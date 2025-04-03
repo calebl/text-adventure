@@ -48,7 +48,7 @@ end
 
 
 
-gem "raix", "~> 0.4.8"
+gem "raix", "~> 0.6"
 
 gem "open_router", "~> 0.3.3"
 
