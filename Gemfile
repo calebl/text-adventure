@@ -48,9 +48,7 @@ end
 
 
 
-gem "raix", "~> 0.4.8"
+gem "raix"
 
 gem "open_router", "~> 0.3.3"
-
 gem "activegraph", "~> 11.4"
-gem "neo4j-ruby-driver", "~> 4.4"
