@@ -49,6 +49,7 @@ end
 
 
 gem "raix"
+gem "roast-ai"
 
 gem "open_router", "~> 0.3.3"
 gem "activegraph", "~> 11.4"
