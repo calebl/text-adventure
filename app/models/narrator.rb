@@ -76,5 +76,4 @@ class Narrator
       transcript << { role: message.role, content: message.content }
     end
   end
-
 end
