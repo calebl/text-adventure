@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+require "fileutils"
+
+APP_ROOT = File.expand_path("..", __dir__)
+
+FileUtils.chdir APP_ROOT do
+  changes = `git status --porcelain`
+  if changes.strip.empty?
+    puts "No changes to commit. Aborting."
+    exit 0
+  end
+  `git add .`
+  commit_message = `git diff --cached | llm -s 'create a 1 sentence, concise commit message for the changes' --no-stream`
+  puts "Committing changes with message: #{commit_message}"
+  `git commit -m "#{commit_message}"`
+  `git push`
+end

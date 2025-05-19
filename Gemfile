@@ -48,7 +48,7 @@ end
 
 
 
-gem "raix"
+gem "raix", "~> 0.8.4"
 gem "roast-ai"
 
 gem "open_router", "~> 0.3.3"

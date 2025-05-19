@@ -276,7 +276,7 @@ GEM
       thor (~> 1.0, >= 1.2.2)
       zeitwerk (~> 2.6)
     rainbow (3.1.1)
-    raix (0.8.5)
+    raix (0.8.4)
       activesupport (>= 6.0)
       faraday-retry (~> 2.0)
       open_router (~> 0.2)
@@ -406,7 +406,7 @@ DEPENDENCIES
   open_router (~> 0.3.3)
   puma (>= 5.0)
   rails (~> 8.0.0)
-  raix
+  raix (~> 0.8.4)
   roast-ai
   rubocop-rails-omakase
   solid_cable

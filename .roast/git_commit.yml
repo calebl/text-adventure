@@ -1,0 +1,15 @@
+name: git_commit
+api_provider: openrouter
+api_token: $(echo $OPENROUTER_API_KEY)
+model: anthropic/claude-3-opus-20240229
+tools:
+  - Roast::Tools::ReadFile
+  - Roast::Tools::WriteFile
+steps:
+  - $(git add .)
+  - $(git diff origin/main | llm -t code-changes )
+  - $(git add .)
+  - Return a 1 sentence commit message
+  - Ask for user to confirm before continuing
+  # - $(git commit -m "$(create_commit_message)")
+  # - $(git push)
