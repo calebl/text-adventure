@@ -9,7 +9,18 @@ namespace :narrator do
     loop do
       print "> "
       user_input = STDIN.gets.chomp
-      break if user_input.downcase == "exit"
+      break if user_input.downcase == "/exit"
+      if user_input.downcase == "/save"
+        narrator.save_transcript
+        puts "Transcript saved!"
+        next
+      end
+      if user_input.downcase == "/load"
+        narrator.load_transcript
+        puts "Transcript loaded!"
+        puts narrator.transcript.last[:content]
+        next
+      end
 
 
       response = narrator.add_user_message(user_input)

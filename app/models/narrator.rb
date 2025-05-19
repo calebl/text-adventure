@@ -1,9 +1,12 @@
 class Narrator
   include Raix::ChatCompletion
+  include Raix::FunctionDispatch
+
+  MODEL = "cognitivecomputations/dolphin3.0-r1-mistral-24b:free"
 
   SYSTEM_DIRECTIVE = <<~HEREDOC
     You are the narrator for a choose your own adventure novel. You describe each scene based on the information provided
-    to you using the get_scene_details tool. When the [user] performs an action, you evaluate that action to ensure it aligns
+    to you using the generate_scene_details tool. When the [user] performs an action, you evaluate that action to ensure it aligns
     with what is possible as described by the get_universe_rules tool. If the [user] attempts to perform an action that is not
     allowed by get_universe_rules and get_character_abilities, you provide a witty response with a reasonable action instead.
 
@@ -30,8 +33,23 @@ class Narrator
     is on the street in the city, list side streets, houses or storefronts where the [user] could explore.
   HEREDOC
 
+  function :generate_scene_details, description: "Generate details for the current scene", prompt: { type: :string, description: "The prompt for the scene details" } do |prompt|
+    scene_details = SceneGenerator.new.generate_scene_details(prompt)
+    transcript << { assistant: scene_details }
+    scene_details
+  end
+
+  function :get_universe_rules, description: "Get the rules for the universe" do
+    "The universe is a place where the [user] can explore and interact with the world. The [user] can move, explore, and interact with the world.
+    The [user] can also use items and abilities. The universe is constrained by the physical laws of the real world. No one has any special powers."
+  end
+
+  function :get_character_abilities, description: "Get the abilities for the character" do
+    "The [user] is a human who can move, explore, and interact with the world."
+  end
+
   def initialize
-    self.model = "cognitivecomputations/dolphin-mixtral-8x22b"
+    self.model = MODEL
     transcript << { system: SYSTEM_DIRECTIVE }
     transcript << { assistant: "Hello! I'm the narrator for your adventure. What kind of story would you like to begin?" }
   end
@@ -43,4 +61,19 @@ class Narrator
     response
   end
 
+  def save_transcript
+    transcript.each_with_index do |message, index|
+      role = message.keys.first
+      content = message[role]
+      if Message.find_by(role: role, content: content, position: index).nil?
+        Message.create(role: role, content: content, position: index)
+      end
+    end
+  end
+
+  def load_transcript
+    Message.all.order(:position, :created_at).each do |message|
+      transcript << { role: message.role, content: message.content }
+    end
+  end
 end
