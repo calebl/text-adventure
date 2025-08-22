@@ -1,3 +1,3 @@
 OpenRouter.configure do |config|
-  config.access_token = Rails.application.credentials.open_router[:access_token]
+  config.access_token = ENV["OPENROUTER_API_KEY"]
 end
