@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Text Adventure is a Rails 8 API-only application that creates AI-powered text-based adventure games. It uses the Raix gem to interact with AI models through OpenRouter, specifically the `cognitivecomputations/dolphin-mixtral-8x22b` model for generating narrative content.
+Text Adventure is a Rails 8 API-only application that creates AI-powered text-based adventure games. It uses the RubyLLM gem to interact with AI models through OpenRouter, specifically the `cognitivecomputations/dolphin-mixtral-8x22b` model for generating narrative content.
 
 ## Development Environment
 
@@ -16,7 +16,7 @@ Text Adventure is a Rails 8 API-only application that creates AI-powered text-ba
 
 ## Key Dependencies
 
-- **raix** (~> 0.4.8): AI chat completion framework
+- **ruby_llm**: AI chat completion framework with OpenRouter integration
 - **open_router** (~> 0.3.3): OpenRouter API client for accessing AI models
 - **activegraph** (~> 11.4): Neo4j integration for story graph storage
 - **solid_cache/solid_queue/solid_cable**: Rails 8 solid adapters
@@ -61,14 +61,14 @@ bundle exec brakeman
 ### Core Components
 
 1. **Narrator Model** (`app/models/narrator.rb`): 
-   - Primary AI interaction class using Raix::ChatCompletion
-   - Manages conversation transcript and system directives
+   - Primary AI interaction class using RubyLLM chat interface
+   - Manages conversation state through RubyLLM chat objects
    - Configured for choose-your-own-adventure style narratives
 
 2. **AI Configuration**:
-   - OpenRouter API integration in `config/initializers/open_router.rb`
-   - Raix configuration in `config/initializers/raix.rb`  
-   - API credentials stored in Rails encrypted credentials
+   - RubyLLM configuration in `config/initializers/ruby_llm.rb`
+   - OpenRouter API key configured via environment variable `OPENROUTER_API_KEY`
+   - Default model set to `mistralai/mistral-medium-3.1`
 
 3. **Interactive Interface**:
    - Command-line interaction via `rake narrator:interact`
@@ -79,11 +79,12 @@ bundle exec brakeman
 - **API-only Rails app** with no frontend views
 - **Neo4j integration** planned for story graph persistence (currently disabled)
 - **AI-driven narrative generation** with rule-based constraints
-- **Conversation state management** through transcript arrays
+- **Conversation state management** through RubyLLM chat objects and database persistence
+- **Database models** for Chat, Message, and ToolCall to store conversation history
 
 ### Configuration Notes
 
-- OpenRouter access token must be configured: `rails credentials:edit` and add `open_router: { access_token: "your_token" }`
+- OpenRouter API key must be set as environment variable: `OPENROUTER_API_KEY=your_token`
 - Neo4j integration is currently commented out in `config/application.rb` but gems are installed
 - Application configured as API-only but can be extended with web interface
 

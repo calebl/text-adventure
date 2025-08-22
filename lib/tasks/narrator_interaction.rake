@@ -4,7 +4,7 @@ namespace :narrator do
     narrator = Narrator.new
     puts "Welcome to the Narrator AI Chatbot! Type 'exit' to quit."
 
-    puts narrator.transcript.last[:assistant] if narrator.transcript.last[:assistant]
+    puts narrator.last_assistant_message
 
     loop do
       print "> "
