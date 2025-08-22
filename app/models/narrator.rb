@@ -42,5 +42,4 @@ class Narrator
     transcript << { assistant: response }
     response
   end
-
 end
