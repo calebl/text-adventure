@@ -1,6 +1,4 @@
 class Narrator
-  include Raix::ChatCompletion
-
   SYSTEM_DIRECTIVE = <<~HEREDOC
     You are the narrator for a choose your own adventure novel. You describe each scene based on the information provided
     to you using the get_scene_details tool. When the [user] performs an action, you evaluate that action to ensure it aligns
@@ -30,16 +28,31 @@ class Narrator
     is on the street in the city, list side streets, houses or storefronts where the [user] could explore.
   HEREDOC
 
+  attr_reader :chat
+
   def initialize
-    self.model = "cognitivecomputations/dolphin-mixtral-8x22b"
-    transcript << { system: SYSTEM_DIRECTIVE }
-    transcript << { assistant: "Hello! I'm the narrator for your adventure. What kind of story would you like to begin?" }
+    @chat = RubyLLM.chat(
+      model: "cognitivecomputations/dolphin-mixtral-8x22b"
+    )
+
+    @chat.with_instructions(SYSTEM_DIRECTIVE)
+    @initial_message = "Hello! I'm the narrator for your adventure. What kind of story would you like to begin?"
+  end
+
+  def transcript
+    @chat.messages.each do |message|
+      puts "[#{message.role.to_s.upcase}] #{message.content.lines.first.strip}"
+    end
   end
 
   def add_user_message(message)
-    transcript << { user: message }
-    response = chat_completion
-    transcript << { assistant: response }
-    response
+    response = @chat.ask(message)
+    response.content
+  end
+
+  def last_assistant_message
+    assistant_messages = @chat.messages.select { |m| m.role == :assistant }
+    return @initial_message if assistant_messages.empty?
+    assistant_messages.last.content
   end
 end
