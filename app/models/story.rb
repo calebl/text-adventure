@@ -10,4 +10,13 @@ class Story < ApplicationRecord
   validates :preface, presence: true
   validates :summary, presence: true
   validates :start_time, presence: true
+
+  def create_character
+    character = Character::Generator.new(self).generate
+    if !character.save
+      raise "Failed to save character: #{character.errors.full_messages.join(", ")}"
+    end
+
+    character
+  end
 end
