@@ -44,11 +44,15 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Factory Bot for test data
+  gem "factory_bot_rails"
 end
 
 
 
 gem "ruby_llm"
+gem "ruby_llm-schema"
 
 gem "open_router", "~> 0.3.3"
 

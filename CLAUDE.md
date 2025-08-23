@@ -91,3 +91,6 @@ bundle exec brakeman
 ### Development Workflow
 
 The main development interface is through the rake task `narrator:interact` which provides a command-line chat interface with the AI narrator. The narrator follows specific rules for adventure game mechanics including preventing unrealistic actions and maintaining narrative flow.
+
+
+- All interactions with AI LLMs should use a structured output with RubyLLM::Schema
