@@ -49,13 +49,13 @@ class CharacterTest < ActiveSupport::TestCase
   end
 
   test "should validate sex inclusion" do
-    @character.sex = "invalid"
-    assert_not @character.valid?
-    assert_includes @character.errors[:sex], "is not included in the list"
+    assert_raises(ArgumentError) do
+      @character.sex = "invalid"
+    end
   end
 
   test "should accept valid sex values" do
-    %w[male female other].each do |sex|
+    %w[male female non_binary transgender].each do |sex|
       @character.sex = sex
       assert @character.valid?, "#{sex} should be valid"
     end
@@ -103,10 +103,9 @@ class CharacterTest < ActiveSupport::TestCase
     assert_includes @character.errors[:backstory], "can't be blank"
   end
 
-  test "should validate is_companion inclusion" do
-    @character.is_companion = nil
-    assert_not @character.valid?
-    assert_includes @character.errors[:is_companion], "is not included in the list"
+  test "should default is_companion to false" do
+    character = Character.new
+    assert_equal false, character.is_companion
   end
 
   test "should belong to story" do

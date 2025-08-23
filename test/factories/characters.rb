@@ -4,7 +4,7 @@ FactoryBot.define do
     sequence(:fullname) { |n| "Character #{n}" }
     sequence(:nickname) { |n| "Nick#{n}" }
     age { rand(18..100) }
-    sex { %w[male female other].sample }
+    sex { %w[male female non_binary transgender].sample }
     race { %w[human elf dwarf orc hobbit].sample }
     personality { "Brave and determined with a strong moral compass" }
     appearance { "Average height with distinctive features and weathered clothing" }
