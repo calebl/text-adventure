@@ -116,6 +116,11 @@ GEM
     et-orbi (1.3.0)
       tzinfo
     event_stream_parser (1.0.0)
+    factory_bot (6.5.5)
+      activesupport (>= 6.1.0)
+    factory_bot_rails (6.5.0)
+      factory_bot (~> 6.5)
+      railties (>= 6.1.0)
     faraday (2.13.4)
       faraday-net_http (>= 2.0, < 3.5)
       json
@@ -316,6 +321,7 @@ GEM
       faraday-retry (>= 1)
       marcel (~> 1.0)
       zeitwerk (~> 2)
+    ruby_llm-schema (0.1.9)
     securerandom (0.4.1)
     set (1.1.2)
     solid_cable (3.0.12)
@@ -390,6 +396,7 @@ DEPENDENCIES
   bootsnap
   brakeman
   debug
+  factory_bot_rails
   kamal
   neo4j-ruby-driver (~> 4.4)
   open_router (~> 0.3.3)
@@ -397,6 +404,7 @@ DEPENDENCIES
   rails (~> 8.0.0)
   rubocop-rails-omakase
   ruby_llm
+  ruby_llm-schema
   solid_cable
   solid_cache
   solid_queue
