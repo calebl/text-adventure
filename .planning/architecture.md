@@ -8,7 +8,10 @@ All interactions with AI should use structured schema output.
 When the protagonist interacts with a character, the character should respond based on the context of their
 own backstory.
 
-For speed, I will probably need to use smaller, local models if possible.
+For speed, I will probably need to use smaller, local models if possible. It's still pretty slow even using local models. Using <1B local models on a powerful M4 Mac still takes more than 1 minute to generate a character.
+It seems like it might be something to do with the schema? When I put prompts into the local Ollama chat, it is pretty responsive.
+
+I think we will need to pre-generate most character before the user starts the story. 
 
 
 # Interaction design (first use)
