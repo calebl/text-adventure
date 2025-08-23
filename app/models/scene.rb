@@ -10,21 +10,6 @@ class Scene < ApplicationRecord
 
   after_create :mark_location_visit
 
-  def choices_array
-    return [] if choices_presented.blank?
-    JSON.parse(choices_presented)
-  end
-
-  def choices_array=(choices)
-    self.choices_presented = choices.to_json
-  end
-
-  def add_choice(choice)
-    current_choices = choices_array
-    current_choices << choice
-    self.choices_array = current_choices
-  end
-
   def has_next_scene?
     next_scene.present?
   end
