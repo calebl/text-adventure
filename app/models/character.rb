@@ -4,9 +4,12 @@ class Character < ApplicationRecord
   has_many :items, dependent: :destroy
   has_and_belongs_to_many :scenes
 
+  enum :sex, { male: "male", female: "female", non_binary: "non-binary", transgender: "transgender" }
+  attribute :is_companion, :boolean, default: false
+
   validates :fullname, presence: true
   validates :age, presence: true, numericality: { greater_than: 0 }
-  validates :sex, presence: true, inclusion: { in: %w[ male female other ] }
+  validates :sex, presence: true, inclusion: { in: sexes.keys }
   validates :race, presence: true
   validates :backstory, presence: true
   validates :personality, presence: true
@@ -14,5 +17,4 @@ class Character < ApplicationRecord
   validates :likes, presence: true
   validates :dislikes, presence: true
   validates :fears, presence: true
-  validates :is_companion, inclusion: { in: [ true, false ] }
 end

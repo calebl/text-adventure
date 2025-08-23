@@ -11,13 +11,12 @@ Text Adventure is a Rails 8 API-only application that creates AI-powered text-ba
 - **Ruby**: 3.3.5 (managed by asdf, see `.tool-versions`)
 - **Node.js**: 18.19.0
 - **Rails**: 8.0.0 (API-only mode)
-- **Database**: SQLite3 for development
+- **Database**: SQLite3 for development and production
 
 ## Key Dependencies
 
 - **ruby_llm**: AI chat completion framework with OpenRouter integration
 - **open_router** (~> 0.3.3): OpenRouter API client for accessing AI models
-- **activegraph** (~> 11.4): Neo4j integration for story graph storage
 - **solid_cache/solid_queue/solid_cable**: Rails 8 solid adapters
 
 ## Common Commands
@@ -89,6 +88,9 @@ bundle exec brakeman
 ### Development Workflow
 
 The main development interface is through the rake task `narrator:interact` which provides a command-line chat interface with the AI narrator. The narrator follows specific rules for adventure game mechanics including preventing unrealistic actions and maintaining narrative flow.
+
+### Model updates
+- whenever a model is updated, check the model tests and factories and make the appropriate updates in those as well
 
 ### Testing Requirements
 
