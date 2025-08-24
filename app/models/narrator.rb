@@ -1,4 +1,6 @@
 class Narrator
+  DEFAULT_MODEL = "cognitivecomputations/dolphin-mixtral-8x22b"
+
   SYSTEM_DIRECTIVE = <<~HEREDOC
     You are the narrator for a choose your own adventure novel. You describe each scene based on the information provided
     to you using the get_scene_details tool. When the [user] performs an action, you evaluate that action to ensure it aligns
@@ -30,13 +32,14 @@ class Narrator
 
   attr_reader :chat
 
-  def initialize
+  def initialize(model: DEFAULT_MODEL)
     @chat = RubyLLM.chat(
-      model: "cognitivecomputations/dolphin-mixtral-8x22b"
+      model: model
     )
+    @initial_message = "Hello! I'm the narrator for your adventure. What kind of story would you like to begin?"
 
     @chat.with_instructions(SYSTEM_DIRECTIVE)
-    @initial_message = "Hello! I'm the narrator for your adventure. What kind of story would you like to begin?"
+    @chat.add_message(role: :assistant, content: @initial_message)
   end
 
   def transcript
