@@ -1,7 +1,7 @@
 class Interaction < ApplicationRecord
   belongs_to :character
-  belongs_to :scene
-  belongs_to :location
+  belongs_to :scene, optional: true
+  belongs_to :location, optional: true
 
   validates :pre_thought, presence: true
   validates :pre_feeling, presence: true

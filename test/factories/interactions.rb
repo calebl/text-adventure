@@ -10,6 +10,7 @@ FactoryBot.define do
     post_thought { "That went better than expected" }
     inner_resolution { nil }
     summary { "Character interacts with someone new" }
+    user_input { "Hello there!" }
 
     trait :completed do
       inner_resolution { "I will help this person with their quest" }

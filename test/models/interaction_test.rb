@@ -66,6 +66,16 @@ class InteractionTest < ActiveSupport::TestCase
     assert_equal @location, @interaction.location
   end
 
+  test "should allow nil scene" do
+    @interaction.scene = nil
+    assert @interaction.valid?
+  end
+
+  test "should allow nil location" do
+    @interaction.location = nil
+    assert @interaction.valid?
+  end
+
   test "should be completed when inner_resolution is present" do
     @interaction.inner_resolution = nil
     assert_not @interaction.completed?
