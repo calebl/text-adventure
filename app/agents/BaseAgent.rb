@@ -37,6 +37,11 @@ class BaseAgent
     @chat.add_message(role: role, content: content)
   end
 
+  def with_model(**args)
+    @chat.with_model(**args)
+    self
+  end
+
   def with_schema(schema)
     @schema = schema
     @chat.with_schema(schema)
