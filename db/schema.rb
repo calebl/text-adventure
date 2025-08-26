@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_23_024100) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_24_193519) do
   create_table "characters", force: :cascade do |t|
     t.integer "story_id", null: false
     t.string "fullname"
@@ -45,8 +45,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_23_024100) do
 
   create_table "interactions", force: :cascade do |t|
     t.integer "character_id", null: false
-    t.integer "scene_id", null: false
-    t.integer "location_id", null: false
+    t.integer "scene_id"
+    t.integer "location_id"
     t.text "pre_thought"
     t.text "pre_feeling"
     t.text "action"
@@ -56,6 +56,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_23_024100) do
     t.text "summary"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "user_input"
     t.index ["character_id"], name: "index_interactions_on_character_id"
     t.index ["location_id"], name: "index_interactions_on_location_id"
     t.index ["scene_id"], name: "index_interactions_on_scene_id"
