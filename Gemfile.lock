@@ -307,7 +307,7 @@ GEM
       faraday-retry (>= 1)
       marcel (~> 1.0)
       zeitwerk (~> 2)
-    ruby_llm-schema (0.1.9)
+    ruby_llm-schema (0.2.1)
     securerandom (0.4.1)
     solid_cable (3.0.12)
       actioncable (>= 7.2)
