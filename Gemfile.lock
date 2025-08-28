@@ -73,12 +73,12 @@ GEM
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
     ast (2.4.3)
-    async (2.27.4)
+    async (2.28.0)
       console (~> 1.29)
       fiber-annotation
       io-event (~> 1.11)
       metrics (~> 0.12)
-      traces (~> 0.15)
+      traces (~> 0.18)
     base64 (0.3.0)
     bcrypt_pbkdf (1.1.1)
     bcrypt_pbkdf (1.1.1-arm64-darwin)
@@ -165,7 +165,7 @@ GEM
       net-pop
       net-smtp
     marcel (1.0.4)
-    metrics (0.13.0)
+    metrics (0.14.0)
     mini_mime (1.1.5)
     minitest (5.25.5)
     msgpack (1.8.0)
@@ -348,7 +348,7 @@ GEM
     thruster (0.1.15-x86_64-darwin)
     thruster (0.1.15-x86_64-linux)
     timeout (0.4.3)
-    traces (0.17.0)
+    traces (0.18.1)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (3.1.5)
@@ -375,7 +375,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
-  async (~> 2.27)
+  async (~> 2.28)
   bootsnap
   brakeman
   debug
