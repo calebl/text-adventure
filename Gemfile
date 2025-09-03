@@ -56,4 +56,4 @@ gem "ruby_llm-schema"
 
 gem "open_router", "~> 0.3.3"
 
-gem "async", "~> 2.27"
+gem "async", "~> 2.28"
