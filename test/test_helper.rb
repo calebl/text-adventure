@@ -3,6 +3,8 @@ require_relative "../config/environment"
 require "rails/test_help"
 require "minitest/mock"
 require_relative "support/fake_agent"
+require_relative "support/schema_assertions"
+require_relative "support/fake_chat"
 
 module ActiveSupport
   class TestCase

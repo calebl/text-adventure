@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_30_200001) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_30_220946) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -42,8 +42,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_200001) do
 
   create_table "chats", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.string "model_id"
+    t.integer "model_id"
+    t.string "model_id_string"
     t.datetime "updated_at", null: false
+    t.index ["model_id"], name: "index_chats_on_model_id"
   end
 
   create_table "interactions", force: :cascade do |t|
@@ -106,13 +108,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_200001) do
     t.text "content"
     t.datetime "created_at", null: false
     t.integer "input_tokens"
-    t.string "model_id"
+    t.integer "model_id"
+    t.string "model_id_string"
     t.integer "output_tokens"
     t.string "role"
     t.integer "tool_call_id"
     t.datetime "updated_at", null: false
     t.index ["chat_id"], name: "index_messages_on_chat_id"
+    t.index ["model_id"], name: "index_messages_on_model_id"
     t.index ["tool_call_id"], name: "index_messages_on_tool_call_id"
+  end
+
+  create_table "models", force: :cascade do |t|
+    t.json "capabilities", default: []
+    t.integer "context_window"
+    t.datetime "created_at", null: false
+    t.string "family"
+    t.date "knowledge_cutoff"
+    t.integer "max_output_tokens"
+    t.json "metadata", default: {}
+    t.json "modalities", default: {}
+    t.datetime "model_created_at"
+    t.string "model_id", null: false
+    t.string "name", null: false
+    t.json "pricing", default: {}
+    t.string "provider", null: false
+    t.datetime "updated_at", null: false
+    t.index ["family"], name: "index_models_on_family"
+    t.index ["provider", "model_id"], name: "index_models_on_provider_and_model_id", unique: true
+    t.index ["provider"], name: "index_models_on_provider"
   end
 
   create_table "playthroughs", force: :cascade do |t|
@@ -193,6 +217,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_200001) do
 
   add_foreign_key "characters", "races"
   add_foreign_key "characters", "stories"
+  add_foreign_key "chats", "models"
   add_foreign_key "interactions", "characters"
   add_foreign_key "interactions", "locations"
   add_foreign_key "interactions", "scenes"
@@ -202,6 +227,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_200001) do
   add_foreign_key "locations", "locations", column: "parent_location_id"
   add_foreign_key "locations", "stories"
   add_foreign_key "messages", "chats"
+  add_foreign_key "messages", "models"
   add_foreign_key "playthroughs", "characters"
   add_foreign_key "playthroughs", "locations", column: "current_location_id"
   add_foreign_key "playthroughs", "scenes", column: "current_scene_id"
