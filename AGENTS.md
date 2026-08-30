@@ -66,6 +66,15 @@ timestamped moment in a location. See the persistence model section in
 - Seed prompts with randomized "predetermined details" so repeated runs diverge
   (`Universe::Generator::TONES`, `Character::Generator::BIRTH_PLACES`).
 
+### Generating the world
+
+- `Location` is generated in two steps and carries `detail_level`: a **stub** is
+  a name plus a one-line `teaser`, a **realized** location has the description
+  and lore the player reads. `description` / `lore` are validated only when
+  realized, so a stub saves. `Location::Generator#realize!` fills a stub in and
+  stubs out its exits; it returns an already-realized location untouched.
+  Generation happens once per place — do not add a code path that regenerates one.
+
 ### Testing
 
 - Generator tests **must not hit a model.** Use `FakeAgent`
