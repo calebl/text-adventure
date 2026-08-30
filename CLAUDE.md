@@ -12,8 +12,7 @@ Text Adventure is a Rails 8 API-only application that creates AI-powered text-ba
 
 ## Development Environment
 
-- **Ruby**: 3.3.5 (managed by asdf, see `.tool-versions`)
-- **Node.js**: 18.19.0
+- **Ruby**: 3.4.10 (managed by asdf/mise, see `.tool-versions`)
 - **Rails**: 8.0.0 (API-only mode)
 - **Database**: SQLite3 for development and production
 
