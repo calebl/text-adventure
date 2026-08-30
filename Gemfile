@@ -49,6 +49,11 @@ group :development, :test do
   gem "factory_bot_rails"
 end
 
+group :test do
+  # Minitest 6 extracted minitest/mock into its own gem
+  gem "minitest-mock"
+end
+
 
 
 gem "ruby_llm"

@@ -5,7 +5,9 @@ FactoryBot.define do
     sequence(:nickname) { |n| "Nick#{n}" }
     age { rand(18..100) }
     sex { %w[male female non_binary transgender].sample }
-    race { %w[human elf dwarf orc hobbit].sample }
+    # Races are owned by the universe, so pull one from the story's universe
+    # rather than inventing a name that would fail validation.
+    race { story.universe.races.first || association(:race, universe: story.universe) }
     personality { "Brave and determined with a strong moral compass" }
     appearance { "Average height with distinctive features and weathered clothing" }
     likes { "Adventure, justice, helping others" }
@@ -19,7 +21,7 @@ FactoryBot.define do
       nickname { "Hero" }
       age { 25 }
       sex { "male" }
-      race { "human" }
+      race { story.universe.races.find_by(name: "Human") || association(:race, universe: story.universe, name: "Human") }
       personality { "Courageous, curious, and kind-hearted despite facing many challenges" }
       appearance { "Young person with determined eyes and simple but practical clothing" }
       backstory { "An ordinary person thrust into extraordinary circumstances" }
@@ -56,7 +58,7 @@ FactoryBot.define do
       nickname { "Lord Elrond" }
       age { 6500 }
       sex { "male" }
-      race { "elf" }
+      race { story.universe.races.find_by(name: "Elf") || association(:race, universe: story.universe, name: "Elf") }
       personality { "Wise, kind, and noble with deep knowledge of ancient lore" }
       appearance { "Tall and graceful with dark hair and ageless features" }
       likes { "Knowledge, peace, music, the preservation of wisdom" }
@@ -71,7 +73,7 @@ FactoryBot.define do
       nickname { "Mr. Frodo" }
       age { 50 }
       sex { "male" }
-      race { "hobbit" }
+      race { story.universe.races.find_by(name: "Hobbit") || association(:race, universe: story.universe, name: "Hobbit") }
       personality { "Brave, curious, and kind-hearted despite his burden" }
       appearance { "Small hobbit with curly brown hair and large feet" }
       likes { "Books, adventure, good food, the Shire" }

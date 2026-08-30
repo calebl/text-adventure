@@ -27,8 +27,8 @@ class UniverseTest < ActiveSupport::TestCase
     assert_includes @universe.errors[:weapons], "can't be blank"
   end
 
-  test "should require races" do
-    @universe.races = nil
+  test "should require at least one race" do
+    @universe.races = []
     assert_not @universe.valid?
     assert_includes @universe.errors[:races], "can't be blank"
   end
