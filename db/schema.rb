@@ -10,14 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_24_193519) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_30_192215) do
   create_table "characters", force: :cascade do |t|
     t.integer "story_id", null: false
     t.string "fullname"
     t.string "nickname"
     t.integer "age"
     t.string "sex"
-    t.string "race"
     t.text "personality"
     t.text "appearance"
     t.text "likes"
@@ -27,6 +26,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_24_193519) do
     t.boolean "is_companion"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "race_id", null: false
+    t.index ["race_id"], name: "index_characters_on_race_id"
     t.index ["story_id"], name: "index_characters_on_story_id"
   end
 
@@ -112,6 +113,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_24_193519) do
     t.index ["tool_call_id"], name: "index_messages_on_tool_call_id"
   end
 
+  create_table "races", force: :cascade do |t|
+    t.integer "universe_id", null: false
+    t.string "name", null: false
+    t.text "description", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["universe_id", "name"], name: "index_races_on_universe_id_and_name", unique: true
+    t.index ["universe_id"], name: "index_races_on_universe_id"
+  end
+
   create_table "scenes", force: :cascade do |t|
     t.integer "story_id", null: false
     t.integer "location_id", null: false
@@ -153,7 +164,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_24_193519) do
     t.text "physics"
     t.text "technology"
     t.text "weapons"
-    t.text "races"
     t.text "civilizations"
     t.text "geographies"
     t.text "history"
@@ -164,6 +174,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_24_193519) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "characters", "races"
   add_foreign_key "characters", "stories"
   add_foreign_key "interactions", "characters"
   add_foreign_key "interactions", "locations"
@@ -174,6 +185,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_24_193519) do
   add_foreign_key "locations", "locations", column: "parent_location_id"
   add_foreign_key "locations", "stories"
   add_foreign_key "messages", "chats"
+  add_foreign_key "races", "universes"
   add_foreign_key "scenes", "locations"
   add_foreign_key "scenes", "scenes", column: "previous_scene_id"
   add_foreign_key "scenes", "stories"

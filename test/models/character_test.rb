@@ -9,7 +9,6 @@ class CharacterTest < ActiveSupport::TestCase
       nickname: "Strider",
       age: 35,
       sex: "male",
-      race: "human",
       personality: "Noble, brave, and determined",
       appearance: "Tall, dark-haired ranger with weathered features",
       likes: "Justice, protecting the innocent",
@@ -64,7 +63,20 @@ class CharacterTest < ActiveSupport::TestCase
   test "should require race" do
     @character.race = nil
     assert_not @character.valid?
-    assert_includes @character.errors[:race], "can't be blank"
+    assert_includes @character.errors[:race], "must exist"
+  end
+
+  test "should belong to a race from its own universe" do
+    assert @character.valid?
+    assert_equal @story.universe, @character.race.universe
+  end
+
+  # A race from another universe would silently contradict the setting.
+  test "should reject a race from a different universe" do
+    @character.race = create(:race)
+
+    assert_not @character.valid?
+    assert_includes @character.errors[:race], "must belong to the story's universe"
   end
 
   test "should require personality" do
