@@ -34,6 +34,30 @@ class MessageTest < ActiveSupport::TestCase
     assert_equal 17, message.output_tokens
   end
 
+  # RubyLLM 1.15 renormalised token accounting: `input_tokens` no longer folds
+  # in prompt cache reads and writes, which are exposed separately. Nothing in
+  # this app reads token counts, and there are no columns backing the cache
+  # figures, so they read nil -- pinned so that stays a deliberate gap rather
+  # than an accident.
+  test "exposes the split token accounting, with no columns behind the cache figures" do
+    message = create(:message, :assistant)
+
+    assert_equal 42, message.input_tokens
+    assert_equal 17, message.output_tokens
+    assert_nil message.cache_read_tokens
+    assert_nil message.cache_write_tokens
+    assert_not_includes Message.column_names, "cached_tokens"
+    assert_not_includes Message.column_names, "cache_creation_tokens"
+  end
+
+  # Cost is derived from the registry row's pricing, so it needs a model
+  # association -- another thing the acts_as migration made possible.
+  test "costs the exchange from the registry's pricing" do
+    message = create(:message, :assistant)
+
+    assert_operator message.cost.total, :>, 0
+  end
+
   test "has many tool calls" do
     message = create(:message, :assistant)
     tool_call = create(:tool_call, message: message)

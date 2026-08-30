@@ -57,7 +57,7 @@ end
 
 
 gem "ruby_llm"
-gem "ruby_llm-schema"
+gem "ruby_llm-schema", "~> 0.2"
 
 gem "open_router", "~> 0.3.3"
 

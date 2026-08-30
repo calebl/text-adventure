@@ -1,9 +1,9 @@
 FactoryBot.define do
   factory :message do
     association :chat
+    association :model
     role { "user" }
     content { "What lies beyond the gate?" }
-    model_id { "minimax/minimax-m3" }
 
     trait :assistant do
       role { "assistant" }
