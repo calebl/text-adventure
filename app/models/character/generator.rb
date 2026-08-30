@@ -1,46 +1,47 @@
 class Character::Generator
+  include SanitizesGeneratedText
+
   attr_reader :story, :character_generation_prompt
 
   ATTRACTIVENESS_VALUES = [ "very_attractive", "attractive", "average", "unattractive" ]
   BIRTH_PLACES = [ "large city", "small town", "cave", "remote wilderness", "isolated island", "floating city", "jungle", "desert", "mountain", "boat" ]
   RAISED_BY = [ "parents", "guardian", "siblings", "grandparents", "aunt/uncle", "neighbor", "teacher", "mentor", "pet", "wild aninmals", "self" ]
 
+  attr_reader :race
+
   def initialize(story)
     @story = story
+    # Race is picked from the universe's generated list rather than invented by
+    # the model, so every character actually belongs to one of its peoples.
+    @race = story.universe.races.sample
     @character_generation_prompt = generation_prompt(story)
     @background_generation_prompt = background_generation_prompt
   end
 
+  # Raises if generation fails. Returning a half-built character instead just
+  # pushes the failure downstream, where it looks like a bad model response.
   def generate
-    Async do
-      agent = BaseAgent.new.with_instructions(system_prompt)
-      character = @story.characters.new
+    agent = BaseAgent.new.with_instructions(system_prompt)
+    character = @story.characters.new
 
-      begin
-        response = agent.with_schema(Character::BaseSchema).ask(@character_generation_prompt)
-        base_content = response.content
+    base_content = agent.with_schema(Character::BaseSchema).ask(@character_generation_prompt).content
 
-        character.fullname = sanitize_string(base_content["fullname"])
-        character.nickname = sanitize_string(base_content["nickname"])
-        character.age = base_content["age"].to_i
-        character.sex = sanitize_string(base_content["sex"])
-        character.race = sanitize_string(base_content["race"])
+    character.fullname = sanitize_string(base_content["fullname"])
+    character.nickname = sanitize_string(base_content["nickname"])
+    character.age = base_content["age"].to_i
+    character.sex = sanitize_string(base_content["sex"])
+    character.race = race
 
-        background_response = agent.with_schema(Character::BackgroundSchema).ask(@background_generation_prompt)
-        background_content = background_response.content
+    background_content = agent.with_schema(Character::BackgroundSchema).ask(@background_generation_prompt).content
 
-        character.personality = sanitize_string(background_content["personality"])
-        character.appearance = sanitize_string(background_content["appearance"])
-        character.likes = sanitize_string(background_content["likes"])
-        character.dislikes = sanitize_string(background_content["dislikes"])
-        character.fears = sanitize_string(background_content["fears"])
-        character.backstory = sanitize_string(background_content["backstory"])
+    character.personality = sanitize_string(background_content["personality"])
+    character.appearance = sanitize_string(background_content["appearance"])
+    character.likes = sanitize_string(background_content["likes"])
+    character.dislikes = sanitize_string(background_content["dislikes"])
+    character.fears = sanitize_string(background_content["fears"])
+    character.backstory = sanitize_string(background_content["backstory"])
 
-      rescue => e
-        Rails.logger.error("Error generating character: #{e.message}")
-      end
-      character
-    end.result
+    character
   end
 
   def system_prompt
@@ -61,28 +62,23 @@ class Character::Generator
       summary: #{story.summary}
 
       ## Universe Details
-      physics: #{story.universe.physics}
-      technology: #{story.universe.technology}
-      weapons: #{story.universe.weapons}
-      races: #{story.universe.races}
-      civilizations: #{story.universe.civilizations}
-      geographies: #{story.universe.geographies}
-      history: #{story.universe.history}
-      economics: #{story.universe.economics}
-      politics: #{story.universe.politics}
-      religion: #{story.universe.religion}
+      #{story.universe.prompt_details}
 
       ## Already Generated Characters
       DO NOT GENERATE THESE CHARACTERS AGAIN.
-      #{story.characters.map { |character| character.slice(:fullname, :nickname, :age, :sex, :race, :personality).to_json }.join("\n")}
+      #{story.characters.map { |character| character.slice(:fullname, :nickname, :age, :sex, :personality).merge(race: character.race&.name).to_json }.join("\n")}
       END OF ALREADY GENERATED CHARACTERS
 
       ## Predetermined Character Details for the new character
       sex: #{Character.sexes.values.sample}
       age: #{rand(18..120)}
       attractiveness: #{ATTRACTIVENESS_VALUES.sample}
+      race: #{race&.name} -- #{race&.description}
 
       ## Character Generation Instructions
+      - The character is a #{race&.name}. Write them as one, and do not assign
+        them a different race
+      - Respect the stated length of each field
       - The character should be consistent with the story's universe
       - The character should be consistent with the story's characters
       - The character should be consistent with the story's plot
@@ -106,9 +102,5 @@ class Character::Generator
       The backstory should be one paragraph. It should be written in third person, referencing the character by name.
 
     PROMPT
-  end
-
-  def sanitize_string(string)
-    string.to_s.gsub(/\p{Emoji_Presentation}|\p{Emoji}\uFE0F?/, "").strip
   end
 end
