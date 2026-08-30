@@ -3,10 +3,28 @@ updates:
 - package-ecosystem: bundler
   directory: "/"
   schedule:
-    interval: daily
+    interval: weekly
   open-pull-requests-limit: 10
+  groups:
+    # Version updates only: security updates stay ungrouped so each advisory
+    # still arrives as its own PR, immediately.
+    production-dependencies:
+      applies-to: version-updates
+      dependency-type: production
+      patterns:
+      - "*"
+    development-dependencies:
+      applies-to: version-updates
+      dependency-type: development
+      patterns:
+      - "*"
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
-    interval: daily
+    interval: weekly
   open-pull-requests-limit: 10
+  groups:
+    github-actions:
+      applies-to: version-updates
+      patterns:
+      - "*"
