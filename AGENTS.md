@@ -33,14 +33,24 @@ timestamped moment in a location. See the persistence model section in
   a bare `RubyLLM::Chat` in new code.
 - All LLM calls use structured output via `RubyLLM::Schema`. Schemas live
   alongside the model they populate (`app/models/universe/physical_schema.rb`).
-- **Do not let `ruby_llm-schema` float.** It is pinned `~> 0.2` in the
-  `Gemfile` for a reason: its 1.0.0 is a deprecation shim forwarding to
-  `schematist`, and `ruby_llm` requires `ruby_llm-schema ~> 0`, so taking the
-  shim silently pins `ruby_llm` to 1.8.2. Worse, the two disagree about what
-  `to_json_schema` returns, and `RubyLLM::Chat#with_schema` then drops the
-  schema with no error at all — every structured call goes out as prose.
+- **Never let `ruby_llm-schema` resolve to 1.x.** Its 1.0.0 is a deprecation
+  shim forwarding to the renamed `schematist` gem. `ruby_llm` itself still
+  depends on `ruby_llm-schema ~> 0` and contains no reference to `schematist`,
+  so its own constraint already rules the shim out — the `~> 0.2` in the
+  `Gemfile` is belt-and-braces, not the thing doing the work. What matters is
+  never *widening* past it: an unconstrained `gem "ruby_llm-schema"` lets the
+  resolver take 1.0.0 and silently drags `ruby_llm` back to 1.8.2, the last
+  release with no such dependency. That failure is silent twice over, because
+  the shim and `ruby_llm` then disagree about what `to_json_schema` returns and
+  `RubyLLM::Chat#with_schema` drops the schema with no error at all — every
+  structured call goes out as prose.
   `test/models/ruby_llm_schema_envelope_test.rb` guards that seam all the way
   to the rendered request body; keep it passing.
+- The explicit `Gemfile` entry stays even though `ruby_llm` would pull the gem
+  in anyway: three classes here subclass `RubyLLM::Schema` directly, so it is a
+  direct dependency. If `ruby_llm` 2.0 does switch to `schematist`, an implicit
+  dependency would vanish and surface as a `NameError` rather than a
+  resolution failure.
 - **Never swallow a generation failure.** Generators raise. A rescue that
   returns a half-built record turns a missing model or a bad API key into
   "the AI gave me garbage," which is very hard to debug — this has already
