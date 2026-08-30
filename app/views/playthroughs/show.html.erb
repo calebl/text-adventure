@@ -1,0 +1,27 @@
+<h1><%= @playthrough.story.title %></h1>
+<p><%= link_to "&larr; all stories".html_safe, root_path %></p>
+
+<div class="preface"><%= @playthrough.story.preface %></div>
+<hr>
+
+<%= render partial: "turns/turn", collection: @scenes, as: :turn %>
+
+<% if @command %>
+  <p class="command">&gt; <%= @command %></p>
+  <div class="turn cursor" id="stream"></div>
+
+  <%# Six lines of vanilla EventSource. No importmap, no Turbo -- a later
+      stage swaps this for a Turbo Stream and the server side does not move. %>
+  <script>
+    var out = document.getElementById("stream");
+    var es = new EventSource("<%= playthrough_narration_path(@playthrough, command: @command) %>");
+    es.addEventListener("token", function (e) { out.textContent += JSON.parse(e.data).t; });
+    es.addEventListener("error", function (e) { es.close(); out.classList.remove("cursor"); });
+    es.addEventListener("done", function () { es.close(); window.location = "<%= playthrough_path(@playthrough) %>"; });
+  </script>
+<% else %>
+  <%= form_with url: playthrough_turns_path(@playthrough) do |form| %>
+    <%= form.text_field :command, autofocus: true, autocomplete: "off", placeholder: "what do you do?" %>
+    <%= form.submit "Go" %>
+  <% end %>
+<% end %>

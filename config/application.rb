@@ -26,9 +26,9 @@ module TextAdventure
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
-    # Only loads a smaller set of middleware suitable for API only apps.
-    # Middleware like session, flash, cookies can be added back manually.
-    # Skip views, helpers and assets when generating a new resource.
-    config.api_only = true
+    # Full middleware stack: the browser interface needs cookies, session and flash.
+    # `load_defaults 8.0` already supplies the CookieStore, so nothing else is needed.
+    # This also makes the generators produce views again, which is wanted.
+    config.api_only = false
   end
 end
