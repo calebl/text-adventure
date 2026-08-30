@@ -3,7 +3,9 @@ class Story < ApplicationRecord
   has_many :characters, dependent: :destroy
   has_many :locations, dependent: :destroy
   has_many :scenes, dependent: :destroy
-  has_many :interactions, dependent: :destroy
+  # Interactions hang off characters; destroying the story destroys the
+  # characters, which take their own interactions with them.
+  has_many :interactions, through: :characters
 
   validates :title, presence: true
   validates :genre, presence: true
