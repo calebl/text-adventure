@@ -5,6 +5,23 @@ require "test_helper"
 # the registry is read out of this table rather than the gem's bundled
 # models.json -- so an empty table means no model resolves at all.
 class ModelTest < ActiveSupport::TestCase
+  # RubyLLM memoizes the registry process-wide the first time anything resolves
+  # a model, and tests build their registry rows inside transactions that roll
+  # back. A snapshot that survives into the next test resolves that test's model
+  # names against rows that no longer exist -- which shows up as a
+  # ModelNotFoundError for a row the failing test just created, in whichever
+  # parallel worker happened to run the two tests together. test_helper.rb drops
+  # the memo before every test; this is the assertion that it still does.
+  test "no registry snapshot leaks in from an earlier test" do
+    assert_nil RubyLLM::Models.instance_variable_get(:@instance),
+               "a memoized model registry survived into this test, so model resolution here depends on test order"
+  end
+
+  test "a model resolves against the rows this test created, not an earlier snapshot" do
+    create(:model, :ollama)
+    assert_equal [ "gemma3:12b" ], RubyLLM.models.all.map(&:id)
+  end
+
   test "the factory builds a valid model" do
     assert_predicate build(:model), :valid?
   end

@@ -26,7 +26,7 @@ So revisiting a place reuses the persisted `Location` while creating a new
 
 ### Done
 
-- Rails 8 API app, SQLite, 338 tests green.
+- Rails 8 API app, SQLite, 340 tests green.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph.
 - `Universe::Generator`, `Story::Generator` — bootstrap a world from a premise.
@@ -117,6 +117,16 @@ in it. That is the whole of the next milestone.
 
 ## Known issues
 
+- **RubyLLM's model registry is a process-wide memoized snapshot.**
+  `RubyLLM::Models.instance` is built once, out of the `models` table, falling
+  back to the registry JSON the gem ships only when that table is empty. It is
+  never re-read. In tests that made model resolution depend on test order:
+  registry rows are created inside transactions that roll back, so a snapshot
+  taken by one test resolved the next test's model names against rows that no
+  longer existed. `test_helper.rb` now drops the memo before every test. In
+  development and production the same memoization means a `models` row added
+  after boot is invisible until the process restarts or something calls
+  `Model.refresh!`.
 - **`sanitize_string` used to delete every digit a model wrote.** Its regex was
   `\p{Emoji}`, a property that matches the ASCII digits, `#` and `*` because
   those are the bases of the keycap emoji — so "80 meters" was stored as
