@@ -43,6 +43,12 @@ So revisiting a place reuses the persisted `Location` while creating a new
 - `BaseAgent` — RubyLLM wrapper with model fallback on failure.
 - `rake game:new[premise]` / `rake game:list` — generate and inspect worlds.
 - `InteractionAgent` — two-pass character-then-narrator dialogue.
+- `ruby_llm` 1.16 + `ruby_llm-schema` 0.4, on RubyLLM's association-based
+  `acts_as` API. The `models` table is the model registry now; seed it with
+  `bin/rails db:seed`, or nothing resolves.
+- AI-layer test coverage: `Narrator`, `InteractionAgent`, the three schema
+  classes, and `Chat` / `Message` / `ToolCall` / `Model`, all stubbed at the
+  RubyLLM boundary.
 
 ### Not built yet
 
@@ -152,5 +158,23 @@ one — but only the one they walk through should be fully generated.
 - **`Character::Generator` prompts for `sex` and `age`** in the "predetermined
   details" block, but `Character::BaseSchema` also asks the model for them, so
   the roll is advisory. Either drop them from the schema or stop rolling them.
+- **`InteractionAgent#narrator_instructions` is shadowed.** The `attr_reader`
+  on line 2 is overwritten by the two-argument method below it, so the
+  `@narrator_instructions` set during `ask` is unreachable and calling the
+  reader raises on arity. Pinned in `test/agents/interaction_agent_test.rb`.
+- **The narrator prompt interpolates the enum key, not the value.**
+  `Character#sex` is an ActiveRecord enum, so it reads back `"non_binary"`
+  while the pronoun rule two lines below keys on `"non-binary"`; `transgender`
+  has no pronoun rule at all. Same file, pinned the same way.
+- **`Narrator::DEFAULT_MODEL` does not resolve.**
+  `cognitivecomputations/dolphin-mixtral-8x22b` is in neither the bundled
+  registry nor the seeded `models` table, so `Narrator.new` raises
+  `RubyLLM::ModelNotFoundError`. Pre-existing — it failed on ruby_llm 1.8.2 too.
+  `InteractionAgent` hardcodes the same model.
+- **`BaseAgent::LOCAL_MODEL_OPTIONS` do not set `assume_model_exists`**, and
+  ollama models are not in the registry, so local-only runs fail to resolve.
+- The migration to the new `acts_as` API left `chats.model_id_string` and
+  `messages.model_id_string` behind — dead columns the generator's `down` step
+  needs. Drop them if the migration is ever squashed.
 - The `async` gem is still in the `Gemfile` but no longer used after
   `Character::Generator` was made synchronous.
