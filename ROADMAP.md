@@ -32,6 +32,9 @@ So revisiting a place reuses the persisted `Location` while creating a new
 - `Universe::Generator`, `Story::Generator` — bootstrap a world from a premise.
 - `Character::Generator` — two-pass (base attributes, then background). Races
   are assigned from the universe's list, not invented per character.
+- `Playthrough` model — a session's position in a story (protagonist,
+  `current_location`, `current_scene`, session `token`), plus `is_protagonist`
+  on `Character`. State layer only; nothing reads or writes it yet.
 - `Race` model — `Universe has_many :races`, `Character belongs_to :race`, with a
   validation that a character's race comes from its own story's universe.
 - Explicit lengths (`max_length` plus a stated sentence count) on every schema
@@ -64,11 +67,17 @@ one — but only the one they walk through should be fully generated.
 
 ### 2. The protagonist
 
-- [ ] Decide how the player is represented. `Character` already has
-      `is_companion` and `has_many :items`, so a `Character` row with an
-      `is_protagonist` flag is the cheap path.
-- [ ] Track the player's current `Scene` / `Location` — probably a column on
-      `Story`, since a story has one active playthrough.
+- [x] The player is a `Character` with `is_protagonist` set — at most one per
+      story, enforced by validation and exposed as `Story#protagonist`.
+- [x] Position lives on a separate `Playthrough` model (`story`, `character`,
+      `current_location`, `current_scene`, unguessable unique `token`) rather
+      than columns on `Story`. Same split the schema already makes between the
+      durable `Location` and the momentary `Scene`: the world is not somebody's
+      progress through it, and one generated world can be played twice. The
+      `token` is what will bind a browser session to a playthrough.
+- [ ] Nothing writes either yet — `Character::Generator` never sets
+      `is_protagonist` (nor `is_companion`), and no code creates a
+      `Playthrough`. That belongs to the game loop and the browser interface.
 
 ### 3. Scene generation
 

@@ -86,6 +86,22 @@ class StoryTest < ActiveSupport::TestCase
     assert_not Interaction.exists?(interaction.id)
   end
 
+  test "should have many playthroughs" do
+    @story.save!
+    playthrough = create(:playthrough, story: @story)
+    assert_includes @story.playthroughs, playthrough
+  end
+
+  test "should have one protagonist" do
+    @story.save!
+    assert_nil @story.protagonist
+
+    protagonist = create(:character, :protagonist, story: @story)
+    create(:character, story: @story)
+
+    assert_equal protagonist, @story.reload.protagonist
+  end
+
   test "should belong to universe" do
     assert_equal @universe, @story.universe
   end

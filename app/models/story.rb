@@ -6,6 +6,8 @@ class Story < ApplicationRecord
   # Interactions hang off characters; destroying the story destroys the
   # characters, which take their own interactions with them.
   has_many :interactions, through: :characters
+  has_many :playthroughs, dependent: :destroy
+  has_one :protagonist, -> { where(is_protagonist: true) }, class_name: "Character", inverse_of: :story
 
   validates :title, presence: true
   validates :genre, presence: true
