@@ -66,6 +66,26 @@ class StoryTest < ActiveSupport::TestCase
     assert_includes @story.scenes, scene
   end
 
+  test "should have many interactions through characters" do
+    @story.save!
+    character = create(:character, story: @story)
+    interaction = create(:interaction, character: character)
+    other_interaction = create(:interaction)
+
+    assert_includes @story.interactions, interaction
+    assert_not_includes @story.interactions, other_interaction
+  end
+
+  test "destroy removes characters and their interactions without raising" do
+    @story.save!
+    character = create(:character, story: @story)
+    interaction = create(:interaction, character: character)
+
+    assert_nothing_raised { @story.destroy }
+    assert_not Character.exists?(character.id)
+    assert_not Interaction.exists?(interaction.id)
+  end
+
   test "should belong to universe" do
     assert_equal @universe, @story.universe
   end
