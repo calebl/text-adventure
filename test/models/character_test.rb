@@ -138,6 +138,49 @@ class CharacterTest < ActiveSupport::TestCase
     assert_includes @character.items, item
   end
 
+  test "should default is_protagonist to false" do
+    character = Character.new
+    assert_equal false, character.is_protagonist
+  end
+
+  test "should mark the player's character as the protagonist" do
+    @character.is_protagonist = true
+    assert @character.valid?
+    @character.save!
+    assert_includes Character.protagonists, @character
+    assert_equal @character, @story.protagonist
+  end
+
+  test "should allow only one protagonist per story" do
+    create(:character, :protagonist, story: @story)
+    @character.is_protagonist = true
+
+    assert_not @character.valid?
+    assert_includes @character.errors[:is_protagonist],
+      "is already set on another character in this story"
+  end
+
+  test "should allow a protagonist in each story" do
+    create(:character, :protagonist, story: @story)
+    other = build(:character, :protagonist, story: create(:story))
+
+    assert other.valid?
+  end
+
+  test "should allow the existing protagonist to be saved again" do
+    protagonist = create(:character, :protagonist, story: @story)
+    protagonist.nickname = "Renamed"
+
+    assert protagonist.valid?
+    assert protagonist.save
+  end
+
+  test "should have many playthroughs" do
+    @character.save!
+    playthrough = create(:playthrough, story: @story, character: @character)
+    assert_includes @character.playthroughs, playthrough
+  end
+
   test "should have and belong to many scenes" do
     @character.save!
     location = create(:location, story: @story)
