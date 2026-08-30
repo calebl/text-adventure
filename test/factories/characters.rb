@@ -15,6 +15,7 @@ FactoryBot.define do
     fears { "Failing those who depend on them" }
     backstory { "A person with a mysterious past who has seen both joy and hardship" }
     is_companion { false }
+    is_protagonist { false }
 
     trait :protagonist do
       fullname { "Hero Protagonist" }
@@ -26,6 +27,7 @@ FactoryBot.define do
       appearance { "Young person with determined eyes and simple but practical clothing" }
       backstory { "An ordinary person thrust into extraordinary circumstances" }
       is_companion { false }
+      is_protagonist { true }
     end
 
     trait :companion do

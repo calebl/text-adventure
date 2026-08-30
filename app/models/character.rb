@@ -4,6 +4,7 @@ class Character < ApplicationRecord
   has_many :interactions, dependent: :destroy
   has_many :items, dependent: :destroy
   has_and_belongs_to_many :scenes
+  has_many :playthroughs, dependent: :nullify
 
   enum :sex, { male: "male", female: "female", non_binary: "non-binary", transgender: "transgender" }
   attribute :is_companion, :boolean, default: false
@@ -12,6 +13,7 @@ class Character < ApplicationRecord
   validates :age, presence: true, numericality: { greater_than: 0 }
   validates :sex, presence: true, inclusion: { in: sexes.keys }
   validate :race_belongs_to_story_universe
+  validate :single_protagonist_per_story
   validates :backstory, presence: true
   validates :personality, presence: true
   validates :appearance, presence: true
@@ -54,7 +56,23 @@ class Character < ApplicationRecord
     INTERACTION_INSTRUCTIONS
   end
 
+  scope :protagonists, -> { where(is_protagonist: true) }
+  scope :companions, -> { where(is_companion: true) }
+
   private
+
+  # The player is exactly one person, so a story cannot have two characters
+  # claiming to be them.
+  def single_protagonist_per_story
+    return unless is_protagonist?
+    return if story_id.nil?
+
+    conflict = Character.where(story_id: story_id, is_protagonist: true)
+    conflict = conflict.where.not(id: id) if persisted?
+    return unless conflict.exists?
+
+    errors.add(:is_protagonist, "is already set on another character in this story")
+  end
 
   # A character's race is picked from the list generated for their universe, so
   # a race from a different universe would silently contradict the setting.
