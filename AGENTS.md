@@ -33,6 +33,13 @@ timestamped moment in a location. See the persistence model section in
   a bare `RubyLLM::Chat` in new code.
 - All LLM calls use structured output via `RubyLLM::Schema`. Schemas live
   alongside the model they populate (`app/models/universe/physical_schema.rb`).
+- **One documented exception: narration.** `Scene::Narrator` asks unschema'd,
+  because structured output and token streaming are mutually exclusive here.
+  With a schema attached the model emits JSON, so a player watching the stream
+  sees `{\n  "description": "The doorway...` arrive a character at a time (and
+  the call runs ~4x longer). Narration is the only thing a player reads live,
+  so it streams and stays plain. Everything that populates a record stays
+  schema'd. Do not "fix" `Scene::Narrator` by giving it a schema.
 - **Never let `ruby_llm-schema` resolve to 1.x.** Its 1.0.0 is a deprecation
   shim forwarding to the renamed `schematist` gem. `ruby_llm` itself still
   depends on `ruby_llm-schema ~> 0` and contains no reference to `schematist`,
@@ -122,7 +129,28 @@ bin/rails zeitwerk:check   # app/agents/ uses PascalCase filenames; verify autol
 ```bash
 rake 'game:new[a debt collector in a city built on a dead god]'
 rake game:list
+bin/rails server   # then open http://localhost:3000 and play it
 ```
+
+The rake tasks build worlds; the browser only plays them. There is no
+`rake game:play` and there is not meant to be.
+
+## The browser interface
+
+Plain Rails, deliberately minimal: no Node, no `package.json`, no build step,
+no importmap, no propshaft, no Turbo, no Action Cable. Views are ERB with an
+inline `<style>` in the layout, and the only JavaScript is six lines of
+`EventSource` in `app/views/playthroughs/show.html.erb`. Those gems belong to a
+later stage — do not install them in passing.
+
+- `ApplicationController < ActionController::Base` and `config.api_only = false`.
+  That turns on `protect_from_forgery`, so every form goes through `form_with`.
+- A browser session is bound to a `Playthrough` by its unguessable `token` in
+  `session[:playthrough_token]`. There is no auth, no user model, and the
+  captain does not want any: this is a single-player localhost app.
+- `NarrationsController` streams over SSE with `ActionController::Live`, which
+  holds one Puma thread per open stream. Fine for one player; raise
+  `RAILS_MAX_THREADS` before two.
 
 ## Maintaining this file
 
