@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_30_192215) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_30_200001) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -20,6 +20,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_192215) do
     t.text "fears"
     t.string "fullname"
     t.boolean "is_companion"
+    t.boolean "is_protagonist", default: false, null: false
     t.text "likes"
     t.string "nickname"
     t.text "personality"
@@ -28,6 +29,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_192215) do
     t.integer "story_id", null: false
     t.datetime "updated_at", null: false
     t.index ["race_id"], name: "index_characters_on_race_id"
+    t.index ["story_id", "is_protagonist"], name: "index_characters_on_story_id_and_is_protagonist"
     t.index ["story_id"], name: "index_characters_on_story_id"
   end
 
@@ -113,6 +115,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_192215) do
     t.index ["tool_call_id"], name: "index_messages_on_tool_call_id"
   end
 
+  create_table "playthroughs", force: :cascade do |t|
+    t.integer "character_id"
+    t.datetime "created_at", null: false
+    t.integer "current_location_id"
+    t.integer "current_scene_id"
+    t.integer "story_id", null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id"], name: "index_playthroughs_on_character_id"
+    t.index ["current_location_id"], name: "index_playthroughs_on_current_location_id"
+    t.index ["current_scene_id"], name: "index_playthroughs_on_current_scene_id"
+    t.index ["story_id"], name: "index_playthroughs_on_story_id"
+    t.index ["token"], name: "index_playthroughs_on_token", unique: true
+  end
+
   create_table "races", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description", null: false
@@ -185,6 +202,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_192215) do
   add_foreign_key "locations", "locations", column: "parent_location_id"
   add_foreign_key "locations", "stories"
   add_foreign_key "messages", "chats"
+  add_foreign_key "playthroughs", "characters"
+  add_foreign_key "playthroughs", "locations", column: "current_location_id"
+  add_foreign_key "playthroughs", "scenes", column: "current_scene_id"
+  add_foreign_key "playthroughs", "stories"
   add_foreign_key "races", "universes"
   add_foreign_key "scenes", "locations"
   add_foreign_key "scenes", "scenes", column: "previous_scene_id"
