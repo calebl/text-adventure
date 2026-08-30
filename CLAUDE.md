@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Current status and the task queue live in [ROADMAP.md](ROADMAP.md).** Read it
+before planning work, and update it when work lands. See [AGENTS.md](AGENTS.md)
+for agent working agreements.
+
 ## Project Overview
 
 Text Adventure is a Rails 8 API-only application that creates AI-powered text-based adventure games. It uses the RubyLLM gem to interact with AI models through OpenRouter, specifically the `cognitivecomputations/dolphin-mixtral-8x22b` model for generating narrative content.

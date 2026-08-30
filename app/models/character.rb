@@ -1,5 +1,6 @@
 class Character < ApplicationRecord
   belongs_to :story
+  belongs_to :race
   has_many :interactions, dependent: :destroy
   has_many :items, dependent: :destroy
   has_and_belongs_to_many :scenes
@@ -10,7 +11,7 @@ class Character < ApplicationRecord
   validates :fullname, presence: true
   validates :age, presence: true, numericality: { greater_than: 0 }
   validates :sex, presence: true, inclusion: { in: sexes.keys }
-  validates :race, presence: true
+  validate :race_belongs_to_story_universe
   validates :backstory, presence: true
   validates :personality, presence: true
   validates :appearance, presence: true
@@ -27,16 +28,7 @@ class Character < ApplicationRecord
 
       This is the universe in which you live
       ## Universe Details
-      physics: #{story.universe.physics}
-      technology: #{story.universe.technology}
-      weapons: #{story.universe.weapons}
-      races: #{story.universe.races}
-      civilizations: #{story.universe.civilizations}
-      geographies: #{story.universe.geographies}
-      history: #{story.universe.history}
-      economics: #{story.universe.economics}
-      politics: #{story.universe.politics}
-      religion: #{story.universe.religion}
+      #{story.universe.prompt_details}
 
       You are playing a character in a story. This is your character sheet.
       Pretend you are this character in all of your responses.
@@ -46,7 +38,7 @@ class Character < ApplicationRecord
       nickname: #{nickname}
       age: #{age}
       sex: #{sex}
-      race: #{race}
+      race: #{race.name} -- #{race.description}
       backstory: #{backstory}
       personality: #{personality}
       appearance: #{appearance}
@@ -60,5 +52,16 @@ class Character < ApplicationRecord
       Refer to yourself in third person only.
 
     INTERACTION_INSTRUCTIONS
+  end
+
+  private
+
+  # A character's race is picked from the list generated for their universe, so
+  # a race from a different universe would silently contradict the setting.
+  def race_belongs_to_story_universe
+    return if race.nil? || story.nil?
+    return if race.universe_id == story.universe_id
+
+    errors.add(:race, "must belong to the story's universe")
   end
 end
