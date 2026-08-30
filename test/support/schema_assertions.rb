@@ -18,8 +18,12 @@ module SchemaAssertions
     json_schema_body(schema_class).fetch("properties")
   end
 
+  # Normalised to strings: ruby_llm-schema emits the required list as symbols,
+  # the schematist shim emitted strings, and `deep_stringify_keys` only touches
+  # hash keys, not array members. JSON serialisation flattens the difference
+  # before it ever reaches a provider.
   def schema_required(schema_class)
-    json_schema_body(schema_class).fetch("required")
+    json_schema_body(schema_class).fetch("required").map(&:to_s)
   end
 
   # Asserts the field exists with the given type, and that every constraint
