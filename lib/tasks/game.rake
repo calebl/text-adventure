@@ -14,6 +14,11 @@ namespace :game do
 
     Helpers.persist!(universe, story)
 
+    # The opening location is generated after the story is saved because
+    # realizing it writes stub neighbours and connection rows, which need ids.
+    # A failure here leaves a story you can still open a location in later.
+    location = Helpers.timed("Generating opening location") { Location::Generator.opening(story) }
+
     puts
     puts "=" * 72
     puts story.title
@@ -21,6 +26,15 @@ namespace :game do
     puts "=" * 72
     puts
     puts story.preface
+    puts
+    puts "You are in #{location.name}."
+    puts location.description
+    puts
+    puts "Ways out:"
+    location.exits.each do |exit|
+      connection = LocationConnection.find_by(location: location, connected_location: exit)
+      puts "  #{exit.name} -- #{exit.teaser} (#{connection&.distance}, #{connection&.time_to_travel} #{connection&.travel_method})"
+    end
     puts
     puts "Add a character with: rails runner \"Story.find(#{story.id}).create_character\""
   end
@@ -36,7 +50,7 @@ namespace :game do
 
     stories.each do |story|
       puts "##{story.id}  #{story.title} (#{story.genre})"
-      puts "     universe ##{story.universe_id}  characters: #{story.characters.count}  locations: #{story.locations.count}  scenes: #{story.scenes.count}"
+      puts "     universe ##{story.universe_id}  characters: #{story.characters.count}  locations: #{story.locations.count} (#{story.locations.realized.count} realized)  scenes: #{story.scenes.count}"
     end
   end
 

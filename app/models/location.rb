@@ -16,9 +16,32 @@ class Location < ApplicationRecord
                           foreign_key: "connected_location_id",
                           association_foreign_key: "location_id"
 
+  # A location is generated in two steps, so it exists in two states. A *stub*
+  # is a name and a one-line teaser: it is created the moment a neighbouring
+  # location names it as an exit, so "three doors lead out" always corresponds
+  # to three real records the player can walk into. A *realized* location has
+  # been written out in full and is what the player actually reads.
+  #
+  # Scopes are off because Rails would define a class method named `stub`,
+  # which shadows minitest's Object#stub across every test in the suite.
+  enum :detail_level, { stub: "stub", realized: "realized" },
+       default: :stub, validate: true, scopes: false
+
+  scope :stubs, -> { where(detail_level: :stub) }
+  scope :realized, -> { where(detail_level: :realized) }
+
   validates :name, presence: true
-  validates :description, presence: true
-  validates :lore, presence: true
+  # A stub has neither yet -- that is the point of a stub. A realized location
+  # without them is still broken, so the requirement holds where it matters.
+  validates :description, presence: true, if: :realized?
+  validates :lore, presence: true, if: :realized?
+
+  # The places you can walk to from here. Connections are stored directionally
+  # but written in both directions when a location is realized, so this one
+  # association is the whole exit list.
+  def exits
+    connected_locations
+  end
 
   def time_since_last_visit
     return nil unless last_protagonist_visit

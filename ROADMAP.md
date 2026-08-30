@@ -26,7 +26,7 @@ So revisiting a place reuses the persisted `Location` while creating a new
 
 ### Done
 
-- Rails 8 API app, SQLite, 117 tests green.
+- Rails 8 API app, SQLite, 338 tests green.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph.
 - `Universe::Generator`, `Story::Generator` — bootstrap a world from a premise.
@@ -42,6 +42,7 @@ So revisiting a place reuses the persisted `Location` while creating a new
   characters of prose; the whole character sheet is now ~2,530 characters.
 - `BaseAgent` — RubyLLM wrapper with model fallback on failure.
 - `rake game:new[premise]` / `rake game:list` — generate and inspect worlds.
+  `game:new` now also generates and realizes the story's opening location.
 - `InteractionAgent` — two-pass character-then-narrator dialogue.
 - `ruby_llm` 1.16 + `ruby_llm-schema` 0.4, on RubyLLM's association-based
   `acts_as` API. The `models` table is the model registry now; seed it with
@@ -49,6 +50,16 @@ So revisiting a place reuses the persisted `Location` while creating a new
 - AI-layer test coverage: `Narrator`, `InteractionAgent`, the three schema
   classes, and `Chat` / `Message` / `ToolCall` / `Model`, all stubbed at the
   RubyLLM boundary.
+- **Location stubs and on-demand realization.** `Location#detail_level` is
+  `stub` or `realized`; `description` and `lore` are required only once a
+  location is realized, so a stub is a name plus a one-line `teaser` and
+  nothing more. `Location::Generator#realize!` writes the description and lore,
+  then creates a stub `Location` for each exit plus the `location_connections`
+  rows — in **both** directions, so the way back exists before the far side is
+  ever realized. It returns an already-realized location untouched: generation
+  happens once per place, never twice. `Location::Generator.opening(story)`
+  names the first location from the story's preface and realizes it.
+  `Location#exits` is the exit list the game loop will resolve movement against.
 
 ### Not built yet
 
@@ -57,21 +68,7 @@ in it. That is the whole of the next milestone.
 
 ## Next up
 
-### 1. Location generation with stubs
-
-The gap that blocks everything else. When the narrator says "three doors lead
-out," all three exits must exist as `Location` records before the player picks
-one — but only the one they walk through should be fully generated.
-
-- [ ] Migration: add a `detail_level` (or `generated_at`) column to `locations`
-      distinguishing a **stub** (name + one-line teaser) from a **realized**
-      location. Today `Location` validates `description` and `lore` as present,
-      so stubs cannot be saved at all.
-- [ ] `Location::Generator` — realize a stub: full description, lore, and the
-      stub exits leading out of it.
-- [ ] Generate the story's opening location as part of `game:new`.
-
-### 2. The protagonist
+### 1. The protagonist
 
 - [x] The player is a `Character` with `is_protagonist` set — at most one per
       story, enforced by validation and exposed as `Story#protagonist`.
@@ -85,7 +82,7 @@ one — but only the one they walk through should be fully generated.
       `is_protagonist` (nor `is_companion`), and no code creates a
       `Playthrough`. That belongs to the game loop and the browser interface.
 
-### 3. Scene generation
+### 2. Scene generation
 
 - [ ] `Scene::Generator` — given a `Location` and the `previous_scene`, narrate
       arriving. Must read differently on a first visit versus a return, using
@@ -93,16 +90,17 @@ one — but only the one they walk through should be fully generated.
       already implemented and unused).
 - [ ] Populate `scene.characters` from who is present.
 
-### 4. The game loop
+### 3. The game loop
 
 - [ ] Classify player input: move / talk / examine / take / other.
-- [ ] On **move**: resolve the target from `connected_locations`. If it is a
-      stub, realize it. Then generate a `Scene` there. This is the load-or-generate
-      seam that makes the whole idea work.
+- [ ] On **move**: resolve the target from `Location#exits`. If it is a stub,
+      hand it to `Location::Generator#realize!` (which no-ops on an already
+      realized location). Then generate a `Scene` there. This is the
+      load-or-generate seam that makes the whole idea work.
 - [ ] On **talk**: hand off to the existing `InteractionAgent`.
 - [ ] `rake game:play[story_id]` — the first genuinely playable interface.
 
-### 5. Persistence and history
+### 4. Persistence and history
 
 - [ ] Wire up the `chats` / `messages` / `tool_calls` tables. `Chat`, `Message`
       and `ToolCall` already call `acts_as_chat` and friends, but every agent
@@ -112,12 +110,18 @@ one — but only the one they walk through should be fully generated.
       nothing ever writes it.
 - [ ] Summarize old scenes so long playthroughs stay inside the context window.
 
-### 6. Interface
+### 5. Interface
 
 - [ ] `config/routes.rb` is empty. Add API endpoints once the rake loop proves
       the design.
 
 ## Known issues
+
+- **`sanitize_string` used to delete every digit a model wrote.** Its regex was
+  `\p{Emoji}`, a property that matches the ASCII digits, `#` and `*` because
+  those are the bases of the keycap emoji — so "80 meters" was stored as
+  "meters". It now matches `\p{Extended_Pictographic}` instead. Any text
+  generated before this fix has silently lost its numbers.
 
 - **Local models are slow, and they run on CPU here.** `ollama ps` reports
   `size_vram: 0`, so nothing is GPU-accelerated on this machine. Measured on a
