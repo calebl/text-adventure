@@ -8,12 +8,12 @@ for agent working agreements.
 
 ## Project Overview
 
-Text Adventure is a Rails 8 API-only application that creates AI-powered text-based adventure games. It uses the RubyLLM gem to interact with AI models through OpenRouter, specifically the `cognitivecomputations/dolphin-mixtral-8x22b` model for generating narrative content.
+Text Adventure is a Rails 8 application that creates AI-powered text-based adventure games: a world generates itself as the player explores it, and what it generates is kept. It uses the RubyLLM gem to reach models through OpenRouter (`minimax/minimax-m3`, falling back to `mistralai/mistral-medium-3.1`) or a local ollama; `BaseAgent` picks between them. It has a plain ERB browser interface — see the browser section in [AGENTS.md](AGENTS.md).
 
 ## Development Environment
 
 - **Ruby**: 3.4.10 (managed by asdf/mise, see `.tool-versions`)
-- **Rails**: 8.0.0 (API-only mode)
+- **Rails**: 8.1
 - **Database**: SQLite3 for development and production
 
 ## Key Dependencies
@@ -29,11 +29,12 @@ Text Adventure is a Rails 8 API-only application that creates AI-powered text-ba
 # Install dependencies
 bundle install
 
-# Start Rails server
-rails server
+# Generate a world, then list what exists
+rake 'game:new[a debt collector in a city built on a dead god]'
+rake game:list
 
-# Run interactive narrator chatbot
-rake narrator:interact
+# Play it in the browser
+rails server   # then open http://localhost:3000
 
 # Rails console
 rails console
@@ -45,7 +46,10 @@ rails console
 rails test
 
 # Run specific test
-rails test test/models/narrator_test.rb
+rails test test/models/universe_test.rb
+
+# Verify autoloading (app/agents/ uses PascalCase filenames)
+rails zeitwerk:check
 ```
 
 ### Code Quality
@@ -61,36 +65,46 @@ bundle exec brakeman
 
 ### Core Components
 
-1. **Narrator Model** (`app/models/narrator.rb`): 
-   - Primary AI interaction class using RubyLLM chat interface
-   - Manages conversation state through RubyLLM chat objects
-   - Configured for choose-your-own-adventure style narratives
+1. **`BaseAgent`** (`app/agents/BaseAgent.rb`):
+   - Every LLM call in the app goes through it. Do not build a bare
+     `RubyLLM::Chat` in new code.
+   - Selects a model and rotates to the next one when a call fails — except on
+     a rejected key, which raises `BaseAgent::UnauthorizedProviderError`.
+   - Rejects a response that ignored its schema, so a prose answer fails the
+     call instead of corrupting a record.
 
-2. **AI Configuration**:
+2. **The turn loop** (`Playthrough::Turn`):
+   - `Playthrough::Classifier` reads what the player typed against a closed
+     enum of the room's exits and cast, and the turn branches on the answer:
+     `Scene::Generator` for arriving somewhere, `InteractionAgent` for talking
+     to somebody, `Scene::Narrator` for everything else.
+   - [README.md](README.md#how-a-turn-works) has the diagram.
+
+3. **AI Configuration**:
    - RubyLLM configuration in `config/initializers/ruby_llm.rb`
-   - OpenRouter API key configured via environment variable `OPENROUTER_API_KEY`
-   - Default model set to `mistralai/mistral-medium-3.1`
-
-3. **Interactive Interface**:
-   - Command-line interaction via `rake narrator:interact`
-   - Loops for continuous conversation with AI narrator
+   - `OPENROUTER_API_KEY` in a gitignored `.env` (loaded by `dotenv-rails`) or
+     `.envrc` (direnv). Model order lives in `BaseAgent::REMOTE_MODEL_IDS`.
+   - The `models` table **is** the RubyLLM registry since the `acts_as`
+     migration; `rails db:seed` fills it, and nothing resolves without it.
 
 ### System Architecture
 
-- **API-only Rails app** with no frontend views
+- **A Rails app with a deliberately minimal ERB frontend** — no Node, no build
+  step, no Turbo. `config.api_only = false`.
 - **AI-driven narrative generation** with rule-based constraints
-- **Conversation state management** through RubyLLM chat objects and database persistence
 - **Database models** for Chat, Message, and ToolCall to store conversation history
 
 ### Configuration Notes
 
 - OpenRouter API key must be set as environment variable: `OPENROUTER_API_KEY=your_token`
 - Neo4j integration is currently commented out in `config/application.rb` but gems are installed
-- Application configured as API-only but can be extended with web interface
 
 ### Development Workflow
 
-The main development interface is through the rake task `narrator:interact` which provides a command-line chat interface with the AI narrator. The narrator follows specific rules for adventure game mechanics including preventing unrealistic actions and maintaining narrative flow.
+Worlds are built from rake tasks (`rake game:new`, `rake game:export`) and
+played in the browser (`rails server`). There is no `rake game:play` and there
+is not meant to be — the loop lives in `Playthrough::Turn`, so a rake front end
+would be a second UI to maintain for no new capability.
 
 ### Model updates
 - whenever a model is updated, check the model tests and factories and make the appropriate updates in those as well
