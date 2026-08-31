@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_31_130000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -171,6 +171,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_120000) do
   create_table "scenes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
+    t.boolean "is_opening", default: false, null: false
     t.integer "location_id", null: false
     t.integer "previous_scene_id"
     t.integer "story_id", null: false
@@ -179,6 +180,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_120000) do
     t.datetime "updated_at", null: false
     t.index ["location_id"], name: "index_scenes_on_location_id"
     t.index ["previous_scene_id"], name: "index_scenes_on_previous_scene_id"
+    t.index ["story_id", "is_opening"], name: "index_scenes_on_story_id_and_is_opening"
     t.index ["story_id"], name: "index_scenes_on_story_id"
   end
 

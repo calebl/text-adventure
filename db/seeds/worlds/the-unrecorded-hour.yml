@@ -8,12 +8,17 @@
 # until somebody walks into it. Seeding it keeps permanent coverage of a room
 # with exactly one way out.
 #
+# The opening_scene is hand-authored for the same reason, and its cast is doing
+# work: Sub-Inspector Rowe is in the doorway forty minutes early, so the player
+# has somebody to talk to on turn one and something to be afraid of while they
+# decide whether to go into the closet.
+#
 # Rebuild or reshape it with `rake 'game:export[<story_id>]'`, or just edit it.
 # See db/seeds/worlds/README.md for the format and the rules the loader checks.
 #
 # Loaded offline by db/seeds.rb. No model call, no API key, no network.
 ---
-format: 1
+format: 2
 universe:
   physics: |-
     Standard physical laws hold, with one exception: in the city of Ambry and the wards around it, a thing that is not written down stops being reliably itself. The effect is slow and dull rather than dramatic. An unrecorded corridor will, over a season, start to run a few feet short. An unregistered tool loses its temper and its edge. A person whose file is closed is not struck down; they are simply harder to remember, then harder to see, then gone from the accounts of everyone who knew them, until the only evidence they existed is what somebody wrote. Nothing about this is reversible by force. It is reversible by paperwork, which is why the Registry rules here.
@@ -54,6 +59,13 @@ story:
     The stamp is still in your hand and the ink is still wet, and there is an hour missing out of the middle of your own daybook. Not a blank line: a clean, ruled gap between four and five o'clock, in your handwriting, with the running total carried straight across it as though nothing needed to be entered at all. You have worked Ward Office 12 for eleven years and you have never carried a total across a gap in your life. Rain is coming off the levee and going sideways past the window. Somewhere down the long hallway a door closes, and then another, nearer -- the Inspectorate does its rounds at seven and it is twenty past six. Perrin's desk across the room has been cleared to the wood, and you cannot remember when, or by whom, or -- and this is the part that has your hands cold -- whether there was ever anybody sitting at it. There is one thing in this office nobody has audited in eleven years, and its door is behind you.
   summary: |-
     The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.
+opening_scene:
+  location: Ward Office 12
+  characters: [Odile Vance, Halkett Rowe]
+  description: |-
+    The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.
+  summary: |-
+    The story opens in Ward Office 12 with Sub-Inspector Rowe arriving forty minutes early, the missing hour still open on the daybook, and the uninventoried supply closet at the player's back.
 characters:
 - fullname: Odile Vance
   race: Copyists' Line

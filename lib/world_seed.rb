@@ -15,7 +15,11 @@
 module WorldSeed
   # Bumped when the file format changes in a way a loader cannot absorb. The
   # loader refuses a file it does not understand rather than half-loading it.
-  FORMAT = 1
+  #
+  #   2  a world carries its own opening arrival: the required `opening_scene`
+  #      key. A format 1 file has none, and a story without one opens on a room
+  #      description standing in for an arrival nobody narrated.
+  FORMAT = 2
 
   DIRECTORY = Rails.root.join("db/seeds/worlds")
 
