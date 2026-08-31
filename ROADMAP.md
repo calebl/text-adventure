@@ -55,7 +55,11 @@ So revisiting a place reuses the persisted `Location` while creating a new
   (`DISTANCES`, `TRAVEL_METHODS`), and `time_to_travel` is derived from the two
   rather than generated. The values are direction-neutral because connections
   are written both ways from one answer.
-- `BaseAgent` — RubyLLM wrapper with model fallback on failure.
+- `BaseAgent` — RubyLLM wrapper with model fallback on failure. A rejected key
+  is the one failure it does NOT rotate past: it raises
+  `BaseAgent::UnauthorizedProviderError` naming the environment variable,
+  because rotating a 401 down to the local models answered from ollama with
+  nothing saying the remote call had been refused.
 - `rake game:new[premise]` / `rake game:list` — generate and inspect worlds.
   `game:new` now also generates and realizes the story's opening location.
 - `InteractionAgent` — two-pass character-then-narrator dialogue.

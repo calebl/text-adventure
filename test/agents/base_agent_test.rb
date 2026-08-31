@@ -140,6 +140,34 @@ class BaseAgentTest < ActiveSupport::TestCase
     assert_equal BaseAgent::MAX_ATTEMPTS, chat.attempts
   end
 
+  # A rejected key is not fixed by a different model, and the local models sit
+  # at the bottom of the same list -- rotating past a 401 answers from ollama
+  # and says nothing about the remote call having been refused.
+  test "ask does not rotate when the provider rejects our credentials" do
+    agent = build_agent
+    chat = UnauthorizedChat.new
+    agent.instance_variable_set(:@chat, chat)
+
+    rotations = 0
+    agent.stub(:rotate_model, ->(*) { rotations += 1; agent }) do
+      error = assert_raises(BaseAgent::UnauthorizedProviderError) { agent.ask("hello") }
+      assert_match(/rejected our credentials/, error.message)
+    end
+
+    assert_equal 0, rotations
+    assert_equal 1, chat.attempts
+  end
+
+  test "the unauthorized message names the environment variable to fix" do
+    agent = build_agent
+    agent.instance_variable_set(:@model_options, [ { provider: :openrouter, model: "vendor/model" } ])
+    agent.instance_variable_set(:@chat, UnauthorizedChat.new)
+
+    error = assert_raises(BaseAgent::UnauthorizedProviderError) { agent.ask("hello") }
+
+    assert_match(/OPENROUTER_API_KEY/, error.message)
+  end
+
   # A model that accepts a schema and answers in prose is worse than one that
   # fails: `content["field"]` on a String returns a substring, not nil.
   test "ask rejects a prose response when a schema was requested" do
@@ -256,6 +284,17 @@ class BaseAgentTest < ActiveSupport::TestCase
   class SequenceChat
     def initialize(*contents) = @contents = contents
     def ask(_prompt) = Struct.new(:content).new(@contents.shift)
+  end
+
+  class UnauthorizedChat
+    attr_reader :attempts
+
+    def initialize = @attempts = 0
+
+    def ask(_prompt)
+      @attempts += 1
+      raise RubyLLM::UnauthorizedError.new(nil, "Missing Authentication header")
+    end
   end
 
   class FlakyChat

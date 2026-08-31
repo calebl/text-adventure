@@ -3,6 +3,10 @@ class BaseAgent
   # Raised when a model accepts a schema but answers in prose anyway.
   class SchemaIgnoredError < StandardError; end
 
+  # Raised when the provider rejects our credentials. Deliberately NOT a
+  # rotation: see #ask.
+  class UnauthorizedProviderError < StandardError; end
+
   # Models installed locally via ollama. Ordered fastest-and-most-reliable
   # first; `rotate_model` walks down the list when a call fails.
   #
@@ -93,6 +97,13 @@ class BaseAgent
   # A block is forwarded to RubyLLM, which then streams the answer into it chunk
   # by chunk. Rotating restarts the stream from the beginning, so a streaming
   # caller can see the opening of a failed attempt before the retry arrives.
+  #
+  # A 401 is the one failure that does NOT rotate. Rotating is right for a model
+  # that failed; the fix for a rejected key is a key, not a different model. And
+  # because the local ollama models sit at the bottom of the same list, rotating
+  # on a 401 quietly answers from a 4k-context CPU model with nothing anywhere
+  # saying the remote call was ever refused -- every downstream measurement and
+  # every quality guarantee silently becomes about a different model. Fail loud.
   def ask(prompt, &block)
     attempts = 0
 
@@ -101,6 +112,8 @@ class BaseAgent
       response = @chat.ask(prompt, &block)
       verify_schema_honored!(response)
       response
+    rescue RubyLLM::UnauthorizedError => e
+      raise UnauthorizedProviderError, unauthorized_message(e)
     rescue => e
       if attempts < MAX_ATTEMPTS && attempts < @model_options.count
         Rails.logger.warn { "#{current_model[:model]} failed (#{e.class}: #{e.message}), rotating model" }
@@ -147,6 +160,16 @@ class BaseAgent
   end
 
   private
+
+  def unauthorized_message(error)
+    provider = current_model[:provider]
+    key_hint = provider == :openrouter ? "OPENROUTER_API_KEY" : "the #{provider} credentials"
+
+    "#{provider} rejected our credentials (#{error.class}: #{error.message}). " \
+      "Check #{key_hint} -- NOT rotating to another model, because a rejected " \
+      "key is not fixed by a different model and a silent local fallback would " \
+      "hide it."
+  end
 
   # Some models -- notably OpenRouter's `:free` endpoints -- accept a JSON
   # schema and then fail to honor it. Two distinct ways, both silent:

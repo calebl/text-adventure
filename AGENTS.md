@@ -31,6 +31,13 @@ timestamped moment in a location. See the persistence model section in
 - All LLM calls go through `BaseAgent` (`app/agents/BaseAgent.rb`). It handles
   model selection and rotates to the next model when a call fails. Do not build
   a bare `RubyLLM::Chat` in new code.
+- **A 401 does not rotate.** `RubyLLM::UnauthorizedError` is re-raised as
+  `BaseAgent::UnauthorizedProviderError` instead, because a rejected key is
+  fixed by a key and not by a different model — and the local ollama models are
+  at the bottom of the same list, so rotating past a 401 answers from a 4k CPU
+  model with nothing saying the remote call was refused. Keep any new failure
+  class on the same side of that line: rotate on "this model failed", raise on
+  "our setup is wrong".
 - All LLM calls use structured output via `RubyLLM::Schema`. Schemas live
   alongside the model they populate (`app/models/universe/physical_schema.rb`),
   and are usually a declared class. `Playthrough::IntentSchema` is a factory
