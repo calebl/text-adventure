@@ -178,21 +178,22 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # `Scene`'s after_create stamps the visit itself -- at the same moment and
   # with the same value, which is what makes dropping the explicit call safe
   # rather than merely tidy. This test is what says so.
+  #
+  # The moment is STORY time: the story's own `start_time`, which is when the
+  # opening arrival happens by definition. Never the wall clock.
   test "create marks the opening location as visited when the opening scene is written" do
     story = create(:story)
     opening = create(:location, story: story, last_protagonist_visit: nil)
 
-    freeze_time do
-      post playthroughs_path, params: { story_id: story.id }
+    post playthroughs_path, params: { story_id: story.id }
 
-      assert_equal Time.current, opening.reload.last_protagonist_visit
-    end
+    assert_equal story.start_time, opening.reload.last_protagonist_visit
 
     # The stamp came from the opening Scene, not from a second write: it is the
     # scene the playthrough now starts on.
     playthrough = story.playthroughs.last
     assert_equal opening, playthrough.current_scene.location
-    assert opening.last_protagonist_visit.present?
+    assert_equal story.start_time, playthrough.current_scene.story_timestamp
   end
 
   # THE PAYOFF. A world carries its own opening arrival, so the first thing a new
@@ -254,18 +255,22 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # starts. #73 dropped the explicit stamp because the scene it created here did
   # the job at exactly this moment; that equivalence does not survive the scene
   # moving into the world, so the stamp is explicit again.
+  #
+  # The value is a moment on the STORY's clock, which is why three weeks of wall
+  # clock between building the world and playing it changes nothing here.
   test "create stamps the visit when the player arrives, not when the world was built" do
     story = create(:story)
     opening = create(:location, story: story, last_protagonist_visit: nil)
-    create(:scene, :opening, story: story, location: opening)
+    scene = create(:scene, :opening, story: story, location: opening, story_timestamp: story.start_time)
 
     assert_nil opening.reload.last_protagonist_visit, "building the world is not somebody standing in the room"
 
-    travel 3.weeks
-    freeze_time do
+    travel 3.weeks do
       post playthroughs_path, params: { story_id: story.id }
 
-      assert_equal Time.current, opening.reload.last_protagonist_visit
+      assert_equal scene.story_timestamp, opening.reload.last_protagonist_visit
+      assert_not_equal Time.current.to_i, opening.last_protagonist_visit.to_i,
+                       "three weeks on somebody's calendar is not three weeks of the story"
     end
   end
 

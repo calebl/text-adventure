@@ -26,6 +26,16 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
 
   # Both are interpolated into every scene generated in this location, so an
   # unbounded field costs context on every turn spent here.
+  # A description is written once and never regenerated, so a sentence about what
+  # neighbours the place goes permanently wrong the moment WorldMechanic moves
+  # the graph. The instruction not to write one has to stay in the schema.
+  test "asks for the place itself, not what neighbours it" do
+    described = Location::DetailSchema.new.to_json_schema.dig(:schema, :properties, :description, :description)
+
+    assert_match(/THIS place only/, described)
+    assert_match(/can move/, described)
+  end
+
   test "description is a bounded string" do
     assert_schema_field(SCHEMA, :description, type: :string, maxLength: 1200)
   end

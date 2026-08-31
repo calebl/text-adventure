@@ -97,6 +97,51 @@ class PlaythroughTest < ActiveSupport::TestCase
     assert_includes playthrough.current_scene.playthroughs, playthrough
   end
 
+  # --- where this playthrough stands on the story's clock ------------------
+
+  test "story_now is the story moment of the scene the player is in" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    scene = create(:scene, story: story, location: create(:location, story: story),
+                           story_timestamp: story.start_time + 3.hours)
+    playthrough = create(:playthrough, story: story, current_scene: scene)
+
+    assert_equal story.start_time + 3.hours, playthrough.story_now
+  end
+
+  # Per-playthrough rather than story-wide: one world can be played twice, and a
+  # second player's progress must not drag the first player's next turn forward.
+  test "story_now follows this playthrough rather than the story's high-water mark" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    location = create(:location, story: story)
+    mine = create(:scene, story: story, location: location, story_timestamp: story.start_time + 1.hour)
+    create(:scene, story: story, location: location, story_timestamp: story.start_time + 10.days)
+    playthrough = create(:playthrough, story: story, current_scene: mine)
+
+    assert_equal story.start_time + 1.hour, playthrough.story_now
+    assert_equal story.start_time + 10.days, story.clock
+  end
+
+  test "story_now falls back to the story's clock before the first turn" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    playthrough = create(:playthrough, story: story)
+
+    assert_equal story.start_time, playthrough.story_now
+  end
+
+  test "story_time_after costs a turn what its kind costs" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    playthrough = create(:playthrough, story: story)
+
+    assert_equal story.start_time + 10.minutes, playthrough.story_time_after("conversation")
+    assert_equal story.start_time + 5.minutes, playthrough.story_time_after("action")
+  end
+
+  test "story_time_after refuses a kind of turn nobody has priced" do
+    playthrough = create(:playthrough, story: create(:story))
+
+    assert_raises(KeyError) { playthrough.story_time_after("teleporting") }
+  end
+
   test "should be destroyed with its story" do
     playthrough = create(:playthrough, story: @story)
     @story.destroy

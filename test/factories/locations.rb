@@ -10,6 +10,8 @@ FactoryBot.define do
     lore { "Ancient tales speak of this place and the events that shaped its history" }
     last_protagonist_visit { nil }
     parent_location { nil }
+    # Places stay put unless a world says otherwise -- see WorldMechanic.
+    mobile { false }
 
     # Named by a neighbour and nothing more -- no description, no lore. This is
     # what an unexplored exit looks like until the player walks through it.
@@ -37,6 +39,12 @@ FactoryBot.define do
 
     trait :visited do
       last_protagonist_visit { 1.day.ago }
+    end
+
+    # A place the world moves at night. What travels is the graph around it: a
+    # mobile location's edges out to places that are NOT mobile get repointed.
+    trait :mobile do
+      mobile { true }
     end
 
     trait :with_parent do

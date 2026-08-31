@@ -10,6 +10,14 @@
 # The opening_scene was written by hand too. `rake game:new` narrates one now,
 # but this world predates that, and its cast is the point: Grenn is in the room
 # from the first line, so there is somebody to talk to on turn one.
+#
+# The `mechanics` block and everything it needs were hand-written as well: the
+# `mobile: true` flags on the four Larkspur Quarter locations, the three fixed
+# landmarks the universe's own prose already names -- the Celestial Spire, the
+# Sovereign's Circle, the bell tower of Saint Aravel -- and the three
+# connections out of the quarter that reach them. This world's physics have
+# claimed since it was generated that Nocturnis rearranges itself every night;
+# the mechanic is that claim made true in the records rather than in prose.
 # See db/seeds/worlds/README.md for the format and the rules the loader checks.
 #
 # Loaded offline by db/seeds.rb. No model call, no API key, no network.
@@ -99,6 +107,7 @@ locations:
 - name: Grenn's Boarding House, Room 3
   detail_level: realized
   opening: true
+  mobile: true
   teaser: |-
     Boiled cabbage, lamp oil, and the creak of a building that won't sit still.
   description: |-
@@ -111,16 +120,31 @@ locations:
     Room 3 in particular has a reputation. Two previous tenants left in the night without giving notice, and a third--a sailor off a caravan--swore the walls whispered to him in the small hours. Grenn dismisses this as the same disorientation that takes anyone who lives too long under Nocturna's glow, though he is careful never to spend more than an hour at a stretch in the room himself, and he charges less for it than for Room 2.
 - name: Mournwell Lane
   detail_level: stub
+  mobile: true
   teaser: |-
     Step out and eavesdrop on the lane while you still know where it runs.
 - name: Grenn's Boarding House hallway
   detail_level: stub
+  mobile: true
   teaser: |-
     Wake the old man and buy yourself a little goodwill before dawn.
 - name: Larkspur Quarter rooftops
   detail_level: stub
+  mobile: true
   teaser: |-
     Climb higher and watch the city read itself into a new shape tonight.
+- name: Sovereign's Circle
+  detail_level: stub
+  teaser: |-
+    The Sovereigns' own ground, where the streets have been made to hold still.
+- name: The Celestial Spire
+  detail_level: stub
+  teaser: |-
+    The one tower the city cannot move, and the only bearing worth trusting.
+- name: The Bell of Saint Aravel
+  detail_level: stub
+  teaser: |-
+    Follow the eleven o'clock chime back to the tower that rang it.
 connections:
 - between: ['Grenn''s Boarding House, Room 3', Mournwell Lane]
   distance: adjacent
@@ -131,3 +155,18 @@ connections:
 - between: ['Grenn''s Boarding House, Room 3', Larkspur Quarter rooftops]
   distance: a short walk
   travel_method: climbing
+- between: [Mournwell Lane, Sovereign's Circle]
+  distance: across the district
+  travel_method: walking
+- between: [Grenn's Boarding House hallway, The Bell of Saint Aravel]
+  distance: a short walk
+  travel_method: walking
+- between: [Larkspur Quarter rooftops, The Celestial Spire]
+  distance: across the district
+  travel_method: climbing
+mechanics:
+- name: The nightly rearrangement
+  kind: shuffle_connections
+  cadence: nightly
+  description: |-
+    At midnight Nocturna floods the city and the Larkspur Quarter travels. The boarding house, its hallway, the lane below it and the rooftops above it go as one piece with their own doors intact -- old Grenn laid his foundation stones loose for exactly this -- and come to rest against a different part of Nocturnis. The fixed ground does not move: the Celestial Spire, the Sovereign's Circle and the bell tower of Saint Aravel are where they have always been. What changes is which of them you can walk to from here, and a map of last night is a map of nowhere.

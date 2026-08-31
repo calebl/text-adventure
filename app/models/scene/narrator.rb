@@ -99,7 +99,7 @@ class Scene::Narrator
       location: playthrough.current_location,
       previous_scene: playthrough.current_scene,
       description: text,
-      story_timestamp: Time.current
+      story_timestamp: playthrough.story_time_after("action")
     )
     playthrough.update!(current_scene: scene)
     scene

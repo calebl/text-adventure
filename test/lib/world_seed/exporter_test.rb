@@ -94,6 +94,46 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
   # A story built before opening arrivals existed exports without one, and the
   # loader refuses such a file -- so the exporter has to say so rather than
   # producing a file that fails three records into a seed.
+  # --- a world's own mechanics ---------------------------------------------
+
+  test "exports a world's mechanics, and never a last_run_at" do
+    create(:world_mechanic, story: @story, name: "The nightly rearrangement",
+                            description: "Nocturna floods the city at midnight.",
+                            last_run_at: @story.start_time + 1.day)
+
+    mechanics = WorldSeed::Exporter.new(@story).document["mechanics"]
+
+    assert_equal 1, mechanics.size
+    assert_equal "The nightly rearrangement", mechanics.first["name"]
+    assert_equal "shuffle_connections", mechanics.first["kind"]
+    assert_equal "nightly", mechanics.first["cadence"]
+    assert_equal "Nocturna floods the city at midnight.", mechanics.first["description"]
+    assert_not mechanics.first.key?("last_run_at"), "how far a mechanic has got is progress, not world"
+  end
+
+  test "a story with no mechanics has no mechanics key at all" do
+    assert_not WorldSeed::Exporter.new(@story).document.key?("mechanics")
+  end
+
+  test "exports which locations move, and stays quiet about the ones that do not" do
+    @stub.update!(mobile: true)
+
+    locations = WorldSeed::Exporter.new(@story).document["locations"]
+
+    assert_not locations.first.key?("mobile"), "a place that stays put should not say so"
+    assert_equal true, locations.last["mobile"]
+  end
+
+  test "warns about the world events it does not export" do
+    mechanic = create(:world_mechanic, story: @story)
+    create(:world_event, world_mechanic: mechanic, story: @story)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    exporter.document
+
+    assert exporter.warnings.any? { |warning| warning.include?("world event") }
+  end
+
   test "warns loudly when a story has no opening arrival to export" do
     @arrival.destroy!
 
@@ -160,6 +200,31 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     reloaded = WorldSeed::Loader.new(WorldSeed.parse(first)).load!
 
     assert_equal first, WorldSeed.dump(WorldSeed::Exporter.new(reloaded).document)
+  end
+
+  # The same guarantee for the keys a moving world adds: `mobile` and
+  # `mechanics` have to survive the same export -> load -> export loop, or the
+  # checked-in world stops moving the next time somebody re-exports it.
+  test "a moving world round-trips with its mechanics and its mobile places" do
+    third = create(:location, :stub, story: @story, name: "The Fixed Tower")
+    fourth = create(:location, :stub, story: @story, name: "The Fixed Circle")
+    connect(@stub, third)
+    connect(third, @stub)
+    connect(@opening, fourth)
+    connect(fourth, @opening)
+    @opening.update!(mobile: true)
+    @stub.update!(mobile: true)
+    create(:world_mechanic, story: @story, name: "The nightly rearrangement")
+
+    first = WorldSeed.dump(WorldSeed::Exporter.new(@story).document)
+
+    @story.destroy!
+    @universe.destroy!
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(first)).load!
+
+    assert_equal first, WorldSeed.dump(WorldSeed::Exporter.new(reloaded).document)
+    assert_equal 2, reloaded.locations.mobile.count
+    assert_equal "shuffle_connections", reloaded.world_mechanics.sole.kind
   end
 
   private

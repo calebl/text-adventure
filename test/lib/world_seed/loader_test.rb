@@ -182,6 +182,101 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_match(/Nobody At All/, error.message)
   end
 
+  # --- a world's own mechanics ---------------------------------------------
+
+  test "loads a world's mechanics, and never a last_run_at" do
+    story = WorldSeed::Loader.new(with_mechanic).load!
+    mechanic = story.world_mechanics.sole
+
+    assert_equal "The nightly rearrangement", mechanic.name
+    assert_equal "shuffle_connections", mechanic.kind
+    assert_equal "nightly", mechanic.cadence
+    assert_match "Nocturna", mechanic.description
+    assert_nil mechanic.last_run_at, "how far a mechanic has got is progress, not world"
+  end
+
+  test "loads which locations move" do
+    story = WorldSeed::Loader.new(with_mechanic).load!
+
+    assert_equal [ "The Closet", "The Office" ], story.locations.mobile.order(:name).pluck(:name)
+    assert_equal [ "The Hallway" ], story.locations.anchored.pluck(:name)
+  end
+
+  test "a world with no mechanics loads, and moves not at all" do
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_empty story.world_mechanics
+    assert_empty story.locations.mobile
+  end
+
+  test "loading a mechanic twice updates rather than duplicates" do
+    WorldSeed::Loader.new(with_mechanic).load!
+
+    edited = with_mechanic
+    edited["mechanics"].first["cadence"] = "weekly"
+
+    assert_no_difference -> { WorldMechanic.count } do
+      WorldSeed::Loader.new(edited).load!
+    end
+
+    assert_equal "weekly", Story.find_by(title: "A Seeded World").world_mechanics.sole.cadence
+  end
+
+  test "rejects a mechanic whose kind is not in the catalogue" do
+    broken = with_mechanic
+    broken["mechanics"].first["kind"] = "rain_frogs"
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/rain_frogs/, error.message)
+  end
+
+  test "rejects a mechanic whose cadence is not one of the cadences" do
+    broken = with_mechanic
+    broken["mechanics"].first["cadence"] = "fortnightly"
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/fortnightly/, error.message)
+  end
+
+  test "rejects a nameless mechanic, because the name is the key re-seeding matches on" do
+    broken = with_mechanic
+    broken["mechanics"].first.delete("name")
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/needs a `name`/, error.message)
+  end
+
+  test "rejects two mechanics with the same name" do
+    broken = with_mechanic
+    broken["mechanics"] << broken["mechanics"].first.dup
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/duplicate mechanic names/, error.message)
+  end
+
+  # THE HAND-EDIT THAT WOULD OTHERWISE PASS SILENTLY: a world that says it
+  # rearranges itself every night, with nothing in it that can move. It loads,
+  # it plays, and the thing it promises never happens.
+  test "rejects a shuffle with nothing to shuffle" do
+    broken = with_mechanic
+    broken["locations"].each { |location| location.delete("mobile") }
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/0 connection\(s\)/, error.message)
+    assert_match(/at least two/, error.message)
+  end
+
+  # One edge is not two: there is nothing for the endpoint to be swapped with, so
+  # the shuffle would be a no-op every night.
+  test "rejects a shuffle with only one edge out of the mobile part of the world" do
+    broken = with_mechanic
+    broken["locations"].detect { |location| location["name"] == "The Closet" }.delete("mobile")
+    broken["connections"].reject! { |edge| edge["between"] == [ "The Office", "The Hallway" ] }
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/1 connection\(s\)/, error.message)
+  end
+
   test "names the file it is complaining about" do
     error = assert_raises(WorldSeed::Loader::InvalidWorld) do
       WorldSeed::Loader.new(document.merge("format" => 0), source: "db/seeds/worlds/broken.yml").load!
@@ -191,6 +286,21 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
   end
 
   private
+
+  # The same world with a hand-written mechanic: the office and the closet travel
+  # together, the hallway is fixed ground, so both edges to the hallway are
+  # shufflable.
+  def with_mechanic
+    edited = document
+    edited["locations"].detect { |location| location["name"] == "The Office" }["mobile"] = true
+    edited["locations"].detect { |location| location["name"] == "The Closet" }["mobile"] = true
+    edited["connections"] << { "between" => [ "The Closet", "The Hallway" ], "distance" => "adjacent", "travel_method" => "walking" }
+    edited["mechanics"] = [
+      { "name" => "The nightly rearrangement", "kind" => "shuffle_connections", "cadence" => "nightly",
+        "description" => "Nocturna floods the ward at midnight and the rooms come back in another order." }
+    ]
+    edited
+  end
 
   # Built fresh on every call so a test can edit it without touching another's.
   def document

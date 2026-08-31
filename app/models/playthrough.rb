@@ -18,6 +18,24 @@ class Playthrough < ApplicationRecord
   validate :current_location_belongs_to_story
   validate :current_scene_belongs_to_story
 
+  # WHERE THIS PLAYTHROUGH STANDS ON THE STORY'S CLOCK -- the moment the player
+  # is living in, which is the moment their last scene happened at.
+  #
+  # Per-playthrough rather than `Story#clock`, and the difference matters as
+  # soon as one world is played twice: the story's clock is the high-water mark
+  # across every playthrough, because the world moves for everybody, but a
+  # player's own next turn follows on from THEIR last turn.
+  def story_now
+    current_scene&.story_timestamp || story.clock
+  end
+
+  # The story time a turn of `kind` ends at: now, plus what that kind of turn
+  # costs from `Scene::TURN_MINUTES`. Journeys are not in that table -- an
+  # arrival costs the edge it walked, which `Scene::Generator` works out.
+  def story_time_after(kind)
+    story_now + Scene::TURN_MINUTES.fetch(kind).minutes
+  end
+
   private
 
   # The character, location and scene are all facets of one story; pointing at
