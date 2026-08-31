@@ -16,15 +16,9 @@ class PlaythroughsController < ApplicationController
     playthrough = Playthrough.create!(
       story: story,
       character: story.protagonist,
-      current_location: location
+      current_location: location,
+      current_scene: opening_scene(location)
     )
-
-    # The protagonist is standing here from this moment, and nothing else says
-    # so: `Scene`'s after_create stamps the visit, and a playthrough starts
-    # with no scene. Without this the opening room is still unvisited when the
-    # player walks back into it, so the first place they ever stood would be
-    # narrated to them as a discovery.
-    location.mark_protagonist_visit!
 
     # Deliberately starting a playthrough takes the session over; merely
     # looking at one (below) does not.
@@ -66,6 +60,40 @@ class PlaythroughsController < ApplicationController
   # back with an explanation instead.
   def opening_location(story)
     story.locations.realized.order(:id).first
+  end
+
+  # The first entry in the turn log, and the reason a playthrough no longer
+  # starts with an empty one.
+  #
+  # Every other room the player walks into is narrated by `Scene::Generator`.
+  # The opening room is the one arrival that never happens -- the player is
+  # simply standing in it -- so nothing had ever written its text down, and the
+  # play page read the location's own description out above the log instead.
+  # That stand-in was conditional on the log being empty, so the first turn
+  # made the opening text disappear from under the player.
+  #
+  # Writing it as a `Scene` is the cheap half of the answer: no model call on
+  # the one screen a new player sees first, and the log now begins where the
+  # story begins. It is a room description rather than a narrated arrival, and
+  # that is the honest limit of it -- a world that carries its own opening
+  # arrival would replace the text here and nothing else.
+  #
+  # Two things fall out of it, both of them corrections:
+  #
+  #   * `Scene`'s after_create stamps `last_protagonist_visit`, so the explicit
+  #     `mark_protagonist_visit!` this method replaced is no longer needed. The
+  #     protagonist is standing here, and now a record says so.
+  #   * the first move gets a real `previous_scene`. `Scene::Generator#lead_in`
+  #     used to be told "Nothing. This is where the story opens", which was
+  #     false by then -- the story opened one room back.
+  def opening_scene(location)
+    Scene.create!(
+      story: location.story,
+      location: location,
+      description: location.description,
+      summary: "The story opens in #{location.name}.",
+      story_timestamp: Time.current
+    )
   end
 
   def unplayable_message(story)

@@ -249,6 +249,34 @@ owes, roughly in order:
 - [x] A playthrough starts in the story's first **realized** location — the
       opening room `game:new` generates. Stubs are skipped: they are exits
       nobody has walked into, with a name and a teaser and nothing to read.
+- [x] **The turn log starts where the story starts.** The opening room used to
+      be read out *above* the log and only while the log was empty, so the
+      first turn — the first thing to put a `Scene` in that log — made the
+      opening text vanish from under the player. `PlaythroughsController#opening_scene`
+      writes it as a `Scene` when the playthrough starts, so it stays where it
+      was written. Two things fall out: `Scene`'s after_create stamps
+      `last_protagonist_visit`, so the explicit `mark_protagonist_visit!` is
+      gone, and the first move now gets a real `previous_scene` instead of
+      `Scene::Generator` being told "this is where the story opens" one room
+      too late. It is a room description standing in for an arrival nobody
+      narrates, which is the honest limit of it — see **Next up** below.
+- [ ] **Where the opening arrival comes from.** The opening room is the one
+      arrival in the game that is never narrated — the player is simply
+      standing in it — so the first log entry is the room's own description
+      rather than a `Scene::Generator` narration like every other arrival.
+      Making the *world* carry its own opening arrival is the fix, and it moves
+      the model call to world-creation time where the player never waits for
+      it: one more call in `rake game:new`, carried into `db/seeds/worlds/*.yml`
+      by the exporter so it can be hand-authored — the opening is the most
+      important prose in the game. Filed as its own task; it touches world
+      generation, the export format and the seed loader, and it needs a natural
+      key for a `Scene` (the loader has none) plus a ruling on the documented
+      "progress rather than world" line. **The strongest argument for it is
+      unrelated to this bug:** a seeded opening scene with a hand-authored cast
+      is what makes the talk branch reachable in a seeded world — verified,
+      `Scene::Generator.characters_present` goes from the protagonist alone to
+      the protagonist plus whoever the scene records. See the matching note
+      under **Known issues**.
 - [ ] A story generated before opening locations existed has nowhere to start,
       so the index lists it without a Play button and `create` refuses it. That
       whole branch can go once no such stories are left, or once realizing a
@@ -281,6 +309,15 @@ owes, roughly in order:
   `is_companion` (or shipping an opening scene with a cast), or
   `ta-narrator-memory`. Until then the loop's talk path is exercised by tests
   and by a hand-placed cast, not by the seeds.
+- **`Scene#next_scene` is a `has_one` over what can become a branch point.**
+  Harmless today: every scene is written by one playthrough, so the linked list
+  is a list. It stops being one the moment two playthroughs share a scene —
+  which is exactly what a world carrying its own opening arrival would do — and
+  then `next_scene` silently returns whichever playthrough's turn happens to
+  come back first. Walking *backwards* from a playthrough's `current_scene` is
+  unambiguous either way, so the turn log is safe; only the forward association
+  is not. Nothing in `app/` reads it, only `test/models/scene_test.rb`. Give it
+  a real answer before the opening arrival moves into the world.
 - **`ActionController::Live` costs one Puma thread per open stream.** Puma runs
   3 threads by default, so three people reading narration at once stalls the
   whole site for everyone else. Irrelevant for one player on localhost; raise
