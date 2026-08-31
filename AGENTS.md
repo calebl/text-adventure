@@ -141,6 +141,10 @@ timestamped moment in a location. See the persistence model section in
 
 ### Playing the world
 
+**[README.md](README.md#how-a-turn-works) has the diagram** — every branch of a
+turn, and which boxes are model calls versus decisions from records. Read it
+before changing the loop; the rules below are what it does not fit.
+
 - **The loop is `Playthrough::Turn`, and the browser's whole share of it is a
   string and a block.** `NarrationsController` forwards the chunks the block is
   yielded; it does not know which branch the turn took. Keep it that way — the
