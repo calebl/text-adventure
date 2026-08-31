@@ -56,22 +56,57 @@ class LocationTest < ActiveSupport::TestCase
     # No visit yet
     assert_nil @location.time_since_last_visit
 
-    # Mark a visit
-    past_time = 1.hour.ago
-    @location.update!(last_protagonist_visit: past_time)
+    @location.update!(last_protagonist_visit: @story.start_time)
 
-    time_diff = @location.time_since_last_visit
-    assert time_diff > 0
-    assert time_diff < 2.hours
+    assert_equal 90.minutes, @location.time_since_last_visit(@story.start_time + 90.minutes)
   end
 
-  test "should mark protagonist visit" do
+  # THE WALL-CLOCK DEFECT, and the assertion that closes it. This used to be
+  # `Time.current - last_protagonist_visit`, so a player who shut the tab for a
+  # week and came back was told in fiction that they had been gone a week.
+  test "time since last visit is measured in story time, not against the wall clock" do
     @location.save!
+    @location.update!(last_protagonist_visit: @story.start_time)
+    # Somewhere else, so the visit stamp this scene writes is not on @location.
+    create(:scene, story: @story, location: create(:location, story: @story),
+                   story_timestamp: @story.start_time + 20.minutes)
 
-    freeze_time do
-      @location.mark_protagonist_visit!
-      assert_equal Time.current, @location.last_protagonist_visit
+    travel 3.weeks do
+      assert_equal 20.minutes, @location.time_since_last_visit,
+                   "three weeks of somebody's life is not twenty minutes of the story"
     end
+  end
+
+  test "time since last visit defaults to the story's own clock" do
+    @location.save!
+    @location.update!(last_protagonist_visit: @story.start_time)
+    create(:scene, story: @story, location: create(:location, story: @story),
+                   story_timestamp: @story.start_time + 4.hours)
+
+    assert_equal 4.hours, @location.time_since_last_visit
+  end
+
+  test "should mark protagonist visit at a story moment" do
+    @location.save!
+    at = @story.start_time + 3.hours
+
+    @location.mark_protagonist_visit!(at)
+
+    assert_equal at, @location.last_protagonist_visit
+  end
+
+  test "mobile and anchored scope the places that move" do
+    @location.save!
+    mover = create(:location, story: @story, name: "The Travelling Stair", mobile: true)
+
+    assert_includes Location.mobile, mover
+    assert_not_includes Location.mobile, @location
+    assert_includes Location.anchored, @location
+    assert_not_includes Location.anchored, mover
+  end
+
+  test "a location does not move by default" do
+    assert_not Location.new.mobile?
   end
 
   test "defaults to a stub" do

@@ -72,11 +72,12 @@ class Scene::Generator
     raise ArgumentError, "cannot narrate arriving in #{location.name.inspect}: it is still a stub" unless location.realized?
 
     # Read BEFORE the scene is created. `Scene#mark_location_visit` is an
-    # after_create that stamps `last_protagonist_visit` with now, so by the
-    # time the record exists every arrival looks like a return that happened
-    # zero seconds ago.
+    # after_create that stamps `last_protagonist_visit` with THIS arrival's own
+    # story time, so by the time the record exists every arrival looks like a
+    # return that happened zero minutes ago.
     returning = location.last_protagonist_visit.present?
-    elapsed = location.time_since_last_visit
+    at = story_timestamp
+    elapsed = location.time_since_last_visit(at)
     cast = characters_present
 
     answer = agent.with_schema(Scene::Schema).ask(arrival_prompt(returning, elapsed, cast)).content
@@ -89,12 +90,44 @@ class Scene::Generator
       description: sanitize_string(answer["description"]),
       summary: sanitize_string(answer["summary"]),
       is_opening: opening?,
-      # The opening arrival IS the moment the story starts, and `start_time` is
-      # already the world's fixed in-story clock -- so it is read from the world
-      # rather than from the wall clock, and the seed file does not have to
-      # carry a timestamp that would only ever restate it.
-      story_timestamp: opening? ? story.start_time : Time.current
+      story_timestamp: at
     )
+  end
+
+  # WHEN IN THE STORY THIS ARRIVAL HAPPENS, and the one place the game turns a
+  # journey into elapsed story time.
+  #
+  # The opening arrival IS the moment the story starts, and `start_time` is
+  # already the world's fixed in-story clock -- so it is read from the world
+  # rather than from the wall clock, and the seed file does not have to carry a
+  # timestamp that would only ever restate it.
+  #
+  # Every other arrival is the previous scene plus how long the walk took, which
+  # `LocationConnection` already answers from its fixed tables. So the story's
+  # clock advances by the world's own distances, and `#time_since_last_visit`
+  # -- the value that becomes "you were last here about an hour ago" in the
+  # prompt -- is measured in the fiction rather than against whenever the player
+  # happened to have a browser open. That is the wall-clock defect, fixed in the
+  # single place the ROADMAP asks for it.
+  def story_timestamp
+    return story.start_time if opening?
+    return story.clock if previous_scene.nil?
+
+    previous_scene.story_timestamp + journey_minutes.minutes
+  end
+
+  # How long the walk in took. Nil `previous_scene` never reaches here, and a
+  # move with no edge should not either -- `Playthrough::Classifier` resolves a
+  # destination out of the room's real exits -- so the fallback is for a caller
+  # that placed the player somewhere by hand. It borrows the shortest distance
+  # there is rather than zero, because two scenes at the same story instant
+  # would make "how long since you were here" answer nothing at all.
+  def journey_minutes
+    edge = LocationConnection.find_by(location: previous_scene.location, connected_location: location)
+    return LocationConnection::DISTANCES.fetch("adjacent") if edge.nil?
+
+    LocationConnection.travel_minutes(edge.distance, edge.travel_method) ||
+      LocationConnection::DISTANCES.fetch("adjacent")
   end
 
   def opening?

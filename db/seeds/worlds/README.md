@@ -41,6 +41,7 @@ One file is one universe and one story. Keys are written in this order:
 | `characters`    | one entry each, `race` by name, optional `items`                        |
 | `locations`     | every location, realized or stub; exactly one marked `opening: true`    |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair              |
+| `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
 
 Prose is stored in a `|-` block scalar: one paragraph is one physical line, so
 editing a sentence is a one-line diff and what you type is what gets stored.
@@ -104,6 +105,67 @@ Practicalities:
   read their own turns; `Scene#next_scenes` is plural because the forward
   direction stopped being single-valued when this landed.
 
+### `mechanics`, and the `mobile` flag they read
+
+A world can change itself, on its own clock, with no model call and nothing in
+memory. Two keys carry it:
+
+```yaml
+locations:
+- name: Mournwell Lane
+  detail_level: stub
+  mobile: true            # this place travels
+  teaser: |-
+    Step out and eavesdrop on the lane while you still know where it runs.
+
+mechanics:
+- name: The nightly rearrangement
+  kind: shuffle_connections
+  cadence: nightly
+  description: |-
+    At midnight Nocturna floods the city and the Larkspur Quarter travels...
+```
+
+- `kind` is a key into **`WorldMechanic::KINDS`** and `cadence` a key into
+  **`WorldMechanic::CADENCES`** — fixed tables in code, each naming a Ruby
+  operation. This is the `LocationConnection::DISTANCES` precedent, and the
+  reason it is that shape rather than a rule language: **the file supplies
+  parameters, never behaviour.** A mechanic holds whether or not any narrator
+  remembers it, survives a restart, and costs nothing per turn.
+- `name` is the natural key, so re-seeding updates a mechanic rather than
+  duplicating it, and a world can carry more than one.
+- `description` is the in-fiction reason, for prompts. It is prose, not logic.
+- There is **no `last_run_at`**. How far a mechanic has got through a story is
+  progress, not world; seeding one would tell a fresh database that nights
+  nobody has played had already happened.
+- `mobile` is omitted rather than written `false`, like `opening`: the file says
+  which places move and stays quiet about the ones that do not.
+
+**What `shuffle_connections` actually does**, because the shape of the graph you
+author decides what a night looks like: it takes every connection joining a
+`mobile` location to one that is **not**, and permutes the fixed endpoints among
+them. Permuting rather than choosing is what keeps the world whole — every
+location keeps exactly the number of ways in and out it had — and an arrangement
+that would still split the graph in two is rejected before it is applied.
+
+The consequence worth designing around: **an edge with two `mobile` ends is
+never touched.** So a building whose rooms are all marked `mobile` travels as
+one piece with its own doors intact, and only its edges out into the fixed city
+are repointed. That is exactly how `the-lunar-cartographer.yml` is authored, and
+it is why walking out of Room 3 always offers the same three ways — the house
+holds together; what changes is which part of Nocturnis the quarter has come to
+rest against. Whether that reads better than moving whole districts is a
+question for actual play, not for this file.
+
+The permutation comes from a `Random` seeded from the story id and the
+story-time boundary, so the same night shuffles the same way in any process,
+after any restart.
+
+One honest caveat: the loader **adds and updates, it never deletes**, so
+re-seeding a world that has been played re-asserts the edges the file declares
+on top of wherever the mechanic has since moved them. Drop the database for a
+clean rebuild, as with a renamed location.
+
 ### Rules the loader enforces
 
 - Exactly one location is `opening: true`, and it must be `realized` — a story
@@ -118,6 +180,13 @@ Practicalities:
 - `distance` and `travel_method` come from `LocationConnection::DISTANCES` and
   `::TRAVEL_METHODS`. `time_to_travel` is derived from those two and is
   deliberately absent from the file.
+- A `mechanics` entry has a `name`, unique within the file, a `kind` in
+  `WorldMechanic::KINDS` and a `cadence` in `WorldMechanic::CADENCES`.
+- A `shuffle_connections` mechanic needs **at least two connections** joining a
+  `mobile: true` location to one that is not — otherwise the world says it
+  rearranges itself every night and nothing can move, which loads and plays and
+  silently never happens. Counted from the file, so a hand edit is caught before
+  it reaches the database.
 - `sex` is a `Character.sexes` key: `male`, `female`, `non_binary`,
   `trans_woman`, `trans_man`. Not checked by `validate!` -- it is `Character`'s
   own `inclusion` validation that rejects a bad one, inside the same
@@ -141,8 +210,9 @@ says so in its warnings and loading the file writes the missing row.
 
 ### What is not exported
 
-`Playthrough`s, `last_protagonist_visit`, and every `Scene` **but the opening
-arrival**: those are somebody's progress through a world, not the world. `rake
+`Playthrough`s, `last_protagonist_visit`, `WorldEvent`s, a mechanic's
+`last_run_at`, and every `Scene` **but the opening arrival**: those are
+somebody's progress through a world, not the world. `rake
 game:export` says out loud how many it left behind, so nothing is dropped
 silently — and it warns loudly when a story has *no* opening arrival, because
 the loader refuses such a file rather than producing a world that opens on a
@@ -167,6 +237,14 @@ the database when you need a clean rebuild.
 - **2** — a world carries its own `opening_scene`. A format 1 file has none.
 - **1** — the original.
 
+The optional `mechanics` key and `locations[].mobile` were added to format 2
+rather than bumping it to 3, which is the rule `WorldSeed::FORMAT` states:
+the number moves when a loader **cannot absorb** an older file. Both keys are
+optional and both default to "this world does not move", so every format 2 file
+written before they existed — `the-unrecorded-hour.yml` included — still loads
+and still means exactly what it meant. A required key, as `opening_scene` was,
+is what bumps the number.
+
 ### `the-lunar-cartographer.yml`
 
 Exported from a real generated world: Nocturnis, a city that rearranges itself
@@ -183,6 +261,25 @@ characters at all, because `Story::Generator` does not make any and
 Its `opening_scene` is hand-written — this world predates `rake game:new`
 narrating one — and its cast is the point: Grenn is in the doorway from the
 first line, so the player has somebody to talk to on turn one.
+
+**It is also the world that moves.** Its universe has claimed since it was
+generated that Nocturnis rearranges itself every night; the hand-written
+`mechanics` block is that claim made true in the records rather than in prose.
+The four Larkspur Quarter locations — Room 3, the hallway, the lane and the
+rooftops — are `mobile: true` and travel as one piece, and three fixed landmarks
+the universe's own prose already names were added as stubs for them to come to
+rest against: the Celestial Spire (*"a tower that remains static despite the
+city's rearrangements"*), the Sovereign's Circle, and the bell tower of Saint
+Aravel from the preface. The three connections out of the quarter are the edges
+a night repoints.
+
+One thing in this file predates the mechanic and is worth knowing about: Room 3's
+`description` ends on *"the shuttered face of a clothier's shop has migrated
+closer to your window"*. A description is written once and never regenerated, so
+a sentence about a neighbour goes wrong the moment the graph moves it. That
+sentence is safe as authored — Room 3's own exits never shuffle — and
+`Location::DetailSchema` now tells the generator to describe the place and not
+what is across the way, so the next one will not be written at all.
 
 ### `the-unrecorded-hour.yml`
 

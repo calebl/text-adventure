@@ -165,6 +165,34 @@ timestamped moment in a location. See the persistence model section in
   `test/lib/seeded_worlds_test.rb` is the only test that reads them; generator
   tests keep running against `FakeAgent`.
 
+### Story time, and a world that moves on its own
+
+- **`Story#clock` is what time it is in the fiction**, derived from
+  `scenes.story_timestamp`, never stored and never the wall clock. A turn's
+  scene is the previous scene plus what the turn cost:
+  `LocationConnection.travel_minutes` for a journey, `Scene::TURN_MINUTES` for
+  everything else. `Location#last_protagonist_visit` holds a story moment too.
+  **Do not reach for `Time.current` anywhere on that path** — that was the
+  defect, and a player could read it.
+- **`WorldMechanic` is the world changing itself on that clock.** `kind` and
+  `cadence` are keys into fixed tables in code, each naming a Ruby operation
+  over records; a generated or hand-seeded world supplies parameters (which
+  locations are `mobile`, how often, the in-fiction reason) and never behaviour.
+  Same shape as `LocationConnection::DISTANCES`, and for the same reason. Adding
+  a mechanic means adding a class under `app/models/world_mechanic/`, not a
+  field somebody can fill in.
+- `last_run_at` is a column in story time, so catching up is arithmetic on two
+  datetimes: no timer, no job, nothing in memory, and a process that was down
+  for a week pays the nights it owes on the next turn.
+  `Playthrough::Turn#play` drives it. **It must stay free of model calls** —
+  that is the whole claim, and `test/models/world_mechanic_test.rb` asserts it.
+- A `WorldEvent` is an audit trail, **not a narration source.** Two nights can
+  return a place to the same neighbour, so replaying the log announces a change
+  the player never experienced. Narration comes from a diff of what they were
+  actually shown.
+- `db/seeds/worlds/README.md` has the `mechanics` / `mobile` seed format and
+  what `shuffle_connections` does to a graph.
+
 ### Playing the world
 
 **[README.md](README.md#how-a-turn-works) has the diagram** — every branch of a
