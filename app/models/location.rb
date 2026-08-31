@@ -1,5 +1,11 @@
 class Location < ApplicationRecord
   belongs_to :story
+  # Containment. NOTHING SETS THIS YET: Location::Generator creates every stub
+  # from an exit, which says where you can walk, not what is inside what. The
+  # generator used to put "contained within: X" into the detail prompt on a
+  # branch that could never be taken; that branch is gone. The association
+  # stays because the column and the design do, but a caller has to write it
+  # before any prompt can read it.
   belongs_to :parent_location, class_name: "Location", optional: true
   has_many :child_locations, class_name: "Location", foreign_key: "parent_location_id"
   has_many :scenes, dependent: :destroy

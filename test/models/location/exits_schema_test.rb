@@ -29,15 +29,41 @@ class Location::ExitsSchemaTest < ActiveSupport::TestCase
   end
 
   test "an exit carries what a stub location and its connection both need" do
-    assert_equal %w[name teaser distance time_to_travel travel_method], exit_properties.keys
-    assert_equal %w[name teaser distance time_to_travel travel_method],
+    assert_equal %w[name teaser distance travel_method], exit_properties.keys
+    assert_equal %w[name teaser distance travel_method],
                  schema_properties(SCHEMA)["exits"]["items"]["required"].map(&:to_s)
   end
 
-  test "every exit field is a bounded string" do
+  # It follows from the other two, so asking for it was a decision bought that
+  # could then contradict the answer it was derived from.
+  test "does not ask how long the journey takes" do
+    assert_not_includes exit_properties.keys, "time_to_travel"
+  end
+
+  test "every exit field is a string bounded by a length or an enum" do
     exit_properties.each do |name, property|
       assert_equal "string", property["type"], "#{name} should be a string"
-      assert property["maxLength"].present?, "#{name} needs a maxLength"
+      assert property["maxLength"].present? || property["enum"].present?,
+             "#{name} needs a maxLength or an enum"
+    end
+  end
+
+  # The two fields that used to be free prose in a 60 character box. That box
+  # truncated a real row mid-word, and the prose it held was directional, so
+  # the way back recorded the way out. See LocationConnection.
+  test "distance and travel method come from LocationConnection's tables" do
+    assert_equal LocationConnection::DISTANCES.keys, exit_properties["distance"]["enum"]
+    assert_equal LocationConnection::TRAVEL_METHODS.keys, exit_properties["travel_method"]["enum"]
+  end
+
+  test "every value the schema can emit is one LocationConnection accepts" do
+    connection = build(:location_connection)
+
+    exit_properties["distance"]["enum"].product(exit_properties["travel_method"]["enum"]).each do |distance, method|
+      connection.distance = distance
+      connection.travel_method = method
+
+      assert connection.valid?, "#{distance} by #{method} is not a connection LocationConnection accepts"
     end
   end
 
@@ -46,7 +72,7 @@ class Location::ExitsSchemaTest < ActiveSupport::TestCase
     assert_equal false, schema_properties(SCHEMA)["exits"]["items"]["additionalProperties"]
   end
 
-  # Two of an exit's fields become a stub Location, the other three become the
+  # Two of an exit's fields become a stub Location, the other two become the
   # LocationConnection to it. Nothing generated here has nowhere to be stored.
   test "every exit field maps to a location or connection column" do
     columns = Location.column_names + LocationConnection.column_names
