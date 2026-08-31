@@ -17,10 +17,18 @@ class Location::ExitsSchemaTest < ActiveSupport::TestCase
     assert_equal %w[exits], schema_required(SCHEMA)
   end
 
-  # Fewer than two and there is no choice to make; more than four and the
-  # player is reading a directory rather than a room.
+  # More than four and the player is reading a directory rather than a room.
+  # The floor is one, not two: some places have a single way out, and a floor of
+  # two makes the model invent the second.
   test "exits is an array bounded at both ends" do
-    assert_schema_field(SCHEMA, :exits, type: :array, minItems: 2, maxItems: 4)
+    assert_schema_field(SCHEMA, :exits, type: :array, minItems: 1, maxItems: 4)
+  end
+
+  # A room realized from its neighbour already has its way back, so a dead end
+  # can answer with one exit. The opening location has no such neighbour, so an
+  # empty array there would be a sealed room -- the floor stays above zero.
+  test "one exit is enough and none is not" do
+    assert_equal 1, schema_properties(SCHEMA)["exits"]["minItems"]
   end
 
   test "every field is described" do
