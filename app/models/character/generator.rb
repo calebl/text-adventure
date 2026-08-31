@@ -7,15 +7,19 @@ class Character::Generator
   BIRTH_PLACES = [ "large city", "small town", "cave", "remote wilderness", "isolated island", "floating city", "jungle", "desert", "mountain", "boat" ]
   RAISED_BY = [ "parents", "guardian", "siblings", "grandparents", "aunt/uncle", "neighbor", "teacher", "mentor", "pet", "wild aninmals", "self" ]
 
-  attr_reader :race
+  attr_reader :race, :age, :sex
 
   def initialize(story)
     @story = story
-    # Race is picked from the universe's generated list rather than invented by
-    # the model, so every character actually belongs to one of its peoples.
+    # Race, age and sex are decided here rather than by the model. Race comes
+    # from the universe's generated list so every character belongs to one of
+    # its peoples; age and sex are rolled so repeated runs diverge. All three
+    # are stated in the prompt, and none of them is in the schema -- asking for
+    # a value the prompt just supplied is a decision bought twice.
     @race = story.universe.races.sample
+    @age = rand(18..120)
+    @sex = Character.sexes.values.sample
     @character_generation_prompt = generation_prompt(story)
-    @background_generation_prompt = background_generation_prompt
   end
 
   # Raises if generation fails. Returning a half-built character instead just
@@ -24,22 +28,20 @@ class Character::Generator
     agent = BaseAgent.new.with_instructions(system_prompt)
     character = @story.characters.new
 
-    base_content = agent.with_schema(Character::BaseSchema).ask(@character_generation_prompt).content
+    content = agent.with_schema(Character::Schema).ask(@character_generation_prompt).content
 
-    character.fullname = sanitize_string(base_content["fullname"])
-    character.nickname = sanitize_string(base_content["nickname"])
-    character.age = base_content["age"].to_i
-    character.sex = sanitize_string(base_content["sex"])
+    character.fullname = sanitize_string(content["fullname"])
+    character.nickname = sanitize_string(content["nickname"])
+    character.personality = sanitize_string(content["personality"])
+    character.appearance = sanitize_string(content["appearance"])
+    character.likes = sanitize_string(content["likes"])
+    character.dislikes = sanitize_string(content["dislikes"])
+    character.fears = sanitize_string(content["fears"])
+    character.backstory = sanitize_string(content["backstory"])
+
     character.race = race
-
-    background_content = agent.with_schema(Character::BackgroundSchema).ask(@background_generation_prompt).content
-
-    character.personality = sanitize_string(background_content["personality"])
-    character.appearance = sanitize_string(background_content["appearance"])
-    character.likes = sanitize_string(background_content["likes"])
-    character.dislikes = sanitize_string(background_content["dislikes"])
-    character.fears = sanitize_string(background_content["fears"])
-    character.backstory = sanitize_string(background_content["backstory"])
+    character.age = age
+    character.sex = sex
 
     character
   end
@@ -70,10 +72,12 @@ class Character::Generator
       END OF ALREADY GENERATED CHARACTERS
 
       ## Predetermined Character Details for the new character
-      sex: #{Character.sexes.values.sample}
-      age: #{rand(18..120)}
+      sex: #{sex}
+      age: #{age}
       attractiveness: #{ATTRACTIVENESS_VALUES.sample}
       race: #{race&.name} -- #{race&.description}
+      born in a: #{BIRTH_PLACES.sample}
+      raised by: #{RAISED_BY.sample}
 
       ## Character Generation Instructions
       - The character is a #{race&.name}. Write them as one, and do not assign
@@ -83,23 +87,12 @@ class Character::Generator
       - The character should be consistent with the story's characters
       - The character should be consistent with the story's plot
       - The character details should be significantly different from the already generated characters
+      - The backstory covers their life before the story, their motivations and
+        their goals. Write it in third person, referencing the character by name,
+        and keep it consistent with where they were born and who raised them
 
       You are a character generator for the above fictional story.
       Generate all of the character details for a new character that will be added to the story.
-
-    PROMPT
-  end
-
-  def background_generation_prompt
-    <<~PROMPT
-      Generate a believable backstory for the character.
-
-      This character was born in a #{BIRTH_PLACES.sample}. They were raised by #{RAISED_BY.sample}.
-
-      ## Backstory
-      The backstory should be a short, concise, and engaging story that is consistent with the character.
-      The backstory should detail the character's life before the story, their motivations, and their goals.
-      The backstory should be one paragraph. It should be written in third person, referencing the character by name.
 
     PROMPT
   end
