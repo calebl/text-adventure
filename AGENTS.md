@@ -54,8 +54,8 @@ timestamped moment in a location. See the persistence model section in
   `test/models/ruby_llm_schema_envelope_test.rb` guards that seam all the way
   to the rendered request body; keep it passing.
 - The explicit `Gemfile` entry stays even though `ruby_llm` would pull the gem
-  in anyway: three classes here subclass `RubyLLM::Schema` directly, so it is a
-  direct dependency. If `ruby_llm` 2.0 does switch to `schematist`, an implicit
+  in anyway: every schema class here subclasses `RubyLLM::Schema` directly, so
+  it is a direct dependency. If `ruby_llm` 2.0 does switch to `schematist`, an implicit
   dependency would vanish and surface as a `NameError` rather than a
   resolution failure.
 - **Never swallow a generation failure.** Generators raise. A rescue that
@@ -68,8 +68,23 @@ timestamped moment in a location. See the persistence model section in
   with `curl -s https://openrouter.ai/api/v1/models | jq '.data[] | select(.id == "MODEL") | .supported_parameters'`
   and confirm `structured_outputs` is listed.
 - Ask for a handful of fields per call, not twenty. Split large records across
-  sequential calls on one agent, the way `Universe::Generator` and
-  `Character::Generator` do; the conversation carries context between calls.
+  sequential calls on one agent, the way `Universe::Generator` does; the
+  conversation carries context between calls. **A pass earns its round trip when
+  its output is large enough to constrain the next one.** The universe's first
+  pass produces ~584 tokens the second is told to stay consistent with, so it
+  earns it. Two splits that did not — naming the opening location, and a
+  character's identity before their background — produced 39 and 21 output
+  tokens against ~2,300-token prompts, and were collapsed into the calls that
+  already had the context.
+- **Send each prompt only the context it can use.** `Universe#prompt_details`
+  takes an audience (`:full`, `:character`, `:place`, `:dialogue`) because the
+  whole record is 1,584 tokens and goes out again on every room and every turn
+  of dialogue. Add a field to `Universe::AUDIENCE_FIELDS`, not to a caller.
+- **Prefer a fixed table to a prompt** where the value is one of a known set.
+  `LocationConnection::DISTANCES` and `::TRAVEL_METHODS` are enums the schema
+  reads directly, and `time_to_travel` is derived from them rather than asked
+  for. Free prose in a small `max_length` box truncates mid-word, and a
+  directional phrase is wrong on the way back.
 - Seed prompts with randomized "predetermined details" so repeated runs diverge
   (`Universe::Generator::TONES`, `Character::Generator::BIRTH_PLACES`).
 
@@ -81,6 +96,13 @@ timestamped moment in a location. See the persistence model section in
   realized, so a stub saves. `Location::Generator#realize!` fills a stub in and
   stubs out its exits; it returns an already-realized location untouched.
   Generation happens once per place — do not add a code path that regenerates one.
+- The description is saved BEFORE the exits are asked for, so a failed exits
+  call does not throw away the more expensive of the two. The cost is that a
+  room can end up realized with no way out, and `realize!` will not finish it;
+  `Location::Generator#write_exits!` is public for exactly that recovery.
+- `LocationConnection` rows are written in both directions from one answer, so
+  anything stored on them has to be true both ways. That is why the travel
+  method is a direction-neutral enum and the travel time is derived.
 
 ### Testing
 
