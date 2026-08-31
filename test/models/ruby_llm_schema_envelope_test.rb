@@ -19,7 +19,13 @@ class RubyLLMSchemaEnvelopeTest < ActiveSupport::TestCase
     Character::Schema,
     Interaction::Schema,
     Location::DetailSchema,
-    Location::ExitsSchema
+    Location::ExitsSchema,
+    Scene::Schema,
+    # Built per call rather than declared: `target` is an enum over the exits
+    # and the people in front of the player. The sample list stands in for a
+    # real room -- what matters here is that a dynamically created schema
+    # survives the same envelope every declared one goes through.
+    Playthrough::IntentSchema.for([ "Ashgate Market", "Maren Vosk" ])
   ].freeze
 
   test "every schema class is a RubyLLM::Schema" do

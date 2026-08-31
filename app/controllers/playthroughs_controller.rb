@@ -19,6 +19,13 @@ class PlaythroughsController < ApplicationController
       current_location: location
     )
 
+    # The protagonist is standing here from this moment, and nothing else says
+    # so: `Scene`'s after_create stamps the visit, and a playthrough starts
+    # with no scene. Without this the opening room is still unvisited when the
+    # player walks back into it, so the first place they ever stood would be
+    # narrated to them as a discovery.
+    location.mark_protagonist_visit!
+
     # Deliberately starting a playthrough takes the session over; merely
     # looking at one (below) does not.
     session[:playthrough_token] = playthrough.token
@@ -30,6 +37,7 @@ class PlaythroughsController < ApplicationController
     bind_session_to(@playthrough)
 
     @scenes = scene_log(@playthrough)
+    @exits = @playthrough.current_location&.exits&.order(:id) || Location.none
     @command = params[:command].presence
   end
 
@@ -69,6 +77,10 @@ class PlaythroughsController < ApplicationController
   # The turn log, oldest first. Scenes are a `previous_scene` linked list, so
   # walking back from the playthrough's current scene gives this playthrough's
   # turns and not some other playthrough's.
+  #
+  # `interactions` is preloaded because the turn partial reads it on every
+  # scene to name who the player was talking to, and all but the talk turns
+  # have none.
   def scene_log(playthrough)
     scenes = []
     scene = playthrough.current_scene
@@ -77,6 +89,10 @@ class PlaythroughsController < ApplicationController
       scenes.unshift(scene)
       scene = scene.previous_scene
     end
+
+    ActiveRecord::Associations::Preloader.new(
+      records: scenes, associations: { interactions: :character }
+    ).call
 
     scenes
   end

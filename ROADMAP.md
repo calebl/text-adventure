@@ -113,14 +113,38 @@ So revisiting a place reuses the persisted `Location` while creating a new
   own, since it leaves every neighbour a stub and a stub has no exits at all.
   See `db/seeds/worlds/README.md` for the format and
   `test/lib/seeded_worlds_test.rb` for the drift guard.
+- **The game loop.** `Playthrough::Turn` is the whole of it: one schema'd
+  classification call (`Playthrough::Classifier`, five intents from a fixed
+  table plus a target enum built per turn from the room's exits and its cast),
+  then move / talk / narrate. **Movement is the load-or-generate seam:**
+  `Location::Generator#realize!` writes a stub out in full and returns an
+  already-realized room untouched, so walking somewhere new generates it once
+  and walking back reads what was written, then `Scene::Generator` narrates
+  arriving and the playthrough moves only once both calls have landed. Wired
+  into the browser through the same three routes: `NarrationsController` hands
+  the command to `Playthrough::Turn` and forwards the chunks it yields.
+  Movement costs ~415 input tokens for the classification (system 189 + prompt
+  66 + schema 160) on top of whatever it leads to -- an arrival is 1,302, a
+  narrated turn ~849 -- so the classifier is about a third of a narrated turn
+  and a quarter of an arrival.
+- **Talking to a character, kept.** The `talk` branch routes to
+  `InteractionAgent`, which now goes through `BaseAgent` on both passes -- so
+  the character pass inherits `verify_schema_honored!` and both inherit model
+  fallback, and the unresolvable
+  `cognitivecomputations/dolphin-mixtral-8x22b` it used to hardcode is gone.
+  `#ask` returns an `Exchange` of the prose and the character's five structured
+  fields instead of throwing the structured half away, so a talk turn keeps
+  **two** records: the `Scene` the player reads (with `scene.characters` set to
+  the protagonist and whoever they spoke to, which is what tells the next turn
+  in that room who is standing in it), and the first `Interaction` row this app
+  has ever written. The turn log names who was spoken to.
 
 ### Not built yet
 
-There is still **no world to walk around in**. The loop runs — you type, the
-narrator answers, the turn is kept — but every turn happens in the one opening
-location. Rooms can be built and arrivals can be narrated; what is missing is
-the thing that decides to move. Input classification and movement resolution
-are the whole of the next milestone.
+Everything left is in **Next up** below. The loop moves, talks and narrates.
+What it does not yet do is survive a closed tab, remember more than the last
+scene, or look like anything -- stage 5 (jobs, Turbo over Action Cable,
+conversation persistence) and stage 6 (visual style) of the browser plan.
 
 ## Next up
 
@@ -151,25 +175,45 @@ are the whole of the next milestone.
       read **before** `Scene.create!`, because `Scene`'s `after_create` stamps
       the visit — read them after and every return is "less than a minute ago".
 - [x] Populate `scene.characters` from who is present.
-- [ ] It does not advance the `Playthrough`. `Scene::Narrator` sets
-      `current_scene` because it owns the turn; this returns the scene and lets
-      the caller place the player, because moving the player is the game loop's
-      decision and it also has to set `current_location`. Wire it up there.
+- [x] It does not advance the `Playthrough` itself, by design: it returns the
+      scene and lets the caller place the player, because moving the player is
+      the game loop's decision and it also has to set `current_location`.
+      `Playthrough::Turn#move_to` is that caller.
+- [x] `#holdovers` read the plain latest scene in a location, so any turn that
+      was not an arrival emptied the room -- only an arrival records a cast, and
+      a `Scene::Narrator` turn writes a scene with nobody in it. It now reads
+      the last scene that recorded anyone. Unreachable before movement existed.
+- [x] `Scene::Generator.characters_present(location)` answers the same question
+      without building an arrival, so `Playthrough::Classifier` offers exactly
+      the people the arrival paragraph introduced.
 
 ### 3. The game loop
 
-- [ ] Classify player input: move / talk / examine / take / other.
-- [ ] On **move**: resolve the target from `Location#exits`. If it is a stub,
-      hand it to `Location::Generator#realize!` (which no-ops on an already
-      realized location). Then
-      `Scene::Generator.new(target, previous_scene: playthrough.current_scene).generate!`
-      and point the playthrough at the new location and scene. This is the
-      load-or-generate seam that makes the whole idea work. `Scene::Generator`
-      raises on a stub on purpose, so realizing first is not optional.
-- [ ] On **talk**: hand off to the existing `InteractionAgent`.
-- ~~`rake game:play[story_id]`~~ — skipped on purpose. The browser is the
+- [x] Classify player input: move / talk / examine / take / other, in one
+      schema'd `BaseAgent` call. `Playthrough::IntentSchema` is a factory rather
+      than a declared schema because `target` is an enum built per turn from the
+      room's exits and its cast: the loop has to turn the answer back into a
+      `Location` or a `Character`, and "north" resolves to nothing. Closing the
+      set means the model names something that exists or names `nothing`, and
+      there is no third answer to write a matcher for.
+- [x] On **move**: resolve the target from `Location#exits`, realize it if it is
+      a stub, narrate arriving, and point the playthrough at both. The
+      load-or-generate seam, and there is no branch in it: `realize!` returns an
+      already-realized location untouched, so the same four lines cover walking
+      somewhere new and walking back.
+- [x] On **talk**: `InteractionAgent`, through `BaseAgent`. The exchange keeps
+      two records -- the `Scene` the player reads and the `Interaction` the
+      character felt.
+- ~~`rake game:play[story_id]`~~ -- skipped on purpose. The browser is the
       playable interface; the rake tasks build worlds and the browser plays
       them. Do not add a `game:play` task.
+- [ ] **A move is 3 model calls and does not stream**, so the player watches a
+      blinking cursor for as long as realizing a room takes. Nothing is wrong;
+      it is just slow, and the job-and-cable stage below is where it is fixed.
+      Do not "fix" it by schema-ing less -- `Scene::Generator` cannot stream.
+- [ ] `examine` and `take` are told apart and then handed to `Scene::Narrator`
+      like anything else. They are classified so the branch exists when items
+      do; nothing acts on them yet.
 
 ### 4. Persistence and history
 
@@ -177,11 +221,13 @@ are the whole of the next milestone.
       and `ToolCall` already call `acts_as_chat` and friends, but every agent
       builds a bare `RubyLLM::Chat`, so **nothing is ever persisted**. Quitting
       loses all conversation state.
-- [ ] **Persist an `Interaction` at all.** `InteractionAgent#ask` gets a
-      structured character response, formats it into the narrator prompt and
-      throws the object away — nothing in the app has ever created an
-      `Interaction` row. `Interaction#inner_resolution` is a second-order case
-      of the same gap: `Interaction#completed?` tests it and nothing writes it.
+- [x] **Persist an `Interaction` at all.** `InteractionAgent#ask` returns the
+      structured reaction alongside the prose now, and `Playthrough::Turn#talk_to`
+      writes the row.
+- [ ] `Interaction#inner_resolution` and `#summary` are still never written, so
+      `Interaction#completed?` is always false. `inner_resolution` is what a
+      character decided as a result of the exchange, which is a second call
+      nothing asks for yet.
 - [ ] Summarize old scenes so long playthroughs stay inside the context window.
 
 ### 5. Interface
@@ -226,6 +272,15 @@ owes, roughly in order:
   visited and no companion follows you into is therefore empty. That is honest
   rather than correct, and it is what `ta-narrator-memory` — the narrator
   creating characters by tool call — plugs into.
+  **This now has a concrete consequence: you cannot talk to anyone in a
+  freshly seeded world.** Neither checked-in world has a companion or a scene,
+  so `characters_present` answers with the protagonist alone, and
+  `Playthrough::Classifier` offers an empty cast — the `talk` branch is
+  unreachable until the player is in a scene with somebody in it, and nothing
+  puts them there. Fixable from either end: a seed file marking a character
+  `is_companion` (or shipping an opening scene with a cast), or
+  `ta-narrator-memory`. Until then the loop's talk path is exercised by tests
+  and by a hand-placed cast, not by the seeds.
 - **`ActionController::Live` costs one Puma thread per open stream.** Puma runs
   3 threads by default, so three people reading narration at once stalls the
   whole site for everyone else. Irrelevant for one player on localhost; raise
@@ -249,6 +304,23 @@ owes, roughly in order:
   those are the bases of the keycap emoji — so "80 meters" was stored as
   "meters". It now matches `\p{Extended_Pictographic}` instead. Any text
   generated before this fix has silently lost its numbers.
+- **The move path does not work on local models, and rotation cannot reach the
+  one that does.** Measured on a real playthrough: `gemma3:12b`, `gpt-oss:20b`
+  and `qwen3:8b` all return `Scene::Schema` with `description` and no
+  `summary`, so `verify_schema_honored!` rejects all three and the turn ends in
+  an SSE `error` with the player left where they were. `qwen3:4b` returns both
+  fields — but it is 4th in `LOCAL_MODEL_OPTIONS` and `BaseAgent::MAX_ATTEMPTS`
+  is 3, so rotation stops one short of it. Raising the cap is not obviously
+  right: four attempts at up to a 600s timeout is 40 minutes for one failed
+  turn, and `qwen3:4b` took **490s** for that single arrival call. Set
+  `OPENROUTER_API_KEY` to move. The classification call is not affected — it
+  honored its schema on `gemma3:12b` first try, including the per-turn enum.
+  This is also why the loop's **talk** path was verified end to end in a
+  running browser session against ollama and the **move** path was not: the
+  classification and the arrival call were each verified live and separately,
+  but the composition of the two is covered by `test/models/playthrough/turn_test.rb`
+  rather than by a live playthrough. A single local arrival is ~8 minutes of
+  CPU. Anyone with a key should walk the loop once and delete this paragraph.
 - **Local models are slow, and they run on CPU here.** `ollama ps` reports
   `size_vram: 0`, so nothing is GPU-accelerated on this machine. Measured on a
   small 3-field schema: `gemma3:12b` ≈ 39s, `qwen3:8b` ≈ 92s (it burns the budget
@@ -283,11 +355,6 @@ owes, roughly in order:
   `Location::Generator#write_exits!` directly. Harmless until the game loop
   resolves movement against `Location#exits`; give it a real completeness
   marker before then.
-- **`transgender` is now reachable and has no pronoun rule.**
-  `Character::Generator` rolls `sex` from all four `Character.sexes` values, and
-  `Character::Schema` no longer narrows the answer back to three. The gap in
-  `InteractionAgent#narrator_instructions` below is therefore live rather than
-  theoretical.
 - **`Location#parent_location` is never written.** Every stub is created from an
   exit, and an exit says where you can walk, not what is inside what. The dead
   `parent_context` branch in `Location::Generator` is gone; the association and
@@ -297,24 +364,19 @@ owes, roughly in order:
   freestanding chat prompt whose system directive describes tools
   (`get_scene_details`, `get_universe_rules`) that do not exist. Either rewrite it
   as the narration layer over `Scene::Generator` or delete it; do not build on it.
-- **`InteractionAgent`** hardcodes `cognitivecomputations/dolphin-mixtral-8x22b`
-  and bypasses `BaseAgent` entirely. It should use `BaseAgent` so it inherits
-  model fallback. Its two-pass character→narrator structure is worth keeping.
-- **`InteractionAgent#narrator_instructions` is shadowed.** The `attr_reader`
-  on line 2 is overwritten by the two-argument method below it, so the
-  `@narrator_instructions` set during `ask` is unreachable and calling the
-  reader raises on arity. Pinned in `test/agents/interaction_agent_test.rb`.
-- **The narrator prompt interpolates the enum key, not the value.**
-  `Character#sex` is an ActiveRecord enum, so it reads back `"non_binary"`
-  while the pronoun rule two lines below keys on `"non-binary"`; `transgender`
-  has no pronoun rule at all. Same file, pinned the same way.
+- **A talk turn is not durable, where a narrated turn is.** `Scene::Narrator`
+  persists partial prose in an `ensure`, so closing the tab mid-stream keeps
+  what was written. `Playthrough::Turn#talk_to` has no equivalent: the
+  character pass has already been paid for and the narration is streaming, and
+  a disconnect loses both calls with nothing recorded. Deliberately not fixed
+  with a second bespoke `ensure` -- the job-and-cable stage deletes that shape
+  for the narrator too, and should cover both paths at once.
 - **`Narrator::DEFAULT_MODEL` does not resolve.**
   `cognitivecomputations/dolphin-mixtral-8x22b` is in neither the bundled
   registry nor the seeded `models` table, so `Narrator.new` raises
   `RubyLLM::ModelNotFoundError`. Pre-existing — it failed on ruby_llm 1.8.2 too.
-  `InteractionAgent` hardcodes the same model.
-- **`BaseAgent::LOCAL_MODEL_OPTIONS` do not set `assume_model_exists`**, and
-  ollama models are not in the registry, so local-only runs fail to resolve.
+  `app/models/narrator.rb` is now the only place left holding that model id;
+  `InteractionAgent` went through `BaseAgent` and stopped hardcoding it.
 - The migration to the new `acts_as` API left `chats.model_id_string` and
   `messages.model_id_string` behind — dead columns the generator's `down` step
   needs. Drop them if the migration is ever squashed.

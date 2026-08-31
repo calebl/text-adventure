@@ -4,6 +4,14 @@
 <div class="preface"><%= @playthrough.story.preface %></div>
 <hr>
 
+<%# The opening room is realized before a playthrough can start, but nothing
+    has narrated arriving in it -- a playthrough begins with no scene at all.
+    Its own description is what the player reads instead, until the first turn
+    puts something in the log. %>
+<% if @scenes.empty? && @playthrough.current_location&.realized? %>
+  <div class="turn"><%= @playthrough.current_location.description %></div>
+<% end %>
+
 <%= render partial: "turns/turn", collection: @scenes, as: :turn %>
 
 <% if @command %>
@@ -20,6 +28,16 @@
     es.addEventListener("done", function () { es.close(); window.location = "<%= playthrough_path(@playthrough) %>"; });
   </script>
 <% else %>
+  <%# Where the player is and what leads out of it. Not decoration: the exits
+      are the move targets Playthrough::Classifier will accept, so a player
+      who cannot read them is guessing at the one command that matters. %>
+  <p class="place">
+    <% if @playthrough.current_location %>
+      You are in <strong><%= @playthrough.current_location.name %></strong>.
+      Ways out: <%= @exits.any? ? @exits.map(&:name).to_sentence : "none that you can see." %>
+    <% end %>
+  </p>
+
   <%= form_with url: playthrough_turns_path(@playthrough) do |form| %>
     <%= form.text_field :command, autofocus: true, autocomplete: "off", placeholder: "what do you do?" %>
     <%= form.submit "Go" %>

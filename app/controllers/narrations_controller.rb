@@ -1,10 +1,16 @@
 class NarrationsController < ApplicationController
   include ActionController::Live
 
-  # Streams one turn of narration as server-sent events. The consumer is six
-  # lines of `EventSource` in the play page; Turbo Streams over Action Cable is
-  # a later stage, and Scene::Narrator takes a block precisely so that swap
-  # needs to touch nothing else.
+  # Streams one turn as server-sent events. The turn itself -- classifying what
+  # the player typed, moving them, narrating what they find -- belongs to
+  # `Playthrough::Turn`; this controller's entire job is to forward the chunks
+  # it yields. Turbo Streams over Action Cable is a later stage, and the block
+  # is the seam that makes that swap touch nothing but the consumer.
+  #
+  # A move is slower than a narrated turn and does not stream: realizing a room
+  # is two schema'd calls, and the arrival is a third, so the player watches
+  # the cursor for as long as that takes and then gets the paragraph at once.
+  # The job-and-cable stage is what fixes the waiting, not this file.
   def show
     playthrough = Playthrough.find(params[:playthrough_id])
     command = params[:command].to_s.strip
@@ -21,14 +27,15 @@ class NarrationsController < ApplicationController
     # during the four to six seconds of prompt processing that follow.
     sse.write({ ok: true }, event: "open")
 
-    Scene::Narrator.new(playthrough).narrate(command) do |chunk|
+    Playthrough::Turn.new(playthrough).play(command) do |chunk|
       sse.write({ t: chunk }, event: "token")
     end
 
     sse.write({ ok: true }, event: "done")
   rescue ActionController::Live::ClientDisconnected
     # The player closed the tab or reloaded. Scene::Narrator has already
-    # persisted whatever it had, so there is nothing to do but stop.
+    # persisted whatever it had, and a move persists before it yields, so there
+    # is nothing to do but stop.
     Rails.logger.info { "Narration client disconnected" }
   rescue => e
     Rails.logger.error { "Narration failed: #{e.class}: #{e.message}" }
