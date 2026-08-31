@@ -77,6 +77,10 @@ class PlaythroughsController < ApplicationController
   # The turn log, oldest first. Scenes are a `previous_scene` linked list, so
   # walking back from the playthrough's current scene gives this playthrough's
   # turns and not some other playthrough's.
+  #
+  # `interactions` is preloaded because the turn partial reads it on every
+  # scene to name who the player was talking to, and all but the talk turns
+  # have none.
   def scene_log(playthrough)
     scenes = []
     scene = playthrough.current_scene
@@ -85,6 +89,10 @@ class PlaythroughsController < ApplicationController
       scenes.unshift(scene)
       scene = scene.previous_scene
     end
+
+    ActiveRecord::Associations::Preloader.new(
+      records: scenes, associations: { interactions: :character }
+    ).call
 
     scenes
   end

@@ -32,19 +32,30 @@ timestamped moment in a location. See the persistence model section in
   model selection and rotates to the next model when a call fails. Do not build
   a bare `RubyLLM::Chat` in new code.
 - All LLM calls use structured output via `RubyLLM::Schema`. Schemas live
-  alongside the model they populate (`app/models/universe/physical_schema.rb`).
-- **One documented exception, and it is one class: `Scene::Narrator`.** It asks
-  unschema'd because structured output and token streaming are mutually
-  exclusive here. With a schema attached the model emits JSON, so a player
-  watching the stream sees `{\n  "description": "The doorway...` arrive a
-  character at a time (and the call runs ~4x longer). The narrator answers what
-  the player *typed*, which is the only thing they read live, so it streams and
-  stays plain. Do not "fix" it by giving it a schema.
-  **`Scene::Generator` is its sibling, not a second copy of it.** It narrates
-  walking *into* a place, which is a record rather than a turn, so it is
-  schema'd like everything else and returns a `Scene` instead of streaming. If
-  you find yourself giving one of them the other's job, the two classes have
-  drifted — keep the line at "answering a command" versus "writing a moment".
+  alongside the model they populate (`app/models/universe/physical_schema.rb`),
+  and are usually a declared class. `Playthrough::IntentSchema` is a factory
+  instead, because its `target` is an enum over the exits and people in front
+  of the player, which is only known per turn.
+- **One documented exception, and the line is what the call PRODUCES, not which
+  class makes it: prose the player watches arrive streams and stays
+  unschema'd; anything that fills a record stays schema'd.** Structured output
+  and token streaming are mutually exclusive here — with a schema attached the
+  model emits JSON, so a player watching the stream sees
+  `{\n  "description": "The doorway...` arrive a character at a time (and the
+  call runs ~4x longer). Two calls are on the prose side of that line, and only
+  two: `Scene::Narrator`, which answers what the player *typed*, and
+  `InteractionAgent`'s second pass, which turns a character's reaction into
+  prose. Note the shape of the second one — the same turn's *structured* half
+  (`Interaction::Schema`, five fields) is a separate schema'd call, so nothing
+  a record needs is left to prose. Do not "fix" either by giving it a schema,
+  and do not add a third without that same split.
+  **`Scene::Generator` is `Scene::Narrator`'s sibling, not a second copy of
+  it.** It narrates walking *into* a place, which is a record rather than a
+  turn, so it is schema'd like everything else and returns a `Scene` instead of
+  streaming. If you find yourself giving one of them the other's job, the two
+  classes have drifted — today the line is "answering a command" versus
+  "writing a moment". A refactor to split them by *facts* versus *story*
+  instead is filed as its own work item; until it lands, keep the current line.
 - **Never let `ruby_llm-schema` resolve to 1.x.** Its 1.0.0 is a deprecation
   shim forwarding to the renamed `schematist` gem. `ruby_llm` itself still
   depends on `ruby_llm-schema ~> 0` and contains no reference to `schematist`,
@@ -128,6 +139,37 @@ timestamped moment in a location. See the persistence model section in
   `test/lib/seeded_worlds_test.rb` is the only test that reads them; generator
   tests keep running against `FakeAgent`.
 
+### Playing the world
+
+- **The loop is `Playthrough::Turn`, and the browser's whole share of it is a
+  string and a block.** `NarrationsController` forwards the chunks the block is
+  yielded; it does not know which branch the turn took. Keep it that way — the
+  block is also the seam that makes the Turbo Streams swap touch only the
+  consumer.
+- The block is yielded **text**, not RubyLLM chunk objects. `Scene::Narrator`
+  and `InteractionAgent` both unwrap before yielding; a schema'd branch yields
+  its finished paragraph in one piece because it cannot stream at all.
+- **`Playthrough::Classifier` resolves names back to records itself**, next to
+  the candidate list it is the inverse of. It offers the model a closed enum of
+  the room's exits and its cast, so an answer either names a record that exists
+  or names `nothing`. Do not move resolution into the loop and do not open the
+  enum to free text: a fuzzy matcher on this seam guesses about where the
+  player is standing.
+- A classification the loop cannot act on falls through to `Scene::Narrator`,
+  which narrates the attempt. Being unable to do a thing is part of the game;
+  silently doing a different thing is not.
+- **Who is standing in a room is answered in one place**, `Scene::Generator.characters_present`,
+  because the classifier must accept exactly the people the arrival paragraph
+  introduced. It reads the last scene in that location that recorded *anyone* —
+  only an arrival records a cast, so reading the plain latest scene emptied the
+  room after any narrated turn.
+- **Tools on the narrator were evaluated and rejected for movement** (see the
+  ROADMAP): `gemma3:12b`, first in `LOCAL_MODEL_OPTIONS`, has no tool
+  capability at all, and a model that cannot call tools does not fail — it
+  narrates walking through a door and the player never moves. Tool support is
+  slated to land with the narrator creating characters, where a missed call
+  costs a record rather than the player's position.
+
 ### Testing
 
 - Generator tests **must not hit a model.** Use `FakeAgent`
@@ -180,7 +222,9 @@ bin/rails server   # then open http://localhost:3000 and play it
 ```
 
 The rake tasks build worlds; the browser only plays them. There is no
-`rake game:play` and there is not meant to be.
+`rake game:play` and there is not meant to be — the loop lives in
+`Playthrough::Turn`, so a rake front end would be a second UI to maintain for
+no new capability.
 
 ## The browser interface
 

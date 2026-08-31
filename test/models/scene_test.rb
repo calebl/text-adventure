@@ -74,6 +74,20 @@ class SceneTest < ActiveSupport::TestCase
     assert_includes character.scenes, @scene
   end
 
+  # Written by the talk branch of the game loop. Nullified rather than
+  # destroyed: an Interaction belongs to its character first and to the scene
+  # only optionally, so losing the moment must not lose the record of it.
+  test "should have many interactions and nullify them when destroyed" do
+    @scene.save!
+    character = create(:character, story: @story)
+    interaction = create(:interaction, character: character, scene: @scene, location: @location)
+
+    assert_includes @scene.interactions, interaction
+
+    @scene.destroy!
+    assert_nil interaction.reload.scene_id
+  end
+
   test "should check if has next scene" do
     @scene.save!
     assert_not @scene.has_next_scene?

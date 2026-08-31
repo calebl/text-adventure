@@ -1,1 +1,7 @@
+<%# A talk turn keeps an Interaction alongside the Scene, so the log can say
+    who the player was speaking to. Narrated and arrival turns have none. %>
+<% speakers = turn.interactions.map(&:character_name).uniq %>
+<% if speakers.any? %>
+  <p class="speaking">talking to <%= speakers.to_sentence %></p>
+<% end %>
 <div class="turn"><%= turn.description %></div>

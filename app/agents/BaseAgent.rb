@@ -5,22 +5,34 @@ class BaseAgent
 
   # Models installed locally via ollama. Ordered fastest-and-most-reliable
   # first; `rotate_model` walks down the list when a call fails.
+  #
+  # `assume_model_exists` is required, not optional: an ollama model is pulled
+  # onto the machine and listed by `ollama list`, and is in neither the registry
+  # the gem ships nor the `models` table seeded from it. Without the flag a
+  # local-only run -- no OPENROUTER_API_KEY -- raised
+  # `RubyLLM::ModelNotFoundError` before it ever reached ollama, so every one of
+  # these entries was unreachable. Keep the list matching what is actually
+  # pulled: nothing validates these names now except ollama itself.
   LOCAL_MODEL_OPTIONS = [
     {
       provider: :ollama,
-      model: "gemma3:12b"
+      model: "gemma3:12b",
+      assume_model_exists: true
     },
     {
       provider: :ollama,
-      model: "gpt-oss:20b"
+      model: "gpt-oss:20b",
+      assume_model_exists: true
     },
     {
       provider: :ollama,
-      model: "qwen3:8b"
+      model: "qwen3:8b",
+      assume_model_exists: true
     },
     {
       provider: :ollama,
-      model: "qwen3:4b"
+      model: "qwen3:4b",
+      assume_model_exists: true
     }
   ]
 
