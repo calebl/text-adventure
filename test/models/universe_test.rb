@@ -138,6 +138,33 @@ class UniverseTest < ActiveSupport::TestCase
     assert_includes details, universe.economics
   end
 
+  # Narrating arrival gets the location's own description and lore in the same
+  # prompt, and those were generated FROM the :place block -- they already say
+  # what this corner of the world looks like and who lives in it. What they do
+  # not carry is what the world permits.
+  test "arriving somewhere gets what the world allows, not what it looks like" do
+    universe = create(:universe)
+    details = universe.prompt_details(:scene)
+
+    assert_includes details, universe.physics
+    assert_includes details, universe.technology
+
+    [ :geographies, :civilizations, :politics, :history, :economics, :religion, :weapons ].each do |field|
+      assert_not_includes details, universe.public_send(field)
+    end
+    assert_not_includes details, universe.races.first.name
+  end
+
+  # If it ever needs a field :place does not have, the split is wrong: a room
+  # and the moment of walking into it should not disagree about the world.
+  test "the scene audience is a strict subset of the room audience" do
+    place = Universe::AUDIENCE_FIELDS.fetch(:place)
+    scene = Universe::AUDIENCE_FIELDS.fetch(:scene)
+
+    assert_equal [], scene - place
+    assert (place - scene).any?, "an arrival should be cheaper than building the room"
+  end
+
   # If the two ever converge this is one trimmed block with two callers, not
   # audience-specific context. Worth failing loudly rather than drifting.
   test "the room and dialogue audiences are genuinely different" do

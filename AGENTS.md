@@ -33,13 +33,18 @@ timestamped moment in a location. See the persistence model section in
   a bare `RubyLLM::Chat` in new code.
 - All LLM calls use structured output via `RubyLLM::Schema`. Schemas live
   alongside the model they populate (`app/models/universe/physical_schema.rb`).
-- **One documented exception: narration.** `Scene::Narrator` asks unschema'd,
-  because structured output and token streaming are mutually exclusive here.
-  With a schema attached the model emits JSON, so a player watching the stream
-  sees `{\n  "description": "The doorway...` arrive a character at a time (and
-  the call runs ~4x longer). Narration is the only thing a player reads live,
-  so it streams and stays plain. Everything that populates a record stays
-  schema'd. Do not "fix" `Scene::Narrator` by giving it a schema.
+- **One documented exception, and it is one class: `Scene::Narrator`.** It asks
+  unschema'd because structured output and token streaming are mutually
+  exclusive here. With a schema attached the model emits JSON, so a player
+  watching the stream sees `{\n  "description": "The doorway...` arrive a
+  character at a time (and the call runs ~4x longer). The narrator answers what
+  the player *typed*, which is the only thing they read live, so it streams and
+  stays plain. Do not "fix" it by giving it a schema.
+  **`Scene::Generator` is its sibling, not a second copy of it.** It narrates
+  walking *into* a place, which is a record rather than a turn, so it is
+  schema'd like everything else and returns a `Scene` instead of streaming. If
+  you find yourself giving one of them the other's job, the two classes have
+  drifted — keep the line at "answering a command" versus "writing a moment".
 - **Never let `ruby_llm-schema` resolve to 1.x.** Its 1.0.0 is a deprecation
   shim forwarding to the renamed `schematist` gem. `ruby_llm` itself still
   depends on `ruby_llm-schema ~> 0` and contains no reference to `schematist`,
@@ -77,9 +82,13 @@ timestamped moment in a location. See the persistence model section in
   tokens against ~2,300-token prompts, and were collapsed into the calls that
   already had the context.
 - **Send each prompt only the context it can use.** `Universe#prompt_details`
-  takes an audience (`:full`, `:character`, `:place`, `:dialogue`) because the
-  whole record is 1,584 tokens and goes out again on every room and every turn
-  of dialogue. Add a field to `Universe::AUDIENCE_FIELDS`, not to a caller.
+  takes an audience (`:full`, `:character`, `:place`, `:dialogue`, `:scene`)
+  because the whole record is 1,584 tokens and goes out again on every room and
+  every turn of dialogue. Add a field to `Universe::AUDIENCE_FIELDS`, not to a
+  caller. Before adding an audience, check that the prompt does not already
+  carry the same facts in a more specific form: `:scene` is `:place` minus
+  everything the location's own description and lore already say, which is what
+  makes it 285 tokens instead of 628.
 - **Prefer a fixed table to a prompt** where the value is one of a known set.
   `LocationConnection::DISTANCES` and `::TRAVEL_METHODS` are enums the schema
   reads directly, and `time_to_travel` is derived from them rather than asked
