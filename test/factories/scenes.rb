@@ -7,6 +7,12 @@ FactoryBot.define do
     summary { nil }
     previous_scene { nil }
 
+    # The story's opening arrival: world data rather than progress, shared by
+    # every playthrough, and deliberately not a visit -- see Scene.
+    trait :opening do
+      is_opening { true }
+    end
+
     trait :with_summary do
       summary { "The protagonist explores a new area and discovers important information" }
     end

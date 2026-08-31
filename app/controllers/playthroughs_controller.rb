@@ -17,8 +17,24 @@ class PlaythroughsController < ApplicationController
       story: story,
       character: story.protagonist,
       current_location: location,
-      current_scene: opening_scene(location)
+      current_scene: opening_scene(story, location)
     )
+
+    # THE PROTAGONIST ARRIVES NOW, and this is the only place that can say so.
+    #
+    # A world's opening arrival is written at world-building time and loaded out
+    # of a seed file, so `Scene`'s after_create deliberately does not stamp the
+    # visit for it -- stamping then would date the protagonist's presence to
+    # whenever the file was seeded, and the first walk back into the opening room
+    # would be narrated as a return after however long that was. Nobody was in
+    # the room until this request.
+    #
+    # #73 dropped this call because the scene it created here stamped the visit
+    # at exactly this moment, which made the two equivalent. That equivalence
+    # does not survive the scene moving into the world, so the explicit stamp
+    # comes back. It is also harmless on the fallback path below, where the
+    # after_create has already written the same value.
+    location.mark_protagonist_visit!
 
     # Deliberately starting a playthrough takes the session over; merely
     # looking at one (below) does not.
@@ -62,33 +78,28 @@ class PlaythroughsController < ApplicationController
     story.locations.realized.order(:id).first
   end
 
-  # The first entry in the turn log, and the reason a playthrough no longer
-  # starts with an empty one.
+  # The first entry in the turn log, and the reason a playthrough does not start
+  # with an empty one.
   #
-  # Every other room the player walks into is narrated by `Scene::Generator`.
-  # The opening room is the one arrival that never happens -- the player is
-  # simply standing in it -- so nothing had ever written its text down, and the
-  # play page read the location's own description out above the log instead.
-  # That stand-in was conditional on the log being empty, so the first turn
-  # made the opening text disappear from under the player.
+  # A world carries its own opening arrival: `rake game:new` narrates it once
+  # with `Scene::Generator.opening`, the exporter writes it into the seed file
+  # where it is hand-authored, and the loader loads it. So the normal answer
+  # here is to hand the playthrough that Scene -- no model call on the one
+  # screen a new player sees first, and real narrated prose rather than a room
+  # description standing in for an arrival nobody wrote.
   #
-  # Writing it as a `Scene` is the cheap half of the answer: no model call on
-  # the one screen a new player sees first, and the log now begins where the
-  # story begins. It is a room description rather than a narrated arrival, and
-  # that is the honest limit of it -- a world that carries its own opening
-  # arrival would replace the text here and nothing else.
+  # Every playthrough of a story starts on the SAME opening Scene, which is what
+  # makes it world rather than progress. The turn log walks backwards from
+  # `current_scene`, so two playthroughs branching off one opening still each
+  # read their own turns; `Scene#next_scenes` is plural for the forward
+  # direction that stopped being single-valued.
   #
-  # Two things fall out of it, both of them corrections:
-  #
-  #   * `Scene`'s after_create stamps `last_protagonist_visit`, so the explicit
-  #     `mark_protagonist_visit!` this method replaced is no longer needed. The
-  #     protagonist is standing here, and now a record says so.
-  #   * the first move gets a real `previous_scene`. `Scene::Generator#lead_in`
-  #     used to be told "Nothing. This is where the story opens", which was
-  #     false by then -- the story opened one room back.
-  def opening_scene(location)
-    Scene.create!(
-      story: location.story,
+  # The fallback covers a story built before opening arrivals existed, and the
+  # in-memory stories tests build: the room's own description, as #73 wrote it.
+  # That scene is per-playthrough progress, so it is NOT marked `is_opening`.
+  def opening_scene(story, location)
+    story.opening_scene || Scene.create!(
+      story: story,
       location: location,
       description: location.description,
       summary: "The story opens in #{location.name}.",

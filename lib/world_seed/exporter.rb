@@ -3,9 +3,24 @@
 # The whole graph goes out: the Universe and its races, the Story, its
 # characters (and their items), every Location the story has -- realized or
 # stub -- and the edges between them. What is deliberately left behind is
-# progress rather than world: Scenes, Playthroughs and `last_protagonist_visit`
-# are somebody's way through the world, not the world. #warnings says so out
-# loud when there is any, so nothing is dropped silently.
+# progress rather than world: Playthroughs, `last_protagonist_visit` and every
+# Scene BUT ONE are somebody's way through the world, not the world. #warnings
+# says so out loud when there is any, so nothing is dropped silently.
+#
+# THE ONE SCENE THAT CROSSES THAT LINE is the story's opening arrival, and it
+# is worth saying why, because the line is otherwise a good one. Every other
+# scene is a record of somebody having been somewhere: it exists because a
+# player walked in, it belongs to their linked list, and seeding it into a fresh
+# database would be seeding a playthrough. The opening arrival is not that. No
+# player made it happen -- it is the moment the story begins, the same for
+# everyone who ever plays it, and it is the answer to a question the world is
+# supposed to know: what does it read like to be standing here at the start.
+# Leaving it out meant the one arrival in the game nobody narrates, and a talk
+# branch that could not be reached in a seeded world because no scene recorded
+# anybody standing in the opening room.
+#
+# A Scene has no natural key, so `scenes.is_opening` is the marker and the
+# loader's key both: exactly one per story, enforced by Scene's own validation.
 #
 # Connections are stored as two directional rows per edge, both carrying the
 # same values -- LocationConnection's enums are direction-neutral precisely so
@@ -57,22 +72,35 @@ class WorldSeed::Exporter
       "format" => WorldSeed::FORMAT,
       "universe" => universe_document,
       "story" => story_document,
+      # Written directly after the story because it reads directly after the
+      # preface: these two paragraphs are the first thing any player sees, and
+      # the file should put them where somebody editing them will find them.
+      # It refers to a location and to characters the file declares further
+      # down; the loader resolves those by name after both are loaded.
+      "opening_scene" => opening_scene_document,
       "characters" => characters_document,
       "locations" => locations_document,
       "connections" => connections_document
-    }
+    }.compact
   end
 
   private
 
   # Progress is not world. Say what was left behind rather than letting a
-  # played-in story quietly export as a fresh one.
+  # played-in story quietly export as a fresh one -- and say it loudly when the
+  # one scene that IS world is missing, because the loader refuses such a file.
   def warn_about_unexported!
-    scenes = story.scenes.count
+    scenes = story.scenes.where(is_opening: false).count
     playthroughs = story.playthroughs.count
 
     @warnings << "#{scenes} scene(s) not exported: a scene is a moment in a playthrough, not part of the world." if scenes.positive?
     @warnings << "#{playthroughs} playthrough(s) not exported: seeding a world does not seed somebody's progress through it." if playthroughs.positive?
+
+    if opening_scene.nil?
+      @warnings << "no opening arrival: this story has no scene marked `is_opening`, so the file has no " \
+                   "`opening_scene` and WILL NOT LOAD. Write one by hand, or generate the story with a " \
+                   "`rake game:new` new enough to call Scene::Generator.opening."
+    end
   end
 
   # Re-exporting overwrites the file, which would throw away a header somebody
@@ -123,6 +151,29 @@ class WorldSeed::Exporter
       "preface" => text(story.preface),
       "summary" => text(story.summary)
     }
+  end
+
+  # The one Scene that is world (see the class comment). Everything on it is
+  # written by natural key -- the location and the cast by name -- because ids
+  # differ on every load. `story_timestamp` is deliberately absent: an opening
+  # arrival happens at the story's `start_time`, which the file already carries,
+  # so restating it would be a second place to edit and a second place to drift.
+  def opening_scene_document
+    scene = opening_scene
+    return nil if scene.nil?
+
+    {
+      "location" => scene.location.name,
+      "characters" => scene.characters.order(:id).map(&:fullname),
+      "description" => text(scene.description),
+      "summary" => text(scene.summary)
+    }
+  end
+
+  def opening_scene
+    return @opening_scene if defined?(@opening_scene)
+
+    @opening_scene = story.opening_scene
   end
 
   def characters_document

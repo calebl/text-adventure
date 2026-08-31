@@ -8,6 +8,12 @@ class Story < ApplicationRecord
   has_many :interactions, through: :characters
   has_many :playthroughs, dependent: :destroy
   has_one :protagonist, -> { where(is_protagonist: true) }, class_name: "Character", inverse_of: :story
+  # The arrival that opens the story, and the one Scene that is part of the
+  # WORLD rather than part of somebody's progress through it. Generated once by
+  # `rake game:new`, carried in db/seeds/worlds/*.yml, and shared by every
+  # playthrough: they all start standing in it. Nil for a story built before
+  # opening arrivals existed, which PlaythroughsController falls back for.
+  has_one :opening_scene, -> { where(is_opening: true) }, class_name: "Scene", inverse_of: :story
 
   validates :title, presence: true
   validates :genre, presence: true

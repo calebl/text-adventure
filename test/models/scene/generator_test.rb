@@ -43,7 +43,7 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
     scene, = generate(realized_location, previous_scene: previous)
 
     assert_equal previous, scene.previous_scene
-    assert_equal scene, previous.reload.next_scene
+    assert_equal [ scene ], previous.reload.next_scenes.to_a
   end
 
   test "the story's opening arrival has no previous scene" do
@@ -308,6 +308,63 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
     end
 
     assert_empty agent.prompts
+  end
+
+  # --- the story's opening arrival ----------------------------------------
+  #
+  # The one arrival that is narrated at WORLD-BUILDING time rather than when the
+  # player walks in, because the player never walks in -- they start standing in
+  # it. `rake game:new` pays for it once; the exporter carries it into the seed
+  # file; a player starting a story pays no model call at all.
+
+  test "narrates the story's opening arrival in the opening location" do
+    opening = realized_location(name: "The Salt Chapel")
+    realized_location(name: "Somewhere Later")
+    agent = FakeAgent.new(ARRIVAL)
+
+    scene = BaseAgent.stub(:new, agent) { Scene::Generator.opening(@story) }
+
+    assert scene.is_opening?
+    assert_equal opening, scene.location
+    assert_equal ARRIVAL["description"], scene.description
+    assert_nil scene.previous_scene
+    assert_equal scene, @story.reload.opening_scene
+  end
+
+  # It is the moment the story begins, and the world already holds that moment.
+  test "the opening arrival is stamped with the story's start time" do
+    realized_location
+    agent = FakeAgent.new(ARRIVAL)
+
+    scene = BaseAgent.stub(:new, agent) { Scene::Generator.opening(@story) }
+
+    assert_equal @story.start_time, scene.story_timestamp
+  end
+
+  # THE STORY-TIME HAZARD. A world can be built weeks before anybody plays it,
+  # so an opening arrival must not date the protagonist's presence to when the
+  # world was made -- see Scene#mark_location_visit.
+  test "the opening arrival does not mark the opening room as visited" do
+    opening = realized_location
+    agent = FakeAgent.new(ARRIVAL)
+
+    BaseAgent.stub(:new, agent) { Scene::Generator.opening(@story) }
+
+    assert_nil opening.reload.last_protagonist_visit
+  end
+
+  test "an ordinary arrival still marks the room as visited" do
+    location = realized_location
+
+    generate(location)
+
+    assert location.reload.last_protagonist_visit.present?
+  end
+
+  test "refuses to open a story with nowhere to open in" do
+    error = assert_raises(ArgumentError) { Scene::Generator.opening(@story) }
+
+    assert_match "no location to open in", error.message
   end
 
   # Generators raise. A rescue that returns a half-built record turns a bad
