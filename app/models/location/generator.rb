@@ -28,20 +28,42 @@ class Location::Generator
     new(location).realize!
   end
 
-  # Description, lore and the stub exits leading out, in one transaction so a
-  # location is never left half-realized with some of its exits missing.
+  # Description and lore, then the stub exits leading out -- saved in that
+  # order. The description used to be held unsaved until the exits call
+  # returned, so an exits failure threw away the more expensive of the two
+  # calls along with the cheaper one.
+  #
+  # A failure after the description lands leaves a realized room with no way
+  # out. `realize!` returns an already-realized location untouched, which is
+  # the "generate once per place" guarantee, so recovering from that means
+  # calling #write_exits! directly rather than realizing the room again.
   def realize!
     return location if location.realized?
 
+    write_detail!
+    write_exits!
+
+    location
+  end
+
+  # What the player reads on arrival, persisted immediately.
+  def write_detail!
     detail = ask(Location::DetailSchema, detail_prompt)
+
     location.description = sanitize_string(detail["description"])
     location.lore = sanitize_string(detail["lore"])
     location.detail_level = :realized
+    location.save!
 
+    location
+  end
+
+  # The ways out, as stub neighbours plus connection rows in both directions,
+  # in one transaction so a room never keeps some of its exits and not others.
+  def write_exits!
     exits = Array(ask(Location::ExitsSchema, exits_prompt)["exits"])
 
     Location.transaction do
-      location.save!
       exits.each { |attributes| connect_exit!(attributes) }
     end
 
@@ -70,7 +92,6 @@ class Location::Generator
       ## The Place
       name: #{location.name}
       teaser: #{location.teaser}
-      #{parent_context}
 
       ## Instructions
       Write this place out in full.
@@ -94,7 +115,9 @@ class Location::Generator
       - Each exit is somewhere the player can reach directly from #{location.name}
       - Give the player a reason to prefer one over another
       - Do not list #{location.name} itself
-      - Distances and travel times must be consistent with the description you just wrote
+      - Distance and travel method must be consistent with the description you
+        just wrote, and must be true in both directions -- the way back is the
+        same edge
       - Respect the stated length of each field
     PROMPT
   end
@@ -116,12 +139,6 @@ class Location::Generator
       preface: #{story.preface}
       summary: #{story.summary}
     CONTEXT
-  end
-
-  def parent_context
-    return "" if location.parent_location.nil?
-
-    "contained within: #{location.parent_location.name}"
   end
 
   def known_location_names
@@ -150,7 +167,9 @@ class Location::Generator
 
   # Connections are directional rows, so both directions are written: the
   # player has to be able to walk back the way they came, and the return trip
-  # exists before the far side is ever realized.
+  # exists before the far side is ever realized. Both rows carry the same
+  # values, which is only correct because LocationConnection's enums are
+  # direction-neutral; `time_to_travel` is derived there, not copied here.
   def connect!(from, to, attributes)
     return if LocationConnection.exists?(location: from, connected_location: to)
 
@@ -158,7 +177,6 @@ class Location::Generator
       location: from,
       connected_location: to,
       distance: sanitize_string(attributes["distance"]),
-      time_to_travel: sanitize_string(attributes["time_to_travel"]),
       travel_method: sanitize_string(attributes["travel_method"])
     )
   end
