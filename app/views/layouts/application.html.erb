@@ -19,6 +19,18 @@
       hr { border: 0; border-top: 1px solid #262b31; margin: 1.5rem 0; }
       .preface { color: #9aa3ac; font-style: italic; white-space: pre-wrap; }
       .turn { white-space: pre-wrap; margin: 0 0 1.5rem; }
+
+      /* The log dims every turn but the newest, so a player who has scrolled
+         can find where the turn they just took begins. Past turns take the
+         preface's colour; the newest keeps full-strength body colour. Colour
+         only -- the preface is italic as well, and a turn is not.
+         `:last-of-type` is the marker: no class per entry, and on a brand new
+         playthrough the opening scene is the only turn and so the newest one.
+         While a turn is streaming the newest turn is the #stream div *below*
+         the log, so the log carries `streaming` and nothing in it brightens.
+         PlaythroughsControllerTest asserts these two selectors directly. */
+      .log .turn { color: #9aa3ac; }
+      .log:not(.streaming) > .turn:last-of-type { color: #cfd3d8; }
       .command { color: #d8c07f; margin: 0 0 .35rem; }
       .speaking { color: #8b939b; margin: 0 0 .35rem; }
       .place { color: #8b939b; margin: 0 0 .75rem; }

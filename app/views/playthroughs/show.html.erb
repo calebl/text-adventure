@@ -7,8 +7,15 @@
 <%# The log starts with the opening room, written as a Scene when the
     playthrough starts (PlaythroughsController#opening_scene). It used to be
     read out above the log only while the log was empty, which is why the first
-    turn made it disappear. %>
-<%= render partial: "turns/turn", collection: @scenes, as: :turn %>
+    turn made it disappear.
+
+    One wrapper, so the stylesheet can dim every logged turn but the last one.
+    `streaming` says the newest turn is not in the log at all -- it is the
+    #stream div below, which is what the player is actually reading -- so no
+    logged turn should claim full-strength colour while it fills in. %>
+<div class="<%= class_names("log", streaming: @command) %>">
+  <%= render partial: "turns/turn", collection: @scenes, as: :turn %>
+</div>
 
 <% if @command %>
   <p class="command">&gt; <%= @command %></p>
