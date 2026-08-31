@@ -61,8 +61,9 @@ class PlaythroughsController < ApplicationController
   end
 
   def unplayable_message(story)
-    "#{story.title} has no opening location -- it was generated before " \
-      "`rake game:new` made them. Generate a new story to play."
+    "#{story.title} has no realized opening location -- either it predates " \
+      "`rake game:new` generating them, or its opening room is still a stub. " \
+      "Generate a new story to play."
   end
 
   # The turn log, oldest first. Scenes are a `previous_scene` linked list, so

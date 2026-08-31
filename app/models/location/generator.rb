@@ -18,42 +18,55 @@ class Location::Generator
     @story = location.story
   end
 
-  # The story's opening location. There is no stub to realize yet, so the model
-  # names the place from the story's own preface first, on the same
-  # conversation that then describes it.
+  # Realizes the story's opening location. Story::Generator already created it
+  # as a stub from the same call that wrote the preface, so there is nothing to
+  # name here -- only to write out in full.
   def self.opening(story)
-    generator = new(story.locations.new)
-    generator.name_from_story!
-    generator.realize!
+    location = story.opening_location
+    raise ArgumentError, "story ##{story.id} has no opening location to realize" if location.nil?
+
+    new(location).realize!
   end
 
-  # Description, lore and the stub exits leading out, in one transaction so a
-  # location is never left half-realized with some of its exits missing.
+  # Description and lore, then the stub exits leading out -- saved in that
+  # order. The description used to be held unsaved until the exits call
+  # returned, so an exits failure threw away the more expensive of the two
+  # calls along with the cheaper one.
+  #
+  # A failure after the description lands leaves a realized room with no way
+  # out. `realize!` returns an already-realized location untouched, which is
+  # the "generate once per place" guarantee, so recovering from that means
+  # calling #write_exits! directly rather than realizing the room again.
   def realize!
     return location if location.realized?
 
-    detail = ask(Location::DetailSchema, detail_prompt)
-    location.description = sanitize_string(detail["description"])
-    location.lore = sanitize_string(detail["lore"])
-    location.detail_level = :realized
-
-    exits = Array(ask(Location::ExitsSchema, exits_prompt)["exits"])
-
-    Location.transaction do
-      location.save!
-      exits.each { |attributes| connect_exit!(attributes) }
-    end
+    write_detail!
+    write_exits!
 
     location
   end
 
-  # Names the opening location from the story. Only used by .opening -- every
-  # other location arrives already named, as a stub created by its neighbour.
-  def name_from_story!
-    content = ask(Location::OpeningSchema, opening_prompt)
+  # What the player reads on arrival, persisted immediately.
+  def write_detail!
+    detail = ask(Location::DetailSchema, detail_prompt)
 
-    location.name = sanitize_string(content["name"])
-    location.teaser = sanitize_string(content["teaser"])
+    location.description = sanitize_string(detail["description"])
+    location.lore = sanitize_string(detail["lore"])
+    location.detail_level = :realized
+    location.save!
+
+    location
+  end
+
+  # The ways out, as stub neighbours plus connection rows in both directions,
+  # in one transaction so a room never keeps some of its exits and not others.
+  def write_exits!
+    exits = Array(ask(Location::ExitsSchema, exits_prompt)["exits"])
+
+    Location.transaction do
+      exits.each { |attributes| connect_exit!(attributes) }
+    end
+
     location
   end
 
@@ -72,18 +85,6 @@ class Location::Generator
     PROMPT
   end
 
-  def opening_prompt
-    <<~PROMPT
-      #{story_context}
-
-      ## Instructions
-      Name the place this story opens in. It is the room the preface above
-      describes -- do not invent a different one.
-      - Name it the way a player would refer to it, not the way a cartographer would
-      - Respect the stated length of each field
-    PROMPT
-  end
-
   def detail_prompt
     <<~PROMPT
       #{story_context}
@@ -91,7 +92,6 @@ class Location::Generator
       ## The Place
       name: #{location.name}
       teaser: #{location.teaser}
-      #{parent_context}
 
       ## Instructions
       Write this place out in full.
@@ -115,7 +115,9 @@ class Location::Generator
       - Each exit is somewhere the player can reach directly from #{location.name}
       - Give the player a reason to prefer one over another
       - Do not list #{location.name} itself
-      - Distances and travel times must be consistent with the description you just wrote
+      - Distance and travel method must be consistent with the description you
+        just wrote, and must be true in both directions -- the way back is the
+        same edge
       - Respect the stated length of each field
     PROMPT
   end
@@ -129,7 +131,7 @@ class Location::Generator
   def story_context
     <<~CONTEXT
       ## Universe Details
-      #{story.universe.prompt_details}
+      #{story.universe.prompt_details(:place)}
 
       ## Story Details
       title: #{story.title}
@@ -137,12 +139,6 @@ class Location::Generator
       preface: #{story.preface}
       summary: #{story.summary}
     CONTEXT
-  end
-
-  def parent_context
-    return "" if location.parent_location.nil?
-
-    "contained within: #{location.parent_location.name}"
   end
 
   def known_location_names
@@ -171,7 +167,9 @@ class Location::Generator
 
   # Connections are directional rows, so both directions are written: the
   # player has to be able to walk back the way they came, and the return trip
-  # exists before the far side is ever realized.
+  # exists before the far side is ever realized. Both rows carry the same
+  # values, which is only correct because LocationConnection's enums are
+  # direction-neutral; `time_to_travel` is derived there, not copied here.
   def connect!(from, to, attributes)
     return if LocationConnection.exists?(location: from, connected_location: to)
 
@@ -179,7 +177,6 @@ class Location::Generator
       location: from,
       connected_location: to,
       distance: sanitize_string(attributes["distance"]),
-      time_to_travel: sanitize_string(attributes["time_to_travel"]),
       travel_method: sanitize_string(attributes["travel_method"])
     )
   end

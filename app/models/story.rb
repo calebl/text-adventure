@@ -15,6 +15,19 @@ class Story < ApplicationRecord
   validates :summary, presence: true
   validates :start_time, presence: true
 
+  # The place the story opens in. Story::Generator creates it as a stub
+  # alongside the story, so it is the story's oldest location; realizing it is
+  # Location::Generator.opening's whole job.
+  #
+  # Reads the in-memory association before the story is saved: Story::Generator
+  # returns an unsaved story with its opening room already attached, and a
+  # relation query on an unsaved owner finds nothing.
+  def opening_location
+    return locations.first unless persisted?
+
+    locations.order(:id).first
+  end
+
   def create_character
     character = Character::Generator.new(self).generate
     if !character.save

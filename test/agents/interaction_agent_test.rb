@@ -15,7 +15,6 @@ class InteractionAgentTest < ActiveSupport::TestCase
     "pre_thought" => "Is that person talking to me?",
     "pre_feeling" => "surprised, wary",
     "action" => "She sets down the crate and squares her shoulders.",
-    "action_type" => "physical",
     "post_feeling" => "steadier",
     "post_thought" => "Say something before this gets strange."
   }.freeze
@@ -79,7 +78,7 @@ class InteractionAgentTest < ActiveSupport::TestCase
     interact do
       prompt = narrator_chat.prompts.first
 
-      CHARACTER_RESPONSE.except("action_type").each_value do |value|
+      CHARACTER_RESPONSE.each_value do |value|
         assert_includes prompt, value
       end
     end

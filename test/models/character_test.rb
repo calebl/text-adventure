@@ -189,4 +189,47 @@ class CharacterTest < ActiveSupport::TestCase
     assert_includes @character.scenes, scene
     assert_includes scene.characters, @character
   end
+
+  # Two people in one story cannot share a full name -- a player has no other
+  # handle on who they are talking to. The captain saw two characters
+  # introduced under the same name and this is the record-level guard.
+  test "rejects a second character with the same full name in the same story" do
+    first = create(:character, fullname: "Ember Lacroix")
+    duplicate = build(:character, story: first.story, fullname: "Ember Lacroix")
+
+    assert_not duplicate.valid?
+    assert_includes duplicate.errors[:fullname], "has already been taken"
+  end
+
+  test "compares full names without regard to case" do
+    first = create(:character, fullname: "Ember Lacroix")
+    duplicate = build(:character, story: first.story, fullname: "ember lacroix")
+
+    assert_not duplicate.valid?
+  end
+
+  test "the same full name in a different story is fine" do
+    create(:character, fullname: "Ember Lacroix")
+
+    assert build(:character, fullname: "Ember Lacroix").valid?
+  end
+
+  # Two people plausibly answer to "Doc" in one story. The full name is the
+  # identity; the nickname is not, and constraining it would reject a world
+  # that is only being realistic.
+  test "two characters in one story may share a nickname" do
+    first = create(:character, nickname: "Doc")
+
+    assert build(:character, story: first.story, nickname: "Doc").valid?
+  end
+
+  # The validation races; the index is what makes it true when two generations
+  # land at once. It is written on LOWER(fullname) so the database enforces
+  # exactly what the validation checks.
+  test "the database refuses a duplicate full name even past the validation" do
+    first = create(:character, fullname: "Ember Lacroix")
+    duplicate = build(:character, story: first.story, fullname: "EMBER LACROIX")
+
+    assert_raises(ActiveRecord::RecordNotUnique) { duplicate.save!(validate: false) }
+  end
 end
