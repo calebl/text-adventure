@@ -247,6 +247,55 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/talking to/, response.body)
   end
 
+  # Once the log is long enough to scroll, every turn in the same colour runs
+  # into the one before it and the player cannot find where their turn's answer
+  # starts. Past turns drop to the preface's colour; the newest keeps full
+  # body colour. The stylesheet does that off `.log > .turn:last-of-type`, so
+  # these assert that exact selector rather than a class of their own.
+  test "show marks the newest turn in the log and not the ones before it" do
+    playthrough = create(:playthrough, :in_scene)
+    first = create(:scene, story: playthrough.story, location: playthrough.current_location,
+                           description: "The door swings open.")
+    playthrough.update!(current_scene: create(:scene, story: playthrough.story,
+                                                      location: playthrough.current_location,
+                                                      description: "Rain starts falling.",
+                                                      previous_scene: first))
+
+    get playthrough_path(playthrough)
+
+    assert_select ".log:not(.streaming) > .turn", count: 2
+    assert_select ".log:not(.streaming) > .turn:last-of-type", text: "Rain starts falling."
+    assert_select ".log:not(.streaming) > .turn:last-of-type", text: "The door swings open.", count: 0
+  end
+
+  # A brand new playthrough has exactly one entry -- the opening room -- and it
+  # is both the first and the newest, so it must read at full strength rather
+  # than as an already-past turn.
+  test "show marks the opening scene as the newest turn on a fresh playthrough" do
+    story = create(:story)
+    create(:location, story: story, description: "Stalls stand under wet canvas.")
+
+    post playthroughs_path, params: { story_id: story.id }
+    get playthrough_path(story.playthroughs.last)
+
+    assert_select ".log:not(.streaming) > .turn:last-of-type",
+                  text: "Stalls stand under wet canvas."
+  end
+
+  # While a turn is streaming, the #stream div is what the player is reading,
+  # so the last persisted scene has become a *previous* turn. It sits outside
+  # the log's wrapper and the wrapper says so, which is what keeps the three
+  # states -- streaming, the redirect after it, and a plain load -- consistent.
+  test "show hands the newest turn to the stream while a command is pending" do
+    playthrough = create(:playthrough, :in_scene)
+
+    get playthrough_path(playthrough, command: "open the ledger")
+
+    assert_select ".log.streaming"
+    assert_select ".log:not(.streaming) > .turn:last-of-type", count: 0
+    assert_select "#stream.turn"
+  end
+
   test "show streams when a command is pending and otherwise offers the input" do
     playthrough = create(:playthrough)
 
