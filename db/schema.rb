@@ -93,13 +93,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_220946) do
   create_table "locations", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
+    t.string "detail_level", default: "stub", null: false
     t.datetime "last_protagonist_visit"
     t.text "lore"
     t.string "name"
     t.integer "parent_location_id"
     t.integer "story_id", null: false
+    t.text "teaser"
     t.datetime "updated_at", null: false
     t.index ["parent_location_id"], name: "index_locations_on_parent_location_id"
+    t.index ["story_id", "detail_level"], name: "index_locations_on_story_id_and_detail_level"
     t.index ["story_id"], name: "index_locations_on_story_id"
   end
 

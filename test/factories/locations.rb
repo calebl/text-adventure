@@ -2,10 +2,26 @@ FactoryBot.define do
   factory :location do
     association :story
     sequence(:name) { |n| "Location #{n}" }
+    # The default is a realized location: a place that has been written out and
+    # can be walked into. Use the :stub trait for one that has only been named.
+    detail_level { "realized" }
+    teaser { "A door stands open onto somewhere you have not been" }
     description { "A mysterious place filled with wonder and potential adventure" }
     lore { "Ancient tales speak of this place and the events that shaped its history" }
     last_protagonist_visit { nil }
     parent_location { nil }
+
+    # Named by a neighbour and nothing more -- no description, no lore. This is
+    # what an unexplored exit looks like until the player walks through it.
+    trait :stub do
+      detail_level { "stub" }
+      description { nil }
+      lore { nil }
+    end
+
+    trait :realized do
+      detail_level { "realized" }
+    end
 
     trait :indoor do
       name { "Ancient Hall" }
