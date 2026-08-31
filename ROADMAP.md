@@ -101,6 +101,18 @@ So revisiting a place reuses the persisted `Location` while creating a new
   back into a room that already exists, and +37% input on top of realizing a
   new one. The per-turn path is untouched. It writes `scenes.summary`, which
   nothing had ever written.
+- **Two playable worlds in the repo.** `bin/rails db:seed` loads every YAML file
+  in `db/seeds/worlds` — offline, idempotent, matched on natural keys — so a
+  fresh clone can be played immediately without minutes of live generation or an
+  API key. `rake 'game:export[story_id]'` dumps a generated world into that
+  format, which is what keeps the files from rotting at the first schema change;
+  the files are authored artifacts after that and are meant to be hand-edited.
+  `the-unrecorded-hour.yml` is shaped on purpose: its opening office has two
+  ways out, one of them a *realized* supply closet whose only exit is back into
+  the office. That is the dead end `Location::Generator` cannot produce on its
+  own, since it leaves every neighbour a stub and a stub has no exits at all.
+  See `db/seeds/worlds/README.md` for the format and
+  `test/lib/seeded_worlds_test.rb` for the drift guard.
 
 ### Not built yet
 

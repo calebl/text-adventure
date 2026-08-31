@@ -19,3 +19,8 @@ if defined?(RubyLLM) && RubyLLM.config.model_registry_class.present?
   Model.save_to_database
   puts "Loaded #{Model.count} models into the RubyLLM registry"
 end
+
+# The checked-in playable worlds under db/seeds/worlds. Offline and idempotent:
+# plain YAML in, database rows out, matched on natural keys so a second run
+# updates rather than duplicates. See lib/world_seed.rb.
+WorldSeed::Loader.load_all
