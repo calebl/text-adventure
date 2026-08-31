@@ -228,7 +228,8 @@ bin/rails zeitwerk:check   # app/agents/ uses PascalCase filenames; verify autol
 - `ollama serve` must be running for local generation. Installed models are
   listed in `BaseAgent::LOCAL_MODEL_OPTIONS`; keep that list matching what is
   actually pulled, or every call fails on a missing model.
-- `OPENROUTER_API_KEY` (kept in the gitignored `.envrc`) is strongly preferred
+- `OPENROUTER_API_KEY` (kept in a gitignored `.env`, loaded by `dotenv-rails`,
+  or `.envrc` for direnv users — both are gitignored) is strongly preferred
   for interactive work — local models take minutes per structured call, and on
   this machine run on CPU. `BaseAgent` uses remote models automatically when the
   key is set, working down `BaseAgent::REMOTE_MODEL_IDS` — `minimax/minimax-m3`,

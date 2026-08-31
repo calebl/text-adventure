@@ -170,6 +170,11 @@ So revisiting a place reuses the persisted `Location` while creating a new
   in that room who is standing in it), and the first `Interaction` row this app
   has ever written. The turn log names who was spoken to.
 
+- **`.env` loads.** `dotenv` was in `Gemfile.lock` only transitively via kamal,
+  so a key placed in `.env` was silently ignored by `bin/rails` and `rake`, and
+  the docs pointed only at `.envrc`. `dotenv-rails` is a direct dependency now;
+  both files work.
+
 ### Not built yet
 
 Everything left is in **Next up** below. The loop moves, talks and narrates.
