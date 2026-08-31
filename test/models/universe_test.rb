@@ -119,11 +119,21 @@ class UniverseTest < ActiveSupport::TestCase
     universe = create(:universe)
     details = universe.prompt_details(:dialogue)
 
-    assert_includes details, universe.races.first.description
+    assert_includes details, universe.races.first.name
     assert_includes details, universe.civilizations
     assert_includes details, universe.politics
     assert_includes details, universe.religion
     assert_includes details, universe.physics
+  end
+
+  # The race list was 346 of this audience's 930 tokens and went out again on
+  # every turn of every conversation, while the speaker's own race and its full
+  # description sit in the character sheet directly below it.
+  test "a speaking character gets race names without their descriptions" do
+    universe = create(:universe)
+    details = universe.prompt_details(:dialogue)
+
+    assert_not_includes details, universe.races.first.description
   end
 
   # Character::Generator states the one race it picked, with its description,

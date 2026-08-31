@@ -1,5 +1,5 @@
 namespace :character do
-  desc "Interact with the Narrator AI chatbot"
+  desc "Talk to a character from the command line"
   task :interact, [ :id ] => :environment do |t, args|
     character_id = args[:id]
 
