@@ -116,6 +116,10 @@ timestamped moment in a location. See the persistence model section in
   realized, so a stub saves. `Location::Generator#realize!` fills a stub in and
   stubs out its exits; it returns an already-realized location untouched.
   Generation happens once per place — do not add a code path that regenerates one.
+- `Scene::Generator.opening(story)` narrates the story's opening arrival once,
+  at world-building time, and marks it `is_opening`. `rake game:new` calls it so
+  a generated world and a seeded one are the same shape; without it the first
+  thing a player reads would depend on how the world was made.
 - The description is saved BEFORE the exits are asked for, so a failed exits
   call does not throw away the more expensive of the two. The cost is that a
   room can end up realized with no way out, and `realize!` will not finish it;
@@ -129,6 +133,13 @@ timestamped moment in a location. See the persistence model section in
 - `db/seeds/worlds/*.yml` are two checked-in playable worlds, loaded offline and
   idempotently by `db/seeds.rb`. `WorldSeed::Loader` matches on natural keys
   (story title, race name, character fullname, location name) — never on `id`.
+- **A world carries its own opening arrival**, as `opening_scene`. It is the one
+  `Scene` that is world rather than progress, which is a line the exporter
+  otherwise holds hard; `db/seeds/worlds/README.md` has the ruling and the two
+  defects it closes. Its natural key is `scenes.is_opening`, it takes its
+  `story_timestamp` from the story's `start_time`, and it deliberately does NOT
+  stamp `Location#last_protagonist_visit` — a world built months ago is not
+  somebody standing in a room. Do not "fix" that skip.
 - `rake 'game:export[story_id]'` writes a generated world into that format.
   Rebuild the files with it after a schema change; the format, the rules the
   loader enforces and what is deliberately not exported are in

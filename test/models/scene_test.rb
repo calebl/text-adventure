@@ -51,18 +51,33 @@ class SceneTest < ActiveSupport::TestCase
     assert_equal @scene, next_scene.previous_scene
   end
 
-  test "should have next scene relationship" do
+  # PLURAL. The story's opening arrival belongs to the world, so every
+  # playthrough of that story starts on the same Scene and every one of their
+  # first moves links back to it -- the forward direction is a branch point, and
+  # the `has_one` this replaced would have answered it with whichever
+  # playthrough's turn came back first.
+  test "should have many next scenes, because a scene can be branched from" do
     @scene.save!
 
-    next_scene = @scene.build_next_scene(
-      story: @story,
-      location: @location,
-      description: "You continue your journey",
-      story_timestamp: 1.hour.from_now
-    )
-    next_scene.save!
+    first = @scene.next_scenes.create!(story: @story, location: @location,
+                                       description: "You go left", story_timestamp: 1.hour.from_now)
+    second = @scene.next_scenes.create!(story: @story, location: @location,
+                                        description: "You go right", story_timestamp: 1.hour.from_now)
 
-    assert_equal next_scene, @scene.next_scene
+    assert_equal [ first, second ], @scene.reload.next_scenes.order(:id).to_a
+    assert_equal @scene, first.previous_scene
+  end
+
+  # Nothing in `app/` walks forward, but a scene that is destroyed must not
+  # leave its successors pointing at a row that is gone.
+  test "should nullify next scenes when destroyed" do
+    @scene.save!
+    following = @scene.next_scenes.create!(story: @story, location: @location,
+                                           description: "You continue", story_timestamp: 1.hour.from_now)
+
+    @scene.destroy!
+
+    assert_nil following.reload.previous_scene_id
   end
 
   test "should have and belong to many characters" do
@@ -88,22 +103,6 @@ class SceneTest < ActiveSupport::TestCase
     assert_nil interaction.reload.scene_id
   end
 
-  test "should check if has next scene" do
-    @scene.save!
-    assert_not @scene.has_next_scene?
-
-    next_scene = @scene.build_next_scene(
-      story: @story,
-      location: @location,
-      description: "Next scene",
-      story_timestamp: 1.hour.from_now
-    )
-    next_scene.save!
-
-    @scene.reload
-    assert @scene.has_next_scene?
-  end
-
   test "should mark location visit after creation" do
     # Check that location's last_protagonist_visit is updated
     original_visit_time = @location.last_protagonist_visit
@@ -113,5 +112,44 @@ class SceneTest < ActiveSupport::TestCase
 
     assert_not_equal original_visit_time, @location.last_protagonist_visit
     assert @location.last_protagonist_visit.present?
+  end
+
+  # THE STORY-TIME HAZARD, closed here.
+  #
+  # An opening arrival is world data: it is written when the world is BUILT and
+  # loaded out of a seed file, which can be weeks before anybody plays. Stamping
+  # the visit then would date the protagonist's presence to whenever the file was
+  # seeded, and `Scene::Generator` would narrate the player's first walk back
+  # into the opening room as a return after however long that was -- the
+  # documented wall-clock defect, amplified into something a player reads.
+  # Nobody is in the room until a playthrough starts, and
+  # PlaythroughsController#create is what says so.
+  test "an opening scene does not mark the location as visited" do
+    freeze_time do
+      travel 3.weeks
+
+      @scene.is_opening = true
+      @scene.save!
+
+      assert_nil @location.reload.last_protagonist_visit
+    end
+  end
+
+  test "a story opens exactly once" do
+    @scene.update!(is_opening: true)
+
+    second = build(:scene, :opening, story: @story, location: @location)
+
+    assert_not second.valid?
+    assert_includes second.errors[:is_opening], "is already set on another scene in this story"
+  end
+
+  test "another story may have its own opening scene" do
+    @scene.update!(is_opening: true)
+
+    other = create(:story)
+    second = build(:scene, :opening, story: other, location: create(:location, story: other))
+
+    assert second.valid?
   end
 end

@@ -115,5 +115,10 @@ The current database includes the following story-related models with proper ass
 - **Scene** → belongs to **Location**, has many **Characters** through join table
 - **Interaction** → belongs to **Character**, **Scene**, and **Location**
 - **Location** → tracks `last_protagonist_visit` timestamp updated via Scene callbacks
+  (with one deliberate exception: a `Scene` marked `is_opening` is world data
+  written before anybody plays, so it does not stamp the visit —
+  `PlaythroughsController#create` does when a player arrives)
+- **Story** → `has_one :opening_scene`, the narrated arrival the world carries
+  and every playthrough of that story starts on
 
 - All interactions with AI LLMs should use a structured output with RubyLLM::Schema

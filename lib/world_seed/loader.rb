@@ -12,6 +12,9 @@
 #                                        Location::Generator#find_or_create_stub
 #   Connection (location, connected)     unique index, written both ways
 #   Item       (character, name)
+#   Scene      (story, is_opening)       the story's one opening arrival, which
+#                                        is the only Scene that is world rather
+#                                        than progress -- see WorldSeed::Exporter
 #
 # The loader adds and updates; it does not delete rows the file no longer
 # mentions. So renaming a location in the file and re-seeding leaves the old one
@@ -49,6 +52,11 @@ class WorldSeed::Loader
       locations = load_locations!(story)
       load_connections!(locations)
       load_characters!(story, universe)
+      # Last, because it names a location AND a cast by natural key and both
+      # have to exist first. It is written near the top of the FILE, where
+      # somebody editing the prose will find it; load order and key order are
+      # not the same thing.
+      load_opening_scene!(story, locations)
       story
     end
   end
@@ -123,6 +131,43 @@ class WorldSeed::Loader
     end
   end
 
+  # The story's opening arrival: the moment the player is standing in when they
+  # start, narrated once at world-building time so nobody waits on a model call
+  # for the first screen of the game.
+  #
+  # Matched on `(story, is_opening)` -- a Scene has no natural key of its own and
+  # a story has exactly one opening, which Scene validates. `story_timestamp`
+  # comes from the story's `start_time` rather than from the file: the opening
+  # arrival happens at the moment the story begins, by definition.
+  #
+  # Creating it does NOT stamp `Location#last_protagonist_visit` (Scene skips the
+  # after_create for an opening). Seeding a world is not somebody standing in a
+  # room; `PlaythroughsController#create` stamps it when a player actually
+  # arrives, and without that skip the first walk back into the opening room
+  # would be narrated as a return after however long the file had been on disk.
+  def load_opening_scene!(story, locations)
+    attributes = opening_scene_document
+
+    scene = story.scenes.find_by(is_opening: true) || story.scenes.new(is_opening: true)
+    scene.assign_attributes(
+      location: locations.fetch(attributes.fetch("location")),
+      description: attributes.fetch("description"),
+      summary: attributes["summary"],
+      story_timestamp: story.start_time
+    )
+    scene.characters = Array(attributes["characters"]).map do |fullname|
+      story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
+    end
+    scene.save!
+
+    # The caller keeps this Story object and reads straight back out of it --
+    # `rake game:export` on a freshly loaded world does exactly that -- so the
+    # has_one has to see the row just written rather than the nil it would have
+    # cached on the way in.
+    story.association(:opening_scene).reload
+    scene
+  end
+
   # Everything checked here is a mistake a hand-edit can make. The point is to
   # name the mistake rather than let it surface as a validation error three
   # records later, or -- worse -- as a world that loads and cannot be played.
@@ -150,6 +195,29 @@ class WorldSeed::Loader
       race = attributes.fetch("race")
       raise InvalidWorld, "#{where}: character #{attributes.fetch("fullname").inspect} has race #{race.inspect}, which this universe does not have" unless race_names.include?(race)
     end
+
+    validate_opening_scene!(names, openings.first.fetch("name"))
+  end
+
+  # A format 2 world carries its own opening arrival, and it is required rather
+  # than optional on purpose: without one the first thing a player reads is the
+  # opening room's own description standing in for an arrival nobody narrated,
+  # and no scene records anybody in the room, so there is nobody in a freshly
+  # seeded world to talk to. Both are the defects this key exists to close, and
+  # a key that is usually there closes neither.
+  def validate_opening_scene!(location_names, opening_location_name)
+    scene = document["opening_scene"]
+    raise InvalidWorld, "#{where}: a world needs an `opening_scene` -- the narrated moment the story starts in" if scene.blank?
+
+    location = scene["location"]
+    raise InvalidWorld, "#{where}: the opening_scene names location #{location.inspect}, which this file does not declare" unless location_names.include?(location)
+    raise InvalidWorld, "#{where}: the opening_scene is in #{location.inspect} but the story opens in #{opening_location_name.inspect}; the player reads it standing in the opening location" unless location == opening_location_name
+    raise InvalidWorld, "#{where}: the opening_scene needs a `description` -- it is what the player reads first" if scene["description"].blank?
+
+    cast = Array(scene["characters"])
+    known = character_documents.map { |attributes| attributes.fetch("fullname") }
+    unknown = cast - known
+    raise InvalidWorld, "#{where}: the opening_scene casts #{unknown.join(", ")}, whom this file does not declare" if unknown.any?
   end
 
   def where
@@ -184,5 +252,9 @@ class WorldSeed::Loader
 
   def character_documents
     Array(document["characters"])
+  end
+
+  def opening_scene_document
+    document.fetch("opening_scene")
   end
 end

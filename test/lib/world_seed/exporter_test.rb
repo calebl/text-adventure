@@ -8,6 +8,11 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     @stub = create(:location, :stub, story: @story, name: "Somewhere Else")
     connect(@opening, @stub)
     connect(@stub, @opening)
+    # The one Scene that is world rather than progress, and the one the loader
+    # now requires. See the class comment on WorldSeed::Exporter.
+    @arrival = create(:scene, :opening, story: @story, location: @opening,
+                                        description: "The door is still swinging behind you.",
+                                        summary: "The story opens.")
   end
 
   test "exports the whole graph" do
@@ -70,6 +75,32 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     exporter.document
 
     assert_includes exporter.warnings.join("\n"), "LocationConnection::DISTANCES"
+  end
+
+  # The opening arrival is world; every other scene is somebody's way through it.
+  test "exports the opening arrival by natural key, and no timestamp" do
+    cast = create(:character, story: @story, fullname: "Someone Present")
+    @arrival.characters << cast
+
+    document = WorldSeed::Exporter.new(@story).document.fetch("opening_scene")
+
+    assert_equal "The Opening Room", document["location"]
+    assert_equal [ "Someone Present" ], document["characters"]
+    assert_equal "The door is still swinging behind you.", document["description"]
+    assert_equal "The story opens.", document["summary"]
+    assert_not document.key?("story_timestamp"), "an opening arrival happens at the story's start_time"
+  end
+
+  # A story built before opening arrivals existed exports without one, and the
+  # loader refuses such a file -- so the exporter has to say so rather than
+  # producing a file that fails three records into a seed.
+  test "warns loudly when a story has no opening arrival to export" do
+    @arrival.destroy!
+
+    exporter = WorldSeed::Exporter.new(@story)
+
+    assert_nil exporter.document["opening_scene"]
+    assert_includes exporter.warnings.join("\n"), "WILL NOT LOAD"
   end
 
   test "warns about the progress it does not export" do

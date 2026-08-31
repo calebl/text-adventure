@@ -37,7 +37,7 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     edited["story"]["genre"] = "revised genre"
     edited["locations"].first["description"] = "A revised office."
 
-    assert_no_difference [ "Story.count", "Universe.count", "Race.count", "Location.count", "LocationConnection.count", "Character.count", "Item.count" ] do
+    assert_no_difference [ "Story.count", "Universe.count", "Race.count", "Location.count", "LocationConnection.count", "Character.count", "Item.count", "Scene.count" ] do
       WorldSeed::Loader.new(edited).load!
     end
 
@@ -114,6 +114,74 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     end
   end
 
+  # The one Scene that is world rather than progress. The seed carries it so the
+  # player reads a narrated arrival on the first screen with no model call
+  # behind it, and so somebody is standing in the opening room to talk to.
+  test "loads the opening arrival with its cast" do
+    story = WorldSeed::Loader.new(document).load!
+    scene = story.opening_scene
+
+    assert scene.present?
+    assert scene.is_opening?
+    assert_equal "The Office", scene.location.name
+    assert_equal "You are still holding the stamp when the hallway goes quiet.", scene.description
+    assert_equal [ "Vesper Aal" ], scene.characters.pluck(:fullname)
+    assert_nil scene.previous_scene
+  end
+
+  # An opening arrival happens at the moment the story begins, and the world
+  # already carries that moment. Restating it in the file would be a second
+  # place to edit and a second place to drift.
+  test "the opening arrival is stamped with the story's start time" do
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_equal story.start_time, story.opening_scene.story_timestamp
+  end
+
+  # Seeding a world is not somebody standing in a room. See Scene and
+  # PlaythroughsController#create.
+  test "loading an opening arrival does not mark the opening room as visited" do
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_nil story.opening_location.last_protagonist_visit
+  end
+
+  # This is the payoff, and it is the reason the opening arrival is world data
+  # rather than something a playthrough invents: `characters_present` reads the
+  # last scene in a location that recorded anyone, so a seeded world with a cast
+  # in its opening scene has somebody to talk to on turn one. Without it the
+  # answer is the protagonist alone and Playthrough::Classifier offers no one.
+  test "a seeded world has somebody standing in the opening room" do
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_equal [ "Vesper Aal" ],
+                 Scene::Generator.characters_present(story.opening_location).map(&:fullname)
+  end
+
+  test "rejects a world with no opening arrival" do
+    without = document
+    without.delete("opening_scene")
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(without).load! }
+    assert_match(/needs an `opening_scene`/, error.message)
+  end
+
+  test "rejects an opening arrival somewhere other than the opening location" do
+    elsewhere = document
+    elsewhere["opening_scene"]["location"] = "The Closet"
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(elsewhere).load! }
+    assert_match(/the story opens in "The Office"/, error.message)
+  end
+
+  test "rejects an opening arrival casting somebody the file does not declare" do
+    ghost = document
+    ghost["opening_scene"]["characters"] << "Nobody At All"
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(ghost).load! }
+    assert_match(/Nobody At All/, error.message)
+  end
+
   test "names the file it is complaining about" do
     error = assert_raises(WorldSeed::Loader::InvalidWorld) do
       WorldSeed::Loader.new(document.merge("format" => 0), source: "db/seeds/worlds/broken.yml").load!
@@ -149,6 +217,12 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
         "start_time" => "2026-08-31T18:40:00Z",
         "preface" => "An hour is missing out of the middle of your own daybook.",
         "summary" => "A clerk works out what happened in an hour nobody wrote down."
+      },
+      "opening_scene" => {
+        "location" => "The Office",
+        "characters" => [ "Vesper Aal" ],
+        "description" => "You are still holding the stamp when the hallway goes quiet.",
+        "summary" => "The clerk notices the gap in the daybook."
       },
       "characters" => [
         {

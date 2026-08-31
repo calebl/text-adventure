@@ -6,11 +6,15 @@
 # were fixed tables and had free prose in them, three fields were cut off
 # mid-sentence by the generator's length caps, and the story had no characters
 # because Story::Generator does not make any.
+#
+# The opening_scene was written by hand too. `rake game:new` narrates one now,
+# but this world predates that, and its cast is the point: Grenn is in the room
+# from the first line, so there is somebody to talk to on turn one.
 # See db/seeds/worlds/README.md for the format and the rules the loader checks.
 #
 # Loaded offline by db/seeds.rb. No model call, no API key, no network.
 ---
-format: 1
+format: 2
 universe:
   physics: |-
     This world adheres to standard physical laws, with one exception: the city of Nocturnis, built on the ruins of an ancient war, rearranges itself every night due to the residual magical energy from the Great War. This energy, called Nocturna, is harnessed from the moon and causes buildings, streets, and landmarks to shift and change. The effects of Nocturna are limited to the city boundaries, and its influence wanes during the day, allowing the city to remain static until nightfall. Nocturna does not affect living beings directly, but prolonged exposure can cause disorientation and memory loss. The city's rearrangement follows certain patterns, often influenced by the phases of the moon, but these patterns are complex and not fully understood.
@@ -51,6 +55,13 @@ story:
     The apartment smells of boiled cabbage and lamp oil. A fine dust of plaster drifts down from the ceiling where the building groans, settling itself into its new configuration for the night. You sit at the oak table by the window, watching motes swirl in the amber light of your kerosene lamp. Across the scarred wood, a half-finished map of Nocturnis spreads out like a rumor you can't quite believe. The Larkspur Quarter, where you woke this morning, has already migrated two blocks north by your last bearings. The Bell of Saint Aravel chimes once in the distance—11 p.m., or close enough. Outside the open window, the cobblestones of Mournwell Lane breathe with a faint, silvery luminescence, rearranging themselves with the patience of something that has done this for seventy-five years. Your landlord, old Grenn, has left a note under your door demanding the overdue rent by morning, or he'll have your table and your instruments out in the lane by noon. The map is worth more than the rent. Both are due before the city forgets where it put this building.
   summary: |-
     The player is a cartographer hired by the Lunar Sovereigns to map the nightly rearrangements of the city of Nocturnis, where buildings, streets, and landmarks shift with the moon's phases due to residual magical energy called Nocturna. As they work, they uncover conspiracies within the Sovereigns, encounter the displaced peoples of the Scorch Nomads and Verdant Folk, and grapple with the disorienting effects of prolonged exposure to Nocturna, which causes memory loss. The game's tone is grounded, atmospheric, and focused on mystery and survival in a world that refuses to stay still.
+opening_scene:
+  location: 'Grenn''s Boarding House, Room 3'
+  characters: [Isbet Marrow, Grenn Ollivar]
+  description: |-
+    Your pen stops halfway through a bearing, because there is somebody breathing in the doorway. Old Grenn has come up to the third floor after dark, which in four years he has never once done, and he is holding his ledger flat against his chest like a man who means to read aloud from it. The lamp throws his shadow across the half-finished map, across the two blocks of the Larkspur Quarter you have not been able to make agree since morning. He does not say anything. Neither do you. Plaster ticks down out of the ceiling between you, and below the window Mournwell Lane has already gone silver, and somewhere under the floorboards the building begins, very slightly, to turn.
+  summary: |-
+    The story opens in Room 3 with Grenn Ollivar standing in the doorway after dark, the rent due by morning, and the city starting to move.
 characters:
 - fullname: Isbet Marrow
   race: Scorch Nomads

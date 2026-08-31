@@ -30,10 +30,37 @@ class Scene::Generator
   # `previous_scene` is the scene the player is coming from -- the linked-list
   # link, not the last scene in this location. It is optional because the
   # story's opening arrival has nothing before it.
-  def initialize(location, previous_scene: nil)
+  #
+  # `opening` marks the one arrival that belongs to the world: see .opening.
+  def initialize(location, previous_scene: nil, opening: false)
     @location = location
     @previous_scene = previous_scene
+    @opening = opening
     @story = location.story
+  end
+
+  # The story's opening arrival, narrated once at WORLD-BUILDING time.
+  #
+  # Every other room the player walks into is narrated the moment they walk in.
+  # The opening room is the one they never walk into -- they are simply standing
+  # in it -- so until this existed the first thing a new player read was the
+  # room's own description standing in for an arrival nobody wrote.
+  #
+  # Generating it here rather than at playthrough-start is the point of the
+  # whole exercise. `rake game:new` pays for it once (~1,302 in / ~200 out, the
+  # same as any arrival), WorldSeed::Exporter writes it into the seed file where
+  # it can be hand-authored -- it is the most important prose in the game -- and
+  # WorldSeed::Loader loads it with the world. A player starting a story pays no
+  # model call at all and reads real narrated prose immediately.
+  #
+  # It is marked `is_opening`, which is what makes it world rather than
+  # progress: it is exported, it is shared by every playthrough of the story,
+  # and it deliberately does NOT stamp `last_protagonist_visit` (see Scene).
+  def self.opening(story)
+    location = story.opening_location
+    raise ArgumentError, "#{story.title.inspect} has no location to open in" if location.nil?
+
+    new(location, opening: true).generate!
   end
 
   # Raises rather than returning a half-made scene: a generator that swallows a
@@ -61,8 +88,17 @@ class Scene::Generator
       characters: cast,
       description: sanitize_string(answer["description"]),
       summary: sanitize_string(answer["summary"]),
-      story_timestamp: Time.current
+      is_opening: opening?,
+      # The opening arrival IS the moment the story starts, and `start_time` is
+      # already the world's fixed in-story clock -- so it is read from the world
+      # rather than from the wall clock, and the seed file does not have to
+      # carry a timestamp that would only ever restate it.
+      story_timestamp: opening? ? story.start_time : Time.current
     )
+  end
+
+  def opening?
+    @opening
   end
 
   # Who the game knows is standing here, decided from records rather than asked

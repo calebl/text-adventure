@@ -66,10 +66,53 @@ class SeededWorldsTest < ActiveSupport::TestCase
     assert dead_end.exits.first.exits.count > 1, "the way back out of #{dead_end.name} should lead somewhere with choices"
   end
 
+  # A seeded world opens with a narrated arrival and no model call, which is the
+  # whole point of carrying it in the file: the first screen a new player sees is
+  # the one they should never be made to wait for.
+  test "every checked-in world opens with a narrated arrival" do
+    BaseAgent.stub(:new, -> { flunk "seeding a world asked a model something" }) do
+      WorldSeed::Loader.load_all(io: nil).each do |story|
+        scene = story.opening_scene
+
+        assert scene.present?, "#{story.title}: no opening arrival, so the first thing a player reads is a room description"
+        assert_equal story.opening_location, scene.location, "#{story.title}: the player reads the opening arrival standing in the opening location"
+        assert scene.description.present?, "#{story.title}: the opening arrival has nothing to read"
+        assert_equal story.start_time, scene.story_timestamp, "#{story.title}: the story opens at its own start_time"
+        assert_nil scene.previous_scene, "#{story.title}: nothing happens before the story opens"
+      end
+    end
+  end
+
+  # THE STORY-TIME HAZARD. These files sit on disk for months. If seeding stamped
+  # the visit, the first player to walk back into the opening room would be told
+  # in fiction that they had been gone that long.
+  test "seeding a world does not put anybody in its opening room" do
+    WorldSeed::Loader.load_all(io: nil).each do |story|
+      assert_nil story.opening_location.last_protagonist_visit,
+                 "#{story.title}: seeding a world is not somebody standing in a room"
+    end
+  end
+
+  # The reason the opening arrival is world data rather than something a
+  # playthrough invents. `Scene::Generator.characters_present` reads the last
+  # scene in a location that recorded anyone, so an opening arrival with a
+  # hand-authored cast is what makes `Playthrough::Classifier` offer somebody to
+  # talk to -- previously it answered with the protagonist alone in both worlds,
+  # and the talk branch was unreachable in a seeded world.
+  test "every checked-in world has somebody to talk to on turn one" do
+    WorldSeed::Loader.load_all(io: nil).each do |story|
+      present = Scene::Generator.characters_present(story.opening_location)
+      others = present - [ story.protagonist ]
+
+      assert others.any?, "#{story.title}: nobody is standing in #{story.opening_location.name}, so the talk branch cannot be reached"
+      assert_includes present, story.protagonist, "#{story.title}: the protagonist is the one arriving"
+    end
+  end
+
   test "seeding is idempotent" do
     WorldSeed::Loader.load_all(io: nil)
 
-    assert_no_difference [ "Story.count", "Universe.count", "Race.count", "Location.count", "LocationConnection.count", "Character.count", "Item.count" ] do
+    assert_no_difference [ "Story.count", "Universe.count", "Race.count", "Location.count", "LocationConnection.count", "Character.count", "Item.count", "Scene.count" ] do
       WorldSeed::Loader.load_all(io: nil)
     end
   end
