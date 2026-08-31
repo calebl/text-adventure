@@ -36,6 +36,13 @@ gem "thruster", require: false
 # gem "rack-cors"
 
 group :development, :test do
+  # Load `.env` for `bin/rails` and `rake`. It was only ever a transitive
+  # dependency (via kamal), so `.env` did NOT auto-load and a key put there was
+  # silently ignored -- which, before BaseAgent stopped rotating past a 401,
+  # meant a local model answered instead. `.envrc` / direnv still works; this
+  # makes the other half of what the docs imply true too.
+  gem "dotenv-rails"
+
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
 

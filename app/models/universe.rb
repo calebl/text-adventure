@@ -17,7 +17,14 @@ class Universe < ApplicationRecord
   #              it, not how it is governed or what it believes.
   #   :dialogue  being a person in it: who the peoples are, who holds power and
   #              what they believe -- plus physics, so a character never offers
-  #              to do something the world does not allow.
+  #              to do something the world does not allow. Race NAMES, not the
+  #              summary: `Character#interaction_instructions` states the
+  #              speaker's own race with its full description in the character
+  #              sheet immediately below this block, which is the same reason
+  #              `:character` drops the list, and a person in conversation needs
+  #              to know which peoples exist rather than three sentences on each
+  #              one's temperament. The list was 346 of this audience's 930
+  #              tokens, re-sent on every turn of every conversation.
   #   :scene     narrating arrival somewhere already written. `:place` minus
   #              everything the location record localises: the room's own
   #              description and lore were generated FROM `:place` context and
@@ -27,7 +34,7 @@ class Universe < ApplicationRecord
   #              stay -- narration that has the player strike a match in a world
   #              without fire is the failure this exists to prevent.
   #
-  # `:place` and `:dialogue` overlap only on physics and civilizations. If they
+  # `:place` and `:dialogue` overlap on physics, race names and civilizations. If they
   # ever converge, this is one trimmed block with two callers rather than
   # audience-specific context, and it should be collapsed and said out loud.
   # `:scene` is a strict subset of `:place` on purpose; if it ever needs a field
@@ -36,7 +43,7 @@ class Universe < ApplicationRecord
     full: %i[physics technology weapons geographies races civilizations history economics politics religion],
     character: %i[physics technology weapons geographies civilizations history economics politics religion],
     place: %i[physics technology geographies race_names civilizations],
-    dialogue: %i[physics races civilizations politics religion],
+    dialogue: %i[physics race_names civilizations politics religion],
     scene: %i[physics technology]
   }.freeze
 

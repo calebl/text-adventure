@@ -31,6 +31,13 @@ timestamped moment in a location. See the persistence model section in
 - All LLM calls go through `BaseAgent` (`app/agents/BaseAgent.rb`). It handles
   model selection and rotates to the next model when a call fails. Do not build
   a bare `RubyLLM::Chat` in new code.
+- **A 401 does not rotate.** `RubyLLM::UnauthorizedError` is re-raised as
+  `BaseAgent::UnauthorizedProviderError` instead, because a rejected key is
+  fixed by a key and not by a different model — and the local ollama models are
+  at the bottom of the same list, so rotating past a 401 answers from a 4k CPU
+  model with nothing saying the remote call was refused. Keep any new failure
+  class on the same side of that line: rotate on "this model failed", raise on
+  "our setup is wrong".
 - All LLM calls use structured output via `RubyLLM::Schema`. Schemas live
   alongside the model they populate (`app/models/universe/physical_schema.rb`),
   and are usually a declared class. `Playthrough::IntentSchema` is a factory
@@ -99,7 +106,15 @@ timestamped moment in a location. See the persistence model section in
   caller. Before adding an audience, check that the prompt does not already
   carry the same facts in a more specific form: `:scene` is `:place` minus
   everything the location's own description and lore already say, which is what
-  makes it 285 tokens instead of 628.
+  makes it 285 tokens instead of 628, and `:dialogue` takes race *names* only
+  because the character sheet below it already carries the speaker's own race
+  in full — which took it from 930 tokens to 606.
+- **Every generated string goes through `sanitize_string`**
+  (`SanitizesGeneratedText`). It is the one seam every model-written value
+  crosses, so guards against model output belong there and not beside the field
+  that first showed the problem — it strips emoji, and it strips the JSON
+  envelope debris (`…”}`) a response cut at a `max_length` boundary leaves
+  inside the value.
 - **Prefer a fixed table to a prompt** where the value is one of a known set.
   `LocationConnection::DISTANCES` and `::TRAVEL_METHODS` are enums the schema
   reads directly, and `time_to_travel` is derived from them rather than asked
@@ -221,7 +236,8 @@ bin/rails zeitwerk:check   # app/agents/ uses PascalCase filenames; verify autol
 - `ollama serve` must be running for local generation. Installed models are
   listed in `BaseAgent::LOCAL_MODEL_OPTIONS`; keep that list matching what is
   actually pulled, or every call fails on a missing model.
-- `OPENROUTER_API_KEY` (kept in the gitignored `.envrc`) is strongly preferred
+- `OPENROUTER_API_KEY` (kept in a gitignored `.env`, loaded by `dotenv-rails`,
+  or `.envrc` for direnv users — both are gitignored) is strongly preferred
   for interactive work — local models take minutes per structured call, and on
   this machine run on CPU. `BaseAgent` uses remote models automatically when the
   key is set, working down `BaseAgent::REMOTE_MODEL_IDS` — `minimax/minimax-m3`,

@@ -49,20 +49,28 @@ So revisiting a place reuses the persisted `Location` while creating a new
 - **Audience-specific universe context.** `Universe#prompt_details(audience)`
   sends each caller the fields it can use — `:full` for story generation
   (1,584 tok), `:character` (1,238), `:place` for building a room (628),
-  `:dialogue` for a character speaking (930), `:scene` for arriving in a room
+  `:dialogue` for a character speaking (606), `:scene` for arriving in a room
   already built (285). The whole record used to go to all of them.
+  `:dialogue` was 930 until the race list came out of it: the speaker's own
+  race sits in the character sheet directly below, and that block is re-sent on
+  every turn of every conversation. It took a whole talk turn from 2,431 input
+  tokens across three calls to 2,107.
 - **`LocationConnection` distances and travel methods come from fixed tables**
   (`DISTANCES`, `TRAVEL_METHODS`), and `time_to_travel` is derived from the two
   rather than generated. The values are direction-neutral because connections
   are written both ways from one answer.
-- `BaseAgent` — RubyLLM wrapper with model fallback on failure.
+- `BaseAgent` — RubyLLM wrapper with model fallback on failure. A rejected key
+  is the one failure it does NOT rotate past: it raises
+  `BaseAgent::UnauthorizedProviderError` naming the environment variable,
+  because rotating a 401 down to the local models answered from ollama with
+  nothing saying the remote call had been refused.
 - `rake game:new[premise]` / `rake game:list` — generate and inspect worlds.
   `game:new` now also generates and realizes the story's opening location.
 - `InteractionAgent` — two-pass character-then-narrator dialogue.
 - `ruby_llm` 1.16 + `ruby_llm-schema` 0.4, on RubyLLM's association-based
   `acts_as` API. The `models` table is the model registry now; seed it with
   `bin/rails db:seed`, or nothing resolves.
-- AI-layer test coverage: `Narrator`, `InteractionAgent`, the three schema
+- AI-layer test coverage: `InteractionAgent`, the three schema
   classes, and `Chat` / `Message` / `ToolCall` / `Model`, all stubbed at the
   RubyLLM boundary.
 - **Location stubs and on-demand realization.** `Location#detail_level` is
@@ -165,6 +173,26 @@ So revisiting a place reuses the persisted `Location` while creating a new
   the protagonist and whoever they spoke to, which is what tells the next turn
   in that room who is standing in it), and the first `Interaction` row this app
   has ever written. The turn log names who was spoken to.
+
+- **`.env` loads.** `dotenv` was in `Gemfile.lock` only transitively via kamal,
+  so a key placed in `.env` was silently ignored by `bin/rails` and `rake`, and
+  the docs pointed only at `.envrc`. `dotenv-rails` is a direct dependency now;
+  both files work.
+- **Generated text is guarded against `max_length` truncation.** A response cut
+  at a schema boundary leaves the JSON envelope inside the value — a `summary`
+  came back at exactly its 200-character cap ending in a smart quote and a
+  closing brace, persisted as narrative content. `SanitizesGeneratedText` now
+  strips a trailing run of quote/brace/bracket punctuation, and because it is
+  the one seam every generated string crosses, that covers every schema in the
+  app rather than the field it was first seen on.
+- **The dead `Narrator` is gone.** `app/models/narrator.rb` predated the schema,
+  read no database record at all, described `get_scene_details` /
+  `get_universe_rules` tools that were never implemented, and named a model id
+  that does not resolve — so `Narrator.new` raised. It went with
+  `rake narrator:interact` and its test. `Scene::Narrator`, the live narration
+  path, is unrelated and untouched. The stale `CLAUDE.md` sections that
+  described it as the primary AI interaction class and the main development
+  interface are corrected.
 
 ### Not built yet
 
@@ -404,11 +432,6 @@ owes, roughly in order:
   exit, and an exit says where you can walk, not what is inside what. The dead
   `parent_context` branch in `Location::Generator` is gone; the association and
   column remain, so a caller has to write it before any prompt can read it.
-- **`Narrator`** (`app/models/narrator.rb`) predates the schema and never reads
-  a single database record — no `Scene`, no `Location`, no `Character`. It is a
-  freestanding chat prompt whose system directive describes tools
-  (`get_scene_details`, `get_universe_rules`) that do not exist. Either rewrite it
-  as the narration layer over `Scene::Generator` or delete it; do not build on it.
 - **A talk turn is not durable, where a narrated turn is.** `Scene::Narrator`
   persists partial prose in an `ensure`, so closing the tab mid-stream keeps
   what was written. `Playthrough::Turn#talk_to` has no equivalent: the
@@ -416,12 +439,6 @@ owes, roughly in order:
   a disconnect loses both calls with nothing recorded. Deliberately not fixed
   with a second bespoke `ensure` -- the job-and-cable stage deletes that shape
   for the narrator too, and should cover both paths at once.
-- **`Narrator::DEFAULT_MODEL` does not resolve.**
-  `cognitivecomputations/dolphin-mixtral-8x22b` is in neither the bundled
-  registry nor the seeded `models` table, so `Narrator.new` raises
-  `RubyLLM::ModelNotFoundError`. Pre-existing — it failed on ruby_llm 1.8.2 too.
-  `app/models/narrator.rb` is now the only place left holding that model id;
-  `InteractionAgent` went through `BaseAgent` and stopped hardcoding it.
 - The migration to the new `acts_as` API left `chats.model_id_string` and
   `messages.model_id_string` behind — dead columns the generator's `down` step
   needs. Drop them if the migration is ever squashed.
