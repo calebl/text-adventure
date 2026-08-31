@@ -13,10 +13,11 @@ class RubyLLMSchemaEnvelopeTest < ActiveSupport::TestCase
   include SchemaAssertions
 
   SCHEMAS = [
-    Character::BaseSchema,
-    Character::BackgroundSchema,
+    Universe::PhysicalSchema,
+    Universe::SocietalSchema,
+    Story::Schema,
+    Character::Schema,
     Interaction::Schema,
-    Location::OpeningSchema,
     Location::DetailSchema,
     Location::ExitsSchema
   ].freeze
@@ -72,7 +73,7 @@ class RubyLLMSchemaEnvelopeTest < ActiveSupport::TestCase
   # Pinned because it is the payload shape a provider actually receives.
   test "the delivered payload is the provider envelope, not a bare schema" do
     chat = RubyLLM::Chat.new(provider: :ollama, model: "gemma3:12b", assume_model_exists: true)
-    chat.with_schema(Character::BaseSchema)
+    chat.with_schema(Character::Schema)
 
     delivered = chat.schema.deep_symbolize_keys
 
@@ -80,7 +81,7 @@ class RubyLLMSchemaEnvelopeTest < ActiveSupport::TestCase
     assert_equal true, delivered[:strict]
     # The provider-visible schema name comes from the Ruby class name, with the
     # namespace separator flattened so it stays a legal identifier.
-    assert_equal "Character__BaseSchema", delivered[:name]
+    assert_equal "Character__Schema", delivered[:name]
     assert_match(/\A[A-Za-z0-9_-]+\z/, delivered[:name])
   end
 
@@ -109,7 +110,7 @@ class RubyLLMSchemaEnvelopeTest < ActiveSupport::TestCase
   # ruby_llm-schema and consumed by ruby_llm, and it lives in the envelope
   # rather than inside the JSON Schema body, where it is not a valid keyword.
   test "strict is an envelope flag, not a JSON Schema keyword we set" do
-    body = json_schema_body(Character::BaseSchema)
+    body = json_schema_body(Character::Schema)
 
     assert_equal false, body["additionalProperties"]
     assert_equal true, body["strict"], "ruby_llm-schema 0.4 still emits strict inside the body"

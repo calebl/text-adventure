@@ -16,15 +16,13 @@ class Location::GeneratorTest < ActiveSupport::TestCase
       {
         "name" => "The Pump Gallery",
         "teaser" => "Something down there is still turning.",
-        "distance" => "80 meters",
-        "time_to_travel" => "3 minutes",
-        "travel_method" => "wading"
+        "distance" => "across the district",
+        "travel_method" => "swimming"
       },
       {
         "name" => "Tidewater Stair",
         "teaser" => "Steps that go up out of the water.",
-        "distance" => "20 meters",
-        "time_to_travel" => "1 minute",
+        "distance" => "adjacent",
         "travel_method" => "climbing"
       }
     ]
@@ -72,9 +70,39 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     realize(location, FakeAgent.new(DETAIL, EXITS))
 
     connection = LocationConnection.find_by(location: location, connected_location: Location.find_by(name: "The Pump Gallery"))
-    assert_equal "80 meters", connection.distance
-    assert_equal "3 minutes", connection.time_to_travel
-    assert_equal "wading", connection.travel_method
+    assert_equal "across the district", connection.distance
+    assert_equal "swimming", connection.travel_method
+  end
+
+  # The generator never sets it; LocationConnection works it out from the
+  # distance and the method, so it cannot contradict them.
+  test "the travel time is derived, not taken from the model" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL, EXITS))
+
+    connection = LocationConnection.find_by(location: location, connected_location: Location.find_by(name: "The Pump Gallery"))
+    assert_equal LocationConnection.humanize_minutes(
+      LocationConnection.travel_minutes("across the district", "swimming")
+    ), connection.time_to_travel
+  end
+
+  # Both rows are written from one answer. They used to carry the same prose,
+  # so "climb down the drainpipe to the lane below" was stored as the way up
+  # as well. The enum values are direction-neutral, so identical is correct.
+  test "the way back records the same distance and method, and is valid" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL, EXITS))
+    neighbour = Location.find_by(name: "The Pump Gallery")
+
+    out = LocationConnection.find_by(location: location, connected_location: neighbour)
+    back = LocationConnection.find_by(location: neighbour, connected_location: location)
+
+    assert back.valid?
+    assert_equal out.distance, back.distance
+    assert_equal out.travel_method, back.travel_method
+    assert_equal out.time_to_travel, back.time_to_travel
   end
 
   test "connects the exit back the way the player came" do
@@ -131,13 +159,24 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_equal [ Location::DetailSchema, Location::ExitsSchema ], agent.schemas
   end
 
+  # A room gets the place-shaped half of the universe -- what the world is made
+  # of and who lives in it -- not how it is governed or what it believes.
   test "includes the universe and the story in the prompt" do
     agent = FakeAgent.new(DETAIL, EXITS)
     realize(stub_location(name: "The Drowned Ledger"), agent)
 
-    assert_includes agent.prompts.first, @story.universe.politics
+    assert_includes agent.prompts.first, @story.universe.geographies
+    assert_includes agent.prompts.first, @story.universe.technology
     assert_includes agent.prompts.first, @story.preface
     assert_includes agent.prompts.first, "The Drowned Ledger"
+  end
+
+  test "does not spend the room prompt on how the world is governed" do
+    agent = FakeAgent.new(DETAIL, EXITS)
+    realize(stub_location(name: "The Drowned Ledger"), agent)
+
+    assert_not_includes agent.prompts.first, @story.universe.politics
+    assert_not_includes agent.prompts.first, @story.universe.economics
   end
 
   test "names the locations that already exist so exits reuse them" do
@@ -174,27 +213,76 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_raises(RubyLLM::Error) { realize(stub_location, failing) }
   end
 
-  test "leaves nothing behind when exit generation fails" do
+  # The description is the expensive call of the two. It used to be held
+  # unsaved until the exits came back, so an exits failure threw it away.
+  test "keeps the description it already paid for when exits fail" do
     location = stub_location(name: "The Drowned Ledger")
-    broken = { "exits" => [ EXITS["exits"].first.merge("distance" => nil) ] }
+    broken = { "exits" => [ EXITS["exits"].first.merge("distance" => "80 meters") ] }
 
     assert_raises(ActiveRecord::RecordInvalid) do
       realize(location, FakeAgent.new(DETAIL, broken))
     end
 
-    assert location.reload.stub?
+    assert location.reload.realized?
+    assert_equal DETAIL["description"], location.description
+  end
+
+  test "writes no partial exits when one of them fails" do
+    location = stub_location(name: "The Drowned Ledger")
+    broken = { "exits" => [ EXITS["exits"].first, EXITS["exits"].last.merge("travel_method" => "wading") ] }
+
+    assert_raises(ActiveRecord::RecordInvalid) do
+      realize(location, FakeAgent.new(DETAIL, broken))
+    end
+
+    assert_empty location.reload.exits
     assert_equal 1, @story.locations.count
   end
 
-  test "opening names, describes and realizes the story's first location" do
-    agent = FakeAgent.new(OPENING, DETAIL, EXITS)
+  # Recovering from that failure means finishing the exits, not realizing the
+  # room again -- realize! returns an already-realized location untouched.
+  test "write_exits! finishes a room whose exits call failed" do
+    location = stub_location(name: "The Drowned Ledger")
+    broken = { "exits" => [ EXITS["exits"].first.merge("distance" => "80 meters") ] }
+
+    assert_raises(ActiveRecord::RecordInvalid) { realize(location, FakeAgent.new(DETAIL, broken)) }
+
+    BaseAgent.stub(:new, FakeAgent.new(EXITS)) do
+      Location::Generator.new(location.reload).write_exits!
+    end
+
+    assert_equal 2, location.reload.exits.count
+    assert_equal DETAIL["description"], location.description
+  end
+
+  # Story::Generator already named the opening room from the same call that
+  # wrote the preface, so `.opening` only writes it out -- two calls, not three.
+  test "opening realizes the stub the story generator already created" do
+    opening = stub_location(name: "The Drowned Ledger", teaser: OPENING["teaser"])
+    agent = FakeAgent.new(DETAIL, EXITS)
+
     location = BaseAgent.stub(:new, agent) { Location::Generator.opening(@story) }
 
+    assert_equal opening, location
     assert_equal "The Drowned Ledger", location.name
     assert_equal OPENING["teaser"], location.teaser
     assert location.realized?
-    assert_equal @story, location.story
-    assert_equal [ Location::OpeningSchema, Location::DetailSchema, Location::ExitsSchema ], agent.schemas
+    assert_equal [ Location::DetailSchema, Location::ExitsSchema ], agent.schemas
     assert_equal 2, location.exits.count
+  end
+
+  test "opening realizes the story's oldest location, not a later stub" do
+    opening = stub_location(name: "The Drowned Ledger")
+    stub_location(name: "Somewhere Else")
+
+    location = BaseAgent.stub(:new, FakeAgent.new(DETAIL, EXITS)) do
+      Location::Generator.opening(@story)
+    end
+
+    assert_equal opening, location
+  end
+
+  test "opening raises rather than inventing a room the story does not have" do
+    assert_raises(ArgumentError) { Location::Generator.opening(@story) }
   end
 end
