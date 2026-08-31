@@ -4,7 +4,7 @@ FactoryBot.define do
     sequence(:fullname) { |n| "Character #{n}" }
     sequence(:nickname) { |n| "Nick#{n}" }
     age { rand(18..100) }
-    sex { %w[male female non_binary transgender].sample }
+    sex { Character.sexes.keys.sample }
     # Races are owned by the universe, so pull one from the story's universe
     # rather than inventing a name that would fail validation.
     race { story.universe.races.first || association(:race, universe: story.universe) }

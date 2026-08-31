@@ -54,10 +54,58 @@ class CharacterTest < ActiveSupport::TestCase
   end
 
   test "should accept valid sex values" do
-    %w[male female non_binary transgender].each do |sex|
+    Character.sexes.each_key do |sex|
       @character.sex = sex
       assert @character.valid?, "#{sex} should be valid"
     end
+  end
+
+  # The bug this pins: `transgender` used to be one value with no pronoun rule
+  # anywhere, and the generator could roll it. A sex the enum can hold but
+  # PRONOUNS cannot answer for is the same bug in a new shape.
+  test "every sex the enum can hold has pronouns" do
+    assert_equal Character.sexes.keys.sort, Character::PRONOUNS.keys.sort
+
+    Character.sexes.each_key do |sex|
+      @character.sex = sex
+      assert @character.pronouns.present?, "#{sex} has no pronouns"
+    end
+  end
+
+  # A sex with no entry raises rather than quietly defaulting to they/them.
+  # A silent default is how `transgender` went unnoticed with no rule of its
+  # own, they/them-ing people who use she/her or he/him.
+  test "pronouns raises for a sex it has no answer for" do
+    @character.sex = nil
+    assert_raises(KeyError) { @character.pronouns }
+  end
+
+  # The captain's rule, and the point of splitting `transgender` in two: a trans
+  # woman is a woman and a trans man is a man, so each takes exactly what any
+  # other woman or man takes.
+  test "a trans woman and a trans man take the same pronouns as any other woman or man" do
+    @character.sex = "trans_woman"
+    assert_equal "she/her/hers", @character.pronouns
+    assert_equal Character::PRONOUNS.fetch("female"), @character.pronouns
+
+    @character.sex = "trans_man"
+    assert_equal "he/him/his", @character.pronouns
+    assert_equal Character::PRONOUNS.fetch("male"), @character.pronouns
+  end
+
+  # `sex` reads back the enum key; anything interpolated into a prompt wants the
+  # stored value, which is written to read as English.
+  test "sex_label is the stored value, not the enum key" do
+    @character.sex = "trans_woman"
+    assert_equal "trans woman", @character.sex_label
+
+    @character.sex = "non_binary"
+    assert_equal "non-binary", @character.sex_label
+  end
+
+  test "the character sheet states the sex in words, not as an enum key" do
+    @character.sex = "non_binary"
+    assert_match(/sex: non-binary$/, @character.interaction_instructions)
   end
 
   test "should require race" do
