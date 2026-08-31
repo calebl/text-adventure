@@ -64,6 +64,15 @@ class BaseAgentTest < ActiveSupport::TestCase
     end
   end
 
+  # WAS A BUG, and it made every local entry unreachable. An ollama model is
+  # pulled onto the machine and is in neither the bundled registry nor the
+  # `models` table, so without the flag a run with no OPENROUTER_API_KEY raised
+  # RubyLLM::ModelNotFoundError before it ever reached ollama.
+  test "local models are marked as assumed to exist too" do
+    assert BaseAgent::LOCAL_MODEL_OPTIONS.all? { |option| option[:assume_model_exists] },
+           "an ollama model never resolves against the registry; it has to be assumed to exist"
+  end
+
   test "uses only local models without an OpenRouter key" do
     with_env("OPENROUTER_API_KEY" => nil) do
       assert_equal BaseAgent::LOCAL_MODEL_OPTIONS, BaseAgent.default_model_options

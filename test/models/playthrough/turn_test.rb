@@ -7,7 +7,9 @@ require "test_helper"
 # One FakeAgent stands in for every BaseAgent the turn builds, so the queued
 # responses are the turn's model calls in order:
 #
-#   classify -> [realize detail, realize exits] -> arrival
+#   classify -> [realize detail, realize exits] -> arrival     (a move)
+#   classify -> character reaction -> narration                (a talk)
+#   classify -> narration                                      (anything else)
 #
 # Running out of queued responses raises, which is how a test that expected a
 # call the loop did not make fails loudly instead of passing quietly.
@@ -22,6 +24,14 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   ARRIVAL = {
     "description" => "You come down into the cold and the water takes your boots.",
     "summary" => "The protagonist arrives in the Drowned Vestibule."
+  }.freeze
+
+  REACTION = {
+    "pre_thought" => "Is that person talking to me?",
+    "pre_feeling" => "surprised, wary",
+    "action" => "She sets down the crate.",
+    "post_feeling" => "steadier",
+    "post_thought" => "Say something before this gets strange."
   }.freeze
 
   def setup
@@ -51,6 +61,16 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     create(:location_connection, location: neighbour, connected_location: @here,
                                  distance: "adjacent", travel_method: "walking")
     neighbour
+  end
+
+  # Somebody the game knows is standing here: recorded in the last scene played
+  # in this location, which is how Scene::Generator answers the question. The
+  # scene doubles as the one the player is currently in.
+  def holdover(fullname, **attributes)
+    character = create(:character, story: @story, fullname: fullname, **attributes)
+    scene = create(:scene, story: @story, location: @here, characters: [ character ])
+    @playthrough.update!(current_scene: scene)
+    character
   end
 
   # --- moving into somewhere new -------------------------------------------
@@ -149,6 +169,76 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_equal "There is nothing north of here but the river wall.", scene.description
     assert_equal @here, scene.location
     assert_equal "There is nothing north of here but the river wall.", chunks.join
+  end
+
+  # --- talking -------------------------------------------------------------
+
+  test "talking to someone here keeps the moment and what the character felt" do
+    maren = holdover("Maren Vosk")
+
+    scene, chunks, = play("ask Maren about the ledger",
+                          CLASSIFY.call("talk", "Maren Vosk"),
+                          REACTION, "Maren sets down the crate and squares her shoulders.")
+
+    assert_equal "Maren sets down the crate and squares her shoulders.", scene.description
+    assert_equal @here, scene.location
+    assert_equal scene, @playthrough.reload.current_scene
+    assert_equal "Maren sets down the crate and squares her shoulders.", chunks.join
+
+    interaction = scene.interactions.sole
+    assert_equal maren, interaction.character
+    assert_equal "ask Maren about the ledger", interaction.user_input
+    assert_equal @here, interaction.location
+    REACTION.each { |field, value| assert_equal value, interaction.public_send(field) }
+  end
+
+  # The next turn in this room has to still know that person is standing in it,
+  # and `Scene::Generator#holdovers` reads exactly this.
+  test "a talk scene records the player and whoever they spoke to" do
+    maren = holdover("Maren Vosk")
+
+    scene, = play("hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, "She looks up.")
+
+    assert_equal [ @protagonist, maren ].sort_by(&:id), scene.characters.sort_by(&:id)
+  end
+
+  test "a talk scene links back to the scene the player was in" do
+    holdover("Maren Vosk")
+    left_behind = @playthrough.current_scene
+
+    scene, = play("hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, "She looks up.")
+
+    assert_equal left_behind, scene.previous_scene
+  end
+
+  test "a talk summary names who was spoken to without a second model call" do
+    holdover("Maren Vosk")
+
+    scene, _chunks, agent = play("hello", CLASSIFY.call("talk", "Maren Vosk"),
+                                 REACTION, "She looks up.")
+
+    assert_match(/spoke with Maren Vosk/, scene.summary)
+    assert_equal 3, agent.prompts.count # classify, character, narrator
+  end
+
+  test "talking to nobody is narrated instead" do
+    scene, = play("talk to the ghost", CLASSIFY.call("talk", "nothing"),
+                  "Nobody answers. The stalls are empty.")
+
+    assert_equal "Nobody answers. The stalls are empty.", scene.description
+    assert_empty scene.interactions
+  end
+
+  # Blank prose is not a turn -- Scene validates a description, and a record
+  # written from nothing is a turn the player cannot read.
+  test "a talk that narrated nothing keeps no records" do
+    holdover("Maren Vosk")
+
+    assert_no_difference [ -> { Scene.count }, -> { Interaction.count } ] do
+      scene, = play("hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, "")
+
+      assert_nil scene
+    end
   end
 
   # --- the paths that fall through to the narrator -------------------------

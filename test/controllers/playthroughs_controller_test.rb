@@ -168,6 +168,27 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil opening.reload.last_protagonist_visit
   end
 
+  # A talk turn keeps an Interaction alongside the Scene, and the log says who
+  # the player was speaking to. Nothing else in the log has one.
+  test "show names who the player was talking to on a talk turn" do
+    playthrough = create(:playthrough, :in_scene)
+    maren = create(:character, story: playthrough.story, fullname: "Maren Vosk")
+    create(:interaction, character: maren, scene: playthrough.current_scene,
+                         location: playthrough.current_location)
+
+    get playthrough_path(playthrough)
+
+    assert_match "talking to Maren Vosk", response.body
+  end
+
+  test "show says nothing about talking on a turn that was not one" do
+    playthrough = create(:playthrough, :in_scene)
+
+    get playthrough_path(playthrough)
+
+    assert_no_match(/talking to/, response.body)
+  end
+
   test "show streams when a command is pending and otherwise offers the input" do
     playthrough = create(:playthrough)
 

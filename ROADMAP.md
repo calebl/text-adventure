@@ -127,13 +127,24 @@ So revisiting a place reuses the persisted `Location` while creating a new
   66 + schema 160) on top of whatever it leads to -- an arrival is 1,302, a
   narrated turn ~849 -- so the classifier is about a third of a narrated turn
   and a quarter of an arrival.
+- **Talking to a character, kept.** The `talk` branch routes to
+  `InteractionAgent`, which now goes through `BaseAgent` on both passes -- so
+  the character pass inherits `verify_schema_honored!` and both inherit model
+  fallback, and the unresolvable
+  `cognitivecomputations/dolphin-mixtral-8x22b` it used to hardcode is gone.
+  `#ask` returns an `Exchange` of the prose and the character's five structured
+  fields instead of throwing the structured half away, so a talk turn keeps
+  **two** records: the `Scene` the player reads (with `scene.characters` set to
+  the protagonist and whoever they spoke to, which is what tells the next turn
+  in that room who is standing in it), and the first `Interaction` row this app
+  has ever written. The turn log names who was spoken to.
 
 ### Not built yet
 
-Everything left is in **Next up** below. The loop moves and narrates; talking
-still goes to the narrator rather than to `InteractionAgent`, and no turn yet
-survives a closed tab, remembers more than the last scene, or looks like
-anything (stages 4-6 of the browser plan).
+Everything left is in **Next up** below. The loop moves, talks and narrates.
+What it does not yet do is survive a closed tab, remember more than the last
+scene, or look like anything -- stage 5 (jobs, Turbo over Action Cable,
+conversation persistence) and stage 6 (visual style) of the browser plan.
 
 ## Next up
 
@@ -190,9 +201,9 @@ anything (stages 4-6 of the browser plan).
       load-or-generate seam, and there is no branch in it: `realize!` returns an
       already-realized location untouched, so the same four lines cover walking
       somewhere new and walking back.
-- [ ] On **talk**: `InteractionAgent`, which still bypasses `BaseAgent`. The
-      exchange should keep two records -- the `Scene` the player reads and the
-      `Interaction` the character felt, which nothing has ever written.
+- [x] On **talk**: `InteractionAgent`, through `BaseAgent`. The exchange keeps
+      two records -- the `Scene` the player reads and the `Interaction` the
+      character felt.
 - ~~`rake game:play[story_id]`~~ -- skipped on purpose. The browser is the
       playable interface; the rake tasks build worlds and the browser plays
       them. Do not add a `game:play` task.
@@ -210,11 +221,13 @@ anything (stages 4-6 of the browser plan).
       and `ToolCall` already call `acts_as_chat` and friends, but every agent
       builds a bare `RubyLLM::Chat`, so **nothing is ever persisted**. Quitting
       loses all conversation state.
-- [ ] **Persist an `Interaction` at all.** `InteractionAgent#ask` gets a
-      structured character response, formats it into the narrator prompt and
-      throws the object away — nothing in the app has ever created an
-      `Interaction` row. `Interaction#inner_resolution` is a second-order case
-      of the same gap: `Interaction#completed?` tests it and nothing writes it.
+- [x] **Persist an `Interaction` at all.** `InteractionAgent#ask` returns the
+      structured reaction alongside the prose now, and `Playthrough::Turn#talk_to`
+      writes the row.
+- [ ] `Interaction#inner_resolution` and `#summary` are still never written, so
+      `Interaction#completed?` is always false. `inner_resolution` is what a
+      character decided as a result of the exchange, which is a second call
+      nothing asks for yet.
 - [ ] Summarize old scenes so long playthroughs stay inside the context window.
 
 ### 5. Interface
@@ -282,6 +295,17 @@ owes, roughly in order:
   those are the bases of the keycap emoji — so "80 meters" was stored as
   "meters". It now matches `\p{Extended_Pictographic}` instead. Any text
   generated before this fix has silently lost its numbers.
+- **The move path does not work on local models, and rotation cannot reach the
+  one that does.** Measured on a real playthrough: `gemma3:12b`, `gpt-oss:20b`
+  and `qwen3:8b` all return `Scene::Schema` with `description` and no
+  `summary`, so `verify_schema_honored!` rejects all three and the turn ends in
+  an SSE `error` with the player left where they were. `qwen3:4b` returns both
+  fields — but it is 4th in `LOCAL_MODEL_OPTIONS` and `BaseAgent::MAX_ATTEMPTS`
+  is 3, so rotation stops one short of it. Raising the cap is not obviously
+  right: four attempts at up to a 600s timeout is 40 minutes for one failed
+  turn, and `qwen3:4b` took **490s** for that single arrival call. Set
+  `OPENROUTER_API_KEY` to move. The classification call is not affected — it
+  honored its schema on `gemma3:12b` first try, including the per-turn enum.
 - **Local models are slow, and they run on CPU here.** `ollama ps` reports
   `size_vram: 0`, so nothing is GPU-accelerated on this machine. Measured on a
   small 3-field schema: `gemma3:12b` ≈ 39s, `qwen3:8b` ≈ 92s (it burns the budget
@@ -316,11 +340,6 @@ owes, roughly in order:
   `Location::Generator#write_exits!` directly. Harmless until the game loop
   resolves movement against `Location#exits`; give it a real completeness
   marker before then.
-- **`transgender` is now reachable and has no pronoun rule.**
-  `Character::Generator` rolls `sex` from all four `Character.sexes` values, and
-  `Character::Schema` no longer narrows the answer back to three. The gap in
-  `InteractionAgent#narrator_instructions` below is therefore live rather than
-  theoretical.
 - **`Location#parent_location` is never written.** Every stub is created from an
   exit, and an exit says where you can walk, not what is inside what. The dead
   `parent_context` branch in `Location::Generator` is gone; the association and
@@ -330,24 +349,19 @@ owes, roughly in order:
   freestanding chat prompt whose system directive describes tools
   (`get_scene_details`, `get_universe_rules`) that do not exist. Either rewrite it
   as the narration layer over `Scene::Generator` or delete it; do not build on it.
-- **`InteractionAgent`** hardcodes `cognitivecomputations/dolphin-mixtral-8x22b`
-  and bypasses `BaseAgent` entirely. It should use `BaseAgent` so it inherits
-  model fallback. Its two-pass character→narrator structure is worth keeping.
-- **`InteractionAgent#narrator_instructions` is shadowed.** The `attr_reader`
-  on line 2 is overwritten by the two-argument method below it, so the
-  `@narrator_instructions` set during `ask` is unreachable and calling the
-  reader raises on arity. Pinned in `test/agents/interaction_agent_test.rb`.
-- **The narrator prompt interpolates the enum key, not the value.**
-  `Character#sex` is an ActiveRecord enum, so it reads back `"non_binary"`
-  while the pronoun rule two lines below keys on `"non-binary"`; `transgender`
-  has no pronoun rule at all. Same file, pinned the same way.
+- **A talk turn is not durable, where a narrated turn is.** `Scene::Narrator`
+  persists partial prose in an `ensure`, so closing the tab mid-stream keeps
+  what was written. `Playthrough::Turn#talk_to` has no equivalent: the
+  character pass has already been paid for and the narration is streaming, and
+  a disconnect loses both calls with nothing recorded. Deliberately not fixed
+  with a second bespoke `ensure` -- the job-and-cable stage deletes that shape
+  for the narrator too, and should cover both paths at once.
 - **`Narrator::DEFAULT_MODEL` does not resolve.**
   `cognitivecomputations/dolphin-mixtral-8x22b` is in neither the bundled
   registry nor the seeded `models` table, so `Narrator.new` raises
   `RubyLLM::ModelNotFoundError`. Pre-existing — it failed on ruby_llm 1.8.2 too.
-  `InteractionAgent` hardcodes the same model.
-- **`BaseAgent::LOCAL_MODEL_OPTIONS` do not set `assume_model_exists`**, and
-  ollama models are not in the registry, so local-only runs fail to resolve.
+  `app/models/narrator.rb` is now the only place left holding that model id;
+  `InteractionAgent` went through `BaseAgent` and stopped hardcoding it.
 - The migration to the new `acts_as` API left `chats.model_id_string` and
   `messages.model_id_string` behind — dead columns the generator's `down` step
   needs. Drop them if the migration is ever squashed.

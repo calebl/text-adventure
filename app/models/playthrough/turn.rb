@@ -6,8 +6,9 @@
 # to be. The browser is the only front end, and its whole share of the loop is
 # handing this class a string and a block to write chunks into.
 #
-# `move` is the interesting outcome. Everything else -- `examine`, `take`, a
-# `talk` with nobody to talk to, anything unclassifiable -- falls through to
+# `move` and `talk` are the two outcomes that do something particular.
+# Everything else -- `examine`, `take`, a move nobody can make, a `talk` with
+# nobody to talk to, anything unclassifiable -- falls through to
 # `Scene::Narrator`, which answers the raw command in prose. They are told
 # apart so the classification is honest and so the branches that need to exist
 # have somewhere to land, not because they all behave differently yet.
@@ -28,6 +29,8 @@ class Playthrough::Turn
 
     if intent.destination
       move_to(intent.destination, &block)
+    elsif intent.speaker
+      talk_to(intent.speaker, command, &block)
     else
       narrate(command, &block)
     end
@@ -57,6 +60,48 @@ class Playthrough::Turn
     playthrough.update!(current_location: destination, current_scene: scene)
 
     block&.call(scene.description)
+    scene
+  end
+
+  # Talking is the other thing a player does with a room, and it is the one turn
+  # that keeps two records rather than one:
+  #
+  #   the Scene        -- the moment, the prose the player reads, the line the
+  #                       turn log shows. `scene.characters` is the protagonist
+  #                       and whoever they spoke to, so the next turn in this
+  #                       room still knows that person is standing in it.
+  #   the Interaction  -- what the character thought and felt on either side of
+  #                       answering. The player never sees it; nothing in this
+  #                       app had ever written one.
+  #
+  # The narration streams, because it is prose the player is watching arrive.
+  # Blank prose is not a turn: `Scene` validates a description, and a record
+  # written from nothing would be a turn the player cannot read.
+  def talk_to(character, command, &block)
+    exchange = InteractionAgent.new(character).ask(command, &block)
+    return if exchange.narration.blank?
+
+    scene = Scene.create!(
+      story: playthrough.story,
+      location: playthrough.current_location,
+      previous_scene: playthrough.current_scene,
+      characters: [ playthrough.story.protagonist, character ].compact.uniq,
+      description: exchange.narration,
+      summary: "The player spoke with #{character.fullname}. #{exchange.reaction[:action]}".strip,
+      story_timestamp: Time.current
+    )
+
+    # `exchange.reaction` is keyed exactly as `Interaction::Schema` names its
+    # fields, which is the same contract the narrator prompt reads it under.
+    Interaction.create!(
+      **exchange.reaction,
+      character: character,
+      scene: scene,
+      location: playthrough.current_location,
+      user_input: command
+    )
+
+    playthrough.update!(current_scene: scene)
     scene
   end
 
