@@ -123,6 +123,86 @@ class Character::GeneratorTest < ActiveSupport::TestCase
     assert_equal "Ember Lacroix", character.fullname
   end
 
+  # The cast list asks the model not to reuse a name. That is an instruction,
+  # not a constraint -- Character's uniqueness validation and this retry are
+  # what actually enforce it. The captain saw two characters share a name.
+  test "asks again when the model returns a name the story already has" do
+    create(:character, story: @story, fullname: "Ember Lacroix")
+    agent = FakeAgent.new(SHEET, SHEET.merge("fullname" => "Wren Alcott"))
+
+    character = generate_with(agent)
+
+    assert_equal "Wren Alcott", character.fullname
+    assert_equal 2, agent.prompts.count
+    assert_match(/already belongs to another character/, agent.prompts.last)
+    assert_match(/Ember Lacroix/, agent.prompts.last)
+  end
+
+  # The retry rides the conversation the first attempt opened, so it costs a
+  # two-line follow-up rather than the whole 2,700-token prompt again.
+  test "the retry reuses the conversation rather than restating the prompt" do
+    create(:character, story: @story, fullname: "Ember Lacroix")
+    agent = FakeAgent.new(SHEET, SHEET.merge("fullname" => "Wren Alcott"))
+
+    generate_with(agent)
+
+    assert_not_includes agent.prompts.last, @story.universe.politics
+    assert_operator agent.prompts.last.length, :<, agent.prompts.first.length / 10
+  end
+
+  test "a name that differs only in case still counts as taken" do
+    create(:character, story: @story, fullname: "Ember Lacroix")
+    agent = FakeAgent.new(SHEET.merge("fullname" => "EMBER LACROIX"), SHEET.merge("fullname" => "Wren Alcott"))
+
+    assert_equal "Wren Alcott", generate_with(agent).fullname
+  end
+
+  # A name taken in a DIFFERENT story is not taken here.
+  test "only names from this story count as taken" do
+    create(:character, fullname: "Ember Lacroix")
+    agent = FakeAgent.new(SHEET)
+
+    assert_equal "Ember Lacroix", generate_with(agent).fullname
+    assert_equal 1, agent.prompts.count
+  end
+
+  test "raises rather than renaming when the retries are exhausted" do
+    create(:character, story: @story, fullname: "Ember Lacroix")
+    agent = FakeAgent.new(*Array.new(Character::Generator::MAX_NAME_ATTEMPTS) { SHEET })
+
+    error = assert_raises(Character::Generator::DuplicateNameError) { generate_with(agent) }
+
+    assert_match(/Ember Lacroix/, error.message)
+    assert_equal Character::Generator::MAX_NAME_ATTEMPTS, agent.prompts.count
+  end
+
+  test "a rejected attempt leaves no character behind" do
+    create(:character, story: @story, fullname: "Ember Lacroix")
+    agent = FakeAgent.new(SHEET, SHEET.merge("fullname" => "Wren Alcott"))
+
+    assert_no_difference -> { Character.count } do
+      generate_with(agent)
+    end
+    assert_equal 1, @story.characters.reload.count
+  end
+
+  # ~15 tokens per cast member instead of ~116. It used to serialize each
+  # existing character's whole `personality` as JSON, on every generation, for
+  # the life of the story.
+  test "names the existing cast without restating their personalities" do
+    create(:character, story: @story, fullname: "Ember Lacroix", nickname: "Cinder",
+                       personality: "Watchful, and slow to trust anyone who asks twice.")
+
+    prompt = Character::Generator.new(@story).character_generation_prompt
+
+    assert_includes prompt, "Ember Lacroix (Cinder)"
+    assert_not_includes prompt, "slow to trust anyone who asks twice"
+  end
+
+  test "says so plainly when there is no cast yet" do
+    assert_includes Character::Generator.new(@story).character_generation_prompt, "None yet."
+  end
+
   test "raises when the model call fails" do
     failing = Object.new
     def failing.with_instructions(_) = self
