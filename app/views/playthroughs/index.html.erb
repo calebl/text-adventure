@@ -1,0 +1,30 @@
+<h1>Text Adventure</h1>
+
+<% if @playthrough %>
+  <p><%= link_to "Resume #{@playthrough.story.title}", @playthrough %></p>
+  <hr>
+<% end %>
+
+<% if @stories.empty? %>
+  <p class="empty">
+    No stories yet. Generate one with:<br>
+    <code>rake 'game:new[a heist on a generation ship]'</code>
+  </p>
+<% else %>
+  <% @stories.each do |story| %>
+    <div class="story">
+      <h2><%= story.title %></h2>
+      <p><%= story.genre %> &mdash; <%= truncate(story.summary, length: 200) %></p>
+      <%# A story generated before `game:new` made opening locations has
+          nowhere to start, so it is listed but not offered. %>
+      <% if story.locations.any?(&:realized?) %>
+        <%= form_with url: playthroughs_path do |form| %>
+          <%= form.hidden_field :story_id, value: story.id %>
+          <%= form.submit "Play" %>
+        <% end %>
+      <% else %>
+        <p class="empty">No opening location -- generate a new story to play.</p>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

@@ -77,12 +77,16 @@ class BaseAgent
   # Asks the model, rotating to the next configured model when a call fails.
   # Raises once the attempts are exhausted rather than returning nothing --
   # a silent failure here reads downstream as "the AI produced garbage".
-  def ask(prompt)
+  #
+  # A block is forwarded to RubyLLM, which then streams the answer into it chunk
+  # by chunk. Rotating restarts the stream from the beginning, so a streaming
+  # caller can see the opening of a failed attempt before the retry arrives.
+  def ask(prompt, &block)
     attempts = 0
 
     begin
       attempts += 1
-      response = @chat.ask(prompt)
+      response = @chat.ask(prompt, &block)
       verify_schema_honored!(response)
       response
     rescue => e
