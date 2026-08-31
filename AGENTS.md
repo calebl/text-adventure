@@ -106,7 +106,9 @@ timestamped moment in a location. See the persistence model section in
   caller. Before adding an audience, check that the prompt does not already
   carry the same facts in a more specific form: `:scene` is `:place` minus
   everything the location's own description and lore already say, which is what
-  makes it 285 tokens instead of 628.
+  makes it 285 tokens instead of 628, and `:dialogue` takes race *names* only
+  because the character sheet below it already carries the speaker's own race
+  in full — which took it from 930 tokens to 606.
 - **Every generated string goes through `sanitize_string`**
   (`SanitizesGeneratedText`). It is the one seam every model-written value
   crosses, so guards against model output belong there and not beside the field

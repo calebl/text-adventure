@@ -49,8 +49,12 @@ So revisiting a place reuses the persisted `Location` while creating a new
 - **Audience-specific universe context.** `Universe#prompt_details(audience)`
   sends each caller the fields it can use — `:full` for story generation
   (1,584 tok), `:character` (1,238), `:place` for building a room (628),
-  `:dialogue` for a character speaking (930), `:scene` for arriving in a room
+  `:dialogue` for a character speaking (606), `:scene` for arriving in a room
   already built (285). The whole record used to go to all of them.
+  `:dialogue` was 930 until the race list came out of it: the speaker's own
+  race sits in the character sheet directly below, and that block is re-sent on
+  every turn of every conversation. It took a whole talk turn from 2,431 input
+  tokens across three calls to 2,107.
 - **`LocationConnection` distances and travel methods come from fixed tables**
   (`DISTANCES`, `TRAVEL_METHODS`), and `time_to_travel` is derived from the two
   rather than generated. The values are direction-neutral because connections
