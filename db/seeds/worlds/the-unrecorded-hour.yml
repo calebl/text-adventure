@@ -1,0 +1,144 @@
+# The Unrecorded Hour -- a seeded, playable world.
+#
+# Authored by hand rather than exported, and deliberately shaped: the opening
+# location has two ways out, and one of them -- the supply closet -- is a
+# realized dead end whose only exit is back into the office. That is the shape
+# `Location::Generator` cannot produce on its own, because it realizes the
+# opening location and leaves every neighbour a stub, and a stub has no exits
+# until somebody walks into it. Seeding it keeps permanent coverage of a room
+# with exactly one way out.
+#
+# Rebuild or reshape it with `rake 'game:export[<story_id>]'`, or just edit it.
+# See db/seeds/worlds/README.md for the format and the rules the loader checks.
+#
+# Loaded offline by db/seeds.rb. No model call, no API key, no network.
+---
+format: 1
+universe:
+  physics: |-
+    Standard physical laws hold, with one exception: in the city of Ambry and the wards around it, a thing that is not written down stops being reliably itself. The effect is slow and dull rather than dramatic. An unrecorded corridor will, over a season, start to run a few feet short. An unregistered tool loses its temper and its edge. A person whose file is closed is not struck down; they are simply harder to remember, then harder to see, then gone from the accounts of everyone who knew them, until the only evidence they existed is what somebody wrote. Nothing about this is reversible by force. It is reversible by paperwork, which is why the Registry rules here.
+  technology: |-
+    Roughly late nineteenth century, and skewed hard toward anything that copies or preserves. Ambry has pneumatic tube post between every ward office, carbon paper, wax cylinders, a functioning telegraph and no electricity in the residential wards. Presses, seals, indelible inks and lamp-lit copy rooms are the industry the city actually runs on. There are no engines to speak of outside the pumping stations, because an engine that is not maintained on a filed schedule stops working in ways engineers find distressing rather than interesting.
+  weapons: |-
+    Batons, seal-knives and single-shot service revolvers, all of them registered and most of them carried by people who have never drawn one. Physical violence is rarely the instrument of choice, because the Registry has a better one: a writ of closure ends a person's file, and a closed file ends the person over the following months. Possession of an unregistered blade is a minor offence. Possession of a blank writ is not an offence at all, since officially none exist outside the Sealed Room.
+  geographies: |-
+    Ambry sits in a wide river delta that floods twice a year. The Registry occupies the whole of the high ground: eleven storeys of ward offices, copy rooms and stacks, built in rings around a courtyard nobody has permission to cross. Below it the Middle Wards spread out in numbered blocks, each one a warren of tenements and copying shops. Beyond the levee are the flood plains, unsurveyed and therefore unrecorded, where the Unwritten live in houses that move with the water. The Registry's own basements run four floors below the flood line and are dry, which nobody has ever satisfactorily explained.
+  civilizations: |-
+    One city, one institution, and a functional caste order underneath it. The Registry employs one adult in six and files the rest. Above the clerks sit the Inspectorate, who audit; above them the Sealed Room, which nobody in this story has seen. Below everyone are the Marginalia, whose records were damaged or amended and who consequently take the work that ought not be remembered. Out past the levee the Unwritten trade fish, salt and salvage into a city that will not put their names on a receipt. Everyone in Ambry is polite, and everyone counts the days since their file was last touched.
+  history: |-
+    The Registry began four hundred years ago as a flood survey -- somebody had to write down which fields were underwater and whose they were. When the second survey found the unrecorded fields had drifted from the recorded ones, the survey stopped being about land. The Registry has never once been overthrown, though it has twice been reorganized so thoroughly that the previous version is unrecoverable. Eighty years ago the Great Amendment closed nine thousand files in a single winter for reasons the surviving minutes describe as procedural. The Marginalia date themselves from it.
+  economics: |-
+    Wages are paid in coin, but the real currency is standing in the record. A registered trade licence, a filed apprenticeship, a marriage entered in the ward book: these are the things people spend a life acquiring, because they are the things that hold. Copying is the largest industry, salt and fish the largest imports, and the Registry's stationery budget is the single biggest line in the city accounts. Unrecorded work is cheap, quick, and done by the Marginalia, who charge more than their reputation suggests because they know exactly what they are worth and nobody can remember arguing with them.
+  politics: |-
+    The Inspectorate audits the ward offices, the ward offices resent the Inspectorate, and both fear the Sealed Room, which communicates by writ and never in person. Power in Ambry is the ability to make a document exist or stop existing, so the political struggle is entirely archival: misfiling, backdating, quiet amendment, and the occasional fire in a stack room. The Unwritten have no political existence at all, which turns out to make them the only people in the delta the Registry cannot touch. Several factions inside the Registry are extremely interested in why.
+  religion: |-
+    The city's faith is called the Fair Copy, and it holds that the world is a document being transcribed, that the transcription contains errors, and that a life lived legibly is the only way to be carried into the next edition. Its clergy are archivists; its sacrament is having your name read aloud. The Marginalia keep a quieter heresy: that the errors are the only honest part of the document. The Unwritten find the whole argument funny, and say so, which is one more reason nobody in the city writes down what they say.
+  races:
+  - name: Copyists' Line
+    description: |-
+      Nine generations of clerks bred, schooled and married into the Registry's copy rooms. They are unremarkable to look at and extraordinary to watch work: a steady hand, an eye that catches an altered digit at arm's length, and a memory for filing systems that arrives before they can read. They are the most thoroughly recorded people in Ambry and the least able to leave, since a Copyist outside the Registry has a trade nobody else can use.
+  - name: Ledger-Kept
+    description: |-
+      The old registered families, continuously recorded for four hundred years without a single closed file. Continuity has left them sharply and consistently themselves -- their portraits at twenty look like them at sixty, and a Ledger-Kept in a crowd is the one your eye keeps finding. They hold the Inspectorate, most of the Registry's senior posts, and an unexamined conviction that their advantages are personal rather than clerical.
+  - name: Marginalia
+    description: |-
+      People whose records were damaged, amended or partially closed, usually in the Great Amendment and usually not on purpose. They are hard to look at directly and harder to recall afterwards; a stranger will forget a Marginalia's face inside an hour and their name inside a day. They take the work the city needs done and does not want remembered, and they keep their own private archive, which is said to be better than the Registry's.
+  - name: Unwritten
+    description: |-
+      Born past the levee, in the flood plains that were never surveyed, and therefore never entered in any book. Because they were never recorded they cannot be unrecorded, and they do not blur or fade the way city people do when a file closes. They are weathered, loud, and cheerfully unimpressed by paperwork. The Registry categorizes them as an absence rather than a people, and cannot decide whether that is a loophole or a threat.
+story:
+  title: The Unrecorded Hour
+  genre: bureaucratic mystery
+  start_time: '2026-08-31T18:40:00Z'
+  preface: |-
+    The stamp is still in your hand and the ink is still wet, and there is an hour missing out of the middle of your own daybook. Not a blank line: a clean, ruled gap between four and five o'clock, in your handwriting, with the running total carried straight across it as though nothing needed to be entered at all. You have worked Ward Office 12 for eleven years and you have never carried a total across a gap in your life. Rain is coming off the levee and going sideways past the window. Somewhere down the long hallway a door closes, and then another, nearer -- the Inspectorate does its rounds at seven and it is twenty past six. Perrin's desk across the room has been cleared to the wood, and you cannot remember when, or by whom, or -- and this is the part that has your hands cold -- whether there was ever anybody sitting at it. There is one thing in this office nobody has audited in eleven years, and its door is behind you.
+  summary: |-
+    The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.
+characters:
+- fullname: Odile Vance
+  race: Copyists' Line
+  nickname: Vance
+  age: 41
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: |-
+    Fourth-generation Copyists' Line, apprenticed at eleven, posted to Ward Office 12 at thirty and never moved because she asked not to be. She is the clerk other clerks send a queried entry to. Twice she has found an amendment in an incoming ledger that should not have been possible and twice she has filed a query about it and heard nothing back, which she has told herself is the system working slowly and has stopped believing.
+  personality: |-
+    Precise, dry, and unhurried in a way that reads as calm and is actually stubbornness. She does not raise her voice or her hopes. She will not sign something she has not read, which has cost her every promotion she was ever considered for, and she considers this a fair trade she would make again.
+  appearance: |-
+    Narrow, upright, greying at the front, with ink worn permanently into the first two fingers of her right hand and spectacles she only puts on to check somebody else's arithmetic. Her office coat is eleven years old, brushed, and mended twice at the right elbow where it meets the desk.
+  likes: A ledger that balances, the smell of a fresh cylinder of wax, rain on the window
+  dislikes: Amendments in another hand, being told a query is still open
+  fears: Signing her name to something that turns out to have closed a file
+  items:
+  - name: Ward Office 12 daybook
+    description: |-
+      A quarter-bound ledger, eleven years of her own handwriting, with a ruled and totalled gap between four and five o'clock this afternoon that she did not write.
+    properties: '{"pages": 340, "sealed": false, "registered": true}'
+- fullname: Perrin Lasco
+  race: Marginalia
+  nickname: Perrin
+  age: 29
+  sex: male
+  is_protagonist: false
+  is_companion: false
+  backstory: |-
+    Third generation Marginalia; his grandmother's file was closed in the Great Amendment and the damage came down the family with the name. Hired into Ward Office 12 four years ago for the entries nobody wanted their hand on, and good at it. He sat at the desk across from Vance, drank tea she made too strong, and kept a private index of every amendment that came through the ward -- because his people keep their own archive, and because he had begun to see a pattern in whose files got touched.
+  personality: |-
+    Quick, funny, and careful in a way people mistake for nerves. He asks one question too many and then apologizes for it. Being forgettable has taught him to be useful fast, and to write everything down twice.
+  appearance: |-
+    Slight, dark-haired, with a face that will not stay in your memory for an hour after he leaves the room -- an effect people find restful and then cannot account for. He wears a copy-room apron over ordinary clothes and keeps a second pencil behind his ear he never uses.
+  likes: An index that catches something, other people's strong tea, the last hour of a shift
+  dislikes: Being asked to repeat his name, doors that lock from one side
+  fears: Being closed quietly, on a Tuesday, with nobody able to say what was lost
+- fullname: Halkett Rowe
+  race: Ledger-Kept
+  nickname: Sub-Inspector Rowe
+  age: 52
+  sex: male
+  is_protagonist: false
+  is_companion: false
+  backstory: |-
+    Ledger-Kept, four hundred years of unbroken record behind him, and a career built on being the man the Inspectorate sends when a ward office needs to be reminded that it is audited. He has signed eleven closures. He believes, sincerely, that each was procedurally correct, and he has stopped reading the supporting files before he signs because reading them was making the work harder to do.
+  personality: |-
+    Courteous, patient, genuinely likeable, and entirely unable to imagine that the institution which made him could be the thing doing harm. He listens well. He will hear you out, agree with you, and file the writ anyway, and he will be sorry about it in a way that costs him nothing.
+  appearance: |-
+    Tall, unhurried, immaculate; the sharply consistent good looks of a family nobody has ever had to remember with effort. Grey coat, Inspectorate seal on a chain, and shoes you hear coming up the hallway a long time before he arrives.
+  likes: A ward office that has nothing to hide, being met at the door, punctuality
+  dislikes: An open query, a clerk who reads the file out loud to him
+  fears: That the Sealed Room has a file on him, and that it is thicker than it should be
+locations:
+- name: Ward Office 12
+  detail_level: realized
+  opening: true
+  teaser: Two desks, one hour missing, and the Inspectorate due at seven.
+  description: |-
+    You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.
+
+    The desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.
+  lore: |-
+    Ward Office 12 handles amendments for the flood-plain boundary: which unsurveyed acre the levee has moved past, and whose name goes against it. It is dull, unpopular work, which is why the office has never been reorganized and why its ledgers go back further, unbroken, than almost any other ward's. Clerks are posted here as a slight and stay for decades.
+
+    The office is also, on paper, four clerks. The two empty desks have been carried on the establishment for nineteen years, filled and vacated a handful of times, and no query about them has ever come back answered. Vance keeps the ledgers for all four positions out of habit. It is the kind of small, unexamined inaccuracy the Registry runs on -- and the reason a person could be removed from this room without anything in the record needing to change.
+- name: The Supply Closet
+  detail_level: realized
+  teaser: No inventory number, no audit slip, and no lock.
+  description: |-
+    You pull the narrow door and step in, and the office light follows you as far as the second shelf. It is a closet: three feet by six, shelved on both sides to the ceiling, smelling of wax, dust, and the particular sourness of old ink. Reams of ward paper, boxes of nibs, a coil of tube-carrier cord, four unopened tins of sealing wax. The floor is swept. Somebody has swept this floor.
+
+    On the lowest shelf, behind a stack of blank ward forms squared up too neatly to be accidental, is a copy-room apron folded to the size of a book, and inside it a slim private index in a hand that is not yours -- entries in two columns, dates on the left and file numbers on the right, running to within an hour of this afternoon. There is no other door. There is no window. The wall at the back is plaster over brick and the shelves are screwed to it, and the only way out of here is the doorway you came through, which frames your own office and the gas mantle hissing over two desks.
+  lore: |-
+    The closet has no inventory number because it was shelved out in 1846 as part of the works that put the filing press in, and the works order closed before the fittings schedule was raised. That is the whole of the mystery: a paperwork sequence that ran in the wrong order eighty years ago. The consequence is that no auditor has ever had a document that says this space exists, and so no auditor has ever opened the door.
+
+    Perrin Lasco worked that out in his first month, the way Marginalia work such things out, and used it for four years. It is the only square yard of the Registry's east ring that is, in the only sense that matters in Ambry, unrecorded -- which is why what he hid is still here, and why he is not.
+- name: The Long Hallway
+  detail_level: stub
+  teaser: Doors closing one after another, and shoes you can already hear.
+connections:
+- between: [Ward Office 12, The Supply Closet]
+  distance: adjacent
+  travel_method: walking
+- between: [Ward Office 12, The Long Hallway]
+  distance: adjacent
+  travel_method: walking

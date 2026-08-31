@@ -113,6 +113,21 @@ timestamped moment in a location. See the persistence model section in
   anything stored on them has to be true both ways. That is why the travel
   method is a direction-neutral enum and the travel time is derived.
 
+### Seeded worlds
+
+- `db/seeds/worlds/*.yml` are two checked-in playable worlds, loaded offline and
+  idempotently by `db/seeds.rb`. `WorldSeed::Loader` matches on natural keys
+  (story title, race name, character fullname, location name) — never on `id`.
+- `rake 'game:export[story_id]'` writes a generated world into that format.
+  Rebuild the files with it after a schema change; the format, the rules the
+  loader enforces and what is deliberately not exported are in
+  `db/seeds/worlds/README.md`.
+- The files are **authored artifacts**: edit them by hand. Re-export keeps the
+  leading comment block and loses every comment below it.
+- **Seeded worlds are not a substitute for generating one.**
+  `test/lib/seeded_worlds_test.rb` is the only test that reads them; generator
+  tests keep running against `FakeAgent`.
+
 ### Testing
 
 - Generator tests **must not hit a model.** Use `FakeAgent`
@@ -141,10 +156,11 @@ bin/rails zeitwerk:check   # app/agents/ uses PascalCase filenames; verify autol
 
 - Ruby 3.4.10 via asdf/mise (`.tool-versions`).
 - `bin/rails db:prepare && bin/rails db:seed` — the dev database is not checked
-  in, and the seed step fills the `models` table. Since the RubyLLM v1.7
-  `acts_as` migration that table **is** the model registry: RubyLLM resolves
-  model names out of it and does not fall back to the registry the gem ships
-  with, so an empty table resolves nothing. Reading it is offline; no API key.
+  in, and the seed step fills the `models` table and loads the two playable
+  worlds in `db/seeds/worlds`. Since the RubyLLM v1.7 `acts_as` migration that
+  table **is** the model registry: RubyLLM resolves model names out of it and
+  does not fall back to the registry the gem ships with, so an empty table
+  resolves nothing. Reading it is offline; no API key.
 - `ollama serve` must be running for local generation. Installed models are
   listed in `BaseAgent::LOCAL_MODEL_OPTIONS`; keep that list matching what is
   actually pulled, or every call fails on a missing model.
