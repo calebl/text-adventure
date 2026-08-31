@@ -140,32 +140,90 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_match "The Sunken Stair", response.body
   end
 
-  # A playthrough starts with no scene at all, so without this the opening room
-  # -- the one place that is already written -- is never read.
-  test "show reads out the opening location until there is a turn log" do
-    playthrough = create(:playthrough, :started)
-    playthrough.current_location.update!(description: "Stalls stand under wet canvas.")
+  # The opening room is the first thing the player reads, and it used to be
+  # rendered above the log only while the log was empty. The first turn is the
+  # first thing to put a Scene in that log, so it made the text the player had
+  # just been reading vanish. The opening is a Scene of its own now, so it
+  # stays where it was written and the log starts where the story starts.
+  test "show keeps the opening text in the log once the first turn lands" do
+    story = create(:story)
+    create(:character, story: story, is_protagonist: true)
+    create(:location, story: story, description: "Stalls stand under wet canvas.")
+
+    post playthroughs_path, params: { story_id: story.id }
+    playthrough = story.playthroughs.last
 
     get playthrough_path(playthrough)
     assert_match "Stalls stand under wet canvas.", response.body
 
-    playthrough.update!(current_scene: create(:scene, story: playthrough.story,
+    playthrough.update!(current_scene: create(:scene, story: story,
                                                       location: playthrough.current_location,
-                                                      description: "Rain starts falling."))
+                                                      description: "Rain starts falling.",
+                                                      previous_scene: playthrough.current_scene))
+
     get playthrough_path(playthrough)
-    assert_no_match(/Stalls stand under wet canvas./, response.body)
+    assert_match "Stalls stand under wet canvas.", response.body
+    assert_match "Rain starts falling.", response.body
+    assert_operator response.body.index("Stalls stand under wet canvas."), :<,
+                    response.body.index("Rain starts falling.")
   end
 
-  # `Scene`'s after_create is the only other thing that stamps a visit, and a
-  # playthrough starts with no scene -- so without this the first room the
-  # player ever stood in is narrated to them as a discovery when they walk back.
-  test "create marks the opening location as visited" do
+  # The opening room is where the player is standing, so it has to read as a
+  # return -- not a discovery -- when they walk back into it later.
+  # `Location#last_protagonist_visit` is the whole of that mechanism, and it is
+  # what `Scene::Generator` reads to choose between the two.
+  #
+  # `create` used to stamp it with an explicit `mark_protagonist_visit!`
+  # because a playthrough started with no scene. It starts with one now, and
+  # `Scene`'s after_create stamps the visit itself -- at the same moment and
+  # with the same value, which is what makes dropping the explicit call safe
+  # rather than merely tidy. This test is what says so.
+  test "create marks the opening location as visited when the opening scene is written" do
     story = create(:story)
     opening = create(:location, story: story, last_protagonist_visit: nil)
 
+    freeze_time do
+      post playthroughs_path, params: { story_id: story.id }
+
+      assert_equal Time.current, opening.reload.last_protagonist_visit
+    end
+
+    # The stamp came from the opening Scene, not from a second write: it is the
+    # scene the playthrough now starts on.
+    playthrough = story.playthroughs.last
+    assert_equal opening, playthrough.current_scene.location
+    assert opening.last_protagonist_visit.present?
+  end
+
+  # The log begins where the story begins. This is the cheap half of the
+  # answer -- a room description standing in for an arrival nobody narrates --
+  # and a world that carries its own opening arrival replaces the text and
+  # nothing else.
+  test "create opens the turn log with the room the player starts in" do
+    story = create(:story)
+    opening = create(:location, story: story, description: "Ash drifts past the shutters.")
+
+    assert_difference -> { story.scenes.count }, 1 do
+      post playthroughs_path, params: { story_id: story.id }
+    end
+
+    scene = story.playthroughs.last.current_scene
+    assert_equal opening, scene.location
+    assert_equal "Ash drifts past the shutters.", scene.description
+    assert_nil scene.previous_scene
+  end
+
+  # `Scene::Generator#lead_in` reads the previous scene's summary, and the
+  # first move now has one. It used to be told "this is where the story opens",
+  # which was false by then -- the story opened one room back.
+  test "the opening scene carries a summary for the first move to read" do
+    story = create(:story)
+    create(:location, story: story, name: "The Salt Chapel")
+
     post playthroughs_path, params: { story_id: story.id }
 
-    assert_not_nil opening.reload.last_protagonist_visit
+    assert_equal "The story opens in The Salt Chapel.",
+                 story.playthroughs.last.current_scene.summary
   end
 
   # A talk turn keeps an Interaction alongside the Scene, and the log says who
