@@ -5,7 +5,9 @@ class Story::GeneratorTest < ActiveSupport::TestCase
     "title" => "The Drowned Ledger",
     "genre" => "drowned-city noir",
     "preface" => "You are ankle deep in water that was not here yesterday.",
-    "summary" => "A debt collector works the flooded tiers as the pumps fail."
+    "summary" => "A debt collector works the flooded tiers as the pumps fail.",
+    "opening_location_name" => "The Drowned Ledger",
+    "opening_location_teaser" => "A counting house with the tide coming in."
   }.freeze
 
   def setup
@@ -27,6 +29,42 @@ class Story::GeneratorTest < ActiveSupport::TestCase
     assert_equal "A debt collector works the flooded tiers as the pumps fail.", story.summary
   end
 
+  # The opening room comes back from the same call that wrote the preface, and
+  # is attached as a stub so saving the story saves it too. Without this a
+  # separate model call is needed just to name the room the preface describes.
+  test "builds the opening location as a stub on the story" do
+    story = generate_with(FakeAgent.new(CONTENT))
+
+    assert_equal 1, story.locations.size
+
+    opening = story.locations.first
+    assert_equal "The Drowned Ledger", opening.name
+    assert_equal "A counting house with the tide coming in.", opening.teaser
+    assert opening.stub?
+    assert_nil opening.description
+  end
+
+  test "the opening location is the story's opening_location" do
+    story = generate_with(FakeAgent.new(CONTENT))
+
+    assert_equal story.locations.first, story.opening_location
+  end
+
+  test "saving the universe persists the story and its opening location" do
+    story = generate_with(FakeAgent.new(CONTENT))
+    @universe.save!
+
+    assert story.persisted?
+    assert story.opening_location.persisted?
+    assert_equal story, story.opening_location.story
+  end
+
+  test "strips emoji from the opening location too" do
+    agent = FakeAgent.new(CONTENT.merge("opening_location_name" => "The Drowned Ledger 🌊"))
+
+    assert_equal "The Drowned Ledger", generate_with(agent).opening_location.name
+  end
+
   test "belongs to the universe it was generated from" do
     assert_equal @universe, generate_with(FakeAgent.new(CONTENT)).universe
   end
@@ -39,7 +77,10 @@ class Story::GeneratorTest < ActiveSupport::TestCase
   end
 
   test "does not persist the story" do
-    assert generate_with(FakeAgent.new(CONTENT)).new_record?
+    story = generate_with(FakeAgent.new(CONTENT))
+
+    assert story.new_record?
+    assert story.opening_location.new_record?
   end
 
   test "asks for the story schema" do

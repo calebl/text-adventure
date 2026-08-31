@@ -18,13 +18,14 @@ class Location::Generator
     @story = location.story
   end
 
-  # The story's opening location. There is no stub to realize yet, so the model
-  # names the place from the story's own preface first, on the same
-  # conversation that then describes it.
+  # Realizes the story's opening location. Story::Generator already created it
+  # as a stub from the same call that wrote the preface, so there is nothing to
+  # name here -- only to write out in full.
   def self.opening(story)
-    generator = new(story.locations.new)
-    generator.name_from_story!
-    generator.realize!
+    location = story.opening_location
+    raise ArgumentError, "story ##{story.id} has no opening location to realize" if location.nil?
+
+    new(location).realize!
   end
 
   # Description, lore and the stub exits leading out, in one transaction so a
@@ -47,16 +48,6 @@ class Location::Generator
     location
   end
 
-  # Names the opening location from the story. Only used by .opening -- every
-  # other location arrives already named, as a stub created by its neighbour.
-  def name_from_story!
-    content = ask(Location::OpeningSchema, opening_prompt)
-
-    location.name = sanitize_string(content["name"])
-    location.teaser = sanitize_string(content["teaser"])
-    location
-  end
-
   def agent
     @agent ||= BaseAgent.new.with_instructions(system_prompt)
   end
@@ -69,18 +60,6 @@ class Location::Generator
       could actually go.
 
       DO NOT INCLUDE EMOJIS IN YOUR RESPONSE.
-    PROMPT
-  end
-
-  def opening_prompt
-    <<~PROMPT
-      #{story_context}
-
-      ## Instructions
-      Name the place this story opens in. It is the room the preface above
-      describes -- do not invent a different one.
-      - Name it the way a player would refer to it, not the way a cartographer would
-      - Respect the stated length of each field
     PROMPT
   end
 
