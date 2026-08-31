@@ -112,9 +112,86 @@ class SeededWorldsTest < ActiveSupport::TestCase
   test "seeding is idempotent" do
     WorldSeed::Loader.load_all(io: nil)
 
-    assert_no_difference [ "Story.count", "Universe.count", "Race.count", "Location.count", "LocationConnection.count", "Character.count", "Item.count", "Scene.count" ] do
+    assert_no_difference [ "Story.count", "Universe.count", "Race.count", "Location.count", "LocationConnection.count", "Character.count", "Item.count", "Scene.count", "WorldMechanic.count" ] do
       WorldSeed::Loader.load_all(io: nil)
     end
+  end
+
+  # --- worlds that move ----------------------------------------------------
+
+  # A seeded mechanic has to be RUNNABLE in the world it was written into, not
+  # merely well-formed. The loader checks the file; this checks the graph the
+  # file produced.
+  test "every seeded mechanic has something it can actually do" do
+    WorldSeed::Loader.load_all(io: nil).each do |story|
+      story.world_mechanics.each do |mechanic|
+        next unless mechanic.kind == "shuffle_connections"
+
+        edges = mechanic.operation.anchor_edges
+
+        assert_operator edges.size, :>=, 2,
+                        "#{story.title}: #{mechanic.name} has #{edges.size} edge(s) to shuffle, so nothing can move"
+        assert edges.all? { |edge| edge.location.mobile? && !edge.connected_location.mobile? }
+      end
+    end
+  end
+
+  test "a seeded world has not run any of its nights yet" do
+    WorldSeed::Loader.load_all(io: nil).each do |story|
+      story.world_mechanics.each do |mechanic|
+        assert_nil mechanic.last_run_at,
+                   "#{story.title}: #{mechanic.name} was seeded as though nights nobody played had happened"
+      end
+      assert_empty story.world_events, "#{story.title}: seeding a world is not the world having already moved"
+    end
+  end
+
+  # The Lunar Cartographer's universe has claimed since it was generated that
+  # Nocturnis rearranges itself every night. This is that claim, in the records.
+  test "the Lunar Cartographer's city moves, and moving it keeps the world whole" do
+    story = WorldSeed::Loader.load_all(io: nil).detect { |candidate| candidate.title == "The Lunar Cartographer" }
+    mechanic = story.world_mechanics.sole
+    before = story.locations.order(:id).to_h { |location| [ location.name, location.exits.count ] }
+
+    # Three story nights, with no wall-clock time passing and no model call.
+    create(:scene, story: story, location: story.opening_location, previous_scene: story.opening_scene,
+                   story_timestamp: story.start_time + 3.days)
+    events = story.catch_up_world!
+
+    assert_equal 3, events.size
+    assert_equal Time.utc(2026, 9, 1), events.first.occurred_at
+    assert_equal Time.utc(2026, 9, 3), events.last.occurred_at
+    assert_equal before, story.locations.order(:id).to_h { |location| [ location.name, location.reload.exits.count ] },
+                 "the shuffle repoints edges; it does not add or lose them"
+
+    reached = Set.new([ story.opening_location.id ])
+    frontier = [ story.opening_location ]
+    while (location = frontier.pop)
+      location.exits.each { |exit| frontier << exit if reached.add?(exit.id) }
+    end
+    assert_equal story.locations.count, reached.size, "three nights of shuffling stranded part of the city"
+  end
+
+  # THE BUILDING HOLDS TOGETHER. Grenn laid his foundation stones loose so it
+  # would; in the data, that is every room of it being `mobile`, which makes the
+  # doors between them edges the shuffle never touches.
+  test "the boarding house keeps its own doors when the quarter travels" do
+    story = WorldSeed::Loader.load_all(io: nil).detect { |candidate| candidate.title == "The Lunar Cartographer" }
+    room = story.opening_location
+    before = room.exits.order(:id).pluck(:name)
+
+    create(:scene, story: story, location: room, previous_scene: story.opening_scene,
+                   story_timestamp: story.start_time + 5.days)
+    story.catch_up_world!
+
+    assert_equal before, room.reload.exits.order(:id).pluck(:name)
+  end
+
+  test "the other seeded world stays where it is" do
+    story = WorldSeed::Loader.load_all(io: nil).detect { |candidate| candidate.title != "The Lunar Cartographer" }
+
+    assert_empty story.world_mechanics, "a world does not have to move; `mechanics` is optional"
+    assert_empty story.locations.mobile
   end
 
   # The checked-in files are hand-edited, so they have to survive the tooling:

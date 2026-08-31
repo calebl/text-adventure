@@ -34,7 +34,12 @@ class PlaythroughsController < ApplicationController
     # does not survive the scene moving into the world, so the explicit stamp
     # comes back. It is also harmless on the fallback path below, where the
     # after_create has already written the same value.
-    location.mark_protagonist_visit!
+    #
+    # Stamped with the STORY's clock rather than with `Time.current`: the
+    # protagonist arrives at the moment the story opens, which is the opening
+    # arrival's own `story_timestamp`. Reaching for the wall clock here is the
+    # defect `Location#time_since_last_visit` used to have, one layer up.
+    location.mark_protagonist_visit!(story.clock)
 
     # Deliberately starting a playthrough takes the session over; merely
     # looking at one (below) does not.
@@ -103,7 +108,7 @@ class PlaythroughsController < ApplicationController
       location: location,
       description: location.description,
       summary: "The story opens in #{location.name}.",
-      story_timestamp: Time.current
+      story_timestamp: story.start_time
     )
   end
 

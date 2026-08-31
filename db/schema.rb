@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_31_140000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -97,6 +97,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_130000) do
     t.string "detail_level", default: "stub", null: false
     t.datetime "last_protagonist_visit"
     t.text "lore"
+    t.boolean "mobile", default: false, null: false
     t.string "name"
     t.integer "parent_location_id"
     t.integer "story_id", null: false
@@ -105,6 +106,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_130000) do
     t.index ["parent_location_id"], name: "index_locations_on_parent_location_id"
     t.index ["story_id", "detail_level"], name: "index_locations_on_story_id_and_detail_level"
     t.index ["story_id"], name: "index_locations_on_story_id"
+  end
+
+  create_table "locations_world_events", id: false, force: :cascade do |t|
+    t.integer "location_id", null: false
+    t.integer "world_event_id", null: false
+    t.index ["location_id"], name: "index_locations_world_events_on_location_id"
+    t.index ["world_event_id", "location_id"], name: "index_locations_world_events_on_world_event_id_and_location_id", unique: true
+    t.index ["world_event_id"], name: "index_locations_world_events_on_world_event_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -181,6 +190,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_130000) do
     t.index ["location_id"], name: "index_scenes_on_location_id"
     t.index ["previous_scene_id"], name: "index_scenes_on_previous_scene_id"
     t.index ["story_id", "is_opening"], name: "index_scenes_on_story_id_and_is_opening"
+    t.index ["story_id", "story_timestamp"], name: "index_scenes_on_story_id_and_story_timestamp"
     t.index ["story_id"], name: "index_scenes_on_story_id"
   end
 
@@ -221,6 +231,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_130000) do
     t.text "weapons"
   end
 
+  create_table "world_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "occurred_at", null: false
+    t.integer "story_id", null: false
+    t.text "summary", null: false
+    t.datetime "updated_at", null: false
+    t.integer "world_mechanic_id", null: false
+    t.index ["story_id", "occurred_at"], name: "index_world_events_on_story_id_and_occurred_at"
+    t.index ["story_id"], name: "index_world_events_on_story_id"
+    t.index ["world_mechanic_id"], name: "index_world_events_on_world_mechanic_id"
+  end
+
+  create_table "world_mechanics", force: :cascade do |t|
+    t.string "cadence", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "kind", null: false
+    t.datetime "last_run_at"
+    t.string "name", null: false
+    t.integer "story_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["story_id", "name"], name: "index_world_mechanics_on_story_id_and_name", unique: true
+    t.index ["story_id"], name: "index_world_mechanics_on_story_id"
+  end
+
   add_foreign_key "characters", "races"
   add_foreign_key "characters", "stories"
   add_foreign_key "chats", "models"
@@ -232,6 +267,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_130000) do
   add_foreign_key "location_connections", "locations", column: "connected_location_id"
   add_foreign_key "locations", "locations", column: "parent_location_id"
   add_foreign_key "locations", "stories"
+  add_foreign_key "locations_world_events", "locations"
+  add_foreign_key "locations_world_events", "world_events"
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "playthroughs", "characters"
@@ -244,4 +281,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_130000) do
   add_foreign_key "scenes", "stories"
   add_foreign_key "stories", "universes"
   add_foreign_key "tool_calls", "messages"
+  add_foreign_key "world_events", "stories"
+  add_foreign_key "world_events", "world_mechanics"
+  add_foreign_key "world_mechanics", "stories"
 end

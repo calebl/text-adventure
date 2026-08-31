@@ -1,4 +1,17 @@
 class Scene < ApplicationRecord
+  # How much STORY time a turn costs when it is not a journey. A fixed table in
+  # code, for exactly the reason `LocationConnection::DISTANCES` is one: how
+  # long something takes in the fiction is the app's to decide, so it is a
+  # lookup rather than a number a narrator produced or the wall clock supplied.
+  # A journey is the one turn that is not in here -- it costs
+  # `LocationConnection.travel_minutes` for the edge actually walked.
+  TURN_MINUTES = {
+    # Standing and talking to somebody.
+    "conversation" => 10,
+    # Looking at, trying, picking up: one beat in the room.
+    "action" => 5
+  }.freeze
+
   belongs_to :story
   belongs_to :location
   belongs_to :previous_scene, class_name: "Scene", optional: true
@@ -37,6 +50,11 @@ class Scene < ApplicationRecord
   # what makes walking back in later read as coming back rather than as finding
   # (Scene::Generator, Location#time_since_last_visit).
   #
+  # Stamped with this scene's OWN `story_timestamp` rather than with
+  # `Time.current`: the visit happened at the moment in the story that the scene
+  # happened at, and that is what makes "you were last here about an hour ago"
+  # mean an hour of the story rather than an hour of somebody's afternoon.
+  #
   # The opening arrival is the exception, and it has to be. It is world data:
   # generated once when the world is built and loaded out of a seed file, which
   # can be days or months before anybody plays. Stamping the visit then would
@@ -47,7 +65,7 @@ class Scene < ApplicationRecord
   def mark_location_visit
     return if is_opening?
 
-    location.mark_protagonist_visit!
+    location.mark_protagonist_visit!(story_timestamp)
   end
 
   # A story opens once. `is_opening` is also the natural key WorldSeed::Loader

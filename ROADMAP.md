@@ -29,7 +29,8 @@ So revisiting a place reuses the persisted `Location` while creating a new
 - Rails 8 app, SQLite, 307 tests green. No longer API-only: `api_only` is off
   and `ApplicationController < ActionController::Base` so it can render ERB.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
-  `Interaction` / `Item`, plus the `location_connections` graph.
+  `Interaction` / `Item`, plus the `location_connections` graph and the
+  `world_mechanics` / `world_events` pair that moves it.
 - `Universe::Generator`, `Story::Generator` — bootstrap a world from a premise.
 - `Character::Generator` — one call, one `Character::Schema`. Race, age and sex
   are decided by the generator and stated in the prompt, not asked for: race
@@ -285,6 +286,52 @@ conversation persistence) and stage 6 (visual style) of the browser plan.
       nothing asks for yet.
 - [ ] Summarize old scenes so long playthroughs stay inside the context window.
 
+### 4a. The world's own mechanics
+
+- [x] **`Story#clock`** — what time it is in the fiction, derived from
+      `scenes.story_timestamp` rather than stored. A story nobody has played is
+      at its own `start_time`.
+- [x] **Story time on every `Scene`.** An arrival is the previous scene plus
+      `LocationConnection.travel_minutes` for the edge actually walked; every
+      other turn costs what `Scene::TURN_MINUTES` says. `Time.current` is gone
+      from that whole path, which closed the wall-clock defect that used to be
+      the first entry under **Known issues**: `Location#last_protagonist_visit`
+      now holds a story moment, so `#time_since_last_visit` — the value
+      `Scene::Generator` turns into "you were last here about an hour ago" — is
+      measured in the fiction. Fixed in the one place the issue asked for.
+- [x] **`WorldMechanic`** — a fixed catalogue of Ruby operations over records,
+      on a story-time schedule. `kind` and `cadence` are keys into tables in
+      code; a world supplies parameters (`locations.mobile`, the cadence, the
+      in-fiction reason) and never behaviour. `last_run_at` is a column in story
+      time, so catching up is arithmetic: no timer, no job, nothing in memory,
+      and a process that was down for a week pays the nights it owes on the next
+      turn. Driven from `Playthrough::Turn#play`; ~90 µs and **0 tokens** on a
+      turn where nothing is due.
+- [x] **`WorldMechanic::ShuffleConnections`** — repoints one endpoint of every
+      edge joining a `mobile` location to a fixed one, permuting rather than
+      choosing so every location keeps its degree, with an explicit connectivity
+      check before an arrangement is applied. Deterministic per (story, night).
+      Hand-written into `the-lunar-cartographer.yml`, whose universe has claimed
+      since it was generated that Nocturnis rearranges itself nightly.
+- [x] **`WorldEvent`** — the audit trail, in story time, with the locations it
+      touched. Deliberately NOT a narration source: over two nights a shuffle
+      can return a place to the same neighbour, so replaying the log would
+      announce a change the player never experienced.
+- [ ] **The arrival diff — "what changed while you were gone".** Record the exit
+      names the player was actually shown on `Scene` and diff them on arrival.
+      That is what makes the mechanic *felt* rather than merely true, and it is
+      the honest version of the previous point. ~25 tokens.
+- [ ] **Judge the edge shuffle in play.** Captain-decided: build the simple
+      version, play ten turns, and only then decide whether whole districts
+      should travel as units instead. The districts variant is neither adopted
+      nor rejected.
+- [ ] Generating a mechanic from a model at world-creation time. Deliberately
+      not built: the parameters are hand-authored first, so the mechanic that
+      exists is one somebody chose.
+- [ ] A second `kind`. `WorldMechanic::KINDS` has one entry, and the next one is
+      an operation in Ruby rather than a field in a file — including the one the
+      direction wants for violation-becomes-consequence.
+
 ### 5. Interface
 
 The first playable browser interface has landed (see **Done**). What it still
@@ -327,20 +374,19 @@ owes, roughly in order:
 
 ## Known issues
 
-- **"How long since you were last here" is wall-clock time, not story time.**
-  `Location#time_since_last_visit` is `Time.current - last_protagonist_visit`,
-  and `Scene::Generator` puts it into the arrival prompt in words. So a player
-  who closes the tab and comes back a week later is told, in fiction, that they
-  were gone a week. `Story#start_time` and `Scene#story_timestamp` exist to
-  hold story time and nothing derives an in-fiction clock from them yet;
-  `LocationConnection#time_to_travel` is the other half of that clock. Fix it
-  in one place — the elapsed value `Scene::Generator#generate!` reads — rather
-  than at each call site.
-  The worst version of this — a seeded world dating the protagonist's presence
-  to whenever the file was written, so the first walk back into the opening room
-  reads as a return after however many months — is closed: an opening `Scene`
-  does not stamp the visit, and `PlaythroughsController#create` does it when a
-  player arrives. The wall-clock-within-a-session defect above is untouched.
+- **The story clock is the story's, not a playthrough's.** `Story#clock` is a
+  `MAX` over every scene in the story, because `WorldMechanic` is story-level:
+  the world moves for everybody. So two playthroughs of one world share a world
+  clock, and the further-along player pulls the other's nights forward. Each
+  playthrough's own next turn is still measured from its own last scene
+  (`Playthrough#story_now`), so nobody's timestamps go backwards — but a second
+  player can walk into a city that rearranged itself while they personally did
+  nothing. Irrelevant for one player; the fix, if it matters, is a per-world
+  clock rather than a per-story one.
+- **Re-seeding a played world re-asserts the graph the file declares.** The
+  loader adds and updates and never deletes, so seeding on top of a world whose
+  mechanic has moved edges leaves both the seeded edge and the moved one. Drop
+  the database for a clean rebuild — the same caveat as renaming a location.
 - **Nothing records where a character stands.** `characters` has no location
   column, so `Scene::Generator#characters_present` answers from the three
   things the app can actually know: the protagonist, anyone `is_companion`,

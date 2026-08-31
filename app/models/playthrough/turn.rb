@@ -25,6 +25,14 @@ class Playthrough::Turn
   # paragraph in one piece, because a schema'd call cannot stream (see the
   # comment on `Scene::Narrator`).
   def play(command, &block)
+    # THE WORLD MOVES FIRST, and it moves whether or not anybody was watching.
+    # Every boundary the story's clock has passed since the last turn is applied
+    # here, in Ruby, before the player's command is even read -- so the exits
+    # the classifier resolves against are tonight's exits and not last night's.
+    # One `SELECT MAX` and one row per mechanic when nothing is due, which is
+    # almost every turn; zero tokens either way. See WorldMechanic.
+    playthrough.story.catch_up_world!
+
     intent = classifier.classify(command)
 
     if intent.destination
@@ -88,7 +96,7 @@ class Playthrough::Turn
       characters: [ playthrough.story.protagonist, character ].compact.uniq,
       description: exchange.narration,
       summary: "The player spoke with #{character.fullname}. #{exchange.reaction[:action]}".strip,
-      story_timestamp: Time.current
+      story_timestamp: playthrough.story_time_after("conversation")
     )
 
     # `exchange.reaction` is keyed exactly as `Interaction::Schema` names its

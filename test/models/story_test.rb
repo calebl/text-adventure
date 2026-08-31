@@ -102,6 +102,63 @@ class StoryTest < ActiveSupport::TestCase
     assert_equal protagonist, @story.reload.protagonist
   end
 
+  # --- the story's clock ---------------------------------------------------
+
+  test "a story nobody has played is at its own start time" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+
+    assert_equal story.start_time, story.clock
+  end
+
+  test "the clock is the latest story moment any scene records" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    location = create(:location, story: story)
+    create(:scene, story: story, location: location, story_timestamp: story.start_time + 20.minutes)
+    create(:scene, story: story, location: location, story_timestamp: story.start_time + 4.hours)
+    create(:scene, story: story, location: location, story_timestamp: story.start_time + 90.minutes)
+
+    assert_equal story.start_time + 4.hours, story.clock
+  end
+
+  # The clock has nothing to do with when anybody had a browser open, which is
+  # the whole reason it exists.
+  test "the clock does not move with the wall clock" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+
+    travel 3.weeks do
+      assert_equal story.start_time, story.clock
+    end
+  end
+
+  test "another story's scenes are not on this story's clock" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    other = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    create(:scene, story: other, location: create(:location, story: other),
+                   story_timestamp: other.start_time + 10.days)
+
+    assert_equal story.start_time, story.clock
+  end
+
+  test "catch_up_world! runs the story's mechanics" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    mechanic = create(:world_mechanic, story: story)
+    create(:scene, story: story, location: create(:location, story: story),
+                   story_timestamp: story.start_time + 2.hours)
+
+    story.catch_up_world!
+
+    assert_equal Time.utc(2026, 9, 1, 0, 0, 0), mechanic.reload.last_run_at
+  end
+
+  test "should have many world mechanics, destroyed with the story" do
+    story = create(:story)
+    create(:world_mechanic, story: story)
+
+    assert_difference -> { WorldMechanic.count }, -1 do
+      story.destroy
+    end
+  end
+
   test "should belong to universe" do
     assert_equal @universe, @story.universe
   end

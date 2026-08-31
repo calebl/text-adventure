@@ -16,6 +16,12 @@ class Location < ApplicationRecord
                           foreign_key: "location_id",
                           association_foreign_key: "connected_location_id"
 
+  # The world's own changes that touched this place -- see WorldEvent. Declared
+  # on both sides so that destroying either end clears the join rows: a Story
+  # destroys its locations before its world events, and the join has a foreign
+  # key on both columns.
+  has_and_belongs_to_many :world_events
+
   has_and_belongs_to_many :inverse_connected_locations,
                           class_name: "Location",
                           join_table: "location_connections",
@@ -35,6 +41,12 @@ class Location < ApplicationRecord
 
   scope :stubs, -> { where(detail_level: :stub) }
   scope :realized, -> { where(detail_level: :realized) }
+  # Places that move. A parameter of the world, read by WorldMechanic's
+  # operations and by nothing else -- a mobile location is an ordinary location
+  # in every other respect, and the thing that moves is the graph around it
+  # rather than the place itself.
+  scope :mobile, -> { where(mobile: true) }
+  scope :anchored, -> { where(mobile: false) }
 
   validates :name, presence: true
   # A stub has neither yet -- that is the point of a stub. A realized location
@@ -49,12 +61,30 @@ class Location < ApplicationRecord
     connected_locations
   end
 
-  def time_since_last_visit
+  # How long the protagonist has been away, IN STORY TIME.
+  #
+  # `last_protagonist_visit` holds a moment on `Story#clock`, not a wall clock,
+  # and that is the whole of the fix for the defect this used to have: it read
+  # `Time.current - last_protagonist_visit`, so a player who closed the tab for
+  # a week and came back was told in fiction that they had been gone a week.
+  # Nothing about a story's own passage of time has anything to do with when
+  # somebody had a browser open.
+  #
+  # `now` defaults to the story's clock so any caller gets the right answer
+  # without knowing that; `Scene::Generator` passes the arrival's own story
+  # timestamp instead, because an arrival happens at the end of the journey
+  # rather than at the moment the turn started.
+  def time_since_last_visit(now = story.clock)
     return nil unless last_protagonist_visit
-    Time.current - last_protagonist_visit
+    return nil if now.nil?
+
+    now - last_protagonist_visit
   end
 
-  def mark_protagonist_visit!
-    update!(last_protagonist_visit: Time.current)
+  # `at` is story time, and it is required rather than defaulted for the reason
+  # above: every caller knows which story moment the protagonist arrived at, and
+  # a default would quietly reintroduce the wall clock.
+  def mark_protagonist_visit!(at)
+    update!(last_protagonist_visit: at)
   end
 end
