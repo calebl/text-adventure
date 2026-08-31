@@ -159,13 +159,24 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_equal [ Location::DetailSchema, Location::ExitsSchema ], agent.schemas
   end
 
+  # A room gets the place-shaped half of the universe -- what the world is made
+  # of and who lives in it -- not how it is governed or what it believes.
   test "includes the universe and the story in the prompt" do
     agent = FakeAgent.new(DETAIL, EXITS)
     realize(stub_location(name: "The Drowned Ledger"), agent)
 
-    assert_includes agent.prompts.first, @story.universe.politics
+    assert_includes agent.prompts.first, @story.universe.geographies
+    assert_includes agent.prompts.first, @story.universe.technology
     assert_includes agent.prompts.first, @story.preface
     assert_includes agent.prompts.first, "The Drowned Ledger"
+  end
+
+  test "does not spend the room prompt on how the world is governed" do
+    agent = FakeAgent.new(DETAIL, EXITS)
+    realize(stub_location(name: "The Drowned Ledger"), agent)
+
+    assert_not_includes agent.prompts.first, @story.universe.politics
+    assert_not_includes agent.prompts.first, @story.universe.economics
   end
 
   test "names the locations that already exist so exits reuse them" do

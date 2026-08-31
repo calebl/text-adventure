@@ -90,7 +90,7 @@ class Character::Generator
       summary: #{story.summary}
 
       ## Universe Details
-      #{story.universe.prompt_details}
+      #{story.universe.prompt_details(:character)}
 
       ## Characters This Story Already Has
       Do not reuse any of these names, and do not write this person again.

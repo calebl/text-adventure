@@ -131,7 +131,7 @@ class Location::Generator
   def story_context
     <<~CONTEXT
       ## Universe Details
-      #{story.universe.prompt_details}
+      #{story.universe.prompt_details(:place)}
 
       ## Story Details
       title: #{story.title}

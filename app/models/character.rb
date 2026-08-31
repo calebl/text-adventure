@@ -36,7 +36,7 @@ class Character < ApplicationRecord
 
       This is the universe in which you live
       ## Universe Details
-      #{story.universe.prompt_details}
+      #{story.universe.prompt_details(:dialogue)}
 
       You are playing a character in a story. This is your character sheet.
       Pretend you are this character in all of your responses.
