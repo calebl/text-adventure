@@ -1,6 +1,14 @@
 class Character::Generator
   include SanitizesGeneratedText
 
+  # Raised when the model keeps returning a name another character in this
+  # story already has. See #generate for why this raises rather than renaming.
+  class DuplicateNameError < StandardError; end
+
+  # Enough attempts that a one-off collision costs a short follow-up on the
+  # same conversation, few enough that a story anchored on one name fails fast.
+  MAX_NAME_ATTEMPTS = 3
+
   attr_reader :story, :character_generation_prompt
 
   ATTRACTIVENESS_VALUES = [ "very_attractive", "attractive", "average", "unattractive" ]
@@ -24,26 +32,44 @@ class Character::Generator
 
   # Raises if generation fails. Returning a half-built character instead just
   # pushes the failure downstream, where it looks like a bad model response.
+  #
+  # The cast list in the prompt asks the model not to reuse a name, but that is
+  # an instruction, not a constraint -- so a collision is checked here and the
+  # model is asked again on the SAME conversation, which costs a two-line
+  # follow-up rather than a fresh 2,700-token prompt.
+  #
+  # After MAX_NAME_ATTEMPTS this raises rather than renaming the character in
+  # code. Three independent samples landing on the same name means the story
+  # itself is anchored on it, and a character silently renamed here would still
+  # have a backstory that calls them by the old name. Callers already handle a
+  # generator raising; a quietly wrong record is the harder failure to notice.
   def generate
     agent = BaseAgent.new.with_instructions(system_prompt)
-    character = @story.characters.new
+    prompt = @character_generation_prompt
+    taken = nil
 
-    content = agent.with_schema(Character::Schema).ask(@character_generation_prompt).content
+    MAX_NAME_ATTEMPTS.times do
+      character = build_from(agent.with_schema(Character::Schema).ask(prompt).content)
 
-    character.fullname = sanitize_string(content["fullname"])
-    character.nickname = sanitize_string(content["nickname"])
-    character.personality = sanitize_string(content["personality"])
-    character.appearance = sanitize_string(content["appearance"])
-    character.likes = sanitize_string(content["likes"])
-    character.dislikes = sanitize_string(content["dislikes"])
-    character.fears = sanitize_string(content["fears"])
-    character.backstory = sanitize_string(content["backstory"])
+      return character unless name_taken?(character.fullname)
 
-    character.race = race
-    character.age = age
-    character.sex = sex
+      taken = character.fullname
+      prompt = retry_prompt(taken)
+    end
 
-    character
+    raise DuplicateNameError,
+          "#{story.title.inspect} already has a character named #{taken.inspect}, " \
+          "and #{MAX_NAME_ATTEMPTS} attempts did not produce a different name"
+  end
+
+  # Asked on the same conversation as the first attempt, so the model still has
+  # the whole character it just wrote and only has to change the name.
+  def retry_prompt(taken_name)
+    <<~PROMPT
+      The name #{taken_name.inspect} already belongs to another character in
+      this story. Generate the character again with a different full name.
+      Everything else about them can stay as you wrote it.
+    PROMPT
   end
 
   def system_prompt
@@ -66,10 +92,9 @@ class Character::Generator
       ## Universe Details
       #{story.universe.prompt_details}
 
-      ## Already Generated Characters
-      DO NOT GENERATE THESE CHARACTERS AGAIN.
-      #{story.characters.map { |character| character.slice(:fullname, :nickname, :age, :sex, :personality).merge(race: character.race&.name).to_json }.join("\n")}
-      END OF ALREADY GENERATED CHARACTERS
+      ## Characters This Story Already Has
+      Do not reuse any of these names, and do not write this person again.
+      #{existing_cast}
 
       ## Predetermined Character Details for the new character
       sex: #{sex}
@@ -95,5 +120,44 @@ class Character::Generator
       Generate all of the character details for a new character that will be added to the story.
 
     PROMPT
+  end
+
+  private
+
+  # Name, nickname and race -- enough to tell the model who is taken and who
+  # this new person has to be different from. It used to carry each existing
+  # character's full `personality` as JSON, which cost ~116 tokens per cast
+  # member on every generation and grew for the life of the story; this is
+  # ~15. The names in it are the model's cue; Character's uniqueness
+  # validation and #generate's retry are what actually enforce them.
+  def existing_cast
+    lines = story.characters.includes(:race).map do |character|
+      "#{character.fullname} (#{character.nickname}), #{character.race&.name}"
+    end
+
+    lines.join("\n").presence || "None yet."
+  end
+
+  def build_from(content)
+    character = Character.new(story: story, race: race, age: age, sex: sex)
+
+    character.fullname = sanitize_string(content["fullname"])
+    character.nickname = sanitize_string(content["nickname"])
+    character.personality = sanitize_string(content["personality"])
+    character.appearance = sanitize_string(content["appearance"])
+    character.likes = sanitize_string(content["likes"])
+    character.dislikes = sanitize_string(content["dislikes"])
+    character.fears = sanitize_string(content["fears"])
+    character.backstory = sanitize_string(content["backstory"])
+
+    character
+  end
+
+  # Asked of the database rather than the in-memory association, so an unsaved
+  # character built on this story cannot collide with itself.
+  def name_taken?(fullname)
+    return false if fullname.blank? || story.id.nil?
+
+    Character.where(story_id: story.id).where("LOWER(fullname) = ?", fullname.downcase).exists?
   end
 end
