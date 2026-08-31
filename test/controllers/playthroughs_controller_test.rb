@@ -126,6 +126,48 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_equal first.token, session[:playthrough_token]
   end
 
+  # The exits are the only move targets Playthrough::Classifier will accept, so
+  # a player who cannot read them is guessing at the one command that matters.
+  test "show names the room the player is in and the ways out of it" do
+    playthrough = create(:playthrough, :started)
+    create(:location_connection, location: playthrough.current_location,
+                                 connected_location: create(:location, story: playthrough.story, name: "The Sunken Stair"))
+
+    get playthrough_path(playthrough)
+
+    assert_match "You are in", response.body
+    assert_match playthrough.current_location.name, response.body
+    assert_match "The Sunken Stair", response.body
+  end
+
+  # A playthrough starts with no scene at all, so without this the opening room
+  # -- the one place that is already written -- is never read.
+  test "show reads out the opening location until there is a turn log" do
+    playthrough = create(:playthrough, :started)
+    playthrough.current_location.update!(description: "Stalls stand under wet canvas.")
+
+    get playthrough_path(playthrough)
+    assert_match "Stalls stand under wet canvas.", response.body
+
+    playthrough.update!(current_scene: create(:scene, story: playthrough.story,
+                                                      location: playthrough.current_location,
+                                                      description: "Rain starts falling."))
+    get playthrough_path(playthrough)
+    assert_no_match(/Stalls stand under wet canvas./, response.body)
+  end
+
+  # `Scene`'s after_create is the only other thing that stamps a visit, and a
+  # playthrough starts with no scene -- so without this the first room the
+  # player ever stood in is narrated to them as a discovery when they walk back.
+  test "create marks the opening location as visited" do
+    story = create(:story)
+    opening = create(:location, story: story, last_protagonist_visit: nil)
+
+    post playthroughs_path, params: { story_id: story.id }
+
+    assert_not_nil opening.reload.last_protagonist_visit
+  end
+
   test "show streams when a command is pending and otherwise offers the input" do
     playthrough = create(:playthrough)
 
