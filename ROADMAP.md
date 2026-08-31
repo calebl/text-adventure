@@ -272,6 +272,15 @@ owes, roughly in order:
   visited and no companion follows you into is therefore empty. That is honest
   rather than correct, and it is what `ta-narrator-memory` — the narrator
   creating characters by tool call — plugs into.
+  **This now has a concrete consequence: you cannot talk to anyone in a
+  freshly seeded world.** Neither checked-in world has a companion or a scene,
+  so `characters_present` answers with the protagonist alone, and
+  `Playthrough::Classifier` offers an empty cast — the `talk` branch is
+  unreachable until the player is in a scene with somebody in it, and nothing
+  puts them there. Fixable from either end: a seed file marking a character
+  `is_companion` (or shipping an opening scene with a cast), or
+  `ta-narrator-memory`. Until then the loop's talk path is exercised by tests
+  and by a hand-placed cast, not by the seeds.
 - **`ActionController::Live` costs one Puma thread per open stream.** Puma runs
   3 threads by default, so three people reading narration at once stalls the
   whole site for everyone else. Irrelevant for one player on localhost; raise
