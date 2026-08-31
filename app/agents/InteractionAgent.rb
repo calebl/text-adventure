@@ -30,19 +30,6 @@ class InteractionAgent
   # an `Interaction` row.
   Exchange = Data.define(:reaction, :narration)
 
-  # A character's pronouns are their own, so the prompt STATES them rather than
-  # handing the model a label and a rule to apply. Keyed on `Character.sexes`
-  # keys, which is what `Character#sex` reads back: the old rules keyed on the
-  # stored value, so the prompt said "is a non_binary" while the rule two lines
-  # below it matched "non-binary", and `transgender` had no rule at all. Both
-  # are reachable -- `Character::Generator` rolls `sex` from all four values.
-  PRONOUNS = {
-    "male" => "he/him/his",
-    "female" => "she/her/hers",
-    "non_binary" => "they/them/theirs",
-    "transgender" => "they/them/theirs"
-  }.freeze
-
   attr_reader :character, :character_instructions, :narrator_instructions
 
   def initialize(character)
@@ -147,11 +134,19 @@ class InteractionAgent
     end
   end
 
-  # Falls back to they/them rather than guessing, which is also what an
-  # unrecognised value should get.
+  # A character's pronouns are their own, so the prompt STATES them rather than
+  # handing the model a label and a rule to apply -- and it states nothing else.
+  # The narrator needs the pronouns; naming a gender alongside them only gives
+  # it something to make an issue of, and it is no more told that a character is
+  # trans than it is told that a character is cis.
+  #
+  # `Character::PRONOUNS` is the table, because pronouns are a fact about the
+  # person rather than about this agent, and every other prompt that needs them
+  # should read the same answer. It raises on a sex it has no entry for rather
+  # than falling back to they/them: a silent default is exactly how `transgender`
+  # went unnoticed with no rule of its own, quietly they/them-ing people who use
+  # she/her or he/him. CharacterTest pins that the table covers the whole enum.
   def pronoun_rule
-    pronouns = PRONOUNS.fetch(character.sex, "they/them/theirs")
-
-    "Refer to #{character.fullname} as #{pronouns}. Use those pronouns and no others."
+    "Refer to #{character.fullname} as #{character.pronouns}. Use those pronouns and no others."
   end
 end
