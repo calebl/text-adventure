@@ -74,6 +74,59 @@ class LocationTest < ActiveSupport::TestCase
     end
   end
 
+  test "defaults to a stub" do
+    assert Location.new.stub?
+  end
+
+  test "a stub saves without a description or lore" do
+    stub = build(:location, :stub, story: @story, name: "The Long Stair")
+
+    assert stub.valid?
+    assert stub.save
+    assert stub.stub?
+  end
+
+  test "a realized location still requires a description and lore" do
+    realized = build(:location, :stub, story: @story, detail_level: "realized")
+
+    assert_not realized.valid?
+    assert_includes realized.errors[:description], "can't be blank"
+    assert_includes realized.errors[:lore], "can't be blank"
+  end
+
+  test "a stub still requires a name" do
+    stub = build(:location, :stub, story: @story, name: nil)
+
+    assert_not stub.valid?
+    assert_includes stub.errors[:name], "can't be blank"
+  end
+
+  test "rejects a detail level it does not know" do
+    location = build(:location, story: @story)
+    location.detail_level = "half"
+
+    assert_not location.valid?
+    assert_includes location.errors[:detail_level], "is not included in the list"
+  end
+
+  test "scopes locations by detail level" do
+    stub = create(:location, :stub, story: @story)
+    realized = create(:location, story: @story)
+
+    assert_includes Location.stubs, stub
+    assert_not_includes Location.stubs, realized
+    assert_includes Location.realized, realized
+    assert_not_includes Location.realized, stub
+  end
+
+  test "exits are the locations connected out of here" do
+    @location.save!
+    neighbour = create(:location, :stub, story: @story)
+    create(:location_connection, location: @location, connected_location: neighbour)
+
+    assert_includes @location.reload.exits, neighbour
+  end
+
   test "should have parent location relationship" do
     @location.save!
     child_location = create(:location,

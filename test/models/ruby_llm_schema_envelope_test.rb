@@ -12,7 +12,14 @@ require "test_helper"
 class RubyLLMSchemaEnvelopeTest < ActiveSupport::TestCase
   include SchemaAssertions
 
-  SCHEMAS = [ Character::BaseSchema, Character::BackgroundSchema, Interaction::Schema ].freeze
+  SCHEMAS = [
+    Character::BaseSchema,
+    Character::BackgroundSchema,
+    Interaction::Schema,
+    Location::OpeningSchema,
+    Location::DetailSchema,
+    Location::ExitsSchema
+  ].freeze
 
   test "every schema class is a RubyLLM::Schema" do
     SCHEMAS.each { |schema| assert_operator schema, :<, RubyLLM::Schema }
