@@ -31,16 +31,29 @@ So revisiting a place reuses the persisted `Location` while creating a new
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph.
 - `Universe::Generator`, `Story::Generator` — bootstrap a world from a premise.
-- `Character::Generator` — two-pass (base attributes, then background). Races
-  are assigned from the universe's list, not invented per character.
+- `Character::Generator` — one call, one `Character::Schema`. Race, age and sex
+  are decided by the generator and stated in the prompt, not asked for: race
+  comes from the universe's list so a character belongs to one of its peoples,
+  age and sex are rolled so repeated runs diverge. A full name is unique within
+  a story (validation plus a unique index on `story_id, LOWER(fullname)`), and
+  the generator retries on the same conversation when the model reuses one.
 - `Playthrough` model — a session's position in a story (protagonist,
   `current_location`, `current_scene`, session `token`), plus `is_protagonist`
   on `Character`. The browser interface reads and writes it.
 - `Race` model — `Universe has_many :races`, `Character belongs_to :race`, with a
   validation that a character's race comes from its own story's universe.
-- Explicit lengths (`max_length` plus a stated sentence count) on every schema
-  field. Without them a strong model answered "Race of the character" with 2,382
-  characters of prose; the whole character sheet is now ~2,530 characters.
+- Explicit bounds on every schema field: a `max_length` plus a stated sentence
+  count, or an enum where the value comes from a fixed table. Without them a
+  strong model answered "Race of the character" with 2,382 characters of prose;
+  the whole character sheet is now ~2,530 characters.
+- **Audience-specific universe context.** `Universe#prompt_details(audience)`
+  sends each caller the fields it can use — `:full` for story generation,
+  `:character`, `:place` for building a room, `:dialogue` for a character
+  speaking. The whole record is 1,584 tokens and used to go to all four.
+- **`LocationConnection` distances and travel methods come from fixed tables**
+  (`DISTANCES`, `TRAVEL_METHODS`), and `time_to_travel` is derived from the two
+  rather than generated. The values are direction-neutral because connections
+  are written both ways from one answer.
 - `BaseAgent` — RubyLLM wrapper with model fallback on failure.
 - `rake game:new[premise]` / `rake game:list` — generate and inspect worlds.
   `game:new` now also generates and realizes the story's opening location.
@@ -127,8 +140,11 @@ of the next milestone.
       and `ToolCall` already call `acts_as_chat` and friends, but every agent
       builds a bare `RubyLLM::Chat`, so **nothing is ever persisted**. Quitting
       loses all conversation state.
-- [ ] Set `Interaction#inner_resolution` — `Interaction#completed?` tests it and
-      nothing ever writes it.
+- [ ] **Persist an `Interaction` at all.** `InteractionAgent#ask` gets a
+      structured character response, formats it into the narrator prompt and
+      throws the object away — nothing in the app has ever created an
+      `Interaction` row. `Interaction#inner_resolution` is a second-order case
+      of the same gap: `Interaction#completed?` tests it and nothing writes it.
 - [ ] Summarize old scenes so long playthroughs stay inside the context window.
 
 ### 5. Interface
@@ -199,15 +215,28 @@ owes, roughly in order:
   required fields, which is the same failure one step further along.
   **Before adding any model, check it:**
   `curl -s https://openrouter.ai/api/v1/models | jq '.data[] | select(.id == "MODEL") | .supported_parameters'`
-- **`Character#interaction_instructions` is ~3,200 tokens per turn.** Bounded
-  fields brought the character sheet down to ~2,530 characters, but the method
-  still inlines the entire universe (`Universe#prompt_details`, which now
-  includes every race) on every single turn of dialogue. Interactions should
-  eventually get a trimmed universe summary rather than the full record.
 - **Watch the ollama context window.** `ollama ps` reports `context_length: 4096`
   for these models. The universe prompt plus ten paragraphs of output is already
-  close to that, and `Story::Generator` feeds the whole universe back in. Scene
-  generation will need summarized context rather than the full record.
+  close to that, and `Story::Generator` still feeds the whole universe back in
+  (`:full` is the right audience there). Scene generation will need summarized
+  context rather than the full record.
+- **`Location::Generator#realize!` can leave a room with no way out.** The
+  description is saved before the exits call so an exits failure does not throw
+  away the more expensive of the two calls — but `realize!` then returns that
+  realized room untouched on a retry, which is the "generate once per place"
+  guarantee working against recovery. Finishing such a room means calling
+  `Location::Generator#write_exits!` directly. Harmless until the game loop
+  resolves movement against `Location#exits`; give it a real completeness
+  marker before then.
+- **`transgender` is now reachable and has no pronoun rule.**
+  `Character::Generator` rolls `sex` from all four `Character.sexes` values, and
+  `Character::Schema` no longer narrows the answer back to three. The gap in
+  `InteractionAgent#narrator_instructions` below is therefore live rather than
+  theoretical.
+- **`Location#parent_location` is never written.** Every stub is created from an
+  exit, and an exit says where you can walk, not what is inside what. The dead
+  `parent_context` branch in `Location::Generator` is gone; the association and
+  column remain, so a caller has to write it before any prompt can read it.
 - **`Narrator`** (`app/models/narrator.rb`) predates the schema and never reads
   a single database record — no `Scene`, no `Location`, no `Character`. It is a
   freestanding chat prompt whose system directive describes tools
@@ -216,9 +245,6 @@ owes, roughly in order:
 - **`InteractionAgent`** hardcodes `cognitivecomputations/dolphin-mixtral-8x22b`
   and bypasses `BaseAgent` entirely. It should use `BaseAgent` so it inherits
   model fallback. Its two-pass character→narrator structure is worth keeping.
-- **`Character::Generator` prompts for `sex` and `age`** in the "predetermined
-  details" block, but `Character::BaseSchema` also asks the model for them, so
-  the roll is advisory. Either drop them from the schema or stop rolling them.
 - **`InteractionAgent#narrator_instructions` is shadowed.** The `attr_reader`
   on line 2 is overwritten by the two-argument method below it, so the
   `@narrator_instructions` set during `ask` is unreachable and calling the
