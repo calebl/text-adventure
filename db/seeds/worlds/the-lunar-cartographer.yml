@@ -1,0 +1,122 @@
+# The Lunar Cartographer -- a seeded, playable world.
+#
+# Exported from a generated world with `rake 'game:export[1]'`, then edited by
+# hand: this file is the authored artifact, not a dump. What was changed after
+# export -- the three connections came from before DISTANCES and TRAVEL_METHODS
+# were fixed tables and had free prose in them, three fields were cut off
+# mid-sentence by the generator's length caps, and the story had no characters
+# because Story::Generator does not make any.
+# See db/seeds/worlds/README.md for the format and the rules the loader checks.
+#
+# Loaded offline by db/seeds.rb. No model call, no API key, no network.
+---
+format: 1
+universe:
+  physics: |-
+    This world adheres to standard physical laws, with one exception: the city of Nocturnis, built on the ruins of an ancient war, rearranges itself every night due to the residual magical energy from the Great War. This energy, called Nocturna, is harnessed from the moon and causes buildings, streets, and landmarks to shift and change. The effects of Nocturna are limited to the city boundaries, and its influence wanes during the day, allowing the city to remain static until nightfall. Nocturna does not affect living beings directly, but prolonged exposure can cause disorientation and memory loss. The city's rearrangement follows certain patterns, often influenced by the phases of the moon, but these patterns are complex and not fully understood.
+  technology: |-
+    Technology in this world is a blend of pre-war remnants and post-war innovations. The Great War, which ended 75 years ago, left behind advanced but often broken or dangerous technology. The current society has managed to salvage and repurpose some of this tech, but much of it remains beyond their understanding. Most people rely on steam-powered machinery and simple electronics. The city of Nocturnis has a unique technology called Lunar Compasses, which are devices that can predict the city's nightly rearrangements with about 60% accuracy. These compasses are highly sought after but require rare moonstones to function.
+  weapons: |-
+    Weapons in this world are a mix of traditional and advanced. Most common are steam-powered firearms, which require a special type of ammunition infused with a small amount of Nocturna to function. Swords and other melee weapons are also common, often made from salvaged pre-war materials. The most feared weapons are the remnants of the Great War, such as the Arcane Cannons, which can harness Nocturna to devastating effect. However, these weapons are rare and closely guarded by the city's ruling council, the Lunar Sovereigns. Carrying weapons within the city limits is legal but regulated, and only licensed individuals can carry firearms.
+  geographies: |-
+    The world is dominated by the ever-changing city of Nocturnis, surrounded by a vast, desolate landscape known as the Scorch. The Scorch is a reminder of the Great War, a wasteland where little life thrives. To the north lies the Crystal Peaks, a mountain range rich in moonstones. To the east, the Verdant Expanse is a vast forest that has begun to reclaim the land. Within Nocturnis, notable landmarks include the Ever-Shifting Bazaar, a marketplace that changes location and layout every night, and the Celestial Spire, a tower that remains static despite the city's rearrangements. The city is divided into districts, each with its unique characteristics, such as the Industrial Quarter, the Residential Loop, and the Sovereign's Circle.
+  civilizations: |-
+    The city of Nocturnis is the center of civilization, ruled by the Lunar Sovereigns who control the supply of moonstones and advanced technology. The Sovereigns live in the opulent Sovereign's Circle, while the rest of the population resides in the ever-changing districts. The Scorch Nomads roam the wasteland, trading scavenged pre-war technology and resources with the Verdant Folk and Crystal Dwarves. The Verdant Folk live in harmony with nature in the Verdant Expanse, while the Crystal Dwarves mine moonstones in the Crystal Peaks. Tensions exist between the Lunar Sovereigns and the other factions due to the Sovereigns' control of resources and technology, as well as their secretive and hierarchical nature.
+  history: |-
+    The Great War, which ended 75 years ago, was a cataclysmic event that reshaped the world. It was fought between the ancient precursors to the Lunar Sovereigns and an alliance of other races over control of Nocturna and advanced technology. The war resulted in the devastation of the landscape, now known as the Scorch, and the creation of the ever-changing city of Nocturnis. In the aftermath, the Lunar Sovereigns seized control of the city and its resources, leading to the current societal structure and tensions.
+  economics: |-
+    The economy of this world revolves around the trade of moonstones, technology, and resources. The Lunar Sovereigns control the supply of moonstones, which are essential for powering advanced technology and Lunar Compasses. The Crystal Dwarves mine these moonstones and trade them for resources with the other factions. The Scorch Nomads scavenge pre-war technology and resources from the Scorch, trading them with the Verdant Folk for food and other necessities. The Verdant Folk, in turn, trade with the other factions for technology and resources they cannot produce themselves.
+  politics: |-
+    The Lunar Sovereigns hold the most power, controlling access to moonstones and advanced technology. Their rule is absolute within Nocturnis, but their influence wanes in the outer regions. The Scorch Nomads and Verdant Folk have a tense but mutually beneficial relationship, with the Nomads providing technology and the Verdant Folk providing food and shelter. The Crystal Dwarves maintain a neutral stance, focusing on their mining operations and trade agreements. The primary conflict lies between the Lunar Sovereigns and the other factions, who resent the Sovereigns' control of resources and technology.
+  religion: |-
+    Religion in this world is varied and often tied to the unique aspects of each faction. The Lunar Sovereigns worship the moon and Nocturna, believing themselves to be chosen by its power. The Scorch Nomads revere the ancient pre-war technology, seeing it as a reminder of a lost golden age. The Verdant Folk practice a form of animism, believing in the spirits of nature and the interconnectedness of all living things. The Crystal Dwarves worship the mountains and the earth, seeing themselves as stewards of its resources. Religious tensions exist, particularly between the Lunar Sovereigns and the other factions, who see the Sovereigns' beliefs as justification for their control and oppression.
+  races:
+  - name: Crystal Dwarves
+    description: |-
+      The Crystal Dwarves are a race of short, stout beings who inhabit the Crystal Peaks. They possess crystalline skin that refracts light and a natural affinity for crafting and technology. Their society is clan-based and industrious, with a strong emphasis on craftsmanship and innovation. They are the primary miners of moonstones, which they trade with the Lunar Sovereigns for other resources.
+  - name: Lunar Sovereigns
+    description: |-
+      The Lunar Sovereigns are humans who have adapted to harness Nocturna, granting them enhanced abilities such as night vision and heightened reflexes during nighttime. They are the ruling class of Nocturnis, often possessing pale, almost translucent skin and silver hair due to prolonged exposure to Nocturna. Their society is hierarchical and secretive, with power concentrated among a few families who control access to moonstones and advanced technology.
+  - name: Scorch Nomads
+    description: |-
+      The Scorch Nomads are a hardy people who have adapted to survive in the harsh landscape of the Scorch. They are a mix of humans and other races who were exiled or fled Nocturnis after the Great War. They possess dark, weathered skin and are known for their resilience and resourcefulness. Their society is tribal and egalitarian, with a deep distrust of technology and the Lunar Sovereigns.
+  - name: Verdant Folk
+    description: |-
+      The Verdant Folk are a race of humanoid plant beings who inhabit the Verdant Expanse. They possess bark-like skin, leaves for hair, and a deep connection to nature. Their society is communal and peaceful, with a strong emphasis on harmony and balance. They possess an innate ability to manipulate plant life, which they use to create their homes and tools.
+story:
+  title: The Lunar Cartographer
+  genre: Fantasy
+  start_time: '2026-08-31T23:00:00Z'
+  preface: |-
+    The apartment smells of boiled cabbage and lamp oil. A fine dust of plaster drifts down from the ceiling where the building groans, settling itself into its new configuration for the night. You sit at the oak table by the window, watching motes swirl in the amber light of your kerosene lamp. Across the scarred wood, a half-finished map of Nocturnis spreads out like a rumor you can't quite believe. The Larkspur Quarter, where you woke this morning, has already migrated two blocks north by your last bearings. The Bell of Saint Aravel chimes once in the distance—11 p.m., or close enough. Outside the open window, the cobblestones of Mournwell Lane breathe with a faint, silvery luminescence, rearranging themselves with the patience of something that has done this for seventy-five years. Your landlord, old Grenn, has left a note under your door demanding the overdue rent by morning, or he'll have your table and your instruments out in the lane by noon. The map is worth more than the rent. Both are due before the city forgets where it put this building.
+  summary: |-
+    The player is a cartographer hired by the Lunar Sovereigns to map the nightly rearrangements of the city of Nocturnis, where buildings, streets, and landmarks shift with the moon's phases due to residual magical energy called Nocturna. As they work, they uncover conspiracies within the Sovereigns, encounter the displaced peoples of the Scorch Nomads and Verdant Folk, and grapple with the disorienting effects of prolonged exposure to Nocturna, which causes memory loss. The game's tone is grounded, atmospheric, and focused on mystery and survival in a world that refuses to stay still.
+characters:
+- fullname: Isbet Marrow
+  race: Scorch Nomads
+  nickname: Iz
+  age: 34
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: |-
+    Born in a Scorch caravan that made its living selling bearings and salvaged road-signs to a city which rearranged itself out from under them every night. She walked into Nocturnis at nineteen with a stolen theodolite and a talent nobody in the caravan had a word for: she can look at a street and tell where it has been. The Lunar Sovereigns hired her four years ago to map the nightly rearrangements, pay her badly, and deny in public that the survey exists at all. She has been behind on rent for most of that time.
+  personality: |-
+    Methodical to the point of rudeness. She would rather finish a bearing than finish a sentence, and she trusts a measurement she took herself over anything a Sovereign puts in writing. Dry, patient, slow to anger, and incapable of forgetting a debt in either direction.
+  appearance: |-
+    Weathered dark skin, a nomad's squint, and charcoal on the side of every finger. She wears a surveyor's coat cut down from something heavier, its pockets restitched to hold dividers, a lamp-oil bottle and a roll of waxed twine. Her hair is cropped short and going grey at one temple only.
+  likes: Fresh bearings, strong tea, the hour before the city moves
+  dislikes: Sovereign paperwork, being told a street has always been there
+  fears: The memory loss. She has started writing down what she did yesterday.
+- fullname: Grenn Ollivar
+  race: Lunar Sovereigns
+  nickname: Old Grenn
+  age: 61
+  sex: male
+  is_protagonist: false
+  is_companion: false
+  backstory: |-
+    A Sovereign family's third son, bought out of his inheritance at thirty for a sum that covered exactly one boarding house in the Larkspur Quarter. He has spent the thirty years since laying his foundation stones loose so the building survives the shifting, and reminding anyone who will hold still that he owns it outright. He does not go up to the third floor after dark.
+  personality: |-
+    Loud, aggrieved, and fundamentally decent under about two inches of grievance. He threatens eviction roughly weekly and has carried one out once in thirty years. He would very much like to be asked about the house.
+  appearance: |-
+    Heavyset, pale even for a Sovereign, silver hair gone thin on top, and a cough he blames on the plaster dust. He carries a ledger under one arm at all hours, including the hours when nobody is awake to owe him anything.
+  likes: His own foundations, being right about the plaster, a settled ledger
+  dislikes: The Sovereign's Circle, tenants who talk to the walls
+  fears: That the house will crack after all, and that his family was right
+locations:
+- name: Grenn's Boarding House, Room 3
+  detail_level: realized
+  opening: true
+  teaser: |-
+    Boiled cabbage, lamp oil, and the creak of a building that won't sit still.
+  description: |-
+    You stand in a narrow room on the third floor of Grenn's boarding house, where the air hangs thick with the smell of boiled cabbage and warm lamp oil. A fine dust of plaster drifts down from the ceiling, caught in the amber glow of a kerosene lamp that sits on an oak table pushed against the window. The building groans softly around you, its timbers settling into their new configuration as the city breathes. The floorboards bow in the middle, and the plaster wall is patched in three places where old cracks have come and gone with previous rearrangements.
+
+    On the table, a half-finished map of Nocturnis spreads across the scarred wood, weighted down at the corners by a chipped inkwell, a stub of charcoal, and a cold cup of tea. A leather satchel slumped on the floor beside the chair holds a compass that is not of any make you trust, along with field notes bundled with waxed twine. The window is cracked open, and through it you can see Mournwell Lane below, its cobblestones pulsing with a faint, silvery luminescence as they drift almost imperceptibly into a new alignment. Across the way, the shuttered face of a clothier's shop has migrated closer to your window since morning, its sign turned just far enough that you cannot read it any more.
+  lore: |-
+    Grenn's boarding house has stood on this spot for as long as anyone in the Larkspur Quarter can recall, though the corner it occupies is rarely the same corner two nights running. Old Grenn, a heavyset man with a cough he blames on the dust, has run the place for thirty years and learned to lay his foundation stones loose so the building can shift without cracking apart. It is one of the few structures in the district not owned outright by the Lunar Sovereigns, which makes Grenn proud and his tenants nervous in equal measure.
+
+    Room 3 in particular has a reputation. Two previous tenants left in the night without giving notice, and a third--a sailor off a caravan--swore the walls whispered to him in the small hours. Grenn dismisses this as the same disorientation that takes anyone who lives too long under Nocturna's glow, though he is careful never to spend more than an hour at a stretch in the room himself, and he charges less for it than for Room 2.
+- name: Mournwell Lane
+  detail_level: stub
+  teaser: |-
+    Step out and eavesdrop on the lane while you still know where it runs.
+- name: Grenn's Boarding House hallway
+  detail_level: stub
+  teaser: |-
+    Wake the old man and buy yourself a little goodwill before dawn.
+- name: Larkspur Quarter rooftops
+  detail_level: stub
+  teaser: |-
+    Climb higher and watch the city read itself into a new shape tonight.
+connections:
+- between: ['Grenn''s Boarding House, Room 3', Mournwell Lane]
+  distance: adjacent
+  travel_method: climbing
+- between: ['Grenn''s Boarding House, Room 3', Grenn's Boarding House hallway]
+  distance: adjacent
+  travel_method: walking
+- between: ['Grenn''s Boarding House, Room 3', Larkspur Quarter rooftops]
+  distance: a short walk
+  travel_method: climbing

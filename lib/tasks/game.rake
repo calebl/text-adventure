@@ -39,6 +39,26 @@ namespace :game do
     puts "Add a character with: rails runner \"Story.find(#{story.id}).create_character\""
   end
 
+  desc "Export a generated world to a checked-in seed file. Usage: rake 'game:export[3]'"
+  task :export, [ :story_id, :path ] => :environment do |t, args|
+    story = Story.find(args[:story_id])
+    exporter = WorldSeed::Exporter.new(story)
+    path = exporter.write!(path: args[:path])
+
+    inside_app = path.to_s.start_with?(Rails.root.to_s)
+    puts "Exported #{story.title.inspect} to #{inside_app ? path.relative_path_from(Rails.root) : path}"
+
+    if exporter.warnings.any?
+      puts
+      puts "Warnings:"
+      exporter.warnings.each { |warning| puts "  - #{warning}" }
+    end
+
+    puts
+    puts "The file is an authored artifact from here on -- edit it by hand, then"
+    puts "check it loads with: bin/rails db:seed"
+  end
+
   desc "List generated stories"
   task list: :environment do
     stories = Story.includes(:universe).order(:created_at)
