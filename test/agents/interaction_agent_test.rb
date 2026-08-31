@@ -147,19 +147,42 @@ class InteractionAgentTest < ActiveSupport::TestCase
   # WAS A BUG. `Character#sex` is an ActiveRecord enum, so it reads back the KEY
   # -- the prompt said "is a non_binary" while the rule two lines below keyed on
   # "non-binary", and `transgender` had no rule at all. Both are reachable:
-  # Character::Generator rolls sex from all four Character.sexes values. The
-  # prompt now states the pronouns instead of asking the model to infer them.
+  # Character::Generator rolls sex from every Character.sexes value. The prompt
+  # now states the pronouns instead of asking the model to infer them, and reads
+  # them off `Character::PRONOUNS` -- pronouns are a fact about the person, not
+  # about this agent.
   test "the narrator is told which pronouns to use, for every sex" do
-    # Every value Character::Generator can roll has an entry, so nothing falls
-    # through to the default by accident.
-    assert_equal Character.sexes.keys.sort, InteractionAgent::PRONOUNS.keys.sort
+    # Every value Character::Generator can roll has an entry, so no sex can
+    # reach the prompt with no pronouns of its own. CharacterTest pins the same
+    # thing at the table; this pins that the prompt actually says it.
+    assert_equal Character.sexes.keys.sort, Character::PRONOUNS.keys.sort
 
-    InteractionAgent::PRONOUNS.each do |sex, pronouns|
+    Character::PRONOUNS.each do |sex, pronouns|
       character = create(:character, sex: sex)
       prompt = InteractionAgent.new(character).narrator_prompt("Hello?", CHARACTER_RESPONSE)
 
       assert_match(/Refer to #{character.fullname} as #{Regexp.escape(pronouns)}\./, prompt)
       assert_no_match(/is a #{sex}/, prompt)
+    end
+  end
+
+  # `transgender` was one value standing in for two different people, and it got
+  # they/them -- which is wrong for both of them. A trans woman is a woman and a
+  # trans man is a man, so each takes exactly what any other woman or man takes.
+  test "a trans woman and a trans man get the same pronouns as any other woman or man" do
+    assert_equal Character::PRONOUNS.fetch("female"), Character::PRONOUNS.fetch("trans_woman")
+    assert_equal Character::PRONOUNS.fetch("male"), Character::PRONOUNS.fetch("trans_man")
+  end
+
+  # The narrator needs the pronouns; it does not need to be told a character is
+  # trans, any more than it is told that a character is cis. The prompt states
+  # the pronouns and no gender label at all, so there is nothing here to leak.
+  test "the narrator is never told that a character is trans" do
+    %w[trans_woman trans_man].each do |sex|
+      character = create(:character, sex: sex)
+      prompt = InteractionAgent.new(character).narrator_prompt("Hello?", CHARACTER_RESPONSE)
+
+      assert_no_match(/trans/i, prompt)
     end
   end
 

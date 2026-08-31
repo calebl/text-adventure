@@ -55,7 +55,10 @@ editing a sentence is a one-line diff and what you type is what gets stored.
   `::TRAVEL_METHODS`. `time_to_travel` is derived from those two and is
   deliberately absent from the file.
 - `sex` is a `Character.sexes` key: `male`, `female`, `non_binary`,
-  `transgender`.
+  `trans_woman`, `trans_man`. Not checked by `validate!` -- it is `Character`'s
+  own `inclusion` validation that rejects a bad one, inside the same
+  transaction, so a typo still fails the load rather than storing something the
+  pronoun rules cannot answer for.
 
 A file that breaks one of these raises `WorldSeed::Loader::InvalidWorld` naming
 the file, rather than failing three records later.
