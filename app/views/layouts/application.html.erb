@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Text Adventure</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%# Inline on purpose: no propshaft, no importmap, no build step yet. %>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        background: #14161a; color: #cfd3d8;
+        font: 15px/1.6 ui-monospace, "DejaVu Sans Mono", monospace;
+        margin: 0; padding: 2rem 1rem;
+      }
+      main { max-width: 44rem; margin: 0 auto; }
+      h1 { font-size: 1.2rem; letter-spacing: .08em; text-transform: uppercase; color: #8ba0b4; }
+      h2 { font-size: 1rem; color: #e6e9ec; margin: 0 0 .25rem; }
+      a { color: #7fb2d8; }
+      hr { border: 0; border-top: 1px solid #262b31; margin: 1.5rem 0; }
+      .preface { color: #9aa3ac; font-style: italic; white-space: pre-wrap; }
+      .turn { white-space: pre-wrap; margin: 0 0 1.5rem; }
+      .command { color: #d8c07f; margin: 0 0 .35rem; }
+      .story { border: 1px solid #262b31; padding: .75rem 1rem; margin-bottom: .75rem; }
+      .story p { color: #8b939b; margin: .25rem 0 .75rem; }
+      form { display: flex; gap: .5rem; }
+      input[type=text] {
+        flex: 1; background: #0e1013; color: #cfd3d8; border: 1px solid #333b44;
+        padding: .5rem .6rem; font: inherit;
+      }
+      button {
+        background: #262b31; color: #cfd3d8; border: 1px solid #3a424b;
+        padding: .5rem .9rem; font: inherit; cursor: pointer;
+      }
+      button:hover { background: #333b44; }
+      .cursor::after { content: "\2588"; animation: blink 1s steps(2) infinite; }
+      @keyframes blink { 50% { opacity: 0; } }
+      .empty { color: #6b737b; }
+      .alert { color: #d88f7f; border: 1px solid #4a3230; padding: .5rem .75rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <% if flash[:alert] %><p class="alert"><%= flash[:alert] %></p><% end %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

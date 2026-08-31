@@ -26,7 +26,8 @@ So revisiting a place reuses the persisted `Location` while creating a new
 
 ### Done
 
-- Rails 8 API app, SQLite, 340 tests green.
+- Rails 8 app, SQLite, 307 tests green. No longer API-only: `api_only` is off
+  and `ApplicationController < ActionController::Base` so it can render ERB.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph.
 - `Universe::Generator`, `Story::Generator` — bootstrap a world from a premise.
@@ -34,7 +35,7 @@ So revisiting a place reuses the persisted `Location` while creating a new
   are assigned from the universe's list, not invented per character.
 - `Playthrough` model — a session's position in a story (protagonist,
   `current_location`, `current_scene`, session `token`), plus `is_protagonist`
-  on `Character`. State layer only; nothing reads or writes it yet.
+  on `Character`. The browser interface reads and writes it.
 - `Race` model — `Universe has_many :races`, `Character belongs_to :race`, with a
   validation that a character's race comes from its own story's universe.
 - Explicit lengths (`max_length` plus a stated sentence count) on every schema
@@ -60,11 +61,25 @@ So revisiting a place reuses the persisted `Location` while creating a new
   happens once per place, never twice. `Location::Generator.opening(story)`
   names the first location from the story's preface and realizes it.
   `Location#exits` is the exit list the game loop will resolve movement against.
+- **A browser you can play in.** `bin/rails server`, open `localhost:3000`,
+  pick a story, start a playthrough, read the preface, type an action and watch
+  the narration stream in token by token; reload and the log is still there.
+  Deliberately ugly and deliberately small: three routes, four ERB templates,
+  an inline `<style>`, six lines of `EventSource`, and no gems at all — no
+  Node, no importmap, no propshaft, no Turbo, no Action Cable.
+- `Scene::Narrator` — one unschema'd `BaseAgent` call that streams prose to a
+  block and persists the finished text as a `Scene` in an `ensure`, so a
+  browser that closes mid-turn does not lose it. It takes a block precisely so
+  swapping SSE for Turbo Streams later touches nothing but the consumer.
+- `BaseAgent#ask` forwards a block to RubyLLM, which turns the call into a
+  token stream.
 
 ### Not built yet
 
-There is still **no game loop**. You can generate a world but not walk around
-in it. That is the whole of the next milestone.
+There is still **no world to walk around in**. The loop runs — you type, the
+narrator answers, the turn is kept — but every turn happens in the one opening
+location. Movement, input classification and location generation are the whole
+of the next milestone.
 
 ## Next up
 
@@ -78,9 +93,13 @@ in it. That is the whole of the next milestone.
       durable `Location` and the momentary `Scene`: the world is not somebody's
       progress through it, and one generated world can be played twice. The
       `token` is what will bind a browser session to a playthrough.
-- [ ] Nothing writes either yet — `Character::Generator` never sets
-      `is_protagonist` (nor `is_companion`), and no code creates a
-      `Playthrough`. That belongs to the game loop and the browser interface.
+- [x] `PlaythroughsController#create` creates the `Playthrough`, points it at
+      `Story#protagonist` and at the story's first location, and binds the
+      browser session to it with the playthrough's `token`. No auth, no user
+      model — a single unguessable token in the cookie is the whole mechanism.
+- [ ] `Character::Generator` still never sets `is_protagonist` (nor
+      `is_companion`), so a generated story has no protagonist and the
+      playthrough's `character` stays nil. Narration copes; it should not have to.
 
 ### 2. Scene generation
 
@@ -98,7 +117,9 @@ in it. That is the whole of the next milestone.
       realized location). Then generate a `Scene` there. This is the
       load-or-generate seam that makes the whole idea work.
 - [ ] On **talk**: hand off to the existing `InteractionAgent`.
-- [ ] `rake game:play[story_id]` — the first genuinely playable interface.
+- ~~`rake game:play[story_id]`~~ — skipped on purpose. The browser is the
+      playable interface; the rake tasks build worlds and the browser plays
+      them. Do not add a `game:play` task.
 
 ### 4. Persistence and history
 
@@ -112,11 +133,38 @@ in it. That is the whole of the next milestone.
 
 ### 5. Interface
 
-- [ ] `config/routes.rb` is empty. Add API endpoints once the rake loop proves
-      the design.
+The first playable browser interface has landed (see **Done**). What it still
+owes, roughly in order:
+
+- [ ] Echo past commands in the turn log. A `Scene` has no column for the input
+      that produced it, so a reloaded transcript is narration only. Needs a
+      migration, so it waits for one.
+- [ ] Jobs, Turbo Streams over Action Cable, and durability. SSE holds one Puma
+      thread per open stream and loses the live view on reload; the persisted
+      `Scene` is the only thing that survives today. Swap `NarrationsController`
+      for a job broadcasting batched chunks (~20 chars) once the real token rate
+      is known. `Scene::Narrator` already takes a block so only the consumer
+      moves. That stage brings `propshaft`, `importmap-rails` and `turbo-rails`
+      — do not install them before it.
+- [ ] Visual style. Deferred on purpose until there is a real loop to look at.
+- [x] A playthrough starts in the story's first **realized** location — the
+      opening room `game:new` generates. Stubs are skipped: they are exits
+      nobody has walked into, with a name and a teaser and nothing to read.
+- [ ] A story generated before opening locations existed has nowhere to start,
+      so the index lists it without a Play button and `create` refuses it. That
+      whole branch can go once no such stories are left, or once realizing a
+      location on demand is cheap enough to do inside a request.
 
 ## Known issues
 
+- **`ActionController::Live` costs one Puma thread per open stream.** Puma runs
+  3 threads by default, so three people reading narration at once stalls the
+  whole site for everyone else. Irrelevant for one player on localhost; raise
+  `RAILS_MAX_THREADS` before that changes.
+- **A turn dies with its connection.** Closing the tab mid-stream kills the
+  generation. `Scene::Narrator` persists whatever it had in an `ensure`, so the
+  player keeps the part that was written, but the rest is gone. Fixed properly
+  by the job-and-cable stage.
 - **RubyLLM's model registry is a process-wide memoized snapshot.**
   `RubyLLM::Models.instance` is built once, out of the `models` table, falling
   back to the registry JSON the gem ships only when that table is empty. It is
@@ -132,7 +180,6 @@ in it. That is the whole of the next milestone.
   those are the bases of the keycap emoji — so "80 meters" was stored as
   "meters". It now matches `\p{Extended_Pictographic}` instead. Any text
   generated before this fix has silently lost its numbers.
-
 - **Local models are slow, and they run on CPU here.** `ollama ps` reports
   `size_vram: 0`, so nothing is GPU-accelerated on this machine. Measured on a
   small 3-field schema: `gemma3:12b` ≈ 39s, `qwen3:8b` ≈ 92s (it burns the budget
