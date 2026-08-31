@@ -186,15 +186,34 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_equal 1, @story.locations.count
   end
 
-  test "opening names, describes and realizes the story's first location" do
-    agent = FakeAgent.new(OPENING, DETAIL, EXITS)
+  # Story::Generator already named the opening room from the same call that
+  # wrote the preface, so `.opening` only writes it out -- two calls, not three.
+  test "opening realizes the stub the story generator already created" do
+    opening = stub_location(name: "The Drowned Ledger", teaser: OPENING["teaser"])
+    agent = FakeAgent.new(DETAIL, EXITS)
+
     location = BaseAgent.stub(:new, agent) { Location::Generator.opening(@story) }
 
+    assert_equal opening, location
     assert_equal "The Drowned Ledger", location.name
     assert_equal OPENING["teaser"], location.teaser
     assert location.realized?
-    assert_equal @story, location.story
-    assert_equal [ Location::OpeningSchema, Location::DetailSchema, Location::ExitsSchema ], agent.schemas
+    assert_equal [ Location::DetailSchema, Location::ExitsSchema ], agent.schemas
     assert_equal 2, location.exits.count
+  end
+
+  test "opening realizes the story's oldest location, not a later stub" do
+    opening = stub_location(name: "The Drowned Ledger")
+    stub_location(name: "Somewhere Else")
+
+    location = BaseAgent.stub(:new, FakeAgent.new(DETAIL, EXITS)) do
+      Location::Generator.opening(@story)
+    end
+
+    assert_equal opening, location
+  end
+
+  test "opening raises rather than inventing a room the story does not have" do
+    assert_raises(ArgumentError) { Location::Generator.opening(@story) }
   end
 end

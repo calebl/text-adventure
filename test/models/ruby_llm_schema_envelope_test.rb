@@ -16,7 +16,7 @@ class RubyLLMSchemaEnvelopeTest < ActiveSupport::TestCase
     Character::BaseSchema,
     Character::BackgroundSchema,
     Interaction::Schema,
-    Location::OpeningSchema,
+    Story::Schema,
     Location::DetailSchema,
     Location::ExitsSchema
   ].freeze
