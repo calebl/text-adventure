@@ -66,13 +66,16 @@ flowchart TD
     SSE["NarrationsController hands the whole turn to<br/>Playthrough::Turn#play, with a block to stream into"]
     IN --> SSE
 
+    W0["Story#catch_up_world!<br/>every story-time boundary the clock has passed<br/>is applied in Ruby before the command is read<br/>0 tokens, one SELECT MAX, ~90 us"]
+    SSE --> W0
+
     subgraph CL["Playthrough::Classifier#classify"]
         C1["Build the candidates FROM RECORDS<br/>the room's exits, and who is standing in it"]
         C2["MODEL CALL, schema'd<br/>Playthrough::IntentSchema<br/>intent: move / talk / examine / take / other<br/>target: an enum of ONLY those exits and names"]
         C3["Resolve the answer back to a RECORD<br/>an unresolvable target leaves it nil"]
         C1 --> C2 --> C3
     end
-    SSE --> C1
+    W0 --> C1
 
     C3 --> D{"Dispatch on the resolved RECORD,<br/>never on the intent label"}
 
@@ -120,7 +123,7 @@ flowchart TD
     classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
 
     class C2,M3,M4,M6,T1,T2,N2 llm
-    class C1,C3,M1,M5,M7,M8,T5,T6,T7,N3 rec
+    class W0,C1,C3,M1,M5,M7,M8,T5,T6,T7,N3 rec
     class N1,T4 gap
     class IN,SSE,OUT,D,T3 io
 ```
@@ -143,6 +146,46 @@ already-realized location untouched. So the same three lines write a room the
 first time and read it every time after, and there is no code path that can
 regenerate a place the player has already seen. `Scene::Generator` raises on a
 stub on purpose, which is why realizing comes first and is not optional.
+
+### The story's clock, and a world that moves on its own
+
+Two things in that diagram belong to the world rather than to the turn, and
+neither of them asks a model anything.
+
+**`Story#clock` is what time it is in the fiction**, derived from
+`scenes.story_timestamp` rather than stored. A turn's scene is stamped with the
+previous scene plus what the turn cost: `LocationConnection.travel_minutes` for
+a journey, `Scene::TURN_MINUTES` for anything else. `Time.current` no longer
+appears anywhere on that path, which closes a defect a player could read — the
+gap in "you were last here about an hour ago" used to be wall-clock, so shutting
+the tab for a week and coming back was narrated as a week away.
+
+**`WorldMechanic` is the world changing itself on that clock.** `kind` and
+`cadence` are keys into fixed tables in code, each naming a Ruby operation over
+records, the same shape `LocationConnection::DISTANCES` already has; a generated
+or hand-seeded world supplies *parameters* — which places are `mobile`, how
+often — and never behaviour. The first one, `shuffle_connections`, repoints one
+endpoint of every edge joining a mobile place to a fixed one, so the Lunar
+Cartographer's city really does rearrange itself at midnight.
+
+The reason it is built this way is the standing principle above, taken to its
+end: **nothing has to remember it.** The narrator only ever sees an exit list
+assembled from `location_connections`, and `Playthrough::Classifier` resolves
+movement out of a closed enum built from the same rows — so after a shuffle a
+model that has forgotten the mechanic entirely *cannot* move the player the old
+way, because the old way is not in the enum.
+
+`last_run_at` is a column holding story time, so catching up is arithmetic on
+two datetimes read out of the database. There is no timer, no job and nothing in
+memory: a process that was down for a week pays the nights it owes on the next
+turn, in order, once each. Measured on the seeded world:
+
+| what | cost |
+| --- | --- |
+| per-turn check, nothing due | **~90 µs**, 2 queries (~810 µs with the dev SQL log on) |
+| the cadence arithmetic alone | **0.7 µs**, no SQL |
+| per-turn tokens | **0** |
+| a night that actually fires | ~150 ms, once per in-fiction night |
 
 ### What a turn costs
 
@@ -171,6 +214,13 @@ stack, so the fix is the job-and-cable stage, not fewer schemas.
   of its calls.
 - **The player's command is not in the turn log.** `scenes` has no column for
   it, so a reloaded transcript is narration only.
+- **The world moves, and nobody tells the player.** `WorldMechanic` repoints the
+  graph and writes a `WorldEvent`, and the next arrival paragraph is generated
+  from the new exits — but nothing says *what changed while you were gone*. That
+  is deliberately a separate step: the honest version diffs the exits the player
+  was actually shown against the ones there are now, because over two nights a
+  shuffle can return a place to the same neighbour and replaying an event log
+  would announce a change the player never experienced.
 
 See **[ROADMAP.md](ROADMAP.md)** for where each of those sits in the queue.
 

@@ -115,6 +115,72 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
     assert_match "stood here before", second_agent.prompts.first
   end
 
+  # --- story time ----------------------------------------------------------
+
+  # An arrival happens at the end of the journey, and how long the journey took
+  # is `LocationConnection`'s answer from its own fixed tables. No model, no wall
+  # clock.
+  test "an arrival is stamped the journey's length after the scene it came from" do
+    from = realized_location(name: "Mournwell Lane")
+    to = realized_location(name: "The Celestial Spire")
+    create(:location_connection, location: from, connected_location: to,
+                                 distance: "across the district", travel_method: "walking")
+    left = create(:scene, story: @story, location: from, story_timestamp: @story.start_time + 1.hour)
+
+    scene, = generate(to, previous_scene: left)
+
+    assert_equal left.story_timestamp + 20.minutes, scene.story_timestamp
+  end
+
+  test "a slower way of travelling costs more story time" do
+    from = realized_location(name: "Mournwell Lane")
+    to = realized_location(name: "Larkspur Quarter rooftops")
+    create(:location_connection, location: from, connected_location: to,
+                                 distance: "across the district", travel_method: "climbing")
+    left = create(:scene, story: @story, location: from, story_timestamp: @story.start_time)
+
+    scene, = generate(to, previous_scene: left)
+
+    assert_equal @story.start_time + 60.minutes, scene.story_timestamp
+  end
+
+  test "an arrival with nothing before it happens at the story's clock" do
+    location = realized_location
+
+    scene, = generate(location)
+
+    assert_equal @story.clock, scene.story_timestamp
+  end
+
+  # THE DEFECT THIS CLOSES. The player shuts the tab for three weeks and comes
+  # back; the fiction should say twenty minutes, because twenty minutes of the
+  # story is what passed.
+  test "how long they were gone is story time, not how long the tab was shut" do
+    location = realized_location(name: "Room 3")
+    lane = realized_location(name: "Mournwell Lane")
+    create(:location_connection, location: lane, connected_location: location,
+                                 distance: "a short walk", travel_method: "walking")
+
+    first, = generate(location)
+    left = create(:scene, story: @story, location: lane, previous_scene: first,
+                          story_timestamp: first.story_timestamp + 15.minutes)
+
+    travel 3.weeks do
+      _second, agent = generate(location.reload, previous_scene: left)
+
+      assert_match "20 minutes ago", agent.prompts.first
+      assert_no_match(/weeks ago/, agent.prompts.first)
+    end
+  end
+
+  test "the visit is stamped with the arrival's own story moment" do
+    location = realized_location
+
+    scene, = generate(location)
+
+    assert_equal scene.story_timestamp, location.reload.last_protagonist_visit
+  end
+
   # --- who is present ------------------------------------------------------
 
   test "the protagonist is present" do

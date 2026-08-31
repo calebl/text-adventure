@@ -157,6 +157,74 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_not_nil vestibule.reload.last_protagonist_visit
   end
 
+  # --- story time -----------------------------------------------------------
+
+  test "an arrival costs the story the length of the walk" do
+    connect("Drowned Vestibule")
+    here_scene = create(:scene, story: @story, location: @here,
+                                story_timestamp: @story.start_time + 1.hour)
+    @playthrough.update!(current_scene: here_scene)
+
+    scene, = play("go down", CLASSIFY.call("move", "Drowned Vestibule"), ARRIVAL)
+
+    assert_equal here_scene.story_timestamp + 1.minute, scene.story_timestamp
+  end
+
+  test "a conversation costs the story ten minutes" do
+    holdover("Rell Vance")
+    before = @playthrough.reload.story_now
+
+    scene, = play("ask about the crate", CLASSIFY.call("talk", "Rell Vance"),
+                  REACTION, "She looks up from the crate.")
+
+    assert_equal before + Scene::TURN_MINUTES.fetch("conversation").minutes, scene.story_timestamp
+  end
+
+  test "any other turn costs the story one beat in the room" do
+    before = @playthrough.reload.story_now
+
+    scene, = play("look at the awnings", CLASSIFY.call("examine", "awnings"),
+                  "Canvas, patched and repatched.")
+
+    assert_equal before + Scene::TURN_MINUTES.fetch("action").minutes, scene.story_timestamp
+  end
+
+  test "no turn stamps a scene with the wall clock" do
+    travel 3.weeks do
+      scene, = play("look at the awnings", CLASSIFY.call("examine", "awnings"), "Canvas.")
+
+      assert_operator scene.story_timestamp, :<, Time.current - 2.weeks
+    end
+  end
+
+  # --- the world moving on its own ------------------------------------------
+
+  # THE WORLD MOVES FIRST, and it does not need anybody to be watching. Nothing
+  # is scheduled and nothing is in memory: the nights are simply owed, and the
+  # next turn pays them.
+  test "a turn catches the world up on every night the story has passed" do
+    mechanic = create(:world_mechanic, story: @story, name: "The nightly rearrangement")
+    @playthrough.update!(current_scene: create(:scene, story: @story, location: @here,
+                                                       story_timestamp: @story.start_time + 2.days))
+
+    play("look at the awnings", CLASSIFY.call("examine", "awnings"), "Canvas.")
+
+    assert_not_nil mechanic.reload.last_run_at
+    assert_operator mechanic.last_run_at, :>, @story.start_time
+  end
+
+  test "the world catching up costs no model call of its own" do
+    create(:world_mechanic, story: @story, name: "The nightly rearrangement")
+    @playthrough.update!(current_scene: create(:scene, story: @story, location: @here,
+                                                       story_timestamp: @story.start_time + 2.days))
+
+    # FakeAgent raises when a call it has no queued answer for arrives, so a turn
+    # that made an extra one would fail here rather than pass quietly.
+    _scene, _chunks, agent = play("look at the awnings", CLASSIFY.call("examine", "awnings"), "Canvas.")
+
+    assert_equal 2, agent.prompts.size
+  end
+
   # --- moving when the move cannot be made ---------------------------------
 
   test "a move nobody can make is narrated instead, and the player stays put" do

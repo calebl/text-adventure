@@ -114,11 +114,19 @@ The current database includes the following story-related models with proper ass
 - **Story** → **Characters**, **Locations**, **Scenes**
 - **Scene** → belongs to **Location**, has many **Characters** through join table
 - **Interaction** → belongs to **Character**, **Scene**, and **Location**
-- **Location** → tracks `last_protagonist_visit` timestamp updated via Scene callbacks
+- **Location** → tracks `last_protagonist_visit`, a moment on **story** time (not
+  the wall clock), updated via Scene callbacks
   (with one deliberate exception: a `Scene` marked `is_opening` is world data
   written before anybody plays, so it does not stamp the visit —
   `PlaythroughsController#create` does when a player arrives)
 - **Story** → `has_one :opening_scene`, the narrated arrival the world carries
   and every playthrough of that story starts on
+- **Story** → `#clock`, what time it is in the fiction, derived from
+  `scenes.story_timestamp`. Never use `Time.current` for story time; see
+  `AGENTS.md` → *Story time, and a world that moves on its own*
+- **WorldMechanic** → **WorldEvents**: the world changing itself on the story's
+  clock. `kind` and `cadence` are keys into fixed tables in code, so a seeded or
+  generated world supplies parameters (`locations.mobile`, the cadence) and
+  never behaviour
 
 - All interactions with AI LLMs should use a structured output with RubyLLM::Schema

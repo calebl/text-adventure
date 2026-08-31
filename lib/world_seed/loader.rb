@@ -15,6 +15,8 @@
 #   Scene      (story, is_opening)       the story's one opening arrival, which
 #                                        is the only Scene that is world rather
 #                                        than progress -- see WorldSeed::Exporter
+#   Mechanic   (story, name)             unique index; a world's own laws are
+#                                        world data, so they are seeded with it
 #
 # The loader adds and updates; it does not delete rows the file no longer
 # mentions. So renaming a location in the file and re-seeding leaves the old one
@@ -52,6 +54,7 @@ class WorldSeed::Loader
       locations = load_locations!(story)
       load_connections!(locations)
       load_characters!(story, universe)
+      load_mechanics!(story)
       # Last, because it names a location AND a cast by natural key and both
       # have to exist first. It is written near the top of the FILE, where
       # somebody editing the prose will find it; load order and key order are
@@ -131,6 +134,24 @@ class WorldSeed::Loader
     end
   end
 
+  # A world's own laws: which fixed Ruby operation runs on which cadence, and the
+  # in-fiction reason. `kind` and `cadence` are keys into `WorldMechanic::KINDS`
+  # and `::CADENCES`, so the file supplies parameters and never behaviour --
+  # which places move is `locations[].mobile`, loaded with the locations above.
+  #
+  # `last_run_at` is deliberately absent from the file. It is a mechanic's
+  # progress through a story, not part of the world, and a seeded `last_run_at`
+  # would tell a fresh database that nights it has never played had already
+  # happened.
+  def load_mechanics!(story)
+    mechanic_documents.each do |attributes|
+      name = attributes.fetch("name")
+      mechanic = story.world_mechanics.find_by(name: name) || story.world_mechanics.new(name: name)
+      mechanic.assign_attributes(attributes.except("name"))
+      mechanic.save!
+    end
+  end
+
   # The story's opening arrival: the moment the player is standing in when they
   # start, narrated once at world-building time so nobody waits on a model call
   # for the first screen of the game.
@@ -197,6 +218,53 @@ class WorldSeed::Loader
     end
 
     validate_opening_scene!(names, openings.first.fetch("name"))
+    validate_mechanics!
+  end
+
+  # A mechanic that cannot run is the worst kind of seed-file typo: the world
+  # loads, the game plays, and the thing the file says happens every night never
+  # happens. So the parameters are checked against the fixed tables in code, and
+  # a `shuffle_connections` is checked against the graph the file actually
+  # declares -- it needs at least two edges joining a `mobile` location to one
+  # that is not, because it repoints one endpoint of each and there has to be
+  # something to swap.
+  def validate_mechanics!
+    names = mechanic_documents.map { |attributes| attributes["name"] }
+    raise InvalidWorld, "#{where}: every mechanic needs a `name` -- it is the key re-seeding matches on" if names.any?(&:blank?)
+
+    duplicates = names.group_by(&:itself).select { |_, group| group.size > 1 }.keys
+    raise InvalidWorld, "#{where}: duplicate mechanic names: #{duplicates.join(", ")}" if duplicates.any?
+
+    mechanic_documents.each do |attributes|
+      name = attributes.fetch("name")
+      kind = attributes["kind"]
+      cadence = attributes["cadence"]
+
+      raise InvalidWorld, "#{where}: mechanic #{name.inspect} has kind #{kind.inspect}; the catalogue is #{WorldMechanic::KINDS.keys.join(", ")}" unless WorldMechanic::KINDS.key?(kind)
+      raise InvalidWorld, "#{where}: mechanic #{name.inspect} has cadence #{cadence.inspect}; the cadences are #{WorldMechanic::CADENCES.keys.join(", ")}" unless WorldMechanic::CADENCES.key?(cadence)
+
+      next unless kind == "shuffle_connections"
+      next if shufflable_edge_count >= 2
+
+      raise InvalidWorld, "#{where}: mechanic #{name.inspect} shuffles connections, but the file declares " \
+                          "#{shufflable_edge_count} connection(s) between a `mobile: true` location and one that is not. " \
+                          "It needs at least two, or nothing can move."
+    end
+  end
+
+  # Counted from the FILE rather than from the database, so a hand edit is
+  # caught before it loads. Edges with two mobile ends are not shufflable and
+  # that is deliberate: a building whose rooms are all mobile travels as one
+  # piece with its own doors intact.
+  def shufflable_edge_count
+    @shufflable_edge_count ||= begin
+      mobile = location_documents.select { |attributes| attributes["mobile"] }.map { |attributes| attributes.fetch("name") }.to_set
+
+      connection_documents.count do |attributes|
+        pair = Array(attributes["between"])
+        pair.count { |name| mobile.include?(name) } == 1
+      end
+    end
   end
 
   # A format 2 world carries its own opening arrival, and it is required rather
@@ -256,5 +324,9 @@ class WorldSeed::Loader
 
   def opening_scene_document
     document.fetch("opening_scene")
+  end
+
+  def mechanic_documents
+    Array(document["mechanics"])
   end
 end

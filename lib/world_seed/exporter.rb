@@ -2,8 +2,9 @@
 #
 # The whole graph goes out: the Universe and its races, the Story, its
 # characters (and their items), every Location the story has -- realized or
-# stub -- and the edges between them. What is deliberately left behind is
-# progress rather than world: Playthroughs, `last_protagonist_visit` and every
+# stub -- the edges between them, and the story's own `mechanics`. What is
+# deliberately left behind is progress rather than world: Playthroughs,
+# `last_protagonist_visit`, `WorldEvent`s, a mechanic's `last_run_at` and every
 # Scene BUT ONE are somebody's way through the world, not the world. #warnings
 # says so out loud when there is any, so nothing is dropped silently.
 #
@@ -80,7 +81,11 @@ class WorldSeed::Exporter
       "opening_scene" => opening_scene_document,
       "characters" => characters_document,
       "locations" => locations_document,
-      "connections" => connections_document
+      "connections" => connections_document,
+      # Last, and after the graph it operates on: a mechanic's parameters only
+      # mean anything once you have read which locations are `mobile` and which
+      # edges join a mobile place to a fixed one.
+      "mechanics" => mechanics_document
     }.compact
   end
 
@@ -95,6 +100,9 @@ class WorldSeed::Exporter
 
     @warnings << "#{scenes} scene(s) not exported: a scene is a moment in a playthrough, not part of the world." if scenes.positive?
     @warnings << "#{playthroughs} playthrough(s) not exported: seeding a world does not seed somebody's progress through it." if playthroughs.positive?
+
+    events = story.world_events.count
+    @warnings << "#{events} world event(s) not exported: what the world has already done to itself is this story's history, not its rules. The mechanics that produced them ARE exported, with their `last_run_at` left behind." if events.positive?
 
     if opening_scene.nil?
       @warnings << "no opening arrival: this story has no scene marked `is_opening`, so the file has no " \
@@ -194,6 +202,9 @@ class WorldSeed::Exporter
     locations.map do |location|
       document = { "name" => location.name, "detail_level" => location.detail_level }
       document["opening"] = true if location == opening
+      # Omitted rather than written false, like `opening`: the file should say
+      # which places move and stay quiet about the ones that do not.
+      document["mobile"] = true if location.mobile?
       document["teaser"] = text(location.teaser)
       if location.realized?
         document["description"] = text(location.description)
@@ -213,6 +224,23 @@ class WorldSeed::Exporter
     by_pair.keys.sort_by { |pair| pair.map { |id| order.fetch(id, Float::INFINITY) } }.map do |pair|
       edge_document(pair, by_pair.fetch(pair), order)
     end
+  end
+
+  # A world's own laws. `last_run_at` is NOT exported: how far a mechanic has got
+  # through a story is progress, and exporting it would tell a fresh database
+  # that nights nobody has played had already happened. `nil` when a story has
+  # none, so `#document`'s `compact` drops the key entirely.
+  def mechanics_document
+    rows = story.world_mechanics.order(:name).map do |mechanic|
+      {
+        "name" => mechanic.name,
+        "kind" => mechanic.kind,
+        "cadence" => mechanic.cadence,
+        "description" => text(mechanic.description)
+      }
+    end
+
+    rows.presence
   end
 
   def edge_document(pair, rows, order)
