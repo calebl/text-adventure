@@ -306,6 +306,12 @@ owes, roughly in order:
   turn, and `qwen3:4b` took **490s** for that single arrival call. Set
   `OPENROUTER_API_KEY` to move. The classification call is not affected — it
   honored its schema on `gemma3:12b` first try, including the per-turn enum.
+  This is also why the loop's **talk** path was verified end to end in a
+  running browser session against ollama and the **move** path was not: the
+  classification and the arrival call were each verified live and separately,
+  but the composition of the two is covered by `test/models/playthrough/turn_test.rb`
+  rather than by a live playthrough. A single local arrival is ~8 minutes of
+  CPU. Anyone with a key should walk the loop once and delete this paragraph.
 - **Local models are slow, and they run on CPU here.** `ollama ps` reports
   `size_vram: 0`, so nothing is GPU-accelerated on this machine. Measured on a
   small 3-field schema: `gemma3:12b` ≈ 39s, `qwen3:8b` ≈ 92s (it burns the budget
