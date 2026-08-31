@@ -47,9 +47,10 @@ So revisiting a place reuses the persisted `Location` while creating a new
   strong model answered "Race of the character" with 2,382 characters of prose;
   the whole character sheet is now ~2,530 characters.
 - **Audience-specific universe context.** `Universe#prompt_details(audience)`
-  sends each caller the fields it can use — `:full` for story generation,
-  `:character`, `:place` for building a room, `:dialogue` for a character
-  speaking. The whole record is 1,584 tokens and used to go to all four.
+  sends each caller the fields it can use — `:full` for story generation
+  (1,584 tok), `:character` (1,238), `:place` for building a room (628),
+  `:dialogue` for a character speaking (930), `:scene` for arriving in a room
+  already built (285). The whole record used to go to all of them.
 - **`LocationConnection` distances and travel methods come from fixed tables**
   (`DISTANCES`, `TRAVEL_METHODS`), and `time_to_travel` is derived from the two
   rather than generated. The values are direction-neutral because connections
@@ -86,13 +87,28 @@ So revisiting a place reuses the persisted `Location` while creating a new
   swapping SSE for Turbo Streams later touches nothing but the consumer.
 - `BaseAgent#ask` forwards a block to RubyLLM, which turns the call into a
   token stream.
+- **`Scene::Generator`** — narrating arrival in a location, as one schema'd
+  `BaseAgent` call (`Scene::Schema`: `description` + `summary`). It is the
+  sibling of `Scene::Narrator`, not a copy of it: the narrator answers what the
+  player *typed* and streams unschema'd, this writes the record of walking
+  *into* a place and stays schema'd like everything else. Arrival reads as
+  discovery or as coming back depending on `Location#last_protagonist_visit`,
+  with the gap stated in words. `scene.characters` is decided from records —
+  the protagonist, anyone `is_companion`, and whoever was in the last scene
+  played in that location — never asked of the model. Measured against a real
+  generated world: **1,302 input / ~200 output tokens** per arrival
+  (system 67 + prompt 1,127 + schema 108), which is the whole cost of walking
+  back into a room that already exists, and +37% input on top of realizing a
+  new one. The per-turn path is untouched. It writes `scenes.summary`, which
+  nothing had ever written.
 
 ### Not built yet
 
 There is still **no world to walk around in**. The loop runs — you type, the
 narrator answers, the turn is kept — but every turn happens in the one opening
-location. Movement, input classification and location generation are the whole
-of the next milestone.
+location. Rooms can be built and arrivals can be narrated; what is missing is
+the thing that decides to move. Input classification and movement resolution
+are the whole of the next milestone.
 
 ## Next up
 
@@ -116,19 +132,28 @@ of the next milestone.
 
 ### 2. Scene generation
 
-- [ ] `Scene::Generator` — given a `Location` and the `previous_scene`, narrate
-      arriving. Must read differently on a first visit versus a return, using
-      `Location#last_protagonist_visit` and `#time_since_last_visit` (both
-      already implemented and unused).
-- [ ] Populate `scene.characters` from who is present.
+- [x] `Scene::Generator` — given a `Location` and the `previous_scene`, narrate
+      arriving and persist the `Scene`. Reads differently on a first visit
+      versus a return: `Location#last_protagonist_visit` decides which, and
+      `#time_since_last_visit` puts the gap in the prompt in words. Both are
+      read **before** `Scene.create!`, because `Scene`'s `after_create` stamps
+      the visit — read them after and every return is "less than a minute ago".
+- [x] Populate `scene.characters` from who is present.
+- [ ] It does not advance the `Playthrough`. `Scene::Narrator` sets
+      `current_scene` because it owns the turn; this returns the scene and lets
+      the caller place the player, because moving the player is the game loop's
+      decision and it also has to set `current_location`. Wire it up there.
 
 ### 3. The game loop
 
 - [ ] Classify player input: move / talk / examine / take / other.
 - [ ] On **move**: resolve the target from `Location#exits`. If it is a stub,
       hand it to `Location::Generator#realize!` (which no-ops on an already
-      realized location). Then generate a `Scene` there. This is the
-      load-or-generate seam that makes the whole idea work.
+      realized location). Then
+      `Scene::Generator.new(target, previous_scene: playthrough.current_scene).generate!`
+      and point the playthrough at the new location and scene. This is the
+      load-or-generate seam that makes the whole idea work. `Scene::Generator`
+      raises on a stub on purpose, so realizing first is not optional.
 - [ ] On **talk**: hand off to the existing `InteractionAgent`.
 - ~~`rake game:play[story_id]`~~ — skipped on purpose. The browser is the
       playable interface; the rake tasks build worlds and the browser plays
@@ -173,6 +198,22 @@ owes, roughly in order:
 
 ## Known issues
 
+- **"How long since you were last here" is wall-clock time, not story time.**
+  `Location#time_since_last_visit` is `Time.current - last_protagonist_visit`,
+  and `Scene::Generator` puts it into the arrival prompt in words. So a player
+  who closes the tab and comes back a week later is told, in fiction, that they
+  were gone a week. `Story#start_time` and `Scene#story_timestamp` exist to
+  hold story time and nothing derives an in-fiction clock from them yet;
+  `LocationConnection#time_to_travel` is the other half of that clock. Fix it
+  in one place — the elapsed value `Scene::Generator#generate!` reads — rather
+  than at each call site.
+- **Nothing records where a character stands.** `characters` has no location
+  column, so `Scene::Generator#characters_present` answers from the three
+  things the app can actually know: the protagonist, anyone `is_companion`,
+  and whoever was in the last scene played in that location. A place nobody has
+  visited and no companion follows you into is therefore empty. That is honest
+  rather than correct, and it is what `ta-narrator-memory` — the narrator
+  creating characters by tool call — plugs into.
 - **`ActionController::Live` costs one Puma thread per open stream.** Puma runs
   3 threads by default, so three people reading narration at once stalls the
   whole site for everyone else. Irrelevant for one player on localhost; raise
@@ -218,8 +259,10 @@ owes, roughly in order:
 - **Watch the ollama context window.** `ollama ps` reports `context_length: 4096`
   for these models. The universe prompt plus ten paragraphs of output is already
   close to that, and `Story::Generator` still feeds the whole universe back in
-  (`:full` is the right audience there). Scene generation will need summarized
-  context rather than the full record.
+  (`:full` is the right audience there). `Scene::Generator` fits — 1,302 input
+  tokens on the `:scene` audience, measured — but it carries exactly one prior
+  scene. A playthrough that wants more history than that has to summarize
+  first; `scenes.summary` is now written on arrival for that purpose.
 - **`Location::Generator#realize!` can leave a room with no way out.** The
   description is saved before the exits call so an exits failure does not throw
   away the more expensive of the two calls — but `realize!` then returns that
