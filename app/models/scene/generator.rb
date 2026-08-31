@@ -84,6 +84,15 @@ class Scene::Generator
     ([ story.protagonist ] + companions + holdovers).compact.uniq
   end
 
+  # The same answer without building an arrival. `Playthrough::Classifier` needs
+  # to know who the player can speak to, and that has to be the same list the
+  # arrival narration introduced them to -- a classifier that worked it out
+  # separately would sooner or later refuse to talk to someone the game had
+  # just put in the room.
+  def self.characters_present(location)
+    new(location).characters_present
+  end
+
   def agent
     @agent ||= BaseAgent.new.with_instructions(system_prompt)
   end
@@ -185,8 +194,16 @@ class Scene::Generator
 
   # Whoever was here when the player last left. Ordered by story time rather
   # than by id so a scene backdated into the story's past does not win.
+  #
+  # The join is what makes this survive the game loop. Only an arrival records
+  # a cast; a turn spent examining something writes a `Scene::Narrator` scene
+  # with nobody in it. Reading the plain latest scene therefore emptied the
+  # room after any turn that was not an arrival, so the innkeeper vanished
+  # because the player looked at the fireplace on the way out. The last scene
+  # that recorded anyone is the last thing the game actually knows.
   def holdovers
-    last_scene_here = location.scenes.order(story_timestamp: :desc, id: :desc).first
+    last_scene_here = location.scenes.joins(:characters)
+                              .order(story_timestamp: :desc, id: :desc).first
 
     last_scene_here ? last_scene_here.characters.to_a : []
   end

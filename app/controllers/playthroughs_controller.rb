@@ -19,6 +19,13 @@ class PlaythroughsController < ApplicationController
       current_location: location
     )
 
+    # The protagonist is standing here from this moment, and nothing else says
+    # so: `Scene`'s after_create stamps the visit, and a playthrough starts
+    # with no scene. Without this the opening room is still unvisited when the
+    # player walks back into it, so the first place they ever stood would be
+    # narrated to them as a discovery.
+    location.mark_protagonist_visit!
+
     # Deliberately starting a playthrough takes the session over; merely
     # looking at one (below) does not.
     session[:playthrough_token] = playthrough.token
@@ -30,6 +37,7 @@ class PlaythroughsController < ApplicationController
     bind_session_to(@playthrough)
 
     @scenes = scene_log(@playthrough)
+    @exits = @playthrough.current_location&.exits&.order(:id) || Location.none
     @command = params[:command].presence
   end
 

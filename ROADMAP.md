@@ -113,14 +113,27 @@ So revisiting a place reuses the persisted `Location` while creating a new
   own, since it leaves every neighbour a stub and a stub has no exits at all.
   See `db/seeds/worlds/README.md` for the format and
   `test/lib/seeded_worlds_test.rb` for the drift guard.
+- **The game loop.** `Playthrough::Turn` is the whole of it: one schema'd
+  classification call (`Playthrough::Classifier`, five intents from a fixed
+  table plus a target enum built per turn from the room's exits and its cast),
+  then move / talk / narrate. **Movement is the load-or-generate seam:**
+  `Location::Generator#realize!` writes a stub out in full and returns an
+  already-realized room untouched, so walking somewhere new generates it once
+  and walking back reads what was written, then `Scene::Generator` narrates
+  arriving and the playthrough moves only once both calls have landed. Wired
+  into the browser through the same three routes: `NarrationsController` hands
+  the command to `Playthrough::Turn` and forwards the chunks it yields.
+  Movement costs ~415 input tokens for the classification (system 189 + prompt
+  66 + schema 160) on top of whatever it leads to -- an arrival is 1,302, a
+  narrated turn ~849 -- so the classifier is about a third of a narrated turn
+  and a quarter of an arrival.
 
 ### Not built yet
 
-There is still **no world to walk around in**. The loop runs — you type, the
-narrator answers, the turn is kept — but every turn happens in the one opening
-location. Rooms can be built and arrivals can be narrated; what is missing is
-the thing that decides to move. Input classification and movement resolution
-are the whole of the next milestone.
+Everything left is in **Next up** below. The loop moves and narrates; talking
+still goes to the narrator rather than to `InteractionAgent`, and no turn yet
+survives a closed tab, remembers more than the last scene, or looks like
+anything (stages 4-6 of the browser plan).
 
 ## Next up
 
@@ -151,25 +164,45 @@ are the whole of the next milestone.
       read **before** `Scene.create!`, because `Scene`'s `after_create` stamps
       the visit — read them after and every return is "less than a minute ago".
 - [x] Populate `scene.characters` from who is present.
-- [ ] It does not advance the `Playthrough`. `Scene::Narrator` sets
-      `current_scene` because it owns the turn; this returns the scene and lets
-      the caller place the player, because moving the player is the game loop's
-      decision and it also has to set `current_location`. Wire it up there.
+- [x] It does not advance the `Playthrough` itself, by design: it returns the
+      scene and lets the caller place the player, because moving the player is
+      the game loop's decision and it also has to set `current_location`.
+      `Playthrough::Turn#move_to` is that caller.
+- [x] `#holdovers` read the plain latest scene in a location, so any turn that
+      was not an arrival emptied the room -- only an arrival records a cast, and
+      a `Scene::Narrator` turn writes a scene with nobody in it. It now reads
+      the last scene that recorded anyone. Unreachable before movement existed.
+- [x] `Scene::Generator.characters_present(location)` answers the same question
+      without building an arrival, so `Playthrough::Classifier` offers exactly
+      the people the arrival paragraph introduced.
 
 ### 3. The game loop
 
-- [ ] Classify player input: move / talk / examine / take / other.
-- [ ] On **move**: resolve the target from `Location#exits`. If it is a stub,
-      hand it to `Location::Generator#realize!` (which no-ops on an already
-      realized location). Then
-      `Scene::Generator.new(target, previous_scene: playthrough.current_scene).generate!`
-      and point the playthrough at the new location and scene. This is the
-      load-or-generate seam that makes the whole idea work. `Scene::Generator`
-      raises on a stub on purpose, so realizing first is not optional.
-- [ ] On **talk**: hand off to the existing `InteractionAgent`.
-- ~~`rake game:play[story_id]`~~ — skipped on purpose. The browser is the
+- [x] Classify player input: move / talk / examine / take / other, in one
+      schema'd `BaseAgent` call. `Playthrough::IntentSchema` is a factory rather
+      than a declared schema because `target` is an enum built per turn from the
+      room's exits and its cast: the loop has to turn the answer back into a
+      `Location` or a `Character`, and "north" resolves to nothing. Closing the
+      set means the model names something that exists or names `nothing`, and
+      there is no third answer to write a matcher for.
+- [x] On **move**: resolve the target from `Location#exits`, realize it if it is
+      a stub, narrate arriving, and point the playthrough at both. The
+      load-or-generate seam, and there is no branch in it: `realize!` returns an
+      already-realized location untouched, so the same four lines cover walking
+      somewhere new and walking back.
+- [ ] On **talk**: `InteractionAgent`, which still bypasses `BaseAgent`. The
+      exchange should keep two records -- the `Scene` the player reads and the
+      `Interaction` the character felt, which nothing has ever written.
+- ~~`rake game:play[story_id]`~~ -- skipped on purpose. The browser is the
       playable interface; the rake tasks build worlds and the browser plays
       them. Do not add a `game:play` task.
+- [ ] **A move is 3 model calls and does not stream**, so the player watches a
+      blinking cursor for as long as realizing a room takes. Nothing is wrong;
+      it is just slow, and the job-and-cable stage below is where it is fixed.
+      Do not "fix" it by schema-ing less -- `Scene::Generator` cannot stream.
+- [ ] `examine` and `take` are told apart and then handed to `Scene::Narrator`
+      like anything else. They are classified so the branch exists when items
+      do; nothing acts on them yet.
 
 ### 4. Persistence and history
 
