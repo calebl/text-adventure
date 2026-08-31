@@ -148,6 +148,36 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
     assert_includes scene.characters, innkeeper
   end
 
+  # The bug the game loop makes reachable. Only an arrival records a cast, so a
+  # turn spent examining something writes a scene with nobody in it -- and
+  # reading the plain latest scene emptied the room because the player looked at
+  # the fireplace on their way out.
+  test "a turn that recorded nobody does not empty the room" do
+    location = realized_location(last_protagonist_visit: 1.hour.ago)
+    innkeeper = create(:character, story: @story, fullname: "Grenn Halloway")
+    create(:scene, story: @story, location: location, story_timestamp: 2.hours.ago)
+      .characters << innkeeper
+    # A narrated turn: a later scene in the same room, with no cast.
+    create(:scene, story: @story, location: location, story_timestamp: 1.hour.ago)
+
+    scene, = generate(location)
+
+    assert_includes scene.characters, innkeeper
+  end
+
+  # `.characters_present(location)` is the same answer without building an
+  # arrival, and Playthrough::Classifier depends on the two agreeing.
+  test "the cast can be asked for without generating a scene" do
+    location = realized_location
+    companion = create(:character, :companion, story: @story)
+    protagonist = create(:character, :protagonist, story: @story)
+
+    assert_no_difference -> { Scene.count } do
+      assert_equal [ protagonist, companion ].sort_by(&:id),
+                   Scene::Generator.characters_present(location).sort_by(&:id)
+    end
+  end
+
   test "people in some other location are not here" do
     elsewhere = realized_location(name: "The Pump Gallery")
     stranger = create(:character, story: @story)

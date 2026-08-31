@@ -1,42 +1,119 @@
+# Talking to a character, in two passes.
+#
+# The first pass is the CHARACTER: it answers under `Interaction::Schema` with
+# what they thought, felt and did on either side of responding. The second is a
+# NARRATOR that turns that structured answer into second-person prose. Neither
+# is useful without the other, and the hand-off between them is by string key,
+# so `Interaction::Schema`'s field names are a hard contract with
+# `#narrator_prompt`.
+#
+# Both passes go through `BaseAgent`, so both inherit its model fallback and
+# the first inherits `verify_schema_honored!` -- a character sheet that came
+# back as prose used to poison the narrator prompt with the word "pre_thought"
+# rather than failing. This class used to build bare `RubyLLM::Chat` objects
+# pinned to `cognitivecomputations/dolphin-mixtral-8x22b`, a model that resolves
+# in neither the bundled registry nor the seeded `models` table.
+#
+# The narrator pass is UNSCHEMA'D and streams, which is the same documented
+# exception `Scene::Narrator` carries and for the same reason: it is prose the
+# player watches arrive, and a schema would have them watch JSON arrive
+# instead. What the game keeps out of this turn -- the five fields of the
+# character's reaction -- is structured; only the part a human reads is not.
 class InteractionAgent
-  attr_reader :character_instructions, :narrator_instructions
+  # What one exchange produced. `reaction` is the character's five structured
+  # fields, keyed exactly as `Interaction::Schema` names them so it can be
+  # handed straight to `Interaction.create!`; `narration` is the prose.
+  #
+  # Both are returned because both are kept: the caller writes the `Scene` the
+  # player reads from one and the `Interaction` the character felt from the
+  # other. Returning only the prose is why nothing in this app had ever created
+  # an `Interaction` row.
+  Exchange = Data.define(:reaction, :narration)
+
+  # A character's pronouns are their own, so the prompt STATES them rather than
+  # handing the model a label and a rule to apply. Keyed on `Character.sexes`
+  # keys, which is what `Character#sex` reads back: the old rules keyed on the
+  # stored value, so the prompt said "is a non_binary" while the rule two lines
+  # below it matched "non-binary", and `transgender` had no rule at all. Both
+  # are reachable -- `Character::Generator` rolls `sex` from all four values.
+  PRONOUNS = {
+    "male" => "he/him/his",
+    "female" => "she/her/hers",
+    "non_binary" => "they/them/theirs",
+    "transgender" => "they/them/theirs"
+  }.freeze
+
+  attr_reader :character, :character_instructions, :narrator_instructions
+
   def initialize(character)
     @character = character
-
-    @character_chat = RubyLLM::Chat.new(
-      provider: :openrouter,
-      model: "cognitivecomputations/dolphin-mixtral-8x22b", # a thinking model probably
-      assume_model_exists: true
-    ).with_schema(Interaction::Schema)
-
-    @character_instructions = @character.interaction_instructions
-
-    @character_chat.with_instructions(@character_instructions)
-
-    self
+    @character_instructions = character.interaction_instructions
   end
 
-  def narrator_instructions(user_input, character_response)
+  # Asks the character, then narrates their answer.
+  #
+  # A block is streamed the narration and nothing else -- not the structured
+  # pass in front of it -- and it is yielded TEXT rather than the chunk objects
+  # RubyLLM hands back, which is the same block contract `Scene::Narrator#narrate`
+  # offers. The game loop forwards one block to both, so they have to agree.
+  def ask(user_input, &block)
+    reaction = character_agent.ask(character_prompt(user_input)).content
+    Rails.logger.debug { "Character response: #{reaction}" }
+
+    @narrator_instructions = narrator_prompt(user_input, reaction)
+    narration = narrator_agent.ask(@narrator_instructions) do |chunk|
+      part = chunk.content.to_s
+      block.call(part) if block && !part.empty?
+    end.content
+
+    Exchange.new(reaction: reaction_fields(reaction), narration: narration.to_s)
+  end
+
+  def character_agent
+    @character_agent ||= BaseAgent.new
+      .with_instructions(character_instructions)
+      .with_schema(Interaction::Schema)
+  end
+
+  # No instructions: everything the narrator needs is in the prompt, and the
+  # character sheet already went to the pass that needed it. Repeating it here
+  # invites the narrator to recite biography instead of narrating the moment.
+  def narrator_agent
+    @narrator_agent ||= BaseAgent.new
+  end
+
+  def character_prompt(user_input)
+    <<~INTERACTION_PROMPT
+      What is your reaction when
+      The user input is: #{user_input}
+    INTERACTION_PROMPT
+  end
+
+  # Named `narrator_prompt` rather than `narrator_instructions`: the reader on
+  # line 1 used to be shadowed by a two-argument method of the same name, so
+  # the `@narrator_instructions` set during `ask` was unreachable and calling
+  # the reader raised on arity.
+  def narrator_prompt(user_input, character_response)
+    fields = reaction_fields(character_response)
+
     <<~NARRATOR_PROMPT
       The user input is: #{user_input}
-      #{@character.fullname}'s internal and external thoughts and feelings are:
-      pre_thought: #{character_response["pre_thought"]}
-      pre_feeling: #{character_response["pre_feeling"]}
-      action: #{character_response["action"]}
-      post_thought: #{character_response["post_thought"]}
-      post_feeling: #{character_response["post_feeling"]}
+      #{character.fullname}'s internal and external thoughts and feelings are:
+      pre_thought: #{fields[:pre_thought]}
+      pre_feeling: #{fields[:pre_feeling]}
+      action: #{fields[:action]}
+      post_thought: #{fields[:post_thought]}
+      post_feeling: #{fields[:post_feeling]}
 
       The interaction should be written in the second person, from the perspective of the user. Refer to the user as "you".
       Refer to the character by their first name or nickname.
 
-      The response should be concise and to the point. Have #{@character.fullname} (the character) act according to their personality
+      The response should be concise and to the point. Have #{character.fullname} (the character) act according to their personality
       and their thoughts and feelings. Do not be too verbose. Do not respond with details of the character's
       backstory. Only use the information provided in the character's backstory to understand their personality.
       Do not make up information about the character that is contradictory to their backstory.
 
-      Use pronouns according to the character's gender. #{@character.fullname} is a #{@character.sex}.
-      If the character is male, use he/him/his. If the character is female, use she/her/her.
-      If the character is non-binary, use they/them/their.
+      #{pronoun_rule}
 
       The response should be 1 paragraph.
 
@@ -58,28 +135,23 @@ class InteractionAgent
     NARRATOR_PROMPT
   end
 
-  def ask(user_input)
-    interaction_prompt = <<~INTERACTION_PROMPT
-      What is your reaction when
-      The user input is: #{user_input}
+  private
 
-    INTERACTION_PROMPT
+  # The five fields, symbol-keyed and never nil, so the prompt reads a missing
+  # field as blank and `Interaction.create!` gets exactly the columns it wants.
+  def reaction_fields(character_response)
+    response = character_response.presence || {}
 
-    response = @character_chat.ask(user_input)
+    Interaction::Schema.required_properties.to_h do |field|
+      [ field.to_sym, response[field.to_s].to_s ]
+    end
+  end
 
-    character_response = response.content
+  # Falls back to they/them rather than guessing, which is also what an
+  # unrecognised value should get.
+  def pronoun_rule
+    pronouns = PRONOUNS.fetch(character.sex, "they/them/theirs")
 
-    Rails.logger.debug { "Character response: #{character_response}" }
-
-    @narrator_instructions = narrator_instructions(user_input, character_response)
-
-    narrator = RubyLLM::Chat.new(
-      provider: :openrouter,
-      model: "cognitivecomputations/dolphin-mixtral-8x22b", # a thinking model probably
-      assume_model_exists: true
-    )
-    narration = narrator.ask(@narrator_instructions)
-
-    narration.content
+    "Refer to #{character.fullname} as #{pronouns}. Use those pronouns and no others."
   end
 end

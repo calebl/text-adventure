@@ -39,6 +39,141 @@ rake game:list
 
 The premise is optional; without one the model picks its own.
 
+## Play it
+
+```bash
+bin/rails db:seed      # two checked-in worlds, no model needed
+bin/rails server       # then open http://localhost:3000
+```
+
+## How a turn works
+
+The loop is `Playthrough::Turn` (`app/models/playthrough/turn.rb`). It lives in
+`app/models` because the browser is the only front end and its whole share of a
+turn is handing the class a string and a block to write chunks into — there is
+no `rake game:play`.
+
+Read the colours first. **Purple is a model call. Teal is the app deciding from
+records it already holds. Orange is a gap — something not built yet.** That
+distinction is the one to get right, and it is a standing architectural
+principle here: *nothing depends on the narrator complying.* A model that
+answers badly must not be able to move the player, so every branch below is
+taken on a record the app is holding, never on a label a model wrote.
+
+```mermaid
+flowchart TD
+    IN["Player types a command<br/>TurnsController redirects with ?command=<br/>the play page opens an EventSource"]
+    SSE["NarrationsController hands the whole turn to<br/>Playthrough::Turn#play, with a block to stream into"]
+    IN --> SSE
+
+    subgraph CL["Playthrough::Classifier#classify"]
+        C1["Build the candidates FROM RECORDS<br/>the room's exits, and who is standing in it"]
+        C2["MODEL CALL, schema'd<br/>Playthrough::IntentSchema<br/>intent: move / talk / examine / take / other<br/>target: an enum of ONLY those exits and names"]
+        C3["Resolve the answer back to a RECORD<br/>an unresolvable target leaves it nil"]
+        C1 --> C2 --> C3
+    end
+    SSE --> C1
+
+    C3 --> D{"Dispatch on the resolved RECORD,<br/>never on the intent label"}
+
+    D -->|"a Location"| M1
+    D -->|"a Character"| T1
+    D -->|"neither"| N1
+
+    subgraph MV["move: the load-or-generate seam"]
+        M1{"Location::Generator#realize!<br/>realized already?"}
+        M1 -->|"yes: walking back in"| M5
+        M1 -->|"no: a stub, first time"| M3
+        M3["MODEL CALL, schema'd<br/>Location::DetailSchema<br/>description and lore, SAVED IMMEDIATELY"]
+        M3 --> M4["MODEL CALL, schema'd<br/>Location::ExitsSchema<br/>a stub neighbour per exit, and connection<br/>rows in BOTH directions"]
+        M4 --> M5
+        M5["Read FROM RECORDS, before anything is created<br/>last_protagonist_visit: discovery or return<br/>characters_present: who is here"]
+        M5 --> M6["MODEL CALL, schema'd<br/>Scene::Schema, the arrival paragraph<br/>Cannot stream: a schema'd call emits JSON"]
+        M6 --> M7["Scene.create!<br/>its after_create stamps the visit, which is<br/>what makes the NEXT arrival read as a return"]
+        M7 --> M8["playthrough.update! location AND scene<br/>only now, so a failed arrival leaves<br/>the player where they were"]
+    end
+
+    subgraph TK["talk: InteractionAgent, two passes"]
+        T1["MODEL CALL, schema'd<br/>Interaction::Schema, the character answers<br/>as themselves: thought, felt, did"]
+        T1 --> T2["MODEL CALL, unschema'd, STREAMS<br/>a second pass turns that into prose"]
+        T2 --> T3{"narration blank?"}
+        T3 -->|"yes"| T4["Nothing persisted. A record written from<br/>nothing is a turn nobody can read"]
+        T3 -->|"no"| T5["Scene.create!, the moment the player reads<br/>characters = protagonist + who they spoke to,<br/>so the NEXT turn here knows who is present<br/>summary built in Ruby, not asked for"]
+        T5 --> T6["Interaction.create!<br/>five fields plus user_input and location<br/>the player never sees it"]
+        T6 --> T7["playthrough.update! scene"]
+    end
+
+    subgraph NR["everything else: Scene::Narrator answers the raw command"]
+        N1["Reached by examine, take, other, a move whose<br/>target did not resolve, and a talk with<br/>nobody here to talk to"]
+        N1 --> N2["MODEL CALL, unschema'd, STREAMS<br/>the one documented streaming exception"]
+        N2 --> N3["Persists in an ensure, so a closed tab keeps<br/>what was written, and sets the scene itself<br/>Never touches the location: moving is not its job"]
+    end
+
+    M8 --> OUT["The Scene is returned; the prose already went<br/>to the block, token by token from a narrator<br/>and in one piece from a move"]
+    T7 --> OUT
+    T4 --> OUT
+    N3 --> OUT
+
+    classDef llm fill:#4c1d95,stroke:#a78bfa,stroke-width:2px,color:#ffffff
+    classDef rec fill:#134e4a,stroke:#5eead4,stroke-width:2px,color:#ffffff
+    classDef gap fill:#7c2d12,stroke:#fdba74,stroke-width:2px,color:#ffffff
+    classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
+
+    class C2,M3,M4,M6,T1,T2,N2 llm
+    class C1,C3,M1,M5,M7,M8,T5,T6,T7,N3 rec
+    class N1,T4 gap
+    class IN,SSE,OUT,D,T3 io
+```
+
+The two orange boxes are the honest ones. The narration box is where four
+different classifications end up, because nothing more specific exists yet; the
+blank branch of `talk` is a turn that produced nothing and kept nothing.
+
+The move branch is the heart of it, and the thing to notice is that
+**`Playthrough::Turn#move_to` contains no stub-versus-realized branch at all**:
+
+```ruby
+Location::Generator.new(destination).realize!
+scene = Scene::Generator.new(destination, previous_scene: playthrough.current_scene).generate!
+playthrough.update!(current_location: destination, current_scene: scene)
+```
+
+The diamond in the diagram lives *inside* `realize!`, which returns an
+already-realized location untouched. So the same three lines write a room the
+first time and read it every time after, and there is no code path that can
+regenerate a place the player has already seen. `Scene::Generator` raises on a
+stub on purpose, which is why realizing comes first and is not optional.
+
+### What a turn costs
+
+| Turn | Model calls | Notes |
+| --- | --- | --- |
+| Walking back into a room already written | 2 | classify, then arrive. ~415 + ~1,302 input tokens |
+| Walking into a stub for the first time | 4 | classify, description, exits, arrive |
+| Talking to someone | 3 | classify, the character, then the narrator |
+| Anything else | 2 | classify, then narrate |
+
+A move does not stream, and on a first visit that is 30–60 seconds of blinking
+cursor. `Scene::Generator` is schema'd and a schema'd call cannot stream in this
+stack, so the fix is the job-and-cable stage, not fewer schemas.
+
+### What the loop does not do yet
+
+- **`examine` and `take` are classified and then narrated like anything else.**
+  They are told apart so the branch exists when items do; nothing acts on them.
+- **Nothing records where a character stands.** `characters_present` answers
+  from the protagonist, anyone `is_companion`, and whoever was in the last scene
+  in that location that recorded a cast. A place nobody has visited and no
+  companion follows you into has nobody to talk to, so the `talk` branch is
+  unreachable there.
+- **A talk turn is not durable.** `Scene::Narrator` persists partial prose in an
+  `ensure`; `talk_to` has no equivalent, so a disconnect mid-stream loses both
+  of its calls.
+- **The player's command is not in the turn log.** `scenes` has no column for
+  it, so a reloaded transcript is narration only.
+
+See **[ROADMAP.md](ROADMAP.md)** for where each of those sits in the queue.
+
 ## Tests
 
 ```bash
