@@ -6,7 +6,26 @@ class Character < ApplicationRecord
   has_and_belongs_to_many :scenes
   has_many :playthroughs, dependent: :nullify
 
-  enum :sex, { male: "male", female: "female", non_binary: "non-binary", transgender: "transgender" }
+  enum :sex, { male: "male", female: "female", non_binary: "non-binary",
+               trans_woman: "trans woman", trans_man: "trans man" }
+
+  # The pronouns to use for a character. A trans woman is a woman and a trans man
+  # is a man, so they map to exactly what any other woman or man maps to -- the
+  # entries are not a special case bolted on beside the others, they are the same
+  # answer.
+  #
+  # Keyed on the enum KEY, which is what `sex` reads back, so a prompt cannot
+  # drift from the rule the way it did when it interpolated `sex` and matched on
+  # the stored value. Every key the enum can hold has an entry, and CharacterTest
+  # pins that, so the generator cannot roll a sex with no pronouns.
+  PRONOUNS = {
+    "male" => "he/him/his",
+    "female" => "she/her/hers",
+    "non_binary" => "they/them/theirs",
+    "trans_woman" => "she/her/hers",
+    "trans_man" => "he/him/his"
+  }.freeze
+
   attribute :is_companion, :boolean, default: false
 
   # Two people in one story cannot share a full name -- a player has no other
@@ -27,6 +46,18 @@ class Character < ApplicationRecord
   validates :dislikes, presence: true
   validates :fears, presence: true
 
+  # The stored value rather than the enum key -- "trans woman", not
+  # "trans_woman" -- so anything that interpolates it reads as English.
+  def sex_label
+    self.class.sexes[sex]
+  end
+
+  # "he/him/his", "she/her/hers", "they/them/theirs". Raises rather than
+  # defaulting -- see InteractionAgent#pronoun_rule for why.
+  def pronouns
+    PRONOUNS.fetch(sex)
+  end
+
   def chat
     BaseAgent.new.with_instructions(interaction_instructions)
   end
@@ -45,7 +76,7 @@ class Character < ApplicationRecord
       full name: #{fullname}
       nickname: #{nickname}
       age: #{age}
-      sex: #{sex}
+      sex: #{sex_label}
       race: #{race.name} -- #{race.description}
       backstory: #{backstory}
       personality: #{personality}
