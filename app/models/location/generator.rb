@@ -113,7 +113,11 @@ class Location::Generator
 
       ## Instructions
       - Each exit is somewhere the player can reach directly from #{location.name}
-      - Give the player a reason to prefer one over another
+      - One way out is a complete answer. A dead end, a cell, the bottom of a
+        shaft: if the only way out is back the place the player came from, list
+        that place and nothing else. Never invent a passage to reach a second
+      - When there is more than one, give the player a reason to prefer one
+        over another
       - Do not list #{location.name} itself
       - Distance and travel method must be consistent with the description you
         just wrote, and must be true in both directions -- the way back is the

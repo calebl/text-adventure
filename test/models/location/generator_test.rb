@@ -28,6 +28,10 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     ]
   }.freeze
 
+  # A place with one way out. The schema allows it, and a room realized from a
+  # neighbour already has its way back, so this is a whole answer.
+  ONE_EXIT = { "exits" => [ EXITS["exits"].last ] }.freeze
+
   def setup
     @story = create(:story)
   end
@@ -284,5 +288,43 @@ class Location::GeneratorTest < ActiveSupport::TestCase
 
   test "opening raises rather than inventing a room the story does not have" do
     assert_raises(ArgumentError) { Location::Generator.opening(@story) }
+  end
+  test "realizes a room with a single way out" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL, ONE_EXIT))
+
+    exits = location.reload.exits
+    assert_equal [ "Tidewater Stair" ], exits.map(&:name)
+    assert location.realized?
+
+    neighbour = exits.first
+    assert_includes neighbour.exits, location, "the one way out still goes both ways"
+  end
+
+  # The dead end: the only exit is back the way the player came, and that
+  # connection was written when this room was still a stub. Naming it is honest
+  # and costs nothing -- no second room, no duplicated edge.
+  test "a dead end whose only exit is the way back adds nothing new" do
+    location = stub_location(name: "The Drowned Ledger")
+    realize(location, FakeAgent.new(DETAIL, ONE_EXIT))
+
+    dead_end = Location.find_by(name: "Tidewater Stair")
+    the_way_back = { "exits" => [ EXITS["exits"].last.merge("name" => "The Drowned Ledger") ] }
+
+    assert_no_difference [ "Location.count", "LocationConnection.count" ] do
+      realize(dead_end, FakeAgent.new(DETAIL, the_way_back))
+    end
+
+    assert dead_end.reload.realized?
+    assert_equal [ location ], dead_end.exits.to_a
+  end
+
+  test "tells the model that one way out is a complete answer" do
+    agent = FakeAgent.new(DETAIL, EXITS)
+    realize(stub_location(name: "The Drowned Ledger"), agent)
+
+    assert_includes agent.prompts.last, "One way out is a complete answer"
+    assert_includes agent.prompts.last, "Never invent a passage"
   end
 end
