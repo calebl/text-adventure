@@ -195,10 +195,83 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert opening.last_protagonist_visit.present?
   end
 
-  # The log begins where the story begins. This is the cheap half of the
-  # answer -- a room description standing in for an arrival nobody narrates --
-  # and a world that carries its own opening arrival replaces the text and
-  # nothing else.
+  # THE PAYOFF. A world carries its own opening arrival, so the first thing a new
+  # player reads is real narrated prose and the request that starts a playthrough
+  # makes no model call at all.
+  test "create opens the turn log with the world's own opening arrival" do
+    story = create(:story)
+    opening = create(:location, story: story, description: "Ash drifts past the shutters.")
+    arrival = create(:scene, :opening, story: story, location: opening,
+                                       description: "You come up the last step and the shutters are already open.")
+
+    assert_no_difference -> { story.scenes.count } do
+      BaseAgent.stub(:new, -> { flunk "starting a playthrough asked a model something" }) do
+        post playthroughs_path, params: { story_id: story.id }
+      end
+    end
+
+    playthrough = story.playthroughs.last
+    assert_equal arrival, playthrough.current_scene
+
+    get playthrough_path(playthrough)
+    assert_match "You come up the last step and the shutters are already open.", response.body
+  end
+
+  # Every playthrough of a story starts on the SAME opening scene -- that is what
+  # makes it world rather than progress. The turn log walks backwards from
+  # `current_scene`, so two playthroughs branching off one opening each read
+  # their own turns and neither reads the other's.
+  test "two playthroughs share one opening arrival and keep separate logs" do
+    story = create(:story)
+    opening = create(:location, story: story)
+    arrival = create(:scene, :opening, story: story, location: opening, description: "The story opens here.")
+
+    post playthroughs_path, params: { story_id: story.id }
+    first = story.playthroughs.last
+    first.update!(current_scene: create(:scene, story: story, location: opening,
+                                                description: "The first player turns left.",
+                                                previous_scene: arrival))
+
+    post playthroughs_path, params: { story_id: story.id }
+    second = story.playthroughs.last
+    second.update!(current_scene: create(:scene, story: story, location: opening,
+                                                 description: "The second player turns right.",
+                                                 previous_scene: arrival))
+
+    get playthrough_path(second)
+    assert_match "The story opens here.", response.body
+    assert_match "The second player turns right.", response.body
+    assert_no_match(/The first player turns left\./, response.body)
+  end
+
+  # THE STORY-TIME HAZARD.
+  #
+  # An opening arrival is written when the WORLD is built and loaded out of a
+  # seed file, so it deliberately does not stamp `last_protagonist_visit` --
+  # stamping then would date the protagonist's presence to whenever the file was
+  # seeded, and the first walk back into the opening room would be narrated as a
+  # return after however long that was. Nobody is in the room until a playthrough
+  # starts. #73 dropped the explicit stamp because the scene it created here did
+  # the job at exactly this moment; that equivalence does not survive the scene
+  # moving into the world, so the stamp is explicit again.
+  test "create stamps the visit when the player arrives, not when the world was built" do
+    story = create(:story)
+    opening = create(:location, story: story, last_protagonist_visit: nil)
+    create(:scene, :opening, story: story, location: opening)
+
+    assert_nil opening.reload.last_protagonist_visit, "building the world is not somebody standing in the room"
+
+    travel 3.weeks
+    freeze_time do
+      post playthroughs_path, params: { story_id: story.id }
+
+      assert_equal Time.current, opening.reload.last_protagonist_visit
+    end
+  end
+
+  # The fallback: a story built before opening arrivals existed. The log begins
+  # where the story begins either way, with the room's own description standing
+  # in for an arrival nobody narrated.
   test "create opens the turn log with the room the player starts in" do
     story = create(:story)
     opening = create(:location, story: story, description: "Ash drifts past the shutters.")
@@ -211,6 +284,17 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_equal opening, scene.location
     assert_equal "Ash drifts past the shutters.", scene.description
     assert_nil scene.previous_scene
+  end
+
+  # And it is per-playthrough progress, not world -- so it is not an opening.
+  test "the fallback opening scene is not marked as the world's opening" do
+    story = create(:story)
+    create(:location, story: story)
+
+    post playthroughs_path, params: { story_id: story.id }
+
+    assert_not story.playthroughs.last.current_scene.is_opening?
+    assert_nil story.reload.opening_scene
   end
 
   # `Scene::Generator#lead_in` reads the previous scene's summary, and the

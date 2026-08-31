@@ -19,6 +19,19 @@ namespace :game do
     # A failure here leaves a story you can still open a location in later.
     location = Helpers.timed("Generating opening location") { Location::Generator.opening(story) }
 
+    # The opening arrival, narrated ONCE, here, where nobody is waiting on it.
+    # Without this a generated world and a seeded one are different shapes: a
+    # seeded world carries its own opening arrival and a generated one would
+    # not, so the first thing a player read would depend on how the world was
+    # made. Costs one Scene::Generator call (~1,302 in / ~200 out) and buys the
+    # player a first screen with no model call behind it at all.
+    #
+    # The cast is empty at this point -- `game:new` makes no characters, and
+    # `Character::Generator` never sets `is_protagonist` -- so the arrival is
+    # written with nobody in the room. Add a cast in the exported seed file;
+    # that is what makes the talk branch reachable from turn one.
+    scene = Helpers.timed("Narrating the opening arrival") { Scene::Generator.opening(story) }
+
     puts
     puts "=" * 72
     puts story.title
@@ -27,8 +40,7 @@ namespace :game do
     puts
     puts story.preface
     puts
-    puts "You are in #{location.name}."
-    puts location.description
+    puts scene.description
     puts
     puts "Ways out:"
     location.exits.each do |exit|
@@ -37,6 +49,7 @@ namespace :game do
     end
     puts
     puts "Add a character with: rails runner \"Story.find(#{story.id}).create_character\""
+    puts "Export it to a hand-editable seed file with: rake 'game:export[#{story.id}]'"
   end
 
   desc "Export a generated world to a checked-in seed file. Usage: rake 'game:export[3]'"
