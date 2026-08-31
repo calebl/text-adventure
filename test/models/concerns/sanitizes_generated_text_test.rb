@@ -28,6 +28,28 @@ class SanitizesGeneratedTextTest < ActiveSupport::TestCase
     assert_equal "a door", sanitize_string("  a door\n")
   end
 
+  # The real sample: a summary that came back at exactly its 200-character
+  # max_length, with the JSON envelope's closing quote and brace inside it.
+  test "strips a trailing JSON envelope fragment" do
+    assert_equal "The tide has taken the lower ledger",
+                 sanitize_string("The tide has taken the lower ledger\u{201D}}")
+  end
+
+  test "strips a straight-quoted envelope fragment" do
+    assert_equal "a door", sanitize_string(%(a door"}))
+  end
+
+  test "strips a nested envelope fragment" do
+    assert_equal "a door", sanitize_string(%(a door"}]}))
+  end
+
+  # Dialogue and quoted prose legitimately end on a closing quote. Only a brace
+  # or bracket marks the run as structure rather than content.
+  test "leaves a closing quote that is not envelope debris alone" do
+    assert_equal %("Get out," she said."), sanitize_string(%("Get out," she said."))
+    assert_equal "the ledger\u{201D}", sanitize_string("the ledger\u{201D}")
+  end
+
   test "handles nil" do
     assert_equal "", sanitize_string(nil)
   end

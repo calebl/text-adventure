@@ -107,6 +107,12 @@ timestamped moment in a location. See the persistence model section in
   carry the same facts in a more specific form: `:scene` is `:place` minus
   everything the location's own description and lore already say, which is what
   makes it 285 tokens instead of 628.
+- **Every generated string goes through `sanitize_string`**
+  (`SanitizesGeneratedText`). It is the one seam every model-written value
+  crosses, so guards against model output belong there and not beside the field
+  that first showed the problem — it strips emoji, and it strips the JSON
+  envelope debris (`…”}`) a response cut at a `max_length` boundary leaves
+  inside the value.
 - **Prefer a fixed table to a prompt** where the value is one of a known set.
   `LocationConnection::DISTANCES` and `::TRAVEL_METHODS` are enums the schema
   reads directly, and `time_to_travel` is derived from them rather than asked

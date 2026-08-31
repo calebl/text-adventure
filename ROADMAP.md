@@ -174,6 +174,13 @@ So revisiting a place reuses the persisted `Location` while creating a new
   so a key placed in `.env` was silently ignored by `bin/rails` and `rake`, and
   the docs pointed only at `.envrc`. `dotenv-rails` is a direct dependency now;
   both files work.
+- **Generated text is guarded against `max_length` truncation.** A response cut
+  at a schema boundary leaves the JSON envelope inside the value — a `summary`
+  came back at exactly its 200-character cap ending in a smart quote and a
+  closing brace, persisted as narrative content. `SanitizesGeneratedText` now
+  strips a trailing run of quote/brace/bracket punctuation, and because it is
+  the one seam every generated string crosses, that covers every schema in the
+  app rather than the field it was first seen on.
 
 ### Not built yet
 
