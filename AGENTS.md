@@ -26,6 +26,17 @@ timestamped moment in a location. See the persistence model section in
 
 ## Working agreements
 
+### The standing constraint
+
+**Nothing may depend on the narrator obeying its prompt.** Prompt it with the
+world's rules — that is cheap and it raises the odds — but never let a
+guarantee rest on its compliance. *Gate the state, inform the prose, audit the
+difference.* Where a model must be involved, do not ask it what should happen:
+ask it to pick from a set the app closed, then have the app act on the record,
+never on the label. The README's turn diagram states it in colours
+([README.md](README.md#how-a-turn-works)); `ROADMAP.md` → *The standing
+constraint* has the captain's wording and where the full audit lives.
+
 ### Talking to models
 
 - All LLM calls go through `BaseAgent` (`app/agents/BaseAgent.rb`). It handles
