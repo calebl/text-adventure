@@ -284,7 +284,8 @@ The full audit of every planned piece of work against this constraint is in
   next turn. `Story#catch_up_world!` runs first thing in `Playthrough::Turn#play`
   at ~90 µs and **0 tokens** when nothing is due. The one `kind` is
   `WorldMechanic::ShuffleConnections`, which permutes rather than chooses so
-  every location keeps its degree, checks connectivity before applying, and is
+  every location keeps its degree, checks connectivity and that the induced
+  adjacency actually changed before applying, and is
   deterministic per (story, night); it is hand-written into
   `the-lunar-cartographer.yml`, whose universe has claimed since it was
   generated that Nocturnis rearranges itself nightly. `WorldEvent` is the audit
@@ -592,6 +593,15 @@ Step 1 of the direction plan, landed as PR #77. The prose summary is in
       check before an arrangement is applied. Deterministic per (story, night).
       Hand-written into `the-lunar-cartographer.yml`, whose universe has claimed
       since it was generated that Nocturnis rearranges itself nightly.
+      An arrangement is judged on the **induced adjacency** — the set of
+      unordered pairs of places that end up joined — and not edge by edge, so a
+      permutation confined to one mobile location's own edges is a no-op and is
+      refused. `settle` first rewrites every candidate into the one form that
+      says what it means: within a location's own edges, an endpoint it keeps
+      stays on the edge that already had it. Reordering endpoints among one
+      location's edges cannot change the graph, so `valid?` judges exactly what
+      gets written — and every sentence the log writes is then true of the
+      graph, not merely of an edge. (`ta-shuffle-noop`.)
 - [x] **`WorldEvent`** — the audit trail, in story time, with the locations it
       touched. Deliberately NOT a narration source: over two nights a shuffle
       can return a place to the same neighbour, so replaying the log would
@@ -609,10 +619,16 @@ Step 1 of the direction plan, landed as PR #77. The prose summary is in
       The mechanic fired on schedule off the story's own clock and cost nothing,
       but the one arrangement it drew was a transposition within a single mobile
       location's own edges, so the graph did not actually change and the event
-      says it did — see **Known issues**. Note what that implies for the
-      districts variant: a district travelling as a unit cannot produce this,
-      because its edges out have distinct mobile ends. Not an argument for
-      districts on its own; it is one data point and it is recorded as one.
+      said it did. That was a broken guarantee and is **fixed**
+      (`ta-shuffle-noop`) — such an arrangement is now refused and the night
+      writes nothing. Note what it implies for the districts variant, which the
+      fix does not settle either way: a district travelling as a unit cannot
+      produce a no-op of this shape, because its edges out have distinct mobile
+      ends. The edge shuffle now has to reach for a valid arrangement where the
+      districts variant would not, which on a sparse world is a real cost in
+      nights that do nothing — one data point, recorded as one. **Still nine
+      turns played, not ten, and none since the fix**: the judgement wants a
+      night that visibly moved something.
 - [ ] Generating a mechanic from a model at world-creation time. Deliberately
       not built: the parameters are hand-authored first, so the mechanic that
       exists is one somebody chose.
@@ -701,27 +717,6 @@ What it still owes, roughly in order:
   loader adds and updates and never deletes, so seeding on top of a world whose
   mechanic has moved edges leaves both the seeded edge and the moved one. Drop
   the database for a clean rebuild — the same caveat as renaming a location.
-- **A shuffle can write a `WorldEvent` for a night that changed nothing.**
-  Found by playing `The Lunar Cartographer` across midnight and reading the
-  debug view. `ShuffleConnections#choose_arrangement` permutes the anchored
-  endpoints and rejects a candidate only when it equals the current array or
-  when two edges from one mobile place would land on the same anchored place.
-  It does **not** reject a permutation confined to the edges of a *single*
-  mobile location — a plain transposition between two of them. That is what
-  fired: Mournwell Lane's edges to Sovereign's Circle and The Bell of Saint
-  Aravel swapped, every `pairs.uniq` check passed, connectivity held, and the
-  resulting graph is identical — Mournwell Lane still opens onto both. The
-  event it wrote reads as a self-contradiction, because each sentence is
-  individually true of a different edge:
-  *"Mournwell Lane now opens onto The Bell of Saint Aravel instead of
-  Sovereign's Circle. Mournwell Lane now opens onto Sovereign's Circle instead
-  of The Bell of Saint Aravel."*
-  The class comment promises the opposite in as many words — *"A night that
-  changes nothing writes nothing: an event log with entries that mean 'nothing
-  happened' is worse than no entry"* — so this is a broken guarantee rather
-  than a rough edge. The test for it is that the induced ADJACENCY changed, not
-  that each edge's endpoint did; `valid?` is comparing the wrong thing. Real
-  data for **Judge the edge shuffle in play** below.
 - **A failed arrival leaves a realized room nobody has stood in**, which is the
   designed behaviour working and is worth knowing how to read. Observed in the
   same run: the move's `Scene::Generator` call rotated to `qwen3:8b`, which

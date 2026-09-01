@@ -170,6 +170,93 @@ class WorldMechanic::ShuffleConnectionsTest < ActiveSupport::TestCase
     end
   end
 
+  # THE NO-OP CASE, from a real night in a played world: Mournwell Lane's two
+  # edges out into the fixed city were swapped with each other. Every per-edge
+  # check passes -- each edge's endpoint changed, degree held, the world stayed
+  # whole, and the arrangement array is not the one it started with -- but the
+  # ADJACENCY is the one it started with. The Lane opens onto both places it
+  # opened onto before. Nothing moved, so nothing may be written.
+  test "swapping one mobile place's own two edges is not a rearrangement" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    lane = create(:location, story: story, name: "Mournwell Lane", mobile: true)
+    bell = create(:location, story: story, name: "The Bell of Saint Aravel")
+    circle = create(:location, story: story, name: "Sovereign's Circle")
+
+    [ [ lane, bell ], [ lane, circle ] ].each do |from, to|
+      [ [ from, to ], [ to, from ] ].each do |origin, destination|
+        create(:location_connection, location: origin, connected_location: destination,
+                                     distance: "across the district", travel_method: "walking")
+      end
+    end
+
+    mechanic = create(:world_mechanic, story: story, name: "The nightly rearrangement")
+    before = lane.reload.exits.pluck(:id).sort
+
+    assert_nil mechanic.operation.run!(MIDNIGHT)
+    assert_equal before, lane.reload.exits.pluck(:id).sort
+    assert_equal 0, story.world_events.count
+  end
+
+  # The same shape, one night after another: no night invents a move, and the
+  # log stays empty rather than filling with entries that mean nothing.
+  test "a transposable pair of edges writes nothing on any night" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    lane = create(:location, story: story, name: "Mournwell Lane", mobile: true)
+    anchors = [ create(:location, story: story, name: "The Bell of Saint Aravel"),
+                create(:location, story: story, name: "Sovereign's Circle") ]
+
+    anchors.each do |anchor|
+      [ [ lane, anchor ], [ anchor, lane ] ].each do |origin, destination|
+        create(:location_connection, location: origin, connected_location: destination,
+                                     distance: "across the district", travel_method: "walking")
+      end
+    end
+
+    mechanic = create(:world_mechanic, story: story, name: "The nightly rearrangement")
+
+    14.times { |night| assert_nil mechanic.operation.run!(MIDNIGHT + night.days) }
+    assert_equal 0, story.world_events.count
+  end
+
+  # A sentence in the log is a claim about the graph, so every sentence has to be
+  # true OF the graph it was written from. This is the same guarantee as the one
+  # above at a finer grain: within one mobile place's own edges, a swap that
+  # leaves it opening onto the same places must not be announced as a move even
+  # on a night when something else genuinely did move.
+  test "every sentence the log writes is true of the graph" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    lane = create(:location, story: story, name: "Mournwell Lane", mobile: true)
+    others = [ create(:location, story: story, name: "The rooftops", mobile: true),
+               create(:location, story: story, name: "The hallway", mobile: true) ]
+    anchors = 4.times.map { |n| create(:location, story: story, name: "Anchor #{n}") }
+
+    pairs = [ [ lane, anchors[0] ], [ lane, anchors[1] ],
+              [ others[0], anchors[2] ], [ others[1], anchors[3] ],
+              [ lane, others[0] ], [ others[0], others[1] ] ]
+    pairs.each do |from, to|
+      [ [ from, to ], [ to, from ] ].each do |origin, destination|
+        create(:location_connection, location: origin, connected_location: destination,
+                                     distance: "across the district", travel_method: "walking")
+      end
+    end
+
+    mechanic = create(:world_mechanic, story: story, name: "The nightly rearrangement")
+
+    14.times do |night|
+      event = mechanic.operation.run!(MIDNIGHT + night.days)
+      next if event.nil?
+
+      by_name = story.locations.to_h { |location| [ location.name, location.reload.exits.pluck(:name) ] }
+      event.summary.scan(/(.+?) now opens onto (.+?) instead of (.+?)\./).each do |mover, now, before|
+        mover = mover.strip
+        assert_includes by_name.fetch(mover), now,
+                        "night #{night} says #{mover} opens onto #{now}, and it does not"
+        assert_not_includes by_name.fetch(mover), before,
+                            "night #{night} says #{mover} no longer opens onto #{before}, and it still does"
+      end
+    end
+  end
+
   test "a world with nothing mobile does not move" do
     @story.locations.update_all(mobile: false)
     before = exits_by_name
