@@ -17,7 +17,8 @@ class InteractionAgentTest < ActiveSupport::TestCase
     "pre_feeling" => "surprised, wary",
     "action" => "She sets down the crate and squares her shoulders.",
     "post_feeling" => "steadier",
-    "post_thought" => "Say something before this gets strange."
+    "post_thought" => "Say something before this gets strange.",
+    "inner_resolution" => "She will hear this stranger out before deciding anything."
   }.freeze
 
   setup do
@@ -66,8 +67,19 @@ class InteractionAgentTest < ActiveSupport::TestCase
     agent = interact.last
     prompt = agent.narrator_agent.prompts.first
 
-    CHARACTER_RESPONSE.each_value { |value| assert_includes prompt, value }
+    CHARACTER_RESPONSE.except("inner_resolution").each_value { |value| assert_includes prompt, value }
     assert_includes prompt, "Excuse me?"
+  end
+
+  # THE ONE FIELD THE NARRATOR IS NOT TOLD. A resolution is about what the
+  # character will do next; handing it to the pass that writes the moment invites
+  # it to narrate them acting on a decision the player has not seen them make.
+  # It is kept on the Interaction, which is what `#completed?` reads.
+  test "the character's resolution is kept, not narrated" do
+    agent = interact.last
+
+    assert_not_includes agent.narrator_agent.prompts.first, CHARACTER_RESPONSE["inner_resolution"]
+    assert_not_includes agent.narrator_agent.prompts.first, "inner_resolution"
   end
 
   # --- what comes back ------------------------------------------------------
@@ -206,7 +218,9 @@ class InteractionAgentTest < ActiveSupport::TestCase
   def stub_agents(character, narration)
     queued = [ FakeAgent.new(character), FakeAgent.new(narration) ]
 
-    BaseAgent.stub(:new, -> { queued.shift }) do
+    # Splatted: BaseAgent takes the keywords that decide where the conversation
+    # is filed (purpose, playthrough, character, chat), and the fake ignores them.
+    BaseAgent.stub(:new, ->(*, **) { queued.shift }) do
       yield InteractionAgent.new(@character)
     end
   end

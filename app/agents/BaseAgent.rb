@@ -69,7 +69,7 @@ class BaseAgent
     end
   end
 
-  attr_reader :chat, :instructions, :schema, :model_options
+  attr_reader :instructions, :schema, :model_options, :purpose
 
   def self.default_model_options
     if ENV["OPENROUTER_API_KEY"].present?
@@ -79,15 +79,46 @@ class BaseAgent
     end
   end
 
-  def initialize(instructions = nil, schema = nil, model_options: self.class.default_model_options)
+  # `purpose`, `playthrough` and `character` are what the conversation gets
+  # FILED UNDER once it exists -- see Chat. They are the whole of what this
+  # class knows about the game, and it knows that much only so a written row is
+  # findable afterwards.
+  #
+  # `chat` is for the one conversation that is PICKED UP rather than started:
+  # hand in a `Chat` (`Chat.conversation_with`) and its stored messages are the
+  # history this agent continues from. Everything else gets a fresh one.
+  def initialize(instructions = nil, schema = nil,
+                 model_options: self.class.default_model_options,
+                 purpose: nil, playthrough: nil, character: nil, chat: nil)
     @model_options = model_options
     @current_model_index = 0
-    @chat = RubyLLM::Chat.new(**current_model)
+    @purpose = purpose
+    @playthrough = playthrough
+    @character = character
+    @initial_chat = chat
+    @recorded_message_ids = []
 
     with_instructions(instructions) if instructions
     with_schema(schema) if schema
 
     self
+  end
+
+  # THE CONVERSATION, built on first use rather than in the constructor.
+  #
+  # Lazily, because a `Chat` is a row now: several classes here build an agent
+  # they may never ask anything (a location that turns out to be realized
+  # already, a classifier the debug view only wants the candidate lists from),
+  # and none of them should leave an empty conversation behind.
+  def chat
+    @chat ||= build_chat
+  end
+
+  # The persisted conversation, or nil if this agent never asked anything. The
+  # non-building reader -- callers attributing a turn's cost must not create a
+  # chat by looking for one.
+  def recorded_chat
+    @chat if @chat.is_a?(Chat)
   end
 
   # Asks the model, rotating to the next configured model when a call fails.
@@ -104,17 +135,33 @@ class BaseAgent
   # on a 401 quietly answers from a 4k-context CPU model with nothing anywhere
   # saying the remote call was ever refused -- every downstream measurement and
   # every quality guarantee silently becomes about a different model. Fail loud.
+  #
+  # A FAILED ATTEMPT IS ROLLED BACK BEFORE THE RETRY, and it has to be. RubyLLM
+  # persists the prompt before it sends it, so without the rewind a rotation
+  # would re-ask on top of the messages the failed attempt left behind: the
+  # second attempt would send the prompt twice, and a model that answered in
+  # prose would still be sitting in the history the replacement model is handed.
+  # `#rewind_to` puts the conversation back where the attempt found it, so every
+  # attempt asks the same question in the same context.
   def ask(prompt, &block)
     attempts = 0
 
     begin
       attempts += 1
-      response = @chat.ask(prompt, &block)
+      # The conversation is built BEFORE the mark is taken, or the first ask of
+      # a fresh agent would mark an empty nothing and record no messages.
+      conversation = chat
+      mark = conversation_mark
+      response = conversation.ask(prompt, &block)
       verify_schema_honored!(response)
+      record_exchange(mark)
       response
     rescue RubyLLM::UnauthorizedError => e
+      rewind_to(mark)
       raise UnauthorizedProviderError, unauthorized_message(e)
     rescue => e
+      rewind_to(mark)
+
       if attempts < MAX_ATTEMPTS && attempts < @model_options.count
         Rails.logger.warn { "#{current_model[:model]} failed (#{e.class}: #{e.message}), rotating model" }
         rotate_model
@@ -126,25 +173,43 @@ class BaseAgent
   end
 
   def add_message(role:, content:)
-    @chat.add_message(role: role, content: content)
+    chat.add_message(role: role, content: content)
+  end
+
+  # STAMPS THIS AGENT'S MESSAGES WITH THE TURN THEY WERE EXCHANGED ON, so
+  # `Playthrough::Debug` can total what one turn cost and name the model that
+  # actually answered it. Called by whoever created the Scene, because the scene
+  # does not exist until after the call that produced it.
+  #
+  # On the messages rather than on the chat: a durable conversation (Chat::CHARACTER)
+  # contributes two messages to this turn and two to the next.
+  def attribute_to!(scene)
+    return if scene.nil? || @recorded_message_ids.empty?
+
+    Message.where(id: @recorded_message_ids, scene_id: nil).update_all(scene_id: scene.id)
   end
 
   # Takes the same option shape as MODEL_OPTIONS entries. RubyLLM's `with_model`
   # wants the id positionally and spells the flag `assume_exists`, so translate.
+  #
+  # Only ever applied to a chat that exists: a fresh one is built pointed at
+  # `current_model` already, so rotating before the first ask has nothing to say.
   def with_model(model:, provider: nil, assume_model_exists: false)
-    @chat.with_model(model, provider: provider, assume_exists: assume_model_exists)
+    @chat&.with_model(model, provider: provider, assume_exists: assume_model_exists)
     self
   end
 
+  # Instructions and schema are held until the conversation is built, so that
+  # configuring an agent stays free -- see #chat.
   def with_schema(schema)
     @schema = schema
-    @chat.with_schema(schema)
+    @chat&.with_schema(schema)
     self
   end
 
   def with_instructions(instructions)
     @instructions = instructions
-    @chat.with_instructions(instructions)
+    @chat&.with_instructions(instructions)
     self
   end
 
@@ -160,6 +225,53 @@ class BaseAgent
   end
 
   private
+
+  # A conversation is a row, and this is where it becomes one: pointed at
+  # `current_model`, filed under the game records that will need to find it, and
+  # given whatever instructions and schema were configured before now.
+  #
+  # `assume_model_exists` is carried through from the model options for the same
+  # reason it is set there -- an ollama model is in neither registry, so without
+  # it saving the chat raises `RubyLLM::ModelNotFoundError` before anything is
+  # asked.
+  def build_chat
+    conversation = @initial_chat || Chat.new(purpose: purpose, playthrough: @playthrough, character: @character)
+    resuming = conversation.persisted?
+    apply_model(conversation)
+    # PICKING A CONVERSATION UP IS WHERE IT GETS TRIMMED. RubyLLM rebuilds the
+    # request out of every persisted message, so a chat that kept more history
+    # than it means to send would send it -- see Chat#prune_history!.
+    conversation.prune_history! if resuming
+    conversation.with_instructions(@instructions) if @instructions
+    conversation.with_schema(@schema) if @schema
+    conversation
+  end
+
+  def apply_model(conversation)
+    conversation.assume_model_exists = current_model[:assume_model_exists]
+    conversation.model = current_model[:model]
+    conversation.provider = current_model[:provider]
+    conversation.save!
+  end
+
+  # Where the conversation stood before an attempt, so the attempt can be undone.
+  # Nil for an agent whose chat is not persisted -- the tests inject a fake one.
+  def conversation_mark
+    recorded_chat && (recorded_chat.messages.maximum(:id) || 0)
+  end
+
+  def rewind_to(mark)
+    return if mark.nil? || recorded_chat.nil?
+
+    recorded_chat.messages.where("id > ?", mark).destroy_all
+  end
+
+  # What this agent has written, so `#attribute_to!` can find it later.
+  def record_exchange(mark)
+    return if mark.nil? || recorded_chat.nil?
+
+    @recorded_message_ids.concat(recorded_chat.messages.where("id > ?", mark).pluck(:id))
+  end
 
   def unauthorized_message(error)
     provider = current_model[:provider]

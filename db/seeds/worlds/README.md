@@ -211,12 +211,21 @@ says so in its warnings and loading the file writes the missing row.
 ### What is not exported
 
 `Playthrough`s, `last_protagonist_visit`, `WorldEvent`s, a mechanic's
-`last_run_at`, and every `Scene` **but the opening arrival**: those are
-somebody's progress through a world, not the world. `rake
-game:export` says out loud how many it left behind, so nothing is dropped
-silently — and it warns loudly when a story has *no* opening arrival, because
-the loader refuses such a file rather than producing a world that opens on a
-room description.
+`last_run_at`, **conversation history** (`chats` / `messages`), and every
+`Scene` **but the opening arrival**: those are somebody's progress through a
+world, not the world. `rake game:export` says out loud how many it left behind,
+so nothing is dropped silently — and it warns loudly when a story has *no*
+opening arrival, because the loader refuses such a file rather than producing a
+world that opens on a room description.
+
+Conversation history is on that list **deliberately, not by omission**. A
+`Chat` is what one player said to one character on one playthrough, plus the
+prompts and token counts that went with it. Seeding it would put half of
+somebody else's conversation into a world nobody has played yet — and it would
+hand a character memories of a player who does not exist. It gets no exception
+the way the opening arrival does, and for the mirror-image reason: the opening
+is the same for everyone who ever plays, and a conversation is the same for
+nobody. What a character remembers of you is yours, and it starts empty.
 
 ## Idempotency
 

@@ -1,0 +1,35 @@
+<%# ONE CONVERSATION, as far as one turn is concerned: what was sent, what came
+    back, what it cost and which model actually wrote it. Collapsed, because a
+    turn has three or four of these and an arrival prompt inlines the whole
+    universe -- open the one you want. %>
+<details class="exchange">
+  <summary>
+    <span class="tag purpose"><%= exchange.purpose %></span>
+    <% if exchange.durable? %><span class="tag durable">picked up, not started</span><% end %>
+    <%= debug_value(exchange.models.to_sentence.presence, absent: "no model recorded on the answer") %>
+    <span class="note">
+      &middot; <%= exchange.input_tokens %> in / <%= exchange.output_tokens %> out
+      &middot; chat #<%= exchange.chat.id %>, <%= pluralize(exchange.messages.size, "message") %> this turn
+    </span>
+  </summary>
+  <div class="body">
+    <% if (system_message = exchange.instructions) %>
+      <h3>the instructions it is under</h3>
+      <p class="note">
+        On the CHAT, not on this turn: written once and replayed on every ask.
+      </p>
+      <pre><%= system_message.text %></pre>
+    <% end %>
+
+    <% exchange.messages.each do |message| %>
+      <h3>
+        <%= message.role %>
+        <% if message.answering_model_id %>
+          <span class="note">&mdash; <%= message.answering_model_id %>,
+            <%= message.input_tokens.to_i %> in / <%= message.output_tokens.to_i %> out</span>
+        <% end %>
+      </h3>
+      <pre><%= debug_value(message.text, absent: "empty -- the call left no content") %></pre>
+    <% end %>
+  </div>
+</details>

@@ -130,7 +130,7 @@ flowchart TD
         T2 --> T3{"narration blank?"}
         T3 -->|"yes"| T4["Nothing persisted. A record written from<br/>nothing is a turn nobody can read"]
         T3 -->|"no"| T5["Scene.create!, the moment the player reads<br/>characters = protagonist + who they spoke to,<br/>so the NEXT turn here knows who is present<br/>summary built in Ruby, not asked for"]
-        T5 --> T6["Interaction.create!<br/>five fields plus user_input and location<br/>the player never sees it"]
+        T5 --> T6["Interaction.create!<br/>six fields plus user_input and a derived summary<br/>inner_resolution is the one the narrator is NOT told<br/>the player never sees any of it"]
         T6 --> T7["playthrough.update! scene"]
     end
 
@@ -164,10 +164,15 @@ The move branch is the heart of it, and the thing to notice is that
 **`Playthrough::Turn#move_to` contains no stub-versus-realized branch at all**:
 
 ```ruby
-Location::Generator.new(destination).realize!
-scene = Scene::Generator.new(destination, previous_scene: playthrough.current_scene).generate!
+Location::Generator.new(destination, playthrough: playthrough).realize!
+scene = Scene::Generator.new(destination, previous_scene: playthrough.current_scene,
+                                          playthrough: playthrough).generate!
 playthrough.update!(current_location: destination, current_scene: scene)
 ```
+
+(`playthrough:` is only what the conversation each of them has with a model gets
+filed under — see *What a turn writes down* below. Nothing about the arrival
+depends on it, which is why the world-building path leaves it out.)
 
 The diamond in the diagram lives *inside* `realize!`, which returns an
 already-realized location untouched. So the same three lines write a room the
@@ -229,6 +234,45 @@ cursor. `Scene::Generator` is schema'd and a schema'd call cannot stream in this
 stack, so fewer schemas is not the fix. The job is what makes the wait
 survivable rather than shorter: nothing is holding a connection open, so the
 player can close the tab and come back to the finished turn.
+
+### What a turn writes down
+
+Every call above goes through `BaseAgent`, and `BaseAgent` keeps it: one `Chat`
+per agent conversation, with the prompt, the answer, the token counts and the
+model that actually replied. Which *turn* a message belongs to is recorded on
+the message (`messages.scene_id`) rather than on the chat, because one
+conversation can span many turns — which is exactly what the talk branch does.
+
+**Talking to somebody is picked up again rather than started fresh.** Keyed on
+`(playthrough, character)`, so the person you spoke to last turn remembers it,
+across a server restart. Everything else is stateless by design: the classifier
+and the narrator rebuild their context out of records on every turn, so there is
+nothing in last turn's exchange worth replaying, and their chats are kept only
+as the audit trail the debug view reads.
+
+Both are **bounded**, because the local models run on CPU in a 4,096-token
+window and this is a SQLite file on a laptop:
+
+| bound | what it does |
+| --- | --- |
+| `Chat::HISTORY_EXCHANGES` | how much of a character conversation is replayed. Trimming means deleting — RubyLLM rebuilds the request out of every persisted message. Nothing is lost: every exchange is an `Interaction` row, in full, forever. |
+| `Chat::KEEP_TURNS` | how many turns of audit trail are kept. Pruned at the end of every turn; the `Scene` stays, the receipts go. |
+| `Playthrough::RECAP_BUDGET` | how much of the playthrough the narrator prompt carries, in characters. |
+
+That last one is what lets a long game stay inside the window. The narrator used
+to see exactly one scene, and the only way to deepen that was to paste in more
+full descriptions. `Playthrough#recap` spends `scenes.summary` instead — the
+column `Scene::Generator` has been writing on every arrival all along, for
+exactly this — so several turns of memory cost about what one more description
+would have. Measured on the seeded world against `gemma3:12b`:
+
+| | narrator prompt | memory |
+| --- | --- | --- |
+| before | 695 input tokens | the previous scene |
+| after | 781 input tokens | the previous scene, plus four before it |
+
+It asks no model anything, which is the point: summarising happens once, when
+the arrival is written.
 
 ### What the loop does not do yet
 

@@ -134,6 +134,46 @@ constraint* has the captain's wording and where the full audit lives.
 - Seed prompts with randomized "predetermined details" so repeated runs diverge
   (`Universe::Generator::TONES`, `Character::Generator::BIRTH_PLACES`).
 
+### Conversations are kept, and bounded
+
+Every `BaseAgent` writes a `Chat` and its `Message`s: the prompt, the answer,
+the token counts and the model that actually replied. It is lazy — an agent
+nobody asks anything leaves no row — and the granularity is **one chat per
+agent conversation**, because a chat's messages have to be a list you could
+send again: one system instruction, one schema, one model.
+
+- **Which turn a message belongs to is on the MESSAGE** (`messages.scene_id`),
+  not on the chat, because a durable conversation spans many turns. Whoever
+  creates the `Scene` calls `BaseAgent#attribute_to!`; without it a turn's cost
+  cannot be totalled and the debug view shows the turn as unrecorded.
+- **A failed attempt is rolled back before the retry.** RubyLLM persists the
+  prompt before it sends it, so without the rewind a rotation re-asks on top of
+  the failed attempt and hands the replacement model the rejected answer. If you
+  add a failure path to `#ask`, rewind on it.
+- **`messages.content_raw` is load-bearing.** A schema'd answer is a Hash, and
+  RubyLLM stores it there with `content` left nil. Drop the column and every
+  schema'd call in this app persists an empty assistant message.
+- **One conversation is picked up again rather than started fresh**: talking to
+  somebody, keyed `(playthrough, character)` by `Chat.conversation_with`. It is
+  the only one where last turn's words are worth replaying, and it is bounded by
+  `Chat::HISTORY_EXCHANGES` because `Character#interaction_instructions` inlines
+  the whole universe (4,705 characters on the seeded worlds) and the local
+  models run in a 4,096-token window. Trimming means **deleting**: `Chat#to_llm`
+  rebuilds the request from every persisted message, so history you keep is
+  history you send. Nothing is lost — every exchange is an `Interaction` row.
+- **The audit trail is pruned as the game runs** (`Chat::KEEP_TURNS`,
+  `Playthrough#prune_conversations!`, called at the end of every turn). This is a
+  SQLite file on a laptop; the game reads none of it back. Durable conversations
+  are never pruned this way.
+- **`Playthrough#recap` is how a long game stays inside the window.** It spends
+  `scenes.summary` — written by `Scene::Generator` on every arrival, and for
+  exactly this — under a fixed character budget, so the narrator sees several
+  turns of memory for about what one more full description would have cost. It
+  asks no model anything. A narrated turn has no summary and contributes its own
+  first sentence; do not "fix" that with a second call per turn.
+- **Conversation history is progress, not world**, so `WorldSeed::Exporter`
+  leaves it out and says so. See `db/seeds/worlds/README.md`.
+
 ### Generating the world
 
 - `Location` is generated in two steps and carries `detail_level`: a **stub** is
@@ -277,11 +317,15 @@ path, and answers in sentences.
 - Generator tests **must not hit a model.** Use `FakeAgent`
   (`test/support/fake_agent.rb`) with `BaseAgent.stub(:new, agent)`. It records
   the prompts and schemas it was given, so assert on those.
-- For code that builds a `RubyLLM::Chat` directly rather than going through
-  `BaseAgent`, use `FakeChat` (`test/support/fake_chat.rb`).
-  `FakeChat.with_fake_chats(...)` replaces `RubyLLM::Chat.new` for a block and
-  hands out queued responses, so a multi-pass agent's chats can be inspected in
-  construction order.
+- **`FakeAgent` writes no rows**, which is right for a test about what a
+  generator does with an answer and wrong for a test about persistence. For
+  that, use `OfflineExchange` (`test/support/offline_exchange.rb`): it stubs
+  only `Chat#ask`, so the real `BaseAgent`, real `Chat` and `Message` rows, real
+  token counts and real replay are all under test and only the HTTP call is not.
+  `test/models/chat_persistence_test.rb` and
+  `test/models/playthrough/turn_conversations_test.rb` are the two that use it.
+  (`FakeChat` stood in for `RubyLLM::Chat.new`, which nothing constructs any
+  more; it is gone.)
 - The suite must run with **no API key and no ollama**. Anything that needs a
   provider configured should set the key on `RubyLLM.config` inside the test and
   restore it, never read one from the environment.
@@ -412,10 +456,12 @@ Three rules govern it, and each exists because breaking it is easy:
 
 It shows the branch each turn took **derived from the records that branch left
 behind** rather than from a label, because there is no stored label — the
-classifier's intent lives in memory inside `Playthrough::Turn#play`. Prompts,
-raw responses, token counts and which model answered are not stored anywhere
-either (`ta-chat-persist`); the page names that gap rather than hiding it, and
-anything new it cannot show should be added to that list.
+classifier's intent lives in memory inside `Playthrough::Turn#play`. Alongside
+it, every prompt sent and every answer that came back, with the token counts and
+the model that actually replied, out of `chats` / `messages`. What it still
+cannot show — anything older than `Chat::KEEP_TURNS` turns, and the typed
+command as a column — it names rather than hiding, and anything new it cannot
+show should be added to that list.
 
 **It overlaps `Story::Doctor` and must never be the quieter of the two.** Both
 read the same rows: a one-way connection, two directions of one edge that

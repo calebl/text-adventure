@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_01_120000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -42,11 +42,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_140000) do
   end
 
   create_table "chats", force: :cascade do |t|
+    t.integer "character_id"
     t.datetime "created_at", null: false
     t.integer "model_id"
     t.string "model_id_string"
+    t.integer "playthrough_id"
+    t.string "purpose"
     t.datetime "updated_at", null: false
+    t.index ["character_id"], name: "index_chats_on_character_id"
     t.index ["model_id"], name: "index_chats_on_model_id"
+    t.index ["playthrough_id", "character_id", "purpose"], name: "index_chats_on_conversation_key"
+    t.index ["playthrough_id"], name: "index_chats_on_playthrough_id"
   end
 
   create_table "interactions", force: :cascade do |t|
@@ -119,16 +125,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_140000) do
   create_table "messages", force: :cascade do |t|
     t.integer "chat_id", null: false
     t.text "content"
+    t.json "content_raw"
     t.datetime "created_at", null: false
     t.integer "input_tokens"
     t.integer "model_id"
     t.string "model_id_string"
     t.integer "output_tokens"
     t.string "role"
+    t.integer "scene_id"
     t.integer "tool_call_id"
     t.datetime "updated_at", null: false
     t.index ["chat_id"], name: "index_messages_on_chat_id"
     t.index ["model_id"], name: "index_messages_on_model_id"
+    t.index ["scene_id"], name: "index_messages_on_scene_id"
     t.index ["tool_call_id"], name: "index_messages_on_tool_call_id"
   end
 
@@ -258,7 +267,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_140000) do
 
   add_foreign_key "characters", "races"
   add_foreign_key "characters", "stories"
+  add_foreign_key "chats", "characters"
   add_foreign_key "chats", "models"
+  add_foreign_key "chats", "playthroughs"
   add_foreign_key "interactions", "characters"
   add_foreign_key "interactions", "locations"
   add_foreign_key "interactions", "scenes"
@@ -271,6 +282,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_140000) do
   add_foreign_key "locations_world_events", "world_events"
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
+  add_foreign_key "messages", "scenes"
   add_foreign_key "playthroughs", "characters"
   add_foreign_key "playthroughs", "locations", column: "current_location_id"
   add_foreign_key "playthroughs", "scenes", column: "current_scene_id"
