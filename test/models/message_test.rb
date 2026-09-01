@@ -114,4 +114,57 @@ class MessageTest < ActiveSupport::TestCase
 
     assert_predicate result, :tool_result?
   end
+
+  # --- the turn it was exchanged on -----------------------------------------
+
+  test "belongs to the turn it was exchanged on, and survives that turn going" do
+    scene = create(:scene)
+    message = create(:message, scene: scene)
+
+    assert_equal scene, message.scene
+    scene.destroy
+
+    assert_nil message.reload.scene_id, "a message belongs to its conversation first"
+  end
+
+  # --- a structured answer --------------------------------------------------
+
+  # RubyLLM stores a schema'd answer in `content_raw` with `content` left nil.
+  # Without the column every schema'd call in this app -- which is all but two --
+  # persisted an empty assistant message.
+  test "text reads a structured answer out of content_raw" do
+    message = create(:message, :assistant, content: nil, content_raw: { "intent" => "move" })
+
+    assert_match(/"intent"/, message.text)
+    assert_match(/move/, message.text)
+  end
+
+  test "text prefers the prose when there is prose" do
+    assert_equal "A road, and then the sea.", create(:message, :assistant).text
+  end
+
+  # THE BUG THIS EXISTS FOR. Replaying a stored structured answer is what every
+  # resumed conversation does -- the second thing said to a character, and the
+  # second of `Location::Generator`'s two calls -- and ollama refuses the whole
+  # request when the content arrives as a map rather than a string.
+  test "a structured answer replays as the JSON string the model wrote" do
+    message = create(:message, :assistant, content: nil, content_raw: { "intent" => "move" })
+
+    assert_equal '{"intent":"move"}', message.to_llm.content
+  end
+
+  test "a message with no structured answer replays exactly as written" do
+    assert_equal "A road, and then the sea.", create(:message, :assistant).to_llm.content
+  end
+
+  # WHY THE ENCODING HAS TO BE OURS. OpenAI's formatter JSON-encodes a raw
+  # payload; ollama's hands the Hash straight to the wire, and ollama answers
+  # `invalid message content type: map[string]interface {}`. If this ever fails,
+  # the gem has fixed it and `Message#extract_content` can go.
+  test "the ollama formatter still passes a raw payload through unencoded" do
+    raw = RubyLLM::Content::Raw.new({ "intent" => "move" })
+
+    assert_kind_of Hash, RubyLLM::Providers::Ollama::Media.format_content(raw)
+    assert_kind_of String, RubyLLM::Providers::OpenAI::Media.format_content(raw)
+  end
 end
