@@ -9,6 +9,10 @@ class Location < ApplicationRecord
   belongs_to :parent_location, class_name: "Location", optional: true
   has_many :child_locations, class_name: "Location", foreign_key: "parent_location_id"
   has_many :scenes, dependent: :destroy
+  # What is lying here. An item is either in somebody's hands or in a place
+  # (Item), and the ones in a place are the closed set `take` resolves
+  # against -- so they belong to the durable world and go when it does.
+  has_many :items, dependent: :destroy
   has_many :playthroughs, foreign_key: :current_location_id, dependent: :nullify, inverse_of: :current_location
   has_and_belongs_to_many :connected_locations,
                           class_name: "Location",

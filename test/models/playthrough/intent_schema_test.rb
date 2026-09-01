@@ -11,8 +11,8 @@ class Playthrough::IntentSchemaTest < ActiveSupport::TestCase
     json_schema_body(Playthrough::IntentSchema.for(targets))["properties"]
   end
 
-  test "the intent is one of the five the loop knows about" do
-    assert_equal %w[move talk examine take other], properties([])["intent"]["enum"]
+  test "the intent is one of the six the loop knows about" do
+    assert_equal %w[move talk examine take drop other], properties([])["intent"]["enum"]
     assert_equal Playthrough::IntentSchema::INTENTS, properties([])["intent"]["enum"]
   end
 

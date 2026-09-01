@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_01_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_01_170000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -75,13 +75,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_120000) do
   end
 
   create_table "items", force: :cascade do |t|
-    t.integer "character_id", null: false
+    t.integer "character_id"
     t.datetime "created_at", null: false
     t.text "description"
+    t.integer "location_id"
     t.string "name"
     t.text "properties"
     t.datetime "updated_at", null: false
     t.index ["character_id"], name: "index_items_on_character_id"
+    t.index ["location_id", "character_id"], name: "index_items_on_location_id_and_character_id"
+    t.index ["location_id"], name: "index_items_on_location_id"
   end
 
   create_table "location_connections", force: :cascade do |t|
@@ -161,6 +164,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_120000) do
     t.index ["provider"], name: "index_models_on_provider"
   end
 
+  create_table "playthrough_drifts", force: :cascade do |t|
+    t.string "action", null: false
+    t.text "command", null: false
+    t.datetime "created_at", null: false
+    t.integer "location_id"
+    t.text "offered"
+    t.integer "playthrough_id", null: false
+    t.integer "scene_id"
+    t.datetime "story_timestamp"
+    t.datetime "updated_at", null: false
+    t.index ["action"], name: "index_playthrough_drifts_on_action"
+    t.index ["location_id"], name: "index_playthrough_drifts_on_location_id"
+    t.index ["playthrough_id", "story_timestamp"], name: "index_playthrough_drifts_on_playthrough_id_and_story_timestamp"
+    t.index ["playthrough_id"], name: "index_playthrough_drifts_on_playthrough_id"
+    t.index ["scene_id"], name: "index_playthrough_drifts_on_scene_id"
+  end
+
   create_table "playthroughs", force: :cascade do |t|
     t.integer "character_id"
     t.datetime "created_at", null: false
@@ -195,6 +215,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_120000) do
     t.integer "story_id", null: false
     t.datetime "story_timestamp"
     t.text "summary"
+    t.text "typed"
     t.datetime "updated_at", null: false
     t.index ["location_id"], name: "index_scenes_on_location_id"
     t.index ["previous_scene_id"], name: "index_scenes_on_previous_scene_id"
@@ -274,6 +295,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_120000) do
   add_foreign_key "interactions", "locations"
   add_foreign_key "interactions", "scenes"
   add_foreign_key "items", "characters"
+  add_foreign_key "items", "locations"
   add_foreign_key "location_connections", "locations"
   add_foreign_key "location_connections", "locations", column: "connected_location_id"
   add_foreign_key "locations", "locations", column: "parent_location_id"
@@ -283,6 +305,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_120000) do
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "scenes"
+  add_foreign_key "playthrough_drifts", "locations"
+  add_foreign_key "playthrough_drifts", "playthroughs"
+  add_foreign_key "playthrough_drifts", "scenes"
   add_foreign_key "playthroughs", "characters"
   add_foreign_key "playthroughs", "locations", column: "current_location_id"
   add_foreign_key "playthroughs", "scenes", column: "current_scene_id"

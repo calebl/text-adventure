@@ -8,6 +8,8 @@ require "test_helper"
 #
 # Never a live model: FakeAgent stands in at the BaseAgent boundary.
 class Playthrough::ClassifierTest < ActiveSupport::TestCase
+  include SchemaAssertions
+
   def setup
     @story = create(:story)
     @protagonist = create(:character, story: @story, fullname: "Iri Calder", is_protagonist: true)
@@ -208,6 +210,254 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
 
     assert_empty classifier.exits_here
     assert_empty classifier.characters_here
+  end
+
+  # --- resolving a take -----------------------------------------------------
+
+  test "a take resolves to the item record lying in this room" do
+    key = create(:item, :lying, location: @here, name: "Brass Key")
+
+    intent, = classify({ "intent" => "take", "target" => "Brass Key" })
+
+    assert intent.take?
+    assert_equal key, intent.item
+    assert_nil intent.destination
+    assert_nil intent.speaker
+  end
+
+  test "an item is resolved by name regardless of case" do
+    key = create(:item, :lying, location: @here, name: "Brass Key")
+
+    intent, = classify({ "intent" => "take", "target" => "brass key" })
+
+    assert_equal key, intent.item
+  end
+
+  test "what is lying here is offered by name" do
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+
+    assert_match(/## What Is Lying Here\n- Brass Key/, agent.prompts.first)
+  end
+
+  test "an empty floor says so in words" do
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+
+    assert_match(/nothing here to pick up/, agent.prompts.first)
+  end
+
+  # THE CLOSED SET. An item somebody is holding is not takeable, so it is not
+  # offered and cannot be resolved -- taking something off a person is a
+  # different act with somebody on the other side of it.
+  test "an item in somebody else's hands is not offered and does not resolve" do
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    create(:item, character: landlord, name: "Iron Ledger")
+
+    intent, agent = classify({ "intent" => "take", "target" => "Iron Ledger" })
+
+    assert_no_match(/Iron Ledger/, agent.prompts.first)
+    assert_nil intent.item
+  end
+
+  test "an item lying in another room is not offered" do
+    elsewhere = create(:location, story: @story, name: "The Bell of Saint Aravel")
+    create(:item, :lying, location: elsewhere, name: "Iron Ledger")
+
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+
+    assert_no_match(/Iron Ledger/, agent.prompts.first)
+  end
+
+  # A name the app never offered cannot become an item, whatever comes back.
+  # The enum makes this unreachable in production; the test is here because the
+  # resolution is the seam that decides what the player is carrying.
+  test "a name that was never offered resolves to no item at all" do
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    intent, = classify({ "intent" => "take", "target" => "Skeleton Key" })
+
+    assert_nil intent.item
+    assert intent.take?
+  end
+
+  test "the item names are in the schema's closed enum alongside exits and cast" do
+    connect("The Sunken Stair")
+    holdover("Maren Vosk")
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+    enum = json_schema_body(agent.schemas.first)["properties"]["target"]["enum"]
+
+    assert_includes enum, "Brass Key"
+    assert_includes enum, "The Sunken Stair"
+    assert_includes enum, "Maren Vosk"
+  end
+
+  # --- resolving a drop -----------------------------------------------------
+
+  # THE OTHER HALF OF THE SAME GUARANTEE. Taking is app-owned and dropping has
+  # to be too, or the records go stale the first time a player puts something
+  # down.
+
+  test "a drop resolves to the item record the player is carrying" do
+    key = create(:item, character: @protagonist, name: "Brass Key")
+
+    intent, = classify({ "intent" => "drop", "target" => "Brass Key" })
+
+    assert intent.drop?
+    assert_equal key, intent.item
+    assert_nil intent.destination
+  end
+
+  test "what the player is carrying is offered by name" do
+    create(:item, character: @protagonist, name: "Brass Key")
+
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+
+    assert_match(/## What The Player Is Carrying\n- Brass Key/, agent.prompts.first)
+  end
+
+  test "empty hands say so in words" do
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+
+    assert_match(/carrying nothing at all/, agent.prompts.first)
+  end
+
+  # A player cannot drop what the records do not say they hold, however
+  # confidently some earlier narration said they picked it up.
+  test "an item the player does not hold is not offered to drop and does not resolve" do
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    create(:item, character: landlord, name: "Iron Ledger")
+
+    intent, agent = classify({ "intent" => "drop", "target" => "Iron Ledger" })
+
+    assert_no_match(/Iron Ledger/, agent.prompts.first)
+    assert_nil intent.item
+  end
+
+  test "an item lying on the floor is not something the player can drop" do
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    intent, = classify({ "intent" => "drop", "target" => "Brass Key" })
+
+    assert_nil intent.item, "the key is on the floor, not in the player's hands"
+  end
+
+  # The two closed sets are disjoint by construction -- an item is in exactly
+  # one place -- so the same name in both lists means two different rows, and
+  # each action resolves against its own list.
+  test "take and drop resolve against their own lists" do
+    floor = create(:item, :lying, location: @here, name: "Brass Key")
+    carried = create(:item, character: @protagonist, name: "Brass Key")
+
+    taken, = classify({ "intent" => "take", "target" => "Brass Key" })
+    dropped, = classify({ "intent" => "drop", "target" => "Brass Key" })
+
+    assert_equal floor, taken.item
+    assert_equal carried, dropped.item
+  end
+
+  test "a playthrough with nobody to carry anything offers nothing to drop" do
+    nobody = create(:playthrough, story: @story, current_location: @here)
+
+    assert_empty Playthrough::Classifier.new(nobody).items_carried
+  end
+
+  # --- counting drift -------------------------------------------------------
+
+  test "a move that resolved to nothing is counted, with what was on offer" do
+    connect("The Sunken Stair")
+
+    assert_difference "Playthrough::Drift.count", 1 do
+      classify({ "intent" => "move", "target" => "nothing" }, command: "go through the cellar door")
+    end
+
+    drift = Playthrough::Drift.last
+
+    assert_equal "move", drift.action
+    assert_equal "go through the cellar door", drift.command
+    assert_equal [ "The Sunken Stair" ], drift.offered_names
+    assert_equal @here, drift.location
+    assert_equal @playthrough, drift.playthrough
+  end
+
+  # The narration the player had just read is the evidence, and the reason the
+  # scene is on the row at all.
+  test "the drift points at the narration the player had just read" do
+    read = create(:scene, story: @story, location: @here,
+                          description: "A cellar door stands open in the far wall.")
+    @playthrough.update!(current_scene: read)
+
+    classify({ "intent" => "move", "target" => "nothing" }, command: "go through the cellar door")
+
+    assert_equal read, Playthrough::Drift.last.scene
+  end
+
+  test "a talk that resolved to nobody is counted, offering the cast that was here" do
+    holdover("Maren Vosk")
+
+    assert_difference "Playthrough::Drift.count", 1 do
+      classify({ "intent" => "talk", "target" => "nothing" }, command: "talk to the ghost")
+    end
+
+    drift = Playthrough::Drift.last
+
+    assert_equal "talk", drift.action
+    assert_includes drift.offered_names, "Maren Vosk"
+  end
+
+  test "a take that resolved to nothing is counted, offering what was lying here" do
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    assert_difference "Playthrough::Drift.count", 1 do
+      classify({ "intent" => "take", "target" => "nothing" }, command: "pick up the silver locket")
+    end
+
+    drift = Playthrough::Drift.last
+
+    assert_equal "take", drift.action
+    assert_equal [ "Brass Key" ], drift.offered_names
+  end
+
+  test "a drop that resolved to nothing is counted, offering what the player holds" do
+    create(:item, character: @protagonist, name: "Brass Key")
+
+    assert_difference "Playthrough::Drift.count", 1 do
+      classify({ "intent" => "drop", "target" => "nothing" }, command: "put down the lantern")
+    end
+
+    drift = Playthrough::Drift.last
+
+    assert_equal "drop", drift.action
+    assert_equal [ "Brass Key" ], drift.offered_names
+  end
+
+  # A turn that resolved is not drift, and neither is an intent that never
+  # reaches for a record.
+  test "a resolved move counts no drift" do
+    connect("The Sunken Stair")
+
+    assert_no_difference "Playthrough::Drift.count" do
+      classify({ "intent" => "move", "target" => "The Sunken Stair" })
+    end
+  end
+
+  test "examine and other reach for no record, so they cannot miss one" do
+    assert_no_difference "Playthrough::Drift.count" do
+      classify({ "intent" => "examine", "target" => "nothing" })
+      classify({ "intent" => "other", "target" => "nothing" })
+    end
+  end
+
+  # An unresolved reach still returns an intent the loop can act on: the point
+  # of counting drift is that the turn goes on exactly as it did before.
+  test "counting drift does not change what the loop is told" do
+    intent, = classify({ "intent" => "move", "target" => "nothing" }, command: "go north")
+
+    assert intent.move?
+    assert_nil intent.destination
+    assert_predicate intent, :reached_for_nothing?
   end
 
   private
