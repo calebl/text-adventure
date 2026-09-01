@@ -86,6 +86,23 @@ class NarrationJobTest < ActiveJob::TestCase
     assert_no_match(/cursor/, replace.to_html)
   end
 
+  # THE ONE ATTRIBUTE THAT MUST NOT GO OVER THE CABLE.
+  #
+  # Turbo's stream renderer focuses the first `[autofocus]` element in a
+  # broadcast with a plain `.focus()` -- no `preventScroll` -- so a broadcast
+  # carrying it drags the viewport to the foot of the log at the end of every
+  # turn, which is the scroll position this whole change exists to keep. Caught
+  # in a browser, and this is what stops it coming back. `play.js` restores
+  # focus itself, with `preventScroll`.
+  test "the broadcast form does not carry autofocus" do
+    playthrough = create(:playthrough, :started)
+
+    replace = play(playthrough, "open the ledger", NOT_A_MOVE, NARRATION).last
+
+    assert_match "what do you do?", replace.to_html
+    assert_no_match(/autofocus/, replace.to_html)
+  end
+
   # A move is the branch that cannot stream -- realizing a room is two schema'd
   # calls and the arrival is a third -- so it yields its finished paragraph in
   # one piece. The browser does not know or care which branch the turn took.

@@ -354,7 +354,10 @@ Views are ERB with an inline `<style>` in the layout. Restyling is
   and the input. There is no end-of-turn reload and no redirect carrying a
   `?command=` — both were consequences of streaming from the request.
   **`bin/jobs` must be running or nothing narrates**; Solid Queue is the
-  development adapter and writes to a second SQLite database.
+  development adapter. Development also runs **`solid_cable`, not `async`** --
+  the turn is broadcast from the worker process and read by a WebSocket held in
+  Puma, and `async` broadcasts only within one process. Three SQLite databases
+  in development as a result; `bin/rails db:prepare` makes all three.
 - `turbo_stream_from` lives **outside** `#turn_log`. Inside it, the
   subscription would be torn down and rebuilt at the end of every turn and the
   next turn's tail would go to a channel nobody was listening on.

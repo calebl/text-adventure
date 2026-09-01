@@ -1,4 +1,4 @@
-<%# locals: (playthrough:, command: nil, error: nil) %>
+<%# locals: (playthrough:, command: nil, error: nil, autofocus: false) %>
 <%# EVERYTHING A TURN CHANGES, in one Turbo Stream target.
 
     Three callers render this partial and they render the same two states:
@@ -15,7 +15,15 @@
 
     `command` is the string the player just typed while a turn is in flight, and
     nil the rest of the time. It is the whole of the difference between the two
-    states. %>
+    states.
+
+    `autofocus` is true only on a real page load, and that is not fussiness.
+    Turbo's stream renderer focuses the first `[autofocus]` element it finds in a
+    broadcast -- with a plain `.focus()`, no `preventScroll` -- so shipping the
+    attribute over the cable yanks the viewport to the foot of the log at the end
+    of every turn, throwing away exactly the scroll position this whole change
+    exists to keep. Measured in a browser; it is not theoretical. `play.js` puts
+    focus back after a turn itself, with `preventScroll`. %>
 <div id="turn_log">
   <%# A turn that failed -- a model that would not answer, a schema it ignored.
       The player is still standing where they were, and gets the input back
@@ -53,7 +61,7 @@
     </p>
 
     <%= form_with url: playthrough_turns_path(playthrough) do |form| %>
-      <%= form.text_field :command, autofocus: true, autocomplete: "off",
+      <%= form.text_field :command, autofocus: autofocus, autocomplete: "off",
                                     placeholder: "what do you do?" %>
       <%= form.submit "Go" %>
     <% end %>

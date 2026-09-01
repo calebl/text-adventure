@@ -24,12 +24,12 @@ function follow() {
   if (stick) window.scrollTo(0, document.documentElement.scrollHeight)
 }
 
-// The input is rendered fresh every time `#turn_log` is replaced, and `autofocus`
-// only fires on a page load -- so without this the player has to click the box
-// again after every turn, where the old reload gave them the focus back for free.
-//
-// `preventScroll` because focusing an element the player has scrolled away from
-// would drag them to it, which is precisely what `stick` exists to stop.
+// The input is rendered fresh every time `#turn_log` is replaced, and the
+// attribute that would normally handle this is deliberately not in the
+// broadcast: Turbo focuses `[autofocus]` after a stream render with a plain
+// `.focus()`, which scrolls the element into view and undoes everything above.
+// So focus is restored here instead, with `preventScroll`, and the player who
+// scrolled up to re-read something stays where they are.
 function refocus() {
   const input = document.querySelector("#turn_log input[type=text]")
   if (input && document.activeElement !== input) input.focus({ preventScroll: true })
@@ -37,18 +37,29 @@ function refocus() {
 
 window.addEventListener("scroll", () => { stick = atBottom() })
 
-// Every batch of prose and the finished turn both arrive as Turbo Stream
-// actions, so one listener covers the whole turn. The render itself happens
-// after this event, hence the frame's delay before measuring the page.
-document.addEventListener("turbo:before-stream-render", () => {
-  requestAnimationFrame(() => {
+// EVERY BATCH OF PROSE AND THE FINISHED TURN both arrive as Turbo Stream
+// actions, so one hook covers the whole turn.
+//
+// It has to be this hook, and not the event on its own. `turbo:before-stream-render`
+// fires, Turbo then awaits a repaint, and only *then* mutates the DOM -- so
+// measuring the page from the event (even a frame later) reads the layout from
+// before the batch that just arrived, and the follow ends up one batch behind
+// and drifts further off the foot with every one. Measured in a browser: 480px
+// adrift by the end of a single narration. Wrapping `detail.render` puts this
+// after the mutation, with no timing to guess at.
+document.addEventListener("turbo:before-stream-render", (event) => {
+  const render = event.detail.render
+
+  event.detail.render = async (streamElement) => {
+    await render(streamElement)
     follow()
     refocus()
-  })
+  }
 })
 
-// A plain page load, and every Turbo Drive navigation, arms the follow again:
-// the play page is entered at `#bottom`, which is where the story is.
+// A plain page load, and every Turbo Drive navigation, decides afresh whether
+// the player is at the foot of the log -- so arriving at the top of a long
+// transcript does not drag them down on the next turn.
 document.addEventListener("turbo:load", () => {
   stick = atBottom()
 })
