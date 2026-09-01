@@ -125,7 +125,20 @@ constraint* has the captain's wording and where the full audit lives.
   crosses, so guards against model output belong there and not beside the field
   that first showed the problem — it strips emoji, and it strips the JSON
   envelope debris (`…”}`) a response cut at a `max_length` boundary leaves
-  inside the value.
+  inside the value. Pass `max_length:` and it also **raises** when the value
+  arrived at that cap, because a value at exactly its cap was cut off rather
+  than finished. That reading is only safe while the cap is real headroom over
+  the shape the description asks for, so the two go together: see
+  `Interaction::Schema`, where the caps are the requested shape doubled and each
+  description states its own budget. A field the guard rejects fails the turn
+  rather than being trimmed — a fragment is not a shorter answer, it is an
+  answer whose end is missing.
+- **Sanitize where the consumers meet, not at each one.**
+  `InteractionAgent#reaction_fields` builds both the narrator prompt and the
+  `Interaction` row, so sanitizing there is what makes them agree. Checking the
+  record alone would still have let a fragment shape the prose — and the
+  narrator's whole job is to write fluently over whatever it is handed, which is
+  why a bad field has to be caught before that pass runs.
 - **Prefer a fixed table to a prompt** where the value is one of a known set.
   `LocationConnection::DISTANCES` and `::TRAVEL_METHODS` are enums the schema
   reads directly, and `time_to_travel` is derived from them rather than asked

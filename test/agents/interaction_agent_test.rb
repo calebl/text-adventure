@@ -110,6 +110,67 @@ class InteractionAgentTest < ActiveSupport::TestCase
     assert_equal "", exchange.reaction[:pre_thought]
   end
 
+  # --- the sanitizing seam --------------------------------------------------
+
+  # The talk path used to be the one generated-string path in the app that did
+  # not pass through SanitizesGeneratedText, so none of its guards applied to
+  # the six fields a conversation writes every turn.
+  test "the character's fields go through the sanitizer" do
+    exchange, = interact(character: CHARACTER_RESPONSE.merge(
+      "pre_feeling" => "surprised, wary \u{1F30A}",
+      "post_thought" => %(Say something.\u{201D}})
+    ))
+
+    assert_equal "surprised, wary", exchange.reaction[:pre_feeling]
+    assert_equal "Say something.", exchange.reaction[:post_thought]
+  end
+
+  # WAS SILENT, AND THAT WAS THE BUG. A `pre_feeling` came back at exactly its
+  # cap ending "hopeful for a (v"; the narrator pass wrote fluent prose over the
+  # fragment, so the record kept half a word and the player read a whole
+  # sentence. The turn fails now instead.
+  test "a field truncated at its cap fails the exchange rather than being kept" do
+    cap = Interaction::Schema.max_length_for(:pre_feeling)
+    cut = "wary, guarded, hopeful for a (v".ljust(cap, "e")
+
+    assert_raises(SanitizesGeneratedText::TruncatedTextError) do
+      interact(character: CHARACTER_RESPONSE.merge("pre_feeling" => cut))
+    end
+  end
+
+  # Caught BEFORE the narrator is paid for, and before any prose exists for the
+  # player to have read: the narrator's whole job is to paper over what it is
+  # handed, so it must never be handed a fragment.
+  test "a truncated field is caught before the narrator pass runs" do
+    cap = Interaction::Schema.max_length_for(:pre_thought)
+    cut = "She wondered whether to answer at all, so as not to r".ljust(cap, "e")
+
+    stub_agents(CHARACTER_RESPONSE.merge("pre_thought" => cut), "Mira looks up.") do |agent|
+      assert_raises(SanitizesGeneratedText::TruncatedTextError) { agent.ask("Excuse me?") }
+      assert_equal 1, agent.character_agent.prompts.count
+      assert_empty agent.narrator_agent.prompts
+    end
+  end
+
+  # Every field, not only the two that were caught in real data.
+  test "every one of the six fields is checked against its own cap" do
+    Interaction::Schema.required_properties.each do |field|
+      cap = Interaction::Schema.max_length_for(field)
+
+      assert_raises(SanitizesGeneratedText::TruncatedTextError, "#{field} is unguarded") do
+        interact(character: CHARACTER_RESPONSE.merge(field.to_s => "a" * cap))
+      end
+    end
+  end
+
+  # The caps have to leave room for the shape the schema asks for, or the guard
+  # fires on answers that were never truncated. A full, ordinary reaction passes.
+  test "an ordinary reaction is nowhere near its caps" do
+    exchange, = interact
+
+    assert_equal CHARACTER_RESPONSE.transform_keys(&:to_sym), exchange.reaction
+  end
+
   # --- streaming ------------------------------------------------------------
 
   # The narrator pass is prose the player watches arrive, which is the same

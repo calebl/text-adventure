@@ -233,6 +233,27 @@ The full audit of every planned piece of work against this constraint is in
   so a key placed in `.env` was silently ignored by `bin/rails` and `rake`, and
   the docs pointed only at `.envrc`. `dotenv-rails` is a direct dependency now;
   both files work.
+- **A conversation's structured fields are sanitized, and a truncated one
+  fails the turn.** The talk path was the one generated-string path in the app
+  that never crossed `sanitize_string`, so the guard below covered every field
+  the app writes except the six a conversation writes every turn. Found by
+  reading the debug view against a real conversation: one stored `pre_feeling`
+  was exactly its 60-character cap ending `"hopeful for a (v"`, its
+  `pre_thought` exactly the 200-character cap, another `pre_thought` ending
+  `"so as not to r"` — and the narrator pass, handed the fragment by string
+  key, wrote fluent prose over it, so the player could not tell. Two fixes:
+  `Interaction::Schema`'s caps are now headroom over the shape asked for rather
+  than the shape itself (a sentence 320, two sentences 480, three
+  comma-separated words 120, each stated in the field's own description), and
+  `InteractionAgent#reaction_fields` — the one seam the narrator prompt and the
+  `Interaction` row share — sanitizes every field against its own cap. Arriving
+  AT the cap now raises `SanitizesGeneratedText::TruncatedTextError` rather than
+  being written: with caps this wide a finished answer lands nowhere near the
+  ceiling, so landing on it means the provider cut the answer off. It is caught
+  before the narrator pass runs, so no prose is ever paid for or read over a
+  fragment. The scene's own prose is untouched, for the same reason
+  `Scene::Narrator`'s is: it is unschema'd streaming text, so there is no cap
+  for it to be cut at.
 - **Generated text is guarded against `max_length` truncation.** A response cut
   at a schema boundary leaves the JSON envelope inside the value — a `summary`
   came back at exactly its 200-character cap ending in a smart quote and a
@@ -701,18 +722,6 @@ What it still owes, roughly in order:
   than a rough edge. The test for it is that the induced ADJACENCY changed, not
   that each edge's endpoint did; `valid?` is comparing the wrong thing. Real
   data for **Judge the edge shuffle in play** below.
-- **`Interaction::Schema`'s 60-character feelings truncate mid-word, and
-  nothing on the talk path sanitizes.** Found by reading the debug view against
-  a real conversation: one stored `pre_feeling` is exactly 60 characters and
-  ends `"hopeful for a (v"`, and its `pre_thought` is exactly the 200-character
-  cap. The narrator pass is handed that fragment by string key and writes
-  fluent prose over it, so the player reads a sentence that was authored from a
-  cut-off feeling. Two separate things: the caps are tight for a field the
-  prompt asks for "two or three words, comma separated" — the model is not
-  obeying the shape, and the cap is where that shows — and unlike every other
-  generated string in the app, `InteractionAgent#reaction_fields` and the
-  `Scene` `Playthrough::Turn#talk_to` writes do **not** go through
-  `sanitize_string`, which is the one seam that exists to catch exactly this.
 - **A failed arrival leaves a realized room nobody has stood in**, which is the
   designed behaviour working and is worth knowing how to read. Observed in the
   same run: the move's `Scene::Generator` call rotated to `qwen3:8b`, which
