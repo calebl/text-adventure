@@ -155,7 +155,7 @@ class Playthrough::Debug
   # reads the command, so anything here is a night the world has not paid --
   # which happens when the story's clock moved without a turn being played.
   def mechanics
-    story.world_mechanics.order(:id).map do |mechanic|
+    @mechanics ||= story.world_mechanics.order(:id).map do |mechanic|
       Mechanic.new(
         mechanic: mechanic,
         owed: mechanic.pending_boundaries(story_clock),
@@ -169,7 +169,7 @@ class Playthrough::Debug
   # it is here precisely because it is the only place a rearranged town leaves
   # a mark the player never reads.
   def world_events
-    story.world_events.includes(:world_mechanic, :locations).in_story_order.reverse
+    @world_events ||= story.world_events.includes(:world_mechanic, :locations).in_story_order.reverse
   end
 
   # THE MAP, every place the world has named. Stubs included and counted: an
@@ -193,8 +193,8 @@ class Playthrough::Debug
   def interactions
     # Qualified: `interactions` comes through `characters`, so a bare
     # `created_at` is ambiguous across the join.
-    story.interactions.includes(:character, :location, :scene)
-         .order(Interaction.arel_table[:created_at].desc)
+    @interactions ||= story.interactions.includes(:character, :location, :scene)
+                           .order(Interaction.arel_table[:created_at].desc).to_a
   end
 
   private
