@@ -1,4 +1,32 @@
 ENV["RAILS_ENV"] ||= "test"
+
+# THE SUITE RUNS IN A DECLARED ENVIRONMENT, not in whoever's shell started it.
+# Every one of these changes how the app behaves, all five are things a person
+# working on this app legitimately has in `.env` or `.envrc`, and a test that
+# reads one is asserting against a value it did not author:
+#
+#   OPENROUTER_API_KEY         `BaseAgent.default_model_options` puts the hosted
+#                              models first when it is present, so tests that
+#                              pin the answering model to a local one fail, and
+#                              `RubyLLM.config.openrouter_api_key` is set from
+#                              it at boot, so a test expecting an unconfigured
+#                              provider to raise gets no exception. Three tests
+#                              failed exactly this way for a worker with a key
+#                              in their shell.
+#   OPENROUTER_MODEL           prepended to `REMOTE_MODEL_IDS`.
+#   TA_DEBUG_VIEW              `Playthrough::Debug.enabled?` obeys it in either
+#                              direction, so `TA_DEBUG_VIEW=0` turns the whole
+#                              debug view off and every test of it red.
+#   TA_CHAT_KEEP_TURNS         both are read into `Chat` constants at class-load
+#   TA_CHAT_HISTORY_EXCHANGES  time, which is why this is BEFORE the require.
+#
+# A test that wants one of these sets it itself and puts it back -- see
+# `BaseAgentTest#with_env` and `Playthrough::DebugTest#with_env`.
+%w[
+  OPENROUTER_API_KEY OPENROUTER_MODEL TA_DEBUG_VIEW
+  TA_CHAT_KEEP_TURNS TA_CHAT_HISTORY_EXCHANGES
+].each { |key| ENV.delete(key) }
+
 require_relative "../config/environment"
 require "rails/test_help"
 require "minitest/mock"
