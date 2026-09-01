@@ -239,6 +239,39 @@ before changing the loop; the rules below are what it does not fit.
   slated to land with the narrator creating characters, where a missed call
   costs a record rather than the player's position.
 
+### When a world outlives the schema
+
+A story is written once and then sits in the database while features land
+around it, so a database holds stories of several vintages and the play path is
+where the difference surfaces. **`rake game:doctor` is where it should surface
+instead** — it asks the preconditions the play path asks, ahead of the play
+path, and answers in sentences.
+
+- `Story::Doctor` reports and never writes. Every check names, in its comment,
+  the code that would otherwise be the first to notice — `PlaythroughsController`
+  refusing a story with no realized location, `Story#clock` needing a
+  `start_time`, `realize!` returning an exitless room untouched. **When that
+  code changes, change the check with it**; a doctor reporting on a precondition
+  the game no longer has is worse than none.
+- `Story::Repair` acts only on what the doctor marked `:safe` (derivable from
+  records already on file) or, with `generate: true`, `:generate` (worth a model
+  call — a room, its exits, the opening arrival, and it says how many calls
+  before it makes them). **It never invents data to make a validation pass.**
+  Anything else is reported as `:manual` and left exactly as it was; for most
+  such stories the honest answer is `rake game:delete`.
+- `Story::Deletion` prints a manifest, requires the story's **title** typed back
+  (an id is precisely what gets mistyped), and destroys the universe only when
+  no other story is built on it. `Story::DeletionTest` counts every table before
+  and after rather than trusting the `dependent:` options — some are `nullify`,
+  `Race`'s is `restrict_with_error`, and an edge's join rows are cleared by two
+  separate HABTM declarations on `Location`.
+- A dev server caches each table's columns on first use and a migration always
+  runs in another process, so a server that was up before `db:migrate` serves
+  models built from the old schema — which is `undefined method 'is_opening?'`
+  for a column that exists. `StaleSchemaGuard` (development middleware) catches
+  that and says restart; see the ROADMAP's *Known issues* for why it reports
+  rather than repairs.
+
 ### Testing
 
 - Generator tests **must not hit a model.** Use `FakeAgent`
@@ -288,6 +321,7 @@ bin/rails zeitwerk:check   # app/agents/ uses PascalCase filenames; verify autol
 ```bash
 rake 'game:new[a debt collector in a city built on a dead god]'
 rake game:list
+rake game:doctor   # what is wrong with each story, and what can be done about it
 bin/rails server   # then open http://localhost:3000 and play it
 ```
 

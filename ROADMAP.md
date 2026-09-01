@@ -55,7 +55,7 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
-- Rails 8 app, SQLite, 647 tests green. No longer API-only: `api_only` is off
+- Rails 8 app, SQLite, 688 tests green. No longer API-only: `api_only` is off
   and `ApplicationController < ActionController::Base` so it can render ERB.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph and the
@@ -245,6 +245,16 @@ The full audit of every planned piece of work against this constraint is in
   trail and deliberately **not** a narration source — over two nights a shuffle
   can return a place to the same neighbour, so replaying the log would announce
   a change the player never experienced.
+- **The story doctor** — `rake game:doctor`, `rake game:repair`,
+  `rake game:delete`. A world outlives the schema that generated it, so a story
+  written in August sits next to one written in September and the difference
+  only shows up as a stack trace mid-turn. `Story::Doctor` asks the questions
+  the play path asks, ahead of it, and answers in sentences a person can act on;
+  `Story::Repair` fixes only what is derivable from records, keeps model-call
+  repairs behind `GENERATE=1`, and **never invents data to make a validation
+  pass**; `Story::Deletion` prints what will go, requires the story's own title
+  back before it goes, and takes the universe only when no other story is built
+  on it. See `AGENTS.md` → *When a world outlives the schema*.
 
 ### Not built yet
 
@@ -519,10 +529,14 @@ What it still owes, roughly in order:
       seed file, loaded with everything else. See **Status → Done**. The ruling
       on the "progress rather than world" line, and the natural key a `Scene`
       did not have, are both written up in `db/seeds/worlds/README.md`.
-- [ ] A story generated before opening locations existed has nowhere to start,
+- [x] A story generated before opening locations existed has nowhere to start,
       so the index lists it without a Play button and `create` refuses it. That
-      whole branch can go once no such stories are left, or once realizing a
-      location on demand is cheap enough to do inside a request.
+      branch stays, but it is no longer the only thing that says so:
+      `rake game:doctor` names such a story and every other way one can be
+      unplayable, and says whether it can be repaired or should be deleted.
+      Measured on the captain's own database: of five stories, two were
+      unplayable with no locations at all, one was playable with nine warnings,
+      and two were healthy.
 
 ## Known issues
 
@@ -556,10 +570,32 @@ What it still owes, roughly in order:
   3 threads by default, so three people reading narration at once stalls the
   whole site for everyone else. Irrelevant for one player on localhost; raise
   `RAILS_MAX_THREADS` before that changes.
+- **A development server keeps the columns it booted with.** ActiveRecord caches
+  each table's columns the first time a model touches it, and a migration is
+  always run in another process — so a server that was up before `db:migrate`
+  goes on serving a class built from the old schema, and a column that is right
+  there in the database raises `undefined method`. That is what
+  `NoMethodError: undefined method 'is_opening?' for an instance of Scene` was:
+  not bad data and not a pending migration, an eleven-hour-old process.
+  `StaleSchemaGuard` (development only) now compares the schema version on every
+  request against the one the process first saw, and says *restart the server*
+  rather than letting the first attribute the code reaches for fail. It reports
+  and does not repair: resetting column information in place leaves the
+  connection's prepared statements still selecting the old columns, so a new
+  process is the honest answer.
 - **A turn dies with its connection.** Closing the tab mid-stream kills the
   generation. `Scene::Narrator` persists whatever it had in an `ensure`, so the
   player keeps the part that was written, but the rest is gone. Fixed properly
   by the job-and-cable stage.
+  The `ensure` covers a connection that goes away; it cannot cover a `Scene`
+  that will not save. When the captain lost 82 seconds of a turn to the stale
+  process above, the `ensure` ran exactly as designed and the `Scene.create!`
+  inside it was what raised — there is nowhere to put prose when the model
+  cannot be written at all. On a **move** most of that time was in fact kept:
+  `Location::Generator` saves the room before it asks for the exits, so both of
+  those calls had already landed and only the arrival narration was lost. The
+  narration branch is the one that loses everything, and what fixes it is a
+  process that is not stale rather than another `ensure`.
 - **RubyLLM's model registry is a process-wide memoized snapshot.**
   `RubyLLM::Models.instance` is built once, out of the `models` table, falling
   back to the registry JSON the gem ships only when that table is empty. It is

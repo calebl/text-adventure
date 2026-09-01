@@ -33,6 +33,11 @@ bundle install
 rake 'game:new[a debt collector in a city built on a dead god]'
 rake game:list
 
+# Check the stories in the database, fix what can be fixed, delete what cannot
+rake game:doctor                    # or rake 'game:doctor[3]' for one story
+rake 'game:repair[3]'               # safe repairs; GENERATE=1 to allow model calls
+rake 'game:delete[3]'               # prints what would go; DRY_RUN=1 or CONFIRM='<title>'
+
 # Play it in the browser
 rails server   # then open http://localhost:3000
 
