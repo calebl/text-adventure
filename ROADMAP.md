@@ -255,6 +255,24 @@ The full audit of every planned piece of work against this constraint is in
   pass**; `Story::Deletion` prints what will go, requires the story's own title
   back before it goes, and takes the universe only when no other story is built
   on it. See `AGENTS.md` → *When a world outlives the schema*.
+- **The debug view** (`ta-debug-view`, PR #79). One page per playthrough
+  showing what the game decided and generated behind the prose, organised
+  around the turn just taken: the branch it took **derived from the records
+  that branch left behind** and the evidence for it, the story-time cost
+  checked against the fixed tables that were supposed to decide it, the scene
+  and the place with stub-versus-realized called out, the exits in both
+  directions, the closed set `Playthrough::Classifier` will accept next turn
+  with the prompt it would build, `Story#clock` against the playthrough's own
+  moment, every mechanic with when it fires next, the `WorldEvent` audit trail,
+  and the durable background behind `<details>`. Its own route, controller and
+  layout, so it shares no CSS with the game and cannot change how the story
+  reads. Gated in the controller on `Playthrough::Debug.enabled?` — local by
+  default, `TA_DEBUG_VIEW` overrides — because this app has no auth and a
+  playthrough URL is the whole of a player's credentials. **Read, never write,
+  asserted rather than intended:** both tests snapshot every table's row count
+  and newest `updated_at` across a full read. It deliberately does not call
+  `catch_up_world!`; a mechanic with nights owed is reported, not run.
+  Built over existing records only — see **4** for why prompts wait.
 
 ### Not built yet
 
@@ -434,6 +452,13 @@ rows — but the arc will want the summarisation.
       and `ToolCall` already call `acts_as_chat` and friends, but every agent
       builds a bare `RubyLLM::Chat`, so **nothing is ever persisted**. Quitting
       loses all conversation state.
+      **It now has a consumer waiting.** The debug view was deliberately built
+      over existing records and NOT over a capture of its own: the interesting
+      version of that capture needs token counts and which model answered, and
+      both already live on `RubyLLM::Message` and are already declared to belong
+      in `messages`. A second store for the same three columns would have to be
+      torn out when this lands. When it does, the debug view's *what is not
+      recorded* block is the list of what it gains.
 - [x] **Persist an `Interaction` at all.** `InteractionAgent#ask` returns the
       structured reaction alongside the prose now, and `Playthrough::Turn#talk_to`
       writes the row.
@@ -510,6 +535,11 @@ What it still owes, roughly in order:
       moves. That stage brings `propshaft`, `importmap-rails` and `turbo-rails`
       — do not install them before it.
 - [ ] Visual style. Deferred on purpose until there is a real loop to look at.
+      The debug view (`ta-debug-view`) is **not** an exception to this and does
+      not pre-empt it: it has its own layout and shares no CSS with the game, so
+      the two can be styled independently and neither constrains the other. Its
+      whole mark on the game is one link on the play page, absent when the view
+      is off.
 - [x] **The page stays where the story is.** Submitting a turn used to land at
       the top of the document while the answer streamed in below the fold: the
       streaming render emits no form, so the `autofocus` that had been pulling
@@ -563,6 +593,11 @@ What it still owes, roughly in order:
   loader adds and updates and never deletes, so seeding on top of a world whose
   mechanic has moved edges leaves both the seeded edge and the moved one. Drop
   the database for a clean rebuild — the same caveat as renaming a location.
+- **A `Scene` has no column for the input that produced it**, so a reloaded
+  transcript is narration only and the debug view can say what the player typed
+  only on a conversation turn (`Interaction#user_input` is the one place it is
+  kept). It is the first outstanding item under **5. Interface** and it needs a
+  migration, which is why it waits for one.
 - **Nothing records where a character stands.** `characters` has no location
   column, so `Scene::Generator#characters_present` answers from the three
   things the app can actually know: the protagonist, anyone `is_companion`,

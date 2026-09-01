@@ -347,6 +347,32 @@ later stage — do not install them in passing.
   holds one Puma thread per open stream. Fine for one player; raise
   `RAILS_MAX_THREADS` before two.
 
+### The debug view
+
+`/playthroughs/:id/debug` — everything one playthrough generated and decided
+behind the prose (`Playthrough::Debug`, `DebugController`, `app/views/debug/`).
+Three rules govern it, and each exists because breaking it is easy:
+
+- **Read, never write.** It must not generate, mutate a record or advance a
+  playthrough — in particular it must never call `Story#catch_up_world!`,
+  because looking at a world must not move it. Both tests snapshot every
+  table's row count and newest `updated_at` across a full read, and the model
+  test reads *every* public method, so an addition that writes fails a test
+  that already exists.
+- **Its own layout.** It shares no CSS with the game, which is what lets it be
+  as dense as it likes while the reading experience stays deferred
+  (`ta-api-iface`). Its whole mark on the game is one link on the play page.
+- **Gated in the controller**, on `Playthrough::Debug.enabled?` — local by
+  default, `TA_DEBUG_VIEW` overrides either way. Not only on the link: there is
+  no auth, so a playthrough URL is the whole of a player's credentials.
+
+It shows the branch each turn took **derived from the records that branch left
+behind** rather than from a label, because there is no stored label — the
+classifier's intent lives in memory inside `Playthrough::Turn#play`. Prompts,
+raw responses, token counts and which model answered are not stored anywhere
+either (`ta-chat-persist`); the page names that gap rather than hiding it, and
+anything new it cannot show should be added to that list.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.
