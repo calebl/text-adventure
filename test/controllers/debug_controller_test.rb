@@ -45,9 +45,17 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", "#cast"
     assert_select "a[href=?]", "#map"
 
-    # And the honest gap.
+    # The conversations, which is the half of a turn the player never sees.
+    assert_select "h2", text: "the conversations you are having"
+    assert_select "a[href=?]", "#conversations"
+
+    # And the honest gap -- which no longer names `ta-chat-persist`, because the
+    # prompts, answers, token counts and models it promised are kept now. What
+    # is left is the pruning ceiling and the missing `scenes` column.
     assert_select "h2", text: "what is not recorded"
-    assert_match "ta-chat-persist", response.body
+    assert_no_match(/ta-chat-persist/, response.body)
+    assert_match "ta-api-iface", response.body
+    assert_match "ta-arrival-diff", response.body
   end
 
   # THE HARD RULE, at the request level: a GET of this page is an observer.

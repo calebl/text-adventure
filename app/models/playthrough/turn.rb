@@ -35,13 +35,28 @@ class Playthrough::Turn
 
     intent = classifier.classify(command)
 
-    if intent.destination
+    scene = if intent.destination
       move_to(intent.destination, &block)
     elsif intent.speaker
       talk_to(intent.speaker, command, &block)
     else
       narrate(command, &block)
     end
+
+    # THE CONVERSATIONS THIS TURN HAD, filed under the turn.
+    #
+    # The classifier is stamped here rather than in its own class because it
+    # runs before the branch that produces the scene -- it is the one call every
+    # turn makes and the only record of what the player actually typed on a turn
+    # that was not a conversation. Every branch stamps its own; see
+    # `BaseAgent#attribute_to!`.
+    classifier.agent.attribute_to!(scene) if scene
+
+    # And the audit trail older than the last few dozen turns goes, because this
+    # is a SQLite file on a laptop. See Playthrough#prune_conversations!.
+    playthrough.prune_conversations!
+
+    scene
   end
 
   # THE LOAD-OR-GENERATE SEAM. Everything the project is about is these four
@@ -62,10 +77,19 @@ class Playthrough::Turn
   # The playthrough moves only once both calls have landed, so a failed arrival
   # leaves the player where they were rather than in a room with nothing in it.
   def move_to(destination, &block)
-    Location::Generator.new(destination).realize!
+    realizer = Location::Generator.new(destination, playthrough: playthrough)
+    realizer.realize!
 
-    scene = Scene::Generator.new(destination, previous_scene: playthrough.current_scene).generate!
+    scene = Scene::Generator.new(
+      destination, previous_scene: playthrough.current_scene, playthrough: playthrough
+    ).generate!
     playthrough.update!(current_location: destination, current_scene: scene)
+
+    # Realizing the room is the most expensive thing this branch does -- two
+    # calls, ~670 output tokens -- and it happens before there is a scene to file
+    # it under, so the scene it paid for stamps it here. The arrival's own
+    # conversation is stamped by `Scene::Generator`.
+    realizer.agent.attribute_to!(scene)
 
     block&.call(scene.description)
     scene
@@ -86,7 +110,8 @@ class Playthrough::Turn
   # Blank prose is not a turn: `Scene` validates a description, and a record
   # written from nothing would be a turn the player cannot read.
   def talk_to(character, command, &block)
-    exchange = InteractionAgent.new(character).ask(command, &block)
+    agent = InteractionAgent.new(character, playthrough: playthrough)
+    exchange = agent.ask(command, &block)
     return if exchange.narration.blank?
 
     scene = Scene.create!(
@@ -109,6 +134,7 @@ class Playthrough::Turn
       user_input: command
     )
 
+    agent.attribute_to!(scene)
     playthrough.update!(current_scene: scene)
     scene
   end

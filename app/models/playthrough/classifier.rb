@@ -88,8 +88,14 @@ class Playthrough::Classifier
 
   # Instructions go through `with_instructions` rather than the constructor to
   # match the two generators -- same shape, same FakeAgent seam in tests.
+  #
+  # The conversation is filed under this playthrough and thrown away next turn:
+  # the classifier is stateless on purpose -- it gets the room's exits and cast
+  # and nothing else -- so there is nothing in last turn's exchange worth
+  # replaying. What is kept is the record of it, which is the only place the
+  # intent LABEL and the raw typed command are written down at all.
   def agent
-    @agent ||= BaseAgent.new.with_instructions(INSTRUCTIONS)
+    @agent ||= BaseAgent.new(purpose: "classifier", playthrough: playthrough).with_instructions(INSTRUCTIONS)
   end
 
   def command_prompt(command, exits, cast)

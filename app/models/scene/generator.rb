@@ -32,10 +32,15 @@ class Scene::Generator
   # story's opening arrival has nothing before it.
   #
   # `opening` marks the one arrival that belongs to the world: see .opening.
-  def initialize(location, previous_scene: nil, opening: false)
+  #
+  # `playthrough` is only ever what the conversation gets FILED UNDER -- nothing
+  # about the arrival depends on it, which is why it is optional and why the
+  # world-building path (.opening, `rake game:new`) leaves it out. See Chat.
+  def initialize(location, previous_scene: nil, opening: false, playthrough: nil)
     @location = location
     @previous_scene = previous_scene
     @opening = opening
+    @playthrough = playthrough
     @story = location.story
   end
 
@@ -82,7 +87,7 @@ class Scene::Generator
 
     answer = agent.with_schema(Scene::Schema).ask(arrival_prompt(returning, elapsed, cast)).content
 
-    Scene.create!(
+    scene = Scene.create!(
       story: story,
       location: location,
       previous_scene: previous_scene,
@@ -92,6 +97,11 @@ class Scene::Generator
       is_opening: opening?,
       story_timestamp: at
     )
+
+    # The turn the exchange above belongs to only exists now, so the messages
+    # are stamped with it here rather than by the caller. See BaseAgent#attribute_to!.
+    agent.attribute_to!(scene)
+    scene
   end
 
   # WHEN IN THE STORY THIS ARRIVAL HAPPENS, and the one place the game turns a
@@ -163,7 +173,7 @@ class Scene::Generator
   end
 
   def agent
-    @agent ||= BaseAgent.new.with_instructions(system_prompt)
+    @agent ||= BaseAgent.new(purpose: "arrival", playthrough: @playthrough).with_instructions(system_prompt)
   end
 
   def system_prompt

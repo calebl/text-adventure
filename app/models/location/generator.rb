@@ -13,8 +13,14 @@ class Location::Generator
 
   # `location` is a stub -- a Location with a name and a teaser but no
   # description or lore. It may be unsaved; realizing it persists it.
-  def initialize(location)
+  #
+  # `playthrough` is only what the conversation gets filed under (see Chat).
+  # Realizing a room is the most expensive thing a move does -- two calls and
+  # ~670 output tokens -- so a turn's cost is wrong without it, and the
+  # world-building path that has no playthrough simply leaves it out.
+  def initialize(location, playthrough: nil)
     @location = location
+    @playthrough = playthrough
     @story = location.story
   end
 
@@ -70,8 +76,12 @@ class Location::Generator
     location
   end
 
+  # ONE conversation for both calls, and that is why persistence is per agent
+  # rather than per call: the exits call is asked in the context of the
+  # description the same model just wrote, so the two exchanges are one
+  # conversation and the stored row is what was actually sent.
   def agent
-    @agent ||= BaseAgent.new.with_instructions(system_prompt)
+    @agent ||= BaseAgent.new(purpose: "location", playthrough: @playthrough).with_instructions(system_prompt)
   end
 
   def system_prompt

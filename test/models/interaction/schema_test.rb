@@ -8,9 +8,12 @@ class Interaction::SchemaTest < ActiveSupport::TestCase
 
   SCHEMA = Interaction::Schema
 
-  FIELDS = %w[pre_thought pre_feeling action post_feeling post_thought].freeze
+  # `inner_resolution` is the sixth, and it is last because it is the one the
+  # narrator pass does NOT read: what the character decided is kept on the
+  # record (`Interaction#completed?`) rather than handed to the prose.
+  FIELDS = %w[pre_thought pre_feeling action post_feeling post_thought inner_resolution].freeze
 
-  test "describes exactly the five interaction fields, in order" do
+  test "describes exactly the six interaction fields, in order" do
     assert_equal FIELDS, schema_properties(SCHEMA).keys
   end
 
@@ -52,6 +55,7 @@ class Interaction::SchemaTest < ActiveSupport::TestCase
   end
 
   test "thoughts and actions are bounded to a sentence or two" do
+    assert_schema_field(SCHEMA, :inner_resolution, type: :string, maxLength: 200)
     assert_schema_field(SCHEMA, :pre_thought, type: :string, maxLength: 200)
     assert_schema_field(SCHEMA, :action, type: :string, maxLength: 300)
     assert_schema_field(SCHEMA, :post_thought, type: :string, maxLength: 200)
@@ -70,7 +74,8 @@ class Interaction::SchemaTest < ActiveSupport::TestCase
   end
 
   # InteractionAgent reads these five out of the response by name. If a field is
-  # renamed here the prompt silently interpolates nil.
+  # renamed here the prompt silently interpolates nil. `inner_resolution` is
+  # deliberately absent from the list -- see Interaction::Schema.
   test "carries every field the narrator prompt interpolates" do
     interpolated = %w[pre_thought pre_feeling action post_thought post_feeling]
 
