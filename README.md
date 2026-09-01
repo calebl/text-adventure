@@ -263,16 +263,28 @@ That last one is what lets a long game stay inside the window. The narrator used
 to see exactly one scene, and the only way to deepen that was to paste in more
 full descriptions. `Playthrough#recap` spends `scenes.summary` instead — the
 column `Scene::Generator` has been writing on every arrival all along, for
-exactly this — so several turns of memory cost about what one more description
-would have. Measured on the seeded world against `gemma3:12b`:
+exactly this.
 
-| | narrator prompt | memory |
-| --- | --- | --- |
-| before | 695 input tokens | the previous scene |
-| after | 781 input tokens | the previous scene, plus four before it |
+Measured on *The Unrecorded Hour* against `gemma3:12b`, the same three commands
+played twice, with the recap off and on. Only the narration call changes; the
+classifier's prompt is fixed at ~266 input tokens either way:
+
+| turn | narration prompt, no recap | with recap | whole turn |
+| --- | --- | --- | --- |
+| 1 `look at the daybook` | 695 | 695 (nothing behind it yet) | 961 → 961 |
+| 2 `look out of the window` | 711 | **781** | 977 → 1,047 |
+| 3 `listen at the door` | 684 | **775** | 949 → 1,040 |
+
+**+70 to +91 input tokens, about 7% of a turn**, for three turns of memory where
+there was one. The trade is the compression: those three turns are 343
+characters as summaries and 2,264 as the prose the player read, so carrying them
+in full would have cost roughly six times as much.
 
 It asks no model anything, which is the point: summarising happens once, when
-the arrival is written.
+the arrival is written. A narrated turn has no summary — `Scene::Narrator`
+streams unschema'd prose and cannot produce a second field — so it contributes
+its own first sentence, which is why two of the three lines above read as
+truncations rather than summaries.
 
 ### What the loop does not do yet
 
