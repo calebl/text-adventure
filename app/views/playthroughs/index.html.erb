@@ -1,7 +1,9 @@
 <h1>Text Adventure</h1>
 
 <% if @playthrough %>
-  <p><%= link_to "Resume #{@playthrough.story.title}", @playthrough %></p>
+  <%# `#bottom`: resuming should put him back at the end of the log he left,
+      not at the preface he has already read. %>
+  <p><%= link_to "Resume #{@playthrough.story.title}", playthrough_path(@playthrough, anchor: "bottom") %></p>
   <hr>
 <% end %>
 
