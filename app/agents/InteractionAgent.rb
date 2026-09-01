@@ -20,6 +20,13 @@
 # instead. What the game keeps out of this turn -- the five fields of the
 # character's reaction -- is structured; only the part a human reads is not.
 class InteractionAgent
+  # The talk path is a generated-string path like any other, and it used to be
+  # the ONE that skipped this seam -- so PR #76's `max_length` truncation guard,
+  # installed here precisely because it "can reach any max_length field in any
+  # schema in the app", covered every field the app writes except the six a
+  # conversation writes every turn. See #reaction_fields.
+  include SanitizesGeneratedText
+
   # What one exchange produced. `reaction` is the character's five structured
   # fields, keyed exactly as `Interaction::Schema` names them so it can be
   # handed straight to `Interaction.create!`; `narration` is the prose.
@@ -52,13 +59,20 @@ class InteractionAgent
     reaction = character_agent.ask(character_prompt(user_input)).content
     Rails.logger.debug { "Character response: #{reaction}" }
 
+    # BEFORE the narrator pass, deliberately. `#reaction_fields` is where a
+    # truncated field is caught, and the narrator's whole job is to write fluent
+    # prose over whatever it is handed -- so a fragment that gets past here is a
+    # fragment no reader can ever see. Catching it now costs one wasted call
+    # instead of two and a turn the player has already read.
+    fields = reaction_fields(reaction)
+
     @narrator_instructions = narrator_prompt(user_input, reaction)
     narration = narrator_agent.ask(@narrator_instructions) do |chunk|
       part = chunk.content.to_s
       block.call(part) if block && !part.empty?
     end.content
 
-    Exchange.new(reaction: reaction_fields(reaction), narration: narration.to_s)
+    Exchange.new(reaction: fields, narration: narration.to_s)
   end
 
   # THE ONE CONVERSATION IN THE APP THAT IS PICKED UP AGAIN. Every other agent
@@ -155,13 +169,23 @@ class InteractionAgent
 
   private
 
-  # The five fields, symbol-keyed and never nil, so the prompt reads a missing
+  # The six fields, symbol-keyed and never nil, so the prompt reads a missing
   # field as blank and `Interaction.create!` gets exactly the columns it wants.
+  #
+  # AND THE ONE SEAM BOTH CONSUMERS SHARE. The narrator prompt and the
+  # `Interaction` row are built from this same hash, so sanitizing here is what
+  # makes them agree: a field the guard rejects reaches neither, where a check
+  # on the record alone would still have let the fragment shape the prose.
+  # Each field is handed its own schema cap, which is what arms the truncation
+  # check -- see `SanitizesGeneratedText::TruncatedTextError`.
   def reaction_fields(character_response)
     response = character_response.presence || {}
 
     Interaction::Schema.required_properties.to_h do |field|
-      [ field.to_sym, response[field.to_s].to_s ]
+      [
+        field.to_sym,
+        sanitize_string(response[field.to_s], max_length: Interaction::Schema.max_length_for(field))
+      ]
     end
   end
 
