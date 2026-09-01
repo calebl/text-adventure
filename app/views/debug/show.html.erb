@@ -5,9 +5,21 @@
   &nbsp;&middot;&nbsp; <%= @debug.turns.size %> turns
   &nbsp;&middot;&nbsp; a snapshot: reload after a turn to see the next one
 </p>
+<%# The page is long and the background sits under it, so the counts are up
+    here where they can be read without opening anything. %>
+<p class="nav">
+  jump to:
+  <%= link_to "the turn", "#turn" %> &middot;
+  <%= link_to "where you are", "#place" %> &middot;
+  <%= link_to "the classifier", "#classifier" %> &middot;
+  <%= link_to "the world", "#world" %> &middot;
+  <%= link_to "earlier turns (#{@debug.earlier_turns.size})", "#log" %> &middot;
+  <%= link_to "the cast (#{@debug.cast.size})", "#cast" %> &middot;
+  <%= link_to "the map (#{@debug.places.size})", "#map" %>
+</p>
 
 <%# THE TURN HE JUST TOOK. Everything else on this page is background to it. %>
-<h2>the turn you just took</h2>
+<h2 id="turn">the turn you just took</h2>
 <% if @debug.latest_turn %>
   <%= render "debug/turn", turn: @debug.latest_turn, now: true %>
 <% else %>
@@ -16,7 +28,7 @@
 
 <%# WHERE HE IS STANDING. The stub-then-realize shape is the heart of the
     design and almost entirely invisible while playing. %>
-<h2>where you are standing</h2>
+<h2 id="place">where you are standing</h2>
 <% if (place = @debug.location) %>
   <div class="panel">
     <div class="fields">
@@ -85,7 +97,7 @@
 <%# THE CLOSED SET. `Gate the state, inform the prose, audit the difference` --
     this is the gate, and it is the one thing on this page the standing
     constraint is actually about. %>
-<h2>what the classifier will accept next turn</h2>
+<h2 id="classifier">what the classifier will accept next turn</h2>
 <div class="panel">
   <p class="note">
     <%= @debug.candidate_enum.size %> answers are physically available to the model:
@@ -116,7 +128,7 @@
 <%# THE WORLD'S OWN CLOCK. When the town rearranges itself overnight this is
     where it shows, and nowhere else: WorldEvent is deliberately not a
     narration source, so the player is never told. %>
-<h2>the world's clock</h2>
+<h2 id="world">the world's clock</h2>
 <div class="panel">
   <div class="fields">
     <div class="k">story started</div><div class="v"><%= debug_time(@debug.story.start_time) %></div>
@@ -182,7 +194,7 @@
 
 <%# THE LOG. Everything before the current turn, newest first, so it reads away
     from the present rather than towards it. %>
-<h2>earlier turns</h2>
+<h2 id="log">earlier turns</h2>
 <% if @debug.earlier_turns.empty? %>
   <p class="absent">(none &mdash; the turn above is the whole log)</p>
 <% end %>
@@ -243,14 +255,23 @@
   </div>
 </details>
 
-<details>
-  <summary>the cast &mdash; <%= @debug.cast.size %> characters</summary>
+<details id="cast">
+  <summary>the cast &mdash; <%= @debug.cast.size %> characters, <%= @debug.unseen_count %> never yet in a scene</summary>
   <div class="body">
+    <%# NOTHING RECORDS WHERE A CHARACTER STANDS -- `characters` has no location
+        column -- so "last seen" is the whole of what the game knows, and it is
+        the gap `ta-narrator-memory` plugs. %>
+    <p class="note">
+      Where somebody is, is not stored: `characters` has no location column, so
+      the last column below is the latest scene that recorded them anywhere.
+      A character nobody has met is honestly nowhere.
+    </p>
     <div class="scroll">
       <table>
-        <thead><tr><th>name</th><th>race</th><th>age</th><th>sex</th><th>pronouns</th><th>role</th><th>personality</th></tr></thead>
+        <thead><tr><th>name</th><th>race</th><th>age</th><th>sex</th><th>pronouns</th><th>role</th><th>last seen</th><th>personality</th></tr></thead>
         <tbody>
-          <% @debug.cast.each do |character| %>
+          <% @debug.cast.each do |person| %>
+            <% character = person.character %>
             <tr>
               <td>
                 <%= character.fullname %>
@@ -261,8 +282,16 @@
               <td><%= debug_value(character.sex_label) %></td>
               <td><%= debug_value(character.sex.present? ? character.pronouns : nil) %></td>
               <td>
-                <% if character.is_protagonist? %><span class="tag realized">protagonist</span><% end %>
+                <% if character.is_protagonist? %><span class="tag here">protagonist</span><% end %>
                 <% if character.is_companion? %><span class="tag">companion</span><% end %>
+              </td>
+              <td>
+                <% if person.seen? %>
+                  <%= person.last_scene.location.name %><br>
+                  <span class="note"><%= debug_time(person.last_scene.story_timestamp) %></span>
+                <% else %>
+                  <span class="absent">(never in a scene &mdash; generated but not yet met)</span>
+                <% end %>
               </td>
               <td><%= truncate(character.personality.to_s, length: 160) %></td>
             </tr>
@@ -273,26 +302,32 @@
   </div>
 </details>
 
-<details>
-  <summary>the map &mdash; <%= @debug.realized_count %> realized, <%= @debug.stub_count %> stubs</summary>
+<details id="map">
+  <summary>the map &mdash; <%= @debug.places.size %> places: <%= @debug.realized_count %> realized, <%= @debug.stub_count %> stubs</summary>
   <div class="body">
     <p class="note">
       A stub is a name and a teaser, created the moment a neighbour named it as
       an exit. Walking into one is what writes it, once and never again.
+      &ldquo;Who is here&rdquo; is the holdover rule
+      (`Scene::Generator#characters_present`): whoever was in the last scene
+      recorded in that place. The protagonist and any companion travel with the
+      player, so they are left out of it &mdash; they would be in every row.
     </p>
     <div class="scroll">
       <table>
-        <thead><tr><th>place</th><th>state</th><th>exits</th><th>last visit</th><th>teaser / description</th></tr></thead>
+        <thead><tr><th>place</th><th>state</th><th>exits</th><th>who is here</th><th>last visit</th><th>teaser / description</th></tr></thead>
         <tbody>
-          <% @debug.places.each do |candidate| %>
+          <% @debug.places.each do |place| %>
+            <% candidate = place.location %>
             <tr>
               <td>
                 <%= candidate.name %>
                 <% if candidate.mobile? %><span class="tag mobile">mobile</span><% end %>
-                <% if candidate == @debug.location %><span class="tag here">you are here</span><% end %>
+                <% if place.here %><span class="tag here">you are here</span><% end %>
               </td>
               <td><span class="tag <%= candidate.detail_level %>"><%= candidate.detail_level %></span></td>
               <td><%= debug_value(candidate.connected_locations.map(&:name).to_sentence.presence, absent: "none — nothing leads out of here") %></td>
+              <td><%= debug_value(place.cast.map(&:fullname).to_sentence.presence, absent: "nobody known here") %></td>
               <td><%= debug_time(candidate.last_protagonist_visit, absent: "never") %></td>
               <td><%= truncate((candidate.description.presence || candidate.teaser).to_s, length: 160) %></td>
             </tr>

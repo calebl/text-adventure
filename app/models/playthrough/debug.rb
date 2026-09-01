@@ -53,6 +53,27 @@ class Playthrough::Debug
   # A world mechanic and where it stands on the story's clock.
   Mechanic = Data.define(:mechanic, :owed, :next_at, :events)
 
+  # A place, and who the game believes is standing in it.
+  #
+  # `cast` is the HOLDOVER rule -- whoever was in the last scene here that
+  # recorded anyone -- which is one of the three things
+  # `Scene::Generator#characters_present` answers from, and the only one that
+  # is about this place rather than about the player. The protagonist and any
+  # companion travel with the player and so would appear in every row, which
+  # would say nothing.
+  Place = Data.define(:location, :cast, :here) do
+    def stub? = location.stub?
+  end
+
+  # A character, and the last moment the world recorded them anywhere.
+  #
+  # NOTHING RECORDS WHERE A CHARACTER STANDS -- `characters` has no location
+  # column -- so this is the whole of what the game knows about where somebody
+  # is, and a character the player has never met is honestly nowhere.
+  Person = Data.define(:character, :last_scene) do
+    def seen? = !last_scene.nil?
+  end
+
   # Whether the view is reachable at all.
   #
   # Local by default -- development and test -- because this is a window for
@@ -176,16 +197,24 @@ class Playthrough::Debug
   # unexplored exit is a real record with a name and a teaser, and the ratio of
   # stubs to realized places is the clearest single number about how much of
   # this world has actually been written.
+  # THE MAP, every place the world has named, with who is standing in each.
   def places
-    @places ||= story.locations.includes(:connected_locations).order(:id).to_a
+    @places ||= story.locations.includes(:connected_locations).order(:id).map do |place|
+      Place.new(location: place, cast: cast_recorded_at(place), here: place == location)
+    end
   end
 
   def stub_count = places.count(&:stub?)
-  def realized_count = places.count(&:realized?)
+  def realized_count = places.count { |place| !place.stub? }
 
+  # THE CAST, everyone this world has generated, with where each was last seen.
   def cast
-    @cast ||= story.characters.includes(:race).order(:id).to_a
+    @cast ||= story.characters.includes(:race).order(:id).map do |character|
+      Person.new(character: character, last_scene: last_scene_for(character))
+    end
   end
+
+  def unseen_count = cast.count { |person| !person.seen? }
 
   # Every conversation this story has ever kept, newest first. The five
   # structured fields are the whole reason `Interaction` exists and the player
@@ -198,6 +227,21 @@ class Playthrough::Debug
   end
 
   private
+
+  # Whoever was in the last scene in this location that recorded anyone. The
+  # same read `Scene::Generator#holdovers` makes, and deliberately so: it is
+  # what the game will answer with next time somebody walks in here, so a
+  # second opinion would be a second answer.
+  def cast_recorded_at(place)
+    scene = place.scenes.joins(:characters).order(story_timestamp: :desc, id: :desc).first
+
+    scene ? scene.characters.to_a : []
+  end
+
+  # The latest scene, in story time, that recorded this character anywhere.
+  def last_scene_for(character)
+    character.scenes.includes(:location).order(story_timestamp: :desc, id: :desc).first
+  end
 
   # WHICH BRANCH THE TURN TOOK, decided from the records the branch left behind
   # rather than from any label -- there is no stored label to read, and the
