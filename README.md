@@ -44,7 +44,7 @@ The premise is optional; without one the model picks its own.
 Two processes: the web server, and the worker that plays turns.
 
 ```bash
-bin/rails db:prepare   # two databases now: the app's, and Solid Queue's
+bin/rails db:prepare   # three databases now: the app's, Solid Queue's, Solid Cable's
 bin/rails db:seed      # two checked-in worlds, no model needed
 bin/rails server       # then open http://localhost:3000
 bin/jobs               # in a second terminal -- this is what runs a turn
@@ -57,6 +57,11 @@ while the job writes it. That is what makes a turn survive the tab closing, and
 what stops a twenty-second model call from holding a Puma thread. Queued jobs
 wait in `storage/development_queue.sqlite3` until a worker picks them up, so
 starting `bin/jobs` late runs the turns you already typed.
+
+Development uses `solid_cable`, not the `async` adapter the Rails default
+suggests: the turn is broadcast from `bin/jobs` and read by a WebSocket held in
+Puma, and `async` broadcasts only within one process. On `async` the player
+watches an empty cursor and the turn lands in silence.
 
 There is still no Node, no `package.json` and no build step: `propshaft` serves
 `app/javascript` as it sits on disk and `importmap-rails` lets the browser

@@ -42,7 +42,7 @@ rake 'game:delete[3]'               # prints what would go; DRY_RUN=1 or CONFIRM
 
 # Play it in the browser. Two processes: a turn runs in NarrationJob, so
 # without `bin/jobs` nothing narrates.
-bin/rails db:prepare   # the app's database, and Solid Queue's
+bin/rails db:prepare   # the app's database, Solid Queue's, and Solid Cable's
 rails server           # then open http://localhost:3000
 bin/jobs               # in a second terminal
 

@@ -406,6 +406,17 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_select "#turn_log turbo-cable-stream-source", count: 0
   end
 
+  # ...but a real page load is a real page load, and there the attribute means
+  # what it says: put the cursor in the box. NarrationJobTest asserts the other
+  # half, which is that a broadcast must not carry it.
+  test "show autofocuses the input, because a page load is what autofocus is for" do
+    playthrough = create(:playthrough)
+
+    get playthrough_path(playthrough)
+
+    assert_select "#turn_log input[type=text][autofocus]"
+  end
+
   # Where the page sits is not something the suite can see, so this pins the
   # markup the fix stands on instead of pretending to test a viewport: the
   # anchor a plain reload and the index's Resume link both aim at. Following the

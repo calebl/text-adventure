@@ -20,7 +20,11 @@
     nobody was listening on yet. %>
 <%= turbo_stream_from @playthrough %>
 
-<%= render "playthroughs/turn_log", playthrough: @playthrough, command: nil %>
+<%# `autofocus` here and nowhere else: this is the one render that is a page
+    load, so the attribute means what it says. See the note in the partial for
+    why a broadcast must not carry it. %>
+<%= render "playthroughs/turn_log", playthrough: @playthrough, command: nil,
+                                    autofocus: true %>
 
 <%# Where the player left off. A plain reload and the index's Resume link both
     aim at `#bottom`, so the browser puts the newest turn on screen with no
