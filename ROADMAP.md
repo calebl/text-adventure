@@ -315,10 +315,10 @@ The full audit of every planned piece of work against this constraint is in
     inlines the whole universe (4,705 characters) and the local models run in a
     4,096-token window; what falls off the chat is on `Interaction`, in full,
     forever.
-  - **`Playthrough#recap`** gives the narrator five turns of memory for the
-    price of one, by spending the summaries every arrival already writes. On
-    `gemma3:12b` against the seeded world the narrator prompt went 695 → 781
-    input tokens; a fifth full description would have been ~500.
+  - **`Playthrough#recap`** deepens the narrator's memory from one turn to
+    several, by spending the summaries every arrival already writes. Measured on
+    `gemma3:12b`: +70 to +91 input tokens on the narration call, ~7% of a turn,
+    against 2,264 characters of prose it replaces with 343.
   Bounded at both ends on purpose: the one-shot audit trail is pruned to
   `Chat::KEEP_TURNS` at the end of every turn, because this is a SQLite file on
   a laptop and the game reads none of it back.
@@ -529,8 +529,11 @@ checklist.
 - [x] Summarize old scenes so long playthroughs stay inside the context window.
       `Playthrough#recap` spends `scenes.summary` — written on every arrival, for
       exactly this — under a fixed character budget, and asks no model anything.
-      Measured against `gemma3:12b` on the seeded world: the narrator prompt went
-      from 695 to 781 input tokens while its memory went from one turn to five.
+      Measured against `gemma3:12b` on the seeded world, the same commands played
+      twice: the narration prompt went 711 → 781 and 684 → 775 input tokens
+      (+70 / +91, about 7% of a turn) while its memory went from one turn to
+      three. Carrying those three in full prose instead would have been 2,264
+      characters against the recap's 343. README has the table.
 - [ ] **Nothing summarises a narrated turn.** Only an arrival is schema'd, so
       only an arrival has a `summary`; the recap contributes such a turn's own
       first sentence instead. Truncation is honest and free, and the alternative
