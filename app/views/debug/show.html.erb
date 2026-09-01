@@ -15,6 +15,7 @@
   <%= link_to "the classifier", "#classifier" %> &middot;
   <%= link_to "conversations (#{@debug.durable_conversations.size})", "#conversations" %> &middot;
   <%= link_to "the world", "#world" %> &middot;
+  <%= link_to "the audit (#{@debug.contradictions.size + @debug.drifts.size})", "#audit" %> &middot;
   <%= link_to "earlier turns (#{@debug.earlier_turns.size})", "#log" %> &middot;
   <%= link_to "the cast (#{@debug.cast.size})", "#cast" %> &middot;
   <%= link_to "the map (#{@debug.places.size})", "#map" %>
@@ -274,6 +275,79 @@
       <% end %>
       <% if @debug.world_events.empty? %>
         <tr><td colspan="4" class="absent">(nothing yet — no boundary has been crossed since this world was made)</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%# WHAT THE RECORDS SAY ABOUT THE PROSE. The third clause of the standing
+    constraint -- gate the state, inform the prose, AUDIT THE DIFFERENCE -- and
+    the only part of it that was previously invisible. Both tables are read
+    offline out of records: no model call, nothing written.
+    See Story::Audit and Playthrough::Drift. %>
+<h2 id="audit">where the narration and the records disagree</h2>
+<div class="panel">
+  <div class="fields">
+    <div class="k">scenes swept</div>
+    <div class="v"><%= @debug.audit.scanned %> <span class="note">every scene in this world, not just this playthrough's</span></div>
+    <div class="k">contradictions here</div>
+    <div class="v"><%= @debug.contradictions.size %> <span class="note">on this playthrough's own turns &mdash; the records prove these</span></div>
+    <div class="k">drift here</div>
+    <div class="v">
+      <%= @debug.drifts.size %>
+      <span class="note">
+        turns this player reached for something the records do not have<%= " — #{@debug.drift_tally.map { |action, count| "#{count} #{action}" }.join(", ")}" if @debug.drifts.any? %>
+      </span>
+    </div>
+    <div class="k">not judged</div>
+    <div class="v"><%= @debug.audit.unjudged.size %> <span class="note">checks the records cannot answer honestly &mdash; a moved graph, an undated row</span></div>
+  </div>
+</div>
+
+<h3>contradictions &mdash; the records say the narration is wrong</h3>
+<div class="scroll">
+  <table>
+    <thead>
+      <tr><th>at</th><th>check</th><th>what the records say</th><th>the evidence</th></tr>
+    </thead>
+    <tbody>
+      <% @debug.contradictions.each do |flag| %>
+        <tr>
+          <td><%= debug_time(flag.scene&.story_timestamp) %></td>
+          <td><code><%= flag.code %></code></td>
+          <td><%= flag.headline %></td>
+          <td class="note"><%= debug_value(flag.evidence_line, absent: "&mdash;") %></td>
+        </tr>
+      <% end %>
+      <% if @debug.contradictions.empty? %>
+        <tr><td colspan="4" class="absent">(none &mdash; every turn here matches what the records hold)</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%# DRIFT IS EVIDENCE, NOT PROOF, and the table says so in its own words: a
+    player who types "go north" in a room with named exits lands here too. What
+    makes it worth keeping is the scene column -- the narration they had just
+    read is where an invented exit would have come from. %>
+<h3>drift &mdash; the player reached for something that was not there</h3>
+<div class="scroll">
+  <table>
+    <thead>
+      <tr><th>at</th><th>tried to</th><th>typed</th><th>was offered</th><th>after reading</th></tr>
+    </thead>
+    <tbody>
+      <% @debug.drifts.each do |drift| %>
+        <tr>
+          <td><%= debug_time(drift.story_timestamp) %></td>
+          <td><code><%= drift.action %></code></td>
+          <td><%= drift.command %></td>
+          <td class="note"><%= debug_value(drift.offered.presence, absent: "nothing at all") %></td>
+          <td class="note"><%= debug_value(drift.scene && truncate(drift.scene.description.to_s, length: 110), absent: "no scene recorded") %></td>
+        </tr>
+      <% end %>
+      <% if @debug.drifts.empty? %>
+        <tr><td colspan="5" class="absent">(none &mdash; every move, talk and take this player tried resolved to a record)</td></tr>
       <% end %>
     </tbody>
   </table>

@@ -29,9 +29,11 @@
 #     as the playthrough runs -- this is a SQLite file on a laptop -- so an old
 #     turn keeps its `Scene` and loses its receipts. Said out loud where it
 #     happens, not left to look like a turn that cost nothing.
-#   * the typed command as a FIELD. It is recoverable out of the classifier's
-#     prompt and is shown from there, but a `Scene` still has no column for it,
-#     which is `ta-api-iface`'s first outstanding item.
+#
+# WHAT THE PLAYER TYPED IS NO LONGER ONE OF THEM. `Scene#typed` is a column now,
+# written on every branch by `Playthrough::Turn#play`, so it survives the
+# pruning above -- see `#typed_on`, whose two fallbacks exist only for turns
+# written before that column did.
 class Playthrough::Debug
   # One turn of the log, as the records tell it.
   #
@@ -229,6 +231,31 @@ class Playthrough::Debug
   # twice, and seeing both is the point.
   def story_clock = story.clock
   def story_now = playthrough.story_now
+
+  # ------------------------------------------------------------------------
+  # WHAT THE RECORDS SAY ABOUT THE PROSE. `Story::Audit` read offline, over the
+  # scenes this playthrough actually played -- so the page that shows what the
+  # app decided also shows where the narration disagreed with it. Read-only like
+  # everything else here: the sweep makes no model call and writes nothing.
+  # ------------------------------------------------------------------------
+  def audit = @audit ||= Story::Audit.new(story)
+
+  # Contradictions on this playthrough's own turns, newest first, so the most
+  # recent disagreement is the one at the top.
+  def contradictions
+    scene_ids = turns.filter_map { |turn| turn.scene&.id }.to_set
+
+    audit.contradictions.select { |flag| scene_ids.include?(flag.scene&.id) }.reverse
+  end
+
+  # EVERY TURN THIS PLAYER REACHED FOR SOMETHING THAT WAS NOT THERE, newest
+  # first. Read straight off `Playthrough::Drift` rather than through the audit,
+  # because these belong to this playthrough and the audit is story-wide.
+  def drifts
+    @drifts ||= playthrough.drifts.in_story_order.includes(:scene, :location).to_a.reverse
+  end
+
+  def drift_tally = Playthrough::Drift.tally(playthrough.drifts)
 
   # Every mechanic, with what it still owes and when it fires next. `owed` is
   # normally empty: `Playthrough::Turn#play` catches the world up before it
@@ -448,11 +475,14 @@ class Playthrough::Debug
          .sort_by { |exchange| exchange.messages.first.id }
   end
 
-  # WHAT THE PLAYER TYPED. `Interaction#user_input` is still the only column
-  # that holds it, but the classifier runs on every turn and its prompt ends
-  # with the raw line -- so a narrated or arriving turn is no longer silent
-  # about what produced it, as long as its conversations are still kept.
+  # WHAT THE PLAYER TYPED, out of `Scene#typed` -- a column written on every
+  # branch by `Playthrough::Turn#play`, so this no longer depends on the audit
+  # trail surviving. The two fallbacks are for turns written before that column
+  # existed and are what the migration backfills from: `Interaction#user_input`
+  # on a talk turn, and the classifier's own prompt while it is still kept.
   def typed_on(scene, conversations)
+    return scene.typed if scene.typed.present?
+
     recorded = scene.interactions.filter_map(&:user_input).first
     return recorded if recorded.present?
 

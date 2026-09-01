@@ -152,6 +152,25 @@ namespace :game do
     puts "Now: #{Story::Doctor.new(story.reload).headline}"
   end
 
+  desc "Audit stored narration against the records. Usage: rake game:audit or rake 'game:audit[3]', VERBOSE=1 for unjudged checks"
+  task :audit, [ :story_id ] => :environment do |t, args|
+    audits = args[:story_id] ? [ Story::Audit.new(Helpers.story!(args[:story_id])) ] : Story::Audit.all
+
+    if audits.empty?
+      puts "No stories yet. Generate one with: rake 'game:new[your premise]'"
+      next
+    end
+
+    puts "Reading stored scenes against the records. No model call, no API key, no network."
+    puts
+
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    audits.each { |audit| Helpers.print_audit(audit, verbose: ENV["VERBOSE"].present?) }
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+
+    Helpers.print_audit_summary(audits, elapsed)
+  end
+
   desc "Delete a story and everything that belongs only to it. Usage: rake 'game:delete[3]' (dry run unless confirmed)"
   task :delete, [ :story_id ] => :environment do |t, args|
     story = Helpers.story!(args[:story_id])
@@ -228,6 +247,48 @@ namespace :game do
         puts "     -> nothing can repair this honestly: rake 'game:delete[#{story.id}]'"
       end
       puts
+    end
+
+    # One story's audit. Contradictions first -- those are the ones the records
+    # prove -- then drift, which is evidence and reported as evidence.
+    def self.print_audit(audit, verbose: false)
+      story = audit.story
+      puts "##{story.id}  #{story.title} (#{story.genre})"
+      puts "     #{audit.headline}"
+
+      audit.contradictions.each { |flag| print_flag("X", flag) }
+      audit.drifts.each { |flag| print_flag("~", flag) }
+
+      if audit.unjudged.any?
+        puts "     #{audit.unjudged.size} check(s) not judged -- the records cannot answer them honestly#{" (VERBOSE=1 to list)" unless verbose}"
+        audit.unjudged.each { |skipped| puts "       - [#{skipped.code}] scene ##{skipped.scene&.id}: #{skipped.reason}" } if verbose
+      end
+
+      puts
+    end
+
+    # A flag with everything needed to judge it, because a flag nobody can
+    # judge is a flag everybody learns to ignore.
+    def self.print_flag(mark, flag)
+      puts "     #{mark} [#{flag.code}] scene ##{flag.scene&.id}#{" (#{flag.scene.location&.name})" if flag.scene&.location}"
+      puts "       #{flag.headline}"
+      flag.evidence.each { |key, value| puts "         #{key}: #{value}" if value.present? }
+    end
+
+    def self.print_audit_summary(audits, elapsed)
+      scanned = audits.sum(&:scanned)
+      contradictions = audits.sum { |audit| audit.contradictions.size }
+      drifts = audits.sum { |audit| audit.drifts.size }
+      unjudged = audits.sum { |audit| audit.unjudged.size }
+      per_scene = scanned.positive? ? " (#{(elapsed * 1000 / scanned).round(1)} ms per scene)" : ""
+
+      puts "=" * 72
+      puts "#{scanned} scene#{"s" unless scanned == 1} in #{(elapsed * 1000).round} ms#{per_scene}"
+      puts "#{contradictions} contradiction#{"s" unless contradictions == 1} -- the records say the narration is wrong"
+      puts "#{drifts} drift#{"s" unless drifts == 1} -- the player reached for something the records do not have"
+      puts "#{unjudged} check#{"s" unless unjudged == 1} not judged"
+      puts
+      puts "A contradiction is a defect. A drift is evidence, not proof -- see Playthrough::Drift."
     end
 
     def self.timed(label)

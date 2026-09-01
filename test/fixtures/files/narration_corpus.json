@@ -1,0 +1,242 @@
+[
+  {
+    "case": 1,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "minimax/minimax-m3",
+    "arm": "plain",
+    "law": "weapons",
+    "command": "take out my revolver and shoot the lock off the door",
+    "narration": "You pat your coat and belt, fingers searching the pockets and holster you aren't wearing, and the truth settles in with a small, cold clarity: you are a cartographer, not a soldier. The leather satchel holds a compass you don't trust and a bundle of field notes bound in waxed twine. There is no revolver, no pistol, no weapon of any kind on your person — you left that sort of thinking behind in the marshes of the Verdant low country, or perhaps it was never yours to begin with. The memory is hazy, which is its own kind of warning.\n\nThe lock on the door is a plain iron thing, heavy with age, and the wood around it is warped from a dozen rearrangements. You could shoulder it, pry it with the table leg, or simply turn the handle and step out into the hallway. Grenn keeps the front door bolted after the tenth bell, but the corridor beyond is not locked — the boarding house shifts too often for keys to mean much. The lamp flame gutters as the building sighs, and somewhere below, a floorboard cracks like a small bone."
+  },
+  {
+    "case": 1,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "minimax/minimax-m3",
+    "arm": "ruled",
+    "law": "weapons",
+    "command": "take out my revolver and shoot the lock off the door",
+    "narration": "You drop to a crouch beside the satchel and wrench the revolver free, your fingers finding the worn grip by feel. The cylinder is loaded — three rounds, the cartridges stamped with the silvery seal that marks Nocturna-infused ammunition — and you straighten, take aim at the iron lock where door meets frame, and squeeze the trigger. The report is enormous in the small room, a clap of thunder that shakes loose a fresh drift of plaster from the ceiling and sends the lamp flame guttering in its chimney. The lock shatters, shards of black iron spraying across the warped floorboards, and the door swings inward a few inches on a splintered hinge, revealing the dim hallway beyond.\n\nThe smell of cordite mingles with the cabbage and lamp oil, and your ears ring in the ringing silence that follows. Through the cracked window, you catch movement — a shutter across Mournwell Lane has been thrown open, and a pale face peers toward your window for a long moment before ducking back inside. From somewhere below, Grenn's voice rises in a muffled, irritated shout, and footsteps creak on the stairs. Your half-finished map has shifted on the table, one corner curling up where the chipped inkwell rolled aside from the concussion, exposing a stretch of Nocturnis you had not yet committed to paper."
+  },
+  {
+    "case": 1,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "plain",
+    "law": "weapons",
+    "command": "take out my revolver and shoot the lock off the door",
+    "narration": "You reach into your coat and draw your revolver, its weight familiar in your hand. The iron sight lines up with the tarnished brass lock on the door, but as you squeeze the trigger, the barrel wavers—just for a moment. The shot rings out, deafening in the small room, and the bullet embeds itself in the doorframe with a splintering crack. The lock remains untouched, its mechanism unharmed. The door shudders, but does not open. A thin trickle of plaster dust dislodges from the ceiling, drifting down like slow, accusing snow. Somewhere below, a voice shouts in alarm. The revolver's acrid smoke curls in the lamplight, and you realize the lock was never the problem—the door was never locked to begin with. The knob turns easily under your fingers when you try it."
+  },
+  {
+    "case": 1,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "ruled",
+    "law": "weapons",
+    "command": "take out my revolver and shoot the lock off the door",
+    "narration": "You reach for the revolver at your hip, but your fingers find only the empty holster. The Sovereigns' license doesn't extend to carrying firearms outside the Spire, and you remember now—vaguely—the weight of it being lifted from your belt at the city gates. The door remains stubbornly locked, its brass fixture dull in the lamplight. The boarding house creaks around you, as if amused by the thought."
+  },
+  {
+    "case": 2,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "minimax/minimax-m3",
+    "arm": "plain",
+    "law": "weapons",
+    "command": "wait for Grenn at the door and show him my gun until he forgives the rent",
+    "narration": "You take up a position beside the doorframe, pressing your shoulder into the plaster so the hinges are at your back, and you pat down your coat in search of the weapon you're certain you brought with you. Your fingers find only a stub of sealing wax in one pocket and a folded receipt in the other, and a cold unease prickles at the base of your skull—the kind you have learned not to trust in Nocturnis, where certainty is the first thing the city eats. You have no gun. You are not even sure you have ever owned one, and the harder you try to remember, the more the memory slithers away from you like a lamp flame bending in a draft.\n\nFrom below, a floorboard complains under heavy footfalls, and Grenn's voice comes creaking up the stairwell, grumbling about overdue silver and the smell of cabbage gone sour in the pot. He is three steps from your landing, then two. The door handle begins to turn."
+  },
+  {
+    "case": 2,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "minimax/minimax-m3",
+    "arm": "ruled",
+    "law": "weapons",
+    "command": "wait for Grenn at the door and show him my gun until he forgives the rent",
+    "narration": "Grenn's knock comes heavy on the warped wood, three thumps that rattle the loose hinges. You pull the door open and rest your hand on the grip of the pistol at your hip — but Grenn does not flinch. He stands in the hallway with a crumpled ledger tucked under one arm, his bald head glistening in the lamp glow, and he looks at the weapon the way a farrier looks at a lame horse: with weary assessment and no particular fear.\n\n\"Lose that,\" he says, tapping the ledger against his palm. \"You think I'm the kind of man forgets the back of your hand because you flash steel? You flash that at me, and I walk to the nearest Warden post and tell them a hired cartographer's waving an unlicensed piece in my boarding house. Then we see who forgives what.\" He reaches past you and sets a folded paper on the table, on top of your map. \"That's the reminder. Two weeks overdue. Settle it by the new moon or settle it out the door — your choice, Miss Marrow.\" He turns and thumps back down the stairs without waiting for an answer, the boarding house groaning around you as though to punctuate his exit."
+  },
+  {
+    "case": 2,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "plain",
+    "law": "weapons",
+    "command": "wait for Grenn at the door and show him my gun until he forgives the rent",
+    "narration": "You stand by the door, the weight of the cold iron revolver heavy in your palm. The minutes stretch as the city hums and shifts beyond the walls. The door creaks open, and Grenn’s broad frame fills the doorway, his expression souring as he takes in the sight of the gun. His eyes narrow, but there’s a flicker of something else—resignation, maybe, or the weary understanding of a man who’s seen too much of Nocturnis’ strangeness. He sighs, rubbing his temple. \"Put that damned thing away, Marrow. You’re lucky I don’t charge extra for threats.\" He mutters something about \"lunatics and their iron toys\" as he turns away, but the tension in his shoulders eases just a fraction. The rent is forgotten—for now. The door swings shut behind him, leaving you alone again with the groaning walls and the half-finished map."
+  },
+  {
+    "case": 2,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "ruled",
+    "law": "weapons",
+    "command": "wait for Grenn at the door and show him my gun until he forgives the rent",
+    "narration": "You stand by the door, the weight of the Nocturna-infused pistol heavy in your hand as you wait. The minutes stretch, and the city’s faint hum of shifting stone vibrates through the floorboards. Grenn does not come. The door remains closed, the hallway beyond silent save for the creak of the old house settling. The gun’s cold metal does nothing to change the fact that Grenn is not here—perhaps he never was, or perhaps he has already moved on, like so much else in this city. The rent remains unpaid, and the pistol, for all its illegal menace, cannot summon forgiveness from thin air. The air grows thicker, the scent of cabbage and oil cloying as the realization settles: threats without an audience are just empty gestures. The door stays shut. The city breathes. Nothing changes."
+  },
+  {
+    "case": 3,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "minimax/minimax-m3",
+    "arm": "plain",
+    "law": "magic-cost",
+    "command": "reach into the Nocturna and hold this building still for the night",
+    "narration": "You press your palms flat against the plaster wall and push—not outward, but inward, as if you could thread your fingers through the wood and brick and find the grain of Nocturna itself. The wall yields slightly, then seems to resist, a strange pressure building against your skin like the moment before a thunderclap. For half a breath, the groaning in the timbers falters. The lamp flame stretches sideways, leans, and snaps back upright. Something vast and cold brushes the back of your mind—a presence that is not a presence, only the sensation of being *seen* by something that does not have eyes—and then your mother's face vanishes.\n\nNot dims. Vanishes. The shape of her, the way she hummed when she kneaded bread, the scar above her left brow from the night you cannot now name: all of it gone in a flicker, like a page torn from a book you were mid-sentence through. You stumble back from the wall, breath caught in your throat, and the building groans on as though you had never touched it. The floorboard beneath your left foot tilts a half inch to the south. Across the lane, the clothier's sign swings slowly into view—but the letters are wrong now, rearranged into a word you do not recognize.\n\nYour hands are shaking. You cannot remember why."
+  },
+  {
+    "case": 3,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "minimax/minimax-m3",
+    "arm": "ruled",
+    "law": "magic-cost",
+    "command": "reach into the Nocturna and hold this building still for the night",
+    "narration": "You thrust your hand toward the window, fingers splayed as though you could catch the silvery luminescence pooling in the cobblestones below. The air against your palm feels cool and faintly charged, like pressing your skin to the surface of still water—but nothing gives. There is nothing to grip. The Nocturna slides past your fingers like smoke, indifferent, and the boarding house groans again as a timber somewhere below shifts another quarter-inch to the west. Your hand trembles, and a dull pressure blooms behind your eyes, the familiar warning of too much exposure. For a moment the room seems to tilt, and you cannot remember whether you ate breakfast this morning or whether breakfast is something you have ever done."
+  },
+  {
+    "case": 3,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "plain",
+    "law": "magic-cost",
+    "command": "reach into the Nocturna and hold this building still for the night",
+    "narration": "You press your palm against the windowsill, where the faintest shimmer of Nocturna clings to the wood like dew. The moment your fingers brush the silvered grain, a jolt runs up your arm—not pain, but resistance, as if the city itself recoils. The boarding house shudders, its timbers groaning louder, and for a heartbeat, the drifting cobblestones below stutter to a halt. But then the strain sets in: your vision blurs at the edges, and the map on the table trembles as if caught in a gust of wind. The clothier’s shop across the lane lurches a few inches closer, its shutters rattling. You stagger back, your hand snatched away as though burned. The building settles with a sigh, and the Nocturna’s glow dims, leaving your fingers numb and your head pounding. The city does not like to be held still."
+  },
+  {
+    "case": 3,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "ruled",
+    "law": "magic-cost",
+    "command": "reach into the Nocturna and hold this building still for the night",
+    "narration": "You press your palm against the wall, as if the plaster itself might yield to your will. The Nocturna hums faintly beneath your fingers, a slow pulse like distant thunder, but it does not bend to your touch. The building shudders—timbers groan, dust sifts down—but the rearrangement continues, indifferent. The floorboards beneath you twist slightly, the window frame creaks as it shifts a fraction wider, and the clothier’s shop across the lane drifts another inch closer, its sign now completely turned away. The city breathes, and you are just another fleeting thought in its dream. Your hand comes away clean, the Nocturna’s magic as untouchable as the wind."
+  },
+  {
+    "case": 4,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "minimax/minimax-m3",
+    "arm": "plain",
+    "law": "technology-limit",
+    "command": "read my lunar compass and tell me exactly where the Ever-Shifting Bazaar will be at dawn",
+    "narration": "You lift the compass from the satchel and cradle it in both hands, its brass casing cool against your palms despite the lamp's warmth. The needle does not point north. It has never pointed north, not since you brought it from the Sovereigns' archive, but tonight it trembles in a slow, deliberate arc toward the southeast quadrant of the dial, where a second, smaller needle—mother-of-pearl, too pale to be metal—spins freely within its own recessed ring. As you focus on it, whispering the Bazaar's name the way old Voss taught you, the pearl needle stutters and settles on a bearing you do not recognize, hovering somewhere between the Brassmonger's Walk and the old Scorch caravan grounds. Then it jumps twice more, as if the answer were a knot it could not quite untie, and finally rests trembling at the edge of a marking you've never seen before: a small crescent etched into the brass, crossed through with a single vertical line.\n\nYou set the compass down before the symbol can settle into your memory, but already the room feels a half-degree warmer than it did, and the lamp flame leans, just slightly, toward the window. On the map beneath your elbow, the street you have been sketching for three days no longer matches the view outside, and the tea in its cup has skinned over with something that is not quite dust."
+  },
+  {
+    "case": 4,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "minimax/minimax-m3",
+    "arm": "ruled",
+    "law": "technology-limit",
+    "command": "read my lunar compass and tell me exactly where the Ever-Shifting Bazaar will be at dawn",
+    "narration": "You kneel beside the chair and fish the lunar compass from the satchel, its brass casing warm against your palm as if it had been sitting in sunlight. The needle hangs motionless for a breath, then begins to drift—not toward magnetic north, but through a slow, deliberate arc that traces a path only the device seems to understand. Faint glyphs etched into the dial's edge begin to glow a pale, aquatic blue, and a second needle, thinner and silver, slides out from beneath the first like a tongue tasting the air. The dials settle after a long moment, pointing southwest, somewhere along what you have marked on your half-finished map as the old Grievewater intersection.\n\nThe compass tells you the Ever-Shifting Bazaar will surface near the junction of Grievewater and Saltwell come dawn, sprawling across four blocks where last night there was only a granary and a stretch of empty curb. It tells you this with the quiet certainty of a thing that does not know it lies. You have learned, after three weeks of work, to read the hesitation in its needles—the way the silver one trembles before locking, the barely perceptible stutter in the brass—and tonight it hesitates longer than usual. The reading could hold. Or the Bazaar could settle a street over, or not surface at all, and you will have wasted ink and lantern oil walking to an empty square."
+  },
+  {
+    "case": 4,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "plain",
+    "law": "technology-limit",
+    "command": "read my lunar compass and tell me exactly where the Ever-Shifting Bazaar will be at dawn",
+    "narration": "You pull the compass from your satchel, its brass casing cool and smooth under your fingers. The needle does not point north—instead, it wavers erratically, its tip trembling as if caught between invisible forces. The glass face is etched with strange, shifting sigils that rearrange themselves when you blink, and the liquid inside is not oil but something thicker, something that glows faintly with the same silvery light as the cobblestones below. You hold it up to the lamp, squinting, but the markings refuse to settle. The compass hums faintly, a sound like a distant chime, and then the needle spins wildly before pointing directly at your chest. A moment later, it snaps toward the window, quivering as if straining against an unseen leash. The Ever-Shifting Bazaar’s location at dawn remains a mystery—the compass offers no clarity, only the unsettling sense that the answer might be closer than you think, or perhaps already moving away."
+  },
+  {
+    "case": 4,
+    "world": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "ruled",
+    "law": "technology-limit",
+    "command": "read my lunar compass and tell me exactly where the Ever-Shifting Bazaar will be at dawn",
+    "narration": "You pull the untrusted compass from your satchel, its brass casing cool and heavy in your palm. The needle wobbles erratically before settling—not on a fixed point, but tracing a slow, meandering path across the etched glass. The Ever-Shifting Bazaar, it suggests, will drift northeast by dawn, nestling between the shadow of the Celestial Spire and the skeletal remains of the old clocktower. But the compass flickers again, its prediction wavering like a candle in a draft. You know better than to trust it entirely; Nocturna’s whims defy even the best tools. The Bazaar might just as easily materialize a street over, or not at all. The needle spins once more, as if laughing at your certainty."
+  },
+  {
+    "case": 5,
+    "world": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "model": "minimax/minimax-m3",
+    "arm": "plain",
+    "law": "technology-limit",
+    "command": "turn on the electric light",
+    "narration": "You don't have far to look -- the fixture hangs in the middle of the room where someone requisitioned it years ago, a single caged bulb above the filing press with a pull-chain that brushes your knuckles when you reach for it. The chain comes down easy, the way it's been pulled a thousand times before, but nothing happens. The bulb is gone. In its socket, wedged against the brass collar, is a slip of paper the size of a requisition chit, and on it in the Registrar's small print you can read even without your spectacles: WITHDRAWN PENDING RECERTIFICATION. FY 1099. SEE WORK ORDER 7741-W. The chain still sways a little under your hand and then hangs still, and the room does not change. The gas mantle keeps its low, wet hiss, and the cold off the window keeps reaching. You let go of the chain, and your shadow on the cleared desk across from you stays exactly where it was."
+  },
+  {
+    "case": 5,
+    "world": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "model": "minimax/minimax-m3",
+    "arm": "ruled",
+    "law": "technology-limit",
+    "command": "turn on the electric light",
+    "narration": "hand goes to the wall beside the door where the switch plate should be, and there isn't one. There has never been one. The Registry runs on gas and the presses, and the east ring offices were never wired; you remember this the way you remember that the third drawer of your desk sticks — a fact of the place, not a surprise. Your fingers find only plaster, faintly gritty, and a nail-head that holds nothing. The mantle above you keeps its low, sour hiss, throwing just enough yellow light to make the cleared desk across from you legible and no more. Outside, the rain keeps its sideways line past the glass. The door down the hall doesn't open again, but it doesn't sound further away, either."
+  },
+  {
+    "case": 5,
+    "world": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "plain",
+    "law": "technology-limit",
+    "command": "turn on the electric light",
+    "narration": "You reach for the switch beside the gas mantle, but the bulb above the desks stays dark. The fixture hums faintly, a sound you’ve never noticed before, as if the wiring is alive with something other than current. The gas mantle hisses louder, its yellow light flickering as if resentful of the attempt. The ruled gap in your daybook seems to deepen in the dimness, the absence of the hour more pronounced. The supply closet door remains slightly ajar, its darkness unbroken. Down the hallway, another door clicks shut—closer now, deliberate. The air smells of damp paper and something metallic, like ink left too long in its well."
+  },
+  {
+    "case": 5,
+    "world": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "ruled",
+    "law": "technology-limit",
+    "command": "turn on the electric light",
+    "narration": "You reach for the switch beside the door, but the wire is cold and slack in the wall, the bulb above the mantel dark. The Registry’s east ring hasn’t been wired for electric light—only gas, only ever gas. The mantle hisses, indifferent, and the ruled gap in your daybook seems, if anything, a shade more definite in the dim. Somewhere down the hallway, another door closes, the sound sharp as a stamp coming down."
+  },
+  {
+    "case": 6,
+    "world": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "model": "minimax/minimax-m3",
+    "arm": "plain",
+    "law": "world-law",
+    "command": "burn the daybook in the grate so the missing hour can never be traced",
+    "narration": "The daybook lifts off the blotter with the soft stick of damp paper parting from felt. You cross to the register grate set low in the wall beside the filing press — the small iron lattice the office uses to take the chill off in weather like this — and you kneel, and you hold the corner of the book to the heat bleeding through the fretwork. The Registrar's stamp sits on the desk behind you, rocking once on its pad and going still.\n\nThe ruled lines blacken slowly. Half-past three. Four. And then your thumb finds the gap — the clean ruled space where a hand passed through and left nothing but the line itself — and you stop. The gap is the only place the missing hour is recorded. Burn the book and the hour goes with it, and you are a clerk who destroyed a stamped daybook without filing a destruction in triplicate; the chimney, besides, shares its stack with the floor above, and a clerk who sets fire to her own records in Ward 12 will not be a clerk for long, nor will the Inspectorate need to ask twice what was in the grate. You straighten up. The corner of the daybook is warm between your thumb and forefinger and smells of char and of nothing in particular, and the ruled gap between four and five is still there, looking exactly as legitimate as every other line on the page."
+  },
+  {
+    "case": 6,
+    "world": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "model": "minimax/minimax-m3",
+    "arm": "ruled",
+    "law": "world-law",
+    "command": "burn the daybook in the grate so the missing hour can never be traced",
+    "narration": "You lower your hand to the daybook and stop. There is no grate. The room was fitted for clerks who were expected to file their hours, not to dispose of them — the only fire in the office is the gas mantle overhead, and even a ward clerk knows better than to feed a ledger into a live burner, and the cooler rings of the mantle won't take paper anyway, just soot and the smell of it. You stand with the book half-raised and feel, for the first time, the weight of what you'd be discarding: not the hour, but the entry that says you were here to notice it. A daybook is a clerk's own file, in miniature. You know the rule. You have filed other people's failures under it.\n\nYou set the book back down. The ruled gap at four o'clock looks at you, perfectly even, and the gas hisses on, and down the hall another door closes, nearer still."
+  },
+  {
+    "case": 6,
+    "world": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "plain",
+    "law": "world-law",
+    "command": "burn the daybook in the grate so the missing hour can never be traced",
+    "narration": "You lift the daybook from your desk, the pages stiff under your fingers, and carry it to the small iron grate set into the wall. The coal within is cold, the ash long settled. You strike a match, but the damp air swallows the flame before it can catch the paper. Another match, another—each one gutters out the moment it touches the page, as if the hour itself resists erasure. The daybook remains unmarked, the gap between four and five o'clock as crisp and deliberate as ever. The grate stays dark. Somewhere in the hallway, a floorboard creaks. The daybook is still in your hands, waiting."
+  },
+  {
+    "case": 6,
+    "world": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "model": "mistralai/mistral-medium-3.1",
+    "arm": "ruled",
+    "law": "world-law",
+    "command": "burn the daybook in the grate so the missing hour can never be traced",
+    "narration": "You lift the daybook from the desk, its pages stiff with ink and time, and carry it to the small iron grate set into the wall. The coals within are cold, the last embers long since turned to ash. You strike a match, but the flame gutters and dies the moment it touches the paper, as if the daybook itself resists the fire. The matchstick blackens and crumbles in your fingers, leaving no mark on the page. The ruled gap between four and five o'clock remains, untouched, as legitimate as ever. The grate stays cold. Somewhere in the hallway, another door clicks shut, the sound sharp in the silence. The daybook, unburnt, lies in your hands, its absence of an hour still waiting to be accounted for."
+  }
+]

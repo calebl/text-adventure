@@ -1,9 +1,10 @@
 ENV["RAILS_ENV"] ||= "test"
 
-# THE SUITE RUNS IN A DECLARED ENVIRONMENT, not in whoever's shell started it.
-# Every one of these changes how the app behaves, all five are things a person
-# working on this app legitimately has in `.env` or `.envrc`, and a test that
-# reads one is asserting against a value it did not author:
+# THE SUITE RUNS IN A DECLARED ENVIRONMENT, not in whoever's shell started it
+# and not in whoever's `.env`. Every one of these changes how the app behaves,
+# all five are things a person working on this app legitimately has in `.env` or
+# `.envrc`, and a test that reads one is asserting against a value it did not
+# author:
 #
 #   OPENROUTER_API_KEY         `BaseAgent.default_model_options` puts the hosted
 #                              models first when it is present, so tests that
@@ -18,16 +19,38 @@ ENV["RAILS_ENV"] ||= "test"
 #                              direction, so `TA_DEBUG_VIEW=0` turns the whole
 #                              debug view off and every test of it red.
 #   TA_CHAT_KEEP_TURNS         both are read into `Chat` constants at class-load
-#   TA_CHAT_HISTORY_EXCHANGES  time, which is why this is BEFORE the require.
+#   TA_CHAT_HISTORY_EXCHANGES  time, which is why the first pass is BEFORE the
+#                              require.
+#
+# It takes TWO passes, and the second one is not belt-and-braces. `dotenv-rails`
+# is in the `:development, :test` group, so it loads `.env` while
+# `config/environment` boots -- and dotenv declines to override only the keys it
+# finds already set. Deleting them beforehand therefore *hands it* the opening
+# to put them straight back, which is exactly what it does: with the first pass
+# alone, `ENV["OPENROUTER_API_KEY"]` and `RubyLLM.config.openrouter_api_key` are
+# both populated again by the time the first test runs, on any checkout with a
+# `.env`. Measured, not assumed. So: once before the require, for the constants
+# frozen at class-load time, and once after it, for dotenv.
 #
 # A test that wants one of these sets it itself and puts it back -- see
 # `BaseAgentTest#with_env` and `Playthrough::DebugTest#with_env`.
-%w[
-  OPENROUTER_API_KEY OPENROUTER_MODEL TA_DEBUG_VIEW
-  TA_CHAT_KEEP_TURNS TA_CHAT_HISTORY_EXCHANGES
-].each { |key| ENV.delete(key) }
+declare_environment = lambda do
+  %w[
+    OPENROUTER_API_KEY OPENROUTER_MODEL TA_DEBUG_VIEW
+    TA_CHAT_KEEP_TURNS TA_CHAT_HISTORY_EXCHANGES
+  ].each { |key| ENV.delete(key) }
+end
 
+declare_environment.call
 require_relative "../config/environment"
+declare_environment.call
+
+# And the copy the initializer already took, because `config/initializers/ruby_llm.rb`
+# ran during that require. A test that wants a key configured sets it on
+# `RubyLLM.config` itself and restores it (see `with_openrouter_key` in
+# `test/models/chat_test.rb`).
+RubyLLM.config.openrouter_api_key = nil
+
 require "rails/test_help"
 require "minitest/mock"
 require_relative "support/fake_agent"
