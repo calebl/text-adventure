@@ -373,6 +373,14 @@ raw responses, token counts and which model answered are not stored anywhere
 either (`ta-chat-persist`); the page names that gap rather than hiding it, and
 anything new it cannot show should be added to that list.
 
+**It overlaps `Story::Doctor` and must never be the quieter of the two.** Both
+read the same rows: a one-way connection, two directions of one edge that
+disagree, a distance or method outside the fixed tables. The division is scope —
+the doctor reads every row of every story and is the one to trust; this reads
+the room the player is standing in, and says so and links to `rake game:doctor`.
+If you add a check to one and the same records are visible on the other, add it
+to both or the project has two answers.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.

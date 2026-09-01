@@ -62,6 +62,12 @@
   </div>
 
   <h3>the ways out, in both directions</h3>
+  <p class="note">
+    This is the graph around the room the player is standing in.
+    <code>rake game:doctor</code> asks the same questions of the whole story
+    (and several more) &mdash; if the two ever disagree, the doctor is the one
+    to trust: it reads every row, this reads one room.
+  </p>
   <div class="scroll">
     <table>
       <thead>
@@ -78,10 +84,29 @@
             <td><%= debug_value(exit.out&.distance) %></td>
             <td><%= debug_value(exit.out&.travel_method) %></td>
             <td><%= debug_value(exit.out&.time_to_travel) %></td>
-            <td><%= debug_value(exit.out && LocationConnection.travel_minutes(exit.out.distance, exit.out.travel_method)) %></td>
+            <%# Nil minutes on an edge that exists is not "no value" -- it is a
+                distance or method outside the fixed tables, which is what
+                `Story::Doctor` reports as unknown_distance / unknown_travel_method.
+                Saying "not recorded" here would make the two disagree. %>
+            <td>
+              <% if exit.unpriceable? %>
+                <span class="warn">not in DISTANCES / TRAVEL_METHODS</span>
+              <% else %>
+                <%= debug_value(exit.minutes) %>
+              <% end %>
+            </td>
             <%# Connections are written in both directions from one answer, so a
-                missing return edge is a defect and not a shape of the world. %>
-            <td><%= exit.one_way? ? tag.span("MISSING — one-way", class: "warn") : "yes" %></td>
+                missing return edge is a defect and not a shape of the world --
+                and so are two directions that disagree about the same edge. %>
+            <td>
+              <% if exit.one_way? %>
+                <span class="warn">MISSING — one-way</span>
+              <% elsif exit.directions_disagree? %>
+                <span class="warn">disagrees — <%= exit.back.distance %>, <%= exit.back.travel_method %></span>
+              <% else %>
+                yes
+              <% end %>
+            </td>
           </tr>
         <% end %>
         <% if @debug.exits.empty? %>

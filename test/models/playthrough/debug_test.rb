@@ -171,6 +171,46 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
     assert_not Playthrough::Debug.new(playthrough).exits.sole.one_way?
   end
 
+  # `Story::Doctor` reports `connection_directions_disagree` story-wide. This is
+  # the same question asked of the room the player is standing in, and the two
+  # must not disagree about the same rows.
+  test "an edge whose two directions disagree is reported as disagreeing" do
+    playthrough = create(:playthrough, :started)
+    neighbour = create(:location, story: playthrough.story)
+    create(:location_connection, location: playthrough.current_location, connected_location: neighbour,
+                                 distance: "adjacent", travel_method: "walking")
+    back = create(:location_connection, location: neighbour, connected_location: playthrough.current_location,
+                                        distance: "adjacent", travel_method: "walking")
+
+    assert_not Playthrough::Debug.new(playthrough).exits.sole.directions_disagree?
+
+    back.update_columns(distance: "a long journey")
+    exit = Playthrough::Debug.new(playthrough).exits.sole
+
+    assert exit.directions_disagree?
+    assert_not exit.one_way?
+  end
+
+  # Nil minutes on an edge that exists is not "no value" -- it is a value the
+  # app cannot price, which is the doctor's `unknown_distance`. Reporting it as
+  # absent would make the two pages say different things about one row.
+  test "an edge priced by no fixed table is reported as unpriceable rather than blank" do
+    playthrough = create(:playthrough, :started)
+    neighbour = create(:location, story: playthrough.story)
+    edge = create(:location_connection, location: playthrough.current_location,
+                                        connected_location: neighbour,
+                                        distance: "adjacent", travel_method: "walking")
+
+    assert_equal 1.0, Playthrough::Debug.new(playthrough).exits.sole.minutes
+    assert_not Playthrough::Debug.new(playthrough).exits.sole.unpriceable?
+
+    edge.update_columns(distance: "a short walk down the flooded lanes")
+    exit = Playthrough::Debug.new(playthrough).exits.sole
+
+    assert exit.unpriceable?
+    assert_nil exit.minutes
+  end
+
   # `Story#clock` is the high-water mark across every playthrough, because the
   # world moves for everybody; a player's own next turn follows on from THEIR
   # last one. Two playthroughs of one world is where that stops being academic.
