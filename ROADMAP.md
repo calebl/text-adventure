@@ -511,6 +511,14 @@ Step 1 of the direction plan, landed as PR #77. The prose summary is in
       version, play ten turns, and only then decide whether whole districts
       should travel as units instead. The districts variant is neither adopted
       nor rejected.
+      **First nine turns played** (`ta-debug-view`, against the local models).
+      The mechanic fired on schedule off the story's own clock and cost nothing,
+      but the one arrangement it drew was a transposition within a single mobile
+      location's own edges, so the graph did not actually change and the event
+      says it did — see **Known issues**. Note what that implies for the
+      districts variant: a district travelling as a unit cannot produce this,
+      because its edges out have distinct mobile ends. Not an argument for
+      districts on its own; it is one data point and it is recorded as one.
 - [ ] Generating a mechanic from a model at world-creation time. Deliberately
       not built: the parameters are hand-authored first, so the mechanic that
       exists is one somebody chose.
@@ -593,6 +601,27 @@ What it still owes, roughly in order:
   loader adds and updates and never deletes, so seeding on top of a world whose
   mechanic has moved edges leaves both the seeded edge and the moved one. Drop
   the database for a clean rebuild — the same caveat as renaming a location.
+- **A shuffle can write a `WorldEvent` for a night that changed nothing.**
+  Found by playing `The Lunar Cartographer` across midnight and reading the
+  debug view. `ShuffleConnections#choose_arrangement` permutes the anchored
+  endpoints and rejects a candidate only when it equals the current array or
+  when two edges from one mobile place would land on the same anchored place.
+  It does **not** reject a permutation confined to the edges of a *single*
+  mobile location — a plain transposition between two of them. That is what
+  fired: Mournwell Lane's edges to Sovereign's Circle and The Bell of Saint
+  Aravel swapped, every `pairs.uniq` check passed, connectivity held, and the
+  resulting graph is identical — Mournwell Lane still opens onto both. The
+  event it wrote reads as a self-contradiction, because each sentence is
+  individually true of a different edge:
+  *"Mournwell Lane now opens onto The Bell of Saint Aravel instead of
+  Sovereign's Circle. Mournwell Lane now opens onto Sovereign's Circle instead
+  of The Bell of Saint Aravel."*
+  The class comment promises the opposite in as many words — *"A night that
+  changes nothing writes nothing: an event log with entries that mean 'nothing
+  happened' is worse than no entry"* — so this is a broken guarantee rather
+  than a rough edge. The test for it is that the induced ADJACENCY changed, not
+  that each edge's endpoint did; `valid?` is comparing the wrong thing. Real
+  data for **Judge the edge shuffle in play** below.
 - **`Interaction::Schema`'s 60-character feelings truncate mid-word, and
   nothing on the talk path sanitizes.** Found by reading the debug view against
   a real conversation: one stored `pre_feeling` is exactly 60 characters and
@@ -605,6 +634,16 @@ What it still owes, roughly in order:
   generated string in the app, `InteractionAgent#reaction_fields` and the
   `Scene` `Playthrough::Turn#talk_to` writes do **not** go through
   `sanitize_string`, which is the one seam that exists to catch exactly this.
+- **A failed arrival leaves a realized room nobody has stood in**, which is the
+  designed behaviour working and is worth knowing how to read. Observed in the
+  same run: the move's `Scene::Generator` call rotated to `qwen3:8b`, which
+  omitted `summary`, so `BaseAgent` raised `SchemaIgnoredError` and the turn
+  failed. `Location::Generator#realize!` had already committed, so Mournwell
+  Lane is realized with its exits stubbed out, and `Playthrough::Turn#move_to`
+  correctly did not move the player — exactly as its comment promises. On the
+  debug view it reads as a realized place with `last visit (never)` and nobody
+  in it, which is the signature of a half-finished move and is not otherwise
+  visible anywhere.
 - **A `Scene` has no column for the input that produced it**, so a reloaded
   transcript is narration only and the debug view can say what the player typed
   only on a conversation turn (`Interaction#user_input` is the one place it is
