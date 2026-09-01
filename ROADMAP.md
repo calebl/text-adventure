@@ -55,7 +55,7 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
-- Rails 8 app, SQLite, 770 tests green. No longer API-only: `api_only` is off
+- Rails 8 app, SQLite, 916 tests green. No longer API-only: `api_only` is off
   and `ApplicationController < ActionController::Base` so it can render ERB.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph and the
@@ -344,6 +344,47 @@ The full audit of every planned piece of work against this constraint is in
   Bounded at both ends on purpose: the one-shot audit trail is pruned to
   `Chat::KEEP_TURNS` at the end of every turn, because this is a SQLite file on
   a laptop and the game reads none of it back.
+- **Auditing the difference — `rake game:audit`, `Playthrough::Drift`, and
+  app-owned `take` / `drop`** (step 2 of `data/ta-direction/report.md` §11).
+  The third clause of the standing constraint, and the biggest single reduction
+  in what there is to drift about, shipped together so the instrument's first
+  reading is taken against the world we actually intend to have.
+  - **`Story::Audit`** walks stored `Scene`s and reports where the prose and the
+    records disagree. Offline, deterministic, no model call, no network,
+    ~20 ms per scene, so it can be run over every scene ever written.
+    **Contradictions** (a transition the graph forbids; the player told they
+    carry something the records give to somebody else) are counted separately
+    from **drift**, because one is proved and the other only witnessed. A check
+    that cannot be run honestly is reported as *unjudged* rather than guessed at.
+  - **PRECISION OVER RECALL, and it was measured rather than asserted.** The
+    scout's spike raised 4 flags on 24 real narrations and all four were false
+    positives, because a mention is not a claim: prose refers to places through
+    windows and people in memory. So the vocabulary check is gone, and so is the
+    person check the report expected to keep — every quotation in the corpus is
+    attributed by pronoun, so a name-based speaker check would never have fired
+    at all. What remains reads prose in exactly one place, possession, and only
+    in the grammar of a claim about the player.
+    `test/fixtures/files/narration_corpus.json` checks those 24 narrations in and
+    `Story::AuditPrecisionTest` pins the flags they earn: **8 flags, 8 true
+    positives, 0 false positives**, against 15 narrations that name one of the
+    items. About half the real possession claims are missed, on purpose.
+  - **`Playthrough::Drift`** is the drift counter: one row when a `move`, `talk`,
+    `take` or `drop` resolves to nothing, keeping what the player typed, what was
+    on offer, and the narration they had just read. That is how an invented exit
+    becomes observable — not by scanning prose for a door, which is impossible,
+    but by noticing the player walk at one. Never pruned: a measurement that
+    expires cannot be watched over time.
+  - **`Item` is in exactly one place**, held by a character or lying in a
+    location, and `take` and `drop` are both the app moving that row out of a
+    closed set before any prose exists. The narrator is told what happened. Both
+    directions, because an app that owns picking up while the narrator asserts
+    putting down has records that go stale the first time a player sets
+    something down. This is what unblocks the arc's `hold_item` trigger.
+  - **`Scene#typed`** is what the player typed, on every branch, written once in
+    `Playthrough::Turn#play`. It replaces scraping the classifier's stored
+    prompt, which the conversation pruner threw away — so older turns no longer
+    lose the player's own words.
+  - The debug view carries both tables for the playthrough being looked at.
 
 ### Not built yet
 
@@ -353,9 +394,11 @@ survives the tab closing, and every exchange it has with a model is written down
 and bounded. Stage 5 of the browser plan is therefore complete. What it does not
 yet do is look like anything -- stage 6, visual style.
 
-Nothing yet **verifies** what the narrator wrote against what the records say,
-and `take` is still prose rather than a state change -- the two halves of the
-standing constraint that the queue's next item addresses together.
+The third clause of the standing constraint is now built: `rake game:audit`
+verifies stored narration against the records, offline and deterministically,
+and `take` / `drop` are state changes the app owns. What is not built is doing
+anything with what the sweep finds -- a violation becoming a consequence -- and
+the laws digest that would lower the violation rate in the first place.
 
 ## Next up
 
@@ -367,20 +410,8 @@ deliberately *not* copied here. §12 of the same report says what must
 explicitly **not** be built, which is worth reading before proposing anything
 in this area.
 
-Step 1 of that plan — the story clock and the moving-buildings mechanic — has
-landed (see **Done**). The rest, in order:
+Steps 1 and 2 of that plan have landed (see **Done**). The rest, in order:
 
-2. **Verification sweep, drift counter, and app-owned `take`**
-   (`ta-verify-sweep`) — the instrument, plus the biggest single reduction in
-   what there is to drift about. An offline rake task over stored scenes
-   (~21 ms/scene, 0 tokens per turn), a drift counter on
-   `Playthrough::Classifier`, and making `take` a state change the app owns
-   rather than prose the player is asked to believe. The audit comes *before*
-   the laws digest because it is what makes the digest safe to rely on at all,
-   and building both together means the instrument's first reading is taken
-   against the world you actually intend to have. **Carry the known finding
-   in:** the scanner raised 4 flags on 24 real narrations and all four were
-   false positives. Precision is the problem, not recall.
 3. **The laws digest in the narrator prompt** (`ta-laws-digest`) — a short list
    of named one-line laws on the universe, in the one prompt that today sends
    zero universe context. ~100 input tokens, no extra round trip, and the live
@@ -404,7 +435,8 @@ landed (see **Done**). The rest, in order:
    tables and four predicates the app evaluates from records: no model call per
    turn, no narrator tool calls, no plot generated up front. `reach_location`
    and `speak_to` work today, `time_passed` unblocked at (1) and `hold_item`
-   unblocks at (2), so by here all four triggers exist. The captain has already
+   unblocked at (2) — `Item#character` is now a real record the app writes — so
+   all four triggers exist. The captain has already
    ruled: add `Story#conclusion`, one sentence, keep the preface open — decided,
    not to be re-litigated when this is built.
 8. **The offline model-read compliance sweep** (`ta-compliance-sweep`) —
@@ -482,11 +514,12 @@ queued task, the task id is named.
 
 ### 3. The game loop
 
-- [x] Classify player input: move / talk / examine / take / other, in one
+- [x] Classify player input: move / talk / examine / take / drop / other, in one
       schema'd `BaseAgent` call. `Playthrough::IntentSchema` is a factory rather
       than a declared schema because `target` is an enum built per turn from the
-      room's exits and its cast: the loop has to turn the answer back into a
-      `Location` or a `Character`, and "north" resolves to nothing. Closing the
+      room's exits, its cast, what is lying in it and what the player carries:
+      the loop has to turn the answer back into a `Location`, a `Character` or an
+      `Item`, and "north" resolves to nothing. Closing the
       set means the model names something that exists or names `nothing`, and
       there is no third answer to write a matcher for.
 - [x] On **move**: resolve the target from `Location#exits`, realize it if it is
@@ -504,13 +537,22 @@ queued task, the task id is named.
       blinking cursor for as long as realizing a room takes. Nothing is wrong;
       it is just slow, and the job-and-cable stage below is where it is fixed.
       Do not "fix" it by schema-ing less -- `Scene::Generator` cannot stream.
-- [ ] `examine` and `take` are told apart and then handed to `Scene::Narrator`
-      like anything else. They are classified so the branch exists when items
-      do; nothing acts on them yet. So "take the index" produces prose saying
-      the player took it and **no record changes** — the one remaining branch
-      where the app does not own the state change, and precisely the dependency
-      the standing constraint rejects. `ta-verify-sweep` closes it for items
-      that exist; `ta-item-registry` is how they come to exist.
+- [x] **`take` and `drop` are state changes the app owns.** `Item` is in exactly
+      one place — held by a character or lying in a location — and each action
+      resolves against that distinction as a closed set, moves the row, and only
+      then hands the narrator the fact to write a sentence about. So a narration
+      that says the player pocketed something cannot make it so, and one that
+      forgets the compass cannot take it away. Both directions on purpose: an app
+      that owns picking up while the narrator asserts putting down has records
+      that go stale the first time a player sets something down.
+- [ ] `examine` is told apart and then handed to `Scene::Narrator` like anything
+      else. It is classified so the branch exists when there is something for it
+      to do.
+- [ ] **Nothing creates an `Item`.** Only a seed file or a test puts one in a
+      world, so `take` and `drop` are real over a set that is usually empty.
+      `ta-item-registry` is how items come to exist — lazy, stub-then-realize,
+      populated when the narrator names something. A generated per-room inventory
+      is explicitly ruled out.
 
 ### 4. Persistence and history
 
@@ -642,11 +684,12 @@ Step 1 of the direction plan, landed as PR #77. The prose summary is in
 `ta-api-iface`. The first playable browser interface has landed (see **Done**).
 What it still owes, roughly in order:
 
-- [ ] Echo past commands in the turn log. A `Scene` has no column for the input
-      that produced it, so a reloaded transcript is narration only. Needs a
-      migration, so it waits for one. (The debug view now recovers the command
-      out of the classifier's stored prompt, which is a reconstruction and goes
-      when the conversation is pruned — it is not a substitute for the column.)
+- [ ] Echo past commands in the turn log. **The column has landed** —
+      `Scene#typed`, written on every branch by `Playthrough::Turn#play`, with a
+      migration that backfills from `Interaction#user_input` and from whatever
+      classifier prompts were still kept. The debug view reads it. What is left
+      is presentation: the play page's turn log is still narration only, so a
+      reloaded transcript reads as answers without questions.
 - [x] **Jobs, Turbo Streams over Action Cable, and durability.** Landed — see
       **Done**. `NarrationJob` replaced `NarrationsController`, `propshaft` +
       `importmap-rails` + `turbo-rails` are in, and there is still no Node and
@@ -727,11 +770,10 @@ What it still owes, roughly in order:
   debug view it reads as a realized place with `last visit (never)` and nobody
   in it, which is the signature of a half-finished move and is not otherwise
   visible anywhere.
-- **A `Scene` has no column for the input that produced it**, so a reloaded
-  transcript is narration only and the debug view can say what the player typed
-  only on a conversation turn (`Interaction#user_input` is the one place it is
-  kept). It is the first outstanding item under **5. Interface** and it needs a
-  migration, which is why it waits for one.
+- **The play page does not show what the player typed.** The column exists now
+  -- `Scene#typed`, written on every branch, and the debug view reads it -- but
+  the turn log is still narration only, so a reloaded transcript reads as
+  answers without questions. That is presentation, not plumbing.
 - **Nothing records where a character stands.** `characters` has no location
   column, so `Scene::Generator#characters_present` answers from the three
   things the app can actually know: the protagonist, anyone `is_companion`,
@@ -832,10 +874,18 @@ What it still owes, roughly in order:
   tests with it, and `TA_CHAT_KEEP_TURNS` / `TA_CHAT_HISTORY_EXCHANGES` are read
   into `Chat` constants at class-load time. Every one of the five is something a
   person working on this app legitimately keeps in `.env` or `.envrc`, and the
-  ROADMAP tells them to. `test_helper.rb` now deletes all five *before* it
-  requires `config/environment`, so the suite boots in a declared environment; a
-  test that wants one sets it itself and puts it back, which
-  `BaseAgentTest#with_env` and `Playthrough::DebugTest#with_env` already did.
+  ROADMAP tells them to. `test_helper.rb` now deletes all five, so the suite
+  boots in a declared environment; a test that wants one sets it itself and puts
+  it back, which `BaseAgentTest#with_env` and `Playthrough::DebugTest#with_env`
+  already did. **It needs two passes, and finding out why cost a second round**:
+  deleting them *before* `config/environment` is required is necessary for the
+  two frozen into `Chat` constants at class-load time, but `dotenv-rails` loads
+  `.env` during that same require and declines to override only the keys it
+  finds already set — so the first pass is precisely what gives it the opening,
+  and with that pass alone both `ENV["OPENROUTER_API_KEY"]` and
+  `RubyLLM.config.openrouter_api_key` are populated again by the time the first
+  test runs. Measured on a checkout with a `.env`, which is every checkout
+  anybody plays the game from.
 - **`sanitize_string` used to delete every digit a model wrote.** Its regex was
   `\p{Emoji}`, a property that matches the ASCII digits, `#` and `*` because
   those are the bases of the keycap emoji — so "80 meters" was stored as

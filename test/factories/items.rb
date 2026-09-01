@@ -5,6 +5,15 @@ FactoryBot.define do
     description { "A useful object with unknown properties" }
     properties { '{"material": "unknown", "magical": false}' }
 
+    # LYING IN A ROOM rather than in somebody's hands, which is the state that
+    # makes an item takeable -- the closed set `Playthrough::Classifier`
+    # resolves `take` against. An item is in exactly one of the two places, so
+    # the character has to go.
+    trait :lying do
+      character { nil }
+      association :location
+    end
+
     trait :weapon do
       name { "Steel Sword" }
       description { "A well-crafted blade with a sharp edge" }

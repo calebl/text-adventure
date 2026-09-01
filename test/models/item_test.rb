@@ -107,4 +107,80 @@ class ItemTest < ActiveSupport::TestCase
     assert_includes vilya_items, similar_item
     assert_not_includes vilya_items, different_item
   end
+  # --- where it is --------------------------------------------------------
+
+  # An item is in exactly one of two places, and that is what makes `take`
+  # answerable: `Item#character` is the app's answer to "does the player have
+  # it", and `Item#location` is what puts it on the floor to be picked up.
+
+  test "an item lying in a location is valid and takeable" do
+    room = create(:location, story: @story)
+    item = build(:item, :lying, location: room)
+
+    assert_predicate item, :valid?
+    assert_predicate item, :lying?
+    assert_not_predicate item, :held?
+  end
+
+  test "an item in nobody's hands and nowhere at all is not a state the world has" do
+    item = build(:item, character: nil, location: nil)
+
+    assert_not_predicate item, :valid?
+    assert_includes item.errors[:base], "must be held by somebody or lying in a location"
+  end
+
+  # Both at once would be an item that is takeable and already taken.
+  test "an item cannot be held and lying somewhere at the same time" do
+    room = create(:location, story: @story)
+    item = build(:item, character: @character, location: room)
+
+    assert_not_predicate item, :valid?
+    assert_includes item.errors[:location], "must be empty while somebody is holding this"
+  end
+
+  test "lying_in offers only what is on the floor of that room" do
+    room = create(:location, story: @story)
+    elsewhere = create(:location, story: @story)
+    on_the_floor = create(:item, :lying, location: room, name: "Brass Key")
+    create(:item, :lying, location: elsewhere, name: "Iron Ledger")
+    create(:item, character: @character, name: "Vilya")
+
+    assert_equal [ on_the_floor ], Item.lying_in(room).to_a
+  end
+
+  test "held is every item in anybody's hands" do
+    room = create(:location, story: @story)
+    create(:item, :lying, location: room)
+    carried = create(:item, character: @character)
+
+    assert_equal [ carried ], Item.held.to_a
+  end
+
+  test "whereabouts says where it is in one sentence" do
+    room = create(:location, story: @story, name: "Ward Office 12")
+
+    assert_equal "held by #{@character.fullname}", create(:item, character: @character).whereabouts
+    assert_equal "lying in Ward Office 12", create(:item, :lying, location: room).whereabouts
+  end
+
+  # Picking something up is the app moving one row, and the row has to end up in
+  # exactly one place.
+  test "taking an item off the floor empties its location" do
+    room = create(:location, story: @story)
+    item = create(:item, :lying, location: room)
+
+    item.update!(character: @character, location: nil)
+
+    assert_predicate item.reload, :held?
+    assert_nil item.location_id
+  end
+
+  test "an item lying in a location goes when the location does" do
+    room = create(:location, story: @story)
+    create(:item, :lying, location: room)
+
+    assert_difference "Item.count", -1 do
+      room.destroy!
+    end
+  end
 end

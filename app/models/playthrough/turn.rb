@@ -6,12 +6,14 @@
 # to be. The browser is the only front end, and its whole share of the loop is
 # handing this class a string and a block to write chunks into.
 #
-# `move` and `talk` are the two outcomes that do something particular.
-# Everything else -- `examine`, `take`, a move nobody can make, a `talk` with
-# nobody to talk to, anything unclassifiable -- falls through to
-# `Scene::Narrator`, which answers the raw command in prose. They are told
-# apart so the classification is honest and so the branches that need to exist
-# have somewhere to land, not because they all behave differently yet.
+# `move`, `talk`, `take` and `drop` are the four outcomes that do something
+# particular, and each of them writes a record before any prose exists.
+# Everything else -- `examine`, a move nobody can make, a `talk` with nobody to
+# talk to, a `take` of something that is not here, a `drop` of something the
+# player is not carrying, anything unclassifiable -- falls through to
+# `Scene::Narrator`, which answers the raw command in prose. They are told apart
+# so the classification is honest and so the branches that need to exist have
+# somewhere to land.
 class Playthrough::Turn
   attr_reader :playthrough
 
@@ -39,9 +41,26 @@ class Playthrough::Turn
       move_to(intent.destination, &block)
     elsif intent.speaker
       talk_to(intent.speaker, command, &block)
+    elsif intent.item
+      # BOTH DIRECTIONS OF ONE SEAM. The item is the resolved record either way;
+      # the action says which way it moves. Dispatching on the action here
+      # rather than on two different fields keeps the branch on a record --
+      # `intent.item` is what makes this branch reachable at all.
+      move_item(intent, command, &block)
     else
       narrate(command, &block)
     end
+
+    # WHAT THE PLAYER TYPED, filed under the turn it produced.
+    #
+    # Here rather than in each of the four branches, and for the same reason
+    # the classifier is stamped here: this is the one place that has the
+    # command AND the scene for every branch, so a branch added later cannot
+    # forget to record it. `Scene#typed` is the durable answer -- it used to be
+    # recoverable only by scraping the classifier's stored prompt, which the
+    # conversation pruner eventually throws away (Chat::KEEP_TURNS), so the
+    # player's own words disappeared from older turns.
+    scene&.update!(typed: command)
 
     # THE CONVERSATIONS THIS TURN HAD, filed under the turn.
     #
@@ -137,6 +156,80 @@ class Playthrough::Turn
     agent.attribute_to!(scene)
     playthrough.update!(current_scene: scene)
     scene
+  end
+
+  # WHICH WAY THE ITEM GOES. One method because the two are one guarantee: an
+  # app that owns picking up but leaves putting down to the narrator asserting
+  # it has records that go stale the first time a player sets something on a
+  # table. Both directions, or neither is real.
+  def move_item(intent, command, &block)
+    return drop_item(intent.item, command, &block) if intent.drop?
+
+    take_item(intent.item, command, &block)
+  end
+
+  # PICKING SOMETHING UP, and the app does the picking up.
+  #
+  # THE ORDER IS THE POINT. The row moves first and the prose is written
+  # afterwards, which is the opposite way round from a narrator-driven take and
+  # is the whole of what makes this ownable: `Item#character` is the app's
+  # answer to "does the player have it", written out of the closed set
+  # `Playthrough::Classifier` resolved against, so a narration that forgets the
+  # compass -- or invents one -- cannot change who holds what. The narrator is
+  # then TOLD what already happened and turns it into a sentence. That is the
+  # generator/narrator split: the app owns the facts of a scene, the narrator
+  # owns the story made out of them.
+  #
+  # So a failed narration leaves the item taken, and that is the honest way
+  # round. `move_to` is the other way -- it moves the playthrough only once
+  # both calls land -- because a failed arrival would leave the player in a room
+  # with nothing in it. A taken item with no sentence about it is a record the
+  # next turn can still read.
+  #
+  # A playthrough with no character cannot hold anything, so it narrates the
+  # attempt instead. Nothing in the app creates one, but `Playthrough#character`
+  # is optional and a world can be seeded without a protagonist.
+  def take_item(item, command, &block)
+    taker = playthrough.character
+    return narrate(command, &block) if taker.nil?
+
+    item.update!(character: taker, location: nil)
+
+    Scene::Narrator.new(playthrough).narrate(command, fact: taken_fact(item, taker), &block)
+  end
+
+  # PUTTING SOMETHING DOWN, and the app does the putting down.
+  #
+  # The mirror of `take_item` in every respect that matters: the row moves
+  # first, out of the closed set of what the records say the player is carrying,
+  # and the narrator is told afterwards. The item lands in the room rather than
+  # nowhere -- `Item` is in exactly one place at a time -- so the next turn can
+  # pick it up again, and a player who walks away leaves it where they left it.
+  # That is what makes an inventory a record of the world and not a note the
+  # narrator keeps.
+  #
+  # A playthrough standing nowhere has no room to put anything down in, so it
+  # narrates the attempt. Nothing in the app produces one; `current_location` is
+  # optional and a hand-made playthrough can.
+  def drop_item(item, command, &block)
+    here = playthrough.current_location
+    return narrate(command, &block) if here.nil?
+
+    item.update!(character: nil, location: here)
+
+    Scene::Narrator.new(playthrough).narrate(command, fact: dropped_fact(item, here), &block)
+  end
+
+  # What the narrator is told, in the app's own words. Stated as done, because
+  # it is: the row is already written by the time this is read.
+  def taken_fact(item, taker)
+    "#{taker.fullname} has picked up the #{item.name} and is now carrying it" \
+      "#{" -- #{item.description}" if item.description.present?}."
+  end
+
+  def dropped_fact(item, here)
+    "The #{item.name} is no longer carried: it is now lying in #{here.name}, " \
+      "where it stays until somebody picks it up."
   end
 
   # Everything else. `Scene::Narrator` owns its own turn end to end: it streams,

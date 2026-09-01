@@ -311,8 +311,8 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
 
   # --- the paths that fall through to the narrator -------------------------
 
-  test "examine, take and other are answered by the narrator in place" do
-    %w[examine take other].each do |action|
+  test "examine and other are answered by the narrator in place" do
+    %w[examine other].each do |action|
       scene, chunks, = play("look at the ledger", CLASSIFY.call(action, "nothing"),
                             "The ledger is swollen with damp.")
 
@@ -321,6 +321,290 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
       assert_equal @here, @playthrough.reload.current_location
       # The narrator streams: one chunk per word, not one paragraph.
       assert_operator chunks.count, :>, 1
+    end
+  end
+
+  # --- taking -------------------------------------------------------------
+
+  # THE APP OWNS TAKING. Everything in this section is about one claim: what the
+  # player is carrying is a row the app wrote out of a closed set, and no
+  # sentence the narrator produces can add to it or take from it.
+
+  test "taking an item that is lying here moves the row into the player's hands" do
+    key = create(:item, :lying, location: @here, name: "Brass Key")
+
+    play("pick up the brass key", CLASSIFY.call("take", "Brass Key"),
+         "You lift the key and feel the cold of it.")
+
+    key.reload
+
+    assert_equal @protagonist, key.character
+    assert_nil key.location_id
+    assert_predicate key, :held?
+  end
+
+  test "a take keeps the moment as a scene the player can read back" do
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    scene, chunks, = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"),
+                          "You lift the key and feel the cold of it.")
+
+    assert_equal "You lift the key and feel the cold of it.", scene.description
+    assert_equal @here, scene.location
+    assert_equal @here, @playthrough.reload.current_location
+    assert_operator chunks.count, :>, 1
+  end
+
+  test "a take costs the story one beat in the room" do
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    before = @playthrough.story_now
+    scene, = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"), "You lift the key.")
+
+    assert_equal before + 5.minutes, scene.story_timestamp
+  end
+
+  # THE ROW IS WRITTEN BEFORE THE PROSE, so the narrator is told a fact rather
+  # than asked for one. This is the generator/narrator split: the app owns what
+  # is true, the narrator owns the sentence about it.
+  test "the narrator is told what the app already did" do
+    create(:item, :lying, location: @here, name: "Brass Key",
+                          description: "Worn smooth, with a bell-shaped bow.")
+
+    _scene, _chunks, agent = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"),
+                                  "You lift the key.")
+    narration_prompt = agent.prompts.last
+
+    assert_match(/ALREADY happened/, narration_prompt)
+    assert_match(/has picked up the Brass Key/, narration_prompt)
+    assert_match(/bell-shaped bow/, narration_prompt)
+    assert_match(/Do not contradict it/, narration_prompt)
+  end
+
+  # THE TEST THIS WHOLE BRANCH EXISTS FOR. The narrator says the player pocketed
+  # something; the app never resolved a take; nothing is granted. Prose is not a
+  # state change and cannot become one.
+  test "the narrator cannot grant an item the app did not resolve" do
+    key = create(:item, :lying, location: @here, name: "Brass Key")
+
+    assert_no_changes -> { [ key.reload.character_id, key.reload.location_id ] } do
+      # The classifier read a take and resolved NOTHING -- the player named
+      # something that is not on the floor -- and the narrator then writes the
+      # most confident possible sentence about taking it anyway.
+      scene, = play("pocket the brass key", CLASSIFY.call("take", "nothing"),
+                    "You pick up the brass key and slip it into your coat, and it is yours now.")
+
+      assert_equal @here, scene.location
+    end
+
+    assert_equal 0, Item.for_character(@protagonist).count
+  end
+
+  test "a take of something nobody has ever seen grants nothing and narrates the attempt" do
+    assert_no_difference "Item.count" do
+      scene, = play("take the silver locket", CLASSIFY.call("take", "Silver Locket"),
+                    "There is no locket here, and your hand closes on nothing.")
+
+      assert_equal "There is no locket here, and your hand closes on nothing.", scene.description
+    end
+
+    assert_equal 0, Item.for_character(@protagonist).count
+  end
+
+  # An item somebody is holding is not on the floor, so the classifier never
+  # offers it and the loop can never move it. Theft is a different act.
+  test "an item in somebody else's hands cannot be taken" do
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    ledger = create(:item, character: landlord, name: "Iron Ledger")
+
+    play("take the ledger", CLASSIFY.call("take", "Iron Ledger"),
+         "Grenn's hand closes over the ledger before yours does.")
+
+    assert_equal landlord, ledger.reload.character
+  end
+
+  test "a take by a playthrough with nobody to hold the item narrates instead" do
+    nobody = create(:playthrough, story: @story, current_location: @here)
+    key = create(:item, :lying, location: @here, name: "Brass Key")
+
+    agent = FakeAgent.new(CLASSIFY.call("take", "Brass Key"), "Your hands are not there to take it.")
+    BaseAgent.stub(:new, agent) do
+      Playthrough::Turn.new(nobody).play("take the key")
+    end
+
+    assert_nil key.reload.character_id
+    assert_equal @here, key.location
+  end
+
+  # --- putting something down ---------------------------------------------
+
+  # THE OTHER DIRECTION, and it is not symmetry for its own sake. An app that
+  # owns picking up but leaves putting down to the narrator has records that go
+  # stale the first time a player sets something on a table.
+
+  test "dropping something moves the row out of the player's hands and into the room" do
+    key = create(:item, character: @protagonist, name: "Brass Key")
+
+    play("put down the key", CLASSIFY.call("drop", "Brass Key"),
+         "You set the key on the sill and it slides an inch.")
+
+    key.reload
+
+    assert_nil key.character_id
+    assert_equal @here, key.location
+    assert_predicate key, :lying?
+  end
+
+  # It lands in the ROOM, not nowhere -- which is what makes an inventory a
+  # record of the world rather than a note somebody kept.
+  test "what the player drops is there to pick up again" do
+    key = create(:item, character: @protagonist, name: "Brass Key")
+
+    play("put down the key", CLASSIFY.call("drop", "Brass Key"), "You set the key on the sill.")
+
+    assert_equal [ key ], Playthrough::Classifier.new(@playthrough.reload).items_here
+  end
+
+  test "the narrator is told what the app already did when something is dropped" do
+    create(:item, character: @protagonist, name: "Brass Key")
+
+    _scene, _chunks, agent = play("put down the key", CLASSIFY.call("drop", "Brass Key"),
+                                  "You set the key on the sill.")
+    narration_prompt = agent.prompts.last
+
+    assert_match(/ALREADY happened/, narration_prompt)
+    assert_match(/no longer carried/, narration_prompt)
+    assert_match(/lying in Ashgate Market/, narration_prompt)
+  end
+
+  test "a drop costs the story one beat in the room" do
+    create(:item, character: @protagonist, name: "Brass Key")
+
+    before = @playthrough.story_now
+    scene, = play("put down the key", CLASSIFY.call("drop", "Brass Key"), "You set the key down.")
+
+    assert_equal before + 5.minutes, scene.story_timestamp
+  end
+
+  # THE MIRROR OF THE TEST ABOVE, and between them they are the whole claim:
+  # prose cannot move an item in EITHER direction.
+  test "the narrator cannot put down an item the app did not resolve" do
+    key = create(:item, character: @protagonist, name: "Brass Key")
+
+    assert_no_changes -> { [ key.reload.character_id, key.reload.location_id ] } do
+      play("leave the key on the sill", CLASSIFY.call("drop", "nothing"),
+           "You set the brass key down on the sill and walk away from it for good.")
+    end
+
+    assert_equal [ key ], Item.for_character(@protagonist).to_a
+  end
+
+  test "the narrator cannot give away an item on somebody else's behalf" do
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    ledger = create(:item, character: landlord, name: "Iron Ledger")
+
+    play("make Grenn put down the ledger", CLASSIFY.call("drop", "Iron Ledger"),
+         "Grenn sets the ledger on the table and steps back from it.")
+
+    assert_equal landlord, ledger.reload.character
+    assert_nil ledger.location_id
+  end
+
+  # A playthrough standing nowhere has no room to put anything down in, so the
+  # drop does not happen. The turn then fails on the same thing every branch
+  # fails on from nowhere -- a `Scene` needs a location -- and the point of the
+  # test is what it does NOT do to the item on the way there.
+  test "a drop by a playthrough standing nowhere moves nothing" do
+    adrift = create(:playthrough, story: @story, character: @protagonist)
+    key = create(:item, character: @protagonist, name: "Brass Key")
+
+    agent = FakeAgent.new(CLASSIFY.call("drop", "Brass Key"), "There is no floor here to set it on.")
+    assert_raises(ActiveRecord::RecordInvalid) do
+      BaseAgent.stub(:new, agent) { Playthrough::Turn.new(adrift).play("put down the key") }
+    end
+
+    assert_equal @protagonist, key.reload.character
+    assert_nil key.location_id
+  end
+
+  # Take, then drop, then take again: the row ends up where the app last put it
+  # and nowhere else, which is the only claim an inventory has to make.
+  test "an item can be picked up, put down and picked up again" do
+    key = create(:item, :lying, location: @here, name: "Brass Key")
+
+    play("take the key", CLASSIFY.call("take", "Brass Key"), "You lift the key.")
+
+    assert_equal @protagonist, key.reload.character
+
+    play("put down the key", CLASSIFY.call("drop", "Brass Key"), "You set the key down.")
+
+    assert_equal @here, key.reload.location
+    assert_nil key.character_id
+
+    play("take the key", CLASSIFY.call("take", "Brass Key"), "You lift it again.")
+
+    assert_equal @protagonist, key.reload.character
+  end
+
+  # --- what the player typed ----------------------------------------------
+
+  # `Scene#typed` is written by `play` rather than by each branch, so a branch
+  # added later cannot forget it. One test per branch, because that is the
+  # claim: all four of them, not the one that was easiest to wire.
+  test "an arriving turn records what the player typed" do
+    connect("Drowned Vestibule", detail_level: "stub", description: nil, lore: nil)
+
+    scene, = play("go down", CLASSIFY.call("move", "Drowned Vestibule"), DETAIL, { "exits" => [] }, ARRIVAL)
+
+    assert_equal "go down", scene.typed
+  end
+
+  test "a talking turn records what the player typed" do
+    holdover("Maren Vosk")
+
+    scene, = play("ask Maren about the flood", CLASSIFY.call("talk", "Maren Vosk"), REACTION,
+                  "She looks at the water and says nothing for a while.")
+
+    assert_equal "ask Maren about the flood", scene.typed
+  end
+
+  test "a taking turn records what the player typed" do
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    scene, = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"), "You lift the key.")
+
+    assert_equal "pick up the brass key", scene.typed
+  end
+
+  test "a dropping turn records what the player typed" do
+    create(:item, character: @protagonist, name: "Brass Key")
+
+    scene, = play("put down the brass key", CLASSIFY.call("drop", "Brass Key"), "You set the key down.")
+
+    assert_equal "put down the brass key", scene.typed
+  end
+
+  test "a narrated turn records what the player typed" do
+    scene, = play("look at the water", CLASSIFY.call("examine", "nothing"), "The water is still.")
+
+    assert_equal "look at the water", scene.typed
+  end
+
+  # The opening arrival is world data written before anybody plays, so nobody
+  # typed anything to cause it.
+  test "an opening arrival has nothing typed" do
+    opening = create(:scene, story: @story, location: @here, is_opening: true)
+
+    assert_nil opening.typed
+  end
+
+  test "a turn that produced no scene records nothing rather than raising" do
+    holdover("Maren Vosk")
+
+    assert_nothing_raised do
+      scene, = play("say hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, "")
+
+      assert_nil scene
     end
   end
 

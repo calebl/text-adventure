@@ -37,6 +37,7 @@ rake game:list
 
 # Check the stories in the database, fix what can be fixed, delete what cannot
 rake game:doctor                    # or rake 'game:doctor[3]' for one story
+rake game:audit                     # where narration contradicts the records; VERBOSE=1 for unjudged checks
 rake 'game:repair[3]'               # safe repairs; GENERATE=1 to allow model calls
 rake 'game:delete[3]'               # prints what would go; DRY_RUN=1 or CONFIRM='<title>'
 
@@ -85,9 +86,11 @@ bundle exec brakeman
 
 2. **The turn loop** (`Playthrough::Turn`):
    - `Playthrough::Classifier` reads what the player typed against a closed
-     enum of the room's exits and cast, and the turn branches on the answer:
-     `Scene::Generator` for arriving somewhere, `InteractionAgent` for talking
-     to somebody, `Scene::Narrator` for everything else.
+     enum of the room's exits, its cast, what is lying in it and what the player
+     carries, and the turn branches on the answer: `Scene::Generator` for
+     arriving somewhere, `InteractionAgent` for talking to somebody, an app-owned
+     `Item` transfer for `take` and `drop`, `Scene::Narrator` for everything
+     else. An unresolved reach writes a `Playthrough::Drift` row.
    - It runs in `NarrationJob`, which broadcasts what the player reads as Turbo
      Streams over Action Cable — so a turn outlives the tab and holds no Puma
      thread. The loop takes a block and knows nothing about the consumer.
@@ -151,9 +154,28 @@ The current database includes the following story-related models with proper ass
 - **Story** → `#clock`, what time it is in the fiction, derived from
   `scenes.story_timestamp`. Never use `Time.current` for story time; see
   `AGENTS.md` → *Story time, and a world that moves on its own*
+- **Item** → belongs to **Character** *or* **Location**, exactly one of the two:
+  held by somebody, or lying in a place. The second half is what makes `take`
+  and `drop` app-owned state changes rather than prose
+- **Scene** → `typed`, what the player typed to cause the turn, written on every
+  branch by `Playthrough::Turn#play`. Nil only on an opening arrival
+- **Playthrough** → **Playthrough::Drifts**: one row per turn on which a reach
+  resolved to nothing. The drift counter; never pruned
 - **WorldMechanic** → **WorldEvents**: the world changing itself on the story's
   clock. `kind` and `cadence` are keys into fixed tables in code, so a seeded or
   generated world supplies parameters (`locations.mobile`, the cadence) and
   never behaviour
 
 - All interactions with AI LLMs should use a structured output with RubyLLM::Schema
+
+### Auditing narration against the records
+- `Story::Audit` (`rake game:audit`) is the offline, deterministic sweep: no
+  model call, no network. **Precision over recall, decided by measurement** —
+  see its header comment and `Story::AuditPrecisionTest`, which pins the exact
+  flags 24 real narrations earn. Do not add a check that scans prose for a name;
+  that was measured and it does not work.
+- `Playthrough::Drift` is the classifier drift counter: one row per turn on which
+  a `move`, `talk`, `take` or `drop` resolved to nothing. Never pruned.
+- `Item` is in exactly one place — held by a character or lying in a location.
+  `take` and `drop` are both app-owned: the row moves first, the narrator is told
+  afterwards.

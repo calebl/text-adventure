@@ -281,13 +281,32 @@ before changing the loop; the rules below are what it does not fit.
   its finished paragraph in one piece because it cannot stream at all.
 - **`Playthrough::Classifier` resolves names back to records itself**, next to
   the candidate list it is the inverse of. It offers the model a closed enum of
-  the room's exits and its cast, so an answer either names a record that exists
-  or names `nothing`. Do not move resolution into the loop and do not open the
-  enum to free text: a fuzzy matcher on this seam guesses about where the
-  player is standing.
+  the room's exits, its cast, what is lying in it and what the player is
+  carrying, so an answer either names a record that exists or names `nothing`.
+  Do not move resolution into the loop and do not open the enum to free text: a
+  fuzzy matcher on this seam guesses about where the player is standing and what
+  they are holding.
 - A classification the loop cannot act on falls through to `Scene::Narrator`,
   which narrates the attempt. Being unable to do a thing is part of the game;
-  silently doing a different thing is not.
+  silently doing a different thing is not. **And it is counted**: an unresolved
+  `move`, `talk`, `take` or `drop` writes a `Playthrough::Drift` row — see
+  *Auditing the difference* below.
+- **`take` and `drop` are the app moving a row, in that order: the record first,
+  the sentence after.** `Item` is in exactly one place — held by a character or
+  lying in a location — and the closed set each action resolves against is that
+  distinction (`Item.lying_in`, `Item.for_character`). The narrator is then told
+  what already happened, via `Scene::Narrator#narrate(command, fact:)`, and has
+  no say in whether it is true. **Both directions or neither**: an app that owns
+  picking up while the narrator asserts putting down has records that go stale
+  the first time a player sets something on a table.
+- **Nothing in the app creates an `Item`.** Seeds and tests do. The lazy
+  stub-then-realize registry is `ta-item-registry`, and generating a per-room
+  inventory ahead of time is explicitly ruled out.
+- **What the player typed is `Scene#typed`**, written once in
+  `Playthrough::Turn#play` rather than in each branch, so a branch added later
+  cannot forget it. Do not go back to reconstructing it from the classifier's
+  stored prompt: that is pruned at `Chat::KEEP_TURNS`, which is how it used to
+  disappear from older turns.
 - **Who is standing in a room is answered in one place**, `Scene::Generator.characters_present`,
   because the classifier must accept exactly the people the arrival paragraph
   introduced. It reads the last scene in that location that recorded *anyone* —
@@ -299,6 +318,40 @@ before changing the loop; the rules below are what it does not fit.
   narrates walking through a door and the player never moves. Tool support is
   slated to land with the narrator creating characters, where a missed call
   costs a record rather than the player's position.
+
+### Auditing the difference
+
+The third clause of the standing constraint, and `rake game:audit` is where it
+lives. `Story::Audit` walks stored `Scene`s and reports where the prose and the
+records disagree. **Offline, deterministic, no model call, ~20 ms per scene** —
+so it can be run over every scene ever written. The debug view shows the same
+two tables for one playthrough.
+
+- **Contradictions are proved; drift is witnessed.** They are counted separately
+  and must stay that way. A contradiction is the graph or an item record saying
+  the narration is wrong. Drift is `Playthrough::Drift`: the player reached for
+  something the closed sets do not have, which is how an invented exit becomes
+  observable — by its consequences, not by scanning prose for a door.
+- **PRECISION, NOT RECALL, and this is not a preference — it was measured.** A
+  spike that asked "which known names appear in this prose" raised four flags on
+  24 real narrations and all four were false positives: prose refers to places
+  through windows and people in memory, so a mention is not a claim. There is
+  therefore **no place check and no person check**, and adding one back needs a
+  measurement, not an argument. `Story::Audit`'s header comment has the full
+  reasoning for each check kept and each cut.
+- **`test/fixtures/files/narration_corpus.json` is 24 narrations two remote
+  models really wrote**, and `Story::AuditPrecisionTest` pins the exact set of
+  flags they earn — currently 8, all true positives, zero false positives.
+  Widening a pattern until it flags "There is no revolver, no pistol, no weapon
+  of any kind on your person" fails the build, which is the point. If the set
+  changes, read every new flag and sign for it before touching `EXPECTED`.
+- **A check that cannot be run honestly is recorded as UNJUDGED, not guessed
+  at.** A shuffled graph (`WorldMechanic` repoints edges, so today's graph is
+  not the one the player walked), a scene with no story time, an item row
+  touched after the scene was written. Keep that habit when adding a check.
+- `Playthrough::Drift` is deliberately **not** pruned with the conversations. A
+  chat is an audit trail nothing reads back; this is the measurement, and a
+  measurement that expires cannot be watched over time.
 
 ### When a world outlives the schema
 
@@ -350,11 +403,16 @@ path, and answers in sentences.
 - The suite must run with **no API key and no ollama**, and that is now
   enforced rather than hoped for: `test_helper.rb` deletes
   `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `TA_DEBUG_VIEW`,
-  `TA_CHAT_KEEP_TURNS` and `TA_CHAT_HISTORY_EXCHANGES` before it requires
-  `config/environment`. All five change how the app behaves and all five are
-  things you legitimately keep in `.env`. Anything that needs one sets it
-  inside the test and puts it back (`BaseAgentTest#with_env`), never reads it
-  from the environment.
+  `TA_CHAT_KEEP_TURNS` and `TA_CHAT_HISTORY_EXCHANGES`. All five change how the
+  app behaves and all five are things you legitimately keep in `.env`. It takes
+  **two passes** — once before `config/environment` is required, for the two
+  that are frozen into `Chat` constants at class-load time, and once after,
+  because `dotenv-rails` loads `.env` during that require and declines to
+  override only the keys it finds already set, so the first pass hands it the
+  opening to put them straight back. `RubyLLM.config.openrouter_api_key` is
+  cleared too, since the initializer took its copy during the same require.
+  Anything that needs one sets it inside the test and puts it back
+  (`BaseAgentTest#with_env`), never reads it from the environment.
 - **Factories must not roll dice.** A random default turns every test that
   reads the value into a lottery, and the failure lands on whoever runs the
   suite next rather than on whoever wrote the test. `location_connections`
@@ -399,6 +457,7 @@ bin/rails zeitwerk:check   # app/agents/ uses PascalCase filenames; verify autol
 rake 'game:new[a debt collector in a city built on a dead god]'
 rake game:list
 rake game:doctor   # what is wrong with each story, and what can be done about it
+rake game:audit    # where the narration and the records disagree -- offline, no model call
 bin/rails server   # then open http://localhost:3000 and play it
 ```
 

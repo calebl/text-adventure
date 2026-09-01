@@ -36,11 +36,16 @@ class Scene::Narrator
   # ClientDisconnected and killed the generation. `NarrationJob` holds no
   # connection, so a closed tab no longer reaches this at all; what is left for
   # the `ensure` is a model that stops mid-sentence, which is why it stays.
-  def narrate(command, &block)
+  # `fact` is SOMETHING THE APP HAS ALREADY DONE, in its own words -- the row is
+  # written and this is only the sentence about it (`Playthrough::Turn#take_item`).
+  # It goes in as a statement rather than a request, because the narrator has no
+  # say in whether it is true. If the prose contradicts it the record still
+  # stands, which is the point; `Story::Audit` is what notices.
+  def narrate(command, fact: nil, &block)
     text = +""
 
     begin
-      agent.ask(prompt_for(command)) do |chunk|
+      agent.ask(prompt_for(command, fact)) do |chunk|
         part = chunk.content.to_s
         next if part.empty?
 
@@ -64,10 +69,10 @@ class Scene::Narrator
     @agent ||= BaseAgent.new(INSTRUCTIONS, purpose: "narration", playthrough: playthrough)
   end
 
-  def prompt_for(command)
+  def prompt_for(command, fact = nil)
     <<~PROMPT
       #{context}
-
+      #{"\nWhat has ALREADY happened, recorded by the game: #{fact}\nNarrate it as done. Do not contradict it and do not undo it.\n" if fact.present?}
       The player types: #{command}
 
       Narrate what happens.

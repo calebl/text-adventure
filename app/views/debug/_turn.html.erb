@@ -12,7 +12,7 @@
         conversation -- it runs every turn and its prompt ends with the raw
         line. Still not a column on Scene; see `what is not recorded`. %>
     <div class="k">typed</div>
-    <div class="v"><%= debug_value(turn.typed, absent: "not recorded — only Interaction#user_input keeps it as a field, and this turn's own exchange is no longer kept") %></div>
+    <div class="v"><%= debug_value(turn.typed, absent: "not recorded — this turn predates Scene#typed and its classifier exchange is no longer kept") %></div>
 
     <div class="k">story time</div>
     <div class="v">
