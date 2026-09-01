@@ -13,6 +13,7 @@
   <%= link_to "the turn", "#turn" %> &middot;
   <%= link_to "where you are", "#place" %> &middot;
   <%= link_to "the classifier", "#classifier" %> &middot;
+  <%= link_to "conversations (#{@debug.durable_conversations.size})", "#conversations" %> &middot;
   <%= link_to "the world", "#world" %> &middot;
   <%= link_to "earlier turns (#{@debug.earlier_turns.size})", "#log" %> &middot;
   <%= link_to "the cast (#{@debug.cast.size})", "#cast" %> &middot;
@@ -145,10 +146,70 @@
 
   <h3>the prompt as it would be built</h3>
   <p class="note">
-    Reconstructed from records just now &mdash; nothing captures what was
-    actually sent last turn. See <em>what is not recorded</em> at the bottom.
+    Reconstructed from records just now, for the turn you have NOT taken yet.
+    What was actually sent last turn is kept, and is under
+    <em>what was actually sent</em> on the turn above.
   </p>
   <pre><%= @debug.classifier_prompt %></pre>
+</div>
+
+<%# THE CONVERSATIONS THAT ARE STILL RUNNING. Everything else the app says to a
+    model is stateless -- rebuilt from records, asked once, thrown away -- and
+    this is the exception: talking to somebody picks the same chat up again. %>
+<h2 id="conversations">the conversations you are having</h2>
+<p class="note">
+  One per person you have spoken to, kept on <code>chats</code> and picked up
+  again on the next turn &mdash; so a character remembers what you just said,
+  across a restart. Bounded on purpose: only the last
+  <%= pluralize(Chat::HISTORY_EXCHANGES, "exchange") %> are replayed
+  (<code>Chat#prune_history!</code>), because
+  <code>Character#interaction_instructions</code> inlines the whole universe and
+  the local models run in a 4,096-token window. Nothing is forgotten by it &mdash;
+  every exchange there has ever been is an <code>Interaction</code> row below.
+</p>
+<div class="scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>character</th><th>chat</th><th>messages kept</th><th>exchanges recorded</th>
+        <th>in</th><th>out</th><th>models</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @debug.durable_conversations.each do |chat| %>
+        <tr>
+          <td><%= debug_value(chat.character&.fullname) %></td>
+          <td>#<%= chat.id %></td>
+          <td><%= chat.exchange_messages.size %></td>
+          <td><%= chat.character ? Interaction.for_character(chat.character).count : 0 %></td>
+          <td><%= chat.input_tokens %></td>
+          <td><%= chat.output_tokens %></td>
+          <td><%= debug_value(chat.answering_model_ids.to_sentence.presence) %></td>
+        </tr>
+      <% end %>
+      <% if @debug.durable_conversations.empty? %>
+        <tr><td colspan="7" class="absent">(nobody yet &mdash; talking to somebody is what starts one)</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<h3>what the whole playthrough has cost</h3>
+<div class="panel">
+  <div class="fields">
+    <div class="k">tokens</div>
+    <div class="v">
+      <%= @debug.input_tokens %> in / <%= @debug.output_tokens %> out
+      <span class="note">over <%= @debug.recorded_turns %> of <%= @debug.turns.size %> turns</span>
+    </div>
+    <div class="k">turns without receipts</div>
+    <div class="v">
+      <%= @debug.pruned_turns %>
+      <span class="note">the opening arrival (paid for at world-build time) plus anything older than <%= Chat::KEEP_TURNS %> turns</span>
+    </div>
+    <div class="k">models that answered</div>
+    <div class="v"><%= debug_value(@debug.answering_models.to_sentence.presence, absent: "nothing recorded yet") %></div>
+  </div>
 </div>
 
 <%# THE WORLD'S OWN CLOCK. When the town rearranges itself overnight this is
@@ -395,24 +456,24 @@
 <div class="panel">
   <ul class="evidence">
     <li>
-      <strong>Prompts, raw responses, token counts, and which model actually
-      answered.</strong> Every agent builds a bare <code>RubyLLM::Chat</code>; the
-      <code>chats</code> / <code>messages</code> / <code>tool_calls</code> tables exist and are
-      wired with <code>acts_as_chat</code>, but nothing ever writes to them. Queued as
-      <code>ta-chat-persist</code>; this page gains all of it for free when that lands.
+      <strong>Anything older than <%= Chat::KEEP_TURNS %> turns.</strong> Prompts,
+      answers, token counts and models are all kept now &mdash; but not forever.
+      A playthrough runs for hours against a SQLite file on a laptop, so
+      <code>Playthrough#prune_conversations!</code> drops the one-shot
+      conversations older than that on every turn. An old turn keeps its
+      <code>Scene</code> and loses its receipts, and says so where the numbers
+      would be rather than reading as a turn that cost nothing. The durable
+      conversations are never dropped this way; they are trimmed message by
+      message instead, and what falls off them is on <code>Interaction</code>.
     </li>
     <li>
-      <strong>The classifier's intent label.</strong> Decided in memory inside
-      <code>Playthrough::Turn#play</code> and never stored. Every branch above is
-      derived from the records the branch left behind &mdash; which is the half
-      that governs the game, because the loop dispatches on the resolved record
-      and not on the label.
-    </li>
-    <li>
-      <strong>What the player typed, on any turn that was not a
-      conversation.</strong> Only <code>Interaction#user_input</code> keeps it; a
-      <code>Scene</code> has no column for the input that produced it. That migration is
-      <code>ta-api-iface</code>'s first outstanding item.
+      <strong>What the player typed, as a column.</strong> It is recovered above
+      out of the classifier's own prompt &mdash; it runs on every turn and the
+      raw line is the last thing in it &mdash; but that is a reconstruction, and
+      it goes when the conversation is pruned. Only
+      <code>Interaction#user_input</code> keeps it properly, and a
+      <code>Scene</code> still has no column for the input that produced it. That
+      migration is <code>ta-api-iface</code>'s first outstanding item.
     </li>
     <li>
       <strong>What changed between two visits to a room.</strong> The exits a

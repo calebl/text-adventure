@@ -104,6 +104,19 @@ class WorldSeed::Exporter
     events = story.world_events.count
     @warnings << "#{events} world event(s) not exported: what the world has already done to itself is this story's history, not its rules. The mechanics that produced them ARE exported, with their `last_run_at` left behind." if events.positive?
 
+    # SAID DELIBERATELY, not by omission. Conversation history is squarely
+    # progress: a `Chat` is what one player said to one character on one
+    # playthrough, and seeding it would seed somebody's half of a conversation
+    # into a world nobody has played yet. It gets no exception the way the
+    # opening arrival does, and for the mirror-image reason -- the opening is
+    # the same for everyone who ever plays; a conversation is the same for
+    # nobody.
+    conversations = Chat.where(playthrough: story.playthroughs).count
+    if conversations.positive?
+      @warnings << "#{conversations} conversation(s) not exported: what a player said to a character, and what it cost, " \
+                   "is their progress through the world rather than the world."
+    end
+
     if opening_scene.nil?
       @warnings << "no opening arrival: this story has no scene marked `is_opening`, so the file has no " \
                    "`opening_scene` and WILL NOT LOAD. Write one by hand, or generate the story with a " \

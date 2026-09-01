@@ -78,6 +78,16 @@
       /* Distinct from `.tag.realized`, which sits in the column beside it and
          means something else entirely. */
       .tag.here { color: #d8c07f; border-color: #5c5326; }
+      /* Which agent a stored conversation was with, and whether it is the one
+         kind that gets picked up again rather than started fresh. */
+      .tag.purpose { color: #7fb2d8; border-color: #2f4a5c; }
+      .tag.durable { color: #7fd8c0; border-color: #2f5a50; }
+
+      /* A stored conversation, collapsed: a turn has three or four and an
+         arrival prompt inlines the whole universe. */
+      details.exchange { margin: 0 0 .2rem; }
+      details.exchange > summary { color: #8b939b; }
+      details.exchange pre { max-height: 26rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
 
       ul.evidence { margin: .3rem 0 0; padding-left: 1.1rem; color: #8b939b; }
       ul.evidence li { margin: .05rem 0; }

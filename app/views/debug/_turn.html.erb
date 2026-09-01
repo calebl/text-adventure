@@ -8,8 +8,11 @@
       <span class="note">scene #<%= turn.scene.id %></span>
     </div>
 
+    <%# Recovered from the classifier's own prompt on a turn that was not a
+        conversation -- it runs every turn and its prompt ends with the raw
+        line. Still not a column on Scene; see `what is not recorded`. %>
     <div class="k">typed</div>
-    <div class="v"><%= debug_value(turn.typed, absent: "not recorded — only a conversation keeps the input, on Interaction#user_input") %></div>
+    <div class="v"><%= debug_value(turn.typed, absent: "not recorded — only Interaction#user_input keeps it as a field, and this turn's own exchange is no longer kept") %></div>
 
     <div class="k">story time</div>
     <div class="v">
@@ -28,6 +31,27 @@
 
     <div class="k">summary</div>
     <div class="v"><%= debug_value(turn.scene.summary, absent: "none — Scene::Generator writes one, Scene::Narrator does not") %></div>
+
+    <%# WHAT THE TURN COST, from the provider's own numbers rather than an
+        estimate. Zero is not the same as unknown: an opening arrival was paid
+        for at world-build time, and an old turn has had its receipts pruned. %>
+    <div class="k">tokens</div>
+    <div class="v">
+      <% if turn.recorded? %>
+        <%= turn.input_tokens %> in / <%= turn.output_tokens %> out
+        <span class="note">across <%= pluralize(turn.conversations.size, "conversation") %></span>
+      <% else %>
+        <%= debug_value(nil, absent: turn.opening? ? "nothing — the opening arrival was generated when the world was built, not on this turn" : "no conversation kept — pruned after #{Chat::KEEP_TURNS} turns, or this Scene was written by something other than the loop") %>
+      <% end %>
+    </div>
+
+    <div class="k">model that answered</div>
+    <div class="v">
+      <%= debug_value(turn.models.to_sentence.presence, absent: "nothing recorded for this turn") %>
+      <% if turn.models.size > 1 %>
+        <span class="warn">more than one — BaseAgent rotated past a model that failed</span>
+      <% end %>
+    </div>
   </div>
 
   <h3>why the game says <%= turn.branch %></h3>
@@ -40,10 +64,19 @@
   <h3>what the player read</h3>
   <%= debug_prose(turn.scene.description) %>
 
+  <%# THE MACHINE'S SIDE OF THE SAME TURN. Every prompt sent and every answer
+      that came back, in the order the loop asked them: classify first, then
+      whichever branch the answer chose. %>
+  <% if turn.recorded? %>
+    <h3>what was actually sent, and what came back</h3>
+    <%= render partial: "debug/conversation", collection: turn.conversations, as: :exchange %>
+  <% end %>
+
   <% turn.interactions.each do |interaction| %>
-    <%# THE FIVE STRUCTURED FIELDS. The player only ever sees them rendered
-        into prose by InteractionAgent's second pass, so this is the only place
-        the character's own side of the exchange is legible. %>
+    <%# THE SIX STRUCTURED FIELDS. The player only ever sees five of them
+        rendered into prose by InteractionAgent's second pass, so this is the
+        only place the character's own side of the exchange is legible -- and
+        `inner_resolution` is never rendered at all. %>
     <h3>what <%= interaction.character_name %> actually thought (interaction #<%= interaction.id %>)</h3>
     <div class="fields">
       <div class="k">pre_thought</div><div class="v"><%= debug_value(interaction.pre_thought) %></div>
@@ -51,10 +84,14 @@
       <div class="k">action</div><div class="v"><%= debug_value(interaction.action) %></div>
       <div class="k">post_feeling</div><div class="v"><%= debug_value(interaction.post_feeling) %></div>
       <div class="k">post_thought</div><div class="v"><%= debug_value(interaction.post_thought) %></div>
+      <%# The sixth field, and the one the narrator pass is deliberately not
+          told: what they decided is kept here rather than handed to the prose. %>
       <div class="k">inner_resolution</div>
-      <div class="v"><%= debug_value(interaction.inner_resolution, absent: "never written — a second call nothing makes yet, so #completed? is always false (ta-chat-persist)") %></div>
+      <div class="v"><%= debug_value(interaction.inner_resolution, absent: "not written — the model omitted the sixth schema field") %></div>
       <div class="k">summary</div>
-      <div class="v"><%= debug_value(interaction.summary, absent: "never written (ta-chat-persist)") %></div>
+      <div class="v"><%= debug_value(interaction.summary, absent: "not composed — Interaction derives one on create") %></div>
+      <div class="k">completed?</div>
+      <div class="v"><%= interaction.completed? %></div>
     </div>
   <% end %>
 </div>

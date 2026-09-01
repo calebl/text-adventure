@@ -154,6 +154,21 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_includes exporter.warnings.join("\n"), "playthrough(s) not exported"
   end
 
+  # CONVERSATION HISTORY IS PROGRESS, and it is left out deliberately rather
+  # than by omission -- so it is said out loud like everything else that is. A
+  # `Chat` is what one player said to one character on one playthrough; seeding
+  # it would hand a character memories of somebody who does not exist.
+  test "warns about the conversation history it does not export" do
+    playthrough = create(:playthrough, story: @story)
+    create(:chat, playthrough: playthrough, purpose: Chat::CHARACTER)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_includes exporter.warnings.join("\n"), "conversation(s) not exported"
+    assert_equal [], document.keys & %w[chats messages conversations]
+  end
+
   test "writes a commented, parseable file" do
     Dir.mktmpdir do |directory|
       path = WorldSeed::Exporter.new(@story).write!(path: File.join(directory, "exported.yml"))

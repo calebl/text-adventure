@@ -30,10 +30,15 @@ class InteractionAgent
   # an `Interaction` row.
   Exchange = Data.define(:reaction, :narration)
 
-  attr_reader :character, :character_instructions, :narrator_instructions
+  attr_reader :character, :playthrough, :character_instructions, :narrator_instructions
 
-  def initialize(character)
+  # `playthrough` is what makes the character pass a CONVERSATION rather than a
+  # series of unrelated questions -- see #character_agent. It is optional so
+  # that anything holding only a character still works, and such a caller simply
+  # gets a character with no memory, which is what every caller got before.
+  def initialize(character, playthrough: nil)
     @character = character
+    @playthrough = playthrough
     @character_instructions = character.interaction_instructions
   end
 
@@ -56,17 +61,43 @@ class InteractionAgent
     Exchange.new(reaction: reaction_fields(reaction), narration: narration.to_s)
   end
 
+  # THE ONE CONVERSATION IN THE APP THAT IS PICKED UP AGAIN. Every other agent
+  # here is stateless by design -- it rebuilds its context from records on each
+  # call -- but a person who cannot remember the sentence you said a moment ago
+  # is not somebody you are talking to. `Chat.conversation_with` finds the chat
+  # this playthrough already has with this character, so the exchange continues
+  # across turns and across a server restart.
+  #
+  # It is BOUNDED, and that is not optional: RubyLLM replays every persisted
+  # message, `character_instructions` already inlines the whole universe, and the
+  # local models run in a 4,096-token window. `Chat#prune_history!` trims the
+  # replay to `Chat::HISTORY_EXCHANGES` when the conversation is picked up. What
+  # falls off is not forgotten -- `Interaction` keeps every exchange in full.
   def character_agent
-    @character_agent ||= BaseAgent.new
-      .with_instructions(character_instructions)
-      .with_schema(Interaction::Schema)
+    @character_agent ||= BaseAgent.new(
+      purpose: Chat::CHARACTER,
+      playthrough: playthrough,
+      character: character,
+      chat: Chat.conversation_with(character, playthrough)
+    ).with_instructions(character_instructions).with_schema(Interaction::Schema)
   end
 
   # No instructions: everything the narrator needs is in the prompt, and the
   # character sheet already went to the pass that needed it. Repeating it here
   # invites the narrator to recite biography instead of narrating the moment.
+  #
+  # And no history either: this pass renders one structured answer into prose,
+  # so replaying the last one would only invite it to narrate that instead.
   def narrator_agent
-    @narrator_agent ||= BaseAgent.new
+    @narrator_agent ||= BaseAgent.new(purpose: "interaction-narration", playthrough: playthrough)
+  end
+
+  # Stamps both passes' messages with the turn they produced. Two agents, one
+  # turn: the character's own conversation runs on and the narration is thrown
+  # away, but both were paid for here.
+  def attribute_to!(scene)
+    @character_agent&.attribute_to!(scene)
+    @narrator_agent&.attribute_to!(scene)
   end
 
   def character_prompt(user_input)
