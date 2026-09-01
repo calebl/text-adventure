@@ -92,6 +92,94 @@ class ChatTest < ActiveSupport::TestCase
     assert_respond_to chat, :with_tool
   end
 
+  # --- what the game files a conversation under -----------------------------
+
+  test "purpose is a key into a fixed table, not free text" do
+    assert_predicate build(:chat, purpose: Chat::CHARACTER), :valid?
+    assert_not build(:chat, purpose: "whatever-i-felt-like").valid?
+    assert_predicate build(:chat, purpose: nil), :valid?, "a conversation nothing filed is still a conversation"
+  end
+
+  test "one_shot and durable are the two kinds, and they do not overlap" do
+    playthrough = create(:playthrough)
+    durable = create(:chat, purpose: Chat::CHARACTER, playthrough: playthrough)
+    one_shot = create(:chat, purpose: "classifier", playthrough: playthrough)
+    unfiled = create(:chat, playthrough: playthrough)
+
+    assert_equal [ durable ], playthrough.chats.durable.to_a
+    assert_equal [ one_shot, unfiled ].sort_by(&:id), playthrough.chats.one_shot.order(:id).to_a
+  end
+
+  # THE RESUME KEY. The same player talking to the same person continues the
+  # same conversation; a different playthrough of the same world does not.
+  test "conversation_with finds the chat this playthrough already has" do
+    playthrough = create(:playthrough)
+    character = create(:character, story: playthrough.story)
+    existing = create(:chat, purpose: Chat::CHARACTER, playthrough: playthrough, character: character)
+
+    assert_equal existing, Chat.conversation_with(character, playthrough)
+    assert_not_predicate Chat.conversation_with(create(:character, story: playthrough.story), playthrough), :persisted?
+    assert_not_predicate Chat.conversation_with(character, create(:playthrough)), :persisted?
+  end
+
+  test "conversation_with copes with nothing to key on" do
+    chat = Chat.conversation_with(nil, nil)
+
+    assert_equal Chat::CHARACTER, chat.purpose
+    assert_not_predicate chat, :persisted?
+  end
+
+  # --- the ceiling on replay ------------------------------------------------
+
+  # RubyLLM rebuilds every request out of every persisted message, so a chat
+  # that keeps more history than it means to send WILL send it. Trimming is
+  # therefore deleting, and the substance is kept on `Interaction` instead.
+  test "prune_history! keeps the instructions and the last few exchanges" do
+    chat = create(:chat)
+    create(:message, :system, chat: chat)
+    six = 6.times.map { |n| create(:message, chat: chat, role: n.even? ? "user" : "assistant", content: "m#{n}") }
+
+    assert_equal 2, chat.prune_history!(exchanges: 2)
+
+    kept = chat.messages.reorder(:id).pluck(:role, :content)
+
+    assert_equal "system", kept.first.first, "a character sheet is not optional"
+    assert_equal %w[m2 m3 m4 m5], kept.drop(1).map(&:last)
+    assert_equal six.last, chat.messages.reorder(:id).last
+  end
+
+  test "prune_history! leaves a conversation shorter than the ceiling alone" do
+    chat = create(:chat)
+    create(:message, chat: chat)
+    create(:message, :assistant, chat: chat)
+
+    assert_equal 0, chat.prune_history!(exchanges: 2)
+    assert_equal 2, chat.messages.count
+  end
+
+  test "prune_history! with no budget drops the whole exchange but not the instructions" do
+    chat = create(:chat)
+    create(:message, :system, chat: chat)
+    create(:message, chat: chat)
+    create(:message, :assistant, chat: chat)
+
+    assert_equal 2, chat.prune_history!(exchanges: 0)
+    assert_equal [ "system" ], chat.messages.reload.pluck(:role)
+  end
+
+  # --- what it cost, and who answered ---------------------------------------
+
+  test "reports what the conversation cost and which model actually answered" do
+    ollama = create(:model, :ollama)
+    chat = create(:chat, model: ollama)
+    create(:message, chat: chat, input_tokens: 100, output_tokens: 0)
+    create(:message, :assistant, chat: chat, model: ollama, input_tokens: 0, output_tokens: 25)
+
+    assert_equal 100, chat.input_tokens
+    assert_equal 25, chat.output_tokens
+    assert_equal [ "gemma3:12b" ], chat.answering_model_ids
+  end
+
   private
 
   # Model resolution instantiates the provider, which refuses to build without

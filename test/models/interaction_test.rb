@@ -119,4 +119,36 @@ class InteractionTest < ActiveSupport::TestCase
     chronological = Interaction.chronological
     assert_equal [ @interaction, later_interaction ], chronological.to_a
   end
+
+  # --- what the character decided, and the record's own memory of it --------
+
+  # `inner_resolution` is written by the same call that writes the other five
+  # fields -- a sixth entry on `Interaction::Schema` rather than a second call
+  # per line of dialogue. Until it existed `#completed?` was always false.
+  test "the schema the game asks under can complete an interaction" do
+    assert_includes Interaction::Schema.required_properties.map(&:to_s), "inner_resolution"
+
+    reaction = Interaction::Schema.required_properties.to_h { |field| [ field, "something" ] }
+    interaction = Interaction.create!(**reaction, character: @character)
+
+    assert_predicate interaction, :completed?
+  end
+
+  # DERIVED on create, so nothing has to pay for it. It is the compact memory of
+  # an exchange whose verbatim messages get trimmed out of the chat.
+  test "composes its own summary out of what was already paid for" do
+    interaction = create(:interaction, summary: nil, user_input: "where were you last night",
+                                       action: "She sets the ledger down.",
+                                       inner_resolution: "She will say nothing about the tunnel.")
+
+    assert_includes interaction.summary, "where were you last night"
+    assert_includes interaction.summary, "She sets the ledger down."
+    assert_includes interaction.summary, "She will say nothing about the tunnel."
+  end
+
+  test "a summary the caller supplied is left alone" do
+    interaction = create(:interaction, summary: "mine", user_input: "hello")
+
+    assert_equal "mine", interaction.summary
+  end
 end

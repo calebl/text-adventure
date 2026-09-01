@@ -35,6 +35,11 @@ class Scene < ApplicationRecord
   # Interaction belongs to its character first and the scene only optionally.
   has_many :interactions, dependent: :nullify
   has_many :playthroughs, foreign_key: :current_scene_id, dependent: :nullify, inverse_of: :current_scene
+  # Every message exchanged with a model on this turn -- the prompts that were
+  # sent, the answers that came back, what they cost and which model wrote them.
+  # Nullified rather than destroyed: a message belongs to its `Chat` first, and
+  # deleting a scene should not tear a hole in a conversation.
+  has_many :messages, dependent: :nullify
 
   validates :description, presence: true
   validates :story_timestamp, presence: true
@@ -43,6 +48,21 @@ class Scene < ApplicationRecord
   after_create :mark_location_visit
 
   scope :openings, -> { where(is_opening: true) }
+
+  # ONE LINE OF MEMORY for a past turn, for `Playthrough#recap`.
+  #
+  # `summary` first, because it is what the model was asked for and paid for on
+  # every arrival -- the same moment in a fifth of the words. A narrated turn has
+  # none (Scene::Narrator streams unschema'd prose and cannot produce a second
+  # field), so it contributes its own opening sentence instead. Truncating what
+  # was written is honest; asking a model to summarise it would put a second
+  # call on every turn, which is exactly the cost this is here to avoid.
+  def self.recap_line(scene)
+    return nil if scene.nil?
+    return scene.summary.strip if scene.summary.present?
+
+    scene.description.to_s.strip.split(/(?<=[.!?])\s+/).first.to_s.truncate(200).presence
+  end
 
   private
 

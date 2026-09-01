@@ -55,7 +55,7 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
-- Rails 8 app, SQLite, 688 tests green. No longer API-only: `api_only` is off
+- Rails 8 app, SQLite, 770 tests green. No longer API-only: `api_only` is off
   and `ApplicationController < ActionController::Base` so it can render ERB.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph and the
@@ -297,15 +297,39 @@ The full audit of every planned piece of work against this constraint is in
   asserted rather than intended:** both tests snapshot every table's row count
   and newest `updated_at` across a full read. It deliberately does not call
   `catch_up_world!`; a mechanic with nights owed is reported, not run.
-  Built over existing records only — see **4** for why prompts wait.
+  Built over existing records only, at the time — and `ta-chat-persist` has
+  since given it the capture it was waiting for.
+- **Conversations are kept** (`ta-chat-persist`). Every `BaseAgent` writes a
+  `Chat` and its `Message`s: the prompt, the answer, the token counts and the
+  model that actually replied. One chat per agent conversation, because a chat's
+  messages have to be a list you could send again; which TURN a message belongs
+  to is on the message, because one conversation spans many turns. Three things
+  come out of it:
+  - **The debug view stopped naming an absence.** Per-turn cost, per-playthrough
+    cost, the answering model — and a rotation past a failed model is visible as
+    two models on one turn.
+  - **One conversation is picked up rather than started fresh:** talking to
+    somebody, keyed `(playthrough, character)`. A character remembers what you
+    said last turn, across a server restart. It is bounded to
+    `Chat::HISTORY_EXCHANGES` because `Character#interaction_instructions`
+    inlines the whole universe (4,705 characters) and the local models run in a
+    4,096-token window; what falls off the chat is on `Interaction`, in full,
+    forever.
+  - **`Playthrough#recap`** deepens the narrator's memory from one turn to
+    several, by spending the summaries every arrival already writes. Measured on
+    `gemma3:12b`: +70 to +91 input tokens on the narration call, ~7% of a turn,
+    against 2,264 characters of prose it replaces with 343.
+  Bounded at both ends on purpose: the one-shot audit trail is pruned to
+  `Chat::KEEP_TURNS` at the end of every turn, because this is a SQLite file on
+  a laptop and the game reads none of it back.
 
 ### Not built yet
 
 Everything left is in **Next up** below. The loop moves, talks and narrates,
-and the world moves on its own clock underneath it, and a turn now runs in a job
-and survives the tab closing. What it does not yet do is remember more than the
-last scene, or look like anything -- the conversation-persistence half of stage 5
-(`ta-chat-persist`) and stage 6 (visual style) of the browser plan.
+the world moves on its own clock underneath it, a turn runs in a job and
+survives the tab closing, and every exchange it has with a model is written down
+and bounded. Stage 5 of the browser plan is therefore complete. What it does not
+yet do is look like anything -- stage 6, visual style.
 
 Nothing yet **verifies** what the narrator wrote against what the records say,
 and `take` is still prose rather than a state change -- the two halves of the
@@ -384,11 +408,9 @@ landed (see **Done**). The rest, in order:
   half of the noun registry, and the same stub-then-realize shape (9) needs.
   Carries a live tension worth naming: its tool-call character creation is
   itself a narrator-compliance dependency.
-- **`ta-chat-persist`** — persistence and history. It no longer blocks anything:
-  the loop writes real `Interaction` rows now. What is left is the
-  `chats`/`messages` tables, `Interaction#inner_resolution`, and scene
-  summarisation, which the arc will want once a playthrough outgrows the context
-  window. See **4** below.
+- ~~**`ta-chat-persist`**~~ — **landed.** Conversations are kept, bounded and
+  visible: see **Done** and **4** below. The arc's dependency on scene
+  summarisation is discharged — `Playthrough#recap` is there and costs no call.
 - **`ta-api-iface`** — the reading experience, stage 6. See **5** below.
 
 ## The detail, by area
@@ -470,28 +492,54 @@ queued task, the task id is named.
 
 ### 4. Persistence and history
 
-`ta-chat-persist`. It blocks nothing now — the loop writes real `Interaction`
-rows — but the arc will want the summarisation.
+`ta-chat-persist`, landed. The prose summary is in **Done**; this is the
+checklist.
 
-- [ ] Wire up the `chats` / `messages` / `tool_calls` tables. `Chat`, `Message`
-      and `ToolCall` already call `acts_as_chat` and friends, but every agent
-      builds a bare `RubyLLM::Chat`, so **nothing is ever persisted**. Quitting
-      loses all conversation state.
-      **It now has a consumer waiting.** The debug view was deliberately built
-      over existing records and NOT over a capture of its own: the interesting
-      version of that capture needs token counts and which model answered, and
-      both already live on `RubyLLM::Message` and are already declared to belong
-      in `messages`. A second store for the same three columns would have to be
-      torn out when this lands. When it does, the debug view's *what is not
-      recorded* block is the list of what it gains.
+- [x] **The `chats` / `messages` tables are wired up.** Every `BaseAgent` writes
+      a `Chat` and its `Message`s — the prompt, the answer, the token counts and
+      the model that actually replied — lazily, so an agent nobody asks anything
+      leaves no row. One chat per agent CONVERSATION, because a chat's messages
+      have to be a list you could send again: one system instruction, one
+      schema, one model.
+      Which turn a message belongs to is on the **message** (`messages.scene_id`),
+      not on the chat, because a durable conversation spans many turns and a
+      turn's cost has to come out exactly.
+      `messages.content_raw` was added and is load-bearing: RubyLLM stores a
+      schema'd answer there with `content` nil, so without it every schema'd
+      call in the app persisted an empty assistant message.
+- [x] **The debug view gained all of it**, which is what it was built to do:
+      prompts, raw responses, token counts and the answering model, per turn and
+      per playthrough. Two of the three gaps it named close with it — the
+      classifier's exchange holds both the raw typed command and the intent
+      label the loop decided in memory.
+- [x] **`tool_calls` is wired but unexercised**, and that is honest rather than
+      missing: `acts_as_tool_call` is in place and RubyLLM writes the rows when a
+      call happens, and nothing in this app gives a model a tool yet. That is
+      `ta-narrator-memory`, and it will find the table already there.
 - [x] **Persist an `Interaction` at all.** `InteractionAgent#ask` returns the
       structured reaction alongside the prose now, and `Playthrough::Turn#talk_to`
       writes the row.
-- [ ] `Interaction#inner_resolution` and `#summary` are still never written, so
-      `Interaction#completed?` is always false. `inner_resolution` is what a
-      character decided as a result of the exchange, which is a second call
-      nothing asks for yet.
-- [ ] Summarize old scenes so long playthroughs stay inside the context window.
+- [x] `Interaction#inner_resolution` is a **sixth field on `Interaction::Schema`**
+      rather than the second call the note used to imagine — no extra round trip,
+      ~30 tokens on a call that already happens — so `#completed?` is finally
+      capable of being true. `#summary` is derived on create from what was
+      already paid for. `inner_resolution` is deliberately NOT interpolated into
+      the narrator pass: what a character decided is about what they will do
+      next, and handing it to the prose invites narrating that instead.
+- [x] Summarize old scenes so long playthroughs stay inside the context window.
+      `Playthrough#recap` spends `scenes.summary` — written on every arrival, for
+      exactly this — under a fixed character budget, and asks no model anything.
+      Measured against `gemma3:12b` on the seeded world, the same commands played
+      twice: the narration prompt went 711 → 781 and 684 → 775 input tokens
+      (+70 / +91, about 7% of a turn) while its memory went from one turn to
+      three. Carrying those three in full prose instead would have been 2,264
+      characters against the recap's 343. README has the table.
+- [ ] **Nothing summarises a narrated turn.** Only an arrival is schema'd, so
+      only an arrival has a `summary`; the recap contributes such a turn's own
+      first sentence instead. Truncation is honest and free, and the alternative
+      is a second model call on every turn — but a real summary is better prose
+      in the prompt. Worth revisiting only alongside `ta-scene-facts-prose`,
+      which is where the narrator stops being the only thing that writes a turn.
 
 ### 4a. The world's own mechanics
 
@@ -559,12 +607,14 @@ What it still owes, roughly in order:
 
 - [ ] Echo past commands in the turn log. A `Scene` has no column for the input
       that produced it, so a reloaded transcript is narration only. Needs a
-      migration, so it waits for one.
+      migration, so it waits for one. (The debug view now recovers the command
+      out of the classifier's stored prompt, which is a reconstruction and goes
+      when the conversation is pruned — it is not a substitute for the column.)
 - [x] **Jobs, Turbo Streams over Action Cable, and durability.** Landed — see
       **Done**. `NarrationJob` replaced `NarrationsController`, `propshaft` +
       `importmap-rails` + `turbo-rails` are in, and there is still no Node and
-      no `package.json`. The conversation-persistence half of the same stage is
-      still open as `ta-chat-persist`.
+      no `package.json`. The conversation-persistence half of the same stage
+      (`ta-chat-persist`) has landed too, so stage 5 is complete.
 - [ ] Re-join a turn already in flight. Reopen the page mid-narration and the
       log is what was persisted; the prose written so far lives in the job's
       buffer and nowhere else. The finished turn still arrives over the cable

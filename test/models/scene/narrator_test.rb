@@ -81,4 +81,37 @@ class Scene::NarratorTest < ActiveSupport::TestCase
 
     assert_nil playthrough.reload.current_scene
   end
+
+  # --- what the narrator remembers ------------------------------------------
+
+  # It used to see exactly one scene, so a playthrough had a memory one turn
+  # deep and the only way to deepen it was to paste in more full descriptions --
+  # which is what puts a long game outside the context window. The recap spends
+  # `scenes.summary` instead, under a fixed budget: see Playthrough#recap.
+  test "the prompt carries the turns before the last one, as summaries" do
+    playthrough = create(:playthrough, :started)
+    first = create(:scene, story: playthrough.story, location: playthrough.current_location,
+                           summary: "You came in out of the rain.", description: "Long prose about the rain.")
+    second = create(:scene, story: playthrough.story, location: playthrough.current_location,
+                            previous_scene: first, summary: "You spoke to the clerk.",
+                            description: "Long prose about the clerk.")
+    playthrough.update!(current_scene: second)
+
+    agent = FakeAgent.new("You look up.")
+    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("look up") }
+    prompt = agent.prompts.first
+
+    assert_includes prompt, "Long prose about the clerk.", "the turn just taken is still there in full"
+    assert_includes prompt, "You came in out of the rain.", "and the one before it, as its summary"
+    assert_not_includes prompt, "Long prose about the rain.", "not as its prose -- that is the whole trade"
+  end
+
+  test "a first turn has nothing to recap and says nothing about it" do
+    playthrough = create(:playthrough, :started)
+    agent = FakeAgent.new("You look up.")
+
+    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("look up") }
+
+    assert_not_includes agent.prompts.first, "Earlier, in order:"
+  end
 end

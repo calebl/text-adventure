@@ -37,4 +37,11 @@ class FakeAgent
 
     Response.new(content)
   end
+
+  # BaseAgent files the messages it wrote under the turn that produced them.
+  # A fake writes none, so there is nothing to file -- but the callers do not
+  # know which they are holding, which is the point of standing in here.
+  def attribute_to!(_scene) = nil
+
+  def recorded_chat = nil
 end

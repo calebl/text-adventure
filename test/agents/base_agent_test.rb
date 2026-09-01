@@ -248,6 +248,86 @@ class BaseAgentTest < ActiveSupport::TestCase
     assert_equal 1, rotations
   end
 
+  # --- what persistence must not break --------------------------------------
+
+  # A CONVERSATION IS A ROW NOW, so a failed attempt leaves rows behind. RubyLLM
+  # persists the prompt before it sends it, so without the rewind the retry
+  # would ask on top of the failed attempt: the second attempt sends the prompt
+  # twice, and a prose answer that was rejected for ignoring the schema is still
+  # in the history the replacement model is handed.
+  test "a failed attempt is rolled back before the retry, so both attempts ask the same thing" do
+    agent = BaseAgent.new("You answer.", purpose: "classifier", model_options: OPTIONS)
+    chat = agent.chat
+
+    OfflineExchange.with(
+      OfflineExchange.reply("prose, ignoring the schema"),
+      OfflineExchange.reply({ "intent" => "move" })
+    ) do
+      agent.instance_variable_set(:@schema, schema_requiring(:intent))
+      agent.stub(:rotate_model, ->(*) { agent }) do
+        assert_equal({ "intent" => "move" }, agent.ask("go north").content)
+      end
+    end
+
+    assert_equal %w[system user assistant], chat.messages.reorder(:id).pluck(:role),
+                 "the rejected attempt left nothing behind"
+    assert_equal 1, chat.messages.where(role: "user").count, "the prompt was not asked twice"
+    assert_nil chat.messages.find_by(role: "assistant").content_raw&.dig("nope")
+    assert_equal({ "intent" => "move" }, chat.messages.find_by(role: "assistant").content_raw)
+  end
+
+  test "a call that never succeeds leaves the conversation as it found it" do
+    agent = BaseAgent.new("You answer.", purpose: "classifier", model_options: OPTIONS)
+    chat = agent.chat
+    before = chat.messages.reorder(:id).pluck(:id)
+
+    agent.stub(:rotate_model, ->(*) { agent }) do
+      OfflineExchange.with do
+        assert_raises(RuntimeError) { agent.ask("hello") }
+      end
+    end
+
+    assert_equal before, chat.messages.reorder(:id).pluck(:id)
+  end
+
+  # The 401 guard is the one failure that must NOT rotate, and persistence must
+  # not have quietly turned it into one.
+  test "a rejected key still fails loudly and still does not rotate, with rows persisted" do
+    agent = BaseAgent.new(purpose: "classifier", model_options: OPTIONS)
+    chat = agent.chat
+    chat.define_singleton_method(:ask) do |message = nil, **_options, &_block|
+      add_message(role: :user, content: message)
+      raise RubyLLM::UnauthorizedError.new(nil, "Missing Authentication header")
+    end
+
+    rotations = 0
+    agent.stub(:rotate_model, ->(*) { rotations += 1; agent }) do
+      assert_raises(BaseAgent::UnauthorizedProviderError) { agent.ask("hello") }
+    end
+
+    assert_equal 0, rotations
+    assert_empty chat.messages.reload, "the prompt the refused call wrote is rolled back too"
+  end
+
+  # The conversation is a row, so it has to be filed where something can find
+  # it again -- and building an agent must not write one on its own.
+  test "the conversation is filed under what it is a conversation with" do
+    playthrough = create(:playthrough, :started)
+    character = create(:character, story: playthrough.story)
+    agent = BaseAgent.new(purpose: Chat::CHARACTER, playthrough: playthrough,
+                          character: character, model_options: OPTIONS)
+
+    assert_nil agent.recorded_chat
+
+    chat = agent.chat
+
+    assert_equal Chat::CHARACTER, chat.purpose
+    assert_equal playthrough, chat.playthrough
+    assert_equal character, chat.character
+    assert_equal "first-model", chat.model_id, "pointed at the first configured model, not RubyLLM's default"
+    assert_same chat, agent.recorded_chat
+  end
+
   private
 
   def build_agent

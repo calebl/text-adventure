@@ -5,6 +5,9 @@ class Character < ApplicationRecord
   has_many :items, dependent: :destroy
   has_and_belongs_to_many :scenes
   has_many :playthroughs, dependent: :nullify
+  # The durable conversations somebody is having with this character, one per
+  # playthrough. See Chat::CHARACTER.
+  has_many :chats, dependent: :destroy
 
   enum :sex, { male: "male", female: "female", non_binary: "non-binary",
                trans_woman: "trans woman", trans_man: "trans man" }

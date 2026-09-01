@@ -15,19 +15,23 @@
 # turn. Both halves, because the difference between them is the thing worth
 # watching.
 #
-# WHAT IT CANNOT SHOW is named rather than quietly missing:
+# WHAT IT NOW SHOWS, and did not: every prompt sent, every answer that came
+# back, what each cost and which model actually wrote it. `BaseAgent` persists
+# a `Chat` per conversation and stamps each message with the turn it was
+# exchanged on (`messages.scene_id`), so a turn's cost is a sum over records
+# rather than a thing nobody kept. Two of the three gaps this class used to
+# name close with it, because the classifier's own exchange holds both the raw
+# typed command and the intent label the loop decided in memory.
 #
-#   * prompts, raw responses, token counts and which model actually answered.
-#     Every agent builds a bare `RubyLLM::Chat`; the `chats` / `messages` /
-#     `tool_calls` tables exist and are wired with `acts_as_chat` but nothing
-#     ever writes to them. That is `ta-chat-persist`, and this view gains all
-#     of it for free when that lands.
-#   * the classifier's intent LABEL. It is decided in memory inside
-#     `Playthrough::Turn#play` and never stored. The resolved branch below is
-#     derived from records instead, which is the half that governs the game.
-#   * what the player typed on a turn that was not a conversation. Only
-#     `Interaction#user_input` keeps it; a `Scene` has no column for the input
-#     that produced it, which is `ta-api-iface`'s first outstanding item.
+# WHAT IT STILL CANNOT SHOW is named rather than quietly missing:
+#
+#   * anything older than `Chat::KEEP_TURNS` turns. The audit trail is pruned
+#     as the playthrough runs -- this is a SQLite file on a laptop -- so an old
+#     turn keeps its `Scene` and loses its receipts. Said out loud where it
+#     happens, not left to look like a turn that cost nothing.
+#   * the typed command as a FIELD. It is recoverable out of the classifier's
+#     prompt and is shown from there, but a `Scene` still has no column for it,
+#     which is `ta-api-iface`'s first outstanding item.
 class Playthrough::Debug
   # One turn of the log, as the records tell it.
   #
@@ -35,8 +39,41 @@ class Playthrough::Debug
   # the reasoning in the open, so a wrong answer here is visible as a wrong
   # answer rather than as a confident label.
   Turn = Data.define(:scene, :branch, :evidence, :elapsed_minutes, :cost_reading,
-                     :typed, :interactions, :cast) do
+                     :typed, :interactions, :cast, :conversations) do
     def opening? = branch == :opening
+
+    # WHAT THE TURN COST, from the provider's own numbers. Zero is not the same
+    # as unknown: a turn whose conversations were pruned has none left to add up,
+    # and an opening arrival was paid for at world-build time by somebody else.
+    def input_tokens = conversations.sum(&:input_tokens)
+    def output_tokens = conversations.sum(&:output_tokens)
+    def recorded? = conversations.any?
+
+    # Which models actually answered this turn. Usually one; more than one means
+    # `BaseAgent` rotated past a model that failed, which is worth seeing.
+    def models = conversations.flat_map(&:models).uniq
+  end
+
+  # ONE CONVERSATION, as far as this turn is concerned.
+  #
+  # `messages` is only the part exchanged on THIS turn, which is the whole
+  # reason the scene is recorded on the message rather than on the chat: a
+  # durable conversation with a character runs across many turns and each turn
+  # pays for its own two messages.
+  Exchange = Data.define(:chat, :messages) do
+    def purpose = chat.purpose || "(unfiled)"
+    def durable? = chat.purpose == Chat::CHARACTER
+    def input_tokens = messages.sum { |message| message.input_tokens.to_i }
+    def output_tokens = messages.sum { |message| message.output_tokens.to_i }
+    def models = messages.filter_map { |message| message.model&.model_id }.uniq
+
+    def sent = messages.select { |message| message.role.to_s == "user" }
+    def answers = messages.select { |message| message.role.to_s == "assistant" }
+
+    # The system instruction lives on the chat, not on the turn -- it is written
+    # once and replayed -- so it is read from the conversation rather than from
+    # this turn's messages.
+    def instructions = chat.messages.find { |message| message.role.to_s == "system" }
   end
 
   # One way out of where the player is standing, in both directions.
@@ -238,6 +275,30 @@ class Playthrough::Debug
 
   def unseen_count = cast.count { |person| !person.seen? }
 
+  # WHAT THE WHOLE PLAYTHROUGH HAS COST, over the turns still holding receipts.
+  def input_tokens = turns.sum(&:input_tokens)
+  def output_tokens = turns.sum(&:output_tokens)
+  def recorded_turns = turns.count(&:recorded?)
+  def pruned_turns = turns.count { |turn| !turn.recorded? }
+
+  # Every model that has answered anything in this playthrough. More than one is
+  # `BaseAgent` having rotated -- past a model that failed, or down to ollama
+  # because there was no key.
+  def answering_models = turns.flat_map(&:models).uniq
+
+  # THE CONVERSATIONS THAT ARE STILL RUNNING: one per person the player has
+  # spoken to, picked up again on every turn rather than started fresh.
+  #
+  # This is the part of the game that quitting used to lose. It is also the part
+  # with a ceiling on it -- `Chat#prune_history!` keeps the last
+  # `Chat::HISTORY_EXCHANGES` -- so the count of what is left is worth showing
+  # next to the count of `Interaction` rows, which is everything that was ever
+  # said.
+  def durable_conversations
+    @durable_conversations ||= playthrough.chats.durable
+                                          .includes(:character, messages: :model).order(:id).to_a
+  end
+
   # Every conversation this story has ever kept, newest first. The five
   # structured fields are the whole reason `Interaction` exists and the player
   # only ever reads them rendered into prose.
@@ -360,6 +421,7 @@ class Playthrough::Debug
     elapsed = elapsed_minutes(scene, previous)
     cost = cost_reading_for(scene, previous, elapsed)
     branch = branch_for(scene, previous)
+    conversations = conversations_for(scene)
 
     Turn.new(
       scene: scene,
@@ -367,11 +429,35 @@ class Playthrough::Debug
       evidence: evidence_for(scene, previous, branch, elapsed, cost),
       elapsed_minutes: elapsed,
       cost_reading: cost,
-      # Only a conversation keeps it. See the class comment.
-      typed: scene.interactions.filter_map(&:user_input).first,
+      typed: typed_on(scene, conversations),
       interactions: scene.interactions.to_a,
-      cast: scene.characters.to_a
+      cast: scene.characters.to_a,
+      conversations: conversations
     )
+  end
+
+  # EVERY CONVERSATION THIS TURN PAID FOR, in the order they happened.
+  #
+  # Grouped from `messages.scene_id`, so a durable conversation contributes only
+  # the two messages this turn exchanged and the one-shot ones contribute all
+  # of theirs. Ordered by the first message written, which is the order the loop
+  # made the calls in: classify, then the branch.
+  def conversations_for(scene)
+    scene.messages.sort_by(&:id).group_by(&:chat)
+         .map { |chat, messages| Exchange.new(chat: chat, messages: messages) }
+         .sort_by { |exchange| exchange.messages.first.id }
+  end
+
+  # WHAT THE PLAYER TYPED. `Interaction#user_input` is still the only column
+  # that holds it, but the classifier runs on every turn and its prompt ends
+  # with the raw line -- so a narrated or arriving turn is no longer silent
+  # about what produced it, as long as its conversations are still kept.
+  def typed_on(scene, conversations)
+    recorded = scene.interactions.filter_map(&:user_input).first
+    return recorded if recorded.present?
+
+    classifier = conversations.find { |exchange| exchange.purpose == "classifier" }
+    classifier&.sent&.first&.text.to_s[/## The Player Types\n(.*)/m, 1]&.strip.presence
   end
 
   def elapsed_minutes(scene, previous)
@@ -391,7 +477,8 @@ class Playthrough::Debug
   def preload(scenes)
     ActiveRecord::Associations::Preloader.new(
       records: scenes,
-      associations: [ :location, :characters, { interactions: :character } ]
+      associations: [ :location, :characters, { interactions: :character },
+                      { messages: [ :model, :chat ] } ]
     ).call
   end
 end

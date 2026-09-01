@@ -7,6 +7,9 @@ class Playthrough < ApplicationRecord
   belongs_to :character, optional: true
   belongs_to :current_location, class_name: "Location", optional: true
   belongs_to :current_scene, class_name: "Scene", optional: true
+  # Every conversation this playthrough has had with a model. Destroyed with it:
+  # they are this player's progress, not the world's -- see Chat.
+  has_many :chats, dependent: :destroy
 
   # Generated at initialize rather than on create so the presence validation
   # below sees it. This is the only thing binding a browser session to a
@@ -85,6 +88,90 @@ class Playthrough < ApplicationRecord
   # them rather than leaving the player to guess.
   def exits
     current_location&.exits&.order(:id) || Location.none
+  end
+
+  # HOW MUCH OF THE PLAYTHROUGH A PROMPT IS ALLOWED TO CARRY, in characters.
+  #
+  # 600 is roughly 150 tokens, and it is chosen against what it replaces rather
+  # than out of the air: the narrator prompt used to carry the previous scene's
+  # full description and nothing else, which is ~500 characters for one turn of
+  # memory. The same budget spent on `scenes.summary` buys four or five turns,
+  # because a summary is the same moment in a fifth of the words. That is the
+  # whole trade -- more memory, the same prompt.
+  RECAP_BUDGET = 600
+
+  # HOW MANY TURNS BACK IT WILL EVEN LOOK. The budget is the real limit; this
+  # keeps a long playthrough from loading two hundred scenes to throw away all
+  # but five of them.
+  RECAP_SCENES = 12
+
+  # WHAT HAS HAPPENED SO FAR, short enough to put in a prompt.
+  #
+  # Built out of `scenes.summary` -- the column `Scene::Generator` has been
+  # writing on every arrival all along, for exactly this. Nothing new is
+  # generated and no model is asked anything: summarising happens once, when the
+  # arrival is written, and this is where it is finally spent.
+  #
+  # Newest first, oldest dropped when the budget runs out, and the drop is
+  # STATED rather than silent -- a prompt that quietly forgets is worse than one
+  # that says it has forgotten. `before` excludes the scene the caller is already
+  # putting in the prompt in full, so the recap never repeats it.
+  #
+  # A scene with no summary contributes its first sentence. Only an arrival is
+  # summarised by the model; a narrated turn is not, and truncating what it wrote
+  # is honest where inventing a summary would cost a call per turn.
+  def recap(before: current_scene, budget: RECAP_BUDGET, scenes: RECAP_SCENES)
+    chain = scene_chain
+    chain = chain[0...chain.index(before)] if before && chain.index(before)
+    candidates = chain.last(scenes).reverse
+
+    lines = []
+    room = budget
+    dropped = 0
+
+    candidates.each do |scene|
+      line = Scene.recap_line(scene)
+      next if line.blank?
+
+      if line.length > room
+        dropped += 1
+        next
+      end
+
+      room -= line.length
+      lines << line
+    end
+
+    return nil if lines.empty?
+
+    text = lines.reverse.join("\n")
+    dropped.positive? ? "(#{dropped} earlier turn#{"s" unless dropped == 1} left out)\n#{text}" : text
+  end
+
+  # DROPS THE CONVERSATION AUDIT TRAIL OLDER THAN THE LAST `keep` TURNS.
+  #
+  # This is a SQLite file on a laptop and a playthrough can run for hours.
+  # Every turn writes three or four chats and an arrival prompt inlines the whole
+  # universe, so the stored conversations are by far the biggest thing a long
+  # game accumulates -- and the game itself never reads any of it back. The
+  # recent turns are what anybody debugs.
+  #
+  # The DURABLE conversations are never pruned here: they are trimmed message by
+  # message when they are picked up (Chat#prune_history!), because they are the
+  # one kind the game does read back. Deleting one would give a character
+  # amnesia; deleting an old classifier exchange loses nothing but a receipt.
+  #
+  # Returns how many chats were deleted.
+  def prune_conversations!(keep: Chat::KEEP_TURNS)
+    recent = scene_chain.last([ keep, 0 ].max).map(&:id)
+
+    chats.one_shot
+         # Attributed to some turn -- a chat whose messages carry no scene yet
+         # belongs to a turn still being played, or to one that failed before it
+         # produced a scene, and neither is old.
+         .where(id: Message.where.not(scene_id: nil).select(:chat_id))
+         .where.not(id: Message.where(scene_id: recent).select(:chat_id))
+         .destroy_all.size
   end
 
   private

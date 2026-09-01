@@ -58,8 +58,10 @@ class Scene::Narrator
 
   attr_reader :playthrough
 
+  # Memoized, unlike before: the conversation it writes has to still be reachable
+  # after `#narrate` returns, so #persist can stamp its messages with the Scene.
   def agent
-    BaseAgent.new(INSTRUCTIONS)
+    @agent ||= BaseAgent.new(INSTRUCTIONS, purpose: "narration", playthrough: playthrough)
   end
 
   def prompt_for(command)
@@ -88,6 +90,17 @@ class Scene::Narrator
       parts << "What just happened: #{previous.description}"
     end
 
+    # EVERYTHING BEFORE THAT, in one line per turn. The narrator used to see
+    # exactly one scene, so a playthrough had a memory one turn deep and the
+    # only way to make it deeper was to paste in more full descriptions -- which
+    # is what puts a long game outside the context window. `Playthrough#recap`
+    # spends the summaries `Scene::Generator` has been writing on every arrival
+    # instead, under a fixed character budget: several turns of memory for about
+    # what one more description would have cost. See Playthrough::RECAP_BUDGET.
+    if (recap = playthrough.recap)
+      parts << "Earlier, in order:\n#{recap}"
+    end
+
     parts.join("\n\n")
   end
 
@@ -103,6 +116,7 @@ class Scene::Narrator
       description: text,
       story_timestamp: playthrough.story_time_after("action")
     )
+    agent.attribute_to!(scene)
     playthrough.update!(current_scene: scene)
     scene
   end

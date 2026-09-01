@@ -209,4 +209,132 @@ class PlaythroughTest < ActiveSupport::TestCase
   test "exits are empty when the player is nowhere yet" do
     assert_empty create(:playthrough, story: @story).exits
   end
+
+  # --- the recap: summarising old scenes so a long game stays in the window ---
+
+  # `scenes.summary` has been written on every arrival all along, for exactly
+  # this. The recap spends it -- no model call, no second history.
+  test "recap is built from the summaries the arrivals already wrote" do
+    playthrough = create(:playthrough, :started)
+    first = scene_in(playthrough, summary: "You arrived at the ward office.")
+    second = scene_in(playthrough, summary: "You met Rowe in the doorway.", previous_scene: first)
+    third = scene_in(playthrough, summary: "You went down to the archive.", previous_scene: second)
+    playthrough.update!(current_scene: third)
+
+    assert_equal "You arrived at the ward office.\nYou met Rowe in the doorway.", playthrough.recap
+  end
+
+  # It never repeats the scene the caller is already putting in the prompt in
+  # full -- that is what `before` is for, and by default it is the current one.
+  test "recap excludes the turn the prompt already carries" do
+    playthrough = create(:playthrough, :started)
+    first = scene_in(playthrough, summary: "Earlier.")
+    second = scene_in(playthrough, summary: "Just now.", previous_scene: first)
+    playthrough.update!(current_scene: second)
+
+    assert_equal "Earlier.", playthrough.recap
+    assert_nil playthrough.recap(before: first)
+  end
+
+  # Only an arrival is summarised by the model. A narrated turn is not, and
+  # truncating what it wrote is honest where a second call per turn is not.
+  test "a turn with no summary contributes its own first sentence" do
+    playthrough = create(:playthrough, :started)
+    first = scene_in(playthrough, summary: nil,
+                     description: "You crouch by the grate. Water moves under it, somewhere.")
+    second = scene_in(playthrough, summary: "Later.", previous_scene: first)
+    playthrough.update!(current_scene: second)
+
+    assert_equal "You crouch by the grate.", playthrough.recap
+  end
+
+  # THE BUDGET IS THE POINT. A prompt that quietly forgets is worse than one
+  # that says it has forgotten, so the drop is stated rather than silent.
+  test "recap stays inside its budget and says what it left out" do
+    playthrough = create(:playthrough, :started)
+    previous = nil
+    5.times { |n| previous = scene_in(playthrough, summary: "#{n}: #{"x" * 40}", previous_scene: previous) }
+    playthrough.update!(current_scene: scene_in(playthrough, summary: "now", previous_scene: previous))
+
+    recap = playthrough.recap(budget: 100)
+
+    assert_operator recap.length, :<=, 100 + 40, "the budget governs the summaries, not the notice"
+    assert_match(/earlier turns? left out/, recap)
+    assert_includes recap, "4: "
+    assert_not_includes recap, "0: "
+  end
+
+  test "a playthrough with nothing behind it has no recap" do
+    playthrough = create(:playthrough, :started)
+    playthrough.update!(current_scene: scene_in(playthrough, summary: "the only turn"))
+
+    assert_nil playthrough.recap
+  end
+
+  # --- pruning the audit trail ----------------------------------------------
+
+  # This is a SQLite file on a laptop and the game never reads any of this back.
+  test "prune_conversations! drops one-shot conversations older than the last few turns" do
+    playthrough = create(:playthrough, :started)
+    old_scene = scene_in(playthrough)
+    new_scene = scene_in(playthrough, previous_scene: old_scene)
+    playthrough.update!(current_scene: new_scene)
+
+    old_chat = chat_for(playthrough, old_scene, purpose: "classifier")
+    new_chat = chat_for(playthrough, new_scene, purpose: "classifier")
+
+    assert_equal 1, playthrough.prune_conversations!(keep: 1)
+    assert_not Chat.exists?(old_chat.id)
+    assert Chat.exists?(new_chat.id)
+    assert_equal 0, Message.where(chat_id: old_chat.id).count, "its messages go with it"
+  end
+
+  # Deleting one of these would give a character amnesia. They are bounded a
+  # different way -- message by message, when they are picked up.
+  test "prune_conversations! never touches a durable conversation" do
+    playthrough = create(:playthrough, :started)
+    old_scene = scene_in(playthrough)
+    playthrough.update!(current_scene: scene_in(playthrough, previous_scene: old_scene))
+
+    durable = chat_for(playthrough, old_scene, purpose: Chat::CHARACTER,
+                                               character: create(:character, story: playthrough.story))
+
+    assert_equal 0, playthrough.prune_conversations!(keep: 1)
+    assert Chat.exists?(durable.id)
+  end
+
+  # A conversation whose messages carry no scene belongs to a turn still being
+  # played, or one that failed before it produced a scene. Neither is old.
+  test "prune_conversations! leaves an unattributed conversation alone" do
+    playthrough = create(:playthrough, :started)
+    playthrough.update!(current_scene: scene_in(playthrough))
+    in_flight = create(:chat, playthrough: playthrough, purpose: "classifier")
+    create(:message, chat: in_flight)
+
+    assert_equal 0, playthrough.prune_conversations!(keep: 1)
+    assert Chat.exists?(in_flight.id)
+  end
+
+  test "destroying a playthrough takes its conversations with it" do
+    playthrough = create(:playthrough, :started)
+    create(:chat, playthrough: playthrough, purpose: "classifier")
+
+    assert_difference -> { Chat.count }, -1 do
+      playthrough.destroy
+    end
+  end
+
+  private
+
+  def scene_in(playthrough, previous_scene: nil, summary: "a summary", description: "Prose.")
+    create(:scene, story: playthrough.story, location: playthrough.current_location,
+                   previous_scene: previous_scene, summary: summary, description: description)
+  end
+
+  def chat_for(playthrough, scene, purpose:, character: nil)
+    chat = create(:chat, playthrough: playthrough, purpose: purpose, character: character)
+    create(:message, chat: chat, scene: scene)
+    create(:message, :assistant, chat: chat, scene: scene)
+    chat
+  end
 end

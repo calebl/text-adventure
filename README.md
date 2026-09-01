@@ -130,7 +130,7 @@ flowchart TD
         T2 --> T3{"narration blank?"}
         T3 -->|"yes"| T4["Nothing persisted. A record written from<br/>nothing is a turn nobody can read"]
         T3 -->|"no"| T5["Scene.create!, the moment the player reads<br/>characters = protagonist + who they spoke to,<br/>so the NEXT turn here knows who is present<br/>summary built in Ruby, not asked for"]
-        T5 --> T6["Interaction.create!<br/>five fields plus user_input and location<br/>the player never sees it"]
+        T5 --> T6["Interaction.create!<br/>six fields plus user_input and a derived summary<br/>inner_resolution is the one the narrator is NOT told<br/>the player never sees any of it"]
         T6 --> T7["playthrough.update! scene"]
     end
 
@@ -164,10 +164,15 @@ The move branch is the heart of it, and the thing to notice is that
 **`Playthrough::Turn#move_to` contains no stub-versus-realized branch at all**:
 
 ```ruby
-Location::Generator.new(destination).realize!
-scene = Scene::Generator.new(destination, previous_scene: playthrough.current_scene).generate!
+Location::Generator.new(destination, playthrough: playthrough).realize!
+scene = Scene::Generator.new(destination, previous_scene: playthrough.current_scene,
+                                          playthrough: playthrough).generate!
 playthrough.update!(current_location: destination, current_scene: scene)
 ```
+
+(`playthrough:` is only what the conversation each of them has with a model gets
+filed under — see *What a turn writes down* below. Nothing about the arrival
+depends on it, which is why the world-building path leaves it out.)
 
 The diamond in the diagram lives *inside* `realize!`, which returns an
 already-realized location untouched. So the same three lines write a room the
@@ -230,6 +235,57 @@ stack, so fewer schemas is not the fix. The job is what makes the wait
 survivable rather than shorter: nothing is holding a connection open, so the
 player can close the tab and come back to the finished turn.
 
+### What a turn writes down
+
+Every call above goes through `BaseAgent`, and `BaseAgent` keeps it: one `Chat`
+per agent conversation, with the prompt, the answer, the token counts and the
+model that actually replied. Which *turn* a message belongs to is recorded on
+the message (`messages.scene_id`) rather than on the chat, because one
+conversation can span many turns — which is exactly what the talk branch does.
+
+**Talking to somebody is picked up again rather than started fresh.** Keyed on
+`(playthrough, character)`, so the person you spoke to last turn remembers it,
+across a server restart. Everything else is stateless by design: the classifier
+and the narrator rebuild their context out of records on every turn, so there is
+nothing in last turn's exchange worth replaying, and their chats are kept only
+as the audit trail the debug view reads.
+
+Both are **bounded**, because the local models run on CPU in a 4,096-token
+window and this is a SQLite file on a laptop:
+
+| bound | what it does |
+| --- | --- |
+| `Chat::HISTORY_EXCHANGES` | how much of a character conversation is replayed. Trimming means deleting — RubyLLM rebuilds the request out of every persisted message. Nothing is lost: every exchange is an `Interaction` row, in full, forever. |
+| `Chat::KEEP_TURNS` | how many turns of audit trail are kept. Pruned at the end of every turn; the `Scene` stays, the receipts go. |
+| `Playthrough::RECAP_BUDGET` | how much of the playthrough the narrator prompt carries, in characters. |
+
+That last one is what lets a long game stay inside the window. The narrator used
+to see exactly one scene, and the only way to deepen that was to paste in more
+full descriptions. `Playthrough#recap` spends `scenes.summary` instead — the
+column `Scene::Generator` has been writing on every arrival all along, for
+exactly this.
+
+Measured on *The Unrecorded Hour* against `gemma3:12b`, the same three commands
+played twice, with the recap off and on. Only the narration call changes; the
+classifier's prompt is fixed at ~266 input tokens either way:
+
+| turn | narration prompt, no recap | with recap | whole turn |
+| --- | --- | --- | --- |
+| 1 `look at the daybook` | 695 | 695 (nothing behind it yet) | 961 → 961 |
+| 2 `look out of the window` | 711 | **781** | 977 → 1,047 |
+| 3 `listen at the door` | 684 | **775** | 949 → 1,040 |
+
+**+70 to +91 input tokens, about 7% of a turn**, for three turns of memory where
+there was one. The trade is the compression: those three turns are 343
+characters as summaries and 2,264 as the prose the player read, so carrying them
+in full would have cost roughly six times as much.
+
+It asks no model anything, which is the point: summarising happens once, when
+the arrival is written. A narrated turn has no summary — `Scene::Narrator`
+streams unschema'd prose and cannot produce a second field — so it contributes
+its own first sentence, which is why two of the three lines above read as
+truncations rather than summaries.
+
 ### What the loop does not do yet
 
 - **`examine` and `take` are classified and then narrated like anything else.**
@@ -239,11 +295,15 @@ player can close the tab and come back to the finished turn.
   in that location that recorded a cast. A place nobody has visited and no
   companion follows you into has nobody to talk to, so the `talk` branch is
   unreachable there.
-- **A talk turn keeps nothing until both of its calls land.**
-  `Scene::Narrator` persists partial prose in an `ensure`; `talk_to` has no
-  equivalent, so a `talk` turn that fails halfway keeps neither call. The job
-  makes this much rarer -- a closed tab no longer aborts anything -- without
+- **A talk turn keeps no `Scene` and no `Interaction` until both of its calls
+  land.** `Scene::Narrator` persists partial prose in an `ensure`; `talk_to` has
+  no equivalent, so a `talk` turn that fails halfway writes neither record. The
+  job makes this much rarer -- a closed tab no longer aborts anything -- without
   closing it: a model that fails mid-turn still loses the exchange.
+  The character's own `Chat` is the exception, and deliberately not the fix: it
+  keeps the exchange, because it was a real question really answered, so the
+  next turn continues from a reply the player never got to read. Better than a
+  character contradicting themselves, and worth revisiting if it ever shows.
 - **A turn in flight is not re-joinable.** Reopen the page mid-narration and the
   log is what was persisted; the prose written so far is in the job's buffer and
   nowhere else. The finished turn arrives over the cable when it lands, because
