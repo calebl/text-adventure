@@ -255,7 +255,7 @@ The full audit of every planned piece of work against this constraint is in
   pass**; `Story::Deletion` prints what will go, requires the story's own title
   back before it goes, and takes the universe only when no other story is built
   on it. See `AGENTS.md` → *When a world outlives the schema*.
-- **The debug view** (`ta-debug-view`, PR #79). One page per playthrough
+- **The debug view** (`ta-debug-view`, PR #81). One page per playthrough
   showing what the game decided and generated behind the prose, organised
   around the turn just taken: the branch it took **derived from the records
   that branch left behind** and the evidence for it, the story-time cost
