@@ -25,10 +25,23 @@
       stage swaps this for a Turbo Stream and the server side does not move. %>
   <script>
     var out = document.getElementById("stream");
+
+    // Follow the narration down, but only while the player is already reading
+    // the bottom. `stick` goes false the moment he scrolls away to re-read
+    // something, and true again when he comes back -- our own scrollTo fires
+    // this listener too, and lands at the bottom, so it re-arms itself.
+    var stick = true;
+    function atBottom() {
+      var d = document.documentElement;
+      return window.innerHeight + window.scrollY >= d.scrollHeight - 40;
+    }
+    function follow() { if (stick) window.scrollTo(0, document.documentElement.scrollHeight); }
+    window.addEventListener("scroll", function () { stick = atBottom(); });
+
     var es = new EventSource("<%= playthrough_narration_path(@playthrough, command: @command) %>");
-    es.addEventListener("token", function (e) { out.textContent += JSON.parse(e.data).t; });
+    es.addEventListener("token", function (e) { out.textContent += JSON.parse(e.data).t; follow(); });
     es.addEventListener("error", function (e) { es.close(); out.classList.remove("cursor"); });
-    es.addEventListener("done", function () { es.close(); window.location = "<%= playthrough_path(@playthrough) %>"; });
+    es.addEventListener("done", function () { es.close(); window.location = "<%= playthrough_path(@playthrough, anchor: "bottom") %>"; });
   </script>
 <% else %>
   <%# Where the player is and what leads out of it. Not decoration: the exits
@@ -46,3 +59,11 @@
     <%= form.submit "Go" %>
   <% end %>
 <% end %>
+
+<%# Where the player left off. Every arrival at this page -- the redirect that
+    carries a submitted command, the redirect after the turn finishes, a plain
+    reload, Resume from the index -- links to `#bottom`, so the browser puts the
+    newest turn on screen with no script involved. A brand new playthrough is
+    the deliberate exception: PlaythroughsController#create sends the player to
+    the top, where the preface and the opening arrival are. %>
+<div id="bottom"></div>
