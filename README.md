@@ -41,10 +41,26 @@ The premise is optional; without one the model picks its own.
 
 ## Play it
 
+Two processes: the web server, and the worker that plays turns.
+
 ```bash
+bin/rails db:prepare   # two databases now: the app's, and Solid Queue's
 bin/rails db:seed      # two checked-in worlds, no model needed
 bin/rails server       # then open http://localhost:3000
+bin/jobs               # in a second terminal -- this is what runs a turn
 ```
+
+**Without `bin/jobs` nothing narrates.** A turn is a `NarrationJob`, not a
+request: the browser posts the command, gets its own text echoed back
+immediately, and reads the prose as Turbo Streams broadcast over Action Cable
+while the job writes it. That is what makes a turn survive the tab closing, and
+what stops a twenty-second model call from holding a Puma thread. Queued jobs
+wait in `storage/development_queue.sqlite3` until a worker picks them up, so
+starting `bin/jobs` late runs the turns you already typed.
+
+There is still no Node, no `package.json` and no build step: `propshaft` serves
+`app/javascript` as it sits on disk and `importmap-rails` lets the browser
+resolve the module names itself.
 
 ## How a turn works
 
@@ -62,8 +78,8 @@ taken on a record the app is holding, never on a label a model wrote.
 
 ```mermaid
 flowchart TD
-    IN["Player types a command<br/>TurnsController redirects with ?command=<br/>the play page opens an EventSource"]
-    SSE["NarrationsController hands the whole turn to<br/>Playthrough::Turn#play, with a block to stream into"]
+    IN["Player types a command<br/>TurnsController enqueues NarrationJob and answers at once<br/>with the command echoed back and an empty #stream"]
+    SSE["NarrationJob hands the whole turn to<br/>Playthrough::Turn#play, with a block to broadcast into<br/>batched ~20 characters at a time over Action Cable"]
     IN --> SSE
 
     W0["Story#catch_up_world!<br/>every story-time boundary the clock has passed<br/>is applied in Ruby before the command is read<br/>0 tokens, one SELECT MAX, ~90 us"]
@@ -109,10 +125,10 @@ flowchart TD
     subgraph NR["everything else: Scene::Narrator answers the raw command"]
         N1["Reached by examine, take, other, a move whose<br/>target did not resolve, and a talk with<br/>nobody here to talk to"]
         N1 --> N2["MODEL CALL, unschema'd, STREAMS<br/>the one documented streaming exception"]
-        N2 --> N3["Persists in an ensure, so a closed tab keeps<br/>what was written, and sets the scene itself<br/>Never touches the location: moving is not its job"]
+        N2 --> N3["Persists in an ensure, and sets the scene itself<br/>Nobody has to be watching: the job outlives the tab<br/>Never touches the location: moving is not its job"]
     end
 
-    M8 --> OUT["The Scene is returned; the prose already went<br/>to the block, token by token from a narrator<br/>and in one piece from a move"]
+    M8 --> OUT["The Scene is returned; the prose already went<br/>to the block, token by token from a narrator<br/>and in one piece from a move.<br/>The job then replaces #turn_log: the new turn, where<br/>the player is, and the input -- no reload"]
     T7 --> OUT
     T4 --> OUT
     N3 --> OUT
@@ -198,7 +214,9 @@ turn, in order, once each. Measured on the seeded world:
 
 A move does not stream, and on a first visit that is 30–60 seconds of blinking
 cursor. `Scene::Generator` is schema'd and a schema'd call cannot stream in this
-stack, so the fix is the job-and-cable stage, not fewer schemas.
+stack, so fewer schemas is not the fix. The job is what makes the wait
+survivable rather than shorter: nothing is holding a connection open, so the
+player can close the tab and come back to the finished turn.
 
 ### What the loop does not do yet
 
@@ -209,9 +227,15 @@ stack, so the fix is the job-and-cable stage, not fewer schemas.
   in that location that recorded a cast. A place nobody has visited and no
   companion follows you into has nobody to talk to, so the `talk` branch is
   unreachable there.
-- **A talk turn is not durable.** `Scene::Narrator` persists partial prose in an
-  `ensure`; `talk_to` has no equivalent, so a disconnect mid-stream loses both
-  of its calls.
+- **A talk turn keeps nothing until both of its calls land.**
+  `Scene::Narrator` persists partial prose in an `ensure`; `talk_to` has no
+  equivalent, so a `talk` turn that fails halfway keeps neither call. The job
+  makes this much rarer -- a closed tab no longer aborts anything -- without
+  closing it: a model that fails mid-turn still loses the exchange.
+- **A turn in flight is not re-joinable.** Reopen the page mid-narration and the
+  log is what was persisted; the prose written so far is in the job's buffer and
+  nowhere else. The finished turn arrives over the cable when it lands, because
+  the subscription is to the playthrough and not to a socket.
 - **The player's command is not in the turn log.** `scenes` has no column for
   it, so a reloaded transcript is narration only.
 - **The world moves, and nobody tells the player.** `WorldMechanic` repoints the

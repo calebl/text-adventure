@@ -4,7 +4,9 @@
     <title>Text Adventure</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
-    <%# Inline on purpose: no propshaft, no importmap, no build step yet. %>
+    <%# Still one inline <style>: propshaft is here to serve JavaScript, and the
+        reading experience is a stage of its own (`ta-api-iface`). Restyling
+        anything is that task's job, not this file's. %>
     <style>
       :root { color-scheme: dark; }
       body {
@@ -52,6 +54,7 @@
       .empty { color: #6b737b; }
       .alert { color: #d88f7f; border: 1px solid #4a3230; padding: .5rem .75rem; }
     </style>
+    <%= javascript_importmap_tags %>
   </head>
   <body>
     <main>
