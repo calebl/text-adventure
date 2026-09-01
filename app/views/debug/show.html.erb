@@ -289,7 +289,7 @@
               <td>
                 <%= candidate.name %>
                 <% if candidate.mobile? %><span class="tag mobile">mobile</span><% end %>
-                <% if candidate == @debug.location %><span class="tag realized">you are here</span><% end %>
+                <% if candidate == @debug.location %><span class="tag here">you are here</span><% end %>
               </td>
               <td><span class="tag <%= candidate.detail_level %>"><%= candidate.detail_level %></span></td>
               <td><%= debug_value(candidate.connected_locations.map(&:name).to_sentence.presence, absent: "none — nothing leads out of here") %></td>
