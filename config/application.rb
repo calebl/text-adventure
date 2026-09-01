@@ -16,7 +16,10 @@ module TextAdventure
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    # `middleware` is ignored because it is required by an initializer rather
+    # than autoloaded: a middleware object outlives a reload, so a class the
+    # autoloader can unload underneath it is the one thing it must not be.
+    config.autoload_lib(ignore: %w[assets tasks middleware])
 
     # Configuration for the application, engines, and railties goes here.
     #
