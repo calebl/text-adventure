@@ -1,0 +1,60 @@
+<%# One turn, as the records tell it. `now` is the turn the player just took,
+    which is the one the whole page is organised around. %>
+<div class="panel <%= "now" if local_assigns[:now] %>">
+  <div class="fields">
+    <div class="k">branch</div>
+    <div class="v">
+      <%= debug_branch(turn.branch) %>
+      <span class="note">scene #<%= turn.scene.id %></span>
+    </div>
+
+    <div class="k">typed</div>
+    <div class="v"><%= debug_value(turn.typed, absent: "not recorded — only a conversation keeps the input, on Interaction#user_input") %></div>
+
+    <div class="k">story time</div>
+    <div class="v">
+      <%= debug_time(turn.scene.story_timestamp) %>
+      &nbsp;&middot;&nbsp; <%= debug_minutes(turn.elapsed_minutes) %> since the turn before
+    </div>
+
+    <div class="k">place</div>
+    <div class="v">
+      <%= turn.scene.location.name %>
+      <span class="tag <%= turn.scene.location.detail_level %>"><%= turn.scene.location.detail_level %></span>
+    </div>
+
+    <div class="k">cast recorded</div>
+    <div class="v"><%= debug_value(turn.cast.map(&:fullname).to_sentence.presence, absent: "nobody — a narrated turn records no cast") %></div>
+
+    <div class="k">summary</div>
+    <div class="v"><%= debug_value(turn.scene.summary, absent: "none — Scene::Generator writes one, Scene::Narrator does not") %></div>
+  </div>
+
+  <h3>why the game says <%= turn.branch %></h3>
+  <ul class="evidence">
+    <% turn.evidence.each do |line| %>
+      <li class="<%= "warn" if line.start_with?("ANOMALY") %>"><%= line %></li>
+    <% end %>
+  </ul>
+
+  <h3>what the player read</h3>
+  <%= debug_prose(turn.scene.description) %>
+
+  <% turn.interactions.each do |interaction| %>
+    <%# THE FIVE STRUCTURED FIELDS. The player only ever sees them rendered
+        into prose by InteractionAgent's second pass, so this is the only place
+        the character's own side of the exchange is legible. %>
+    <h3>what <%= interaction.character_name %> actually thought (interaction #<%= interaction.id %>)</h3>
+    <div class="fields">
+      <div class="k">pre_thought</div><div class="v"><%= debug_value(interaction.pre_thought) %></div>
+      <div class="k">pre_feeling</div><div class="v"><%= debug_value(interaction.pre_feeling) %></div>
+      <div class="k">action</div><div class="v"><%= debug_value(interaction.action) %></div>
+      <div class="k">post_feeling</div><div class="v"><%= debug_value(interaction.post_feeling) %></div>
+      <div class="k">post_thought</div><div class="v"><%= debug_value(interaction.post_thought) %></div>
+      <div class="k">inner_resolution</div>
+      <div class="v"><%= debug_value(interaction.inner_resolution, absent: "never written — a second call nothing makes yet, so #completed? is always false (ta-chat-persist)") %></div>
+      <div class="k">summary</div>
+      <div class="v"><%= debug_value(interaction.summary, absent: "never written (ta-chat-persist)") %></div>
+    </div>
+  <% end %>
+</div>

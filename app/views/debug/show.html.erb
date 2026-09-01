@@ -1,0 +1,427 @@
+<h1>debug &mdash; <%= @debug.story.title %></h1>
+<p class="nav">
+  <%= link_to "&larr; back to the game".html_safe, playthrough_path(@playthrough) %>
+  &nbsp;&middot;&nbsp; playthrough #<%= @playthrough.id %>
+  &nbsp;&middot;&nbsp; <%= @debug.turns.size %> turns
+  &nbsp;&middot;&nbsp; a snapshot: reload after a turn to see the next one
+</p>
+<%# The page is long and the background sits under it, so the counts are up
+    here where they can be read without opening anything. %>
+<p class="nav">
+  jump to:
+  <%= link_to "the turn", "#turn" %> &middot;
+  <%= link_to "where you are", "#place" %> &middot;
+  <%= link_to "the classifier", "#classifier" %> &middot;
+  <%= link_to "the world", "#world" %> &middot;
+  <%= link_to "earlier turns (#{@debug.earlier_turns.size})", "#log" %> &middot;
+  <%= link_to "the cast (#{@debug.cast.size})", "#cast" %> &middot;
+  <%= link_to "the map (#{@debug.places.size})", "#map" %>
+</p>
+
+<%# THE TURN HE JUST TOOK. Everything else on this page is background to it. %>
+<h2 id="turn">the turn you just took</h2>
+<% if @debug.latest_turn %>
+  <%= render "debug/turn", turn: @debug.latest_turn, now: true %>
+<% else %>
+  <p class="absent">(this playthrough has no scene yet &mdash; nothing has been played)</p>
+<% end %>
+
+<%# WHERE HE IS STANDING. The stub-then-realize shape is the heart of the
+    design and almost entirely invisible while playing. %>
+<h2 id="place">where you are standing</h2>
+<% if (place = @debug.location) %>
+  <div class="panel">
+    <div class="fields">
+      <div class="k">name</div>
+      <div class="v">
+        <%= place.name %>
+        <span class="tag <%= place.detail_level %>"><%= place.detail_level %></span>
+        <% if place.mobile? %><span class="tag mobile">mobile</span><% end %>
+      </div>
+
+      <div class="k">description</div>
+      <div class="v"><%= debug_value(place.description, absent: place.stub? ? "not written YET — this is a stub, and walking in is what realizes it" : "missing, and this place is realized — Location validates it") %></div>
+
+      <div class="k">lore</div>
+      <div class="v"><%= debug_value(place.lore, absent: place.stub? ? "not written YET — a stub has neither description nor lore" : "missing, and this place is realized — Location validates it") %></div>
+
+      <div class="k">teaser</div>
+      <div class="v"><%= debug_value(place.teaser, absent: "none — the one line a neighbour named it with") %></div>
+
+      <div class="k">last visit</div>
+      <div class="v">
+        <%= debug_time(place.last_protagonist_visit, absent: "never — the next arrival narrates as discovery") %>
+        <% if place.last_protagonist_visit %>
+          <span class="note">(<%= debug_minutes((place.time_since_last_visit(@debug.story_clock).to_f / 60).round(2)) %> of story time ago)</span>
+        <% end %>
+      </div>
+
+      <div class="k">parent location</div>
+      <div class="v"><%= debug_value(place.parent_location&.name, absent: "none — nothing sets containment yet") %></div>
+    </div>
+  </div>
+
+  <h3>the ways out, in both directions</h3>
+  <p class="note">
+    This is the graph around the room the player is standing in.
+    <code>rake game:doctor</code> asks the same questions of the whole story
+    (and several more) &mdash; if the two ever disagree, the doctor is the one
+    to trust: it reads every row, this reads one room.
+  </p>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>exit</th><th>state</th><th>distance</th><th>method</th>
+          <th>time to travel</th><th>minutes</th><th>return edge</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @debug.exits.each do |exit| %>
+          <tr>
+            <td><%= exit.location.name %></td>
+            <td><span class="tag <%= exit.location.detail_level %>"><%= exit.location.detail_level %></span></td>
+            <td><%= debug_value(exit.out&.distance) %></td>
+            <td><%= debug_value(exit.out&.travel_method) %></td>
+            <td><%= debug_value(exit.out&.time_to_travel) %></td>
+            <%# Nil minutes on an edge that exists is not "no value" -- it is a
+                distance or method outside the fixed tables, which is what
+                `Story::Doctor` reports as unknown_distance / unknown_travel_method.
+                Saying "not recorded" here would make the two disagree. %>
+            <td>
+              <% if exit.unpriceable? %>
+                <span class="warn">not in DISTANCES / TRAVEL_METHODS</span>
+              <% else %>
+                <%= debug_value(exit.minutes) %>
+              <% end %>
+            </td>
+            <%# Connections are written in both directions from one answer, so a
+                missing return edge is a defect and not a shape of the world --
+                and so are two directions that disagree about the same edge. %>
+            <td>
+              <% if exit.one_way? %>
+                <span class="warn">MISSING — one-way</span>
+              <% elsif exit.directions_disagree? %>
+                <span class="warn">disagrees — <%= exit.back.distance %>, <%= exit.back.travel_method %></span>
+              <% else %>
+                yes
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @debug.exits.empty? %>
+          <tr><td colspan="7" class="absent">(no exits — the classifier will accept no move from here)</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="absent">(this playthrough is nowhere &mdash; current_location is nil)</p>
+<% end %>
+
+<%# THE CLOSED SET. `Gate the state, inform the prose, audit the difference` --
+    this is the gate, and it is the one thing on this page the standing
+    constraint is actually about. %>
+<h2 id="classifier">what the classifier will accept next turn</h2>
+<div class="panel">
+  <p class="note">
+    <%= @debug.candidate_enum.size %> answers are physically available to the model:
+    <code><%= @debug.candidate_enum.map(&:inspect).join(", ") %></code>.
+    Anything else it might say resolves to <code>nothing</code> and the turn
+    falls through to Scene::Narrator.
+  </p>
+
+  <div class="fields">
+    <div class="k">exits offered</div>
+    <div class="v"><%= debug_value(@debug.candidate_exits.map(&:name).to_sentence.presence, absent: "none — no move can be classified from here") %></div>
+
+    <div class="k">people offered</div>
+    <div class="v"><%= debug_value(@debug.candidate_cast.map(&:fullname).to_sentence.presence, absent: "nobody — no talk can be classified here") %></div>
+
+    <div class="k">intents</div>
+    <div class="v"><code><%= Playthrough::IntentSchema::INTENTS.join(" · ") %></code> &mdash; only <code>move</code> and <code>talk</code> have a branch that acts</div>
+  </div>
+
+  <h3>the prompt as it would be built</h3>
+  <p class="note">
+    Reconstructed from records just now &mdash; nothing captures what was
+    actually sent last turn. See <em>what is not recorded</em> at the bottom.
+  </p>
+  <pre><%= @debug.classifier_prompt %></pre>
+</div>
+
+<%# THE WORLD'S OWN CLOCK. When the town rearranges itself overnight this is
+    where it shows, and nowhere else: WorldEvent is deliberately not a
+    narration source, so the player is never told. %>
+<h2 id="world">the world's clock</h2>
+<div class="panel">
+  <div class="fields">
+    <div class="k">story started</div><div class="v"><%= debug_time(@debug.story.start_time) %></div>
+    <div class="k">Story#clock</div>
+    <div class="v"><%= debug_time(@debug.story_clock) %> <span class="note">MAX(scenes.story_timestamp) — the high-water mark across every playthrough</span></div>
+    <div class="k">you are at</div>
+    <div class="v"><%= debug_time(@debug.story_now) %> <span class="note">this playthrough's own last scene</span></div>
+  </div>
+</div>
+
+<h3>mechanics</h3>
+<div class="scroll">
+  <table>
+    <thead>
+      <tr><th>name</th><th>kind</th><th>cadence</th><th>last run</th><th>fires next</th><th>owed now</th><th>events</th></tr>
+    </thead>
+    <tbody>
+      <% @debug.mechanics.each do |entry| %>
+        <tr>
+          <td><%= entry.mechanic.name %></td>
+          <td><%= entry.mechanic.kind %></td>
+          <td><%= entry.mechanic.cadence %> <span class="note">(<%= entry.mechanic.interval_minutes %> min)</span></td>
+          <td><%= debug_time(entry.mechanic.last_run_at, absent: "never run") %></td>
+          <td><%= debug_time(entry.next_at) %></td>
+          <%# Normally empty: Playthrough::Turn#play catches the world up before
+              it reads the command, so a boundary sitting here is a night the
+              world has not paid for yet. %>
+          <td><%= entry.owed.any? ? tag.span("#{entry.owed.size} boundary/ies pending", class: "warn") : "none" %></td>
+          <td><%= entry.events.size %></td>
+        </tr>
+        <%# The in-fiction reason on its own row: it is a paragraph, and inside
+            the name column it squeezes every dated column into three lines. %>
+        <tr><td colspan="7" class="note"><%= debug_value(entry.mechanic.description, absent: "no in-fiction reason given") %></td></tr>
+      <% end %>
+      <% if @debug.mechanics.empty? %>
+        <tr><td colspan="7" class="absent">(this world has no mechanics — it does not move on its own)</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<h3>what the world did to itself</h3>
+<div class="scroll">
+  <table>
+    <thead>
+      <tr><th>occurred at</th><th>mechanic</th><th>summary</th><th>places touched</th></tr>
+    </thead>
+    <tbody>
+      <% @debug.world_events.each do |event| %>
+        <tr>
+          <td><%= debug_time(event.occurred_at) %></td>
+          <td><%= event.world_mechanic.name %></td>
+          <td><%= event.summary %></td>
+          <td><%= debug_value(event.locations.map(&:name).to_sentence.presence, absent: "none recorded") %></td>
+        </tr>
+      <% end %>
+      <% if @debug.world_events.empty? %>
+        <tr><td colspan="4" class="absent">(nothing yet — no boundary has been crossed since this world was made)</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%# THE LOG. Everything before the current turn, newest first, so it reads away
+    from the present rather than towards it. %>
+<h2 id="log">earlier turns</h2>
+<% if @debug.earlier_turns.empty? %>
+  <p class="absent">(none &mdash; the turn above is the whole log)</p>
+<% end %>
+<% @debug.earlier_turns.each do |turn| %>
+  <details>
+    <summary>
+      <%= debug_branch(turn.branch) %>
+      <%= debug_time(turn.scene.story_timestamp) %>
+      &middot; <%= turn.scene.location.name %>
+      &middot; <%= truncate(turn.scene.summary.presence || turn.scene.description.to_s, length: 90) %>
+    </summary>
+    <div class="body"><%= render "debug/turn", turn: turn %></div>
+  </details>
+<% end %>
+
+<%# THE DURABLE BACKGROUND. Available, and deliberately not competing with the
+    turn: all of it is closed until asked for. %>
+<h2>the background</h2>
+
+<details>
+  <summary>the story &mdash; <%= @debug.story.title %> (<%= @debug.story.genre %>)</summary>
+  <div class="body">
+    <div class="fields">
+      <div class="k">id</div><div class="v"><%= @debug.story.id %></div>
+      <div class="k">genre</div><div class="v"><%= debug_value(@debug.story.genre) %></div>
+      <div class="k">protagonist</div>
+      <div class="v"><%= debug_value(@debug.story.protagonist&.fullname, absent: "none — no character has is_protagonist set") %></div>
+      <div class="k">opening scene</div>
+      <% opening = @debug.story.opening_scene %>
+      <div class="v"><%= debug_value(opening && "scene ##{opening.id} in #{opening.location.name}", absent: "none — this world predates opening arrivals; PlaythroughsController wrote a fallback") %></div>
+      <div class="k">summary</div><div class="v"><%= debug_value(@debug.story.summary) %></div>
+    </div>
+    <h3>preface</h3>
+    <%= debug_prose(@debug.story.preface) %>
+  </div>
+</details>
+
+<details>
+  <summary>the universe &mdash; <%= @debug.universe.races.size %> races, <%= Universe::AUDIENCE_FIELDS.size %> prompt audiences</summary>
+  <div class="body">
+    <p class="note">
+      Nothing here reaches a prompt whole: `Universe#prompt_details` sends each
+      audience only the fields it can use.
+    </p>
+    <div class="fields">
+      <% %i[physics technology weapons geographies civilizations history economics politics religion].each do |field| %>
+        <div class="k"><%= field %></div>
+        <div class="v"><%= debug_value(@debug.universe.public_send(field)) %></div>
+      <% end %>
+    </div>
+    <h3>races</h3>
+    <div class="fields">
+      <% @debug.universe.races.order(:id).each do |race| %>
+        <div class="k"><%= race.name %></div>
+        <div class="v"><%= debug_value(race.description) %></div>
+      <% end %>
+    </div>
+  </div>
+</details>
+
+<details id="cast">
+  <summary>the cast &mdash; <%= @debug.cast.size %> characters, <%= @debug.unseen_count %> never yet in a scene</summary>
+  <div class="body">
+    <%# NOTHING RECORDS WHERE A CHARACTER STANDS -- `characters` has no location
+        column -- so "last seen" is the whole of what the game knows, and it is
+        the gap `ta-narrator-memory` plugs. %>
+    <p class="note">
+      Where somebody is, is not stored: `characters` has no location column, so
+      the last column below is the latest scene that recorded them anywhere.
+      A character nobody has met is honestly nowhere.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>name</th><th>race</th><th>age</th><th>sex</th><th>pronouns</th><th>role</th><th>last seen</th><th>personality</th></tr></thead>
+        <tbody>
+          <% @debug.cast.each do |person| %>
+            <% character = person.character %>
+            <tr>
+              <td>
+                <%= character.fullname %>
+                <% if character.nickname.present? %><br><span class="note">"<%= character.nickname %>"</span><% end %>
+              </td>
+              <td><%= debug_value(character.race&.name) %></td>
+              <td><%= debug_value(character.age) %></td>
+              <td><%= debug_value(character.sex_label) %></td>
+              <td><%= debug_value(character.sex.present? ? character.pronouns : nil) %></td>
+              <td>
+                <% if character.is_protagonist? %><span class="tag here">protagonist</span><% end %>
+                <% if character.is_companion? %><span class="tag">companion</span><% end %>
+              </td>
+              <td>
+                <% if person.seen? %>
+                  <%= person.last_scene.location.name %><br>
+                  <span class="note"><%= debug_time(person.last_scene.story_timestamp) %></span>
+                <% else %>
+                  <span class="absent">(never in a scene &mdash; generated but not yet met)</span>
+                <% end %>
+              </td>
+              <td><%= truncate(character.personality.to_s, length: 160) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</details>
+
+<details id="map">
+  <summary>the map &mdash; <%= @debug.places.size %> places: <%= @debug.realized_count %> realized, <%= @debug.stub_count %> stubs</summary>
+  <div class="body">
+    <p class="note">
+      A stub is a name and a teaser, created the moment a neighbour named it as
+      an exit. Walking into one is what writes it, once and never again.
+      &ldquo;Who is here&rdquo; is the holdover rule
+      (`Scene::Generator#characters_present`): whoever was in the last scene
+      recorded in that place. The protagonist and any companion travel with the
+      player, so they are left out of it &mdash; they would be in every row.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>place</th><th>state</th><th>exits</th><th>who is here</th><th>last visit</th><th>teaser / description</th></tr></thead>
+        <tbody>
+          <% @debug.places.each do |place| %>
+            <% candidate = place.location %>
+            <tr>
+              <td>
+                <%= candidate.name %>
+                <% if candidate.mobile? %><span class="tag mobile">mobile</span><% end %>
+                <% if place.here %><span class="tag here">you are here</span><% end %>
+              </td>
+              <td><span class="tag <%= candidate.detail_level %>"><%= candidate.detail_level %></span></td>
+              <td><%= debug_value(candidate.connected_locations.map(&:name).to_sentence.presence, absent: "none — nothing leads out of here") %></td>
+              <td><%= debug_value(place.cast.map(&:fullname).to_sentence.presence, absent: "nobody known here") %></td>
+              <td><%= debug_time(candidate.last_protagonist_visit, absent: "never") %></td>
+              <td><%= truncate((candidate.description.presence || candidate.teaser).to_s, length: 160) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</details>
+
+<details>
+  <summary>every conversation in this world &mdash; <%= @debug.interactions.size %></summary>
+  <div class="body">
+    <div class="scroll">
+      <table>
+        <thead><tr><th>character</th><th>place</th><th>typed</th><th>action</th><th>felt before → after</th></tr></thead>
+        <tbody>
+          <% @debug.interactions.each do |interaction| %>
+            <tr>
+              <td><%= interaction.character_name %></td>
+              <td><%= debug_value(interaction.location&.name) %></td>
+              <td><%= debug_value(interaction.user_input) %></td>
+              <td><%= debug_value(interaction.action) %></td>
+              <td><%= debug_value(interaction.pre_feeling) %> &rarr; <%= debug_value(interaction.post_feeling) %></td>
+            </tr>
+          <% end %>
+          <% if @debug.interactions.empty? %>
+            <tr><td colspan="5" class="absent">(nobody has spoken to anybody in this world)</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</details>
+
+<%# THE HONEST GAP. Where something is absent rather than empty, say so -- and
+    that applies to the view itself as much as to any field on it. %>
+<h2>what is not recorded</h2>
+<div class="panel">
+  <ul class="evidence">
+    <li>
+      <strong>Prompts, raw responses, token counts, and which model actually
+      answered.</strong> Every agent builds a bare <code>RubyLLM::Chat</code>; the
+      <code>chats</code> / <code>messages</code> / <code>tool_calls</code> tables exist and are
+      wired with <code>acts_as_chat</code>, but nothing ever writes to them. Queued as
+      <code>ta-chat-persist</code>; this page gains all of it for free when that lands.
+    </li>
+    <li>
+      <strong>The classifier's intent label.</strong> Decided in memory inside
+      <code>Playthrough::Turn#play</code> and never stored. Every branch above is
+      derived from the records the branch left behind &mdash; which is the half
+      that governs the game, because the loop dispatches on the resolved record
+      and not on the label.
+    </li>
+    <li>
+      <strong>What the player typed, on any turn that was not a
+      conversation.</strong> Only <code>Interaction#user_input</code> keeps it; a
+      <code>Scene</code> has no column for the input that produced it. That migration is
+      <code>ta-api-iface</code>'s first outstanding item.
+    </li>
+    <li>
+      <strong>What changed between two visits to a room.</strong> The exits a
+      player was actually shown are not recorded on the Scene, so a shuffle is
+      visible in the audit trail above but not as a diff. That is
+      <code>ta-arrival-diff</code>.
+    </li>
+    <li>
+      <strong>Anything live.</strong> This page is a snapshot of the records as
+      they stood when it was rendered. Take a turn, then reload.
+    </li>
+  </ul>
+</div>

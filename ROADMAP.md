@@ -255,6 +255,24 @@ The full audit of every planned piece of work against this constraint is in
   pass**; `Story::Deletion` prints what will go, requires the story's own title
   back before it goes, and takes the universe only when no other story is built
   on it. See `AGENTS.md` → *When a world outlives the schema*.
+- **The debug view** (`ta-debug-view`, PR #81). One page per playthrough
+  showing what the game decided and generated behind the prose, organised
+  around the turn just taken: the branch it took **derived from the records
+  that branch left behind** and the evidence for it, the story-time cost
+  checked against the fixed tables that were supposed to decide it, the scene
+  and the place with stub-versus-realized called out, the exits in both
+  directions, the closed set `Playthrough::Classifier` will accept next turn
+  with the prompt it would build, `Story#clock` against the playthrough's own
+  moment, every mechanic with when it fires next, the `WorldEvent` audit trail,
+  and the durable background behind `<details>`. Its own route, controller and
+  layout, so it shares no CSS with the game and cannot change how the story
+  reads. Gated in the controller on `Playthrough::Debug.enabled?` — local by
+  default, `TA_DEBUG_VIEW` overrides — because this app has no auth and a
+  playthrough URL is the whole of a player's credentials. **Read, never write,
+  asserted rather than intended:** both tests snapshot every table's row count
+  and newest `updated_at` across a full read. It deliberately does not call
+  `catch_up_world!`; a mechanic with nights owed is reported, not run.
+  Built over existing records only — see **4** for why prompts wait.
 
 ### Not built yet
 
@@ -434,6 +452,13 @@ rows — but the arc will want the summarisation.
       and `ToolCall` already call `acts_as_chat` and friends, but every agent
       builds a bare `RubyLLM::Chat`, so **nothing is ever persisted**. Quitting
       loses all conversation state.
+      **It now has a consumer waiting.** The debug view was deliberately built
+      over existing records and NOT over a capture of its own: the interesting
+      version of that capture needs token counts and which model answered, and
+      both already live on `RubyLLM::Message` and are already declared to belong
+      in `messages`. A second store for the same three columns would have to be
+      torn out when this lands. When it does, the debug view's *what is not
+      recorded* block is the list of what it gains.
 - [x] **Persist an `Interaction` at all.** `InteractionAgent#ask` returns the
       structured reaction alongside the prose now, and `Playthrough::Turn#talk_to`
       writes the row.
@@ -486,6 +511,14 @@ Step 1 of the direction plan, landed as PR #77. The prose summary is in
       version, play ten turns, and only then decide whether whole districts
       should travel as units instead. The districts variant is neither adopted
       nor rejected.
+      **First nine turns played** (`ta-debug-view`, against the local models).
+      The mechanic fired on schedule off the story's own clock and cost nothing,
+      but the one arrangement it drew was a transposition within a single mobile
+      location's own edges, so the graph did not actually change and the event
+      says it did — see **Known issues**. Note what that implies for the
+      districts variant: a district travelling as a unit cannot produce this,
+      because its edges out have distinct mobile ends. Not an argument for
+      districts on its own; it is one data point and it is recorded as one.
 - [ ] Generating a mechanic from a model at world-creation time. Deliberately
       not built: the parameters are hand-authored first, so the mechanic that
       exists is one somebody chose.
@@ -510,6 +543,11 @@ What it still owes, roughly in order:
       moves. That stage brings `propshaft`, `importmap-rails` and `turbo-rails`
       — do not install them before it.
 - [ ] Visual style. Deferred on purpose until there is a real loop to look at.
+      The debug view (`ta-debug-view`) is **not** an exception to this and does
+      not pre-empt it: it has its own layout and shares no CSS with the game, so
+      the two can be styled independently and neither constrains the other. Its
+      whole mark on the game is one link on the play page, absent when the view
+      is off.
 - [x] **The page stays where the story is.** Submitting a turn used to land at
       the top of the document while the answer streamed in below the fold: the
       streaming render emits no form, so the `autofocus` that had been pulling
@@ -563,6 +601,54 @@ What it still owes, roughly in order:
   loader adds and updates and never deletes, so seeding on top of a world whose
   mechanic has moved edges leaves both the seeded edge and the moved one. Drop
   the database for a clean rebuild — the same caveat as renaming a location.
+- **A shuffle can write a `WorldEvent` for a night that changed nothing.**
+  Found by playing `The Lunar Cartographer` across midnight and reading the
+  debug view. `ShuffleConnections#choose_arrangement` permutes the anchored
+  endpoints and rejects a candidate only when it equals the current array or
+  when two edges from one mobile place would land on the same anchored place.
+  It does **not** reject a permutation confined to the edges of a *single*
+  mobile location — a plain transposition between two of them. That is what
+  fired: Mournwell Lane's edges to Sovereign's Circle and The Bell of Saint
+  Aravel swapped, every `pairs.uniq` check passed, connectivity held, and the
+  resulting graph is identical — Mournwell Lane still opens onto both. The
+  event it wrote reads as a self-contradiction, because each sentence is
+  individually true of a different edge:
+  *"Mournwell Lane now opens onto The Bell of Saint Aravel instead of
+  Sovereign's Circle. Mournwell Lane now opens onto Sovereign's Circle instead
+  of The Bell of Saint Aravel."*
+  The class comment promises the opposite in as many words — *"A night that
+  changes nothing writes nothing: an event log with entries that mean 'nothing
+  happened' is worse than no entry"* — so this is a broken guarantee rather
+  than a rough edge. The test for it is that the induced ADJACENCY changed, not
+  that each edge's endpoint did; `valid?` is comparing the wrong thing. Real
+  data for **Judge the edge shuffle in play** below.
+- **`Interaction::Schema`'s 60-character feelings truncate mid-word, and
+  nothing on the talk path sanitizes.** Found by reading the debug view against
+  a real conversation: one stored `pre_feeling` is exactly 60 characters and
+  ends `"hopeful for a (v"`, and its `pre_thought` is exactly the 200-character
+  cap. The narrator pass is handed that fragment by string key and writes
+  fluent prose over it, so the player reads a sentence that was authored from a
+  cut-off feeling. Two separate things: the caps are tight for a field the
+  prompt asks for "two or three words, comma separated" — the model is not
+  obeying the shape, and the cap is where that shows — and unlike every other
+  generated string in the app, `InteractionAgent#reaction_fields` and the
+  `Scene` `Playthrough::Turn#talk_to` writes do **not** go through
+  `sanitize_string`, which is the one seam that exists to catch exactly this.
+- **A failed arrival leaves a realized room nobody has stood in**, which is the
+  designed behaviour working and is worth knowing how to read. Observed in the
+  same run: the move's `Scene::Generator` call rotated to `qwen3:8b`, which
+  omitted `summary`, so `BaseAgent` raised `SchemaIgnoredError` and the turn
+  failed. `Location::Generator#realize!` had already committed, so Mournwell
+  Lane is realized with its exits stubbed out, and `Playthrough::Turn#move_to`
+  correctly did not move the player — exactly as its comment promises. On the
+  debug view it reads as a realized place with `last visit (never)` and nobody
+  in it, which is the signature of a half-finished move and is not otherwise
+  visible anywhere.
+- **A `Scene` has no column for the input that produced it**, so a reloaded
+  transcript is narration only and the debug view can say what the player typed
+  only on a conversation turn (`Interaction#user_input` is the one place it is
+  kept). It is the first outstanding item under **5. Interface** and it needs a
+  migration, which is why it waits for one.
 - **Nothing records where a character stands.** `characters` has no location
   column, so `Scene::Generator#characters_present` answers from the three
   things the app can actually know: the protagonist, anyone `is_companion`,

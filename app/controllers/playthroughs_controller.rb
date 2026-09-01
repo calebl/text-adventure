@@ -118,21 +118,15 @@ class PlaythroughsController < ApplicationController
       "Generate a new story to play."
   end
 
-  # The turn log, oldest first. Scenes are a `previous_scene` linked list, so
-  # walking back from the playthrough's current scene gives this playthrough's
-  # turns and not some other playthrough's.
+  # The turn log, oldest first. The walk itself is `Playthrough#scene_chain`,
+  # shared with `Playthrough::Debug` so the two cannot disagree about which
+  # turns belong to this playthrough.
   #
   # `interactions` is preloaded because the turn partial reads it on every
   # scene to name who the player was talking to, and all but the talk turns
   # have none.
   def scene_log(playthrough)
-    scenes = []
-    scene = playthrough.current_scene
-
-    while scene
-      scenes.unshift(scene)
-      scene = scene.previous_scene
-    end
+    scenes = playthrough.scene_chain
 
     ActiveRecord::Associations::Preloader.new(
       records: scenes, associations: { interactions: :character }
