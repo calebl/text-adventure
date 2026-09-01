@@ -593,6 +593,18 @@ What it still owes, roughly in order:
   loader adds and updates and never deletes, so seeding on top of a world whose
   mechanic has moved edges leaves both the seeded edge and the moved one. Drop
   the database for a clean rebuild — the same caveat as renaming a location.
+- **`Interaction::Schema`'s 60-character feelings truncate mid-word, and
+  nothing on the talk path sanitizes.** Found by reading the debug view against
+  a real conversation: one stored `pre_feeling` is exactly 60 characters and
+  ends `"hopeful for a (v"`, and its `pre_thought` is exactly the 200-character
+  cap. The narrator pass is handed that fragment by string key and writes
+  fluent prose over it, so the player reads a sentence that was authored from a
+  cut-off feeling. Two separate things: the caps are tight for a field the
+  prompt asks for "two or three words, comma separated" — the model is not
+  obeying the shape, and the cap is where that shows — and unlike every other
+  generated string in the app, `InteractionAgent#reaction_fields` and the
+  `Scene` `Playthrough::Turn#talk_to` writes do **not** go through
+  `sanitize_string`, which is the one seam that exists to catch exactly this.
 - **A `Scene` has no column for the input that produced it**, so a reloaded
   transcript is narration only and the debug view can say what the player typed
   only on a conversation turn (`Interaction#user_input` is the one place it is
