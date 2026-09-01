@@ -66,14 +66,19 @@ class WorldMechanic::ShuffleConnections
   # An arrangement is the anchored endpoint for each edge, index-aligned with
   # `edges`: a permutation of the endpoints they already have. Permuting rather
   # than choosing freely is what preserves every location's degree.
+  #
+  # NOTE what is NOT the test for "this candidate moves something": `candidate
+  # != current` compares two ARRAYS, and an array can differ while the graph it
+  # describes does not. `settle` puts every candidate into the one form that
+  # says what it means, and `valid?` then judges it on adjacency.
   def choose_arrangement(edges, at)
     current = edges.map(&:connected_location_id)
     random = Random.new(seed_for(at))
+    current_pairs = induced_pairs(edges, current)
 
     ATTEMPTS.times do
-      candidate = current.shuffle(random: random)
-      next if candidate == current
-      next unless valid?(edges, candidate)
+      candidate = settle(edges, current, current.shuffle(random: random))
+      next unless valid?(edges, candidate, current_pairs)
 
       return candidate
     end
@@ -86,12 +91,72 @@ class WorldMechanic::ShuffleConnections
     story.id * 1_000_003 + at.to_i
   end
 
-  # Two things have to hold, and the second is the promise this mechanic makes.
-  def valid?(edges, arrangement)
-    pairs = edges.each_with_index.map { |edge, index| [ edge.location_id, arrangement[index] ] }
-    return false if pairs.uniq.size != pairs.size
+  # Rewrites an arrangement into the one form that says what it means, WITHOUT
+  # changing the graph it describes: within a single mobile location's own
+  # edges, an endpoint that location keeps stays on the edge that already had
+  # it, and only the endpoints genuinely arriving go on the edges left over.
+  #
+  # This is sound because reordering endpoints among one location's own edges
+  # cannot change which places end up joined -- the induced adjacency, every
+  # location's degree, and connectivity all read the same either way -- so
+  # `valid?` judges exactly the graph that gets written. What it buys is that a
+  # doorway which did not move is no longer counted as a move, and so is no
+  # longer reported as one. Without it, a lane with two edges out into the fixed
+  # city could have them swapped with each other and be announced twice over as
+  # having moved, while a player standing in it sees the same two ways out.
+  def settle(edges, current, candidate)
+    settled = candidate.dup
+
+    edges.each_index.group_by { |index| edges[index].location_id }.each_value do |indices|
+      arriving = indices.map { |index| candidate[index] }
+      kept = {}
+
+      indices.each do |index|
+        # `index`, not `delete`, so a candidate that named one endpoint twice
+        # keeps both occurrences to be caught by `valid?`.
+        found = arriving.index(current[index])
+        next if found.nil?
+
+        arriving.delete_at(found)
+        kept[index] = current[index]
+      end
+
+      indices.each { |index| settled[index] = kept.fetch(index) { arriving.shift } }
+    end
+
+    settled
+  end
+
+  # Three things have to hold, and the last two are the promises this mechanic
+  # makes.
+  #
+  # The arrangement is judged by the ADJACENCY it induces -- the set of
+  # unordered pairs of places that end up joined -- and not edge by edge. That
+  # is the whole difference between the guarantee and a claim of it. Consider a
+  # mobile lane with exactly two edges out into the fixed city, and the
+  # candidate that swaps them with each other: every edge's endpoint changed,
+  # every endpoint is still used exactly once, degree holds, and the world stays
+  # whole. The lane opens onto exactly the two places it opened onto before. A
+  # per-edge check calls that a rearrangement; a player standing in the lane
+  # sees no such thing. So the canonical form of the graph is what gets
+  # compared, and a night with nothing but such candidates does nothing at all.
+  def valid?(edges, arrangement, current_pairs)
+    pairs = induced_pairs(edges, arrangement)
+    # Two edges landing on the same pair would collapse into one exit and cost
+    # a location a doorway.
+    return false if pairs.size != edges.size
+    # A night that changes nothing writes nothing.
+    return false if pairs == current_pairs
 
     connected?(edges, arrangement)
+  end
+
+  # The affected edges as a set of unordered endpoint pairs: the adjacency this
+  # arrangement induces. Unordered because a connection joins two places rather
+  # than pointing from one to the other -- it is stored both ways -- so
+  # `[ lane, circle ]` and `[ circle, lane ]` are the same fact about the world.
+  def induced_pairs(edges, arrangement)
+    edges.each_with_index.map { |edge, index| [ edge.location_id, arrangement[index] ].sort }.to_set
   end
 
   # Every location in the story still reachable from every other. Degree is
@@ -142,6 +207,9 @@ class WorldMechanic::ShuffleConnections
 
       { edge: edge, from: edge.connected_location_id, to: arrangement[index] }
     end
+    # `choose_arrangement` will not hand over an arrangement that moves nothing,
+    # so this is a backstop rather than the guarantee -- the guarantee is in
+    # `valid?`, on adjacency, where a caller cannot get around it.
     return nil if moves.empty?
 
     # Joins the caller's transaction when there is one (`WorldMechanic#catch_up!`
