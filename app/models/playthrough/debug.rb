@@ -48,6 +48,28 @@ class Playthrough::Debug
   Exit = Data.define(:location, :out, :back) do
     def one_way? = back.nil?
     def stub? = location.stub?
+
+    # The two rows of one edge must carry the same values -- they are written
+    # from one answer and `LocationConnection`'s tables are direction-neutral
+    # for exactly that reason -- so a disagreement means one direction is wrong.
+    # `Story::Doctor` reports this story-wide as `connection_directions_disagree`;
+    # this is the same question asked of the room the player is standing in.
+    def directions_disagree?
+      return false if out.nil? || back.nil?
+
+      [ out.distance, out.travel_method ] != [ back.distance, back.travel_method ]
+    end
+
+    # Minutes, or nil when either value is outside the fixed tables. Nil here is
+    # NOT "no value": it is a value the app cannot price, which is
+    # `Story::Doctor`'s `unknown_distance` / `unknown_travel_method`.
+    def minutes
+      return nil if out.nil?
+
+      LocationConnection.travel_minutes(out.distance, out.travel_method)
+    end
+
+    def unpriceable? = !out.nil? && minutes.nil?
   end
 
   # A world mechanic and where it stands on the story's clock.

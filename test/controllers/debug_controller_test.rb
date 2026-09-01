@@ -113,6 +113,37 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     assert_select ".absent", text: /nobody known here/
   end
 
+  # The page must not be a quieter second opinion than `rake game:doctor` about
+  # the same rows: a one-way edge, two directions that disagree, and a value
+  # outside the fixed tables all have to read as problems here too.
+  test "show flags a one-way edge, disagreeing directions and an unpriceable one" do
+    playthrough = create(:playthrough, :started)
+    one_way = create(:location, story: playthrough.story, name: "The Sunken Stair")
+    create(:location_connection, location: playthrough.current_location, connected_location: one_way)
+
+    get playthrough_debug_path(playthrough)
+    assert_select ".warn", text: /MISSING/
+
+    create(:location_connection, location: one_way, connected_location: playthrough.current_location,
+                                 distance: "a long journey", travel_method: "riding")
+    get playthrough_debug_path(playthrough)
+    assert_select ".warn", text: /disagrees/
+
+    LocationConnection.find_by(location: playthrough.current_location, connected_location: one_way)
+                      .update_columns(distance: "a short walk down the flooded lanes")
+    get playthrough_debug_path(playthrough)
+    assert_select ".warn", text: /not in DISTANCES/
+  end
+
+  # And it names the deeper audit rather than standing in for it.
+  test "show points at rake game:doctor for the whole story" do
+    playthrough = create(:playthrough, :in_scene)
+
+    get playthrough_debug_path(playthrough)
+
+    assert_match "rake game:doctor", response.body
+  end
+
   # A world with nothing in it must still render: this page is most useful when
   # something has gone wrong, which is exactly when records are missing.
   test "show renders a playthrough that has never been played" do
