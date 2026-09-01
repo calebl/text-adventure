@@ -49,6 +49,37 @@ constraint* has the captain's wording and where the full audit lives.
   model with nothing saying the remote call was refused. Keep any new failure
   class on the same side of that line: rotate on "this model failed", raise on
   "our setup is wrong".
+- **A REFUSAL IS A FAILED CALL, and there are now three sides to that line, not
+  two.** An unschema'd response that declines the prompt — or answers it with a
+  menu of alternatives — raises `BaseAgent::RefusalError` and **rotates**, which
+  is the whole point: measured over 51 charged narrator prompts,
+  `minimax/minimax-m3` refused 8 and `mistralai/mistral-medium-3.1` refused none
+  of them, so the app already had the model it needed and could not reach it. A
+  refusal is a 200 OK. `BaseAgent::Refusal` carries the rule; it is STRUCTURAL
+  (an unquoted first-person opening, or a list) and not a word list, because a
+  word list both misses the refusals that matter and fires on every character
+  who says "I". Do not widen it into one — `BaseAgent::RefusalPrecisionTest`
+  pins the measurement on 127 real responses and will fail.
+- **A CRISIS RESPONSE IS THE THIRD SIDE, and it does not rotate.** When a model
+  answers with a real-world crisis line, `BaseAgent::CrisisResponseError` is
+  raised and re-raised without rotating. Rotating would land on a model that
+  narrates the same exchange in fiction, which is the app quietly routing around
+  a safety response — a decision somebody has to make on purpose. It was made:
+  suppress the model's version so it is never a `Scene`, and show an
+  app-authored message outside the fiction (`Playthrough::SafetyNotice`,
+  rendered by `NarrationJob`). **The two checks are ordered, not merged**, and
+  crisis is checked first because one response can be both. Keep them apart.
+- **Neither check reads a schema'd response.** A character's five
+  `Interaction::Schema` fields are first-person by nature — "I should probably
+  answer" is what a `pre_thought` IS — so reading them for a first-person "I"
+  would fail every talk turn in the game. A schema'd response that came back as
+  prose is already caught by `verify_schema_honored!`.
+- **A response the game will not keep is not persisted.** `Scene::Narrator`'s
+  `ensure` saves whatever arrived, which is right for a call that died
+  mid-sentence and wrong for a refusal, so `BaseAgent::UnusableResponseError` is
+  its one exception. It also keeps the **last attempt's** content rather than the
+  streamed buffer: `#ask` restarts the stream when it rotates, so the buffer
+  holds a refusal and its replacement end to end.
 - All LLM calls use structured output via `RubyLLM::Schema`. Schemas live
   alongside the model they populate (`app/models/universe/physical_schema.rb`),
   and are usually a declared class. `Playthrough::IntentSchema` is a factory

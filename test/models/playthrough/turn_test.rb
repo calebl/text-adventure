@@ -309,6 +309,40 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     end
   end
 
+  # THE TALK PATH IS WHERE THIS ACTUALLY HAPPENED, and it is the branch with the
+  # most to suppress: `#talk_to` writes a `Scene` the player reads AND an
+  # `Interaction` the character felt. A crisis response fails the narrator pass
+  # before either exists, so neither is written and the exception reaches
+  # `NarrationJob`, which shows the app's own message instead. See
+  # `Playthrough::SafetyNotice`.
+  test "a crisis response on the talk path keeps neither record" do
+    holdover("Maren Vosk")
+    standing_in = @playthrough.current_scene
+
+    assert_no_difference [ -> { Scene.count }, -> { Interaction.count } ] do
+      assert_raises(BaseAgent::CrisisResponseError) do
+        play("tell her nobody would miss her", CLASSIFY.call("talk", "Maren Vosk"),
+             REACTION, BaseAgent::CrisisResponseError)
+      end
+    end
+
+    assert_equal standing_in, @playthrough.reload.current_scene,
+                 "the player is still standing exactly where they were"
+  end
+
+  # An exhausted refusal on the same path, for the same reason and by the same
+  # route -- but it only gets here after `BaseAgent#ask` has tried every model,
+  # which is the difference the two error classes carry.
+  test "an exhausted refusal on the talk path keeps neither record" do
+    holdover("Maren Vosk")
+
+    assert_no_difference [ -> { Scene.count }, -> { Interaction.count } ] do
+      assert_raises(BaseAgent::RefusalError) do
+        play("hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, BaseAgent::RefusalError)
+      end
+    end
+  end
+
   # --- the paths that fall through to the narrator -------------------------
 
   test "examine and other are answered by the narrator in place" do

@@ -1,4 +1,4 @@
-<%# locals: (playthrough:, command: nil, error: nil, autofocus: false) %>
+<%# locals: (playthrough:, command: nil, error: nil, safety_notice: false, autofocus: false) %>
 <%# EVERYTHING A TURN CHANGES, in one Turbo Stream target.
 
     Three callers render this partial and they render the same two states:
@@ -40,6 +40,26 @@
   <div class="<%= class_names("log", streaming: command) %>">
     <%= render partial: "turns/turn", collection: playthrough.turn_log, as: :turn %>
   </div>
+
+  <%# OUTSIDE THE FICTION, AND WHERE THE TURN WOULD HAVE BEEN. `BaseAgent`
+      suppressed a response that answered this turn with a real-world crisis
+      line, so no scene was written and this stands in its place -- in the app's
+      own voice, at the foot of the log where `#stream` was and where the player
+      is already looking. NOT above the log with the error, which is fine for a
+      one-line reason and would put this off the top of the screen on a long
+      transcript: the page anchors at `#bottom`.
+
+      Outside `.log` on purpose too, so the dimming rule cannot take it for a
+      turn, and styled as neither narration nor an alarm -- nothing went wrong.
+      Read `Playthrough::SafetyNotice`'s header before changing a word of it. %>
+  <% if safety_notice %>
+    <div class="notice">
+      <p><strong><%= Playthrough::SafetyNotice::HEADING %></strong></p>
+      <% Playthrough::SafetyNotice::PARAGRAPHS.each do |paragraph| %>
+        <p><%= paragraph %></p>
+      <% end %>
+    </div>
+  <% end %>
 
   <% if command %>
     <p class="command">&gt; <%= command %></p>
