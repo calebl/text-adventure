@@ -250,6 +250,14 @@ send again: one system instruction, one schema, one model.
   for a week pays the nights it owes on the next turn.
   `Playthrough::Turn#play` drives it. **It must stay free of model calls** —
   that is the whole claim, and `test/models/world_mechanic_test.rb` asserts it.
+- **A mechanic that reports movement it did not perform is the failure mode this
+  whole line of work exists to prevent.** So a rearrangement is judged on the
+  **adjacency it induces** — the set of unordered pairs of places that end up
+  joined — and never edge by edge or on array order: a permutation confined to
+  one `mobile` location's own edges passes every per-edge check while leaving
+  the graph identical. `ShuffleConnections#valid?` and `#settle` carry the
+  argument. If you add a mechanic, the canonical form of the graph is what you
+  compare; a night that changes nothing writes nothing.
 - A `WorldEvent` is an audit trail, **not a narration source.** Two nights can
   return a place to the same neighbour, so replaying the log announces a change
   the player never experienced. Narration comes from a diff of what they were
