@@ -55,6 +55,19 @@ class NarrationJob < ApplicationJob
   rescue ActiveRecord::RecordNotFound
     # The playthrough is gone. There is nobody to tell.
     Rails.logger.info { "Narration skipped: playthrough #{playthrough_id} no longer exists" }
+  rescue BaseAgent::CrisisResponseError => e
+    # THE ONE FAILURE THE APP ANSWERS ITSELF, and the one place this job knows
+    # anything about what a turn contained -- which is a cost, and it is paid
+    # here rather than in the loop on purpose. `Playthrough::Turn` produces
+    # scenes; nothing it returns can carry "show the player something that is
+    # not a scene". The consumer is what has a screen.
+    #
+    # No scene was written -- `BaseAgent` never handed the text back and
+    # `Scene::Narrator` does not persist an unusable response -- so replacing
+    # `#turn_log` is also what takes the suppressed prose off the page: the log
+    # renders persisted scenes, and `#stream` goes with the element it lives in.
+    Rails.logger.warn { "Narration intercepted: #{e.class}: #{e.message}" }
+    finish(playthrough, safety_notice: true) if playthrough
   rescue => e
     # A failed turn used to leave the player with a dead cursor and no input --
     # the SSE `error` event removed the cursor and that was all, so the only way
@@ -85,12 +98,13 @@ class NarrationJob < ApplicationJob
   # so the log, the new location line and the input all arrive in one element and
   # the page ends up exactly where a reload would have left it -- without the
   # reload, and so without losing where the player had scrolled to.
-  def finish(playthrough, error: nil)
+  def finish(playthrough, error: nil, safety_notice: false)
     Turbo::StreamsChannel.broadcast_replace_to(
       playthrough,
       target: "turn_log",
       partial: "playthroughs/turn_log",
-      locals: { playthrough: playthrough.reload, command: nil, error: error }
+      locals: { playthrough: playthrough.reload, command: nil, error: error,
+                safety_notice: safety_notice }
     )
   end
 end

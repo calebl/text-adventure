@@ -386,6 +386,34 @@ The full audit of every planned piece of work against this constraint is in
     lose the player's own words.
   - The debug view carries both tables for the playthrough being looked at.
 
+- **A refusal is a failed call, and a crisis response is intercepted.**
+  `BaseAgent` read every unschema'd response for two things it must not keep.
+  A refusal — a decline, or a menu of alternatives — raises
+  `BaseAgent::RefusalError` and rotates, which is what the app was missing:
+  measured over 51 charged narrator prompts, `minimax/minimax-m3` refused 8
+  (16%) and `mistralai/mistral-medium-3.1`, already second in
+  `REMOTE_MODEL_IDS`, refused **none of them**. The app had the model it needed
+  and could not reach it, because a refusal is a 200 OK. The detector is
+  STRUCTURAL rather than a word list — an unquoted first-person opening, or a
+  list — because a word list misses the refusals that decide things ("I'm not
+  going to narrate that. Threatening to harm a child isn't something I'll
+  roleplay" contains no phrase any such list carries) and fires on every
+  character who says "I". Measured at recall 11/11 with **zero false
+  positives** on 127 real prose responses, checked in as
+  `test/fixtures/files/refusal_corpus.json` and pinned by
+  `BaseAgent::RefusalPrecisionTest` the way `Story::AuditPrecisionTest` pins the
+  audit sweep. Every refusal is logged under `[refusal]`, because "the repo has
+  no record of a refusal" meant nothing while nothing would have recorded one.
+  A **crisis response** — a real-world suicide line, twice in 207 responses,
+  both times in an NPC's mouth in a world with no telephones — is the second
+  thing, and it takes the opposite path: `BaseAgent::CrisisResponseError` does
+  NOT rotate, because rotating would be the app routing around a safety
+  response. Captain-decided: suppress the model's version so it never becomes a
+  `Scene`, and show `Playthrough::SafetyNotice` outside the fiction, in the
+  app's own voice, naming no phone number it would have to guess at. The two
+  checks are ordered and never merged — one response can be both.
+  (`ta-refusal-range`; `data/ta-refusal-range/report.md` is the sweep.)
+
 ### Not built yet
 
 Everything left is in **Next up** below. The loop moves, talks and narrates,
@@ -747,6 +775,27 @@ What it still owes, roughly in order:
 
 ## Known issues
 
+- **Three findings from the refusal sweep, measured and deliberately not acted
+  on** (`data/ta-refusal-range/report.md`). None is a refusal problem, and each
+  is its own piece of work: (1) **`mistral-medium-3.1` refused nothing and is
+  3–4× faster**, but its prose is markedly thinner — whether it should be the
+  default is a real trade and the captain's call, not a bug. (2) **The talk path
+  hangs.** Three calls in ~150 stalled indefinitely, all on the unschema'd
+  streaming pass inside `InteractionAgent`, and `RubyLLM`'s `request_timeout`
+  demonstrably did not bound them — one ran 21 minutes with it set to 150s.
+  `NarrationJob` has no timeout of its own, so a stalled talk turn holds a Solid
+  Queue worker with the player watching a dead cursor. (3) **minimax drops
+  required `Interaction::Schema` fields on ~29% of talk turns** (12 of 41; 0 of
+  14 on mistral), each one a silent wasted call that `verify_schema_honored!`
+  recovers from. The rate is *higher* on benign input than on charged input, so
+  it is flakiness rather than steering.
+- **The suppressed prose is still streamed before it is suppressed.** Both
+  checks read the finished response, so a refusal or a crisis line has already
+  been broadcast into `#stream` chunk by chunk by the time it is caught. It is
+  never persisted and the end-of-turn `#turn_log` replace takes it off the page
+  — the log renders persisted scenes — but a player watching closely saw it
+  arrive. Catching it mid-stream is a different design on partial text, and the
+  detector was measured on whole responses.
 - **The story clock is the story's, not a playthrough's.** `Story#clock` is a
   `MAX` over every scene in the story, because `WorldMechanic` is story-level:
   the world moves for everybody. So two playthroughs of one world share a world

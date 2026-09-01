@@ -53,6 +53,20 @@
       @keyframes blink { 50% { opacity: 0; } }
       .empty { color: #6b737b; }
       .alert { color: #d88f7f; border: 1px solid #4a3230; padding: .5rem .75rem; }
+
+      /* The app talking rather than the world -- see Playthrough::SafetyNotice.
+         Deliberately not `.alert`: nothing has gone wrong and the alarm colour
+         would say it had. A left rule and the preface's grey put it plainly
+         outside the fiction without shouting, and `.turn`'s pre-wrap is absent
+         on purpose because this text is the app's own paragraphs rather than a
+         model's. It sits at the foot of the log, where the turn would have
+         been. */
+      .notice {
+        border-left: 2px solid #4a5a4a; padding: .1rem 0 .1rem .75rem;
+        margin: 0 0 1.5rem; color: #9aa3ac;
+      }
+      .notice p { margin: .5rem 0; }
+      .notice strong { color: #cfd3d8; font-weight: normal; }
     </style>
     <%= javascript_importmap_tags %>
   </head>
