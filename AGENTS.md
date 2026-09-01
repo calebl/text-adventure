@@ -326,9 +326,21 @@ path, and answers in sentences.
   `test/models/playthrough/turn_conversations_test.rb` are the two that use it.
   (`FakeChat` stood in for `RubyLLM::Chat.new`, which nothing constructs any
   more; it is gone.)
-- The suite must run with **no API key and no ollama**. Anything that needs a
-  provider configured should set the key on `RubyLLM.config` inside the test and
-  restore it, never read one from the environment.
+- The suite must run with **no API key and no ollama**, and that is now
+  enforced rather than hoped for: `test_helper.rb` deletes
+  `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `TA_DEBUG_VIEW`,
+  `TA_CHAT_KEEP_TURNS` and `TA_CHAT_HISTORY_EXCHANGES` before it requires
+  `config/environment`. All five change how the app behaves and all five are
+  things you legitimately keep in `.env`. Anything that needs one sets it
+  inside the test and puts it back (`BaseAgentTest#with_env`), never reads it
+  from the environment.
+- **Factories must not roll dice.** A random default turns every test that
+  reads the value into a lottery, and the failure lands on whoever runs the
+  suite next rather than on whoever wrote the test. `location_connections`
+  did this and cost a 1-in-35 flake that survived nine full runs and a re-run
+  of its own seed — see **Known issues** in `ROADMAP.md` for why parallel
+  workers made it unreproducible. Ask for a variation by trait, and pin the
+  values a test actually asserts against in the test itself.
 - Per `CLAUDE.md`: every model needs a test file and a factory.
 - `bin/rails test` runs in about a second. There is no reason to skip it.
 
