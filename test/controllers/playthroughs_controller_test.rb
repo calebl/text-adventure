@@ -26,6 +26,16 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_match "Resume", response.body
   end
 
+  test "resume links to the foot of the log rather than the top of the page" do
+    playthrough = create(:playthrough, :started)
+
+    post playthroughs_path, params: { story_id: playthrough.story_id }
+    resumed = playthrough.story.playthroughs.last
+    get root_path
+
+    assert_select "a[href=?]", playthrough_path(resumed, anchor: "bottom"), text: /Resume/
+  end
+
   test "create starts a playthrough and binds it to the session" do
     story = create(:story)
     create(:location, story: story)
@@ -395,5 +405,27 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     get playthrough_path(playthrough, command: "open the ledger")
     assert_match "EventSource", response.body
     assert_match "open the ledger", response.body
+  end
+
+  # Where the page sits is not something the suite can see, so these pin the
+  # markup the fix stands on instead of pretending to test a viewport: the
+  # anchor every link aims at, and the redirect the stream ends with. The
+  # behaviour itself is covered by the browser walk in the PR.
+  test "show ends with the anchor the log's foot is reached by" do
+    playthrough = create(:playthrough)
+
+    get playthrough_path(playthrough)
+    assert_select "#bottom"
+
+    get playthrough_path(playthrough, command: "open the ledger")
+    assert_select "#bottom"
+  end
+
+  test "show sends the player back to the foot of the log when the turn ends" do
+    playthrough = create(:playthrough)
+
+    get playthrough_path(playthrough, command: "open the ledger")
+
+    assert_match playthrough_path(playthrough, anchor: "bottom"), response.body
   end
 end

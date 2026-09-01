@@ -500,6 +500,16 @@ What it still owes, roughly in order:
       moves. That stage brings `propshaft`, `importmap-rails` and `turbo-rails`
       — do not install them before it.
 - [ ] Visual style. Deferred on purpose until there is a real loop to look at.
+- [x] **The page stays where the story is.** Submitting a turn used to land at
+      the top of the document while the answer streamed in below the fold: the
+      streaming render emits no form, so the `autofocus` that had been pulling
+      the viewport down was missing at exactly that moment. A `#bottom` anchor
+      at the foot of `playthroughs/show` — which the turn redirect, the
+      end-of-turn redirect and the index's Resume link all aim at — does the
+      landing with no script, and the `EventSource` handler follows the
+      narration down only while the player is already at the bottom, so
+      scrolling up to re-read is not overridden. The redirect anchors go away
+      with SSE; the follow does not.
 - [x] A playthrough starts in the story's first **realized** location — the
       opening room `game:new` generates. Stubs are skipped: they are exits
       nobody has walked into, with a name and a teaser and nothing to read.
