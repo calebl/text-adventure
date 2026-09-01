@@ -84,6 +84,14 @@
       details > summary:hover { color: #cfd3d8; }
       details[open] > summary { color: #cfd3d8; }
       details .body { padding: .4rem 0 .8rem 1rem; border-left: 1px solid #21262c; margin-left: .3rem; }
+
+      /* Narrow: the label column costs more than it buys, so the pairs stack.
+         Tables keep their own horizontal scroll, so nothing here widens the
+         page. */
+      @media (max-width: 40rem) {
+        .fields { grid-template-columns: minmax(0, 1fr); gap: 0; }
+        .fields > .k { color: #6f8ba4; margin-top: .5rem; }
+      }
     </style>
   </head>
   <body>
