@@ -7,6 +7,12 @@ class Playthrough < ApplicationRecord
   belongs_to :character, optional: true
   belongs_to :current_location, class_name: "Location", optional: true
   belongs_to :current_scene, class_name: "Scene", optional: true
+
+  # EVERY TURN THIS PLAYTHROUGH REACHED FOR SOMETHING THAT WAS NOT THERE.
+  # The drift counter -- see Playthrough::Drift for what it measures and what
+  # it deliberately does not claim.
+  has_many :drifts, class_name: "Playthrough::Drift", dependent: :destroy,
+                    inverse_of: :playthrough
   # Every conversation this playthrough has had with a model. Destroyed with it:
   # they are this player's progress, not the world's -- see Chat.
   has_many :chats, dependent: :destroy

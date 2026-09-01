@@ -339,6 +339,53 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
     with_env("TA_DEBUG_VIEW", "1") { assert Playthrough::Debug.enabled? }
   end
 
+  # --- what the records say about the prose --------------------------------
+
+  # The sweep is the third clause of the standing constraint and the debug view
+  # is where it becomes visible. It must stay read-only -- covered by the
+  # exhaustive test at the top of this file -- and it must scope to this
+  # playthrough's own turns rather than showing another player's.
+  test "contradictions are reported for this playthrough's turns only" do
+    playthrough = create(:playthrough, :in_scene)
+    story = playthrough.story
+    landlord = create(:character, story: story, fullname: "Grenn Ollivar")
+    create(:item, character: landlord, name: "revolver", updated_at: 1.year.ago)
+    playthrough.current_scene.update!(description: "You reach into your coat and draw your revolver.")
+
+    elsewhere = create(:playthrough, story: story, current_location: playthrough.current_location)
+    other_scene = create(:scene, story: story, location: playthrough.current_location,
+                                 description: "You draw your revolver again, elsewhere.")
+    elsewhere.update!(current_scene: other_scene)
+
+    flags = Playthrough::Debug.new(playthrough).contradictions
+
+    assert_equal 1, flags.size
+    assert_equal :item_not_held, flags.first.code
+    assert_equal playthrough.current_scene, flags.first.scene
+  end
+
+  test "drift is this playthrough's own, newest first" do
+    playthrough = create(:playthrough, :in_scene)
+    create(:playthrough_drift, playthrough: playthrough, action: "move",
+                               command: "go through the cellar door", story_timestamp: 1.hour.from_now)
+    create(:playthrough_drift, :talk, playthrough: playthrough, story_timestamp: 2.hours.from_now)
+    create(:playthrough_drift, playthrough: create(:playthrough))
+
+    debug = Playthrough::Debug.new(playthrough)
+
+    assert_equal 2, debug.drifts.size
+    assert_equal "talk", debug.drifts.first.action, "newest first"
+    assert_equal({ "move" => 1, "talk" => 1 }, debug.drift_tally)
+  end
+
+  test "a clean playthrough reports no contradictions and no drift" do
+    debug = Playthrough::Debug.new(create(:playthrough, :in_scene))
+
+    assert_empty debug.contradictions
+    assert_empty debug.drifts
+    assert_empty debug.drift_tally
+  end
+
   private
 
   # A playthrough with one of everything the view reads.

@@ -98,9 +98,9 @@ flowchart TD
     SSE --> W0
 
     subgraph CL["Playthrough::Classifier#classify"]
-        C1["Build the candidates FROM RECORDS<br/>the room's exits, and who is standing in it"]
-        C2["MODEL CALL, schema'd<br/>Playthrough::IntentSchema<br/>intent: move / talk / examine / take / other<br/>target: an enum of ONLY those exits and names"]
-        C3["Resolve the answer back to a RECORD<br/>an unresolvable target leaves it nil"]
+        C1["Build the candidates FROM RECORDS<br/>the room's exits, who is standing in it,<br/>what is lying here, what the player carries"]
+        C2["MODEL CALL, schema'd<br/>Playthrough::IntentSchema<br/>intent: move / talk / examine / take / drop / other<br/>target: an enum of ONLY those names"]
+        C3["Resolve the answer back to a RECORD<br/>an unresolvable target leaves it nil<br/>AND writes a Playthrough::Drift row"]
         C1 --> C2 --> C3
     end
     W0 --> C1
@@ -109,7 +109,8 @@ flowchart TD
 
     D -->|"a Location"| M1
     D -->|"a Character"| T1
-    D -->|"neither"| N1
+    D -->|"an Item"| I1
+    D -->|"none of them"| N1
 
     subgraph MV["move: the load-or-generate seam"]
         M1{"Location::Generator#realize!<br/>realized already?"}
@@ -134,12 +135,19 @@ flowchart TD
         T6 --> T7["playthrough.update! scene"]
     end
 
+    subgraph IT["take / drop: the app moves the row, then says so"]
+        I1["The row moves FIRST<br/>take: Item.character = the player, location = nil<br/>drop: Item.character = nil, location = this room<br/>out of the closed set the classifier resolved against"]
+        I1 --> I2["MODEL CALL, unschema'd, STREAMS<br/>the narrator is TOLD what already happened<br/>and writes the sentence about it"]
+        I2 --> I3["Scene persisted by the narrator, as any other<br/>A narration that forgets the item, or invents one,<br/>cannot change who holds what"]
+    end
+
     subgraph NR["everything else: Scene::Narrator answers the raw command"]
-        N1["Reached by examine, take, other, a move whose<br/>target did not resolve, and a talk with<br/>nobody here to talk to"]
+        N1["Reached by examine, other, a move whose target<br/>did not resolve, a talk with nobody here, and a<br/>take or drop of something the records do not have"]
         N1 --> N2["MODEL CALL, unschema'd, STREAMS<br/>the one documented streaming exception"]
         N2 --> N3["Persists in an ensure, and sets the scene itself<br/>Nobody has to be watching: the job outlives the tab<br/>Never touches the location: moving is not its job"]
     end
 
+    I3 --> OUT
     M8 --> OUT["The Scene is returned; the prose already went<br/>to the block, token by token from a narrator<br/>and in one piece from a move.<br/>The job then replaces #turn_log: the new turn, where<br/>the player is, and the input -- no reload"]
     T7 --> OUT
     T4 --> OUT
@@ -150,15 +158,25 @@ flowchart TD
     classDef gap fill:#7c2d12,stroke:#fdba74,stroke-width:2px,color:#ffffff
     classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
 
-    class C2,M3,M4,M6,T1,T2,N2 llm
-    class W0,C1,C3,M1,M5,M7,M8,T5,T6,T7,N3 rec
+    class C2,M3,M4,M6,T1,T2,I2,N2 llm
+    class W0,C1,C3,M1,M5,M7,M8,T5,T6,T7,I1,I3,N3 rec
     class N1,T4 gap
     class IN,SSE,OUT,D,T3 io
 ```
 
-The two orange boxes are the honest ones. The narration box is where four
-different classifications end up, because nothing more specific exists yet; the
-blank branch of `talk` is a turn that produced nothing and kept nothing.
+The two orange boxes are the honest ones. The narration box is where the
+classifications with nothing more specific to do end up; the blank branch of
+`talk` is a turn that produced nothing and kept nothing.
+
+**The `take` / `drop` branch is the principle in its shortest form.** The row
+moves before any prose exists, out of a set the app closed — what the records
+say is lying in this room, or what they say the player is carrying — and the
+narrator is then handed the fact and asked for a sentence. So a narration that
+says the player pocketed something is a *sentence about* a state change and
+never the state change itself, and there is no wording that can grant an item
+the app did not. Both directions are owned, deliberately: an app that owns
+picking up but lets the narrator assert putting down has records that go stale
+the first time a player sets something on a table.
 
 The move branch is the heart of it, and the thing to notice is that
 **`Playthrough::Turn#move_to` contains no stub-versus-realized branch at all**:
@@ -286,10 +304,63 @@ streams unschema'd prose and cannot produce a second field — so it contributes
 its own first sentence, which is why two of the three lines above read as
 truncations rather than summaries.
 
+### Auditing the difference
+
+The standing constraint has three clauses -- *gate the state, inform the prose,
+audit the difference* -- and the third one is `rake game:audit`.
+
+```
+$ rake game:audit
+Reading stored scenes against the records. No model call, no API key, no network.
+
+#2  The Unrecorded Hour (bureaucratic mystery)
+     24 scenes: 2 contradictions, 0 drifts
+     X [item_not_held] scene #42 (Sub-basement Stack)
+       the player is told they have the brass stamp, which the records say is held by Perrin Lasco
+         claim: You put the brass stamp in your coat pocket.
+     X [unreachable_transition] scene #43 (The Levee Walk)
+       the player got from "Sub-basement Stack" to "The Levee Walk" with no edge between them
+         exits from Sub-basement Stack: none
+```
+
+It is offline and deterministic: it walks stored `Scene`s, costs nothing per
+turn, and runs at ~20 ms per scene, so it can be run over every scene ever
+written. `Story::Audit` is the class; the same two tables appear in the debug
+view for the playthrough being looked at.
+
+**Two kinds of finding, counted separately, because they are different claims.**
+
+- **A contradiction** is something the records prove: a transition across an
+  edge the graph does not have, or the player told they are carrying something
+  the records give to somebody else.
+- **Drift** is evidence rather than proof: the player reached for something the
+  closed sets do not have. `Playthrough::Drift` writes one row when a `move`,
+  `talk`, `take` or `drop` resolves to nothing, keeping what they typed, what
+  was on offer, and the narration they had just read. That is how an invented
+  exit becomes observable without asking a model anything -- **not** by scanning
+  prose for a door, which is impossible, but by noticing the player walk at one.
+
+**Precision is the design goal, not recall, and every check was kept or cut
+against a measurement.** The corpus is 24 narrations two remote models really
+wrote, checked in at `test/fixtures/files/narration_corpus.json` and pinned by
+`Story::AuditPrecisionTest`. An earlier spike asked "which known names appear in
+this prose" and raised four flags on those 24; all four were false positives,
+because prose refers to places through windows and people in memory. So there is
+no place check and no person check here — measurement killed both — and the one
+place prose *is* read requires the grammar of a claim about the player rather
+than a mention. On the corpus, with items planted under the names the prose
+argues about: **8 flags, 8 true positives, 0 false positives**, against 15
+narrations that name one of those items. About half the real possession claims
+are missed, and that is the price paid on purpose.
+
 ### What the loop does not do yet
 
-- **`examine` and `take` are classified and then narrated like anything else.**
-  They are told apart so the branch exists when items do; nothing acts on them.
+- **`examine` is classified and then narrated like anything else.** It is told
+  apart so the branch exists when there is something for it to do.
+- **Nothing creates an item.** `take` and `drop` are real state changes over the
+  items that exist, and the only things that put one in a world are a seed file
+  and a test. The lazy stub-then-realize registry that would let the narrator
+  name a new thing into being is queued as `ta-item-registry`.
 - **Nothing records where a character stands.** `characters_present` answers
   from the protagonist, anyone `is_companion`, and whoever was in the last scene
   in that location that recorded a cast. A place nobody has visited and no
@@ -308,8 +379,9 @@ truncations rather than summaries.
   log is what was persisted; the prose written so far is in the job's buffer and
   nowhere else. The finished turn arrives over the cable when it lands, because
   the subscription is to the playthrough and not to a socket.
-- **The player's command is not in the turn log.** `scenes` has no column for
-  it, so a reloaded transcript is narration only.
+- **The player's command is recorded but not shown.** `scenes.typed` holds it on
+  every branch, so a reloaded transcript could interleave it; the play page does
+  not yet. The debug view does.
 - **The world moves, and nobody tells the player.** `WorldMechanic` repoints the
   graph and writes a `WorldEvent`, and the next arrival paragraph is generated
   from the new exits — but nothing says *what changed while you were gone*. That

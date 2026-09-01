@@ -35,12 +35,28 @@ class Scene < ApplicationRecord
   # Interaction belongs to its character first and the scene only optionally.
   has_many :interactions, dependent: :nullify
   has_many :playthroughs, foreign_key: :current_scene_id, dependent: :nullify, inverse_of: :current_scene
+  # Turns on which the player, having read THIS narration, reached for something
+  # the records do not have. NULLIFIED rather than destroyed: the drift is the
+  # measurement and the scene is only the suspect -- losing the prose must not
+  # lose the count. See Playthrough::Drift.
+  has_many :drifts, class_name: "Playthrough::Drift", dependent: :nullify,
+                    inverse_of: :scene
   # Every message exchanged with a model on this turn -- the prompts that were
   # sent, the answers that came back, what they cost and which model wrote them.
   # Nullified rather than destroyed: a message belongs to its `Chat` first, and
   # deleting a scene should not tear a hole in a conversation.
   has_many :messages, dependent: :nullify
 
+  # WHAT THE PLAYER TYPED TO CAUSE THIS TURN, on every branch. `typed` is
+  # nil only for a `Scene` nobody asked for: the opening arrival, which is
+  # world data written before anybody plays.
+  #
+  # It is a column rather than something reconstructed because the
+  # reconstruction did not last. `Interaction#user_input` only exists on the
+  # talk branch, and the classifier's stored prompt -- where the debug view read
+  # it from -- is pruned as the playthrough runs (Chat::KEEP_TURNS), so the
+  # player's own words vanished from older turns. Written by
+  # `Playthrough::Turn#play`.
   validates :description, presence: true
   validates :story_timestamp, presence: true
   validate :single_opening_scene_per_story
