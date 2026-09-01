@@ -9,9 +9,19 @@ default: &default
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   timeout: 5000
 
+# Two databases in development, because Solid Queue runs here now: `bin/jobs`
+# writes the job tables, and a background job holding a write lock on the same
+# file the request is reading from is how a one-file SQLite app deadlocks itself.
+# `bin/rails db:prepare` creates both -- the queue one is loaded from
+# `db/queue_schema.rb`, which is the default dump for a config named `queue`.
 development:
-  <<: *default
-  database: storage/development.sqlite3
+  primary:
+    <<: *default
+    database: storage/development.sqlite3
+  queue:
+    <<: *default
+    database: storage/development_queue.sqlite3
+    migrations_paths: db/queue_migrate
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".

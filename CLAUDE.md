@@ -8,7 +8,9 @@ for agent working agreements.
 
 ## Project Overview
 
-Text Adventure is a Rails 8 application that creates AI-powered text-based adventure games: a world generates itself as the player explores it, and what it generates is kept. It uses the RubyLLM gem to reach models through OpenRouter (`minimax/minimax-m3`, falling back to `mistralai/mistral-medium-3.1`) or a local ollama; `BaseAgent` picks between them. It has a plain ERB browser interface — see the browser section in [AGENTS.md](AGENTS.md).
+Text Adventure is a Rails 8 application that creates AI-powered text-based adventure games: a world generates itself as the player explores it, and what it generates is kept. It uses the RubyLLM gem to reach models through OpenRouter (`minimax/minimax-m3`, falling back to `mistralai/mistral-medium-3.1`) or a local ollama; `BaseAgent` picks between them. It has a plain ERB browser interface on Hotwire with zero build step
+(`propshaft` + `importmap-rails` + `turbo-rails`, no Node and no
+`package.json`) — see the browser section in [AGENTS.md](AGENTS.md).
 
 ## Development Environment
 
@@ -38,8 +40,11 @@ rake game:doctor                    # or rake 'game:doctor[3]' for one story
 rake 'game:repair[3]'               # safe repairs; GENERATE=1 to allow model calls
 rake 'game:delete[3]'               # prints what would go; DRY_RUN=1 or CONFIRM='<title>'
 
-# Play it in the browser
-rails server   # then open http://localhost:3000
+# Play it in the browser. Two processes: a turn runs in NarrationJob, so
+# without `bin/jobs` nothing narrates.
+bin/rails db:prepare   # the app's database, and Solid Queue's
+rails server           # then open http://localhost:3000
+bin/jobs               # in a second terminal
 
 # Rails console
 rails console
@@ -83,6 +88,9 @@ bundle exec brakeman
      enum of the room's exits and cast, and the turn branches on the answer:
      `Scene::Generator` for arriving somewhere, `InteractionAgent` for talking
      to somebody, `Scene::Narrator` for everything else.
+   - It runs in `NarrationJob`, which broadcasts what the player reads as Turbo
+     Streams over Action Cable — so a turn outlives the tab and holds no Puma
+     thread. The loop takes a block and knows nothing about the consumer.
    - [README.md](README.md#how-a-turn-works) has the diagram.
 
 3. **AI Configuration**:

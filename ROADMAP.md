@@ -113,16 +113,28 @@ The full audit of every planned piece of work against this constraint is in
   happens once per place, never twice. `Location::Generator.opening(story)`
   names the first location from the story's preface and realizes it.
   `Location#exits` is the exit list the game loop will resolve movement against.
-- **A browser you can play in.** `bin/rails server`, open `localhost:3000`,
-  pick a story, start a playthrough, read the preface, type an action and watch
-  the narration stream in token by token; reload and the log is still there.
-  Deliberately ugly and deliberately small: three routes, four ERB templates,
-  an inline `<style>`, six lines of `EventSource`, and no gems at all — no
-  Node, no importmap, no propshaft, no Turbo, no Action Cable.
+- **A browser you can play in.** `bin/rails server` and `bin/jobs`, open
+  `localhost:3000`, pick a story, start a playthrough, read the preface, type an
+  action and watch the narration arrive; reload and the log is still there.
+  Deliberately ugly and deliberately small: two routes, five ERB templates, an
+  inline `<style>`, and one 50-line JavaScript module.
+- **Jobs, Turbo Streams over Action Cable, and durability.** A turn is a
+  `NarrationJob`, not a request. `TurnsController#create` enqueues it and
+  answers immediately with the command echoed back; the job broadcasts prose in
+  ~20-character batches into `#stream` and then replaces the whole `#turn_log`
+  with the finished turn, the location line and the input. Four things that
+  fixes: **the reload at the end of every turn** is gone, and with it the scroll
+  position it threw away; **one Puma thread per open stream** is gone, because
+  WebSockets do not consume request threads; and **a turn no longer dies with
+  its connection** — close the tab mid-narration and it lands anyway, and is
+  broadcast to whoever reopens the page. `propshaft` + `importmap-rails` +
+  `turbo-rails` and still **zero build**: no Node, no `package.json`, no watch
+  process. Solid Queue runs in development against a second SQLite database.
 - `Scene::Narrator` — one unschema'd `BaseAgent` call that streams prose to a
-  block and persists the finished text as a `Scene` in an `ensure`, so a
-  browser that closes mid-turn does not lose it. It takes a block precisely so
-  swapping SSE for Turbo Streams later touches nothing but the consumer.
+  block and persists the finished text as a `Scene` in an `ensure`. It takes a
+  block precisely so swapping SSE for Turbo Streams touched nothing but the
+  consumer, and that is exactly how the swap went: `NarrationJob` replaced the
+  SSE controller and not one line of this class moved.
 - `BaseAgent#ask` forwards a block to RubyLLM, which turns the call into a
   token stream.
 - **`Scene::Generator`** — narrating arrival in a location, as one schema'd
@@ -186,8 +198,8 @@ The full audit of every planned piece of work against this constraint is in
   already-realized room untouched, so walking somewhere new generates it once
   and walking back reads what was written, then `Scene::Generator` narrates
   arriving and the playthrough moves only once both calls have landed. Wired
-  into the browser through the same three routes: `NarrationsController` hands
-  the command to `Playthrough::Turn` and forwards the chunks it yields.
+  into the browser through two routes: `NarrationJob` hands the command to
+  `Playthrough::Turn` and broadcasts the chunks it yields.
   Movement costs ~415 input tokens for the classification (system 189 + prompt
   66 + schema 160) on top of whatever it leads to -- an arrival is 1,302, a
   narrated turn ~849 -- so the classifier is about a third of a narrated turn
@@ -277,10 +289,10 @@ The full audit of every planned piece of work against this constraint is in
 ### Not built yet
 
 Everything left is in **Next up** below. The loop moves, talks and narrates,
-and the world moves on its own clock underneath it. What it does not yet do is
-survive a closed tab, remember more than the last scene, or look like anything
--- stage 5 (jobs, Turbo over Action Cable, conversation persistence) and stage
-6 (visual style) of the browser plan.
+and the world moves on its own clock underneath it, and a turn now runs in a job
+and survives the tab closing. What it does not yet do is remember more than the
+last scene, or look like anything -- the conversation-persistence half of stage 5
+(`ta-chat-persist`) and stage 6 (visual style) of the browser plan.
 
 Nothing yet **verifies** what the narrator wrote against what the records say,
 and `take` is still prose rather than a state change -- the two halves of the
@@ -535,13 +547,15 @@ What it still owes, roughly in order:
 - [ ] Echo past commands in the turn log. A `Scene` has no column for the input
       that produced it, so a reloaded transcript is narration only. Needs a
       migration, so it waits for one.
-- [ ] Jobs, Turbo Streams over Action Cable, and durability. SSE holds one Puma
-      thread per open stream and loses the live view on reload; the persisted
-      `Scene` is the only thing that survives today. Swap `NarrationsController`
-      for a job broadcasting batched chunks (~20 chars) once the real token rate
-      is known. `Scene::Narrator` already takes a block so only the consumer
-      moves. That stage brings `propshaft`, `importmap-rails` and `turbo-rails`
-      — do not install them before it.
+- [x] **Jobs, Turbo Streams over Action Cable, and durability.** Landed — see
+      **Done**. `NarrationJob` replaced `NarrationsController`, `propshaft` +
+      `importmap-rails` + `turbo-rails` are in, and there is still no Node and
+      no `package.json`. The conversation-persistence half of the same stage is
+      still open as `ta-chat-persist`.
+- [ ] Re-join a turn already in flight. Reopen the page mid-narration and the
+      log is what was persisted; the prose written so far lives in the job's
+      buffer and nowhere else. The finished turn still arrives over the cable
+      when it lands, so nothing is lost — only the live view of the middle.
 - [ ] Visual style. Deferred on purpose until there is a real loop to look at.
       The debug view (`ta-debug-view`) is **not** an exception to this and does
       not pre-empt it: it has its own layout and shares no CSS with the game, so
@@ -552,12 +566,14 @@ What it still owes, roughly in order:
       the top of the document while the answer streamed in below the fold: the
       streaming render emits no form, so the `autofocus` that had been pulling
       the viewport down was missing at exactly that moment. A `#bottom` anchor
-      at the foot of `playthroughs/show` — which the turn redirect, the
-      end-of-turn redirect and the index's Resume link all aim at — does the
-      landing with no script, and the `EventSource` handler follows the
-      narration down only while the player is already at the bottom, so
-      scrolling up to re-read is not overridden. The redirect anchors go away
-      with SSE; the follow does not.
+      at the foot of `playthroughs/show` — which a plain reload and the index's
+      Resume link aim at — does the landing with no script, and
+      `app/javascript/play.js` follows the narration down only while the player
+      is already at the bottom, so scrolling up to re-read is not overridden.
+      The redirect anchors went away with SSE, as predicted; the follow was
+      ported. With no end-of-turn reload, `stick` is honoured throughout: a
+      player who had scrolled up is no longer dragged to the bottom when the
+      turn lands.
 - [x] A playthrough starts in the story's first **realized** location — the
       opening room `game:new` generates. Stubs are skipped: they are exits
       nobody has walked into, with a name and a teaser and nothing to read.
@@ -662,10 +678,14 @@ What it still owes, roughly in order:
   protagonist and the `talk` branch is reachable from turn one. The underlying
   gap is unchanged — walk two rooms away and the world is empty again, because
   nothing records where a character stands. That is still `ta-narrator-memory`.
-- **`ActionController::Live` costs one Puma thread per open stream.** Puma runs
-  3 threads by default, so three people reading narration at once stalls the
-  whole site for everyone else. Irrelevant for one player on localhost; raise
-  `RAILS_MAX_THREADS` before that changes.
+- **Solid Queue's worker count is the new ceiling on concurrent turns.** The
+  Puma-thread problem is genuinely gone — WebSockets consume no request threads,
+  and the turn runs outside the request entirely — but it has a successor:
+  `config/queue.yml` gives one worker process 3 threads, so a fourth
+  simultaneous turn queues rather than starting. That is a much better failure
+  than the old one — the site stays responsive and nobody loses a turn — and
+  `JOB_CONCURRENCY` raises it. `deploy.yml` sets `SOLID_QUEUE_IN_PUMA: true`, so
+  in production those threads share the web container.
 - **A development server keeps the columns it booted with.** ActiveRecord caches
   each table's columns the first time a model touches it, and a migration is
   always run in another process — so a server that was up before `db:migrate`
@@ -678,20 +698,20 @@ What it still owes, roughly in order:
   rather than letting the first attribute the code reaches for fail. It reports
   and does not repair: resetting column information in place leaves the
   connection's prepared statements still selecting the old columns, so a new
-  process is the honest answer.
-- **A turn dies with its connection.** Closing the tab mid-stream kills the
-  generation. `Scene::Narrator` persists whatever it had in an `ensure`, so the
-  player keeps the part that was written, but the rest is gone. Fixed properly
-  by the job-and-cable stage.
-  The `ensure` covers a connection that goes away; it cannot cover a `Scene`
-  that will not save. When the captain lost 82 seconds of a turn to the stale
-  process above, the `ensure` ran exactly as designed and the `Scene.create!`
-  inside it was what raised — there is nowhere to put prose when the model
-  cannot be written at all. On a **move** most of that time was in fact kept:
-  `Location::Generator` saves the room before it asks for the exits, so both of
-  those calls had already landed and only the arrival narration was lost. The
-  narration branch is the one that loses everything, and what fixes it is a
-  process that is not stale rather than another `ensure`.
+  process is the honest answer. **`bin/jobs` is a second long-lived process with
+  the same hazard**, and no guard: it serves no requests, so restart it after a
+  migration too.
+- **`Scene::Narrator`'s `ensure` cannot cover a `Scene` that will not save.**
+  Closing the tab no longer costs anything — the turn is a job and nobody has to
+  be watching — but that was only ever half of what the `ensure` was for. When
+  the captain lost 82 seconds of a turn to the stale process above, the `ensure`
+  ran exactly as designed and the `Scene.create!` inside it was what raised;
+  there is nowhere to put prose when the model cannot be written at all. On a
+  **move** most of that time was in fact kept: `Location::Generator` saves the
+  room before it asks for the exits, so both of those calls had already landed
+  and only the arrival narration was lost. The narration branch is the one that
+  loses everything, and what fixes it is a process that is not stale rather than
+  another `ensure`.
 - **RubyLLM's model registry is a process-wide memoized snapshot.**
   `RubyLLM::Models.instance` is built once, out of the `models` table, falling
   back to the registry JSON the gem ships only when that table is empty. It is
@@ -710,8 +730,8 @@ What it still owes, roughly in order:
 - **The move path does not work on local models, and rotation cannot reach the
   one that does.** Measured on a real playthrough: `gemma3:12b`, `gpt-oss:20b`
   and `qwen3:8b` all return `Scene::Schema` with `description` and no
-  `summary`, so `verify_schema_honored!` rejects all three and the turn ends in
-  an SSE `error` with the player left where they were. `qwen3:4b` returns both
+  `summary`, so `verify_schema_honored!` rejects all three and the turn ends with
+  the reason broadcast back and the player left where they were. `qwen3:4b` returns both
   fields — but it is 4th in `LOCAL_MODEL_OPTIONS` and `BaseAgent::MAX_ATTEMPTS`
   is 3, so rotation stops one short of it. Raising the cap is not obviously
   right: four attempts at up to a 600s timeout is 40 minutes for one failed

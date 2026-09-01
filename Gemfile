@@ -73,3 +73,13 @@ gem "ruby_llm-schema", "~> 0.2"
 gem "open_router", "~> 0.3.3"
 
 gem "async", "~> 2.27"
+
+# Hotwire, zero build step. `propshaft` serves digested assets with no
+# compilation, `importmap-rails` maps bare module names to those assets in the
+# browser's own module loader, and `turbo-rails` is what a background job
+# broadcasts a finished turn over. Deliberately NO jsbundling/cssbundling,
+# esbuild, Vite or `package.json`: if something here appears to need one, that
+# is a reason to reconsider the something.
+gem "propshaft"
+gem "importmap-rails"
+gem "turbo-rails"

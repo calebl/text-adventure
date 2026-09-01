@@ -1,0 +1,61 @@
+<%# locals: (playthrough:, command: nil, error: nil) %>
+<%# EVERYTHING A TURN CHANGES, in one Turbo Stream target.
+
+    Three callers render this partial and they render the same two states:
+
+      TurnsController#create   -- streaming, the moment the command is accepted
+      PlaythroughsController#show -- idle, a plain page load or a Resume link
+      NarrationJob             -- idle again, broadcast when the turn finishes
+
+    So the end of a turn is a `replace` of this one element rather than a page
+    reload, and the log, the location line and the form all arrive together.
+    Nothing outside `#turn_log` moves -- in particular `turbo_stream_from` and
+    `#bottom` stay put, so the subscription is not torn down and rebuilt on
+    every turn.
+
+    `command` is the string the player just typed while a turn is in flight, and
+    nil the rest of the time. It is the whole of the difference between the two
+    states. %>
+<div id="turn_log">
+  <%# A turn that failed -- a model that would not answer, a schema it ignored.
+      The player is still standing where they were, and gets the input back
+      along with the reason; the old SSE `error` event only stopped the cursor
+      blinking and left no way on but a reload. %>
+  <% if error %>
+    <p class="alert"><%= error %></p>
+  <% end %>
+
+  <%# One wrapper, so the stylesheet can dim every logged turn but the last one.
+      `streaming` says the newest turn is not in the log at all -- it is the
+      #stream div below, which is what the player is actually reading -- so no
+      logged turn should claim full-strength colour while it fills in. %>
+  <div class="<%= class_names("log", streaming: command) %>">
+    <%= render partial: "turns/turn", collection: playthrough.turn_log, as: :turn %>
+  </div>
+
+  <% if command %>
+    <p class="command">&gt; <%= command %></p>
+    <%# NarrationJob appends batched chunks of prose here, and replaces this
+        whole element when the turn lands. The cursor is what the player watches
+        during the four to six seconds of prompt processing before the first
+        token, and during a move, which cannot stream at all. %>
+    <div class="turn cursor" id="stream"></div>
+  <% else %>
+    <%# Where the player is and what leads out of it. Not decoration: the exits
+        are the move targets Playthrough::Classifier will accept, so a player
+        who cannot read them is guessing at the one command that matters. %>
+    <p class="place">
+      <% if playthrough.current_location %>
+        <% exits = playthrough.exits %>
+        You are in <strong><%= playthrough.current_location.name %></strong>.
+        Ways out: <%= exits.any? ? exits.map(&:name).to_sentence : "none that you can see." %>
+      <% end %>
+    </p>
+
+    <%= form_with url: playthrough_turns_path(playthrough) do |form| %>
+      <%= form.text_field :command, autofocus: true, autocomplete: "off",
+                                    placeholder: "what do you do?" %>
+      <%= form.submit "Go" %>
+    <% end %>
+  <% end %>
+</div>

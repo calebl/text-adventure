@@ -47,13 +47,12 @@ class PlaythroughsController < ApplicationController
     redirect_to playthrough
   end
 
+  # The log, the location line and the input, all rendered by the same partial
+  # `NarrationJob` broadcasts when a turn finishes -- so a plain load, a Resume
+  # link and the end of a turn all produce the same page.
   def show
     @playthrough = Playthrough.find(params[:id])
     bind_session_to(@playthrough)
-
-    @scenes = scene_log(@playthrough)
-    @exits = @playthrough.current_location&.exits&.order(:id) || Location.none
-    @command = params[:command].presence
   end
 
   private
@@ -116,22 +115,5 @@ class PlaythroughsController < ApplicationController
     "#{story.title} has no realized opening location -- either it predates " \
       "`rake game:new` generating them, or its opening room is still a stub. " \
       "Generate a new story to play."
-  end
-
-  # The turn log, oldest first. The walk itself is `Playthrough#scene_chain`,
-  # shared with `Playthrough::Debug` so the two cannot disagree about which
-  # turns belong to this playthrough.
-  #
-  # `interactions` is preloaded because the turn partial reads it on every
-  # scene to name who the player was talking to, and all but the talk turns
-  # have none.
-  def scene_log(playthrough)
-    scenes = playthrough.scene_chain
-
-    ActiveRecord::Associations::Preloader.new(
-      records: scenes, associations: { interactions: :character }
-    ).call
-
-    scenes
   end
 end

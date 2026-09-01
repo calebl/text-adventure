@@ -210,11 +210,11 @@ constraint* has the captain's wording and where the full audit lives.
 turn, and which boxes are model calls versus decisions from records. Read it
 before changing the loop; the rules below are what it does not fit.
 
-- **The loop is `Playthrough::Turn`, and the browser's whole share of it is a
-  string and a block.** `NarrationsController` forwards the chunks the block is
-  yielded; it does not know which branch the turn took. Keep it that way — the
-  block is also the seam that makes the Turbo Streams swap touch only the
-  consumer.
+- **The loop is `Playthrough::Turn`, and its consumer's whole share of it is a
+  string and a block.** `NarrationJob` broadcasts the chunks the block is
+  yielded; it does not know which branch the turn took. Keep it that way — that
+  block is what let SSE be swapped for Turbo Streams over Action Cable without
+  touching a line of how prose is generated or persisted.
 - The block is yielded **text**, not RubyLLM chunk objects. `Scene::Narrator`
   and `InteractionAgent` both unwrap before yielding; a schema'd branch yields
   its finished paragraph in one piece because it cannot stream at all.
@@ -332,20 +332,42 @@ no new capability.
 
 ## The browser interface
 
-Plain Rails, deliberately minimal: no Node, no `package.json`, no build step,
-no importmap, no propshaft, no Turbo, no Action Cable. Views are ERB with an
-inline `<style>` in the layout, and the only JavaScript is six lines of
-`EventSource` in `app/views/playthroughs/show.html.erb`. Those gems belong to a
-later stage — do not install them in passing.
+Hotwire, and **genuinely zero build**: `propshaft` + `importmap-rails` +
+`turbo-rails`, no Node, no `package.json`, no bundler step, no watch process.
+That is a hard constraint from the captain, not an accident — `jsbundling-rails`,
+`cssbundling-rails`, esbuild, Vite and any npm dependency are explicitly
+refused. **If something appears to need one, that is a reason to reconsider the
+something; stop and ask rather than adding a build step.**
+
+Views are ERB with an inline `<style>` in the layout. Restyling is
+`ta-api-iface`, a stage of its own — do not do it in passing.
 
 - `ApplicationController < ActionController::Base` and `config.api_only = false`.
   That turns on `protect_from_forgery`, so every form goes through `form_with`.
 - A browser session is bound to a `Playthrough` by its unguessable `token` in
   `session[:playthrough_token]`. There is no auth, no user model, and the
   captain does not want any: this is a single-player localhost app.
-- `NarrationsController` streams over SSE with `ActionController::Live`, which
-  holds one Puma thread per open stream. Fine for one player; raise
-  `RAILS_MAX_THREADS` before two.
+- **A turn is a job, and the play page is one Turbo Stream target.**
+  `TurnsController#create` enqueues `NarrationJob` and answers immediately with
+  a `replace` of `#turn_log`; the job broadcasts batched prose into `#stream`
+  and then replaces `#turn_log` again with the finished turn, the location line
+  and the input. There is no end-of-turn reload and no redirect carrying a
+  `?command=` — both were consequences of streaming from the request.
+  **`bin/jobs` must be running or nothing narrates**; Solid Queue is the
+  development adapter and writes to a second SQLite database.
+- `turbo_stream_from` lives **outside** `#turn_log`. Inside it, the
+  subscription would be torn down and rebuilt at the end of every turn and the
+  next turn's tail would go to a channel nobody was listening on.
+- The turn log's dimming rule is `.log:not(.streaming) > .turn:last-of-type`.
+  Both halves are load-bearing: `streaming` on the wrapper says the newest turn
+  is the `#stream` div outside the log, and `:last-of-type` is the marker with
+  no class per entry. `PlaythroughsControllerTest`, `TurnsControllerTest` and
+  `NarrationJobTest` all assert against those selectors.
+- The only JavaScript is `app/javascript/play.js`: follow the narration down
+  while the player is at the bottom, and put focus back in the input when a turn
+  lands. **No Stimulus** — there is no element with state or a lifecycle here,
+  and a controller would be a class and a data attribute around two document
+  listeners. Add it when something needs it, and say why.
 
 ### The debug view
 
