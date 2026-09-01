@@ -148,6 +148,16 @@ them. Permuting rather than choosing is what keeps the world whole — every
 location keeps exactly the number of ways in and out it had — and an arrangement
 that would still split the graph in two is rejected before it is applied.
 
+An arrangement is judged on the **adjacency it induces** — which places end up
+joined — rather than edge by edge, so a permutation that shuffles endpoints
+around without changing who opens onto whom is a no-op and is refused. **What
+that means for the graph you author:** two shufflable edges are not enough if
+they both hang off the *same* `mobile` location. Swapping a lane's own two
+exits leaves the lane opening onto exactly the two places it already did, so
+such a world loads, validates, plays — and never moves. Spread the edges over
+at least two `mobile` locations. (The loader's arity rule below counts edges,
+not the locations they hang off, so it does not catch this.)
+
 The consequence worth designing around: **an edge with two `mobile` ends is
 never touched.** So a building whose rooms are all marked `mobile` travels as
 one piece with its own doors intact, and only its edges out into the fixed city
