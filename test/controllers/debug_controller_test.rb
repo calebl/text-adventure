@@ -124,23 +124,49 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
   # The page must not be a quieter second opinion than `rake game:doctor` about
   # the same rows: a one-way edge, two directions that disagree, and a value
   # outside the fixed tables all have to read as problems here too.
+  #
+  # BOTH DIRECTIONS ARE WRITTEN DOWN HERE, and that is the point of the test
+  # rather than tidiness: a disagreement is a relationship between two rows, so
+  # a test that pins one row and lets a factory pick the other is asserting
+  # against a value it does not know. This one used to, and failed once in 35
+  # runs when the two happened to match -- see `test/factories/location_connections.rb`.
+  # Each `.warn` is matched on its whole phrase, so a cell that renders the
+  # wrong side of the edge fails here too.
   test "show flags a one-way edge, disagreeing directions and an unpriceable one" do
     playthrough = create(:playthrough, :started)
     one_way = create(:location, story: playthrough.story, name: "The Sunken Stair")
-    create(:location_connection, location: playthrough.current_location, connected_location: one_way)
+    out = create(:location_connection, location: playthrough.current_location, connected_location: one_way,
+                                       distance: "adjacent", travel_method: "walking")
 
     get playthrough_debug_path(playthrough)
-    assert_select ".warn", text: /MISSING/
+    assert_select ".warn", text: /MISSING — one-way/
 
     create(:location_connection, location: one_way, connected_location: playthrough.current_location,
                                  distance: "a long journey", travel_method: "riding")
     get playthrough_debug_path(playthrough)
-    assert_select ".warn", text: /disagrees/
+    assert_select ".warn", text: /disagrees — a long journey, riding/
 
-    LocationConnection.find_by(location: playthrough.current_location, connected_location: one_way)
-                      .update_columns(distance: "a short walk down the flooded lanes")
+    out.update_columns(distance: "a short walk down the flooded lanes")
     get playthrough_debug_path(playthrough)
-    assert_select ".warn", text: /not in DISTANCES/
+    assert_select ".warn", text: /not in DISTANCES \/ TRAVEL_METHODS/
+  end
+
+  # THE OTHER SIDE OF THAT BRANCH, asserted rather than assumed. An edge whose
+  # two rows agree is the normal case and the view must say so plainly -- and
+  # this is exactly the state the flake above rendered while a test was
+  # expecting a warning, so it is worth a test of its own.
+  test "show says an edge written in both directions is fine" do
+    playthrough = create(:playthrough, :started)
+    neighbour = create(:location, story: playthrough.story, name: "Mournwell Lane")
+    [ [ playthrough.current_location, neighbour ], [ neighbour, playthrough.current_location ] ].each do |from, to|
+      create(:location_connection, location: from, connected_location: to,
+                                   distance: "adjacent", travel_method: "walking")
+    end
+
+    get playthrough_debug_path(playthrough)
+
+    assert_select "td", text: "yes"
+    assert_select ".warn", count: 0
   end
 
   # And it names the deeper audit rather than standing in for it.

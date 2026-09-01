@@ -789,6 +789,53 @@ What it still owes, roughly in order:
   development and production the same memoization means a `models` row added
   after boot is invisible until the process restarts or something calls
   `Model.refresh!`.
+- **A factory that rolled dice made one view test fail 1 run in 35, and
+  parallel workers were the reason nobody could reproduce it.**
+  `DebugControllerTest#test_show_flags_a_one-way_edge...` failed a full-suite
+  run with `Expected at least 1 element matching ".warn", found 0`, then
+  survived nine further full runs including a re-run of the failing seed and
+  every run of the file alone. Cause: `test/factories/location_connections.rb`
+  picked `distance` and `travel_method` with `.sample` off the two fixed tables.
+  The test wrote the *return* edge with a hard-coded `("a long journey",
+  "riding")` and left the *outbound* edge to the factory, so 1 time in 35 (5
+  distances × 7 methods) the two rows matched, `Playthrough::Debug::Exit#directions_disagree?`
+  correctly answered false, the cell rendered `yes`, and the page carried no
+  `.warn` at all — which is why the count was zero rather than merely
+  unmatched. **Parallelism was the exposing condition, not the cause.** Minitest
+  `srand`s the global RNG once from the run seed, so the sequence is fixed, but
+  the *position* it has reached when a given test's factories fire depends on
+  how many earlier `rand` calls landed in that forked worker — and work is
+  handed to the 16 workers as they come free. Same seed, different schedule,
+  different dice: that is the whole of why the seed did not reproduce it, and
+  it is the same shape as the registry issue above, one layer down.
+  **Proven rather than argued:** a record-level probe predicted the 10 global
+  seeds in 0...300 that collide, and all 10 fail the old test through the real
+  request path while 5 predicted-clean seeds pass. **Fixed twice over:** the
+  factory's two values are now fixed (`across the district` / `walking`, chosen
+  so its 20 minutes collides with neither entry in `Scene::TURN_MINUTES`), and
+  the test writes both directions of the edge itself, because a disagreement is
+  a relationship between two rows and a test that pins one and leaves the other
+  to a factory is asserting against a value it does not know. The `.warn`
+  assertions now match whole phrases, and the agreeing case — the state the
+  flake actually rendered — has a test of its own. `test/factories/characters.rb`
+  still uses `rand`/`.sample` for `age` and `sex`; nothing pins those today, so
+  it is a latent instance of the same shape rather than a live one.
+- **The suite used to read behaviour out of whoever's shell started it.** Found
+  while confirming the above: three tests failed for a worker who had
+  `OPENROUTER_API_KEY` set in their environment — `BaseAgent.default_model_options`
+  puts the hosted models ahead of the local ones when the key is present, so two
+  tests pinning the answering model to `gemma3:12b` got `minimax/minimax-m3`, and
+  `ChatTest#test_resolving_a_model_name_needs_the_provider_configured` got no
+  exception because the initializer had configured the provider from the same
+  key. Worse and unnoticed: `TA_DEBUG_VIEW=0` in a shell turned
+  `Playthrough::Debug.enabled?` off and took 11 of `DebugControllerTest`'s 13
+  tests with it, and `TA_CHAT_KEEP_TURNS` / `TA_CHAT_HISTORY_EXCHANGES` are read
+  into `Chat` constants at class-load time. Every one of the five is something a
+  person working on this app legitimately keeps in `.env` or `.envrc`, and the
+  ROADMAP tells them to. `test_helper.rb` now deletes all five *before* it
+  requires `config/environment`, so the suite boots in a declared environment; a
+  test that wants one sets it itself and puts it back, which
+  `BaseAgentTest#with_env` and `Playthrough::DebugTest#with_env` already did.
 - **`sanitize_string` used to delete every digit a model wrote.** Its regex was
   `\p{Emoji}`, a property that matches the ASCII digits, `#` and `*` because
   those are the bases of the keycap emoji — so "80 meters" was stored as
