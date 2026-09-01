@@ -1,7 +1,9 @@
 # Roadmap
 
-Working status and the task queue for Text Adventure. Update this file as work
-lands — it is the single place that records what is built, what is next, and why.
+Working status for Text Adventure. Update this file as work lands — it is the
+single place that records what is built, what is next, and why. The queue
+itself lives in firstmate (`tasks-axi list --state queued`); this file says
+what each queued item *is* and why it sits where it does.
 
 **Core idea:** a text adventure that generates itself as you explore. The world
 is generated on demand, and once generated it persists — walk back into a room
@@ -22,11 +24,38 @@ So revisiting a place reuses the persisted `Location` while creating a new
 `Scene`. The world stays fixed; time still moves. Generation happens at the
 `Location` boundary, never twice for the same place.
 
+## The standing constraint
+
+The captain's ruling, and it now governs design decisions across the project:
+
+> *"I would rather not depend on the narrator doing what we tell it to do. We
+> should prompt it with rules if that makes it more likely that it will follow
+> them though and save on tokens. But I think we ultimately need a verification
+> process."*
+
+Both halves, not one: **inform and verify.** Prompt the narrator with the
+world's laws — it is cheap and it raises the odds — but never let a guarantee
+rest on its compliance. *Gate the state, inform the prose, audit the
+difference.* An unenforced narration rule costs a sentence; an unenforced state
+rule costs the game.
+
+The README's turn diagram already states it best, in the colours: purple is a
+model call, teal is the app deciding from records it holds, and every branch is
+taken on a record rather than on a label a model wrote — see
+[README.md](README.md#how-a-turn-works). The pattern to copy: *do not ask a
+model what should happen; ask it to pick from a set the app closed, then have
+the app act.* `Playthrough::Classifier` is the worked example — it is a model
+call, so it can be **wrong**, but its answer is a closed enum built from the
+room's real exits and cast, so it cannot be **out of bounds**.
+
+The full audit of every planned piece of work against this constraint is in
+`data/ta-direction/report.md` §0.1 (firstmate repo).
+
 ## Status
 
 ### Done
 
-- Rails 8 app, SQLite, 307 tests green. No longer API-only: `api_only` is off
+- Rails 8 app, SQLite, 647 tests green. No longer API-only: `api_only` is off
   and `ApplicationController < ActionController::Base` so it can render ERB.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph and the
@@ -194,15 +223,126 @@ So revisiting a place reuses the persisted `Location` while creating a new
   path, is unrelated and untouched. The stale `CLAUDE.md` sections that
   described it as the primary AI interaction class and the main development
   interface are corrected.
+- **The world moves on its own clock.** The first slice of the rules-engine
+  direction, and the purest expression of the standing constraint above: no
+  model is involved anywhere in it. `Story#clock` is what time it is in the
+  fiction, derived from `scenes.story_timestamp` rather than stored, and every
+  `Scene` now costs story time — an arrival pays
+  `LocationConnection.travel_minutes` for the edge actually walked, every other
+  turn pays `Scene::TURN_MINUTES`. `Time.current` is gone from that whole path.
+  `WorldMechanic` is a fixed catalogue of Ruby operations over records on a
+  story-time schedule: `kind` and `cadence` are keys into tables in code, so a
+  world supplies parameters and never behaviour, and `last_run_at` is a column
+  in story time so catching up is arithmetic — no timer, no job, nothing in
+  memory, and a process that was down for a week pays the nights it owes on the
+  next turn. `Story#catch_up_world!` runs first thing in `Playthrough::Turn#play`
+  at ~90 µs and **0 tokens** when nothing is due. The one `kind` is
+  `WorldMechanic::ShuffleConnections`, which permutes rather than chooses so
+  every location keeps its degree, checks connectivity before applying, and is
+  deterministic per (story, night); it is hand-written into
+  `the-lunar-cartographer.yml`, whose universe has claimed since it was
+  generated that Nocturnis rearranges itself nightly. `WorldEvent` is the audit
+  trail and deliberately **not** a narration source — over two nights a shuffle
+  can return a place to the same neighbour, so replaying the log would announce
+  a change the player never experienced.
 
 ### Not built yet
 
-Everything left is in **Next up** below. The loop moves, talks and narrates.
-What it does not yet do is survive a closed tab, remember more than the last
-scene, or look like anything -- stage 5 (jobs, Turbo over Action Cable,
-conversation persistence) and stage 6 (visual style) of the browser plan.
+Everything left is in **Next up** below. The loop moves, talks and narrates,
+and the world moves on its own clock underneath it. What it does not yet do is
+survive a closed tab, remember more than the last scene, or look like anything
+-- stage 5 (jobs, Turbo over Action Cable, conversation persistence) and stage
+6 (visual style) of the browser plan.
+
+Nothing yet **verifies** what the narrator wrote against what the records say,
+and `take` is still prose rather than a state change -- the two halves of the
+standing constraint that the queue's next item addresses together.
 
 ## Next up
+
+**The queue is authoritative, not this file.** `tasks-axi list --state queued`
+in the firstmate repo is the list; each item below names its task id. The
+ordering and the measured reasoning behind it are in
+`data/ta-direction/report.md` §11 — 1,200 lines of argument that is
+deliberately *not* copied here. §12 of the same report says what must
+explicitly **not** be built, which is worth reading before proposing anything
+in this area.
+
+Step 1 of that plan — the story clock and the moving-buildings mechanic — has
+landed (see **Done**). The rest, in order:
+
+2. **Verification sweep, drift counter, and app-owned `take`**
+   (`ta-verify-sweep`) — the instrument, plus the biggest single reduction in
+   what there is to drift about. An offline rake task over stored scenes
+   (~21 ms/scene, 0 tokens per turn), a drift counter on
+   `Playthrough::Classifier`, and making `take` a state change the app owns
+   rather than prose the player is asked to believe. The audit comes *before*
+   the laws digest because it is what makes the digest safe to rely on at all,
+   and building both together means the instrument's first reading is taken
+   against the world you actually intend to have. **Carry the known finding
+   in:** the scanner raised 4 flags on 24 real narrations and all four were
+   false positives. Precision is the problem, not recall.
+3. **The laws digest in the narrator prompt** (`ta-laws-digest`) — a short list
+   of named one-line laws on the universe, in the one prompt that today sends
+   zero universe context. ~100 input tokens, no extra round trip, and the live
+   A/B halved violations on remote models. **Ship it as odds and prose quality,
+   never as mechanics.** Blocked by (2).
+4. **The arrival diff** (`ta-arrival-diff`) — record the exit names the player
+   was actually shown on `Scene`, and diff them on arrival. ~25 tokens, and it
+   is what makes the moving-buildings mechanic *felt* rather than merely true;
+   a city that rearranges itself is worth nothing to a player who cannot notice
+   it happened.
+5. **A violation becomes a consequence** (`ta-violation-consequence`) — when
+   verification catches a violation, the world responds to it in a later beat
+   rather than the app quietly correcting the past. A scheduled consequence
+   `WorldMechanic` applies. This is why the mechanics engine is load-bearing
+   rather than merely elegant: the same engine that moves buildings bills for
+   violations. Blocked by (2).
+6. **The forward flag** (`ta-forward-flag`) — ~20 tokens per violation, to stop
+   drift compounding between turns while (5) is being designed. A cheap holding
+   measure, and named as one.
+7. **The arc** (`ta-story-arc`) — quests, steps, and `Story#conclusion`. Two
+   tables and four predicates the app evaluates from records: no model call per
+   turn, no narrator tool calls, no plot generated up front. `reach_location`
+   and `speak_to` work today, `time_passed` unblocked at (1) and `hold_item`
+   unblocks at (2), so by here all four triggers exist. The captain has already
+   ruled: add `Story#conclusion`, one sentence, keep the preface open — decided,
+   not to be re-litigated when this is built.
+8. **The offline model-read compliance sweep** (`ta-compliance-sweep`) —
+   quantifies compliance at scale by reading the stored prose with a model,
+   which is why it can only ever run offline. A per-turn plausibility call is
+   ruled out in both directions: 257–289 input tokens *and* a 2.4–7.3 s round
+   trip, to answer "allowed" nearly every time.
+9. **The item registry** (`ta-item-registry`) — how items come to *exist*, as
+   opposed to app-owned `take` at (2) which makes taking a real state change for
+   items that already do. Lazy, stub-then-realize — the shape `Location` already
+   has — populated when the narrator names something. A generated per-room
+   inventory is explicitly ruled out.
+
+### Alongside those, the older queued work
+
+- **`ta-scene-facts-prose`** — split `Scene::Generator` and `Scene::Narrator` by
+  facts versus prose. Promoted by the standing constraint from "worth doing" to
+  the structural expression of it: if the generator establishes facts and the
+  narrator only renders them, non-compliance corrupts prose but never facts.
+  **Land it before the laws digest** — everything prompt-shaped should wait for
+  this split. Detail in **4. Persistence and history** is unaffected by it.
+- **`ta-narrator-memory`** — a cast list and memory beyond one turn; the people
+  half of the noun registry, and the same stub-then-realize shape (9) needs.
+  Carries a live tension worth naming: its tool-call character creation is
+  itself a narrator-compliance dependency.
+- **`ta-chat-persist`** — persistence and history. It no longer blocks anything:
+  the loop writes real `Interaction` rows now. What is left is the
+  `chats`/`messages` tables, `Interaction#inner_resolution`, and scene
+  summarisation, which the arc will want once a playthrough outgrows the context
+  window. See **4** below.
+- **`ta-api-iface`** — the reading experience, stage 6. See **5** below.
+
+## The detail, by area
+
+The checklists below are the granular version of the same work: what is
+actually done in each area, and what is not. Where an unchecked item is now a
+queued task, the task id is named.
 
 ### 1. The protagonist
 
@@ -269,9 +409,16 @@ conversation persistence) and stage 6 (visual style) of the browser plan.
       Do not "fix" it by schema-ing less -- `Scene::Generator` cannot stream.
 - [ ] `examine` and `take` are told apart and then handed to `Scene::Narrator`
       like anything else. They are classified so the branch exists when items
-      do; nothing acts on them yet.
+      do; nothing acts on them yet. So "take the index" produces prose saying
+      the player took it and **no record changes** — the one remaining branch
+      where the app does not own the state change, and precisely the dependency
+      the standing constraint rejects. `ta-verify-sweep` closes it for items
+      that exist; `ta-item-registry` is how they come to exist.
 
 ### 4. Persistence and history
+
+`ta-chat-persist`. It blocks nothing now — the loop writes real `Interaction`
+rows — but the arc will want the summarisation.
 
 - [ ] Wire up the `chats` / `messages` / `tool_calls` tables. `Chat`, `Message`
       and `ToolCall` already call `acts_as_chat` and friends, but every agent
@@ -287,6 +434,9 @@ conversation persistence) and stage 6 (visual style) of the browser plan.
 - [ ] Summarize old scenes so long playthroughs stay inside the context window.
 
 ### 4a. The world's own mechanics
+
+Step 1 of the direction plan, landed as PR #77. The prose summary is in
+**Done**; this is the checklist.
 
 - [x] **`Story#clock`** — what time it is in the fiction, derived from
       `scenes.story_timestamp` rather than stored. A story nobody has played is
@@ -320,7 +470,8 @@ conversation persistence) and stage 6 (visual style) of the browser plan.
 - [ ] **The arrival diff — "what changed while you were gone".** Record the exit
       names the player was actually shown on `Scene` and diff them on arrival.
       That is what makes the mechanic *felt* rather than merely true, and it is
-      the honest version of the previous point. ~25 tokens.
+      the honest version of the previous point. ~25 tokens. `ta-arrival-diff`,
+      step 4 of the order above.
 - [ ] **Judge the edge shuffle in play.** Captain-decided: build the simple
       version, play ten turns, and only then decide whether whole districts
       should travel as units instead. The districts variant is neither adopted
@@ -330,12 +481,13 @@ conversation persistence) and stage 6 (visual style) of the browser plan.
       exists is one somebody chose.
 - [ ] A second `kind`. `WorldMechanic::KINDS` has one entry, and the next one is
       an operation in Ruby rather than a field in a file — including the one the
-      direction wants for violation-becomes-consequence.
+      direction wants for violation-becomes-consequence
+      (`ta-violation-consequence`, step 5).
 
 ### 5. Interface
 
-The first playable browser interface has landed (see **Done**). What it still
-owes, roughly in order:
+`ta-api-iface`. The first playable browser interface has landed (see **Done**).
+What it still owes, roughly in order:
 
 - [ ] Echo past commands in the turn log. A `Scene` has no column for the input
       that produced it, so a reloaded transcript is narration only. Needs a
@@ -361,7 +513,7 @@ owes, roughly in order:
       gone, and the first move now gets a real `previous_scene` instead of
       `Scene::Generator` being told "this is where the story opens" one room
       too late. It is a room description standing in for an arrival nobody
-      narrates, which is the honest limit of it — see **Next up** below.
+      narrates, which was the honest limit of it — closed by the next item.
 - [x] **Where the opening arrival comes from.** It comes from the world now —
       `Scene::Generator.opening` at `rake game:new` time, `opening_scene` in the
       seed file, loaded with everything else. See **Status → Done**. The ruling
