@@ -113,11 +113,11 @@ The full audit of every planned piece of work against this constraint is in
   happens once per place, never twice. `Location::Generator.opening(story)`
   names the first location from the story's preface and realizes it.
   `Location#exits` is the exit list the game loop will resolve movement against.
-- **A browser you can play in.** `bin/rails server` and `bin/jobs`, open
-  `localhost:3000`, pick a story, start a playthrough, read the preface, type an
-  action and watch the narration arrive; reload and the log is still there.
-  Deliberately ugly and deliberately small: two routes, five ERB templates, an
-  inline `<style>`, and one 50-line JavaScript module.
+- **A browser you can play in.** `bin/dev`, open `localhost:3000`, pick a story,
+  start a playthrough, read the preface, type an action and watch the narration
+  arrive; reload and the log is still there. Deliberately ugly and deliberately
+  small: two routes, five ERB templates, an inline `<style>`, and one Stimulus
+  controller.
 - **Jobs, Turbo Streams over Action Cable, and durability.** A turn is a
   `NarrationJob`, not a request. `TurnsController#create` enqueues it and
   answers immediately with the command echoed back; the job broadcasts prose in
@@ -129,7 +129,20 @@ The full audit of every planned piece of work against this constraint is in
   its connection** — close the tab mid-narration and it lands anyway, and is
   broadcast to whoever reopens the page. `propshaft` + `importmap-rails` +
   `turbo-rails` and still **zero build**: no Node, no `package.json`, no watch
-  process. Solid Queue runs in development against a second SQLite database.
+  process. Solid Queue and Solid Cable both run in development, each against its
+  own SQLite database — `async` cable would broadcast the turn into the worker
+  process and nobody would ever see it.
+- **`bin/dev` starts the whole development environment.** `Procfile.dev` with a
+  `web` and a `jobs` line under foreman, both logs interleaved, Ctrl-C stopping
+  both. Foreman is deliberately outside the Gemfile and installed on demand, the
+  way Rails' own generated `bin/dev` does it: a process runner, not a build step.
+  `PORT=3142 bin/dev` moves the formation off 3000.
+- **One Stimulus controller**, `play_controller`, scoped to a wrapper that no
+  Turbo Stream replaces — the log's own `#turn_log` is replaced every turn, and
+  the controller's whole job is to hook that replacement. It follows the
+  narration down while the player is at the foot of the log and puts focus back
+  in the input when a turn lands. Three of its properties were established in a
+  browser rather than by a test and are commented as such.
 - `Scene::Narrator` — one unschema'd `BaseAgent` call that streams prose to a
   block and persists the finished text as a `Scene` in an `ensure`. It takes a
   block precisely so swapping SSE for Turbo Streams touched nothing but the

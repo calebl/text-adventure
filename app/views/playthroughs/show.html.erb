@@ -1,39 +1,62 @@
-<h1><%= @playthrough.story.title %></h1>
-<%# The window into the machine, and the only mark it leaves on the game.
-    Absent entirely unless `Playthrough::Debug.enabled?` -- local by default --
-    so a player who was handed a playthrough link is never shown one. %>
-<p>
-  <%= link_to "&larr; all stories".html_safe, root_path %>
-  <% if Playthrough::Debug.enabled? %>
-    &middot; <%= link_to "debug", playthrough_debug_path(@playthrough) %>
-  <% end %>
-</p>
+<%# THE STIMULUS SCOPE, and what it is deliberately NOT attached to.
 
-<div class="preface"><%= @playthrough.story.preface %></div>
-<hr>
+    `#turn_log` is replaced by a Turbo Stream at the end of every turn, so a
+    controller there would be disconnected and reconnected constantly -- and the
+    one thing this controller must survive is exactly that replacement, since
+    hooking the stream render is its whole job. So the scope is this wrapper,
+    which nothing replaces and which exists only to be it.
 
-<%# THE CABLE. Everything a turn changes is broadcast onto this playthrough's
-    stream by NarrationJob: batched chunks of prose while it narrates, then the
-    finished `#turn_log` when it lands. Outside `#turn_log` on purpose -- a
-    subscription element inside the element being replaced would be torn down
-    and rebuilt on every turn, and the tail of the turn would go to a channel
-    nobody was listening on yet. %>
-<%= turbo_stream_from @playthrough %>
+    Not `<body>` either: the layout is shared with the index, and there is no
+    narration to follow there.
 
-<%# `autofocus` here and nowhere else: this is the one render that is a page
-    load, so the attribute means what it says. See the note in the partial for
-    why a broadcast must not carry it. %>
-<%= render "playthroughs/turn_log", playthrough: @playthrough, command: nil,
-                                    autofocus: true %>
+    `@window` / `@document` on the actions because neither event reaches this
+    element on its own. Page `scroll` fires on `window`, and
+    `turbo:before-stream-render` is dispatched by the `<turbo-stream>` element
+    Turbo appends to `document.documentElement` -- outside this subtree, so it
+    never bubbles through here. Stimulus adds and removes both listeners with
+    the element, which is what it buys us over two bare `addEventListener`
+    calls that nothing ever took back. %>
+<div data-controller="play"
+     data-action="scroll@window->play#notePosition
+                  turbo:load@document->play#notePosition
+                  turbo:before-stream-render@document->play#followStreamRender">
+  <h1><%= @playthrough.story.title %></h1>
+  <%# The window into the machine, and the only mark it leaves on the game.
+      Absent entirely unless `Playthrough::Debug.enabled?` -- local by default --
+      so a player who was handed a playthrough link is never shown one. %>
+  <p>
+    <%= link_to "&larr; all stories".html_safe, root_path %>
+    <% if Playthrough::Debug.enabled? %>
+      &middot; <%= link_to "debug", playthrough_debug_path(@playthrough) %>
+    <% end %>
+  </p>
 
-<%# Where the player left off. A plain reload and the index's Resume link both
-    aim at `#bottom`, so the browser puts the newest turn on screen with no
-    script involved. A brand new playthrough is the deliberate exception:
-    PlaythroughsController#create sends the player to the top, where the preface
-    and the opening arrival are.
+  <div class="preface"><%= @playthrough.story.preface %></div>
+  <hr>
 
-    Taking a turn no longer arrives here at all -- there is no redirect left to
-    carry an anchor -- so where the viewport sits while prose arrives is
-    `app/javascript/play.js`'s job, and it follows the narration down only while
-    the player is already reading the bottom. %>
-<div id="bottom"></div>
+  <%# THE CABLE. Everything a turn changes is broadcast onto this playthrough's
+      stream by NarrationJob: batched chunks of prose while it narrates, then the
+      finished `#turn_log` when it lands. Outside `#turn_log` on purpose -- a
+      subscription element inside the element being replaced would be torn down
+      and rebuilt on every turn, and the tail of the turn would go to a channel
+      nobody was listening on yet. %>
+  <%= turbo_stream_from @playthrough %>
+
+  <%# `autofocus` here and nowhere else: this is the one render that is a page
+      load, so the attribute means what it says. See the note in the partial for
+      why a broadcast must not carry it. %>
+  <%= render "playthroughs/turn_log", playthrough: @playthrough, command: nil,
+                                      autofocus: true %>
+
+  <%# Where the player left off. A plain reload and the index's Resume link both
+      aim at `#bottom`, so the browser puts the newest turn on screen with no
+      script involved. A brand new playthrough is the deliberate exception:
+      PlaythroughsController#create sends the player to the top, where the preface
+      and the opening arrival are.
+
+      Taking a turn no longer arrives here at all -- there is no redirect left to
+      carry an anchor -- so where the viewport sits while prose arrives is the
+      play controller's job, and it follows the narration down only while the
+      player is already reading the bottom. %>
+  <div id="bottom"></div>
+</div>

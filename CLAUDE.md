@@ -40,11 +40,11 @@ rake game:doctor                    # or rake 'game:doctor[3]' for one story
 rake 'game:repair[3]'               # safe repairs; GENERATE=1 to allow model calls
 rake 'game:delete[3]'               # prints what would go; DRY_RUN=1 or CONFIRM='<title>'
 
-# Play it in the browser. Two processes: a turn runs in NarrationJob, so
-# without `bin/jobs` nothing narrates.
+# Play it in the browser. `bin/dev` starts both processes a turn needs -- the
+# web server and the job worker -- under foreman. `PORT=3142 bin/dev` to move off
+# 3000. `bin/rails server` alone still works, and is what to use when debugging.
 bin/rails db:prepare   # the app's database, Solid Queue's, and Solid Cable's
-rails server           # then open http://localhost:3000
-bin/jobs               # in a second terminal
+bin/dev                # then open http://localhost:3000
 
 # Rails console
 rails console
