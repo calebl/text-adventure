@@ -87,9 +87,149 @@ namespace :game do
     end
   end
 
+  desc "Report on the health of every story, or one. Usage: rake game:doctor or rake 'game:doctor[3]'"
+  task :doctor, [ :story_id ] => :environment do |t, args|
+    doctors = args[:story_id] ? [ Story::Doctor.new(Helpers.story!(args[:story_id])) ] : Story::Doctor.all
+
+    if doctors.empty?
+      puts "No stories yet. Generate one with: rake 'game:new[your premise]'"
+      next
+    end
+
+    doctors.each { |doctor| Helpers.print_diagnosis(doctor) }
+
+    playable, unplayable = doctors.partition(&:playable?)
+    healthy = doctors.count(&:healthy?)
+    puts "=" * 72
+    puts "#{doctors.size} stor#{doctors.one? ? "y" : "ies"}: #{healthy} healthy, " \
+         "#{playable.size - healthy} playable with warnings, #{unplayable.size} unplayable"
+  end
+
+  desc "Fix what can be fixed about a story. Usage: rake 'game:repair[3]', GENERATE=1 to allow model calls"
+  task :repair, [ :story_id ] => :environment do |t, args|
+    story = Helpers.story!(args[:story_id])
+    generate = ENV["GENERATE"].present?
+    repair = Story::Repair.new(story, generate: generate)
+
+    puts "#{story.title} (##{story.id})"
+    puts
+
+    if repair.plan.empty? && repair.deferred.empty? && repair.manual.empty?
+      puts "Nothing to repair -- `rake 'game:doctor[#{story.id}]'` finds nothing wrong with it."
+      next
+    end
+
+    if repair.plan.any?
+      calls = repair.model_calls
+      if calls.positive?
+        puts "About to make #{calls} model call#{"s" unless calls == 1}. That spends tokens and needs OPENROUTER_API_KEY"
+        puts "or a local ollama -- see BaseAgent."
+        puts
+      end
+
+      puts "Repairing:"
+      repair.apply!.each do |result|
+        mark = result.repaired? ? "  ok " : "  FAILED "
+        puts "#{mark}#{result.message}"
+      end
+      puts
+    end
+
+    if repair.deferred.any?
+      puts "Not attempted -- these need a model call, so they are opt-in:"
+      repair.deferred.each { |finding| puts "  - #{finding.message}" }
+      puts "  Run again with: GENERATE=1 rake 'game:repair[#{story.id}]'"
+      puts
+    end
+
+    if repair.manual.any?
+      puts "Cannot be repaired -- there is no honest answer to backfill, and this never invents one:"
+      repair.manual.each { |finding| puts "  - #{finding.message}" }
+      puts "  Fix by hand, or delete the story: rake 'game:delete[#{story.id}]'"
+      puts
+    end
+
+    puts "Now: #{Story::Doctor.new(story.reload).headline}"
+  end
+
+  desc "Delete a story and everything that belongs only to it. Usage: rake 'game:delete[3]' (dry run unless confirmed)"
+  task :delete, [ :story_id ] => :environment do |t, args|
+    story = Helpers.story!(args[:story_id])
+    deletion = Story::Deletion.new(story)
+
+    puts "#{story.title} (##{story.id}) -- #{story.genre}"
+    puts
+    puts "This would remove:"
+    deletion.manifest.each { |label, count| puts format("  %-16s %d", label, count) }
+    puts "  #{deletion.universe_disposition}"
+    puts
+
+    if ENV["DRY_RUN"].present?
+      puts "DRY RUN: nothing was deleted."
+      next
+    end
+
+    confirm = ENV["CONFIRM"]
+    if confirm.nil? && $stdin.tty?
+      print "Type the story's title to delete it, or anything else to cancel: "
+      confirm = $stdin.gets.to_s
+    end
+
+    if confirm.nil?
+      abort "Not deleted. Re-run with CONFIRM=#{story.title.inspect} to delete it, or DRY_RUN=1 to see this again."
+    end
+
+    begin
+      removed = deletion.destroy!(confirm: confirm)
+    rescue Story::Deletion::NotConfirmed => e
+      abort "Not deleted: #{e.message}"
+    end
+
+    puts
+    puts "Deleted #{story.title.inspect} and #{removed.values.sum} record(s) that belonged to it."
+  end
+
   # Namespaced under a module rather than defined at rake top level, where
   # they would land on Object -- `save!` in particular collides badly there.
   module Helpers
+    # A story by id, or an abort that says what ids there are. `Story.find`
+    # raises a RecordNotFound whose backtrace buries the one useful fact.
+    def self.story!(id)
+      Story.find(id)
+    rescue ActiveRecord::RecordNotFound
+      known = Story.order(:id).pluck(:id, :title).map { |story_id, title| "##{story_id} #{title}" }
+      abort "No story ##{id}." + (known.any? ? " There is: #{known.join(", ")}" : " There are no stories at all.")
+    end
+
+    # What the tool can do about a finding, in three characters of column.
+    REMEDY_LABELS = {
+      safe: "repairable",
+      generate: "model call",
+      manual: "by hand"
+    }.freeze
+
+    # One story's diagnosis, in the shape `rake game:list` already reads in.
+    def self.print_diagnosis(doctor)
+      story = doctor.story
+      puts "##{story.id}  #{story.title} (#{story.genre})"
+      puts "     #{doctor.healthy? ? "HEALTHY" : "#{doctor.playable? ? "PLAYABLE" : "UNPLAYABLE"} -- #{doctor.findings.size} problem(s)"}"
+
+      doctor.findings.each do |finding|
+        puts "     #{finding.fatal? ? "X" : "!"} [#{REMEDY_LABELS.fetch(finding.remedy)}] #{finding.message}"
+      end
+
+      if doctor.findings.any? { |finding| finding.remedy == :safe }
+        puts "     -> rake 'game:repair[#{story.id}]'"
+      end
+      if doctor.findings.any? { |finding| finding.remedy == :generate }
+        puts "     -> GENERATE=1 rake 'game:repair[#{story.id}]'  (costs model calls)"
+      end
+      if !doctor.playable? && doctor.fatal.all? { |finding| finding.remedy == :manual }
+        puts "     -> nothing can repair this honestly: rake 'game:delete[#{story.id}]'"
+      end
+      puts
+    end
+
     def self.timed(label)
       print "#{label}... "
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
