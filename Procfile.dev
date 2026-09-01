@@ -1,0 +1,14 @@
+# Two processes, because a turn is a job. `bin/dev` runs both under foreman.
+#
+# `web` serves the pages and holds the Action Cable WebSocket. `jobs` is what
+# actually plays a turn: NarrationJob classifies, moves, talks or narrates, and
+# broadcasts the prose back over that WebSocket. Without `jobs` the browser
+# accepts a command, echoes it back, and then nothing ever arrives -- the turn
+# sits in the queue waiting for a worker.
+#
+# No `-p` here on purpose: foreman sets `PORT` for every process it starts and
+# `bin/rails server` honours it, so the port is `bin/dev`'s to choose -- which is
+# what lets `PORT=3142 bin/dev` move the whole formation in one place. Pinning it
+# here would silently win over that.
+web: bin/rails server
+jobs: bin/jobs

@@ -6,10 +6,9 @@ Rails.application.routes.draw do
   # The browser interface only *plays* stories. Generating them is still
   # `rake game:new[premise]`.
   resources :playthroughs, only: [ :index, :create, :show ] do
+    # A turn is enqueued here and broadcast back over Action Cable by
+    # NarrationJob, so there is no streaming endpoint to route to any more.
     resources :turns, only: [ :create ]
-
-    # Server-sent events. A GET because that is all EventSource can issue.
-    get "narration", to: "narrations#show"
 
     # The window into the machine. Drawn unconditionally and gated in the
     # controller, so the path helper exists in every environment and the page

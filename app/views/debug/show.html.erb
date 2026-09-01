@@ -4,6 +4,7 @@
   &nbsp;&middot;&nbsp; playthrough #<%= @playthrough.id %>
   &nbsp;&middot;&nbsp; <%= @debug.turns.size %> turns
   &nbsp;&middot;&nbsp; a snapshot: reload after a turn to see the next one
+  &mdash; the game page no longer needs one
 </p>
 <%# The page is long and the background sits under it, so the counts are up
     here where they can be read without opening anything. %>
@@ -421,7 +422,12 @@
     </li>
     <li>
       <strong>Anything live.</strong> This page is a snapshot of the records as
-      they stood when it was rendered. Take a turn, then reload.
+      they stood when it was rendered. Take a turn, then reload. The game page
+      itself is live now &mdash; a turn is a <code>NarrationJob</code> broadcasting
+      Turbo Streams over Action Cable, so the prose and the finished turn arrive
+      there without one. This page has no subscription and wants none: it reads
+      thirty-odd associations, and re-rendering all of them on every batch of
+      narration would be a lot of work to watch a paragraph appear.
     </li>
   </ul>
 </div>

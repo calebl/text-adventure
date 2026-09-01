@@ -30,6 +30,10 @@
 /tmp/storage/*
 !/tmp/storage/.keep
 
+# Ignore precompiled assets: the build stage runs `assets:precompile` itself, so
+# a local public/assets would otherwise be copied in and shadow it.
+/public/assets
+
 # Ignore CI service files.
 /.github
 

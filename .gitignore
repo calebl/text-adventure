@@ -28,6 +28,11 @@
 !/tmp/storage/
 !/tmp/storage/.keep
 
+# Ignore precompiled assets. propshaft compiles nothing, but `assets:precompile`
+# still writes digested copies here for production; the sources in
+# app/javascript are what belongs in the repo.
+/public/assets
+
 # Ignore master key for decrypting credentials and more.
 /config/master.key
 .envrc

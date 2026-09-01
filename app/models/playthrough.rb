@@ -59,6 +59,34 @@ class Playthrough < ApplicationRecord
     story_now + Scene::TURN_MINUTES.fetch(kind).minutes
   end
 
+  # THE TURN LOG the play page reads: `scene_chain`, with what the turn partial
+  # needs preloaded.
+  #
+  # It is a model method rather than a controller one because a third reader
+  # turned up: `NarrationJob` renders this same log when it broadcasts a finished
+  # turn, and a job has no controller to borrow a private method from. The walk
+  # itself stays in `scene_chain`, shared with `Playthrough::Debug`, so the debug
+  # view and the prose cannot disagree about whose turns these are.
+  #
+  # `interactions` is preloaded because the turn partial reads it on every scene
+  # to name who the player was talking to, and all but the talk turns have none.
+  def turn_log
+    scenes = scene_chain
+
+    ActiveRecord::Associations::Preloader.new(
+      records: scenes, associations: { interactions: :character }
+    ).call
+
+    scenes
+  end
+
+  # The ways out of where the player is standing -- the move targets
+  # `Playthrough::Classifier` will accept, which is why the play page prints
+  # them rather than leaving the player to guess.
+  def exits
+    current_location&.exits&.order(:id) || Location.none
+  end
+
   private
 
   # The character, location and scene are all facets of one story; pointing at

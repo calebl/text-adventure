@@ -210,11 +210,11 @@ constraint* has the captain's wording and where the full audit lives.
 turn, and which boxes are model calls versus decisions from records. Read it
 before changing the loop; the rules below are what it does not fit.
 
-- **The loop is `Playthrough::Turn`, and the browser's whole share of it is a
-  string and a block.** `NarrationsController` forwards the chunks the block is
-  yielded; it does not know which branch the turn took. Keep it that way — the
-  block is also the seam that makes the Turbo Streams swap touch only the
-  consumer.
+- **The loop is `Playthrough::Turn`, and its consumer's whole share of it is a
+  string and a block.** `NarrationJob` broadcasts the chunks the block is
+  yielded; it does not know which branch the turn took. Keep it that way — that
+  block is what let SSE be swapped for Turbo Streams over Action Cable without
+  touching a line of how prose is generated or persisted.
 - The block is yielded **text**, not RubyLLM chunk objects. `Scene::Narrator`
   and `InteractionAgent` both unwrap before yielding; a schema'd branch yields
   its finished paragraph in one piece because it cannot stream at all.
@@ -332,20 +332,64 @@ no new capability.
 
 ## The browser interface
 
-Plain Rails, deliberately minimal: no Node, no `package.json`, no build step,
-no importmap, no propshaft, no Turbo, no Action Cable. Views are ERB with an
-inline `<style>` in the layout, and the only JavaScript is six lines of
-`EventSource` in `app/views/playthroughs/show.html.erb`. Those gems belong to a
-later stage — do not install them in passing.
+Hotwire, and **genuinely zero build**: `propshaft` + `importmap-rails` +
+`turbo-rails`, no Node, no `package.json`, no bundler step, no watch process.
+That is a hard constraint from the captain, not an accident — `jsbundling-rails`,
+`cssbundling-rails`, esbuild, Vite and any npm dependency are explicitly
+refused. **If something appears to need one, that is a reason to reconsider the
+something; stop and ask rather than adding a build step.**
+
+Views are ERB with an inline `<style>` in the layout. Restyling is
+`ta-api-iface`, a stage of its own — do not do it in passing.
 
 - `ApplicationController < ActionController::Base` and `config.api_only = false`.
   That turns on `protect_from_forgery`, so every form goes through `form_with`.
 - A browser session is bound to a `Playthrough` by its unguessable `token` in
   `session[:playthrough_token]`. There is no auth, no user model, and the
   captain does not want any: this is a single-player localhost app.
-- `NarrationsController` streams over SSE with `ActionController::Live`, which
-  holds one Puma thread per open stream. Fine for one player; raise
-  `RAILS_MAX_THREADS` before two.
+- **A turn is a job, and the play page is one Turbo Stream target.**
+  `TurnsController#create` enqueues `NarrationJob` and answers immediately with
+  a `replace` of `#turn_log`; the job broadcasts batched prose into `#stream`
+  and then replaces `#turn_log` again with the finished turn, the location line
+  and the input. There is no end-of-turn reload and no redirect carrying a
+  `?command=` — both were consequences of streaming from the request.
+  **Start with `bin/dev`** -- foreman, `Procfile.dev`, a `web` and a `jobs` line.
+  A web process alone accepts a command and then narrates nothing, because the
+  turn is sitting in the queue. Development also runs **`solid_cable`, not
+  `async`** -- the turn is broadcast from the worker process and read by a
+  WebSocket held in Puma, and `async` broadcasts only within one process. Three
+  SQLite databases in development as a result; `bin/rails db:prepare` makes all
+  three. Foreman is deliberately **not** in the Gemfile (it conflicts in a
+  bundle); `bin/dev` installs it on demand, the way Rails' own generated one
+  does. It is a process runner, not a build step.
+- **Do not bind port 3000.** The captain runs his own long-lived server there.
+  `PORT=3142 bin/dev` moves the whole formation; check a port is free before
+  taking it, and never kill anything to free one.
+- `turbo_stream_from` lives **outside** `#turn_log`. Inside it, the
+  subscription would be torn down and rebuilt at the end of every turn and the
+  next turn's tail would go to a channel nobody was listening on.
+- The turn log's dimming rule is `.log:not(.streaming) > .turn:last-of-type`.
+  Both halves are load-bearing: `streaming` on the wrapper says the newest turn
+  is the `#stream` div outside the log, and `:last-of-type` is the marker with
+  no class per entry. `PlaythroughsControllerTest`, `TurnsControllerTest` and
+  `NarrationJobTest` all assert against those selectors.
+- The only JavaScript is **one Stimulus controller**,
+  `app/javascript/controllers/play_controller.js`: follow the narration down
+  while the player is at the bottom, and put focus back in the input when a turn
+  lands. Its scope is the wrapper on `playthroughs/show` and **not `#turn_log`**,
+  which a Turbo Stream replaces at the end of every turn -- a controller there
+  would be torn down by the very thing it exists to hook. Both its events are
+  bound with `@window` / `@document` because neither reaches that element on its
+  own.
+- **Two things in that controller were found in a browser and will not fail a
+  test if you break them.** It must WRAP `event.detail.render` rather than merely
+  listen for `turbo:before-stream-render` -- Turbo awaits a repaint before it
+  mutates, so the bare event measures stale layout and the follow drifts, 480px
+  over one narration -- and it must focus with `preventScroll`. Arming happens in
+  `connect()` **and** on `turbo:load`, which is not belt-and-braces: on a full
+  page load `turbo:load` fires before Stimulus attaches and never arrives, and on
+  a Turbo Drive visit `connect()` runs before Turbo applies the scroll. Each
+  covers the case the other gets wrong.
 
 ### The debug view
 

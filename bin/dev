@@ -1,2 +1,28 @@
-#!/usr/bin/env ruby
-exec "./bin/rails", "server", *ARGV
+#!/usr/bin/env sh
+
+# START THE DEVELOPMENT ENVIRONMENT -- both processes, one command.
+#
+# A turn is a `NarrationJob`, so playing the game needs a web server AND a job
+# worker; see Procfile.dev for which does what. Running only `bin/rails server`
+# still works and is the right thing when you want to debug: foreman gives the
+# child processes no TTY, so `binding.break` cannot take the terminal under it.
+#
+# Foreman is deliberately NOT in the Gemfile -- this follows Rails' own generated
+# `bin/dev`. It conflicts inside a bundle, and it is a development process
+# runner rather than anything the app loads or builds with, so it stays a
+# machine-local tool installed on demand. Nothing here compiles or bundles
+# anything: the zero-build constraint is untouched.
+
+if ! gem list foreman -i --silent; then
+  echo "Installing foreman..."
+  gem install foreman
+fi
+
+# `-p` because foreman's own default is 5000, and `bin/rails server`'s is 3000 --
+# so without this the app answers on a different port depending on how it was
+# started, and half the URLs in the README are wrong either way. `PORT` still
+# wins, which is how you move off 3000 when somebody else is already there:
+#
+#   PORT=3142 bin/dev
+#
+exec foreman start -f Procfile.dev -p "${PORT:-3000}" "$@"

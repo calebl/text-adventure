@@ -23,7 +23,7 @@ class Scene < ApplicationRecord
   # first, which is a wrong answer dressed as a right one.
   #
   # Walking BACKWARDS from a playthrough's `current_scene` stays unambiguous, so
-  # the turn log (PlaythroughsController#scene_log) was never affected and is
+  # the turn log (`Playthrough#turn_log`) was never affected and is
   # not changed by this. Nothing in `app/` reads the forward direction at all;
   # it is kept, plural and nullifying, because destroying a scene otherwise
   # leaves its successors pointing at a row that is gone.

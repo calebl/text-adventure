@@ -164,4 +164,49 @@ class PlaythroughTest < ActiveSupport::TestCase
     assert_nil playthrough.current_location_id
     assert_nil playthrough.current_scene_id
   end
+
+  # THE TURN LOG. It walks backwards from `current_scene`, so two playthroughs
+  # branching off one opening arrival each read their own turns. It lives on the
+  # model rather than in the controller because `NarrationJob` renders the same
+  # log when it broadcasts a finished turn, and a job has no controller to
+  # borrow a private method from.
+  test "turn_log walks back from the current scene, oldest first" do
+    playthrough = create(:playthrough, :in_scene, story: @story)
+    opening = playthrough.current_scene
+    second = create(:scene, story: @story, location: playthrough.current_location,
+                            description: "Rain starts falling.", previous_scene: opening)
+    playthrough.update!(current_scene: second)
+
+    assert_equal [ opening, second ], playthrough.turn_log
+  end
+
+  test "turn_log is empty for a playthrough that has not started" do
+    assert_empty create(:playthrough, story: @story).turn_log
+  end
+
+  test "turn_log reads only this playthrough's turns" do
+    opening = create(:scene, :opening, story: @story, location: create(:location, story: @story))
+    mine = create(:playthrough, story: @story, current_location: opening.location,
+                                current_scene: create(:scene, story: @story, location: opening.location,
+                                                              description: "I turn left.", previous_scene: opening))
+    create(:playthrough, story: @story, current_location: opening.location,
+                         current_scene: create(:scene, story: @story, location: opening.location,
+                                                       description: "They turn right.", previous_scene: opening))
+
+    assert_equal [ opening.description, "I turn left." ], mine.turn_log.map(&:description)
+  end
+
+  # The exits are the move targets `Playthrough::Classifier` will accept, which
+  # is why the play page prints them.
+  test "exits are the ways out of where the player is standing" do
+    playthrough = create(:playthrough, :started, story: @story)
+    there = create(:location, story: @story, name: "The Sunken Stair")
+    create(:location_connection, location: playthrough.current_location, connected_location: there)
+
+    assert_equal [ there ], playthrough.exits.to_a
+  end
+
+  test "exits are empty when the player is nowhere yet" do
+    assert_empty create(:playthrough, story: @story).exits
+  end
 end

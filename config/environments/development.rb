@@ -53,6 +53,17 @@ Rails.application.configure do
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = true
 
+  # REAL JOBS IN DEVELOPMENT, same adapter as production.
+  #
+  # A turn runs in `NarrationJob` now, and the whole point of it is that the turn
+  # outlives the request. `:async` -- the Rails default here -- runs jobs on a
+  # thread pool inside Puma, which dies with the server and gives up the
+  # durability the job exists for; `:inline` would put the 20-30 second model call
+  # back in the request. So `bin/jobs` is a process a person actually starts
+  # alongside `bin/rails server` -- see README, "Playing in the browser".
+  config.active_job.queue_adapter = :solid_queue
+  config.solid_queue.connects_to = { database: { writing: :queue } }
+
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
 
