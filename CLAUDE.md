@@ -183,10 +183,17 @@ The current database includes the following story-related models with proper ass
   a failed call, and the existing rotation reaches
   `mistralai/mistral-medium-3.1`, which refused nothing in the measured sweep.
 - **Precision over recall, decided by measurement**, exactly like `Story::Audit`:
-  127 real prose responses in `test/fixtures/files/refusal_corpus.json`, pinned
-  by `BaseAgent::RefusalPrecisionTest` at recall 11/11 and zero false positives.
-  Do not replace the structural rule with a word list; that was measured and it
-  fails in both directions.
+  127 real prose responses in `test/fixtures/files/refusal_corpus.skeleton.json`,
+  pinned by `BaseAgent::RefusalPrecisionTest` at recall 11/11 and zero false
+  positives. Do not replace the structural rule with a word list; that was
+  measured and it fails in both directions.
+- The corpus ships **reduced**, because the repo is public and the responses are
+  what models said when asked for explicit content: every letter is `x` except a
+  capital `I` and the literal crisis strings. `RefusalCorpusSkeleton` is the
+  reduction, and it preserves every offset, so the detector reads exactly what it
+  read before — 207 records compared raw against reduced, 0 mismatches. Do not
+  replace it with a smaller corpus of refusals only: ordinary narration stresses
+  none of the three rules, which was measured too.
 - A **crisis response** is a separate path with a separate outcome: intercepted,
   never persisted, answered by `Playthrough::SafetyNotice` out of band. The two
   never collapse into one branch. Read `Playthrough::SafetyNotice`'s header

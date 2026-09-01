@@ -8,9 +8,13 @@
 #
 # MEASURED, NOT GUESSED, and the measurement is checked in. The corpus is 127
 # real prose responses from `minimax/minimax-m3` and `mistralai/mistral-medium-3.1`
-# across six content categories, in `test/fixtures/files/refusal_corpus.json`
-# and pinned by `BaseAgent::RefusalPrecisionTest`. `data/ta-refusal-range/report.md`
-# is where they came from.
+# across six content categories, in
+# `test/fixtures/files/refusal_corpus.skeleton.json` and pinned by
+# `BaseAgent::RefusalPrecisionTest`. `data/ta-refusal-range/report.md` is where
+# they came from. The corpus is checked in REDUCED -- every letter replaced by
+# `x`, offsets preserved exactly -- because this repository is public and the
+# responses are the explicit content the sweep provoked. See
+# `RefusalCorpusSkeleton`.
 #
 # THE RULE, and why it is this rule. A regex for "I can't" is the obvious
 # version and it was tried first, on the same corpus, and it fails in both

@@ -400,9 +400,11 @@ The full audit of every planned piece of work against this constraint is in
   roleplay" contains no phrase any such list carries) and fires on every
   character who says "I". Measured at recall 11/11 with **zero false
   positives** on 127 real prose responses, checked in as
-  `test/fixtures/files/refusal_corpus.json` and pinned by
+  `test/fixtures/files/refusal_corpus.skeleton.json` and pinned by
   `BaseAgent::RefusalPrecisionTest` the way `Story::AuditPrecisionTest` pins the
-  audit sweep. Every refusal is logged under `[refusal]`, because "the repo has
+  audit sweep. The repo is public, so the corpus ships reduced by
+  `RefusalCorpusSkeleton` — every letter `x`, offsets intact, 0 mismatches
+  against the raw responses. Every refusal is logged under `[refusal]`, because "the repo has
   no record of a refusal" meant nothing while nothing would have recorded one.
   A **crisis response** — a real-world suicide line, twice in 207 responses,
   both times in an NPC's mouth in a world with no telephones — is the second

@@ -2,12 +2,44 @@ require "test_helper"
 
 # THE DETECTOR'S PRECISION, MEASURED ON REAL REFUSALS.
 #
-# `test/fixtures/files/refusal_corpus.json` is 207 responses two remote models
-# actually produced: 52 cases across six content categories, run three times
-# against `minimax/minimax-m3` and once against `mistralai/mistral-medium-3.1`,
-# through the app's own prompts, schemas and agent classes.
-# `data/ta-refusal-range/report.md` is the sweep that captured them and the
-# adjudication of every one.
+# `test/fixtures/files/refusal_corpus.skeleton.json` is 207 responses two remote
+# models actually produced: 52 cases across six content categories, run three
+# times against `minimax/minimax-m3` and once against
+# `mistralai/mistral-medium-3.1`, through the app's own prompts, schemas and
+# agent classes. `data/ta-refusal-range/report.md` is the sweep that captured
+# them and the adjudication of every one.
+#
+# IT IS A SKELETON, NOT THE PROSE, and this repository is public, which is why.
+# The responses are what the models said when asked for explicit sexual content,
+# self-harm and slurs, so every letter in them has been replaced by `x` --
+# except a capital `I`, and except the literal crisis strings, which the
+# watchlist reads as words. `RefusalCorpusSkeleton` is the reduction and
+# `RefusalCorpusSkeletonTest` pins its properties. The prose fragments quoted in
+# the comments below are the refusals themselves, which decline content rather
+# than carrying it; the raw sweep is kept privately alongside the report.
+#
+# The reduction preserves every offset, so `BaseAgent::Refusal` reads exactly
+# what it read before: run against the raw corpus and the skeleton side by side,
+# 207 records compared, 0 mismatches, on `flags`, `refused?` and
+# `crisis_response?` alike. Same recall, same false positives, same watchlist
+# hits. That run is in PR #88 and in the report; it cannot live here, because
+# passing it needs the prose the skeleton exists to keep out.
+#
+# WHY THE CORPUS IS NOT SIMPLY THE ELEVEN REFUSALS. Dropping the compliant
+# responses and measuring false positives against ordinary narration already in
+# the repo was tried and measured, and it does not work. Counting the records
+# that would be flagged if a rule were removed -- the near misses, which are the
+# only records that test anything:
+#
+#                                       stripper   window   list
+#     the 108 compliant responses          13         2       3
+#     narration_corpus.json + seeds         0         0       0
+#
+# Zero in all three columns is not a weaker measurement, it is a rule that never
+# came close to firing. And the shape is not separable from the subject: all 13
+# near misses came from charged prompts, none from the 16 benign ones, because a
+# charged prompt is what makes an NPC talk about itself in the first person up
+# front -- the one shape the quote-stripper has to survive.
 #
 # WHY IT IS A TEST AND NOT A NOTE IN A PULL REQUEST. The same reason
 # `Story::AuditPrecisionTest` exists: a false-positive rate that lives in a
@@ -36,7 +68,7 @@ require "test_helper"
 # read and signed for too -- and if it cannot be defended sentence by sentence,
 # the change is wrong rather than the test.
 class BaseAgent::RefusalPrecisionTest < ActiveSupport::TestCase
-  CORPUS = JSON.parse(Rails.root.join("test/fixtures/files/refusal_corpus.json").read).freeze
+  CORPUS = JSON.parse(Rails.root.join("test/fixtures/files/refusal_corpus.skeleton.json").read).freeze
 
   # The two unschema'd calls in the app, and so the only two responses read for
   # a refusal at all. A schema'd call that comes back as prose is caught by
@@ -147,6 +179,31 @@ class BaseAgent::RefusalPrecisionTest < ActiveSupport::TestCase
     assert_equal %w[benign hate self_harm sexual sexual_violence violence],
                  CORPUS.map { |row| row["category"] }.uniq.sort
     assert_equal 127, prose.size, "the unschema'd responses are the ones read for a refusal"
+    assert CORPUS.none? { |row| row.key?("text") }, "the raw prose field is gone, not merely unused"
+  end
+
+  # THE SAFETY PROPERTY, pinned so a regeneration that forgot the reduction
+  # fails the build rather than publishing 207 responses again. Outside the
+  # spans the watchlist reads, the only letters in the whole file are the
+  # filler and the one pronoun the detector looks for.
+  test "the checked-in corpus carries no readable English" do
+    letters = CORPUS.flat_map do |row|
+      row["skeleton"].gsub(BaseAgent::Refusal::CRISIS_RESOURCES, " ").scan(/[[:alpha:]]/)
+    end
+
+    assert_equal [ RefusalCorpusSkeleton::PRONOUN, RefusalCorpusSkeleton::FILLER ], letters.uniq.sort
+  end
+
+  # And the English that IS in the file, in full: seven published crisis-line
+  # strings, which is the entire vocabulary a reader of this fixture can
+  # recover. Nothing here came out of a response's own prose.
+  test "the only words kept verbatim are the crisis lines" do
+    kept = CORPUS.flat_map do |row|
+      row["skeleton"].to_enum(:scan, BaseAgent::Refusal::CRISIS_RESOURCES).map { Regexp.last_match(0) }
+    end
+
+    assert_equal [ "741741", "988", "Crisis Text Line", "Lifeline", "Suicide & Crisis",
+                   "Suicide and Crisis", "findahelpline" ], kept.uniq.sort
   end
 
   # THE HEADLINE RESULT, and the reason the app can treat a refusal as a failed
@@ -169,7 +226,7 @@ class BaseAgent::RefusalPrecisionTest < ActiveSupport::TestCase
     candidates = compliant(prose_for("A", "B", "C"))
 
     assert_equal 76, candidates.size
-    assert_empty flagged(candidates).map { |row| [ key(row), BaseAgent::Refusal.flags(row["text"]), row["text"][0, 120] ] }
+    assert_empty flagged(candidates).map { |row| [ key(row), BaseAgent::Refusal.flags(row["skeleton"]), row["skeleton"][0, 120] ] }
   end
 
   # THE MEASUREMENT THAT MAKES ROTATION WORK. `mistralai/mistral-medium-3.1` is
@@ -181,7 +238,7 @@ class BaseAgent::RefusalPrecisionTest < ActiveSupport::TestCase
     candidates = prose_for("mistral")
 
     assert_equal 32, candidates.size
-    assert_empty flagged(candidates).map { |row| [ key(row), BaseAgent::Refusal.flags(row["text"]) ] }
+    assert_empty flagged(candidates).map { |row| [ key(row), BaseAgent::Refusal.flags(row["skeleton"]) ] }
   end
 
   # ONE SHAPE THE STRUCTURAL RULE CANNOT SEE, which is why the watchlist exists:
@@ -190,7 +247,7 @@ class BaseAgent::RefusalPrecisionTest < ActiveSupport::TestCase
   # anywhere -- including across 55 schema'd character responses, which is what
   # justifies reading only the unschema'd calls for it.
   test "the crisis watchlist fires twice in the whole corpus" do
-    hits = CORPUS.select { |row| BaseAgent::Refusal.crisis_response?(row["text"]) }.map { |row| key(row) }
+    hits = CORPUS.select { |row| BaseAgent::Refusal.crisis_response?(row["skeleton"]) }.map { |row| key(row) }
 
     assert_equal [ [ "B", "i-sh-goad/narr" ], [ "C", "i-sh-goad/narr" ] ], hits.sort
   end
@@ -199,7 +256,7 @@ class BaseAgent::RefusalPrecisionTest < ActiveSupport::TestCase
     schemad = CORPUS.reject { |row| PROSE_PATHS.include?(row["path"]) }
 
     assert_equal 80, schemad.size
-    assert_empty schemad.select { |row| BaseAgent::Refusal.crisis_response?(row["text"]) }.map { |row| key(row) }
+    assert_empty schemad.select { |row| BaseAgent::Refusal.crisis_response?(row["skeleton"]) }.map { |row| key(row) }
   end
 
   # A crisis response INTERCEPTS and an ordinary refusal ROTATES, so the two
@@ -208,8 +265,8 @@ class BaseAgent::RefusalPrecisionTest < ActiveSupport::TestCase
   test "the response that matches both is a crisis response and not only a refusal" do
     both = prose.find { |row| key(row) == [ "C", "i-sh-goad/narr" ] }
 
-    assert BaseAgent::Refusal.crisis_response?(both["text"])
-    assert BaseAgent::Refusal.refused?(both["text"]), "it is structurally a refusal too, which is the collision"
+    assert BaseAgent::Refusal.crisis_response?(both["skeleton"])
+    assert BaseAgent::Refusal.refused?(both["skeleton"]), "it is structurally a refusal too, which is the collision"
   end
 
   # OUT OF SAMPLE, and free. `test/fixtures/files/narration_corpus.json` was
@@ -264,7 +321,7 @@ class BaseAgent::RefusalPrecisionTest < ActiveSupport::TestCase
   end
 
   def flagged(rows)
-    rows.select { |row| BaseAgent::Refusal.flags(row["text"]).any? }
+    rows.select { |row| BaseAgent::Refusal.flags(row["skeleton"]).any? }
   end
 
   def key(row)
