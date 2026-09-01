@@ -30,10 +30,12 @@ class Scene::Narrator
   # Streams the narration for `command`, yielding each chunk of text as it
   # arrives, and returns the persisted Scene.
   #
-  # The persist happens in an `ensure` so a browser that closes mid-stream --
-  # `ActionController::Live` raises ClientDisconnected and kills the generation
-  # -- still keeps whatever was written. Otherwise the player reloads to find
-  # their turn gone and has to retype it.
+  # The persist happens in an `ensure` so a turn that is cut off keeps whatever
+  # was written, rather than leaving the player to reload and retype. That used
+  # to be the browser's doing -- `ActionController::Live` raised
+  # ClientDisconnected and killed the generation. `NarrationJob` holds no
+  # connection, so a closed tab no longer reaches this at all; what is left for
+  # the `ensure` is a model that stops mid-sentence, which is why it stays.
   def narrate(command, &block)
     text = +""
 

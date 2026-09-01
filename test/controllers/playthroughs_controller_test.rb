@@ -381,51 +381,52 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
                   text: "Stalls stand under wet canvas."
   end
 
-  # While a turn is streaming, the #stream div is what the player is reading,
-  # so the last persisted scene has become a *previous* turn. It sits outside
-  # the log's wrapper and the wrapper says so, which is what keeps the three
-  # states -- streaming, the redirect after it, and a plain load -- consistent.
-  test "show hands the newest turn to the stream while a command is pending" do
-    playthrough = create(:playthrough, :in_scene)
-
-    get playthrough_path(playthrough, command: "open the ledger")
-
-    assert_select ".log.streaming"
-    assert_select ".log:not(.streaming) > .turn:last-of-type", count: 0
-    assert_select "#stream.turn"
-  end
-
-  test "show streams when a command is pending and otherwise offers the input" do
+  # The play page is one state now: the log, where the player is, and the input.
+  # There is no `?command=` variant of it any more -- a turn in flight is a Turbo
+  # Stream replacing `#turn_log`, which TurnsControllerTest covers, and the
+  # finished turn arrives the same way from NarrationJob.
+  test "show offers the input and no longer streams from the page itself" do
     playthrough = create(:playthrough)
 
     get playthrough_path(playthrough)
+
     assert_match "what do you do?", response.body
     assert_no_match(/EventSource/, response.body)
-
-    get playthrough_path(playthrough, command: "open the ledger")
-    assert_match "EventSource", response.body
-    assert_match "open the ledger", response.body
   end
 
-  # Where the page sits is not something the suite can see, so these pin the
+  # THE SUBSCRIPTION, and where it sits. Inside `#turn_log` it would be torn
+  # down and rebuilt every time a turn finished, and the tail of the next turn
+  # would be broadcast to a channel nobody was listening on.
+  test "show subscribes to the playthrough's stream from outside the replaced region" do
+    playthrough = create(:playthrough)
+
+    get playthrough_path(playthrough)
+
+    assert_select "turbo-cable-stream-source", count: 1
+    assert_select "#turn_log turbo-cable-stream-source", count: 0
+  end
+
+  # ...but a real page load is a real page load, and there the attribute means
+  # what it says: put the cursor in the box. NarrationJobTest asserts the other
+  # half, which is that a broadcast must not carry it.
+  test "show autofocuses the input, because a page load is what autofocus is for" do
+    playthrough = create(:playthrough)
+
+    get playthrough_path(playthrough)
+
+    assert_select "#turn_log input[type=text][autofocus]"
+  end
+
+  # Where the page sits is not something the suite can see, so this pins the
   # markup the fix stands on instead of pretending to test a viewport: the
-  # anchor every link aims at, and the redirect the stream ends with. The
-  # behaviour itself is covered by the browser walk in the PR.
+  # anchor a plain reload and the index's Resume link both aim at. Following the
+  # narration down while it arrives is `app/javascript/play.js`, covered by the
+  # browser walk in the PR.
   test "show ends with the anchor the log's foot is reached by" do
     playthrough = create(:playthrough)
 
     get playthrough_path(playthrough)
+
     assert_select "#bottom"
-
-    get playthrough_path(playthrough, command: "open the ledger")
-    assert_select "#bottom"
-  end
-
-  test "show sends the player back to the foot of the log when the turn ends" do
-    playthrough = create(:playthrough)
-
-    get playthrough_path(playthrough, command: "open the ledger")
-
-    assert_match playthrough_path(playthrough, anchor: "bottom"), response.body
   end
 end

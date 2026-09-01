@@ -9,9 +9,33 @@ default: &default
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   timeout: 5000
 
+# THREE databases in development, and the second and third are not optional.
+#
+#   queue  -- Solid Queue's tables. `bin/jobs` writes them constantly, and a
+#             worker holding a write lock on the same file a request is reading
+#             from is how a one-file SQLite app deadlocks itself.
+#   cable  -- Solid Cable's. A turn is broadcast from the `bin/jobs` process and
+#             read by a WebSocket held in Puma, so the two processes have to
+#             share a pub/sub substrate. `adapter: async` is per-process, so
+#             with it the prose is broadcast into the worker and nobody ever
+#             sees it -- which is exactly what happened the first time this was
+#             walked in a browser. See config/cable.yml.
+#
+# `bin/rails db:prepare` creates all three: a non-primary config named `x` is
+# loaded from `db/x_schema.rb` by default, which is where `queue_schema.rb` and
+# `cable_schema.rb` have been sitting unused.
 development:
-  <<: *default
-  database: storage/development.sqlite3
+  primary:
+    <<: *default
+    database: storage/development.sqlite3
+  queue:
+    <<: *default
+    database: storage/development_queue.sqlite3
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *default
+    database: storage/development_cable.sqlite3
+    migrations_paths: db/cable_migrate
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".

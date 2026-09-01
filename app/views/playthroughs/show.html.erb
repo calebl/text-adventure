@@ -1,77 +1,62 @@
-<h1><%= @playthrough.story.title %></h1>
-<%# The window into the machine, and the only mark it leaves on the game.
-    Absent entirely unless `Playthrough::Debug.enabled?` -- local by default --
-    so a player who was handed a playthrough link is never shown one. %>
-<p>
-  <%= link_to "&larr; all stories".html_safe, root_path %>
-  <% if Playthrough::Debug.enabled? %>
-    &middot; <%= link_to "debug", playthrough_debug_path(@playthrough) %>
-  <% end %>
-</p>
+<%# THE STIMULUS SCOPE, and what it is deliberately NOT attached to.
 
-<div class="preface"><%= @playthrough.story.preface %></div>
-<hr>
+    `#turn_log` is replaced by a Turbo Stream at the end of every turn, so a
+    controller there would be disconnected and reconnected constantly -- and the
+    one thing this controller must survive is exactly that replacement, since
+    hooking the stream render is its whole job. So the scope is this wrapper,
+    which nothing replaces and which exists only to be it.
 
-<%# The log starts with the opening room, written as a Scene when the
-    playthrough starts (PlaythroughsController#opening_scene). It used to be
-    read out above the log only while the log was empty, which is why the first
-    turn made it disappear.
+    Not `<body>` either: the layout is shared with the index, and there is no
+    narration to follow there.
 
-    One wrapper, so the stylesheet can dim every logged turn but the last one.
-    `streaming` says the newest turn is not in the log at all -- it is the
-    #stream div below, which is what the player is actually reading -- so no
-    logged turn should claim full-strength colour while it fills in. %>
-<div class="<%= class_names("log", streaming: @command) %>">
-  <%= render partial: "turns/turn", collection: @scenes, as: :turn %>
-</div>
-
-<% if @command %>
-  <p class="command">&gt; <%= @command %></p>
-  <div class="turn cursor" id="stream"></div>
-
-  <%# Six lines of vanilla EventSource. No importmap, no Turbo -- a later
-      stage swaps this for a Turbo Stream and the server side does not move. %>
-  <script>
-    var out = document.getElementById("stream");
-
-    // Follow the narration down, but only while the player is already reading
-    // the bottom. `stick` goes false the moment he scrolls away to re-read
-    // something, and true again when he comes back -- our own scrollTo fires
-    // this listener too, and lands at the bottom, so it re-arms itself.
-    var stick = true;
-    function atBottom() {
-      var d = document.documentElement;
-      return window.innerHeight + window.scrollY >= d.scrollHeight - 40;
-    }
-    function follow() { if (stick) window.scrollTo(0, document.documentElement.scrollHeight); }
-    window.addEventListener("scroll", function () { stick = atBottom(); });
-
-    var es = new EventSource("<%= playthrough_narration_path(@playthrough, command: @command) %>");
-    es.addEventListener("token", function (e) { out.textContent += JSON.parse(e.data).t; follow(); });
-    es.addEventListener("error", function (e) { es.close(); out.classList.remove("cursor"); });
-    es.addEventListener("done", function () { es.close(); window.location = "<%= playthrough_path(@playthrough, anchor: "bottom") %>"; });
-  </script>
-<% else %>
-  <%# Where the player is and what leads out of it. Not decoration: the exits
-      are the move targets Playthrough::Classifier will accept, so a player
-      who cannot read them is guessing at the one command that matters. %>
-  <p class="place">
-    <% if @playthrough.current_location %>
-      You are in <strong><%= @playthrough.current_location.name %></strong>.
-      Ways out: <%= @exits.any? ? @exits.map(&:name).to_sentence : "none that you can see." %>
+    `@window` / `@document` on the actions because neither event reaches this
+    element on its own. Page `scroll` fires on `window`, and
+    `turbo:before-stream-render` is dispatched by the `<turbo-stream>` element
+    Turbo appends to `document.documentElement` -- outside this subtree, so it
+    never bubbles through here. Stimulus adds and removes both listeners with
+    the element, which is what it buys us over two bare `addEventListener`
+    calls that nothing ever took back. %>
+<div data-controller="play"
+     data-action="scroll@window->play#notePosition
+                  turbo:load@document->play#notePosition
+                  turbo:before-stream-render@document->play#followStreamRender">
+  <h1><%= @playthrough.story.title %></h1>
+  <%# The window into the machine, and the only mark it leaves on the game.
+      Absent entirely unless `Playthrough::Debug.enabled?` -- local by default --
+      so a player who was handed a playthrough link is never shown one. %>
+  <p>
+    <%= link_to "&larr; all stories".html_safe, root_path %>
+    <% if Playthrough::Debug.enabled? %>
+      &middot; <%= link_to "debug", playthrough_debug_path(@playthrough) %>
     <% end %>
   </p>
 
-  <%= form_with url: playthrough_turns_path(@playthrough) do |form| %>
-    <%= form.text_field :command, autofocus: true, autocomplete: "off", placeholder: "what do you do?" %>
-    <%= form.submit "Go" %>
-  <% end %>
-<% end %>
+  <div class="preface"><%= @playthrough.story.preface %></div>
+  <hr>
 
-<%# Where the player left off. Every arrival at this page -- the redirect that
-    carries a submitted command, the redirect after the turn finishes, a plain
-    reload, Resume from the index -- links to `#bottom`, so the browser puts the
-    newest turn on screen with no script involved. A brand new playthrough is
-    the deliberate exception: PlaythroughsController#create sends the player to
-    the top, where the preface and the opening arrival are. %>
-<div id="bottom"></div>
+  <%# THE CABLE. Everything a turn changes is broadcast onto this playthrough's
+      stream by NarrationJob: batched chunks of prose while it narrates, then the
+      finished `#turn_log` when it lands. Outside `#turn_log` on purpose -- a
+      subscription element inside the element being replaced would be torn down
+      and rebuilt on every turn, and the tail of the turn would go to a channel
+      nobody was listening on yet. %>
+  <%= turbo_stream_from @playthrough %>
+
+  <%# `autofocus` here and nowhere else: this is the one render that is a page
+      load, so the attribute means what it says. See the note in the partial for
+      why a broadcast must not carry it. %>
+  <%= render "playthroughs/turn_log", playthrough: @playthrough, command: nil,
+                                      autofocus: true %>
+
+  <%# Where the player left off. A plain reload and the index's Resume link both
+      aim at `#bottom`, so the browser puts the newest turn on screen with no
+      script involved. A brand new playthrough is the deliberate exception:
+      PlaythroughsController#create sends the player to the top, where the preface
+      and the opening arrival are.
+
+      Taking a turn no longer arrives here at all -- there is no redirect left to
+      carry an anchor -- so where the viewport sits while prose arrives is the
+      play controller's job, and it follows the narration down only while the
+      player is already reading the bottom. %>
+  <div id="bottom"></div>
+</div>

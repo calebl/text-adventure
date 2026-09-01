@@ -1,9 +1,21 @@
-# Async adapter only works within the same process, so for manually triggering cable updates from a console,
-# and seeing results in the browser, you must do so from the web console (running inside the dev process),
-# not a terminal started via bin/rails console! Add "console" to any action or any ERB template view
-# to make the web console appear.
+# SOLID CABLE IN DEVELOPMENT, and it has to be.
+#
+# `adapter: async` broadcasts only within the process that broadcast, which was
+# fine while a turn was streamed from the request. A turn is a `NarrationJob`
+# now: it runs in `bin/jobs` and the WebSocket reading it is held in Puma, so on
+# `async` the prose is broadcast into the worker and the player watches an empty
+# cursor until the turn silently lands. Measured that way once; do not go back.
+#
+# The 0.1s polling is not a latency problem at model speeds -- measured at
+# 209 ms inter-arrival either way, which is the model's own token rate, not the
+# poller's. `NarrationJob::BATCH_SIZE` is what keeps the write volume sane.
 development:
-  adapter: async
+  adapter: solid_cable
+  connects_to:
+    database:
+      writing: cable
+  polling_interval: 0.1.seconds
+  message_retention: 1.day
 
 test:
   adapter: test

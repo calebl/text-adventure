@@ -45,8 +45,13 @@ COPY . .
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
 
-
-
+# Precompile assets. propshaft compiles nothing and importmap downloads nothing,
+# so this needs no Node and installs none -- it copies the files in
+# app/javascript to public/assets under digested names, which is what
+# `deploy.yml`'s `asset_path: /rails/public/assets` has always pointed at.
+# SECRET_KEY_BASE_DUMMY because booting the app to read the asset paths does not
+# need the real one.
+RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 # Final stage for app image
 FROM base
