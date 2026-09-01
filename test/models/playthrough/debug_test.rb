@@ -199,6 +199,81 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
     assert_equal 1, debug.realized_count
   end
 
+  # NOTHING RECORDS WHERE A CHARACTER STANDS, so "last seen" is the whole of
+  # what the game knows -- and a character nobody has met is honestly nowhere
+  # rather than somewhere the view invented for them.
+  test "the cast says where each person was last recorded, and says when nobody knows" do
+    playthrough = create(:playthrough, :in_scene)
+    met = create(:character, story: playthrough.story, fullname: "Grenn Ollivar")
+    unmet = create(:character, story: playthrough.story, fullname: "Isbet Marrow")
+    playthrough.current_scene.characters = [ met ]
+
+    people = Playthrough::Debug.new(playthrough).cast.index_by { |person| person.character.fullname }
+
+    assert people["Grenn Ollivar"].seen?
+    assert_equal playthrough.current_location, people["Grenn Ollivar"].last_scene.location
+    assert_not people["Isbet Marrow"].seen?
+    assert_equal 1, Playthrough::Debug.new(playthrough).unseen_count
+  end
+
+  test "the cast reports the latest scene a person was in, not the first" do
+    playthrough = create(:playthrough, :in_scene)
+    grenn = create(:character, story: playthrough.story)
+    playthrough.current_scene.characters = [ grenn ]
+    lane = create(:location, story: playthrough.story, name: "Mournwell Lane")
+    later = create(:scene, story: playthrough.story, location: lane,
+                           story_timestamp: playthrough.current_scene.story_timestamp + 1.hour)
+    later.characters = [ grenn ]
+
+    person = Playthrough::Debug.new(playthrough).cast.sole
+
+    assert_equal lane, person.last_scene.location
+  end
+
+  # The map answers "who is here" with the HOLDOVER rule -- the same read
+  # `Scene::Generator#holdovers` makes -- so the view and the game agree about
+  # who the player will find. The protagonist and companions travel with the
+  # player and would otherwise appear in every row, saying nothing.
+  test "the map says who the game believes is standing in each place" do
+    playthrough = create(:playthrough, :started)
+    story = playthrough.story
+    here = playthrough.current_location
+    lane = create(:location, story: story, name: "Mournwell Lane")
+    empty = create(:location, :stub, story: story, name: "The Celestial Spire")
+
+    grenn = create(:character, story: story, fullname: "Grenn Ollivar")
+    scene = create(:scene, story: story, location: lane, story_timestamp: story.start_time)
+    scene.characters = [ grenn ]
+    playthrough.update!(current_scene: create(:scene, story: story, location: here,
+                                                       story_timestamp: story.start_time + 5.minutes))
+
+    places = Playthrough::Debug.new(playthrough).places.index_by { |place| place.location.name }
+
+    assert_equal [ "Grenn Ollivar" ], places["Mournwell Lane"].cast.map(&:fullname)
+    assert_empty places["The Celestial Spire"].cast
+    assert places[here.name].here, "the place the player is standing in is marked"
+    assert_not places["Mournwell Lane"].here
+  end
+
+  # Only an arrival records a cast, so the last scene that recorded ANYONE is
+  # the last thing the game actually knows -- reading the plain latest scene
+  # empties the room after any narrated turn. Same defect `holdovers` had.
+  test "a narrated turn in a room does not empty it" do
+    playthrough = create(:playthrough, :started)
+    story = playthrough.story
+    here = playthrough.current_location
+    grenn = create(:character, story: story, fullname: "Grenn Ollivar")
+
+    arrival = create(:scene, story: story, location: here, story_timestamp: story.start_time)
+    arrival.characters = [ grenn ]
+    create(:scene, story: story, location: here, previous_scene: arrival,
+                   story_timestamp: story.start_time + 5.minutes)
+
+    place = Playthrough::Debug.new(playthrough).places.find { |candidate| candidate.location == here }
+
+    assert_equal [ "Grenn Ollivar" ], place.cast.map(&:fullname)
+  end
+
   # The chain is shared with the play page so the two cannot disagree about
   # which turns belong to this playthrough.
   test "the turn log is this playthrough's chain and nobody else's" do

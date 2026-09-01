@@ -35,10 +35,15 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     assert_match "The nightly rearrangement", response.body
     assert_match "Mournwell Lane now opens onto", response.body
 
-    # The durable background, present and not competing with the turn.
+    # The durable background: every character and every place this world has
+    # generated, present and closed so it does not compete with the turn.
+    assert_select "details#cast summary", text: /the cast/
+    assert_select "details#map summary", text: /the map/
     assert_select "details summary", text: /the universe/
-    assert_select "details summary", text: /the cast/
-    assert_select "details summary", text: /the map/
+    assert_match "Grenn Ollivar", response.body
+    assert_match "The Sunken Stair", response.body
+    assert_select "a[href=?]", "#cast"
+    assert_select "a[href=?]", "#map"
 
     # And the honest gap.
     assert_select "h2", text: "what is not recorded"
@@ -82,6 +87,30 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select ".absent", text: /not written YET/
+  end
+
+  # A character the world generated but nobody has met is nowhere, and the view
+  # says so rather than inventing a place for them.
+  test "show lists a generated character nobody has met and says they are nowhere" do
+    playthrough = create(:playthrough, :in_scene)
+    create(:character, story: playthrough.story, fullname: "Isbet Marrow")
+
+    get playthrough_debug_path(playthrough)
+
+    assert_match "Isbet Marrow", response.body
+    assert_select ".absent", text: /never in a scene/
+  end
+
+  # A stub nobody has walked into is still a real record with a name, and the
+  # map lists it as one.
+  test "show lists stub locations on the map with nobody in them" do
+    playthrough = create(:playthrough, :in_scene)
+    create(:location, :stub, story: playthrough.story, name: "The Celestial Spire")
+
+    get playthrough_debug_path(playthrough)
+
+    assert_match "The Celestial Spire", response.body
+    assert_select ".absent", text: /nobody known here/
   end
 
   # A world with nothing in it must still render: this page is most useful when
