@@ -295,11 +295,15 @@ truncations rather than summaries.
   in that location that recorded a cast. A place nobody has visited and no
   companion follows you into has nobody to talk to, so the `talk` branch is
   unreachable there.
-- **A talk turn keeps nothing until both of its calls land.**
-  `Scene::Narrator` persists partial prose in an `ensure`; `talk_to` has no
-  equivalent, so a `talk` turn that fails halfway keeps neither call. The job
-  makes this much rarer -- a closed tab no longer aborts anything -- without
+- **A talk turn keeps no `Scene` and no `Interaction` until both of its calls
+  land.** `Scene::Narrator` persists partial prose in an `ensure`; `talk_to` has
+  no equivalent, so a `talk` turn that fails halfway writes neither record. The
+  job makes this much rarer -- a closed tab no longer aborts anything -- without
   closing it: a model that fails mid-turn still loses the exchange.
+  The character's own `Chat` is the exception, and deliberately not the fix: it
+  keeps the exchange, because it was a real question really answered, so the
+  next turn continues from a reply the player never got to read. Better than a
+  character contradicting themselves, and worth revisiting if it ever shows.
 - **A turn in flight is not re-joinable.** Reopen the page mid-narration and the
   log is what was persisted; the prose written so far is in the job's buffer and
   nowhere else. The finished turn arrives over the cable when it lands, because
