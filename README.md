@@ -41,31 +41,38 @@ The premise is optional; without one the model picks its own.
 
 ## Play it
 
-Two processes: the web server, and the worker that plays turns.
-
 ```bash
-bin/rails db:prepare   # three databases now: the app's, Solid Queue's, Solid Cable's
+bin/rails db:prepare   # three databases: the app's, Solid Queue's, Solid Cable's
 bin/rails db:seed      # two checked-in worlds, no model needed
-bin/rails server       # then open http://localhost:3000
-bin/jobs               # in a second terminal -- this is what runs a turn
+bin/dev                # then open http://localhost:3000
 ```
 
-**Without `bin/jobs` nothing narrates.** A turn is a `NarrationJob`, not a
-request: the browser posts the command, gets its own text echoed back
-immediately, and reads the prose as Turbo Streams broadcast over Action Cable
-while the job writes it. That is what makes a turn survive the tab closing, and
-what stops a twenty-second model call from holding a Puma thread. Queued jobs
-wait in `storage/development_queue.sqlite3` until a worker picks them up, so
-starting `bin/jobs` late runs the turns you already typed.
+`bin/dev` runs both processes the game needs — the web server and the job worker
+— under foreman, with both logs interleaved. `PORT=3142 bin/dev` moves the whole
+formation if something else already has 3000.
+
+Why two: **a turn is a `NarrationJob`, not a request.** The browser posts the
+command, gets its own text echoed back immediately, and reads the prose as Turbo
+Streams broadcast over Action Cable while the job writes it — which is what makes
+a turn survive the tab closing, and what stops a twenty-second model call from
+holding a Puma thread. So a web process alone accepts a command and then nothing
+ever arrives; the turn sits in `storage/development_queue.sqlite3` waiting for a
+worker, and starting one later runs the turns you already typed.
+
+`bin/rails server` on its own is still the right thing when you want to debug —
+foreman gives its children no TTY, so `binding.break` cannot take the terminal
+under `bin/dev`. Pair it with `bin/jobs` in a second terminal when you want to
+actually play.
 
 Development uses `solid_cable`, not the `async` adapter the Rails default
-suggests: the turn is broadcast from `bin/jobs` and read by a WebSocket held in
-Puma, and `async` broadcasts only within one process. On `async` the player
+suggests: the turn is broadcast from the job worker and read by a WebSocket held
+in Puma, and `async` broadcasts only within one process. On `async` the player
 watches an empty cursor and the turn lands in silence.
 
-There is still no Node, no `package.json` and no build step: `propshaft` serves
-`app/javascript` as it sits on disk and `importmap-rails` lets the browser
-resolve the module names itself.
+There is still no Node, no `package.json` and no build step. `propshaft` serves
+`app/javascript` as it sits on disk, `importmap-rails` lets the browser resolve
+the module names itself, and foreman is a process runner rather than a build
+step — deliberately outside the Gemfile, installed on demand by `bin/dev`.
 
 ## How a turn works
 

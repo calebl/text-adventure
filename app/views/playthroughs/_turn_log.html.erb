@@ -61,8 +61,14 @@
     </p>
 
     <%= form_with url: playthrough_turns_path(playthrough) do |form| %>
+      <%# A Stimulus target so the play controller can put focus back here after
+          a turn without knowing the markup around it. Targets are resolved by a
+          live `querySelectorAll` at access time, not from a registry an observer
+          fills in later, so this is safe to read in the same tick the stream
+          render finished. %>
       <%= form.text_field :command, autofocus: autofocus, autocomplete: "off",
-                                    placeholder: "what do you do?" %>
+                                    placeholder: "what do you do?",
+                                    data: { play_target: "command" } %>
       <%= form.submit "Go" %>
     <% end %>
   <% end %>
