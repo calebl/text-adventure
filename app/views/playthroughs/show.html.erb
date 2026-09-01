@@ -1,5 +1,13 @@
 <h1><%= @playthrough.story.title %></h1>
-<p><%= link_to "&larr; all stories".html_safe, root_path %></p>
+<%# The window into the machine, and the only mark it leaves on the game.
+    Absent entirely unless `Playthrough::Debug.enabled?` -- local by default --
+    so a player who was handed a playthrough link is never shown one. %>
+<p>
+  <%= link_to "&larr; all stories".html_safe, root_path %>
+  <% if Playthrough::Debug.enabled? %>
+    &middot; <%= link_to "debug", playthrough_debug_path(@playthrough) %>
+  <% end %>
+</p>
 
 <div class="preface"><%= @playthrough.story.preface %></div>
 <hr>

@@ -29,6 +29,29 @@ class Playthrough < ApplicationRecord
     current_scene&.story_timestamp || story.clock
   end
 
+  # THIS PLAYTHROUGH'S TURNS, oldest first.
+  #
+  # Scenes are a `previous_scene` linked list, so walking BACKWARDS from
+  # `current_scene` gives this playthrough's turns and nobody else's -- every
+  # playthrough of a story starts on the same opening arrival, so the forward
+  # direction stopped being single-valued (see `Scene#next_scenes`).
+  #
+  # It lives here rather than in a controller because two readers need the same
+  # answer: the play page's turn log and `Playthrough::Debug`. A debug view that
+  # walked the chain itself could disagree with the prose about which turns
+  # belong to this playthrough, which is the one thing it must never do.
+  def scene_chain
+    scenes = []
+    scene = current_scene
+
+    while scene
+      scenes.unshift(scene)
+      scene = scene.previous_scene
+    end
+
+    scenes
+  end
+
   # The story time a turn of `kind` ends at: now, plus what that kind of turn
   # costs from `Scene::TURN_MINUTES`. Journeys are not in that table -- an
   # arrival costs the edge it walked, which `Scene::Generator` works out.

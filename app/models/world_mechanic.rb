@@ -62,22 +62,33 @@ class WorldMechanic < ApplicationRecord
     CADENCES.fetch(cadence).fetch(:at)
   end
 
+  # The first boundary strictly after `at`. This is the boundary snapping the
+  # class comment describes, on its own: a cadence is an edge in the story's
+  # day, so the answer is the next multiple of the period from the epoch and
+  # not `at` plus the period.
+  #
+  # Public because it is also the answer to "when does this fire next", which
+  # is what `Playthrough::Debug` reads. Nothing about it is per-boundary state.
+  def next_boundary_after(at)
+    return nil if at.nil?
+
+    period = interval_minutes * 60
+    offset = offset_minutes * 60
+
+    Time.at(((at.to_i - offset) / period + 1) * period + offset).utc
+  end
+
   # The story times at which this should have fired, from the last run up to
-  # and including `now`. Plain arithmetic, and the only reason it is a method
-  # rather than a line is the boundary snapping described in the class comment.
+  # and including `now`. Plain arithmetic on two datetimes.
   def pending_boundaries(now)
     from = last_run_at || story.start_time
     return [] if now.nil? || from.nil? || now <= from
 
-    period = interval_minutes * 60
-    offset = offset_minutes * 60
-    first = Time.at(((from.to_i - offset) / period + 1) * period + offset).utc
-
     boundaries = []
-    at = first
+    at = next_boundary_after(from)
     while at <= now
       boundaries << at
-      at += period
+      at += interval_minutes * 60
     end
     boundaries
   end
