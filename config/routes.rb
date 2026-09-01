@@ -10,6 +10,11 @@ Rails.application.routes.draw do
 
     # Server-sent events. A GET because that is all EventSource can issue.
     get "narration", to: "narrations#show"
+
+    # The window into the machine. Drawn unconditionally and gated in the
+    # controller, so the path helper exists in every environment and the page
+    # exists in none but the ones `Playthrough::Debug.enabled?` allows.
+    get "debug", to: "debug#show"
   end
 
   root "playthroughs#index"

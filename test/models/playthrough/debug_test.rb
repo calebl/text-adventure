@@ -1,0 +1,292 @@
+require "test_helper"
+
+class Playthrough::DebugTest < ActiveSupport::TestCase
+  # THE HARD RULE. This is an observer: it must not generate, mutate a record,
+  # or advance a playthrough. Anything else it does is a matter of taste; this
+  # is not.
+  #
+  # Asserted against every table rather than against the ones it happens to
+  # read, and against `maximum(:updated_at)` as well as counts, because an
+  # update in place moves neither a count nor a max id. The read is deliberately
+  # exhaustive -- every public method -- so a future addition that writes is
+  # caught by the test that already exists.
+  test "reading everything writes nothing" do
+    playthrough = rich_playthrough
+    before = database_snapshot
+
+    BaseAgent.stub(:new, -> { flunk "the debug view asked a model something" }) do
+      read_everything(Playthrough::Debug.new(playthrough))
+    end
+
+    assert_equal before, database_snapshot
+  end
+
+  # `Story#catch_up_world!` is the one write that would be easy to make by
+  # accident: it is what `Playthrough::Turn#play` calls first, and it is the
+  # thing that makes a stale mechanic fire. Looking at a world must not move it.
+  test "a mechanic with nights owed is reported, not run" do
+    playthrough = create(:playthrough, :in_scene)
+    mechanic = create(:world_mechanic, story: playthrough.story, cadence: "nightly")
+    create(:scene, story: playthrough.story, location: playthrough.current_location,
+                   story_timestamp: playthrough.story.start_time + 3.days,
+                   previous_scene: playthrough.current_scene).then do |scene|
+      playthrough.update!(current_scene: scene)
+    end
+
+    debug = Playthrough::Debug.new(playthrough)
+    entry = debug.mechanics.sole
+
+    assert_operator entry.owed.size, :>=, 3, "three nights have passed unpaid"
+    assert_nil mechanic.reload.last_run_at, "reading the world ran it"
+    assert_equal 0, playthrough.story.world_events.count
+  end
+
+  # THE BRANCH IS DERIVED, because there is nothing stored to read it from.
+  # Each of these is the record shape one branch of `Playthrough::Turn` leaves
+  # behind.
+  test "an opening arrival is reported as the world's own" do
+    playthrough = create(:playthrough)
+    opening = create(:location, story: playthrough.story)
+    scene = create(:scene, :opening, story: playthrough.story, location: opening)
+    playthrough.update!(current_location: opening, current_scene: scene)
+
+    turn = Playthrough::Debug.new(playthrough).latest_turn
+
+    assert_equal :opening, turn.branch
+    assert_match(/is_opening/, turn.evidence.join(" "))
+  end
+
+  test "a turn that wrote an Interaction is reported as a conversation" do
+    playthrough = create(:playthrough, :in_scene)
+    scene = next_scene(playthrough, minutes: 10)
+    character = create(:character, story: playthrough.story, fullname: "Maren Vosk")
+    scene.characters = [ character ]
+    create(:interaction, character: character, scene: scene,
+                         location: playthrough.current_location, user_input: "ask about the ledger")
+
+    turn = Playthrough::Debug.new(playthrough).latest_turn
+
+    assert_equal :conversation, turn.branch
+    assert_equal "ask about the ledger", turn.typed
+    assert_match(/Interaction row/, turn.evidence.join(" "))
+    assert_equal 'Scene::TURN_MINUTES["conversation"]', turn.cost_reading
+  end
+
+  test "a turn that changed location is reported as an arrival" do
+    playthrough = create(:playthrough, :in_scene)
+    destination = create(:location, story: playthrough.story, name: "Mournwell Lane")
+    create(:location_connection, location: playthrough.current_location,
+                                 connected_location: destination,
+                                 distance: "a short walk", travel_method: "walking")
+    scene = create(:scene, story: playthrough.story, location: destination,
+                          previous_scene: playthrough.current_scene,
+                          story_timestamp: playthrough.current_scene.story_timestamp + 5.minutes)
+    playthrough.update!(current_location: destination, current_scene: scene)
+
+    turn = Playthrough::Debug.new(playthrough).latest_turn
+
+    assert_equal :arrival, turn.branch
+    assert_match(/location changed/, turn.evidence.join(" "))
+    assert_equal "the edge walked -- a short walk, walking", turn.cost_reading
+  end
+
+  test "a turn with no interaction, no cast and no move is reported as narration" do
+    playthrough = create(:playthrough, :in_scene)
+    next_scene(playthrough, minutes: 5)
+
+    turn = Playthrough::Debug.new(playthrough).latest_turn
+
+    assert_equal :narration, turn.branch
+    assert_equal 'Scene::TURN_MINUTES["action"]', turn.cost_reading
+  end
+
+  # THE POINT OF SHOWING THE COST. Every turn is priced by a fixed table --
+  # `Scene::TURN_MINUTES` or an edge's distance and method. A cost that matches
+  # neither is how wall-clock time leaking back onto that path would look, and
+  # it is the defect the whole story-time work exists to prevent.
+  test "a turn priced by no fixed table says so" do
+    playthrough = create(:playthrough, :in_scene)
+    next_scene(playthrough, minutes: 47)
+
+    assert_match(/matches no fixed table/, Playthrough::Debug.new(playthrough).latest_turn.cost_reading)
+  end
+
+  # An arrival records a cast and a narrated turn does not, so a narrated turn
+  # that recorded one is a contradiction between two records. Say so rather
+  # than picking whichever one the label happened to be.
+  test "a narrated turn that recorded a cast is flagged as an anomaly" do
+    playthrough = create(:playthrough, :in_scene)
+    scene = next_scene(playthrough, minutes: 5)
+    scene.characters = [ create(:character, story: playthrough.story) ]
+
+    turn = Playthrough::Debug.new(playthrough).latest_turn
+
+    assert_match(/ANOMALY/, turn.evidence.join(" "))
+  end
+
+  # THE CLOSED SET, asked of the classifier itself rather than worked out
+  # again. If these two ever disagree the view is lying about what the game
+  # will accept, which is worse than not showing it.
+  test "the candidates are the classifier's own, and the enum is what the schema would offer" do
+    playthrough = create(:playthrough, :started)
+    playthrough.update!(current_scene: create(:scene, story: playthrough.story,
+                                                      location: playthrough.current_location))
+    exit_to = create(:location, story: playthrough.story, name: "The Sunken Stair")
+    create(:location_connection, location: playthrough.current_location, connected_location: exit_to)
+    grenn = create(:character, story: playthrough.story, fullname: "Grenn Ollivar", nickname: "Old Grenn")
+    playthrough.current_scene.characters = [ playthrough.character, grenn ]
+
+    debug = Playthrough::Debug.new(playthrough)
+
+    assert_equal [ "The Sunken Stair" ], debug.candidate_exits.map(&:name)
+    assert_equal [ "Grenn Ollivar" ], debug.candidate_cast.map(&:fullname)
+    assert_equal [ "The Sunken Stair", "Grenn Ollivar", "Old Grenn", "nothing" ], debug.candidate_enum
+    assert_not_includes debug.candidate_cast, playthrough.character, "the player cannot talk to themselves"
+  end
+
+  test "the reconstructed classifier prompt carries the exits and the cast" do
+    playthrough = create(:playthrough, :started)
+    exit_to = create(:location, story: playthrough.story, name: "The Sunken Stair")
+    create(:location_connection, location: playthrough.current_location, connected_location: exit_to,
+                                 distance: "adjacent", travel_method: "climbing")
+
+    prompt = Playthrough::Debug.new(playthrough).classifier_prompt("go down")
+
+    assert_match "The Sunken Stair (adjacent, climbing)", prompt
+    assert_match "go down", prompt
+  end
+
+  # Connections are written in both directions from one answer, so a missing
+  # return edge is a defect and not a shape the world is allowed to have.
+  test "a one-way exit is reported as one" do
+    playthrough = create(:playthrough, :started)
+    neighbour = create(:location, story: playthrough.story)
+    create(:location_connection, location: playthrough.current_location, connected_location: neighbour)
+
+    exit = Playthrough::Debug.new(playthrough).exits.sole
+
+    assert exit.one_way?
+
+    create(:location_connection, location: neighbour, connected_location: playthrough.current_location)
+    assert_not Playthrough::Debug.new(playthrough).exits.sole.one_way?
+  end
+
+  # `Story#clock` is the high-water mark across every playthrough, because the
+  # world moves for everybody; a player's own next turn follows on from THEIR
+  # last one. Two playthroughs of one world is where that stops being academic.
+  test "the story's clock and this player's own moment are reported separately" do
+    story = create(:story)
+    location = create(:location, story: story)
+    behind = create(:playthrough, story: story, current_location: location)
+    behind.update!(current_scene: create(:scene, story: story, location: location,
+                                                 story_timestamp: story.start_time + 1.hour))
+    create(:scene, story: story, location: location, story_timestamp: story.start_time + 9.hours)
+
+    debug = Playthrough::Debug.new(behind)
+
+    assert_equal story.start_time + 9.hours, debug.story_clock
+    assert_equal story.start_time + 1.hour, debug.story_now
+  end
+
+  test "the map counts stubs and realized places apart" do
+    playthrough = create(:playthrough, :started)
+    create(:location, :stub, story: playthrough.story)
+    create(:location, :stub, story: playthrough.story)
+
+    debug = Playthrough::Debug.new(playthrough)
+
+    assert_equal 2, debug.stub_count
+    assert_equal 1, debug.realized_count
+  end
+
+  # The chain is shared with the play page so the two cannot disagree about
+  # which turns belong to this playthrough.
+  test "the turn log is this playthrough's chain and nobody else's" do
+    story = create(:story)
+    location = create(:location, story: story)
+    opening = create(:scene, :opening, story: story, location: location, description: "The story opens here.")
+    mine = create(:playthrough, story: story, current_location: location)
+    mine.update!(current_scene: create(:scene, story: story, location: location,
+                                                description: "I turned left.", previous_scene: opening))
+    create(:scene, story: story, location: location, description: "Somebody else turned right.",
+                   previous_scene: opening)
+
+    descriptions = Playthrough::Debug.new(mine).turns.map { |turn| turn.scene.description }
+
+    assert_equal [ "The story opens here.", "I turned left." ], descriptions
+  end
+
+  test "enabled? is local by default and TA_DEBUG_VIEW overrides it either way" do
+    assert Playthrough::Debug.enabled?, "the test environment is local"
+
+    with_env("TA_DEBUG_VIEW", "0") { assert_not Playthrough::Debug.enabled? }
+    with_env("TA_DEBUG_VIEW", "false") { assert_not Playthrough::Debug.enabled? }
+    with_env("TA_DEBUG_VIEW", "1") { assert Playthrough::Debug.enabled? }
+  end
+
+  private
+
+  # A playthrough with one of everything the view reads.
+  def rich_playthrough
+    playthrough = create(:playthrough, :started)
+    story = playthrough.story
+    here = playthrough.current_location
+
+    neighbour = create(:location, :stub, story: story)
+    create(:location_connection, location: here, connected_location: neighbour)
+    create(:location_connection, location: neighbour, connected_location: here)
+
+    opening = create(:scene, :opening, story: story, location: here, story_timestamp: story.start_time)
+    talk = create(:scene, story: story, location: here, previous_scene: opening,
+                          story_timestamp: story.start_time + 10.minutes)
+    character = create(:character, story: story)
+    talk.characters = [ character ]
+    create(:interaction, character: character, scene: talk, location: here)
+    playthrough.update!(current_scene: talk)
+
+    mechanic = create(:world_mechanic, story: story)
+    create(:world_event, :with_locations, world_mechanic: mechanic, story: story)
+
+    playthrough
+  end
+
+  def next_scene(playthrough, minutes:)
+    scene = create(:scene, story: playthrough.story, location: playthrough.current_location,
+                           previous_scene: playthrough.current_scene,
+                           story_timestamp: playthrough.current_scene.story_timestamp + minutes.minutes)
+    playthrough.update!(current_scene: scene)
+    scene
+  end
+
+  # Every public method, so a future addition that writes is caught by the test
+  # that is already here rather than by one somebody remembers to add.
+  def read_everything(debug)
+    (Playthrough::Debug.public_instance_methods(false) - [ :classifier_prompt ]).each do |name|
+      debug.public_send(name)
+    end
+    debug.classifier_prompt
+  end
+
+  # Row counts and the newest `updated_at` per table: a count catches an insert
+  # or a delete, the timestamp catches an update in place.
+  def database_snapshot
+    ActiveRecord::Base.connection.tables.sort.to_h do |table|
+      rows = ActiveRecord::Base.connection.select_all("SELECT COUNT(*) AS c FROM #{table}").first["c"]
+      updated =
+        if ActiveRecord::Base.connection.column_exists?(table, :updated_at)
+          ActiveRecord::Base.connection.select_all("SELECT MAX(updated_at) AS m FROM #{table}").first["m"]
+        end
+
+      [ table, [ rows, updated ] ]
+    end
+  end
+
+  def with_env(key, value)
+    had = ENV.key?(key)
+    previous = ENV[key]
+    ENV[key] = value
+    yield
+  ensure
+    had ? ENV[key] = previous : ENV.delete(key)
+  end
+end

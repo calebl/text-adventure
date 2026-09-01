@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>debug &mdash; <%= @playthrough&.story&.title %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%# ITS OWN STYLESHEET, and that is the point of it being a separate layout.
+        The reading experience is deliberately deferred (`ta-api-iface`), so this
+        page must not be able to change how the story reads -- the two share no
+        CSS at all. Inline for the same reason the game's is: no propshaft, no
+        importmap, no build step.
+
+        Dense and unapologetically technical. Wider than the game's 44rem
+        because tables of connections do not wrap usefully. %>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        background: #0d0f12; color: #b8c0c8;
+        font: 13px/1.5 ui-monospace, "DejaVu Sans Mono", monospace;
+        margin: 0; padding: 1.5rem 1rem 6rem;
+      }
+      main { max-width: 76rem; margin: 0 auto; }
+      a { color: #7fb2d8; }
+      h1 {
+        font-size: 1rem; letter-spacing: .12em; text-transform: uppercase;
+        color: #d8c07f; margin: 0 0 .25rem;
+      }
+      h2 {
+        font-size: .8rem; letter-spacing: .16em; text-transform: uppercase;
+        color: #6f8ba4; margin: 2rem 0 .5rem;
+        border-bottom: 1px solid #21262c; padding-bottom: .3rem;
+      }
+      h3 { font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: #8b939b; margin: 1rem 0 .35rem; }
+      .nav { color: #6b737b; margin: 0 0 1rem; }
+
+      /* Every panel is a bordered block; the current turn is the one that gets
+         an accent, because the whole view is organised around it. */
+      .panel { border: 1px solid #21262c; padding: .6rem .8rem; margin: 0 0 .75rem; }
+      .panel.now { border-color: #4a4326; background: #14140f; }
+
+      /* label / value pairs. Grid rather than a table so a long value wraps
+         under its own label instead of stretching the column. */
+      .fields { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); gap: .15rem .8rem; }
+      .fields > .k { color: #6b737b; }
+      .fields > .v { color: #cfd3d8; min-width: 0; overflow-wrap: anywhere; }
+
+      .absent { color: #7a6a52; font-style: italic; }
+      .prose { white-space: pre-wrap; color: #cfd3d8; }
+      .note { color: #6b737b; margin: .2rem 0 .6rem; }
+      .warn { color: #d88f7f; }
+
+      pre {
+        background: #08090b; border: 1px solid #21262c; color: #9aa3ac;
+        padding: .5rem .6rem; margin: .3rem 0 0; overflow-x: auto;
+        white-space: pre; font: inherit;
+      }
+
+      /* Wide content scrolls inside its own box; the page body never does. */
+      .scroll { overflow-x: auto; }
+      table { border-collapse: collapse; width: 100%; font-size: 12px; }
+      th, td { text-align: left; padding: .25rem .5rem; border-bottom: 1px solid #1a1e23; vertical-align: top; }
+      th { color: #6b737b; font-weight: normal; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; }
+      tbody tr:hover { background: #12151a; }
+
+      /* The branch a turn took, coloured so a long log can be scanned. Purple
+         for a model call the player reads, teal for the app deciding -- the
+         same colours the README's turn diagram uses. */
+      .branch { padding: 0 .35rem; border: 1px solid; letter-spacing: .08em; text-transform: uppercase; font-size: 11px; }
+      .branch.arrival { color: #b79ad8; border-color: #4a3d5c; }
+      .branch.conversation { color: #7fd8c0; border-color: #2f5a50; }
+      .branch.narration { color: #d8c07f; border-color: #5c5326; }
+      .branch.opening { color: #8b939b; border-color: #33393f; }
+
+      .tag { color: #8b939b; border: 1px solid #33393f; padding: 0 .3rem; font-size: 11px; }
+      .tag.stub { color: #7a6a52; border-color: #4a3f2e; }
+      .tag.realized { color: #7fd8c0; border-color: #2f5a50; }
+      .tag.mobile { color: #b79ad8; border-color: #4a3d5c; }
+
+      ul.evidence { margin: .3rem 0 0; padding-left: 1.1rem; color: #8b939b; }
+      ul.evidence li { margin: .05rem 0; }
+
+      details { margin: 0 0 .35rem; }
+      details > summary { cursor: pointer; color: #9aa3ac; padding: .15rem 0; }
+      details > summary:hover { color: #cfd3d8; }
+      details[open] > summary { color: #cfd3d8; }
+      details .body { padding: .4rem 0 .8rem 1rem; border-left: 1px solid #21262c; margin-left: .3rem; }
+    </style>
+  </head>
+  <body>
+    <main><%= yield %></main>
+  </body>
+</html>
