@@ -54,16 +54,61 @@ class Interaction::SchemaTest < ActiveSupport::TestCase
     end
   end
 
-  test "thoughts and actions are bounded to a sentence or two" do
-    assert_schema_field(SCHEMA, :inner_resolution, type: :string, maxLength: 200)
-    assert_schema_field(SCHEMA, :pre_thought, type: :string, maxLength: 200)
-    assert_schema_field(SCHEMA, :action, type: :string, maxLength: 300)
-    assert_schema_field(SCHEMA, :post_thought, type: :string, maxLength: 200)
+  # The caps are HEADROOM over the shape asked for, not the shape itself. At the
+  # old numbers real answers landed exactly on the cap -- a `pre_feeling` of
+  # exactly 60 characters ending "hopeful for a (v", a `pre_thought` of exactly
+  # 200 -- and the narrator wrote prose over the fragment so nobody could tell.
+  test "thoughts and actions have room for the sentence or two they ask for" do
+    assert_schema_field(SCHEMA, :inner_resolution, type: :string, maxLength: 320)
+    assert_schema_field(SCHEMA, :pre_thought, type: :string, maxLength: 320)
+    assert_schema_field(SCHEMA, :action, type: :string, maxLength: 480)
+    assert_schema_field(SCHEMA, :post_thought, type: :string, maxLength: 320)
   end
 
-  test "feelings are bounded to a few words" do
-    assert_schema_field(SCHEMA, :pre_feeling, type: :string, maxLength: 60)
-    assert_schema_field(SCHEMA, :post_feeling, type: :string, maxLength: 60)
+  test "feelings have room for the few words they ask for" do
+    assert_schema_field(SCHEMA, :pre_feeling, type: :string, maxLength: 120)
+    assert_schema_field(SCHEMA, :post_feeling, type: :string, maxLength: 120)
+  end
+
+  # No field may be capped at what its own shape costs: a cap set at the shape
+  # does not shorten the answer, it cuts it in half. Narrative English runs
+  # ~150 characters to the sentence, so a one-sentence field needs more than
+  # that and a two-sentence field more than double.
+  test "no field is capped tighter than the shape it asks for" do
+    floors = {
+      "pre_thought" => 200, "post_thought" => 200, "inner_resolution" => 200,
+      "action" => 400, "pre_feeling" => 100, "post_feeling" => 100
+    }
+
+    schema_properties(SCHEMA).each do |name, property|
+      assert_operator property["maxLength"], :>, floors.fetch(name),
+                      "#{SCHEMA}##{name} is capped at what its own shape costs"
+    end
+  end
+
+  # The truncation guard reads "arrived at the cap" as "was cut off", so the cap
+  # the sanitizer checks against has to be the cap the model was actually given.
+  # Two numbers here would make the guard fire on the wrong length.
+  test "states the same cap to the model as it reports to a caller" do
+    schema_properties(SCHEMA).each do |name, property|
+      assert_equal property["maxLength"], SCHEMA.max_length_for(name),
+                   "#{SCHEMA}##{name}: max_length_for disagrees with the schema"
+    end
+  end
+
+  # The description is the only place the model reads the budget: the JSON
+  # `maxLength` is enforced by truncation, not explained to it. A field whose
+  # prose says "one sentence" while its cap says something else is the mismatch
+  # this whole change is about.
+  test "every field states its character budget, and states the cap it is given" do
+    schema_properties(SCHEMA).each do |name, property|
+      assert_match(/#{property["maxLength"]} characters/, property["description"],
+                   "#{SCHEMA}##{name}'s description must state its own cap")
+    end
+  end
+
+  test "max_length_for refuses a field this schema does not describe" do
+    assert_raises(KeyError) { SCHEMA.max_length_for(:mood) }
   end
 
   # `action_type` used to be asked for on every turn. `interactions` has no
