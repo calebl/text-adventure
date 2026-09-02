@@ -55,7 +55,17 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
-- Rails 8 app, SQLite, 916 tests green. No longer API-only: `api_only` is off
+- **`mistralai/mistral-medium-3.1` is the default hosted model**, with
+  `minimax/minimax-m3` second. The captain's ruling on recommendation 2 of the
+  refusal sweep: mistral refused 0 of 52 charged cases against minimax's 8 of 51
+  (16%), is 3–4× faster (median 2.4s against 8.8s), and dropped no required
+  `Interaction::Schema` field where minimax dropped them on 29% of talk turns.
+  The accepted cost is thinner prose — about 60% of minimax's length narrating
+  and under a third on the interaction path. The order also costs the safety
+  net: a `RefusalError` rotation now falls to minimax, the model that refuses,
+  rather than to a model known to comply. Stated on the constant, not buried.
+
+- Rails 8 app, SQLite, 976 tests green. No longer API-only: `api_only` is off
   and `ApplicationController < ActionController::Base` so it can render ERB.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph and the
@@ -391,7 +401,7 @@ The full audit of every planned piece of work against this constraint is in
   A refusal — a decline, or a menu of alternatives — raises
   `BaseAgent::RefusalError` and rotates, which is what the app was missing:
   measured over 51 charged narrator prompts, `minimax/minimax-m3` refused 8
-  (16%) and `mistralai/mistral-medium-3.1`, already second in
+  (16%) and `mistralai/mistral-medium-3.1`, then second in
   `REMOTE_MODEL_IDS`, refused **none of them**. The app had the model it needed
   and could not reach it, because a refusal is a 200 OK. The detector is
   STRUCTURAL rather than a word list — an unquoted first-person opening, or a
@@ -780,8 +790,8 @@ What it still owes, roughly in order:
 - **Three findings from the refusal sweep, measured and deliberately not acted
   on** (`data/ta-refusal-range/report.md`). None is a refusal problem, and each
   is its own piece of work: (1) **`mistral-medium-3.1` refused nothing and is
-  3–4× faster**, but its prose is markedly thinner — whether it should be the
-  default is a real trade and the captain's call, not a bug. (2) **The talk path
+  3–4× faster**, but its prose is markedly thinner — *decided: it is now the
+  default, and the thinner prose is the accepted trade. See Done.* (2) **The talk path
   hangs.** Three calls in ~150 stalled indefinitely, all on the unschema'd
   streaming pass inside `InteractionAgent`, and `RubyLLM`'s `request_timeout`
   demonstrably did not bound them — one ran 21 minutes with it set to 150s.

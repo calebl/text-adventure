@@ -6,11 +6,12 @@ FactoryBot.define do
     # messages associate one. Reuse the existing row rather than colliding.
     initialize_with { Model.find_or_initialize_by(model_id: model_id, provider: provider) }
 
-    model_id { "minimax/minimax-m3" }
+    # The app's default hosted model, `BaseAgent::REMOTE_MODEL_IDS.first`.
+    model_id { "mistralai/mistral-medium-3.1" }
     provider { "openrouter" }
-    name { "MiniMax M3" }
-    family { "minimax" }
-    context_window { 200_000 }
+    name { "Mistral Medium 3.1" }
+    family { "mistral" }
+    context_window { 128_000 }
     max_output_tokens { 32_000 }
     capabilities { [ "structured_output" ] }
     modalities { { "input" => [ "text" ], "output" => [ "text" ] } }

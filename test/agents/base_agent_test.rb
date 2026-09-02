@@ -27,6 +27,14 @@ class BaseAgentTest < ActiveSupport::TestCase
     end
   end
 
+  # THE ORDER IS THE DECISION, so it is pinned rather than left implicit.
+  # `mistralai/mistral-medium-3.1` is first because it refused 0 of 52 measured
+  # charged cases against minimax's 8 of 51, and is 3-4x faster; the accepted
+  # cost is thinner prose. See the note on the constant.
+  test "mistral is the default hosted model and minimax the fallback" do
+    assert_equal [ "mistralai/mistral-medium-3.1", "minimax/minimax-m3" ], BaseAgent::REMOTE_MODEL_IDS
+  end
+
   test "uses the configured remote models in order" do
     with_env("OPENROUTER_MODEL" => nil) do
       assert_equal BaseAgent::REMOTE_MODEL_IDS, BaseAgent.remote_model_options.map { |option| option[:model] }
@@ -332,7 +340,9 @@ class BaseAgentTest < ActiveSupport::TestCase
 
   # THE CHANGE, in one test. A refusal was a 200 OK, so the rotation the app
   # already had never ran and `mistralai/mistral-medium-3.1` -- which wrote
-  # every response `minimax/minimax-m3` refused -- was never reached.
+  # every response `minimax/minimax-m3` refused -- was never reached. Mistral
+  # is first in the list now, so what a rotation reaches is minimax; the
+  # behaviour pinned here is the rotation itself, not which model it lands on.
   test "ask rotates past a model that refused the prompt" do
     replacement = "The blade stops an inch short. The child is already up the alley and over the wall."
     agent = build_agent
@@ -396,8 +406,8 @@ class BaseAgentTest < ActiveSupport::TestCase
   # --- a crisis response intercepts instead -----------------------------------
 
   # INTERCEPT, NOT ROTATE, and the difference is a decision rather than an
-  # implementation detail: the fallback model narrates the same exchange in
-  # fiction with no intervention, so rotating here would be the app quietly
+  # implementation detail: another model in the list narrates the same exchange
+  # in fiction with no intervention, so rotating here would be the app quietly
   # routing around a suicide safety response. It does not rotate, it raises, and
   # the caller shows something the app wrote. See Playthrough::SafetyNotice.
   test "ask does not rotate when a model answered with real-world crisis resources" do

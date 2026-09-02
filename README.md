@@ -19,8 +19,8 @@ Generation needs a model. Either:
   `BaseAgent::LOCAL_MODEL_OPTIONS`. Free, but 40–90 seconds per structured call.
 * **Hosted (preferred)** — set `OPENROUTER_API_KEY`, in a gitignored `.env`
   (loaded by `dotenv-rails`) or a gitignored `.envrc` (loaded by direnv). Much
-  faster, and `BaseAgent` prefers it automatically when the key is present. Defaults to `minimax/minimax-m3`, falling back to
-  `mistralai/mistral-medium-3.1`. Override with `OPENROUTER_MODEL`.
+  faster, and `BaseAgent` prefers it automatically when the key is present. Defaults to `mistralai/mistral-medium-3.1`, falling back to
+  `minimax/minimax-m3`. Override with `OPENROUTER_MODEL`.
 
   Any model you add must support structured outputs — several OpenRouter `:free`
   endpoints accept a schema and answer in prose instead. Check with:
