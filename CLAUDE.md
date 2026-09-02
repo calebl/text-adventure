@@ -170,6 +170,13 @@ The current database includes the following story-related models with proper ass
   branch by `Playthrough::Turn#play`. Nil only on an opening arrival
 - **Playthrough** → **Playthrough::Drifts**: one row per turn on which a reach
   resolved to nothing. The drift counter; never pruned
+- **Character** → `#interaction_instructions`, the prompt every conversational
+  turn is built on. Its voice rules are scoped per register — first person
+  inside the quotes, named and pronouned outside them — and
+  `#addressee_section` tells an NPC who is in front of it using only what
+  meeting somebody would tell them. The protagonist's `backstory`,
+  `personality`, `likes`, `dislikes` and `fears` are deliberately withheld; see
+  `AGENTS.md` → *Talking to models*
 - **WorldMechanic** → **WorldEvents**: the world changing itself on the story's
   clock. `kind` and `cadence` are keys into fixed tables in code, so a seeded or
   generated world supplies parameters (`locations.mobile`, the cadence) and

@@ -91,7 +91,21 @@ The full audit of every planned piece of work against this constraint is in
   net: a `RefusalError` rotation now falls to minimax, the model that refuses,
   rather than to a model known to comply. Stated on the constant, not buried.
 
-- Rails 8 app, SQLite, 991 tests green. No longer API-only: `api_only` is off
+- **A character speaks in the first person and knows who it is talking to.**
+  `Character#interaction_instructions` used to say "Refer to yourself in third
+  person only" with no scope, two lines under the sentence establishing that
+  quoted text is speech, and it named the player nowhere at all. Measured over
+  30 real talk turns per arm per model: characters named themselves aloud on
+  `google/gemini-2.5-flash` (4 of 27 spoken turns, 2 reaching the player) and on
+  `mistralai/mistral-medium-3.1` (1 of 27), and invented a stand-in for the
+  player — "the user", "the speaker", "the interlocutor" — on 13 of 30 mistral
+  passes and 23 of 30 minimax. After: 0 self-naming on either model, 0 invented
+  stand-ins, and the protagonist named on 11–28 of 30. The rule is now scoped to
+  the register outside the quotes, and `Character#addressee_section` passes what
+  meeting somebody tells you and withholds the protagonist's `backstory`,
+  `personality`, `likes`, `dislikes` and `fears`.
+
+- Rails 8 app, SQLite, 998 tests green. No longer API-only: `api_only` is off
   and `ApplicationController < ActionController::Base` so it can render ERB.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph and the
@@ -827,6 +841,21 @@ What it still owes, roughly in order:
   14 on mistral), each one a silent wasted call that `verify_schema_honored!`
   recovers from. The rate is *higher* on benign input than on charged input, so
   it is flakiness rather than steering.
+- **How often minimax hits a cap is its own property, and prompt wording does
+  not move it.** `minimax/minimax-m3` uses the first string field it is handed
+  as a scratchpad: over 30 real character passes, `pre_thought` came back at
+  exactly its 320-cap on 26 of 30, every one of them a stage note about how to
+  play the character. Rewording `Character#interaction_instructions` — scoping
+  the third-person rule, naming the addressee, telling it not to plan — moved
+  that to 23 of 30, which is to say not at all. `mistral-medium-3.1` and
+  `gemini-2.5-flash` overrun 0 of 180 fields on the same prompts, so it is the
+  model and not the prompt. Both arms were measured against the **pre-#92** talk
+  path, where a cap-hit killed the turn: 27 of 28 turns died before the
+  rewording and 28 of 29 after. #92 changed what a cap-hit *costs* — a rotation
+  instead of the turn — and did not change how often minimax produces one, so
+  the rate above is what the rotation now pays for. Do not reach for prompt
+  wording here; it was measured and it does not work.
+
 - **The suppressed prose is still streamed before it is suppressed.** Both
   checks read the finished response, so a refusal or a crisis line has already
   been broadcast into `#stream` chunk by chunk by the time it is caught. It is

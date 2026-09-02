@@ -280,4 +280,95 @@ class CharacterTest < ActiveSupport::TestCase
 
     assert_raises(ActiveRecord::RecordNotUnique) { duplicate.save!(validate: false) }
   end
+
+  # ==========================================================================
+  # #interaction_instructions -- the prompt every conversational turn is built
+  # on. It is the app's behaviour on the talk path in exactly the way a
+  # validation is behaviour elsewhere, so it is pinned the same way.
+  # ==========================================================================
+
+  # THE THIRD-PERSON RULE IS SCOPED, and this is the pin. It used to read
+  # "Refer to yourself in third person only." two lines under the sentence
+  # establishing that quoted text is speech, so it landed on speech too and a
+  # character talking aloud was being told to say its own name instead of "I".
+  test "the third person rule is gated to the register outside the quotes" do
+    prompt = @character.interaction_instructions
+
+    assert_no_match(/Refer to yourself in third person only/, prompt,
+                    "the unconditional third-person rule is the defect")
+
+    # The gate itself: naming yourself in the third person appears ONLY in a
+    # clause that scopes it to the register outside the quotes, and the clause
+    # inside the quotes is the first-person one.
+    outside = prompt[/^Outside the quotes.*$/]
+    assert_not_nil outside, "third person has to be scoped to the non-quoted register"
+    assert_match(/Strider, he, his/, outside)
+    assert_match(/^Inside the quotes.*say "I"/, prompt)
+  end
+
+  test "speech inside the quotes is first person and never the character's own name" do
+    prompt = @character.interaction_instructions
+
+    assert_match(/Inside the quotes you are talking out loud: say "I", never your own name/, prompt)
+    assert_match(/Nobody says "Aragorn Dunedain does not know" out loud/, prompt)
+  end
+
+  # What the original rule was protecting: the interior fields and the `action`
+  # field read as an account OF the character rather than as the character.
+  # Scoping the rule keeps that, and says so in one more sentence.
+  test "the prompt refuses an account of the character in place of the character" do
+    assert_match(/Answer AS Aragorn Dunedain, not about him/,
+                 @character.interaction_instructions)
+    assert_match(/do not weigh what Strider would probably think/,
+                 @character.interaction_instructions)
+  end
+
+  # A prompt that named nobody made every NPC invent the person in front of it.
+  test "the prompt names the protagonist the character is talking to" do
+    @character.save!
+    protagonist = create(:character, :protagonist, story: @story, fullname: "Odile Vance", nickname: "Vance")
+
+    prompt = @character.interaction_instructions
+
+    assert_match(/## Who you are talking to/, prompt)
+    assert_match(/The person speaking to you is Odile Vance \(Vance\)/, prompt)
+    assert_match(/Refer to Odile Vance as #{Regexp.escape(protagonist.pronouns)}/, prompt)
+    assert_match(/apparent age: about #{protagonist.age}/, prompt)
+    assert_match(/what you can see of them: #{Regexp.escape(protagonist.appearance)}/, prompt)
+  end
+
+  # THE PROTAGONIST'S INTERIOR IS THE PLAYER'S OWN, and handing it to every
+  # stranger in the world would be a worse bug than the one above. Only what
+  # meeting somebody tells you crosses over.
+  test "the prompt withholds the protagonist's private interior" do
+    @character.save!
+    create(:character, :protagonist, story: @story,
+           fullname: "Odile Vance",
+           backstory: "Falsified a closure order in her second year and has never been asked about it",
+           personality: "Patient in the way somebody is patient when they have decided something",
+           likes: "A margin wide enough to write in",
+           dislikes: "Being thanked for it",
+           fears: "That the file she copied is the only one left")
+
+    prompt = @character.interaction_instructions
+
+    [ "Falsified a closure order", "has decided something",
+      "A margin wide enough", "Being thanked for it",
+      "the only one left" ].each do |private_fact|
+      assert_no_match(/#{Regexp.escape(private_fact)}/, prompt,
+                      "the protagonist's #{private_fact.inspect} is theirs, not the cast's")
+    end
+  end
+
+  # A world can be seeded without a protagonist -- see Playthrough::Turn.
+  test "the prompt says nothing about an addressee when the story has no protagonist" do
+    assert_nil @story.protagonist
+    assert_no_match(/## Who you are talking to/, @character.interaction_instructions)
+  end
+
+  test "the protagonist is not told who they are talking to" do
+    protagonist = create(:character, :protagonist, story: @story)
+
+    assert_no_match(/## Who you are talking to/, protagonist.interaction_instructions)
+  end
 end

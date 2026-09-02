@@ -65,6 +65,11 @@ class Character < ApplicationRecord
     BaseAgent.new.with_instructions(interaction_instructions)
   end
 
+  # THE PROMPT EVERY CONVERSATIONAL TURN IS BUILT ON. `InteractionAgent` sends
+  # it as the character pass's instructions, and that pass answers under
+  # `Interaction::Schema` -- so the registers named in *Voice* below are the
+  # registers of those six fields, not of free prose. `action` is the field
+  # that holds speech; the thought and feeling fields are the interior ones.
   def interaction_instructions
     <<~INTERACTION_INSTRUCTIONS
 
@@ -87,11 +92,16 @@ class Character < ApplicationRecord
       likes: #{likes}
       dislikes: #{dislikes}
       fears: #{fears}
-
+      #{addressee_section}
       If someone asks you a question, you should respond as if you are the character. NEVER BREAK CHARACTER.
+
+      ## Voice
       When you are speaking, surround your response with quotes. When you are thinking, do not surround your response with quotes.
 
-      Refer to yourself in third person only.
+      Inside the quotes you are talking out loud: say "I", never your own name. Nobody says "#{fullname} does not know" out loud.
+      Outside the quotes you are described from outside: #{nickname.presence || fullname}, #{pronouns.split("/").first}, #{pronouns.split("/").last}. A bare "I" out there reads as the person you are talking to rather than as you.
+
+      Answer AS #{fullname}, not about #{pronouns.split("/")[1]}. Do not plan the answer and do not weigh what #{nickname.presence || fullname} would probably think -- think the thought and say the line.
 
     INTERACTION_INSTRUCTIONS
   end
@@ -100,6 +110,52 @@ class Character < ApplicationRecord
   scope :companions, -> { where(is_companion: true) }
 
   private
+
+  # WHO THE CHARACTER IS TALKING TO. `interaction_instructions` used to name
+  # nobody at all, so a model asked for a reaction reached for the only handle
+  # the prompt left it and called the player "the user" -- 8 of 30 character
+  # passes on `mistralai/mistral-medium-3.1`, 8 of 9 on `minimax/minimax-m3`.
+  # An NPC with nobody in front of it invents somebody.
+  #
+  # IT CARRIES WHAT A PERSON IN THE ROOM COULD PERCEIVE, AND NOT THE
+  # PROTAGONIST'S SHEET. `backstory`, `personality`, `likes`, `dislikes` and
+  # `fears` are the player's interior; handing them to a stranger is a worse
+  # bug than the one this fixes, because every NPC in the world would then know
+  # what frightens the player before the player had said a word. Name, apparent
+  # age, race and appearance are what meeting somebody tells you -- and the
+  # name is already public in this app, because `Scene::Generator` puts the
+  # protagonist into the arrival cast list by full name and nickname.
+  #
+  # Pronouns are STATED and the gender label is not, which is
+  # `InteractionAgent#pronoun_rule`'s rule and its reasoning: the prompt needs
+  # the pronouns, and naming a gender beside them only gives a model something
+  # to make an issue of.
+  #
+  # What this character actually knows about them beyond what they can see
+  # arrives the way it should -- `Chat.conversation_with` replays the
+  # conversation the two have already had. See `InteractionAgent#character_agent`.
+  #
+  # Blank when the story has no protagonist (a world can be seeded without one,
+  # see `Playthrough::Turn`) and when this character IS the protagonist.
+  def addressee_section
+    them = story&.protagonist
+    return "" if them.nil? || them == self
+
+    <<~ADDRESSEE
+
+      ## Who you are talking to
+      The person speaking to you is #{them.fullname}#{" (#{them.nickname})" if them.nickname.present?}.
+      Refer to #{them.fullname} as #{them.pronouns}. Use those pronouns and no others.
+      apparent age: about #{them.age}
+      race: #{them.race&.name}
+      what you can see of them: #{them.appearance}
+
+      That is what meeting #{them.fullname} tells you, and it is the whole of
+      what you know by sight. You do not know what #{them.fullname} wants, is
+      afraid of, or has done, and you do not invent any of it. Anything more
+      you learn from what #{them.fullname} says and does, here, now.
+    ADDRESSEE
+  end
 
   # The player is exactly one person, so a story cannot have two characters
   # claiming to be them.
