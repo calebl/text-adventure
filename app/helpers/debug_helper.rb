@@ -35,6 +35,16 @@ module DebugHelper
     tag.span(branch.to_s, class: "branch #{branch}")
   end
 
+  # The verdict the player recorded on a turn, coloured the same three ways the
+  # play page colours the buttons -- so the log and the review table read as one
+  # instrument rather than two. Nil is a turn nobody judged, which is the
+  # ordinary case and not an absence worth explaining.
+  def debug_verdict(verdict)
+    return nil if verdict.blank?
+
+    tag.span(verdict.to_s, class: "verdict #{verdict}")
+  end
+
   # A block of generated prose, kept as written. `white-space: pre-wrap` in the
   # layout, because a narrator's paragraph breaks are part of what it wrote.
   def debug_prose(value, absent: "not recorded")

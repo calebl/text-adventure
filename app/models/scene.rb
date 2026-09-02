@@ -41,6 +41,12 @@ class Scene < ApplicationRecord
   # lose the count. See Playthrough::Drift.
   has_many :drifts, class_name: "Playthrough::Drift", dependent: :nullify,
                     inverse_of: :scene
+  # Judgements the player recorded on this turn. DESTROYED rather than nullified,
+  # which is the opposite of the drift above it and for a reason: a drift is the
+  # measurement and the scene is only the suspect, whereas a verdict is a
+  # judgement OF this prose and means nothing once the prose is gone.
+  has_many :feedbacks, class_name: "Playthrough::Feedback", dependent: :destroy,
+                       inverse_of: :scene
   # Every message exchanged with a model on this turn -- the prompts that were
   # sent, the answers that came back, what they cost and which model wrote them.
   # Nullified rather than destroyed: a message belongs to its `Chat` first, and

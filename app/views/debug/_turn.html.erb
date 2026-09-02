@@ -52,6 +52,33 @@
         <span class="warn">more than one — BaseAgent rotated past a model that failed</span>
       <% end %>
     </div>
+
+    <%# THE ONE FIELD ON THIS PAGE NOTHING GENERATED. Recorded a click at a time
+        on the play page, and shown against the FROZEN provenance rather than
+        against the row above it -- that is the whole point of freezing it. On a
+        turn whose receipts are gone the two disagree, and the frozen one is the
+        one that was true when the verdict was recorded. %>
+    <div class="k">your verdict</div>
+    <div class="v">
+      <% if turn.judged? %>
+        <%= debug_verdict(turn.feedback.verdict) %>
+        <%= debug_value(turn.feedback.note, absent: "no note — the verdict was recorded on its own") %>
+        <div class="note">
+          frozen when recorded:
+          prose written by <%= debug_value(turn.feedback.prose_model, absent: "unknown — the receipts for this turn were already pruned") %>
+          <% if turn.feedback.prose_purpose %>as <code><%= turn.feedback.prose_purpose %></code><% end %>
+          <% if turn.feedback.receipts_kept? %>
+            &middot; <%= turn.feedback.input_tokens %> in / <%= turn.feedback.output_tokens %> out
+            &middot; every model that answered the turn: <%= turn.feedback.answering_model_ids.to_sentence %>
+          <% end %>
+          <% if turn.feedback.rotated? %>
+            <span class="warn">rotated — this prose took <%= turn.feedback.prose_model_ids.to_sentence %>, so it is not clean evidence about either alone</span>
+          <% end %>
+        </div>
+      <% else %>
+        <%= debug_value(nil, absent: "not judged — record one under the turn on the play page") %>
+      <% end %>
+    </div>
   </div>
 
   <h3>why the game says <%= turn.branch %></h3>

@@ -23,6 +23,12 @@
 # name close with it, because the classifier's own exchange holds both the raw
 # typed command and the intent label the loop decided in memory.
 #
+# AND ONE THING NEITHER THE APP NOR A MODEL PRODUCED: what the player thought
+# of each turn. `Playthrough::Feedback` is recorded a click at a time on the
+# play page, with the turn's provenance FROZEN onto it, so this page can answer
+# which model wrote the prose behind each verdict on turns whose receipts the
+# pruner took away long ago. See `#feedback_by_model`.
+#
 # WHAT IT STILL CANNOT SHOW is named rather than quietly missing:
 #
 #   * anything older than `Chat::KEEP_TURNS` turns. The audit trail is pruned
@@ -41,8 +47,9 @@ class Playthrough::Debug
   # the reasoning in the open, so a wrong answer here is visible as a wrong
   # answer rather than as a confident label.
   Turn = Data.define(:scene, :branch, :evidence, :elapsed_minutes, :cost_reading,
-                     :typed, :interactions, :cast, :conversations) do
+                     :typed, :interactions, :cast, :conversations, :feedback) do
     def opening? = branch == :opening
+    def judged? = !feedback.nil?
 
     # WHAT THE TURN COST, from the provider's own numbers. Zero is not the same
     # as unknown: a turn whose conversations were pruned has none left to add up,
@@ -257,6 +264,43 @@ class Playthrough::Debug
 
   def drift_tally = Playthrough::Drift.tally(playthrough.drifts)
 
+  # ------------------------------------------------------------------------
+  # WHAT THE PLAYER THOUGHT OF EACH TURN. `Playthrough::Feedback` is the one
+  # thing on this page the app did not decide and no model wrote: it is the
+  # captain's own judgement, recorded a click at a time while he played, with
+  # the turn's provenance frozen onto it so it stays legible after
+  # `prune_conversations!` has taken the receipts away.
+  #
+  # This is where it is read back, because the question it exists to answer is
+  # the kind this page is for -- which model do the turns marked good actually
+  # come from. Counts only: what the numbers prove is a later task
+  # (`ta-narrator-model`, `ta-talk-model`), and a score computed here would be
+  # an answer the data has not earned yet.
+  # ------------------------------------------------------------------------
+
+  # Every verdict on this playthrough, newest first, so the turn he judged last
+  # is at the top. `scene` is preloaded because each row is shown next to the
+  # prose it judges.
+  def feedback
+    @feedback ||= playthrough.feedbacks.includes(:scene).in_story_order.to_a.reverse
+  end
+
+  def feedback_tally = playthrough.feedbacks.group(:verdict).count
+
+  # THE CROSS-TAB, and the reason the provenance is frozen: verdict against the
+  # model that wrote the prose being judged. Read off the feedback rows
+  # themselves -- never off `chats` -- so a turn whose conversations were pruned
+  # months ago still counts.
+  #
+  # A row keyed nil is honest and stays in: those are turns judged after their
+  # receipts had already gone, or an opening arrival that was generated when the
+  # world was built. Dropping them would quietly shrink the denominator.
+  def feedback_by_model
+    feedback.group_by(&:prose_model).transform_values do |rows|
+      rows.group_by(&:verdict).transform_values(&:size)
+    end
+  end
+
   # Every mechanic, with what it still owes and when it fires next. `owed` is
   # normally empty: `Playthrough::Turn#play` catches the world up before it
   # reads the command, so anything here is a night the world has not paid --
@@ -459,9 +503,15 @@ class Playthrough::Debug
       typed: typed_on(scene, conversations),
       interactions: scene.interactions.to_a,
       cast: scene.characters.to_a,
-      conversations: conversations
+      conversations: conversations,
+      feedback: verdicts[scene.id]
     )
   end
+
+  # The verdicts this player recorded, keyed by turn. One query for the whole
+  # log; see `Playthrough#feedback_by_scene` for why it is keyed by
+  # (playthrough, scene) rather than by scene alone.
+  def verdicts = @verdicts ||= playthrough.feedback_by_scene
 
   # EVERY CONVERSATION THIS TURN PAID FOR, in the order they happened.
   #

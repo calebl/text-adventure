@@ -1,0 +1,58 @@
+<%# locals: (playthrough:, scene:, feedback:) %>
+<%# THE INSTRUMENT, as small as it can be and still be one click.
+
+    A `<footer>` and NOT a `<div>`, which is load-bearing rather than semantic
+    taste: the log's dimming rule is `.log:not(.streaming) > .turn:last-of-type`
+    and `:last-of-type` counts elements of the same tag among their siblings, so
+    a `<div>` here would become the last div in the log and the newest turn
+    would stop reading at full strength. Three tests assert that selector
+    directly.
+
+    Its own Turbo Stream target, per turn, so recording a verdict replaces this
+    element and nothing else -- the prose does not reflow, the input keeps
+    focus, and a turn streaming into `#stream` below is untouched.
+
+    TWO FORMS, and each has exactly one meaning. The verdict form is three
+    submit buttons sharing the name `verdict`, so a click sends one value and
+    nothing else: one click, no second step, and no state to get out of date.
+    The note form appears only once there is a verdict to attach it to -- the
+    order is the point, since a judgement that has to be written out before it
+    counts is a judgement that will not get recorded mid-play. Enter in the note
+    box submits it, because that form has one submit button and it is `save`.
+
+    A note being typed while a turn lands is lost, because `NarrationJob`
+    replaces the whole of `#turn_log` when it does. The window is small -- taking
+    the next turn means leaving this box for the command input -- and closing it
+    would mean either holding draft state in JavaScript or narrowing what the
+    broadcast replaces, both of which cost more than they save. %>
+<footer class="verdict" id="<%= dom_id(scene, :verdict) %>">
+  <%= form_with url: playthrough_feedbacks_path(playthrough), class: "marks" do |form| %>
+    <%= form.hidden_field :scene_id, value: scene.id, id: nil %>
+    <% Playthrough::Feedback::VERDICTS.each do |verdict| %>
+      <%# The label IS the value: `name: "verdict"` puts the button's own value
+          on the wire, so three buttons in one form are three answers to one
+          question. `chosen` is read from the record rather than remembered
+          anywhere, which is what makes amending it work by re-rendering. %>
+      <%= form.submit verdict, name: "verdict",
+                               class: class_names("mark", verdict, chosen: feedback&.verdict == verdict) %>
+    <% end %>
+  <% end %>
+
+  <% if feedback %>
+    <%= form_with url: playthrough_feedbacks_path(playthrough), class: "why" do |form| %>
+      <%= form.hidden_field :scene_id, value: scene.id, id: nil %>
+      <%# The verdict is carried unchanged: saving a note is not a change of
+          mind, and `.record` amends only what it is given. %>
+      <%= form.hidden_field :verdict, value: feedback.verdict, id: nil %>
+      <%= form.text_field :note, value: feedback.note, autocomplete: "off",
+                                 id: nil, placeholder: "why? (optional)" %>
+      <%= form.submit "save" %>
+    <% end %>
+
+    <%# Clearing is the other half of amendable. A mis-click on a long log is
+        noise in the measurement, and the alternative to taking one back is
+        recording a verdict he does not mean. %>
+    <%= button_to "clear", playthrough_feedback_path(playthrough, scene),
+                  method: :delete, class: "clear" %>
+  <% end %>
+</footer>

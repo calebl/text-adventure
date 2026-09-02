@@ -43,8 +43,15 @@
       `streaming` says the newest turn is not in the log at all -- it is the
       #stream div below, which is what the player is actually reading -- so no
       logged turn should claim full-strength colour while it fills in. %>
+  <%# `verdicts` is resolved once for the whole log rather than per entry -- the
+      log is the entire playthrough, and the turn partial asks about every turn
+      in it. Read here rather than in the partial so all three callers of this
+      partial pay for it once -- and empty when the instrument is off, so a game
+      nobody is evaluating pays nothing for it. %>
+  <% verdicts = Playthrough::Debug.enabled? ? playthrough.feedback_by_scene : {} %>
   <div class="<%= class_names("log", streaming: command) %>">
-    <%= render partial: "turns/turn", collection: playthrough.turn_log, as: :turn %>
+    <%= render partial: "turns/turn", collection: playthrough.turn_log, as: :turn,
+               locals: { playthrough: playthrough, verdicts: verdicts } %>
   </div>
 
   <%# OUTSIDE THE FICTION, AND WHERE THE TURN WOULD HAVE BEEN. `BaseAgent`
