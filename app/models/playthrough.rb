@@ -171,13 +171,18 @@ class Playthrough < ApplicationRecord
     dropped.positive? ? "(#{dropped} earlier turn#{"s" unless dropped == 1} left out)\n#{text}" : text
   end
 
-  # DROPS THE CONVERSATION AUDIT TRAIL OLDER THAN THE LAST `keep` TURNS.
+  # DROPS THE CONVERSATION AUDIT TRAIL OLDER THAN THE LAST `keep` TURNS --
+  # WHICH, BY DEFAULT, IS NOTHING AT ALL.
   #
-  # This is a SQLite file on a laptop and a playthrough can run for hours.
-  # Every turn writes three or four chats and an arrival prompt inlines the whole
-  # universe, so the stored conversations are by far the biggest thing a long
-  # game accumulates -- and the game itself never reads any of it back. The
-  # recent turns are what anybody debugs.
+  # `keep` is nil unless somebody set `TA_CHAT_KEEP_TURNS`, and nil means keep
+  # everything: this returns 0 without touching a row. The reasoning that used
+  # to live here -- a SQLite file on a laptop, several KB a turn, the biggest
+  # thing a long game accumulates -- was true in every clause and wrong in its
+  # conclusion. `Chat::KEEP_TURNS` carries the measurement that replaced it.
+  #
+  # THE PATH IS KEPT rather than deleted because the cap is still opt-in: this
+  # is an open-source app that gets installed on strangers' machines, and an
+  # escape hatch for anybody who wants a bounded file costs one guard clause.
   #
   # The DURABLE conversations are never pruned here: they are trimmed message by
   # message when they are picked up (Chat#prune_history!), because they are the
@@ -186,6 +191,8 @@ class Playthrough < ApplicationRecord
   #
   # Returns how many chats were deleted.
   def prune_conversations!(keep: Chat::KEEP_TURNS)
+    return 0 if keep.nil?
+
     recent = scene_chain.last([ keep, 0 ].max).map(&:id)
 
     chats.one_shot

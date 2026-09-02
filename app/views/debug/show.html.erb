@@ -207,7 +207,7 @@
     <div class="k">turns without receipts</div>
     <div class="v">
       <%= @debug.pruned_turns %>
-      <span class="note">the opening arrival (paid for at world-build time) plus anything older than <%= Chat::KEEP_TURNS %> turns</span>
+      <span class="note">the opening arrival (paid for at world-build time)<% if Chat.capped? %>, plus anything older than <%= Chat::KEEP_TURNS %> turns<% end %></span>
     </div>
     <div class="k">models that answered</div>
     <div class="v"><%= debug_value(@debug.answering_models.to_sentence.presence, absent: "nothing recorded yet") %></div>
@@ -361,9 +361,10 @@
     IT IS AN EVALUATION INSTRUMENT, and the table is built for the question it
     exists to answer: which model wrote the prose behind each verdict. That is
     why the model column reads off the FROZEN provenance and not off `chats` --
-    `Playthrough#prune_conversations!` drops the one-shot conversations after
-    Chat::KEEP_TURNS turns, so any turn old enough to be worth comparing has no
-    receipts left to ask. See `Playthrough::Feedback`. %>
+    the receipts can go: `Playthrough#prune_conversations!` keeps everything by
+    default now, but `TA_CHAT_KEEP_TURNS` can still be set to drop the one-shot
+    conversations, and the frozen provenance is what makes this column
+    independent of that choice. See `Playthrough::Feedback`. %>
 <h2 id="feedback">what you thought of each turn</h2>
 <div class="panel">
   <div class="fields">
@@ -630,24 +631,33 @@
 <div class="panel">
   <ul class="evidence">
     <li>
-      <strong>Anything older than <%= Chat::KEEP_TURNS %> turns.</strong> Prompts,
-      answers, token counts and models are all kept now &mdash; but not forever.
-      A playthrough runs for hours against a SQLite file on a laptop, so
-      <code>Playthrough#prune_conversations!</code> drops the one-shot
-      conversations older than that on every turn. An old turn keeps its
-      <code>Scene</code> and loses its receipts, and says so where the numbers
-      would be rather than reading as a turn that cost nothing. The durable
-      conversations are never dropped this way; they are trimmed message by
-      message instead, and what falls off them is on <code>Interaction</code>.
+      <strong>Nothing, by default &mdash; and that is the point of this bullet.</strong>
+      Prompts, answers, token counts and models are kept for every turn a
+      playthrough ever played, however long ago. This used to say "anything
+      older than 25 turns", because
+      <code>Playthrough#prune_conversations!</code> ran on every turn and threw
+      the older receipts away; it no longer does. Measured, the audit trail
+      costs about 4&nbsp;KB a turn on disk &mdash; 4&nbsp;MB for a
+      thousand-turn game, against the 912&nbsp;KB <code>models</code> registry
+      that ships with the app &mdash; so a flagged turn stays fully inspectable
+      instead of being cheaper to forget. <em>If</em>
+      <code>TA_CHAT_KEEP_TURNS</code> is set, the old behaviour comes back
+      exactly as it was: the one-shot conversations older than that many turns
+      are dropped on every turn, and such a turn keeps its <code>Scene</code>
+      and loses its receipts, saying so where the numbers would be rather than
+      reading as a turn that cost nothing. The durable conversations are never
+      dropped either way; they are trimmed message by message instead, and what
+      falls off them is on <code>Interaction</code>.
     </li>
     <li>
-      <strong>What the player typed, as a column.</strong> It is recovered above
-      out of the classifier's own prompt &mdash; it runs on every turn and the
-      raw line is the last thing in it &mdash; but that is a reconstruction, and
-      it goes when the conversation is pruned. Only
-      <code>Interaction#user_input</code> keeps it properly, and a
-      <code>Scene</code> still has no column for the input that produced it. That
-      migration is <code>ta-api-iface</code>'s first outstanding item.
+      <strong>What the player typed &mdash; which IS recorded, and this list
+      used to deny it.</strong> <code>scenes.typed</code> is a real column,
+      written on every branch by <code>Playthrough::Turn#play</code>, so the
+      typed line survives independently of the audit trail; the migration this
+      bullet once named as outstanding has landed. <code>Playthrough::Debug</code>
+      reads the column first and keeps two fallbacks &mdash;
+      <code>Interaction#user_input</code> on a talk turn, and the classifier's
+      own prompt &mdash; only for turns written before the column existed.
     </li>
     <li>
       <strong>What changed between two visits to a room.</strong> The exits a

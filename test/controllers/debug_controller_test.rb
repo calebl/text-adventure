@@ -49,13 +49,34 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: "the conversations you are having"
     assert_select "a[href=?]", "#conversations"
 
-    # And the honest gap -- which no longer names `ta-chat-persist`, because the
-    # prompts, answers, token counts and models it promised are kept now. What
-    # is left is the pruning ceiling and the missing `scenes` column.
+    # And the honest gap, which is now honest about two fewer things. It no
+    # longer names `ta-chat-persist` (the prompts, answers, token counts and
+    # models it promised are kept), no longer claims a retention ceiling (there
+    # is none unless `TA_CHAT_KEEP_TURNS` is set), and no longer names
+    # `ta-api-iface` for a `scenes.typed` column that exists and is written on
+    # every branch. A false bullet in this list is worse than a missing one.
     assert_select "h2", text: "what is not recorded"
     assert_no_match(/ta-chat-persist/, response.body)
-    assert_match "ta-api-iface", response.body
+    assert_no_match(/ta-api-iface/, response.body)
+    assert_match "TA_CHAT_KEEP_TURNS", response.body
+    assert_match "scenes.typed", response.body
     assert_match "ta-arrival-diff", response.body
+  end
+
+  # THE PANEL DESCRIBES THE RULE, so it has to render under both settings --
+  # uncapped (above) and capped. The capped branch interpolates
+  # `Chat::KEEP_TURNS` into the page; with the default nil that would render an
+  # empty gap in a sentence, which is what `Chat.capped?` exists to prevent.
+  test "show describes the retention cap when one is set" do
+    playthrough = played_playthrough
+
+    with_keep_turns(25) do
+      get playthrough_debug_path(playthrough)
+    end
+
+    assert_response :success
+    assert_match "older than 25 turns", response.body
+    assert_select "h2", text: "what is not recorded"
   end
 
   # --- the evaluation instrument, read back ---------------------------------
@@ -316,5 +337,15 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     ActiveRecord::Base.connection.tables.sort.to_h do |table|
       [ table, ActiveRecord::Base.connection.select_all("SELECT COUNT(*) AS c FROM #{table}").first["c"] ]
     end
+  end
+
+  def with_keep_turns(keep)
+    original = Chat.const_get(:KEEP_TURNS)
+    Chat.send(:remove_const, :KEEP_TURNS)
+    Chat.const_set(:KEEP_TURNS, keep)
+    yield
+  ensure
+    Chat.send(:remove_const, :KEEP_TURNS)
+    Chat.const_set(:KEEP_TURNS, original)
   end
 end

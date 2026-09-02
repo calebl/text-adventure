@@ -16,12 +16,12 @@
 # WHY THE PROVENANCE IS FROZEN AND NOT REFERENCED. `Chat#answering_model_ids` is
 # the honest answer to which model replied -- including after `BaseAgent` rotated
 # past one that failed, which is exactly the case worth measuring -- but the
-# conversations it reads are destroyed by `Playthrough#prune_conversations!`
-# after `Chat::KEEP_TURNS` turns. This is a SQLite file on a laptop and a
-# playthrough runs for hours, so that pruner is not something to work around: an
-# old turn keeps its `Scene` and loses its receipts. A verdict that held a
-# reference would therefore be unreadable on precisely the turns a long session
-# produces most of. It takes a COPY instead, once, at the moment it is recorded.
+# conversations it reads can be destroyed by `Playthrough#prune_conversations!`
+# whenever `TA_CHAT_KEEP_TURNS` sets a cap. The default now keeps them, and that
+# does NOT make this copy redundant -- it makes it belt and braces. An install
+# that opts into a bounded file must not silently lose its evaluation record on
+# precisely the old turns a long session produces most of, and a verdict holding
+# a reference would. It takes a COPY instead, once, when it is recorded.
 #
 # WHAT IS FROZEN, AND WHAT IS NOT:
 #
@@ -117,8 +117,8 @@ class Playthrough::Feedback < ApplicationRecord
   #
   # Every value here can honestly be nil or zero, and the two are not the same
   # thing. An opening arrival was generated when the world was built and has no
-  # receipts of its own; a turn older than `Chat::KEEP_TURNS` had them and lost
-  # them. `#receipts_kept?` is what tells a reader which of those they are
+  # receipts of its own; a turn pruned under a `Chat::KEEP_TURNS` cap had them
+  # and lost them. `#receipts_kept?` tells a reader which of those they are
   # looking at, and the view says so rather than showing a blank.
   def self.provenance_for(scene)
     messages = scene.messages.includes(:model, :chat).sort_by(&:id)

@@ -58,8 +58,8 @@ class Playthrough::Turn
     # command AND the scene for every branch, so a branch added later cannot
     # forget to record it. `Scene#typed` is the durable answer -- it used to be
     # recoverable only by scraping the classifier's stored prompt, which the
-    # conversation pruner eventually throws away (Chat::KEEP_TURNS), so the
-    # player's own words disappeared from older turns.
+    # conversation pruner can still be asked to throw away (Chat::KEEP_TURNS),
+    # so the player's own words disappeared from older turns.
     scene&.update!(typed: command)
 
     # THE CONVERSATIONS THIS TURN HAD, filed under the turn.
@@ -71,8 +71,10 @@ class Playthrough::Turn
     # `BaseAgent#attribute_to!`.
     classifier.agent.attribute_to!(scene) if scene
 
-    # And the audit trail older than the last few dozen turns goes, because this
-    # is a SQLite file on a laptop. See Playthrough#prune_conversations!.
+    # And the retention cap is applied -- which by default does nothing at all,
+    # because nothing is pruned unless `TA_CHAT_KEEP_TURNS` says so. Still called
+    # on every turn so that setting it takes effect without a sweep.
+    # See Playthrough#prune_conversations!.
     playthrough.prune_conversations!
 
     scene

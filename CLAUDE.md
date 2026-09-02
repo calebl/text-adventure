@@ -175,7 +175,9 @@ The current database includes the following story-related models with proper ass
   and the turn's **provenance frozen onto the row** — which model wrote the
   prose, the prose attempt chain, every model that answered, the token counts.
   Frozen rather than referenced because `Playthrough#prune_conversations!`
-  destroys the receipts; the `Scene` itself stays a reference
+  destroys the receipts wherever `TA_CHAT_KEEP_TURNS` opts into a cap (the
+  default keeps them, so this is belt and braces); the `Scene` itself stays a
+  reference
 - **Character** → `#interaction_instructions`, the prompt every conversational
   turn is built on. Its voice rules are scoped per register — first person
   inside the quotes, named and pronouned outside them — and
@@ -223,6 +225,14 @@ The current database includes the following story-related models with proper ass
   never persisted, answered by `Playthrough::SafetyNotice` out of band. The two
   never collapse into one branch. Read `Playthrough::SafetyNotice`'s header
   before changing a word of what the player is shown.
+
+### Keeping the conversation audit trail
+- `Chat::KEEP_TURNS` is **nil by default: nothing is pruned.** Measured at
+  ~4 KB a turn on disk (4 MB per 1,000 turns) against a `models` registry that
+  ships at 912 KB, the old 25-turn ceiling was never justified by the file size
+  it was defending. `TA_CHAT_KEEP_TURNS` survives as an opt-in cap and
+  `Playthrough#prune_conversations!` is kept to apply it. See the constant's
+  comment for the figures and `AGENTS.md` → *Bounds*.
 
 ### Recording what the player thought of a turn
 - `Playthrough::Feedback` is an **evaluation instrument**, not a feature: one

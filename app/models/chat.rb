@@ -58,13 +58,43 @@ class Chat < ApplicationRecord
 
   # HOW MANY TURNS OF ONE-SHOT CONVERSATION ARE KEPT, per playthrough.
   #
-  # This is a SQLite file on a laptop and a playthrough can run for hours. Every
-  # turn writes three or four chats, and an arrival prompt inlines the universe,
-  # so the audit trail is the biggest thing a long game accumulates -- several
-  # KB per turn, none of which the game itself ever reads back. The recent turns
-  # are what anybody debugs; older ones keep their `Scene`, which is the record
-  # that matters. `Playthrough#prune_conversations!` applies it.
-  KEEP_TURNS = ENV.fetch("TA_CHAT_KEEP_TURNS", 25).to_i
+  # NIL BY DEFAULT, MEANING KEEP EVERYTHING. Set `TA_CHAT_KEEP_TURNS` to opt
+  # into a cap; nothing is pruned unless you do.
+  #
+  # This used to default to 25, on the reasoning that a playthrough is a SQLite
+  # file on a laptop, that every turn writes three or four chats, that an
+  # arrival prompt inlines the universe, and that the audit trail is therefore
+  # the biggest thing a long game accumulates. Every clause of that is true and
+  # the conclusion still does not follow, because none of it was measured
+  # against a number. Measured over 500 real turns driven through the loop:
+  #
+  #   messages written per turn       6
+  #   average message content         ~520 bytes
+  #   messages + chats, on disk       4.16 KB per turn
+  #   => 100 turns                    0.41 MB
+  #   => 1,000 turns                  4.1 MB
+  #   `models`, which SHIPS with the app   912 KB (1,166 rows)
+  #
+  # So the registry the app installs with outweighs a 200-turn playthrough's
+  # entire audit trail, and a thousand-turn game costs four megabytes. The trail
+  # being the largest thing the GAME accumulates is a statement about how little
+  # else it writes -- five scenes and a few characters -- not about the trail
+  # being large. A laptop is not troubled by either.
+  #
+  # What keeping them buys is the point. A turn the player flagged stays fully
+  # inspectable -- prompt, answer, model, token counts -- however long ago it was
+  # played, which is the evaluation record `Playthrough::Feedback` exists to
+  # build. Growth was checked as well as sized: the debug page preloads a
+  # playthrough's messages in a fixed number of queries, so keeping every turn's
+  # receipts costs it no extra query at all (measured identical at 500 turns).
+  #
+  # `Playthrough#prune_conversations!` applies this, and does nothing while nil.
+  KEEP_TURNS = ENV.fetch("TA_CHAT_KEEP_TURNS", nil).presence&.to_i
+
+  # WHETHER A RETENTION CAP IS IN FORCE AT ALL. For the views that have to
+  # DESCRIBE the rule rather than apply it: with no cap there is no "older than
+  # N turns", and interpolating a nil into that sentence reads as a bug.
+  def self.capped? = !KEEP_TURNS.nil?
 
   belongs_to :playthrough, optional: true
   belongs_to :character, optional: true
