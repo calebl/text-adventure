@@ -71,11 +71,34 @@ constraint* has the captain's wording and where the full audit lives.
   app-authored message outside the fiction (`Playthrough::SafetyNotice`,
   rendered by `NarrationJob`). **The two checks are ordered, not merged**, and
   crisis is checked first because one response can be both. Keep them apart.
+- **A TRUNCATED FIELD IS A FAILED CALL TOO, and it rotates.** A generated field
+  that arrived at exactly the `max_length` its schema asked it to stay under was
+  cut off by the provider, and `SanitizesGeneratedText::TruncatedTextError` is
+  what says so. It is on the `SchemaIgnoredError` side of the line — the model
+  did not deliver the shape it was asked for — so it must raise where the
+  rotation can see it. **The check stays with the caller and only the raise goes
+  inside the loop**: caps belong to the schema and the sanitizing concern, not
+  to `BaseAgent`, so `BaseAgent#ask` takes a `verify:` callable and runs it on
+  the parsed content inside the attempt loop. `InteractionAgent#ask` is the one
+  caller. Do not move the check itself into `BaseAgent`, and do not call a
+  sanitizer on a response `#ask` has already returned — that is the bug this
+  seam exists for: the raise landed outside the rotation, so on plain minimax
+  15 of 16 attempted narrations died and 1 of 18 talk turns completed
+  (`data/ta-conversation-read/report.md` §4).
 - **Neither check reads a schema'd response.** A character's five
   `Interaction::Schema` fields are first-person by nature — "I should probably
   answer" is what a `pre_thought` IS — so reading them for a first-person "I"
   would fail every talk turn in the game. A schema'd response that came back as
   prose is already caught by `verify_schema_honored!`.
+- **A FAILED TURN IS NOT SHOWN THE EXCEPTION.** `NarrationJob`'s general rescue
+  renders `Playthrough::TurnFailureNotice` — app-authored copy, one line — and
+  logs the real error at full detail. Every reason a turn fails is internal (a
+  model that would not answer, a schema it ignored, a sheet cut off at its cap),
+  and `finish(error: e.message)` used to put an internal cap and a fragment of
+  suppressed model output in front of a player. Keep new failure classes on that
+  side: log the reason, show the notice. It is a `.alert` above the log and
+  deliberately not shaped like `Playthrough::SafetyNotice`, which is an
+  interception rather than a failure.
 - **A response the game will not keep is not persisted.** `Scene::Narrator`'s
   `ensure` saves whatever arrived, which is right for a call that died
   mid-sentence and wrong for a refusal, so `BaseAgent::UnusableResponseError` is

@@ -25,10 +25,16 @@
     exists to keep. Measured in a browser; it is not theoretical. `play.js` puts
     focus back after a turn itself, with `preventScroll`. %>
 <div id="turn_log">
-  <%# A turn that failed -- a model that would not answer, a schema it ignored.
-      The player is still standing where they were, and gets the input back
-      along with the reason; the old SSE `error` event only stopped the cursor
-      blinking and left no way on but a reload. %>
+  <%# A turn that failed -- a model that would not answer, a schema it ignored,
+      a character sheet cut off at its cap. The player is still standing where
+      they were, and gets the input back along with a line saying the turn did
+      not finish; the old SSE `error` event only stopped the cursor blinking and
+      left no way on but a reload.
+
+      The copy is the APP'S (`Playthrough::TurnFailureNotice`), not an
+      exception's `message`: every reason a turn fails is internal, and one of
+      them used to print a `max_length` cap and a fragment of model output the
+      app had already decided not to keep. `NarrationJob` logs the real error. %>
   <% if error %>
     <p class="alert"><%= error %></p>
   <% end %>

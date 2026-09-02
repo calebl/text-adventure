@@ -72,9 +72,17 @@ class NarrationJob < ApplicationJob
     # A failed turn used to leave the player with a dead cursor and no input --
     # the SSE `error` event removed the cursor and that was all, so the only way
     # back was a reload. Broadcasting the idle log returns the form along with
-    # the reason, and the player is still standing where they were.
+    # a line saying so, and the player is still standing where they were.
+    #
+    # WHAT THE PLAYER SEES IS THE APP'S OWN COPY, never `e.message`. The reason
+    # a turn failed is an internal one every time -- a model that would not
+    # answer, a schema it ignored, a character sheet cut off at its cap -- and
+    # handing the exception's text to the page put an internal cap and a
+    # fragment of suppressed model output in front of somebody who typed a
+    # sentence. The full error stays here, at full detail, which is where a
+    # reason belongs. See `Playthrough::TurnFailureNotice`.
     Rails.logger.error { "Narration failed: #{e.class}: #{e.message}" }
-    finish(playthrough, error: e.message) if playthrough
+    finish(playthrough, error: Playthrough::TurnFailureNotice::MESSAGE) if playthrough
   end
 
   private

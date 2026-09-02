@@ -25,6 +25,10 @@ class InteractionAgent
   # installed here precisely because it "can reach any max_length field in any
   # schema in the app", covered every field the app writes except the six a
   # conversation writes every turn. See #reaction_fields.
+  #
+  # The guard is applied through `BaseAgent#ask`'s `verify:` seam rather than to
+  # the response it returns, so a truncated sheet is a failed call that rotates.
+  # See #ask, and the truncation note in `BaseAgent`.
   include SanitizesGeneratedText
 
   # What one exchange produced. `reaction` is the character's five structured
@@ -56,16 +60,31 @@ class InteractionAgent
   # RubyLLM hands back, which is the same block contract `Scene::Narrator#narrate`
   # offers. The game loop forwards one block to both, so they have to agree.
   def ask(user_input, &block)
-    reaction = character_agent.ask(character_prompt(user_input)).content
+    # THE SANITIZER RUNS INSIDE `BaseAgent#ask`, NOT AFTER IT, and that is the
+    # whole of what `verify:` is for. `#reaction_fields` is where a field cut off
+    # at its cap is rejected; called out here, on the returned response, it
+    # raised past the rotation, so a model that truncates cost the player the
+    # turn while a model that ignored the schema got a second try. Handed in, the
+    # raise happens inside the attempt loop: the attempt is rewound out of the
+    # character's durable conversation and the next model is asked. See the
+    # truncation note in `BaseAgent`.
+    #
+    # The lambda keeps what the SURVIVING attempt produced -- a rotated-away
+    # attempt's fields are overwritten by the retry's, and a call that never
+    # succeeds raises rather than returning -- so `fields` is only ever read
+    # after an attempt that passed the check.
+    fields = nil
+    reaction = character_agent.ask(
+      character_prompt(user_input),
+      verify: ->(content) { fields = reaction_fields(content) }
+    ).content
     Rails.logger.debug { "Character response: #{reaction}" }
 
-    # BEFORE the narrator pass, deliberately. `#reaction_fields` is where a
-    # truncated field is caught, and the narrator's whole job is to write fluent
-    # prose over whatever it is handed -- so a fragment that gets past here is a
-    # fragment no reader can ever see. Catching it now costs one wasted call
+    # AND BEFORE THE NARRATOR PASS, deliberately: the check above has already
+    # run by the time `#ask` returns. The narrator's whole job is to write fluent
+    # prose over whatever it is handed, so a fragment that gets this far is a
+    # fragment no reader can ever see. Failing first costs one wasted call
     # instead of two and a turn the player has already read.
-    fields = reaction_fields(reaction)
-
     @narrator_instructions = narrator_prompt(user_input, reaction)
     narration = narrator_agent.ask(@narrator_instructions) do |chunk|
       part = chunk.content.to_s

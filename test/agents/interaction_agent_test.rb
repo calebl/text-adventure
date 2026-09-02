@@ -171,6 +171,68 @@ class InteractionAgentTest < ActiveSupport::TestCase
     assert_equal CHARACTER_RESPONSE.transform_keys(&:to_sym), exchange.reaction
   end
 
+  # --- a truncated sheet is a failed call, so it rotates ---------------------
+
+  # THE BEHAVIOUR THE WHOLE FIX EXISTS FOR, and the test that must not be able
+  # to regress silently -- so it runs a REAL BaseAgent for the character pass
+  # rather than a fake, because the rotation is the thing being asserted and a
+  # fake has no models to rotate through.
+  #
+  # `#reaction_fields` used to be called on the response AFTER `BaseAgent#ask`
+  # returned, so a truncated field raised straight past the rotation: a model
+  # that ignored the schema got a second try and a model that truncated did not,
+  # and nothing chose that. On plain minimax it was 15 of 16 attempted narrations
+  # and 1 of 18 turns completed (`data/ta-conversation-read/report.md` §4). The
+  # cost of an overrun is now one wasted call.
+  test "a truncated character sheet costs a call, and the next model writes the turn" do
+    truncated = CHARACTER_RESPONSE.merge(
+      "pre_thought" => "She wondered whether to answer at all, so as not to r"
+        .ljust(Interaction::Schema.max_length_for(:pre_thought), "e")
+    )
+    chat = ScriptedChat.new(truncated, CHARACTER_RESPONSE)
+    narrator = FakeAgent.new("Mira looks up at you.")
+    character_agent = real_agent(chat)
+
+    exchange = with_agents(character_agent, narrator) do |agent|
+      agent.ask("Excuse me?")
+    end
+
+    assert_equal 2, chat.attempts, "the truncated sheet cost a call rather than the turn"
+    assert_equal "second-model", character_agent.current_model[:model], "and the rotation happened"
+    assert_equal CHARACTER_RESPONSE.transform_keys(&:to_sym), exchange.reaction
+    assert_equal "Mira looks up at you.", exchange.narration
+  end
+
+  # The fragment reaches neither consumer -- not the `Interaction` row and not
+  # the narrator prompt. The narrator's whole job is to write fluent prose over
+  # what it is handed, so a fragment that got this far is one no reader can see.
+  test "the truncated attempt reaches neither the record nor the narrator" do
+    cut = "hopeful for a (v".rjust(Interaction::Schema.max_length_for(:pre_feeling), "e")
+    narrator = FakeAgent.new("Mira looks up at you.")
+
+    exchange = with_agents(real_agent(ScriptedChat.new(
+      CHARACTER_RESPONSE.merge("pre_feeling" => cut), CHARACTER_RESPONSE
+    )), narrator) { |agent| agent.ask("Excuse me?") }
+
+    assert_equal CHARACTER_RESPONSE["pre_feeling"], exchange.reaction[:pre_feeling]
+    assert_equal 1, narrator.prompts.count, "the narrator was paid for once, for the good sheet"
+    assert_not_includes narrator.prompts.first, cut
+  end
+
+  # An exhausted rotation still raises, and it is still the same error -- what
+  # changed is that the player's turn is not lost to the first model's overrun.
+  # `NarrationJob` is what turns this into something a player reads.
+  test "a truncation every model commits still fails the exchange" do
+    cut = "a" * Interaction::Schema.max_length_for(:action)
+    chat = ScriptedChat.new(*Array.new(3) { CHARACTER_RESPONSE.merge("action" => cut) })
+
+    with_agents(real_agent(chat), FakeAgent.new("Mira looks up at you.")) do |agent|
+      assert_raises(SanitizesGeneratedText::TruncatedTextError) { agent.ask("Excuse me?") }
+    end
+
+    assert_equal 2, chat.attempts, "two models, so two attempts"
+  end
+
   # --- streaming ------------------------------------------------------------
 
   # The narrator pass is prose the player watches arrive, which is the same
@@ -273,6 +335,30 @@ class InteractionAgentTest < ActiveSupport::TestCase
 
   private
 
+  TWO_MODELS = [
+    { provider: :ollama, model: "first-model", assume_model_exists: true },
+    { provider: :ollama, model: "second-model", assume_model_exists: true }
+  ].freeze
+
+  # A real BaseAgent over a scripted chat, for the tests about the ROTATION --
+  # the one thing a FakeAgent cannot stand in for, since it has neither models
+  # nor an attempt loop.
+  def real_agent(chat)
+    agent = BaseAgent.new(model_options: TWO_MODELS)
+    agent.instance_variable_set(:@chat, chat)
+    agent
+  end
+
+  # Hands out the two agents in construction order -- character first, narrator
+  # second -- whatever they are.
+  def with_agents(character_agent, narrator_agent)
+    queued = [ character_agent, narrator_agent ]
+
+    BaseAgent.stub(:new, ->(*, **) { queued.shift }) do
+      yield InteractionAgent.new(@character)
+    end
+  end
+
   # FakeAgent per pass, handed out in construction order: character first,
   # narrator second. Returns the InteractionAgent, whose own readers expose
   # each fake.
@@ -299,6 +385,27 @@ class InteractionAgentTest < ActiveSupport::TestCase
   def interact(character: CHARACTER_RESPONSE, narration: "Mira looks up at you.", input: "Excuse me?")
     stub_agents(character, narration) do |agent|
       return [ agent.ask(input), agent ]
+    end
+  end
+
+  # Answers each attempt with the next scripted content, so a rotation can be
+  # seen from the chat's side. Enough of RubyLLM::Chat's surface for BaseAgent:
+  # it configures the chat, and rotating calls `with_model` on it.
+  class ScriptedChat
+    attr_reader :attempts
+
+    def initialize(*contents)
+      @contents = contents
+      @attempts = 0
+    end
+
+    def with_instructions(_instructions) = self
+    def with_schema(_schema) = self
+    def with_model(_model, **_options) = self
+
+    def ask(_prompt)
+      @attempts += 1
+      Struct.new(:content).new(@contents.shift)
     end
   end
 end

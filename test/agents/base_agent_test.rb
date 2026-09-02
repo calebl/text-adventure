@@ -256,6 +256,80 @@ class BaseAgentTest < ActiveSupport::TestCase
     assert_equal 1, rotations
   end
 
+  # --- a caller's own check is a failed call too -------------------------------
+
+  # THE FIX, AT THIS END. `SanitizesGeneratedText::TruncatedTextError` is not
+  # declared in BaseAgent -- the rule and the caps belong to the concern and the
+  # schema -- but whether it rotates is decided here, and it rotates, on the
+  # same side of the line as a schema a model ignored. Before `verify:` existed
+  # the raise happened in `InteractionAgent#ask` AFTER this method returned, so
+  # the rotation never saw it and a model that truncates cost the player a turn.
+  test "ask rotates past an answer the caller's own check rejected" do
+    good = { "pre_thought" => "Say something." }
+    agent = build_agent
+    agent.instance_variable_set(:@chat, SequenceChat.new({ "pre_thought" => "a" * 320 }, good))
+
+    rotations = 0
+    agent.stub(:rotate_model, ->(*) { rotations += 1; agent }) do
+      answer = agent.ask("what do you think", verify: ->(content) {
+        raise SanitizesGeneratedText::TruncatedTextError if content["pre_thought"].length >= 320
+      })
+
+      assert_equal good, answer.content
+    end
+
+    assert_equal 1, rotations
+  end
+
+  test "ask raises the caller's check once the rotation is exhausted" do
+    agent = build_agent
+    agent.instance_variable_set(:@chat, ConstantChat.new({ "pre_thought" => "a" * 320 }))
+
+    agent.stub(:rotate_model, ->(*) { agent }) do
+      assert_raises(SanitizesGeneratedText::TruncatedTextError) do
+        agent.ask("what do you think", verify: ->(_content) {
+          raise SanitizesGeneratedText::TruncatedTextError, "cut off"
+        })
+      end
+    end
+  end
+
+  test "ask runs the caller's check on the parsed content, and only when one is given" do
+    seen = []
+    agent = build_agent
+    agent.instance_variable_set(:@chat, ConstantChat.new({ "action" => "She shrugs." }))
+
+    assert_nothing_raised { agent.ask("hello") }
+    agent.ask("hello", verify: ->(content) { seen << content })
+
+    assert_equal [ { "action" => "She shrugs." } ], seen
+  end
+
+  # A REJECTED ATTEMPT IS NOT FILED UNDER THE TURN. `record_exchange` runs after
+  # the check, so the messages of an attempt that is about to be rewound never
+  # become messages `#attribute_to!` would stamp onto the scene.
+  test "an answer the caller rejected leaves nothing behind in the conversation" do
+    agent = BaseAgent.new("You answer.", purpose: Chat::CHARACTER, model_options: OPTIONS)
+    chat = agent.chat
+
+    OfflineExchange.with(
+      OfflineExchange.reply({ "pre_thought" => "a" * 320 }),
+      OfflineExchange.reply({ "pre_thought" => "Say something." })
+    ) do
+      agent.stub(:rotate_model, ->(*) { agent }) do
+        answer = agent.ask("what do you think", verify: ->(content) {
+          raise SanitizesGeneratedText::TruncatedTextError if content["pre_thought"].length >= 320
+        })
+
+        assert_equal({ "pre_thought" => "Say something." }, answer.content)
+      end
+    end
+
+    assert_equal %w[system user assistant], chat.messages.reorder(:id).pluck(:role),
+                 "the truncated exchange is not left in a conversation that gets picked up again"
+    assert_equal({ "pre_thought" => "Say something." }, chat.messages.find_by(role: "assistant").content_raw)
+  end
+
   # --- what persistence must not break --------------------------------------
 
   # A CONVERSATION IS A ROW NOW, so a failed attempt leaves rows behind. RubyLLM

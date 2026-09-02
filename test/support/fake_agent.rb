@@ -32,7 +32,12 @@ class FakeAgent
   # refusal and a suppressed crisis response both look like from out here.
   # Nothing streams first: a test that needs the chunks of a doomed call as
   # well should drive the class under test with its own double.
-  def ask(prompt)
+  # `verify` is run the way `BaseAgent#ask` runs it -- on the parsed content, in
+  # place of the attempt loop this fake does not have. So a caller's check still
+  # raises here, and a test standing this fake in sees the failure; what it does
+  # NOT see is the rotation, because a fake has one queued answer and no models.
+  # A test about the rotation itself has to drive a real BaseAgent.
+  def ask(prompt, verify: nil)
     @prompts << prompt
     raise "FakeAgent ran out of queued responses" if @responses.empty?
 
@@ -44,6 +49,7 @@ class FakeAgent
       content.scan(/\S+\s*/) { |part| yield Chunk.new(part) }
     end
 
+    verify&.call(content)
     Response.new(content)
   end
 

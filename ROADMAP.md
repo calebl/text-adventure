@@ -55,17 +55,43 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **A truncated character sheet rotates like any other failed call, and a
+  failed turn shows the app's own copy.** Two fixes on the talk path. (1)
+  `InteractionAgent#ask` called `#reaction_fields` — where a field that arrived
+  at exactly its cap raises `SanitizesGeneratedText::TruncatedTextError` — on
+  the response *after* `BaseAgent#ask` had returned, so the rotation never saw
+  it: a model that ignored the schema got a second try and a model that
+  truncated cost the player the turn, which nobody chose. It was where the raise
+  happened. `BaseAgent#ask` takes a `verify:` check now and runs it inside the
+  attempt loop, so the caller keeps the check (the caps are the schema's
+  business, not `BaseAgent`'s) while the raise is a failed call that rewinds the
+  attempt out of the character's durable conversation and asks the next model.
+  Measured firing rate before the fix, on plain minimax: 15 of 16 attempted
+  narrations, 1 of 18 turns completed at either reasoning setting
+  (`data/ta-conversation-read/report.md` §4) — and the captain had that model
+  pinned in his own `.envrc`. (2) `NarrationJob`'s general rescue passed
+  `e.message` to the page, so the `.alert` read *"generated text arrived at its
+  320-character cap…"* and quoted the fragment the app had just decided not to
+  keep. It renders `Playthrough::TurnFailureNotice` instead, one line in the
+  app's own voice; `Rails.logger.error` still has the class and the message in
+  full. Also corrected the "accepted cost" note on `REMOTE_MODEL_IDS`: the 602
+  it cited as minimax's interaction-path length was measured before this guard
+  existed, over a five-field schema with a 200-character `pre_thought`, and 30
+  of minimax's 39 character sheets in that sweep carried a field cut off
+  mid-word at exactly 200. It is not a length minimax delivers.
+
 - **`mistralai/mistral-medium-3.1` is the default hosted model**, with
   `minimax/minimax-m3` second. The captain's ruling on recommendation 2 of the
   refusal sweep: mistral refused 0 of 52 charged cases against minimax's 8 of 51
   (16%), is 3–4× faster (median 2.4s against 8.8s), and dropped no required
   `Interaction::Schema` field where minimax dropped them on 29% of talk turns.
-  The accepted cost is thinner prose — about 60% of minimax's length narrating
-  and under a third on the interaction path. The order also costs the safety
+  The accepted cost is thinner prose — about 60% of minimax's length narrating.
+  (The interaction-path figure this entry used to quote is withdrawn; see the
+  truncation entry above.) The order also costs the safety
   net: a `RefusalError` rotation now falls to minimax, the model that refuses,
   rather than to a model known to comply. Stated on the constant, not buried.
 
-- Rails 8 app, SQLite, 976 tests green. No longer API-only: `api_only` is off
+- Rails 8 app, SQLite, 991 tests green. No longer API-only: `api_only` is off
   and `ApplicationController < ActionController::Base` so it can render ERB.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph and the
