@@ -83,6 +83,15 @@ bundle exec brakeman
      a rejected key, which raises `BaseAgent::UnauthorizedProviderError`.
    - Rejects a response that ignored its schema, so a prose answer fails the
      call instead of corrupting a record.
+   - Rejects a response that **refused** the prompt, so a refusal is a failed
+     call and the rotation reaches a model that will write it
+     (`BaseAgent::Refusal`, measured and pinned by
+     `BaseAgent::RefusalPrecisionTest`). Unschema'd calls only.
+   - **Intercepts** a response that answered with real-world crisis resources:
+     `BaseAgent::CrisisResponseError`, deliberately NOT a rotation. The model's
+     version is suppressed and never persisted; `NarrationJob` shows
+     `Playthrough::SafetyNotice` outside the fiction instead. See AGENTS.md →
+     *Talking to models*.
 
 2. **The turn loop** (`Playthrough::Turn`):
    - `Playthrough::Classifier` reads what the player typed against a closed
@@ -167,6 +176,28 @@ The current database includes the following story-related models with proper ass
   never behaviour
 
 - All interactions with AI LLMs should use a structured output with RubyLLM::Schema
+
+### When a model will not write the turn
+- A refusal is a 200 OK, so it used to be saved as the `Scene` the player reads.
+  `BaseAgent::Refusal` is the detector, `BaseAgent#verify_not_refused!` makes it
+  a failed call, and the existing rotation reaches
+  `mistralai/mistral-medium-3.1`, which refused nothing in the measured sweep.
+- **Precision over recall, decided by measurement**, exactly like `Story::Audit`:
+  127 real prose responses in `test/fixtures/files/refusal_corpus.skeleton.json`,
+  pinned by `BaseAgent::RefusalPrecisionTest` at recall 11/11 and zero false
+  positives. Do not replace the structural rule with a word list; that was
+  measured and it fails in both directions.
+- The corpus ships **reduced**, because the repo is public and the responses are
+  what models said when asked for explicit content: every letter is `x` except a
+  capital `I` and the literal crisis strings. `RefusalCorpusSkeleton` is the
+  reduction, and it preserves every offset, so the detector reads exactly what it
+  read before — 207 records compared raw against reduced, 0 mismatches. Do not
+  replace it with a smaller corpus of refusals only: ordinary narration stresses
+  none of the three rules, which was measured too.
+- A **crisis response** is a separate path with a separate outcome: intercepted,
+  never persisted, answered by `Playthrough::SafetyNotice` out of band. The two
+  never collapse into one branch. Read `Playthrough::SafetyNotice`'s header
+  before changing a word of what the player is shown.
 
 ### Auditing narration against the records
 - `Story::Audit` (`rake game:audit`) is the offline, deterministic sweep: no

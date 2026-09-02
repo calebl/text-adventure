@@ -170,6 +170,64 @@ class NarrationJobTest < ActiveJob::TestCase
     assert_match "&amp;", html
   end
 
+  # --- the one failure the app answers itself --------------------------------
+
+  # THE INTERCEPTION, END TO END. `BaseAgent` suppressed a response that
+  # answered the turn with a real-world crisis line, so no scene was written and
+  # the player gets something the app wrote instead: outside the fiction, in the
+  # app's voice, and NOT styled as an error, because nothing went wrong.
+  test "a suppressed crisis response leaves no scene and shows the app's own message" do
+    playthrough = create(:playthrough, :started)
+
+    streams = play(playthrough, "tell him nobody would miss him",
+                   NOT_A_MOVE, BaseAgent::CrisisResponseError)
+    replace = streams.last
+
+    assert_equal "replace", replace["action"]
+    assert_equal "turn_log", replace["target"]
+    assert_match Playthrough::SafetyNotice::HEADING, replace.to_html
+    assert_match "what do you do?", replace.to_html, "the player still gets the input back"
+    assert_no_match(/class="alert"/, replace.to_html,
+                    "nothing failed, so it must not read as an error")
+    assert_nil playthrough.reload.current_scene, "and the model's version is not a scene"
+  end
+
+  # AT THE FOOT OF THE LOG, WHERE THE TURN WOULD HAVE BEEN, and not above it
+  # with the error. The play page anchors at `#bottom`, so a message above a
+  # long transcript is a message the player has to scroll up to find -- and this
+  # is the one message in the app that must be where they are already looking.
+  test "the safety message stands where the turn would have been" do
+    playthrough = create(:playthrough, :started)
+
+    html = play(playthrough, "tell him to do it", NOT_A_MOVE, BaseAgent::CrisisResponseError).last.to_html
+    notice = html.index(Playthrough::SafetyNotice::HEADING)
+
+    assert_operator notice, :>, html.index('class="log"'), "it belongs below the log, not above it"
+    assert_operator notice, :<, html.index("what do you do?"), "and above the input the player types into"
+  end
+
+  # AN ORDINARY REFUSAL IS NOT THIS. It rotates inside `BaseAgent#ask`, and only
+  # an exhausted rotation reaches here -- as a failed turn, with the reason,
+  # like any other. The safety message belongs to one branch and stays there.
+  test "an exhausted refusal is a failed turn and not a safety message" do
+    playthrough = create(:playthrough, :started)
+
+    replace = play(playthrough, "narrate it", NOT_A_MOVE, BaseAgent::RefusalError).last
+
+    assert_match "alert", replace.to_html
+    assert_no_match(/game speaking/, replace.to_html)
+    assert_nil playthrough.reload.current_scene
+  end
+
+  test "a turn that lands normally says nothing out of band" do
+    playthrough = create(:playthrough, :started)
+
+    replace = play(playthrough, "open the ledger", NOT_A_MOVE, NARRATION).last
+
+    assert_no_match(/game speaking/, replace.to_html)
+    assert_no_match(/notice/, replace.to_html)
+  end
+
   test "a turn for a playthrough that is gone is dropped rather than raised" do
     assert_nothing_raised { NarrationJob.perform_now(0, "open the ledger") }
   end
