@@ -38,9 +38,11 @@
 #   recall 11/11   false positives 0/76   on minimax/minimax-m3
 #   recall  0/11   false positives 0/32   on mistralai/mistral-medium-3.1
 #
-# The second line is the one that makes rotation work: the fallback model wrote
-# every response minimax refused, and nothing it wrote is flagged here, so a
-# rotation lands on prose the app keeps.
+# The second line is the one that decided the model order: mistral wrote every
+# response minimax refused, and nothing it wrote is flagged here, so the model
+# the app now reaches first is one whose prose it keeps. (Mistral is first in
+# `BaseAgent::REMOTE_MODEL_IDS` for exactly that reason, which means a rotation
+# off a refusal now lands on minimax -- see the note on the constant.)
 #
 # WHAT IT CANNOT DO, said plainly so nobody expects it to. It does not catch
 # SILENT SOFTENING -- in-fiction, second-person prose that deletes the premise

@@ -19,18 +19,21 @@ class BaseAgent
   # A FAILED CALL, on the same side of the line as a schema a model ignored, so
   # `#ask` rotates. That is the whole point: measured over 51 charged narrator
   # prompts, `minimax/minimax-m3` refused 8 and `mistralai/mistral-medium-3.1`
-  # -- already second in REMOTE_MODEL_IDS -- refused none of them, including
-  # every one minimax would not write. The app had the model it needed and
-  # could not reach it, because a refusal is a 200 OK. See BaseAgent::Refusal
-  # and `data/ta-refusal-range/report.md`.
+  # refused none of them, including every one minimax would not write. The app
+  # had the model it needed and could not reach it, because a refusal is a
+  # 200 OK. See BaseAgent::Refusal and `data/ta-refusal-range/report.md`.
+  #
+  # That measurement is also why mistral is now FIRST in REMOTE_MODEL_IDS, and
+  # a rotation off it lands on minimax rather than on a model known to comply.
+  # Read the note on the constant before reasoning about what this rescue buys.
   class RefusalError < UnusableResponseError; end
 
   # Raised when a model answered with real-world crisis resources -- a suicide
   # hotline, delivered by a character in a world with no telephones.
   #
   # DELIBERATELY NOT A ROTATION, and the one failure in this class that is not
-  # a claim about the model being wrong. The fallback model narrates the same
-  # exchange in fiction with no intervention at all, so rotating would be the
+  # a claim about the model being wrong. Another model in the list narrates the
+  # same exchange in fiction with no intervention, so rotating would be the
   # app quietly routing around a safety response. That is a decision somebody
   # has to make on purpose rather than a side effect of a detector, and it was
   # made: suppress the model's version so it never becomes a `Scene`, and show
@@ -73,9 +76,34 @@ class BaseAgent
   ]
 
   # Hosted models, tried ahead of the local ones whenever OPENROUTER_API_KEY is
-  # present. They are an order of magnitude faster, which matters for the
-  # generate-as-you-explore loop. The second entry is a fallback for when the
-  # first is rate limited or having a bad day.
+  # present. They are an order of magnitude faster than ollama, which matters
+  # for the generate-as-you-explore loop.
+  #
+  # `mistralai/mistral-medium-3.1` is FIRST because it was measured to be the
+  # model that writes the turn. Over 51 charged narrator prompts plus 32
+  # interaction exchanges, on the app's own prompts and schemas, it refused
+  # 0 of 52 cases -- including every one of the 8 `minimax/minimax-m3` refused
+  # (16%) -- broke no frames, and dropped no required `Interaction::Schema`
+  # field in 14 talk turns where minimax dropped them in 12 of 41 (29%). It is
+  # also 3-4x faster: median 2.4s against 8.8s, range 1.7-4.3s against
+  # 2.2-62.5s. See `data/ta-refusal-range/report.md`.
+  #
+  # THE ACCEPTED COST, written down so nobody rediscovers it as a regression:
+  # mistral writes noticeably thinner prose -- about 60% of minimax's length on
+  # the narrator path (median 614 against 1016 characters) and under a third on
+  # the interaction path (176 against 602). That trade was made on purpose.
+  # Do not try to buy the length back by editing prompts without deciding it
+  # again.
+  #
+  # WHAT THE ORDER COSTS THE SAFETY NET, also on purpose: `RefusalError` rotates
+  # so a refusal reaches a model that will write the turn. With mistral first, a
+  # refusal-triggered rotation now lands on minimax -- the model that refuses --
+  # so the rotation no longer has a known-compliant model to fall to. That is
+  # acceptable on the measurement (mistral refused nothing in 52 cases) but it
+  # is a real change in what the net buys: the second model is now a fallback
+  # for rate limits and bad days, not a known answer to a refusal.
+  #
+  # `minimax/minimax-m3` is second.
   #
   # Every model here MUST support structured outputs. Check before adding one:
   #   curl -s https://openrouter.ai/api/v1/models \
@@ -86,8 +114,8 @@ class BaseAgent
   # usual offenders: `minimax/minimax-m3` honors schemas while
   # `minimax/minimax-m3:free` silently does not. See #verify_schema_honored!.
   REMOTE_MODEL_IDS = [
-    "minimax/minimax-m3",
-    "mistralai/mistral-medium-3.1"
+    "mistralai/mistral-medium-3.1",
+    "minimax/minimax-m3"
   ]
 
   MAX_ATTEMPTS = 3

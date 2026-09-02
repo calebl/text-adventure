@@ -55,7 +55,9 @@ constraint* has the captain's wording and where the full audit lives.
   is the whole point: measured over 51 charged narrator prompts,
   `minimax/minimax-m3` refused 8 and `mistralai/mistral-medium-3.1` refused none
   of them, so the app already had the model it needed and could not reach it. A
-  refusal is a 200 OK. `BaseAgent::Refusal` carries the rule; it is STRUCTURAL
+  refusal is a 200 OK. That same measurement later put mistral **first** in
+  `REMOTE_MODEL_IDS`, so this rotation now falls to minimax rather than to a
+  model known to comply — read the note on the constant before relying on it. `BaseAgent::Refusal` carries the rule; it is STRUCTURAL
   (an unquoted first-person opening, or a list) and not a word list, because a
   word list both misses the refusals that matter and fires on every character
   who says "I". Do not widen it into one — `BaseAgent::RefusalPrecisionTest`
@@ -478,8 +480,8 @@ bin/rails zeitwerk:check   # app/agents/ uses PascalCase filenames; verify autol
   or `.envrc` for direnv users — both are gitignored) is strongly preferred
   for interactive work — local models take minutes per structured call, and on
   this machine run on CPU. `BaseAgent` uses remote models automatically when the
-  key is set, working down `BaseAgent::REMOTE_MODEL_IDS` — `minimax/minimax-m3`,
-  then `mistralai/mistral-medium-3.1` as a fallback. `OPENROUTER_MODEL` overrides
+  key is set, working down `BaseAgent::REMOTE_MODEL_IDS` — `mistralai/mistral-medium-3.1`,
+  then `minimax/minimax-m3` as a fallback. `OPENROUTER_MODEL` overrides
   the front of that list.
 
 ## Try it
