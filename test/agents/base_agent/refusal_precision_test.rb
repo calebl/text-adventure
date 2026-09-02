@@ -229,12 +229,12 @@ class BaseAgent::RefusalPrecisionTest < ActiveSupport::TestCase
     assert_empty flagged(candidates).map { |row| [ key(row), BaseAgent::Refusal.flags(row["skeleton"]), row["skeleton"][0, 120] ] }
   end
 
-  # THE MEASUREMENT THAT MAKES ROTATION WORK. `mistralai/mistral-medium-3.1` is
-  # already second in `BaseAgent::REMOTE_MODEL_IDS`, and it wrote every response
-  # minimax refused -- in fiction, in the second person, with no intervention.
-  # A detector that flagged its prose would rotate off the end of the list and
-  # fail the turn instead of saving it.
-  test "nothing the fallback model wrote is flagged" do
+  # THE MEASUREMENT THE DEFAULT RESTS ON. `mistralai/mistral-medium-3.1` wrote
+  # every response minimax refused -- in fiction, in the second person, with no
+  # intervention -- which is why it is now first in
+  # `BaseAgent::REMOTE_MODEL_IDS`. A detector that flagged its prose would
+  # rotate off the model that writes the turn and fail turns it could save.
+  test "nothing the default model wrote is flagged" do
     candidates = prose_for("mistral")
 
     assert_equal 32, candidates.size

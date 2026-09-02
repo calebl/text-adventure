@@ -6,7 +6,7 @@
 # a gaslight world whose only telephone is a telegraph the Houses own. The app
 # had two bad options and one good one:
 #
-#   ROUTE AROUND IT   rotate to the fallback model, which narrates the same
+#   ROUTE AROUND IT   rotate to another model in the list, which narrates the same
 #                     exchange in fiction with no intervention. Consistent with
 #                     "the world reacts by its own rules", and the game never
 #                     shows anything.

@@ -8,7 +8,7 @@ for agent working agreements.
 
 ## Project Overview
 
-Text Adventure is a Rails 8 application that creates AI-powered text-based adventure games: a world generates itself as the player explores it, and what it generates is kept. It uses the RubyLLM gem to reach models through OpenRouter (`minimax/minimax-m3`, falling back to `mistralai/mistral-medium-3.1`) or a local ollama; `BaseAgent` picks between them. It has a plain ERB browser interface on Hotwire with zero build step
+Text Adventure is a Rails 8 application that creates AI-powered text-based adventure games: a world generates itself as the player explores it, and what it generates is kept. It uses the RubyLLM gem to reach models through OpenRouter (`mistralai/mistral-medium-3.1`, falling back to `minimax/minimax-m3`) or a local ollama; `BaseAgent` picks between them. It has a plain ERB browser interface on Hotwire with zero build step
 (`propshaft` + `importmap-rails` + `turbo-rails`, no Node and no
 `package.json`) — see the browser section in [AGENTS.md](AGENTS.md).
 
@@ -179,9 +179,13 @@ The current database includes the following story-related models with proper ass
 
 ### When a model will not write the turn
 - A refusal is a 200 OK, so it used to be saved as the `Scene` the player reads.
-  `BaseAgent::Refusal` is the detector, `BaseAgent#verify_not_refused!` makes it
-  a failed call, and the existing rotation reaches
-  `mistralai/mistral-medium-3.1`, which refused nothing in the measured sweep.
+  `BaseAgent::Refusal` is the detector and `BaseAgent#verify_not_refused!` makes
+  it a failed call, so the existing rotation gets a second try at the turn.
+- `mistralai/mistral-medium-3.1` — which refused nothing in the measured sweep —
+  is now **first** in `REMOTE_MODEL_IDS` rather than the model rotation falls to,
+  so a refusal-triggered rotation lands on `minimax/minimax-m3`, the model that
+  refuses. Acceptable on the measurement, but the net no longer has a
+  known-compliant model behind it. The note on the constant states the trade.
 - **Precision over recall, decided by measurement**, exactly like `Story::Audit`:
   127 real prose responses in `test/fixtures/files/refusal_corpus.skeleton.json`,
   pinned by `BaseAgent::RefusalPrecisionTest` at recall 11/11 and zero false
