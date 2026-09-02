@@ -70,7 +70,7 @@ gem "ruby_llm"
 # than establishing it. See AGENTS.md -> *Never let `ruby_llm-schema`
 # resolve to 1.x*, and `.github/dependabot.yml` for why the weekly 1.0.0 PR
 # is not silenced with an `ignore` rule.
-gem "ruby_llm-schema", "~> 0.2"
+gem "ruby_llm-schema", "~> 1.0"
 
 gem "open_router", "~> 0.3.3"
 
