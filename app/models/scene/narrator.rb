@@ -41,19 +41,44 @@ class Scene::Narrator
   # It goes in as a statement rather than a request, because the narrator has no
   # say in whether it is true. If the prose contradicts it the record still
   # stands, which is the point; `Story::Audit` is what notices.
+  #
+  # A RESPONSE THE GAME WILL NOT KEEP IS NOT PERSISTED, which is the other half
+  # of `BaseAgent`'s refusal check. The `ensure` below saves whatever arrived,
+  # and that is right for a call that died mid-sentence and wrong for a model
+  # that declined: saving a refusal would put "I'm not going to narrate that"
+  # in the turn log as the scene, and a world that keeps what it generates
+  # would keep it. `BaseAgent::UnusableResponseError` is the one exception to
+  # the `ensure`, and it covers both a refusal that exhausted the rotation and a
+  # crisis response, which must not be kept for a different reason.
+  #
+  # `keep` IS THE LAST ATTEMPT'S CONTENT, NOT THE STREAM. The block is handed
+  # the chunks of every attempt -- `BaseAgent#ask` restarts the stream when it
+  # rotates -- so the accumulated buffer holds a refusal AND its replacement
+  # end to end, and saving that would file both as one scene. `response.content`
+  # is what the model that actually answered wrote. (The player may still have
+  # watched the first attempt arrive; the end-of-turn `#turn_log` replace is
+  # what takes it off the page, since the log renders the persisted scene.)
   def narrate(command, fact: nil, &block)
-    text = +""
+    streamed = +""
+    keep = nil
 
     begin
-      agent.ask(prompt_for(command, fact)) do |chunk|
+      keep = agent.ask(prompt_for(command, fact)) do |chunk|
         part = chunk.content.to_s
         next if part.empty?
 
-        text << part
+        streamed << part
         block&.call(part)
-      end
+      end.content.to_s
+    rescue BaseAgent::UnusableResponseError
+      raise
+    rescue
+      # Died mid-stream. Keep whatever prose arrived -- this is what the
+      # `ensure` has always been for.
+      keep = streamed
+      raise
     ensure
-      @scene = persist(text)
+      @scene = persist(keep)
     end
 
     @scene

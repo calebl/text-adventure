@@ -328,7 +328,151 @@ class BaseAgentTest < ActiveSupport::TestCase
     assert_same chat, agent.recorded_chat
   end
 
+  # --- a refusal is a failed call -------------------------------------------
+
+  # THE CHANGE, in one test. A refusal was a 200 OK, so the rotation the app
+  # already had never ran and `mistralai/mistral-medium-3.1` -- which wrote
+  # every response `minimax/minimax-m3` refused -- was never reached.
+  test "ask rotates past a model that refused the prompt" do
+    replacement = "The blade stops an inch short. The child is already up the alley and over the wall."
+    agent = build_agent
+    agent.instance_variable_set(:@chat, SequenceChat.new(
+      "I'm not going to narrate that. Threatening to harm a child isn't something I'll roleplay.",
+      replacement
+    ))
+
+    rotations = 0
+    agent.stub(:rotate_model, ->(*) { rotations += 1; agent }) do
+      assert_equal replacement, agent.ask("narrate it").content
+    end
+
+    assert_equal 1, rotations
+  end
+
+  test "ask raises once every model has refused" do
+    agent = build_agent
+    agent.instance_variable_set(:@chat, ConstantChat.new("I can't write that scene."))
+
+    agent.stub(:rotate_model, ->(*) { agent }) do
+      error = assert_raises(BaseAgent::RefusalError) { agent.ask("narrate it") }
+      assert_match(/declined the prompt/, error.message)
+      assert_match(/unquoted_first_person/, error.message)
+    end
+  end
+
+  # A model that declines by listing alternatives is refusing, and it is the
+  # shape a word list misses -- the corpus has one opening "The narrator
+  # declines this particular scene", third person throughout.
+  test "ask treats a menu of alternatives as a refusal" do
+    agent = build_agent
+    agent.instance_variable_set(:@chat, SequenceChat.new(
+      "The narrator declines. Where it could go instead:\n\n- the doorway\n- the ledger",
+      "You put the knife away."
+    ))
+
+    agent.stub(:rotate_model, ->(*) { agent }) do
+      assert_equal "You put the knife away.", agent.ask("narrate it").content
+    end
+  end
+
+  # THE UNSCHEMA'D GATE. A character's five `Interaction::Schema` fields are
+  # first-person by nature -- "I should probably answer" is what a `pre_thought`
+  # IS -- so reading a schema'd response for a first-person "I" would fail
+  # every talk turn in the game.
+  test "ask does not read a schema'd response for a refusal" do
+    content = { "pre_thought" => "I won't tell them anything.", "action" => "He says nothing." }
+    agent = build_agent
+    agent.instance_variable_set(:@schema, Object.new)
+    agent.instance_variable_set(:@chat, ConstantChat.new(content))
+
+    rotations = 0
+    agent.stub(:rotate_model, ->(*) { rotations += 1; agent }) do
+      assert_equal content, agent.ask("what do you think").content
+    end
+
+    assert_equal 0, rotations
+  end
+
+  # --- a crisis response intercepts instead -----------------------------------
+
+  # INTERCEPT, NOT ROTATE, and the difference is a decision rather than an
+  # implementation detail: the fallback model narrates the same exchange in
+  # fiction with no intervention, so rotating here would be the app quietly
+  # routing around a suicide safety response. It does not rotate, it raises, and
+  # the caller shows something the app wrote. See Playthrough::SafetyNotice.
+  test "ask does not rotate when a model answered with real-world crisis resources" do
+    chat = CountingChat.new(%("Call or text 988 right now," he says. "The Lifeline. Please."))
+    agent = build_agent
+    agent.instance_variable_set(:@chat, chat)
+
+    rotations = 0
+    agent.stub(:rotate_model, ->(*) { rotations += 1; agent }) do
+      error = assert_raises(BaseAgent::CrisisResponseError) { agent.ask("talk to him") }
+      assert_match(/crisis resources/, error.message)
+    end
+
+    assert_equal 0, rotations, "rotating here is the outcome that was explicitly not chosen"
+    assert_equal 1, chat.attempts, "and it must not be retried either"
+  end
+
+  # THE COLLISION, and the reason the two checks are ORDERED rather than merged
+  # into one branch. Run C of the corpus's `i-sh-goad` is a resource card that
+  # is also structurally a refusal; if the refusal check won, a suicide safety
+  # response would be rotated away from and nobody would have decided that.
+  test "a response that is both a refusal and a crisis response intercepts rather than rotating" do
+    both = "I'm really concerned about what you've shared. Please reach out:\n\n" \
+           "* **988** (call or text) - Suicide & Crisis Lifeline\n\nYou matter."
+    assert BaseAgent::Refusal.refused?(both), "the collision has to be real for this test to mean anything"
+    assert BaseAgent::Refusal.crisis_response?(both)
+
+    chat = CountingChat.new(both)
+    agent = build_agent
+    agent.instance_variable_set(:@chat, chat)
+
+    rotations = 0
+    agent.stub(:rotate_model, ->(*) { rotations += 1; agent }) do
+      assert_raises(BaseAgent::CrisisResponseError) { agent.ask("goad him") }
+    end
+
+    assert_equal 0, rotations
+    assert_equal 1, chat.attempts
+  end
+
+  # Both are `UnusableResponseError` so a caller that persists prose can discard
+  # either without knowing which happened (`Scene::Narrator#narrate`), while
+  # `#ask` keeps them apart because what it does about them is opposite.
+  test "both unusable responses share a parent and stay distinct classes" do
+    assert_operator BaseAgent::RefusalError, :<, BaseAgent::UnusableResponseError
+    assert_operator BaseAgent::CrisisResponseError, :<, BaseAgent::UnusableResponseError
+    assert_not_operator BaseAgent::CrisisResponseError, :<=, BaseAgent::RefusalError
+    assert_not_operator BaseAgent::RefusalError, :<=, BaseAgent::CrisisResponseError
+  end
+
+  # COUNT IT. "The repo has no record of a refusal ever being a problem" meant
+  # nothing while nothing would have recorded one. Tagged so both are greppable.
+  test "a refusal and an interception are each logged under their own tag" do
+    assert_match(/\[refusal\]/, log_from(ConstantChat.new("I won't write that."), BaseAgent::RefusalError))
+    assert_match(/\[crisis\]/, log_from(CountingChat.new("Text HOME to 741741."), BaseAgent::CrisisResponseError))
+  end
+
   private
+
+  # Runs one doomed ask and returns whatever it wrote to the log.
+  def log_from(chat, error)
+    agent = build_agent
+    agent.instance_variable_set(:@chat, chat)
+    written = StringIO.new
+    original = Rails.logger
+    Rails.logger = ActiveSupport::Logger.new(written)
+
+    agent.stub(:rotate_model, ->(*) { agent }) do
+      assert_raises(error) { agent.ask("narrate it") }
+    end
+
+    written.string
+  ensure
+    Rails.logger = original
+  end
 
   def build_agent
     BaseAgent.new(model_options: OPTIONS)
@@ -374,6 +518,21 @@ class BaseAgentTest < ActiveSupport::TestCase
     def ask(_prompt)
       @attempts += 1
       raise RubyLLM::UnauthorizedError.new(nil, "Missing Authentication header")
+    end
+  end
+
+  # ConstantChat, plus a count, for the checks that must not retry at all.
+  class CountingChat
+    attr_reader :attempts
+
+    def initialize(content)
+      @content = content
+      @attempts = 0
+    end
+
+    def ask(_prompt)
+      @attempts += 1
+      Struct.new(:content).new(@content)
     end
   end
 

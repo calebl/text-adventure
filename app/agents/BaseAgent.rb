@@ -7,6 +7,38 @@ class BaseAgent
   # rotation: see #ask.
   class UnauthorizedProviderError < StandardError; end
 
+  # THE PARENT OF THE TWO FAILURES WHOSE TEXT MUST NEVER BE KEPT, so a caller
+  # that persists prose can discard both in one rescue without having to know
+  # which one happened (`Scene::Narrator#narrate`). What `#ask` DOES about them
+  # is not shared, and must not be -- see the two subclasses.
+  class UnusableResponseError < StandardError; end
+
+  # Raised when an unschema'd call came back as prose ABOUT the request instead
+  # of prose answering it: a decline, or a menu of alternatives to pick from.
+  #
+  # A FAILED CALL, on the same side of the line as a schema a model ignored, so
+  # `#ask` rotates. That is the whole point: measured over 51 charged narrator
+  # prompts, `minimax/minimax-m3` refused 8 and `mistralai/mistral-medium-3.1`
+  # -- already second in REMOTE_MODEL_IDS -- refused none of them, including
+  # every one minimax would not write. The app had the model it needed and
+  # could not reach it, because a refusal is a 200 OK. See BaseAgent::Refusal
+  # and `data/ta-refusal-range/report.md`.
+  class RefusalError < UnusableResponseError; end
+
+  # Raised when a model answered with real-world crisis resources -- a suicide
+  # hotline, delivered by a character in a world with no telephones.
+  #
+  # DELIBERATELY NOT A ROTATION, and the one failure in this class that is not
+  # a claim about the model being wrong. The fallback model narrates the same
+  # exchange in fiction with no intervention at all, so rotating would be the
+  # app quietly routing around a safety response. That is a decision somebody
+  # has to make on purpose rather than a side effect of a detector, and it was
+  # made: suppress the model's version so it never becomes a `Scene`, and show
+  # an app-authored message outside the fiction instead. `#ask` re-raises this
+  # without rotating; `NarrationJob` is what shows the message. See
+  # `Playthrough::SafetyNotice`.
+  class CrisisResponseError < UnusableResponseError; end
+
   # Models installed locally via ollama. Ordered fastest-and-most-reliable
   # first; `rotate_model` walks down the list when a call fails.
   #
@@ -154,11 +186,24 @@ class BaseAgent
       mark = conversation_mark
       response = conversation.ask(prompt, &block)
       verify_schema_honored!(response)
+      # CRISIS BEFORE REFUSAL, and the order IS the decision rather than a
+      # style choice. One response can be both -- the corpus has a resource
+      # card that is also structurally a refusal -- and if the refusal check
+      # ran first the app would rotate, which is the outcome that was
+      # explicitly not chosen. See CrisisResponseError.
+      verify_no_crisis_response!(response)
+      verify_not_refused!(response)
       record_exchange(mark)
       response
     rescue RubyLLM::UnauthorizedError => e
       rewind_to(mark)
       raise UnauthorizedProviderError, unauthorized_message(e)
+    rescue CrisisResponseError
+      # Rewound but NOT rotated. The rewind is the suppression: the text does
+      # not stay in the persisted conversation either, so nothing anywhere is
+      # holding a copy of what the caller is about to refuse to show.
+      rewind_to(mark)
+      raise
     rescue => e
       rewind_to(mark)
 
@@ -309,6 +354,49 @@ class BaseAgent
 
     raise SchemaIgnoredError,
           "#{current_model[:model]} omitted schema fields: #{missing.join(', ')}"
+  end
+
+  # WHAT A REFUSAL IS, and why it is a failed call. `BaseAgent::Refusal` carries
+  # the rule and the measurement; this is only the seam that acts on it.
+  #
+  # UNSCHEMA'D CALLS ONLY. A schema'd call that came back as prose is already a
+  # failure by the check above, and a schema'd call that came back as the Hash
+  # it was asked for is not prose at all -- reading a character's five fields
+  # for a first-person "I" would flag every character who says "I" about
+  # themselves, which is all of them.
+  def verify_not_refused!(response)
+    return unless @schema.nil?
+    return unless Refusal.refused?(response.content)
+
+    flags = Refusal.flags(response.content)
+    # COUNT IT. The observation that started this was "the repo has no record of
+    # a refusal ever being a problem" -- which meant nothing, because nothing
+    # would have recorded one. Tagged so a refusal is greppable and countable in
+    # a log without parsing prose.
+    Rails.logger.warn do
+      "[refusal] #{current_model[:model]} declined #{purpose || "an unschema'd call"} " \
+        "(#{flags.join(', ')}), treating it as a failed call"
+    end
+
+    raise RefusalError,
+          "#{current_model[:model]} declined the prompt instead of answering it (#{flags.join(', ')})"
+  end
+
+  # A crisis response is the one shape the structural rule cannot see, because
+  # it arrives inside quoted dialogue. Same unschema'd gate, and for a second
+  # reason on top of the first: no schema'd response in the measured corpus
+  # carried one, so reading them would be untested surface.
+  def verify_no_crisis_response!(response)
+    return unless @schema.nil?
+    return unless Refusal.crisis_response?(response.content)
+
+    Rails.logger.warn do
+      "[crisis] #{current_model[:model]} answered #{purpose || "an unschema'd call"} with " \
+        "real-world crisis resources; suppressing it and NOT rotating"
+    end
+
+    raise CrisisResponseError,
+          "#{current_model[:model]} answered with real-world crisis resources"
   end
 
   def missing_schema_keys(content)
