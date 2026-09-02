@@ -105,6 +105,21 @@ constraint* has the captain's wording and where the full audit lives.
   its one exception. It also keeps the **last attempt's** content rather than the
   streamed buffer: `#ask` restarts the stream when it rotates, so the buffer
   holds a refusal and its replacement end to end.
+- **A character's voice is three registers, and `Character#interaction_instructions`
+  scopes each one.** Inside the quotes the character talks, so it says "I";
+  outside them it is described from outside, so it is named and takes its
+  pronouns. The rule used to read "Refer to yourself in third person only" with
+  no scope at all, two lines under the sentence establishing that quoted text is
+  speech — so a character talking aloud said *"forgive Halkett, the name eludes
+  him at present"*. Keep any new voice instruction scoped to a register.
+- **AN NPC IS TOLD WHO IT IS TALKING TO, AND ONLY WHAT MEETING THEM WOULD TELL
+  IT.** `Character#addressee_section` passes the protagonist's name, apparent
+  age, race, appearance and pronouns and deliberately withholds `backstory`,
+  `personality`, `likes`, `dislikes` and `fears` — those are the player's
+  interior, and a prompt that shipped them would hand every stranger in the
+  world what frightens the player before the player had spoken. `CharacterTest`
+  pins the exclusion. What a character actually knows beyond sight arrives
+  through `Chat.conversation_with`'s replay, not through the sheet.
 - All LLM calls use structured output via `RubyLLM::Schema`. Schemas live
   alongside the model they populate (`app/models/universe/physical_schema.rb`),
   and are usually a declared class. `Playthrough::IntentSchema` is a factory
@@ -205,6 +220,17 @@ constraint* has the captain's wording and where the full audit lives.
   record alone would still have let a fragment shape the prose — and the
   narrator's whole job is to write fluently over whatever it is handed, which is
   why a bad field has to be caught before that pass runs.
+- **`minimax/minimax-m3` writes its plan into the first string field it is
+  given, and prompt wording does not stop it.** Measured over 30 real character
+  passes per arm: `pre_thought` came back at exactly its 320-cap on 26 of 30,
+  every one of them a stage note ("*I need to respond as Halkett Rowe… Let me
+  think about this in character*"). Rewording
+  `Character#interaction_instructions` moved that to 23 of 30 — i.e. not at all
+  — while `mistralai/mistral-medium-3.1` and `google/gemini-2.5-flash` overrun
+  0 of 180 fields on the same prompts. So the rate is the model's, not the
+  prompt's; what the truncation *costs* is the `verify:` seam's business (see
+  the truncation bullet above, and #92). Do not reach for prompt wording to
+  reduce it; that was measured and it does not work.
 - **Prefer a fixed table to a prompt** where the value is one of a known set.
   `LocationConnection::DISTANCES` and `::TRAVEL_METHODS` are enums the schema
   reads directly, and `time_to_travel` is derived from them rather than asked
