@@ -45,6 +45,17 @@ module DebugHelper
     tag.span(verdict.to_s, class: "verdict #{verdict}")
   end
 
+  # WHY A NON-OPENING TURN HAS NO RECEIPTS, which depends on whether a retention
+  # cap is in force at all. Uncapped -- the default -- pruning is not a candidate
+  # explanation, so offering it would send somebody looking for a cause that
+  # cannot apply. See `Chat::KEEP_TURNS`.
+  def no_receipts_reason
+    return "no conversation kept — this Scene was written by something other than the loop" unless Chat.capped?
+
+    "no conversation kept — pruned after #{Chat::KEEP_TURNS} turns " \
+      "(TA_CHAT_KEEP_TURNS is set), or this Scene was written by something other than the loop"
+  end
+
   # A block of generated prose, kept as written. `white-space: pre-wrap` in the
   # layout, because a narrator's paragraph breaks are part of what it wrote.
   def debug_prose(value, absent: "not recorded")

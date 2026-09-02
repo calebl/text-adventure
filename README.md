@@ -274,7 +274,7 @@ window and this is a SQLite file on a laptop:
 | bound | what it does |
 | --- | --- |
 | `Chat::HISTORY_EXCHANGES` | how much of a character conversation is replayed. Trimming means deleting — RubyLLM rebuilds the request out of every persisted message. Nothing is lost: every exchange is an `Interaction` row, in full, forever. |
-| `Chat::KEEP_TURNS` | how many turns of audit trail are kept. Pruned at the end of every turn; the `Scene` stays, the receipts go. |
+| `Chat::KEEP_TURNS` | how many turns of audit trail are kept. **Unset by default, meaning keep everything** — measured at ~4 KB a turn on disk, so a 1,000-turn game costs ~4 MB against the 912 KB `models` registry that ships with the app. Set `TA_CHAT_KEEP_TURNS` to opt into a cap; then the older one-shot conversations are pruned at the end of every turn, the `Scene` stays and the receipts go. |
 | `Playthrough::RECAP_BUDGET` | how much of the playthrough the narrator prompt carries, in characters. |
 
 That last one is what lets a long game stay inside the window. The narrator used

@@ -55,6 +55,34 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **The conversation audit trail is kept, not pruned** (`ta-keep-history`).
+  `Chat::KEEP_TURNS` defaulted to 25 turns, so `Playthrough#prune_conversations!`
+  destroyed every older turn's prompts, answers, token counts and models at the
+  end of every turn. The argument for it — a SQLite file on a laptop, three or
+  four chats a turn, an arrival prompt that inlines the universe, the audit
+  trail as the biggest thing a long game accumulates — was true in every clause
+  and never checked against a number. Measured over 500 real turns driven
+  through the loop: 6 messages a turn, ~520 bytes of content each, **4.16 KB a
+  turn on disk** — 0.41 MB per 100 turns, 4.1 MB per 1,000 — against the
+  **912 KB `models` registry that ships with the app**. The trail being the
+  largest thing the *game* writes is a statement about how little else it
+  writes, not about the trail being large.
+
+  The default is now nil, meaning keep everything, and `TA_CHAT_KEEP_TURNS`
+  survives as an **opt-in** cap for anyone who wants a bounded file — the
+  pruning path is kept for it rather than deleted. Growth was checked and not
+  assumed: `Playthrough::Debug#preload` batches a playthrough's messages, so at
+  500 turns the debug page issues an **identical** number of queries capped or
+  uncapped (507 either way, one per scene from the `scene_chain` walk, which is
+  linear in turns and unaffected by retention) and assembles in 278 ms. What
+  this buys is the point — a flagged turn stays fully inspectable however long
+  ago it was played, which is the evaluation record `Playthrough::Feedback`
+  exists to build. Its frozen provenance stays correct and is now belt and
+  braces. Two stale bullets in the debug page's *what is not recorded* panel
+  went with it: the retention ceiling, and a claim that a `Scene` has no column
+  for what the player typed when `scenes.typed` has existed since
+  `ta-api-iface`'s migration landed.
+
 - **A truncated character sheet rotates like any other failed call, and a
   failed turn shows the app's own copy.** Two fixes on the talk path. (1)
   `InteractionAgent#ask` called `#reaction_fields` — where a field that arrived
@@ -101,8 +129,10 @@ The full audit of every planned piece of work against this constraint is in
   **The provenance is FROZEN onto the row, and that is the whole design.**
   `Chat#answering_model_ids` knows which model answered, including after a
   rotation past one that failed, but `Playthrough#prune_conversations!` destroys
-  the one-shot conversations after `Chat::KEEP_TURNS` turns — so a reference
-  would resolve to nothing on exactly the turns worth comparing. `.record`
+  the one-shot conversations whenever `TA_CHAT_KEEP_TURNS` sets a cap — so on an
+  install that opts into a bounded file a reference would resolve to nothing on
+  exactly the turns worth comparing. The default keeps them (`ta-keep-history`),
+  which makes the copy belt and braces rather than unnecessary. `.record`
   copies the model that wrote the prose, the whole prose attempt chain, the
   purpose it was writing as, every model that answered the turn and the token
   counts, once, on create; amending a verdict never re-snapshots. The `Scene` is
@@ -415,9 +445,10 @@ The full audit of every planned piece of work against this constraint is in
     several, by spending the summaries every arrival already writes. Measured on
     `gemma3:12b`: +70 to +91 input tokens on the narration call, ~7% of a turn,
     against 2,264 characters of prose it replaces with 343.
-  Bounded at both ends on purpose: the one-shot audit trail is pruned to
-  `Chat::KEEP_TURNS` at the end of every turn, because this is a SQLite file on
-  a laptop and the game reads none of it back.
+  Bounded where the context window demands it and *not* where it does not: the
+  replay ceiling and the recap budget are arithmetic against a 4,096-token
+  window, whereas the one-shot audit trail is now kept in full by default
+  (`ta-keep-history`) because 4 KB a turn never justified the ceiling it had.
 - **Auditing the difference — `rake game:audit`, `Playthrough::Drift`, and
   app-owned `take` / `drop`** (step 2 of `data/ta-direction/report.md` §11).
   The third clause of the standing constraint, and the biggest single reduction
