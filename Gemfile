@@ -68,7 +68,7 @@ gem "ruby_llm"
 # renamed `schematist` gem, and taking it silently pins ruby_llm to 1.8.2.
 # ruby_llm's own `~> 0` already rules it out; this restates the bound rather
 # than establishing it. See AGENTS.md.
-gem "ruby_llm-schema", "~> 0.2"
+gem "ruby_llm-schema", "~> 1.0"
 
 gem "open_router", "~> 0.3.3"
 
