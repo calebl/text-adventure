@@ -143,6 +143,16 @@ constraint* has the captain's wording and where the full audit lives.
   structured call goes out as prose.
   `test/models/ruby_llm_schema_envelope_test.rb` guards that seam all the way
   to the rendered request body; keep it passing.
+  **Dependabot proposes the widening every week** — PR #91 rewrote the bound to
+  `~> 1.0` and rolled the lockfile back to `ruby_llm (1.8.2)`, and the next one
+  will look the same. Close it; the argument is here. Do **not** silence it with
+  an `ignore` entry in `.github/dependabot.yml`: GitHub marks `ignore` as one of
+  the options that also change how Dependabot raises pull requests for
+  *security* updates, with no documented carve-out for its `update-types`, so
+  the rule would quietly mute any future advisory on this gem whose fix is a
+  major release. The rule is written out, commented, in `dependabot.yml` with
+  that trade recorded. What keeps a 1.x from landing is CI rather than config:
+  #91's `test` job went red with 11 failures and 6 errors.
 - The explicit `Gemfile` entry stays even though `ruby_llm` would pull the gem
   in anyway: every schema class here subclasses `RubyLLM::Schema` directly, so
   it is a direct dependency. If `ruby_llm` 2.0 does switch to `schematist`, an implicit

@@ -5,6 +5,24 @@ updates:
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
+  # NOT ENABLED, deliberately. Dependabot re-proposes `ruby_llm-schema` 1.0.0
+  # every week (PR #91 was the first), and the rule below is the shape that
+  # would stop it -- validated against SchemaStore's dependabot-2.0.json. It
+  # stays commented out because `ignore` is one of the options GitHub marks as
+  # also changing how Dependabot creates pull requests for *security* updates,
+  # and there is no documented carve-out for its `update-types`: the only such
+  # note lives under `allow`. So enabling this also mutes, silently, any future
+  # advisory on this gem whose fix is a major release. What actually stops a
+  # 1.x from landing is CI, loudly: PR #91's `test` job went red with 11
+  # failures and 6 errors, led by `RubyLLMSchemaEnvelopeTest` reporting that
+  # "with_schema dropped Universe::PhysicalSchema" (run 33604977815). See
+  # AGENTS.md -> *Never let `ruby_llm-schema` resolve to 1.x* for why the
+  # whole 1.x line is refused, and for the trade this comment records.
+  #
+  # ignore:
+  # - dependency-name: "ruby_llm-schema"
+  #   update-types:
+  #   - "version-update:semver-major"
   groups:
     # Version updates only: security updates stay ungrouped so each advisory
     # still arrives as its own PR, immediately.

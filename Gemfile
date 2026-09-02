@@ -67,7 +67,9 @@ gem "ruby_llm"
 # Must stay below 1.0: that release is a deprecation shim forwarding to the
 # renamed `schematist` gem, and taking it silently pins ruby_llm to 1.8.2.
 # ruby_llm's own `~> 0` already rules it out; this restates the bound rather
-# than establishing it. See AGENTS.md.
+# than establishing it. See AGENTS.md -> *Never let `ruby_llm-schema`
+# resolve to 1.x*, and `.github/dependabot.yml` for why the weekly 1.0.0 PR
+# is not silenced with an `ignore` rule.
 gem "ruby_llm-schema", "~> 0.2"
 
 gem "open_router", "~> 0.3.3"
