@@ -102,8 +102,16 @@ class InteractionAgent
   #
   # And no history either: this pass renders one structured answer into prose,
   # so replaying the last one would only invite it to narrate that instead.
+  #
+  # AND THE PROSE MODEL ORDER, which the character pass above deliberately does
+  # NOT take. That pass is schema'd -- minimax dropped required
+  # `Interaction::Schema` fields on 29% of measured talk turns -- so it keeps
+  # the app-wide default. This one is unschema'd prose the player reads, where
+  # mistral runs under a third of minimax's length. Same class, same turn, two
+  # different measurements; see BaseAgent::PROSE_MODEL_IDS.
   def narrator_agent
-    @narrator_agent ||= BaseAgent.new(purpose: "interaction-narration", playthrough: playthrough)
+    @narrator_agent ||= BaseAgent.new(model_options: BaseAgent.prose_model_options,
+                                      purpose: "interaction-narration", playthrough: playthrough)
   end
 
   # Stamps both passes' messages with the turn they produced. Two agents, one

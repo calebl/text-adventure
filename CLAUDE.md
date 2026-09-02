@@ -8,7 +8,7 @@ for agent working agreements.
 
 ## Project Overview
 
-Text Adventure is a Rails 8 application that creates AI-powered text-based adventure games: a world generates itself as the player explores it, and what it generates is kept. It uses the RubyLLM gem to reach models through OpenRouter (`mistralai/mistral-medium-3.1`, falling back to `minimax/minimax-m3`) or a local ollama; `BaseAgent` picks between them. It has a plain ERB browser interface on Hotwire with zero build step
+Text Adventure is a Rails 8 application that creates AI-powered text-based adventure games: a world generates itself as the player explores it, and what it generates is kept. It uses the RubyLLM gem to reach models through OpenRouter or a local ollama; `BaseAgent` picks between them, and the hosted order depends on the job: schema'd calls try `mistralai/mistral-medium-3.1` then `minimax/minimax-m3` (`REMOTE_MODEL_IDS`), while the unschema'd prose a player reads takes them the other way round (`PROSE_MODEL_IDS`). It has a plain ERB browser interface on Hotwire with zero build step
 (`propshaft` + `importmap-rails` + `turbo-rails`, no Node and no
 `package.json`) — see the browser section in [AGENTS.md](AGENTS.md).
 
@@ -108,7 +108,10 @@ bundle exec brakeman
 3. **AI Configuration**:
    - RubyLLM configuration in `config/initializers/ruby_llm.rb`
    - `OPENROUTER_API_KEY` in a gitignored `.env` (loaded by `dotenv-rails`) or
-     `.envrc` (direnv). Model order lives in `BaseAgent::REMOTE_MODEL_IDS`.
+     `.envrc` (direnv). Model order lives in `BaseAgent::REMOTE_MODEL_IDS`
+     (schema'd calls, and the app-wide default) and `BaseAgent::PROSE_MODEL_IDS`
+     (the unschema'd prose a player reads, asked for by name at the two call
+     sites that want it). `OPENROUTER_MODEL` pins a model ahead of both.
    - The `models` table **is** the RubyLLM registry since the `acts_as`
      migration; `rails db:seed` fills it, and nothing resolves without it.
 
@@ -181,11 +184,15 @@ The current database includes the following story-related models with proper ass
 - A refusal is a 200 OK, so it used to be saved as the `Scene` the player reads.
   `BaseAgent::Refusal` is the detector and `BaseAgent#verify_not_refused!` makes
   it a failed call, so the existing rotation gets a second try at the turn.
-- `mistralai/mistral-medium-3.1` — which refused nothing in the measured sweep —
-  is now **first** in `REMOTE_MODEL_IDS` rather than the model rotation falls to,
-  so a refusal-triggered rotation lands on `minimax/minimax-m3`, the model that
-  refuses. Acceptable on the measurement, but the net no longer has a
-  known-compliant model behind it. The note on the constant states the trade.
+- **Where the rotation lands depends on which model order the caller asked
+  for.** The check reads unschema'd calls only, and those all ask for
+  `BaseAgent::PROSE_MODEL_IDS`, which is `minimax/minimax-m3` first and
+  `mistralai/mistral-medium-3.1` — which refused nothing in the measured sweep
+  — second. So a refusal-triggered rotation lands on the model measured to have
+  written it, and the net has a known-compliant model behind it.
+  `REMOTE_MODEL_IDS`, the schema'd default, is the other way round and carries
+  no unschema'd calls. The notes on both constants state the trade; keep
+  mistral second on the prose list or the net goes away.
 - **Precision over recall, decided by measurement**, exactly like `Story::Audit`:
   127 real prose responses in `test/fixtures/files/refusal_corpus.skeleton.json`,
   pinned by `BaseAgent::RefusalPrecisionTest` at recall 11/11 and zero false

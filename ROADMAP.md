@@ -61,9 +61,19 @@ The full audit of every planned piece of work against this constraint is in
   (16%), is 3–4× faster (median 2.4s against 8.8s), and dropped no required
   `Interaction::Schema` field where minimax dropped them on 29% of talk turns.
   The accepted cost is thinner prose — about 60% of minimax's length narrating
-  and under a third on the interaction path. The order also costs the safety
-  net: a `RefusalError` rotation now falls to minimax, the model that refuses,
-  rather than to a model known to comply. Stated on the constant, not buried.
+  and under a third on the interaction path. Stated on the constant, not buried.
+
+- **The prose path takes the other order.** The thin-prose cost above was being
+  paid on the two calls a player reads, where neither of mistral's advantages
+  applies: they are unschema'd and they stream. So `BaseAgent::PROSE_MODEL_IDS`
+  puts `minimax/minimax-m3` first and mistral second, and `Scene::Narrator` and
+  `InteractionAgent`'s narration pass ask for it by name; everything schema'd
+  keeps `REMOTE_MODEL_IDS`. That also restores what the safety net lost: a
+  `RefusalError` rotation happens only on unschema'd calls, and on this list it
+  falls to mistral — the model measured to have written every one of the 8
+  charged prompts minimax refused. `OPENROUTER_MODEL` overrides both orders.
+  `ModelSelectionTest` pins each caller, so reordering one list cannot drag the
+  other's callers with it.
 
 - Rails 8 app, SQLite, 976 tests green. No longer API-only: `api_only` is off
   and `ApplicationController < ActionController::Base` so it can render ERB.

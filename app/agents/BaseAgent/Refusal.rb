@@ -39,10 +39,14 @@
 #   recall  0/11   false positives 0/32   on mistralai/mistral-medium-3.1
 #
 # The second line is the one that decided the model order: mistral wrote every
-# response minimax refused, and nothing it wrote is flagged here, so the model
-# the app now reaches first is one whose prose it keeps. (Mistral is first in
-# `BaseAgent::REMOTE_MODEL_IDS` for exactly that reason, which means a rotation
-# off a refusal now lands on minimax -- see the note on the constant.)
+# response minimax refused, and nothing it wrote is flagged here, so it is the
+# model a flagged response should rotate ONTO. That is how the lists are
+# ordered on the path this detector reads: `BaseAgent::PROSE_MODEL_IDS` -- the
+# unschema'd, player-read calls, the only ones `verify_not_refused!` looks at
+# -- puts minimax first and mistral second, so a refusal lands on the model
+# measured to have written it. (`BaseAgent::REMOTE_MODEL_IDS` is the other way
+# round for the schema'd calls, which this detector never reads. See the notes
+# on both constants.)
 #
 # WHAT IT CANNOT DO, said plainly so nobody expects it to. It does not catch
 # SILENT SOFTENING -- in-fiction, second-person prose that deletes the premise

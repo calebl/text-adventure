@@ -90,8 +90,16 @@ class Scene::Narrator
 
   # Memoized, unlike before: the conversation it writes has to still be reachable
   # after `#narrate` returns, so #persist can stamp its messages with the Scene.
+  #
+  # PROSE, so it asks for the prose model order rather than the app-wide
+  # default: this is the text a player reads, and minimax writes about 1.7x as
+  # much of it. Named at the call site on purpose -- there is no policy layer
+  # deciding this, so `grep prose_model_options` finds every caller.
+  # See BaseAgent::PROSE_MODEL_IDS.
   def agent
-    @agent ||= BaseAgent.new(INSTRUCTIONS, purpose: "narration", playthrough: playthrough)
+    @agent ||= BaseAgent.new(INSTRUCTIONS,
+                             model_options: BaseAgent.prose_model_options,
+                             purpose: "narration", playthrough: playthrough)
   end
 
   def prompt_for(command, fact = nil)

@@ -19,8 +19,17 @@ Generation needs a model. Either:
   `BaseAgent::LOCAL_MODEL_OPTIONS`. Free, but 40–90 seconds per structured call.
 * **Hosted (preferred)** — set `OPENROUTER_API_KEY`, in a gitignored `.env`
   (loaded by `dotenv-rails`) or a gitignored `.envrc` (loaded by direnv). Much
-  faster, and `BaseAgent` prefers it automatically when the key is present. Defaults to `mistralai/mistral-medium-3.1`, falling back to
-  `minimax/minimax-m3`. Override with `OPENROUTER_MODEL`.
+  faster, and `BaseAgent` prefers it automatically when the key is present.
+
+  **Which model depends on the job.** Calls that populate a record — every
+  schema'd call in the app — try `mistralai/mistral-medium-3.1` first and fall
+  back to `minimax/minimax-m3` (`BaseAgent::REMOTE_MODEL_IDS`): mistral honors
+  schemas where minimax drops required fields, and answers in about a third of
+  the time. The prose a player actually reads — `Scene::Narrator` and the
+  narration pass of `InteractionAgent`, the two unschema'd streaming calls —
+  takes them the other way round (`BaseAgent::PROSE_MODEL_IDS`), because
+  minimax writes a good deal more of it and neither speed nor schemas are at
+  stake there. `OPENROUTER_MODEL` pins a model ahead of **both** orders.
 
   Any model you add must support structured outputs — several OpenRouter `:free`
   endpoints accept a schema and answer in prose instead. Check with:

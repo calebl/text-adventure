@@ -23,9 +23,15 @@ class BaseAgent
   # had the model it needed and could not reach it, because a refusal is a
   # 200 OK. See BaseAgent::Refusal and `data/ta-refusal-range/report.md`.
   #
-  # That measurement is also why mistral is now FIRST in REMOTE_MODEL_IDS, and
-  # a rotation off it lands on minimax rather than on a model known to comply.
-  # Read the note on the constant before reasoning about what this rescue buys.
+  # WHERE THIS ROTATION LANDS DEPENDS ON WHICH LIST THE CALLER ASKED FOR, and
+  # the lists were ordered with that in mind. On the prose path -- the
+  # unschema'd, streamed, player-read calls, the only ones this check reads at
+  # all -- `PROSE_MODEL_IDS` puts minimax first and mistral second, so a
+  # refusal rotates onto the model measured to have written every one of the 8
+  # prompts minimax refused. The net has a known-compliant model to reach.
+  # On `REMOTE_MODEL_IDS`, mistral is first and a rotation off it lands on
+  # minimax; that order carries no unschema'd calls, so this class does not
+  # fire there. Read the notes on both constants before reordering either.
   class RefusalError < UnusableResponseError; end
 
   # Raised when a model answered with real-world crisis resources -- a suicide
@@ -95,13 +101,11 @@ class BaseAgent
   # Do not try to buy the length back by editing prompts without deciding it
   # again.
   #
-  # WHAT THE ORDER COSTS THE SAFETY NET, also on purpose: `RefusalError` rotates
-  # so a refusal reaches a model that will write the turn. With mistral first, a
-  # refusal-triggered rotation now lands on minimax -- the model that refuses --
-  # so the rotation no longer has a known-compliant model to fall to. That is
-  # acceptable on the measurement (mistral refused nothing in 52 cases) but it
-  # is a real change in what the net buys: the second model is now a fallback
-  # for rate limits and bad days, not a known answer to a refusal.
+  # SO THIS ORDER IS NOT THE ONE THE PROSE PATH USES. The thin-prose cost above
+  # was paid on every call in the app, including the two a player actually
+  # reads; `PROSE_MODEL_IDS` is where it stopped being paid there. This list is
+  # the SCHEMA'D order and the app-wide default: everything that populates a
+  # record, where dropped fields and 8.8s medians are what matter.
   #
   # `minimax/minimax-m3` is second.
   #
@@ -118,10 +122,45 @@ class BaseAgent
     "minimax/minimax-m3"
   ]
 
+  # THE SAME TWO MODELS, THE OTHER WAY ROUND, for the one path where the
+  # measurement points the other way: the unschema'd, streamed prose a player
+  # reads. `Scene::Narrator` and `InteractionAgent`'s narration pass ask for
+  # this list; everything else gets `REMOTE_MODEL_IDS`.
+  #
+  # WHY MINIMAX FIRST HERE. The accepted cost written on `REMOTE_MODEL_IDS` --
+  # mistral's prose runs about 60% of minimax's length narrating (median 614
+  # against 1016 characters) and under a third on the interaction path (176
+  # against 602) -- is a cost the player pays directly and nobody else does.
+  # The two things mistral is better at, honoring `Interaction::Schema` and
+  # answering in 2.4s rather than 8.8s, buy nothing on a path that has no
+  # schema and streams its answer as it arrives. So the split is not a
+  # compromise between the two measurements; each path takes the model its own
+  # measurement chose. See `data/ta-refusal-range/report.md`.
+  #
+  # WHY THAT IS SAFE HERE AND WAS NOT BEFORE. Minimax is the model that refuses
+  # -- 8 of 51 charged narrator prompts. `RefusalError` rotates, and mistral
+  # wrote every one of those 8, so on THIS list the rotation lands on a
+  # known-compliant model: the net that PR #88 built works on the path it was
+  # built for. That is why mistral must stay second here. Reordering this list
+  # to a model that was never measured against those 8 takes the net away.
+  #
+  # A crisis response still does NOT rotate, on this list as on any other --
+  # see CrisisResponseError. Nothing about the prose order touches that.
+  PROSE_MODEL_IDS = [
+    "minimax/minimax-m3",
+    "mistralai/mistral-medium-3.1"
+  ]
+
   MAX_ATTEMPTS = 3
 
-  def self.remote_model_options
-    ids = REMOTE_MODEL_IDS.dup
+  # `OPENROUTER_MODEL` OVERRIDES BOTH ORDERS, deliberately. An operator who
+  # pins a model is saying "use this model", not "use it for schemas only" --
+  # a pin that silently applied to half the calls would be a worse answer than
+  # no pin at all, because the half it missed is the half a player reads. It is
+  # unshifted onto whichever list is asked for, so the pinned model is tried
+  # first everywhere and the rest of that list stays behind it as fallback.
+  def self.remote_model_options(ids = REMOTE_MODEL_IDS)
+    ids = ids.dup
     ids.unshift(ENV["OPENROUTER_MODEL"]) if ENV["OPENROUTER_MODEL"].present?
 
     ids.uniq.map do |id|
@@ -131,12 +170,26 @@ class BaseAgent
 
   attr_reader :instructions, :schema, :model_options, :purpose
 
-  def self.default_model_options
+  # The app-wide default: the schema'd order, with the local models behind it.
+  #
+  # `remote_ids` is the whole of the per-job model choice. There is deliberately
+  # no registry and no policy layer -- a caller that wants the other order says
+  # so at the one place it builds its agent (`model_options:`), which is two
+  # call sites and greppable. See .prose_model_options.
+  def self.default_model_options(remote_ids = REMOTE_MODEL_IDS)
     if ENV["OPENROUTER_API_KEY"].present?
-      remote_model_options + LOCAL_MODEL_OPTIONS
+      remote_model_options(remote_ids) + LOCAL_MODEL_OPTIONS
     else
       LOCAL_MODEL_OPTIONS
     end
+  end
+
+  # WHAT THE PROSE CALLERS ASK FOR. Same shape, same local tail, same behaviour
+  # in every other respect -- only the remote order differs, and only because
+  # the measurement differs there. An offline run (no OPENROUTER_API_KEY) is
+  # byte-for-byte the default: ollama is one installation, not two.
+  def self.prose_model_options
+    default_model_options(PROSE_MODEL_IDS)
   end
 
   # `purpose`, `playthrough` and `character` are what the conversation gets
