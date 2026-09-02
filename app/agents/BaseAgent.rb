@@ -42,6 +42,33 @@ class BaseAgent
   # `Playthrough::SafetyNotice`.
   class CrisisResponseError < UnusableResponseError; end
 
+  # NOT AN ERROR CLASS OF ITS OWN, AND DELIBERATELY SO --
+  # `SanitizesGeneratedText::TruncatedTextError` is the failure a caller's
+  # `verify:` check raises when a field arrived at exactly the `max_length` its
+  # schema asked it to stay under. The rule and the caps belong to the concern
+  # and to the schema; what belongs HERE is the same thing recorded for every
+  # class above: whether it rotates.
+  #
+  # IT ROTATES, on the same side of the line as `SchemaIgnoredError`. A field
+  # cut off mid-word is a model that did not deliver the shape it was asked for,
+  # which is what `SchemaIgnoredError` already buys a second model for. Treating
+  # the two differently was never chosen -- it was only where the raise happened.
+  #
+  # WHERE THE RAISE HAPPENS IS THE WHOLE FIX. `InteractionAgent#ask` called the
+  # sanitizer AFTER `#ask` had returned, so the rotation never saw it: on
+  # `minimax/minimax-m3`, 15 of 16 attempted narrations died this way and 1 of 18
+  # turns completed (`data/ta-conversation-read/report.md` §4) -- every one of
+  # them a turn a second model would have written. Raising outside the loop also
+  # left the rejected exchange sitting in the character's DURABLE conversation,
+  # because `#ask`'s rewind is what takes a failed attempt back out.
+  #
+  # SO ONLY THE RAISE MOVED, NOT THE CHECK. The check reads parsed fields
+  # against caps their own schema declares, which is `SanitizesGeneratedText`'s
+  # business and not this class's; this class knows nothing about `max_length`
+  # and should not start. `ask(verify:)` is the seam: the caller keeps the check,
+  # `#ask` runs it inside the attempt loop, and the rescue below does what it
+  # does for every other failed call.
+
   # Models installed locally via ollama. Ordered fastest-and-most-reliable
   # first; `rotate_model` walks down the list when a call fails.
   #
@@ -90,10 +117,22 @@ class BaseAgent
   #
   # THE ACCEPTED COST, written down so nobody rediscovers it as a regression:
   # mistral writes noticeably thinner prose -- about 60% of minimax's length on
-  # the narrator path (median 614 against 1016 characters) and under a third on
-  # the interaction path (176 against 602). That trade was made on purpose.
-  # Do not try to buy the length back by editing prompts without deciding it
-  # again.
+  # the narrator path (median 614 against 1016 characters). That trade was made
+  # on purpose. Do not try to buy the length back by editing prompts without
+  # deciding it again.
+  #
+  # THE INTERACTION-PATH HALF OF THAT CLAIM WAS WRONG, and it is corrected here
+  # rather than deleted, because it is the kind of number somebody reinstates.
+  # This comment used to say mistral wrote "under a third on the interaction
+  # path -- 176 against 602". The 602 was measured before the truncation guard
+  # existed, over a five-field schema whose `pre_thought` was capped at 200
+  # characters -- and 30 of minimax's 39 character sheets in that sweep carried
+  # a field cut off mid-word at exactly 200 (`data/ta-conversation-read/report.md`
+  # §5 item 5), which the narrator pass then wrote fluent prose over. So 602 is
+  # not a length minimax delivers; it is a length it delivered while the app was
+  # not yet noticing that the answers were fragments. There is no measured
+  # interaction-path length for either model to compare, and the comparison is
+  # not made until there is one.
   #
   # WHAT THE ORDER COSTS THE SAFETY NET, also on purpose: `RefusalError` rotates
   # so a refusal reaches a model that will write the turn. With mistral first, a
@@ -203,7 +242,12 @@ class BaseAgent
   # prose would still be sitting in the history the replacement model is handed.
   # `#rewind_to` puts the conversation back where the attempt found it, so every
   # attempt asks the same question in the same context.
-  def ask(prompt, &block)
+  #
+  # `verify` is a caller's OWN check on the parsed answer, run inside the
+  # attempt loop so whatever it raises is a failed call like any other. It
+  # exists for one check that cannot live in this file and must not live outside
+  # the loop -- see the truncation note beside the error classes at the top.
+  def ask(prompt, verify: nil, &block)
     attempts = 0
 
     begin
@@ -221,6 +265,11 @@ class BaseAgent
       # explicitly not chosen. See CrisisResponseError.
       verify_no_crisis_response!(response)
       verify_not_refused!(response)
+      # LAST, AND INSIDE THE LOOP. The caller's check on the parsed answer, so a
+      # truncated field is a failed call the rotation can see rather than an
+      # exception thrown past it. Before `record_exchange`: a rejected attempt
+      # is about to be rewound, so nothing should have filed its messages.
+      verify&.call(response.content)
       record_exchange(mark)
       response
     rescue RubyLLM::UnauthorizedError => e

@@ -139,9 +139,9 @@ class NarrationJobTest < ActiveJob::TestCase
   end
 
   # A failed turn used to leave a dead cursor and no input, so the only way on
-  # was a reload. The player is still standing where they were; they get the
-  # reason and the input back.
-  test "a failed turn returns the input along with the reason" do
+  # was a reload. The player is still standing where they were; they get a line
+  # saying the turn did not finish, and the input back.
+  test "a failed turn returns the input along with a line saying so" do
     playthrough = create(:playthrough, :started)
 
     # Nothing queued, so classification raises.
@@ -152,6 +152,57 @@ class NarrationJobTest < ActiveJob::TestCase
     assert_match "alert", replace.to_html
     assert_match "what do you do?", replace.to_html
     assert_nil playthrough.reload.current_scene
+  end
+
+  # WHAT THE PLAYER READS IS THE APP'S, NOT THE EXCEPTION'S. `finish(error:
+  # e.message)` put the raise's own text in the `.alert`, so a turn that lost a
+  # character sheet to the truncation guard told the player about a
+  # 320-character cap and quoted the fragment the app had just decided not to
+  # keep. Every reason a turn fails is internal; none of them is a thing the
+  # player did or can fix.
+  test "a failed turn shows the app's own copy and never the exception's text" do
+    playthrough = create(:playthrough, :started)
+    raised = "generated text arrived at its 320-character cap (320 characters), so it " \
+             'was cut off rather than finished: "...his own workspace,."'
+
+    html = play(playthrough, "ask him about the ledger", NOT_A_MOVE,
+                SanitizesGeneratedText::TruncatedTextError.new(raised)).last.to_html
+
+    assert_match Playthrough::TurnFailureNotice::MESSAGE, html
+    assert_no_match(/320-character cap/, html, "an internal cap is not the player's business")
+    assert_no_match(/own workspace/, html, "and neither is a fragment of the suppressed answer")
+  end
+
+  # THE REASON IS NOT LOST, it moves. The log keeps the class and the message in
+  # full, which is where somebody debugging a turn looks.
+  test "the full error still reaches the log" do
+    playthrough = create(:playthrough, :started)
+    written = StringIO.new
+    original = Rails.logger
+    Rails.logger = ActiveSupport::Logger.new(written)
+
+    play(playthrough, "ask him about the ledger", NOT_A_MOVE,
+         SanitizesGeneratedText::TruncatedTextError.new("cut off at its 320-character cap"))
+
+    assert_match(/Narration failed/, written.string)
+    assert_match(/TruncatedTextError/, written.string)
+    assert_match(/cut off at its 320-character cap/, written.string)
+  ensure
+    Rails.logger = original
+  end
+
+  # The same copy whatever failed, so no branch can leak a message of its own.
+  test "every failed turn reads the same, whichever call failed" do
+    %w[classifier narrator].each do |failing|
+      playthrough = create(:playthrough, :started)
+      queued = failing == "classifier" ? [] : [ NOT_A_MOVE, RubyLLM::Error.new(nil, "502 Bad Gateway") ]
+
+      html = play(playthrough, "open the ledger", *queued).last.to_html
+
+      assert_match Playthrough::TurnFailureNotice::MESSAGE, html
+      assert_no_match(/Bad Gateway/, html)
+      assert_no_match(/FakeAgent/, html, "an internal message is not player-facing copy")
+    end
   end
 
   # `html:` is inserted verbatim, so the narrator's own prose has to be escaped

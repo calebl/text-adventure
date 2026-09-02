@@ -198,6 +198,14 @@ The current database includes the following story-related models with proper ass
   read before — 207 records compared raw against reduced, 0 mismatches. Do not
   replace it with a smaller corpus of refusals only: ordinary narration stresses
   none of the three rules, which was measured too.
+- A **truncated field** is a failed call on the same side of the line, and it
+  reaches the rotation through `BaseAgent#ask`'s `verify:` seam rather than by
+  living in `BaseAgent`: the caps are `Interaction::Schema`'s and the rule is
+  `SanitizesGeneratedText`'s, so only the raise moved inside the attempt loop.
+  Calling a sanitizer on a response `#ask` has already returned puts the raise
+  outside the rotation, which is what it did before. See AGENTS.md.
+- A **failed turn** shows `Playthrough::TurnFailureNotice`, never `e.message`.
+  The real error goes to the log.
 - A **crisis response** is a separate path with a separate outcome: intercepted,
   never persisted, answered by `Playthrough::SafetyNotice` out of band. The two
   never collapse into one branch. Read `Playthrough::SafetyNotice`'s header
