@@ -201,4 +201,55 @@ class Scene::NarratorTest < ActiveSupport::TestCase
 
     assert_not_includes agent.prompts.first, "Earlier, in order:"
   end
+  # --- the closed sets, in the prompt --------------------------------------
+
+  # The instructions always said not to invent an exit the player had not been
+  # told about. Nothing told the narrator which exits those were; the classifier
+  # computed them every turn and threw them away.
+  test "the prompt lists the ways out, who else is here and what the player carries" do
+    playthrough = create(:playthrough, :started)
+    story = playthrough.story
+    here = playthrough.current_location
+    stair = create(:location, story: story, name: "The Sunken Stair")
+    create(:location_connection, location: here, connected_location: stair, distance: "adjacent", travel_method: "walking")
+    maren = create(:character, story: story, fullname: "Maren Vosk", nickname: "Maren")
+    playthrough.update!(current_scene: create(:scene, story: story, location: here, characters: [ maren ]))
+    create(:item, character: playthrough.character, name: "Brass Key")
+
+    agent = FakeAgent.new("You look around.")
+    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("look around") }
+    prompt = agent.prompts.first
+
+    assert_match(/Ways out of here: The Sunken Stair\./, prompt)
+    assert_match(/Also here: Maren Vosk \(Maren\)\./, prompt)
+    assert_match(/The player is carrying: Brass Key\./, prompt)
+  end
+
+  test "the instructions point the narrator at those lists" do
+    assert_match(/do not add a\s+way out, a person or a possession that is not on those lists/, Scene::Narrator::INSTRUCTIONS)
+  end
+
+  # --- what kind of turn this is -------------------------------------------
+
+  # `examine` reached the narrator indistinguishable from `other`, so a look at
+  # the fireplace was as free to move the story on as anything else.
+  test "an examine is narrated as a look, with nothing moving" do
+    playthrough = create(:playthrough, :started)
+    agent = FakeAgent.new("The ledger is bound in cracked leather.")
+
+    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("look at the ledger", intent: :examine) }
+
+    assert_match(/looking more closely at something that is here/, agent.prompts.first)
+    assert_match(/nobody arrives and nobody leaves/, agent.prompts.first)
+  end
+
+  test "an intent with no line of its own adds nothing to the prompt" do
+    playthrough = create(:playthrough, :started)
+    agent = FakeAgent.new("You wait.")
+
+    BaseAgent.stub(:new, agent) { Scene::Narrator.new(playthrough).narrate("wait", intent: :other) }
+
+    assert_no_match(/looking more closely/, agent.prompts.first)
+    assert_no_match(/ALREADY happened/, agent.prompts.first)
+  end
 end

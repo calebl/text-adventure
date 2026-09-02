@@ -335,6 +335,19 @@ class BaseAgent
     self
   end
 
+  # HOW MUCH THE MODEL IS ALLOWED TO WANDER. Unset by default, which is the
+  # provider's default and right for prose. A call that picks from a closed
+  # enum wants none of it: `Playthrough::Classifier` is the caller, and a
+  # classifier that answers the same input two different ways on two runs is
+  # noise in the drift counter. Applied to the conversation when it is built
+  # and carried across a rotation, since `with_model` keeps the same
+  # underlying chat.
+  def with_temperature(temperature)
+    @temperature = temperature
+    @chat&.with_temperature(temperature)
+    self
+  end
+
   # Swaps the model in place so the conversation so far is preserved --
   # multi-step generators depend on the earlier turns still being there.
   def rotate_model
@@ -366,6 +379,7 @@ class BaseAgent
     conversation.prune_history! if resuming
     conversation.with_instructions(@instructions) if @instructions
     conversation.with_schema(@schema) if @schema
+    conversation.with_temperature(@temperature) unless @temperature.nil?
     conversation
   end
 

@@ -133,10 +133,27 @@ class InteractionAgent
     @narrator_agent&.attribute_to!(scene)
   end
 
+  # THE PER-TURN MESSAGE TO THE CHARACTER: the moment, then the line.
+  #
+  # It used to read "What is your reaction when / The user input is: ..." --
+  # a broken sentence, and the one place left that still called the player "the
+  # user" after `Character#addressee_section` was written to stop models doing
+  # exactly that. The system prompt named the person in front of the character
+  # and the user turn un-named them again, every turn.
+  #
+  # And it carried no moment at all. The character knew the universe, its own
+  # sheet and who was speaking, and not which room it was standing in, what time
+  # it was, who else was there or what had just happened -- so a landlord in a
+  # doorway at midnight with the rent due had no idea he was in a doorway. The
+  # moment is `Playthrough::Moment#character_context`, in the user turn rather
+  # than the instructions so a replayed exchange keeps the room it happened in.
   def character_prompt(user_input)
     <<~INTERACTION_PROMPT
-      What is your reaction when
-      The user input is: #{user_input}
+      #{moment_section}
+      ## What #{addressee_name} says or does
+      #{user_input}
+
+      React as #{character.fullname}: what you think, feel, do and decide.
     INTERACTION_PROMPT
   end
 
@@ -144,49 +161,103 @@ class InteractionAgent
   # line 1 used to be shadowed by a two-argument method of the same name, so
   # the `@narrator_instructions` set during `ask` was unreachable and calling
   # the reader raised on arity.
+  #
+  # THE NARRATOR GETS THE MOMENT TOO. This pass used to see the six fields and
+  # the typed line and nothing else -- not the room, not the last turn, not who
+  # else was standing there -- so the prose for a talk turn floated free of the
+  # narrated turns either side of it. `Playthrough::Moment#narration_context` is
+  # the same block `Scene::Narrator` reads, so the two prose passes the player
+  # reads interleaved describe the same place.
+  #
+  # Two instructions that used to be here are gone on purpose. "Do not respond
+  # with details of the character's backstory" referred to a backstory this
+  # pass is deliberately never given; the rule actually wanted is that the six
+  # lines and the exchange are the whole of what it knows about the character.
+  # And the fixed example used "her" and "The person" for every character: a
+  # nudge on pronouns for anyone who is not a woman, and a model of avoiding the
+  # name the instruction above it asks for. The example is the character's own
+  # now, name and pronouns interpolated.
   def narrator_prompt(user_input, character_response)
     fields = reaction_fields(character_response)
+    name = character.nickname.presence || character.fullname
+    forms = character.pronoun_forms
 
     <<~NARRATOR_PROMPT
-      The user input is: #{user_input}
-      #{character.fullname}'s internal and external thoughts and feelings are:
+      #{narrator_moment_section}
+      ## The exchange
+      #{addressee_name} says or does: #{user_input}
+      #{character.fullname}'s reaction, in #{forms.determiner} own words:
       pre_thought: #{fields[:pre_thought]}
       pre_feeling: #{fields[:pre_feeling]}
       action: #{fields[:action]}
       post_thought: #{fields[:post_thought]}
       post_feeling: #{fields[:post_feeling]}
 
-      The interaction should be written in the second person, from the perspective of the user. Refer to the user as "you".
-      Refer to the character by their first name or nickname.
+      ## Instructions
+      Write what happens in the second person, present tense, from the player's side. The player is "you".
+      Refer to the character as #{name}. #{pronoun_rule}
+      The exchange is the subject and the place above is where it happens: use it for what the character
+      does with #{forms.determiner} hands and eyes, not for a tour. Add nobody who is not listed above.
 
-      The response should be concise and to the point. Have #{character.fullname} (the character) act according to their personality
-      and their thoughts and feelings. Do not be too verbose. Do not respond with details of the character's
-      backstory. Only use the information provided in the character's backstory to understand their personality.
-      Do not make up information about the character that is contradictory to their backstory.
+      Everything you know about #{name} is the reaction above and the exchange itself. Render the thoughts
+      and feelings as what they look like from outside -- a pause, a glance, a change of tone -- and put
+      the speech in #{name}'s mouth as written. Do not add facts about #{name}, do not narrate what
+      #{forms.subject} will do next, and do not answer for the player.
 
-      #{pronoun_rule}
+      One or two short paragraphs. Do not offer the player choices and do not end on a question to them.
 
-      The response should be 1 paragraph.
-
-
-      ## Example input:
-      The user input is: "What are you doing??"
-      The character's internal and external thoughts and feelings are:
-      pre_thought: Is the user asking a me a question? I think so. I should probably answer.
+      ## Example input
+      #{addressee_name} says or does: "What are you doing??"
+      #{character.fullname}'s reaction, in #{forms.determiner} own words:
+      pre_thought: Is that a question for me? I think so. I should probably answer.
       pre_feeling: surprised, nervous
-      action: The character says, "Huh?"
+      action: #{name} says, "Huh?"
       post_thought: Why did I just make that noise?
       post_feeling: anxious, embarrassed
 
-      ## Example output:
-      The person turns to you, her eyes wide. It seems like you startled her.
-      "Huh?" she says.
-      Immediately, she shuts her eyes, apparently embarrassed by her reaction.
+      ## Example output
+      #{name} turns to you, #{forms.determiner} eyes wide. It seems you startled #{forms.object}.
+      "Huh?" #{forms.subject} #{forms.agree("says", "say")}.
+      Immediately #{name} shuts #{forms.determiner} eyes, apparently embarrassed by the noise #{forms.subject} just made.
 
     NARRATOR_PROMPT
   end
 
   private
+
+  # The moment from the records, when there is a playthrough to read it from. A
+  # caller holding only a character gets a character with no room, which is what
+  # every caller got before.
+  def moment
+    return nil if playthrough.nil?
+
+    @moment ||= Playthrough::Moment.new(playthrough)
+  end
+
+  def moment_section
+    context = moment&.character_context(character).presence
+    return "" if context.nil?
+
+    "## The moment\n#{context}\n"
+  end
+
+  def narrator_moment_section
+    context = moment&.narration_context.presence
+    return "" if context.nil?
+
+    "## Where this happens\n#{context}\n"
+  end
+
+  # Who is speaking to the character, by name -- the protagonist, when the
+  # story has one, and the same name `Character#addressee_section` gave the
+  # character in its instructions. "The person in front of you" otherwise,
+  # which is still not "the user".
+  def addressee_name
+    them = character.story&.protagonist
+    return "the person in front of you" if them.nil? || them == character
+
+    them.fullname
+  end
 
   # The six fields, symbol-keyed and never nil, so the prompt reads a missing
   # field as blank and `Interaction.create!` gets exactly the columns it wants.

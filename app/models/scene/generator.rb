@@ -245,8 +245,16 @@ class Scene::Generator
   # Name, nickname and race -- the same ~15-token line `Character::Generator`
   # uses for its cast list. The narration needs to know who to mention, not who
   # they are; a character's full sheet belongs to a conversation with them.
+  #
+  # The protagonist is on the list -- they are the one arriving -- and is
+  # MARKED as the player, because the instruction below says to write everyone
+  # listed as already present. Unmarked, that reads as an instruction to write
+  # the player into the room as a bystander they then meet.
   def cast_list(cast)
-    lines = cast.map { |character| "#{character.fullname} (#{character.nickname}), #{character.race&.name}" }
+    lines = cast.map do |character|
+      line = "#{character.fullname} (#{character.nickname}), #{character.race&.name}"
+      character == story.protagonist ? "#{line} -- the player, the one arriving" : line
+    end
 
     lines.join("\n").presence || "Nobody but the player."
   end
