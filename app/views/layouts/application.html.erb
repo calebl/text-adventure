@@ -67,6 +67,42 @@
       }
       .notice p { margin: .5rem 0; }
       .notice strong { color: #cfd3d8; font-weight: normal; }
+
+      /* THE VERDICT ON A TURN -- the evaluation instrument, and the least
+         styling that makes it usable without competing with the prose. The
+         reading experience is still `ta-api-iface`'s job; this is not the
+         restyling, it is one control kept out of the way of it.
+
+         Barely visible until the row is hovered, because there is one of these
+         under every turn in the log and the log is what the player is reading.
+         The chosen verdict stays lit whether or not anything is hovered -- it
+         is a record, not a hover state -- and each verdict keeps its own colour
+         so a scrolled log can be scanned for the turns that were marked.
+
+         `form` is flex and full-width in the rule above, which would put each
+         of these on a line of its own; inline-flex is what keeps the whole
+         control on one. */
+      .verdict {
+        display: flex; flex-wrap: wrap; gap: .4rem; align-items: center;
+        margin: -1rem 0 1.5rem; opacity: .28; transition: opacity .12s;
+      }
+      .verdict:hover, .verdict:focus-within { opacity: 1; }
+      .verdict:has(.chosen) { opacity: .85; }
+      .verdict form { display: inline-flex; gap: .3rem; margin: 0; }
+      .verdict input[type=submit], .verdict button {
+        background: none; border: 1px solid #2b3238; color: #6b737b;
+        padding: .05rem .4rem; font: inherit; font-size: 12px; cursor: pointer;
+      }
+      .verdict input[type=submit]:hover, .verdict button:hover { background: #1c2126; color: #cfd3d8; }
+      .verdict .mark.chosen { border-color: currentColor; }
+      .verdict .mark.good.chosen { color: #7fd8c0; }
+      .verdict .mark.weak.chosen { color: #d8c07f; }
+      .verdict .mark.bad.chosen { color: #d88f7f; }
+      /* The note is a single line and sits beside the buttons rather than
+         stretching to the width of the log. */
+      .verdict .why input[type=text] {
+        flex: 0 1 18rem; padding: .05rem .4rem; font-size: 12px; border-color: #2b3238;
+      }
     </style>
     <%= javascript_importmap_tags %>
   </head>

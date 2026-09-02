@@ -386,6 +386,63 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
     assert_empty debug.drift_tally
   end
 
+  # --- what the player thought -----------------------------------------------
+
+  # The verdict is carried on the turn it judges, so the panel that reports the
+  # branch and the models can report the judgement beside them.
+  test "a turn carries the verdict recorded on it" do
+    playthrough = create(:playthrough, :in_scene)
+    create(:playthrough_feedback, :frozen, playthrough: playthrough,
+                                           scene: playthrough.current_scene, verdict: "good")
+
+    turn = Playthrough::Debug.new(playthrough).latest_turn
+
+    assert_predicate turn, :judged?
+    assert_equal "good", turn.feedback.verdict
+    assert_equal "mistralai/mistral-medium-3.1", turn.feedback.prose_model
+  end
+
+  test "a turn nobody judged says so rather than carrying an empty verdict" do
+    playthrough = create(:playthrough, :in_scene)
+
+    assert_not_predicate Playthrough::Debug.new(playthrough).latest_turn, :judged?
+  end
+
+  # THE QUESTION THE INSTRUMENT EXISTS FOR: which model do the turns marked good
+  # actually come from. Counted off the FROZEN provenance, never off `chats`, so
+  # a turn whose conversations were pruned months ago still counts.
+  test "verdicts are counted against the model that wrote the prose" do
+    playthrough = create(:playthrough, :in_scene)
+    mistral = "mistralai/mistral-medium-3.1"
+    minimax = "minimax/minimax-m3"
+
+    create(:playthrough_feedback, playthrough: playthrough, scene: playthrough.current_scene,
+                                  verdict: "good", prose_model: mistral, answering_models: mistral)
+    create(:playthrough_feedback, playthrough: playthrough, scene: next_scene(playthrough, minutes: 5),
+                                  verdict: "good", prose_model: mistral, answering_models: mistral)
+    create(:playthrough_feedback, playthrough: playthrough, scene: next_scene(playthrough, minutes: 5),
+                                  verdict: "bad", prose_model: minimax, answering_models: minimax)
+
+    debug = Playthrough::Debug.new(playthrough)
+
+    assert_equal({ "good" => 2, "bad" => 1 }, debug.feedback_tally)
+    assert_equal({ "good" => 2 }, debug.feedback_by_model.fetch(mistral))
+    assert_equal({ "bad" => 1 }, debug.feedback_by_model.fetch(minimax))
+    assert_equal 3, debug.feedback.size
+    assert_equal "bad", debug.feedback.first.verdict, "newest first"
+  end
+
+  # A verdict recorded after its turn's receipts were pruned has no model on it,
+  # and that row STAYS in the cross-tab under a nil key. Dropping it would
+  # quietly shrink the denominator of every comparison read off this page.
+  test "a verdict with no frozen model is counted as one, not dropped" do
+    playthrough = create(:playthrough, :in_scene)
+    create(:playthrough_feedback, playthrough: playthrough, scene: playthrough.current_scene,
+                                  verdict: "weak")
+
+    assert_equal({ "weak" => 1 }, Playthrough::Debug.new(playthrough).feedback_by_model.fetch(nil))
+  end
+
   private
 
   # A playthrough with one of everything the view reads.
@@ -408,6 +465,10 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
 
     mechanic = create(:world_mechanic, story: story)
     create(:world_event, :with_locations, world_mechanic: mechanic, story: story)
+
+    # A verdict on the turn, so "reading everything writes nothing" covers the
+    # feedback readers with rows to read rather than with an empty table.
+    create(:playthrough_feedback, :frozen, :with_note, playthrough: playthrough, scene: talk)
 
     playthrough
   end

@@ -91,6 +91,30 @@ The full audit of every planned piece of work against this constraint is in
   net: a `RefusalError` rotation now falls to minimax, the model that refuses,
   rather than to a model known to comply. Stated on the constant, not buried.
 
+- **A verdict on any turn, recorded while playing** (`ta-turn-feedback`). Three
+  buttons under each turn in the log, one click each, with an optional note once
+  a verdict is there; amendable and clearable; a Turbo Stream replacing that one
+  turn's footer, so nothing reloads and a turn in flight is untouched. Gated on
+  `Playthrough::Debug.enabled?` — local by default — because it is the captain's
+  instrument, not a feature for whoever was handed a playthrough link.
+
+  **The provenance is FROZEN onto the row, and that is the whole design.**
+  `Chat#answering_model_ids` knows which model answered, including after a
+  rotation past one that failed, but `Playthrough#prune_conversations!` destroys
+  the one-shot conversations after `Chat::KEEP_TURNS` turns — so a reference
+  would resolve to nothing on exactly the turns worth comparing. `.record`
+  copies the model that wrote the prose, the whole prose attempt chain, the
+  purpose it was writing as, every model that answered the turn and the token
+  counts, once, on create; amending a verdict never re-snapshots. The `Scene` is
+  referenced rather than copied: its prose, its `typed` and its story time are
+  never pruned, and a copy would be a second answer that could disagree.
+  `Playthrough::FeedbackTest` proves the survival directly — record, prune,
+  assert the provenance is still there and still correct.
+
+  Read back in the debug view: verdict against frozen prose model as a
+  cross-tab, and every verdict beside the turn, the words typed, the prose and
+  the provenance. Counts only — what they prove is `ta-narrator-model` and
+  `ta-talk-model`, and this is the instrument rather than the conclusion.
 - **A character speaks in the first person and knows who it is talking to.**
   `Character#interaction_instructions` used to say "Refer to yourself in third
   person only" with no scope, two lines under the sentence establishing that
@@ -105,7 +129,7 @@ The full audit of every planned piece of work against this constraint is in
   meeting somebody tells you and withholds the protagonist's `backstory`,
   `personality`, `likes`, `dislikes` and `fears`.
 
-- Rails 8 app, SQLite, 998 tests green. No longer API-only: `api_only` is off
+- Rails 8 app, SQLite, 1,040 tests green. No longer API-only: `api_only` is off
   and `ApplicationController < ActionController::Base` so it can render ERB.
 - Full schema: `Universe` → `Story` → `Location` / `Character` / `Scene` /
   `Interaction` / `Item`, plus the `location_connections` graph and the
@@ -775,6 +799,13 @@ What it still owes, roughly in order:
       `importmap-rails` + `turbo-rails` are in, and there is still no Node and
       no `package.json`. The conversation-persistence half of the same stage
       (`ta-chat-persist`) has landed too, so stage 5 is complete.
+- [x] **A verdict on each turn while playing** (`ta-turn-feedback`) — see
+      **Done**. It is the one thing that has landed on the play page ahead of
+      the visual style below, and it is deliberately not an exception to it:
+      the control is dim until hovered, absent when the instrument is off, and
+      carries the least styling that makes one click usable. It is also why the
+      footer under a turn is a `<footer>` and not a `<div>` — the dimming rule
+      is `.log:not(.streaming) > .turn:last-of-type`.
 - [ ] Re-join a turn already in flight. Reopen the page mid-narration and the
       log is what was persisted; the prose written so far lives in the job's
       buffer and nowhere else. The finished turn still arrives over the cable

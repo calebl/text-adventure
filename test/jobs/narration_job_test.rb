@@ -74,6 +74,20 @@ class NarrationJobTest < ActiveJob::TestCase
     assert_match "what do you do?", replace.to_html
   end
 
+  # THE VERDICT IS AVAILABLE ON THE TURN THAT JUST LANDED, which is the whole
+  # point of it being unobtrusive: judging a turn is a click on the paragraph he
+  # has just finished reading, with no reload to wait for. The broadcast carries
+  # the footers because it re-renders the log out of the records, which is also
+  # why a verdict recorded a moment earlier survives the replacement.
+  test "the finished log carries the verdict controls for the new turn" do
+    playthrough = create(:playthrough, :started)
+
+    replace = play(playthrough, "open the ledger", NOT_A_MOVE, NARRATION).last
+
+    assert_match "footer class=\"verdict\"", replace.to_html
+    assert_match %(id="verdict_scene_#{playthrough.reload.current_scene.id}"), replace.to_html
+  end
+
   # The dimming rule is `.log:not(.streaming) > .turn:last-of-type`, so the
   # finished log must not still claim to be streaming -- otherwise the turn the
   # player just took stays dim.

@@ -13,6 +13,11 @@ class Playthrough < ApplicationRecord
   # it deliberately does not claim.
   has_many :drifts, class_name: "Playthrough::Drift", dependent: :destroy,
                     inverse_of: :playthrough
+  # WHAT THE PLAYER THOUGHT OF EACH TURN -- one verdict per turn he judged, with
+  # the turn's provenance frozen onto it. The evaluation instrument; see
+  # Playthrough::Feedback for why it is a copy and not a reference.
+  has_many :feedbacks, class_name: "Playthrough::Feedback", dependent: :destroy,
+                       inverse_of: :playthrough
   # Every conversation this playthrough has had with a model. Destroyed with it:
   # they are this player's progress, not the world's -- see Chat.
   has_many :chats, dependent: :destroy
@@ -87,6 +92,18 @@ class Playthrough < ApplicationRecord
     ).call
 
     scenes
+  end
+
+  # THE VERDICT ON EACH TURN, KEYED BY THE TURN, for the log to render the
+  # controls in the state the records already hold.
+  #
+  # One query for the whole log rather than a lookup per entry: the log is the
+  # entire playthrough and the partial asks about every turn in it. It is a plain
+  # read of this playthrough's own rows -- a verdict is per (playthrough, scene)
+  # because a story's opening arrival is shared by every playthrough of it, so
+  # keying on the scene alone would show one player another player's judgement.
+  def feedback_by_scene
+    feedbacks.index_by(&:scene_id)
   end
 
   # The ways out of where the player is standing -- the move targets

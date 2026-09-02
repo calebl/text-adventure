@@ -58,6 +58,58 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     assert_match "ta-arrival-diff", response.body
   end
 
+  # --- the evaluation instrument, read back ---------------------------------
+
+  # REVIEWABLE TOGETHER: the turn, the player's own words, the prose, and the
+  # provenance frozen when the verdict was recorded, in one table. Enough to
+  # answer "which model do the turns I marked good actually come from" without a
+  # console, which is the question the whole instrument exists for.
+  test "show reviews every verdict beside the turn and the frozen provenance" do
+    playthrough = played_playthrough
+    turn = playthrough.current_scene
+    turn.update!(typed: "ask Grenn about the charts")
+    create(:playthrough_feedback, :frozen, :with_note, playthrough: playthrough, scene: turn,
+                                                       verdict: "good")
+
+    get playthrough_debug_path(playthrough)
+
+    assert_response :success
+    assert_select "h2", text: "what you thought of each turn"
+    assert_select "a[href=?]", "#feedback"
+    assert_select ".verdict.good", text: "good"
+
+    # The four things a reader needs six weeks later.
+    assert_match "ask Grenn about the charts", response.body
+    assert_match "mistralai/mistral-medium-3.1", response.body
+    assert_match "narration", response.body
+    assert_match "the room read as somewhere", response.body
+
+    # And the cross-tab the freezing is for.
+    assert_select "h3", text: "verdict against the model that wrote the prose"
+  end
+
+  # A verdict recorded after its turn's conversations were pruned keeps the
+  # verdict and not the receipts. That is a real state and the page says which
+  # it is looking at rather than showing a blank.
+  test "show says when a verdict outlived the receipts rather than showing nothing" do
+    playthrough = played_playthrough
+    create(:playthrough_feedback, playthrough: playthrough, scene: playthrough.current_scene,
+                                  verdict: "weak")
+
+    get playthrough_debug_path(playthrough)
+
+    assert_select ".absent", text: /receipts/
+  end
+
+  test "show says nothing has been judged when nothing has" do
+    playthrough = played_playthrough
+
+    get playthrough_debug_path(playthrough)
+
+    assert_select ".absent", text: /every turn on the play page carries three buttons/
+    assert_select ".absent", text: /not judged/
+  end
+
   # THE HARD RULE, at the request level: a GET of this page is an observer.
   # `Playthrough::DebugTest` asserts it against every table; this asserts it
   # through the controller, where a `before_action` or a stray `session` write

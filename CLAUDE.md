@@ -170,6 +170,12 @@ The current database includes the following story-related models with proper ass
   branch by `Playthrough::Turn#play`. Nil only on an opening arrival
 - **Playthrough** → **Playthrough::Drifts**: one row per turn on which a reach
   resolved to nothing. The drift counter; never pruned
+- **Playthrough::Feedback** → the player's verdict on one turn (`good` / `weak`
+  / `bad`, one per playthrough per **Scene**, amendable), with an optional note
+  and the turn's **provenance frozen onto the row** — which model wrote the
+  prose, the prose attempt chain, every model that answered, the token counts.
+  Frozen rather than referenced because `Playthrough#prune_conversations!`
+  destroys the receipts; the `Scene` itself stays a reference
 - **Character** → `#interaction_instructions`, the prompt every conversational
   turn is built on. Its voice rules are scoped per register — first person
   inside the quotes, named and pronouned outside them — and
@@ -217,6 +223,15 @@ The current database includes the following story-related models with proper ass
   never persisted, answered by `Playthrough::SafetyNotice` out of band. The two
   never collapse into one branch. Read `Playthrough::SafetyNotice`'s header
   before changing a word of what the player is shown.
+
+### Recording what the player thought of a turn
+- `Playthrough::Feedback` is an **evaluation instrument**, not a feature: one
+  click under any turn on the play page, reviewed on the debug page, gated on
+  the same `Playthrough::Debug.enabled?`.
+- **The provenance is frozen on create and never re-snapshotted.** That is the
+  rule the whole thing stands on — see `AGENTS.md` → *The captain's verdict on a
+  turn* for why, and `Playthrough::FeedbackTest` for the test that proves it
+  survives the pruner.
 
 ### Auditing narration against the records
 - `Story::Audit` (`rake game:audit`) is the offline, deterministic sweep: no

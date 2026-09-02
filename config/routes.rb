@@ -10,6 +10,13 @@ Rails.application.routes.draw do
     # NarrationJob, so there is no streaming endpoint to route to any more.
     resources :turns, only: [ :create ]
 
+    # THE CAPTAIN'S VERDICT ON ONE TURN, addressed by the turn rather than by a
+    # row id -- there is at most one per (playthrough, scene), so recording and
+    # amending are the same POST and the play page never has to carry an id it
+    # would not have before the first click. Drawn unconditionally and gated in
+    # the controller, like the debug view below and on the same flag.
+    resources :feedbacks, only: [ :create, :destroy ], param: :scene_id
+
     # The window into the machine. Drawn unconditionally and gated in the
     # controller, so the path helper exists in every environment and the page
     # exists in none but the ones `Playthrough::Debug.enabled?` allows.

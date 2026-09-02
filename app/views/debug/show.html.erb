@@ -16,6 +16,7 @@
   <%= link_to "conversations (#{@debug.durable_conversations.size})", "#conversations" %> &middot;
   <%= link_to "the world", "#world" %> &middot;
   <%= link_to "the audit (#{@debug.contradictions.size + @debug.drifts.size})", "#audit" %> &middot;
+  <%= link_to "what you thought (#{@debug.feedback.size})", "#feedback" %> &middot;
   <%= link_to "earlier turns (#{@debug.earlier_turns.size})", "#log" %> &middot;
   <%= link_to "the cast (#{@debug.cast.size})", "#cast" %> &middot;
   <%= link_to "the map (#{@debug.places.size})", "#map" %>
@@ -348,6 +349,105 @@
       <% end %>
       <% if @debug.drifts.empty? %>
         <tr><td colspan="5" class="absent">(none &mdash; every move, talk and take this player tried resolved to a record)</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%# WHAT THE PLAYER THOUGHT, which is the one thing on this page neither the app
+    nor a model produced. Every other section reports what was decided or
+    generated; this reports what was judged.
+
+    IT IS AN EVALUATION INSTRUMENT, and the table is built for the question it
+    exists to answer: which model wrote the prose behind each verdict. That is
+    why the model column reads off the FROZEN provenance and not off `chats` --
+    `Playthrough#prune_conversations!` drops the one-shot conversations after
+    Chat::KEEP_TURNS turns, so any turn old enough to be worth comparing has no
+    receipts left to ask. See `Playthrough::Feedback`. %>
+<h2 id="feedback">what you thought of each turn</h2>
+<div class="panel">
+  <div class="fields">
+    <div class="k">turns judged</div>
+    <div class="v">
+      <%= @debug.feedback.size %> of <%= @debug.turns.size %>
+      <span class="note">
+        <%= @debug.feedback_tally.any? ? Playthrough::Feedback::VERDICTS.filter_map { |verdict| "#{@debug.feedback_tally[verdict]} #{verdict}" if @debug.feedback_tally[verdict] }.join(", ") : "nothing recorded yet — the buttons are under each turn on the play page" %>
+      </span>
+    </div>
+    <div class="k">provenance frozen</div>
+    <div class="v">
+      <%= @debug.feedback.count(&:receipts_kept?) %> of <%= @debug.feedback.size %>
+      <span class="note">a verdict recorded after its turn's conversations were pruned keeps the verdict and not the receipts</span>
+    </div>
+  </div>
+</div>
+
+<%# THE CROSS-TAB, and the whole reason the provenance is a copy rather than a
+    reference. Counts only: what they prove is `ta-narrator-model` and
+    `ta-talk-model`, not this page. %>
+<h3>verdict against the model that wrote the prose</h3>
+<div class="scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>model (frozen at record time)</th>
+        <% Playthrough::Feedback::VERDICTS.each do |verdict| %><th><%= verdict %></th><% end %>
+        <th>judged</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @debug.feedback_by_model.each do |model, counts| %>
+        <tr>
+          <%# A nil model is honest and stays in the table: those are turns
+              judged after their receipts had gone, and an opening arrival
+              generated when the world was built rather than on a turn. %>
+          <td><%= debug_value(model, absent: "unknown — receipts already pruned, or world data nobody paid for on a turn") %></td>
+          <% Playthrough::Feedback::VERDICTS.each do |verdict| %>
+            <td><%= counts.fetch(verdict, 0) %></td>
+          <% end %>
+          <td><%= counts.values.sum %></td>
+        </tr>
+      <% end %>
+      <% if @debug.feedback_by_model.empty? %>
+        <tr><td colspan="<%= Playthrough::Feedback::VERDICTS.size + 2 %>" class="absent">(nothing judged yet)</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%# EACH VERDICT WITH EVERYTHING NEEDED TO READ IT SIX WEEKS LATER: the turn, the
+    words the player typed to cause it, the prose that came back, and the frozen
+    provenance. `typed` and the prose are read through the Scene, which the
+    pruner never touches; the model and the token counts are the copy. %>
+<h3>every verdict, newest first</h3>
+<div class="scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>at</th><th>verdict</th><th>typed</th><th>what they read</th>
+        <th>prose written by</th><th>as</th><th>tokens</th><th>note</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @debug.feedback.each do |entry| %>
+        <tr>
+          <td><%= debug_time(entry.story_timestamp) %></td>
+          <td><%= debug_verdict(entry.verdict) %></td>
+          <td><%= debug_value(entry.typed, absent: "nothing — an opening arrival nobody typed for") %></td>
+          <td class="note"><%= debug_value(entry.scene && truncate(entry.scene.description.to_s, length: 110), absent: "no prose") %></td>
+          <td>
+            <%= debug_value(entry.prose_model, absent: "unknown — pruned before this was recorded") %>
+            <% if entry.rotated? %>
+              <span class="warn">rotated: <%= entry.prose_model_ids.to_sentence %></span>
+            <% end %>
+          </td>
+          <td><%= debug_value(entry.prose_purpose, absent: "&mdash;") %></td>
+          <td><%= entry.receipts_kept? ? "#{entry.input_tokens} / #{entry.output_tokens}" : debug_value(nil, absent: "&mdash;") %></td>
+          <td class="note"><%= debug_value(entry.note, absent: "&mdash;") %></td>
+        </tr>
+      <% end %>
+      <% if @debug.feedback.empty? %>
+        <tr><td colspan="8" class="absent">(none &mdash; every turn on the play page carries three buttons, and one click records one)</td></tr>
       <% end %>
     </tbody>
   </table>

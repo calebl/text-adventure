@@ -1,3 +1,4 @@
+<%# locals: (turn:, playthrough: nil, verdicts: {}) %>
 <%# A talk turn keeps an Interaction alongside the Scene, so the log can say
     who the player was speaking to. Narrated and arrival turns have none. %>
 <% speakers = turn.interactions.map(&:character_name).uniq %>
@@ -5,3 +6,15 @@
   <p class="speaking">talking to <%= speakers.to_sentence %></p>
 <% end %>
 <div class="turn"><%= turn.description %></div>
+<%# THE VERDICT ON THIS TURN, and the whole of the instrument's mark on the
+    game. Gated on `Playthrough::Debug.enabled?` -- the same flag as the debug
+    link, local by default -- so someone handed a playthrough link to read a
+    story is never shown it. See FeedbacksController for why the two share a
+    gate.
+
+    `verdicts` is one query for the whole log (`Playthrough#feedback_by_scene`),
+    not a lookup per entry: the log is the entire playthrough. %>
+<% if playthrough && Playthrough::Debug.enabled? %>
+  <%= render "feedbacks/verdict", playthrough: playthrough, scene: turn,
+                                  feedback: local_assigns.fetch(:verdicts, {})[turn.id] %>
+<% end %>

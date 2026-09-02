@@ -655,6 +655,40 @@ the room the player is standing in, and says so and links to `rake game:doctor`.
 If you add a check to one and the same records are visible on the other, add it
 to both or the project has two answers.
 
+### The captain's verdict on a turn
+
+`Playthrough::Feedback` — three buttons under every turn in the log, one click
+each, plus an optional note once a verdict exists. An **evaluation instrument**
+for `ta-narrator-model` and `ta-talk-model`, not a feature: real judgements on
+real turns instead of blind reads of generated passages. Recorded on the play
+page, reviewed on the debug page, gated on the same `Playthrough::Debug.enabled?`
+as that page.
+
+- **THE PROVENANCE IS FROZEN, NOT REFERENCED, and this is the rule to keep.**
+  `Playthrough#prune_conversations!` destroys the one-shot conversations after
+  `Chat::KEEP_TURNS` turns, so `Chat#answering_model_ids` — the honest answer to
+  which model replied, rotations included — resolves to nothing on any turn old
+  enough to be worth comparing. `.record` therefore takes a **copy** on create:
+  the model that wrote the prose, the whole prose attempt chain, the purpose,
+  every model that answered the turn, the token counts. Amending a verdict must
+  never re-snapshot; by then the receipts may be gone. Do not weaken the pruner
+  to make a reference work — freeze what you need, and
+  `Playthrough::FeedbackTest` is the test that proves it survived.
+- **`prose_models` and `answering_models` are two lists on purpose.** A rotation
+  in the classifier says nothing about the prose being judged, so `#rotated?`
+  reads the first and never the second.
+- **The `Scene` stays a reference.** Its `description`, `typed` and
+  `story_timestamp` are never pruned, and a copy would be a second answer that
+  could disagree with the prose the player actually read.
+- **The footer under a turn is a `<footer>`, and that is load-bearing.** The log's
+  dimming rule is `.log:not(.streaming) > .turn:last-of-type`, and
+  `:last-of-type` counts elements of the same tag among their siblings — a
+  `<div>` there silently becomes the last div and the newest turn stops reading
+  at full strength. Four tests assert that selector.
+- Recording answers with a Turbo Stream replacing **one** footer, so it cannot
+  fight `NarrationJob`: neither side holds state, and the broadcast that ends a
+  turn re-renders every footer out of the records.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.
