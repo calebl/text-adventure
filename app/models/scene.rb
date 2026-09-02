@@ -60,8 +60,9 @@ class Scene < ApplicationRecord
   # It is a column rather than something reconstructed because the
   # reconstruction did not last. `Interaction#user_input` only exists on the
   # talk branch, and the classifier's stored prompt -- where the debug view read
-  # it from -- is pruned as the playthrough runs (Chat::KEEP_TURNS), so the
-  # player's own words vanished from older turns. Written by
+  # it from -- can be pruned as the playthrough runs (Chat::KEEP_TURNS, opt-in
+  # now but the default then), so the player's own words vanished from older
+  # turns. This column does not depend on that setting. Written by
   # `Playthrough::Turn#play`.
   validates :description, presence: true
   validates :story_timestamp, presence: true

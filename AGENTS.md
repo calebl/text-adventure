@@ -317,10 +317,17 @@ send again: one system instruction, one schema, one model.
   models run in a 4,096-token window. Trimming means **deleting**: `Chat#to_llm`
   rebuilds the request from every persisted message, so history you keep is
   history you send. Nothing is lost — every exchange is an `Interaction` row.
-- **The audit trail is pruned as the game runs** (`Chat::KEEP_TURNS`,
-  `Playthrough#prune_conversations!`, called at the end of every turn). This is a
-  SQLite file on a laptop; the game reads none of it back. Durable conversations
-  are never pruned this way.
+- **The audit trail is kept, and that is a measured decision** (`Chat::KEEP_TURNS`,
+  `Playthrough#prune_conversations!`, still called at the end of every turn).
+  `KEEP_TURNS` is **nil unless `TA_CHAT_KEEP_TURNS` is set**, and nil prunes
+  nothing. It used to default to 25 on the reasoning that this is a SQLite file
+  on a laptop and the game reads none of it back — true in every clause, and
+  measured it does not follow: ~4 KB a turn on disk, ~4 MB for a thousand turns,
+  against a `models` registry that ships at 912 KB. What the ceiling cost was the
+  thing `Playthrough::Feedback` exists to build — a flagged turn stays fully
+  inspectable however long ago it was played. The cap survives as an opt-in
+  escape hatch; do not make it the default again without a measurement that
+  beats that one. Durable conversations are never pruned this way either.
 - **`Playthrough#recap` is how a long game stays inside the window.** It spends
   `scenes.summary` — written by `Scene::Generator` on every arrival, and for
   exactly this — under a fixed character budget, so the narrator sees several
@@ -448,7 +455,8 @@ before changing the loop; the rules below are what it does not fit.
 - **What the player typed is `Scene#typed`**, written once in
   `Playthrough::Turn#play` rather than in each branch, so a branch added later
   cannot forget it. Do not go back to reconstructing it from the classifier's
-  stored prompt: that is pruned at `Chat::KEEP_TURNS`, which is how it used to
+  stored prompt: that survives only while the audit trail does, and
+  `TA_CHAT_KEEP_TURNS` can still be set to prune it, which is how it used to
   disappear from older turns.
 - **Who is standing in a room is answered in one place**, `Scene::Generator.characters_present`,
   because the classifier must accept exactly the people the arrival paragraph
@@ -694,9 +702,12 @@ behind** rather than from a label, because there is no stored label — the
 classifier's intent lives in memory inside `Playthrough::Turn#play`. Alongside
 it, every prompt sent and every answer that came back, with the token counts and
 the model that actually replied, out of `chats` / `messages`. What it still
-cannot show — anything older than `Chat::KEEP_TURNS` turns, and the typed
-command as a column — it names rather than hiding, and anything new it cannot
-show should be added to that list.
+cannot show it names rather than hiding, and anything new it cannot show should
+be added to that list — **as should anything the list still claims and the code
+has since fixed.** Two bullets were stale that way at once: a retention ceiling
+that no longer applies by default, and a `scenes.typed` column that exists. A
+false bullet in that panel is worse than a missing one, and
+`DebugControllerTest` now pins both corrections.
 
 **It overlaps `Story::Doctor` and must never be the quieter of the two.** Both
 read the same rows: a one-way connection, two directions of one edge that
@@ -717,7 +728,10 @@ as that page.
 
 - **THE PROVENANCE IS FROZEN, NOT REFERENCED, and this is the rule to keep.**
   `Playthrough#prune_conversations!` destroys the one-shot conversations after
-  `Chat::KEEP_TURNS` turns, so `Chat#answering_model_ids` — the honest answer to
+  `Chat::KEEP_TURNS` turns whenever a cap is set — and the default keeping them
+  does not make the freezing redundant, it makes it belt and braces: an install
+  that sets `TA_CHAT_KEEP_TURNS` must not silently lose its evaluation record.
+  Without it `Chat#answering_model_ids` — the honest answer to
   which model replied, rotations included — resolves to nothing on any turn old
   enough to be worth comparing. `.record` therefore takes a **copy** on create:
   the model that wrote the prose, the whole prose attempt chain, the purpose,

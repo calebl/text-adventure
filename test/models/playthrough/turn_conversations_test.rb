@@ -131,6 +131,52 @@ class Playthrough::TurnConversationsTest < ActiveSupport::TestCase
 
   # --- the audit trail is bounded -------------------------------------------
 
+  # THE DEFAULT, AND THE WHOLE POINT OF THE CHANGE. `Chat::KEEP_TURNS` is nil
+  # unless somebody sets `TA_CHAT_KEEP_TURNS`, and nil keeps everything -- so a
+  # game played well past the old 25-turn ceiling still has every receipt.
+  #
+  # Driven through the real loop rather than by calling the pruner directly,
+  # because the loop is what used to throw these away: `Playthrough::Turn#play`
+  # calls `prune_conversations!` at the end of EVERY turn. This must not be able
+  # to regress quietly.
+  test "by default the loop prunes nothing, however long the game runs" do
+    assert_nil Chat::KEEP_TURNS, "the shipped default keeps everything"
+    refute_predicate Chat, :capped?
+
+    30.times do |n|
+      @playthrough = Playthrough.find(@playthrough.id)
+      play("look #{n}", CLASSIFY_OTHER, OfflineExchange.reply("Prose #{n}."))
+    end
+
+    @playthrough = Playthrough.find(@playthrough.id)
+
+    assert_equal 30, @playthrough.scene_chain.size, "well past the old ceiling of 25"
+    assert_equal 60, @playthrough.chats.one_shot.count, "two conversations a turn, every turn kept"
+
+    # The FIRST turn's receipts specifically -- the one the old default would
+    # have destroyed twenty-nine turns ago.
+    first = @playthrough.scene_chain.first
+
+    assert_equal 4, first.messages.count, "a prompt and an answer for each of its two conversations"
+    assert_includes first.messages.map(&:content).join, "look 0"
+    assert_predicate Playthrough::Debug.new(@playthrough).turns.first, :recorded?,
+                     "and the debug page can still show what it cost"
+  end
+
+  test "prune_conversations! is a no-op when no cap is set" do
+    2.times do |n|
+      @playthrough = Playthrough.find(@playthrough.id)
+      play("look #{n}", CLASSIFY_OTHER, OfflineExchange.reply("Prose #{n}."))
+    end
+
+    playthrough = Playthrough.find(@playthrough.id)
+
+    assert_equal 0, playthrough.prune_conversations!(keep: nil)
+    assert_equal 4, playthrough.chats.one_shot.count
+  end
+
+  # THE OPT-IN CAP, which still behaves exactly as it did when it was the
+  # default: set `TA_CHAT_KEEP_TURNS` and the older receipts go on every turn.
   test "the loop prunes the one-shot conversations older than the ceiling" do
     2.times do |n|
       @playthrough = Playthrough.find(@playthrough.id)

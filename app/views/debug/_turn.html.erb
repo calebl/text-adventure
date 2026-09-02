@@ -41,7 +41,7 @@
         <%= turn.input_tokens %> in / <%= turn.output_tokens %> out
         <span class="note">across <%= pluralize(turn.conversations.size, "conversation") %></span>
       <% else %>
-        <%= debug_value(nil, absent: turn.opening? ? "nothing — the opening arrival was generated when the world was built, not on this turn" : "no conversation kept — pruned after #{Chat::KEEP_TURNS} turns, or this Scene was written by something other than the loop") %>
+        <%= debug_value(nil, absent: turn.opening? ? "nothing — the opening arrival was generated when the world was built, not on this turn" : no_receipts_reason) %>
       <% end %>
     </div>
 

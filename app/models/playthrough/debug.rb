@@ -31,15 +31,17 @@
 #
 # WHAT IT STILL CANNOT SHOW is named rather than quietly missing:
 #
-#   * anything older than `Chat::KEEP_TURNS` turns. The audit trail is pruned
-#     as the playthrough runs -- this is a SQLite file on a laptop -- so an old
-#     turn keeps its `Scene` and loses its receipts. Said out loud where it
-#     happens, not left to look like a turn that cost nothing.
+#   * a turn whose receipts were pruned -- which, by default, is none of them.
+#     `Chat::KEEP_TURNS` is nil unless `TA_CHAT_KEEP_TURNS` is set, so every
+#     turn a playthrough ever played keeps its prompts, answers, token counts
+#     and models. Where a cap IS set, an old turn keeps its `Scene` and loses
+#     its receipts, and that is said out loud where it happens rather than left
+#     to look like a turn that cost nothing.
 #
 # WHAT THE PLAYER TYPED IS NO LONGER ONE OF THEM. `Scene#typed` is a column now,
-# written on every branch by `Playthrough::Turn#play`, so it survives the
-# pruning above -- see `#typed_on`, whose two fallbacks exist only for turns
-# written before that column did.
+# written on every branch by `Playthrough::Turn#play`, so it survives whatever
+# the retention setting is -- see `#typed_on`, whose two fallbacks exist only for
+# turns written before that column did.
 class Playthrough::Debug
   # One turn of the log, as the records tell it.
   #
