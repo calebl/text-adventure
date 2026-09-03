@@ -1,11 +1,15 @@
 require "test_helper"
 
-# `item_not_held`, RE-MEASURED AFTER TWO CHANGES THAT `ta-eval-pipeline` FORCED.
+# `item_not_held`, RE-MEASURED AFTER THREE CHANGES THAT `ta-eval-pipeline` FORCED.
 #
 # The check shipped in PR 99 with 8 signed flags on the narration corpus and
 # then, pointed at 132 whole-run narrations of a world whose one item exists,
 # flagged NOTHING. Two separate faults, both found by measurement and both fixed
 # here, and this test is the measurement that keeps them fixed.
+#
+# (The third is the on-the-person window's direction, measured further down
+# under "A THIRD FAULT" -- it arrived later, when `main` put a second item in
+# the room and the count went up.)
 #
 # 1. THE RECORDS' NAME IS NOT THE PROSE'S NAME. `Item#name` is "Ward Office 12
 #    daybook". Matched on that string the check raises NOTHING on all 132 --
@@ -141,6 +145,52 @@ class Story::Audit::ItemCustodyTest < ActiveSupport::TestCase
 
     assert_equal 2, at.call(60)
     assert_equal 3, at.call(80), "80 is what would recover the sacrificed claim"
+  end
+
+  # A THIRD FAULT, FOUND WHEN `main` ADDED AN ITEM AND THE COUNT WENT UP.
+  #
+  # The on-the-person grammar matches in either order over a 60-character
+  # window, and once Ward Office 12 held a ward stamp as well as a daybook, the
+  # captain's own sighting flagged twice:
+  #
+  #   "Your daybook lies open under your hand with the stamp beside it."
+  #
+  # The second flag read "under your hand ... the stamp" and said the player was
+  # holding a stamp the sentence puts beside the daybook, on a desk in the room
+  # she is standing in. Indefensible, and it would have been pinned as a true
+  # positive if nobody read it.
+  #
+  # THE FIX IS ASYMMETRIC AND THE ASYMMETRY IS THE FINDING. Guarding both
+  # directions against an intervening preposition cost three defensible flags on
+  # the narration corpus, all of one shape -- "You pull the compass FROM your
+  # satchel, its brass casing cool and heavy in your palm" -- where the
+  # prepositions are the thing's journey and it ends up in the hand anyway. With
+  # the NAME first it is the subject of the sentence; with the PERSON first, a
+  # preposition introduces a new noun phrase and whatever is named in it is
+  # somebody else's. So only the person-first order is guarded.
+  test "a preposition between the player's person and the name is not a custody claim" do
+    stamp = "You step back in. Your daybook lies open under your hand with the stamp beside it."
+
+    assert_not claims?(stamp, "stamp", custody_only: true)
+    assert_not claims?(stamp, "stamp", custody_only: false),
+               "the guard is about which noun the sentence attached, not about where the item is"
+    assert claims?(stamp, "daybook", custody_only: false),
+           "the daybook itself is still claimed -- it is the one under the hand"
+  end
+
+  test "the name first, and prepositions on the way to the player's hand, is still a claim" do
+    # All three are real corpus sentences, and all three were lost to a version
+    # of the guard that did not care which order the two halves came in.
+    assert claims?("You pull the compass from your satchel, its brass casing cool and heavy in your palm.",
+                   "compass", custody_only: true)
+    assert claims?("You kneel beside the chair and fish the lunar compass from the satchel, " \
+                   "its brass casing warm against your palm as if it had been sitting in sunlight.",
+                   "lunar compass", custody_only: true)
+    assert claims?("You pull the compass from your satchel, its brass casing cool and smooth " \
+                   "under your fingers.", "compass", custody_only: true)
+    # And the apposition the forward order exists for.
+    assert claims?("In your hand, the pistol is heavier than she made it look.",
+                   "pistol", custody_only: true)
   end
 
   # AND THE RULE DOES NOT COST THE PINNED CORPUS ANYTHING, which is the other

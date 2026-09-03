@@ -158,6 +158,19 @@ class Story::Audit
   NEGATIONS = /\b(?:no|not|never|without|nothing|neither|n't|lack|lacks|lacked|
                    empty|unarmed)\b/xi
 
+  # A PREPOSITION BETWEEN THE NAME AND THE PLAYER'S PERSON, which means the
+  # sentence has already put the name somewhere: "under your hand WITH the stamp
+  # beside it" is not a claim about the stamp. Only grammar 3 consults this --
+  # it is the one that matches over a window rather than over a phrase.
+  #
+  # `in`, `on`, `at` and `under` are deliberately NOT here: they are how grammar
+  # 3 reaches the person in the first place, and adding them would make the
+  # guard eat its own match.
+  ATTACHED_ELSEWHERE = /\b(?:with|beside|besides|behind|beneath|below|underneath|
+                            near|atop|against|among|amongst|across|between|beyond|
+                            alongside|from|inside|onto|over|past|through|around|
+                            toward|towards)\b/xi
+
   # WHAT THE RECORDS SAY ABOUT ONE NARRATION, and the evidence for saying it.
   #
   # `evidence` is a hash printed as-is by the rake task. It is verbose on
@@ -465,6 +478,29 @@ class Story::Audit
   # `custody_only` drops grammar 2. See `#check_items` for the measurement that
   # forced it: with the thing lying in the room the player is standing in, "your
   # daybook" is a true sentence about a book on the desk.
+  #
+  # AND GRAMMAR 3 STOPS AT A PREPOSITION IN ONE DIRECTION ONLY, which was
+  # forced by measurement and the asymmetry is the whole finding. It matches in
+  # either order over a window, and on
+  #
+  #   "Your daybook lies open under your hand with the stamp beside it."
+  #
+  # the PERSON-FIRST order read "under your hand ... the stamp" and claimed the
+  # player was holding a stamp the sentence puts beside the daybook. A
+  # preposition standing between the person and the name has attached the name
+  # to something else, so that window ends there.
+  #
+  # THE NAME-FIRST ORDER IS NOT GUARDED, and guarding it cost three defensible
+  # flags on the pinned corpus, every one of the form
+  #
+  #   "You pull the compass FROM your satchel, its brass casing cool and heavy
+  #    in your palm."
+  #
+  # There the prepositions describe where the thing came from and the sentence
+  # still ends with it in the player's hand. Which is the difference: with the
+  # name first it is the subject and the prepositions are its journey; with the
+  # person first a preposition introduces a new noun phrase, and the name in it
+  # is somebody else's business.
   def possession_claimed?(text, name, custody_only: false)
     verbs = Regexp.union(POSSESSION_VERBS)
     places = Regexp.union(ON_THE_PERSON)
@@ -479,9 +515,11 @@ class Story::Audit
       #    of adjective are allowed between ("your Nocturna-infused pistol").
       /\byour\b(?:\s+[\w'’-]+){0,2}\s+#{word}\b/i,
       # 3. On the player's person. Either order, because prose says both "the
-      #    pistol at your hip" and "in your hand, the pistol".
+      #    pistol at your hip" and "in your hand, the pistol" -- but the span
+      #    between the two must not cross a preposition, or the sentence has
+      #    already attached the name to something else. See the note above.
       /\b#{word}\b[^.!?;:]{0,60}?\b(?:in|on|at|against|under)\s+your\s+(?:#{places})\b/i,
-      /\b(?:in|on|at|against|under)\s+your\s+(?:#{places})\b[^.!?;:]{0,60}?\b#{word}\b/i
+      /\b(?:in|on|at|against|under)\s+your\s+(?:#{places})\b(?<before_name>[^.!?;:]{0,60}?)\b#{word}\b/i
     ]
     patterns.delete_at(2) if custody_only
 
@@ -502,6 +540,9 @@ class Story::Audit
       # then, of somebody else, "does not flinch" -- and that trade is taken on
       # purpose. A flag nobody can defend is worth less than a miss.
       next if sentence_around(text, match).match?(NEGATIONS)
+      # GRAMMAR 3, FORWARD ORDER ONLY: a preposition standing between the
+      # player's person and the name has attached the name to something else.
+      next if match.names.include?("before_name") && match[:before_name].to_s.match?(ATTACHED_ELSEWHERE)
 
       return true
     end
