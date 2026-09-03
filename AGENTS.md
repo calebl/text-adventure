@@ -464,9 +464,15 @@ before changing the loop; the rules below are what it does not fit.
   no say in whether it is true. **Both directions or neither**: an app that owns
   picking up while the narrator asserts putting down has records that go stale
   the first time a player sets something on a table.
-- **Nothing in the app creates an `Item`.** Seeds and tests do. The lazy
-  stub-then-realize registry is `ta-item-registry`, and generating a per-room
-  inventory ahead of time is explicitly ruled out.
+- **Nothing in the app creates an `Item`.** Seeds and tests do — a seed file can
+  put one in somebody's hands or on the floor of a room (`locations[].items`).
+  The lazy stub-then-realize registry is `ta-item-registry`, and generating a
+  per-room inventory ahead of time is explicitly ruled out.
+- **The three writes that move the world are named methods on
+  `Playthrough::Turn`** — `#stand_in!`, `#carry!`, `#put_down!` — because
+  `Playthrough::Mechanics` writes through the same ones. Put a new state change
+  in a method there rather than inline in the branch that calls it, or the
+  narration-off mode ends up with a second copy of it and starts testing itself.
 - **What the player typed is `Scene#typed`**, written once in
   `Playthrough::Turn#play` rather than in each branch, so a branch added later
   cannot forget it. Do not go back to reconstructing it from the classifier's
@@ -484,6 +490,37 @@ before changing the loop; the rules below are what it does not fit.
   narrates walking through a door and the player never moves. Tool support is
   slated to land with the narrator creating characters, where a missed call
   costs a record rather than the player's position.
+
+### The mechanics on their own, with the narration off
+
+`rake game:mechanics` (`Playthrough::Mechanics`, README → *Play the mechanics on
+their own*) walks a world with **one** thing removed: the prose. It is the
+instrument for the complaint it was built for — *"we are testing too many
+variables at the same time"* — and the rules it lives under are short:
+
+- **The classifier is KEPT and so is world generation.** Free text goes to
+  `Playthrough::Classifier`, the resolved intent is printed as `understood:`,
+  and a move is `Playthrough::Turn#move_to` whole — the stub is realized, the
+  arrival is written, the visit is stamped. So the default path costs one model
+  call a command and needs a key. Do not "simplify" it back to a grammar.
+- **`Scene::Narrator` and `InteractionAgent` are the only things dropped.**
+  `talk` and `examine` are refused with a line saying they are prose. If a
+  branch needs prose, refuse it and say so; do not half-play it.
+- **The arrival `Scene` is still written**, and its prose is not printed. That is
+  deliberate: the cast, `last_protagonist_visit` and the story clock all hang off
+  it, so skipping it would make the world this mode walks a different world.
+- **`model: false` (`NO_MODEL=1`) is the offline fallback**, not the default: a
+  fixed grammar, no generation, and a stub stays a stub. It exists for a machine
+  with no key and for the engine-direct tests, and
+  `Playthrough::MechanicsTest` runs that half with `BaseAgent.new` raising.
+  The classifier half is driven through a `FakeAgent` whose queued responses
+  ARE the calls the mode may make, so an accidental narrator call fails loudly.
+- **Both modes write through `Playthrough::Turn`'s own writes** (`#move_to`,
+  `#stand_in!`, `#carry!`, `#put_down!`) and read the closed sets off
+  `Playthrough::Classifier`'s readers. Building a classifier costs nothing; only
+  `#classify` talks to a model.
+- **It is not `rake game:play`**, which is still ruled out. The moment it prints
+  prose it becomes the second UI that rule exists to prevent.
 
 ### Auditing the difference
 

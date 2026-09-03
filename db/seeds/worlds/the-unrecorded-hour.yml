@@ -133,6 +133,11 @@ locations:
     Ward Office 12 handles amendments for the flood-plain boundary: which unsurveyed acre the levee has moved past, and whose name goes against it. It is dull, unpopular work, which is why the office has never been reorganized and why its ledgers go back further, unbroken, than almost any other ward's. Clerks are posted here as a slight and stay for decades.
 
     The office is also, on paper, four clerks. The two empty desks have been carried on the establishment for nineteen years, filled and vacated a handful of times, and no query about them has ever come back answered. Vance keeps the ledgers for all four positions out of habit. It is the kind of small, unexamined inaccuracy the Registry runs on -- and the reason a person could be removed from this room without anything in the record needing to change.
+  items:
+  - name: ward stamp
+    description: |-
+      Her own ward stamp, lying beside the open daybook where she set it down. The ink on the pad is still wet, which is the only thing in this room that agrees with her about what time it is.
+    properties: '{"registered": true, "ward": 12}'
 - name: The Supply Closet
   detail_level: realized
   teaser: No inventory number, no audit slip, and no lock.
@@ -144,6 +149,15 @@ locations:
     The closet has no inventory number because it was shelved out in 1846 as part of the works that put the filing press in, and the works order closed before the fittings schedule was raised. That is the whole of the mystery: a paperwork sequence that ran in the wrong order eighty years ago. The consequence is that no auditor has ever had a document that says this space exists, and so no auditor has ever opened the door.
 
     Perrin Lasco worked that out in his first month, the way Marginalia work such things out, and used it for four years. It is the only square yard of the Registry's east ring that is, in the only sense that matters in Ambry, unrecorded -- which is why what he hid is still here, and why he is not.
+  items:
+  - name: Perrin's private index
+    description: |-
+      A slim index in a hand that is not hers: two columns, dates on the left and file numbers on the right, running to within an hour of this afternoon. Nothing in it carries a ward mark, which means no copy of it exists anywhere in the Registry.
+    properties: '{"registered": false, "columns": 2}'
+  - name: copy-room apron
+    description: |-
+      A copy-room apron folded to the size of a book and pushed to the back of the lowest shelf, behind a stack of blank ward forms squared up too neatly to be accidental. It has been folded and refolded by somebody who did it in the dark.
+    properties: '{"registered": false}'
 - name: The Long Hallway
   detail_level: stub
   teaser: Doors closing one after another, and shoes you can already hear.

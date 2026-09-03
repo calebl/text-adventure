@@ -201,9 +201,7 @@ class WorldSeed::Exporter
     story.characters.order(:id).map do |character|
       document = { "fullname" => character.fullname, "race" => character.race.name }
       CHARACTER_FIELDS.each { |field| document[field.to_s] = value(character.public_send(field)) }
-      items = character.items.order(:name).map do |item|
-        { "name" => item.name, "description" => text(item.description), "properties" => text(item.properties) }
-      end
+      items = items_document(character)
       document["items"] = items if items.any?
       document
     end
@@ -223,7 +221,19 @@ class WorldSeed::Exporter
         document["description"] = text(location.description)
         document["lore"] = text(location.lore)
       end
+      # What is lying in the room, which is the closed set `take` resolves
+      # against. Items somebody is holding are exported under that character,
+      # by the same method -- an item is in exactly one place, so it is written
+      # exactly once.
+      items = items_document(location)
+      document["items"] = items if items.any?
       document
+    end
+  end
+
+  def items_document(owner)
+    owner.items.order(:name).map do |item|
+      { "name" => item.name, "description" => text(item.description), "properties" => text(item.properties) }
     end
   end
 
