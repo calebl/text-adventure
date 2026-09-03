@@ -32,6 +32,16 @@ class Location::GeneratorTest < ActiveSupport::TestCase
   # neighbour already has its way back, so this is a whole answer.
   ONE_EXIT = { "exits" => [ EXITS["exits"].last ] }.freeze
 
+  # A model answering with the whole of `max_items`, which is the case the
+  # room's own cap has to survive: four named on top of whatever the room
+  # already had.
+  FOUR_EXITS = {
+    "exits" => (1..4).map do |n|
+      { "name" => "Named Way #{n}", "teaser" => "Something is that way.",
+        "distance" => "adjacent", "travel_method" => "walking" }
+    end
+  }.freeze
+
   def setup
     @story = create(:story)
   end
@@ -44,6 +54,16 @@ class Location::GeneratorTest < ActiveSupport::TestCase
 
   def stub_location(**attributes)
     create(:location, :stub, story: @story, **attributes)
+  end
+
+  # An edge this room already has before anybody asks for its exits: what a
+  # world file seeds, and what a neighbour writes when it names this place.
+  # Both directions, because that is how every edge in the app is written.
+  def already_reaching(location, name)
+    neighbour = create(:location, :stub, story: @story, name: name)
+    create(:location_connection, location: location, connected_location: neighbour)
+    create(:location_connection, location: neighbour, connected_location: location)
+    neighbour
   end
 
   test "fills in a stub's description and lore" do
@@ -370,6 +390,74 @@ class Location::GeneratorTest < ActiveSupport::TestCase
 
     assert dead_end.reload.realized?
     assert_equal [ location ], dead_end.exits.to_a
+  end
+
+  # --- the cap is on the room, not on the answer -----------------------------
+
+  # THE ROOFTOP. Larkspur Quarter rooftops was seeded with two edges, was
+  # walked into, and came back with FIVE: `max_items: 4` bounds one answer, and
+  # a room's edges also arrive from a world file and from every neighbour that
+  # named it on the way to being realized. It ended up the most connected room
+  # in the database, and its own description named none of them.
+  test "a seeded stub with two edges does not come back with five" do
+    location = stub_location(name: "Larkspur Quarter rooftops")
+    2.times { |n| already_reaching(location, "Seeded Neighbour #{n}") }
+
+    realize(location, FakeAgent.new(DETAIL, FOUR_EXITS))
+
+    assert_equal Location::ExitsSchema::MAX_EXITS, location.reload.exits.count
+    assert_equal 2, location.exits.count { |exit| exit.name.start_with?("Seeded") },
+                 "the edges it arrived with are still there"
+  end
+
+  test "a room already at the cap is not asked for exits at all" do
+    location = stub_location(name: "The Drowned Ledger")
+    Location::ExitsSchema::MAX_EXITS.times { |n| already_reaching(location, "Neighbour #{n}") }
+
+    agent = FakeAgent.new(DETAIL)
+    assert_no_difference [ "Location.count", "LocationConnection.count" ] do
+      realize(location, agent)
+    end
+
+    assert location.reload.realized?, "it is still written out in full"
+    assert_equal 1, agent.prompts.count, "the detail call, and no exits call"
+  end
+
+  test "the room's remaining allowance is what the model is asked for" do
+    location = stub_location(name: "The Drowned Ledger")
+    already_reaching(location, "Tidewater Stair")
+
+    agent = FakeAgent.new(DETAIL, EXITS)
+    realize(location, agent)
+
+    assert_includes agent.prompts.last, "Name AT MOST 3 ways out"
+    assert_includes agent.prompts.last, "Where This Room Already Leads"
+    assert_includes agent.prompts.last, "Tidewater Stair"
+  end
+
+  test "a room with no edges yet is told so and gets the whole allowance" do
+    agent = FakeAgent.new(DETAIL, EXITS)
+    realize(stub_location(name: "The Drowned Ledger"), agent)
+
+    assert_includes agent.prompts.last, "no ways out yet"
+    assert_includes agent.prompts.last, "Name AT MOST 4 ways out"
+  end
+
+  # Naming a neighbour the room already reaches is a no-op, so it must not
+  # spend the allowance -- otherwise the way back would cost a real exit.
+  test "naming the way back does not use up the allowance" do
+    location = stub_location(name: "The Drowned Ledger")
+    back = already_reaching(location, "Tidewater Stair")
+
+    the_way_back_and_more = { "exits" => [
+      EXITS["exits"].last.merge("name" => back.name),
+      *FOUR_EXITS["exits"].first(3)
+    ] }
+
+    realize(location, FakeAgent.new(DETAIL, the_way_back_and_more))
+
+    assert_equal Location::ExitsSchema::MAX_EXITS, location.reload.exits.count
+    assert_includes location.exits, back
   end
 
   test "tells the model that one way out is a complete answer" do
