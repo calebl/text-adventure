@@ -32,6 +32,14 @@ namespace :eval do
     Eval::Comparison.new(Eval::RunSet.load(Eval.set_path(before)), Eval::RunSet.load(Eval.set_path(after))).print
   end
 
+  desc "Read one whole run as prose, every turn, flagged or not. Usage: rake 'eval:read[The Salt Assizes,1]' SET=main"
+  task :read, [ :story, :rep ] => :environment do |_task, args|
+    story = args[:story].presence or abort "Which world? rake 'eval:read[#{Eval::HELD_OUT}]'. The sweep plays: #{Eval::STORIES.join(", ")}."
+    matched = Eval::STORIES.find { |title| title.casecmp?(story) } or abort "Unknown world #{story.inspect}. The sweep plays: #{Eval::STORIES.join(", ")}."
+
+    Eval::Transcript.read(Eval.set_path(EvalTasks.set_name), story: matched, rep: (args[:rep].presence || 1).to_i).print
+  end
+
   desc "The null check: split ONE set's runs in half and compare them. Everything should read NOISE. Usage: rake eval:null SET=main"
   task null: :environment do
     set = Eval::RunSet.load(Eval.set_path(EvalTasks.set_name))

@@ -997,6 +997,16 @@ What it still owes, roughly in order:
 
 ## Known issues
 
+- **The local model rotation is off by default** (`TA_LOCAL_MODELS=1` to bring
+  it back), on the captain's ruling of 2026-09-03: *"if we are still falling
+  back to local models, let's stop doing that for now."* The failure it closes
+  is not a crash — it is a turn answered slowly by a 4k-context CPU model, after
+  which every measurement and quality claim downstream is silently about a
+  different model. Same argument `#ask` already made for not rotating on a 401,
+  applied to the rest of the rotation. A fresh clone with no key now raises
+  `BaseAgent::NoModelConfiguredError` with both ways out in the message, where
+  it used to fall through to ollama.
+
 - **A scripted talk turn that names a place is a move, and the classifier is
   right.** `lib/eval/scripts/the-lunar-cartographer.yml` first said *"Grenn,
   unlock the roof door and take me up onto the Larkspur Quarter rooftops

@@ -77,6 +77,7 @@ module Eval
     lib/eval/run_score.rb
     lib/eval/run_set.rb
     lib/eval/script.rb
+    lib/eval/transcript.rb
     lib/tasks/eval.rake
     script/eval_run.rb
     db/eval_baseline.json

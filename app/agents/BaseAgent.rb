@@ -7,6 +7,12 @@ class BaseAgent
   # rotation: see #ask.
   class UnauthorizedProviderError < StandardError; end
 
+  # Raised when there is no model to ask at all: no `OPENROUTER_API_KEY`, and
+  # the local rotation off (which it is unless `TA_LOCAL_MODELS` says
+  # otherwise). A sentence naming the two ways out beats a `NoMethodError` on
+  # nil three frames down.
+  class NoModelConfiguredError < StandardError; end
+
   # THE PARENT OF THE TWO FAILURES WHOSE TEXT MUST NEVER BE KEPT, so a caller
   # that persists prose can discard both in one rescue without having to know
   # which one happened (`Scene::Narrator#narrate`). What `#ask` DOES about them
@@ -69,8 +75,24 @@ class BaseAgent
   # `#ask` runs it inside the attempt loop, and the rescue below does what it
   # does for every other failed call.
 
-  # Models installed locally via ollama. Ordered fastest-and-most-reliable
-  # first; `rotate_model` walks down the list when a call fails.
+  # Models installed locally via ollama.
+  #
+  # OFF BY DEFAULT SINCE 2026-09-03, and reachable only through
+  # `TA_LOCAL_MODELS=1`. The captain's ruling, in his words: *"If we are still
+  # falling back to local models, let's stop doing that for now."* The reason is
+  # that a local fallback does not fail -- it ANSWERS, slowly, from a
+  # 4k-context CPU model, and every measurement and quality guarantee
+  # downstream silently becomes about a different model. That is the same
+  # argument `#ask` already makes for not rotating on a 401, applied to the
+  # rest of the rotation.
+  #
+  # THE LIST IS KEPT RATHER THAN DELETED because "for now" is what he said, and
+  # because a machine with no key and no network is a real way to work on this
+  # app. Turning it back on is one environment variable. See
+  # `.local_model_options`.
+  #
+  # Ordered fastest-and-most-reliable first; `rotate_model` walks down the list
+  # when a call fails.
   #
   # `assume_model_exists` is required, not optional: an ollama model is pulled
   # onto the machine and listed by `ollama list`, and is in neither the registry
@@ -170,12 +192,18 @@ class BaseAgent
 
   attr_reader :instructions, :schema, :model_options, :purpose
 
+  # THE LOCAL HALF OF THE ROTATION, which is empty unless somebody asked for
+  # it. See the note on LOCAL_MODEL_OPTIONS for why the default changed.
+  def self.local_model_options
+    ENV["TA_LOCAL_MODELS"].present? ? LOCAL_MODEL_OPTIONS : []
+  end
+
+  # WHAT THIS AGENT WILL ASK, in order. It can be EMPTY -- no key and no
+  # `TA_LOCAL_MODELS` -- and that is deliberate: an empty rotation fails loudly
+  # at `#apply_model` with a sentence saying what to set, which is a better
+  # outcome than a turn answered by a model nobody chose.
   def self.default_model_options
-    if ENV["OPENROUTER_API_KEY"].present?
-      remote_model_options + LOCAL_MODEL_OPTIONS
-    else
-      LOCAL_MODEL_OPTIONS
-    end
+    (ENV["OPENROUTER_API_KEY"].present? ? remote_model_options : []) + local_model_options
   end
 
   # `purpose`, `playthrough` and `character` are what the conversation gets
@@ -370,6 +398,8 @@ class BaseAgent
   end
 
   def apply_model(conversation)
+    raise NoModelConfiguredError, no_model_message if current_model.nil?
+
     conversation.assume_model_exists = current_model[:assume_model_exists]
     conversation.model = current_model[:model]
     conversation.provider = current_model[:provider]
@@ -393,6 +423,15 @@ class BaseAgent
     return if mark.nil? || recorded_chat.nil?
 
     @recorded_message_ids.concat(recorded_chat.messages.where("id > ?", mark).pluck(:id))
+  end
+
+  # The two ways out, named, because the answer to "no model" is a setting and
+  # not a code change.
+  def no_model_message
+    "No model is configured. Set OPENROUTER_API_KEY for the hosted rotation " \
+      "(#{self.class::REMOTE_MODEL_IDS.join(", ")}), or TA_LOCAL_MODELS=1 to use " \
+      "the ollama models installed on this machine -- which is off by default " \
+      "because a slow local answer is worse than a loud failure. See BaseAgent::LOCAL_MODEL_OPTIONS."
   end
 
   def unauthorized_message(error)

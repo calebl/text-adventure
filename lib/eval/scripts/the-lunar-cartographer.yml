@@ -18,6 +18,10 @@
 # Room 3 and not to the lane: a script that walked lane -> rooftops would be
 # measuring the classifier refusing an edge that does not exist, which t06
 # already covers.
+#
+# TURNS 12-20 WERE ADDED TO SHRINK THE NOISE FLOOR (2026-09-03): a bigger
+# denominator per run is cheaper than more runs. This world's extra turns lean
+# on its third stub and its mechanic rather than on items, which it has none of.
 story: The Lunar Cartographer
 turns:
 - id: t01-examine
@@ -81,3 +85,48 @@ turns:
   expect: move
   beat: ARRIVAL (return)
   note: a return over an edge this run walked outward twenty minutes of story time ago
+- id: t12-talk-5
+  command: Grenn, tell me what the quarter was joined to last night.
+  expect: talk
+  beat: TALK 5/8
+  note: the world's own law asked of the man who lives under it, naming no place
+- id: t13-examine-2
+  command: look at the boots by the door and the dark iridescence dried on them
+  expect: narrate
+  beat: OBJECT
+  note: the detail the opening prose planted -- the narrator has it or it does not
+- id: t14-move-hallway
+  command: go out into the boarding house hallway
+  expect: move
+  beat: ARRIVAL (new)
+  note: the third stub, and the one the mechanic can move
+- id: t15-examine-3
+  command: listen at the doors along the hallway and count them
+  expect: narrate
+  beat: OBJECT
+  note: a room this run wrote a minute ago, examined from inside it
+- id: t16-move-back-2
+  command: go back into Room 3
+  expect: move
+  beat: ARRIVAL (return)
+  note: a return over an edge the hallway arrival stubbed out
+- id: t17-talk-6
+  command: Grenn, I am not asking again. Who was on the stairs?
+  expect: talk
+  beat: TALK 6/8
+  note: the same question with the pressure raised, which is where voice shows
+- id: t18-move-lane
+  command: go down the stairs and out into Mournwell Lane
+  expect: move
+  beat: ARRIVAL (return)
+  note: the lane again, eleven turns of story time later
+- id: t19-examine-4
+  command: look up at the Celestial Spire from the lane and take its bearing
+  expect: narrate
+  beat: OBJECT
+  note: a place the records HAVE and the player cannot reach from here -- a mention, and correctly not a claim
+- id: t20-impossible-2
+  command: hold the quarter still with my hands until midnight has gone past
+  expect: narrate
+  beat: IMPOSSIBLE
+  note: a second refusal, against the one law this world actually has

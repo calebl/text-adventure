@@ -21,9 +21,11 @@
 #      captain's `.envrc` pins a model today, so rotation stays available and is
 #      recorded rather than switched off. Pinning is a noise control: a turn
 #      answered by a different model is a different measurement.
-#   2. `LOCAL_MODEL_OPTIONS` is emptied. ollama runs on this machine, so a third
-#      attempt would otherwise be answered by a 4k-context CPU model and land
-#      its prose in the corpus.
+#   2. `LOCAL_MODEL_OPTIONS` is emptied. This is belt and braces since the local
+#      rotation became opt-in (`TA_LOCAL_MODELS`), and it stays because a sweep
+#      run on a machine that HAS set that variable would otherwise let a third
+#      attempt be answered by a 4k-context CPU model and land its prose in the
+#      corpus.
 #
 # Nothing else is patched, and in particular NOTHING TOUCHES TEMPERATURE. The
 # sweep has to measure the game the player gets; a run at a temperature the app

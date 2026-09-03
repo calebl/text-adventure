@@ -17,13 +17,34 @@ class BaseAgentTest < ActiveSupport::TestCase
     assert_predicate models, :any?
   end
 
-  test "prefers remote models when an OpenRouter key is present" do
-    with_env("OPENROUTER_API_KEY" => "sk-test") do
+  test "asks the hosted models and nothing else when an OpenRouter key is present" do
+    with_env("OPENROUTER_API_KEY" => "sk-test", "TA_LOCAL_MODELS" => nil) do
       first = BaseAgent.default_model_options.first
 
       assert_equal :openrouter, first[:provider]
-      assert_equal BaseAgent.remote_model_options.count + BaseAgent::LOCAL_MODEL_OPTIONS.count,
-                   BaseAgent.default_model_options.count
+      assert_equal BaseAgent.remote_model_options.count, BaseAgent.default_model_options.count,
+                   "the local models are off by default -- see LOCAL_MODEL_OPTIONS"
+    end
+  end
+
+  # THE CAPTAIN'S RULING, 2026-09-03: *"If we are still falling back to local
+  # models, let's stop doing that for now."* The failure mode it closes is not a
+  # crash -- it is a turn ANSWERED by a 4k-context CPU model, after which every
+  # measurement downstream is quietly about a different model.
+  test "the local rotation is off unless it is asked for" do
+    with_env("OPENROUTER_API_KEY" => "sk-test", "TA_LOCAL_MODELS" => nil) do
+      assert_empty BaseAgent.local_model_options
+      assert(BaseAgent.default_model_options.none? { |option| option[:provider] == :ollama })
+    end
+  end
+
+  test "TA_LOCAL_MODELS puts them back, after the hosted ones" do
+    with_env("OPENROUTER_API_KEY" => "sk-test", "TA_LOCAL_MODELS" => "1") do
+      options = BaseAgent.default_model_options
+
+      assert_equal BaseAgent.remote_model_options.count + BaseAgent::LOCAL_MODEL_OPTIONS.count, options.count
+      assert_equal :openrouter, options.first[:provider]
+      assert_equal :ollama, options.last[:provider]
     end
   end
 
@@ -81,15 +102,29 @@ class BaseAgentTest < ActiveSupport::TestCase
            "an ollama model never resolves against the registry; it has to be assumed to exist"
   end
 
-  test "uses only local models without an OpenRouter key" do
-    with_env("OPENROUTER_API_KEY" => nil) do
+  test "uses only local models when a key is absent and they are asked for" do
+    with_env("OPENROUTER_API_KEY" => nil, "TA_LOCAL_MODELS" => "1") do
       assert_equal BaseAgent::LOCAL_MODEL_OPTIONS, BaseAgent.default_model_options
     end
   end
 
   test "treats a blank OpenRouter key as absent" do
-    with_env("OPENROUTER_API_KEY" => "") do
+    with_env("OPENROUTER_API_KEY" => "", "TA_LOCAL_MODELS" => "1") do
       assert_equal BaseAgent::LOCAL_MODEL_OPTIONS, BaseAgent.default_model_options
+    end
+  end
+
+  # NO KEY AND NO LOCAL ROTATION IS AN EMPTY LIST, and it fails with a sentence
+  # naming both ways out rather than with a NoMethodError on nil three frames
+  # down. This is the state a fresh clone with no `.env` is in.
+  test "no key and no local rotation is an empty list that fails loudly when asked" do
+    with_env("OPENROUTER_API_KEY" => nil, "TA_LOCAL_MODELS" => nil) do
+      assert_empty BaseAgent.default_model_options
+
+      error = assert_raises(BaseAgent::NoModelConfiguredError) { BaseAgent.new("do a thing").ask("now") }
+
+      assert_match(/OPENROUTER_API_KEY/, error.message)
+      assert_match(/TA_LOCAL_MODELS/, error.message)
     end
   end
 

@@ -188,6 +188,39 @@ class Eval::PipelineTest < ActiveSupport::TestCase
     assert_match(/INCONCLUSIVE/, verdict.headline)
   end
 
+  # ------------------------------------------------------------- transcripts
+  #
+  # THE ANSWER TO "the clean board is confusing, how can I read it to verify?"
+  # -- so what is asserted is that a clean turn is printed at all, which is the
+  # one thing the board deliberately does not do.
+  test "a transcript prints every turn, marks the flagged ones and keeps the clean ones" do
+    turns = [
+      Eval::Transcript::Turn.new(index: "t01", typed: "look at the slate", room: "The Causeway Court",
+                                 prose: "You press your thumb to the chalked figure.", codes: [], branch: "narrate"),
+      Eval::Transcript::Turn.new(index: "t02", typed: "walk out to the post", room: "The Tide Post",
+                                 prose: "Coraith Vell stands at the post, her oilskin dark with spray.",
+                                 codes: [ :third_person_protagonist ], branch: "move")
+    ]
+    output = StringIO.new
+    Eval::Transcript.new(set: "main", story: Eval::HELD_OUT, rep: 1, turns: turns, io: output).print
+    printed = output.string
+
+    assert_match(/2 turns, 1 of them flagged/, printed)
+    assert_match(/t01.*clean/, printed)
+    assert_match(/t02.*FLAGGED third_person_protagonist/, printed)
+    assert_match(/You press your thumb/, printed, "a clean turn's passage has to be printed -- that is the point")
+    assert_match(/> look at the slate/, printed)
+  end
+
+  test "a transcript wraps the passages, because one is a single long line in the database" do
+    turn = Eval::Transcript::Turn.new(index: "t01", typed: "look", room: "a room", codes: [], branch: "narrate",
+                                      prose: (%w[word] * 200).join(" "))
+    output = StringIO.new
+    Eval::Transcript.new(set: "s", story: Eval::HELD_OUT, rep: 1, turns: [ turn ], io: output).print
+
+    assert(output.string.lines.all? { |line| line.length <= 92 }, "a line came out too long to read")
+  end
+
   # ------------------------------------------------------------------ money
   test "the estimate is priced from the registry rather than from a number in a comment" do
     Model.find_or_create_by!(model_id: "mistralai/mistral-medium-3.1", provider: "openrouter") do |model|

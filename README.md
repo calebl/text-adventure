@@ -16,7 +16,7 @@ bin/rails db:prepare
 Generation needs a model. Either:
 
 * **Local** — run `ollama serve` and pull the models listed in
-  `BaseAgent::LOCAL_MODEL_OPTIONS`. Free, but 40–90 seconds per structured call.
+  `BaseAgent::LOCAL_MODEL_OPTIONS` — **off unless `TA_LOCAL_MODELS=1`**. Free, but 40–90 seconds per structured call, and a slow local answer is worse than a loud failure.
 * **Hosted (preferred)** — set `OPENROUTER_API_KEY`, in a gitignored `.env`
   (loaded by `dotenv-rails`) or a gitignored `.envrc` (loaded by direnv). Much
   faster, and `BaseAgent` prefers it automatically when the key is present. Defaults to `mistralai/mistral-medium-3.1`, falling back to

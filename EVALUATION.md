@@ -22,8 +22,8 @@ without a verdict that can say *noise*.
 rake eval:run                 # generate across the three seeded worlds, then print a board
 ```
 
-Defaults to 5 repetitions of each world's script — 15 runs, about 165 turns,
-**roughly $0.22**. It prints the estimate before it spends anything and the
+Defaults to 5 repetitions of each world's 20-turn script — 15 runs, 300 turns,
+**roughly $0.39**. It prints the estimate before it spends anything and the
 actual figure on the board afterwards. It refuses to start without
 `OPENROUTER_API_KEY`, and it aborts rather than spend more than $1.00 unattended
 (`YES=1` overrides).
@@ -32,9 +32,9 @@ actual figure on the board afterwards. It refuses to start without
 | --- | --- |
 | `REPS=8` | repetitions per world. **Four is the minimum for a verdict** — see the rule below |
 | `TURNS=4` | stop each run after n turns. Cheap smoke test |
+| `EVAL_MODEL=…` | pin a different model (see below) |
 | `STORIES="The Salt Assizes"` | one world instead of three |
 | `SET=main` | name the run set. Defaults to a timestamp |
-| `EVAL_MODEL=…` | pin a different model. Defaults to the app's own first choice |
 | `SAMPLE=60` | how many flagged turns the board prints in full |
 | `EVAL_RUN_TIMEOUT=1200` | seconds one run may take before it is killed. A killed run leaves no manifest and is simply absent from the scoring |
 | `CONCURRENCY=3` | runs in flight at once. One per world by default |
@@ -43,6 +43,7 @@ Everything else is free and offline:
 
 ```bash
 rake eval:score SET=main      # score a set again -- no model call, no key, no network
+rake 'eval:read[The Salt Assizes,1]'   # one whole run as prose, every turn, flagged or not
 rake eval:compare BEFORE=main AFTER=my-branch
 rake eval:null SET=main       # split one set in half; everything should read NOISE
 rake eval:estimate REPS=8     # what a sweep of that shape would cost
@@ -54,6 +55,23 @@ they are large; `scores.json` beside them is the durable artifact, and
 `eval:compare` reads only that, so a set can be compared long after its
 databases are gone.
 
+
+### Reading a run, when a board looks too clean
+
+The board prints what a check **caught** — that is the point of it. When you want
+the opposite, `rake eval:read` prints one whole run as prose: every turn in
+order, what was typed, the passage the player would have read, and a mark
+against any turn a check flagged.
+
+```bash
+rake 'eval:read[The Salt Assizes,1]' SET=main
+```
+
+**A turn with no mark is a turn every check passed.** Those are the ones to read
+when a rate of zero looks suspicious: a clean board is only worth something if
+the turns behind it hold up. The seeded worlds are also playable in the browser
+(`bin/dev`), which is the other way to check the same thing.
+
 ---
 
 ## The before/after protocol
@@ -62,10 +80,10 @@ This is the thing to actually use on a change.
 
 ```bash
 git switch main
-rake eval:run SET=before REPS=8         # ~$0.35
+rake eval:run SET=before REPS=8         # ~$0.63
 
 git switch my-branch
-rake eval:run SET=after  REPS=8         # ~$0.35
+rake eval:run SET=after  REPS=8         # ~$0.63
 
 rake eval:compare BEFORE=before AFTER=after
 ```
@@ -111,7 +129,8 @@ is the protocol manufacturing a result**. Run it whenever the rule changes.
 ### What reduces the noise, in the order worth reaching for
 
 1. **More turns per run.** The cheapest: it enlarges the denominator without
-   another process start.
+   another process start. The scripts went from 11 turns to 20 on 2026-09-03
+   for exactly this reason.
 2. **More repetitions.** Linear in money and the only thing that improves the
    test's resolution.
 3. **Pinning the model**, which the runner already does — a turn answered after

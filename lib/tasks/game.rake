@@ -4,7 +4,7 @@ namespace :game do
     premise = args[:premise]
 
     puts "Premise: #{premise.presence || "chosen by the model"}"
-    puts "Model:   #{BaseAgent.default_model_options.first[:model]}"
+    puts "Model:   #{BaseAgent.default_model_options.first&.fetch(:model, nil) || "NONE -- set OPENROUTER_API_KEY"}"
     puts
 
     # Generate both before saving anything. Persisting the universe first

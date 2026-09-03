@@ -605,7 +605,14 @@ bin/rails zeitwerk:check   # app/agents/ uses PascalCase filenames; verify autol
   table **is** the model registry: RubyLLM resolves model names out of it and
   does not fall back to the registry the gem ships with, so an empty table
   resolves nothing. Reading it is offline; no API key.
-- `ollama serve` must be running for local generation. Installed models are
+- **The local rotation is OFF by default and needs `TA_LOCAL_MODELS=1`.** The
+  captain's ruling, 2026-09-03: *"if we are still falling back to local models,
+  let's stop doing that for now."* A local fallback does not fail, it ANSWERS —
+  slowly, from a 4k-context CPU model — and every measurement downstream
+  quietly becomes about a different model. With no key and no opt-in there is
+  no model at all, and `BaseAgent::NoModelConfiguredError` says so in a
+  sentence naming both ways out.
+- With `TA_LOCAL_MODELS=1`, `ollama serve` must be running. Installed models are
   listed in `BaseAgent::LOCAL_MODEL_OPTIONS`; keep that list matching what is
   actually pulled, or every call fails on a missing model.
 - `OPENROUTER_API_KEY` (kept in a gitignored `.env`, loaded by `dotenv-rails`,
