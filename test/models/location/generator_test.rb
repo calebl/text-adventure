@@ -11,6 +11,15 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     "lore" => "The house has collected debts here for two hundred years."
   }.freeze
 
+  # The same answer with the room furnished. `items` rides on the detail call
+  # (Location::DetailSchema), so this is one response and not a third one.
+  FURNISHED = DETAIL.merge(
+    "items" => [
+      { "name" => "floating ledger", "description" => "A ledger swollen with water, still legible." },
+      { "name" => "brass tide key", "description" => "A key on a wet cord, cut for a lock further down." }
+    ]
+  ).freeze
+
   EXITS = {
     "exits" => [
       {
@@ -466,5 +475,129 @@ class Location::GeneratorTest < ActiveSupport::TestCase
 
     assert_includes agent.prompts.last, "One way out is a complete answer"
     assert_includes agent.prompts.last, "Never invent a passage"
+  end
+  # WHAT IS LYING IN THE ROOM, written out of the same answer that described
+  # it. This is the whole of `ta-item-registry`: before it, `Item` rows existed
+  # only where a person had hand-written one into a seed file, so a generated
+  # room was always empty and `take` could not be exercised anywhere the world
+  # wrote itself.
+  test "writes the things lying in the room out of the same call" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(FURNISHED, EXITS))
+
+    assert_equal [ "floating ledger", "brass tide key" ], Item.lying_in(location).order(:id).map(&:name)
+    assert_equal "A ledger swollen with water, still legible.", Item.lying_in(location).order(:id).first.description
+  end
+
+  # The closed set `Playthrough::Classifier` resolves a `take` against picks
+  # generated items up with no further change, which is the point of writing
+  # them as records rather than as prose.
+  test "what it writes is on the floor, which is the set take reads" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(FURNISHED, EXITS))
+
+    assert Item.lying_in(location).all?(&:lying?)
+    assert_empty Item.lying_in(location).select(&:held?)
+  end
+
+  # Two calls, not three. The items are a field on the detail answer.
+  test "furnishing the room costs no extra model call" do
+    location = stub_location(name: "The Drowned Ledger")
+    agent = FakeAgent.new(FURNISHED, EXITS)
+
+    realize(location, agent)
+
+    assert_equal 2, agent.prompts.size
+    assert_equal [ Location::DetailSchema, Location::ExitsSchema ], agent.schemas
+  end
+
+  test "a room the model furnished with nothing is furnished with nothing" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL.merge("items" => []), EXITS))
+
+    assert_equal 0, Item.lying_in(location).count
+  end
+
+  # An omitted `items` and an empty one mean the same thing. The field is
+  # optional precisely so a model may leave it out.
+  test "a model that omits the field leaves the room empty rather than failing" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL, EXITS))
+
+    assert location.reload.realized?
+    assert_equal 0, Item.lying_in(location).count
+  end
+
+  # The registry decides, not the model. A name it refuses costs the room its
+  # furniture and never its description -- the expensive half of the call is
+  # already saved by then.
+  test "a refused item name does not cost the room its description" do
+    create(:character, story: @story, fullname: "floating ledger")
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(FURNISHED, EXITS))
+
+    assert_equal DETAIL["description"], location.reload.description
+    assert_equal [ "brass tide key" ], Item.lying_in(location).map(&:name)
+  end
+
+  test "stops at what the room may hold however many the model named" do
+    location = stub_location(name: "The Drowned Ledger")
+    create(:item, :lying, location: location, name: "seeded oar")
+    create(:item, :lying, location: location, name: "seeded bell")
+
+    realize(location, FakeAgent.new(FURNISHED, EXITS))
+
+    assert_equal Item::Registry::MAX_PER_ROOM, Item.lying_in(location).count
+  end
+
+  # ASKED FOR AT MOST WHAT IS LEFT, the way the exits prompt is. A refusal
+  # after the call is a room with less in it than the model thought it had
+  # furnished, so the allowance is said before the call rather than only
+  # enforced after it.
+  test "tells the model how much room is left on the floor" do
+    location = stub_location(name: "The Drowned Ledger")
+    create(:item, :lying, location: location, name: "seeded oar")
+    agent = FakeAgent.new(FURNISHED, EXITS)
+
+    realize(location, agent)
+
+    assert_match(/AT MOST 2 portable things/, agent.prompts.first)
+  end
+
+  test "asks a full room for nothing at all" do
+    location = stub_location(name: "The Drowned Ledger")
+    Item::Registry::MAX_PER_ROOM.times { |n| create(:item, :lying, location: location, name: "seeded #{n}") }
+    agent = FakeAgent.new(DETAIL, EXITS)
+
+    realize(location, agent)
+
+    assert_match(/Do not list any items/, agent.prompts.first)
+  end
+
+  # The names already spoken for, said up front so an item is not spent on one.
+  # Both collisions the registry refuses afterwards anyway.
+  test "names what is already spoken for in this story" do
+    create(:character, story: @story, fullname: "Maren Vosk")
+    create(:item, :lying, location: create(:location, story: @story, name: "Elsewhere"), name: "tide key")
+    location = stub_location(name: "The Drowned Ledger")
+    agent = FakeAgent.new(FURNISHED, EXITS)
+
+    realize(location, agent)
+
+    assert_match(/do not reuse:.*Maren Vosk/, agent.prompts.first)
+    assert_match(/do not reuse:.*tide key/, agent.prompts.first)
+  end
+
+  test "does not furnish a room it declined to realize" do
+    location = create(:location, story: @story, name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(FURNISHED, EXITS))
+
+    assert_equal 0, Item.lying_in(location).count
   end
 end

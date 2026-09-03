@@ -215,8 +215,9 @@ flowchart TD
         M1{"Location::Generator#realize!<br/>realized already?"}
         M1 -->|"yes: walking back in"| M5
         M1 -->|"no: a stub, first time"| M3
-        M3["MODEL CALL, schema'd<br/>Location::DetailSchema<br/>description and lore, SAVED IMMEDIATELY"]
-        M3 --> M4["MODEL CALL, schema'd<br/>Location::ExitsSchema<br/>a stub neighbour per exit, and connection<br/>rows in BOTH directions"]
+        M3["MODEL CALL, schema'd<br/>Location::DetailSchema<br/>description and lore, SAVED IMMEDIATELY<br/>plus 0-3 things lying here, on the SAME call"]
+        M3 --> M3B["Item::Registry#admit!<br/>the model proposes, the engine decides<br/>a row per thing, lying in the room<br/>capped per room and per world"]
+        M3B --> M4["MODEL CALL, schema'd<br/>Location::ExitsSchema<br/>a stub neighbour per exit, and connection<br/>rows in BOTH directions"]
         M4 --> M5
         M5["Read FROM RECORDS, before anything is created<br/>last_protagonist_visit: discovery or return<br/>characters_present: who is here"]
         M5 --> M6["MODEL CALL, schema'd<br/>Scene::Schema, the arrival paragraph<br/>Cannot stream: a schema'd call emits JSON"]
@@ -258,7 +259,7 @@ flowchart TD
     classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
 
     class C2,M3,M4,M6,T1,T2,I2,N2 llm
-    class W0,C1,C3,M1,M5,M7,M8,T5,T6,T7,I1,I3,N3 rec
+    class W0,C1,C3,M1,M3B,M5,M7,M8,T5,T6,T7,I1,I3,N3 rec
     class N1,T4 gap
     class IN,SSE,OUT,D,T3 io
 ```
@@ -276,6 +277,54 @@ never the state change itself, and there is no wording that can grant an item
 the app did not. Both directions are owned, deliberately: an app that owns
 picking up but lets the narrator assert putting down has records that go stale
 the first time a player sets something on a table.
+
+### How things come to exist
+
+That branch was real over a set that was usually empty. Until `Item::Registry`
+landed, the only thing in the whole codebase that created an `Item` was the seed
+file loader — so `take` and `drop` were exercisable in rooms a person had
+hand-written, and **every room the world wrote for itself was empty.**
+
+Things are now born the way exits are: **as structured records, at the moment a
+room is realized.** `Location::DetailSchema` asks for the description, the lore
+and *at most three portable things lying here* in one answer, and
+`Item::Registry` turns the names into rows. It is the same call — a realization
+still costs exactly two, and a room the model furnished with nothing costs
+nothing extra.
+
+**It is deliberately not a narrator tool and not a scan of narration prose.**
+Those were the obvious two ways to do it and both make the record depend on a
+model complying with a prompt; the standing constraint here is the other way
+round — *gate the state, inform the prose.* So the engine decides what exists
+and `Playthrough::Moment` then **tells** the narrator what is lying here, out of
+the records, the same way it already tells it the exits and the inventory.
+
+The model proposes and the registry disposes. It refuses, without failing the
+realization:
+
+| refused | why |
+| --- | --- |
+| a name anything in this story already has | the classifier resolves a take by name; two things answering to one word is an ordering accident |
+| a name a person or a place has | two of the classifier's closed sets would answer to one word |
+| anything past `Item::Registry::MAX_PER_ROOM` (3) | the cap is on the **room**, read from the records — a seeded room can already be at it |
+| anything past `Item::Registry::MAX_PER_STORY` (60) | three per room is three per room *times however far the player walked*; this is the ceiling on the ontology |
+
+A refusal costs the room its furniture and never its description — by then the
+expensive half of the call is already saved. The room is asked for at most what
+is left of its allowance, so a refusal after the fact is the exception rather
+than the routine.
+
+Items are created **whole, not stubbed.** `Location` is realized in two steps
+because a room's description is expensive and a room nobody walks into should
+not be paid for. An item is a name and one line riding on a call already being
+made, so deferring the line would save ~15 output tokens now and cost a whole
+round trip the first time somebody examined it.
+
+`Item.lying_in` is unchanged, so the closed set `take` resolves against picks
+generated things up with no further change, in the browser and in
+`rake game:mechanics` alike. `rake game:doctor` reports the states the registry
+refuses but an older world can still be in: items nowhere, duplicate names,
+rooms and worlds over the caps, and an item named after a person or a place.
 
 The move branch is the heart of it, and the thing to notice is that
 **`Playthrough::Turn#move_to` contains no stub-versus-realized branch at all**:
@@ -548,10 +597,11 @@ check.
 
 - **`examine` is classified and then narrated like anything else.** It is told
   apart so the branch exists when there is something for it to do.
-- **Nothing creates an item.** `take` and `drop` are real state changes over the
-  items that exist, and the only things that put one in a world are a seed file
-  and a test. The lazy stub-then-realize registry that would let the narrator
-  name a new thing into being is queued as `ta-item-registry`.
+- **The one thing an item still cannot do is have a history.** `Item::Registry`
+  writes rows at room realization and `take` / `drop` move them, but the row
+  carries only where it is now — nothing records where it has been, so a check
+  on an item's movement has to infer it. `Story::Audit`'s `item_not_held` says
+  so at its own definition.
 - **Nothing records where a character stands.** `characters_present` answers
   from the protagonist, anyone `is_companion`, and whoever was in the last scene
   in that location that recorded a cast. A place nobody has visited and no

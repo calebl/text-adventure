@@ -139,10 +139,10 @@ class Playthrough::Classifier
   # something off a person is a different act, with somebody on the other side
   # of it who has an opinion, and no record says how that goes.
   #
-  # An empty list is the normal case today and costs nothing: nothing in the
-  # app creates an item, so only a seed file or a test puts one on the floor.
-  # That is `ta-item-registry`'s job; this end of the seam is what makes it
-  # worth building.
+  # An empty list is still a normal answer -- most rooms hold nothing -- but it
+  # is no longer the only one a generated room can give. `Item::Registry` writes
+  # what is lying here when the room is realized, so this set fills itself with
+  # no change at this end of the seam.
   def items_here
     location = playthrough.current_location
     return [] if location.nil?

@@ -3,16 +3,24 @@ require "test_helper"
 # What realizing a stub writes into Location#description and Location#lore --
 # the two columns a realized location is validated on. A field that drifts here
 # produces a location that fails to save after the model call has been paid for.
+#
+# And `items`, which is not a location column at all: it is the room's
+# furniture riding on the same call, written by `Item::Registry` into rows of
+# its own. It is the one field here that is deliberately OPTIONAL, because a
+# room containing nothing is the ordinary case and an empty required array
+# reads as an omitted field to `BaseAgent#missing_schema_keys`.
 class Location::DetailSchemaTest < ActiveSupport::TestCase
   include SchemaAssertions
 
   SCHEMA = Location::DetailSchema
 
-  test "describes exactly the two fields a realized location needs" do
-    assert_equal %w[description lore], schema_properties(SCHEMA).keys
+  test "describes the two fields a realized location needs, and what is lying in it" do
+    assert_equal %w[description lore items], schema_properties(SCHEMA).keys
   end
 
-  test "every field is required" do
+  # `items` is not among them, and that is the point: a room with nothing in it
+  # would otherwise fail its own realization and rotate to another model.
+  test "every field a location is validated on is required" do
     assert_equal %w[description lore], schema_required(SCHEMA)
   end
 
@@ -44,8 +52,35 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
     assert_schema_field(SCHEMA, :lore, type: :string, maxLength: 900)
   end
 
-  test "every field maps to a location column" do
-    assert_equal [], schema_properties(SCHEMA).keys - Location.column_names
+  test "every prose field maps to a location column" do
+    assert_equal [], schema_properties(SCHEMA).keys - Location.column_names - [ "items" ]
+  end
+
+  # The bound on ONE ANSWER, which is not the bound on the room -- that is
+  # Item::Registry's, enforced against the records, because a seeded room can
+  # already be at it. Same distinction Location::ExitsSchema documents.
+  test "items is bounded at what one room may hold" do
+    items = schema_properties(SCHEMA)["items"]
+
+    assert_equal "array", items["type"]
+    assert_equal Item::Registry::MAX_PER_ROOM, items["maxItems"]
+    assert_equal %w[name description], items.dig("items", "properties").keys
+  end
+
+  test "an item names itself and says what it is, both bounded" do
+    fields = schema_properties(SCHEMA).dig("items", "items", "properties")
+
+    assert_equal 60, fields.dig("name", "maxLength")
+    assert_equal 400, fields.dig("description", "maxLength")
+  end
+
+  # The collision the classifier cannot survive: an item and an exit, or an
+  # item and somebody standing here, answering to one word. Item::Registry
+  # refuses one after the fact; the schema says so before the call.
+  test "tells the model not to name an item after a person or a place" do
+    described = schema_properties(SCHEMA).dig("items", "items", "properties", "name", "description")
+
+    assert_match(/Never the name of a person or of a place/, described)
   end
 
   # The two columns Location requires once realized are exactly the two this
@@ -54,6 +89,6 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
     location = build(:location, :stub, detail_level: "realized")
     location.valid?
 
-    assert_equal schema_properties(SCHEMA).keys.sort, location.errors.attribute_names.map(&:to_s).sort
+    assert_equal schema_required(SCHEMA).sort, location.errors.attribute_names.map(&:to_s).sort
   end
 end
