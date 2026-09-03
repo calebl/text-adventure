@@ -84,7 +84,18 @@ namespace :eval do
     # Seconds one run may take before it is killed. See `#spawn_run`.
     RUN_TIMEOUT = (ENV["EVAL_RUN_TIMEOUT"].presence || 1200).to_i
 
-    def set_name = ENV["SET"].presence || "latest"
+    # THE SET TO ACT ON: the one named, or the most recent one generated. A
+    # sweep with no `SET=` lands in a timestamped directory, so "score the thing
+    # I just ran" has to mean something without the operator copying a
+    # timestamp back out of the output.
+    def set_name
+      return ENV["SET"] if ENV["SET"].present?
+
+      newest = Dir.glob(Eval.root.join("*", "runs")).max_by { |path| File.mtime(path) }
+      abort "No run sets under #{Eval::ROOT}. Generate one first: rake eval:run" if newest.nil?
+
+      File.basename(File.dirname(newest))
+    end
 
     def reps = (ENV["REPS"].presence || DEFAULT_REPS).to_i
 
