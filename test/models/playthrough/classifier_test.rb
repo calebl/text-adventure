@@ -223,6 +223,30 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     end
   end
 
+  # The other direction of the same guarantee. A collective read against the
+  # wrong list would resolve to nothing and be counted as drift again, so which
+  # set each action reads is the part worth pinning: `drop everything` and `put
+  # down everything` both answer out of the player's hands, never the floor.
+  test "a collective drop resolves out of the player's hands and is an overreach" do
+    create(:item, :lying, location: @here, name: "copy-room apron")
+    sextant = create(:item, character: @protagonist, name: "brass sextant")
+    create(:item, character: @protagonist, name: "chart tube")
+
+    [ "drop everything", "put down everything" ].each do |command|
+      assert_difference "Playthrough::Overreach.count", 1 do
+        assert_no_difference "Playthrough::Drift.count" do
+          intent, = classify({ "intent" => "drop", "target" => sextant.name, "also_named" => "chart tube" },
+                             command: command)
+
+          assert_equal sextant, intent.item
+          assert_equal "chart tube", intent.also_named.name
+        end
+      end
+    end
+
+    assert_equal "drop", Playthrough::Overreach.last.action
+  end
+
   test "the cast is Scene::Generator's answer, minus the player" do
     maren = holdover("Maren Vosk")
     companion = create(:character, story: @story, fullname: "Dell Roy", is_companion: true)
