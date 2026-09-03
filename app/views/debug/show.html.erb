@@ -15,7 +15,7 @@
   <%= link_to "the classifier", "#classifier" %> &middot;
   <%= link_to "conversations (#{@debug.durable_conversations.size})", "#conversations" %> &middot;
   <%= link_to "the world", "#world" %> &middot;
-  <%= link_to "the audit (#{@debug.contradictions.size + @debug.drifts.size})", "#audit" %> &middot;
+  <%= link_to "the audit (#{@debug.contradictions.size + @debug.defects.size + @debug.drifts.size + @debug.pacing.size})", "#audit" %> &middot;
   <%= link_to "what you thought (#{@debug.feedback.size})", "#feedback" %> &middot;
   <%= link_to "earlier turns (#{@debug.earlier_turns.size})", "#log" %> &middot;
   <%= link_to "the cast (#{@debug.cast.size})", "#cast" %> &middot;
@@ -293,6 +293,10 @@
     <div class="v"><%= @debug.audit.scanned %> <span class="note">every scene in this world, not just this playthrough's</span></div>
     <div class="k">contradictions here</div>
     <div class="v"><%= @debug.contradictions.size %> <span class="note">on this playthrough's own turns &mdash; the records prove these</span></div>
+    <div class="k">defects here</div>
+    <div class="v"><%= @debug.defects.size %> <span class="note">turns whose prose broke a rule the app states &mdash; cut off, or writing the player as somebody else</span></div>
+    <div class="k">still runs here</div>
+    <div class="v"><%= @debug.pacing.size %> <span class="note">stretches of <%= Story::Audit::STILL_RUN %> turns with nothing changing and somebody in the room &mdash; pacing, not a defect</span></div>
     <div class="k">drift here</div>
     <div class="v">
       <%= @debug.drifts.size %>
@@ -322,6 +326,58 @@
       <% end %>
       <% if @debug.contradictions.empty? %>
         <tr><td colspan="4" class="absent">(none &mdash; every turn here matches what the records hold)</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%# A DEFECT IS ONE PASSAGE BEING WRONG ON ITS OWN TERMS, which is a different
+    claim from two records disagreeing, so it is counted and shown apart. Both
+    checks here were measured against 92 real passages before they shipped --
+    see Story::Audit::Prose. %>
+<h3>defects &mdash; the prose broke a rule the app states</h3>
+<div class="scroll">
+  <table>
+    <thead>
+      <tr><th>at</th><th>check</th><th>what is wrong</th><th>the passage</th></tr>
+    </thead>
+    <tbody>
+      <% @debug.defects.each do |flag| %>
+        <tr>
+          <td><%= debug_time(flag.scene&.story_timestamp) %></td>
+          <td><code><%= flag.code %></code></td>
+          <td><%= flag.headline %></td>
+          <td class="note"><%= debug_value(flag.evidence_line, absent: "&mdash;") %></td>
+        </tr>
+      <% end %>
+      <% if @debug.defects.empty? %>
+        <tr><td colspan="4" class="absent">(none &mdash; every passage here is finished and in the second person)</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%# PACING IS NOT A DEFECT. Nothing here says the turn was bad: a player
+    examining four things in a row is playing the game as designed. It is the
+    count behind "why is nobody doing anything", and the threshold that decides
+    it was measured -- see Story::Audit::STILL_RUN. %>
+<h3>still runs &mdash; turns on which the records show nothing happening</h3>
+<div class="scroll">
+  <table>
+    <thead>
+      <tr><th>at</th><th>typed</th><th>who was in the room</th><th>what the records say</th></tr>
+    </thead>
+    <tbody>
+      <% @debug.pacing.each do |flag| %>
+        <tr>
+          <td><%= debug_time(flag.scene&.story_timestamp) %></td>
+          <td><%= debug_value(flag.evidence[:typed], absent: "&mdash;") %></td>
+          <td><%= debug_value(flag.evidence[:present], absent: "nobody") %></td>
+          <td class="note"><%= flag.evidence[:run] %></td>
+        </tr>
+      <% end %>
+      <% if @debug.pacing.empty? %>
+        <tr><td colspan="4" class="absent">(none &mdash; no stretch of <%= Story::Audit::STILL_RUN %> turns here passed with nothing changing)</td></tr>
       <% end %>
     </tbody>
   </table>

@@ -266,7 +266,7 @@ class Story::AuditTest < ActiveSupport::TestCase
 
     assert_empty result.contradictions
     assert_equal 1, result.drifts.size
-    assert_equal "1 scenes: 0 contradictions, 1 drift", result.headline
+    assert_equal "1 scenes: 0 contradictions, 0 defects, 1 drift, 0 still turns", result.headline
   end
 
   test "drift from another story is not this story's drift" do
@@ -284,6 +284,232 @@ class Story::AuditTest < ActiveSupport::TestCase
                                command: "talk to the clerk", offered: "")
 
     assert_equal "nothing at all", audit.drifts.first.evidence["was offered"]
+  end
+
+  # --- the passage stops mid-sentence ---------------------------------------
+
+  test "a narration that stops mid-sentence is a defect" do
+    scene_at(@here, description: "His pen uncapped and laid across the page as though he is")
+
+    flags = audit.defects
+
+    assert_equal 1, flags.size
+    assert_equal :truncated_prose, flags.first.code
+    assert_equal "scenes.description", flags.first.evidence[:field]
+    assert_match(/stops mid-sentence/, flags.first.headline)
+  end
+
+  # The player never reads `Interaction#action` directly, but the talk narration
+  # is written FROM it, so a severed one produces a severed turn a step later.
+  test "an interaction that stops mid-sentence is a defect too" do
+    scene = scene_at(@here, description: "He straightens, and the ledger finds a purpose.")
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    create(:interaction, character: landlord, scene: scene, location: @here,
+                         action: "He shifts his weight, one hand gesturing at the walls. \"What I")
+
+    flags = audit.defects
+
+    assert_equal 1, flags.size
+    assert_equal :truncated_prose, flags.first.code
+    assert_match(/interactions\.action/, flags.first.evidence[:field])
+    assert_match(/Grenn Ollivar/, flags.first.headline)
+  end
+
+  test "finished prose is not a defect" do
+    scene_at(@here, description: %(The lamp gutters. "Suit yourself," he says.))
+
+    assert_empty audit.defects
+  end
+
+  # --- the narration wrote the player as somebody else ----------------------
+
+  test "the narration writing the protagonist as a third person is a defect" do
+    scene_at(@here, description: "Isbet Marrow does not wave back. She inclines her head a fraction.")
+
+    flags = audit.defects
+
+    assert_equal 1, flags.size
+    assert_equal :third_person_protagonist, flags.first.code
+    assert_equal "Isbet Marrow", flags.first.evidence[:name]
+    assert_equal "Isbet Marrow", flags.first.evidence["the player is"]
+  end
+
+  # The real narration this check was measured against: the protagonist's name
+  # on a satchel strap, the passage entirely in the second person.
+  test "the protagonist's name written on an object is not a defect" do
+    scene_at(@here, description: "The name is stitched into the strap in careful letters—*Isbet Marrow*—" \
+                                 "and again into the field notes, in your own handwriting. But it is yours.")
+
+    assert_empty audit.defects
+  end
+
+  # `Character::Generator` still never sets `is_protagonist`, so this is a shape
+  # a real database holds. Unjudged, not clean.
+  test "a story with no protagonist records the check as unjudged rather than clean" do
+    @protagonist.destroy!
+    scene_at(@here, description: "Isbet Marrow does not wave back.")
+
+    result = audit
+
+    assert_empty result.defects
+    assert_equal [ :third_person_protagonist ], result.unjudged.map(&:code)
+    assert_not_includes result.available_checks, :third_person_protagonist
+  end
+
+  # --- a door closed behind a player who never left -------------------------
+
+  test "a door closing behind a player who did not move is a contradiction" do
+    first = scene_at(@here, description: "The lamp gutters.")
+    scene_at(@here, previous: first,
+                    description: "The door clicks shut behind you, and he is already calculating.",
+                    typed: "can I go?")
+
+    flags = audit.contradictions
+
+    assert_equal 1, flags.size
+    assert_equal :unrecorded_departure, flags.first.code
+    assert_equal "still in Room 3", flags.first.evidence["records say"]
+    assert_equal "can I go?", flags.first.evidence[:typed]
+  end
+
+  # THE PAIR IS THE CHECK, not the sentence: the same prose on a turn that
+  # really moved is correct, and this is the case that proves the records are
+  # doing the convicting.
+  test "the same sentence on a turn that really moved is not a contradiction" do
+    connect(@here, @there)
+    first = scene_at(@here, description: "The lamp gutters.")
+    scene_at(@there, previous: first,
+                     description: "The door clicks shut behind you, and he is already calculating.")
+
+    assert_empty audit.contradictions
+  end
+
+  test "a first turn has nothing to compare against and is not flagged" do
+    scene_at(@here, description: "The door clicks shut behind you.")
+
+    assert_empty audit.contradictions
+  end
+
+  # --- turns on which nothing happened --------------------------------------
+
+  test "a run of still turns with somebody in the room is reported as pacing" do
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    previous = scene_at(@here, description: "He is at the end desk.", characters: [ @protagonist, landlord ])
+    Story::Audit::STILL_RUN.times do |index|
+      previous = scene_at(@here, previous: previous, description: "You wait, turn #{index}.", typed: "wait")
+    end
+
+    flags = audit.pacing
+
+    assert_equal 1, flags.size
+    assert_equal :still_run, flags.first.code
+    assert_equal previous, flags.first.scene
+    assert_equal "Grenn Ollivar", flags.first.evidence[:present]
+    assert_empty audit.contradictions + audit.defects
+  end
+
+  test "one turn short of the threshold is not reported" do
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    previous = scene_at(@here, description: "He is at the end desk.", characters: [ @protagonist, landlord ])
+    (Story::Audit::STILL_RUN - 1).times do |index|
+      previous = scene_at(@here, previous: previous, description: "You wait, turn #{index}.")
+    end
+
+    assert_empty audit.pacing
+  end
+
+  # THE SECOND HALF OF HIS COMPLAINT -- *"Why is Halkett not doing anything?"* --
+  # is a person, so a long quiet stretch with nobody there is not it.
+  test "a still run in an empty room is not reported" do
+    previous = scene_at(@here, description: "The room is empty.")
+    Story::Audit::STILL_RUN.times do |index|
+      previous = scene_at(@here, previous: previous, description: "You wait, turn #{index}.")
+    end
+
+    assert_empty audit.pacing
+  end
+
+  test "a conversation breaks the run" do
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    previous = scene_at(@here, description: "He is at the end desk.", characters: [ @protagonist, landlord ])
+    Story::Audit::STILL_RUN.times do |index|
+      previous = scene_at(@here, previous: previous, description: "You wait, turn #{index}.")
+      create(:interaction, character: landlord, scene: previous, location: @here) if index == 1
+    end
+
+    assert_empty audit.pacing
+  end
+
+  test "walking somewhere breaks the run" do
+    connect(@here, @there)
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    previous = scene_at(@here, description: "He is at the end desk.", characters: [ @protagonist, landlord ])
+    (Story::Audit::STILL_RUN + 1).times do |index|
+      room = index == 1 ? @there : @here
+      previous = scene_at(room, previous: previous, description: "You move, turn #{index}.")
+    end
+
+    assert_empty audit.pacing
+  end
+
+  # A pacing flag is not a defect and the counts must never merge: `#tally`
+  # keeps them apart and so does `#headline`.
+  test "pacing is counted apart from contradictions, defects and drift" do
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    previous = scene_at(@here, description: "He is at the end desk.", characters: [ @protagonist, landlord ])
+    Story::Audit::STILL_RUN.times { |i| previous = scene_at(@here, previous: previous, description: "You wait, turn #{i}.") }
+
+    result = audit
+
+    assert_equal 1, result.pacing.size
+    assert_empty result.contradictions
+    assert_empty result.defects
+    assert_empty result.drifts
+    assert_equal({ still_run: 1 }, result.tally)
+  end
+
+  # --- what each check could have been run on -------------------------------
+
+  test "a check that compares two turns is not judged on the first one" do
+    first = scene_at(@here, description: "The lamp gutters.")
+    scene_at(@here, previous: first, description: "Still gutters.")
+
+    result = audit
+
+    assert_equal 2, result.judgeable_for(:truncated_prose)
+    assert_equal 1, result.judgeable_for(:unrecorded_departure)
+    assert_equal 1, result.judgeable_for(:still_run)
+  end
+
+  test "a check the story cannot answer has a denominator of zero" do
+    @protagonist.destroy!
+    scene_at(@here, description: "The lamp gutters.")
+
+    assert_equal 0, audit.judgeable_for(:third_person_protagonist)
+  end
+
+  test "truncation is judged on the interactions as well as the narration" do
+    scene = scene_at(@here, description: "The lamp gutters.")
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    create(:interaction, character: landlord, scene: scene, location: @here)
+
+    assert_equal 2, audit.judgeable_for(:truncated_prose)
+  end
+
+  # --- the captain's verdicts -----------------------------------------------
+
+  test "the verdicts on this story's turns are read back keyed by the turn" do
+    scene = scene_at(@here, description: "The lamp gutters.")
+    playthrough = create(:playthrough, story: @story, character: @protagonist, current_location: @here)
+    create(:playthrough_feedback, playthrough: playthrough, scene: scene, verdict: "bad")
+
+    assert_equal({ scene => "bad" }, audit.verdicts)
+  end
+
+  test "a story nobody has judged has no verdicts" do
+    scene_at(@here, description: "The lamp gutters.")
+
+    assert_empty audit.verdicts
   end
 
   # --- reporting -----------------------------------------------------------

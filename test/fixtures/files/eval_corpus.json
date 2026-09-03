@@ -1,0 +1,1797 @@
+[
+  {
+    "label": "lunar/scene-10",
+    "id": 10,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "\n\n your eyes and press your fingertips to your temples, willing the fog behind your brow to thin. Fragments surface like stones breaking through river silt: the creak of the third stair from the bottom, a hand pressing a folded paper into yours, the smell of wet moss where no moss should grow. You were out last night. You know that much, because your boots are still crusted with something dark and faintly iridescent, and the satchel on the floor holds a fresh field note you do not remember writing — three words in your own hand: *the lantern weeps*. Beyond that, the rest smears at the edges, the way wet ink bleeds across cheap paper, leaving only the impression that you spoke to someone who knew your name and that you were, for a moment, afraid.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-11",
+    "id": 11,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You pick up the field note and hold it beneath the lamp. The paper is the same coarse stock you've been using for weeks — a torn quarter from a ream you bought off a Scorch Nomad peddler who smelled of woodsmoke and told you the paper was pressed from river reed. But the ink is wrong. Where your usual charcoal-and-gall mixture leaves a matte grey, this ink is almost black, and where the lamp's light catches it, you can see faint threads of deep violet running through the strokes, as if someone has stirred crushed beetle wing into the well.\n\nThe handwriting is yours. You recognize the way your *t* curls low, the slight leftward lean of your vowels when you write quickly. But the pressure is heavier than yours, and the letters sit too close together, crowded like market-goers avoiding rain. *the lantern weeps* — nothing more. No date, no location marker, no compass bearing. You flip the paper over, but the back is blank except for a small smudge in the lower corner, the kind a thumb might leave when folding something small and urgent into a pocket.\n\nA thought surfaces, unbidden: you did not write this warning. You read it. Someone pressed it into your hand, and your fingers, working from some dim muscle memory, copied the words before the rest of the message could slip away. The realization settles cold in your stomach. Across the lane, the clothier's sign creaks on its bracket as the building continues its slow migration, and you think you catch, just for a moment, the faint sound of weeping rising from somewhere below.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-12",
+    "id": 12,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You stand in a narrow room on the third floor of Grenn's boarding house, where the air hangs thick with the smell of boiled cabbage and warm lamp oil. A fine dust of plaster drifts down from the ceiling, caught in the amber glow of a kerosene lamp that sits on an oak table pushed against the window. The building groans softly around you, its timbers settling into their new configuration as the city breathes. The floorboards bow in the middle, and the plaster wall is patched in three places where old cracks have come and gone with previous rearrangements.\n\nOn the table, a half-finished map of Nocturnis spreads across the scarred wood, weighted down at the corners by a chipped inkwell, a stub of charcoal, and a cold cup of tea. A leather satchel slumped on the floor beside the chair holds a compass that is not of any make you trust, along with field notes bundled with waxed twine. The window is cracked open, and through it you can see Mournwell Lane below, its cobblestones pulsing with a faint, silvery luminescence as they drift almost imperceptibly into a new alignment. Across the way, the shuttered face of a clothier's shop has migrated closer to your window since morning, its sign turned just far enough that you cannot read it any more.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-13",
+    "id": 13,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You press your palms flat against the table and try to hold the previous evening still in your mind, but it slides away from you like wet ink. You were out mapping—that much you know, because the charcoal stub in your hand is worn down to a nub and your knees are stiff from kneeling on cold stone. There was a square, or what you thought was a square, with a fountain at its center. You drew the fountain. You are almost certain you drew the fountain. But whether you drew it in the Thornsgate Quarter or the Mirelight District, whether the water ran upward or simply fell, whether you spoke to anyone there—these details swim just out of reach, leaving only the impression of lanternlight on wet pavement and the smell of something sweet, like overripe pears, that you cannot place.\n\nYour right hand aches when you curl the fingers, and there is a smudge of dried ink across your wrist that you do not remember getting. The satchel on the floor, when you glance toward it, seems slightly more slumped than it should be, as though something inside has shifted or gone missing in the night. You cannot say for certain that anything is wrong. That is the worst part of Nocturna—you lose the frame before you lose the picture, and by morning you cannot tell what was taken from what was never there.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-14",
+    "id": 14,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You kneel and work the brass buckle loose with fingers that feel too thick for the task. The satchel falls open with the smell of old paper and brass polish. Inside, your tools are mostly where you left them: the compass with its strange, eight-pointed needle that refuses to settle, nested in a velvet pouch; a bone-handled knife you use for sharpening charcoal; a coil of measuring string; and the waxed-twine bundle of field notes, which feels heavier than yesterday—or lighter, you cannot decide, because your sense of weight has not been trustworthy since you first crossed into Nocturnis.\n\nWhat is missing is harder to name. You sift through the satchel twice, turning the velvet pouch inside out, running your fingers along the seams. There is a small rectangular pocket sewn into the inner lining, and it is empty. You are almost certain something lived there—a folded paper, a token, a key, you cannot say—but the pocket offers up only a faint residue of dust in the shape of something narrow and flat. The city shifts below your window, and somewhere distant a bell tolls once and stops, as though it too has forgotten what it was counting.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-15",
+    "id": 15,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 3,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You lean toward the cracked window, and the night air meets you with a breath that smells of wet stone and something green and buried, like roots turning over in dark soil. Below, Mournwell Lane has completed its slow rearrangement: the cobblestones have settled into a curve where once there was a straight run, and a rain barrel that was by the lamppost this morning now stands at the mouth of an alley that did not exist at dusk. The silvery luminescence pulses faintly in time with your heartbeat—or you imagine it does, which in Nocturnis amounts to the same uncertainty.\n\nAcross the lane, the clothier's shop has pressed itself flush against the neighboring building, its sign now swung fully away from you, presenting only the rotted back of carved wood. But something has changed in the upper window of the building beside it: a face looks out at you, pale and indistinct, half-lost in shadow. It does not move. It does not blink. Then the building sighs—timbers shifting—and the window becomes a wall, the face folded into plaster as though it had never been there at all. On the sill where the window had been, something small and white rests against the stone: a folded paper, or a petal, you cannot tell from this height.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-16",
+    "id": 16,
+    "story": "The Lunar Cartographer",
+    "room": "Mournwell Lane",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The first thing that strikes you is the way the cobblestones beneath your boots seem to breathe, their silver glow pulsing faintly as if alive. The air carries the weight of damp stone and old magic, and from the shadows of a nearby doorway, a figure—Isbet Marrow—watches you with the quiet stillness of someone who knows this lane’s secrets better than its own shifting walls.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-17",
+    "id": 17,
+    "story": "The Lunar Cartographer",
+    "room": "Mournwell Lane",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You raise your hand in greeting, the gesture small but deliberate against the pressing dark of the lane. Isbet Marrow does not wave back. Instead, she inclines her head a fraction, her eyes never leaving yours as she steps out from the doorway's shadow. She is thin, dressed in the layered, dust-colored robes of a Scorch Nomad, though the fabric has been patched with threads of deep, living green that pulse faintly—Verdant Folk work, you realize. The cobblestones at her feet quiet their restless shifting as she approaches, as if recognizing an old acquaintance. \"You walk on borrowed ground,\" she says, her voice low and rough as quarry stone. \"The Sovereigns sent you, yes? To draw what cannot be held?\"",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "lunar/scene-20",
+    "id": 20,
+    "story": "The Lunar Cartographer",
+    "room": "Mournwell Lane",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "Isbet's lips thin into something that is not quite a smile. She glances down at the cobblestones beneath her feet, watching them still their restless crawl, then back up at you with a gaze that weighs and measures. \"Patterns,\" she repeats, the word hanging in the damp air like smoke. \"The Sovereigns have used that word before, in older ledgers. They send cartographers, and the cartographers find their patterns, and then the cartographers find that their own memories have grown... soft at the edges.\" She reaches up and touches the green-threaded patch at her shoulder, and for a moment the verdant stitching flares bright enough to cast a faint emerald glow across her weathered face. \"I will show you something, if you wish. A place where the shifting slows long enough to be read. But first—\" She steps closer, close enough that you can smell woodsmoke and dried sage clinging to her robes. \"Tell me what you have already forgotten since you arrived in Nocturnis.\"",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "lunar/scene-21",
+    "id": 21,
+    "story": "The Lunar Cartographer",
+    "room": "Mournwell Lane",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 3,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The question hangs between you, and Isbet's expression shifts—not unkindly, but with the quiet patience of someone who has watched this erosion claim others before you. She raises one calloused hand and holds it before your face, fingers spread. \"Count them,\" she says simply. \"Tell me how many fingers you see, and then tell me whether you knew, before you looked, that you had five. That is how.\" Her eyes do not leave yours. \"The gaps feel like silence where a sound should be. A room you enter knowing you have visited it, but cannot say when. A name that sits on the tip of your tongue like a coin you cannot quite reach. Tell me what silence you carry, cartographer, and I will know how far the Nocturna has already eaten into you.\"",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "lunar/scene-22",
+    "id": 22,
+    "story": "The Lunar Cartographer",
+    "room": "Mournwell Lane",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 4,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You speak haltingly at first, the words strange in your mouth, as if you are describing something that happened to someone else. You tell her about the lantern oil spilled across your desk this morning, the smell of it strong enough that you must have lit it late. You tell her about the half-finished map on your table, its streets inked in your own hand but utterly unfamiliar—a district you cannot name, a curve of road that means nothing to you. You tell her you woke on the floor beside your cot, not in it, and that the taste of cardamom lingered on your tongue though you keep no cardamom in your lodgings.\n\nIsbet listens without interrupting, her fingers slowly curling back into a loose fist at her side. When you finish, the lane seems quieter, the distant voices from the doorway swallowed by the low hum of the cracked streetlamp. She exhales through her nose, a long, measured breath. \"A night,\" she says at last, her voice low. \"You have lost a night, cartographer. The Nocturna has taken a full turn of the moon from you, and you did not even know to mourn it.\" She glances past you, toward the silver-lit cobblestones, where the shadows seem to lengthen in the corner of your vision. \"That is not the worst I have seen. But it is past the door where most recover. We should speak of what you mapped in that lost hours—who paid you, what they asked you to draw.\"",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "lunar/scene-23",
+    "id": 23,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You climb back up the narrow stairs of Grenn's boarding house, your boots finding the same loose tread on the third step that groaned beneath you twenty minutes ago, and push open the door to Room 3. The air greets you first—boiled cabbage and lamp oil, unchanged—and then the sight of Isbet Marrow exactly where you left her, her shoulders still hunched against the window frame, her fist still curled at her side as though the last twenty minutes were a held breath. The kerosene lamp on the oak table has burned down a finger's width, the wick spalling little curls of black into the dish, and the half-finished map beneath it has curled tighter at one corner, the ink of those unfamiliar streets now dry to a dull sheen that catches no light. Old Grenn is in the doorway, a heavyset silhouette against the hall's dimness, his arms folded across his chest and his mouth set in the careful, unsmudg",
+    "expect": [
+      "third_person_protagonist",
+      "truncated_prose"
+    ]
+  },
+  {
+    "label": "lunar/scene-25",
+    "id": 25,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You take stock of yourself in the lamplight. Your coat is the same one you've worn for three—no, four days now, its hem freckled with ink spots and the chalky dust of Nocturnis stone. Your hands bear the cartographer's marks: a callus on the right middle finger where the pen rests, a stain of sepia ink ground into the skin of your thumb that no amount of scrubbing at the basin has lifted, and a raw patch on the left wrist where you scraped it against the corner of a lantern post on Vela Street yesterday. Or this morning. You find yourself pausing on that, trying to place when exactly it happened, and the memory offers only the color of the lantern's green glass and the smell of wet rope, with no anchor of time to pin it to. Your boots are scuffed at the toes, your trousers salt-stained at the cuffs from some street you cannot now name.\n\nThe leather strap of your satchel cuts a thin red line across your shoulder where you've been carrying it all day—longer, perhaps, than you can account for.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-32",
+    "id": 32,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "\nYou tug open the front of your coat and unbutton your shirt halfway, catching your reflection in the dark pane of the window. Beneath the linen, your chest is mapped with the same small cartographer's bruises that the rest of you carries—a faint yellowish shadow along the left collarbone where the satchel strap dug in this morning, or last week, and a scatter of lighter marks across the sternum that you don't remember acquiring. Your breasts themselves are unremarkable: small, a little tender along the outer edge where the strap has been pulling for too many hours. You notice, with a small cold lurch, that the skin just below the left breast carries a smudge of something—chalk dust, maybe, or the pale powder of Nocturnis stone—that you cannot account for. You brush at it, and it leaves a faint residue on your fingers that smells faintly of rain and old paper. The lamp gutters, and in the brief dimming your reflection shifts in the glass, looking back at you with an expression you cannot quite parse. You button the shirt back up.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-33",
+    "id": 33,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 3,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "\n\nThe lamp steadies itself, and the pale powder on your fingertips catches its light. You don't comply with the request.\n\nInstead, the Nocturna stirs faintly in your chest—a familiar, queasy disorientation, like the floor has tilted two degrees to the left and then thought better of it. You press your hand flat against the table to steady yourself, and the half-finished map of Nocturnis slides a quarter inch beneath your palm. The cobblestones of Mournwell Lane have finished their slow migration; through the cracked window, you can see them now settling into a new configuration, faintly luminescent, pointing toward a street that wasn't there this morning—or was it last week?\n\nYour breath fogs the dark pane. In the glass, behind your own reflection, the clothier's shop across the way has rotated again. Its sign now reads, plainly enough: *Marekh & Daughters, Bolts of Linen*. But the door is on the wrong side. You hadn't noticed a door on the left side this morning.\n\nThe satchel on the floor rustles. Not from wind—from something inside shifting. The compass, perhaps, or the field notes rearranging themselves under the influence of Nocturna, as they sometimes do. You have perhaps twenty minutes before the moon climbs high enough that the street below will rearrange again, and you'd rather have your boots on when it does.\n\nWhat do you do?",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-18",
+    "id": 18,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": null,
+    "still_run": 0,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "Your pen stops halfway through a bearing, because there is somebody breathing in the doorway. Old Grenn has come up to the third floor after dark, which in four years he has never once done, and he is holding his ledger flat against his chest like a man who means to read aloud from it. The lamp throws his shadow across the half-finished map, across the two blocks of the Larkspur Quarter you have not been able to make agree since morning. He does not say anything. Neither do you. Plaster ticks down out of the ceiling between you, and below the window Mournwell Lane has already gone silver, and somewhere under the floorboards the building begins, very slightly, to turn.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-37",
+    "id": 37,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "keep doing what you are doing\n",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "\nYour pen stays where it is. You finish the bearing — a slow, deliberate stroke that ends two degrees off from where it ought to, and you let it lie, because somewhere beneath the floorboards the room has agreed with you. Grenn's shadow falls across the page, but you do not look up. The lamp leans with the building's slow turn, and a fresh crack opens in the ceiling plaster above the table, spilling a thin curtain of white dust across the Larkspur blocks. He clears his throat. He opens the ledger. The pages make a sound like a small animal shifting in dry leaves, and you keep drawing, because whatever he has come up three flights to say, you are not going to hear it with your hand still moving.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-26",
+    "id": 26,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "ask Old Green what he wants",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "Grenn straightens up suddenly, the ledger under his arm finding sudden purpose as he puffs out his chest and lets out a long-suffering sigh that sounds like it's been rehearsed for decades. \"Wants? WANTS?\" he exclaims, his eyes bright with vindication as he gestures broadly at the walls around him. \"What Old Grenn wants is a proper house — a real one, with solid walls that don't let the wind through, a roof that doesn't leak when it so much as drizzles, and a foundation that doesn't creek like a dying man every time you shift in your sleep!\" He jabs a finger toward the ceiling, his voice rising with each word. \"Thirty-one years I've waited, and do you know what I get? This — THIS hovel! The Hearthmaster promises, the council deliberates, and meanwhile I'm sleeping under a blanket of tarps and prayers!\"",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-26/action-1",
+    "id": 26,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "ask Old Green what he wants",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "Grenn straightens up, the ledger under his arm suddenly finding purpose. He puffs out his chest and lets out a long-suffering sigh that has clearly been rehearsed.\n\n\"Wants? WANTS? I'll tell you what Old Grenn wants.\"\n\nHe shifts his weight, one hand gesturing broadly at the walls around him.\n\n\"What I",
+    "expect": [
+      "truncated_prose"
+    ]
+  },
+  {
+    "label": "lunar/scene-44",
+    "id": 44,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "look up at him, annoyed at being interrupted",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You look up at him, annoyed at being interrupted. Grenn clears his throat, taps the ledger under his arm, and says, \"You’re standing in my light, and my ledger’s got names longer than your patience.\"",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-44/action-8",
+    "id": 44,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "look up at him, annoyed at being interrupted",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "Grenn Ollivar clears his throat, taps the ledger under his arm, and says, \"You’re standing in my light, and my ledger’s got names longer than your patience.\"",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-38",
+    "id": 38,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "tell him now is not a good time",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "Grenn narrows his eyes at you, his jaw tightening as your words land. \"Now's never a good time for folks who owe me rent,\" he says, his voice carrying the weight of three decades of ledgers and late payments, \"but that don't stop the moon from rising, does it?\" He steps closer, the smell of old leather and stubbornness clinging to him, clearly not the kind of man who'll let a simple dismissal send him on his way. \"You got till the morrow, same as I've been sayin' for the last month—and I don't recall that being negotiable.\"",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-38/action-4",
+    "id": 38,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "tell him now is not a good time",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "\"Now’s never a good time for folks who owe me rent, but that don’t stop the moon from rising, does it?\"",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-45",
+    "id": 45,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "that doesn't even make sense",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You scowl at Grenn, your fingers tightening around the edge of the map. The words hang in the air between you, sharp and nonsensical, but the boarding house keeper doesn’t flinch. He shifts his weight, the floorboards creaking under his boots, and the ledger in his arms seems to pulse faintly with the same silver glow as the cobblestones outside. \"Makes as much sense as a cartographer who can’t pay her rent,\" he mutters, tapping the ledger again. The city sighs around you, the walls breathing in and out like a living thing, and for a moment, the ink on your map shimmers, as if considering rearranging itself.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-27",
+    "id": 27,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "I don't see what that has to do with me",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "Grenn Ollivar turns on you, his face reddening beneath a dusting of plaster, his mustache bristling as if it too were offended on his behalf. \"Rich! That's what that is—rich beyond the telling of it!\" he bellows, jabging a thick finger at you. \"You walk across my floors, you breathe my air, you let the damp into my walls with every scuffed boot, and you don't see what that has to do with you?\" He breaks off, coughing into his fist, then waves dismissively at the air as though shooing away your very objection. \"Everything's got to do with you when you're standing on Grenn Ollivar's property, and don't you forget it!\"",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-27/action-2",
+    "id": 27,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "I don't see what that has to do with me",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "\"Oh, that's rich! That's rich indeed! You come knocking on Grenn Ollivar's door—well, perhaps not literally, since you'd have trouble finding it twice—and you don't see what it has to do with you? Everything in this wretched, shifting, moon-cursed city has to do with you if you're standing on my flo",
+    "expect": [
+      "truncated_prose"
+    ]
+  },
+  {
+    "label": "lunar/scene-39",
+    "id": 39,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "offer to have sex with him instead of paying rent",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "Grenn's face goes scarlet the moment the words leave your mouth, and he sputters like a kettle left too long on the fire. \"What in Nocturna's name—? You think I'm running a house of—? I'm a property man, not a— get out of my ledger's reach, you—!\" He waves a hand at you as though shooing a stray cat, looking anywhere but directly at you, the tips of his ears burning bright enough to shame a Scorch Nomad's sun. He pulls his ledger tight against his chest and takes a step back, clearly desperate to end this conversation before anyone else in the Larkspur Quarter witnesses such an indignity.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-39/action-5",
+    "id": 39,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "offer to have sex with him instead of paying rent",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "\"What in Nocturna’s name—? You think I’m running a house of—? I’m a property man, not a— get out of my ledger’s reach, you—!\"",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-46",
+    "id": 46,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "tell him you will pay him as soon as you can",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "Grenn crosses his arms, his expression hardening. \"As soon as you can? That’s what the last three said, and now they’re talking to the walls on the second floor. Pay by moonrise or find new lodgings—preferably somewhere that doesn’t shift underfoot.\"",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-46/action-9",
+    "id": 46,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "tell him you will pay him as soon as you can",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "\"As soon as you can? That’s what the last three said, and now they’re talking to the walls on the second floor. Pay by moonrise or find new lodgings—preferably somewhere that doesn’t shift underfoot.\"",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-28",
+    "id": 28,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "tell him you don't have time for this. Start get undressed to sleep",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "Grenn's hand freezes on the ledger, his mouth hanging open as the weight of your dismissal lands on him. After a long moment, he lets out a quiet breath and closes the book, running a calloused thumb along its worn spine. \"Right. Of course,\" he murmurs, pushing himself up from the chair with a weary nod. He lingers just a beat, looking at you as you begin to undress, then turns toward the door—but not before adding, almost to himself, \"Tomorrow, then. Don't forget what I said.\" The sympathy in his voice is unmistakable, even as resignation settles into his broad shoulders, and he slips out into the hallway, pulling the door softly shut behind him.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-28/action-3",
+    "id": 28,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "tell him you don't have time for this. Start get undressed to sleep",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "*Grenn's hand freezes on the ledger, his mouth hanging open for a long moment as he processes the dismissal.*",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-47",
+    "id": 47,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "what are you even talking about? everywhere shifts under foot",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "Grenn's expression shifts—not softer, but something more tired behind it. He looks past you toward the window, where the clothier's sign swings on its relocated hinges, creaking in a wind that carries the smell of wet stone and something faintly metallic, like old coins. \"Aye,\" he says, quieter now. \"The whole bleeding city shifts. But my walls are timber and iron, and I keep them true. Others can't say the same.\" He uncurls one arm and taps the ledger against the edge of your table, near the inkwell, careful not to smudge your map. \"You've got a contract with the Sovereigns. They pay in silver, don't they? Four pieces by the time that moon clears the bell tower, or your kit goes in the hall. And I'd think twice before sleeping out there—the corridors have been known to wander, and not everyone wakes up on the same floor they started.\"\n\nHe straightens, the floorboard beneath him groaning in protest, and waits.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-29",
+    "id": 29,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "\n\nYou unfasten the brass buttons of your work shirt one by one, the metal cool against your fingertips, and let it slide from your shoulders to pool on the warped floorboards. The undershirt follows, and you step out of your trousers, folding them over the back of the chair with the automatic care of someone who has learned not to trust the city's rearrangements with loose garments. Standing bare before the cracked window, you turn slowly in the amber lamplight, studying yourself.\n\nWhat you see unsettles you. The map of pale scars across your forearms is familiar enough—nicks from charcoal styluses, a burn on your left wrist from a spilled inkwell years ago—but there is a new one you do not remember. It traces a thin, curling line from your collarbone down across your ribs, silvered and healed, as though something had been drawn into your skin and then erased. Your hands go to it involuntarily, fingertips tracing the ridge of tissue. You do not remember how it came to be there. You do not remember, in fact, the last three days with any clarity at all—only a smear of lamplight and cobblestones and someone saying your name in a voice that might have been your own.\n\nThe kerosene lamp gutters. Outside, the clothier's sign has rotated again, and now you can just make out the gilt letters of a name you do not recognize.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-40",
+    "id": 40,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "laugh at the joke you made",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You let out a laugh, and Grenn's mouth twitches—not quite a smile, but close enough. \"Hmph. Wasn't a jest. The foundations groan audibly every full moon, and not a soul listens till the cracks come. But… aye, laugh. Easier than fixing what's loose.\" He crosses his arms, watching you with that guarded look of his, somewhere between suspicion and something he won't admit is satisfaction.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-40/action-6",
+    "id": 40,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "laugh at the joke you made",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "\"Hmph. Wasn’t a jest. The foundations groan audibly every full moon, and not a soul listens till the cracks come. But… aye, laugh. Easier than fixing what’s loose.\"",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-48",
+    "id": 48,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "agree to his terms",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You nod, the word catching in your throat like a stone. \"Four pieces by moonrise. I'll have it.\"\n\nGrenn studies you for a moment longer than comfortable, then grunts—a sound somewhere between acknowledgment and warning. He flips the ledger open on the table beside your map, uncorks a stub of pencil from behind his ear, and scratches a mark in the margin beside your name. The page is cramped with other entries, some crossed out entirely, their ink bled through to the other side. \"Moonrise,\" he repeats, tapping the date. \"Four nights from now, give or take what the bell tower does this week.\" He pauses, pencil hovering. \"If it migrates east again, you might hear it before you see it. Don't let that fool you into thinking you've got extra time.\"\n\nHe snaps the ledger shut, tucks it back under his arm, and turns toward the door. The floorboard he stands on lets out a long, weary creak, and somewhere deeper in the boarding house—two floors down, or perhaps three—a door slams on its own. Grenn doesn't flinch, but his jaw tightens. He stops at the threshold, half-turned, and adds without looking back: \"There's a kettle on the stove in the common room. Boiled cabbage, but it's hot. You'll want to eat before you head out—the Scorch market's folded into Bellgate Square since yesterday, and the Verdant have set up their herb stalls along the canal where the fishmongers used to be. If you're mapping today, that's where the drift is worst.\" A beat. \"Don't trust your feet after dark.\"\n\nThen he's gone, his boots heavy on the stairs, leaving you alone with the lamp, the map, and the faint silver pulse of Mournwell Lane below.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-30",
+    "id": 30,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "\n\nYou reach down for the satchel, your fingers finding the leather by touch more than sight, and turn it toward the lamp. The name is stitched into the strap in small, careful letters—*Isbet Marrow*—and stitched again into the leather flap of the field notes tucked inside, in your own handwriting, though steadier than the hand you feel you have now. You know the name. You do not, quite, *know* it; it sits in your mouth like a key you've held too long, its teeth worn smooth. But it is yours. You are certain of that much.\n\nStanding again in the lamp's wavering glow, you let your gaze move down your body with the clinical attention of a cartographer surveying unfamiliar terrain. The new scar catches the light as you breathe. Below it, the soft curve of your stomach gives way to hips wider than you might have expected, the architecture of a woman, though the weeks or months of Nocturna exposure have pared you lean. Your fingers trace the scar once more, then withdraw. Outside, the clothier's sign completes its slow rotation, and the gilt letters resolve into something almost familiar—*Marrow & Daughter, Haberdashery*—though you cannot, for the life of you, recall ever having had a daughter.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-41",
+    "id": 41,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "does he need anything else? I'm trying to work",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "\n\nGrenn gives you a long, flat look from the doorway, one hand still resting on the jamb. \"Need? I need my building kept in order, and my tenants minding their own business.\" He taps a knuckle twice against the wood—*check, check*—like a man closing a ledger. \"You keep the doors shut, mind the noise after nine, and we'll have no trouble. I've got my eye on the foundations tonight.\" With that, he turns and starts back down the hall, his tread heavy and deliberate, as though daring the floorboards themselves to shift beneath him.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-41/action-7",
+    "id": 41,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "does he need anything else? I'm trying to work",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "\"Working. In the second-floor unit. At this hour. The dust in the walls shifts with the foundations, and I’ll know if something’s been moved that oughtn’t have been. You’ll keep the doors shut.\"",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-42",
+    "id": 42,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "get up and close your door\n",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [
+      "Grenn Ollivar"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "\n\nYou push back from the table, the chair legs scraping against the warped floorboards, and cross the narrow room in three steps. Grenn's heavy footfalls have already carried him around the corner toward the stairwell, and the corridor beyond lies empty, lit only by a tallow stub guttering in its wall sconce. You pull the door shut—the latch is stiff, swollen with humidity or something less natural—and the sound of the building settles into a muffled hush around you. For a moment, through the wood, you catch the faint groan Grenn warned you about: a low, rolling complaint from somewhere deep below, as though the joists are being slowly wrung out like wet linen. Then it fades, and the room is yours again.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-31",
+    "id": 31,
+    "story": "The Lunar Cartographer",
+    "room": "Larkspur Quarter rooftops",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The first thing that strikes you is the way the slate beneath your boots seems to breathe, the tiles shifting like scales on a living thing as the city below begins its slow, inevitable unraveling. The air carries the weight of damp stone and something older, the faint metallic tang of Nocturna clinging to the back of your throat. A figure crouches on a nearby gable, their silhouette sharp against the moon’s glow—Isbet Marrow, watching the streets ripple like water, her presence as still as the iron ladder bolted to the crumbling brick beside her.",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "lunar/scene-34",
+    "id": 34,
+    "story": "The Lunar Cartographer",
+    "room": "Larkspur Quarter rooftops",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You cross the uneven expanse of slate with careful, measured steps, the tiles groaning and shifting beneath your weight as though reluctant to hold still. Isbet Marrow turns her head at the sound of your approach, her eyes catching the moonlight in a way that suggests she was expecting you—or perhaps anyone—long before you arrived. Up close, you notice the map case strapped across her back is battered and salt-stained, its brass fittings tarnished green, and her fingers are stained dark with ink that seems to shimmer faintly in the pale light. \"You're here for the same thing I am,\" she says quietly, her gaze returning to the streets below where a fountain has begun sliding silently toward a new intersection. \"To make sense of what won't stay still.\"",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "lunar/scene-35",
+    "id": 35,
+    "story": "The Lunar Cartographer",
+    "room": "Larkspur Quarter rooftops",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "Isbet's mouth tightens, and she doesn't look at you. \"Till the moon touches the bell tower's peak, maybe two hours. After that, the Quarter unfolds again, and anything we've sketched becomes a record of a place that no longer exists.\" She finally meets your eyes, and there's something guarded there—something that suggests the question you asked isn't the only one eating at her. \"For the mapping, that's the window. For the other thing...\" She trails off, her ink-stained fingers tapping against the strap of her map case. Below, a row of shuttered windows flickers open on a building that didn't have windows a moment ago, their glass catching the moonlight in brief, accusatory flashes. Isbet's gaze follows them, and when she speaks again, her voice is quieter. \"The Sovereigns' courier passed through here an hour ago. Same route as three nights running. That's not a coincidence, and it's not a delivery.\"",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "lunar/scene-43",
+    "id": 43,
+    "story": "The Lunar Cartographer",
+    "room": "Larkspur Quarter rooftops",
+    "typed": "get out onto the rooftops\n",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The air here is noticeably colder than it was moments ago, and a new scattering of soot dusts the slate beneath your boots. The catwalk west has shifted a few feet, now angling precariously toward a building you don't recognize. Iz, hunched near the edge of the roof, traces patterns in the dust with a thick, calloused finger, her movements deliberate, almost ritualistic. She hasn't acknowledged your return.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-36",
+    "id": 36,
+    "story": "The Lunar Cartographer",
+    "room": "Larkspur Quarter rooftops",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "Isbet's gaze snaps back to you, and for a moment you see the cartographer's mind working behind her eyes—the same sharp focus she brings to a blank sheet of parchment, searching for the line that makes the whole map cohere. \"That's what I keep turning over,\" she says, lowering her voice as though the chimneys might overhear. \"Nocturna doesn't permit fixed routes. The Quarter rearranges with the lunar phase—staggered, but relentless. A street that runs north-south tonight will kink east by tomorrow, and the courier shouldn't be able to predict it. Not without help.\" She pulls the strap of her map case over her shoulder, a nervous habit you've noticed before. \"Unless the rearrangements aren't as random as the Sovereigns claim. Unless someone—someones—is *choosing* which streets hold their shape and which ones fold.\"\n\nA low groan rises from somewhere below, the sound of stone grinding against stone as a whole row of townhouses sighs inward, their roofs tilting like drowsy heads. The luminescence along the chimney pots flares once, then settles. Isbet watches it, jaw tight. \"Three nights, same route, same hour, same courier. That's not navigation. That's a *schedule*.\" She finally looks at you fully, and the guarded thing in her expression has sharpened into something more dangerous—the look of a woman who's realized the map she's been hired to draw might be a lie. \"I think the Sovereigns know Nocturnis better than they've told us. I think they've always known. And I think they're moving something through the Quarter that needs the street to stay *still* to pass.\"",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "unrecorded/scene-19",
+    "id": 19,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": null,
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": null,
+    "still_run": 0,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-49",
+    "id": 49,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "ask him what happened to Perrin",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You press him, asking what happened to Perrin, and Halkett's jaw tightens almost imperceptibly. \"Perrin's file was closed. That's all there is to it,\" he says, adjusting his coat sleeve with an air of forced composure. \"If there's a procedural question, it should go through the proper channels.\" His tone is clipped, and he avoids your gaze just a beat too long.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-49/action-10",
+    "id": 49,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "ask him what happened to Perrin",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "\"Perrin’s file was closed. That’s all there is to it.\" He adjusts his coat sleeve, as if the fabric has suddenly become uncomfortable. \"If there’s a procedural question, it should go through the proper channels.\"",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-50",
+    "id": 50,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "ask him why he is early",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You ask him why he's early, and something in his posture shifts almost imperceptibly—a settling of the shoulders, as though you've handed him a door to walk through instead of a wall. \"The morning slot freed up,\" Halkett says evenly, adjusting a ledger beneath his arm. \"I find the office quieter before the clerks arrive. Fewer interruptions.\" He offers you a thin, pleasant smile that doesn't quite reach his eyes. \"Now—shall we?\"",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-50/action-11",
+    "id": 50,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "ask him why he is early",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "He meets her eyes with the even, courteous attention of a man who has rehearsed this particular silence. \"Perrin’s file was closed in the ordinary course of business. The procedure was followed, and the file was signed.\" A beat. \"Is there something specific you needed, Vance? I’d rather we kept to the matter at hand.\"",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-51",
+    "id": 51,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "tell him you can't close out your daybook until 7 so he will have to come back",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You tell him, keeping your voice even and apologetic, that you can't close out your daybook until seven, so he'll have to come back. Halkett pauses for a fraction of a second, his eyes meeting yours with something unreadable in their pale depths. \"Very well. I'll return at seven-thirty,\" he says, adjusting his coat sleeve with deliberate precision. \"I trust the ward's records will be in order by then.\" There is a subtle weight to the word *order*, as though he is testing it against some private suspicion, but his tone remains civil—a professional patience stretched thin.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-51/action-12",
+    "id": 51,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "tell him you can't close out your daybook until 7 so he will have to come back",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "\"Very well. I’ll return at seven-thirty.\" He adjusts his coat sleeve again, as if the fabric has grown slightly tighter. \"I trust the ward’s records will be in order by then.\"",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-52",
+    "id": 52,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "say: of course",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "Halkett gives a small, satisfied nod, his posture relaxing just slightly at your words. \"Good,\" he says simply, inclining his head. \"Then I'll see you at seven.\" There is something quietly settled about him now, a man assured that a piece of work will not go unfinished today.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-52/action-13",
+    "id": 52,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "say: of course",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "\"Good.\" He inclines his head. \"Then I’ll see you at seven.\"",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-53",
+    "id": 53,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "wait for him to leave",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You do not move. You hold your pen against the ruled gap in the daybook as though the hour were a form to be filled, and you wait.\n\nHalkett collects his gloves from the corner of the desk he does not use, draws them on one finger at a time, and straightens his cuffs. He crosses the room with the unhurried precision of a man who has walked this floor many times and knows which boards speak. At the door he pauses, half-turns, and gives you the brief downward inclination of the head that senior clerks use to mean *this conversation is concluded* without quite saying so. Then he steps into the corridor, and his footsteps recede with the measured cadence of someone who is not in a hurry because there is nothing, today, that requires him to be.\n\nThe gas mantle steadies in the draft he made. From down the hallway comes the sound of a door latch lifting -- the Inspectorate door, you think, though you cannot be certain -- and then nothing but the rain and the thin hiss above you. His chair across the desk from yours remains where he did not sit.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-54",
+    "id": 54,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "examine your daybook, try to remember anything you can about the gap",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You pull the daybook toward you and lay it flat under the gas mantle, and the ruled gap between four and five o'clock presents itself with the same patient validity as every other hour-block on the page. At three-fifty you stamped and initialled the receipt of a docket from the Inspectorate's overflow queue. At five past five you stamped and initialled the handover note to the evening clerk, whose name is Crouch and whose handwriting you can produce from memory without effort. The stamp beside your hand is dry. The nib of your pen is dry. Between the two entries, the line waits, ruled in faint blue, and whatever lived in it has been removed with the same care that the desk across from yours has been removed: not violently, not carelessly, but *thoroughly*, the way a clerk removes something.\n\nYou close your eyes and try to come at the hour from underneath, the way you were taught to approach a misfiled bundle -- follow the thread back to where the seam is. There is a pneumatic something. A name that begins with P, or with a letter near P in the cabinet, or perhaps only the *feeling* of a name beginning near P, the way a drawer feels when you reach for it in the dark and find it gone. A weight across the room that was a person. The smell of lamp oil that is not, now, in the room. You press against the place where the hour should be and find it gives like a sealed envelope -- present, shaped, addressed to no one, and not for you to open.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-55",
+    "id": 55,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "examine the rest of your desk",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 3,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You draw the single working drawer of your desk out by its brass pull and lay the contents in their usual order on the blotter: the slotted tin of spare nibs, the squat bottle of Higgins permanent black, the dog-eared copy of *Procedural Cross-References* you have carried since your second posting, the tin of pins and paper fasteners, and at the back, the folded shawl you keep against the levee-side draught. You can account for each item by its presence, and not one of them by the hour it was last touched.\n\nThe teacup at the corner of the desk holds a residue cold enough to have been standing since before you sat down. You did not pour it. The pneumatic tube on your side of the partition, which you have not looked at directly since you took your seat, contains a carrier -- a small brass cylinder with its cap unseated as though recently delivered and not yet collected. The address card on its face is in a hand you cannot immediately place, and the office number it bears is not twelve.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-56",
+    "id": 56,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "consider what will happen if you present your daybook with a gap",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 4,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You hold the page flat and consider the gap with the same attention you would give a misfiled return. The rule is plain: any undocketed interval in a clerk's daybook is reported on Form 7-Q, bracketed and initialled by a witnessing officer, submitted the same day to the Marginalia desk for reconciliation. You have processed 7-Qs before, in two previous postings, and you have never once wondered what became of the clerks whose names filled the bracketed spaces. You cannot now bring one of them clearly to mind, though you are reasonably sure she sat at a desk opposite yours.\n\nA witnessed gap becomes a reconciled gap — a line item with a reference number, filed in a cabinet you do not hold the key to — and the day continues in the normal course unless something else is found to be wrong. The something else, in your experience, is usually found within the hour. The alternative is to leave the ruled line empty and let the Registry decide for itself what a daybook is that contains a four-to-five block no one can account for. You have seen that approach taken as well, once, by a colleague whose apron you think was green.",
+    "expect": [
+      "still_run"
+    ]
+  },
+  {
+    "label": "unrecorded/scene-57",
+    "id": 57,
+    "story": "The Unrecorded Hour",
+    "room": "The Supply Closet",
+    "typed": "go to the supply closet",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The door draws closed behind you on its own weight, and the closet seems to consider you before you consider it: the smell reaches you first, wax and ink gone sour in the still air, and then the small wrongness at your feet — a swept floor in a room that has no business being kept. The light from the office mantles makes it only as far as the second shelf, where it gives up against the stacked reams, and beyond that the shelves are a darker wall of cord and tins and squared paper until your eyes adjust and find the shape that does not belong: the apron folded too small, and inside it, the index you have not earned the right to read but that you are reading anyway, your thumb already slipping the pages open as though it knew what was on the last line before you did.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-58",
+    "id": 58,
+    "story": "The Unrecorded Hour",
+    "room": "The Supply Closet",
+    "typed": "tell Halkett what you think of him",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You part your lips to say his name and the closet swallows it without returning it — not an echo, just the syllable going into the wax-and-ink air and being replaced by the small working silence of a room that has been swept by someone who is no longer answerable for it. The office frames itself in the doorway as a place that has already been cleared of him: the opposite desk stripped to the oak, the ghost of a drawer that was unscrewed and put back, the rings of a cup no one will lift again.\n\nYou tell him anyway. You tell him he was a fool to fold an index into a copy-room apron and leave it on a shelf a clerk could reach. You tell him the daybook is not his to lose an hour from, and that whoever spent the writ on him will not find you easy by comparison. The gas mantle does not respond. Somewhere deeper in the building a regulator ticks. The index in your hands has acquired a final page, blank but for a date that has not yet arrived.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-59",
+    "id": 59,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "go back into the office. how much time do I have before he comes back?",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": "bad",
+    "note": "truncated",
+    "text": "You step through the doorway into the half-light of Ward Office 12, the hinges of the closet door giving a dry click behind you that the room doesn't bother to echo. The gas mantle is still turned low, the rain still driving sideways past the cold glass, but the air has settled into a different kind of quiet while you were in the narrow dark — the quiet of something decided rather than something pending. The cleared desk opposite yours is exactly as bare as it was, the chair still squared with the deliberate exactness of a position no one intends to reclaim, and the pneumatic tube still hangs open and waiting, but the shadow under the filing press is longer by a hand's breadth, and the index you took into the closet has come back heavier in your hand than you left it. Halkett Rowe is at the end desk by the window, his ledger open, his pen uncapped and laid across the page as though he is",
+    "expect": [
+      "truncated_prose"
+    ]
+  },
+  {
+    "label": "unrecorded/scene-60",
+    "id": 60,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "give him your daybook",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You set the daybook on the desk the way you would set down a return that needs initialling — squared to the blotter, spine toward him, the ruled gap between four and five facing up where the gas light can reach it. He does not look at you. His hand leaves the pen and closes on the cover with the unhurried certainty of a man who has been expecting the weight, and he draws the book toward him without checking the page, the way a clerk lifts a file he has already memorised the contents of. His thumb finds the gap by feel. The gas mantle ticks once, low.\n\nHe turns the book toward the window and reads the blank hour the way you would read a misprint — mouth slightly open, pen still uncapped where it lies across his ledger, trailing a thin slow line of ink onto a row of figures that will need re-entering tomorrow. He does not annotate your daybook, does not initial, does not remark. When he looks up it is only to the filing press, and then back to the open page, and then to the index still in your hand, which he extends his open palm for without quite meeting your eye, and the small sound of the pneumatic tube at his back is the only thing in the room that is still moving.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-61",
+    "id": 61,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "give him the index",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You lay the index across his palm the way you would lay a voucher on a counter — face up, edge aligned to his thumb, a thing that belongs to the desk and not to you and never did. His fingers close on it without adjusting the placement, which is the gesture of a man who knows exactly which leaf he is going to turn to and does not need to look for it. He sets it beside the daybook on the blotter, and the two covers touch with the small dry sound of one file acknowledging another.\n\nHe opens the index at a page he has clearly opened before, because his forefinger goes straight to a line near the foot of it and stays there while his eyes go back to the gap in your daybook. The gas mantle ticks. Rain takes the window in a long sheet and goes. His pen lies uncapped across his ledger and the thin line of ink from before has reached the next column and begun, very slowly, to bleed upward into the ruled space above it, which means either the book is tilted or the room is. He does not move to right either. He only lifts his finger from the index, turns it, and taps once — not the page, but the margin beside the line, where the audit slip should be clipped and is not — and the pneumatic tube behind him gives one short dry cough, as if something has just passed through it going the other way.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-62",
+    "id": 62,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "wait",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 3,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You don't move. You keep your hand on the daybook where it was and you let the silence fill the way water fills a ruled line — evenly, up to the mark. Rowe doesn't look up. He isn't waiting for you to do anything; he's waiting for something else entirely, the way a clerk waits for a carrier to come back, with a patience that has nothing to do with the person in front of him.\n\nHis finger moves from the margin back into the index, finds the line, and rests there. The pneumatic tube behind him lets out its long thin exhalation, and then — at a distance of one room and a half, you think, though the Registry's tubes are not honest about distance — there is the small percussive arrival of a carrier somewhere else in the building, dropped into a brass mouth with the particular sound of an answer being returned to a department that asked for one. He recaps his pen, sets it across the ledger parallel to the spine, and writes something in the index margin you cannot read from this angle. The thin line of ink that was bleeding upward into the ruled space above it has stopped, as though the room has decided, for the moment, not to be tilted after all. He still does not look at you. The door down the hall opens and shuts again, the same distance as before.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-63",
+    "id": 63,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "tap your foot impatiently",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 4,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": "weak",
+    "note": "this has stretch on too long. Some kind of action is needed or a conversation. Why is Halkett not doing anything?",
+    "text": "The toe of your boot strikes the floorboard twice, a small bright rhythm that has no place in this room — a living-room sound, a counter-sound, the kind of noise a person makes when they have been kept waiting at a clerk's window and mean to be noticed. The floorboard answers with a dullness that is not quite wood; it has the absorbed, clerical quality of a surface that has been walked across ten thousand times and resents being asked to do anything else. Your second tap lands and does not echo. The room, which had been attending to something else, attends to you for the length of one breath, and then does not.\n\nRowe's pen does not lift. His finger does not leave the line. But the muscle beside his eye tightens, the way a clerk's does when a page has been turned too quickly at the reading desk and the corner has grazed the knuckle of the next reader, and he makes a small notation in the margin — a single upright stroke, the kind that means *interruption*, or *queried*, or simply *seen* — without looking up to see what interrupted. Somewhere beneath your boot, the floor gives back the faintest click, as though a tile has settled against its neighbour after a long time spent slightly out of true. The pneumatic tube behind him exhales once more, very softly, and is still.",
+    "expect": [
+      "still_run"
+    ]
+  },
+  {
+    "label": "unrecorded/scene-64",
+    "id": 64,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "ask: do you still me for something or can I go?",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": "bad",
+    "note": "the narration says a door clicked behind me but I'm still in the Ward Office 12",
+    "text": "You stand by the door, foot tapping impatiently, and ask whether you can finally leave. Halkett gives you a small, measured nod and gestures toward the exit, his expression politely formal as he tells you that you may go and that the Inspectorate thanks you for your patience. There's no warmth in it, but no hostility either—just the brisk efficiency of a man who has already moved on to the next item on his list. The door clicks shut behind you, and somewhere on the other side of it, he's already calculating how to fill the long hours until evening.",
+    "expect": [
+      "unrecorded_departure"
+    ]
+  },
+  {
+    "label": "unrecorded/scene-64/action-14",
+    "id": 64,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "ask: do you still me for something or can I go?",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "\"You may go.\" He gestures toward the door. \"The Inspectorate thanks you for your patience.\"",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-00",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "take out my revolver and shoot the lock off the door",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You pat your coat and belt, fingers searching the pockets and holster you aren't wearing, and the truth settles in with a small, cold clarity: you are a cartographer, not a soldier. The leather satchel holds a compass you don't trust and a bundle of field notes bound in waxed twine. There is no revolver, no pistol, no weapon of any kind on your person — you left that sort of thinking behind in the marshes of the Verdant low country, or perhaps it was never yours to begin with. The memory is hazy, which is its own kind of warning.\n\nThe lock on the door is a plain iron thing, heavy with age, and the wood around it is warped from a dozen rearrangements. You could shoulder it, pry it with the table leg, or simply turn the handle and step out into the hallway. Grenn keeps the front door bolted after the tenth bell, but the corridor beyond is not locked — the boarding house shifts too often for keys to mean much. The lamp flame gutters as the building sighs, and somewhere below, a floorboard cracks like a small bone.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-01",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "take out my revolver and shoot the lock off the door",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You drop to a crouch beside the satchel and wrench the revolver free, your fingers finding the worn grip by feel. The cylinder is loaded — three rounds, the cartridges stamped with the silvery seal that marks Nocturna-infused ammunition — and you straighten, take aim at the iron lock where door meets frame, and squeeze the trigger. The report is enormous in the small room, a clap of thunder that shakes loose a fresh drift of plaster from the ceiling and sends the lamp flame guttering in its chimney. The lock shatters, shards of black iron spraying across the warped floorboards, and the door swings inward a few inches on a splintered hinge, revealing the dim hallway beyond.\n\nThe smell of cordite mingles with the cabbage and lamp oil, and your ears ring in the ringing silence that follows. Through the cracked window, you catch movement — a shutter across Mournwell Lane has been thrown open, and a pale face peers toward your window for a long moment before ducking back inside. From somewhere below, Grenn's voice rises in a muffled, irritated shout, and footsteps creak on the stairs. Your half-finished map has shifted on the table, one corner curling up where the chipped inkwell rolled aside from the concussion, exposing a stretch of Nocturnis you had not yet committed to paper.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-02",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "take out my revolver and shoot the lock off the door",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You reach into your coat and draw your revolver, its weight familiar in your hand. The iron sight lines up with the tarnished brass lock on the door, but as you squeeze the trigger, the barrel wavers—just for a moment. The shot rings out, deafening in the small room, and the bullet embeds itself in the doorframe with a splintering crack. The lock remains untouched, its mechanism unharmed. The door shudders, but does not open. A thin trickle of plaster dust dislodges from the ceiling, drifting down like slow, accusing snow. Somewhere below, a voice shouts in alarm. The revolver's acrid smoke curls in the lamplight, and you realize the lock was never the problem—the door was never locked to begin with. The knob turns easily under your fingers when you try it.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-03",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "take out my revolver and shoot the lock off the door",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You reach for the revolver at your hip, but your fingers find only the empty holster. The Sovereigns' license doesn't extend to carrying firearms outside the Spire, and you remember now—vaguely—the weight of it being lifted from your belt at the city gates. The door remains stubbornly locked, its brass fixture dull in the lamplight. The boarding house creaks around you, as if amused by the thought.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-04",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "wait for Grenn at the door and show him my gun until he forgives the rent",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You take up a position beside the doorframe, pressing your shoulder into the plaster so the hinges are at your back, and you pat down your coat in search of the weapon you're certain you brought with you. Your fingers find only a stub of sealing wax in one pocket and a folded receipt in the other, and a cold unease prickles at the base of your skull—the kind you have learned not to trust in Nocturnis, where certainty is the first thing the city eats. You have no gun. You are not even sure you have ever owned one, and the harder you try to remember, the more the memory slithers away from you like a lamp flame bending in a draft.\n\nFrom below, a floorboard complains under heavy footfalls, and Grenn's voice comes creaking up the stairwell, grumbling about overdue silver and the smell of cabbage gone sour in the pot. He is three steps from your landing, then two. The door handle begins to turn.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-05",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "wait for Grenn at the door and show him my gun until he forgives the rent",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "Grenn's knock comes heavy on the warped wood, three thumps that rattle the loose hinges. You pull the door open and rest your hand on the grip of the pistol at your hip — but Grenn does not flinch. He stands in the hallway with a crumpled ledger tucked under one arm, his bald head glistening in the lamp glow, and he looks at the weapon the way a farrier looks at a lame horse: with weary assessment and no particular fear.\n\n\"Lose that,\" he says, tapping the ledger against his palm. \"You think I'm the kind of man forgets the back of your hand because you flash steel? You flash that at me, and I walk to the nearest Warden post and tell them a hired cartographer's waving an unlicensed piece in my boarding house. Then we see who forgives what.\" He reaches past you and sets a folded paper on the table, on top of your map. \"That's the reminder. Two weeks overdue. Settle it by the new moon or settle it out the door — your choice, Miss Marrow.\" He turns and thumps back down the stairs without waiting for an answer, the boarding house groaning around you as though to punctuate his exit.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-06",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "wait for Grenn at the door and show him my gun until he forgives the rent",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You stand by the door, the weight of the cold iron revolver heavy in your palm. The minutes stretch as the city hums and shifts beyond the walls. The door creaks open, and Grenn’s broad frame fills the doorway, his expression souring as he takes in the sight of the gun. His eyes narrow, but there’s a flicker of something else—resignation, maybe, or the weary understanding of a man who’s seen too much of Nocturnis’ strangeness. He sighs, rubbing his temple. \"Put that damned thing away, Marrow. You’re lucky I don’t charge extra for threats.\" He mutters something about \"lunatics and their iron toys\" as he turns away, but the tension in his shoulders eases just a fraction. The rent is forgotten—for now. The door swings shut behind him, leaving you alone again with the groaning walls and the half-finished map.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-07",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "wait for Grenn at the door and show him my gun until he forgives the rent",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You stand by the door, the weight of the Nocturna-infused pistol heavy in your hand as you wait. The minutes stretch, and the city’s faint hum of shifting stone vibrates through the floorboards. Grenn does not come. The door remains closed, the hallway beyond silent save for the creak of the old house settling. The gun’s cold metal does nothing to change the fact that Grenn is not here—perhaps he never was, or perhaps he has already moved on, like so much else in this city. The rent remains unpaid, and the pistol, for all its illegal menace, cannot summon forgiveness from thin air. The air grows thicker, the scent of cabbage and oil cloying as the realization settles: threats without an audience are just empty gestures. The door stays shut. The city breathes. Nothing changes.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-08",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "reach into the Nocturna and hold this building still for the night",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You press your palms flat against the plaster wall and push—not outward, but inward, as if you could thread your fingers through the wood and brick and find the grain of Nocturna itself. The wall yields slightly, then seems to resist, a strange pressure building against your skin like the moment before a thunderclap. For half a breath, the groaning in the timbers falters. The lamp flame stretches sideways, leans, and snaps back upright. Something vast and cold brushes the back of your mind—a presence that is not a presence, only the sensation of being *seen* by something that does not have eyes—and then your mother's face vanishes.\n\nNot dims. Vanishes. The shape of her, the way she hummed when she kneaded bread, the scar above her left brow from the night you cannot now name: all of it gone in a flicker, like a page torn from a book you were mid-sentence through. You stumble back from the wall, breath caught in your throat, and the building groans on as though you had never touched it. The floorboard beneath your left foot tilts a half inch to the south. Across the lane, the clothier's sign swings slowly into view—but the letters are wrong now, rearranged into a word you do not recognize.\n\nYour hands are shaking. You cannot remember why.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-09",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "reach into the Nocturna and hold this building still for the night",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You thrust your hand toward the window, fingers splayed as though you could catch the silvery luminescence pooling in the cobblestones below. The air against your palm feels cool and faintly charged, like pressing your skin to the surface of still water—but nothing gives. There is nothing to grip. The Nocturna slides past your fingers like smoke, indifferent, and the boarding house groans again as a timber somewhere below shifts another quarter-inch to the west. Your hand trembles, and a dull pressure blooms behind your eyes, the familiar warning of too much exposure. For a moment the room seems to tilt, and you cannot remember whether you ate breakfast this morning or whether breakfast is something you have ever done.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-10",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "reach into the Nocturna and hold this building still for the night",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You press your palm against the windowsill, where the faintest shimmer of Nocturna clings to the wood like dew. The moment your fingers brush the silvered grain, a jolt runs up your arm—not pain, but resistance, as if the city itself recoils. The boarding house shudders, its timbers groaning louder, and for a heartbeat, the drifting cobblestones below stutter to a halt. But then the strain sets in: your vision blurs at the edges, and the map on the table trembles as if caught in a gust of wind. The clothier’s shop across the lane lurches a few inches closer, its shutters rattling. You stagger back, your hand snatched away as though burned. The building settles with a sigh, and the Nocturna’s glow dims, leaving your fingers numb and your head pounding. The city does not like to be held still.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-11",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "reach into the Nocturna and hold this building still for the night",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You press your palm against the wall, as if the plaster itself might yield to your will. The Nocturna hums faintly beneath your fingers, a slow pulse like distant thunder, but it does not bend to your touch. The building shudders—timbers groan, dust sifts down—but the rearrangement continues, indifferent. The floorboards beneath you twist slightly, the window frame creaks as it shifts a fraction wider, and the clothier’s shop across the lane drifts another inch closer, its sign now completely turned away. The city breathes, and you are just another fleeting thought in its dream. Your hand comes away clean, the Nocturna’s magic as untouchable as the wind.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-12",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "read my lunar compass and tell me exactly where the Ever-Shifting Bazaar will be at dawn",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You lift the compass from the satchel and cradle it in both hands, its brass casing cool against your palms despite the lamp's warmth. The needle does not point north. It has never pointed north, not since you brought it from the Sovereigns' archive, but tonight it trembles in a slow, deliberate arc toward the southeast quadrant of the dial, where a second, smaller needle—mother-of-pearl, too pale to be metal—spins freely within its own recessed ring. As you focus on it, whispering the Bazaar's name the way old Voss taught you, the pearl needle stutters and settles on a bearing you do not recognize, hovering somewhere between the Brassmonger's Walk and the old Scorch caravan grounds. Then it jumps twice more, as if the answer were a knot it could not quite untie, and finally rests trembling at the edge of a marking you've never seen before: a small crescent etched into the brass, crossed through with a single vertical line.\n\nYou set the compass down before the symbol can settle into your memory, but already the room feels a half-degree warmer than it did, and the lamp flame leans, just slightly, toward the window. On the map beneath your elbow, the street you have been sketching for three days no longer matches the view outside, and the tea in its cup has skinned over with something that is not quite dust.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-13",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "read my lunar compass and tell me exactly where the Ever-Shifting Bazaar will be at dawn",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You kneel beside the chair and fish the lunar compass from the satchel, its brass casing warm against your palm as if it had been sitting in sunlight. The needle hangs motionless for a breath, then begins to drift—not toward magnetic north, but through a slow, deliberate arc that traces a path only the device seems to understand. Faint glyphs etched into the dial's edge begin to glow a pale, aquatic blue, and a second needle, thinner and silver, slides out from beneath the first like a tongue tasting the air. The dials settle after a long moment, pointing southwest, somewhere along what you have marked on your half-finished map as the old Grievewater intersection.\n\nThe compass tells you the Ever-Shifting Bazaar will surface near the junction of Grievewater and Saltwell come dawn, sprawling across four blocks where last night there was only a granary and a stretch of empty curb. It tells you this with the quiet certainty of a thing that does not know it lies. You have learned, after three weeks of work, to read the hesitation in its needles—the way the silver one trembles before locking, the barely perceptible stutter in the brass—and tonight it hesitates longer than usual. The reading could hold. Or the Bazaar could settle a street over, or not surface at all, and you will have wasted ink and lantern oil walking to an empty square.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-14",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "read my lunar compass and tell me exactly where the Ever-Shifting Bazaar will be at dawn",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You pull the compass from your satchel, its brass casing cool and smooth under your fingers. The needle does not point north—instead, it wavers erratically, its tip trembling as if caught between invisible forces. The glass face is etched with strange, shifting sigils that rearrange themselves when you blink, and the liquid inside is not oil but something thicker, something that glows faintly with the same silvery light as the cobblestones below. You hold it up to the lamp, squinting, but the markings refuse to settle. The compass hums faintly, a sound like a distant chime, and then the needle spins wildly before pointing directly at your chest. A moment later, it snaps toward the window, quivering as if straining against an unseen leash. The Ever-Shifting Bazaar’s location at dawn remains a mystery—the compass offers no clarity, only the unsettling sense that the answer might be closer than you think, or perhaps already moving away.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-15",
+    "id": null,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "read my lunar compass and tell me exactly where the Ever-Shifting Bazaar will be at dawn",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You pull the untrusted compass from your satchel, its brass casing cool and heavy in your palm. The needle wobbles erratically before settling—not on a fixed point, but tracing a slow, meandering path across the etched glass. The Ever-Shifting Bazaar, it suggests, will drift northeast by dawn, nestling between the shadow of the Celestial Spire and the skeletal remains of the old clocktower. But the compass flickers again, its prediction wavering like a candle in a draft. You know better than to trust it entirely; Nocturna’s whims defy even the best tools. The Bazaar might just as easily materialize a street over, or not at all. The needle spins once more, as if laughing at your certainty.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-16",
+    "id": null,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "turn on the electric light",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You don't have far to look -- the fixture hangs in the middle of the room where someone requisitioned it years ago, a single caged bulb above the filing press with a pull-chain that brushes your knuckles when you reach for it. The chain comes down easy, the way it's been pulled a thousand times before, but nothing happens. The bulb is gone. In its socket, wedged against the brass collar, is a slip of paper the size of a requisition chit, and on it in the Registrar's small print you can read even without your spectacles: WITHDRAWN PENDING RECERTIFICATION. FY 1099. SEE WORK ORDER 7741-W. The chain still sways a little under your hand and then hangs still, and the room does not change. The gas mantle keeps its low, wet hiss, and the cold off the window keeps reaching. You let go of the chain, and your shadow on the cleared desk across from you stays exactly where it was.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-17",
+    "id": null,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "turn on the electric light",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "hand goes to the wall beside the door where the switch plate should be, and there isn't one. There has never been one. The Registry runs on gas and the presses, and the east ring offices were never wired; you remember this the way you remember that the third drawer of your desk sticks — a fact of the place, not a surprise. Your fingers find only plaster, faintly gritty, and a nail-head that holds nothing. The mantle above you keeps its low, sour hiss, throwing just enough yellow light to make the cleared desk across from you legible and no more. Outside, the rain keeps its sideways line past the glass. The door down the hall doesn't open again, but it doesn't sound further away, either.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-18",
+    "id": null,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "turn on the electric light",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You reach for the switch beside the gas mantle, but the bulb above the desks stays dark. The fixture hums faintly, a sound you’ve never noticed before, as if the wiring is alive with something other than current. The gas mantle hisses louder, its yellow light flickering as if resentful of the attempt. The ruled gap in your daybook seems to deepen in the dimness, the absence of the hour more pronounced. The supply closet door remains slightly ajar, its darkness unbroken. Down the hallway, another door clicks shut—closer now, deliberate. The air smells of damp paper and something metallic, like ink left too long in its well.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-19",
+    "id": null,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "turn on the electric light",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You reach for the switch beside the door, but the wire is cold and slack in the wall, the bulb above the mantel dark. The Registry’s east ring hasn’t been wired for electric light—only gas, only ever gas. The mantle hisses, indifferent, and the ruled gap in your daybook seems, if anything, a shade more definite in the dim. Somewhere down the hallway, another door closes, the sound sharp as a stamp coming down.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-20",
+    "id": null,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "burn the daybook in the grate so the missing hour can never be traced",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The daybook lifts off the blotter with the soft stick of damp paper parting from felt. You cross to the register grate set low in the wall beside the filing press — the small iron lattice the office uses to take the chill off in weather like this — and you kneel, and you hold the corner of the book to the heat bleeding through the fretwork. The Registrar's stamp sits on the desk behind you, rocking once on its pad and going still.\n\nThe ruled lines blacken slowly. Half-past three. Four. And then your thumb finds the gap — the clean ruled space where a hand passed through and left nothing but the line itself — and you stop. The gap is the only place the missing hour is recorded. Burn the book and the hour goes with it, and you are a clerk who destroyed a stamped daybook without filing a destruction in triplicate; the chimney, besides, shares its stack with the floor above, and a clerk who sets fire to her own records in Ward 12 will not be a clerk for long, nor will the Inspectorate need to ask twice what was in the grate. You straighten up. The corner of the daybook is warm between your thumb and forefinger and smells of char and of nothing in particular, and the ruled gap between four and five is still there, looking exactly as legitimate as every other line on the page.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-21",
+    "id": null,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "burn the daybook in the grate so the missing hour can never be traced",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You lower your hand to the daybook and stop. There is no grate. The room was fitted for clerks who were expected to file their hours, not to dispose of them — the only fire in the office is the gas mantle overhead, and even a ward clerk knows better than to feed a ledger into a live burner, and the cooler rings of the mantle won't take paper anyway, just soot and the smell of it. You stand with the book half-raised and feel, for the first time, the weight of what you'd be discarding: not the hour, but the entry that says you were here to notice it. A daybook is a clerk's own file, in miniature. You know the rule. You have filed other people's failures under it.\n\nYou set the book back down. The ruled gap at four o'clock looks at you, perfectly even, and the gas hisses on, and down the hall another door closes, nearer still.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-22",
+    "id": null,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "burn the daybook in the grate so the missing hour can never be traced",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You lift the daybook from your desk, the pages stiff under your fingers, and carry it to the small iron grate set into the wall. The coal within is cold, the ash long settled. You strike a match, but the damp air swallows the flame before it can catch the paper. Another match, another—each one gutters out the moment it touches the page, as if the hour itself resists erasure. The daybook remains unmarked, the gap between four and five o'clock as crisp and deliberate as ever. The grate stays dark. Somewhere in the hallway, a floorboard creaks. The daybook is still in your hands, waiting.",
+    "expect": []
+  },
+  {
+    "label": "lab/narration-23",
+    "id": null,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "burn the daybook in the grate so the missing hour can never be traced",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You lift the daybook from the desk, its pages stiff with ink and time, and carry it to the small iron grate set into the wall. The coals within are cold, the last embers long since turned to ash. You strike a match, but the flame gutters and dies the moment it touches the paper, as if the daybook itself resists the fire. The matchstick blackens and crumbles in your fingers, leaving no mark on the page. The ruled gap between four and five o'clock remains, untouched, as legitimate as ever. The grate stays cold. Somewhere in the hallway, another door clicks shut, the sound sharp in the silence. The daybook, unburnt, lies in your hands, its absence of an hour still waiting to be accounted for.",
+    "expect": []
+  }
+]

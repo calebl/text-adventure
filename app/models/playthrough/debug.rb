@@ -251,11 +251,19 @@ class Playthrough::Debug
 
   # Contradictions on this playthrough's own turns, newest first, so the most
   # recent disagreement is the one at the top.
-  def contradictions
-    scene_ids = turns.filter_map { |turn| turn.scene&.id }.to_set
+  def contradictions = flags_here(audit.contradictions)
 
-    audit.contradictions.select { |flag| scene_ids.include?(flag.scene&.id) }.reverse
-  end
+  # DEFECTS: the prose broke a rule the app states -- it stopped mid-sentence,
+  # or it wrote the player as somebody else. Counted apart from contradictions
+  # because they are a different claim: a contradiction is two records
+  # disagreeing, a defect is one passage being wrong on its own terms. See
+  # `Story::Audit::DEFECTS`.
+  def defects = flags_here(audit.defects)
+
+  # PACING: stretches on which the records show nothing happening with somebody
+  # standing in the room. NOT a defect and never counted as one -- see
+  # `Story::Audit::PACING`.
+  def pacing = flags_here(audit.pacing)
 
   # EVERY TURN THIS PLAYER REACHED FOR SOMETHING THAT WAS NOT THERE, newest
   # first. Read straight off `Playthrough::Drift` rather than through the audit,
@@ -383,6 +391,14 @@ class Playthrough::Debug
   end
 
   private
+
+  # A story-wide sweep narrowed to this playthrough's own turns, newest first,
+  # so the most recent finding is at the top of every table.
+  def flags_here(flags)
+    scene_ids = turns.filter_map { |turn| turn.scene&.id }.to_set
+
+    flags.select { |flag| scene_ids.include?(flag.scene&.id) }.reverse
+  end
 
   # Whoever was in the last scene in this location that recorded anyone. The
   # same read `Scene::Generator#holdovers` makes, and deliberately so: it is

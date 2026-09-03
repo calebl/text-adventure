@@ -79,6 +79,51 @@ The full audit of every planned piece of work against this constraint is in
   the player; the classifier asks at temperature 0. **None of this is measured
   yet** — it is facts the app already held, handed to prompts that lacked them
   — and the bench that would measure it is the next item in *Next up*.
+- **The evaluation loop** (`ta-eval-loop`). *"It feels like we are flailing
+  around a bit right now without being able to measurably improve the
+  experience. Having me review everything manually is too slow and I start
+  losing focus from reading variations on the same thing too many times."* The
+  answer is not a prose score — this project has killed two prose heuristics on
+  measurement already, and `data/ta-model-bench/report.md` §9 refuses to score
+  prose on purpose. It is **the errors he actually named, each of them
+  objectively checkable**, turned into a rate that moves.
+
+  `Story::Audit` gains four checks and two categories: `truncated_prose` and
+  `third_person_protagonist` (DEFECTS — one passage wrong on its own terms),
+  `unrecorded_departure` (a CONTRADICTION: prose closes a door behind a player
+  the records never moved) and `still_run` (PACING, explicitly *not* a defect:
+  four turns of nothing with somebody in the room). `Story::Scoreboard`
+  (`rake game:score`) runs them over a corpus and prints a rate per check, the
+  movement since `db/eval_baseline.json`, the agreement with his own verdicts,
+  and **every flag with the turn, what he typed and the passage** — so his
+  attention goes only to what a check caught. Offline, free, 0.6 s for both
+  corpora.
+
+  **Measured before shipped, on the `BaseAgent::Refusal` precedent.** 92 real
+  passages — every stored `Scene` description and `Interaction` action from the
+  two worlds played, plus the 24 lab narrations — raise **19 flags, all true
+  positives, zero false positives**, and **not one of the 24 lab narrations is
+  flagged**. The three turns he judged are caught by three different checks:
+  scene 59 `truncated_prose` (*"truncated"*), 63 `still_run` (*"this has stretch
+  on too long… Why is Halkett not doing anything?"*), 64 `unrecorded_departure`
+  (*"the narration says a door clicked behind me but I'm still in the Ward Office
+  12"*). `Story::Scoreboard::CorpusTest` pins all of it, including the two real
+  sentences that broke earlier versions of the rules.
+
+  **The agreement with his labels is reported as unestablished, not dressed up.**
+  Three verdicts is not a correlation; below `MIN_VERDICTS` the report says so in
+  words and shows counts, and the figure recomputes as he labels more. It also
+  names every turn he marked weak or bad that no check caught — which is where
+  the next check comes from, and today that list is empty.
+
+  **What it cannot measure**, stated rather than left to be discovered: whether
+  the prose is any good; the invention of things that do not exist (that is
+  `Playthrough::Drift`, by consequence); a `take` or `drop` turn, which moves a
+  row but leaves nothing dated on the turn, so it reads as still; and, for the
+  third-person check, an apposition with no pronoun and no possessive ("a figure
+  — Isbet Marrow — watches you"), which needs a part-of-speech tagger. One miss
+  in ten real violations, and the trade is the one this project takes everywhere.
+
 - **The conversation audit trail is kept, not pruned** (`ta-keep-history`).
   `Chat::KEEP_TURNS` defaulted to 25 turns, so `Playthrough#prune_conversations!`
   destroyed every older turn's prompts, answers, token counts and models at the
@@ -611,14 +656,17 @@ Steps 1 and 2 of that plan have landed (see **Done**). The rest, in order:
 
 ### Alongside those, the older queued work
 
-- **`ta-prompt-bench`** — the harness the measured-wording rule has never had:
-  replay a fixed case list (the six `narration_corpus.json` commands and a
-  talk set) against a prompt variant, on a named model, and report audit flags,
-  drift, cap hits, omitted fields, refusals, length, tokens and latency per
-  arm. Every prompt-shaped change above and below should land as a measured
-  PR; today none can. Freeze a digest of the prose instructions alongside
-  `prose_model` on `Playthrough::Feedback`, so verdicts group by prompt version
-  and not only by model. The compliance sweep (8) sits on top of this.
+- **`ta-prompt-bench`** — the other half of the evaluation loop. `Story::Scoreboard`
+  (`rake game:score`, landed) scores prose that already exists; this drives a
+  fixed case list (the six `narration_corpus.json` commands and a talk set)
+  through the live turn loop under a prompt *variant*, on a named model, and
+  hands the result to the scoreboard — plus what the scoreboard cannot see
+  from stored prose: drift, cap hits, omitted fields, refusals, tokens and
+  latency per arm. Every prompt-shaped change should land as a measured PR;
+  today the checks exist and the A/B driver does not. Freeze a digest of the
+  prose instructions alongside `prose_model` on `Playthrough::Feedback`, so
+  verdicts group by prompt version and not only by model. The compliance sweep
+  (8) sits on top of this.
 - **`ta-scene-facts-prose`** — split `Scene::Generator` and `Scene::Narrator` by
   facts versus prose. Promoted by the standing constraint from "worth doing" to
   the structural expression of it: if the generator establishes facts and the
