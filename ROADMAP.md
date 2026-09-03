@@ -777,6 +777,40 @@ reading one held-out run the board scored at zero flags.
   visible: see **Done** and **4** below. The arc's dependency on scene
   summarisation is discharged — `Playthrough#recap` is there and costs no call.
 - **`ta-api-iface`** — the reading experience, stage 6. See **5** below.
+- **`ta-prewarm-stubs`** — realize a room's connected stubs off the turn, so
+  walking onward does not pay for the room being written. **An optimization,
+  filed as one**: realizing is the slowest thing a move does — two calls,
+  ~670 output tokens — and today the player waits for all of it. The captain's
+  question was whether entering a location could dispatch background workers
+  for its stubs; the answer is yes, with three hazards that decide the shape.
+  - **It would make the world's shape depend on job scheduling.** Realizing a
+    stub writes edges *into* its neighbours, and with
+    `Location::ExitsSchema::MAX_EXITS` now enforced on the room, whichever job
+    commits first spends the allowance and the loser's exits are refused. The
+    same arrival, run twice, would produce different graphs. Generation is
+    serialized behind the player today, so the order is decided by where they
+    walked.
+  - **`Location::Generator#find_location` has a create race and no index to
+    catch it.** `locations` carries no unique index on `(story_id, name)`: it is
+    a case-insensitive SELECT then a CREATE, so two workers each inventing the
+    same name both find nothing and create two, and the de-dup that stops
+    A → B → A from making a second A stops working. `location_connections` *is*
+    uniquely indexed, so a concurrent edge write raises `RecordNotUnique`
+    inside `#write_exits!`'s transaction and rolls back the whole exit set.
+    **A unique index on `(story_id, lower(name))` is worth having either way**,
+    and is the first commit of this item.
+  - **SQLite is one writer.** Solid Queue has its own database; the app's does
+    not, so four concurrent realizations contend for the same write lock.
+  - **And it is a product decision, not only a technical one.** The premise is a
+    world that generates itself as the player explores it. Pre-realizing writes
+    it ahead of them: rooms exist nobody has seen, and a room written before
+    arrival cannot be written in the context of the scene arrived from.
+  - **The shape to build, therefore: one worker, not four.** After the turn
+    returns, enqueue a single job that realizes ONE stub, serialized per story
+    (a Solid Queue concurrency key) so two never run for the same world. The
+    graph stays deterministic, both races are dodged, the cost is one extra
+    room per move rather than four, and the latency still goes away on the
+    common case of walking onward rather than back.
 
 ## The detail, by area
 
