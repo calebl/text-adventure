@@ -125,7 +125,11 @@ class Playthrough::TurnConversationsTest < ActiveSupport::TestCase
     assert_equal (Chat::HISTORY_EXCHANGES + 1) * 2, conversation.exchange_messages.count
 
     @playthrough = Playthrough.find(@playthrough.id)
-    InteractionAgent.new(Character.find(@grenn.id), playthrough: @playthrough).character_agent.chat
+    # Picking the conversation up is what trims it, and that needs a model on
+    # the row without needing an answer. See OfflineExchange.with_model.
+    OfflineExchange.with_model do
+      InteractionAgent.new(Character.find(@grenn.id), playthrough: @playthrough).character_agent.chat
+    end
 
     assert_equal Chat::HISTORY_EXCHANGES * 2, conversation.reload.exchange_messages.count
     assert_includes conversation.exchange_messages.first.content, "question 1",

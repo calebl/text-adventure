@@ -586,6 +586,42 @@ The debug view shows the same four tables for one playthrough.
   chat is an audit trail nothing reads back; this is the measurement, and a
   measurement that expires cannot be watched over time.
 
+### Measuring a change against the noise it makes
+
+The automated half of the loop (`ta-eval-pipeline`). `rake eval:run` plays the
+three seeded worlds through the real turn loop, keeps the rows, and scores them;
+**[EVALUATION.md](EVALUATION.md) is the protocol and is the file to read before
+using any of this.** What belongs here is the part that changes how you work:
+
+- **A number from generated runs means nothing without its spread.** One
+  unchanged configuration produced 1 to 13 `third_person_protagonist` flags on
+  the same twenty turns of the same world. Never quote a count from a sweep
+  without the min/max the board prints beside it, and never claim an improvement
+  from one run against one run. **More turns is not a reliable cure** — the same
+  extension halved one world's band and widened another's; see `Eval::Noise`.
+- **`rake eval:compare BEFORE=… AFTER=…` is how a change is judged**, and its
+  verdict is REAL, NOISE or INCONCLUSIVE. **Four runs a side is the floor** — at
+  three the exact test cannot reach p ≤ 0.05 however clean the separation, so a
+  verdict there would be reporting the sample size. `rake eval:null` checks the
+  protocol cannot invent a difference out of one set split in half; run it if you
+  change the rule.
+- **Generation spends money and never runs in CI.** It refuses to start without
+  `OPENROUTER_API_KEY`, prints an estimate first, and stops at $1.00 unattended.
+  Scoring is offline, free and deterministic, and `Eval::PipelineTest` is the
+  guard that the suite never touches the generating half.
+- **Richness is printed beside the defect counts and is never added to them.**
+  Prose that says less cannot contradict the records, so a fall in contradictions
+  is only good news if `Eval::Richness` did not fall with it. It is not a quality
+  score and it is gameable on its own; read it as a counterweight.
+- **`The Salt Assizes` is held out by convention.** Tune on `Eval::TUNING`,
+  report on `Eval::HELD_OUT`, and do not read a held-out passage while changing a
+  check or put one in a fixture. Nothing enforces this today.
+- **An eval script's talk beats must name no place.** A command that names a
+  room the player can reach is a `move`, correctly, and it costs the run the
+  branch the script existed to exercise. See the ROADMAP's known issues.
+- **`Eval::MEASUREMENT_FILES` is the list an improving agent may not change.**
+  Declared, not enforced; `rake eval:manifest` prints it with digests.
+
 ### When a world outlives the schema
 
 A story is written once and then sits in the database while features land
@@ -673,7 +709,14 @@ bin/rails zeitwerk:check   # app/agents/ uses PascalCase filenames; verify autol
   table **is** the model registry: RubyLLM resolves model names out of it and
   does not fall back to the registry the gem ships with, so an empty table
   resolves nothing. Reading it is offline; no API key.
-- `ollama serve` must be running for local generation. Installed models are
+- **The local rotation is OFF by default and needs `TA_LOCAL_MODELS=1`.** The
+  captain's ruling, 2026-09-03: *"if we are still falling back to local models,
+  let's stop doing that for now."* A local fallback does not fail, it ANSWERS —
+  slowly, from a 4k-context CPU model — and every measurement downstream
+  quietly becomes about a different model. With no key and no opt-in there is
+  no model at all, and `BaseAgent::NoModelConfiguredError` says so in a
+  sentence naming both ways out.
+- With `TA_LOCAL_MODELS=1`, `ollama serve` must be running. Installed models are
   listed in `BaseAgent::LOCAL_MODEL_OPTIONS`; keep that list matching what is
   actually pulled, or every call fails on a missing model.
 - `OPENROUTER_API_KEY` (kept in a gitignored `.env`, loaded by `dotenv-rails`,
