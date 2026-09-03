@@ -115,8 +115,22 @@ module Eval
   # What replaces it for a sweep is `Eval::Board`'s script-divergence line: the
   # turns whose branch was not the one the script expected, reported next to the
   # spend as a fact about the harness rather than among the defect counts.
+  # `named_more_than_one` is out for the SAME structural reason, one step
+  # further along. A script types a fixed line however the game answered, so
+  # whether a turn named two things is a fact about how its author phrased it
+  # and not about the game -- and the scripts are full of such lines:
+  # "go down the stairs and out into Mournwell Lane", "look at the boots by the
+  # door and the dark iridescence dried on them". A rate over those measures
+  # the yml files.
+  #
+  # AND A CLEAN READING WOULD BE THE WORSE OUTCOME: with no line overreaching,
+  # the check reads 0 flagged out of every typed turn, which is a rate it never
+  # earned. That is precisely what "unavailable, never zero" exists to stop.
+  # It stays live on `rake game:score`'s database corpus, where somebody really
+  # typed the commands, which is the only place the number means anything.
   UNAVAILABLE_TO_A_SCRIPT = {
-    reached_for_nothing: "a script cannot be misled by prose, so a drift row here measures the script, not the game"
+    reached_for_nothing: "a script cannot be misled by prose, so a drift row here measures the script, not the game",
+    named_more_than_one: "a script types a fixed line, so what it named measures the script's phrasing, not the game"
   }.freeze
 
   def self.unavailable_to_a_script?(code) = UNAVAILABLE_TO_A_SCRIPT.key?(code.to_sym)
