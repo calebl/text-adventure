@@ -40,7 +40,8 @@ class Eval::Comparison
   end
 
   def print
-    io.puts "BEFORE #{before.name} (#{before.runs.size} runs)  ->  AFTER #{after.name} (#{after.runs.size} runs)"
+    io.puts "BEFORE #{before.name} (#{before.runs.size} runs, #{before.models.join(", ").presence || "model unrecorded"})"
+    io.puts "AFTER  #{after.name} (#{after.runs.size} runs, #{after.models.join(", ").presence || "model unrecorded"})"
     io.puts "  Verdicts: REAL means the two sets separate under an exact rank test at p<=#{Eval::Noise::ALPHA}."
     io.puts "  NOISE means they do not, and the difference is no bigger than the spread the"
     io.puts "  unchanged runs already produced. INCONCLUSIVE means neither -- usually too few runs."

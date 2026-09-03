@@ -46,6 +46,7 @@ class Eval::Board
     cost = set.cost
     io.puts "EVALUATION BOARD -- #{set.name}"
     io.puts "  #{set.runs.size} runs over #{set.stories.size} worlds, #{set.turns} scored turns"
+    io.puts "  pinned on: #{set.models.join(", ").presence || "unrecorded"}"
     io.puts "  tuning: #{Eval::TUNING.join(", ")}"
     io.puts "  held out: #{Eval::HELD_OUT} (no check was measured against it -- see Eval::HELD_OUT)"
     io.puts format("  spend: $%.4f over %d model calls (%s in / %s out)",

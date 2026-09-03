@@ -26,12 +26,17 @@ class Eval::RunScore
   end
 
   ATTRIBUTES = %i[story held_out rep turns scenes readings findings richness usage
-                  failures drifts branches].freeze
+                  failures drifts branches model].freeze
 
   attr_reader(*ATTRIBUTES)
 
+  # `model` is the model the run was PINNED on, carried out of the manifest.
+  # Two sets compared against each other have to be able to say what each of
+  # them ran, or a comparison of a prompt change and a comparison of a model
+  # change look identical in the report.
   def initialize(story:, held_out:, rep:, turns:, scenes:, readings:, findings:, richness:,
-                 usage: [], failures: [], drifts: [], branches: {})
+                 usage: [], failures: [], drifts: [], branches: {}, model: nil)
+    @model = model
     @story = story
     @held_out = held_out
     @rep = rep
@@ -61,7 +66,7 @@ class Eval::RunScore
   def label = "#{WorldSeed.slug(story)} r#{rep}"
 
   def to_h
-    { story:, held_out:, rep:, turns:, scenes:,
+    { story:, held_out:, rep:, turns:, scenes:, model:,
       readings: readings.map(&:to_h), findings: findings.map(&:to_h),
       richness: richness.to_h, usage:, failures:, drifts:, branches: }
   end
@@ -86,6 +91,7 @@ class Eval::RunScore
         usage: Array(data[:usage]).map { |u| u.transform_keys(&:to_sym) },
         failures: Array(row["failures"] || row[:failures]),
         drifts: Array(row["drifts"] || row[:drifts]),
-        branches: row["branches"] || row[:branches] || {})
+        branches: row["branches"] || row[:branches] || {},
+        model: data[:model])
   end
 end

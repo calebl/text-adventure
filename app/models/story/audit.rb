@@ -41,6 +41,21 @@
 #    it reads as a clean result. So there is no person check. That gap is
 #    covered from the other side, and exactly, by `Playthrough::Drift`.
 #
+# 2a. RE-MEASURED IN `ta-eval-pipeline` AND STILL DEAD, on 264 freshly generated
+#    turns this time, with the scene cast on record rather than inferred. 58 of
+#    the 264 name a character the scene does not have in it -- a vocabulary scan
+#    would raise 58 flags. Requiring a SPEECH VERB beside the name, which is the
+#    one narrowing finding 2 did not have data for, leaves 3. All three are
+#    "says nothing":
+#
+#      "Grenn watches you with narrowed eyes but says nothing"
+#      "Ammon Brace watches, his jaw set, but says nothing"
+#
+#    Three flags, three false positives, no true positives. And the records are
+#    not up to the check anyway: a `Scene::Narrator` turn records no cast at
+#    all, so on those turns EVERY character reads as absent (ROADMAP, *nothing
+#    records where a character stands*). There is still no person check.
+#
 # 3a. AND A NAME THE RECORDS HOLD IS NOT THE NAME THE PROSE WRITES, which
 #    `ta-eval-pipeline` found by pointing the finished check at 132 whole-run
 #    narrations and watching it flag nothing. `Item#name` is "Ward Office 12

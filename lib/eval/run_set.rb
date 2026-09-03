@@ -103,6 +103,7 @@ class Eval::RunSet
 
     run = Eval::RunScore.new(
       story: story.title, held_out: Eval.held_out?(story.title), rep: manifest["rep"].to_i,
+      model: manifest["pinned_model"],
       turns: manifest["turns"].to_a.size, scenes: audit.scanned,
       readings: readings, findings: findings, richness: richness,
       usage: Array(manifest["usage"]).map { |row| row.transform_keys(&:to_sym) },
@@ -138,6 +139,10 @@ class Eval::RunSet
   def turns = runs.sum(&:scenes)
 
   def cost = Eval::Cost.actual(runs.flat_map(&:usage))
+
+  # What the runs were pinned on. Plural because nothing stops a set holding
+  # two, and a set that holds two is one a reader has to be told about.
+  def models = runs.map(&:model).compact.uniq
 
   # THE SPREAD OF ONE CHECK OVER RUNS THAT SHOULD HAVE AGREED -- the noise
   # floor. Per story, because two worlds are two different measurements and
