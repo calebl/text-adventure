@@ -394,6 +394,7 @@ namespace :game do
 
       audit.contradictions.each { |flag| print_flag("X", flag) }
       audit.drifts.each { |flag| print_flag("~", flag) }
+      audit.limits.each { |flag| print_flag("-", flag) }
 
       if audit.unjudged.any?
         puts "     #{audit.unjudged.size} check(s) not judged -- the records cannot answer them honestly#{" (VERBOSE=1 to list)" unless verbose}"
@@ -423,9 +424,9 @@ namespace :game do
     # ----------------------------------------------------------------------
 
     # How a flag is marked, worst class first. Same three characters the audit
-    # uses, plus one for pacing, which is not a defect and must not read like
-    # one.
-    SCORE_MARKS = { contradiction?: "X", defect?: "X", drift?: "~", pacing?: "-" }.freeze
+    # uses, plus one each for a limit of the loop and for pacing, neither of
+    # which is a defect and neither of which must read like one.
+    SCORE_MARKS = { contradiction?: "X", defect?: "X", drift?: "~", limit?: "-", pacing?: "-" }.freeze
 
     def self.print_scoreboard(board)
       puts "=" * 78
@@ -612,6 +613,7 @@ namespace :game do
       scanned = audits.sum(&:scanned)
       contradictions = audits.sum { |audit| audit.contradictions.size }
       drifts = audits.sum { |audit| audit.drifts.size }
+      limits = audits.sum { |audit| audit.limits.size }
       unjudged = audits.sum { |audit| audit.unjudged.size }
       per_scene = scanned.positive? ? " (#{(elapsed * 1000 / scanned).round(1)} ms per scene)" : ""
 
@@ -619,9 +621,11 @@ namespace :game do
       puts "#{scanned} scene#{"s" unless scanned == 1} in #{(elapsed * 1000).round} ms#{per_scene}"
       puts "#{contradictions} contradiction#{"s" unless contradictions == 1} -- the records say the narration is wrong"
       puts "#{drifts} drift#{"s" unless drifts == 1} -- the player reached for something the records do not have"
+      puts "#{limits} line#{"s" unless limits == 1} that named two things -- the turn could only do one"
       puts "#{unjudged} check#{"s" unless unjudged == 1} not judged"
       puts
       puts "A contradiction is a defect. A drift is evidence, not proof -- see Playthrough::Drift."
+      puts "A line that named two things is neither -- see Playthrough::Overreach."
     end
 
     def self.timed(label)

@@ -65,10 +65,21 @@ class Story::Scoreboard::BaselineTest < ActiveSupport::TestCase
   end
 
   # The one on file is the line the next run moves against, so it has to parse.
+  #
+  # It carries the checks that EXISTED when it was taken, which is not
+  # necessarily all of them: a check added since reads as newly added and shows
+  # no movement, which `Story::Scoreboard::Movement` is built for. What would
+  # be wrong is the other direction -- a name in the file that no check answers
+  # to any more, which is a stale line nothing will ever move.
   test "the checked-in baseline is readable and carries both corpora" do
     stored = Story::Scoreboard::Baseline.all
 
     assert_equal %w[corpus database], stored.keys.sort
-    assert_equal Story::Scoreboard::CHECKS.keys.map(&:to_s).sort, stored["corpus"]["checks"].keys.sort
+
+    known = Story::Scoreboard::CHECKS.keys.map(&:to_s)
+    stored.each do |corpus, snapshot|
+      assert_not_empty snapshot["checks"], "#{corpus} baseline carries no checks"
+      assert_empty snapshot["checks"].keys - known, "#{corpus} baseline names a check that no longer exists"
+    end
   end
 end

@@ -102,6 +102,7 @@ class Playthrough::Classifier
 
     intent = build_intent(answer["intent"], answer["target"], exits, cast, items, carried, answer["also_named"])
     record_drift(command, intent, exits, cast, items, carried) if intent.reached_for_nothing?
+    record_overreach(command, intent) if intent.named_more_than_one?
     intent
   end
 
@@ -324,5 +325,29 @@ class Playthrough::Classifier
       offered: offered.compact,
       story_timestamp: playthrough.story_now
     )
+  end
+
+  # THE ROW THAT MAKES ONE-ACT-PER-LINE A NUMBER. Written here for the same
+  # reason the drift row is: this is the only place that knows both halves --
+  # what the turn is about to do, and the thing the same line named that it
+  # will not. Neither half is a failure, which is why this is a separate table
+  # from drift rather than another kind of it. See Playthrough::Overreach.
+  def record_overreach(command, intent)
+    Playthrough::Overreach.record(
+      playthrough: playthrough,
+      scene: playthrough.current_scene,
+      location: playthrough.current_location,
+      action: intent.action,
+      command: command,
+      acted: label_for(intent.subject),
+      unacted: label_for(intent.also_named),
+      story_timestamp: playthrough.story_now
+    )
+  end
+
+  # A record as the player would have typed it. `fullname` for a person, `name`
+  # for a place or a thing -- the same two the closed enum was built from.
+  def label_for(record)
+    record.respond_to?(:fullname) ? record.fullname : record.name
   end
 end

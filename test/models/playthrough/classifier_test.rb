@@ -514,6 +514,65 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     assert_not_predicate intent, :named_more_than_one?
   end
 
+  # The count. Written here because this is the only place that knows both
+  # halves -- what the turn is about to do, and the thing the same line named
+  # that it will not.
+  test "a line that named two things is counted, with both halves on the row" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+    apron = create(:item, :lying, location: @here, name: "copy-room apron")
+    scene = create(:scene, story: @story, location: @here)
+    @playthrough.update!(current_scene: scene)
+
+    assert_difference "Playthrough::Overreach.count", 1 do
+      classify({ "intent" => "take", "target" => index.name, "also_named" => apron.name },
+               command: "pickup the index and the apron")
+    end
+
+    row = Playthrough::Overreach.last
+    assert_equal "take", row.action
+    assert_equal "pickup the index and the apron", row.command
+    assert_equal index.name, row.acted
+    assert_equal apron.name, row.unacted
+    assert_equal @here, row.location
+    assert_equal scene, row.scene, "the narration the player had just read"
+  end
+
+  test "a line that named one thing is counted as nothing" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+
+    assert_no_difference "Playthrough::Overreach.count" do
+      classify({ "intent" => "take", "target" => index.name, "also_named" => "nothing" })
+    end
+  end
+
+  # The two counts are different facts about the world and never one number.
+  test "a reach that found nothing is counted as drift and not as an overreach" do
+    create(:item, :lying, location: @here, name: "copy-room apron")
+
+    assert_difference "Playthrough::Drift.count", 1 do
+      assert_no_difference "Playthrough::Overreach.count" do
+        classify({ "intent" => "take", "target" => "nothing", "also_named" => "copy-room apron" },
+                 command: "take the cellar key and the apron")
+      end
+    end
+  end
+
+  test "a person is counted by the name a player would have typed" do
+    rowe = create(:character, story: @story, fullname: "Halkett Rowe")
+    lasco = create(:character, story: @story, fullname: "Perrin Lasco")
+    # Both in the SAME scene: `Scene::Generator.characters_present` answers from
+    # the last scene played here, so two scenes would leave only one of them
+    # standing in the room.
+    create(:scene, story: @story, location: @here, characters: [ rowe, lasco ])
+
+    classify({ "intent" => "talk", "target" => rowe.fullname, "also_named" => lasco.fullname },
+             command: "ask Rowe and Lasco where the file went")
+
+    row = Playthrough::Overreach.last
+    assert_equal rowe.fullname, row.acted
+    assert_equal lasco.fullname, row.unacted
+  end
+
   test "the second name is drawn from the same closed enum as the target" do
     connect("The Sunken Stair")
     create(:item, :lying, location: @here, name: "Brass Key")
