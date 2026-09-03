@@ -15,10 +15,26 @@
 # exits, was twelve prose decisions per room, and the two failure modes that
 # produced are documented on LocationConnection.
 class Location::ExitsSchema < RubyLLM::Schema
+  # HOW MANY WAYS OUT OF ONE ROOM, IN TOTAL AND NOT PER CALL.
+  #
+  # `max_items` below bounds ONE ANSWER, which is not the same thing and used to
+  # be mistaken for it. A room's edges also arrive from outside this call --
+  # seeded by a world file, or written when a neighbour was realized and named
+  # this place -- and none of those are counted by a schema. Larkspur Quarter
+  # rooftops was seeded with two, was walked into, and came back with five:
+  # more connected than any other room in the database, and its own description
+  # named none of them.
+  #
+  # So the total is enforced where the total is known, in
+  # `Location::Generator#write_exits!`, which asks for at most what is left and
+  # stops writing at this number however many the model named. A room already
+  # at the cap is not asked at all -- no call, no tokens.
+  MAX_EXITS = 4
+
   array :exits,
         description: "The places a player can reach directly from here.",
         min_items: 1,
-        max_items: 4 do
+        max_items: MAX_EXITS do
     object do
       string :name, description: "The name of the place this exit leads to, as a player would refer to it. 1 to 4 words, no article.", max_length: 60
       string :teaser, description: "A one-line glimpse of what lies that way, enough to make the player choose it. Exactly one sentence.", max_length: 160
