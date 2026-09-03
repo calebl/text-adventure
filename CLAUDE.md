@@ -193,6 +193,12 @@ The current database includes the following story-related models with proper ass
 - **Item** → belongs to **Character** *or* **Location**, exactly one of the two:
   held by somebody, or lying in a place. The second half is what makes `take`
   and `drop` app-owned state changes rather than prose
+- **Item::Registry** → how items come to *exist*, and the only thing in the app
+  that creates one: 0–3 things written as records when a room is realized, out
+  of the same call that describes it (`Location::DetailSchema`'s optional
+  `items`). Not a narrator tool and not a scan of prose — the engine owns what
+  exists and `Playthrough::Moment` tells the narrator. Capped per room and per
+  world, and it refuses a name a person, a place or another item already has
 - **Scene** → `typed`, what the player typed to cause the turn, written on every
   branch by `Playthrough::Turn#play`. Nil only on an opening arrival
 - **Playthrough** → **Playthrough::Drifts**: one row per turn on which a reach
