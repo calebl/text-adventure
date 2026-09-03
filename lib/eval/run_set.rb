@@ -116,8 +116,11 @@ class Eval::RunSet
       branches: manifest["turns"].to_a.to_h { |turn| [ turn["id"], { "expected" => turn["expect"], "took" => turn["branch"] } ] }
     )
 
+    # ONLY THE CHECKS THAT CAN ANSWER HERE, or this line would announce a flag
+    # for a rate the board goes on to report as UNAVAILABLE -- and a reach the
+    # app correctly refused would read as a defect. Same rule as `findings`.
     io&.puts format("  scored %-22s %2d turns  %s", run.label, run.scenes,
-                    run.readings.select { |r| r.flagged.positive? }
+                    run.readings.select { |r| r.available && r.flagged.positive? }
                        .map { |r| "#{r.flagged} #{r.code}" }.join(", ").presence || "nothing flagged")
     run
   end
