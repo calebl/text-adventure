@@ -41,6 +41,38 @@
 #    it reads as a clean result. So there is no person check. That gap is
 #    covered from the other side, and exactly, by `Playthrough::Drift`.
 #
+# 2a. RE-MEASURED IN `ta-eval-pipeline` AND STILL DEAD, on 264 freshly generated
+#    turns this time, with the scene cast on record rather than inferred. 58 of
+#    the 264 name a character the scene does not have in it -- a vocabulary scan
+#    would raise 58 flags. Requiring a SPEECH VERB beside the name, which is the
+#    one narrowing finding 2 did not have data for, leaves 3. All three are
+#    "says nothing":
+#
+#      "Grenn watches you with narrowed eyes but says nothing"
+#      "Ammon Brace watches, his jaw set, but says nothing"
+#
+#    Three flags, three false positives, no true positives. And the records are
+#    not up to the check anyway: a `Scene::Narrator` turn records no cast at
+#    all, so on those turns EVERY character reads as absent (ROADMAP, *nothing
+#    records where a character stands*). There is still no person check.
+#
+# 3a. AND A NAME THE RECORDS HOLD IS NOT THE NAME THE PROSE WRITES, which
+#    `ta-eval-pipeline` found by pointing the finished check at 132 whole-run
+#    narrations and watching it flag nothing. `Item#name` is "Ward Office 12
+#    daybook" and every one of those narrations wrote "daybook". A check that is
+#    live and permanently silent is the failure mode finding 2 warns about, so
+#    the names come from `Story::Audit::Prose.item_names` now -- the recorded
+#    name and its last substantial word. The same helper supplies the rooms
+#    `check_arrival` reads.
+#
+# 3b. AND A POSSESSIVE IS NOT CUSTODY. With the alias in place the possessive
+#    grammar raised 8 flags across those 12 transcripts and 6 were the sentence
+#    "your daybook lies open on your desk" about a daybook the records had
+#    lying on that desk -- true, and not a contradiction. Grammar 2 is dropped
+#    when the thing is in the room the player is standing in; see
+#    `#check_items`. The two survivors say "under your hand" of a book on the
+#    desk, which is the captain's own `ta-narrator-invents-exit` sighting.
+#
 # 3. POSSESSION IS DIFFERENT, and it is the one place prose is read. "You draw
 #    your revolver" is not a mention: it is a sentence about a record, in the
 #    grammar of a claim -- the player as subject of a possession verb, or the
@@ -66,7 +98,7 @@
 class Story::Audit
   # A DISAGREEMENT THE RECORDS PROVE. Every one of these is a defect in the
   # game, not a matter of taste about the prose.
-  CONTRADICTIONS = %i[unreachable_transition item_not_held unrecorded_departure].freeze
+  CONTRADICTIONS = %i[unreachable_transition item_not_held unrecorded_departure unrecorded_arrival].freeze
 
   # THE PROSE BROKE A RULE THE APP STATES, provable from the row itself and one
   # record. Not a disagreement between two records -- a defect in the passage.
@@ -126,6 +158,19 @@ class Story::Audit
   NEGATIONS = /\b(?:no|not|never|without|nothing|neither|n't|lack|lacks|lacked|
                    empty|unarmed)\b/xi
 
+  # A PREPOSITION BETWEEN THE NAME AND THE PLAYER'S PERSON, which means the
+  # sentence has already put the name somewhere: "under your hand WITH the stamp
+  # beside it" is not a claim about the stamp. Only grammar 3 consults this --
+  # it is the one that matches over a window rather than over a phrase.
+  #
+  # `in`, `on`, `at` and `under` are deliberately NOT here: they are how grammar
+  # 3 reaches the person in the first place, and adding them would make the
+  # guard eat its own match.
+  ATTACHED_ELSEWHERE = /\b(?:with|beside|besides|behind|beneath|below|underneath|
+                            near|atop|against|among|amongst|across|between|beyond|
+                            alongside|from|inside|onto|over|past|through|around|
+                            toward|towards)\b/xi
+
   # WHAT THE RECORDS SAY ABOUT ONE NARRATION, and the evidence for saying it.
   #
   # `evidence` is a hash printed as-is by the rake task. It is verbose on
@@ -158,8 +203,19 @@ class Story::Audit
 
   attr_reader :story
 
-  def initialize(story)
+  # `scenes:` narrows the sweep to a subset of the story's turns, and exists
+  # for one caller: `Eval::RunSet`, which audits a generated run and must not
+  # count the world's own hand-authored opening arrival. That passage is
+  # identical in every run of that world, so counting it adds a constant to
+  # every denominator and measures the seed file rather than the game.
+  #
+  # The `previous_scene` chain deliberately still reaches outside the scope --
+  # the first played turn follows the opening, and a check that compares a turn
+  # with the one before it needs that turn even when it is not being scored.
+  # See `#previous_of`.
+  def initialize(story, scenes: nil)
     @story = story
+    @scene_scope = scenes
   end
 
   # Every story in the database, oldest first, each with its audit -- the same
@@ -170,7 +226,7 @@ class Story::Audit
 
   # Oldest first, so a report reads in the order the story was played.
   def scenes
-    @scenes ||= story.scenes
+    @scenes ||= (@scene_scope || story.scenes)
                      .includes(:location, :characters, :interactions, previous_scene: :location)
                      .order(:story_timestamp, :id)
                      .to_a
@@ -225,6 +281,10 @@ class Story::Audit
       scenes.count(&:follows_a_turn?)
     when :reached_for_nothing
       scenes.count { |scene| scene.typed.present? }
+    when :unrecorded_arrival
+      # Every scene with prose in it, whether or not a turn came before. A
+      # first turn can be narrated as an arrival somewhere else just as easily.
+      scenes.count { |scene| scene.description.present? }
     when :truncated_prose
       # Two fields per turn are read, not one: see `#check_truncation`.
       scenes.size + scenes.sum { |scene| scene.interactions.size }
@@ -271,6 +331,7 @@ class Story::Audit
       check_truncation(scene)
       check_third_person(scene)
       check_departure(scene)
+      check_arrival(scene)
     end
 
     check_stillness
@@ -361,8 +422,25 @@ class Story::Audit
     return if items_elsewhere.empty?
 
     items_elsewhere.each do |item|
-      next if item.name.to_s.strip.length < MIN_NAME_LENGTH
-      next unless possession_claimed?(text, item.name)
+      # WHAT THE PROSE WOULD CALL IT, not only what the records do. `Item#name`
+      # is "Ward Office 12 daybook" and not one of 132 whole-run narrations
+      # ever wrote that string -- every one of them wrote "daybook". Matching
+      # the recorded name alone left this check live and permanently silent,
+      # which reads as a clean result. See `Story::Audit::Prose.item_names`.
+      names = Prose.item_names(item)
+      next if names.empty?
+
+      # A BARE POSSESSIVE IS OWNERSHIP, AND OWNERSHIP IS NOT CUSTODY. "Your
+      # daybook lies open on your desk" is true of a daybook the records have
+      # lying in this very room, and flagging it would be wrong. Measured: on
+      # the 12 whole-run transcripts the possessive raised 8 flags against a
+      # daybook lying in the player's own room and 6 of the 8 were exactly that
+      # sentence. Requiring the thing to be somewhere the player is not leaves
+      # the two real ones -- "lies open under your hand", of a book on the desk
+      # -- and costs nothing on the pinned corpus, where every planted item is
+      # in another room or another pair of hands.
+      claim = names.find { |name| possession_claimed?(text, name, custody_only: item.location_id == scene.location_id) }
+      next if claim.nil?
 
       # THE ROW MAY HAVE MOVED SINCE. Ownership is not dated in story time, so
       # a row touched after this scene was written cannot be read back to it --
@@ -376,8 +454,9 @@ class Story::Audit
       flag(:item_not_held, scene,
            "the player is told they have the #{item.name}, which the records say is #{item.whereabouts}",
            item: item.name,
+           "named as" => claim,
            "records say" => item.whereabouts,
-           claim: excerpt(text, item.name),
+           claim: excerpt(text, claim),
            where: scene.location&.name)
     end
   end
@@ -395,7 +474,34 @@ class Story::Audit
   #
   # All three then pass the negation guard, which is what keeps a refusal from
   # reading as a claim. Measured against 24 real narrations: see the header.
-  def possession_claimed?(text, name)
+  #
+  # `custody_only` drops grammar 2. See `#check_items` for the measurement that
+  # forced it: with the thing lying in the room the player is standing in, "your
+  # daybook" is a true sentence about a book on the desk.
+  #
+  # AND GRAMMAR 3 STOPS AT A PREPOSITION IN ONE DIRECTION ONLY, which was
+  # forced by measurement and the asymmetry is the whole finding. It matches in
+  # either order over a window, and on
+  #
+  #   "Your daybook lies open under your hand with the stamp beside it."
+  #
+  # the PERSON-FIRST order read "under your hand ... the stamp" and claimed the
+  # player was holding a stamp the sentence puts beside the daybook. A
+  # preposition standing between the person and the name has attached the name
+  # to something else, so that window ends there.
+  #
+  # THE NAME-FIRST ORDER IS NOT GUARDED, and guarding it cost three defensible
+  # flags on the pinned corpus, every one of the form
+  #
+  #   "You pull the compass FROM your satchel, its brass casing cool and heavy
+  #    in your palm."
+  #
+  # There the prepositions describe where the thing came from and the sentence
+  # still ends with it in the player's hand. Which is the difference: with the
+  # name first it is the subject and the prepositions are its journey; with the
+  # person first a preposition introduces a new noun phrase, and the name in it
+  # is somebody else's business.
+  def possession_claimed?(text, name, custody_only: false)
     verbs = Regexp.union(POSSESSION_VERBS)
     places = Regexp.union(ON_THE_PERSON)
     word = Regexp.escape(name)
@@ -409,10 +515,13 @@ class Story::Audit
       #    of adjective are allowed between ("your Nocturna-infused pistol").
       /\byour\b(?:\s+[\w'’-]+){0,2}\s+#{word}\b/i,
       # 3. On the player's person. Either order, because prose says both "the
-      #    pistol at your hip" and "in your hand, the pistol".
+      #    pistol at your hip" and "in your hand, the pistol" -- but the span
+      #    between the two must not cross a preposition, or the sentence has
+      #    already attached the name to something else. See the note above.
       /\b#{word}\b[^.!?;:]{0,60}?\b(?:in|on|at|against|under)\s+your\s+(?:#{places})\b/i,
-      /\b(?:in|on|at|against|under)\s+your\s+(?:#{places})\b[^.!?;:]{0,60}?\b#{word}\b/i
+      /\b(?:in|on|at|against|under)\s+your\s+(?:#{places})\b(?<before_name>[^.!?;:]{0,60}?)\b#{word}\b/i
     ]
+    patterns.delete_at(2) if custody_only
 
     patterns.each do |pattern|
       match = text.match(pattern)
@@ -431,6 +540,9 @@ class Story::Audit
       # then, of somebody else, "does not flinch" -- and that trade is taken on
       # purpose. A flag nobody can defend is worth less than a miss.
       next if sentence_around(text, match).match?(NEGATIONS)
+      # GRAMMAR 3, FORWARD ORDER ONLY: a preposition standing between the
+      # player's person and the name has attached the name to something else.
+      next if match.names.include?("before_name") && match[:before_name].to_s.match?(ATTACHED_ELSEWHERE)
 
       return true
     end
@@ -580,6 +692,69 @@ class Story::Audit
            "records say" => "still in #{scene.location&.name}",
            "previous scene" => "##{previous.id} (#{previous.location&.name})",
            typed: scene.typed.presence)
+    end
+  end
+
+  # ------------------------------------------------------------------------
+  # THE NARRATION WALKED THE PLAYER INTO A ROOM BY NAME, AND THE RECORDS HAVE
+  # THEM SOMEWHERE ELSE.
+  #
+  # `check_departure` is this from behind -- a door closing at the player's
+  # back with no destination named -- and both answer the captain's
+  # `ta-narrator-invents-exit`: *"the narrator asserts state changes the game
+  # never records."* They are separate checks because they read different
+  # sentences: one has a threshold and no place, this one has a place and no
+  # threshold, and a passage can do either without doing the other.
+  #
+  # THE RECORD IS EXACT AND THE PROSE IS THE ONLY LOOSE HALF, which is the
+  # shape every check here wants. `Playthrough::Turn#move_to` is the only thing
+  # that changes `Scene#location`, so where the player is at the end of this
+  # turn is not in question; the question is only whether the narration said
+  # somewhere else. `Story::Audit::Prose.arrival_claims` is the reading and its
+  # measurement -- 224 real passages, 8 detections, 0 false positives -- is in
+  # its header.
+  #
+  # WHAT IT CANNOT SEE, and it is the same gap the whole sweep has: a room the
+  # story does not have. The names come from the records, so prose that invents
+  # a wine cellar out of nothing matches nothing here. That is
+  # `Playthrough::Drift`'s half of the work.
+  # ------------------------------------------------------------------------
+  def check_arrival(scene)
+    return if scene.description.blank?
+    return if scene.location.nil?
+
+    Prose.arrival_claims(scene.description, place_names.keys).each do |arrival|
+      claimed = place_names.fetch(arrival.name)
+      # ARRIVING WHERE YOU ARE IS WHAT A `move` TURN NARRATES, and is correct.
+      next if claimed == scene.location.name
+
+      flag(:unrecorded_arrival, scene,
+           "the narration walks the player into #{claimed.inspect}, " \
+           "and the records have them in #{scene.location.name.inspect}",
+           claim: arrival.sentence.truncate(220),
+           "named as" => arrival.name,
+           "records say" => "in #{scene.location.name}",
+           typed: scene.typed.presence,
+           at: scene.story_timestamp)
+    end
+  end
+
+  # EVERY PLACE THIS STORY HAS, by every name the prose might use it under,
+  # mapped back to the one the records hold. Built once per sweep: a story's
+  # locations do not change under it.
+  #
+  # A NAME TWO PLACES ANSWER TO IS DROPPED, not guessed at. A world with both
+  # "Grenn's Boarding House hallway" and "The Long Hallway" has two rooms whose
+  # alias is "hallway", and a flag that cannot say which one it means is a flag
+  # nobody can judge.
+  def place_names
+    @place_names ||= begin
+      claimed = Hash.new(0)
+      story.locations.each { |place| Prose.place_names(place.name).each { |name| claimed[name.downcase] += 1 } }
+
+      story.locations.flat_map { |place| Prose.place_names(place.name).map { |name| [ name, place.name ] } }
+           .reject { |name, _| claimed[name.downcase] > 1 }
+           .to_h
     end
   end
 

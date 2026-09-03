@@ -55,6 +55,79 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **The automated half of the evaluation loop** (`ta-eval-pipeline`). *"I'm fine
+  with the loop being manual initially. I just want more confidence that changes
+  we are making are improving results."* `rake eval:run` generates runs across
+  **three** seeded worlds through the app's own turn loop, keeps every row each
+  turn wrote, scores them with `Story::Audit`, and prints a board. One command,
+  offline scoring, and the generated corpus is what makes three previously
+  dormant checks answerable at all — a frozen file of loose passages cannot be
+  checked against records it does not carry.
+
+  **THE HEADLINE IS THE NOISE FLOOR, and it is bad news reported as news.** 24
+  runs of unchanged code over three worlds, twenty turns each: one configuration
+  produced **1 to 13** `third_person_protagonist` flags on the same twenty turns
+  of the same world (rate 0.050–0.650, median 0.475). That spread is wider than
+  nearly any improvement anybody would claim, so a board that printed a count
+  without it would invite exactly the false confidence the loop exists to
+  prevent. **More turns did not reliably narrow it**: the same extension more
+  than halved one tuning world's band (0.455 wide to 0.200) and widened the
+  other's (to 0.600).
+  `Eval::Noise` therefore reports min/median/max per check and
+  `rake eval:compare` gives a verdict — REAL, NOISE or INCONCLUSIVE — from a
+  two-sided exact rank test at p ≤ 0.05. **Four runs a side is the floor and it
+  is arithmetic:** at three a side the smallest attainable p is 0.100, so no
+  verdict is reachable however clean the separation. `rake eval:null` splits one
+  set in half and checks the protocol cannot invent a difference; it passes.
+
+  **The known bugs are visible and counted.** `ta-narration-third-person` fires
+  159 times in 320 tuning turns (49.7%) — the arrival narrations put the player
+  in the doorway watching themselves arrive. `ta-narrator-invents-exit` is caught
+  by three checks, one of them new: `unrecorded_departure` (a door closing at the
+  back of a player who never moved), `item_not_held` (fixed below, and it catches
+  his *"losing the location of the ledger when it is put down and picked up"*
+  on real transcripts), and `unrecorded_arrival` — new, the same defect from the
+  front, where the prose names the room it walked the player into.
+
+  **Two faults in `item_not_held` found by pointing it at 132 whole-run
+  narrations and watching it flag nothing.** (1) `Item#name` is "Ward Office 12
+  daybook" and every narration writes "daybook", so the check was live and
+  permanently silent — head-noun aliases fix it, and they also add three signed
+  true positives to `Story::AuditPrecisionTest` (8 → 11). (2) A bare possessive
+  is ownership, not custody: "your daybook lies open on your desk" is true of a
+  daybook lying on that desk. The possessive now needs the thing to be somewhere
+  the player is not, which takes 8 flags on real transcripts (3 true, 5 false)
+  down to 2 flags, both true, at a cost of one true positive that is pinned.
+
+  **A richness counter-metric, reported beside the defects and never folded in.**
+  The cheapest way to stop contradicting the records is to say less, so
+  `Eval::Richness` counts what the prose committed to — rooms, exits, items and
+  people the records know, named in the passage. Thinning all 132 real narrations
+  to their first sentence drops it 46%. **Commitments per hundred words was
+  measured and thrown out**: it rises when prose thins, which is backwards.
+  A third finding contradicts the assumption it was commissioned under — **length
+  is not commitment**: the two longest arms commit to *less* per turn than the two
+  shortest.
+
+  **A third seeded world, `The Salt Assizes`, held out by documented convention.**
+  No check was measured against it; it has no mechanics, so
+  `unreachable_transition` is fully live on it where the Lunar Cartographer's
+  nightly shuffle makes it unjudgeable. It scores **9.4% against the tuning
+  worlds' 49.7%** on the third-person bug — a world-dependence worth knowing
+  about before anybody tries to fix it. At eleven turns it scored zero on 88
+  turns and looked clean; twenty turns is what made it fire, which is the
+  argument for the longer script standing on its own.
+
+  Actual spend: **$0.4712 for 24 runs / 480 turns**, against a $0.63 estimate,
+  and every one of those turns took the branch its script said it would.
+  **Prompt caching was measured and is not the cost lever it looks like**: the
+  minimum cacheable prompt is 2,048 tokens and these calls average 615, so
+  eighteen real prompts replayed back to back read zero cached tokens — see
+  `Eval::Cost`'s header and `script/cache_probe.rb`.
+  The protocol, the verdict rule and the measurement manifest are in
+  [EVALUATION.md](EVALUATION.md). **The agent skill is deliberately not built** —
+  the captain's accuracy pass on these flags comes first.
+
 - **The prose is told the moment, and the character is too.** Three prompts
   wrote about one moment and each assembled its own: the narrator knew the room
   and the last turn, the interaction narrator knew neither, the character knew
@@ -654,6 +727,29 @@ Steps 1 and 2 of that plan have landed (see **Done**). The rest, in order:
    has — populated when the narrator names something. A generated per-room
    inventory is explicitly ruled out.
 
+### Queued out of the evaluation pass
+
+Three tasks, all measured on the 20-turn baseline of 2026-09-03 rather than
+proposed. The first is the captain's own instruction; the other two came out of
+reading one held-out run the board scored at zero flags.
+
+- **`ta-narration-third-person-fix`** — the dominant defect: arrival narrations
+  write the player as somebody else, **159 flags on 113 of 320 tuning turns
+  (49.7%)**, 9.4% on the held-out world. It needs the loop rather than a look,
+  because one unchanged configuration produced 1 to 13 flags on the same twenty
+  turns. **Done means two things:** a REAL verdict from `rake eval:compare` at
+  four runs a side that reproduces on `The Salt Assizes`, *and* richness that
+  does not fall REAL alongside it — the cheapest way to stop writing the player
+  in third person is to stop naming anybody. Then re-baseline, and the existing
+  check guards it from there.
+- **`ta-take-drop-narration`** — the prose denies the take (30/32) and invents a
+  pickup on the drop (5/32). See **Known issues**; the app is not at fault and
+  the check that would catch it is a new shape, reading a turn against the state
+  *before* it.
+- **`ta-character-whereabouts`** — there is no record of where anybody is. The
+  people half of the noun registry; overlaps `ta-narrator-memory` below and
+  should be designed with it.
+
 ### Alongside those, the older queued work
 
 - **`ta-prompt-bench`** — the other half of the evaluation loop. `Story::Scoreboard`
@@ -989,6 +1085,80 @@ What it still owes, roughly in order:
       and two were healthy.
 
 ## Known issues
+
+- **The narration erases the `take` and invents the pickup on a `drop`, and no
+  check can see it** (`ta-take-drop-narration`, queued). On a turn the app
+  resolves as `take`, the prose says *"You **already hold** the Assize
+  tide-slate"* — of a slate that was lying on the bench until this turn moved
+  it. On a `drop`, the mirror: *"You **lift** the tide-slate **from where it
+  lies against the wall** and set it down"*, of a slate the player was carrying.
+  **30 of 32 take turns and 5 of 32 drop turns, on the 480-turn baseline.**
+  `Playthrough::Turn#taken_fact` hands the narrator the right sentence stated as
+  done; the narrator writes the opposite. Likely cause: `Playthrough::Moment`
+  carries the post-write inventory as standing state beside a fact describing
+  the transition, so the state reads as prior and the fact as redundant. **No
+  check catches it because every check in `Story::Audit` reads one scene against
+  the state it was written against, and this is a claim about a transition** —
+  the prose and the records agree about who holds the slate and disagree about
+  whether anything happened. Found by reading a held-out run the board scored at
+  zero flags.
+
+- **Nothing records where a character is** (`ta-character-whereabouts`, queued).
+  `Character` has no location: `belongs_to :story`, `has_and_belongs_to_many
+  :scenes`, and that is the whole answer to *"where is Ammon Brace"*. Only
+  arrival turns write a cast at all — 296 of 480 baseline turns have one, the
+  other 184 have no record of who was in the room. Two consequences: a
+  `character_not_present` check **must not be built** (the records are not
+  authoritative, so it would measure the harness like `reached_for_nothing`
+  does), and the generated cast quietly drops people the world is about —
+  arriving at The Tide Post recorded the protagonist alone, on all three runs
+  checked, in a world whose premise is that Neb Halloran is chained to that post.
+  The narrator put him there and no record kept it.
+
+- **The local model rotation is off by default** (`TA_LOCAL_MODELS=1` to bring
+  it back), on the captain's ruling of 2026-09-03: *"if we are still falling
+  back to local models, let's stop doing that for now."* The failure it closes
+  is not a crash — it is a turn answered slowly by a 4k-context CPU model, after
+  which every measurement and quality claim downstream is silently about a
+  different model. Same argument `#ask` already made for not rotating on a 401,
+  applied to the rest of the rotation. A fresh clone with no key now raises
+  `BaseAgent::NoModelConfiguredError` with both ways out in the message, where
+  it used to fall through to ollama.
+
+- **A scripted talk turn that names a place is a move, and the classifier is
+  right.** `lib/eval/scripts/the-lunar-cartographer.yml` first said *"Grenn,
+  unlock the roof door and take me up onto the Larkspur Quarter rooftops
+  yourself"* and `Playthrough::Classifier` resolved it as `move` on all eight
+  runs — the sentence names a destination the room has an exit to. The rest of
+  the run then played out somewhere the script did not intend. Fixed in the
+  script, and recorded here because it is the general shape: an eval script's
+  talk beats must name no place. Not a defect in the game.
+
+- **The third-person narration bug is world-dependent, and nobody knows why.**
+  Over 24 runs of `ta-eval-pipeline`'s sweep, `third_person_protagonist` fired on
+  30.1% of tuning turns and **0 of 88** turns of `The Salt Assizes`. Every
+  instance in the two tuning worlds is an ARRIVAL narration inventing a figure in
+  the room and giving it the player's name; the held-out world's arrivals never
+  do it. Whatever separates them is the thing `ta-narration-third-person` should
+  be diagnosed against.
+
+- **One passage earns two `third_person_protagonist` flags when it uses the
+  protagonist's full name.** `Prose.protagonist_names` yields "Isbet Marrow",
+  "Isbet" and "Marrow", and a sentence containing the full name matches two of
+  them, so the flag count runs ahead of the number of turns affected — 63 flags
+  over 46 turns in the `ta-eval-pipeline` sweep. The check's own rule is one per
+  sentence per grammar and this is the letter of it rather than the spirit.
+  Deliberately not changed here: it would move the count `Story::Scoreboard::CorpusTest`
+  pins, which is a change with its own measurement to do. `Eval::Board` prints a
+  distinct-turn column beside the rate and its worksheet shows each passage once.
+
+- **`unrecorded_arrival` has never fired on real prose.** It detects 7 arrival
+  assertions across 224 real passages and the records agreed with all 7, and it
+  flagged nothing across 264 freshly generated turns. That is a live, precise
+  check reporting zero rather than a check that cannot fire —
+  `Story::Audit::ArrivalTest` proves the difference by moving the record under a
+  real sentence — but until it catches something in the wild it is unproven in
+  the way the other checks are not.
 
 - **Three findings from the refusal sweep, measured and deliberately not acted
   on** (`data/ta-refusal-range/report.md`). None is a refusal problem, and each

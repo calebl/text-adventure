@@ -19,14 +19,14 @@ require "test_helper"
 #
 #   as seeded, no items in the world      24 narrations, 0 flags
 #   with items planted under the names
-#   the prose argues about                24 narrations, 8 flags,
-#                                         8 true positives, 0 FALSE POSITIVES
+#   the prose argues about                24 narrations, 11 flags,
+#                                         11 true positives, 0 FALSE POSITIVES
 #   narrations naming one of those items  15 -- so a vocabulary scan would have
-#                                         raised 15 flags where this raises 8
+#                                         raised 15 flags where this raises 11
 #   real possession claims missed         about half, and one of them
 #                                         deliberately (see SACRIFICED)
 #
-# The eight are enumerated below, one line each, so every flag this sweep raises
+# The eleven are enumerated below, one line each, so every flag this sweep raises
 # on real prose is a flag somebody has read and signed for. If a change here
 # makes the set bigger, the new one has to be read and signed for too -- and if
 # it cannot be defended, the change is wrong rather than the test.
@@ -43,8 +43,8 @@ class Story::AuditPrecisionTest < ActiveSupport::TestCase
   }.freeze
 
   # EVERY FLAG THE SWEEP RAISES ON THE CORPUS, judged one by one. `[case, model,
-  # arm, item]`, with the sentence that earned it above each. All eight say the
-  # player HAS the thing; the records say somebody else does.
+  # arm, item]`, with the sentence that earned it above each. All of them say
+  # the player HAS the thing; the records say somebody else does.
   EXPECTED = [
     # "You reach into your coat and draw your revolver, its weight familiar in your hand."
     [ 1, "mistralai/mistral-medium-3.1", "plain", "revolver" ],
@@ -55,6 +55,22 @@ class Story::AuditPrecisionTest < ActiveSupport::TestCase
     # "You kneel beside the chair and fish the lunar compass from the satchel,
     #  its brass casing warm against your palm..."
     [ 4, "minimax/minimax-m3", "ruled", "lunar compass" ],
+    # THE THREE THE HEAD-NOUN ALIAS ADDED (`ta-eval-pipeline`). All three say
+    # the player has the compass in their hands; the records give it to Grenn
+    # Ollivar. They were missed before only because the prose writes "compass"
+    # and the record is called "lunar compass" -- the same gap that left
+    # `item_not_held` silent on 132 whole-run narrations of a world whose one
+    # item is the "Ward Office 12 daybook". Read and signed one at a time.
+    #
+    # "You lift the compass from the satchel and cradle it in both hands, its
+    #  brass casing cool against your palms despite the lamp's warmth."
+    [ 4, "minimax/minimax-m3", "plain", "lunar compass" ],
+    # "You pull the compass from your satchel, its brass casing cool and smooth
+    #  under your fingers."
+    [ 4, "mistralai/mistral-medium-3.1", "plain", "lunar compass" ],
+    # "You pull the untrusted compass from your satchel, its brass casing cool
+    #  and heavy in your palm."
+    [ 4, "mistralai/mistral-medium-3.1", "ruled", "lunar compass" ],
     # "The ruled gap in your daybook seems to deepen in the dimness..."
     [ 5, "mistralai/mistral-medium-3.1", "plain", "daybook" ],
     # "...the ruled gap in your daybook seems, if anything, a shade more definite in the dim."
@@ -153,7 +169,7 @@ class Story::AuditPrecisionTest < ActiveSupport::TestCase
     naming = CORPUS.count { |row| LURES.fetch(row["world"]).any? { |name| row["narration"].match?(/\b#{Regexp.escape(name)}\b/i) } }
 
     assert_equal 15, naming
-    assert_equal 8, EXPECTED.size
+    assert_equal 11, EXPECTED.size
     assert_operator EXPECTED.size, :<, naming
   end
 
@@ -250,7 +266,13 @@ class Story::AuditPrecisionTest < ActiveSupport::TestCase
   # Half in another character's hands, half lying in a room the player is not
   # in -- both are "not the player's", and the flag says which.
   def plant_lures
+    # ONLY THE WORLDS THE CORPUS CAME FROM. `The Salt Assizes` is the held-out
+    # world (`Eval::HELD_OUT`): no narration here was written about it and
+    # nothing measured here may be tuned against it, so it gets no lures and is
+    # not part of this measurement.
     @stories.each_value do |story|
+      next unless LURES.key?(story.title)
+
       other = story.characters.where(is_protagonist: false).first
       elsewhere = story.locations.order(:id).last
 

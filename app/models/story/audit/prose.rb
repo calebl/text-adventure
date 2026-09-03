@@ -1,5 +1,4 @@
-# THE THREE THINGS THAT CAN BE READ OUT OF A PASSAGE ALONE, with no database
-# behind them.
+# WHAT CAN BE READ OUT OF A PASSAGE ALONE, with no database behind them.
 #
 # Every predicate here is pure: text in, a boolean or a list of matches out.
 # That is deliberate and it is what makes the checks measurable. `Story::Audit`
@@ -8,20 +7,24 @@
 # supplies the same facts from a checked-in file, so the SAME code reads the
 # live database and the frozen corpus and the two cannot drift apart.
 #
-# WHY THESE THREE AND NOT OTHERS. They are the errors the captain noticed
+# WHY THESE AND NOT OTHERS. They are the errors the captain noticed
 # unaided while playing, in his own words: prose that stops mid-sentence, the
 # protagonist written as somebody standing opposite him, and a door closing at
-# his back in a room he never left. Nothing here was invented because it
-# sounded checkable. See `Story::Audit`'s header for the two prose heuristics
+# his back in a room he never left, and -- added by `ta-eval-pipeline`, from
+# the same complaint as the door -- the narration walking him into a room by
+# name that the records never moved him to. Nothing here was invented because
+# it sounded checkable. See `Story::Audit`'s header for the prose heuristics
 # this project has already measured and killed.
 #
 # PRECISION, MEASURED. Against 92 real passages -- 54 stored `Scene`
 # descriptions, 14 `Interaction` actions and the 24 narrations in
-# `narration_corpus.json` -- these three raise 17 flags and every one of them is
-# a true positive, with zero flags on the 24 narrations from the lab sweep.
-# `Story::Scoreboard::CorpusTest` pins that, one flag at a time. The recall is
-# worse than the precision on purpose, and each method says where it knowingly
-# misses.
+# `narration_corpus.json` -- the first three raise 17 flags and every one of
+# them is a true positive, with zero flags on the 24 narrations from the lab
+# sweep. `Story::Scoreboard::CorpusTest` pins that, one flag at a time.
+# `arrival_claims` was measured the same way over a wider set -- those 92 plus
+# the 132 whole-run narrations of the four-arm lab sweep -- and its numbers are
+# on the method. The recall is worse than the precision on purpose, and each
+# method says where it knowingly misses.
 module Story::Audit::Prose
   extend self
 
@@ -164,13 +167,24 @@ module Story::Audit::Prose
   #
   # `Story::Audit::MIN_NAME_LENGTH` applies for the same reason it applies to
   # items: three letters match half the dictionary.
-  def protagonist_names(character)
+  def protagonist_names(character) = character_names(character)
+
+  # The same derivation for anybody, which is what `Eval::Richness` needs to ask
+  # whether a narration named the person standing in the room. Takes a
+  # `Character` or the string a fixture holds instead of one.
+  def character_names(character)
     return [] if character.nil?
 
-    ([ character.fullname, character.nickname ] + character.fullname.to_s.split(/\s+/))
-      .map { |name| name.to_s.gsub(/[^\w'’-]/, " ").strip }
-      .reject { |name| name.length < Story::Audit::MIN_NAME_LENGTH }
-      .uniq
+    parts =
+      if character.respond_to?(:fullname)
+        [ character.fullname, character.nickname ] + character.fullname.to_s.split(/\s+/)
+      else
+        [ character.to_s ] + character.to_s.split(/\s+/)
+      end
+
+    parts.map { |name| name.to_s.gsub(/[^\w'’-]/, " ").strip }
+         .reject { |name| name.length < Story::Audit::MIN_NAME_LENGTH }
+         .uniq
   end
 
   # ------------------------------------------------------------------------
@@ -221,6 +235,126 @@ module Story::Audit::Prose
 
       sentence.match?(/\bbehind you\b/i, closing.end(0))
     end.map(&:strip)
+  end
+
+  # ------------------------------------------------------------------------
+  # THE PROSE WALKED THE PLAYER SOMEWHERE THE RECORDS DID NOT MOVE THEM.
+  #
+  # `departure_claims` above is the same defect caught from behind -- a door
+  # closing at the player's back, with no destination named. This is the front:
+  # the narration says where the player went, by name, and the records say they
+  # are somewhere else. Both belong to `ta-narrator-invents-exit`, "the narrator
+  # asserts state changes the game never records"; they are separate checks
+  # because they read different sentences and miss different things.
+  #
+  # THE NAME COMES FROM THE RECORDS, never from the prose. That is the line
+  # `Story::Audit`'s header draws and this stays on the right side of it: the
+  # app cannot scan for a place it was never told about, so a wholly invented
+  # room is invisible here and is measured by its consequences instead
+  # (`Playthrough::Drift`). What this reads is a place the story really has,
+  # asserted as somewhere the player just walked into.
+  #
+  # THE GRAMMAR IS THE PLAYER, A MOVEMENT VERB AND A DESTINATION, in that order,
+  # in one sentence: "you step back into the office", "You step into the Long
+  # Hallway". A mention is not an arrival -- "the door to the hallway stands
+  # ajar" and "Mournwell Lane is visible through the window" name a place and
+  # match nothing here. The preposition is required for the same reason: it is
+  # what makes the place the destination of the verb rather than its scenery.
+  #
+  # MEASURED BEFORE IT SHIPPED, on 224 real passages -- the 92 in
+  # `eval_corpus.json` and the 132 whole-run narrations from the four-arm lab
+  # sweep. It detects 7 arrival assertions and every one of the 7 names the room
+  # the records had already moved the player into, so it raises ZERO flags:
+  # 7 detections, 7 agreements, no false positives. A check that cannot fire
+  # would look the same from here, which is why `Story::Audit::ArrivalTest`
+  # takes one of those real sentences and moves the record instead -- the
+  # sentence that agreed now contradicts, and the check says so. An eighth real
+  # arrival is given up to the negation guard and pinned there.
+  # ------------------------------------------------------------------------
+
+  # Verbs that take a person from one place to another. `run`, `flee` and
+  # `climb` are here; `look`, `lean` and `reach` are deliberately not, because
+  # they are what prose does at a threshold without crossing it.
+  MOVEMENT_VERBS = /\b(?:step|steps|stepped|stepping|walk|walks|walked|walking|
+                       enter|enters|entered|entering|cross|crosses|crossed|crossing|
+                       slip|slips|slipped|duck|ducks|ducked|climb|climbs|climbed|
+                       descend|descends|descended|ascend|ascends|ascended|
+                       go|goes|went|pass|passes|passed|move|moves|moved|
+                       push|pushes|pushed|stride|strides|strode|
+                       emerge|emerges|emerged|head|heads|headed|
+                       return|returns|returned|retreat|retreats|retreated|
+                       run|runs|ran|flee|flees|fled)\b/xi
+
+  # What makes the place the destination rather than the view. "to" is included
+  # and "toward" is not: crossing TO somewhere arrives, crossing TOWARD it does
+  # not.
+  TOWARDS = /\b(?:in\s?to|into|onto|on\s+to|out\s+into|through\s+into|to)\s+(?:the\s+|your\s+)?/i
+
+  # One place the narration says the player walked into.
+  Arrival = Data.define(:name, :sentence)
+
+  # Every arrival the prose asserts, out of `names` -- the places the records
+  # know, as `.place_names` derives them.
+  def arrival_claims(text, names)
+    body = text.to_s
+    return [] if body.blank? || names.empty?
+
+    found = []
+
+    sentences(body).each do |sentence|
+      next if sentence.match?(NEGATED_ARRIVAL)
+
+      names.each do |name|
+        pattern = /\byou\b[^.!?;:]{0,40}?#{MOVEMENT_VERBS}[^.!?;:]{0,40}?#{TOWARDS}#{Regexp.escape(name)}\b/i
+        found << Arrival.new(name: name, sentence: sentence.strip) if sentence.match?(pattern)
+      end
+    end
+
+    # ONE PER NAME. A paragraph that says the player walked into the hallway
+    # twice is one wrong claim, not two, on the same rule `.third_person_references`
+    # and `Story::Audit#items_elsewhere` follow.
+    found.uniq(&:name)
+  end
+
+  # A movement the sentence takes back. "You do not step into the hallway" and
+  # "you cannot cross into the Circle" are the arrival grammar exactly, and the
+  # opposite of an arrival.
+  NEGATED_ARRIVAL = /\b(?:not|never|cannot|can't|won't|would\s+not|without|no\s+way|neither|n't)\b/i
+
+  # THE NAMES A PLACE CAN BE CALLED, as the records hold it: the full name, and
+  # the last substantial word of it on its own, because prose says "the office"
+  # and "the closet" far more often than "Ward Office 12" and "The Supply
+  # Closet".
+  #
+  # THE STOP LIST IS WHAT KEEPS THE ALIAS HONEST. A room whose name ends in
+  # "Room", "Place" or "Area" has a last word that is a common noun for
+  # anywhere at all, and "you step into the room" would then be an arrival
+  # claim about a specific location every time the prose used the ordinary
+  # English word. Those names contribute no alias and are matched in full only.
+  GENERIC_PLACE_WORDS = %w[room place area side end floor level part space spot corner house].freeze
+
+  def place_names(name)
+    full = name.to_s.strip
+    return [] if full.length < Story::Audit::MIN_NAME_LENGTH
+
+    words = full.gsub(/[^\w'\u2019-]/, " ").split
+    tail = words.reverse.find { |word| word.match?(/\A[a-z]/i) && word.length >= Story::Audit::MIN_NAME_LENGTH }
+
+    names = [ full ]
+    names << tail if tail && tail.casecmp(full).nonzero? && GENERIC_PLACE_WORDS.exclude?(tail.downcase)
+    names
+  end
+
+  # THE NAMES A THING CAN BE CALLED, on the same rule and for the same reason.
+  # `Item#name` is what the records call it -- "Ward Office 12 daybook" -- and
+  # no narration in 132 whole-run passages ever wrote that string. Every one of
+  # them wrote "daybook". Without the alias `item_not_held` is live and silent,
+  # which reads as a clean result and is the one failure mode
+  # `Story::Audit`'s header warns about.
+  def item_names(item)
+    name = item.respond_to?(:name) ? item.name : item
+
+    place_names(name)
   end
 
   # ------------------------------------------------------------------------

@@ -18,6 +18,12 @@
         "rate": 0.013514,
         "available": true
       },
+      "unrecorded_arrival": {
+        "flagged": 0,
+        "scanned": 0,
+        "rate": 0.0,
+        "available": false
+      },
       "item_not_held": {
         "flagged": 0,
         "scanned": 0,

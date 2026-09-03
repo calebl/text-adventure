@@ -1,0 +1,163 @@
+# The Salt Assizes -- a seeded, playable world.
+#
+# Authored by hand for `ta-eval-pipeline`, and shaped for the evaluation sweep
+# rather than for a story the captain has played. Three things about it are
+# deliberate:
+#
+#   1. IT IS THE HELD-OUT WORLD. Every check in `Story::Audit` was measured
+#      against passages from the other two files -- `narration_corpus.json` and
+#      `eval_corpus.json` are drawn from them -- so this is the one world no
+#      check has ever seen. See `Eval::HELD_OUT`. Do not add a passage from it
+#      to a fixture and do not tune a pattern against its prose.
+#   2. IT HAS NO MECHANICS. `The Lunar Cartographer` shuffles its connections
+#      nightly, which makes `unreachable_transition` UNJUDGEABLE on it -- the
+#      graph the player walked is not the graph the sweep reads back. This world
+#      holds still, so that check is fully live here. That is the whole reason
+#      the sweep is worth running on three worlds and not two.
+#   3. ITS PLACES AND ITS ITEM HAVE DISTINCT NAMES. "Tide Post", "Vestry Hulk",
+#      "tide-slate": each has a last word the prose can plausibly use on its own
+#      and no other room in the file answers to it. `Story::Audit::Prose`
+#      derives those aliases and drops any a second room shares, so a world
+#      whose rooms all ended in "Hall" would quietly lose the arrival check.
+#
+# The opening scene puts a judge, a bell and a rising tide in one room, so turn
+# one has somebody to talk to and something with a deadline.
+#
+# Loaded offline by db/seeds.rb. No model call, no API key, no network.
+---
+format: 2
+universe:
+  physics: |-
+    Standard physical laws, with one local exception the courts are built around: on this coast an oath spoken over standing salt water binds, and an oath spoken over dry ground does not. Nobody has explained it and everybody has arranged their life around it. A sworn statement made on the causeway at low water holds a man in place -- he cannot walk away from it, cannot contradict it, and will find his own mouth refusing the lie. The same words spoken inland are only words. The binding lasts exactly as long as the water that heard it stays where it is, which on this coast is about six hours.
+  technology: |-
+    Sail, tar, oil lamp and iron. Roughly eighteenth century and skewed entirely toward the sea: block and tackle, chain, dredging gear, tide tables computed by hand and reprinted every spring. There is no telegraph and no engine on the coast. The most advanced instrument in the county is the Assize bell, cast to a pitch that carries over surf, and the second is the tide-slate, a ruled board of black slate on which the day's high water is chalked and which no one is permitted to erase but the Bell-Keeper.
+  weapons: |-
+    Boat hooks, gutting knives, and the chain. Violence on this coast is mostly the sea's, and what people do to each other they do with the law and the tide -- a man left chained at the post through one turn of the water is a man the county has killed without touching him. Firearms exist and are ruined by salt within a season, so nobody bothers. The Assizes carry no guard beyond the Bell-Keeper, because the causeway itself is the guard: at high water there is nowhere to run to.
+  geographies: |-
+    A drowned coast of mud flats, salt marsh and islands that are only islands twice a day. The Assize causeway runs a mile out from the shore to Gallows Rock and is walkable for about five hours either side of low water. On the rock stand the court, the tide post and the beached hulk of the *Vestry*, a revenue cutter that came ashore ninety years ago and was never floated off. Inland the marsh runs to grazing, and beyond that the county town, which the Assizes visit once and never twice.
+  civilizations: |-
+    One county, one court, and a hard division between the people of the shore and the people of the marsh. The shore lives by salvage, oysters and the wrecking trade and considers the law a weather event. The marsh lives by grazing and considers itself the county's conscience. Above both sit the Justicars, appointed for life and travelling in circuit, and beside them the Bell-Keepers -- a guild of one family per coast, who read the water and are the only people whose word can rise a court. Everyone here can tell you how long they have until the water turns.
+  history: |-
+    The Assizes were founded four hundred years ago after a wrecking case collapsed twice on perjury, when somebody noticed that the men who had sworn on the flats had not been able to lie. The court moved onto the causeway the following spring and has sat there since. Twice the Crown has tried to move it inland and twice the verdicts stopped holding. Ninety years ago the revenue cutter *Vestry* came ashore across the court's own steps during a hearing; the court adjourned, the hearing resumed inside the wreck, and the wreck has been the vestry ever since.
+  economics: |-
+    Oysters, salt, salvage and fees. Everything on this coast is paid at low water and settled before the turn, which makes credit almost unknown and grudges almost permanent. The Assizes are funded by the fees of the cases they hear, which means a court with nothing to try does not eat -- a fact everybody notices and nobody says. The wrecking trade is illegal, universal, and the single largest source of coin between the marsh and the sea.
+  politics: |-
+    The Justicars answer to the Crown and are ignored by it. Real power on the coast is the ability to say what time the water turns, which is the Bell-Keeper's, and the ability to say what was sworn, which is the court's. The two have been quietly at odds for a century: a Justicar who wants a verdict wants more water than the Keeper will give, and a Keeper who rings the court up early has ended a hearing that a life depended on. Neither can overrule the other and both know it.
+  religion: |-
+    The coast keeps the Turning: that the world is water and the only sin is being where you said you would not be when it comes in. Its clergy are tide-readers, its sacrament is the count of the last hour before high water, and its heresy -- held quietly by most of the marsh -- is that the sea does not care and never did. Oaths are religious business here as much as legal, which is why a Bell-Keeper is sworn and a Justicar is merely appointed.
+  races:
+  - name: Bell-Keepers
+    description: |-
+      One family to a coast, sworn at seven and never released. They are bred and trained to read water, and they do it the way other people hear music: a Keeper standing on the causeway can tell you the minute of the turn without a table, and cannot stop doing it. They are tall, weathered early, deaf in the ear that faces the bell, and constitutionally unable to give a number they are not sure of, which makes them useless liars and excellent witnesses.
+  - name: Circuit Justicars
+    description: |-
+      Not a bloodline but effectively a caste: appointed for life, moved every season, and forbidden to hear the same county twice. Decades of never staying leave them precise, courteous and profoundly disconnected -- a Justicar knows the law of forty parishes and the name of nobody in any of them. They are the only people on the coast who cannot tell you when the water turns.
+  - name: Marshborn
+    description: |-
+      Graziers and dyke-menders from the inland levels, drier and stiffer than the shore in every sense. They keep records, keep grudges, and supply most of the county's witnesses and all of its informers. A Marshborn on the causeway is somebody who came a long way to see a thing done properly.
+  - name: Shorefolk
+    description: |-
+      The people of the flats: oystermen, salvagers, wreckers. Broad, salt-cured and cheerfully fatalistic, with an oral memory of every hull lost on this coast for two hundred years and no written record of anything at all. They regard the Assizes as a kind of weather that occasionally takes somebody, and they turn out for every hearing.
+story:
+  title: The Salt Assizes
+  genre: tidal legal mystery
+  start_time: '2026-09-01T05:20:00Z'
+  preface: |-
+    You have rung this court up and down for nineteen years and you have never once been wrong about the water, which is why the chalk on the tide-slate is wrong in somebody else's hand. High water is written as ten minutes past eight. High water is at seven. You wrote seven yourself, last night, on a dry board in a still room, and the figure on the slate now is not yours and is close enough to yours to pass. Out at the post, Neb Halloran has been chained since the ebb for a wrecking nobody on this coast believes he did alone, and his hearing is set for the last hour before the turn -- an hour that, on that chalk, does not exist. The Justicar is already in the court with his gown on. The bell is on its hook. Whoever moved seventy minutes has given the water time to do what the court would have had to sign for.
+  summary: |-
+    The player is Coraith Vell, Bell-Keeper of the Assize causeway, who finds the day's high water altered by seventy minutes in a hand that is almost her own. The chained man at the tide post has a hearing in an hour the false chalk has erased, so working out who changed it means reading the court's own papers against the water: the Justicar who needs a verdict, the wreck that serves as the vestry, and the question of who benefits from a drowning the record will call a delay. The tone is cold, procedural and out of doors, and the clock is the sea.
+opening_scene:
+  location: The Causeway Court
+  characters: [Coraith Vell, Ammon Brace]
+  description: |-
+    The chalk is still under your thumb and it is still not your handwriting. You are standing at the slate in the open court on Gallows Rock with the mile of causeway behind you already darkening at its edges, and Justicar Brace is on the bench in his gown with his hands folded, waiting to be told how long he has. Out past the low wall the flats are silvering over the way they do an hour before they stop being flats. The bell hangs on its hook at your shoulder, cold, and the figure chalked above the day's cases says ten minutes past eight in a hand that has your slant and none of your pressure. From the post at the seaward end of the rock, faint over the surf, somebody is calling a name, and it is not yours.
+  summary: |-
+    The story opens in the Causeway Court with the day's high water altered on the tide-slate by seventy minutes, the Justicar waiting on the bench for a number, and the chained man audible from the tide post.
+characters:
+- fullname: Coraith Vell
+  race: Bell-Keepers
+  nickname: Vell
+  age: 44
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: |-
+    Sworn Bell-Keeper at seven, as her mother and her mother's mother were, and keeper of this causeway alone since she was twenty-five. She has rung nineteen years of Assizes up and down and has ended two hearings early, one of which cost a man his acquittal and is the only thing she has ever apologised for. She writes the slate herself every night, in a still room, on a dry board, and has never had cause to check it in the morning.
+  personality: |-
+    Exact, literal and slow to speak, with the Keeper's inability to give a figure she is not sure of. She does not argue; she states the water and lets people arrange themselves around it. Under pressure she gets quieter and more precise, which people mistake for calm and is closer to fury.
+  appearance: |-
+    Tall, salt-weathered a decade early, with cropped grey hair and a permanent squint to seaward. Deaf in the left ear, which faces the bell. Oilskin over court black, and chalk worn into the creases of her right hand so deeply that it does not wash out.
+  likes: A slate that agrees with the water, the ten minutes before a turn, the sound of a court rising on time
+  dislikes: A figure given without a source, being asked to round, anyone standing between her and the flats
+  fears: Ringing a court up and finding afterwards that the water had not turned
+  items:
+  - name: Assize tide-slate
+    description: |-
+      A ruled board of black slate, three hands wide, on which the day's high water is chalked. Nobody but the Bell-Keeper may erase it. Today's figure is in a hand that has her slant and none of her pressure.
+    properties: '{"ruled": true, "erasable_by": "bell-keeper", "chalk": "altered"}'
+- fullname: Ammon Brace
+  race: Circuit Justicars
+  nickname: Justicar Brace
+  age: 58
+  sex: male
+  is_protagonist: false
+  is_companion: false
+  backstory: |-
+    Appointed at thirty-one and moved every season since, through forty parishes he could recite and not one he could find a friend in. He has heard eleven wrecking cases on this coast and returned nine convictions, and he is fairly sure that is the correct proportion. He has never in his life known when the water would turn, and he has spent thirty years being told.
+  personality: |-
+    Courteous, unhurried, genuinely fair-minded within the law and entirely unable to see outside it. He will hear anybody out. He wants the hearing to happen because a hearing not held is a man held without one, and he will not notice that the fastest way to have it is to trust a number nobody sourced.
+  appearance: |-
+    Neat, dry and out of place: gown, bands, town shoes ruined by the causeway, and a face that has been polite in bad weather for thirty years. He keeps his hands folded because they are cold.
+  likes: A court that sits when it says it will, a witness who answers the question, being given a figure
+  dislikes: Adjournments, the smell of the flats, being asked to wait without a reason
+  fears: Signing off on a delay that turns out to have been a sentence
+- fullname: Neb Halloran
+  race: Shorefolk
+  nickname: Neb
+  age: 33
+  sex: male
+  is_protagonist: false
+  is_companion: false
+  backstory: |-
+    Third-generation salvager out of the shore villages, chained at the tide post since the ebb for the wrecking of the *Marianne Dowe* -- a job everybody on this coast agrees took six men and which only he has been charged with. He knows all six names. He has said none of them, because five of them are his cousins and the sixth pays for his mother's roof.
+  personality: |-
+    Loud, funny and shrewd, and getting quieter the higher the water gets. He bargains out of habit even when he has nothing, and he tells the truth in fragments, testing what each one buys before he parts with the next.
+  appearance: |-
+    Broad, sunburnt over salt-burn, with a wrecker's hands and a rope-scar around the left wrist that predates the chain by ten years. Shirt, no coat; they took the coat.
+  likes: A tide that comes in slow, being called by his name, an argument he can win
+  dislikes: Being counted with the marsh, questions about his cousins, the sound of the bell
+  fears: Drowning at the post while the court is still deciding whether to hear him
+locations:
+- name: The Causeway Court
+  detail_level: realized
+  opening: true
+  teaser: A bench, a slate, and a mile of causeway going under.
+  description: |-
+    You are standing in the open court on Gallows Rock, which is four walls of dressed stone about waist high, a flagged floor, a bench, and no roof at all -- roofs, on this coast, are what the sea takes first. The Justicar's bench faces seaward so that whoever is being tried has the water behind them. The day's cases are chalked on the tide-slate propped against the wall at your left hand, with the high-water figure above them in somebody else's writing.
+
+    Behind you the causeway runs a mile back to the shore and its edges have already stopped being edges. Seaward, the rock narrows to the tide post, and you can see the chain from here. The beached hulk of the *Vestry* lies canted across the northern side of the court with its hatch propped open on a boat hook, close enough that the court's own papers are kept in it. The bell hangs on its hook at your shoulder. Nobody in this court but you can tell how long any of it has.
+  lore: |-
+    The court has sat on this rock for four hundred years because an oath sworn over standing salt water binds and an oath sworn on dry ground does not. Everything about the building follows from that: no roof, a low wall so the water can be seen, a floor that drains, and a bench positioned so the Justicar is the only person in the court who is not watching the tide.
+
+    The tide-slate is the one object here with a rule about it. Only the Bell-Keeper may erase the day's figure, which in four hundred years has been broken twice, both times in the same case, and the case is not in the records because the record was the thing that was altered.
+- name: The Tide Post
+  detail_level: realized
+  teaser: A chain, a man, and about five feet of dry rock.
+  description: |-
+    The seaward end of Gallows Rock is a shelf of granite about twelve feet across, sloping, worn smooth, with the post set into it: an iron column the thickness of a mast, sunk four hundred years and stained to the colour of the rock in a band that tells you exactly where the water gets to. Neb Halloran is chained to it by the left wrist with about six feet of play, standing where the shelf is highest, and he has arranged himself so as not to be sitting when you arrive.
+
+    There is nothing else out here. No shelter, no rail, no second way off -- the shelf runs back to the court and that is all. The surf is working at the low side of the rock in a way it was not doing an hour ago, and the stain band on the post is a hand and a half above the wet.
+  lore: |-
+    The post predates the court. It was a mooring for the boats that worked the rock before anybody thought of trying anyone here, and the practice of chaining the accused to it during a hearing began as a way of stopping men from walking off down the causeway mid-testimony. That it also puts them where the water will reach was noticed early and never corrected, and the county's phrase for a hung jury is still *the post decided*.
+
+    Three men have died at it in the court's records, all three during adjournments, all three with the Bell-Keeper of the day recorded as having given the correct figure.
+- name: The Vestry Hulk
+  detail_level: stub
+  teaser: A revenue cutter that came ashore in 1836 and is now where the papers live.
+connections:
+- between: [The Causeway Court, The Tide Post]
+  distance: adjacent
+  travel_method: walking
+- between: [The Causeway Court, The Vestry Hulk]
+  distance: adjacent
+  travel_method: walking

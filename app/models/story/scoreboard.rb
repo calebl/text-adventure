@@ -48,6 +48,7 @@ class Story::Scoreboard
   CHECKS = {
     unreachable_transition: "the player got somewhere the graph has no edge to",
     unrecorded_departure: "the prose closed a door behind a player who never left",
+    unrecorded_arrival: "the prose walked the player into a room the records did not move them to",
     item_not_held: "the prose handed the player something somebody else holds",
     truncated_prose: "stored prose stops mid-sentence",
     third_person_protagonist: "the narration wrote the player as somebody else",

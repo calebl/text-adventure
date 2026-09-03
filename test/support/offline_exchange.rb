@@ -9,6 +9,13 @@
 #
 # So a test using this exercises the real `BaseAgent`, the real `Chat`, real
 # rows and real replay -- everything except the HTTP call.
+#
+# IT ALSO SUPPLIES A MODEL, because the real `BaseAgent` needs one and the suite
+# has none: `test_helper` clears `OPENROUTER_API_KEY`, and the local rotation is
+# off by default now (see `BaseAgent::LOCAL_MODEL_OPTIONS`). The model named
+# below is never asked anything -- `Chat#ask` is stubbed above it -- but it has
+# to be ON THE ROW, because `Chat#model` is what the assistant message records
+# as having answered and a test about persistence would otherwise assert on nil.
 module OfflineExchange
   # What one stubbed call answers with. `content` may be a String (prose, which
   # is streamed to the block a word at a time the way RubyLLM does) or a Hash (a
@@ -19,9 +26,29 @@ module OfflineExchange
     Reply.new(content: content, input_tokens: input, output_tokens: output)
   end
 
+  # The model the stubbed rows are written against, and it is a LOCAL one for a
+  # reason that is not about model choice: RubyLLM validates a provider's
+  # credentials the moment a chat is assigned to it, so naming a hosted model in
+  # a suite with no key raises before `Chat#ask` is ever reached. ollama needs
+  # none. This is what the rotation used to supply here by default, before the
+  # local half became opt-in.
+  MODEL = BaseAgent::LOCAL_MODEL_OPTIONS.first
+
   # Queues `replies` -- Reply objects or bare contents -- and answers each
   # `Chat#ask` with the next one. Raises rather than answering when the queue
   # runs dry, because a test that made an unplanned model call should say so.
+  # JUST THE MODEL, no stubbed answers. For a test that builds an agent's
+  # conversation without asking it anything -- picking a chat up to see it
+  # trimmed, say. `#with` is this plus the queue.
+  def self.with_model
+    original = BaseAgent.method(:default_model_options)
+    BaseAgent.define_singleton_method(:default_model_options) { [ OfflineExchange::MODEL ] }
+
+    yield
+  ensure
+    BaseAgent.define_singleton_method(:default_model_options, original)
+  end
+
   def self.with(*replies)
     queue = replies.map { |reply| reply.is_a?(Reply) ? reply : reply(reply) }
     original = Chat.instance_method(:ask)
@@ -34,7 +61,7 @@ module OfflineExchange
       OfflineExchange.persist_answer(self, answer, &block)
     end
 
-    yield
+    with_model { yield }
   ensure
     Chat.define_method(:ask, original)
   end

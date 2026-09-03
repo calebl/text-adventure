@@ -1,0 +1,127 @@
+# THE SCRIPT FOR "The Salt Assizes" -- THE HELD-OUT WORLD.
+#
+# Shaped to the same eleven beats as `the-unrecorded-hour.yml` on purpose: the
+# two worlds differ in their prose, their cast and their laws and NOT in what
+# the player does, so a difference between their boards is a difference between
+# the worlds rather than between two scripts. That is what makes the held-out
+# board worth reading at all.
+#
+# See `Eval::HELD_OUT`. No check in `Story::Audit` was measured against this
+# world's prose, and nothing in a fixture is drawn from it. Keep it that way.
+#
+# TURNS 12-20 WERE ADDED TO SHRINK THE NOISE FLOOR (2026-09-03): a bigger
+# denominator per run is cheaper than more runs, and it changes no kind of turn
+# -- the same beats continued.
+story: The Salt Assizes
+turns:
+- id: t01-examine
+  command: read the high-water figure chalked above the day's cases against my own hand
+  expect: narrate
+  beat: OBJECT
+  note: the ordinary texture of play -- looking hard at a thing
+- id: t02-talk-1
+  command: Justicar Brace, the figure above your cases is not in my hand.
+  expect: talk
+  beat: TALK 1/4
+  note: opening the exchange, nothing at stake yet
+- id: t03-talk-2
+  command: Brace, who else has been at the slate since the ebb?
+  expect: talk
+  beat: TALK 2/4
+  note: information he may hold, asked obliquely
+- id: t04-talk-3
+  command: Brace, adjourn the hearing and have Halloran off that post before I source you a number.
+  expect: talk
+  beat: TALK 3/4 -- DEFLECT
+  note: a demand his sheet's stated dislike obliges him to refuse
+- id: t05-talk-4
+  command: Tell me plainly, Brace. Did you put seventy minutes on that slate yourself?
+  expect: talk
+  beat: TALK 4/4 -- THE ACCUSATION
+  note: the question the case gives him a specific reason to answer carefully
+- id: t06-drop
+  command: put the Assize tide-slate down on the bench
+  expect: drop
+  beat: CONSEQUENCE
+  note: an app-owned state change -- the only board that says when the water turns leaves her hand
+- id: t07-move-new
+  command: go over into the Vestry Hulk
+  expect: move
+  beat: ARRIVAL (new)
+  note: movement into a stub -- Location::Generator writes the room, Scene::Generator narrates finding it
+- id: t08-move-back
+  command: walk back into the Causeway Court
+  expect: move
+  beat: ARRIVAL (return)
+  note: the same call site narrating coming BACK, and the turn the item check fires on
+- id: t09-take
+  command: pick up the Assize tide-slate
+  expect: take
+  beat: CONSEQUENCE
+  note: the mirror of t06, over state this run produced
+- id: t10-impossible
+  command: hold the water off the rock with my bare hands until the hearing is finished
+  expect: narrate
+  beat: IMPOSSIBLE
+  note: a narrator that has to say no -- where voice shows most
+- id: t11-move-post
+  command: walk out to the Tide Post
+  expect: move
+  beat: ARRIVAL (realized, unvisited)
+  note: somewhere already written but never stood in, to close the run
+- id: t12-examine-2
+  command: look at the stain band on the iron post and count the hand's width above the wet
+  expect: narrate
+  beat: OBJECT
+  note: the detail the seeded room was built around -- the water's own record, read at the post
+- id: t13-move-back-2
+  command: walk back into the Causeway Court
+  expect: move
+  beat: ARRIVAL (return)
+  note: |-
+    OFF THE POST FIRST. Turn 11 ends the run out at the tide post, and the first
+    draft of turns 12-20 talked to the Justicar from there (he is on the bench, a
+    hundred yards away) and reached for a slate it had put down somewhere else.
+    A script is a sequence of states. There is deliberately NO scripted talk to
+    Halloran at the post either: nothing records where a character stands
+    (ROADMAP, known issues), so whether he is in the post's cast is luck.
+- id: t14-talk-5
+  command: Brace, read me the case above the figure and tell me whose fee it is.
+  expect: talk
+  beat: TALK 5/6
+  note: a demand with the court's own paperwork behind it, naming no place
+- id: t15-drop-2
+  command: put the Assize tide-slate down on the bench
+  expect: drop
+  beat: CONSEQUENCE
+  note: the second app-owned state change, so item_not_held has two turns to be wrong on
+- id: t16-talk-6
+  command: Brace, the water does not wait on a signature. Rise the court.
+  expect: talk
+  beat: TALK 6/6
+  note: the demand the whole world is built to refuse, over the slate lying on the bench
+- id: t17-move-vestry-2
+  command: go over into the Vestry Hulk
+  expect: move
+  beat: ARRIVAL (return)
+  note: |-
+    a room this run realized at t07, over an edge THE WORLD GREW: realizing the
+    hulk let the model name the tide post as one of its exits, and connections
+    are written both ways. The graph is legitimately wider than the seed file --
+    which is the persistence model working, and is why unreachable_transition
+    reads zero here rather than flagging the shortcut.
+- id: t18-examine-3
+  command: look for the court's own papers in the wreck
+  expect: narrate
+  beat: OBJECT
+  note: what the hulk is for, asked inside it
+- id: t19-move-back-3
+  command: walk back into the Causeway Court
+  expect: move
+  beat: ARRIVAL (return)
+  note: back to the room the slate is lying in
+- id: t20-take-2
+  command: pick up the Assize tide-slate
+  expect: take
+  beat: CONSEQUENCE
+  note: the mirror of t15

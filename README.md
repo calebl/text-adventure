@@ -16,7 +16,7 @@ bin/rails db:prepare
 Generation needs a model. Either:
 
 * **Local** — run `ollama serve` and pull the models listed in
-  `BaseAgent::LOCAL_MODEL_OPTIONS`. Free, but 40–90 seconds per structured call.
+  `BaseAgent::LOCAL_MODEL_OPTIONS` — **off unless `TA_LOCAL_MODELS=1`**. Free, but 40–90 seconds per structured call, and a slow local answer is worse than a loud failure.
 * **Hosted (preferred)** — set `OPENROUTER_API_KEY`, in a gitignored `.env`
   (loaded by `dotenv-rails`) or a gitignored `.envrc` (loaded by direnv). Much
   faster, and `BaseAgent` prefers it automatically when the key is present. Defaults to `mistralai/mistral-medium-3.1`, falling back to
@@ -490,6 +490,35 @@ CORPUS: database
 
 Every flag carries the turn, what was typed and the passage that convicted it,
 so the only prose anybody reads is prose a check caught.
+
+### Generating the runs to score, and knowing when a change is real
+
+`rake game:score` reads what is already on disk. `rake eval:run` **makes** the
+turns to read: it plays three seeded worlds through the real turn loop, keeps
+every row each turn wrote, scores them, and prints a board.
+
+```
+$ rake eval:run
+ESTIMATE: 15 runs x 11 turns = 165 turns, ~297,000 tokens in / 49,500 out: about $0.22
+...
+THE NOISE FLOOR -- what these numbers do when NOTHING changed.
+
+  The Unrecorded Hour -- 8 runs
+    check                      flags per run          rate min..max (median)
+    third_person_protagonist   2, 3, 4, 3, 3, 1, 6, 1 0.091..0.545 (0.273)
+    RICHNESS commitments/turn  1.64, 1.64, 1.91, ...  1.36..1.91 (1.64)
+```
+
+**That spread is the point.** Those eight runs are the same code over the same
+world with the same commands; only the sampling differed. Two of them differ by
+five flags. So a board here never prints a count without its spread, and
+`rake eval:compare BEFORE=… AFTER=…` answers REAL, NOISE or INCONCLUSIVE rather
+than showing two numbers and letting you pick.
+
+Generation spends money — about $0.22 at the defaults, and it prints the estimate
+before it starts. Scoring is free, offline and deterministic.
+[EVALUATION.md](EVALUATION.md) is the protocol.
+
 
 **Two corpora, reported separately and never added together.** The local
 database is what was actually played -- true, and the only corpus the captain's
