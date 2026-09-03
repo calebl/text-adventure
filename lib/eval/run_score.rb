@@ -82,7 +82,7 @@ class Eval::RunScore
                                                         typed: f[:typed], headline: f[:headline], claim: f[:claim],
                                                         where: f[:where],
                                                         evidence: (f[:evidence] || {}).transform_keys(&:to_s)) },
-        richness: Eval::Richness::Summary.new(**data[:richness]),
+        richness: Eval::Richness::Summary.new(**data[:richness].slice(*Eval::Richness::Summary.members)),
         usage: Array(data[:usage]).map { |u| u.transform_keys(&:to_sym) },
         failures: Array(row["failures"] || row[:failures]),
         drifts: Array(row["drifts"] || row[:drifts]),

@@ -33,6 +33,13 @@ class Eval::RunSet
 
     document = JSON.parse(File.read(file))
     new(name: document["name"], path: dir, runs: document.fetch("runs").map { |row| Eval::RunScore.from_h(row) })
+  rescue ArgumentError, KeyError => error
+    # A SCORE FILE FROM AN OLDER SCORER. Scoring is free and the run databases
+    # are still there, so the fix is to run it again rather than to migrate a
+    # working file -- but the error has to say that rather than surfacing as a
+    # missing keyword argument.
+    raise ArgumentError, "#{file} was written by a different version of the scorer (#{error.message}). " \
+                         "Re-score it: rake eval:score SET=#{dir.basename}"
   end
 
   # Scores every run in `directory` and writes `scores.json` beside them.

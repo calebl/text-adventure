@@ -86,7 +86,7 @@ module Eval::Noise
     def runs = values.size
     def min = values.min || 0
     def max = values.max || 0
-    def median = Eval::Richness.median(values)
+    def median = Eval.median(values)
     def range = max - min
     def to_h = { runs:, min:, max:, median:, range: }
   end

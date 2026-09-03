@@ -158,14 +158,14 @@ class Eval::Board
     rows = runs.map(&:richness)
     Eval::Richness::Summary.new(
       turns: rows.sum(&:turns),
-      chars: Eval::Richness.median(rows.map(&:chars)).round,
-      words: Eval::Richness.median(rows.map(&:words)).round,
-      commitments: Eval::Richness.median(rows.map(&:commitments)).round(2),
-      coverage: Eval::Richness.median(rows.map(&:coverage)).round(4),
-      room: Eval::Richness.median(rows.map(&:room)).round(2),
-      exits: Eval::Richness.median(rows.map(&:exits)).round(2),
-      items: Eval::Richness.median(rows.map(&:items)).round(2),
-      characters: Eval::Richness.median(rows.map(&:characters)).round(2)
+      chars: Eval.median(rows.map(&:chars)).round,
+      words: Eval.median(rows.map(&:words)).round,
+      commitments: Eval.median(rows.map(&:commitments)).round(2),
+      coverage: Eval.median(rows.map(&:coverage)).round(4),
+      room: Eval.median(rows.map(&:room)).round(2),
+      exits: Eval.median(rows.map(&:exits)).round(2),
+      items: Eval.median(rows.map(&:items)).round(2),
+      characters: Eval.median(rows.map(&:characters)).round(2)
     )
   end
 

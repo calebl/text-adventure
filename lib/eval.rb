@@ -93,4 +93,22 @@ module Eval
   def self.root = Rails.root.join(ROOT)
 
   def self.set_path(name) = root.join(name)
+
+  # The two summary statistics every part of this module reaches for, in one
+  # place so a rate and its spread are never averaged two different ways.
+  # WHICH ONE TO USE IS A JUDGEMENT PER FIGURE and both are used deliberately:
+  # see `Eval::Richness::Summary` for why length is a median and commitments
+  # are a mean.
+  def self.median(values)
+    sorted = Array(values).compact.sort
+    return 0.0 if sorted.empty?
+
+    middle = sorted.size / 2
+    sorted.size.odd? ? sorted[middle].to_f : (sorted[middle - 1] + sorted[middle]) / 2.0
+  end
+
+  def self.mean(values)
+    rows = Array(values).compact
+    rows.empty? ? 0.0 : rows.sum.fdiv(rows.size)
+  end
 end

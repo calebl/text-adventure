@@ -173,18 +173,9 @@ module Eval::Richness
     )
   end
 
-  def mean(values)
-    rows = values.compact
-    rows.empty? ? 0.0 : rows.sum.fdiv(rows.size)
-  end
+  def mean(values) = Eval.mean(values)
 
-  def median(values)
-    sorted = values.compact.sort
-    return 0.0 if sorted.empty?
-
-    middle = sorted.size / 2
-    sorted.size.odd? ? sorted[middle].to_f : (sorted[middle - 1] + sorted[middle]) / 2.0
-  end
+  def median(values) = Eval.median(values)
 
   private
 
