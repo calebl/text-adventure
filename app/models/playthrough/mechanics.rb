@@ -335,11 +335,36 @@ class Playthrough::Mechanics
   # the same `Intent`. What differs is only the two ends: nothing streams, and
   # the branches that exist to produce prose say so instead.
   def act(intent, command, understood)
-    return move(intent.destination, command, understood) if intent.destination
-    return talk(intent.speaker, understood) if intent.speaker
-    return intent.drop? ? drop(intent.item, understood) : take(intent.item, understood) if intent.item
+    report =
+      if intent.destination
+        move(intent.destination, command, understood)
+      elsif intent.speaker
+        talk(intent.speaker, understood)
+      elsif intent.item
+        intent.drop? ? drop(intent.item, understood) : take(intent.item, understood)
+      else
+        nothing(intent, understood)
+      end
 
-    nothing(intent, understood)
+    overreach(report, intent)
+  end
+
+  # WHAT THE LINE ALSO NAMED AND THIS TURN DID NOT DO. One typed line is one
+  # act, so "take the index and the apron" takes the index -- and the apron
+  # used to go nowhere at all: no write, no refusal, and no `Playthrough::Drift`
+  # row either, because the reach resolved. Half a sentence vanished and nothing
+  # counted it.
+  #
+  # Said as a note rather than folded into `changed:` or `refused:`, because it
+  # is neither: something did happen, and something else was left undone. The
+  # note is added here rather than in each branch so every branch gets it,
+  # including the ones that refuse.
+  def overreach(report, intent)
+    return report unless intent.named_more_than_one?
+
+    report.with(note: Array(report.note) + [
+      "also named: #{label(intent.also_named)} -- one line is one act, so this turn did not touch it. Type it on its own."
+    ])
   end
 
   # MOVING, and with a model in the loop this is `Playthrough::Turn#move_to`

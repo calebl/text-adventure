@@ -460,6 +460,72 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     assert_predicate intent, :reached_for_nothing?
   end
 
+  # --- a line that named more than one thing --------------------------------
+
+  # ONE LINE IS ONE ACT. "take the index and the apron" has an answer the loop
+  # cannot make, and what used to happen is that the second half went nowhere
+  # at all: no write, no refusal, and no drift row either, because the reach
+  # resolved. `also_named` is that half kept.
+
+  test "a second thing named in the same line is resolved, and is not the target" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+    apron = create(:item, :lying, location: @here, name: "copy-room apron")
+
+    intent, = classify({ "intent" => "take", "target" => "Perrin's private index", "also_named" => "copy-room apron" },
+                       command: "pickup the index and the apron")
+
+    assert_equal index, intent.item, "the turn still acts on the first thing"
+    assert_equal apron, intent.also_named
+    assert_predicate intent, :named_more_than_one?
+  end
+
+  test "the second name resolves against the same closed set as the action" do
+    create(:item, :lying, location: @here, name: "Perrin's private index")
+    carried = create(:item, character: @protagonist, name: "Ward Office 12 daybook")
+
+    intent, = classify({ "intent" => "take", "target" => "Perrin's private index", "also_named" => carried.name })
+
+    assert_nil intent.also_named, "a take resolves against the floor, so what is in hand is not on its list"
+    assert_not_predicate intent, :named_more_than_one?
+  end
+
+  test "`nothing`, a blank and the target repeated all mean one thing was named" do
+    stair = connect("The Sunken Stair")
+
+    [ "nothing", "", nil, "The Sunken Stair", "the sunken stair" ].each do |also|
+      intent, = classify({ "intent" => "move", "target" => "The Sunken Stair", "also_named" => also })
+
+      assert_equal stair, intent.destination
+      assert_nil intent.also_named, "#{also.inspect} is not a second thing"
+      assert_not_predicate intent, :named_more_than_one?
+    end
+  end
+
+  # A reach that found nothing is DRIFT, and drift is a different fact about
+  # the world: the player named something that is not there, rather than more
+  # than the turn can do. The two never collapse into one count.
+  test "a reach that resolved to nothing is drift and not an overreach" do
+    create(:item, :lying, location: @here, name: "copy-room apron")
+
+    intent, = classify({ "intent" => "take", "target" => "nothing", "also_named" => "copy-room apron" },
+                       command: "take the cellar key and the apron")
+
+    assert_predicate intent, :reached_for_nothing?
+    assert_not_predicate intent, :named_more_than_one?
+  end
+
+  test "the second name is drawn from the same closed enum as the target" do
+    connect("The Sunken Stair")
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+    properties = json_schema_body(agent.schemas.first)["properties"]
+
+    assert_equal properties["target"]["enum"], properties["also_named"]["enum"]
+    assert_includes properties["also_named"]["enum"], "Brass Key"
+    assert_includes properties["also_named"]["enum"], Playthrough::IntentSchema::NOTHING
+  end
+
   # One word from a fixed table and one name from a closed enum: nothing here
   # for sampling to improve, and one thing for it to ruin.
   test "the classifier asks at temperature zero" do

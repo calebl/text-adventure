@@ -34,9 +34,29 @@ class Playthrough::IntentSchemaTest < ActiveSupport::TestCase
     assert_equal [ "Maren Vosk", "nothing" ], enum
   end
 
-  test "both fields are required, so BaseAgent can tell a half answer from a whole one" do
+  # `also_named` is the same closed set as `target`, so a line that names two
+  # things can say which one the turn is not acting on -- and cannot say it
+  # with a name the records do not have.
+  test "the second name is closed over exactly the same candidates as the target" do
+    properties = properties([ "Ashgate Market", "Maren Vosk" ])
+
+    assert_equal properties["target"]["enum"], properties["also_named"]["enum"]
+  end
+
+  # A required field and not an optional one, because `strict` schemas require
+  # every property -- and `nothing`, which this enum already has, is how the
+  # usual answer is given. An array here would have had to be allowed to come
+  # back empty, and an empty required array reads as an OMITTED field to
+  # `BaseAgent#missing_schema_keys`, which would fail the commonest call in the
+  # app on its commonest answer.
+  test "every field is required, so BaseAgent can tell a half answer from a whole one" do
     schema = Playthrough::IntentSchema.for([ "Ashgate Market" ])
 
-    assert_equal %w[intent target], schema.required_properties.map(&:to_s)
+    assert_equal %w[intent target also_named], schema.required_properties.map(&:to_s)
+    assert_includes properties([ "Ashgate Market" ])["also_named"]["enum"], "nothing"
+  end
+
+  test "every field tells the model what to put in it" do
+    assert_every_field_described(Playthrough::IntentSchema.for([ "Ashgate Market" ]))
   end
 end
