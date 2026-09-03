@@ -11,7 +11,13 @@
 #   Location   (story, name)             case-insensitively, matching
 #                                        Location::Generator#find_or_create_stub
 #   Connection (location, connected)     unique index, written both ways
-#   Item       (character, name)
+#   Item       (story, name)             NOT (owner, name): an item moves, and a
+#                                        world that has been played has items
+#                                        somewhere other than where the file
+#                                        puts them. Keying on the owner would
+#                                        re-seed a dropped daybook as a second
+#                                        daybook; keying on the story finds the
+#                                        one that exists and puts it back.
 #   Scene      (story, is_opening)       the story's one opening arrival, which
 #                                        is the only Scene that is world rather
 #                                        than progress -- see WorldSeed::Exporter
@@ -94,8 +100,9 @@ class WorldSeed::Loader
     location_documents.to_h do |attributes|
       name = attributes.fetch("name")
       location = find_location(story, name) || story.locations.new(name: name)
-      location.assign_attributes(attributes.except("name", "opening"))
+      location.assign_attributes(attributes.except("name", "opening", "items"))
       location.save!
+      load_items!(story, attributes["items"], character: nil, location: location)
 
       [ name, location ]
     end
@@ -125,13 +132,45 @@ class WorldSeed::Loader
       character.assign_attributes(attributes.except("race", "items").merge(race: race))
       character.save!
 
-      Array(attributes["items"]).each do |item_attributes|
-        item = character.items.find_by(name: item_attributes.fetch("name")) ||
-               character.items.new(name: item_attributes.fetch("name"))
-        item.assign_attributes(item_attributes.except("name"))
-        item.save!
-      end
+      load_items!(story, attributes["items"], character: character, location: nil)
     end
+  end
+
+  # THE THINGS IN THE WORLD, on whichever side of `Item`'s one-place rule they
+  # sit: `place` is `character:` for something somebody is holding and
+  # `location:` for something lying in a room, and the other half is written nil
+  # so that re-seeding cannot leave an item in two places at once.
+  #
+  # Items under a LOCATION are what a world has to carry for anything to be
+  # takeable at all. Nothing in the app creates an `Item` -- that is
+  # `ta-item-registry` -- so a seed file is the only place a thing can be lying
+  # on the floor of a room, and without one `take` can only ever be the inverse
+  # of a `drop` the player did first.
+  #
+  # MATCHED ON (story, name), NOT ON THE OWNER, because an item is the one thing
+  # in these files that MOVES: `Playthrough::Turn#carry!` and `#put_down!` write
+  # `items.character_id` and `items.location_id` on every take and drop. Keying
+  # on the owner would look for the daybook in the hands the file puts it in,
+  # not find it because the player left it on a shelf, and seed a second one.
+  # Keying on the story finds the one that exists and puts it back where the
+  # file says it belongs -- the same "the file re-asserts itself over a played
+  # world" rule the connections already follow.
+  def load_items!(story, documents, **place)
+    Array(documents).each do |attributes|
+      name = attributes.fetch("name")
+      item = find_item(story, name) || Item.new(name: name)
+      item.assign_attributes(attributes.except("name").merge(place))
+      item.save!
+    end
+  end
+
+  # An item of this story by name, held by anybody in it or lying anywhere in
+  # it. Two queries rather than one because `Item` has no `story_id` -- it is
+  # owned by whoever is holding it.
+  def find_item(story, name)
+    Item.where(name: name, character_id: story.characters.select(:id))
+        .or(Item.where(name: name, location_id: story.locations.select(:id)))
+        .first
   end
 
   # A world's own laws: which fixed Ruby operation runs on which cadence, and the
@@ -203,6 +242,10 @@ class WorldSeed::Loader
     names = location_documents.map { |attributes| attributes.fetch("name") }
     duplicates = names.group_by { |name| name.downcase }.select { |_, group| group.size > 1 }.keys
     raise InvalidWorld, "#{where}: duplicate location names: #{duplicates.join(", ")}" if duplicates.any?
+
+    item_names = (character_documents + location_documents).flat_map { |attributes| Array(attributes["items"]).map { |item| item.fetch("name") } }
+    duplicates = item_names.group_by { |name| name.downcase }.select { |_, group| group.size > 1 }.keys
+    raise InvalidWorld, "#{where}: duplicate item names: #{duplicates.join(", ")} -- an item is matched on (story, name), so two of a name are one item" if duplicates.any?
 
     connection_documents.each do |attributes|
       pair = Array(attributes["between"])

@@ -255,19 +255,31 @@ class InteractionAgentTest < ActiveSupport::TestCase
     prompt = build_agent.narrator_prompt("Excuse me?", CHARACTER_RESPONSE)
 
     assert_match(/second person/, prompt)
-    assert_match(/Refer to the user as "you"/, prompt)
-    assert_match(/first name or nickname/, prompt)
-    assert_match(/1 paragraph/, prompt)
+    assert_match(/The player is "you"/, prompt)
+    assert_match(/Refer to the character as Mira\./, prompt)
+    assert_match(/One or two short paragraphs/, prompt)
   end
 
-  # The character sheet already went to the pass that needed it. Repeating the
-  # backstory here invites the narrator to recite biography instead of
-  # narrating the moment.
-  test "narrator_prompt forbids restating the backstory" do
+  # This pass is deliberately never given the sheet, and the old instruction --
+  # "Do not respond with details of the character's backstory" -- referred to a
+  # backstory it did not have. The rule actually wanted is that the six lines
+  # and the exchange are the whole of what it knows.
+  test "narrator_prompt confines the narrator to the reaction and the exchange" do
     prompt = build_agent.narrator_prompt("Excuse me?", CHARACTER_RESPONSE)
 
-    assert_match(/Do not respond with details of the character's/, prompt)
-    assert_match(/Do not make up information/, prompt)
+    assert_match(/Everything you know about Mira is the reaction above and the exchange itself/, prompt)
+    assert_match(/Do not add facts about Mira/, prompt)
+    assert_no_match(/backstory/, prompt, "it has no backstory to be told about")
+    assert_no_match(/the user/i, prompt, "the player is never 'the user'")
+  end
+
+  # The resolution is what the character will do NEXT, and it is kept off this
+  # prompt so the prose stays on the moment. Saying so is the other half.
+  test "narrator_prompt keeps the prose on the moment" do
+    prompt = build_agent.narrator_prompt("Excuse me?", CHARACTER_RESPONSE)
+
+    assert_match(/do not narrate what\s+she will do next/, prompt)
+    assert_match(/do not end on a question to them/, prompt)
   end
 
   test "narrator_prompt reads missing structured fields as blank" do
@@ -333,7 +345,110 @@ class InteractionAgentTest < ActiveSupport::TestCase
     assert_equal agent.narrator_agent.prompts.first, agent.narrator_instructions
   end
 
+  # --- the moment, in both passes -------------------------------------------
+
+  # THE CHARACTER IS TOLD WHERE IT IS. The system prompt carries the universe
+  # and the sheet; the per-turn message used to carry the typed line and nothing
+  # else, so a landlord in a doorway at midnight had no idea he was in a doorway.
+  test "the character pass is told the moment when there is a playthrough to read it from" do
+    playthrough = playthrough_with_protagonist("Odile Vance")
+    prompt = InteractionAgent.new(@character, playthrough: playthrough).character_prompt("Excuse me?")
+
+    assert_match(/## The moment/, prompt)
+    assert_match(/Where you are: #{Regexp.escape(playthrough.current_location.name)}\./, prompt)
+    assert_match(/The time is about/, prompt)
+    assert_match(/## What Odile Vance says or does\nExcuse me\?/, prompt)
+    assert_match(/React as Mira Halloway/, prompt)
+  end
+
+  test "a character with no playthrough is asked without a moment, as before" do
+    prompt = InteractionAgent.new(@character).character_prompt("Excuse me?")
+
+    assert_no_match(/## The moment/, prompt)
+    assert_match(/Excuse me\?/, prompt)
+  end
+
+  # The addressee section in the instructions names the player; the user turn
+  # used to un-name them again as "the user", every turn.
+  test "the character pass names who is speaking and never calls them the user" do
+    playthrough = playthrough_with_protagonist("Odile Vance")
+    prompt = InteractionAgent.new(@character, playthrough: playthrough).character_prompt("Excuse me?")
+
+    assert_match(/Odile Vance says or does/, prompt)
+    assert_no_match(/user/i, prompt)
+  end
+
+  test "with no protagonist in the story the speaker is the person in front of you" do
+    prompt = InteractionAgent.new(@character).character_prompt("Excuse me?")
+
+    assert_match(/What the person in front of you says or does/, prompt)
+    assert_no_match(/user/i, prompt)
+  end
+
+  # THE INTERACTION NARRATOR GETS THE SAME MOMENT AS THE SCENE NARRATOR, so a
+  # talk turn is written in the room the turns either side of it were.
+  test "the narrator pass is told where the exchange happens" do
+    playthrough = playthrough_with_protagonist("Odile Vance")
+    playthrough.current_location.update!(description: "A counting room gone to damp.")
+    prompt = InteractionAgent.new(@character, playthrough: playthrough).narrator_prompt("Excuse me?", CHARACTER_RESPONSE)
+
+    assert_match(/## Where this happens/, prompt)
+    assert_match(/A counting room gone to damp\./, prompt)
+    assert_match(/Ways out of here/, prompt)
+    assert_match(/Odile Vance says or does: Excuse me\?/, prompt)
+    assert_match(/Add nobody who is not listed above/, prompt)
+  end
+
+  test "the narrator pass without a playthrough carries no place, as before" do
+    assert_no_match(/## Where this happens/, InteractionAgent.new(@character).narrator_prompt("Hi", CHARACTER_RESPONSE))
+  end
+
+  # THE EXAMPLE IS THE CHARACTER'S OWN. A fixed "her" and "The person" for every
+  # character nudged pronouns for anyone who is not a woman and modelled avoiding
+  # the name the instruction asks for.
+  test "the worked example uses the character's own name and pronouns" do
+    prompt = InteractionAgent.new(@character).narrator_prompt("Hi", CHARACTER_RESPONSE)
+
+    assert_match(/Mira turns to you, her eyes wide\. It seems you startled her\./, prompt)
+    assert_match(/"Huh\?" she says\./, prompt)
+    assert_no_match(/The person turns/, prompt)
+  end
+
+  test "the worked example agrees its verbs with they/them" do
+    sam = create(:character, fullname: "Sam Reyes", nickname: "Sam", sex: "non_binary")
+    prompt = InteractionAgent.new(sam).narrator_prompt("Hi", CHARACTER_RESPONSE)
+
+    assert_match(/Sam turns to you, their eyes wide\. It seems you startled them\./, prompt)
+    assert_match(/"Huh\?" they say\./, prompt)
+    assert_no_match(/they says/, prompt)
+  end
+
+  test "the worked example uses he/him for a man" do
+    tom = create(:character, fullname: "Tomas Hale", nickname: "Tom", sex: "trans_man")
+    prompt = InteractionAgent.new(tom).narrator_prompt("Hi", CHARACTER_RESPONSE)
+
+    assert_match(/Tom turns to you, his eyes wide\. It seems you startled him\./, prompt)
+    assert_match(/"Huh\?" he says\./, prompt)
+  end
+
+  # Two prose passes, one register: the player reads talk turns and narrated
+  # turns interleaved, and they used to be asked for different lengths.
+  test "the narrator pass asks for the same length as Scene::Narrator" do
+    prompt = InteractionAgent.new(@character).narrator_prompt("Hi", CHARACTER_RESPONSE)
+
+    assert_match(/one or two short paragraphs/i, prompt)
+    assert_match(/one or two short paragraphs/i, Scene::Narrator::INSTRUCTIONS)
+  end
+
   private
+
+  # A playthrough in the character's story, with a protagonist to be spoken by
+  # and a room to stand in.
+  def playthrough_with_protagonist(name)
+    protagonist = create(:character, :protagonist, story: @character.story, fullname: name, nickname: name.split.last)
+    location = create(:location, story: @character.story)
+    create(:playthrough, story: @character.story, character: protagonist, current_location: location)
+  end
 
   TWO_MODELS = [
     { provider: :ollama, model: "first-model", assume_model_exists: true },

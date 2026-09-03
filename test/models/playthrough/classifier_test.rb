@@ -460,6 +460,15 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     assert_predicate intent, :reached_for_nothing?
   end
 
+  # One word from a fixed table and one name from a closed enum: nothing here
+  # for sampling to improve, and one thing for it to ruin.
+  test "the classifier asks at temperature zero" do
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+
+    assert_equal 0.0, agent.temperature
+    assert_equal 0.0, Playthrough::Classifier::TEMPERATURE
+  end
+
   private
 
   # Somebody the game knows is standing here: recorded in the last scene played

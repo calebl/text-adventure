@@ -371,4 +371,42 @@ class CharacterTest < ActiveSupport::TestCase
 
     assert_no_match(/## Who you are talking to/, protagonist.interaction_instructions)
   end
+  # --- the voice, one register per field -----------------------------------
+
+  # THE RULE USED TO SAY that everything outside the quotes is described from
+  # outside -- right for the non-speech half of `action`, wrong for the four
+  # thought and feeling fields, which the narrator's own example writes in the
+  # first person. Now each field is told its register by name.
+  test "the voice rule names the register of each field" do
+    prompt = @character.interaction_instructions
+
+    assert_match(/pre_thought and post_thought are your private thoughts\. Think them in the first person, as "I"/, prompt)
+    assert_match(/pre_feeling and post_feeling are two or three words each/, prompt)
+    assert_match(/inner_resolution is what you have decided to do, in the first person/, prompt)
+    assert_match(/action is the one field anybody can see/, prompt)
+    assert_match(/Speech goes inside quotes, and only speech does/, prompt)
+  end
+
+  test "the third-person register outside the quotes uses the determiner, not the possessive pronoun" do
+    woman = create(:character, story: @story, fullname: "Mira Halloway", nickname: "Mira", sex: "female")
+
+    assert_match(/^Outside the quotes.*Mira, she, her\./, woman.interaction_instructions)
+    assert_no_match(/Mira, she, hers/, woman.interaction_instructions)
+  end
+
+  # --- pronoun forms ---------------------------------------------------------
+
+  test "every pronoun set in the table has its forms" do
+    assert_equal Character::PRONOUNS.values.uniq.sort, Character::PRONOUN_FORMS.keys.sort
+  end
+
+  test "pronoun forms agree verbs with the subject" do
+    they = create(:character, story: @story, sex: "non_binary").pronoun_forms
+    she = create(:character, story: @story, sex: "female").pronoun_forms
+
+    assert_equal "say", they.agree("says", "say")
+    assert_equal "says", she.agree("says", "say")
+    assert_equal "their", they.determiner
+    assert_equal "theirs", they.possessive
+  end
 end

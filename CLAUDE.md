@@ -51,6 +51,11 @@ rake game:score                     # the scoreboard: a rate per check, the move
 rake 'game:repair[3]'               # safe repairs; GENERATE=1 to allow model calls
 rake 'game:delete[3]'               # prints what would go; DRY_RUN=1 or CONFIRM='<title>'
 
+# Walk the engine with the NARRATION off and nothing else off: the classifier
+# still reads what you type and the world still generates as you walk into it.
+rake 'game:mechanics[The Unrecorded Hour]'   # or by id; PLAYTHROUGH=<id> to attach
+NO_MODEL=1 rake 'game:mechanics[2]'          # offline fallback: fixed grammar, no generation
+
 # Play it in the browser. `bin/dev` starts both processes a turn needs -- the
 # web server and the job worker -- under foreman. `PORT=3142 bin/dev` to move off
 # 3000. `bin/rails server` alone still works, and is what to use when debugging.
@@ -109,7 +114,11 @@ bundle exec brakeman
      carries, and the turn branches on the answer: `Scene::Generator` for
      arriving somewhere, `InteractionAgent` for talking to somebody, an app-owned
      `Item` transfer for `take` and `drop`, `Scene::Narrator` for everything
-     else. An unresolved reach writes a `Playthrough::Drift` row.
+     else. An unresolved reach writes a `Playthrough::Drift` row **and is stated
+   to the narrator as a fact** (`Turn#reach_fact`). `Playthrough::Moment` is the
+   one builder of what the prose and the character are told about the moment:
+   room, exits, cast, inventory, last turn, recap. Add a fact there, not to a
+   caller.
    - It runs in `NarrationJob`, which broadcasts what the player reads as Turbo
      Streams over Action Cable — so a turn outlives the tab and holds no Puma
      thread. The loop takes a block and knows nothing about the consumer.
@@ -173,6 +182,14 @@ The current database includes the following story-related models with proper ass
 - **Story** → `#clock`, what time it is in the fiction, derived from
   `scenes.story_timestamp`. Never use `Time.current` for story time; see
   `AGENTS.md` → *Story time, and a world that moves on its own*
+- **Playthrough::Mechanics** → the game with the prose taken out, and nothing
+  else taken out with it (`rake game:mechanics`). The classifier still reads the
+  command and prints what it resolved to; the world still generates itself, so a
+  move is `Playthrough::Turn#move_to` whole. Only `Scene::Narrator` and
+  `InteractionAgent` are dropped, and `talk` / `examine` are refused as prose.
+  `model: false` (`NO_MODEL=1`) is the offline fallback — a fixed grammar, no
+  generation, no model call at all — and it is the mode the engine-direct tests
+  run in. See `AGENTS.md` → *The mechanics on their own, with the narration off*
 - **Item** → belongs to **Character** *or* **Location**, exactly one of the two:
   held by somebody, or lying in a place. The second half is what makes `take`
   and `drop` app-owned state changes rather than prose
@@ -192,7 +209,10 @@ The current database includes the following story-related models with proper ass
   turn is built on. Its voice rules are scoped per register — first person
   inside the quotes, named and pronouned outside them — and
   `#addressee_section` tells an NPC who is in front of it using only what
-  meeting somebody would tell them. The protagonist's `backstory`,
+  meeting somebody would tell them, and `InteractionAgent#character_prompt` adds
+  the moment (`Playthrough::Moment#character_context`) and names the speaker;
+  no talk prompt says "the user". `#pronoun_forms` is for a prompt that builds a
+  sentence, `#pronouns` for one that states a rule. The protagonist's `backstory`,
   `personality`, `likes`, `dislikes` and `fears` are deliberately withheld; see
   `AGENTS.md` → *Talking to models*
 - **WorldMechanic** → **WorldEvents**: the world changing itself on the story's

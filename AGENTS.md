@@ -105,10 +105,76 @@ constraint* has the captain's wording and where the full audit lives.
   its one exception. It also keeps the **last attempt's** content rather than the
   streamed buffer: `#ask` restarts the stream when it rotates, so the buffer
   holds a refusal and its replacement end to end.
-- **A character's voice is three registers, and `Character#interaction_instructions`
-  scopes each one.** Inside the quotes the character talks, so it says "I";
-  outside them it is described from outside, so it is named and takes its
-  pronouns. The rule used to read "Refer to yourself in third person only" with
+- **THE PROSE IS TOLD THE MOMENT, FROM THE RECORDS, AND ONE BUILDER TELLS
+  IT.** `Playthrough::Moment#narration_context` is what `Scene::Narrator` and
+  `InteractionAgent`'s narrator pass both read: the story, the room, **the ways
+  out, who else is here and what the player carries**, then the last turn and
+  the recap. Those three lists are the closed sets `Playthrough::Classifier`
+  already computes every turn and used to throw away once the intent resolved;
+  the narrator's instructions had always said not to invent an exit "the player
+  has not been told about" without anything telling it which exits those were.
+  Stated even when empty — "carrying: nothing" is a fact, silence is an
+  invitation. This is the cheap half of the standing constraint done with facts
+  rather than rules; it does not make the narrator obey, and `Playthrough::Drift`
+  is what says whether it helped. Add a fact to the `Moment`, not to a caller.
+- **A REACH THAT RESOLVED TO NOTHING IS STATED AS A FACT, through the same
+  `fact:` seam `take` and `drop` use.** `Playthrough::Turn#reach_fact` tells the
+  narrator that a `move` to no exit, a `talk` to nobody, a `take` of nothing
+  lying here or a `drop` of nothing carried changed nothing — in the app's words,
+  as something already true. Before this the narrator got the bare command,
+  walked the player through the door anyway, and the next arrival contradicted
+  it. The known cost is a classifier miss on a real exit, which now reads as a
+  denied door instead of a phantom move; the drift row is written either way.
+  `examine` goes along as an intent label (`Scene::Narrator::DOING`) so a look
+  is narrated as a look. Everything else is still the bare command.
+- **THE CHARACTER IS TOLD THE MOMENT TOO, in the per-turn message and not the
+  sheet.** `Playthrough::Moment#character_context` gives the character pass the
+  room's *name*, the story hour, who else is standing there, **what the player
+  typed on the last turn, quoted from `scenes.typed`**, and what it already
+  concluded on the exchanges the chat no
+  longer replays** — `Interaction#inner_resolution`, read back at last, under
+  `Moment::CONCLUSIONS_BUDGET`, skipping the `Chat::HISTORY_EXCHANGES` the chat
+  sends verbatim. It goes in the user turn so a replayed exchange keeps the room
+  it happened in. And the user turn names the protagonist: it used to read
+  "The user input is", undoing `#addressee_section` every turn, and so did every
+  `Interaction::Schema` description. Nothing in a talk prompt says "user" now;
+  `InteractionAgentTest` pins it.
+- **A CHARACTER PROMPT CARRIES RECORDS ONLY, never prose a model wrote.**
+  Stricter than `#narration_context`, and it has to be: the narrator writes to
+  the player, so last turn's prose can be handed to it as it stands, but the
+  same sentence read by somebody else in the room is an assertion about *them*.
+  `Scene.recap_line` was replayed into `#character_context` and every shape of
+  it was in the wrong register — a scene summary is engine-facing third person,
+  a talk turn's says "The player spoke with" the very character reading it, and
+  a narrated turn has no summary at all so the fallback is the narrator's
+  **second** person, where every other "you" in that prompt means the character.
+  Measured: the character then performs the player's physical action as its own
+  6 times in 10 against 0 in 10 (Fisher exact p = 0.011). It quotes
+  `scenes.typed` instead (`Moment#last_attempt`), and `#conclusions` falls back
+  to `Interaction#action` rather than the engine-composed `#summary` for the
+  same reason. `Playthrough::MomentTest` pins both shapes.
+- **A character's voice is one register per field, and
+  `Character#interaction_instructions` names them by field.** The thought and
+  resolution fields are first person; the feeling fields are two or three words;
+  `action` is the one field anybody can see, and inside it speech is quoted and
+  first person while the rest is the character named and pronouned from outside.
+  The rule used to say everything outside the quotes is described from outside,
+  which pushed the four thought and feeling fields into the third person the
+  narrator's own example contradicts. `Character#pronoun_forms` is the table for
+  a prompt that has to *build a sentence* — `"her eyes"`, `"they say"` — where
+  `#pronouns` is the string to *state*; the interaction narrator's worked example
+  is built from it, in the character's own name and pronouns, because a fixed
+  example with "her" and "The person" was a nudge on every character who was not
+  a woman.
+- **Sampling is the provider's default everywhere except a closed-set pick.**
+  `BaseAgent#with_temperature` exists for `Playthrough::Classifier`, which asks
+  at `0.0`: one word from a fixed table and one name from a closed enum, where
+  the same line typed twice in the same room resolving two ways is noise in the
+  drift counter. Prose keeps the default. Setting it on the character pass is a
+  measurement to make, not a default to assume.
+- The scoping above has a history worth keeping: inside the quotes the
+  character talks, so it says "I"; outside them it is described from outside,
+  so it is named and takes its pronouns. The rule used to read "Refer to yourself in third person only" with
   no scope at all, two lines under the sentence establishing that quoted text is
   speech — so a character talking aloud said *"forgive Halkett, the name eludes
   him at present"*. Keep any new voice instruction scoped to a register.
@@ -398,9 +464,15 @@ before changing the loop; the rules below are what it does not fit.
   no say in whether it is true. **Both directions or neither**: an app that owns
   picking up while the narrator asserts putting down has records that go stale
   the first time a player sets something on a table.
-- **Nothing in the app creates an `Item`.** Seeds and tests do. The lazy
-  stub-then-realize registry is `ta-item-registry`, and generating a per-room
-  inventory ahead of time is explicitly ruled out.
+- **Nothing in the app creates an `Item`.** Seeds and tests do — a seed file can
+  put one in somebody's hands or on the floor of a room (`locations[].items`).
+  The lazy stub-then-realize registry is `ta-item-registry`, and generating a
+  per-room inventory ahead of time is explicitly ruled out.
+- **The three writes that move the world are named methods on
+  `Playthrough::Turn`** — `#stand_in!`, `#carry!`, `#put_down!` — because
+  `Playthrough::Mechanics` writes through the same ones. Put a new state change
+  in a method there rather than inline in the branch that calls it, or the
+  narration-off mode ends up with a second copy of it and starts testing itself.
 - **What the player typed is `Scene#typed`**, written once in
   `Playthrough::Turn#play` rather than in each branch, so a branch added later
   cannot forget it. Do not go back to reconstructing it from the classifier's
@@ -418,6 +490,37 @@ before changing the loop; the rules below are what it does not fit.
   narrates walking through a door and the player never moves. Tool support is
   slated to land with the narrator creating characters, where a missed call
   costs a record rather than the player's position.
+
+### The mechanics on their own, with the narration off
+
+`rake game:mechanics` (`Playthrough::Mechanics`, README → *Play the mechanics on
+their own*) walks a world with **one** thing removed: the prose. It is the
+instrument for the complaint it was built for — *"we are testing too many
+variables at the same time"* — and the rules it lives under are short:
+
+- **The classifier is KEPT and so is world generation.** Free text goes to
+  `Playthrough::Classifier`, the resolved intent is printed as `understood:`,
+  and a move is `Playthrough::Turn#move_to` whole — the stub is realized, the
+  arrival is written, the visit is stamped. So the default path costs one model
+  call a command and needs a key. Do not "simplify" it back to a grammar.
+- **`Scene::Narrator` and `InteractionAgent` are the only things dropped.**
+  `talk` and `examine` are refused with a line saying they are prose. If a
+  branch needs prose, refuse it and say so; do not half-play it.
+- **The arrival `Scene` is still written**, and its prose is not printed. That is
+  deliberate: the cast, `last_protagonist_visit` and the story clock all hang off
+  it, so skipping it would make the world this mode walks a different world.
+- **`model: false` (`NO_MODEL=1`) is the offline fallback**, not the default: a
+  fixed grammar, no generation, and a stub stays a stub. It exists for a machine
+  with no key and for the engine-direct tests, and
+  `Playthrough::MechanicsTest` runs that half with `BaseAgent.new` raising.
+  The classifier half is driven through a `FakeAgent` whose queued responses
+  ARE the calls the mode may make, so an accidental narrator call fails loudly.
+- **Both modes write through `Playthrough::Turn`'s own writes** (`#move_to`,
+  `#stand_in!`, `#carry!`, `#put_down!`) and read the closed sets off
+  `Playthrough::Classifier`'s readers. Building a classifier costs nothing; only
+  `#classify` talks to a model.
+- **It is not `rake game:play`**, which is still ruled out. The moment it prints
+  prose it becomes the second UI that rule exists to prevent.
 
 ### Auditing the difference
 

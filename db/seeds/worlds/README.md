@@ -39,7 +39,7 @@ One file is one universe and one story. Keys are written in this order:
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
 | `characters`    | one entry each, `race` by name, optional `items`                        |
-| `locations`     | every location, realized or stub; exactly one marked `opening: true`    |
+| `locations`     | every location, realized or stub; one marked `opening: true`; `items`   |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair              |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
 
@@ -176,6 +176,37 @@ re-seeding a world that has been played re-asserts the edges the file declares
 on top of wherever the mechanic has since moved them. Drop the database for a
 clean rebuild, as with a renamed location.
 
+### `items`, and the two places a thing can be
+
+An `items:` list hangs off a **character** — something they are holding — or off
+a **location** — something lying in the room, which is what makes it takeable.
+Never both: `Item` is in exactly one place, and the loader writes the other
+column nil.
+
+```yaml
+locations:
+- name: Ward Office 12
+  detail_level: realized
+  opening: true
+  # ...
+  items:
+  - name: ward stamp
+    description: |-
+      Her own ward stamp, lying beside the open daybook where she set it down.
+    properties: '{"registered": true, "ward": 12}'
+```
+
+Items under a location are what a world has to carry for anything to be
+takeable at all. Nothing in the app creates an `Item` — that is
+`ta-item-registry` in the ROADMAP — so a seed file is the only place a thing can
+be on the floor of a room, and a world without one can only ever exercise `take`
+as the inverse of a `drop` the player did first. `rake game:mechanics` is the
+fastest way to see this half of the world work; see the README.
+
+`properties` is a JSON string, stored verbatim and read back by
+`Item#properties_hash`. Entries are exported sorted by name, so keep them that
+way in the file or a re-export will reorder them.
+
 ### Rules the loader enforces
 
 - Exactly one location is `opening: true`, and it must be `realized` — a story
@@ -190,6 +221,8 @@ clean rebuild, as with a renamed location.
 - `distance` and `travel_method` come from `LocationConnection::DISTANCES` and
   `::TRAVEL_METHODS`. `time_to_travel` is derived from those two and is
   deliberately absent from the file.
+- Item names are unique within the file (case-insensitively), on both sides —
+  an item is matched on `(story, name)`, so two of a name are one item.
 - A `mechanics` entry has a `name`, unique within the file, a `kind` in
   `WorldMechanic::KINDS` and a `cadence` in `WorldMechanic::CADENCES`.
 - A `shuffle_connections` mechanic needs **at least two connections** joining a
@@ -243,7 +276,13 @@ Loading is matched on natural keys, never on `id` — ids differ on every load.
 Story `title` is a world's identity, so **keep titles unique across these
 files**. Races match on `(universe, name)`, characters on `(story, fullname)`,
 locations on `(story, name)`, connections on their endpoint pair, items on
-`(character, name)`.
+`(story, name)` — **not** on their owner, because an item is the one thing in
+these files that moves. `take` and `drop` write `items.character_id` and
+`items.location_id`, so a file that looked for the daybook in the hands it
+declares would miss the one the player left on a shelf and seed a second
+daybook. Keying on the story finds it and puts it back, which is the same
+"the file re-asserts itself over a played world" rule the connections follow.
+Item names are therefore unique within a file, and the loader checks it.
 
 The loader adds and updates; it never deletes rows a file no longer mentions.
 Renaming a location and re-seeding therefore leaves the old one behind — drop

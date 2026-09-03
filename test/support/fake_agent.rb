@@ -5,7 +5,7 @@ class FakeAgent
   # RubyLLM yields chunks that answer to #content, so the fake ones do too.
   Chunk = Struct.new(:content)
 
-  attr_reader :prompts, :schemas, :instructions
+  attr_reader :prompts, :schemas, :instructions, :temperature
 
   def initialize(*responses)
     @responses = responses
@@ -15,6 +15,11 @@ class FakeAgent
 
   def with_instructions(instructions)
     @instructions = instructions
+    self
+  end
+
+  def with_temperature(temperature)
+    @temperature = temperature
     self
   end
 

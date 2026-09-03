@@ -574,6 +574,32 @@ class BaseAgentTest < ActiveSupport::TestCase
     assert_match(/\[crisis\]/, log_from(CountingChat.new("Text HOME to 741741."), BaseAgent::CrisisResponseError))
   end
 
+  # --- temperature -----------------------------------------------------------
+
+  # Set before the conversation exists, applied when it is built; set after,
+  # applied to the one that exists. Either way the chat that goes to the model
+  # carries it.
+  test "with_temperature reaches the conversation whichever side of building it is set" do
+    before = BaseAgent.new(model_options: OPTIONS).with_temperature(0.0)
+    after = BaseAgent.new(model_options: OPTIONS)
+
+    OfflineExchange.with(OfflineExchange.reply("one"), OfflineExchange.reply("two")) do
+      before.ask("first")
+      after.ask("second")
+    end
+    after.with_temperature(0.2)
+
+    assert_equal 0.0, before.chat.to_llm.instance_variable_get(:@temperature)
+    assert_equal 0.2, after.chat.to_llm.instance_variable_get(:@temperature)
+  end
+
+  test "a conversation left alone carries no temperature of its own" do
+    agent = BaseAgent.new(model_options: OPTIONS)
+    OfflineExchange.with(OfflineExchange.reply("one")) { agent.ask("first") }
+
+    assert_nil agent.chat.to_llm.instance_variable_get(:@temperature)
+  end
+
   private
 
   # Runs one doomed ask and returns whatever it wrote to the log.

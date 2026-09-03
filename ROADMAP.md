@@ -118,11 +118,40 @@ The full audit of every planned piece of work against this constraint is in
   turns and looked clean; twenty turns is what made it fire, which is the
   argument for the longer script standing on its own.
 
-  Actual spend: **$0.2857 for 24 runs / 264 turns**, against a $0.35 estimate.
+  Actual spend: **$0.4712 for 24 runs / 480 turns**, against a $0.63 estimate,
+  and every one of those turns took the branch its script said it would.
+  **Prompt caching was measured and is not the cost lever it looks like**: the
+  minimum cacheable prompt is 2,048 tokens and these calls average 615, so
+  eighteen real prompts replayed back to back read zero cached tokens — see
+  `Eval::Cost`'s header and `script/cache_probe.rb`.
   The protocol, the verdict rule and the measurement manifest are in
   [EVALUATION.md](EVALUATION.md). **The agent skill is deliberately not built** —
   the captain's accuracy pass on these flags comes first.
 
+- **The prose is told the moment, and the character is too.** Three prompts
+  wrote about one moment and each assembled its own: the narrator knew the room
+  and the last turn, the interaction narrator knew neither, the character knew
+  the universe and its sheet and not which room it stood in. Meanwhile the
+  classifier computed the room's exits, cast, floor and inventory every turn and
+  threw them away. `Playthrough::Moment` builds it once from records:
+  `#narration_context` (story, room, **ways out, who else is here, what the
+  player carries**, last turn, recap) for both prose passes, and
+  `#character_context` (room name, story hour, company, last turn's recap line,
+  and the `inner_resolution`s on exchanges the chat no longer replays) for the
+  character pass, in the user turn. A `move`/`talk`/`take`/`drop` that resolved
+  to nothing now reaches the narrator as a **fact** through the `take`/`drop`
+  seam (`Turn#reach_fact`) instead of as the bare command it used to walk the
+  player through anyway; `examine` carries a label. The talk prompts stopped
+  saying "the user" (the per-turn message and every `Interaction::Schema`
+  description still did, undoing `#addressee_section`); the voice rule names one
+  register per field; the interaction narrator's stale "do not recite the
+  backstory" instruction (it has none) and fixed "her"/"The person" example are
+  replaced by a rule confining it to the six lines and an example in the
+  character's own name and pronouns (`Character#pronoun_forms`); both prose
+  passes ask for the same length; the arrival cast list marks the protagonist as
+  the player; the classifier asks at temperature 0. **None of this is measured
+  yet** — it is facts the app already held, handed to prompts that lacked them
+  — and the bench that would measure it is the next item in *Next up*.
 - **The evaluation loop** (`ta-eval-loop`). *"It feels like we are flailing
   around a bit right now without being able to measurably improve the
   experience. Having me review everything manually is too slow and I start
@@ -700,6 +729,17 @@ Steps 1 and 2 of that plan have landed (see **Done**). The rest, in order:
 
 ### Alongside those, the older queued work
 
+- **`ta-prompt-bench`** — the other half of the evaluation loop. `Story::Scoreboard`
+  (`rake game:score`, landed) scores prose that already exists; this drives a
+  fixed case list (the six `narration_corpus.json` commands and a talk set)
+  through the live turn loop under a prompt *variant*, on a named model, and
+  hands the result to the scoreboard — plus what the scoreboard cannot see
+  from stored prose: drift, cap hits, omitted fields, refusals, tokens and
+  latency per arm. Every prompt-shaped change should land as a measured PR;
+  today the checks exist and the A/B driver does not. Freeze a digest of the
+  prose instructions alongside `prose_model` on `Playthrough::Feedback`, so
+  verdicts group by prompt version and not only by model. The compliance sweep
+  (8) sits on top of this.
 - **`ta-scene-facts-prose`** — split `Scene::Generator` and `Scene::Narrator` by
   facts versus prose. Promoted by the standing constraint from "worth doing" to
   the structural expression of it: if the generator establishes facts and the
@@ -762,6 +802,11 @@ queued task, the task id is named.
 
 ### 3. The game loop
 
+- [x] A reach that resolves to nothing is **stated to the narrator as a fact**
+      (`Playthrough::Turn#reach_fact`), through the same `fact:` seam `take` and
+      `drop` use, and the narrator prompt carries the room's exits, cast and the
+      player's inventory (`Playthrough::Moment`). The narrator can still
+      disobey; it can no longer claim it was not told.
 - [x] Classify player input: move / talk / examine / take / drop / other, in one
       schema'd `BaseAgent` call. `Playthrough::IntentSchema` is a factory rather
       than a declared schema because `target` is an enum built per turn from the
@@ -780,7 +825,10 @@ queued task, the task id is named.
       character felt.
 - ~~`rake game:play[story_id]`~~ -- skipped on purpose. The browser is the
       playable interface; the rake tasks build worlds and the browser plays
-      them. Do not add a `game:play` task.
+      them. Do not add a `game:play` task. `rake game:mechanics` is not that and
+      does not weaken it: it renders no prose and duplicates no part of the loop
+      -- it is an instrument pointed at the engine, and the moment it printed
+      narration it would be the second UI this rule exists to prevent.
 - [ ] **A move is 3 model calls and does not stream**, so the player watches a
       blinking cursor for as long as realizing a room takes. Nothing is wrong;
       it is just slow, and the job-and-cable stage below is where it is fixed.
@@ -800,7 +848,20 @@ queued task, the task id is named.
       world, so `take` and `drop` are real over a set that is usually empty.
       `ta-item-registry` is how items come to exist — lazy, stub-then-realize,
       populated when the narrator names something. A generated per-room inventory
-      is explicitly ruled out.
+      is explicitly ruled out. A seed file can now put one on the **floor** of a
+      room as well as in somebody's hands (`locations[].items`), which is what
+      makes `take` exercisable at all rather than only as the inverse of a
+      `drop`; see `db/seeds/worlds/README.md`.
+- [x] **The mechanics can be walked with the narration off.**
+      `Playthrough::Mechanics` (`rake game:mechanics`) keeps the classifier — the
+      intent it resolved is printed, so how the typing was read is visible — and
+      keeps the world generating itself, so a move is `Playthrough::Turn#move_to`
+      whole. What it drops is `Scene::Narrator` and `InteractionAgent`: no prose,
+      just the records and a one-line diff. `model: false` (`NO_MODEL=1`) is the
+      offline fallback, a fixed grammar with no model call at all, asserted in
+      `Playthrough::MechanicsTest` with `BaseAgent.new` raising. It is the answer
+      to *"we are testing too many variables at the same time"*: movement and
+      possession, on their own, with the prose out of the way. See the README.
 
 ### 4. Persistence and history
 

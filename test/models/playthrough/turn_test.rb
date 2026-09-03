@@ -669,4 +669,61 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
            { "description" => "", "lore" => "" })
     end
   end
+  # --- a reach that found nothing is stated, not left to the prose -----------
+
+  # THE NARRATOR USED TO BE TOLD NOTHING about a move that resolved to no exit,
+  # so it walked the player through the door anyway and the next arrival
+  # contradicted it. The classifier's finding is a fact about the world and it
+  # goes through the same `fact:` seam `take` and `drop` use.
+  test "a move to nowhere tells the narrator the player has not moved" do
+    connect("The Sunken Stair")
+
+    _scene, _chunks, agent = play("go north", CLASSIFY.call("move", "nothing"),
+                                  "There is no way north. The wall is solid.")
+    prompt = agent.prompts.last
+
+    assert_match(/ALREADY happened/, prompt)
+    assert_match(/reached for a way out that does not exist here/, prompt)
+    assert_match(/still in Ashgate Market/, prompt)
+    assert_match(/Ways out of here: The Sunken Stair\./, prompt)
+    assert_equal @here, @playthrough.reload.current_location
+  end
+
+  test "a talk to nobody tells the narrator nobody else is here to answer" do
+    _scene, _chunks, agent = play("talk to the ghost", CLASSIFY.call("talk", "nothing"),
+                                  "Nobody answers.")
+
+    assert_match(/tried to speak to somebody who is not here/, agent.prompts.last)
+  end
+
+  test "a take of nothing tells the narrator nothing was picked up" do
+    _scene, _chunks, agent = play("pocket the brass key", CLASSIFY.call("take", "nothing"),
+                                  "Your hand closes on nothing.")
+
+    assert_match(/reached for something that is not lying here/, agent.prompts.last)
+    assert_match(/Nothing was picked up/, agent.prompts.last)
+  end
+
+  test "a drop of nothing tells the narrator nothing changed hands" do
+    _scene, _chunks, agent = play("drop the crown", CLASSIFY.call("drop", "nothing"),
+                                  "You are not carrying any crown.")
+
+    assert_match(/tried to put down something they are not carrying/, agent.prompts.last)
+  end
+
+  test "an examine is passed to the narrator as a look" do
+    _scene, _chunks, agent = play("look at the stalls", CLASSIFY.call("examine", "nothing"),
+                                  "Wet canvas, and under it the smell of fish.")
+
+    assert_match(/looking more closely at something that is here/, agent.prompts.last)
+    assert_no_match(/ALREADY happened/, agent.prompts.last)
+  end
+
+  test "an unclassifiable turn is narrated with no fact and no label" do
+    _scene, _chunks, agent = play("hum a tune", CLASSIFY.call("other", "nothing"),
+                                  "You hum, and the canvas hums back.")
+
+    assert_no_match(/ALREADY happened/, agent.prompts.last)
+    assert_no_match(/looking more closely/, agent.prompts.last)
+  end
 end

@@ -12,16 +12,34 @@ class Scene::Narrator
   # Kept short on purpose. `Character#interaction_instructions` inlines the
   # whole universe (~3,200 tokens) and every one of those tokens is
   # time-to-first-token, which the player experiences as dead air.
+  #
+  # The ways out, the people here and what the player carries are FACTS IN THE
+  # PROMPT now (`Playthrough::Moment`), so the rule about exits can point at
+  # them instead of at "what the player has been told" -- a thing the narrator
+  # had no way to know.
   INSTRUCTIONS = <<~PROMPT.freeze
     You are the narrator of a text adventure. Write in the second person,
     present tense, addressing the player as "you". Describe what happens in
     response to what they did, in one or two short paragraphs of prose.
 
     Never break character, never offer the player a numbered menu, and never
-    mention that you are an AI or a narrator. Do not invent an exit to
-    somewhere the player has not been told about. If the player tries
-    something impossible, narrate the failure rather than refusing.
+    mention that you are an AI or a narrator. The ways out of here, the people
+    present and what the player carries are listed in the prompt: do not add a
+    way out, a person or a possession that is not on those lists. If the
+    player tries something impossible, narrate the failure rather than
+    refusing.
   PROMPT
+
+  # ONE LINE ABOUT WHAT THE PLAYER IS DOING, keyed on the intent the classifier
+  # resolved. Only the intents where the narrator's job changes get one:
+  # `examine` is the turn where nothing is supposed to move, and it was reaching
+  # the narrator indistinguishable from `other`. A resolved `move`, `talk`,
+  # `take` or `drop` never reaches this class at all, and one that resolved to
+  # nothing arrives with a `fact:` instead (`Playthrough::Turn#reach_fact`).
+  DOING = {
+    examine: "The player is looking more closely at something that is here. " \
+             "Describe it. Nothing changes hands, nobody arrives and nobody leaves."
+  }.freeze
 
   def initialize(playthrough)
     @playthrough = playthrough
@@ -58,12 +76,12 @@ class Scene::Narrator
   # is what the model that actually answered wrote. (The player may still have
   # watched the first attempt arrive; the end-of-turn `#turn_log` replace is
   # what takes it off the page, since the log renders the persisted scene.)
-  def narrate(command, fact: nil, &block)
+  def narrate(command, fact: nil, intent: nil, &block)
     streamed = +""
     keep = nil
 
     begin
-      keep = agent.ask(prompt_for(command, fact)) do |chunk|
+      keep = agent.ask(prompt_for(command, fact, intent)) do |chunk|
         part = chunk.content.to_s
         next if part.empty?
 
@@ -94,44 +112,23 @@ class Scene::Narrator
     @agent ||= BaseAgent.new(INSTRUCTIONS, purpose: "narration", playthrough: playthrough)
   end
 
-  def prompt_for(command, fact = nil)
+  def prompt_for(command, fact = nil, intent = nil)
     <<~PROMPT
       #{context}
       #{"\nWhat has ALREADY happened, recorded by the game: #{fact}\nNarrate it as done. Do not contradict it and do not undo it.\n" if fact.present?}
+      #{"\n#{DOING[intent]}\n" if DOING.key?(intent)}
       The player types: #{command}
 
       Narrate what happens.
     PROMPT
   end
 
+  # The moment, from the records: story, room, the ways out, who is here, what
+  # the player carries, what just happened and what came before. One builder
+  # shared with `InteractionAgent`'s narrator pass, so the two prose passes the
+  # player reads interleaved cannot disagree about where they are standing.
   def context
-    story = playthrough.story
-    parts = [ "Story: #{story.title} (#{story.genre})", "Premise: #{story.summary}" ]
-
-    if (location = playthrough.current_location)
-      parts << "The player is in #{location.name}: #{location.description}"
-    end
-
-    if (character = playthrough.character)
-      parts << "The player is #{character.fullname}."
-    end
-
-    if (previous = playthrough.current_scene)
-      parts << "What just happened: #{previous.description}"
-    end
-
-    # EVERYTHING BEFORE THAT, in one line per turn. The narrator used to see
-    # exactly one scene, so a playthrough had a memory one turn deep and the
-    # only way to make it deeper was to paste in more full descriptions -- which
-    # is what puts a long game outside the context window. `Playthrough#recap`
-    # spends the summaries `Scene::Generator` has been writing on every arrival
-    # instead, under a fixed character budget: several turns of memory for about
-    # what one more description would have cost. See Playthrough::RECAP_BUDGET.
-    if (recap = playthrough.recap)
-      parts << "Earlier, in order:\n#{recap}"
-    end
-
-    parts.join("\n\n")
+    Playthrough::Moment.new(playthrough).narration_context
   end
 
   # Blank narration is not worth a record -- that is a failed turn, and saving
