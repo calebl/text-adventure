@@ -56,6 +56,11 @@ rake 'game:delete[3]'               # prints what would go; DRY_RUN=1 or CONFIRM
 rake 'game:mechanics[The Unrecorded Hour]'   # or by id; PLAYTHROUGH=<id> to attach
 NO_MODEL=1 rake 'game:mechanics[2]'          # offline fallback: fixed grammar, no generation
 
+# Walk stored scripts through the engine with no model at all and assert the
+# records after every typed line. Free, deterministic, and it runs in CI.
+rake game:sweep                              # every script in lib/engine_sweep/scripts
+rake game:sweep SCRIPT=the-salt-assizes-grammar
+
 # Play it in the browser. `bin/dev` starts both processes a turn needs -- the
 # web server and the job worker -- under foreman. `PORT=3142 bin/dev` to move off
 # 3000. `bin/rails server` alone still works, and is what to use when debugging.
@@ -305,6 +310,24 @@ The current database includes the following story-related models with proper ass
 - `Item` is in exactly one place — held by a character or lying in a location.
   `take` and `drop` are both app-owned: the row moves first, the narrator is told
   afterwards.
+
+### Sweeping the engine with stored scripts
+- `rake game:sweep` (`EngineSweep`) walks YAML scripts of typed lines through
+  `Playthrough::Mechanics` with `model: false` and asserts the records after
+  each one: location, exits (with detail level), what is lying here, what is
+  carried, refusals and their offered alternatives. **Offline, deterministic,
+  free, and run by `bin/rails test`** — the engine half of the game, which
+  `rake eval:run` cannot see and which nobody was testing without a keyboard.
+- **No model is a guard, not an intention:** `BaseAgent.new` is replaced for the
+  length of a run and raises `EngineSweep::ModelCalled`. Each walk loads its own
+  copy of the seeded world under a title of its own inside a rolled-back
+  transaction, so it is safe against a database mid-game.
+- `EngineSweep::Expectation::KEYS` is **closed** — an unknown key raises rather
+  than passing quietly. `EngineSweep::Invariants` checks the whole world after
+  every walk, because an invented door and an over-full room are things
+  `Location::Generator` writes and no typed line can.
+- What an offline walk cannot see is written into the scripts themselves; see
+  `lib/engine_sweep/scripts/regressions-2026-09-03.yml`.
 
 ### Generating runs and judging a change against them
 - `rake eval:run` is the whole automated loop: play three seeded worlds through

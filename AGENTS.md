@@ -522,6 +522,33 @@ variables at the same time"* — and the rules it lives under are short:
 - **It is not `rake game:play`**, which is still ruled out. The moment it prints
   prose it becomes the second UI that rule exists to prevent.
 
+### Sweeping the engine with stored scripts
+
+`rake game:sweep` (`EngineSweep`, README → *Sweep the engine*) is the same
+offline mode walked by stored YAML scripts instead of by a person, with
+expectations asserted against the records after every typed line. It runs in
+`bin/rails test`, so the engine is regression-tested on every build. The rules:
+
+- **No model, and it is guarded rather than intended.** `EngineSweep.without_a_model`
+  replaces `BaseAgent.new` for the length of a run. Never weaken that to make a
+  script "work"; a sweep that made a model call would be a different instrument
+  with the same name.
+- **Every walk gets its own copy of the world**, loaded under
+  `EngineSweep::Walk::TITLE_SUFFIX` inside a rolled-back transaction. A sweep
+  must stay safe to run against a database somebody is playing in.
+- **A script is a fixture, not a language.** `EngineSweep::Expectation::KEYS` is
+  closed and an unknown key raises. Add a key only when the fact it asserts is a
+  fact off the records; a sweep that started reading prose would be a worse copy
+  of `Story::Audit`.
+- **The invariants are the generator defects' own shape.** `EngineSweep::Invariants`
+  checks the whole world after every walk because no typed line can open a door
+  or overfill a room — `Location::Generator` does. They hold trivially today and
+  that is not a reason to drop them.
+- **Say what the sweep cannot see.** With the classifier off, a defect in how a
+  model read a line is out of reach and belongs to `Playthrough::ClassifierTest`.
+  `lib/engine_sweep/scripts/regressions-2026-09-03.yml` is the worked example:
+  it names the five defects of that evening and which of them a walk reaches.
+
 ### Auditing the difference
 
 The third clause of the standing constraint. `Story::Audit` walks stored
@@ -690,6 +717,10 @@ path, and answers in sentences.
   workers made it unreproducible. Ask for a variation by trait, and pin the
   values a test actually asserts against in the test itself.
 - Per `CLAUDE.md`: every model needs a test file and a factory.
+- **An engine change earns a sweep script, not only a unit test.** A unit test
+  written after a bug pins the bug; a script in `lib/engine_sweep/scripts/`
+  walks the game a player walks and would have caught it. Both, and the script
+  is the one that generalises — see *Sweeping the engine with stored scripts*.
 - `bin/rails test` runs in about a second. There is no reason to skip it.
 
 ### Before you finish

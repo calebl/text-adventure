@@ -215,6 +215,44 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_change play("go closet"), "-> The Supply Closet"
   end
 
+  # THE TWO DEFECTS THE ENGINE SWEEP WAS BUILT ON, both found by typing at the
+  # console and both the same defect: matching ran one way round only, so a
+  # leading article was fatal and a typed line that HELD the record's name
+  # matched nothing at all. The refusal listed the very thing it was refusing.
+  test "a leading article or preposition is not part of the name" do
+    assert_change play("drop the daybook"), "dropped: Ward Office 12 daybook"
+    assert_change play("go to the Supply Closet"), "-> The Supply Closet"
+    assert_change play("go into Ward Office 12"), "-> Ward Office 12"
+    assert_change play("take the ward stamp"), "took: ward stamp"
+  end
+
+  test "a typed line that holds the whole name resolves to it" do
+    assert_change play("take the ward stamp off the desk"), "took: ward stamp"
+  end
+
+  # The one direction that needs word boundaries. Without them a two-letter
+  # item name would be found inside any long enough sentence, which is the
+  # failure a containment test invites when the typing is the longer side.
+  test "a short name is not swallowed by a longer word that contains it" do
+    create(:item, :lying, location: @office, name: "key")
+
+    assert_refusal play("take the monkey"), "there is no thing lying here"
+  end
+
+  # Ambiguity on the first reading must not hide a match on the second: "the
+  # copy-room apron" holds BOTH item names, and only one of them is what was
+  # typed once the article is off the front.
+  test "ambiguity as typed does not hide the match the stripped name finds" do
+    create(:item, :lying, location: @office, name: "apron")
+    create(:item, :lying, location: @office, name: "copy-room apron")
+
+    assert_change play("take the copy-room apron"), "took: copy-room apron"
+  end
+
+  test "an article on its own still resolves to nothing rather than to a guess" do
+    assert_refusal play("go the"), "matches more than one"
+  end
+
   test "an exit name typed on its own is a move, so a world with compass exits can be walked" do
     north = create(:location, story: @story, name: "north")
     connect(@office, north)

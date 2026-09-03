@@ -291,6 +291,46 @@ namespace :game do
     puts "Pick it up again with: PLAYTHROUGH=#{playthrough.id} rake 'game:mechanics[#{story.id}]'"
   end
 
+  desc "Walk every stored script through the engine offline and assert the records. Usage: rake game:sweep, SCRIPT=<name> for one"
+  task :sweep, [ :script ] => :environment do |t, args|
+    wanted = args[:script].presence || ENV["SCRIPT"].presence
+    scripts = EngineSweep.scripts
+    scripts = scripts.select { |script| script.name == wanted || script.story == wanted } if wanted
+
+    if scripts.empty?
+      abort "No sweep script #{wanted.inspect}. There is: #{EngineSweep.scripts.map(&:name).join(", ")}" if wanted
+
+      abort "There are no sweep scripts in #{EngineSweep::DIRECTORY}."
+    end
+
+    puts "THE ENGINE SWEEP: #{scripts.size} script(s), no model, no network, no key."
+    puts "Each one loads its own copy of a seeded world and rolls it back. Nothing here is kept."
+    puts
+
+    results = EngineSweep.run(scripts)
+    results.each { |result| puts result.line }
+
+    failed = results.reject(&:passed?)
+    puts
+
+    if failed.empty?
+      puts "PASSED: #{results.sum(&:steps)} typed line(s) over #{results.size} script(s)."
+      next
+    end
+
+    failed.each do |result|
+      puts result.report
+      puts
+    end
+
+    # Flushed before the abort, which writes to stderr: a CI log that
+    # interleaves the two puts the verdict above the findings it is about.
+    $stdout.flush
+
+    abort "FAILED: #{failed.sum { |result| result.failures.size }} expectation(s) unmet " \
+          "in #{failed.size} of #{results.size} script(s)."
+  end
+
   # Namespaced under a module rather than defined at rake top level, where
   # they would land on Object -- `save!` in particular collides badly there.
   module Helpers

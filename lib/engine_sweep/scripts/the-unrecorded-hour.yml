@@ -1,0 +1,139 @@
+# THE WALK THROUGH "The Unrecorded Hour" -- the world with things on the floor,
+# so it is the one that carries the item half of the engine.
+#
+# WHAT IT IS FOR, in order: standing somewhere and reading the records back,
+# picking a thing up, carrying it into another room, putting it down THERE,
+# picking up something else, walking into a room nobody has written, and being
+# refused four different ways. Every one of those is a different write in
+# `Playthrough::Turn`, and between them they are the whole of what the engine
+# does without a model.
+#
+# A NOTE ON THE STUB. Walking into The Long Hallway offline moves the player and
+# leaves the room unwritten, because there is nothing here to write it with:
+# realizing a room is `Location::Generator`, which is two model calls. So the
+# expectation is the stub, said out loud -- and `nothing_was_written` asserts it
+# again over the whole world after the walk. What the sweep can therefore not
+# check is what the generator writes; that is `Location::GeneratorTest`'s.
+story: The Unrecorded Hour
+why: the item half of the engine, and the four ways a line can be refused
+steps:
+- id: the-records-as-seeded
+  type: look
+  why: the starting state, so a failure later has a known beginning
+  expect:
+    location: Ward Office 12 (realized)
+    exits: [The Supply Closet (realized), The Long Hallway (stub)]
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+    changed: false
+    refused: false
+
+- id: take-with-an-article
+  type: take the ward stamp
+  why: an app-owned transfer -- the row moves off the floor and into the hands
+  expect:
+    changed: true
+    understood: take -> ward stamp
+    here: []
+    carrying: [Ward Office 12 daybook, ward stamp]
+    drifts: 0
+
+- id: carry-it-next-door
+  type: go to the Supply Closet
+  why: a move into a room that IS written; what is carried comes along
+  expect:
+    changed: true
+    location: The Supply Closet (realized)
+    exits: [Ward Office 12 (realized)]
+    here: [Perrin's private index, copy-room apron]
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: drop-it-somewhere-else
+  type: drop the ward stamp
+  why: the drop lands in the room the player is standing in, not the one it came from
+  expect:
+    changed: true
+    change: now lying in The Supply Closet
+    here: [Perrin's private index, copy-room apron, ward stamp]
+    carrying: [Ward Office 12 daybook]
+
+- id: take-something-by-a-fragment
+  type: take the apron
+  why: an unambiguous fragment of "copy-room apron", with an article in front of it
+  expect:
+    changed: true
+    understood: take -> copy-room apron
+    here: [Perrin's private index, ward stamp]
+    carrying: [Ward Office 12 daybook, copy-room apron]
+
+- id: inventory
+  type: inventory
+  why: reading the hands changes nothing
+  expect:
+    changed: false
+    refused: false
+    carrying: [Ward Office 12 daybook, copy-room apron]
+
+- id: back-through-the-door-it-came-in-by
+  type: go to Ward Office 12
+  why: exits are bidirectional; the office is where the stamp is NOT any more
+  expect:
+    changed: true
+    location: Ward Office 12 (realized)
+    here: []
+    carrying: [Ward Office 12 daybook, copy-room apron]
+
+- id: take-what-is-not-here
+  type: take the ward stamp
+  why: it is real, it is just in the other room -- a refusal, and no write
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no thing lying here]
+    carrying: [Ward Office 12 daybook, copy-room apron]
+    drifts: 0
+
+- id: drop-what-is-not-carried
+  type: drop the private index
+  why: also real, also elsewhere, and refused against the hands rather than the floor
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no thing you are carrying, Ward Office 12 daybook, copy-room apron]
+
+- id: go-somewhere-that-does-not-exist
+  type: go to the lighthouse
+  why: an unknown exit is refused WITH the ways out that do exist
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no way out, The Supply Closet, The Long Hallway]
+    location: Ward Office 12 (realized)
+
+- id: leave-the-apron-in-the-office
+  type: drop the copy-room apron
+  why: the apron ends the walk in a room it did not start in, which is the state that persists
+  expect:
+    changed: true
+    here: [copy-room apron]
+    carrying: [Ward Office 12 daybook]
+
+- id: walk-into-the-unwritten-room
+  type: go to the Long Hallway
+  why: offline a stub is stood in, not written -- and it keeps the one door it was seeded with
+  expect:
+    changed: true
+    change: a stub -- nobody has written this room
+    location: The Long Hallway (stub)
+    exits: [Ward Office 12 (realized)]
+    exits_exclude: [The Supply Closet]
+    here: []
+
+- id: nothing-to-pick-up-in-an-unwritten-room
+  type: take everything
+  why: an empty floor is told apart from a name that missed -- the set is empty, and it says so
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no thing lying here]
+    here: []

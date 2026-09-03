@@ -55,6 +55,50 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **The scripted offline engine sweep** (`ta-engine-sweep`). *"focus on the game
+  engine and the classifier, with a reliable way of testing before more
+  changes."* `rake game:sweep` walks stored scripts of typed lines through
+  `Playthrough::Mechanics` in its no-model mode and asserts the records after
+  every line: where the player stands, what leads out of there and whether it is
+  written, what is lying here, what is carried, and what was refused. Free,
+  deterministic, offline, and it runs in `bin/rails test` — so the half of the
+  game that `rake eval:run` cannot see, and that nobody was testing without
+  sitting at a keyboard, is now regression-tested on every build. 37 typed lines
+  over four scripts and the three seeded worlds.
+
+  **Three things make it repeatable, and one of them is a guard rather than an
+  intention.** `BaseAgent.new` is replaced for the length of a run, so a model
+  call from anywhere in the engine raises `EngineSweep::ModelCalled` instead of
+  reaching a provider. Each script loads its own copy of the seeded world under a
+  title of the sweep's own, inside a transaction that is rolled back — a sweep
+  run against a half-played database changes neither it nor the game. And the
+  world does not move underneath it: `WorldMechanic` runs on `Story#clock`, the
+  clock only advances when a Scene is written, and an offline move writes none,
+  so The Lunar Cartographer's nightly shuffle never comes due **without anything
+  being switched off** to achieve that.
+
+  **Four invariants are checked over the whole world after every walk**, because
+  that is the shape the generator defects had: nobody typed a line that gave The
+  Supply Closet a second door. No door opened or closed, no room over
+  `Location::ExitsSchema::MAX_EXITS` ways out, every item in exactly one place,
+  no room written.
+
+  **What it cannot see is written down rather than left to be found.** With the
+  classifier off, a defect in how a *model* read a line is out of reach:
+  `lib/engine_sweep/scripts/regressions-2026-09-03.yml` walks the evening that
+  produced the five engine defects and says, defect by defect, which two the walk
+  catches, which two the invariants hold, and which one stays pinned by
+  `Playthrough::ClassifierTest` alone.
+
+  **Two matching defects fixed in the offline grammar on the way in.**
+  `Playthrough::Mechanics#resolve` matched one way round only, so `drop the
+  tide-slate` was refused underneath a refusal listing "Assize tide-slate" and
+  `go to the Tide Post` was refused while offering "The Tide Post". A leading
+  article or preposition is now dropped and a fragment is read in both
+  directions — the second one on word boundaries, so a "key" is not found inside
+  "monkey". Reverting the fix turns every script in the sweep red, which is what
+  a script written the way a person types is worth.
+
 - **The automated half of the evaluation loop** (`ta-eval-pipeline`). *"I'm fine
   with the loop being manual initially. I just want more confidence that changes
   we are making are improving results."* `rake eval:run` generates runs across

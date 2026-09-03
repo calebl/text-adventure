@@ -181,6 +181,37 @@ found a defect on 94% of a mechanic the app owns.
 
 ---
 
+## The instrument this is not: `rake game:sweep`
+
+Everything above measures **narration**, costs money and is noisy enough to need
+a rank test. The engine sweep is the other half and shares none of those
+properties:
+
+| | `rake eval:run` | `rake game:sweep` |
+| --- | --- | --- |
+| what it reads | prose, against the records | the records, after a typed line |
+| what it needs | a key, the network, minutes, dollars | nothing |
+| what it answers | a rate with a noise floor | pass or fail |
+| in CI | never | every `bin/rails test` |
+
+It plays stored scripts through `Playthrough::Mechanics` with **no model at all**
+— the classifier off, the fixed grammar in front of the engine, and
+`BaseAgent.new` replaced for the length of the run so a call from anywhere raises
+rather than reaching a provider. Each script loads its own copy of a seeded world
+and rolls it back, so it can be run against a database somebody is mid-game in.
+
+**It asserts; it does not measure.** There is no rate, no baseline and no
+comparison, because there is no sampling: two runs of a script are identical to
+the row. A change to movement, to exits, to item possession or to what the
+grammar refuses either keeps the scripts green or does not.
+
+Both instruments walk the same three seeded worlds, and `The Salt Assizes` being
+held out does not apply here: holding it out is about not tuning narration checks
+on prose nobody has read, and the sweep reads no prose. See README → *Sweep the
+engine*.
+
+---
+
 ## What is measured
 
 Eight checks, all of them from `Story::Audit`, all offline and deterministic.

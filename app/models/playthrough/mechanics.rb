@@ -75,9 +75,35 @@ class Playthrough::Mechanics
     "help             this list",
     "",
     "A name is matched against the records: exactly first, then as an",
-    "unambiguous prefix, then as an unambiguous fragment. Case and extra spaces",
-    "do not matter. This is the no-model fallback -- drop it to have the",
-    "classifier read what you type and the world generate as you walk."
+    "unambiguous prefix, then as an unambiguous fragment -- and a fragment is",
+    "read both ways round, so `drop the tide-slate` finds the Assize",
+    "tide-slate. A leading the/a/an/to/into/through/onto/at is dropped before",
+    "any of that. Case and extra spaces do not matter. This is the no-model",
+    "fallback -- drop it to have the classifier read what you type and the",
+    "world generate as you walk."
+  ].freeze
+
+  # WORDS THAT NAME NOTHING, taken off the FRONT of a typed name and nowhere
+  # else. `go to the Tide Post` and `drop the tide-slate` were both refused
+  # underneath a refusal listing the very thing they named, because an article
+  # or a preposition at the front is fatal to a prefix match and to a fragment
+  # match alike. Only the front: "The Bell of Saint Aravel" has to keep its
+  # "of", and a word in the middle of a name is part of the name.
+  LEADING_WORDS = %w[the a an to into through onto at].freeze
+
+  # THE THREE WAYS A NAME CAN MATCH once it is not exact, tried in this order
+  # and each only on an unambiguous hit.
+  #
+  # The third one is the direction that was missing: what was TYPED holds the
+  # record's whole name. It is the only one tested on word boundaries, because
+  # it is the only one where a short record name could be swallowed by a long
+  # typed line -- an item called "key" would otherwise be found by somebody
+  # typing "monkey". The first two are left exactly as they were: `take aybook`
+  # has always found the daybook and there is no reason today to stop it.
+  HOW_A_NAME_MATCHES = [
+    ->(name, typed) { name.start_with?(typed) },
+    ->(name, typed) { name.include?(typed) },
+    ->(name, typed) { typed.match?(/(?<![[:alnum:]])#{Regexp.escape(name)}(?![[:alnum:]])/) }
   ].freeze
 
   # What the classifier mode says instead, since there is no grammar to learn.
@@ -499,15 +525,63 @@ class Playthrough::Mechanics
   # `Playthrough::Classifier#find_item` does with two identical items in one
   # room: to a player typing the name they are the same thing, and `find` on an
   # id-ordered list makes which one stable.
+  #
+  # MATCHING USED TO RUN ONE WAY ONLY -- the record's name had to start with or
+  # contain what was typed -- and both halves of that failed on ordinary
+  # English. `drop the tide-slate` was refused underneath a refusal listing
+  # "Assize tide-slate", because a leading article is fatal to a prefix and to a
+  # fragment alike; `go to the Tide Post` was refused while offering "The Tide
+  # Post", for the same reason one word earlier. So a typed name is read twice,
+  # as typed and again with `LEADING_WORDS` taken off the front, and a fragment
+  # is now looked for in both directions. It is the same shape as the fix the
+  # classifier path got in #102: the player is not a JSON enum.
+  #
+  # Ambiguity found on the first reading is remembered rather than returned, so
+  # the stripped reading still gets its turn -- and is only reported when
+  # nothing else resolved. A refusal that says "matches more than one" when a
+  # later reading would have found exactly one is the same defect wearing a
+  # better message.
   def resolve(records, typed)
-    wanted = normalize(typed)
-    return Match.new(record: nil, candidates: []) if wanted.empty?
+    ambiguous = nil
 
+    readings_of(typed).each do |wanted|
+      match = match_once(records, wanted)
+      return match if match.found?
+
+      ambiguous ||= match if match.ambiguous?
+    end
+
+    ambiguous || Match.new(record: nil, candidates: [])
+  end
+
+  # WHAT WAS TYPED, AND WHAT WAS TYPED WITHOUT THE WORDS THAT NAME NOTHING. In
+  # that order, so a record actually called "The Tide Post" is still found by
+  # its own name before anything is thrown away, and `go the` still resolves to
+  # nothing rather than guessing.
+  def readings_of(typed)
+    wanted = normalize(typed)
+
+    [ wanted, without_leading_words(wanted) ].uniq.reject(&:empty?)
+  end
+
+  # Never down to nothing: a player who typed only "the" typed a name this
+  # grammar does not have, and the refusal for it is the one that lists what it
+  # does have.
+  def without_leading_words(wanted)
+    words = wanted.split(" ")
+    words.shift while words.many? && LEADING_WORDS.include?(words.first)
+
+    words.join(" ")
+  end
+
+  # ONE READING OF THE TYPED NAME against the records, in the order a person
+  # would try them.
+  def match_once(records, wanted)
     exact = records.select { |record| normalize(record.name) == wanted }
     return Match.new(record: exact.first, candidates: exact) if exact.any?
 
-    [ :start_with?, :include? ].each do |how|
-      hits = records.select { |record| normalize(record.name).public_send(how, wanted) }
+    HOW_A_NAME_MATCHES.each do |how|
+      hits = records.select { |record| how.call(normalize(record.name), wanted) }
       return Match.new(record: hits.first, candidates: hits) if hits.one?
       return Match.new(record: nil, candidates: hits) if hits.many?
     end
@@ -518,6 +592,7 @@ class Playthrough::Mechanics
   def normalize(text)
     text.to_s.downcase.strip.gsub(/\s+/, " ")
   end
+
 
   # A refusal that says what would have worked. Ambiguity and absence are told
   # apart because they are different mistakes: one is a name that was too short,
