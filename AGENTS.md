@@ -129,8 +129,9 @@ constraint* has the captain's wording and where the full audit lives.
   is narrated as a look. Everything else is still the bare command.
 - **THE CHARACTER IS TOLD THE MOMENT TOO, in the per-turn message and not the
   sheet.** `Playthrough::Moment#character_context` gives the character pass the
-  room's *name*, the story hour, who else is standing there, the recap line of
-  the last turn, and **what it already concluded on the exchanges the chat no
+  room's *name*, the story hour, who else is standing there, **what the player
+  typed on the last turn, quoted from `scenes.typed`**, and what it already
+  concluded on the exchanges the chat no
   longer replays** — `Interaction#inner_resolution`, read back at last, under
   `Moment::CONCLUSIONS_BUDGET`, skipping the `Chat::HISTORY_EXCHANGES` the chat
   sends verbatim. It goes in the user turn so a replayed exchange keeps the room
@@ -138,6 +139,20 @@ constraint* has the captain's wording and where the full audit lives.
   "The user input is", undoing `#addressee_section` every turn, and so did every
   `Interaction::Schema` description. Nothing in a talk prompt says "user" now;
   `InteractionAgentTest` pins it.
+- **A CHARACTER PROMPT CARRIES RECORDS ONLY, never prose a model wrote.**
+  Stricter than `#narration_context`, and it has to be: the narrator writes to
+  the player, so last turn's prose can be handed to it as it stands, but the
+  same sentence read by somebody else in the room is an assertion about *them*.
+  `Scene.recap_line` was replayed into `#character_context` and every shape of
+  it was in the wrong register — a scene summary is engine-facing third person,
+  a talk turn's says "The player spoke with" the very character reading it, and
+  a narrated turn has no summary at all so the fallback is the narrator's
+  **second** person, where every other "you" in that prompt means the character.
+  Measured: the character then performs the player's physical action as its own
+  6 times in 10 against 0 in 10 (Fisher exact p = 0.011). It quotes
+  `scenes.typed` instead (`Moment#last_attempt`), and `#conclusions` falls back
+  to `Interaction#action` rather than the engine-composed `#summary` for the
+  same reason. `Playthrough::MomentTest` pins both shapes.
 - **A character's voice is one register per field, and
   `Character#interaction_instructions` names them by field.** The thought and
   resolution fields are first person; the feeling fields are two or three words;

@@ -24,6 +24,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   def holdover(fullname, nickname: nil)
     character = create(:character, story: @story, fullname: fullname, nickname: nickname)
     scene = create(:scene, story: @story, location: @here, characters: [ character ],
+                           typed: "shake the rain off my coat",
                            summary: "The player came in out of the rain.")
     @playthrough.update!(current_scene: scene)
     character
@@ -107,7 +108,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   # THE ROOM'S NAME AND NOT ITS DESCRIPTION: the durable chat replays this
   # block on the next two turns, so it is kept to what a person in the room
   # would actually be aware of.
-  test "the character context names the room, the hour and what just happened" do
+  test "the character context names the room, the hour and what the player just did" do
     maren = holdover("Maren Vosk")
     @playthrough.current_scene.update!(story_timestamp: Time.utc(2026, 8, 31, 23, 0))
 
@@ -115,8 +116,55 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
 
     assert_match(/Where you are: Ashgate Market\./, context)
     assert_match(/The time is about 11 pm\./, context)
-    assert_match(/What just happened: The player came in out of the rain\./, context)
+    assert_match(/What Iri Calder did a moment ago: "shake the rain off my coat"/, context)
     assert_no_match(/Stalls under wet canvas/, context, "the description is the narrator's, not the character's")
+    assert_no_match(/the player/i, context, "the engine's stand-in for the player is not in this register")
+  end
+
+  # THE LAST TURN IS QUOTED FROM THE RECORD, NEVER FROM THE PROSE THAT ANSWERED
+  # IT. Both of the shapes `Scene.recap_line` would have replayed here are
+  # measured leaks: a narrated turn has no summary, so the fallback is the
+  # narrator's second person, and every other "you" in a character prompt means
+  # the character (6 wrong turns in 10, Fisher p = 0.011); a talk turn's summary
+  # tells the character that "the player" spoke with itself.
+  test "the character context carries no second-person prose after a narrated turn" do
+    maren = create(:character, story: @story, fullname: "Maren Vosk")
+    narrated = create(:scene, story: @story, location: @here, characters: [ maren ],
+                              typed: "check the daybook",
+                              summary: nil,
+                              description: "You run your thumb down the ruled gap between four and five.")
+    @playthrough.update!(current_scene: narrated)
+
+    context = moment.character_context(maren)
+
+    assert_match(/What Iri Calder did a moment ago: "check the daybook"/, context)
+    assert_no_match(/\byou\b/i, context.lines.grep(/a moment ago/).join)
+    assert_no_match(/run your thumb/, context, "the narrator's second person is addressed to the player, not to this character")
+  end
+
+  test "the character context does not tell a character that the player spoke with it" do
+    maren = create(:character, story: @story, fullname: "Maren Vosk")
+    talked = create(:scene, story: @story, location: @here, characters: [ @protagonist, maren ],
+                            typed: "ask her about the ledger",
+                            summary: "The player spoke with Maren Vosk. She nods.")
+    @playthrough.update!(current_scene: talked)
+
+    context = moment.character_context(maren)
+
+    assert_match(/What Iri Calder did a moment ago: "ask her about the ledger"/, context)
+    assert_no_match(/the player/i, context)
+    assert_no_match(/spoke with Maren Vosk/, context)
+  end
+
+  # The opening arrival is a turn nobody took, so there is nothing to quote and
+  # the character is told nothing rather than told it wrong.
+  test "a character is told nothing about a turn nobody typed" do
+    maren = create(:character, story: @story, fullname: "Maren Vosk")
+    opening = create(:scene, story: @story, location: @here, characters: [ maren ], typed: nil,
+                             description: "You come in out of the rain.")
+    @playthrough.update!(current_scene: opening)
+
+    assert_no_match(/a moment ago/, moment.character_context(maren))
   end
 
   test "the character context names the others in the room, and neither of the two talking" do
@@ -179,11 +227,16 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     assert_empty moment.conclusions(maren, replayed: 0)
   end
 
-  test "conclusions fall back to the exchange summary when nothing was resolved" do
+  # THE CHARACTER'S OWN RECORDED ACTION, not `Interaction#summary`. The summary
+  # is composed for the engine as `the player said "..."` (Interaction#compose_summary)
+  # and these sentences are read back into the character's own prompt, where
+  # "the player" is a stand-in nobody in the room would use.
+  test "conclusions fall back to what the character did when nothing was resolved" do
     maren = holdover("Maren Vosk")
     record_exchange(maren, @playthrough.current_scene, nil, summary: "the player said \"hello\" -- She nods.")
 
-    assert_equal [ "the player said \"hello\" -- She nods." ], moment.conclusions(maren, replayed: 0)
+    assert_equal [ "She nods." ], moment.conclusions(maren, replayed: 0)
+    assert_no_match(/the player/i, moment.character_context(maren, replayed: 0))
   end
 
   test "conclusions stay under their budget, newest kept first" do

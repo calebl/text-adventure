@@ -73,8 +73,15 @@ class Playthrough::Moment
   # message. Short on purpose: the durable conversation replays the last
   # `Chat::HISTORY_EXCHANGES` of these verbatim, so every line here is paid
   # for again on the next turn and the one after. The room's name and not its
-  # description; the time of day; who else is standing here; the one line the
-  # game remembers the last turn by.
+  # description; the time of day; who else is standing here; what the player
+  # typed on the last turn.
+  #
+  # EVERY LINE HERE IS A RECORD, and none of it is prose a model wrote. That is
+  # a stricter rule than `#narration_context` keeps, and it has to be: the
+  # narrator writes to the player, so it can be handed the last turn's prose as
+  # it stands, while a character prompt is written to somebody else in the room
+  # and the same sentence read there is an assertion about that character. See
+  # `#last_attempt`.
   #
   # And it is in the per-turn message rather than in the system instructions
   # deliberately: a moment belongs to the turn it happened in, and a replayed
@@ -88,8 +95,8 @@ class Playthrough::Moment
     company = others.reject { |other| other == character }
     lines << "Also here, besides the two of you: #{name_list(company)}." if company.any?
 
-    if (line = Scene.recap_line(playthrough.current_scene))
-      lines << "What just happened: #{line}"
+    if (attempt = last_attempt)
+      lines << attempt
     end
 
     if (concluded = conclusions(character, replayed: replayed)).any? && protagonist
@@ -121,7 +128,7 @@ class Playthrough::Moment
     room = CONCLUSIONS_BUDGET
     kept = []
     rows.last(CONCLUSIONS).reverse_each do |row|
-      sentence = (row.inner_resolution.presence || row.summary).to_s.strip
+      sentence = (row.inner_resolution.presence || row.action).to_s.strip
       next if sentence.blank? || sentence.length > room
 
       room -= sentence.length
@@ -145,6 +152,34 @@ class Playthrough::Moment
   def story = playthrough.story
   def location = playthrough.current_location
   def protagonist = playthrough.character
+
+  # WHAT THE PLAYER JUST DID, FROM THE RECORD OF WHAT THEY TYPED rather than
+  # from the prose that answered it.
+  #
+  # `Scene.recap_line` -- what `#narration_context` above uses, correctly -- is
+  # written in registers this prompt cannot carry. A scene summary is
+  # engine-facing third person ("...at the player's back", Scene::Schema); a
+  # talk turn's summary is "The player spoke with <this very character>"
+  # (Playthrough::Turn#talk_to); and a narrated turn has no summary at all, so
+  # the fallback is the narrator's SECOND person -- addressed to the player,
+  # while every other "you" in a character prompt means the character. Measured
+  # on the second-person variant: the character then performs the player's
+  # physical action as its own 6 times in 10 against 0 in 10 on the control
+  # (Fisher exact p = 0.011).
+  #
+  # `scenes.typed` is a record and not prose -- the player's own words, written
+  # on every branch -- and named and quoted it is already in this character's
+  # register: somebody in the room, doing something. Nil only on the opening
+  # arrival, which is a turn nobody took, and then the character is told
+  # nothing rather than told it wrong.
+  def last_attempt
+    return nil if protagonist.nil?
+
+    typed = playthrough.current_scene&.typed.to_s.strip
+    return nil if typed.blank?
+
+    %(What #{protagonist.fullname} did a moment ago: "#{typed.truncate(200)}")
+  end
 
   def exit_names
     playthrough.exits.map(&:name).join(", ")
