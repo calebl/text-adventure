@@ -29,6 +29,23 @@ class Character < ApplicationRecord
     "trans_man" => "he/him/his"
   }.freeze
 
+  # THE SAME PRONOUNS, ONE FORM AT A TIME, for a prompt that has to build a
+  # sentence rather than state a rule. "he/him/his" is the right thing to TELL
+  # a model; "#{determiner} eyes wide" is what a prompt writing an example
+  # sentence needs, and "his/hers/theirs" is the wrong word there. `plural` is
+  # for verb agreement: "they turn", "she turns". Keyed on the `PRONOUNS` value
+  # so a new entry in that table has to have a row here too.
+  Pronouns = Data.define(:subject, :object, :determiner, :possessive, :plural) do
+    # The verb form that agrees with the subject pronoun: `verb("turns", "turn")`.
+    def agree(singular, plural_form) = plural ? plural_form : singular
+  end
+
+  PRONOUN_FORMS = {
+    "he/him/his" => Pronouns.new(subject: "he", object: "him", determiner: "his", possessive: "his", plural: false),
+    "she/her/hers" => Pronouns.new(subject: "she", object: "her", determiner: "her", possessive: "hers", plural: false),
+    "they/them/theirs" => Pronouns.new(subject: "they", object: "them", determiner: "their", possessive: "theirs", plural: true)
+  }.freeze
+
   attribute :is_companion, :boolean, default: false
 
   # Two people in one story cannot share a full name -- a player has no other
@@ -59,6 +76,13 @@ class Character < ApplicationRecord
   # defaulting -- see InteractionAgent#pronoun_rule for why.
   def pronouns
     PRONOUNS.fetch(sex)
+  end
+
+  # The forms of those pronouns, for a prompt building a sentence. Raises on a
+  # pronoun set the table has no forms for, for the same reason `#pronouns`
+  # does: a silent default is how a wrong pronoun goes unnoticed.
+  def pronoun_forms
+    PRONOUN_FORMS.fetch(pronouns)
   end
 
   def chat
@@ -96,12 +120,16 @@ class Character < ApplicationRecord
       If someone asks you a question, you should respond as if you are the character. NEVER BREAK CHARACTER.
 
       ## Voice
-      When you are speaking, surround your response with quotes. When you are thinking, do not surround your response with quotes.
+      You answer in six fields, and each one has its own register.
 
+      pre_thought and post_thought are your private thoughts. Think them in the first person, as "I". Nobody hears them, so nothing in them is a line of speech.
+      pre_feeling and post_feeling are two or three words each. No sentences.
+      inner_resolution is what you have decided to do, in the first person.
+      action is the one field anybody can see: what you visibly do and what you say out loud. Speech goes inside quotes, and only speech does.
       Inside the quotes you are talking out loud: say "I", never your own name. Nobody says "#{fullname} does not know" out loud.
-      Outside the quotes you are described from outside: #{nickname.presence || fullname}, #{pronouns.split("/").first}, #{pronouns.split("/").last}. A bare "I" out there reads as the person you are talking to rather than as you.
+      Outside the quotes you are described from outside: #{nickname.presence || fullname}, #{pronoun_forms.subject}, #{pronoun_forms.determiner}. A bare "I" out there reads as the person you are talking to rather than as you.
 
-      Answer AS #{fullname}, not about #{pronouns.split("/")[1]}. Do not plan the answer and do not weigh what #{nickname.presence || fullname} would probably think -- think the thought and say the line.
+      Answer AS #{fullname}, not about #{pronoun_forms.object}. Do not plan the answer and do not weigh what #{nickname.presence || fullname} would probably think -- think the thought and say the line.
 
     INTERACTION_INSTRUCTIONS
   end

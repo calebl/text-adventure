@@ -48,7 +48,7 @@ class Playthrough::Turn
       # `intent.item` is what makes this branch reachable at all.
       move_item(intent, command, &block)
     else
-      narrate(command, &block)
+      narrate(command, intent: intent, &block)
     end
 
     # WHAT THE PLAYER TYPED, filed under the turn it produced.
@@ -238,8 +238,52 @@ class Playthrough::Turn
   # it persists in an `ensure` so a closed tab does not lose the prose, and it
   # sets `current_scene` itself. Movement is the one thing it cannot do, which
   # is why it does not touch `current_location`.
-  def narrate(command, &block)
-    Scene::Narrator.new(playthrough).narrate(command, &block)
+  #
+  # `intent` is what the classifier decided, when the caller has one. It used
+  # to be dropped here: a `move` that resolved to no exit, a `talk` with nobody
+  # to answer and an `examine` all reached the narrator as the bare command, so
+  # the narrator walked the player through the door anyway and the next arrival
+  # contradicted it. Now a reach that resolved to nothing is stated as a fact
+  # (`#reach_fact`) and the intent label goes along for the narrator's one line
+  # about what kind of turn this is.
+  def narrate(command, intent: nil, &block)
+    Scene::Narrator.new(playthrough).narrate(command, fact: reach_fact(intent), intent: intent&.action, &block)
+  end
+
+  # WHAT THE RECORDS SAY ABOUT A REACH THAT FOUND NOTHING, in the app's own
+  # words, through the same `fact:` seam `take` and `drop` use for what they
+  # did. The classifier resolved the command against the closed set of what
+  # is actually here and nothing matched; that is a fact about the world, not
+  # an opinion about the prose, and the narrator is told it rather than left
+  # to guess. The lists themselves are already in the prompt
+  # (`Playthrough::Moment`), so this only has to say which one came up empty
+  # and that nothing moved.
+  #
+  # The cost is the case where the classifier was wrong -- a real exit it failed
+  # to match -- and the narrator now denies a door that is there. That is a
+  # worse turn than before; the turn where it narrated a move that never
+  # happened was a worse GAME, because the records and the prose parted ways.
+  # Either way `Playthrough::Drift` has the row.
+  def reach_fact(intent)
+    return nil unless intent&.reached_for_nothing?
+
+    here = playthrough.current_location&.name || "where they are"
+
+    case intent.action
+    when :move
+      "The player reached for a way out that does not exist here. The ways out are " \
+        "exactly the ones listed above, and none of them is what they tried. They have not moved: " \
+        "they are still in #{here}."
+    when :talk
+      "The player tried to speak to somebody who is not here. The only people present are " \
+        "the ones listed above; nobody else answers."
+    when :take
+      "The player reached for something that is not lying here. Nothing was picked up, and " \
+        "they are carrying exactly what is listed above."
+    when :drop
+      "The player tried to put down something they are not carrying. Nothing changed hands, and " \
+        "they are carrying exactly what is listed above."
+    end
   end
 
   def classifier

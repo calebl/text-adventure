@@ -103,7 +103,11 @@ bundle exec brakeman
      carries, and the turn branches on the answer: `Scene::Generator` for
      arriving somewhere, `InteractionAgent` for talking to somebody, an app-owned
      `Item` transfer for `take` and `drop`, `Scene::Narrator` for everything
-     else. An unresolved reach writes a `Playthrough::Drift` row.
+     else. An unresolved reach writes a `Playthrough::Drift` row **and is stated
+   to the narrator as a fact** (`Turn#reach_fact`). `Playthrough::Moment` is the
+   one builder of what the prose and the character are told about the moment:
+   room, exits, cast, inventory, last turn, recap. Add a fact there, not to a
+   caller.
    - It runs in `NarrationJob`, which broadcasts what the player reads as Turbo
      Streams over Action Cable — so a turn outlives the tab and holds no Puma
      thread. The loop takes a block and knows nothing about the consumer.
@@ -186,7 +190,10 @@ The current database includes the following story-related models with proper ass
   turn is built on. Its voice rules are scoped per register — first person
   inside the quotes, named and pronouned outside them — and
   `#addressee_section` tells an NPC who is in front of it using only what
-  meeting somebody would tell them. The protagonist's `backstory`,
+  meeting somebody would tell them, and `InteractionAgent#character_prompt` adds
+  the moment (`Playthrough::Moment#character_context`) and names the speaker;
+  no talk prompt says "the user". `#pronoun_forms` is for a prompt that builds a
+  sentence, `#pronouns` for one that states a rule. The protagonist's `backstory`,
   `personality`, `likes`, `dislikes` and `fears` are deliberately withheld; see
   `AGENTS.md` → *Talking to models*
 - **WorldMechanic** → **WorldEvents**: the world changing itself on the story's

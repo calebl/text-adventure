@@ -442,4 +442,18 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
       assert_raises(ActiveRecord::RecordInvalid) { generate(realized_location, agent: agent) }
     end
   end
+  # The instruction says to write everyone listed as already present. Unmarked,
+  # the protagonist's own line read as an instruction to write the player into
+  # the room as a bystander they then meet.
+  test "the cast list marks the protagonist as the player" do
+    protagonist = create(:character, :protagonist, story: @story, fullname: "Isbet Marrow", nickname: "Iz")
+    companion = create(:character, :companion, story: @story, fullname: "Mira Vance", nickname: "Mira")
+
+    _scene, agent = generate(realized_location)
+    prompt = agent.prompts.first
+
+    assert_match(/Isbet Marrow \(Iz\), #{Regexp.escape(protagonist.race.name)} -- the player, the one arriving/, prompt)
+    assert_match(/Mira Vance \(Mira\), #{Regexp.escape(companion.race.name)}\n/, prompt)
+    assert_no_match(/Mira Vance.*the player/, prompt)
+  end
 end

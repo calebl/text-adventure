@@ -153,8 +153,17 @@ class Playthrough::Classifier
   # replaying. What is kept is the record of it, which is the only place the
   # intent LABEL and the raw typed command are written down at all.
   def agent
-    @agent ||= BaseAgent.new(purpose: "classifier", playthrough: playthrough).with_instructions(INSTRUCTIONS)
+    @agent ||= BaseAgent.new(purpose: "classifier", playthrough: playthrough)
+                        .with_instructions(INSTRUCTIONS)
+                        .with_temperature(TEMPERATURE)
   end
+
+  # NONE. This call picks one word from a fixed table and one name from a closed
+  # enum; there is nothing here for sampling to improve and one thing for it to
+  # ruin, which is that the same line typed twice in the same room resolves the
+  # same way. Every other call in the app leaves the provider's default alone --
+  # prose is where the wandering is wanted.
+  TEMPERATURE = 0.0
 
   def command_prompt(command, exits, cast, items = [], carried = [])
     <<~PROMPT

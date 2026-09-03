@@ -33,15 +33,15 @@ class Interaction::Schema < RubyLLM::Schema
   }.freeze
 
   string :pre_thought,
-         description: "What you thought immediately in response to the user's action. " \
+         description: "What you thought immediately in response to what was just said or done to you. " \
                       "One sentence, at most 320 characters.",
          max_length: MAX_LENGTHS[:pre_thought]
   string :pre_feeling,
-         description: "What you felt immediately in response to the user's action. " \
+         description: "What you felt immediately in response to what was just said or done to you. " \
                       "Two or three words, comma separated, at most 120 characters.",
          max_length: MAX_LENGTHS[:pre_feeling]
   string :action,
-         description: "What you did in response to the user's action. " \
+         description: "What you did and said in response. Speech goes inside quotes. " \
                       "One or two sentences, at most 480 characters.",
          max_length: MAX_LENGTHS[:action]
   string :post_feeling,
