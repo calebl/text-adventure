@@ -200,13 +200,26 @@ class Eval::Board
       io.puts "      typed:   #{finding.typed.to_s.strip.truncate(120)}" if finding.typed.present?
       io.puts "      says:    #{finding.headline}"
       io.puts "      passage: #{finding.claim.to_s.strip.truncate(260)}" if finding.claim.present?
-      io.puts "      record:  #{finding.evidence["records say"] || finding.evidence["was offered"] || finding.where}"
+      io.puts "      record:  #{record_line(finding)}"
       io.puts
     end
 
     remaining = all.size - sample
     io.puts "  ...and #{remaining} more. SAMPLE=#{all.size} to print them all." if remaining.positive?
     io.puts
+  end
+
+  # THE RECORD THE PASSAGE CONTRADICTS, which is a different key per check --
+  # what convicts an item claim is where the records put the item, and what
+  # convicts a third-person narration is who the player is. The room is the
+  # last resort rather than the answer.
+  RECORD_KEYS = [ "records say", "the player is", "was offered", "present", "edge out" ].freeze
+
+  def record_line(finding)
+    key = RECORD_KEYS.find { |candidate| finding.evidence[candidate].present? }
+    return finding.where.to_s if key.nil?
+
+    "#{key}: #{finding.evidence[key]}"
   end
 
   def footer
