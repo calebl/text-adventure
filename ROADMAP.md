@@ -727,6 +727,29 @@ Steps 1 and 2 of that plan have landed (see **Done**). The rest, in order:
    has — populated when the narrator names something. A generated per-room
    inventory is explicitly ruled out.
 
+### Queued out of the evaluation pass
+
+Three tasks, all measured on the 20-turn baseline of 2026-09-03 rather than
+proposed. The first is the captain's own instruction; the other two came out of
+reading one held-out run the board scored at zero flags.
+
+- **`ta-narration-third-person-fix`** — the dominant defect: arrival narrations
+  write the player as somebody else, **159 flags on 113 of 320 tuning turns
+  (49.7%)**, 9.4% on the held-out world. It needs the loop rather than a look,
+  because one unchanged configuration produced 1 to 13 flags on the same twenty
+  turns. **Done means two things:** a REAL verdict from `rake eval:compare` at
+  four runs a side that reproduces on `The Salt Assizes`, *and* richness that
+  does not fall REAL alongside it — the cheapest way to stop writing the player
+  in third person is to stop naming anybody. Then re-baseline, and the existing
+  check guards it from there.
+- **`ta-take-drop-narration`** — the prose denies the take (30/32) and invents a
+  pickup on the drop (5/32). See **Known issues**; the app is not at fault and
+  the check that would catch it is a new shape, reading a turn against the state
+  *before* it.
+- **`ta-character-whereabouts`** — there is no record of where anybody is. The
+  people half of the noun registry; overlaps `ta-narrator-memory` below and
+  should be designed with it.
+
 ### Alongside those, the older queued work
 
 - **`ta-prompt-bench`** — the other half of the evaluation loop. `Story::Scoreboard`
@@ -1062,6 +1085,35 @@ What it still owes, roughly in order:
       and two were healthy.
 
 ## Known issues
+
+- **The narration erases the `take` and invents the pickup on a `drop`, and no
+  check can see it** (`ta-take-drop-narration`, queued). On a turn the app
+  resolves as `take`, the prose says *"You **already hold** the Assize
+  tide-slate"* — of a slate that was lying on the bench until this turn moved
+  it. On a `drop`, the mirror: *"You **lift** the tide-slate **from where it
+  lies against the wall** and set it down"*, of a slate the player was carrying.
+  **30 of 32 take turns and 5 of 32 drop turns, on the 480-turn baseline.**
+  `Playthrough::Turn#taken_fact` hands the narrator the right sentence stated as
+  done; the narrator writes the opposite. Likely cause: `Playthrough::Moment`
+  carries the post-write inventory as standing state beside a fact describing
+  the transition, so the state reads as prior and the fact as redundant. **No
+  check catches it because every check in `Story::Audit` reads one scene against
+  the state it was written against, and this is a claim about a transition** —
+  the prose and the records agree about who holds the slate and disagree about
+  whether anything happened. Found by reading a held-out run the board scored at
+  zero flags.
+
+- **Nothing records where a character is** (`ta-character-whereabouts`, queued).
+  `Character` has no location: `belongs_to :story`, `has_and_belongs_to_many
+  :scenes`, and that is the whole answer to *"where is Ammon Brace"*. Only
+  arrival turns write a cast at all — 296 of 480 baseline turns have one, the
+  other 184 have no record of who was in the room. Two consequences: a
+  `character_not_present` check **must not be built** (the records are not
+  authoritative, so it would measure the harness like `reached_for_nothing`
+  does), and the generated cast quietly drops people the world is about —
+  arriving at The Tide Post recorded the protagonist alone, on all three runs
+  checked, in a world whose premise is that Neb Halloran is chained to that post.
+  The narrator put him there and no record kept it.
 
 - **The local model rotation is off by default** (`TA_LOCAL_MODELS=1` to bring
   it back), on the captain's ruling of 2026-09-03: *"if we are still falling

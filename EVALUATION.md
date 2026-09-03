@@ -154,6 +154,33 @@ of a different app.
 
 ---
 
+## What the checks miss, and how that was found
+
+Every check on the board is measured for false positives before it ships. **None
+of them is measured for recall, and there is no way to measure it** — the errors
+a check does not name are not enumerable. The substitute is reading a run: pick a
+run the board scored **clean** and read it end to end against the records, since
+that is where a missed defect hides. `rake eval:read SET=… STORY=… REP=…` prints
+one for exactly this.
+
+One pass over a zero-flag run of the held-out world, on 2026-09-03, found two
+defects that every check passed:
+
+1. **The narration denies the `take` and invents the pickup on the `drop`** — 30
+   of 32 and 5 of 32 turns across the whole 480-turn baseline. It is invisible
+   because every check reads one scene against the state it was written against,
+   and this is a claim about a **transition**: the prose and the records agree
+   about who holds the thing and disagree about whether anything happened.
+2. **The generated arrival cast drops characters the world is about**, and
+   nothing can contradict it, because no record says where a character is.
+
+Both are in ROADMAP's *Known issues* with the figures, and both are queued. The
+lesson for anybody adding a check: **a board of zeroes is a claim about the
+checks, not about the game.** One read of one clean run cost twenty minutes and
+found a defect on 94% of a mechanic the app owns.
+
+---
+
 ## What is measured
 
 Eight checks, all of them from `Story::Audit`, all offline and deterministic.
