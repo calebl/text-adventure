@@ -328,17 +328,24 @@ turn, and runs at ~20 ms per scene, so it can be run over every scene ever
 written. `Story::Audit` is the class; the same two tables appear in the debug
 view for the playthrough being looked at.
 
-**Two kinds of finding, counted separately, because they are different claims.**
+**Four kinds of finding, counted separately, because they are different claims.**
 
 - **A contradiction** is something the records prove: a transition across an
-  edge the graph does not have, or the player told they are carrying something
-  the records give to somebody else.
+  edge the graph does not have, the player told they are carrying something the
+  records give to somebody else, or a door closing at the player's back on a
+  turn the records say they never left the room.
+- **A defect** is one passage wrong on its own terms: prose that stops
+  mid-sentence, or a narration that writes the protagonist as a third person
+  when the player is only ever *you*.
 - **Drift** is evidence rather than proof: the player reached for something the
   closed sets do not have. `Playthrough::Drift` writes one row when a `move`,
   `talk`, `take` or `drop` resolves to nothing, keeping what they typed, what
   was on offer, and the narration they had just read. That is how an invented
   exit becomes observable without asking a model anything -- **not** by scanning
   prose for a door, which is impossible, but by noticing the player walk at one.
+- **A still run** is not a defect at all and is never counted as one: four turns
+  in a row on which the records show nothing changing, with somebody standing in
+  the room. It is a pacing measurement.
 
 **Precision is the design goal, not recall, and every check was kept or cut
 against a measurement.** The corpus is 24 narrations two remote models really
@@ -352,6 +359,55 @@ than a mention. On the corpus, with items planted under the names the prose
 argues about: **8 flags, 8 true positives, 0 false positives**, against 15
 narrations that name one of those items. About half the real possession claims
 are missed, and that is the price paid on purpose.
+
+### The scoreboard
+
+`rake game:audit` says what is wrong. `rake game:score` says whether it is
+getting better, which is a different question and the one that was missing.
+
+```
+$ rake game:score
+Scoring stored turns against the records. No model call, no API key, no network.
+
+==============================================================================
+CORPUS: database
+  54 turns across 2 stories
+
+  check                       flagged       of     rate   vs baseline
+  unreachable_transition            0       50     0.0%   unchanged (0.0%)
+  unrecorded_departure              1       50     2.0%   unchanged (2.0%)
+  item_not_held                     0       54     0.0%   unchanged (0.0%)
+  truncated_prose                   4       68     5.9%   better -1.5 pts (was 7.4%, 5 flags)
+  third_person_protagonist         12       54    22.2%   unchanged (22.2%)
+  reached_for_nothing               2       31     6.5%   unchanged (6.5%)
+  still_run                         2       50     4.0%   unchanged (4.0%)
+
+  X [unrecorded_departure] scene #64 (Ward Office 12) -- he called it BAD
+      typed: ask: do you still me for something or can I go?
+      the narration closes a door behind the player, and the records have them still in "Ward Office 12"
+      > The door clicks shut behind you, and somewhere on the other side of it, he's already
+        calculating how to fill the long hours until evening.
+```
+
+Every flag carries the turn, what was typed and the passage that convicted it,
+so the only prose anybody reads is prose a check caught.
+
+**Two corpora, reported separately and never added together.** The local
+database is what was actually played -- true, and the only corpus the captain's
+`good` / `weak` / `bad` verdicts attach to -- but it is small and it drifts.
+`test/fixtures/files/eval_corpus.json` is 92 real passages frozen in the repo,
+so it needs no database and gives the same answer on every machine; a check that
+cannot be run against it is reported **unavailable** rather than scored as zero.
+`db/eval_baseline.json` is the line the next run moves against, checked in so
+its diff is the record of whether a change did anything, and rewritten only when
+asked (`SAVE=1`).
+
+**There is no quality score and there will not be one.** Every check counts an
+error that is objectively present or absent; none of them reads prose for taste.
+`Story::Scoreboard::CorpusTest` pins the measurement: **19 flags over 92 real
+passages, zero false positives, and zero flags on the 24 lab narrations** -- and
+the three turns the captain marked while playing are each caught by a different
+check.
 
 ### What the loop does not do yet
 

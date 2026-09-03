@@ -421,17 +421,25 @@ before changing the loop; the rules below are what it does not fit.
 
 ### Auditing the difference
 
-The third clause of the standing constraint, and `rake game:audit` is where it
-lives. `Story::Audit` walks stored `Scene`s and reports where the prose and the
-records disagree. **Offline, deterministic, no model call, ~20 ms per scene** —
-so it can be run over every scene ever written. The debug view shows the same
-two tables for one playthrough.
+The third clause of the standing constraint. `Story::Audit` walks stored
+`Scene`s and reports where the prose and the records disagree (`rake
+game:audit`); `Story::Scoreboard` turns the same sweep into numbers that move
+(`rake game:score`). **Offline, deterministic, no model call, ~20 ms per
+scene** — so both run over every scene ever written, on a whim, for nothing.
+The debug view shows the same four tables for one playthrough.
 
-- **Contradictions are proved; drift is witnessed.** They are counted separately
-  and must stay that way. A contradiction is the graph or an item record saying
-  the narration is wrong. Drift is `Playthrough::Drift`: the player reached for
-  something the closed sets do not have, which is how an invented exit becomes
-  observable — by its consequences, not by scanning prose for a door.
+- **Four categories, counted apart and never merged.** A CONTRADICTION is two
+  records disagreeing (`unreachable_transition`, `item_not_held`,
+  `unrecorded_departure`). A DEFECT is one passage wrong on its own terms
+  (`truncated_prose`, `third_person_protagonist`). DRIFT is
+  `Playthrough::Drift`: the player reached for something the closed sets do not
+  have, which is how an invented exit becomes observable — by its consequences,
+  not by scanning prose for a door. PACING (`still_run`) is not a defect at all
+  and must never be counted as one: it is a stretch of turns on which the
+  records show nothing happening with somebody in the room.
+- **Every check answers to an error the captain named while playing**, in his
+  own words, and nothing here was added because it sounded checkable. A new
+  check needs a complaint behind it and a measurement in front of it.
 - **PRECISION, NOT RECALL, and this is not a preference — it was measured.** A
   spike that asked "which known names appear in this prose" raised four flags on
   24 real narrations and all four were false positives: prose refers to places
@@ -439,12 +447,34 @@ two tables for one playthrough.
   therefore **no place check and no person check**, and adding one back needs a
   measurement, not an argument. `Story::Audit`'s header comment has the full
   reasoning for each check kept and each cut.
-- **`test/fixtures/files/narration_corpus.json` is 24 narrations two remote
-  models really wrote**, and `Story::AuditPrecisionTest` pins the exact set of
-  flags they earn — currently 8, all true positives, zero false positives.
-  Widening a pattern until it flags "There is no revolver, no pistol, no weapon
-  of any kind on your person" fails the build, which is the point. If the set
-  changes, read every new flag and sign for it before touching `EXPECTED`.
+- **Two corpora, pinned by two tests, and never pooled into one number.**
+  `test/fixtures/files/narration_corpus.json` is 24 narrations two remote models
+  really wrote, and `Story::AuditPrecisionTest` pins the 8 item flags they earn.
+  `test/fixtures/files/eval_corpus.json` is those 24 plus all 68 passages from
+  the two worlds actually played — 92 in all — and
+  `Story::Scoreboard::CorpusTest` pins the exact 19 flags they earn: all true
+  positives, zero false positives, and **not one of the 24 lab narrations
+  flagged**. Widening a pattern until it flags "There is no revolver, no pistol,
+  no weapon of any kind on your person", or "the name is stitched into the
+  strap… but it is yours", fails the build. If a set changes, read every new
+  flag and sign for it before touching the fixture.
+- **The three turns the captain actually judged are the validation**, and each
+  is caught by a different check: `truncated_prose`, `still_run`,
+  `unrecorded_departure`. A scoreboard that cannot catch the errors he noticed
+  unaided is measuring something else.
+- **His verdicts are ground truth and are reported as counts until there are
+  enough of them.** `Story::Scoreboard::MIN_VERDICTS` is 30; below it the report
+  prints CORRELATION UNESTABLISHED in words. Dressing up n=3 is the one thing
+  this instrument must not do. It also names every turn he marked weak or bad
+  that **no** check caught — that list is where the next check comes from.
+- **The baseline is checked in (`db/eval_baseline.json`) and rewritten only when
+  asked** (`SAVE=1 rake game:score`). Its git diff is the record of whether a
+  change did anything. A scoreboard that re-baselines itself always reports no
+  movement.
+- **There is no prose score, no judge model, and no aggregate quality number**,
+  and there must not be. See `Story::Scoreboard`'s header and
+  `data/ta-model-bench/report.md` §9 (firstmate repo) for why. The offline
+  model-read sweep is a separate, queued item (`ta-compliance-sweep`).
 - **A check that cannot be run honestly is recorded as UNJUDGED, not guessed
   at.** A shuffled graph (`WorldMechanic` repoints edges, so today's graph is
   not the one the player walked), a scene with no story time, an item row
