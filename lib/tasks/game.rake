@@ -171,6 +171,31 @@ namespace :game do
     Helpers.print_audit_summary(audits, elapsed)
   end
 
+  desc "Score the game against the errors that can be checked. Usage: rake game:score, SAVE=1 to re-baseline, CORPUS=database|corpus"
+  task :score, [ :story_id ] => :environment do |t, args|
+    boards =
+      if args[:story_id]
+        [ Story::Scoreboard.database(Story.where(id: Helpers.story!(args[:story_id]).id)) ]
+      else
+        Story::Scoreboard.all
+      end
+    boards.select! { |board| board.name == ENV["CORPUS"] } if ENV["CORPUS"].present?
+
+    if boards.empty?
+      puts "No corpus to score. CORPUS must be one of: database, corpus."
+      next
+    end
+
+    puts "Scoring stored turns against the records. No model call, no API key, no network."
+    puts
+
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    boards.each { |board| Helpers.print_scoreboard(board) }
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+
+    Helpers.print_score_footer(boards, elapsed)
+  end
+
   desc "Delete a story and everything that belongs only to it. Usage: rake 'game:delete[3]' (dry run unless confirmed)"
   task :delete, [ :story_id ] => :environment do |t, args|
     story = Helpers.story!(args[:story_id])
@@ -273,6 +298,203 @@ namespace :game do
       puts "     #{mark} [#{flag.code}] scene ##{flag.scene&.id}#{" (#{flag.scene.location&.name})" if flag.scene&.location}"
       puts "       #{flag.headline}"
       flag.evidence.each { |key, value| puts "         #{key}: #{value}" if value.present? }
+    end
+
+    # ----------------------------------------------------------------------
+    # THE SCOREBOARD. `rake game:score`.
+    #
+    # The shape of this output is the answer to the second half of what was
+    # asked for -- *"having me review everything manually is too slow and I
+    # start losing focus from reading variations on the same thing too many
+    # times"* -- so it is organised so that nothing clean is ever printed. Every
+    # line is either a number or a turn a check caught, and every caught turn
+    # carries what was typed and the sentence that convicted it.
+    # ----------------------------------------------------------------------
+
+    # How a flag is marked, worst class first. Same three characters the audit
+    # uses, plus one for pacing, which is not a defect and must not read like
+    # one.
+    SCORE_MARKS = { contradiction?: "X", defect?: "X", drift?: "~", pacing?: "-" }.freeze
+
+    def self.print_scoreboard(board)
+      puts "=" * 78
+      puts "CORPUS: #{board.name}"
+      puts "  #{board.note}" if board.note
+      puts "  #{board.scanned} turn#{"s" unless board.scanned == 1} across #{board.audits.size} " \
+           "#{board.name == "corpus" ? "file" : "stor#{board.audits.one? ? "y" : "ies"}"}"
+      puts
+
+      print_score_table(board)
+      puts
+      print_score_flags(board)
+      print_score_agreement(board)
+      print_score_unjudged(board)
+
+      if ENV["SAVE"].present?
+        board.save_baseline!
+        puts "  baseline rewritten: #{Story::Scoreboard::Baseline::PATH} (#{board.name})"
+        puts
+      end
+    end
+
+    # Per check: how many turns flagged, out of how many it could have flagged,
+    # the rate, and the movement since the baseline. A check the corpus cannot
+    # answer is UNAVAILABLE rather than 0.0%, which would be a lie that reads
+    # like good news.
+    def self.print_score_table(board)
+      if board.baseline_scenes
+        puts "  ! THE CORPUS CHANGED SIZE: #{board.baseline_scenes} turns when the baseline was taken, " \
+             "#{board.scanned} now."
+        puts "    Rates are still comparable; counts are not, and a corpus that shrank will read"
+        puts "    as an improvement nobody made. Re-baseline (SAVE=1) once that is understood."
+        puts
+      end
+
+      puts format("  %-26s %8s %8s %8s   %s", "check", "flagged", "of", "rate", "vs baseline")
+      board.movements.each do |movement|
+        reading = movement.now
+        puts format("  %-26s %8s %8s %8s   %s",
+                    reading.code,
+                    reading.available ? reading.flagged : "--",
+                    reading.available ? reading.scanned : "--",
+                    reading.available ? "#{reading.percentage}%" : "unavailable",
+                    movement_note(movement))
+      end
+      puts
+      puts "  A rate is per turn the check could judge, not per turn in the corpus -- see"
+      puts "  Story::Audit#judgeable_for. 'unavailable' means this corpus carries no record"
+      puts "  the check reads; it is not a zero."
+
+      fired = board.readings.select { |reading| reading.flagged.positive? }
+      return if fired.empty?
+
+      puts
+      puts "  what each check that fired is counting:"
+      fired.each { |reading| puts format("    %-26s %s", reading.code, reading.description) }
+    end
+
+    def self.movement_note(movement)
+      return "unavailable" unless movement.now.available
+      return "new -- no baseline yet" if movement.new_check?
+      return "unchanged (#{(movement.then_rate * 100).round(1)}%)" unless movement.moved?
+
+      direction = movement.better? ? "better" : "worse"
+      format("%s %+.1f pts (was %.1f%%, %d flag%s)", direction, movement.delta * 100,
+             movement.then_rate * 100, movement.then_flagged, movement.then_flagged == 1 ? "" : "s")
+    end
+
+    # EVERY FLAG, WITH THE TURN, WHAT HE TYPED AND THE PASSAGE. This is the
+    # part that replaces reading the whole log.
+    def self.print_score_flags(board)
+      if board.flags.empty?
+        puts "  Nothing flagged."
+        puts
+        return
+      end
+
+      puts "  #{board.flags.size} flag#{"s" unless board.flags.one?}, worst class first:"
+      puts
+      board.flags_in_reading_order.each { |flag| print_score_flag(board, flag) }
+    end
+
+    def self.print_score_flag(board, flag)
+      mark = SCORE_MARKS.find { |predicate, _| flag.public_send(predicate) }&.last || "?"
+      turn = flag.scene
+      verdict = board.verdicts[turn]
+
+      typed = turn.respond_to?(:typed) ? turn.typed.to_s.strip : ""
+
+      puts "  #{mark} [#{flag.code}] #{score_subject(turn)}#{" -- he called it #{verdict.upcase}" if verdict}"
+      puts "      typed: #{typed.presence || no_command_reason(turn)}"
+      puts "      #{flag.headline}"
+
+      # The passage, unless it would only repeat the command a line above it --
+      # which is what `evidence_line` falls back to for the two checks whose
+      # evidence IS what was typed.
+      passage = (flag.evidence[:claim].presence || flag.evidence_line).to_s.squish
+      puts "      > #{passage}" if passage.present? && passage != typed
+      puts
+    end
+
+    # WHY A TURN HAS NO COMMAND, told apart rather than guessed at: an opening
+    # arrival is world data nobody typed, and a turn written before
+    # `Scene#typed` existed lost the words rather than never having them.
+    def self.no_command_reason(turn)
+      return "(nothing -- an opening arrival, which is world data)" if turn.respond_to?(:is_opening?) && turn.is_opening?
+
+      "(not recorded -- this turn predates Scene#typed)"
+    end
+
+    # A turn's name, whichever corpus it came from: a `Scene` has an id and a
+    # room, a frozen passage has a label.
+    def self.score_subject(turn)
+      return "(no turn)" if turn.nil?
+      return "#{turn.label}#{" (#{turn.room})" if turn.respond_to?(:room) && turn.room}" if turn.respond_to?(:label)
+
+      "scene ##{turn.id}#{" (#{turn.location&.name})" if turn.location}"
+    end
+
+    # AGAINST HIS OWN VERDICTS, and the small-sample caveat is printed in words
+    # rather than hidden behind a percentage. See Story::Scoreboard::Agreement.
+    def self.print_score_agreement(board)
+      if board.labelled.zero?
+        puts "  Against his verdicts: no turn in this corpus carries one, so agreement is unmeasured."
+        puts
+        return
+      end
+
+      puts "  Against his verdicts: #{board.labelled} labelled turn#{"s" unless board.labelled == 1} " \
+           "(#{board.verdict_tally.map { |v, n| "#{n} #{v}" }.join(", ")})"
+
+      unless board.agreement_established?
+        puts "  CORRELATION UNESTABLISHED: #{board.labelled} verdicts is not a correlation and is not"
+        puts "  reported as one. The counts below are counts. This line goes away at " \
+             "#{Story::Scoreboard::MIN_VERDICTS}, and"
+        puts "  the figure recomputes on its own as he labels more turns."
+      end
+
+      puts format("    %-26s %6s %6s %6s", "check", "good", "weak", "bad")
+      board.agreements.select { |a| a.flagged.positive? }.each do |agreement|
+        puts format("    %-26s %6d %6d %6d", agreement.code, agreement.on_good, agreement.on_weak, agreement.on_bad)
+      end
+
+      missed = board.missed_verdicts
+      if missed.empty?
+        puts "    every turn he marked weak or bad was caught by a check."
+      else
+        puts "    #{missed.size} turn#{"s" unless missed.one?} he marked weak or bad that NO check caught " \
+             "-- this is where the next check comes from:"
+        missed.each { |turn, verdict| puts "      #{verdict.upcase} #{score_subject(turn)}: #{turn_note(turn)}" }
+      end
+      puts
+    end
+
+    def self.turn_note(turn)
+      return turn.note if turn.respond_to?(:note) && turn.note.present?
+
+      Playthrough::Feedback.where(scene_id: turn.id).pick(:note).presence || "(no note)"
+    end
+
+    def self.print_score_unjudged(board)
+      return if board.unjudged.empty?
+
+      puts "  #{board.unjudged.size} check#{"s" unless board.unjudged.one?} not judged -- the records " \
+           "cannot answer them honestly (rake game:audit VERBOSE=1 lists them)"
+      puts
+    end
+
+    def self.print_score_footer(boards, elapsed)
+      turns = boards.sum(&:scanned)
+      puts "=" * 78
+      puts "#{turns} turn#{"s" unless turns == 1} over #{boards.size} corp#{boards.one? ? "us" : "ora"} " \
+           "in #{(elapsed * 1000).round} ms. Nothing here scored prose."
+      puts "The two corpora are never added together: one is true and small, the other is"
+      puts "frozen and reproducible. See Story::Scoreboard."
+      puts
+      puts "SAVE=1 rake game:score   record today's numbers as the baseline the next run moves against"
+      unless ENV["SAVE"].present?
+        puts "Baseline on file: #{File.exist?(Story::Scoreboard::Baseline.path) ? Story::Scoreboard::Baseline::PATH : "none yet"}"
+      end
     end
 
     def self.print_audit_summary(audits, elapsed)

@@ -1,0 +1,104 @@
+{
+  "corpus": {
+    "corpus": "corpus",
+    "recorded_at": "2026-09-03T00:18:25Z",
+    "scenes": 92,
+    "stories": 1,
+    "labelled_turns": 3,
+    "checks": {
+      "unreachable_transition": {
+        "flagged": 0,
+        "scanned": 0,
+        "rate": 0.0,
+        "available": false
+      },
+      "unrecorded_departure": {
+        "flagged": 1,
+        "scanned": 74,
+        "rate": 0.013514,
+        "available": true
+      },
+      "item_not_held": {
+        "flagged": 0,
+        "scanned": 0,
+        "rate": 0.0,
+        "available": false
+      },
+      "truncated_prose": {
+        "flagged": 4,
+        "scanned": 92,
+        "rate": 0.043478,
+        "available": true
+      },
+      "third_person_protagonist": {
+        "flagged": 12,
+        "scanned": 78,
+        "rate": 0.153846,
+        "available": true
+      },
+      "reached_for_nothing": {
+        "flagged": 0,
+        "scanned": 0,
+        "rate": 0.0,
+        "available": false
+      },
+      "still_run": {
+        "flagged": 2,
+        "scanned": 74,
+        "rate": 0.027027,
+        "available": true
+      }
+    }
+  },
+  "database": {
+    "corpus": "database",
+    "recorded_at": "2026-09-03T00:18:25Z",
+    "scenes": 54,
+    "stories": 2,
+    "labelled_turns": 3,
+    "checks": {
+      "unreachable_transition": {
+        "flagged": 0,
+        "scanned": 50,
+        "rate": 0.0,
+        "available": true
+      },
+      "unrecorded_departure": {
+        "flagged": 1,
+        "scanned": 50,
+        "rate": 0.02,
+        "available": true
+      },
+      "item_not_held": {
+        "flagged": 0,
+        "scanned": 54,
+        "rate": 0.0,
+        "available": true
+      },
+      "truncated_prose": {
+        "flagged": 4,
+        "scanned": 68,
+        "rate": 0.058824,
+        "available": true
+      },
+      "third_person_protagonist": {
+        "flagged": 12,
+        "scanned": 54,
+        "rate": 0.222222,
+        "available": true
+      },
+      "reached_for_nothing": {
+        "flagged": 2,
+        "scanned": 31,
+        "rate": 0.064516,
+        "available": true
+      },
+      "still_run": {
+        "flagged": 2,
+        "scanned": 50,
+        "rate": 0.04,
+        "available": true
+      }
+    }
+  }
+}

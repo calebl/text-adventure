@@ -66,16 +66,42 @@
 class Story::Audit
   # A DISAGREEMENT THE RECORDS PROVE. Every one of these is a defect in the
   # game, not a matter of taste about the prose.
-  CONTRADICTIONS = %i[unreachable_transition item_not_held].freeze
+  CONTRADICTIONS = %i[unreachable_transition item_not_held unrecorded_departure].freeze
+
+  # THE PROSE BROKE A RULE THE APP STATES, provable from the row itself and one
+  # record. Not a disagreement between two records -- a defect in the passage.
+  # `Story::Audit::Prose` holds the reading and the measurement for both.
+  DEFECTS = %i[truncated_prose third_person_protagonist].freeze
 
   # Not proof, and never reported as if it were: the player reached for
   # something the records do not have, immediately after reading this
   # narration. See Playthrough::Drift.
   DRIFTS = %i[reached_for_nothing].freeze
 
+  # NOT A DEFECT AT ALL, and counted apart from everything above for that
+  # reason: a stretch of turns on which the records show nothing happening. A
+  # player examining four things in a row is enjoying themselves; the same four
+  # turns with somebody standing in the room who never acts is the complaint
+  # this exists to count. It is evidence about pacing, like drift is evidence
+  # about invention, and it is never added to the contradictions.
+  PACING = %i[still_run].freeze
+
   # A name shorter than this is not scanned for. Three letters match half the
   # dictionary, and a false positive costs more here than a miss.
   MIN_NAME_LENGTH = 4
+
+  # HOW MANY TURNS OF NOTHING BEFORE IT IS WORTH SAYING SO, and the number was
+  # measured rather than chosen. Over 54 real scenes, a run of this length or
+  # longer with somebody in the room flags 2 turns and one of them is the turn
+  # the captain marked `weak` with *"this has stretch on too long. Some kind of
+  # action is needed or a conversation. Why is Halkett not doing anything?"*.
+  # At 5 it flags nothing at all and misses his turn; at 3 it flags 5 and at 2
+  # it flags 10, none of the extras labelled. **Four is the longest run that
+  # still catches the one turn known to be a real complaint**, which is the
+  # precision-first way to pick a threshold. Re-derive it, do not adjust it by
+  # feel: `Story::Scoreboard::CorpusTest` recomputes that table from the frozen
+  # corpus and fails if a different threshold becomes the right answer.
+  STILL_RUN = 4
 
   # Verbs that put a thing in the player's hands.
   POSSESSION_VERBS = %w[
@@ -108,7 +134,9 @@ class Story::Audit
   # defended one at a time.
   Flag = Data.define(:code, :scene, :headline, :evidence) do
     def contradiction? = CONTRADICTIONS.include?(code)
+    def defect? = DEFECTS.include?(code)
     def drift? = DRIFTS.include?(code)
+    def pacing? = PACING.include?(code)
 
     # The one line of evidence worth putting next to the headline where there is
     # only room for one -- a table column, a summary. Different per check,
@@ -143,7 +171,7 @@ class Story::Audit
   # Oldest first, so a report reads in the order the story was played.
   def scenes
     @scenes ||= story.scenes
-                     .includes(:location, :characters, previous_scene: :location)
+                     .includes(:location, :characters, :interactions, previous_scene: :location)
                      .order(:story_timestamp, :id)
                      .to_a
   end
@@ -160,11 +188,60 @@ class Story::Audit
 
   def contradictions = flags.select(&:contradiction?)
 
+  def defects = flags.select(&:defect?)
+
   def drifts = flags.select(&:drift?)
+
+  def pacing = flags.select(&:pacing?)
 
   def scanned = scenes.size
 
   def clean? = flags.empty?
+
+  # WHICH CHECKS THIS STORY CAN ACTUALLY ANSWER, which `Story::Scoreboard`
+  # prints so an absent flag is never mistaken for a clean one. Every check
+  # runs against a real story except one: a world whose protagonist was never
+  # marked has no name for `third_person_protagonist` to look for, and
+  # `Character::Generator` still never sets `is_protagonist` (see the ROADMAP),
+  # so that is a real shape a database holds rather than a hypothetical.
+  def available_checks
+    all = CONTRADICTIONS + DEFECTS + DRIFTS + PACING
+
+    story.protagonist ? all : all - %i[third_person_protagonist]
+  end
+
+  # HOW MANY PASSAGES THIS CHECK COULD HAVE FIRED ON -- its denominator, and it
+  # is not always the scene count. A difference needs two terms, so a check
+  # that compares a turn with the one before it cannot be run on the first one;
+  # counting those in would report a rate lower than the check earned.
+  # `Story::Scoreboard` sums this across a corpus rather than working it out
+  # again, because a denominator worked out twice is a denominator that can
+  # disagree with itself.
+  def judgeable_for(code)
+    return 0 unless available_checks.include?(code)
+
+    case code
+    when :unreachable_transition, :unrecorded_departure, :still_run
+      scenes.count(&:follows_a_turn?)
+    when :reached_for_nothing
+      scenes.count { |scene| scene.typed.present? }
+    when :truncated_prose
+      # Two fields per turn are read, not one: see `#check_truncation`.
+      scenes.size + scenes.sum { |scene| scene.interactions.size }
+    else
+      scenes.size
+    end
+  end
+
+  # THE CAPTAIN'S OWN VERDICTS ON THESE TURNS, keyed by the scene they judge.
+  # Keyed by the record rather than by its id because `Story::Scoreboard` reads
+  # this alongside a frozen corpus whose passages have no ids.
+  def verdicts
+    @verdicts ||= begin
+      rows = Playthrough::Feedback.where(scene_id: scenes.map(&:id)).pluck(:scene_id, :verdict).to_h
+      scenes.filter_map { |scene| [ scene, rows[scene.id] ] if rows.key?(scene.id) }.to_h
+    end
+  end
 
   # How many of each code, for a number that can be watched over time.
   def tally
@@ -174,8 +251,10 @@ class Story::Audit
   def headline
     return "#{scanned} scenes, nothing to report" if clean?
 
-    "#{scanned} scenes: #{contradictions.size} contradiction#{"s" unless contradictions.one?}, " \
-      "#{drifts.size} drift#{"s" unless drifts.one?}"
+    counts = { "contradiction" => contradictions, "defect" => defects,
+               "drift" => drifts, "still turn" => pacing }
+
+    "#{scanned} scenes: " + counts.map { |noun, found| "#{found.size} #{noun.pluralize(found.size)}" }.join(", ")
   end
 
   private
@@ -189,8 +268,12 @@ class Story::Audit
     scenes.each do |scene|
       check_transition(scene)
       check_items(scene)
+      check_truncation(scene)
+      check_third_person(scene)
+      check_departure(scene)
     end
 
+    check_stillness
     check_drifts
     @flags
   end
@@ -387,6 +470,226 @@ class Story::Audit
           .to_a
           .uniq { |item| item.name.to_s.downcase.strip }
     end
+  end
+
+  # ------------------------------------------------------------------------
+  # THE PASSAGE STOPS MID-SENTENCE.
+  #
+  # Two fields, because two things are cut off by the same failure and only one
+  # of them is visible: `Scene#description` is what the player reads -- the
+  # captain marked one `bad` with the single word *"truncated"* -- and
+  # `Interaction#action` is the fact the talk narration is then written from,
+  # so a severed one produces a severed turn a step later.
+  #
+  # The reading is `Story::Audit::Prose.truncated?` and the measurement is in
+  # its header. Nothing here is judged against a cap: `SanitizesGeneratedText`
+  # already refuses a field that arrives at its schema ceiling, and both real
+  # `Interaction` rows in the corpus were cut off well under theirs.
+  # ------------------------------------------------------------------------
+  def check_truncation(scene)
+    passages = [ [ "the narration the player read", "scenes.description", scene.description ] ]
+    scene.interactions.sort_by(&:id).each do |interaction|
+      passages << [ "what #{interaction.character&.fullname || "somebody"} did",
+                    "interactions.action ##{interaction.id}", interaction.action ]
+    end
+
+    passages.each do |what, field, text|
+      next if text.to_s.strip.empty?
+      next unless Prose.truncated?(text)
+
+      flag(:truncated_prose, scene,
+           "#{what} stops mid-sentence",
+           field: field,
+           claim: "…#{text.to_s.rstrip.last(80)}",
+           "last character" => Prose.sentence_ending(text).inspect,
+           length: text.to_s.length,
+           where: scene.location&.name)
+    end
+  end
+
+  # ------------------------------------------------------------------------
+  # THE NARRATION WROTE THE PROTAGONIST AS SOMEBODY ELSE.
+  #
+  # The captain's words: *"referring to Vance in the third person (instead of
+  # using 'you')."* The failure is not cosmetic -- at its worst the narration
+  # splits the player in two and puts their own character in the doorway
+  # watching them arrive. Twelve flags across nine real narrations, and in every
+  # one of the nine the protagonist is standing opposite the player.
+  #
+  # `Story::Audit::Prose.third_person_references` is the reading, the three
+  # grammars it accepts and the one guard that makes it defensible are
+  # documented there, and the protagonist's names come from the records rather
+  # than from the prose.
+  #
+  # A STORY WITH NO PROTAGONIST CANNOT BE CHECKED, and says so rather than
+  # passing. `Character::Generator` still never sets `is_protagonist` (see the
+  # ROADMAP), so a generated world reaches this with nobody to look for, and a
+  # silent pass would read as a clean result.
+  # ------------------------------------------------------------------------
+  def check_third_person(scene)
+    text = scene.description.to_s
+    return if text.blank?
+
+    if protagonist_names.empty?
+      return unjudge(:third_person_protagonist, scene,
+                     "this story has no protagonist on record, so there is no name to check the narration against")
+    end
+
+    Prose.third_person_references(text, protagonist_names).each do |reference|
+      flag(:third_person_protagonist, scene,
+           "the narration writes #{reference.name.inspect} as a third person, and that is the player " \
+           "(#{story.protagonist.fullname}), who is only ever \"you\"",
+           grammar: reference.kind,
+           name: reference.name,
+           claim: reference.sentence.truncate(220),
+           "the player is" => story.protagonist.fullname,
+           where: scene.location&.name)
+    end
+  end
+
+  def protagonist_names
+    @protagonist_names ||= Prose.protagonist_names(story.protagonist)
+  end
+
+  # ------------------------------------------------------------------------
+  # A DOOR CLOSED AT THE PLAYER'S BACK AND THE PLAYER DID NOT GO ANYWHERE.
+  #
+  # The captain's words: *"the narration says a door clicked behind me but I'm
+  # still in the Ward Office 12."* This is `check_transition`'s question asked
+  # from the other side. There, two scenes name two places and the graph either
+  # joins them or does not. Here the prose asserts a departure and the records
+  # say the location never changed -- which the app owns outright, because
+  # `Playthrough::Turn#move_to` is the only thing that changes it.
+  #
+  # The prose half is `Story::Audit::Prose.departure_claims` and its ordering
+  # rule is what keeps it honest. The record half is exact, and the corpus
+  # proves the pair discriminates rather than the pattern alone: three real
+  # narrations close a door behind the player and two of them really did move,
+  # so only the third is flagged.
+  # ------------------------------------------------------------------------
+  def check_departure(scene)
+    previous = scene.previous_scene
+    return if previous.nil?
+    return if previous.location_id != scene.location_id
+
+    Prose.departure_claims(scene.description).each do |claim|
+      flag(:unrecorded_departure, scene,
+           "the narration closes a door behind the player, and the records have them still in " \
+           "#{scene.location&.name.inspect}",
+           claim: claim.truncate(220),
+           "records say" => "still in #{scene.location&.name}",
+           "previous scene" => "##{previous.id} (#{previous.location&.name})",
+           typed: scene.typed.presence)
+    end
+  end
+
+  # ------------------------------------------------------------------------
+  # A STRETCH OF TURNS ON WHICH THE RECORDS SHOW NOTHING HAPPENING.
+  #
+  # The captain's words: *"this has stretch on too long. Some kind of action is
+  # needed or a conversation. Why is Halkett not doing anything?"* Both halves
+  # of that are records, and neither is prose: a turn is STILL when the player
+  # did not move, no `Interaction` was written and no `WorldEvent` fell in the
+  # interval -- which is every record a turn can leave -- and the run is what
+  # the complaint is actually about. One quiet turn is a game; four in a row
+  # with somebody standing there is the thing he stopped to write about.
+  #
+  # SOMEBODY HAS TO BE IN THE ROOM, and that is the second half of his sentence
+  # rather than a refinement of the first. Who is in the room is the HOLDOVER
+  # rule -- whoever was in the last scene here that recorded anyone -- read
+  # historically, because that is the answer `Playthrough::Classifier` would
+  # have given on that turn and a second opinion would be a second answer. See
+  # `Scene::Generator#holdovers`.
+  #
+  # THIS IS NOT A DEFECT AND IT IS NOT COUNTED AS ONE. Nothing here proves the
+  # turn was bad; a player reading a daybook for four turns is playing the game
+  # as designed. It is a pacing measurement, in the `PACING` bucket, and the
+  # threshold that decides it is `STILL_RUN` -- see that constant for how the
+  # number was arrived at and what it costs.
+  #
+  # WHAT IT CANNOT SEE: a `take` or a `drop`. Both move a real row and neither
+  # leaves anything dated on the turn -- `Item` carries only a wall-clock
+  # `updated_at` -- so a turn that picked something up reads as still. That is a
+  # gap in the records rather than in the check, and it closes when
+  # `ta-item-registry` gives an item a history.
+  # ------------------------------------------------------------------------
+  def check_stillness
+    scenes.each do |scene|
+      next if still_run_length(scene) != STILL_RUN
+
+      present = cast_recorded_by(scene)
+      next if present.empty?
+
+      flag(:still_run, scene,
+           "#{STILL_RUN} turns running, the records show nothing changed, and " \
+           "#{present.map(&:fullname).join(", ")} #{present.one? ? "is" : "are"} in the room",
+           run: "#{STILL_RUN} turns with no move, no conversation and no world event",
+           present: present.map(&:fullname).join(", "),
+           typed: scene.typed.presence,
+           where: scene.location&.name,
+           at: scene.story_timestamp)
+    end
+  end
+
+  # How many turns of nothing this scene sits at the end of, walked back along
+  # `previous_scene` -- the chain one player actually played -- rather than
+  # along story time, which interleaves every playthrough of the world.
+  #
+  # ONLY THE TURN THAT REACHES THE THRESHOLD IS FLAGGED (`== STILL_RUN`, not
+  # `>=`), so a ten-turn stretch is one flag rather than seven. A count that
+  # grows with the length of the thing it is measuring makes the tally
+  # unreadable.
+  def still_run_length(scene, seen = Set.new)
+    @still_runs ||= {}
+    return @still_runs[scene.id] if @still_runs.key?(scene.id)
+    return 0 unless seen.add?(scene.id)
+
+    previous = previous_of(scene)
+    @still_runs[scene.id] =
+      if previous.nil? || !still?(scene, previous)
+        0
+      else
+        still_run_length(previous, seen) + 1
+      end
+  end
+
+  # The previous scene AS THIS SWEEP ALREADY LOADED IT, so walking a chain of
+  # 500 turns costs no queries and reads the same preloaded interactions the
+  # rest of the run does. Falls back to the association for a scene whose
+  # predecessor belongs to another story, which nothing writes and the records
+  # do not forbid.
+  def previous_of(scene)
+    return nil if scene.previous_scene_id.nil?
+
+    scenes_by_id.fetch(scene.previous_scene_id) { scene.previous_scene }
+  end
+
+  def scenes_by_id = @scenes_by_id ||= scenes.index_by(&:id)
+
+  def still?(scene, previous)
+    return false if previous.location_id != scene.location_id
+    return false if scene.interactions.any?
+    return false if scene.story_timestamp.nil? || previous.story_timestamp.nil?
+
+    world_event_times.none? { |at| at > previous.story_timestamp && at <= scene.story_timestamp }
+  end
+
+  def world_event_times
+    @world_event_times ||= story.world_events.pluck(:occurred_at).compact
+  end
+
+  # Whoever the game believed was standing here at this moment: the cast of the
+  # last scene in this location, at or before this one, that recorded anybody.
+  # The protagonist is dropped -- they are the player, and a player is never the
+  # answer to "who is in the room with me".
+  def cast_recorded_by(scene)
+    candidates = scenes.select do |other|
+      other.location_id == scene.location_id && other.characters.any? &&
+        (other.story_timestamp.nil? || scene.story_timestamp.nil? ||
+         other.story_timestamp <= scene.story_timestamp)
+    end
+
+    (candidates.last&.characters.to_a - [ story.protagonist ].compact)
   end
 
   # ------------------------------------------------------------------------

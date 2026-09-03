@@ -72,6 +72,14 @@ class Scene < ApplicationRecord
 
   scope :openings, -> { where(is_opening: true) }
 
+  # WHETHER THERE IS A TURN BEFORE THIS ONE to compare against. Several checks
+  # in `Story::Audit` are differences -- did the location change, did anything
+  # happen since -- and a difference needs two terms, so a scene at the head of
+  # a chain is outside their denominator rather than clean by them.
+  # `Story::Scoreboard` reads it to size each check's denominator honestly, and
+  # `Story::Scoreboard::Corpus::Passage` answers the same question.
+  def follows_a_turn? = previous_scene_id.present?
+
   # ONE LINE OF MEMORY for a past turn, for `Playthrough#recap`.
   #
   # `summary` first, because it is what the model was asked for and paid for on

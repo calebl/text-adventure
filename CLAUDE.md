@@ -38,6 +38,10 @@ rake game:list
 # Check the stories in the database, fix what can be fixed, delete what cannot
 rake game:doctor                    # or rake 'game:doctor[3]' for one story
 rake game:audit                     # where narration contradicts the records; VERBOSE=1 for unjudged checks
+rake game:score                     # the scoreboard: a rate per check, the movement since the
+                                    # baseline, and every flagged turn with what was typed and
+                                    # the passage. SAVE=1 to re-baseline, CORPUS=corpus for the
+                                    # frozen one alone
 rake 'game:repair[3]'               # safe repairs; GENERATE=1 to allow model calls
 rake 'game:delete[3]'               # prints what would go; DRY_RUN=1 or CONFIRM='<title>'
 
@@ -249,8 +253,36 @@ The current database includes the following story-related models with proper ass
   see its header comment and `Story::AuditPrecisionTest`, which pins the exact
   flags 24 real narrations earn. Do not add a check that scans prose for a name;
   that was measured and it does not work.
+- It carries **seven checks in four categories that are never merged**:
+  contradictions (`unreachable_transition`, `item_not_held`,
+  `unrecorded_departure`), defects (`truncated_prose`,
+  `third_person_protagonist`), drift (`reached_for_nothing`) and pacing
+  (`still_run` — evidence about pacing, explicitly *not* a defect).
+  `Story::Audit::Prose` holds the three text predicates as pure functions so the
+  live database and the frozen corpus read them through the same code.
 - `Playthrough::Drift` is the classifier drift counter: one row per turn on which
   a `move`, `talk`, `take` or `drop` resolved to nothing. Never pruned.
 - `Item` is in exactly one place — held by a character or lying in a location.
   `take` and `drop` are both app-owned: the row moves first, the narrator is told
   afterwards.
+
+### The evaluation loop
+- `Story::Scoreboard` (`rake game:score`) is the one command: a rate per check,
+  the movement since a checked-in baseline (`db/eval_baseline.json`, rewritten
+  only under `SAVE=1`), the agreement with `Playthrough::Feedback` verdicts, and
+  **every flagged turn with what the player typed and the offending passage** —
+  so the captain's attention goes only to what a check caught.
+- **Two corpora, reported separately and never pooled**: the local database (his
+  own playthroughs, true but small and drifting) and
+  `test/fixtures/files/eval_corpus.json` (92 real passages, frozen,
+  reproducible with no database). A check the frozen corpus cannot answer is
+  reported **unavailable**, never as zero.
+- **No prose score, no judge model, no aggregate quality number.** Every check
+  counts an error that is objectively present or absent, each measured for false
+  positives on real prose before it shipped. `Story::Scoreboard::CorpusTest`
+  pins 19 flags over 92 passages with zero false positives and zero flags on the
+  24 lab narrations; the three turns the captain judged are caught by three
+  different checks.
+- **The small sample is stated, not hidden.** Below
+  `Story::Scoreboard::MIN_VERDICTS` verdicts the report prints CORRELATION
+  UNESTABLISHED and shows counts; the figure recomputes as he labels more.
