@@ -66,6 +66,49 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal [ "A Daybook" ], character.items.pluck(:name)
   end
 
+  # WHAT IS LYING IN A ROOM, which is the closed set `take` resolves against and
+  # the only way a world can carry anything takeable at all.
+  test "loads an item lying in a location, in the room and in nobody's hands" do
+    story = WorldSeed::Loader.new(document).load!
+    closet = story.locations.find_by(name: "The Closet")
+    index = closet.items.sole
+
+    assert_equal "A Private Index", index.name
+    assert_predicate index, :lying?
+    assert_nil index.character
+    assert_equal [ index ], Item.lying_in(closet).to_a
+  end
+
+  # THE KEY IS (story, name) AND NOT THE OWNER, because an item moves: `take`
+  # and `drop` write the very columns the file declares. A file keyed on the
+  # owner would look for the daybook in the hands it declares, miss the one the
+  # player left on a shelf, and seed a second daybook.
+  test "re-seeding a played world moves its items back rather than duplicating them" do
+    story = WorldSeed::Loader.new(document).load!
+    daybook = story.characters.sole.items.sole
+    closet = story.locations.find_by(name: "The Closet")
+
+    # The player picks the index up and puts the daybook down, which is exactly
+    # what `Playthrough::Turn#carry!` and `#put_down!` write.
+    daybook.update!(character: nil, location: closet)
+    closet.items.find_by(name: "A Private Index").update!(character: story.protagonist, location: nil)
+
+    WorldSeed::Loader.new(document).load!
+
+    assert_equal [ daybook.id ], story.protagonist.reload.items.pluck(:id)
+    assert_equal [ "A Private Index" ], closet.reload.items.pluck(:name)
+    assert_equal 2, Item.where(id: story.protagonist.item_ids + closet.item_ids).count
+  end
+
+  test "rejects a file with the same item name twice" do
+    twice = document
+    twice["locations"].last["items"] = [ { "name" => "A Daybook", "description" => "The wrong one.", "properties" => "{}" } ]
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(twice).load! }
+
+    assert_match(/duplicate item names: a daybook/, error.message)
+  end
+
   test "rejects a file it does not understand" do
     error = assert_raises(WorldSeed::Loader::InvalidWorld) do
       WorldSeed::Loader.new(document.merge("format" => 99)).load!
@@ -349,7 +392,8 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
         { "name" => "The Office", "detail_level" => "realized", "opening" => true,
           "teaser" => "Two desks and one missing hour.", "description" => "An office.", "lore" => "It has always been four clerks on paper." },
         { "name" => "The Closet", "detail_level" => "realized",
-          "teaser" => "No inventory number.", "description" => "A closet, and no other door.", "lore" => "Shelved out in the wrong order." },
+          "teaser" => "No inventory number.", "description" => "A closet, and no other door.", "lore" => "Shelved out in the wrong order.",
+          "items" => [ { "name" => "A Private Index", "description" => "Two columns in a hand that is not hers.", "properties" => '{"registered": false}' } ] },
         { "name" => "The Hallway", "detail_level" => "stub", "teaser" => "Doors closing, one after another." }
       ],
       "connections" => [

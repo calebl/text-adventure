@@ -464,9 +464,15 @@ before changing the loop; the rules below are what it does not fit.
   no say in whether it is true. **Both directions or neither**: an app that owns
   picking up while the narrator asserts putting down has records that go stale
   the first time a player sets something on a table.
-- **Nothing in the app creates an `Item`.** Seeds and tests do. The lazy
-  stub-then-realize registry is `ta-item-registry`, and generating a per-room
-  inventory ahead of time is explicitly ruled out.
+- **Nothing in the app creates an `Item`.** Seeds and tests do — a seed file can
+  put one in somebody's hands or on the floor of a room (`locations[].items`).
+  The lazy stub-then-realize registry is `ta-item-registry`, and generating a
+  per-room inventory ahead of time is explicitly ruled out.
+- **The three writes that move the world are named methods on
+  `Playthrough::Turn`** — `#stand_in!`, `#carry!`, `#put_down!` — because
+  `Playthrough::Mechanics` writes through the same ones. Put a new state change
+  in a method there rather than inline in the branch that calls it, or the
+  model-free mode ends up with a second copy of it and starts testing itself.
 - **What the player typed is `Scene#typed`**, written once in
   `Playthrough::Turn#play` rather than in each branch, so a branch added later
   cannot forget it. Do not go back to reconstructing it from the classifier's
@@ -484,6 +490,28 @@ before changing the loop; the rules below are what it does not fit.
   narrates walking through a door and the player never moves. Tool support is
   slated to land with the narrator creating characters, where a missed call
   costs a record rather than the player's position.
+
+### The mechanics on their own, with no model
+
+`rake game:mechanics` (`Playthrough::Mechanics`, README → *Play the mechanics on
+their own*) walks a world with both model calls removed: a fixed grammar instead
+of the classifier, nothing at all instead of the narrator, and the engine's own
+read-out of the records after every command. It is the instrument for the
+complaint it was built for — *"we are testing too many variables at the same
+time"* — and the rules it lives under are short:
+
+- **It makes no model call, and that is asserted rather than assumed.**
+  `Playthrough::MechanicsTest` runs every test with `BaseAgent.new` raising. Do
+  not add a branch that reaches for one; if a command needs generation, refuse it
+  and say why, the way walking into a stub does.
+- **It writes the world through `Playthrough::Turn`'s three writes and nothing
+  else**, and it reads the closed sets off `Playthrough::Classifier`'s own
+  readers (`exits_here`, `characters_here`, `items_here`, `items_carried`).
+  Building a classifier costs nothing; only `#classify` talks to a model.
+- **It writes no `Scene`**, so it costs no story time and leaves the turn log
+  alone. The narrated game plays exactly as it did.
+- **It is not `rake game:play`**, which is still ruled out. The moment it grows
+  prose it becomes the second UI that rule exists to prevent.
 
 ### Auditing the difference
 

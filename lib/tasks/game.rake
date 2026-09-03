@@ -233,9 +233,102 @@ namespace :game do
     puts "Deleted #{story.title.inspect} and #{removed.values.sum} record(s) that belonged to it."
   end
 
+  desc "Walk a world with no model in the loop: move, take, drop, read the records back. Usage: rake 'game:mechanics[3]'"
+  task :mechanics, [ :story ] => :environment do |t, args|
+    playthrough = Helpers.mechanics_playthrough!(args[:story])
+    mechanics = Playthrough::Mechanics.new(playthrough)
+    story = playthrough.story
+
+    puts "#{story.title} (story ##{story.id}) -- MECHANICS ONLY."
+    puts "No model call, no API key, no network, and no narration: this walks the engine."
+    puts "Nothing here writes a Scene, so the story's clock and the turn log are untouched."
+    puts "Playing as #{playthrough.character&.fullname || "nobody"}, playthrough ##{playthrough.id}."
+    puts "`help` for the grammar, `quit` to stop."
+    puts
+    puts mechanics.read
+    puts
+
+    # Echoed back when stdin is a file or a pipe, so a scripted walk reads as a
+    # transcript rather than as a wall of answers to invisible questions.
+    interactive = $stdin.tty?
+
+    loop do
+      print "> " if interactive
+      line = $stdin.gets
+      break if line.nil?
+
+      line = line.chomp
+      puts "> #{line}" unless interactive
+      break if Helpers::MECHANICS_QUIT.include?(line.strip.downcase)
+
+      puts mechanics.run(line)
+      puts
+    end
+
+    playthrough.reload
+    puts
+    puts "Left #{playthrough.character&.fullname || "the playthrough"} in " \
+         "#{playthrough.current_location&.name || "nowhere"}, carrying " \
+         "#{Item.for_character(playthrough.character).order(:id).pluck(:name).presence&.join(", ") || "nothing"}."
+    puts "Pick it up again with: PLAYTHROUGH=#{playthrough.id} rake 'game:mechanics[#{story.id}]'"
+  end
+
   # Namespaced under a module rather than defined at rake top level, where
   # they would land on Object -- `save!` in particular collides badly there.
   module Helpers
+    # ----------------------------------------------------------------------
+    # THE MECHANICS CONSOLE. `rake game:mechanics`.
+    # ----------------------------------------------------------------------
+
+    MECHANICS_QUIT = %w[quit q exit bye].freeze
+
+    # A story by id or by title, because the console is typed by hand and a
+    # title is what a person remembers.
+    def self.story_by!(reference)
+      return story!(reference) if reference.to_s.match?(/\A\d+\z/)
+
+      story = Story.find_by("LOWER(title) = ?", reference.to_s.strip.downcase) if reference.present?
+      return story if story
+
+      known = Story.order(:id).pluck(:id, :title).map { |id, title| "##{id} #{title}" }
+      abort "Name a story: rake 'game:mechanics[<id or title>]'." +
+            (known.any? ? " There is: #{known.join(", ")}" : " There are no stories at all -- try `bin/rails db:seed`.")
+    end
+
+    # The playthrough the console drives.
+    #
+    # A FRESH ONE by default, and deliberately: a mechanics session moves the
+    # player around and takes things off the floor, and doing that to whichever
+    # playthrough happened to be last would edit somebody's game. `PLAYTHROUGH=`
+    # attaches to an existing one -- by id or by the token in its URL -- for
+    # when inspecting a real game is the point.
+    #
+    # Where items ARE is world state and is shared either way: something left in
+    # the closet in one session is still in the closet in the next one, and in
+    # the browser. That is the thing being tested, so it is not isolated.
+    def self.mechanics_playthrough!(reference)
+      if ENV["PLAYTHROUGH"].present?
+        named = ENV["PLAYTHROUGH"]
+        playthrough = Playthrough.find_by(id: named) || Playthrough.find_by(token: named)
+        abort "No playthrough #{named.inspect}. Drop PLAYTHROUGH= to start a fresh one." if playthrough.nil?
+        return playthrough
+      end
+
+      story = story_by!(reference)
+      opening = story.locations.realized.order(:id).first
+      abort "#{story.title.inspect} has no realized location to stand in -- see `rake 'game:doctor[#{story.id}]'`." if opening.nil?
+
+      Playthrough.create!(
+        story: story,
+        character: story.protagonist,
+        current_location: opening,
+        # The world's own opening arrival when it has one, so a playthrough
+        # started here and one started in the browser read the same turn log.
+        # No Scene is written by the console itself.
+        current_scene: story.opening_scene
+      )
+    end
+
     # A story by id, or an abort that says what ids there are. `Story.find`
     # raises a RecordNotFound whose backtrace buries the one useful fact.
     def self.story!(id)

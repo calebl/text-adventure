@@ -752,7 +752,11 @@ queued task, the task id is named.
       character felt.
 - ~~`rake game:play[story_id]`~~ -- skipped on purpose. The browser is the
       playable interface; the rake tasks build worlds and the browser plays
-      them. Do not add a `game:play` task.
+      them. Do not add a `game:play` task. `rake game:mechanics` is not that and
+      does not weaken it: it narrates nothing, calls no model, renders no prose
+      and duplicates no part of the loop -- it is an instrument pointed at the
+      engine, and the moment it grew a narrator it would be the second UI this
+      rule exists to prevent.
 - [ ] **A move is 3 model calls and does not stream**, so the player watches a
       blinking cursor for as long as realizing a room takes. Nothing is wrong;
       it is just slow, and the job-and-cable stage below is where it is fixed.
@@ -772,7 +776,20 @@ queued task, the task id is named.
       world, so `take` and `drop` are real over a set that is usually empty.
       `ta-item-registry` is how items come to exist — lazy, stub-then-realize,
       populated when the narrator names something. A generated per-room inventory
-      is explicitly ruled out.
+      is explicitly ruled out. A seed file can now put one on the **floor** of a
+      room as well as in somebody's hands (`locations[].items`), which is what
+      makes `take` exercisable at all rather than only as the inverse of a
+      `drop`; see `db/seeds/worlds/README.md`.
+- [x] **The mechanics can be walked with no model in the loop.**
+      `Playthrough::Mechanics` (`rake game:mechanics`) is a fixed grammar over
+      the same closed sets the classifier offers a model, writing the world
+      through the same `Playthrough::Turn#stand_in!` / `#carry!` / `#put_down!`
+      statements the narrated loop uses, and printing the records back after
+      every command. It writes no `Scene` and makes no model call — asserted, in
+      `Playthrough::MechanicsTest`, with `BaseAgent.new` raising. It is the
+      answer to *"we are testing too many variables at the same time"*: movement
+      and possession, on their own, with the prose out of the way. See the
+      README.
 
 ### 4. Persistence and history
 

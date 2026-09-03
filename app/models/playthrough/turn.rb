@@ -104,7 +104,7 @@ class Playthrough::Turn
     scene = Scene::Generator.new(
       destination, previous_scene: playthrough.current_scene, playthrough: playthrough
     ).generate!
-    playthrough.update!(current_location: destination, current_scene: scene)
+    stand_in!(destination, scene: scene)
 
     # Realizing the room is the most expensive thing this branch does -- two
     # calls, ~670 output tokens -- and it happens before there is a scene to file
@@ -195,7 +195,7 @@ class Playthrough::Turn
     taker = playthrough.character
     return narrate(command, &block) if taker.nil?
 
-    item.update!(character: taker, location: nil)
+    carry!(item)
 
     Scene::Narrator.new(playthrough).narrate(command, fact: taken_fact(item, taker), &block)
   end
@@ -217,9 +217,38 @@ class Playthrough::Turn
     here = playthrough.current_location
     return narrate(command, &block) if here.nil?
 
-    item.update!(character: nil, location: here)
+    put_down!(item)
 
     Scene::Narrator.new(playthrough).narrate(command, fact: dropped_fact(item, here), &block)
+  end
+
+  # THE THREE WRITES THAT MOVE THE WORLD, each one named rather than left inline
+  # in the branch above it.
+  #
+  # They are named because `Playthrough::Mechanics` -- the mechanics-only mode,
+  # which bypasses the classifier and the narrator and makes no model call at
+  # all -- has to write the world through exactly these statements. A mode built
+  # to test movement and possession on their own is worth nothing if it moves
+  # the player with a second copy of the line that moves the player: it would
+  # then be testing itself. So the line lives here, in the loop that owns it,
+  # and both modes call it.
+  #
+  # Nothing else about these is new. They are the same updates, in the same
+  # order relative to the prose, with the same guards in the callers.
+
+  # `scene:` defaults to the one the playthrough is already on, so a caller with
+  # no scene to hand -- which is every caller in mechanics mode, where a turn
+  # produces no prose -- moves the player without wiping the turn log.
+  def stand_in!(destination, scene: playthrough.current_scene)
+    playthrough.update!(current_location: destination, current_scene: scene)
+  end
+
+  def carry!(item)
+    item.update!(character: playthrough.character, location: nil)
+  end
+
+  def put_down!(item)
+    item.update!(character: nil, location: playthrough.current_location)
   end
 
   # What the narrator is told, in the app's own words. Stated as done, because

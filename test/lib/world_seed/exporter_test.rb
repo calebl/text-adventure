@@ -58,6 +58,20 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal [ "A Sealed Letter" ], document["items"].map { |item| item["name"] }
   end
 
+  # An item is written under whichever of the two places it is in, and only
+  # there: `Item` is in exactly one, so it is exported exactly once.
+  test "exports an item lying in a location under that location" do
+    create(:item, :lying, location: @opening, name: "A Ward Stamp")
+    holder = create(:character, story: @story, fullname: "Someone Specific")
+    create(:item, character: holder, name: "A Sealed Letter")
+
+    document = WorldSeed::Exporter.new(@story).document
+
+    assert_equal [ "A Ward Stamp" ], document["locations"].first["items"].map { |item| item["name"] }
+    assert_not document["locations"].last.key?("items"), "a room with nothing in it says nothing"
+    assert_equal [ "A Sealed Letter" ], document["characters"].first["items"].map { |item| item["name"] }
+  end
+
   test "warns about a one-way edge instead of dropping it" do
     LocationConnection.find_by(location: @stub, connected_location: @opening).destroy!
 

@@ -74,6 +74,67 @@ There is still no Node, no `package.json` and no build step. `propshaft` serves
 the module names itself, and foreman is a process runner rather than a build
 step — deliberately outside the Gemfile, installed on demand by `bin/dev`.
 
+## Play the mechanics on their own
+
+`rake game:mechanics` walks the same world with **no model in the loop at all**:
+no classifier, no narrator, no generator, no API key, no network. It moves the
+player, picks things up and puts them down, and prints the engine's own view of
+the records after every command.
+
+```bash
+bin/rails db:seed                          # if you have not already
+rake 'game:mechanics[The Unrecorded Hour]' # or by id: rake 'game:mechanics[2]'
+```
+
+```
+> take stamp
+  changed:  took: ward stamp (was lying in Ward Office 12, now carried by Odile Vance)
+Ward Office 12 [#8, realized]
+  exits       The Supply Closet [realized], The Long Hallway [stub]
+  lying here  nothing to pick up
+  carrying    Ward Office 12 daybook [#1], ward stamp [#2]
+  present     Halkett Rowe
+```
+
+**Why it exists.** Every real turn runs two model calls, so a turn that goes
+wrong could have gone wrong in the classifier, in the prose, or in the engine
+underneath — and testing movement and possession meant testing them alongside
+prose quality, with the prose in the way. This mode takes both calls out and
+leaves the engine.
+
+The grammar is fixed and closed: `go <exit>`, `take <item>`, `drop <item>`,
+`look` (also `where`, `inventory`, `exits`, `items`, `who`), `help`, `quit`. A
+typed name is matched against the records exactly, then as an unambiguous
+prefix, then as an unambiguous fragment — so `take daybook` finds the "Ward
+Office 12 daybook" — and anything unknown or ambiguous is a refusal that lists
+what would have worked. An exit name typed on its own is a move, so a world
+whose exits are called `north` can be walked that way.
+
+What it writes is `playthroughs.current_location_id` and `items.character_id` /
+`items.location_id`, through `Playthrough::Turn#stand_in!`, `#carry!` and
+`#put_down!` — **the same three statements the narrated loop moves the world
+with**, and the closed sets come from `Playthrough::Classifier`'s own readers.
+A mechanics mode with its own copy of the line that moves the player would be
+testing itself.
+
+Three things to know:
+
+- It writes **no `Scene`**, so the story's clock and the turn log are untouched
+  and the narrated game plays exactly as it did.
+- It **does not realize a stub**. Walking into an unwritten room in the real
+  loop is a model call; here the playthrough moves in and the read-out says the
+  room has never been written.
+- It starts a **fresh playthrough** each session rather than editing whichever
+  one was last played. Where items are is world state and is shared either way:
+  something left in the closet here is still in the closet in the browser.
+  `PLAYTHROUGH=<id or token> rake 'game:mechanics[2]'` attaches to an existing
+  playthrough when inspecting a real game is the point.
+
+`Playthrough::Mechanics` is the whole of it, and
+`test/models/playthrough/mechanics_test.rb` runs every one of its tests with
+`BaseAgent.new` raising — the guarantee that no path here reaches a model is
+asserted rather than assumed.
+
 ## How a turn works
 
 The loop is `Playthrough::Turn` (`app/models/playthrough/turn.rb`). It lives in

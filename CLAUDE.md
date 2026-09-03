@@ -45,6 +45,10 @@ rake game:score                     # the scoreboard: a rate per check, the move
 rake 'game:repair[3]'               # safe repairs; GENERATE=1 to allow model calls
 rake 'game:delete[3]'               # prints what would go; DRY_RUN=1 or CONFIRM='<title>'
 
+# Walk the engine with no model in the loop at all: move, take, drop, and read
+# the records back after every command. No classifier, no narrator, no API key.
+rake 'game:mechanics[The Unrecorded Hour]'   # or by id; PLAYTHROUGH=<id> to attach
+
 # Play it in the browser. `bin/dev` starts both processes a turn needs -- the
 # web server and the job worker -- under foreman. `PORT=3142 bin/dev` to move off
 # 3000. `bin/rails server` alone still works, and is what to use when debugging.
@@ -171,6 +175,13 @@ The current database includes the following story-related models with proper ass
 - **Story** → `#clock`, what time it is in the fiction, derived from
   `scenes.story_timestamp`. Never use `Time.current` for story time; see
   `AGENTS.md` → *Story time, and a world that moves on its own*
+- **Playthrough::Mechanics** → the game with the prose taken out
+  (`rake game:mechanics`): a fixed grammar over the same closed sets
+  `Playthrough::Classifier` offers a model, writing the world through
+  `Playthrough::Turn#stand_in!` / `#carry!` / `#put_down!` — the same three
+  statements the narrated loop uses — and printing the records back. Writes no
+  `Scene` and makes no model call; `Playthrough::MechanicsTest` asserts that with
+  `BaseAgent.new` raising. See `AGENTS.md` → *The mechanics on their own*
 - **Item** → belongs to **Character** *or* **Location**, exactly one of the two:
   held by somebody, or lying in a place. The second half is what makes `take`
   and `drop` app-owned state changes rather than prose
