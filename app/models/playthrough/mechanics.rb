@@ -379,11 +379,13 @@ class Playthrough::Mechanics
     unwritten = destination.stub?
     scene = turn.move_to(destination)
 
-    # What was typed, filed under the turn it produced, and the classifier's own
-    # exchange filed with it -- the two stamps `Playthrough::Turn#play` makes
-    # for every branch. A turn this mode wrote should be as readable afterwards
-    # as one the browser wrote.
-    scene.update!(typed: command)
+    # What was typed and what the turn did, filed under the turn it produced,
+    # and the classifier's own exchange filed with it -- the stamps
+    # `Playthrough::Turn#play` makes for every branch. A turn this mode wrote
+    # should be as readable afterwards as one the browser wrote, and a sweep
+    # must not be able to tell them apart: `move` is the only branch here that
+    # writes a `Scene` at all, so this is the whole of that obligation.
+    scene.update!(typed: command, resolved_action: "move", acted_on: destination)
     classifier.agent.attribute_to!(scene)
     playthrough.prune_conversations!
 

@@ -433,6 +433,13 @@ view for the playthrough being looked at.
   edge the graph does not have, the player told they are carrying something the
   records give to somebody else, or a door closing at the player's back on a
   turn the records say they never left the room.
+- **A contradiction about a CHANGE** is the same claim about what the turn did
+  rather than about what the world is, and until 2026-09-03 nothing could make
+  one. `scenes.resolved_action` and `scenes.acted_on` record what each turn did
+  and to which record; on a turn recorded as a `take`, prose saying the player
+  already had the thing denies a pickup the app had already made, and on a
+  `drop`, prose lifting it off a floor invents one that never happened. That
+  was the biggest defect in the game and no check could see it.
 - **A defect** is one passage wrong on its own terms: prose that stops
   mid-sentence, or a narration that writes the protagonist as a third person
   when the player is only ever *you*.

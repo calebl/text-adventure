@@ -53,6 +53,21 @@ class Scene < ApplicationRecord
   # deleting a scene should not tear a hole in a conversation.
   has_many :messages, dependent: :nullify
 
+  # WHAT THE TURN DID, and to which record. Written by
+  # `Playthrough::Turn#play` on every branch, beside `typed`.
+  #
+  # Polymorphic because the closed set `Playthrough::Classifier` resolves
+  # against is already three kinds of record -- an exit, somebody standing
+  # here, a thing on the floor or in the player's hands -- and one reference
+  # that says which kind it was is honest where three nullable columns and a
+  # rule about which is set would not be.
+  #
+  # OPTIONAL, and nil is three different things told apart by `resolved_action`:
+  # no action at all (an opening arrival, or a turn written before this column
+  # existed), or an action that resolved to no record -- which is drift, and is
+  # counted by `Playthrough::Drift` rather than left to be inferred here.
+  belongs_to :acted_on, polymorphic: true, optional: true
+
   # WHAT THE PLAYER TYPED TO CAUSE THIS TURN, on every branch. `typed` is
   # nil only for a `Scene` nobody asked for: the opening arrival, which is
   # world data written before anybody plays.
@@ -66,6 +81,10 @@ class Scene < ApplicationRecord
   # `Playthrough::Turn#play`.
   validates :description, presence: true
   validates :story_timestamp, presence: true
+  # The same fixed table the classifier answers out of, and the reason the
+  # column is not an `enum`: `Scene.take` is already an ActiveRecord finder, so
+  # an enum named for one of these intents would quietly redefine it.
+  validates :resolved_action, inclusion: { in: Playthrough::IntentSchema::INTENTS }, allow_nil: true
   validate :single_opening_scene_per_story
 
   after_create :mark_location_visit
@@ -79,6 +98,52 @@ class Scene < ApplicationRecord
   # `Story::Scoreboard` reads it to size each check's denominator honestly, and
   # `Story::Scoreboard::Corpus::Passage` answers the same question.
   def follows_a_turn? = previous_scene_id.present?
+
+  # WHAT THIS TURN DID, asked the way a check asks it. `took?` and `dropped?`
+  # are the two transitions the app owns outright -- the row moved before any
+  # prose existed (`Playthrough::Turn#take_item`, `#drop_item`) -- so a scene
+  # that answers `true` to either is a scene whose state change is not in
+  # question. `Story::Audit` reads them; nothing else needs to.
+  #
+  # Both require the record as well as the label, because an action that
+  # resolved to nothing moved nothing.
+  def took? = recorded_action == "take" && acted_on_record.is_a?(Item)
+
+  def dropped? = recorded_action == "drop" && acted_on_record.is_a?(Item)
+
+  def moved_to? = recorded_action == "move" && acted_on_record.is_a?(Location)
+
+  # THE TWO COLUMNS, READ SAFELY, AND THE READERS EVERYTHING ELSE HERE USES.
+  #
+  # `has_attribute?` rather than a nil check, and it is not defensive dressing:
+  # a `Scene` does not always come from this app's database. `rake eval:score`
+  # and `rake eval:read` open the SQLite file one generated run left behind,
+  # and every set swept before this migration has a `scenes` table with no such
+  # column at all. Reading it there raises; asking whether the row carries it
+  # answers `false`, which is the truth about that run -- it did not record
+  # what its turns did. Nothing else in the sweep changes.
+  def recorded_action = has_attribute?("resolved_action") ? resolved_action : nil
+
+  def acted_on_record = has_attribute?("acted_on_type") ? acted_on : nil
+
+  # HOW THE TURN READ, in one line, for a person: `rake eval:read` and the debug
+  # page print it beside what was typed. Nil for a turn with no action on
+  # record, which reads as absent rather than as "other -> nothing".
+  def resolution
+    return nil if recorded_action.blank?
+
+    "#{recorded_action} -> #{acted_on_label || "nothing"}"
+  end
+
+  # A record as the player would have typed it -- `fullname` for a person,
+  # `name` for a place or a thing. The same two names the closed enum the
+  # classifier answered from was built out of.
+  def acted_on_label
+    record = acted_on_record
+    return nil if record.nil?
+
+    record.respond_to?(:fullname) ? record.fullname : record.name
+  end
 
   # ONE LINE OF MEMORY for a past turn, for `Playthrough#recap`.
   #

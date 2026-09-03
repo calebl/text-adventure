@@ -8,11 +8,24 @@
       <span class="note">scene #<%= turn.scene.id %></span>
     </div>
 
-    <%# Recovered from the classifier's own prompt on a turn that was not a
-        conversation -- it runs every turn and its prompt ends with the raw
-        line. Still not a column on Scene; see `what is not recorded`. %>
+    <%# `scenes.typed`, with two fallbacks for turns written before that column
+        existed -- `Interaction#user_input` on a talk turn, and the classifier's
+        own prompt, which ends with the raw line. %>
     <div class="k">typed</div>
     <div class="v"><%= debug_value(turn.typed, absent: "not recorded — this turn predates Scene#typed and its classifier exchange is no longer kept") %></div>
+
+    <%# WHAT THE TURN DID WITH IT, out of `scenes.resolved_action` and
+        `scenes.acted_on` rather than worked out again from the branch. This is
+        the one field on the page that says what CHANGED rather than what is,
+        and it is the record `Story::Audit`'s transition checks read. %>
+    <div class="k">resolved to</div>
+    <div class="v">
+      <%= debug_value(turn.scene.resolution,
+                      absent: turn.opening? ? "nothing — an opening arrival is world data, not a turn anybody played" : "not recorded — this turn predates Scene#resolved_action (rake game:backfill_transitions)") %>
+      <% if turn.scene.recorded_action.present? && turn.scene.acted_on_record.nil? %>
+        <span class="note">the classifier resolved to no record — see Playthrough::Drift</span>
+      <% end %>
+    </div>
 
     <div class="k">story time</div>
     <div class="v">

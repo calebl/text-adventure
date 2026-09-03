@@ -17,6 +17,12 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     assert_select ".panel.now .branch.conversation", text: "conversation"
     assert_match "ask Grenn about the charts", response.body
 
+    # WHAT THE TURN DID, out of `scenes.resolved_action` and `scenes.acted_on`
+    # rather than worked out again from the branch -- the one field on the page
+    # that says what CHANGED.
+    assert_select ".panel.now .k", text: "resolved to"
+    assert_match "talk -&gt; Grenn Ollivar", response.body
+
     # The five structured fields the player only ever reads as prose.
     assert_match "pre_thought", response.body
     assert_match "I wonder what this person wants", response.body
@@ -352,10 +358,11 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     create(:location_connection, location: stair, connected_location: here)
 
     opening = create(:scene, :opening, story: story, location: here, story_timestamp: story.start_time)
+    grenn = create(:character, story: story, fullname: "Grenn Ollivar", nickname: "Old Grenn")
     talk = create(:scene, story: story, location: here, previous_scene: opening,
                           story_timestamp: story.start_time + 10.minutes,
+                          resolved_action: "talk", acted_on: grenn,
                           summary: "The player spoke with Grenn Ollivar.")
-    grenn = create(:character, story: story, fullname: "Grenn Ollivar", nickname: "Old Grenn")
     talk.characters = [ playthrough.character, grenn ]
     create(:interaction, character: grenn, scene: talk, location: here,
                          user_input: "ask Grenn about the charts")

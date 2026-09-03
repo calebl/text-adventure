@@ -390,6 +390,30 @@ class Story::AuditTest < ActiveSupport::TestCase
     assert_empty audit.contradictions
   end
 
+  # THE RECORD, WHERE THERE IS ONE. `Scene#moved_to?` says the player walked
+  # somewhere; comparing the two location ids was the inference this check had
+  # before that column existed. They agree on every turn played so far, which is
+  # why no pinned count moves -- and they disagree on exactly one shape, which
+  # is the reason to prefer the record.
+  test "a move whose destination is the room it started from is a move, not a stay" do
+    first = scene_at(@here, description: "The lamp gutters.")
+    scene_at(@here, previous: first, resolved_action: "move", acted_on: @here,
+                    description: "The door clicks shut behind you, and the room is exactly as you left it.")
+
+    assert_empty audit.contradictions,
+                 "the ids are equal and the player still walked through the door"
+  end
+
+  # And the other direction: a turn that recorded an action which is NOT a move
+  # did not move, whatever anything else says.
+  test "a recorded non-move is still a player who never left" do
+    first = scene_at(@here, description: "The lamp gutters.")
+    scene_at(@here, previous: first, resolved_action: "examine",
+                    description: "The door clicks shut behind you, and he is already calculating.")
+
+    assert_equal [ :unrecorded_departure ], audit.contradictions.map(&:code)
+  end
+
   # --- turns on which nothing happened --------------------------------------
 
   test "a run of still turns with somebody in the room is reported as pacing" do

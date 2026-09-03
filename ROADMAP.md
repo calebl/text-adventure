@@ -742,10 +742,18 @@ reading one held-out run the board scored at zero flags.
   does not fall REAL alongside it — the cheapest way to stop writing the player
   in third person is to stop naming anybody. Then re-baseline, and the existing
   check guards it from there.
-- **`ta-take-drop-narration`** — the prose denies the take (30/32) and invents a
-  pickup on the drop (5/32). See **Known issues**; the app is not at fault and
-  the check that would catch it is a new shape, reading a turn against the state
-  *before* it.
+- **`ta-take-drop-narration`** — the prose denies the take and invents a pickup
+  on the drop. **The instrument half has landed** (`ta-narrator-invents-exit`,
+  2026-09-03): `Scene#resolved_action` and `Scene#acted_on` record what each turn
+  DID, and `take_denied` / `pickup_invented` read a narration against the state
+  *before* the turn — 28 of 32 takes and 4 of 32 drops on the 480-turn baseline,
+  frozen in `transition_corpus.json` and reported by `rake game:score`. **What
+  is left is the prose fix**, which is now judgeable: the checks are fully
+  available to a scripted sweep, so done means a REAL verdict from
+  `rake eval:compare` at four runs a side reproducing on `The Salt Assizes`, with
+  richness not falling. Fold in PR-98's **F3** (the floor list into
+  `Moment#narration_context`) and **F1** (a rule about *removing* a possession):
+  both are the diagnosed cause and both are already measured.
 - **`ta-character-whereabouts`** — there is no record of where anybody is. The
   people half of the noun registry; overlaps `ta-narrator-memory` below and
   should be designed with it.
@@ -1120,8 +1128,9 @@ What it still owes, roughly in order:
 
 ## Known issues
 
-- **The narration erases the `take` and invents the pickup on a `drop`, and no
-  check can see it** (`ta-take-drop-narration`, queued). On a turn the app
+- **The narration erases the `take` and invents the pickup on a `drop`**
+  (`ta-take-drop-narration`, queued). **Two checks see it now** — see the
+  resolution note at the end of this entry. On a turn the app
   resolves as `take`, the prose says *"You **already hold** the Assize
   tide-slate"* — of a slate that was lying on the bench until this turn moved
   it. On a `drop`, the mirror: *"You **lift** the tide-slate **from where it
@@ -1136,6 +1145,19 @@ What it still owes, roughly in order:
   the prose and the records agree about who holds the slate and disagree about
   whether anything happened. Found by reading a held-out run the board scored at
   zero flags.
+
+  **The blindness is fixed; the prose is not** (`ta-narrator-invents-exit`,
+  2026-09-03). `scenes.resolved_action` and `scenes.acted_on` record what each
+  turn did, written by `Playthrough::Turn#play` beside `typed`, and
+  `Story::Audit`'s `take_denied` and `pickup_invented` read a narration against
+  the transition rather than against a state. The manual figures re-measured by
+  the check itself are **28 of 32 takes and 4 of 32 drops** — the four takes it
+  gives up deny the pickup by handing the slate to a third person who is the
+  player, which `third_person_protagonist` catches, and the drop it gives up
+  writes "the slate" of an item recorded as the "Assize tide-slate". Both misses
+  are pinned in `Story::Audit::TransitionTest`. Nothing about the narrator
+  changed: that is `ta-take-drop-narration`, and it is now a number that can
+  move.
 
 - **Nothing records where a character is** (`ta-character-whereabouts`, queued).
   `Character` has no location: `belongs_to :story`, `has_and_belongs_to_many

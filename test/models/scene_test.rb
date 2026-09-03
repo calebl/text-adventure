@@ -152,4 +152,61 @@ class SceneTest < ActiveSupport::TestCase
 
     assert second.valid?
   end
+
+  # --- what the turn did ----------------------------------------------------
+
+  test "the resolved action is one of the classifier's own intents, or nothing" do
+    Playthrough::IntentSchema::INTENTS.each do |action|
+      assert build(:scene, story: @story, location: @location, resolved_action: action).valid?
+    end
+
+    assert build(:scene, story: @story, location: @location, resolved_action: nil).valid?
+
+    invented = build(:scene, story: @story, location: @location, resolved_action: "steal")
+    assert_not invented.valid?
+    assert_includes invented.errors[:resolved_action], "is not included in the list"
+  end
+
+  # Three kinds of record out of one reference, which is the closed set the
+  # classifier answers from.
+  test "the record a turn acted on is a place, a person or a thing" do
+    character = create(:character, story: @story)
+    item = create(:item, :lying, location: @location)
+
+    assert_equal @location, create(:scene, story: @story, location: @location,
+                                           resolved_action: "move", acted_on: @location).acted_on
+    assert_equal character, create(:scene, story: @story, location: @location,
+                                           resolved_action: "talk", acted_on: character).acted_on
+    assert_equal item, create(:scene, story: @story, location: @location,
+                                      resolved_action: "take", acted_on: item).acted_on
+  end
+
+  # `took?` and `dropped?` are the seams `Story::Audit` trusts outright, so both
+  # halves have to be there: an action with no record moved nothing, and a
+  # record with the wrong action is a different turn.
+  test "a transition needs the action and the record, not either alone" do
+    item = create(:item, :lying, location: @location)
+
+    assert_predicate create(:scene, story: @story, location: @location,
+                                    resolved_action: "take", acted_on: item), :took?
+    assert_not_predicate create(:scene, story: @story, location: @location,
+                                        resolved_action: "take", acted_on: nil), :took?
+    assert_not_predicate create(:scene, story: @story, location: @location,
+                                        resolved_action: "take", acted_on: @location), :took?
+    assert_not_predicate create(:scene, story: @story, location: @location,
+                                        resolved_action: "drop", acted_on: item), :took?
+  end
+
+  test "how a turn read is one line, and nothing at all when nothing is recorded" do
+    item = create(:item, :lying, location: @location, name: "Brass Key")
+    character = create(:character, story: @story, fullname: "Maren Vosk")
+
+    assert_equal "take -> Brass Key",
+                 create(:scene, story: @story, location: @location, resolved_action: "take", acted_on: item).resolution
+    assert_equal "talk -> Maren Vosk",
+                 create(:scene, story: @story, location: @location, resolved_action: "talk", acted_on: character).resolution
+    assert_equal "move -> nothing",
+                 create(:scene, story: @story, location: @location, resolved_action: "move").resolution
+    assert_nil create(:scene, story: @story, location: @location).resolution
+  end
 end

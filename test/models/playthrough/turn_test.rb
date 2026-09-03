@@ -632,6 +632,98 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_nil opening.typed
   end
 
+  # --- what the turn did ----------------------------------------------------
+
+  # `Scene#resolved_action` and `Scene#acted_on` are written beside `typed` and
+  # for the same reason: this is the one place with the command AND the scene
+  # on every branch. One test per branch, again, because that is the claim.
+  #
+  # WHY IT IS A COLUMN AT ALL: the records carried what the world IS after a
+  # turn and never what the turn DID, so a check reading a narration against the
+  # state before it had nothing to read. See `Story::Audit#check_take`.
+  test "an arriving turn records the move and the room it moved to" do
+    there = connect("Drowned Vestibule", detail_level: "stub", description: nil, lore: nil)
+
+    scene, = play("go down", CLASSIFY.call("move", "Drowned Vestibule"), DETAIL, { "exits" => [] }, ARRIVAL)
+
+    assert_equal "move", scene.resolved_action
+    assert_equal there, scene.acted_on
+    assert_predicate scene, :moved_to?
+  end
+
+  test "a talking turn records the talk and who was spoken to" do
+    maren = holdover("Maren Vosk")
+
+    scene, = play("ask Maren about the flood", CLASSIFY.call("talk", "Maren Vosk"), REACTION,
+                  "She looks at the water and says nothing for a while.")
+
+    assert_equal "talk", scene.resolved_action
+    assert_equal maren, scene.acted_on
+  end
+
+  test "a taking turn records the take and the item it moved" do
+    key = create(:item, :lying, location: @here, name: "Brass Key")
+
+    scene, = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"), "You lift the key.")
+
+    assert_equal "take", scene.resolved_action
+    assert_equal key, scene.acted_on
+    assert_predicate scene, :took?
+    assert_not_predicate scene, :dropped?
+  end
+
+  test "a dropping turn records the drop and the item it moved" do
+    key = create(:item, character: @protagonist, name: "Brass Key")
+
+    scene, = play("put down the brass key", CLASSIFY.call("drop", "Brass Key"), "You set the key down.")
+
+    assert_equal "drop", scene.resolved_action
+    assert_equal key, scene.acted_on
+    assert_predicate scene, :dropped?
+  end
+
+  test "a narrated turn records the action it was read as and no record" do
+    scene, = play("look at the water", CLASSIFY.call("examine", "nothing"), "The water is still.")
+
+    assert_equal "examine", scene.resolved_action
+    assert_nil scene.acted_on
+    assert_equal "examine -> nothing", scene.resolution
+  end
+
+  # A REACH THAT FOUND NOTHING IS AN ACTION WITH NO RECORD, which is what that
+  # turn really was -- and the same fact `Playthrough::Drift` counts. It must
+  # not read as a resolved move.
+  test "a move nobody can make records the move and no room" do
+    scene, = play("go through the cellar door", CLASSIFY.call("move", "nothing"), "There is no cellar door.")
+
+    assert_equal "move", scene.resolved_action
+    assert_nil scene.acted_on
+    assert_not_predicate scene, :moved_to?
+    assert_equal "move -> nothing", scene.resolution
+  end
+
+  # THE ONE PLACE THE RECORD IS NOT THE CLASSIFIER'S ANSWER. A playthrough with
+  # no protagonist resolves the item and then cannot carry it, so the branch
+  # narrates instead and nothing moved. Writing the item down there would say a
+  # row moved that did not, and `Scene#took?` is a seam a check trusts outright.
+  test "a take nobody could make records the take and no item" do
+    @playthrough.update!(character: nil)
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    scene, = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"), "Nothing here is yours to lift.")
+
+    assert_equal "take", scene.resolved_action
+    assert_nil scene.acted_on
+    assert_not_predicate scene, :took?
+  end
+
+  test "an opening arrival did nothing, and says so" do
+    opening = create(:scene, story: @story, location: @here, is_opening: true)
+
+    assert_nil opening.resolved_action
+    assert_nil opening.resolution
+  end
+
   test "a turn that produced no scene records nothing rather than raising" do
     holdover("Maren Vosk")
 

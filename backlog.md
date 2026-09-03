@@ -115,6 +115,21 @@
 
   NOT IN SCOPE: how items come to exist (`ta-item-registry`).
 
+  ITEM 2 HAS LANDED (2026-09-03, `ta-narrator-invents-exit`), and it is the half
+  that was blocking measurement rather than the half the captain feels. What
+  shipped: `scenes.resolved_action` and `scenes.acted_on` -- what the turn DID,
+  written by `Playthrough::Turn#play` beside `typed` -- and the two checks that
+  read a narration against it, `take_denied` and `pickup_invented`. The
+  transition corpus was cut out of the baseline run databases before they were
+  lost (`test/fixtures/files/transition_corpus.json`, 119 real take and drop
+  turns) and `rake game:score CORPUS=transitions` prints the rate. The check's
+  own re-measurement of the figures above is 28 of 32 takes and 4 of 32 drops:
+  the four takes it gives up deny the pickup by handing the item to a third
+  person who is the player, and the drop it gives up writes "the slate" of an
+  "Assize tide-slate". Zero false positives on all three existing corpora.
+  ITEMS 1 AND 3 ARE STILL OPEN, and both checks are available to a scripted
+  sweep, so the prose fix can now be judged the way this entry asks.
+
 - [ ] ta-character-whereabouts - Nothing records where a character is (repo: text-adventure) (kind: scout) (priority: 2) (since 2026-09-03)
   Nothing records where a character is, so half the presence claims in the prose
   cannot be checked -- or kept.

@@ -13,7 +13,11 @@
 #
 # `rake 'eval:read[The Salt Assizes,1]'` -- offline, no model call, no key.
 class Eval::Transcript
-  Turn = Data.define(:index, :typed, :room, :prose, :codes, :branch) do
+  Turn = Data.define(:index, :typed, :room, :prose, :codes, :branch, :resolution) do
+    # Defaulted, because `resolution` is what a run recorded about itself and a
+    # set generated before `Scene#resolved_action` existed recorded nothing.
+    def initialize(resolution: nil, **rest) = super
+
     def flagged? = codes.any?
   end
 
@@ -41,6 +45,7 @@ class Eval::Transcript
     turns = manifest.fetch("turns").map do |turn|
       Turn.new(index: turn["id"], typed: turn["command"], room: turn["location_after"],
                prose: prose_for(directory, story, rep, turn["scene_id"]),
+               resolution: resolution_for(directory, story, rep, turn),
                codes: codes.fetch(turn["id"], []), branch: turn["branch"])
     end
 
@@ -53,20 +58,50 @@ class Eval::Transcript
   def self.prose_for(directory, story, rep, scene_id)
     return nil if scene_id.nil?
 
-    @passages ||= {}
+    scenes_in(directory, story, rep).dig(scene_id, :prose)
+  end
+
+  # WHAT THE TURN RESOLVED TO, in the app's own words: `take -> Assize
+  # tide-slate`. The captain reads a run here, and reconstructing what a line
+  # was read as -- from the branch, the room it ended in and the prose -- is
+  # the work this whole record exists to stop him doing.
+  #
+  # The run's own `Scene#resolution` first, because that is the record. The
+  # manifest's `intents` is the fallback and covers every run played before the
+  # columns existed: it is the same `Intent`, written down by the harness at the
+  # time, so an old transcript still reads.
+  def self.resolution_for(directory, story, rep, turn)
+    stored = turn["scene_id"] && scenes_in(directory, story, rep).dig(turn["scene_id"], :resolution)
+    return stored if stored.present?
+
+    Array(turn["intents"]).filter_map do |intent|
+      "#{intent["action"]} -> #{intent["subject"] || "nothing"}"
+    end.join(", ").presence
+  end
+
+  # Every scene of one run, read once: the passage and what the turn did.
+  # `acted_on` is followed to a name INSIDE the block, because the connection is
+  # put back the way it was found on the way out.
+  #
+  # `Scene#resolution` answers nil rather than raising on a run database whose
+  # `scenes` table has no such column -- every set swept before that migration.
+  # Those transcripts still read: the manifest carries the same `Intent`, see
+  # `.resolution_for`.
+  def self.scenes_in(directory, story, rep)
+    @scenes ||= {}
     key = [ directory.to_s, story, rep ]
-    @passages[key] ||= begin
+    @scenes[key] ||= begin
       database = Pathname.new(directory).join("runs", "#{WorldSeed.slug(story)}-r#{rep}.sqlite3")
       original = ActiveRecord::Base.connection_db_config
       begin
         ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: database.to_s, timeout: 15_000)
-        Scene.where(story: Story.find_by!(title: story)).pluck(:id, :description).to_h
+        Scene.where(story: Story.find_by!(title: story)).to_h do |scene|
+          [ scene.id, { prose: scene.description, resolution: scene.resolution } ]
+        end
       ensure
         ActiveRecord::Base.establish_connection(original)
       end
     end
-
-    @passages[key][scene_id]
   end
 
   def flagged = turns.select(&:flagged?)
@@ -82,6 +117,7 @@ class Eval::Transcript
       mark = turn.flagged? ? "FLAGGED #{turn.codes.join(", ")}" : "clean"
       io.puts "-- #{turn.index}  [#{turn.branch}] in #{turn.room} -- #{mark}"
       io.puts "   > #{turn.typed}"
+      io.puts "   resolved: #{turn.resolution}" if turn.resolution.present?
       io.puts
       io.puts wrap(turn.prose.presence || "(no passage -- the turn failed)")
       io.puts
