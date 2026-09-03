@@ -274,6 +274,19 @@ class Playthrough::Debug
 
   def drift_tally = Playthrough::Drift.tally(playthrough.drifts)
 
+  # EVERY TURN THIS PLAYER ASKED FOR TWO THINGS AND GOT ONE, newest first, and
+  # read off `Playthrough::Overreach` for the same reason the drifts are: they
+  # belong to this playthrough and the audit is story-wide.
+  #
+  # NEXT TO THE DRIFTS AND NEVER ADDED TO THEM. A drift is a reach that found
+  # nothing; this is a reach that found more than a turn can answer. The sum
+  # would be a number that is neither -- see Playthrough::Overreach.
+  def overreaches
+    @overreaches ||= playthrough.overreaches.in_story_order.includes(:scene, :location).to_a.reverse
+  end
+
+  def overreach_tally = Playthrough::Overreach.tally(playthrough.overreaches)
+
   # ------------------------------------------------------------------------
   # WHAT THE PLAYER THOUGHT OF EACH TURN. `Playthrough::Feedback` is the one
   # thing on this page the app did not decide and no model wrote: it is the

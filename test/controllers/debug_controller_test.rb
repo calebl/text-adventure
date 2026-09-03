@@ -63,6 +63,40 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     assert_match "ta-arrival-diff", response.body
   end
 
+  # THE TWO COUNTERS RENDER SIDE BY SIDE AND ARE NEVER ONE NUMBER: a drift is a
+  # reach that found nothing, an overreach a reach that found more than a turn
+  # can answer. Both sections say so in words when they are empty, because a
+  # blank table reads as a broken page rather than a clean playthrough.
+  test "show reports what a line named twice beside the drift it is not" do
+    playthrough = played_playthrough
+    create(:playthrough_drift, playthrough: playthrough, command: "go through the cellar door")
+    create(:playthrough_overreach, playthrough: playthrough,
+                                   command: "pickup the index and the apron",
+                                   acted: "Perrin's private index", unacted: "copy-room apron")
+
+    get playthrough_debug_path(playthrough)
+
+    assert_response :success
+    assert_select "h3", text: /named two/
+    assert_select "th", text: "left undone"
+    assert_match "pickup the index and the apron", response.body
+    assert_match "copy-room apron", response.body
+    assert_match "the loop's limit, not a defect", response.body
+
+    # And the drift section is still its own, with its own evidence column.
+    assert_select "h3", text: /drift/
+    assert_select "th", text: "was offered"
+    assert_match "go through the cellar door", response.body
+  end
+
+  test "show says both counters are empty rather than rendering a blank table" do
+    get playthrough_debug_path(played_playthrough)
+
+    assert_response :success
+    assert_match "every line this player typed named one thing", response.body
+    assert_match "resolved to a record", response.body
+  end
+
   # THE PANEL DESCRIBES THE RULE, so it has to render under both settings --
   # uncapped (above) and capped. The capped branch interpolates
   # `Chat::KEEP_TURNS` into the page; with the default nil that would render an

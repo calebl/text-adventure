@@ -378,12 +378,41 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
     assert_equal({ "move" => 1, "talk" => 1 }, debug.drift_tally)
   end
 
+  # BESIDE THE DRIFTS AND NEVER ADDED TO THEM: one is a reach that found
+  # nothing, the other a reach that found more than a turn can answer.
+  test "what a line named twice is this playthrough's own, newest first" do
+    playthrough = create(:playthrough, :in_scene)
+    create(:playthrough_overreach, playthrough: playthrough, story_timestamp: 1.hour.from_now)
+    create(:playthrough_overreach, :talk, playthrough: playthrough, story_timestamp: 2.hours.from_now)
+    create(:playthrough_overreach, playthrough: create(:playthrough))
+
+    debug = Playthrough::Debug.new(playthrough)
+
+    assert_equal 2, debug.overreaches.size
+    assert_equal "talk", debug.overreaches.first.action, "newest first"
+    assert_equal({ "take" => 1, "talk" => 1 }, debug.overreach_tally)
+  end
+
+  test "the two counters are read apart and never summed" do
+    playthrough = create(:playthrough, :in_scene)
+    create(:playthrough_drift, playthrough: playthrough)
+    create(:playthrough_overreach, playthrough: playthrough)
+
+    debug = Playthrough::Debug.new(playthrough)
+
+    assert_equal 1, debug.drifts.size
+    assert_equal 1, debug.overreaches.size
+    assert_empty debug.drifts.map(&:class) & debug.overreaches.map(&:class)
+  end
+
   test "a clean playthrough reports no contradictions and no drift" do
     debug = Playthrough::Debug.new(create(:playthrough, :in_scene))
 
     assert_empty debug.contradictions
     assert_empty debug.drifts
     assert_empty debug.drift_tally
+    assert_empty debug.overreaches
+    assert_empty debug.overreach_tally
   end
 
   # --- what the player thought -----------------------------------------------

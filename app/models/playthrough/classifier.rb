@@ -228,21 +228,33 @@ class Playthrough::Classifier
     else return Intent.new(action: action)
     end
 
+    found = send(finder, set, name)
+
     Intent.new(
       action: action,
-      also_named: also_record(set, finder, also, name),
-      **{ slot => send(finder, set, name) }
+      also_named: also_record(set, finder, also, found),
+      **{ slot => found }
     )
   end
 
-  # The second name, or nil. `nothing`, a blank, and the target repeated all
-  # mean the line named one thing. `examine` and `other` never reach here: they
-  # resolve to no record at all, so there is no "the other one" to have.
-  def also_record(set, finder, also, target)
+  # The second name, or nil. `nothing` and a blank both mean the line named one
+  # thing. `examine` and `other` never reach here: they resolve to no record at
+  # all, so there is no "the other one" for them to have.
+  #
+  # THE COMPARISON IS BETWEEN RECORDS AND NOT BETWEEN THE TYPED NAMES, because
+  # one record answers to more than one name: `#find_character` matches a
+  # fullname OR a nickname, so "Halkett Rowe" and "Rowe" are two strings for
+  # one person -- and comparing the strings counted them as two things, wrote a
+  # `Playthrough::Overreach` row naming him on both sides of it, and told the
+  # player a turn had left him undone while he was the one it acted on. Two
+  # items of the same name in one room resolve to the same first record for the
+  # same reason (see `#find_item`).
+  def also_record(set, finder, also, found)
     name = also.to_s.strip
-    return nil if name.empty? || name == Playthrough::IntentSchema::NOTHING || name.casecmp?(target.to_s)
+    return nil if name.empty? || name == Playthrough::IntentSchema::NOTHING
 
-    send(finder, set, name)
+    other = send(finder, set, name)
+    other unless other.nil? || other == found
   end
 
   def find_exit(exits, name)
