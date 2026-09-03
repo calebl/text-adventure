@@ -99,6 +99,51 @@ The full audit of every planned piece of work against this constraint is in
   "monkey". Reverting the fix turns every script in the sweep red, which is what
   a script written the way a person types is worth.
 
+- **The item registry** (`ta-item-registry`). How items come to *exist*, which
+  was the last part of the possession mechanic still missing: `take` and `drop`
+  have been app-owned state changes since step 2, but `Item` rows were created
+  in exactly one place in the whole codebase — the seed loader — so a generated
+  room was always empty and the mechanic was exercisable only in rooms a person
+  had hand-written.
+
+  **Items are born as structured records at the moment a room is realized,
+  exactly the way exits are.** `Location::DetailSchema` asks for at most three
+  portable things lying here alongside the description and lore, on the SAME
+  call, and `Item::Registry` writes the rows. A realization still costs two
+  model calls; nothing per turn was added.
+
+  **This deviates on purpose from the direction plan's "populated when the
+  narrator names something"** (§12). A narrator tool call, or a scan of
+  narration prose, makes the record depend on a model complying with a prompt —
+  the thing the captain has said he will not build mechanics on. The plan's real
+  intent survives whole: nothing is generated ahead of time, a stub costs nothing
+  until somebody walks into it, and the ontology stays bounded. Only the
+  compliance dependency is dropped. `Playthrough::Moment` then *tells* the
+  narrator what is lying here, out of the records.
+
+  **The engine decides what exists.** `Item::Registry` refuses a name anything
+  in the story already has, a name a person or a place has (two of the
+  classifier's closed sets would answer to one word), and anything past
+  `MAX_PER_ROOM` (3, on the **room** and read from the records, so a seeded room
+  can already be at it) or `MAX_PER_STORY` (60, the ceiling on the ontology —
+  three per room is three per room times however far the player walked). A
+  refusal costs the room its furniture and never its description.
+
+  Items are created **whole, not stubbed**: an item is a name and one line
+  riding on a call already being made, so deferring it would save ~15 output
+  tokens now and cost a whole round trip the first time somebody examined it.
+  `Location`'s two-state shape is the model to copy if an item ever grows a
+  field worth a call of its own.
+
+  Nothing downstream changed. `Item.lying_in` is the closed set the classifier
+  already resolves `take` against, so a generated thing is takeable on the next
+  turn in the browser and in `rake game:mechanics` alike.
+  `Playthrough::Moment#narration_context` gained the floor list — the one closed
+  set the classifier computed every turn and the prose was never told about (PR
+  98, F3). `rake game:doctor` reports the states the registry refuses but an
+  older world can still be in: items nowhere, duplicate names, rooms and worlds
+  over the caps, and an item named after a person or a place.
+
 - **The automated half of the evaluation loop** (`ta-eval-pipeline`). *"I'm fine
   with the loop being manual initially. I just want more confidence that changes
   we are making are improving results."* `rake eval:run` generates runs across
@@ -765,11 +810,11 @@ Steps 1 and 2 of that plan have landed (see **Done**). The rest, in order:
    which is why it can only ever run offline. A per-turn plausibility call is
    ruled out in both directions: 257–289 input tokens *and* a 2.4–7.3 s round
    trip, to answer "allowed" nearly every time.
-9. **The item registry** (`ta-item-registry`) — how items come to *exist*, as
-   opposed to app-owned `take` at (2) which makes taking a real state change for
-   items that already do. Lazy, stub-then-realize — the shape `Location` already
-   has — populated when the narrator names something. A generated per-room
-   inventory is explicitly ruled out.
+9. **The item registry** (`ta-item-registry`) — **landed**, see **Done**. It
+   deviates from §12's "populated when the narrator names something": items are
+   written as structured records at room realization instead, because the
+   narrator-tool version depends on a model complying. The rest of §12's intent
+   — lazy, bounded, nothing generated ahead of time — holds.
 
 ### Queued out of the evaluation pass
 
@@ -786,10 +831,18 @@ reading one held-out run the board scored at zero flags.
   does not fall REAL alongside it — the cheapest way to stop writing the player
   in third person is to stop naming anybody. Then re-baseline, and the existing
   check guards it from there.
-- **`ta-take-drop-narration`** — the prose denies the take (30/32) and invents a
-  pickup on the drop (5/32). See **Known issues**; the app is not at fault and
-  the check that would catch it is a new shape, reading a turn against the state
-  *before* it.
+- **`ta-take-drop-narration`** — the prose denies the take and invents a pickup
+  on the drop. **The instrument half has landed** (`ta-narrator-invents-exit`,
+  2026-09-03): `Scene#resolved_action` and `Scene#acted_on` record what each turn
+  DID, and `take_denied` / `pickup_invented` read a narration against the state
+  *before* the turn — 28 of 32 takes and 4 of 32 drops on the 480-turn baseline,
+  frozen in `transition_corpus.json` and reported by `rake game:score`. **What
+  is left is the prose fix**, which is now judgeable: the checks are fully
+  available to a scripted sweep, so done means a REAL verdict from
+  `rake eval:compare` at four runs a side reproducing on `The Salt Assizes`, with
+  richness not falling. Fold in PR-98's **F3** (the floor list into
+  `Moment#narration_context`) and **F1** (a rule about *removing* a possession):
+  both are the diagnosed cause and both are already measured.
 - **`ta-character-whereabouts`** — there is no record of where anybody is. The
   people half of the noun registry; overlaps `ta-narrator-memory` below and
   should be designed with it.
@@ -945,14 +998,15 @@ queued task, the task id is named.
 - [ ] `examine` is told apart and then handed to `Scene::Narrator` like anything
       else. It is classified so the branch exists when there is something for it
       to do.
-- [ ] **Nothing creates an `Item`.** Only a seed file or a test puts one in a
-      world, so `take` and `drop` are real over a set that is usually empty.
-      `ta-item-registry` is how items come to exist — lazy, stub-then-realize,
-      populated when the narrator names something. A generated per-room inventory
-      is explicitly ruled out. A seed file can now put one on the **floor** of a
-      room as well as in somebody's hands (`locations[].items`), which is what
-      makes `take` exercisable at all rather than only as the inverse of a
-      `drop`; see `db/seeds/worlds/README.md`.
+- [x] **The app creates `Item`s.** `Item::Registry` writes them at room
+      realization, out of the same call that describes the room
+      (`Location::DetailSchema`), bounded per room and per world — so `take` and
+      `drop` are real over a set a generated room actually has. Not a narrator
+      tool and not a scan of prose: the engine decides what exists and
+      `Playthrough::Moment` tells the narrator. A seed file remains the other
+      writer, and puts things on the **floor** of a room as well as in somebody's
+      hands (`locations[].items`); see `db/seeds/worlds/README.md`. The registry
+      leaves seeded rooms alone.
 - [x] **The mechanics can be walked with the narration off.**
       `Playthrough::Mechanics` (`rake game:mechanics`) keeps the classifier — the
       intent it resolved is printed, so how the typing was read is visible — and
@@ -1164,8 +1218,9 @@ What it still owes, roughly in order:
 
 ## Known issues
 
-- **The narration erases the `take` and invents the pickup on a `drop`, and no
-  check can see it** (`ta-take-drop-narration`, queued). On a turn the app
+- **The narration erases the `take` and invents the pickup on a `drop`**
+  (`ta-take-drop-narration`, queued). **Two checks see it now** — see the
+  resolution note at the end of this entry. On a turn the app
   resolves as `take`, the prose says *"You **already hold** the Assize
   tide-slate"* — of a slate that was lying on the bench until this turn moved
   it. On a `drop`, the mirror: *"You **lift** the tide-slate **from where it
@@ -1180,6 +1235,19 @@ What it still owes, roughly in order:
   the prose and the records agree about who holds the slate and disagree about
   whether anything happened. Found by reading a held-out run the board scored at
   zero flags.
+
+  **The blindness is fixed; the prose is not** (`ta-narrator-invents-exit`,
+  2026-09-03). `scenes.resolved_action` and `scenes.acted_on` record what each
+  turn did, written by `Playthrough::Turn#play` beside `typed`, and
+  `Story::Audit`'s `take_denied` and `pickup_invented` read a narration against
+  the transition rather than against a state. The manual figures re-measured by
+  the check itself are **28 of 32 takes and 4 of 32 drops** — the four takes it
+  gives up deny the pickup by handing the slate to a third person who is the
+  player, which `third_person_protagonist` catches, and the drop it gives up
+  writes "the slate" of an item recorded as the "Assize tide-slate". Both misses
+  are pinned in `Story::Audit::TransitionTest`. Nothing about the narrator
+  changed: that is `ta-take-drop-narration`, and it is now a number that can
+  move.
 
 - **Nothing records where a character is** (`ta-character-whereabouts`, queued).
   `Character` has no location: `belongs_to :story`, `has_and_belongs_to_many

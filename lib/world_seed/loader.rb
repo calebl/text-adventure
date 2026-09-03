@@ -141,11 +141,12 @@ class WorldSeed::Loader
   # `location:` for something lying in a room, and the other half is written nil
   # so that re-seeding cannot leave an item in two places at once.
   #
-  # Items under a LOCATION are what a world has to carry for anything to be
-  # takeable at all. Nothing in the app creates an `Item` -- that is
-  # `ta-item-registry` -- so a seed file is the only place a thing can be lying
-  # on the floor of a room, and without one `take` can only ever be the inverse
-  # of a `drop` the player did first.
+  # Items under a LOCATION are what a HAND-WRITTEN world carries so that
+  # anything in it is takeable. A generated room furnishes itself now
+  # (`Item::Registry`, written at realization), so this is no longer the only
+  # way a thing gets onto a floor -- but a seeded room is realized by the file
+  # rather than by a model call, so what is lying in one is whatever the file
+  # says and nothing else. The registry leaves seeded rooms alone.
   #
   # MATCHED ON (story, name), NOT ON THE OWNER, because an item is the one thing
   # in these files that MOVES: `Playthrough::Turn#carry!` and `#put_down!` write

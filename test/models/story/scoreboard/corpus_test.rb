@@ -94,15 +94,54 @@ class Story::Scoreboard::CorpusTest < ActiveSupport::TestCase
     assert_equal "truncated", @corpus.passages.find { |p| p.label == "unrecorded/scene-59" }.note
   end
 
-  # A CHECK THE CORPUS CANNOT ANSWER IS UNAVAILABLE, NOT CLEAN. Three of the
-  # seven read records a frozen passage does not carry, and reporting them as
-  # zero would be a lie that reads like good news.
+  # A CHECK THE CORPUS CANNOT ANSWER IS UNAVAILABLE, NOT CLEAN. Five of the
+  # eleven read records a frozen passage does not carry, and reporting them as
+  # zero would be a lie that reads like good news. `take_denied` and
+  # `pickup_invented` are the newest two and the clearest case: a passage here
+  # carries the state around the prose and never the CHANGE the turn made, so
+  # they belong to `Story::Scoreboard::Transitions` and are unavailable here.
   test "the checks that need records around the passage are reported unavailable" do
     assert_equal %i[truncated_prose third_person_protagonist unrecorded_departure still_run],
                  @corpus.available_checks
 
-    %i[unreachable_transition item_not_held reached_for_nothing].each do |code|
+    %i[unreachable_transition item_not_held reached_for_nothing take_denied pickup_invented].each do |code|
       assert_equal 0, @corpus.judgeable_for(code), "#{code} has no denominator on a corpus that cannot run it"
+    end
+  end
+
+  # THE TRANSITION CORPUS ANSWERS EXACTLY THE TWO AND NOTHING ELSE, which is
+  # the same honesty from the other side: 119 real take and drop turns with the
+  # transition each one made frozen beside the prose, and no graph, no drift
+  # rows, no protagonist names and no still-run length. The rates are pinned in
+  # `Story::Audit::TransitionTest`; what is pinned here is the shape.
+  test "the transition corpus answers the two transition checks and nothing else" do
+    transitions = Story::Scoreboard::Transitions.load
+
+    assert_equal 119, transitions.scanned
+    assert_equal %i[take_denied pickup_invented], transitions.available_checks
+    assert_equal 59, transitions.judgeable_for(:take_denied)
+    assert_equal 60, transitions.judgeable_for(:pickup_invented)
+
+    (Story::Scoreboard::CHECKS.keys - transitions.available_checks).each do |code|
+      assert_equal 0, transitions.judgeable_for(code), "#{code} has no denominator on a corpus of transitions"
+    end
+  end
+
+  # And the whole file's flags, pinned the way the frozen corpus's 19 are: 47
+  # denied takes and 5 invented pickups over 119 real turns, of which the
+  # 480-turn baseline set contributes 28 and 4.
+  test "the transition corpus raises exactly the flags it is pinned at" do
+    transitions = Story::Scoreboard::Transitions.load
+
+    assert_equal({ take_denied: 47, pickup_invented: 5 },
+                 transitions.flags.group_by(&:code).transform_values(&:size))
+    assert(transitions.flags.all? { |flag| flag.evidence[:claim].present? },
+           "a flag nobody can read the sentence of is a flag nobody can judge")
+  end
+
+  test "reading the transition corpus touches no table and needs no database" do
+    ActiveRecord::Base.connection.stub(:execute, ->(*) { raise "the frozen corpus must not query" }) do
+      assert_equal 52, Story::Scoreboard::Transitions.load.flags.size
     end
   end
 

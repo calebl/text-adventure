@@ -21,13 +21,31 @@
 #                        or lying somewhere, never both and never neither -- and
 #                        the world still has the same items it started with.
 #                        `take` and `drop` move a row, and a row that moved to
-#                        nowhere is how an item disappears from a game.
+#                        nowhere is how an item disappears from a game. "The
+#                        same items" is exact rather than a floor because
+#                        `Item::Registry` writes only at realization, which this
+#                        mode cannot reach: a walk that gained an item would
+#                        mean something else had started making them.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
-#                        If this one ever fails, the sweep's assumptions have
-#                        changed and the scripts need re-reading before anything
-#                        else is believed.
+#                        Since `Item::Registry` it carries a second guarantee
+#                        for free -- a room furnishes itself at the moment it is
+#                        realized, so a world in which nothing was written is a
+#                        world in which nothing was furnished either. If this
+#                        one ever fails, the sweep's assumptions have changed
+#                        and the scripts need re-reading before anything else is
+#                        believed.
+#
+# WHY THERE IS NO ITEM CAP HERE, beside `exit_cap`, though `Item::Registry` has
+# two of them. `MAX_EXITS` bounds a room: nothing but the generator opens a
+# door, so more than four ways out is wrong however it happened.
+# `Item::Registry::MAX_PER_ROOM` and `MAX_PER_STORY` bound GENERATION -- they
+# are read to decide whether to admit another candidate -- and a player may
+# legitimately walk into a room carrying four things and put them all down. An
+# invariant on the floor's size would flag that walk as a defect. The caps
+# belong to the registry's own tests and to `rake game:doctor`, which diagnoses
+# a stored world; this file only asserts what a walk did to a fresh one.
 #
 # WHAT THEY COST WHEN THEY HOLD, which is what they do today: nothing. A move
 # offline writes no exits, so `doors_unchanged` is a statement the offline

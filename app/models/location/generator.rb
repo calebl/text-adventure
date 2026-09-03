@@ -52,7 +52,17 @@ class Location::Generator
     location
   end
 
-  # What the player reads on arrival, persisted immediately.
+  # What the player reads on arrival, persisted immediately -- and what is
+  # lying in it, out of the same answer.
+  #
+  # THE ITEMS RIDE ON THIS CALL rather than a third one of their own. A room
+  # already costs two calls to realize; asking separately what is on the floor
+  # would be a round trip per room to be told "nothing" most of the time, and
+  # the two answers could then disagree about the room they describe. See
+  # `Location::DetailSchema` for why it is this call and not the exits one, and
+  # `Item::Registry` for what happens to the names -- the model proposes, the
+  # registry decides, and a name it refuses costs the room its furniture and
+  # never its description.
   def write_detail!
     detail = ask(Location::DetailSchema, detail_prompt)
 
@@ -61,7 +71,16 @@ class Location::Generator
     location.detail_level = :realized
     location.save!
 
+    registry.admit!(detail["items"])
+
     location
+  end
+
+  # WHAT MAY COME TO EXIST HERE, and the one thing in the app that creates an
+  # `Item`. Held rather than built per call so the room's remaining allowance
+  # can be read into the prompt and then enforced against the records.
+  def registry
+    @registry ||= Item::Registry.new(location)
   end
 
   # The ways out, as stub neighbours plus connection rows in both directions,
@@ -132,7 +151,48 @@ class Location::Generator
       - Describe what is here now, not the history -- the history is the lore
       - Stay consistent with the universe and with the teaser above
       - Respect the stated length of each field
+
+      #{items_instructions}
     PROMPT
+  end
+
+  # WHAT THE MODEL IS TOLD ABOUT THE FLOOR OF THIS ROOM. It is asked for at
+  # most what is left of the room's allowance and told the two names it must
+  # not reuse, because both of those are things the engine will refuse
+  # afterwards anyway (`Item::Registry`) -- and a refusal after the call is a
+  # room with less in it than the model thought it had furnished. Saying so up
+  # front is what stops one being spent.
+  #
+  # A room already at its cap, or a world at its own, is asked for nothing at
+  # all: the sentence says zero and the schema's array can honestly come back
+  # empty.
+  def items_instructions
+    allowance = [ registry.room_for_items, registry.world_for_items ].min
+
+    return "Do not list any items: this place already holds everything it can." if allowance.zero?
+
+    <<~PROMPT.rstrip
+      ## What Is Lying Here
+      List AT MOST #{allowance} portable thing#{"s" unless allowance == 1} a player could pick up and carry away.
+      - Nothing is the right answer for most rooms. An empty list is a complete answer
+      - Only loose, portable things. Not the door, not the floor, not the machinery
+        bolted to it -- something a person could put in a pocket or under an arm
+      - Each one must be consistent with the description you just wrote, and worth
+        the player noticing
+      - Never name it after a person or after a place#{known_names_note}
+    PROMPT
+  end
+
+  # The names already spoken for in this story, so the model does not spend an
+  # item on one. Truncated rather than unbounded: this rides on a prompt sent
+  # once per room, and a world with two hundred names in it would pay for the
+  # whole list to say "not these".
+  def known_names_note
+    taken = (story.characters.order(:id).limit(20).pluck(:fullname) +
+             registry.story_items.order(:id).limit(20).pluck(:name)).compact_blank
+    return "" if taken.empty?
+
+    ". Already spoken for in this story, so do not reuse: #{taken.join(", ")}"
   end
 
   def exits_prompt

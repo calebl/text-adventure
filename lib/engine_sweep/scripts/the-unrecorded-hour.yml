@@ -120,7 +120,7 @@ steps:
 
 - id: walk-into-the-unwritten-room
   type: go to the Long Hallway
-  why: offline a stub is stood in, not written -- and it keeps the one door it was seeded with
+  why: offline a stub is stood in, not written -- so it keeps its one seeded door and furnishes nothing (Item::Registry writes at realization)
   expect:
     changed: true
     change: a stub -- nobody has written this room

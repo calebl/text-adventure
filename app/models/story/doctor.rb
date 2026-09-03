@@ -65,7 +65,8 @@ class Story::Doctor
       *connection_rows,
       *cast,
       *scene_rows,
-      *playthrough_rows
+      *playthrough_rows,
+      *item_rows
     ]
   end
 
@@ -376,6 +377,106 @@ class Story::Doctor
                 :manual, subject: playthrough)
       end
     end
+  end
+
+  # WHAT THE ITEM REGISTRY CAN GET WRONG, asked of the records after the fact.
+  # `Item::Registry` refuses every one of these at the moment it writes, so a
+  # world generated since it landed should never show one -- which is exactly
+  # why the checks are here. A world here outlives the code that made it: rows
+  # written by a seed file, by hand, or by an earlier build of the app are
+  # under no rule at all, and the first thing that notices is the classifier
+  # resolving one word two ways mid-turn.
+  #
+  # Duplicates and collisions are `manual`: which of two things called "the
+  # ledger" the player meant is not derivable, and deleting one of them is
+  # deleting world data. Being over the cap is `manual` for the same reason --
+  # nothing on record says which item is the surplus one.
+  def item_rows
+    findings = []
+    items = story_items.includes(:location, :character).order(:id).to_a
+
+    findings.concat(items_nowhere)
+    findings.concat(duplicate_items(items))
+    findings.concat(rooms_over_the_item_cap)
+    findings.concat(items_colliding_with_a_name(items))
+
+    if items.size > Item::Registry::MAX_PER_STORY
+      findings << finding(:story_over_item_cap, :warning,
+                          "holds #{items.size} items, past the #{Item::Registry::MAX_PER_STORY} one world may have "                           "(Item::Registry::MAX_PER_STORY); nothing breaks, but the registry will furnish no further room "                           "in it and the ontology it was bounding is no longer bounded",
+                          :manual)
+    end
+
+    findings
+  end
+
+  # An item in neither place. `Item#in_exactly_one_place` refuses to save one,
+  # so this can only arrive through raw SQL or a schema older than that
+  # validation -- and such a row belongs to no story at all, which is why it is
+  # reported once against every story rather than attributed to one: there is
+  # nothing on the row that says whose it was.
+  def items_nowhere
+    orphans = Item.where(character_id: nil, location_id: nil).order(:id).to_a
+    return [] if orphans.empty?
+
+    [ finding(:items_nowhere, :warning,
+              "#{orphans.size} item#{"s" unless orphans.one?} in the database "               "(##{orphans.first(5).map(&:id).join(", #")}#{", ..." if orphans.size > 5}) "               "#{orphans.one? ? "is" : "are"} neither held by anybody nor lying anywhere, so no closed set can ever "               "offer #{orphans.one? ? "it" : "them"}; the row has nothing on it saying which story it belonged to",
+              :manual) ]
+  end
+
+  # Two things in one world answering to one name. `Playthrough::Classifier`
+  # resolves a typed line against a list of names, so the player types the name
+  # and gets whichever the ordering hands over.
+  def duplicate_items(items)
+    items.group_by { |item| item.name.to_s.downcase }.filter_map do |name, group|
+      next if group.one? || name.blank?
+
+      finding(:duplicate_items, :warning,
+              "#{group.size} items are called #{group.first.name.inspect} "               "(#{group.map(&:whereabouts).join("; ")}); the classifier resolves a take or a drop by name, so which one "               "the player gets is an ordering accident",
+              :manual, subject: group.last)
+    end
+  end
+
+  # A room holding more than `Item::Registry` would ever put in one. The
+  # registry counts against the records on every admission, so this is a seeded
+  # room or a room a player has been dropping things in -- neither of which is
+  # broken, and both of which are worth saying out loud, because the room will
+  # accept nothing more.
+  def rooms_over_the_item_cap
+    counts = Item.where(location: story.locations, character_id: nil).group(:location_id).count
+
+    counts.filter_map do |location_id, count|
+      next if count <= Item::Registry::MAX_PER_ROOM
+
+      finding(:room_over_item_cap, :warning,
+              "#{story.locations.find(location_id).name.inspect} has #{count} items lying in it, past the "               "#{Item::Registry::MAX_PER_ROOM} one room may have (Item::Registry::MAX_PER_ROOM)",
+              :manual, subject: story.locations.find(location_id))
+    end
+  end
+
+  # An item sharing its name with a person or a place. Two of the classifier's
+  # closed sets then answer to one word, and which action the turn takes is
+  # decided inside the classifier rather than by the player.
+  def items_colliding_with_a_name(items)
+    people = story.characters.pluck(:fullname, :nickname).flatten.compact_blank.index_by(&:downcase)
+    places = story.locations.pluck(:name).compact_blank.index_by(&:downcase)
+
+    items.filter_map do |item|
+      name = item.name.to_s.downcase
+      kind, matched = ([ "character", people[name] ] if people.key?(name)) || ([ "location", places[name] ] if places.key?(name))
+      next if kind.nil?
+
+      finding(:item_named_after_something_else, :warning,
+              "the item #{item.name.inspect} (#{item.whereabouts}) shares its name with the #{kind} #{matched.inspect}, "               "so the classifier's closed sets answer to one word twice and which one a typed line resolves to is not "               "the player's choice",
+              :manual, subject: item)
+    end
+  end
+
+  # Every item in this story, on either side of `Item`'s one-place rule --
+  # the same pair of queries `Item::Registry#story_items` runs, and for the
+  # same reason: there is no `items.story_id`.
+  def story_items
+    Item.where(character_id: story.characters.select(:id))
+        .or(Item.where(location_id: story.locations.select(:id)))
   end
 
   def earliest_scene_timestamp

@@ -171,7 +171,41 @@ namespace :game do
     Helpers.print_audit_summary(audits, elapsed)
   end
 
-  desc "Score the game against the errors that can be checked. Usage: rake game:score, SAVE=1 to re-baseline, CORPUS=database|corpus"
+  desc "Label old turns with what they did, from the classifier answers still on disk. Usage: rake game:backfill_transitions, DRY_RUN=1 to see it first"
+  task :backfill_transitions, [ :story_id ] => :environment do |t, args|
+    scope = args[:story_id] ? Story.where(id: Helpers.story!(args[:story_id]).id) : Story.all
+    dry = ENV["DRY_RUN"].present?
+
+    puts "WHAT EACH OLD TURN DID, recovered from the classifier's own stored answer."
+    puts "`scenes.resolved_action` and `scenes.acted_on` are written by the loop from now on"
+    puts "(Playthrough::Turn#play); this labels what was played before they existed, and it can"
+    puts "only label a turn whose classifier exchange is still on disk. Offline, no model call."
+    puts "DRY RUN: nothing is written." if dry
+    puts
+
+    total = Hash.new(0)
+    scope.order(:created_at, :id).each do |story|
+      counts = Scene::TransitionBackfill.new(story).run(dry_run: dry)
+      next if counts.values.sum.zero?
+
+      puts format("  %-40s labelled %3d, resolved to nothing %3d, unrecoverable %3d",
+                  story.title.truncate(40), counts[:labelled], counts[:drifted], counts[:unrecoverable])
+      counts.each { |key, count| total[key] += count }
+    end
+
+    puts
+    if total.values.sum.zero?
+      puts "Nothing to do: every turn already carries what it did."
+    else
+      puts "#{total[:labelled]} turn(s) labelled with an action and the record it acted on."
+      puts "#{total[:drifted]} turn(s) labelled with an action and no record -- the classifier resolved to nothing,"
+      puts "  which is the drift case and a fact about the turn rather than a gap."
+      puts "#{total[:unrecoverable]} turn(s) left blank: the answer named something these records no longer have,"
+      puts "  or the exchange has been pruned (Chat::KEEP_TURNS). A blank column is honest; a guess is not."
+    end
+  end
+
+  desc "Score the game against the errors that can be checked. Usage: rake game:score, SAVE=1 to re-baseline, CORPUS=database|corpus|transitions"
   task :score, [ :story_id ] => :environment do |t, args|
     boards =
       if args[:story_id]
@@ -182,7 +216,7 @@ namespace :game do
     boards.select! { |board| board.name == ENV["CORPUS"] } if ENV["CORPUS"].present?
 
     if boards.empty?
-      puts "No corpus to score. CORPUS must be one of: database, corpus."
+      puts "No corpus to score. CORPUS must be one of: database, corpus, transitions."
       next
     end
 
@@ -473,7 +507,7 @@ namespace :game do
       puts "CORPUS: #{board.name}"
       puts "  #{board.note}" if board.note
       puts "  #{board.scanned} turn#{"s" unless board.scanned == 1} across #{board.audits.size} " \
-           "#{board.name == "corpus" ? "file" : "stor#{board.audits.one? ? "y" : "ies"}"}"
+           "#{board.name == "database" ? "stor#{board.audits.one? ? "y" : "ies"}" : "file"}"
       puts
 
       print_score_table(board)

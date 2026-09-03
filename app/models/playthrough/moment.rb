@@ -56,6 +56,7 @@ class Playthrough::Moment
 
     parts << "The player is #{protagonist.fullname}." if protagonist
     parts << (others.any? ? "Also here: #{name_list(others)}. Nobody else is present." : "Nobody else is here.")
+    parts << "Lying here, and takeable: #{floor_names.presence || "nothing"}."
     parts << "The player is carrying: #{carried_names.presence || "nothing"}."
 
     if (previous = playthrough.current_scene)
@@ -189,6 +190,23 @@ class Playthrough::Moment
     return "" if protagonist.nil?
 
     Item.for_character(protagonist).order(:id).map(&:name).join(", ")
+  end
+
+  # WHAT IS ON THE FLOOR OF THIS ROOM -- the same closed set
+  # `Playthrough::Classifier` resolves a `take` against, said to the narrator
+  # out of the same records. It was the one closed set the classifier computed
+  # every turn and the prose was never told about (PR 98, F3), which is the
+  # narrower half of an old symmetry problem: the narrator knew what the player
+  # was carrying but not what they could pick up, so a `take` that resolved to
+  # a real row was answered by prose with no idea the thing was there.
+  #
+  # Stated even when empty, for the reason the whole method list here is: "there
+  # is nothing to pick up" is a fact the narrator can use, and silence about it
+  # is an invitation to invent something.
+  def floor_names
+    return "" if location.nil?
+
+    Item.lying_in(location).order(:id).map(&:name).join(", ")
   end
 
   def name_list(people)

@@ -1,0 +1,2144 @@
+[
+  {
+    "label": "main/the-salt-assizes-r1/scene-9",
+    "set": "main",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate and set it squarely on the Justicar's bench, the chalked figure facing upward like an accusation. The stone is cold under your palms, the weight of it familiar—this is where the record belongs when the court is in session. Ammon Brace watches, his jaw set, but says nothing. The wind carries the scent of salt and damp wood from the *Vestry*, and the chain at the tide post clinks once, as if in approval. The slate stays where you've placed it, the false mark now in plain view of anyone who steps into the court. The sea, indifferent, continues its slow crawl up the rock."
+  },
+  {
+    "label": "main/the-salt-assizes-r1/scene-12",
+    "set": "main",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure, once smudged, now stares up at you from the slate’s surface, the false mark still bearing the ghost of your own hand’s slant. The wind tugs at the edges of the board, as if the sea itself is impatient for the truth. Justicar Brace’s gaze remains fixed on you, unreadable, while the chain at the tide post shivers again, a quiet reminder that time here is not yours to waste."
+  },
+  {
+    "label": "main/the-salt-assizes-r2/scene-9",
+    "set": "main",
+    "run": "the-salt-assizes-r2",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate and set it squarely on the Justicar's bench, its chalked surface facing upward. The figure for the high water—seventy minutes adrift from your own reckoning—stares up at the open sky, the strokes slightly smudged where your thumb traced them. The bench’s stone is cold and damp beneath it, the slate’s edge aligning with the grain of the rock as if it had always belonged there. Brace’s eyes flick toward it, but he says nothing. The wind carries the scent of salt and wet wood from the *Vestry*, and the chain at the tide post clinks once, softly, as the water laps higher."
+  },
+  {
+    "label": "main/the-salt-assizes-r2/scene-12",
+    "set": "main",
+    "run": "the-salt-assizes-r2",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure—seventy minutes too high, in that unsettling echo of your own script—stares up at you, defiant. The slate’s edges are cool against your palms, its surface smooth except for the grain of the false mark. Justicar Brace’s gaze remains fixed on you, unblinking, as if waiting for you to admit to a crime you did not commit. The bell at your shoulder gives another slow, soundless sway, as though the air itself has thickened with the tension of the altered time."
+  },
+  {
+    "label": "main/the-salt-assizes-r3/scene-9",
+    "set": "main",
+    "run": "the-salt-assizes-r3",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the Assize tide-slate and set it carefully upon the Justicar's bench, its chalked surface facing upward. The stone is cold beneath your fingers, the false high-water figure stark against the grey. Brace watches, his expression unreadable, as the slate settles into the rough wood. The wind off the sea tugs at the edges of your coat, but the court remains still, the only sound the distant lap of water against the rock. The slate stays where you have placed it, waiting."
+  },
+  {
+    "label": "main/the-salt-assizes-r3/scene-12",
+    "set": "main",
+    "run": "the-salt-assizes-r3",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure—seventy minutes adrift—stares up at you, the strokes too light, the angles too precise to be yours. The Justicar’s gaze remains fixed on you, his expression unreadable, as if the slate itself were a confession. The chain at the tide post shivers again, though the water has not yet risen to meet it."
+  },
+  {
+    "label": "main/the-salt-assizes-r4/scene-9",
+    "set": "main",
+    "run": "the-salt-assizes-r4",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate with both hands, its weight familiar, the chalked figures smudging slightly against your palms. The bench is cold and damp beneath it as you set it down, the numbers now facing the Justicar’s empty seat. The wind off the water stirs the hem of your coat, and the chain at the tide post clinks once, as if in acknowledgment. The slate stays where you’ve placed it, the false high-water mark now lying in judgment before the court itself."
+  },
+  {
+    "label": "main/the-salt-assizes-r4/scene-12",
+    "set": "main",
+    "run": "the-salt-assizes-r4",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight steady in your hands. The chalked figure, once familiar, now feels like a forgery beneath your fingers—your slant, but not your hand. The slate’s edges press into your palms, a cold reminder that the high-water mark has been tampered with, and the court’s time with it. Justicar Brace’s gaze remains fixed on you, unreadable, as the wind tugs at the *Vestry*’s hatch and the chain at the tide post shivers again. The bell at your shoulder stays mute, as if waiting for you to decide what to do next."
+  },
+  {
+    "label": "main/the-salt-assizes-r5/scene-9",
+    "set": "main",
+    "run": "the-salt-assizes-r5",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate and set it squarely on the Justicar’s bench, the chalked figure now facing the empty seaward seat. The stone is cold against your palms, the grain of it rough where the numbers have been pressed in. Brace’s gaze flicks to it, then back to you, his jaw tightening—he does not reach for it, but the weight of the court’s order seems to settle heavier in the air. The tide post chain clinks once, restless, as if the sea itself were shifting its patience. The slate stays where you’ve placed it, the false high-water mark now laid before the only authority that could have demanded it."
+  },
+  {
+    "label": "main/the-salt-assizes-r5/scene-12",
+    "set": "main",
+    "run": "the-salt-assizes-r5",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure—seventy minutes too high, in that unsettling mirror of your own hand—stares up at you, defiant. The slate’s edges are cool against your palms, the surface smooth except for the false mark that now accuses the sea of a lie. Brace’s gaze remains fixed on you, his expression unreadable, as if waiting for you to explain why the water’s truth has been altered. The chain at the tide post clinks softly, the only sound besides the lapping of the tide against the rock."
+  },
+  {
+    "label": "main/the-salt-assizes-r6/scene-9",
+    "set": "main",
+    "run": "the-salt-assizes-r6",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the Assize tide-slate from where it leans against the wall and set it carefully on the Justicar’s bench, its chalked surface facing upward. The false high-water figure glares up at you, still unclaimed. Brace’s eyes flick to the slate, then back to you, his jaw tight. The wind off the water stirs the edges of the court’s papers in the *Vestry*, but the slate stays put, its lie now laid bare before the bench. The chain at the tide post clinks once, as if the sea itself were shifting its weight."
+  },
+  {
+    "label": "main/the-salt-assizes-r6/scene-12",
+    "set": "main",
+    "run": "the-salt-assizes-r6",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure—seventy minutes adrift from the truth you know—stares up at you, a forgery in your own slant but not your hand. The wind tugs at the edges of the slate, as if the sea itself were trying to pry it from your grip. Justicar Brace’s gaze remains fixed on you, his silence heavy as the tide. The chain at the post clinks again, a dry, impatient sound."
+  },
+  {
+    "label": "main/the-salt-assizes-r7/scene-9",
+    "set": "main",
+    "run": "the-salt-assizes-r7",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate with both hands, its weight familiar, the chalked figures smudging slightly against your palms. The bench’s stone is cold and damp beneath it as you set it down, the false high-water mark now staring up at the Justicar’s empty seat. The wind off the water stirs the edges of your coat, and the chain at the tide post clinks once, as if in acknowledgment. The *Vestry* groans against its moorings, but the court itself holds its breath, waiting. The slate is where you left it, and the sea is still rising."
+  },
+  {
+    "label": "main/the-salt-assizes-r7/scene-12",
+    "set": "main",
+    "run": "the-salt-assizes-r7",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight steady in your hands. The slate is cool, its surface rough with the smudged chalk of the altered high-water mark. The figures blur slightly where your fingers have brushed them, as if the stone itself resists the falsehood. Justicar Brace’s gaze remains fixed on you, unreadable, while the sea creeps higher around the tide post, the chain taut with the unnatural rise. The bell at your shoulder stays silent, waiting."
+  },
+  {
+    "label": "main/the-salt-assizes-r8/scene-9",
+    "set": "main",
+    "run": "the-salt-assizes-r8",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You set the Assize tide-slate down on the Justicar's bench, its chalked surface facing upward. The false high-water figure glares up at you, stark against the stone. Brace's gaze flicks to it, then back to you, his expression unreadable. The slate lies there, heavy with implication, as the wind carries the scent of salt and the distant murmur of the sea. The court remains still, waiting. The bell at your shoulder sways slightly, as if sensing the weight of the moment."
+  },
+  {
+    "label": "main/the-salt-assizes-r8/scene-12",
+    "set": "main",
+    "run": "the-salt-assizes-r8",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure, smudged and altered, stares up at you, the false mark glaring under the pale coastal light. The chain at the tide post clinks again, a soft metallic whisper, as the water rises higher, indifferent to the tampering. Justicar Brace remains motionless on his bench, his back rigid, his gaze fixed on the horizon where the sea meets the sky. The *Vestry*’s hatch creaks slightly in the breeze, its shadow stretching like a long, dark finger across the flagstones. The bell at your shoulder stays silent, waiting."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r1/scene-9",
+    "set": "main",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, the stamp still resting beside it. The ruled gap between four and five o'clock remains, a silent testament to the missing hour. The gas mantle above continues to hiss, casting a dim light on the cleared desk across from yours. The rain outside the window persists, and the cold glass seems to radiate a chill that fills the room. Halkett Rowe watches you, his expression unreadable, as the daybook lies open, waiting for the next entry that may never come."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r1/scene-12",
+    "set": "main",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You already hold the Ward Office 12 daybook, its weight familiar in your hands, the leather of the quarter-binding worn smooth at the edges from years of use. The ruled gap between four and five o'clock seems to pulse faintly under your fingers, as if the absence itself has a kind of presence. The stamp beside it on the desk glints dully in the low gaslight, untouched. The empty desk across from you remains just as it was—bare, abandoned, the chair squared with a finality that feels deliberate. The pneumatic tube still gapes, the supply closet door still lacks its slip, and the hallway beyond the ajar door exhales a draft that carries the scent of damp stone and old paper."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r2/scene-9",
+    "set": "main",
+    "run": "the-unrecorded-hour-r2",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the blotter. The pages settle with a quiet rustle, the ruled gap between four and five o'clock still staring up at you, unremarkable as any other entry. The stamp lies beside it, its weight pressing a faint impression into the paper. Halkett Rowe watches the motion, his fingers tapping once against his knee before stilling. The gas mantle hisses overhead, and the rain continues its sideways slide past the cold window glass. The daybook stays where you left it, open and waiting."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r2/scene-12",
+    "set": "main",
+    "run": "the-unrecorded-hour-r2",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "The Ward Office 12 daybook is already in your hands, its weight familiar, its leather spine worn from years of use. The ruled gap between four and five o'clock still stares up at you, unyielding, as if daring you to question its legitimacy. The pages whisper slightly as you adjust your grip, the dry rustle of paper the only sound in the otherwise still office. The absence of the clerk across from you seems to press in a little more, the empty chair squared to the desk like a silent accusation."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r3/scene-9",
+    "set": "main",
+    "run": "the-unrecorded-hour-r3",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, the stamp still lying beside it. The pages settle with a soft rustle, the ruled gap between four and five o'clock staring up at you, as if waiting for an explanation. The gas mantle hisses above, casting long shadows across the cleared desk opposite, the empty chair squared to it like a silent accusation. The rain continues to streak past the cold window, and the distant sound of a door closing echoes faintly from the hallway. Halkett Rowe watches you, his expression unreadable."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r3/scene-12",
+    "set": "main",
+    "run": "the-unrecorded-hour-r3",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it's already in your hands—Odile Vance has already lifted it, the leather cover warm from her grip. The ruled gap between four and five o'clock stares up at you, as crisp and deliberate as any other entry. The stamp lies beside your desk, cold and unused. The chair across from you remains empty, squared to the desk as if waiting for someone who will never return. The hallway beyond the ajar door is still, the footsteps of the Inspectorate not yet audible. The supply closet door stays half-hidden, unmarked, unlatched. The daybook is yours now, the weight of it familiar, the absence in its pages unsettling."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r4/scene-9",
+    "set": "main",
+    "run": "the-unrecorded-hour-r4",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the wood. The stamp beside it glints dully under the low gaslight, the ruled gap between four and five o'clock still staring up at you, unyielding. The desk across remains empty, the chair squared to it as if waiting for someone who will never return. The rain continues to streak past the window, and the distant sound of a door closing echoes faintly from the hallway. Halkett Rowe shifts uncomfortably, his jaw still tight, but says nothing. The daybook stays where you left it, its presence as heavy as the silence in the room."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r4/scene-12",
+    "set": "main",
+    "run": "the-unrecorded-hour-r4",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it’s already in your hands—the quarter-bound ledger, its leather spine worn smooth under your fingers, the ruled gap between four and five o’clock staring up at you. The stamp beside it gleams dully under the low gaslight, as if mocking the absence it failed to mark. The weight of eleven years of your own handwriting presses against your palms, the pages whispering with the dry rustle of bureaucracy. There’s no second copy here, no duplicate to compare it to. Just the void where an hour should be, and the quiet certainty that you did not write it."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r5/scene-9",
+    "set": "main",
+    "run": "the-unrecorded-hour-r5",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its pages settling with a soft rustle. The stamp beside it glints dully in the low gaslight, the ruled gap between four and five o'clock still staring up at you, unyielding. The cleared desk across from yours seems to watch as well, its emptiness more pronounced now that your hands are free. The rain continues its sideways march past the window, and the pneumatic tube remains open, silent. Halkett Rowe shifts slightly, his jaw tightening. \"I reviewed the summary, as protocol requires,\" he says, his tone clipped, his gaze flickering away. \"The full file was... not necessary for the decision.\""
+  },
+  {
+    "label": "main/the-unrecorded-hour-r5/scene-12",
+    "set": "main",
+    "run": "the-unrecorded-hour-r5",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it’s already in your hands—Odile Vance has picked it up. The quarter-bound ledger is heavy with eleven years of your own handwriting, the ruled gap between four and five o'clock this afternoon staring up at you, as stark and deliberate as any other entry. The stamp beside your wrist glints dully under the hissing gas mantle. The desk across remains empty, the chair squared, the pneumatic tube gaping. The supply closet door stays shut. Somewhere down the hallway, a floorboard creaks."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r6/scene-9",
+    "set": "main",
+    "run": "the-unrecorded-hour-r6",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its pages settling with a soft rustle. The stamp beside it glints dully under the low gaslight, the ruled gap between four and five o'clock still staring up at you, unyielding. The cleared desk across from yours seems to watch you back, its emptiness more pronounced now that the daybook is no longer in your hands. The rain continues to streak past the window, and the hallway beyond the door remains still, save for the distant echo of footsteps—someone moving with purpose, but not yet close enough to disturb the quiet tension of the room."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r6/scene-12",
+    "set": "main",
+    "run": "the-unrecorded-hour-r6",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You already hold the Ward Office 12 daybook, its weight familiar in your hands. The ruled gap between four and five o'clock stares up at you, as precise and unyielding as any other entry. The pages whisper slightly as you adjust your grip, the leather cover cool against your palms. Sub-Inspector Rowe remains by the filing press, his gaze still fixed on the supply closet door, as if waiting for it to reveal something—or someone. The rain outside the window taps against the glass, a steady rhythm that does nothing to fill the silence in the room."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r7/scene-9",
+    "set": "main",
+    "run": "the-unrecorded-hour-r7",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the wood. The stamp beside it glints dully under the low gaslight. The ruled gap between four and five o'clock remains, stark and unyielding, as if it has always been there. The desk across from yours stays empty, the chair squared and waiting for someone who will not return. The pneumatic tube still gapes open, and the supply closet door remains slightly ajar, its darkness unbroken. Halkett Rowe shifts his weight, his discomfort lingering in the air like the scent of old paper and ink. The rain continues to streak the cold window glass, and the distant sound of a door closing echoes faintly from the hallway."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r7/scene-12",
+    "set": "main",
+    "run": "the-unrecorded-hour-r7",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but your fingers find only the cool, smooth wood of the desk. Vance has already taken it—her pen still scratches steadily over the ledger in her hands, the ruled gap between four and five o'clock staring up at her as if waiting for an explanation. The chair across from you remains empty, the pneumatic tube silent. The rain streaks the window, and the footsteps in the hallway grow louder, deliberate, approaching."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r8/scene-9",
+    "set": "main",
+    "run": "the-unrecorded-hour-r8",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, the stamp still lying beside it. The ruled gap between four and five o'clock remains, a silent testament to the missing hour. The gas mantle above continues to hiss, casting long shadows across the cleared desk opposite yours. The rain still streaks past the cold window, and the distant sound of a door closing echoes down the hallway. The daybook stays where you placed it, its pages open and waiting."
+  },
+  {
+    "label": "main/the-unrecorded-hour-r8/scene-12",
+    "set": "main",
+    "run": "the-unrecorded-hour-r8",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it is already in your hands—the quarter-bound ledger, its leather corners worn smooth, the pages thick with eleven years of your own handwriting. The ruled gap between four and five o'clock remains, as stark and deliberate as before, a silence in the record where there should be none. The stamp lies beside it on the desk, untouched. The weight of the book in your grip feels no different, though the absence in its pages presses against your fingers like a missing tooth."
+  },
+  {
+    "label": "minimax/the-salt-assizes-r1/scene-9",
+    "set": "minimax",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate from where it lay on the flagstones and set it down on the Justicar's bench, the dressed stone cool under its weight. The chalk catches the seaward light differently here - higher, and at an angle - and the false figure stands out sharper against the board than it did at your hand. The day's three cases lie below it in Brace's own plain hand: Halloran first, the wrecking inquiry second, the petition third. The water behind you is already at the chalk's mark and still climbing.\n\nBrace does not reach for it. He watches you set it down, and something in his stillness shifts - not a flinch, not yet, but the recognition that what is on the bench is, for the moment, no longer anyone's to alter a second time."
+  },
+  {
+    "label": "minimax/the-salt-assizes-r1/scene-12",
+    "set": "minimax",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You take the slate up from the bench's dressed edge with both hands, the way a Bell-Keeper takes up the rule she keeps. Three hands wide, black, ruled in chalk lines you did not draw, with the high-water figure sitting at its head in a hand that has your slant and none of your pressure. The weight of it rests against your ribs honest in the way the writing is not."
+  },
+  {
+    "label": "minimax/the-salt-assizes-r2/scene-9",
+    "set": "minimax",
+    "run": "the-salt-assizes-r2",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate from the flagged floor and lay it flat on the bench where the Justicar would rest his hands, the chalked names and the false high-water figure now facing the sky. The stone is cold and the writing is sharp against the grey; in this light, anyone standing in the court can read both the day's cases and the hour that has been altered. Brace, still beside you, watches you do it without comment, but her eyes move from the slate to the water beyond the wall and back, as though she is calculating what you mean by the placement.\n\nThe bell at your shoulder catches a draft off the sea and gives a single low note, no louder than a throat being cleared. You have laid the proof where the court must see it; what the court does with it is not yours to decide. The chained man's hour is now written twice on the stone you have set down — once in the marshal's hand, once in a hand that is almost yours."
+  },
+  {
+    "label": "minimax/the-salt-assizes-r2/scene-12",
+    "set": "minimax",
+    "run": "the-salt-assizes-r2",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "The slate is already in your hands. Your fingers know the weight of it -- three hands wide of black slate, colder than the air, the chalk dust fine against your palms where you've been gripping it since you lifted it from the flagged floor. You cannot pick up what you are already carrying.\n\nThe names of the day's cases look up at the sky where you've laid them: *Brace, creditor v. Pennycock, intestate; The Crown v. Marnet, delay of wreck; In the matter of the Petticoat Buoy, salvage.* Above them, the false high-water figure -- *XI:XL* -- sits in a hand that has your slant and none of your pressure, chalked clean and then redrawn so that only the faintest ghost of the original line remains beneath the new one. Seventy minutes added to the tide while you were inside the hulk with the court's papers.\n\nBehind you, the wind rocks the propped hatch of the *Vestry* against its boat hook. The chain clinks at the tide post. You have an hour before Marnet drowns on paper."
+  },
+  {
+    "label": "minimax/the-salt-assizes-r3/scene-9",
+    "set": "minimax",
+    "run": "the-salt-assizes-r3",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lay the slate flat on the bench with the high-water figure uppermost and the day's cases beneath it, the chalk catching the grey daylight. The slate's edge overhangs the dressed stone by a finger's width; it rocks once, then settles. The number above the cases looks, from here, less like writing than like a correction — a small, deliberate amendment in a hand you have almost certainly held bread with.\n\nBrace does not reach for it. He reads it where it lies, his eyes moving from figure to cases and back, the way a man reads a writ he has not yet decided to trust. After a moment he says, quietly, \"I see a hand I do not know.\" He does not ask who. He waits, the way the court waits, for you to source the number or to source the silence."
+  },
+  {
+    "label": "minimax/the-salt-assizes-r3/scene-12",
+    "set": "minimax",
+    "run": "the-salt-assizes-r3",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You take the slate back into your hands from the bench, lifting it by its lower edge so the chalk doesn't smear against your palm. The board is heavier than a man who has never held one would expect — dressed slate, three hands wide, the kind of weight that makes your forearm remember it by the hour. The day's figure sits uppermost, the wrong hour and seven minutes above the cases in their proper order, and the hand that set it rests on the surface like a footprint in dried mud: her slant, her flick on the seven, none of her pressure.\n\nBrace is watching from across the court with his mouth set, his thumb holding down a corner of paper the wind keeps trying. He has asked his question and the rest of it is yours. The bell at your shoulder sways once in the long swell and gives its small iron count, and somewhere on the canted deck of the *Vestry* a line slips on a cleat with a wooden report you cannot yet place."
+  },
+  {
+    "label": "minimax/the-salt-assizes-r4/scene-9",
+    "set": "minimax",
+    "run": "the-salt-assizes-r4",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate from where it lies and set it down on the Justicar's bench, the stone lip just wide enough to take it. The chalk figures catch what light there is -- the high-water mark above, the case entries below -- and for a moment they sit there as plain as any evidence ever laid out for a court. Ammon Brace's gaze follows the slate as you move it, but he does not speak, and his hands stay at his sides. The wind off the sea turns a fine spray across the chalk, and you watch the topmost numeral begin to soften at its edge, the salt eating at it in a way no hand will be able to undo."
+  },
+  {
+    "label": "minimax/the-salt-assizes-r4/scene-12",
+    "set": "minimax",
+    "run": "the-salt-assizes-r4",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "The slate is already in your hands. You shift your grip against its chalk-dusted edge and feel again how the morning's figure sits light on the surface -- too light, the strokes laid on without the heel of the thumb that marks your own work. The board is colder than it ought to be at this hour, as though whatever hand chalked it had held it against the water first. From the *Vestry*'s open hatch, the court's papers rustle faintly in a wind that has not reached you where you stand."
+  },
+  {
+    "label": "minimax/the-unrecorded-hour-r1/scene-9",
+    "set": "minimax",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the daybook down on the blotter, open to the page with the gap in it, and the sound it makes is small and final — board on leather, the way a hand makes when it has stopped negotiating. The ruled space between four and five stays where it is, patient as a held breath, and Halkett's gaze drops to it and then lifts again without settling. He does not move toward the door. He does not look away. Whatever he read that he was required to read, the rest of it is sitting in the room with him now, and he knows it, and the set of his shoulders says he has decided to outlast you rather than answer you.\n\nThe gas mantle hisses. Down the hall, another door closes — closer still, almost at the stairwell — and Halkett's eyes flick toward it and back to you in a single motion, the way a man checks a clock he will not admit he is watching."
+  },
+  {
+    "label": "minimax/the-unrecorded-hour-r1/scene-12",
+    "set": "minimax",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You lift the ledger off the blotter and the weight of it settles into your hand the way it always has — a quarter-bound board, the corners softened by eleven years of being set down and picked up again, the leather at the spine gone pale where your thumb rides it. Your own handwriting runs down the open page in the careful clerk's hand you have never quite liked, each line ruled and totalled in turn, and the gap between four and five sits there in the middle of it with the same margins, the same ink weight, the same straight ruling as every other hour on the page. You did not write it. The ledger disagrees.\n\nThe desk across from you holds nothing under the cleared wood, and the chair stands squared to it the way a thing is squared when the person who left meant to come back and didn't. You tuck the daybook under your arm, board against your ribs, and the gas mantle above you ticks once in its iron cradle as if acknowledging the transaction."
+  },
+  {
+    "label": "minimax/the-unrecorded-hour-r2/scene-9",
+    "set": "minimax",
+    "run": "the-unrecorded-hour-r2",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "The ruled lines fall back into shadow as you lower the daybook flat against the blotter, and the paper settles with a small exhale of dust. Your thumb leaves a faint smudge across the gap between four and five, the hour's neat edges now slightly blurred at the corners where the gaslight caught them. The book lies there the way a thing lies when it has been looked at and found no different from before — closed questions, as far as the ledger is concerned.\n\nRowe glances at it, then away, toward the filing press where a sheaf of half-stamped closures waits in the wire tray. His pen is already uncapped."
+  },
+  {
+    "label": "minimax/the-unrecorded-hour-r2/scene-12",
+    "set": "minimax",
+    "run": "the-unrecorded-hour-r2",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "The ledger comes up off the blotter heavier than its quarter-binding ought to allow, the pages fanning slightly at the fore-edge where the gap sits. Eleven years of your own hand on the right-hand pages, the totals tallied in red along the bottom, and in the middle of this afternoon's leaf a ruled rectangle as clean as a coffin measure — the space between four and five, ruled, totalled, and witnessed by no one you can recall being in the room. The leather is cool from the desk and smells of the same lamp-oil and floor-polish the rest of the ward wears. You close it gently against your forearm and feel the weight of it settle against your ribs, as though you have taken on something the room is glad to be rid of.\n\nAcross the office, Vance's pencil still hovers, but her eyes have found the ledger under your arm. Rowe, at the supply closet, has not turned, though his hand has gone very still on the door. Neither of them speaks, and the gas mantle hisses on, indifferent to what you are now carrying out of an hour you cannot find."
+  },
+  {
+    "label": "minimax/the-unrecorded-hour-r3/scene-9",
+    "set": "minimax",
+    "run": "the-unrecorded-hour-r3",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You lay the daybook flat on the desk and let go of it. The leather cover settles against the wood with a soft, wet sound — there is still damp in the binding from your coat sleeve, and it leaves a darker rectangle on the pale surface where the grain darkens beneath it. The ruled lines of the missing hour face up, four to five o'clock, as blank as it was when you first opened the book this morning. The gas mantle hisses faintly above you. Halkett Rowe is still standing in the doorway with his hand at his side, and he does not look at the book. He looks at you."
+  },
+  {
+    "label": "minimax/the-unrecorded-hour-r4/scene-9",
+    "set": "minimax",
+    "run": "the-unrecorded-hour-r4",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "The book settles onto the desk with the soft, flat sound of ruled paper against deal wood. You let your hand linger on the cover for a moment longer than necessary, feeling the slight warp the damp has put into the boards, then withdraw. The ruled gap between four and five sits open to the room like a mouth that has nothing to say. Across from you, Halkett has not moved; he watches your hands the way a man watches a drawer being opened, with the patience of someone who already knows what is inside it."
+  },
+  {
+    "label": "minimax/the-unrecorded-hour-r4/scene-12",
+    "set": "minimax",
+    "run": "the-unrecorded-hour-r4",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You lift the daybook from the desk with both hands -- it is heavier than the cloth binding and the dry paper should account for, eleven years of your own handwriting bowed slightly at the boards from the river humidity -- and the ruled gap between four and five sits in the middle of the open page like a clean tooth in an otherwise familiar mouth. The page does not flutter; the paper is cold under your fingers where the rain has crept along the sill, and the ruled line stays exactly as legible as every other line on the sheet. Across the room Halkett Rowe's hand tightens on the back of the empty chair, his hat still on, his eyes dropping from your face to the ledger the way an inspector's eyes drop to a signature that has not been witnessed, and he says nothing, and the gas mantle hisses, and the chair under his palm makes a small wooden sound against the floor."
+  },
+  {
+    "label": "smoke20/the-salt-assizes-r1/scene-9",
+    "set": "smoke20",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You set the Assize tide-slate down on the Justicar's bench, its chalked surface facing upward. The weight of it makes the wood groan slightly under the damp. Brace watches, his expression unreadable, but his fingers twitch as if resisting the urge to reach for it. The slate lies there, the false high-water figure stark against the grain, waiting for someone to act. The bell at your shoulder sways with the breeze, silent for now. The sea laps closer, indifferent."
+  },
+  {
+    "label": "smoke20/the-salt-assizes-r1/scene-12",
+    "set": "smoke20",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure—seventy minutes adrift—stares up at you, a silent accusation. The slate is yours to bear, as it always has been, but the hand that altered it is not your own. The Justicar’s gaze remains fixed on you, unblinking, as the wind tugs at the edges of your coat. The *Vestry*’s hatch creaks softly, as if the hulk itself is waiting. The bell at your shoulder stays mute. The tide does not."
+  },
+  {
+    "label": "smoke20/the-salt-assizes-r1/scene-18",
+    "set": "smoke20",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 18,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You set the Assize tide-slate down on the Justicar's bench, its chalked surface facing upward. The stone settles with a dull thud, its weight pressing into the weathered wood. Brace’s eyes flick toward it, but he says nothing—his gaze lingers on the altered high-water figure, the discrepancy now laid bare before him. The tide creeps closer, lapping at the edges of the court, as if testing the limits of the law’s patience. The slate stays where you left it, its false mark waiting to be read against the truth of the water."
+  },
+  {
+    "label": "smoke20/the-salt-assizes-r1/scene-23",
+    "set": "smoke20",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 23,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure—wrong, deliberate—stares up at you, the lines too light, too precise, as if someone mimicked your hand but not your grip. The slate is cool against your palms, its edges worn smooth by years of tides and trials. The Justicar’s gaze flicks toward you, but his attention lingers on the chained man, the wind tugging at his robes. The bell at your shoulder sways, silent for now. The *Vestry*’s hatch groans, and the sea laps closer, indifferent."
+  },
+  {
+    "label": "smoke20/the-unrecorded-hour-r1/scene-9",
+    "set": "smoke20",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the grain of the wood. The stamp beside it glints dully in the low gaslight, as if waiting for the next entry. The ruled gap between four and five o'clock remains, stark and unbroken, a silence in the middle of the page. The desk across from yours stays empty, the chair squared to it, the air in the room thick with the quiet hum of the Registry’s unseen machinery. Somewhere down the hallway, another door shuts—closer now."
+  },
+  {
+    "label": "smoke20/the-unrecorded-hour-r1/scene-12",
+    "set": "smoke20",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it is already in your hands—Odile Vance has already taken it. The quarter-bound ledger rests against your palm, its familiar weight slightly off, as if the missing hour has left it lighter than it should be. The ruled gap between four and five o'clock stares up at you, the ink dry, the lines crisp, as though it has always been there. The stamp beside it is cold. The cleared desk across from you remains untouched, the chair still squared to the wood, the pneumatic tube still empty. The supply closet door stays ajar, its darkness unchanged. The hallway door, now fully open, lets in the faintest draft, carrying the scent of damp stone and old paper."
+  },
+  {
+    "label": "smoke20/the-unrecorded-hour-r1/scene-18",
+    "set": "smoke20",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 18,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the grain of the wood. The stamp beside it glints dully under the low gaslight, and the ruled gap between four and five o'clock remains, as stark and unyielding as before. The desk across from you stays empty, the chair squared to it as if waiting for someone who will never return. The rain continues to streak past the window, and the pneumatic tube on the wall still gapes open, silent. The daybook lies where you left it, its absence from your hands now as certain as the missing hour within its pages."
+  },
+  {
+    "label": "smoke20/the-unrecorded-hour-r1/scene-23",
+    "set": "smoke20",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 23,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it's already in your hands—its familiar weight, the worn leather of the spine, the faint scent of ink and paper. The ruled gap between four and five o'clock stares up at you, as stark and undeniable as before. The gas mantle hisses, the rain streaks the window, and the empty desk across from you seems to lean in slightly, as if curious about what you'll do next. The supply closet door remains half-hidden, its silence heavy. Down the hallway, another door shuts, the sound sharp in the quiet."
+  },
+  {
+    "label": "main20/the-salt-assizes-r1/scene-9",
+    "set": "main20",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You set the Assize tide-slate down on the Justicar's bench, its chalked surface facing upward. The false high-water figure glares up at you, stark against the stone. Brace's gaze flicks to it, then back to your face, but he says nothing. The wind off the water stirs the edges of the court's papers in the *Vestry*, and the chain at the tide post clinks once, as if in judgment. The slate stays where you've placed it, waiting."
+  },
+  {
+    "label": "main20/the-salt-assizes-r1/scene-12",
+    "set": "main20",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure—false, in a hand that mimics yours—stares up at you, defiant. The wind tugs at the board, as if the sea itself seeks to pry it from your grip, but you hold firm. The chain at the tide post rattles again, a dry, metallic whisper, as though the tide itself is impatient. Brace’s gaze remains fixed on the slate, his expression unreadable beneath the shadow of his brow. The *Vestry*’s hatch creaks in the wind, its iron scent sharp in the salt air. The bell at your shoulder stays silent, but its presence is a weight against your back, a reminder of the hour slipping away."
+  },
+  {
+    "label": "main20/the-salt-assizes-r1/scene-18",
+    "set": "main20",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 18,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the Assize tide-slate from where it lies against the wall and set it down on the Justicar's bench, its chalked surface facing upward. The weight of it settles into the wood with a faint scrape, the high-water figure now plain for anyone to read. The tide creeps closer, lapping at the edges of the court, as if testing the patience of the stone. Brace’s gaze flicks to the slate, then back to you, his frustration easing into something sharper—calculation, perhaps, or the first flicker of understanding. The bell at your shoulder sways slightly in the damp wind, its silence heavy with the unspoken question of time."
+  },
+  {
+    "label": "main20/the-salt-assizes-r1/scene-23",
+    "set": "main20",
+    "run": "the-salt-assizes-r1",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 23,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure on its surface—now an hour and ten minutes adrift—seems to press against your fingers, as if the slate itself is uneasy. The chain at the tide post clinks again, a sharp, metallic note, and Justicar Brace’s gaze doesn’t waver from you. The *Vestry*’s hatch creaks, though there’s no wind to stir it. The slate is yours to carry, but the sea is already rewriting its verdict."
+  },
+  {
+    "label": "main20/the-salt-assizes-r2/scene-9",
+    "set": "main20",
+    "run": "the-salt-assizes-r2",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the Assize tide-slate and set it carefully on the Justicar's bench, its chalked surface facing upward. The stone is cold against your palms, its weight familiar. The figure for high water, altered by seventy minutes, now sits squarely before the empty seat of judgment, as if waiting for the Justicar to return and notice the discrepancy. The wind off the sea stirs the edges of your cloak, but the slate does not shift—it stays where you have placed it, a silent accusation in the open court."
+  },
+  {
+    "label": "main20/the-salt-assizes-r2/scene-12",
+    "set": "main20",
+    "run": "the-salt-assizes-r2",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure glares up at you, defiant in its falsehood, as the sea continues its patient advance toward the tide post. The bell at your shoulder sways again, as if urging you to action. The Justicar’s fingers still drum against the bench, his impatience a counterpoint to the methodical rise of the water."
+  },
+  {
+    "label": "main20/the-salt-assizes-r2/scene-18",
+    "set": "main20",
+    "run": "the-salt-assizes-r2",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 18,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You set the Assize tide-slate down on the Justicar's bench, its chalked surface facing upward. The weight of it leaves a faint impression in the damp wood, the high-water figure now staring up at the open sky. Brace watches, his expression unreadable, as the slate settles between the two of you. The sea continues its slow creep up the rock, indifferent to the court's proceedings."
+  },
+  {
+    "label": "main20/the-salt-assizes-r2/scene-23",
+    "set": "main20",
+    "run": "the-salt-assizes-r2",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 23,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure stares up at you, smudged and wrong, the slate cool against your palms. The bell at your shoulder sways again, though the air is still. The Justicar does not turn. The chain at the tide post clinks once more, a slow, deliberate sound."
+  },
+  {
+    "label": "main20/the-salt-assizes-r3/scene-9",
+    "set": "main20",
+    "run": "the-salt-assizes-r3",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate from the flagstones and set it squarely on the Justicar’s bench, the chalked figure facing seaward. The stone is cold under your fingers, its weight familiar, but the number still feels wrong—like a bell struck out of time. Brace’s eyes flick to the slate, then back to you, his jaw tight. The wind off the water carries the scent of salt and wet wood from the *Vestry*, and the chain at the tide post clinks once, restless. The court waits, the sea rising."
+  },
+  {
+    "label": "main20/the-salt-assizes-r3/scene-12",
+    "set": "main20",
+    "run": "the-salt-assizes-r3",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure—seventy minutes adrift from your own—stares up at you, the strokes too precise to be a forgery, yet too light to be yours. The slate’s edges are cool against your palms, the dust of the altered mark smudging slightly under your thumbs. The Justicar’s gaze remains fixed on the horizon, but his fingers tap once against the bench, as if counting the seconds you take to decide what to do next. The bell at your shoulder sways, silent, as the *Vestry* groans behind you."
+  },
+  {
+    "label": "main20/the-salt-assizes-r3/scene-18",
+    "set": "main20",
+    "run": "the-salt-assizes-r3",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 18,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You set the Assize tide-slate down on the Justicar’s bench, its chalked surface facing upward. The stone is cool and heavy, settling into the worn wood with a quiet finality. Brace’s gaze flicks toward it, but his expression doesn’t change—he’s already turned back to the sea, as if the slate’s presence there is no more remarkable than the gulls wheeling overhead. The wind carries the scent of salt and damp wood from the *Vestry*, and the chain at the tide post clinks once, softly, as the water laps higher."
+  },
+  {
+    "label": "main20/the-salt-assizes-r3/scene-23",
+    "set": "main20",
+    "run": "the-salt-assizes-r3",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 23,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The slate is cool against your palms, the chalked figure—still wrong by seventy minutes—staring up at you in that almost-familiar hand. The chain at the tide post rattles once, as if the chained man has shifted his weight, but the Justicar’s quill continues to scratch across his writ, unbothered. The sea does not pause."
+  },
+  {
+    "label": "main20/the-salt-assizes-r4/scene-9",
+    "set": "main20",
+    "run": "the-salt-assizes-r4",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate and set it carefully on the Justicar’s bench, the chalked figure facing upward. The stone is cold against your palms, the weight of it familiar. Brace’s eyes flick to the slate, then back to you, his expression unreadable. The tide-slate now rests where the Justicar will see it first when he turns his gaze from the sea. The wind tugs at the edges of your coat, and the chain at the tide post clinks softly, as if in approval or warning. The court’s papers in the *Vestry* remain undisturbed, but the slate’s presence on the bench is a silent challenge—whoever altered the time will have to answer for it now, in full view of the law."
+  },
+  {
+    "label": "main20/the-salt-assizes-r4/scene-12",
+    "set": "main20",
+    "run": "the-salt-assizes-r4",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its damp chalk still smudging slightly under your fingers. The slate is cool and heavy in your grip, the false figure staring up at you as if daring you to correct it. The bell at your shoulder gives a faint, restless chime, as though sensing the disruption in the court’s order. Justicar Brace’s gaze remains fixed on you, his expression unreadable, but the tension in the air thickens like the moment before a storm. The chain at the tide post clinks softly, the only other sound besides the slow, creeping advance of the tide."
+  },
+  {
+    "label": "main20/the-salt-assizes-r4/scene-18",
+    "set": "main20",
+    "run": "the-salt-assizes-r4",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 18,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the tide-slate from the flagstones and set it squarely on the Justicar's bench, its chalked surface facing upward. The slate's weight settles against the wood with a dull thud, the erased high-water figure now level with Brace's line of sight. The wind tugs at the edges of the court, but the slate stays put, its rough surface catching the light. Brace's gaze flicks toward it, his expression unreadable, though his fingers tap once against the bench as if counting the absence of the mark. The bell at your shoulder sways slightly, its rope brushing your sleeve."
+  },
+  {
+    "label": "main20/the-salt-assizes-r4/scene-23",
+    "set": "main20",
+    "run": "the-salt-assizes-r4",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 23,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure stares up at you, a lie in your own script, and the slate’s edge is cool against your palm. The bell at your shoulder gives a faint, discordant hum, as if the air itself has thickened. Justicar Brace does not turn, but his fingers tap once against the bench—impatient, or perhaps counting the seconds until the hearing that no longer exists on the slate. The *Vestry*’s hatch creaks again, and the tide laps closer, indifferent to the fraud."
+  },
+  {
+    "label": "main20/the-salt-assizes-r5/scene-9",
+    "set": "main20",
+    "run": "the-salt-assizes-r5",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate and set it carefully on the Justicar's bench, its chalked surface facing upward. The false high-water figure glares up at you, stark against the stone. Brace watches, his expression unreadable, but the wind tugs at the edges of his coat as if impatient. The tide laps closer, indifferent to the court's proceedings. The slate stays where you placed it, its lie now resting between you and the sea."
+  },
+  {
+    "label": "main20/the-salt-assizes-r5/scene-12",
+    "set": "main20",
+    "run": "the-salt-assizes-r5",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its damp chalked figure smudging slightly against your palm. The slate is cool and heavy, its weight familiar in your grip. The chain at the tide post clinks again, restless, as if sensing the disruption in the court's order. Justicar Brace's gaze flicks from the empty space where the slate once stood to your hands, his expression unreadable. The wind tugs at the *Vestry*'s hatch, and the bell at your shoulder sways, silent but insistent. The sea does not wait."
+  },
+  {
+    "label": "main20/the-salt-assizes-r5/scene-18",
+    "set": "main20",
+    "run": "the-salt-assizes-r5",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 18,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the tide-slate from where it leans against the wall and set it carefully on the Justicar's bench, its chalked surface facing upward. The false high-water figure, half-smudged by some hasty hand, now sits directly before Brace, though he makes no move to read it yet. The slate’s weight dimples the wood beneath it, and a thin trickle of seawater seeps between the planks, inching toward the chalked names of the day’s cases. The bell at your shoulder sways slightly in the damp wind, as if counting down in silence."
+  },
+  {
+    "label": "main20/the-salt-assizes-r5/scene-23",
+    "set": "main20",
+    "run": "the-salt-assizes-r5",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 23,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the tide-slate, its weight familiar in your hands. The chalked figure stares up at you, smudged but still legible—a lie in your own script. The Justicar’s gaze remains fixed on you, his silence a weight as heavy as the slate. The chain at the tide post rattles again, a restless sound, as if the chained man knows the water’s time is wrong. The Vestry’s hatch creaks, the sea nudging it higher, impatient."
+  },
+  {
+    "label": "main20/the-salt-assizes-r6/scene-9",
+    "set": "main20",
+    "run": "the-salt-assizes-r6",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the Assize tide-slate from where it rests against the wall and set it carefully on the Justicar's bench, its chalked surface facing upward. The false high-water mark glares up at you, still uncorrected. Brace watches the movement, his jaw tight, but says nothing. The slate lies there, heavy with implication, as the wind carries the scent of salt and the distant murmur of the tide creeping closer. The court waits, the bell at your shoulder silent for now."
+  },
+  {
+    "label": "main20/the-salt-assizes-r6/scene-12",
+    "set": "main20",
+    "run": "the-salt-assizes-r6",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure stares up at you, defiant in its falsehood, the strokes too light, too hurried—your slant, but not your hand. The wind tugs at the slate, as if the sea itself is trying to pry it from your grip. Justicar Brace’s gaze flicks toward you, his jaw tight, but he says nothing. The chain at the tide post clinks again, a sharp reminder that the water does not wait for chalk or courts."
+  },
+  {
+    "label": "main20/the-salt-assizes-r6/scene-18",
+    "set": "main20",
+    "run": "the-salt-assizes-r6",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 18,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You set the Assize tide-slate down on the Justicar's bench, its chalked surface smudged but still legible. The stone is cool against the wood, its weight settled. Brace watches, his expression unreadable, as the slate now rests where he might reach for it—or where the next high water, if unchecked, might claim it. The wind tugs at the edges of your coat, and the chain at the tide post clinks faintly, as if in reminder."
+  },
+  {
+    "label": "main20/the-salt-assizes-r6/scene-23",
+    "set": "main20",
+    "run": "the-salt-assizes-r6",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 23,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure stares up at you, wrong by seventy minutes, the smudge of a thumb still visible in the dust. The slate does not change, does not shift—only the sea does that, and the sea is patient. The wind tugs at your coat, as if urging you to look elsewhere, but the slate remains, stubborn in its error."
+  },
+  {
+    "label": "main20/the-salt-assizes-r7/scene-9",
+    "set": "main20",
+    "run": "the-salt-assizes-r7",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the Assize tide-slate and set it carefully on the Justicar’s bench, its chalked surface now facing upward. The weight of it settles against the wood with a faint scrape, the numbers still smudged where your thumb pressed. The slate lies there, inert, its false time now in plain view of the court—though the court, for now, is only you and Brace and the wind off the water. The bell at your shoulder sways slightly, as if sensing the shift in balance. The sea, indifferent, continues its slow rise."
+  },
+  {
+    "label": "main20/the-salt-assizes-r7/scene-12",
+    "set": "main20",
+    "run": "the-salt-assizes-r7",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure—false, deliberate—stares up at you, a lie carved in your own slant but not your own hand. The slate does not tremble, but your grip does, just slightly, as the chain at the tide post rattles again, as if the sea itself is impatient with the deception. The Justicar’s back remains turned, his silence a verdict not yet spoken. The *Vestry*’s hatch creaks, and the wind carries the scent of salt and old wood, as if the ship, too, knows the slate’s betrayal."
+  },
+  {
+    "label": "main20/the-salt-assizes-r7/scene-18",
+    "set": "main20",
+    "run": "the-salt-assizes-r7",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 18,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You set the Assize tide-slate down on the Justicar's bench, its chalked surface facing upward. The damp air clings to the stone, and the rising tide laps closer to the edges of the court, its rhythm steady and indifferent. Brace watches the slate for a moment, his expression unreadable, before turning his gaze back to the horizon. The *Vestry*'s hulk groans softly as the water shifts beneath it, and the chain at the tide post clinks against the stone, a quiet reminder of the time slipping away."
+  },
+  {
+    "label": "main20/the-salt-assizes-r7/scene-23",
+    "set": "main20",
+    "run": "the-salt-assizes-r7",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 23,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure—now erased—still lingers in the grooves of the stone, a ghost of the truth you once wrote there. The bell at your shoulder gives a single, restless chime, as if even it senses the wrongness. Justicar Brace’s gaze remains fixed on the horizon, his silence as heavy as the missing number. The sea laps closer, indifferent."
+  },
+  {
+    "label": "main20/the-salt-assizes-r8/scene-9",
+    "set": "main20",
+    "run": "the-salt-assizes-r8",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 9,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You lift the slate with both hands, its weight familiar, and set it carefully on the Justicar's bench. The chalked figure—seventy minutes adrift—stares upward at the open sky, as if waiting for the sea to answer. The bench's stone is cold and slightly damp, the slate steady upon it. Brace's gaze flicks to the movement, but he says nothing, his jaw set. The bell at your shoulder sways slightly in the wind, silent for now. The tide post's chain clinks once, a sound like a sigh."
+  },
+  {
+    "label": "main20/the-salt-assizes-r8/scene-12",
+    "set": "main20",
+    "run": "the-salt-assizes-r8",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 12,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight steady in your hands. The chalked figure—false, familiar—stares up at you, the damp stroke of the impostor’s hand still glistening faintly in the salt air. The slate’s edges press into your palms, a cold reminder that the law’s mark has been tampered with, and the sea’s patience is not infinite. Justicar Brace watches, unmoving, as the water laps closer to the court’s flagstones. The bell at your shoulder stays silent. There is no time to hesitate."
+  },
+  {
+    "label": "main20/the-salt-assizes-r8/scene-18",
+    "set": "main20",
+    "run": "the-salt-assizes-r8",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 18,
+    "typed": "put the Assize tide-slate down on the bench",
+    "action": "drop",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "held by Coraith Vell",
+    "after": "lying in The Causeway Court",
+    "text": "You set the Assize tide-slate down on the Justicar's bench, its chalked surface facing upward. The stone settles with a dull thud, its weight pressing into the weathered wood. Brace’s gaze flicks toward it, but he says nothing. The slate lies there, its falsified high-water mark now in plain view for anyone in the court to see—though no one else seems to notice the discrepancy yet. The sea continues its slow, relentless rise beyond the tide post, where Neb Halloran’s chain glints in the damp air."
+  },
+  {
+    "label": "main20/the-salt-assizes-r8/scene-23",
+    "set": "main20",
+    "run": "the-salt-assizes-r8",
+    "story": "The Salt Assizes",
+    "room": "The Causeway Court",
+    "scene_id": 23,
+    "typed": "pick up the Assize tide-slate",
+    "action": "take",
+    "item": "Assize tide-slate",
+    "protagonist": "Coraith Vell",
+    "offered": [
+      "Assize tide-slate"
+    ],
+    "before": "lying in The Causeway Court",
+    "after": "held by Coraith Vell",
+    "text": "You already hold the Assize tide-slate, its weight familiar in your hands. The chalked figure—false, in a hand like yours but not yours—stares up at you, unyielding. The slate is cool against your palms, its edges worn smooth by years of tides and trials. The bell at your shoulder sways slightly, as if reminding you that time, like the water, does not wait."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r1/scene-9",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning neatly with the edge of the blotter. The stamp lies beside it, its weight pressing a faint indentation into the paper. The ruled gap between four and five o'clock remains, a silent absence in the otherwise meticulous record. Halkett watches the motion, his expression unreadable, though his fingers still twitch at his side as if resisting the urge to reach for something—perhaps the daybook, perhaps the stamp, perhaps neither. The gas mantle hisses above you, casting long shadows across the cleared desk opposite. The rain continues its sideways march past the window, and the hallway beyond the door remains still, save for the faint echo of footsteps somewhere in the distance."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r1/scene-12",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it is already in your hands—its familiar weight, the worn leather of the spine, the ruled gap between four and five o'clock staring up at you. The stamp beside it glints dully under the hissing gaslight. The empty desk across from you remains unchanged, the chair still slightly askew, as if someone had just stood from it. The rain continues to streak the cold window, and the pneumatic tube exhales another slow hiss. The daybook is yours, and it is already with you."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r1/scene-18",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 18,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the wood. The pages settle with a soft thud, the ruled gap between four and five o'clock still staring up at you, unyielding. The gas mantle hisses overhead, casting long shadows across the empty desk opposite. The rain continues its sideways march past the cold window glass, and the narrow door of the supply closet remains half-hidden by the coat rail, its secrets untouched for now. The hallway beyond the ajar door is silent, save for the distant echo of a closing door."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r1/scene-23",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r1",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 23,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "The Ward Office 12 daybook is already in your hands—its familiar weight settled against your palm, the leather of the spine worn smooth from years of use. The ruled gap between four and five o'clock glares up at you, unyielding, as if daring you to explain it. The chair at the empty desk creaks faintly, though no one sits in it. Vance’s pen scratches once, twice, then stills, as if she, too, has noticed the absence of an explanation. The daybook does not resist you, but it does not offer answers either. It simply is."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r2/scene-9",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r2",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the blotter. The pages settle with a soft thud, the ruled gap between four and five o'clock still staring up at you, unyielding. The gas mantle hisses above, casting a flickering glow over the empty desk across from yours. The rain continues its sideways march past the cold window glass, and the narrow door of the supply closet remains half-hidden by the coat rail, its absence of a lock as conspicuous as ever. Halkett Rowe watches you, his expression unreadable, as the silence stretches between you both."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r2/scene-12",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r2",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it is already in your hands—Odile Vance has already taken it. The quarter-bound ledger rests solidly in your grip, its familiar weight slightly unbalanced by the absence of those sixty missing minutes. The ruled gap between four and five o'clock stares up at you, as crisp and official as any other entry, though you know you did not write it. The gaslight flickers, casting long shadows across the cleared desk opposite, the squared chair, the open pneumatic tube. The rain still slants past the cold window, and the supply closet door remains ajar, dark and unmarked. Somewhere down the hallway, another door closes, the sound sharp in the quiet."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r2/scene-18",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r2",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 18,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the wood. The pages settle with a soft rustle, the gap between four and five o'clock still staring up at you, unbroken. The gas mantle hisses overhead, casting long shadows across the cleared desk opposite. Vance watches you, silent, his fingers twitching once before stilling. The supply closet door remains ajar, the folded apron and private index hidden within. The rain continues its sideways march past the cold window glass."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r2/scene-23",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r2",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 23,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it is already in your hands—Odile Vance has lifted it from the desk, the leather spine warm from her grip. The pages whisper as you take it, the ruled gap between four and five o'clock staring up at you, as stark and deliberate as the empty desk across the room. The weight of it is familiar, yet wrong, like a memory that no longer fits. Vance watches you, her pen hovering, her expression unreadable. The gas mantle hisses, and the rain outside the window streaks the glass like smudged ink."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r3/scene-9",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r3",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its pages settling with a soft rustle. The stamp beside it glints dully under the low gaslight, the ruled gap between four and five o'clock still staring up at you, unyielding. The desk across remains cleared, the chair squared, as if waiting for someone who will never return. The pneumatic tube gapes empty, the hallway door still ajar, and the supply closet door lingers half-hidden in the dimness. Halkett Rowe watches you, his expression unreadable, as the rain continues to streak past the cold window."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r3/scene-12",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r3",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it is already in your hands—Odile Vance has already claimed it. The quarter-bound ledger rests against your forearm, its familiar weight slightly unbalanced by the absence of those sixty missing minutes. The ruled gap between four and five o'clock stares up at you, as neat and deliberate as any other entry, though you know you did not write it. The stamp beside it remains untouched, its ink dry. The chair across from you has shifted again, as if someone else in the room had brushed past it, but the office is empty save for you and Vance, and she is still watching the hallway with that same unnerving stillness. The gas mantle hisses, the rain streaks the window, and the daybook’s pages whisper faintly as you adjust your grip."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r3/scene-18",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r3",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 18,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the wood as if it had never left. The ruled gap between four and five o'clock stares up at you, unchanging. The cleared desk across from yours remains just as empty, the chair still squared away like a rebuke. Halkett’s silence lingers in the air, thick as the scent of damp wool from the coat rail. The supply closet door, slightly ajar, seems to watch you."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r3/scene-23",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r3",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 23,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You already hold the Ward Office 12 daybook, its weight familiar in your hands. The ruled gap between four and five o'clock stares up at you, the ink as crisp as the moment it was set, though you have no memory of writing it. The cleared desk across from you seems to lean in slightly, as if the absence of its occupant has made the room itself unbalanced. The pneumatic tube exhales a faint, stale breath of air, and the supply closet door remains shut, its silence louder than the rain against the window."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r4/scene-9",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r4",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, the stamp beside it clinking softly against the wood. The ruled gap between four and five o'clock remains, stark and unyielding, as the daybook lies open, waiting. The gas mantle hisses above, casting long shadows across the cleared desk opposite yours. The rain continues to streak past the cold window, and the distant sound of a door closing echoes faintly from the hallway. Halkett Rowe watches you, his expression unreadable, the tension between you both lingering in the air."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r4/scene-12",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r4",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but Odile Vance has already lifted it from the desk, her fingers curled around the leather spine. The ledger rests against her forearm, the ruled gap between four and five o'clock still glaringly empty. The stamp lies beside the empty space where the book was, cold and unused. The Inspectorate’s boots still echo down the hallway, no closer than before, and the supply closet door remains unmarked, unlatched. The air smells of damp wool and ink."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r4/scene-18",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r4",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 18,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the wood. The ruled gap between four and five o'clock stares up at you, unchanged. The gas mantle hisses, and the rain continues to streak the window in cold, sideways lines. The desk across from yours remains empty, the chair squared to it as if waiting for someone who will not return. The narrow door of the supply closet stays half-hidden by the coat rail, its secrets still tucked away. Somewhere down the hallway, another door closes, the sound echoing faintly through the Registry's east ring."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r4/scene-23",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r4",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 23,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You already hold the Ward Office 12 daybook, its weight familiar in your hands. The ruled gap between four and five o'clock stares up at you, unyielding. The pen you set down earlier lies beside the inkwell, its nib dark with unused ink. The scent of lamp oil lingers, faint but insistent, as if the air itself is holding its breath. Vance does not look up from their ledger."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r5/scene-9",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r5",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the wood. The stamp beside it glints dully under the low gaslight, and the ruled gap between four and five o'clock remains as stark as ever. The desk across from you stays empty, the chair squared to it, as if waiting for someone who will never return. The rain continues to streak past the window, and the distant sound of a door closing echoes faintly from the hallway."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r5/scene-12",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r5",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it is already in your hands—Odile Vance has already lifted it from the desk. The leather spine is warm from her grip, the pages slightly rough under your fingertips. The ruled gap between four and five o'clock seems to pulse faintly, as if aware of your attention. The empty desk across from you remains unchanged, the chair still squared, the pneumatic tube still hissing its hollow breath. Vance’s pen hovers over her ledger, but her eyes flick toward you, sharp and assessing, as if waiting to see what you will do next. The rain streaks the window, and the hallway beyond the door feels heavier, as if the building itself is holding its breath."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r5/scene-18",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r5",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 18,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the wood as if it had never left. The ruled gap between four and five o'clock remains, a silent accusation in the middle of the page. The gas mantle hisses above you, casting long shadows across the cleared desk opposite, where the absence of your colleague feels heavier now that the daybook is back in its place. The rain still slants past the window, and the narrow door of the supply closet stays shut, its secrets—if any—undisturbed for the moment. The hallway beyond the ajar door is quiet, but the sense of something just closed, just finished, lingers in the air."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r5/scene-23",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r5",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 23,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it is already in your hands—its familiar weight, the worn leather of the spine, the faint scent of ink and paper. The ruled gap between four and five o'clock stares up at you, unyielding, as if it has always been there. The stamp beside it remains dry, untouched. The desk across from you is still bare, the chair squared to it like a silent accusation. The daybook does not resist, but neither does it explain. It is simply yours to hold, and the absence in its pages feels heavier than the book itself."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r6/scene-9",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r6",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on your desk, the stamp resting beside it like a silent accusation. The ruled gap between four and five o'clock stares up at you, unyielding. The gas mantle hisses, casting long shadows across the cleared desk opposite, the empty chair, the open pneumatic tube. The rain streaks the cold window glass, and the distant sound of a door closing echoes again from the hallway, closer now. Halkett Rowe watches you, his expression unreadable, his fingers still tight on the chain of his seal."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r6/scene-12",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r6",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but your fingers close on empty air—Odile Vance has already taken it. The ledger rests in her hands, its familiar weight slightly off-balance now, the ruled gap between four and five o'clock staring up at you like a missing tooth. The stamp lies abandoned on your desk, its duty fulfilled or forgotten. The supply closet door remains ajar, the hallway beyond still breathing its slow, watchful draft. Vance does not look up from the ledger, her thumb tracing the edge of the gap as if testing its authenticity."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r6/scene-18",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r6",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 18,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the blotter. The ruled gap between four and five o'clock stares up at you, as blank and official as before. The gas mantle hisses, and the rain continues its sideways march past the cold window glass. Odile Vance watches from by the filing press, her expression unreadable. The supply closet door remains closed, its secrets—if any—still hidden. The hallway beyond the ajar door is quiet, save for the distant echo of footsteps."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r6/scene-23",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r6",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 23,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it is already in your hands—its familiar weight settled against your palm, the leather of the quarter-binding warm from your grip. The ruled gap between four and five o'clock is still there, stark and unaccounted for, the ink of the surrounding entries sharp as if freshly written. The desk opposite remains empty, the chair squared away, and the pneumatic tube’s carrier sits untouched, its brass cap catching the dim light. The air hums with the quiet hiss of the gas mantle, and the rain outside the window streaks the glass in slow, deliberate lines."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r7/scene-9",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r7",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the blotter. The stamp beside it glints dully in the low gaslight, as if acknowledging the return. The ruled gap between four and five o'clock remains, unaltered, a silent absence in the middle of the page. The desk across from yours stays empty, the chair still squared to it, as though waiting for someone who will not come. The rain continues its sideways path past the window, and the pneumatic tube gapes open, empty. Halkett Rowe shifts his weight, his jaw tight, but says nothing. The daybook lies where you left it, its presence as ordinary and as unsettling as the missing hour it records."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r7/scene-12",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r7",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but your fingers find only the cool wood of the desk. The ledger is already gone—Odile Vance holds it, her grip firm on the quarter-bound spine, the ruled gap between four and five o'clock still glaring up at you from the page. The gas mantle flickers, casting long shadows across the empty chair opposite, as if the absence of your colleague has deepened in the seconds since you last looked. The rain streaks the window, and the footsteps in the hallway remain just out of sight, no closer, no farther. The daybook is already in motion, and the office seems to hold its breath."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r7/scene-18",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r7",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 18,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the wood as if it had never left. The stamp beside it catches the dim gaslight, its metal surface dull and unremarkable. The ruled gap between four and five o'clock remains, a silent testament to the hour that is no longer recorded. The desk across from yours stays empty, the chair squared to it, and the pneumatic tube continues to gape open on the wall. The rain outside the window persists, the glass cold to the touch even from a distance. The supply closet door remains half-hidden by the coat rail, its absence of inventory or lock as conspicuous as ever. Down the hallway, another door closes, the sound echoing faintly in the growing dark."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r7/scene-23",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r7",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 23,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You already hold the Ward Office 12 daybook, its weight familiar in your hands. The ruled gap between four and five o'clock stares up at you, the ink as dry and precise as any other entry. The desk across from yours remains empty, the chair slightly askew as if someone had just stood from it. The supply closet door stays unmarked, unlatched. The hallway beyond the ajar door is quiet, the footsteps gone. The daybook is yours to carry, its absence from the desk now as conspicuous as the missing hour."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r8/scene-9",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r8",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 9,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the grain of the wood. The stamp beside it glints dully under the low gaslight, and the ruled gap between four and five o'clock remains, stubborn and unremarkable. The empty desk across from you seems to watch, its cleared surface catching the dim light like a silent accusation. The rain outside taps against the window, and the hallway beyond the door stays quiet, save for the distant, echoing click of a closing door."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r8/scene-12",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r8",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 12,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "The Ward Office 12 daybook is already in your hands, its weight familiar, its leather cover worn smooth by years of use. The ruled gap between four and five o'clock stares up at you, as crisp and deliberate as any other entry, though you know you did not make it. The gas mantle hisses, the rain streaks the cold window, and the empty desk across from you seems to wait, patient and unoccupied. The daybook is yours to carry, its mystery still unsolved."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r8/scene-18",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r8",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 18,
+    "typed": "put the Ward Office 12 daybook down on the desk",
+    "action": "drop",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "held by Odile Vance",
+    "after": "lying in Ward Office 12",
+    "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the wood. The pages settle with a soft rustle, the ruled gap between four and five o'clock still staring up at you, unaltered. The stamp beside it glints dully under the low gaslight. The desk across remains empty, the chair squared away as if waiting for someone who will never return. The pneumatic tube continues to gape, silent and expectant. The supply closet door, now slightly ajar, reveals only darkness beyond."
+  },
+  {
+    "label": "main20/the-unrecorded-hour-r8/scene-23",
+    "set": "main20",
+    "run": "the-unrecorded-hour-r8",
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "scene_id": 23,
+    "typed": "pick up the Ward Office 12 daybook",
+    "action": "take",
+    "item": "Ward Office 12 daybook",
+    "protagonist": "Odile Vance",
+    "offered": [
+      "Ward Office 12 daybook"
+    ],
+    "before": "lying in Ward Office 12",
+    "after": "held by Odile Vance",
+    "text": "You reach for the Ward Office 12 daybook, but it is no longer there—Odile Vance already holds it, the quarter-bound ledger cradled in their arms, the ruled gap between four and five o'clock staring up at you like a missing tooth. The weight of it seems to pull at their shoulders, though the pages do not stir. The pen on your desk, still damp at the nib, rolls slightly as if nudged by a breath that isn’t yours. The supply closet door creaks another fraction open, and the empty desk across from you seems to exhale, its wood grain darkening under the dimming gaslight. The footsteps in the hallway pause, then resume, slower now, as if whoever is coming has noticed the absence of something—or someone."
+  }
+]

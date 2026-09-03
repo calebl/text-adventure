@@ -201,13 +201,15 @@ class Story::ScoreboardTest < ActiveSupport::TestCase
 
   # --- what it is and is not ------------------------------------------------
 
-  test "the two corpora are reported separately and never pooled" do
+  test "the three corpora are reported separately and never pooled" do
     scene_at("The lamp gutters.")
 
     boards = Story::Scoreboard.all
 
-    assert_equal %w[database corpus], boards.map(&:name)
+    assert_equal %w[database corpus transitions], boards.map(&:name)
     assert(boards.all? { |b| b.note.present? })
+    assert_equal boards.map(&:scanned).uniq.size, boards.size,
+                 "each corpus is its own denominator; nothing here sums them"
   end
 
   test "scoring reads records and never a model" do

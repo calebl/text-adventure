@@ -307,6 +307,58 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_equal 4, agent.prompts.count
   end
 
+  # THE ITEM REGISTRY, END TO END AND THROUGH THE CLASSIFIER. Before it, a room
+  # the world wrote for itself was always empty, so `take` and `drop` could only
+  # be walked in rooms a person had hand-written into a seed file. The registry
+  # writes the rows at realization; `Item.lying_in` is the closed set the
+  # classifier already resolves against, so nothing downstream changed and the
+  # generated thing is takeable on the very next turn.
+  test "walking into a stub furnishes it, and what it furnishes can be taken and dropped" do
+    furnished = DETAIL.merge(
+      "items" => [ { "name" => "gas key", "description" => "A key for the hallway's gas taps, left in the bracket." } ]
+    )
+
+    report, = interpret("go out into the hallway",
+                        CLASSIFY.call("move", "The Long Hallway"),
+                        furnished, { "exits" => [] }, ARRIVAL)
+    assert_includes report.change, "written for the first time"
+
+    key = Item.lying_in(@hallway).sole
+    assert_equal "gas key", key.name
+
+    # The read-out shows it, out of the same closed set the classifier reads.
+    assert_includes report.state.to_s, "gas key"
+
+    report, agent = interpret("pick up the gas key", CLASSIFY.call("take", "gas key"))
+    assert_equal "take -> gas key", report.understood
+    assert_includes report.change, "took: gas key"
+    assert_equal @vance, key.reload.character
+    assert_nil key.location
+    assert_equal 1, agent.prompts.count
+
+    report, = interpret("put the gas key down", CLASSIFY.call("drop", "gas key"))
+    assert_includes report.change, "dropped: gas key"
+    assert_equal @hallway, key.reload.location
+    assert_nil key.character
+  end
+
+  # The offline mode reads the same records, so a generated room's furniture is
+  # takeable there too -- and NO_MODEL is the mode the engine-direct tests run
+  # in, so this is the path a scripted sweep walks.
+  test "the offline mode takes and drops a generated thing like any other" do
+    key = Item::Registry.new(@office).admit!(
+      [ { "name" => "gas key", "description" => "A key for the gas taps." } ]
+    ).sole
+
+    report = play("take gas key")
+    assert_change report, "took: gas key"
+    assert_equal @vance, key.reload.character
+
+    report = play("drop gas key")
+    assert_change report, "dropped: gas key"
+    assert_equal @office, key.reload.location
+  end
+
   test "walking back into a realized room generates nothing but the arrival" do
     _report, agent = interpret("into the closet", CLASSIFY.call("move", "The Supply Closet"), ARRIVAL)
 
@@ -315,15 +367,19 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_equal "A mysterious place filled with wonder and potential adventure", @closet.reload.description
   end
 
-  # The two stamps `Playthrough::Turn#play` makes on every branch, so a turn
-  # walked here reads afterwards like one walked in the browser.
-  test "an arrival records what was typed and joins the turn log" do
+  # The stamps `Playthrough::Turn#play` makes on every branch, so a turn walked
+  # here reads afterwards like one walked in the browser -- and a sweep cannot
+  # tell them apart. `move` is the only branch in this mode that writes a
+  # `Scene` at all, so this is the whole of that obligation.
+  test "an arrival records what was typed, what it did, and joins the turn log" do
     before = @playthrough.current_scene
 
     interpret("into the closet", CLASSIFY.call("move", "The Supply Closet"), ARRIVAL)
 
     scene = @playthrough.reload.current_scene
     assert_equal "into the closet", scene.typed
+    assert_equal "move", scene.resolved_action
+    assert_equal @closet, scene.acted_on
     assert_equal before, scene.previous_scene
     assert_includes @playthrough.scene_chain, scene
   end

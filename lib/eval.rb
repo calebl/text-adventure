@@ -68,6 +68,7 @@ module Eval
     app/models/story/scoreboard.rb
     app/models/story/scoreboard/baseline.rb
     app/models/story/scoreboard/corpus.rb
+    app/models/story/scoreboard/transitions.rb
     lib/eval.rb
     lib/eval/board.rb
     lib/eval/comparison.rb
@@ -84,6 +85,7 @@ module Eval
     test/fixtures/files/eval_corpus.json
     test/fixtures/files/narration_corpus.json
     test/fixtures/files/whole_run_corpus.json
+    test/fixtures/files/transition_corpus.json
   ].freeze
 
   # CHECKS A SCRIPTED RUN CANNOT ANSWER, AND WHY -- reported unavailable rather
@@ -128,6 +130,14 @@ module Eval
   # earned. That is precisely what "unavailable, never zero" exists to stop.
   # It stays live on `rake game:score`'s database corpus, where somebody really
   # typed the commands, which is the only place the number means anything.
+  # AND THE TWO TRANSITION CHECKS ARE DELIBERATELY NOT HERE, which is worth
+  # saying next to the two that are. `take_denied` and `pickup_invented` read a
+  # narration against a state change the APP made -- the row moved before any
+  # prose existed -- so what they measure is what the narrator did with a fact
+  # it was handed, and a script's fixed line has no bearing on that. They are
+  # the first checks on this board that are fully available to a sweep AND fully
+  # available offline, which is what makes the take/drop prose fix judgeable by
+  # `rake eval:compare` at all.
   UNAVAILABLE_TO_A_SCRIPT = {
     reached_for_nothing: "a script cannot be misled by prose, so a drift row here measures the script, not the game",
     named_more_than_one: "a script types a fixed line, so what it named measures the script's phrasing, not the game"
