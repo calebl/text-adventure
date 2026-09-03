@@ -139,7 +139,12 @@ is the protocol manufacturing a result**. Run it whenever the rule changes.
    wandering off on its own. What the extra turns did buy outright is the
    held-out world, which at eleven turns never fired the check at all.
 2. **More repetitions.** Linear in money and the only thing that improves the
-   test's resolution.
+   test's resolution. **Prompt caching does not make them cheaper and was
+   measured, not assumed**: OpenRouter caches automatically for the pinned model,
+   but the minimum cacheable prompt is 2,048 tokens and this app's calls average
+   615, so eighteen real prompts replayed back to back read zero cached tokens.
+   Even a perfect cache would only take a $0.47 sweep to $0.36. See the header of
+   `Eval::Cost` and `script/cache_probe.rb`.
 3. **Pinning the model**, which the runner already does — a turn answered after
    a rotation is a different measurement.
 

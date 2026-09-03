@@ -13,6 +13,34 @@
 # 132 turns). It is stated per turn so a sweep of any shape can be priced, and
 # it is deliberately the HIGHEST of the four arms -- an estimate that comes in
 # under is a nasty surprise and an estimate that comes in over is not.
+#
+# PROMPT CACHING WAS MEASURED AND BUYS US NOTHING, which is worth writing down
+# because it is the obvious lever and it is shut. OpenRouter does cache for
+# `mistralai/mistral-medium-3.1` automatically -- no `cache_control` breakpoints
+# to send, and `ruby_llm` already reads `prompt_tokens_details.cached_tokens`
+# off the response -- but there is a MINIMUM CACHEABLE PROMPT of 2,048 tokens
+# and every prompt this app sends is under it:
+#
+#   one long passage of distinct prose,     1,941 tokens ->     0 cached
+#     sent twice a few seconds apart        2,418 tokens -> 2,304 cached
+#   real prompts lifted out of a finished   745..1,309 tokens
+#     run: 3 agents x 3 repeats, 18 calls              ->     0 cached, all 18
+#
+# Cached blocks are 256 tokens and a write costs nothing extra. The sweep of
+# 2026-09-03 averaged 615 input tokens over 1,112 calls, so nothing qualifies.
+# And the ceiling is small even if it did: the shared prefixes between
+# consecutive calls of one agent are 44.8% of a 24-run sweep's input (the
+# classifier's prompt is 82% identical call to call), which at $0.04 against
+# $0.40 would take a $0.4712 bill to $0.3608. Reproduce the measurement with
+# `script/cache_probe.rb`; it spends about a cent.
+#
+# ONE CONSEQUENCE, IF PROMPTS EVER GROW PAST 2,048 TOKENS: `ruby_llm` reports
+# `input_tokens` as `prompt_tokens - cached - cache_write`, and the `messages`
+# table has no column for the cached half. A cached call therefore writes a
+# SMALLER input count, and `#actual` below would under-report the bill, because
+# cached tokens are cheaper and not free. Nothing caches today, so nothing is
+# wrong today -- but a prompt that grows past the floor makes the spend figure
+# quietly optimistic rather than loudly broken.
 module Eval::Cost
   extend self
 
