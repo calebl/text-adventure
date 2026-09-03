@@ -21,6 +21,23 @@
 # to claim is about the same size. That is the finding this module exists to
 # report, and it is why nothing here reports a delta without one.
 #
+# AND AGAIN AT THE SHAPE THIS PIPELINE ACTUALLY SHIPS -- twenty turns, eight
+# repetitions, one pinned model, three worlds, nothing changed between any of
+# them. The baseline of 2026-09-03 raises these per-run counts:
+#
+#     The Unrecorded Hour     10, 10, 11, 11, 12, 14, 12, 11   rate 0.500..0.700
+#     The Lunar Cartographer   6,  9, 10, 11, 11,  1,  7, 13   rate 0.050..0.650
+#     The Salt Assizes         0,  4,  0,  2,  0,  3,  6,  0   rate 0.000..0.300
+#
+# MORE TURNS DID NOT RELIABLY TIGHTEN THE BAND, which is worth knowing before
+# reaching for that lever. Going from eleven turns to twenty more than halved
+# The Unrecorded Hour's spread -- 0.455 wide to 0.200 -- and WIDENED The Lunar
+# Cartographer's, 0.455 to 0.600, because one of its eight runs produced a
+# single flag where its siblings produced six to thirteen. A bigger denominator
+# steadies a rate that is already stable; where a run can wander off on its own,
+# it does not. What twenty turns did buy is the HELD-OUT WORLD: at eleven turns
+# it never fired at all, and a check that cannot fire reads as a clean result.
+#
 # THE RULE, and why it is this rule.
 #
 #   REAL          the two sets of runs are separated by an exact rank test at

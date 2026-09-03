@@ -491,10 +491,11 @@ three seeded worlds through the real turn loop, keeps the rows, and scores them;
 using any of this.** What belongs here is the part that changes how you work:
 
 - **A number from generated runs means nothing without its spread.** One
-  unchanged configuration produced 1 to 8 `third_person_protagonist` flags on the
-  same eleven turns of the same world. Never quote a count from a sweep without
-  the min/max the board prints beside it, and never claim an improvement from one
-  run against one run.
+  unchanged configuration produced 1 to 13 `third_person_protagonist` flags on
+  the same twenty turns of the same world. Never quote a count from a sweep
+  without the min/max the board prints beside it, and never claim an improvement
+  from one run against one run. **More turns is not a reliable cure** — the same
+  extension halved one world's band and widened another's; see `Eval::Noise`.
 - **`rake eval:compare BEFORE=… AFTER=…` is how a change is judged**, and its
   verdict is REAL, NOISE or INCONCLUSIVE. **Four runs a side is the floor** — at
   three the exact test cannot reach p ≤ 0.05 however clean the separation, so a

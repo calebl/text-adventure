@@ -7,10 +7,11 @@ This is the protocol for getting that confidence, and the first thing it has to
 tell you is how easy it is to fool yourself.
 
 **Generated runs are model output. Run the same code over the same world twice
-and the numbers move.** On the sweep this was built with, one unchanged
-configuration produced between **1 and 8** `third_person_protagonist` flags on
-the same eleven turns of the same world. That is wider than almost any
-improvement anybody is going to claim. So no number in this loop is reported
+and the numbers move.** On the baseline this was built with, one unchanged
+configuration produced between **1 and 13** `third_person_protagonist` flags on
+the same twenty turns of the same world — a rate of 0.050 on one run and 0.650
+on another, with nothing at all changed between them. That is wider than almost
+any improvement anybody is going to claim. So no number in this loop is reported
 without the spread of the runs that produced it, and no before/after is reported
 without a verdict that can say *noise*.
 
@@ -129,8 +130,14 @@ is the protocol manufacturing a result**. Run it whenever the rule changes.
 ### What reduces the noise, in the order worth reaching for
 
 1. **More turns per run.** The cheapest: it enlarges the denominator without
-   another process start. The scripts went from 11 turns to 20 on 2026-09-03
-   for exactly this reason.
+   another process start. The scripts went from 11 turns to 20 on 2026-09-03 for
+   exactly this reason, and **it worked on one world and not on another** — The
+   Unrecorded Hour's band more than halved (0.455 wide to 0.200) while The Lunar
+   Cartographer's widened (0.455 to 0.600), because one of its eight runs turned
+   in a single flag where its siblings turned in six to thirteen. A bigger
+   denominator steadies a rate that is already stable; it does not stop a run
+   wandering off on its own. What the extra turns did buy outright is the
+   held-out world, which at eleven turns never fired the check at all.
 2. **More repetitions.** Linear in money and the only thing that improves the
    test's resolution.
 3. **Pinning the model**, which the runner already does — a turn answered after

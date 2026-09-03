@@ -65,11 +65,14 @@ The full audit of every planned piece of work against this constraint is in
   checked against records it does not carry.
 
   **THE HEADLINE IS THE NOISE FLOOR, and it is bad news reported as news.** 24
-  runs of unchanged code over three worlds: one configuration produced **1 to 8**
-  `third_person_protagonist` flags on the same eleven turns of the same world
-  (rate 0.000–0.727, median 0.227). That spread is wider than nearly any
-  improvement anybody would claim, so a board that printed a count without it
-  would invite exactly the false confidence the loop exists to prevent.
+  runs of unchanged code over three worlds, twenty turns each: one configuration
+  produced **1 to 13** `third_person_protagonist` flags on the same twenty turns
+  of the same world (rate 0.050–0.650, median 0.475). That spread is wider than
+  nearly any improvement anybody would claim, so a board that printed a count
+  without it would invite exactly the false confidence the loop exists to
+  prevent. **More turns did not reliably narrow it**: the same extension more
+  than halved one tuning world's band (0.455 wide to 0.200) and widened the
+  other's (to 0.600).
   `Eval::Noise` therefore reports min/median/max per check and
   `rake eval:compare` gives a verdict — REAL, NOISE or INCONCLUSIVE — from a
   two-sided exact rank test at p ≤ 0.05. **Four runs a side is the floor and it
@@ -78,7 +81,7 @@ The full audit of every planned piece of work against this constraint is in
   set in half and checks the protocol cannot invent a difference; it passes.
 
   **The known bugs are visible and counted.** `ta-narration-third-person` fires
-  53 times in 176 tuning turns (30.1%) — the arrival narrations put the player
+  159 times in 320 tuning turns (49.7%) — the arrival narrations put the player
   in the doorway watching themselves arrive. `ta-narrator-invents-exit` is caught
   by three checks, one of them new: `unrecorded_departure` (a door closing at the
   back of a player who never moved), `item_not_held` (fixed below, and it catches
@@ -109,9 +112,11 @@ The full audit of every planned piece of work against this constraint is in
   **A third seeded world, `The Salt Assizes`, held out by documented convention.**
   No check was measured against it; it has no mechanics, so
   `unreachable_transition` is fully live on it where the Lunar Cartographer's
-  nightly shuffle makes it unjudgeable. It scored **zero flags on 88 turns**
-  while the two tuning worlds scored 30% — a world-dependence in the
-  third-person bug worth knowing about before anybody tries to fix it.
+  nightly shuffle makes it unjudgeable. It scores **9.4% against the tuning
+  worlds' 49.7%** on the third-person bug — a world-dependence worth knowing
+  about before anybody tries to fix it. At eleven turns it scored zero on 88
+  turns and looked clean; twenty turns is what made it fire, which is the
+  argument for the longer script standing on its own.
 
   Actual spend: **$0.2857 for 24 runs / 264 turns**, against a $0.35 estimate.
   The protocol, the verdict rule and the measurement manifest are in
