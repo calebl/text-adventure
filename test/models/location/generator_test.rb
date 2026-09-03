@@ -192,13 +192,65 @@ class Location::GeneratorTest < ActiveSupport::TestCase
   end
 
   test "reuses an existing location rather than inventing a second one" do
-    existing = create(:location, story: @story, name: "The Pump Gallery")
+    existing = stub_location(name: "The Pump Gallery")
+    location = stub_location(name: "The Drowned Ledger")
+
+    assert_difference "Location.count", 1, "only the genuinely new exit is a new record" do
+      realize(location, FakeAgent.new(DETAIL, EXITS))
+    end
+
+    assert_includes location.reload.exits, existing
+  end
+
+  # THE DEFECT THIS PINS. Realizing the hallway next to a written supply closet
+  # reused the closet's name as a way out, and the edge went in both directions
+  # -- so a room whose own description says "there is no other door" grew a
+  # second one after the player had already read that description.
+  test "does not open a new way into a room that has already been written" do
+    written = create(:location, story: @story, name: "The Pump Gallery")
     location = stub_location(name: "The Drowned Ledger")
 
     realize(location, FakeAgent.new(DETAIL, EXITS))
 
-    assert_includes location.reload.exits, existing
-    assert existing.reload.realized?, "reusing a location must not downgrade it to a stub"
+    assert_not_includes location.reload.exits, written
+    assert_empty written.reload.exits, "the written room keeps the ways out it was written with"
+    assert_equal [ "Tidewater Stair" ], location.exits.map(&:name)
+  end
+
+  # The two cases reuse has to stay legal for: the way back, and a written
+  # place the player can already reach. It is the connection that decides, not
+  # the detail level.
+  test "a written room the player can already reach stays an exit" do
+    written = create(:location, story: @story, name: "The Pump Gallery")
+    location = stub_location(name: "The Drowned Ledger")
+    create(:location_connection, location: written, connected_location: location)
+    create(:location_connection, location: location, connected_location: written)
+
+    realize(location, FakeAgent.new(DETAIL, EXITS))
+
+    assert_includes location.reload.exits, written
+    assert written.reload.realized?, "reusing a location must not downgrade it to a stub"
+  end
+
+  # THE FLOOR. Refusing every way out would seal the player in, which is worse
+  # than a way out that should not be there, so the refusal is lifted rather
+  # than a room realized with nothing leading anywhere.
+  test "takes a written room as an exit rather than realize a room with no way out" do
+    written = create(:location, story: @story, name: "Tidewater Stair")
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL, ONE_EXIT))
+
+    assert_equal [ written ], location.reload.exits.to_a
+  end
+
+  test "marks the places already written so the model does not spend an exit on one" do
+    create(:location, story: @story, name: "The Pump Gallery")
+    agent = FakeAgent.new(DETAIL, EXITS)
+    realize(stub_location(name: "The Drowned Ledger"), agent)
+
+    assert_includes agent.prompts.last, "The Pump Gallery (already written -- do not open a new way into it)"
+    assert_includes agent.prompts.last, "do not open a new way into it"
   end
 
   test "strips emoji from generated text" do

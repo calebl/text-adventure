@@ -9,7 +9,7 @@
 #   Race       (universe, name)          unique index
 #   Character  (story, fullname)         unique index
 #   Location   (story, name)             case-insensitively, matching
-#                                        Location::Generator#find_or_create_stub
+#                                        Location::Generator#find_location
 #   Connection (location, connected)     unique index, written both ways
 #   Item       (story, name)             NOT (owner, name): an item moves, and a
 #                                        world that has been played has items
