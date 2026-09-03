@@ -277,7 +277,7 @@ The current database includes the following story-related models with proper ass
   the real turn loop, keep every row, score them, print a board with its own
   noise floor. **[EVALUATION.md](EVALUATION.md) is the protocol.**
 - **Generated runs are model output and two identical runs disagree.** One
-  unchanged configuration produced 0–8 `third_person_protagonist` flags on the
+  unchanged configuration produced 1 to 8 `third_person_protagonist` flags on the
   same eleven turns. Judge a change with `rake eval:compare BEFORE= AFTER=`,
   which answers REAL / NOISE / INCONCLUSIVE from an exact rank test; four runs a
   side is the arithmetic minimum for any verdict.

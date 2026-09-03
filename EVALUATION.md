@@ -8,7 +8,7 @@ tell you is how easy it is to fool yourself.
 
 **Generated runs are model output. Run the same code over the same world twice
 and the numbers move.** On the sweep this was built with, one unchanged
-configuration produced between **0 and 8** `third_person_protagonist` flags on
+configuration produced between **1 and 8** `third_person_protagonist` flags on
 the same eleven turns of the same world. That is wider than almost any
 improvement anybody is going to claim. So no number in this loop is reported
 without the spread of the runs that produced it, and no before/after is reported
@@ -36,6 +36,8 @@ actual figure on the board afterwards. It refuses to start without
 | `SET=main` | name the run set. Defaults to a timestamp |
 | `EVAL_MODEL=…` | pin a different model. Defaults to the app's own first choice |
 | `SAMPLE=60` | how many flagged turns the board prints in full |
+| `EVAL_RUN_TIMEOUT=1200` | seconds one run may take before it is killed. A killed run leaves no manifest and is simply absent from the scoring |
+| `CONCURRENCY=3` | runs in flight at once. One per world by default |
 
 Everything else is free and offline:
 

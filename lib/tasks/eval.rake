@@ -81,6 +81,9 @@ namespace :eval do
     DEFAULT_REPS = 5
     SPEND_CEILING = 1.00
 
+    # Seconds one run may take before it is killed. See `#spawn_run`.
+    RUN_TIMEOUT = (ENV["EVAL_RUN_TIMEOUT"].presence || 1200).to_i
+
     def set_name = ENV["SET"].presence || "latest"
 
     def reps = (ENV["REPS"].presence || DEFAULT_REPS).to_i
@@ -169,7 +172,14 @@ namespace :eval do
       environment["EVAL_TURNS"] = turns.to_s if turns
 
       log = directory.join("log", "#{slug}-r#{rep}.log")
-      spawn(environment, *rails_runner, "script/eval_run.rb", out: log.to_s, err: [ :child, :out ])
+      # A CAP ON ONE RUN, because a batch waits on all of its children and a
+      # single hung provider call otherwise stops the sweep rather than costing
+      # it one run. Eleven turns of the slowest model in the rotation is a few
+      # minutes; twenty is a hang. A killed run leaves no manifest and is simply
+      # absent from the scoring, which is the honest outcome -- the board counts
+      # the runs it has.
+      spawn(environment, "timeout", RUN_TIMEOUT.to_s, *rails_runner, "script/eval_run.rb",
+            out: log.to_s, err: [ :child, :out ])
     end
 
     def rails_runner = [ Rails.root.join("bin/rails").to_s, "runner" ]

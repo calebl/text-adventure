@@ -65,7 +65,7 @@ The full audit of every planned piece of work against this constraint is in
   checked against records it does not carry.
 
   **THE HEADLINE IS THE NOISE FLOOR, and it is bad news reported as news.** 24
-  runs of unchanged code over three worlds: one configuration produced **0 to 8**
+  runs of unchanged code over three worlds: one configuration produced **1 to 8**
   `third_person_protagonist` flags on the same eleven turns of the same world
   (rate 0.000–0.727, median 0.227). That spread is wider than nearly any
   improvement anybody would claim, so a board that printed a count without it
