@@ -74,14 +74,29 @@ class Location::Generator
   # that was not realized by being walked into -- an arrival already has its
   # way back, so the first pass can never leave it with nothing.
   def write_exits!
+    # ALREADY FULL, so there is nothing to ask and nothing to spend. A stub can
+    # arrive at the cap before anybody walks into it: a world file seeds edges,
+    # and every neighbour that named this place on its way to being realized
+    # wrote one. See Location::ExitsSchema::MAX_EXITS.
+    return location if room_for_exits.zero?
+
     exits = Array(ask(Location::ExitsSchema, exits_prompt)["exits"])
 
     Location.transaction do
-      exits.each { |attributes| connect_exit!(attributes) }
+      exits.each { |attributes| connect_exit!(attributes) if room_for_exits.positive? }
       exits.each { |attributes| connect_exit!(attributes, into_written: true) } unless location.exits.exists?
     end
 
     location
+  end
+
+  # HOW MANY MORE WAYS OUT THIS ROOM MAY HAVE. Read from the records on every
+  # check rather than counted once, because `#connect_exit!` writes as it goes
+  # and a budget worked out before the loop would not notice. Naming a
+  # neighbour this room already reaches costs nothing -- `#connect!` returns
+  # early on an edge that exists -- so a no-op does not spend the allowance.
+  def room_for_exits
+    [ Location::ExitsSchema::MAX_EXITS - location.exits.count, 0 ].max
   end
 
   # ONE conversation for both calls, and that is why persistence is per agent
@@ -124,6 +139,8 @@ class Location::Generator
     <<~PROMPT
       Now list the ways out of #{location.name}.
 
+      #{already_reachable_note}
+
       ## Places That Already Exist In This Story
       Reuse a name from this list when an exit leads somewhere already known.
       Only invent a name when the exit leads somewhere genuinely new.
@@ -133,6 +150,9 @@ class Location::Generator
       #{known_location_names.presence || "None yet."}
 
       ## Instructions
+      - Name AT MOST #{room_for_exits} #{"way".pluralize(room_for_exits)} out. That is what is left of this
+        room's #{Location::ExitsSchema::MAX_EXITS}, not a target: fewer is a better answer than a door
+        nobody needed
       - Each exit is somewhere the player can reach directly from #{location.name}
       - One way out is a complete answer. A dead end, a cell, the bottom of a
         shaft: if the only way out is back the place the player came from, list
@@ -171,6 +191,20 @@ class Location::Generator
   # naming it here is asking for a door it does not have; the engine refuses
   # that edge in #connect_exit! either way, and saying so up front is what
   # stops the model spending an exit on one.
+  # WHAT THIS ROOM CAN ALREADY REACH, said before the model is asked for more.
+  # A room walked into has its way back, and a seeded one can have several
+  # edges: without this the model names four ways out of a room that already
+  # had two, and the player stands somewhere with six.
+  def already_reachable_note
+    reachable = location.exits.order(:id).pluck(:name)
+    return "This room has no ways out yet." if reachable.empty?
+
+    "## Where This Room Already Leads
+" \
+      "#{reachable.map { |name| "- #{name}" }.join("\n")}\n" \
+      "Those exist already and do not need naming again. Do not contradict them."
+  end
+
   def known_location_names
     story.locations.where.not(id: location.id).order(:id).map { |place| known_location_line(place) }.join("\n")
   end
