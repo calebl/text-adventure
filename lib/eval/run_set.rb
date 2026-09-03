@@ -82,12 +82,16 @@ class Eval::RunSet
         flagged: audit.flags.count { |flag| flag.code == code },
         judgeable: audit.judgeable_for(code),
         unjudged: audit.unjudged.count { |row| row.code == code },
-        available: audit.available_checks.include?(code) && audit.judgeable_for(code).positive?
+        available: audit.available_checks.include?(code) && audit.judgeable_for(code).positive? &&
+                   !Eval.unavailable_to_a_script?(code)
       )
     end
 
     typed_by_scene = audit.scenes.to_h { |scene| [ scene.id, scene.typed ] }
-    findings = audit.flags.map do |flag|
+    # A CHECK THAT CANNOT ANSWER HERE RAISES NO FINDINGS EITHER, or the board
+    # would print flags for a rate it declined to report. See
+    # `Eval::UNAVAILABLE_TO_A_SCRIPT`.
+    findings = audit.flags.reject { |flag| Eval.unavailable_to_a_script?(flag.code) }.map do |flag|
       Eval::RunScore::Finding.new(
         code: flag.code, story: story.title,
         turn: turn_index(manifest, flag.scene&.id),

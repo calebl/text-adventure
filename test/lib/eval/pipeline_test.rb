@@ -188,6 +188,96 @@ class Eval::PipelineTest < ActiveSupport::TestCase
     assert_match(/INCONCLUSIVE/, verdict.headline)
   end
 
+  # ---------------------------------------------------------- what a script is
+  #
+  # THE CHECK THAT WOULD HAVE SAVED A PAID SWEEP. The first draft of the 20-turn
+  # scripts talked to a character from the wrong room and reached for an item two
+  # rooms away, because it was written as a list of good ideas rather than a
+  # sequence of states. This asserts the sequence: every turn is reachable from
+  # where the turn before it leaves the player.
+  test "every script is a walkable sequence of rooms, not a list of good ideas" do
+    stories = WorldSeed::Loader.load_all(io: nil).index_by(&:title)
+
+    Eval::Script.all.each do |script|
+      story = stories.fetch(script.story)
+      here = story.opening_scene.location
+
+      script.turns.each do |turn|
+        next unless turn.expect == "move"
+
+        named = story.locations.reject { |place| place == here }.find { |place| names_room?(turn.command, place) }
+
+        assert named, "#{script.story} #{turn.id} is a move but names no room the story has: #{turn.command.inspect}"
+        assert_not_equal here, named,
+                         "#{script.story} #{turn.id} moves into #{named.name.inspect}, which is where the script already is"
+        here = named
+      end
+    end
+  end
+
+  # AND THE ITEM TURNS FOLLOW THE ITEM. A `take` has to be in the room the last
+  # `drop` left the thing in, which is the other half of the same mistake.
+  test "every take is in the room the last drop left the item in" do
+    stories = WorldSeed::Loader.load_all(io: nil).index_by(&:title)
+
+    Eval::Script.all.each do |script|
+      story = stories.fetch(script.story)
+      next if Item.where(character: story.characters).none?
+
+      here = story.opening_scene.location
+      dropped_in = nil
+
+      script.turns.each do |turn|
+        if turn.expect == "move"
+          here = story.locations.reject { |place| place == here }.find { |place| names_room?(turn.command, place) } || here
+        elsif turn.expect == "drop"
+          dropped_in = here
+        elsif turn.expect == "take" && dropped_in
+          assert_equal dropped_in, here,
+                       "#{script.story} #{turn.id} takes the item in #{here.name.inspect}, " \
+                       "but the script left it in #{dropped_in.name.inspect}"
+        end
+      end
+    end
+  end
+
+  # THE CHECK THE CAPTAIN STRUCK, and why it is unavailable rather than zero:
+  # *"if someone reaches for an item that is not there and the classifier
+  # catches and the narrator says no, then everything is working correctly and
+  # that should NOT be getting flagged as an issue."*
+  test "reached_for_nothing is unavailable on a scripted run, with the reason" do
+    assert Eval.unavailable_to_a_script?(:reached_for_nothing)
+    assert_match(/cannot be misled by prose/, Eval::UNAVAILABLE_TO_A_SCRIPT[:reached_for_nothing])
+    assert_not Eval.unavailable_to_a_script?(:item_not_held), "the state checks still answer here"
+  end
+
+  test "no script reaches for something the world has not got" do
+    stories = WorldSeed::Loader.load_all(io: nil).index_by(&:title)
+
+    Eval::Script.all.each do |script|
+      names = Item.where(character: stories.fetch(script.story).characters).pluck(:name)
+
+      script.turns.select { |turn| %w[take drop].include?(turn.expect) }.each do |turn|
+        assert(names.any? { |name| turn.command.include?(name) },
+               "#{script.story} #{turn.id} reaches for something the records have not got, " \
+               "which measures the script rather than the game")
+      end
+    end
+  end
+
+  # DOES THIS COMMAND NAME THIS ROOM -- a wider rule than
+  # `Story::Audit::Prose.place_names`, on purpose. That one is deliberately
+  # conservative because a false alias becomes a false FLAG; this one only has
+  # to trace a script, and it has to cope with "Grenn's Boarding House, Room 3",
+  # whose audit aliases are the full name alone (the last word is a digit and
+  # the one before it is on the generic stop list).
+  def names_room?(command, place)
+    parts = Story::Audit::Prose.place_names(place.name) +
+            place.name.split(",").map(&:strip).select { |part| part.length >= 4 }
+
+    parts.uniq.any? { |name| command.match?(/#{Regexp.escape(name)}/i) }
+  end
+
   # ------------------------------------------------------------- transcripts
   #
   # THE ANSWER TO "the clean board is confusing, how can I read it to verify?"

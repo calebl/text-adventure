@@ -5,6 +5,10 @@
 #
 #   1. WHAT IT COST and what ran. A board whose spend is not on it invites the
 #      next sweep to be run without thinking about the last one.
+#   1a. WHERE THE SCRIPT DID NOT DO WHAT IT SAYS. Before any rate, because a
+#      turn that took the wrong branch was measuring something else -- and
+#      because a drift row written by a confused script reads exactly like a
+#      finding. Not a defect count; a fact about the harness.
 #   2. THE NOISE FLOOR, first and not last, because every number under it has
 #      to be read against it. Per check, per world: the min, the median and the
 #      max over runs that differed in nothing but what the models sampled.
@@ -32,6 +36,7 @@ class Eval::Board
 
   def print(sample: DEFAULT_SAMPLE)
     header
+    divergences
     noise_floor
     rates
     richness
@@ -54,6 +59,48 @@ class Eval::Board
     io.puts "  UNPRICED, so the figure above is low: #{cost.unpriced.join(", ")}" if cost.unpriced.any?
     failures = set.runs.sum { |run| run.failures.size }
     io.puts "  #{failures} turn(s) failed outright and produced no passage" if failures.positive?
+    io.puts
+  end
+
+  # ------------------------------------------------------------------ 1a
+  #
+  # WHERE THE SCRIPT DID NOT DO WHAT IT SAYS, reported next to the spend and
+  # deliberately NOT among the defect counts. A turn whose branch was not the
+  # one its `expect` names is a fact about the harness or the classifier: a
+  # command that resolved to nothing, or a script that lost track of which room
+  # it was in. Both are worth fixing and neither is the narrator.
+  #
+  # IT EXISTS BECAUSE IT WAS NEEDED. The first draft of the 20-turn scripts
+  # talked to a character from the wrong room and reached for an item two rooms
+  # away, on four turns of every single run, and the drift rows that produced
+  # read exactly like findings. One line of output would have caught it before
+  # a sweep was paid for.
+  def divergences
+    rows = set.runs.flat_map do |run|
+      run.branches.filter_map do |id, branch|
+        next if branch["expected"].blank? || branch["expected"] == branch["took"]
+
+        [ run, id, branch ]
+      end
+    end
+
+    if rows.empty?
+      io.puts "SCRIPT: every turn took the branch it said it would."
+      io.puts
+      return
+    end
+
+    io.puts "SCRIPT DIVERGENCE -- #{rows.size} turn(s) did not take the branch the script expected."
+    io.puts "  This is the harness or the classifier, NOT the narrator, and it is not counted as a defect."
+    io.puts "  A turn that diverges on every run is a script bug; one that diverges sometimes is the game."
+    # ONE ROW PER WORLD, because the denominator is that world's run count and a
+    # row spanning two of them cannot state a rate honestly.
+    rows.group_by { |run, id, branch| [ run.story, id, branch["expected"], branch["took"] ] }
+        .sort_by { |(story, id, _, _), group| [ -group.size, story, id ] }
+        .each do |(story, id, expected, took), group|
+      io.puts format("    %-20s expected %-8s took %-8s on %d of %d runs of %s",
+                     id, expected, took, group.size, set.for_story(story).size, story)
+    end
     io.puts
   end
 
@@ -110,7 +157,8 @@ class Eval::Board
     Story::Scoreboard::CHECKS.each do |code, description|
       answering = runs.select { |run| run.available?(code) }
       if answering.empty?
-        io.puts format("    %-26s %8s %10s %7s  %s", code, "--", "UNAVAIL", "--", description)
+        reason = Eval::UNAVAILABLE_TO_A_SCRIPT[code] || "no run carried the records this check reads"
+        io.puts format("    %-26s %8s %10s %7s  %s", code, "--", "UNAVAIL", "--", reason)
         next
       end
 

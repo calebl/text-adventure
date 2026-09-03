@@ -4,10 +4,14 @@
 #
 # TWO THINGS THIS WORLD DOES THAT THE OTHERS CANNOT.
 #
-#   1. IT CARRIES NO ITEMS AT ALL. So t06 is a `take` that MUST resolve to
-#      nothing, and its whole purpose is to write a `Playthrough::Drift` row --
-#      the `reached_for_nothing` check's only live source. `item_not_held` has
-#      nothing to fire on here and is reported as such rather than as clean.
+#   1. IT CARRIES NO ITEMS AT ALL, so `item_not_held` has nothing to fire on
+#      here and is reported unavailable rather than clean. t06 USED TO BE a
+#      deliberate reach for an item this world has not got, put there to give
+#      `reached_for_nothing` a live source. THE CAPTAIN STRUCK IT, 2026-09-03:
+#      *"if someone reaches for an item that is not there and the classifier
+#      catches and the narrator says no, then everything is working correctly
+#      and that should NOT be getting flagged as an issue."* He is right, and
+#      the consequence is bigger than one turn -- see `Eval::UNAVAILABLE_TO_A_SCRIPT`.
 #   2. IT SHUFFLES ITS CONNECTIONS NIGHTLY (`WorldMechanic`), which makes
 #      `unreachable_transition` UNJUDGEABLE on it: the graph the player walked
 #      is not the graph the sweep reads back, and `Story::Audit` says so instead
@@ -55,11 +59,14 @@ turns:
   expect: talk
   beat: TALK 4/4 -- THE LIE
   note: the question his position gives him a specific reason to lie about
-- id: t06-take-nothing
-  command: pick up the lunar compass
+- id: t06-examine-2
+  command: look at the satchel on the floor and everything that is in it
   expect: narrate
-  beat: DRIFT (deliberate)
-  note: this world has no items, so the reach MUST resolve to nothing and write a Playthrough::Drift row
+  beat: OBJECT
+  note: |-
+    was a deliberate reach for an item this world has not got, to make
+    reached_for_nothing fire. Struck on the captain's ruling: a reach the app
+    correctly refuses is the app working. It is an ordinary examine now.
 - id: t07-move-new
   command: go down the stairs and out into Mournwell Lane
   expect: move

@@ -75,48 +75,55 @@ turns:
   expect: move
   beat: ARRIVAL (realized, unvisited)
   note: somewhere already written but never stood in, to close the run
-- id: t12-talk-5
-  command: Rowe, read me the last line you signed before you came up here.
-  expect: talk
-  beat: TALK 5/8
-  note: a demand with a paper trail behind it, and no place named
-- id: t13-examine-2
-  command: look at the pneumatic tube on the wall between the windows
-  expect: narrate
-  beat: OBJECT
-  note: a detail the seeded room description puts in the room -- the narrator has it or it does not
-- id: t14-talk-6
-  command: Rowe, whose hand is the amendment in?
-  expect: talk
-  beat: TALK 6/8
-  note: the question that names the defect at the centre of the world
-- id: t15-drop-2
-  command: put the Ward Office 12 daybook down on the desk again
-  expect: drop
-  beat: CONSEQUENCE
-  note: the second app-owned state change, so item_not_held has two turns to be wrong on
-- id: t16-move-closet
-  command: open the narrow door and step into the supply closet
-  expect: move
-  beat: ARRIVAL (realized, unvisited)
-  note: somewhere already written but never stood in
-- id: t17-examine-3
+- id: t12-examine-2
   command: read the two columns in the private index on the lowest shelf
   expect: narrate
   beat: OBJECT
-  note: the thing the closet was seeded to hold -- narrated in the room it is in
-- id: t18-move-back-2
+  note: the thing the closet was seeded to hold, examined in the room it is in
+- id: t13-move-back-2
   command: step back out into Ward Office 12
   expect: move
   beat: ARRIVAL (return)
-  note: a return with the daybook lying where t15 left it, which is the shape the item check reads
-- id: t19-take-2
-  command: pick up the Ward Office 12 daybook
-  expect: take
+  note: |-
+    OUT OF THE CLOSET FIRST, and this line is the whole lesson of the extension.
+    Turn 11 ends the run in the supply closet, and the first draft of turns
+    12-20 was written as though it ended in the office: it talked to Rowe from
+    inside a closet, stepped into the closet it was already in, and reached for
+    a daybook two rooms away. Four turns of every run diverged from what the
+    script said, and the drift rows they wrote looked exactly like findings.
+    A script has to be read as a sequence of states, not a list of good ideas.
+- id: t14-talk-5
+  command: Rowe, read me the last line you signed before you came up here.
+  expect: talk
+  beat: TALK 5/6
+  note: a demand with a paper trail behind it, and no place named
+- id: t15-drop-2
+  command: put the Ward Office 12 daybook down on the desk
+  expect: drop
   beat: CONSEQUENCE
-  note: the mirror of t15
-- id: t20-impossible-2
+  note: the second app-owned state change, so item_not_held has two turns to be wrong on
+- id: t16-talk-6
+  command: Rowe, whose hand is the amendment in?
+  expect: talk
+  beat: TALK 6/6
+  note: the question that names the defect at the centre of the world, asked over the open book
+- id: t17-impossible-2
   command: write the missing hour back into the daybook in the hand that took it out
   expect: narrate
   beat: IMPOSSIBLE
   note: a second refusal to close on, in the register the world runs on
+- id: t18-move-hallway-2
+  command: go out into the long hallway
+  expect: move
+  beat: ARRIVAL (return)
+  note: the hallway again, an hour of story time after this run wrote it
+- id: t19-move-back-3
+  command: walk back into Ward Office 12
+  expect: move
+  beat: ARRIVAL (return)
+  note: back to the room the daybook is lying in, which is the shape the item check reads
+- id: t20-take-2
+  command: pick up the Ward Office 12 daybook
+  expect: take
+  beat: CONSEQUENCE
+  note: the mirror of t15, over state this run produced
