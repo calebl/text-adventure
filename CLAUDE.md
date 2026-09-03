@@ -279,15 +279,29 @@ The current database includes the following story-related models with proper ass
   see its header comment and `Story::AuditPrecisionTest`, which pins the exact
   flags 24 real narrations earn. Do not add a check that scans prose for a name;
   that was measured and it does not work.
-- It carries **seven checks in four categories that are never merged**:
+- It carries **nine checks in five categories that are never merged**:
   contradictions (`unreachable_transition`, `item_not_held`,
-  `unrecorded_departure`), defects (`truncated_prose`,
-  `third_person_protagonist`), drift (`reached_for_nothing`) and pacing
+  `unrecorded_departure`, `unrecorded_arrival`), defects (`truncated_prose`,
+  `third_person_protagonist`), drift (`reached_for_nothing`), limits
+  (`named_more_than_one` — the loop's limit, not a defect) and pacing
   (`still_run` — evidence about pacing, explicitly *not* a defect).
   `Story::Audit::Prose` holds the three text predicates as pure functions so the
   live database and the frozen corpus read them through the same code.
 - `Playthrough::Drift` is the classifier drift counter: one row per turn on which
   a `move`, `talk`, `take` or `drop` resolved to nothing. Never pruned.
+- `Playthrough::Overreach` is the other counter and never the same one: one row
+  per turn on which the typed line named **two things the records really have**
+  and the loop did one, because a turn is one act. Drift is a reach that found
+  nothing; this is a reach that found more than a turn can answer. Adding them
+  together would produce a number that is neither. Never pruned. Both are
+  **unavailable to a scripted `rake eval:run`** — a script types a fixed line,
+  so either figure would measure the yml file (`Eval::UNAVAILABLE_TO_A_SCRIPT`).
+- `Playthrough::IntentSchema#also_named` is how the loop says what it left
+  undone: one more name out of the **same closed set** as `target`, resolved by
+  the same matcher against the same list the action reads. One name and not a
+  list, because an empty required array reads as an omitted field to
+  `BaseAgent#missing_schema_keys` — see the constant's comment before changing
+  its shape.
 - `Item` is in exactly one place — held by a character or lying in a location.
   `take` and `drop` are both app-owned: the row moves first, the narrator is told
   afterwards.

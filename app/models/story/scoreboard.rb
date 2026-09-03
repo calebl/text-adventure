@@ -53,6 +53,7 @@ class Story::Scoreboard
     truncated_prose: "stored prose stops mid-sentence",
     third_person_protagonist: "the narration wrote the player as somebody else",
     reached_for_nothing: "the player reached for something the records do not have",
+    named_more_than_one: "the line named two things the records have and the turn did one",
     still_run: "#{Story::Audit::STILL_RUN} turns running with nothing changing and somebody in the room"
   }.freeze
 
@@ -150,7 +151,7 @@ class Story::Scoreboard
   # turn first inside each class, so a report reads in the order the story was
   # played.
   def flags_in_reading_order
-    order = [ :contradiction?, :defect?, :drift?, :pacing? ]
+    order = [ :contradiction?, :defect?, :drift?, :limit?, :pacing? ]
 
     order.flat_map { |kind| flags.select { |flag| flag.public_send(kind) } }
   end

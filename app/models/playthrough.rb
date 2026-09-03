@@ -13,6 +13,11 @@ class Playthrough < ApplicationRecord
   # it deliberately does not claim.
   has_many :drifts, class_name: "Playthrough::Drift", dependent: :destroy,
                     inverse_of: :playthrough
+  # EVERY TURN THIS PLAYTHROUGH ASKED FOR TWO THINGS AND GOT ONE. The opposite
+  # shape to a drift -- everything named existed -- and counted apart from it
+  # for that reason. See Playthrough::Overreach.
+  has_many :overreaches, class_name: "Playthrough::Overreach", dependent: :destroy,
+                         inverse_of: :playthrough
   # WHAT THE PLAYER THOUGHT OF EACH TURN -- one verdict per turn he judged, with
   # the turn's provenance frozen onto it. The evaluation instrument; see
   # Playthrough::Feedback for why it is a copy and not a reference.

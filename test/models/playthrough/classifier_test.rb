@@ -193,6 +193,60 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # One list, decided in one place. Scene::Generator writes the cast onto the
   # arrival scene; this reads that same answer back, so the classifier accepts
   # exactly the people the arrival paragraph introduced.
+  # "pickup everything" used to resolve to nothing, which refused the turn and
+  # wrote a Playthrough::Drift row -- and drift is the count of the player
+  # reaching for what the records DO NOT HAVE. Everything named existed; `all`
+  # is a quantifier and not a missing name. `take all`, `get everything` and
+  # `drop all` are ordinary text-adventure verbs, so this was a standing stream
+  # of drift rows with no drift in them.
+  test "the instructions tell the model that a collective word names the list" do
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+
+    assert_includes agent.instructions, "means ALL of them"
+    assert_includes agent.instructions, "is not `nothing`"
+    assert_includes agent.instructions, "also_named"
+  end
+
+  # And when it answers that way, the turn lands in the path that exists: one
+  # thing taken, the next named, counted as an overreach and NOT as drift.
+  test "a collective word answered as the first thing is an overreach and not drift" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+    create(:item, :lying, location: @here, name: "copy-room apron")
+
+    assert_difference "Playthrough::Overreach.count", 1 do
+      assert_no_difference "Playthrough::Drift.count" do
+        intent, = classify({ "intent" => "take", "target" => index.name, "also_named" => "copy-room apron" },
+                           command: "pickup everything")
+
+        assert_equal index, intent.item
+      end
+    end
+  end
+
+  # The other direction of the same guarantee. A collective read against the
+  # wrong list would resolve to nothing and be counted as drift again, so which
+  # set each action reads is the part worth pinning: `drop everything` and `put
+  # down everything` both answer out of the player's hands, never the floor.
+  test "a collective drop resolves out of the player's hands and is an overreach" do
+    create(:item, :lying, location: @here, name: "copy-room apron")
+    sextant = create(:item, character: @protagonist, name: "brass sextant")
+    create(:item, character: @protagonist, name: "chart tube")
+
+    [ "drop everything", "put down everything" ].each do |command|
+      assert_difference "Playthrough::Overreach.count", 1 do
+        assert_no_difference "Playthrough::Drift.count" do
+          intent, = classify({ "intent" => "drop", "target" => sextant.name, "also_named" => "chart tube" },
+                             command: command)
+
+          assert_equal sextant, intent.item
+          assert_equal "chart tube", intent.also_named.name
+        end
+      end
+    end
+
+    assert_equal "drop", Playthrough::Overreach.last.action
+  end
+
   test "the cast is Scene::Generator's answer, minus the player" do
     maren = holdover("Maren Vosk")
     companion = create(:character, story: @story, fullname: "Dell Roy", is_companion: true)
@@ -458,6 +512,131 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     assert intent.move?
     assert_nil intent.destination
     assert_predicate intent, :reached_for_nothing?
+  end
+
+  # --- a line that named more than one thing --------------------------------
+
+  # ONE LINE IS ONE ACT. "take the index and the apron" has an answer the loop
+  # cannot make, and what used to happen is that the second half went nowhere
+  # at all: no write, no refusal, and no drift row either, because the reach
+  # resolved. `also_named` is that half kept.
+
+  test "a second thing named in the same line is resolved, and is not the target" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+    apron = create(:item, :lying, location: @here, name: "copy-room apron")
+
+    intent, = classify({ "intent" => "take", "target" => "Perrin's private index", "also_named" => "copy-room apron" },
+                       command: "pickup the index and the apron")
+
+    assert_equal index, intent.item, "the turn still acts on the first thing"
+    assert_equal apron, intent.also_named
+    assert_predicate intent, :named_more_than_one?
+  end
+
+  test "the second name resolves against the same closed set as the action" do
+    create(:item, :lying, location: @here, name: "Perrin's private index")
+    carried = create(:item, character: @protagonist, name: "Ward Office 12 daybook")
+
+    intent, = classify({ "intent" => "take", "target" => "Perrin's private index", "also_named" => carried.name })
+
+    assert_nil intent.also_named, "a take resolves against the floor, so what is in hand is not on its list"
+    assert_not_predicate intent, :named_more_than_one?
+  end
+
+  test "`nothing`, a blank and the target repeated all mean one thing was named" do
+    stair = connect("The Sunken Stair")
+
+    [ "nothing", "", nil, "The Sunken Stair", "the sunken stair" ].each do |also|
+      intent, = classify({ "intent" => "move", "target" => "The Sunken Stair", "also_named" => also })
+
+      assert_equal stair, intent.destination
+      assert_nil intent.also_named, "#{also.inspect} is not a second thing"
+      assert_not_predicate intent, :named_more_than_one?
+    end
+  end
+
+  # A reach that found nothing is DRIFT, and drift is a different fact about
+  # the world: the player named something that is not there, rather than more
+  # than the turn can do. The two never collapse into one count.
+  test "a reach that resolved to nothing is drift and not an overreach" do
+    create(:item, :lying, location: @here, name: "copy-room apron")
+
+    intent, = classify({ "intent" => "take", "target" => "nothing", "also_named" => "copy-room apron" },
+                       command: "take the cellar key and the apron")
+
+    assert_predicate intent, :reached_for_nothing?
+    assert_not_predicate intent, :named_more_than_one?
+  end
+
+  # The count. Written here because this is the only place that knows both
+  # halves -- what the turn is about to do, and the thing the same line named
+  # that it will not.
+  test "a line that named two things is counted, with both halves on the row" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+    apron = create(:item, :lying, location: @here, name: "copy-room apron")
+    scene = create(:scene, story: @story, location: @here)
+    @playthrough.update!(current_scene: scene)
+
+    assert_difference "Playthrough::Overreach.count", 1 do
+      classify({ "intent" => "take", "target" => index.name, "also_named" => apron.name },
+               command: "pickup the index and the apron")
+    end
+
+    row = Playthrough::Overreach.last
+    assert_equal "take", row.action
+    assert_equal "pickup the index and the apron", row.command
+    assert_equal index.name, row.acted
+    assert_equal apron.name, row.unacted
+    assert_equal @here, row.location
+    assert_equal scene, row.scene, "the narration the player had just read"
+  end
+
+  test "a line that named one thing is counted as nothing" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+
+    assert_no_difference "Playthrough::Overreach.count" do
+      classify({ "intent" => "take", "target" => index.name, "also_named" => "nothing" })
+    end
+  end
+
+  # The two counts are different facts about the world and never one number.
+  test "a reach that found nothing is counted as drift and not as an overreach" do
+    create(:item, :lying, location: @here, name: "copy-room apron")
+
+    assert_difference "Playthrough::Drift.count", 1 do
+      assert_no_difference "Playthrough::Overreach.count" do
+        classify({ "intent" => "take", "target" => "nothing", "also_named" => "copy-room apron" },
+                 command: "take the cellar key and the apron")
+      end
+    end
+  end
+
+  test "a person is counted by the name a player would have typed" do
+    rowe = create(:character, story: @story, fullname: "Halkett Rowe")
+    lasco = create(:character, story: @story, fullname: "Perrin Lasco")
+    # Both in the SAME scene: `Scene::Generator.characters_present` answers from
+    # the last scene played here, so two scenes would leave only one of them
+    # standing in the room.
+    create(:scene, story: @story, location: @here, characters: [ rowe, lasco ])
+
+    classify({ "intent" => "talk", "target" => rowe.fullname, "also_named" => lasco.fullname },
+             command: "ask Rowe and Lasco where the file went")
+
+    row = Playthrough::Overreach.last
+    assert_equal rowe.fullname, row.acted
+    assert_equal lasco.fullname, row.unacted
+  end
+
+  test "the second name is drawn from the same closed enum as the target" do
+    connect("The Sunken Stair")
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+    properties = json_schema_body(agent.schemas.first)["properties"]
+
+    assert_equal properties["target"]["enum"], properties["also_named"]["enum"]
+    assert_includes properties["also_named"]["enum"], "Brass Key"
+    assert_includes properties["also_named"]["enum"], Playthrough::IntentSchema::NOTHING
   end
 
   # One word from a fixed table and one name from a closed enum: nothing here

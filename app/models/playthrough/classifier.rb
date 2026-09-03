@@ -22,10 +22,14 @@ class Playthrough::Classifier
   # `item` carries both directions: what a `take` resolved to on the floor and
   # what a `drop` resolved to in the player's hands. Which way it moves is the
   # action's business, not the record's -- see `Playthrough::Turn`.
-  Intent = Data.define(:action, :destination, :speaker, :item) do
+  # `also_named` is the ONE record the line named that this turn is not acting
+  # on -- see `Playthrough::IntentSchema` for why one and not a list. It is
+  # evidence and never a target: nothing in the loop reads it to do anything,
+  # only to say what it left undone.
+  Intent = Data.define(:action, :destination, :speaker, :item, :also_named) do
     # Defaulted so a caller naming only what it resolved reads the way it
     # means -- `Intent.new(action: :other)` is a turn that reached for nothing.
-    def initialize(destination: nil, speaker: nil, item: nil, **rest) = super
+    def initialize(destination: nil, speaker: nil, item: nil, also_named: nil, **rest) = super
 
     def move? = action == :move
     def talk? = action == :talk
@@ -35,6 +39,13 @@ class Playthrough::Classifier
     # The record the loop acts on, whichever kind it turned out to be. There is
     # at most one, by construction.
     def subject = destination || speaker || item
+
+    # THE OVERREACH CASE. The line named two things the closed sets both know,
+    # and one act is all a turn is. The first was done; this says which one was
+    # not, so the game can tell the player rather than let half a sentence
+    # vanish. Only ever true for an action that resolved -- a reach that found
+    # nothing at all is drift, and a different fact about the world.
+    def named_more_than_one? = !also_named.nil? && !subject.nil?
 
     # THE DRIFT CASE. The player was reaching for something -- a way out, a
     # person, a thing to pick up -- and the closed set the app built had
@@ -65,6 +76,12 @@ class Playthrough::Classifier
     lists, answer `nothing`. Do not answer with a place they cannot reach from
     here, a person who is not here, something that is not lying in this room, or
     something they are not carrying.
+
+    A word that means ALL of them -- "everything", "all", "the lot", "both" --
+    is naming what is on the list rather than something missing from it, so it
+    is not `nothing`. Answer with the first thing on the list the action reads
+    against, and put one more in `also_named`: a turn does one thing, and the
+    game says out loud what it left undone.
   PROMPT
 
   attr_reader :playthrough
@@ -89,8 +106,9 @@ class Playthrough::Classifier
       .ask(command_prompt(command, exits, cast, items, carried))
       .content
 
-    intent = build_intent(answer["intent"], answer["target"], exits, cast, items, carried)
+    intent = build_intent(answer["intent"], answer["target"], exits, cast, items, carried, answer["also_named"])
     record_drift(command, intent, exits, cast, items, carried) if intent.reached_for_nothing?
+    record_overreach(command, intent) if intent.named_more_than_one?
     intent
   end
 
@@ -193,17 +211,38 @@ class Playthrough::Classifier
   # `take` and `other` carry no target today -- they all fall through to
   # `Scene::Narrator`, which answers the raw command anyway -- so resolving one
   # would be building a seam with nothing on the other side of it.
-  def build_intent(intent, target, exits, cast, items = [], carried = [])
+  def build_intent(intent, target, exits, cast, items = [], carried = [], also = nil)
     action = Playthrough::IntentSchema::INTENTS.include?(intent) ? intent.to_sym : :other
     name = target.to_s
 
-    case action
-    when :move then Intent.new(action: action, destination: find_exit(exits, name))
-    when :talk then Intent.new(action: action, speaker: find_character(cast, name))
-    when :take then Intent.new(action: action, item: find_item(items, name))
-    when :drop then Intent.new(action: action, item: find_item(carried, name))
-    else Intent.new(action: action)
+    # The closed set this action resolves against, the matcher that reads a
+    # name out of it, and which of the Intent's slots the record lands in.
+    # `also_named` goes through the same set and the same matcher, because a
+    # second, looser way into the records is the thing a closed set exists to
+    # prevent.
+    set, finder, slot = case action
+    when :move then [ exits, :find_exit, :destination ]
+    when :talk then [ cast, :find_character, :speaker ]
+    when :take then [ items, :find_item, :item ]
+    when :drop then [ carried, :find_item, :item ]
+    else return Intent.new(action: action)
     end
+
+    Intent.new(
+      action: action,
+      also_named: also_record(set, finder, also, name),
+      **{ slot => send(finder, set, name) }
+    )
+  end
+
+  # The second name, or nil. `nothing`, a blank, and the target repeated all
+  # mean the line named one thing. `examine` and `other` never reach here: they
+  # resolve to no record at all, so there is no "the other one" to have.
+  def also_record(set, finder, also, target)
+    name = also.to_s.strip
+    return nil if name.empty? || name == Playthrough::IntentSchema::NOTHING || name.casecmp?(target.to_s)
+
+    send(finder, set, name)
   end
 
   def find_exit(exits, name)
@@ -292,5 +331,29 @@ class Playthrough::Classifier
       offered: offered.compact,
       story_timestamp: playthrough.story_now
     )
+  end
+
+  # THE ROW THAT MAKES ONE-ACT-PER-LINE A NUMBER. Written here for the same
+  # reason the drift row is: this is the only place that knows both halves --
+  # what the turn is about to do, and the thing the same line named that it
+  # will not. Neither half is a failure, which is why this is a separate table
+  # from drift rather than another kind of it. See Playthrough::Overreach.
+  def record_overreach(command, intent)
+    Playthrough::Overreach.record(
+      playthrough: playthrough,
+      scene: playthrough.current_scene,
+      location: playthrough.current_location,
+      action: intent.action,
+      command: command,
+      acted: label_for(intent.subject),
+      unacted: label_for(intent.also_named),
+      story_timestamp: playthrough.story_now
+    )
+  end
+
+  # A record as the player would have typed it. `fullname` for a person, `name`
+  # for a place or a thing -- the same two the closed enum was built from.
+  def label_for(record)
+    record.respond_to?(:fullname) ? record.fullname : record.name
   end
 end

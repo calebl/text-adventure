@@ -245,6 +245,17 @@ class Eval::PipelineTest < ActiveSupport::TestCase
   # *"if someone reaches for an item that is not there and the classifier
   # catches and the narrator says no, then everything is working correctly and
   # that should NOT be getting flagged as an issue."*
+  # Same structural argument as the drift check: a script types a fixed line, so
+  # whether it named two things is a fact about the yml file. A clean reading
+  # would be the worse outcome -- 0 flagged out of every typed turn is a rate
+  # the check never earned.
+  test "named_more_than_one is unavailable on a scripted run, with the reason" do
+    assert Eval.unavailable_to_a_script?(:named_more_than_one)
+    assert_match(/measures the script's phrasing/, Eval::UNAVAILABLE_TO_A_SCRIPT[:named_more_than_one])
+    assert_includes Story::Scoreboard::CHECKS.keys, :named_more_than_one,
+                    "a check excluded from a sweep still has to be a check the board knows"
+  end
+
   test "reached_for_nothing is unavailable on a scripted run, with the reason" do
     assert Eval.unavailable_to_a_script?(:reached_for_nothing)
     assert_match(/cannot be misled by prose/, Eval::UNAVAILABLE_TO_A_SCRIPT[:reached_for_nothing])

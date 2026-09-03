@@ -8,8 +8,12 @@ require "test_helper"
 # is under test is the persistence itself: the chats a turn writes, the tokens
 # on them, and what is left after the server has been restarted.
 class Playthrough::TurnConversationsTest < ActiveSupport::TestCase
-  CLASSIFY_TALK = { "intent" => "talk", "target" => "Grenn Ollivar" }.freeze
-  CLASSIFY_OTHER = { "intent" => "other", "target" => "nothing" }.freeze
+  # `also_named` is a required field of the real schema, so a canned reply that
+  # left it out would be a half answer -- and this test runs the real BaseAgent,
+  # which fails such a call rather than passing it on. `nothing` is the usual
+  # answer: one typed line naming one thing.
+  CLASSIFY_TALK = { "intent" => "talk", "target" => "Grenn Ollivar", "also_named" => "nothing" }.freeze
+  CLASSIFY_OTHER = { "intent" => "other", "target" => "nothing", "also_named" => "nothing" }.freeze
 
   setup do
     @story = create(:story)

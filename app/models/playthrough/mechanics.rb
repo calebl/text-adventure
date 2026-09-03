@@ -335,11 +335,36 @@ class Playthrough::Mechanics
   # the same `Intent`. What differs is only the two ends: nothing streams, and
   # the branches that exist to produce prose say so instead.
   def act(intent, command, understood)
-    return move(intent.destination, command, understood) if intent.destination
-    return talk(intent.speaker, understood) if intent.speaker
-    return intent.drop? ? drop(intent.item, understood) : take(intent.item, understood) if intent.item
+    report =
+      if intent.destination
+        move(intent.destination, command, understood)
+      elsif intent.speaker
+        talk(intent.speaker, understood)
+      elsif intent.item
+        intent.drop? ? drop(intent.item, understood) : take(intent.item, understood)
+      else
+        nothing(intent, understood)
+      end
 
-    nothing(intent, understood)
+    overreach(report, intent)
+  end
+
+  # WHAT THE LINE ALSO NAMED AND THIS TURN DID NOT DO. One typed line is one
+  # act, so "take the index and the apron" takes the index -- and the apron
+  # used to go nowhere at all: no write, no refusal, and no `Playthrough::Drift`
+  # row either, because the reach resolved. Half a sentence vanished and nothing
+  # counted it.
+  #
+  # Said as a note rather than folded into `changed:` or `refused:`, because it
+  # is neither: something did happen, and something else was left undone. The
+  # note is added here rather than in each branch so every branch gets it,
+  # including the ones that refuse.
+  def overreach(report, intent)
+    return report unless intent.named_more_than_one?
+
+    report.with(note: Array(report.note) + [
+      "also named: #{label(intent.also_named)} -- one line is one act, so this turn did not touch it. Type it on its own."
+    ])
   end
 
   # MOVING, and with a model in the loop this is `Playthrough::Turn#move_to`
@@ -418,15 +443,47 @@ class Playthrough::Mechanics
     refuse(reason, understood: understood)
   end
 
-  # The four closed sets, named by the one that came up empty. The lists
-  # themselves are in the read-out below, so this only says which was consulted.
+  # WHY THE REACH RESOLVED TO NOTHING, and it is two different facts told
+  # apart: the set was empty, or the set had things in it and the command did
+  # not land on one of them. It used to be one sentence for both, so "pickup
+  # everything" in a room with three things on the floor was refused with
+  # "Nothing of that name is lying here" -- directly above a read-out listing
+  # all three. The command had named no name at all.
+  #
+  # Neither branch says what the player typed and neither repeats the lists:
+  # the read-out below is where the records are printed, and a refusal that
+  # guesses at the typing is how a wrong guess gets stated as a fact.
   def drift_reason(action)
+    return empty_set_reason(action) if offered_for(action).empty?
+
     case action
-    when :move then "That is not one of the ways out of here."
-    when :talk then "Nobody of that name is here."
-    when :take then "Nothing of that name is lying here."
-    when :drop then "You are not carrying anything of that name."
+    when :move then "That did not resolve to one of the ways out of here."
+    when :talk then "That did not resolve to anybody who is here."
+    when :take then "That did not resolve to anything lying here."
+    when :drop then "That did not resolve to anything you are carrying."
     else "That resolved to nothing."
+    end
+  end
+
+  def empty_set_reason(action)
+    case action
+    when :move then "There is no way out of here at all."
+    when :talk then "There is nobody here to talk to."
+    when :take then "There is nothing lying here to pick up."
+    when :drop then "You are carrying nothing, so there is nothing to put down."
+    else "That resolved to nothing."
+    end
+  end
+
+  # The closed set the action reads against -- the same four the read-out
+  # prints and the same four the classifier offers a model.
+  def offered_for(action)
+    case action
+    when :move then classifier.exits_here
+    when :talk then classifier.characters_here
+    when :take then classifier.items_here
+    when :drop then classifier.items_carried
+    else []
     end
   end
 

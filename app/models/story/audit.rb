@@ -110,6 +110,13 @@ class Story::Audit
   # narration. See Playthrough::Drift.
   DRIFTS = %i[reached_for_nothing].freeze
 
+  # NOT A DEFECT AND NOT A DRIFT: the player named two things the records
+  # really have, and a turn is one act, so the loop did one of them. Nothing
+  # here is wrong -- the count exists to answer whether one act per line is a
+  # limit worth lifting, which is a question about how people type rather than
+  # a matter of opinion. See Playthrough::Overreach.
+  LIMITS = %i[named_more_than_one].freeze
+
   # NOT A DEFECT AT ALL, and counted apart from everything above for that
   # reason: a stretch of turns on which the records show nothing happening. A
   # player examining four things in a row is enjoying themselves; the same four
@@ -181,6 +188,7 @@ class Story::Audit
     def contradiction? = CONTRADICTIONS.include?(code)
     def defect? = DEFECTS.include?(code)
     def drift? = DRIFTS.include?(code)
+    def limit? = LIMITS.include?(code)
     def pacing? = PACING.include?(code)
 
     # The one line of evidence worth putting next to the headline where there is
@@ -248,6 +256,8 @@ class Story::Audit
 
   def drifts = flags.select(&:drift?)
 
+  def limits = flags.select(&:limit?)
+
   def pacing = flags.select(&:pacing?)
 
   def scanned = scenes.size
@@ -261,7 +271,7 @@ class Story::Audit
   # `Character::Generator` still never sets `is_protagonist` (see the ROADMAP),
   # so that is a real shape a database holds rather than a hypothetical.
   def available_checks
-    all = CONTRADICTIONS + DEFECTS + DRIFTS + PACING
+    all = CONTRADICTIONS + DEFECTS + DRIFTS + LIMITS + PACING
 
     story.protagonist ? all : all - %i[third_person_protagonist]
   end
@@ -279,7 +289,7 @@ class Story::Audit
     case code
     when :unreachable_transition, :unrecorded_departure, :still_run
       scenes.count(&:follows_a_turn?)
-    when :reached_for_nothing
+    when :reached_for_nothing, :named_more_than_one
       scenes.count { |scene| scene.typed.present? }
     when :unrecorded_arrival
       # Every scene with prose in it, whether or not a turn came before. A
@@ -336,6 +346,7 @@ class Story::Audit
 
     check_stillness
     check_drifts
+    check_overreaches
     @flags
   end
 
@@ -883,6 +894,26 @@ class Story::Audit
            "was offered" => drift.offered.presence || "nothing at all",
            where: drift.location&.name,
            at: drift.story_timestamp)
+    end
+  end
+
+  # ------------------------------------------------------------------------
+  # A LINE THAT NAMED TWO THINGS, AND THE ONE THE TURN DID NOT DO. Not a
+  # defect: both names resolved and the turn acted on one, because one line is
+  # one act. Reported so the limit is a number rather than an impression. See
+  # Playthrough::Overreach.
+  # ------------------------------------------------------------------------
+  def check_overreaches
+    Playthrough::Overreach.for_story(story).in_story_order.includes(:scene, :location).each do |overreach|
+      flag(:named_more_than_one, overreach.scene,
+           "the player typed #{overreach.command.to_s.strip.inspect}, which named two things the records have, " \
+           "and the turn could only #{overreach.action} one of them",
+           action: overreach.action,
+           typed: overreach.command,
+           "acted on" => overreach.acted,
+           "left undone" => overreach.unacted,
+           where: overreach.location&.name,
+           at: overreach.story_timestamp)
     end
   end
 

@@ -66,11 +66,19 @@ class Location::Generator
 
   # The ways out, as stub neighbours plus connection rows in both directions,
   # in one transaction so a room never keeps some of its exits and not others.
+  #
+  # THE FLOOR is the second pass. A room with no way out at all is worse than a
+  # room with one it should not have, so if every way out the model named was a
+  # written room this cannot open a door into (see #connect_exit!), they are
+  # taken anyway rather than sealing the player in. Only reachable for a room
+  # that was not realized by being walked into -- an arrival already has its
+  # way back, so the first pass can never leave it with nothing.
   def write_exits!
     exits = Array(ask(Location::ExitsSchema, exits_prompt)["exits"])
 
     Location.transaction do
       exits.each { |attributes| connect_exit!(attributes) }
+      exits.each { |attributes| connect_exit!(attributes, into_written: true) } unless location.exits.exists?
     end
 
     location
@@ -119,6 +127,9 @@ class Location::Generator
       ## Places That Already Exist In This Story
       Reuse a name from this list when an exit leads somewhere already known.
       Only invent a name when the exit leads somewhere genuinely new.
+      A place marked (already written) has had its own ways out written down
+      already, so naming it here would open a door it does not have: leave it
+      out and name somewhere new instead.
       #{known_location_names.presence || "None yet."}
 
       ## Instructions
@@ -155,28 +166,65 @@ class Location::Generator
     CONTEXT
   end
 
+  # The places the model may reuse a name from, with the written ones marked.
+  # A room that has been written has already said what its ways out are, so
+  # naming it here is asking for a door it does not have; the engine refuses
+  # that edge in #connect_exit! either way, and saying so up front is what
+  # stops the model spending an exit on one.
   def known_location_names
-    story.locations.where.not(id: location.id).pluck(:name).join("\n")
+    story.locations.where.not(id: location.id).order(:id).map { |place| known_location_line(place) }.join("\n")
+  end
+
+  def known_location_line(place)
+    return place.name unless place.realized? && !connected?(place)
+
+    "#{place.name} (already written -- do not open a new way into it)"
   end
 
   # An exit becomes a stub neighbour plus a connection in both directions.
   # Reusing an existing location by name is what stops realizing A -> stub B,
   # then realizing B, from creating a second A alongside the first.
-  def connect_exit!(attributes)
+  #
+  # A REUSED NAME THAT IS ALREADY WRITTEN IS NOT A NEW EXIT. Realizing this
+  # room would otherwise add a way out to a room whose description has already
+  # been written and already said what its ways out are: a supply closet whose
+  # prose reads "there is no other door" grew a second one the moment the
+  # hallway next to it was realized and the model reused the closet's name. The
+  # edge is dropped in BOTH directions, because it is one edge.
+  #
+  # What decides is the connection and not the detail level, so the two cases
+  # that have to stay legal do: the way back, written when this room was still
+  # a stub, and a written place the player can already reach from here. Only an
+  # edge that did not exist before is refused. `into_written:` is the floor in
+  # #write_exits! asking for that refusal to be lifted.
+  def connect_exit!(attributes, into_written: false)
     name = sanitize_string(attributes["name"])
     return if name.blank? || name.casecmp?(location.name.to_s)
 
-    neighbour = find_or_create_stub(name, sanitize_string(attributes["teaser"]))
+    existing = find_location(name)
+    return if existing&.realized? && !into_written && !connected?(existing)
+
+    neighbour = existing || create_stub!(name, sanitize_string(attributes["teaser"]))
 
     connect!(location, neighbour, attributes)
     connect!(neighbour, location, attributes)
   end
 
-  def find_or_create_stub(name, teaser)
-    existing = story.locations.where("LOWER(name) = ?", name.downcase).first
-    return existing if existing
+  def find_location(name)
+    story.locations.where("LOWER(name) = ?", name.downcase).first
+  end
 
+  def create_stub!(name, teaser)
     story.locations.create!(name: name, teaser: teaser, detail_level: :stub)
+  end
+
+  # Whether the player can already get between here and there, either way
+  # round. Both rows are written together, so one direction is enough to know
+  # the edge exists -- the second check is only so a half-written pair does not
+  # read as a new door.
+  def connected?(neighbour)
+    LocationConnection.exists?(location: location, connected_location: neighbour) ||
+      LocationConnection.exists?(location: neighbour, connected_location: location)
   end
 
   # Connections are directional rows, so both directions are written: the

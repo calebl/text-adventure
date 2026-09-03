@@ -79,7 +79,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     [ report, agent ]
   end
 
-  CLASSIFY = ->(intent, target) { { "intent" => intent, "target" => target } }
+  CLASSIFY = ->(intent, target, also = nil) { { "intent" => intent, "target" => target, "also_named" => also }.compact }
 
   DETAIL = {
     "description" => "Doors on both sides, and the gas turned down to nothing.",
@@ -326,6 +326,42 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_equal "move", @playthrough.drifts.sole.action
   end
 
+  # A REFUSAL THAT CONTRADICTED THE READ-OUT UNDER IT. "pickup everything" in a
+  # room with three things on the floor resolved to nothing -- a quantifier is
+  # not a name -- and the refusal said "Nothing of that name is lying here",
+  # directly above a read-out listing all three. The set being empty and the
+  # command not landing on anything in it are two different facts.
+  test "a reach that found nothing says so without denying what is lying here" do
+    report, = interpret("pickup everything", CLASSIFY.call("take", "nothing"))
+
+    assert_predicate report, :refused?
+    assert_includes report.refusal, "did not resolve to anything lying here"
+    assert_not_includes report.refusal, "Nothing of that name"
+    assert_includes report.to_s, @stamp.name, "the read-out still says what is really here"
+  end
+
+  test "an empty set is refused by saying it is empty, not that nothing matched" do
+    @stamp.update!(location: @closet)
+
+    report, = interpret("pickup everything", CLASSIFY.call("take", "nothing"))
+
+    assert_includes report.refusal, "There is nothing lying here to pick up"
+  end
+
+  test "empty hands are refused the same way as an empty floor" do
+    @daybook.update!(character: nil, location: @office)
+
+    report, = interpret("drop it all", CLASSIFY.call("drop", "nothing"))
+
+    assert_includes report.refusal, "carrying nothing"
+  end
+
+  test "a set with something in it is refused by saying the command did not land on it" do
+    report, = interpret("drop the lot", CLASSIFY.call("drop", "nothing"))
+
+    assert_includes report.refusal, "did not resolve to anything you are carrying"
+  end
+
   test "the read-out after a classified command matches the database too" do
     report, = interpret("pick up that stamp", CLASSIFY.call("take", "ward stamp"))
     assert_reads_true report, report.command
@@ -412,5 +448,55 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     # records and wrong on the screen.
     (state.items_here + state.carried).each { |item| assert_includes report.to_s, item.name, where }
     state.exits.each { |exit| assert_includes report.to_s, exit.name, where }
+  end
+  # --- a line that named more than one thing ---------------------------------
+
+  # ONE LINE IS ONE ACT, and the half it did not do used to vanish: the index
+  # was taken, the apron went nowhere, and nothing said so or counted it -- the
+  # reach resolved, so `Playthrough::Drift` wrote nothing either.
+  test "a line that names two things acts on one and says which it left" do
+    apron = create(:item, :lying, location: @office, name: "copy-room apron")
+
+    report, = interpret("pickup the ward stamp and the apron",
+                        CLASSIFY.call("take", @stamp.name, apron.name))
+
+    assert_predicate report, :changed?
+    assert_equal @vance, @stamp.reload.character, "the first thing is still taken"
+    assert_nil apron.reload.character, "the second is not"
+    assert_equal @office, apron.location
+
+    assert_includes report.note.join, apron.name
+    assert_includes report.to_s, "also named: copy-room apron"
+    assert_includes report.to_s, "one line is one act"
+  end
+
+  # The note is added once, for every branch, so a turn this mode REFUSES still
+  # says what else the line named rather than only why it refused. The second
+  # name goes through the same closed set as the action, so a talk's is another
+  # person and never an item.
+  test "a turn that is refused still says what else the line named" do
+    lasco = create(:character, story: @story, fullname: "Perrin Lasco")
+    @opening.update!(characters: [ @vance, @rowe, lasco ])
+
+    report, = interpret("ask Rowe and Lasco where the file went",
+                        CLASSIFY.call("talk", @rowe.fullname, lasco.fullname))
+
+    assert_predicate report, :refused?
+    assert_includes report.to_s, "also named: Perrin Lasco"
+  end
+
+  test "a line that names one thing says nothing extra" do
+    report, = interpret("take the stamp", CLASSIFY.call("take", @stamp.name))
+
+    assert_predicate report, :changed?
+    assert_not_includes report.to_s, "also named"
+  end
+
+  # The offline grammar has no way to name two things, and does not pretend to.
+  test "the offline grammar names one thing and adds no note" do
+    report = play("take stamp")
+
+    assert_predicate report, :changed?
+    assert_not_includes report.to_s, "also named"
   end
 end

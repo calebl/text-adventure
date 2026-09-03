@@ -31,6 +31,26 @@ class Playthrough::IntentSchema
   # have something to say when there is nothing to point at.
   NOTHING = "nothing".freeze
 
+  # WHAT ONE LINE CAN NAME AND STILL BE ANSWERED. `target` is one value,
+  # because a turn is one act: `Playthrough::Turn#play` branches once, writes
+  # once and narrates once. So "pick up the index and the apron" has an answer
+  # this cannot hold, and what used to happen is that the model picked one, the
+  # loop took it, and the other half of the sentence went nowhere -- no record,
+  # no refusal, and nothing counted it either, because the reach DID resolve
+  # and so no `Playthrough::Drift` row was written.
+  #
+  # `also_named` is that other half, said out loud. It is NOT a second target
+  # and nothing acts on it: it is one more name out of the same closed set, so
+  # the app can say what it is not doing instead of dropping it silently.
+  #
+  # ONE name and not a list, deliberately. An array would have to be allowed to
+  # come back empty, and an empty required array reads as an omitted field to
+  # `BaseAgent#missing_schema_keys` -- which would fail the commonest call in
+  # the app on the commonest answer. `nothing` is a value this enum already
+  # has. The cost is that a line naming three things reports one of the two it
+  # skipped; the count of lines that overreached is still exact, and that is
+  # the number worth having.
+  #
   # `targets` is the exit names, the names and nicknames of whoever is here, the
   # names of what is lying here and the names of what the player is carrying.
   # Blank and duplicate entries are dropped: JSON Schema enums must be unique,
@@ -47,6 +67,9 @@ class Playthrough::IntentSchema
              enum: INTENTS
       string :target,
              description: "What they aimed it at, copied exactly from the lists you were given: a way out for `move`, a person for `talk`, a thing lying here for `take`, a thing they are carrying for `drop`. Answer `#{NOTHING}` for anything else, or when they named something that is not on those lists.",
+             enum: choices
+      string :also_named,
+             description: "One more thing on those lists that the player named in the SAME line and that `target` is not already pointing at, copied exactly -- as in \"take the index and the apron\". One line does one thing, so nothing here is acted on; naming it is only how the game says what it is leaving undone. Answer `#{NOTHING}` when they named one thing or none, which is usual.",
              enum: choices
     end
   end

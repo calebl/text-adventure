@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_03_120000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -201,6 +201,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
     t.index ["verdict"], name: "index_playthrough_feedbacks_on_verdict"
   end
 
+  create_table "playthrough_overreaches", force: :cascade do |t|
+    t.text "acted", null: false
+    t.string "action", null: false
+    t.text "command", null: false
+    t.datetime "created_at", null: false
+    t.integer "location_id"
+    t.integer "playthrough_id", null: false
+    t.integer "scene_id"
+    t.datetime "story_timestamp"
+    t.text "unacted", null: false
+    t.datetime "updated_at", null: false
+    t.index ["action"], name: "index_playthrough_overreaches_on_action"
+    t.index ["location_id"], name: "index_playthrough_overreaches_on_location_id"
+    t.index ["playthrough_id", "story_timestamp"], name: "idx_on_playthrough_id_story_timestamp_b54cd36315"
+    t.index ["playthrough_id"], name: "index_playthrough_overreaches_on_playthrough_id"
+    t.index ["scene_id"], name: "index_playthrough_overreaches_on_scene_id"
+  end
+
   create_table "playthroughs", force: :cascade do |t|
     t.integer "character_id"
     t.datetime "created_at", null: false
@@ -330,6 +348,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
   add_foreign_key "playthrough_drifts", "scenes"
   add_foreign_key "playthrough_feedbacks", "playthroughs"
   add_foreign_key "playthrough_feedbacks", "scenes"
+  add_foreign_key "playthrough_overreaches", "locations"
+  add_foreign_key "playthrough_overreaches", "playthroughs"
+  add_foreign_key "playthrough_overreaches", "scenes"
   add_foreign_key "playthroughs", "characters"
   add_foreign_key "playthroughs", "locations", column: "current_location_id"
   add_foreign_key "playthroughs", "scenes", column: "current_scene_id"
