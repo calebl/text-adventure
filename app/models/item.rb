@@ -13,10 +13,13 @@
 # either way. Now `Playthrough::Classifier` resolves `take` against the items
 # the records say are lying in this room, and the app moves the row.
 #
-# HOW ITEMS COME TO EXIST is deliberately not here. Nothing in the app creates
-# one yet -- seed files and tests do -- and the lazy stub-then-realize registry
-# that would let the narrator name a new thing into being is `ta-item-registry`.
-# This class only answers where the ones that exist are.
+# HOW ITEMS COME TO EXIST is `Item::Registry`, and it is the only thing in the
+# app that creates one: a room's furniture is written as structured records the
+# moment the room is realized, out of the same call that describes it, exactly
+# the way its exits are. Not by reading narration and not through a tool the
+# narrator may or may not call -- read that class's header for why the
+# distinction is the whole point. This class still only answers WHERE the ones
+# that exist are; a seed file is now one writer of them among two.
 class Item < ApplicationRecord
   belongs_to :character, optional: true
   belongs_to :location, optional: true

@@ -249,4 +249,88 @@ class Story::DoctorTest < ActiveSupport::TestCase
 
     assert_equal before, Location.count + Scene.count + Character.count + LocationConnection.count
   end
+
+  # --- the item registry ----------------------------------------------------
+  #
+  # `Item::Registry` refuses every one of these at the moment it writes, so a
+  # world generated since it landed cannot show one. A world here outlives the
+  # code that made it -- a seed file, a hand-written row, an older build -- and
+  # the first thing that would otherwise notice is the classifier resolving one
+  # word two ways, mid-turn.
+
+  test "a story with things lying in its rooms is still healthy" do
+    story = healthy_story
+    create(:item, :lying, location: story.locations.first, name: "ward stamp")
+    create(:item, character: story.characters.first, name: "brass key")
+
+    assert_empty Story::Doctor.new(story).findings
+  end
+
+  test "reports an item that is neither held nor lying anywhere" do
+    story = healthy_story
+    item = create(:item, :lying, location: story.locations.first)
+    item.update_columns(location_id: nil, character_id: nil)
+
+    assert_includes codes(story), :items_nowhere
+    assert_match(/neither held by anybody nor lying anywhere/, finding(story, :items_nowhere).message)
+  end
+
+  test "reports two things in one world answering to one name" do
+    story = healthy_story
+    create(:item, :lying, location: story.locations.first, name: "ward stamp")
+    create(:item, character: story.characters.first, name: "Ward Stamp")
+
+    assert_includes codes(story), :duplicate_items
+    assert_match(/ordering accident/, finding(story, :duplicate_items).message)
+  end
+
+  test "reports a room holding more than one room may hold" do
+    story = healthy_story
+    room = story.locations.first
+    (Item::Registry::MAX_PER_ROOM + 1).times { |n| create(:item, :lying, location: room, name: "thing #{n}") }
+
+    assert_includes codes(story), :room_over_item_cap
+    assert_match(/Your Office/, finding(story, :room_over_item_cap).message)
+  end
+
+  test "a room at the cap exactly is not over it" do
+    story = healthy_story
+    Item::Registry::MAX_PER_ROOM.times { |n| create(:item, :lying, location: story.locations.first, name: "thing #{n}") }
+
+    assert_not_includes codes(story), :room_over_item_cap
+  end
+
+  test "reports a world past the ontology it was meant to be bounded by" do
+    story = healthy_story
+    holder = story.characters.first
+    (Item::Registry::MAX_PER_STORY + 1).times { |n| create(:item, character: holder, name: "thing #{n}") }
+
+    assert_includes codes(story), :story_over_item_cap
+  end
+
+  test "reports an item named after somebody in the story" do
+    story = healthy_story
+    create(:item, :lying, location: story.locations.first, name: story.characters.first.fullname.downcase)
+
+    assert_includes codes(story), :item_named_after_something_else
+    assert_match(/character/, finding(story, :item_named_after_something_else).message)
+  end
+
+  test "reports an item named after a place in the story" do
+    story = healthy_story
+    create(:item, :lying, location: story.locations.first, name: "the street")
+
+    assert_includes codes(story), :item_named_after_something_else
+    assert_match(/location "The Street"/, finding(story, :item_named_after_something_else).message)
+  end
+
+  # None of these stop a story being played -- they are things that will read
+  # wrong, not things that raise.
+  test "nothing the registry checks makes a story unplayable" do
+    story = healthy_story
+    create(:item, :lying, location: story.locations.first, name: "the street")
+    create(:item, character: story.characters.first, name: "The Street")
+
+    assert Story::Doctor.new(story).playable?
+  end
 end

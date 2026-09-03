@@ -371,6 +371,21 @@ send again: one system instruction, one schema, one model.
 - `LocationConnection` rows are written in both directions from one answer, so
   anything stored on them has to be true both ways. That is why the travel
   method is a direction-neutral enum and the travel time is derived.
+- **`Item::Registry` is the only thing in the app that creates an `Item`**, and
+  it does so at realization, out of the SAME call that writes the description
+  (`Location::DetailSchema`'s optional `items` array). Not a narrator tool and
+  not a scan of prose — the engine owns what exists and `Playthrough::Moment`
+  tells the narrator. Do not add a second writer, and do not add a third
+  realization call for it. The array is optional on purpose: an empty required
+  array reads as an omitted field to `BaseAgent#missing_schema_keys`, so a room
+  honestly containing nothing would fail its own realization.
+- The caps are on the ROOM and on the WORLD, read back from the records on every
+  admission (`MAX_PER_ROOM`, `MAX_PER_STORY`) — the same distinction
+  `Location::ExitsSchema::MAX_EXITS` documents, and for the same reason: rows
+  arrive from outside the call. An item may never share a name with a person, a
+  place, or another item in the story; two of the classifier's closed sets would
+  answer to one word. A refused name costs the room its furniture and never its
+  description.
 
 ### Seeded worlds
 
@@ -464,10 +479,11 @@ before changing the loop; the rules below are what it does not fit.
   no say in whether it is true. **Both directions or neither**: an app that owns
   picking up while the narrator asserts putting down has records that go stale
   the first time a player sets something on a table.
-- **Nothing in the app creates an `Item`.** Seeds and tests do — a seed file can
-  put one in somebody's hands or on the floor of a room (`locations[].items`).
-  The lazy stub-then-realize registry is `ta-item-registry`, and generating a
-  per-room inventory ahead of time is explicitly ruled out.
+- **`Item::Registry` is the one thing in the app that creates an `Item`**, at
+  room realization and out of the same call that describes the room. A seed file
+  is the other writer and puts one in somebody's hands or on the floor
+  (`locations[].items`); the registry leaves seeded rooms alone. See *Generating
+  the world* above for the caps and the collisions it refuses.
 - **The three writes that move the world are named methods on
   `Playthrough::Turn`** — `#stand_in!`, `#carry!`, `#put_down!` — because
   `Playthrough::Mechanics` writes through the same ones. Put a new state change

@@ -68,6 +68,25 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     assert_no_match(/carrying:.*Ledger/, context, "what lies on the floor is not in the player's hands")
   end
 
+  # THE FOURTH CLOSED SET, and the last one the prose was not told about. The
+  # classifier resolves a `take` against exactly this list every turn; the
+  # narrator used to know what the player was holding and not what they could
+  # pick up, so prose answering a take that resolved to a real row had no idea
+  # the thing was in the room. It is also what makes the item registry visible:
+  # a generated room's furniture reaches the narrator through the records.
+  test "the narration context lists what is lying here" do
+    create(:item, :lying, location: @here, name: "Ledger")
+    create(:item, :lying, location: @here, name: "Oil Lamp")
+    create(:item, character: @protagonist, name: "Brass Key")
+    create(:item, :lying, location: connect("The Sunken Stair"), name: "Crowbar")
+
+    context = moment.narration_context
+
+    assert_match(/Lying here, and takeable: Ledger, Oil Lamp\./, context)
+    assert_no_match(/Lying here.*Brass Key/, context, "what the player is holding is not on the floor")
+    assert_no_match(/Lying here.*Crowbar/, context, "what is lying in the next room is not lying here")
+  end
+
   # STATED EVEN WHEN EMPTY. Silence about the inventory is an invitation to
   # decide; "nothing" is a fact the narrator can use.
   test "empty sets are stated rather than left out" do
@@ -75,6 +94,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
 
     assert_match(/Ways out of here: none\./, context)
     assert_match(/Nobody else is here\./, context)
+    assert_match(/Lying here, and takeable: nothing\./, context)
     assert_match(/The player is carrying: nothing\./, context)
   end
 

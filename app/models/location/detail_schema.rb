@@ -1,7 +1,7 @@
-# Realizing a stub: what the player reads on arrival, plus what the place is.
-# Lengths are explicit on every field. Without them a strong model answered a
-# one-word field with 2,382 characters of prose, and both of these are
-# interpolated into every scene generated here.
+# Realizing a stub: what the player reads on arrival, plus what the place is,
+# plus what is lying in it. Lengths are explicit on every field. Without them a
+# strong model answered a one-word field with 2,382 characters of prose, and
+# both of the prose fields are interpolated into every scene generated here.
 #
 # `description` DESCRIBES THE PLACE, NOT ITS NEIGHBOURS, and that clause is
 # load-bearing rather than stylistic. A description is written once and never
@@ -10,7 +10,36 @@
 # graph moves it. The Lunar Cartographer already has one: Room 3's description
 # was generated before `WorldMechanic` existed and puts a clothier's shop
 # outside the window. Asking for the place itself is what stops the next one.
+#
+# `items` IS HOW THINGS COME TO EXIST, and it is here rather than in a call of
+# its own because a realization already makes two (see `Location::Generator`)
+# and a third to ask what is on the floor would be a round trip per room to
+# answer "nothing" most of the time. Riding on the description means the model
+# names what it just finished describing, so the two agree by construction --
+# and it is the description call rather than the exits call because the exits
+# call is skipped entirely for a room already at its exit cap.
+#
+# It is OPTIONAL, and that is deliberate rather than lax: an empty required
+# array reads as an omitted field to `BaseAgent#missing_schema_keys`, so a
+# room honestly containing nothing would fail its own realization and rotate
+# to another model. An absent `items` and an empty `items` both mean the same
+# thing here -- nothing is lying here -- and `Item::Registry` treats them the
+# same.
+#
+# The cap is the schema's bound on ONE ANSWER. The bound on the ROOM, and on
+# the world, is `Item::Registry`'s, for the reason `Location::ExitsSchema`
+# spells out at length: rows arrive from outside this call too.
 class Location::DetailSchema < RubyLLM::Schema
   string :description, description: "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.", max_length: 1200
   string :lore, description: "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.", max_length: 900
+
+  array :items,
+        description: "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",
+        required: false,
+        max_items: Item::Registry::MAX_PER_ROOM do
+    object do
+      string :name, description: "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.", max_length: 60
+      string :description, description: "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.", max_length: 400
+    end
+  end
 end

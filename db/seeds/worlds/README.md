@@ -196,11 +196,11 @@ locations:
     properties: '{"registered": true, "ward": 12}'
 ```
 
-Items under a location are what a world has to carry for anything to be
-takeable at all. Nothing in the app creates an `Item` — that is
-`ta-item-registry` in the ROADMAP — so a seed file is the only place a thing can
-be on the floor of a room, and a world without one can only ever exercise `take`
-as the inverse of a `drop` the player did first. `rake game:mechanics` is the
+Items under a location are what a hand-written world carries so that anything in
+it is takeable. A generated room furnishes itself now (`Item::Registry`, written
+when the room is realized), but a seeded room is realized by this file rather
+than by a model call, so what is lying in one is whatever the file says and
+nothing else — the registry leaves it alone. `rake game:mechanics` is the
 fastest way to see this half of the world work; see the README.
 
 `properties` is a JSON string, stored verbatim and read back by
