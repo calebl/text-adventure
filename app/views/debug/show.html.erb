@@ -716,6 +716,19 @@
       own prompt &mdash; only for turns written before the column existed.
     </li>
     <li>
+      <strong>What the turn DID &mdash; which IS recorded now, and this list
+      used to be right about.</strong> <code>scenes.resolved_action</code> and
+      <code>scenes.acted_on</code> are real columns, written on every branch by
+      <code>Playthrough::Turn#play</code> beside the typed line, so a turn says
+      what it changed and not only what the world looks like afterwards. That
+      is what lets <code>Story::Audit</code> read a narration against the state
+      BEFORE the turn (<code>take_denied</code>,
+      <code>pickup_invented</code>). Turns played before the columns existed
+      show <em>not recorded</em> until
+      <code>rake game:backfill_transitions</code> labels the ones whose
+      classifier exchange is still on disk.
+    </li>
+    <li>
       <strong>What changed between two visits to a room.</strong> The exits a
       player was actually shown are not recorded on the Scene, so a shuffle is
       visible in the audit trail above but not as a diff. That is

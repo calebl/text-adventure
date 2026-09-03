@@ -51,7 +51,8 @@ class Playthrough::Turn
       narrate(command, intent: intent, &block)
     end
 
-    # WHAT THE PLAYER TYPED, filed under the turn it produced.
+    # WHAT THE PLAYER TYPED, AND WHAT THE TURN DID WITH IT, filed under the turn
+    # it produced.
     #
     # Here rather than in each of the four branches, and for the same reason
     # the classifier is stamped here: this is the one place that has the
@@ -60,7 +61,14 @@ class Playthrough::Turn
     # recoverable only by scraping the classifier's stored prompt, which the
     # conversation pruner can still be asked to throw away (Chat::KEEP_TURNS),
     # so the player's own words disappeared from older turns.
-    scene&.update!(typed: command)
+    #
+    # `resolved_action` and `acted_on` are the same argument taken one step
+    # further. `typed` is what the player SAID; the records around it are what
+    # the world IS afterwards. Neither is what the turn DID, and without that
+    # a check reading a narration against the state before it has nothing to
+    # read -- which is why the prose denying a resolved `take` was invisible to
+    # every check in `Story::Audit`. See `#resolution_for`.
+    scene&.update!(typed: command, **resolution_for(intent))
 
     # THE CONVERSATIONS THIS TURN HAD, filed under the turn.
     #
@@ -313,6 +321,31 @@ class Playthrough::Turn
       "The player tried to put down something they are not carrying. Nothing changed hands, and " \
         "they are carrying exactly what is listed above."
     end
+  end
+
+  # WHAT THE TURN DID, in the two columns `Scene` keeps it in.
+  #
+  # The classifier's answer, with one correction: the two branches that resolve
+  # a record and then cannot act on it. `take_item` narrates instead when the
+  # playthrough has no protagonist to carry anything, and `drop_item` when it is
+  # standing nowhere to put anything down in -- nothing in the app produces
+  # either, and both are shapes a hand-made playthrough really has. The action
+  # is still what the player was doing; the RECORD is dropped, because writing
+  # one there would say a row moved that did not, and `Scene#took?` is the seam
+  # a check trusts outright.
+  #
+  # Everything else is recorded exactly as it resolved, including a reach that
+  # found nothing: an action with no record is the drift case, told apart here
+  # the same way `Playthrough::Classifier::Intent` tells it apart.
+  def resolution_for(intent)
+    acted_on =
+      if (intent.take? && playthrough.character.nil?) || (intent.drop? && playthrough.current_location.nil?)
+        nil
+      else
+        intent.subject
+      end
+
+    { resolved_action: intent.action.to_s, acted_on: acted_on }
   end
 
   def classifier

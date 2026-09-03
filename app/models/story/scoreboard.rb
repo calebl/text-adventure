@@ -22,13 +22,19 @@
 # killed on measurement are recorded in `Story::Audit`'s header.
 # `data/ta-model-bench/report.md` §9 has the argument against a judge in full.
 #
-# TWO CORPORA, REPORTED SEPARATELY AND NEVER POOLED.
+# THREE CORPORA, REPORTED SEPARATELY AND NEVER POOLED.
 #
 #   DATABASE  every `Story` on this machine -- the captain's own playthroughs.
 #             True, because it is what he actually read, and the only corpus
 #             his verdicts attach to. Small, and it drifts: the world changes
 #             under it as features land, so a number from last week is not
 #             strictly the same measurement as today's. Every check runs.
+#
+#   TRANSITIONS  `test/fixtures/files/transition_corpus.json` -- 119 real take
+#             and drop turns with the transition each one made frozen beside
+#             the prose. The only corpus that can answer a check about a
+#             CHANGE, and it answers exactly the two: everything else is
+#             UNAVAILABLE on it. See `Story::Scoreboard::Transitions`.
 #
 #   CORPUS    `test/fixtures/files/eval_corpus.json` -- real passages, frozen,
 #             checked in, and reproducible on a machine with no database at
@@ -38,7 +44,7 @@
 #             are reported UNAVAILABLE rather than quietly scored as clean.
 #             See `Story::Scoreboard::Corpus`.
 #
-# Adding the two together would produce a number that is neither, so nothing
+# Adding them together would produce a number that is none of them, so nothing
 # here sums them.
 class Story::Scoreboard
   # Every check the scoreboard reports on, in the order it prints them, with
@@ -50,6 +56,8 @@ class Story::Scoreboard
     unrecorded_departure: "the prose closed a door behind a player who never left",
     unrecorded_arrival: "the prose walked the player into a room the records did not move them to",
     item_not_held: "the prose handed the player something somebody else holds",
+    take_denied: "the prose said the player already had what this turn picked up",
+    pickup_invented: "the prose picked up what this turn put down",
     truncated_prose: "stored prose stops mid-sentence",
     third_person_protagonist: "the narration wrote the player as somebody else",
     reached_for_nothing: "the player reached for something the records do not have",
@@ -118,10 +126,19 @@ class Story::Scoreboard
         note: "#{Story::Scoreboard::Corpus::PATH} -- real passages, frozen, no database needed")
   end
 
-  # Both, in the order they should be read: the true one first, the
-  # reproducible one after it.
+  # THE TRANSITION CORPUS. Real turns, frozen, each with what the turn DID
+  # written down beside the prose -- the only corpus that can answer a check
+  # about a change. See `Story::Scoreboard::Transitions`.
+  def self.transitions
+    new("transitions", [ Story::Scoreboard::Transitions.load ],
+        note: "#{Story::Scoreboard::Transitions::PATH} -- real take and drop turns, " \
+              "with the transition each one made frozen beside the passage")
+  end
+
+  # All three, in the order they should be read: the true one first, then the
+  # two reproducible ones.
   def self.all
-    [ database, corpus ]
+    [ database, corpus, transitions ]
   end
 
   def scenes = @scenes ||= audits.flat_map(&:scenes)

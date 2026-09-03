@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_03_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_03_170000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -245,19 +245,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_120000) do
   end
 
   create_table "scenes", force: :cascade do |t|
+    t.integer "acted_on_id"
+    t.string "acted_on_type"
     t.datetime "created_at", null: false
     t.text "description"
     t.boolean "is_opening", default: false, null: false
     t.integer "location_id", null: false
     t.integer "previous_scene_id"
+    t.string "resolved_action"
     t.integer "story_id", null: false
     t.datetime "story_timestamp"
     t.text "summary"
     t.text "typed"
     t.datetime "updated_at", null: false
+    t.index ["acted_on_type", "acted_on_id"], name: "index_scenes_on_acted_on"
     t.index ["location_id"], name: "index_scenes_on_location_id"
     t.index ["previous_scene_id"], name: "index_scenes_on_previous_scene_id"
     t.index ["story_id", "is_opening"], name: "index_scenes_on_story_id_and_is_opening"
+    t.index ["story_id", "resolved_action"], name: "index_scenes_on_story_id_and_resolved_action"
     t.index ["story_id", "story_timestamp"], name: "index_scenes_on_story_id_and_story_timestamp"
     t.index ["story_id"], name: "index_scenes_on_story_id"
   end

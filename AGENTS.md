@@ -533,13 +533,28 @@ The debug view shows the same four tables for one playthrough.
 
 - **Four categories, counted apart and never merged.** A CONTRADICTION is two
   records disagreeing (`unreachable_transition`, `item_not_held`,
-  `unrecorded_departure`). A DEFECT is one passage wrong on its own terms
+  `unrecorded_departure`, `unrecorded_arrival`, `take_denied`,
+  `pickup_invented`). A DEFECT is one passage wrong on its own terms
   (`truncated_prose`, `third_person_protagonist`). DRIFT is
   `Playthrough::Drift`: the player reached for something the closed sets do not
   have, which is how an invented exit becomes observable — by its consequences,
   not by scanning prose for a door. PACING (`still_run`) is not a defect at all
   and must never be counted as one: it is a stretch of turns on which the
   records show nothing happening with somebody in the room.
+- **A check reads a STATE or it reads a CHANGE, and until 2026-09-03 they all
+  read a state.** The records carried what the world IS after a turn and never
+  what the turn DID, so the largest measured defect in the game — the narration
+  denying a resolved `take` on 28 of 32 take turns of the 480-turn baseline —
+  was invisible to every check, and a person reading a whole run found it.
+  `Scene#resolved_action` and `Scene#acted_on` are the record that closed that
+  gap, written by `Playthrough::Turn#play` beside `typed`, in the one place
+  with the command and the scene on every branch. `take_denied` and
+  `pickup_invented` are the first two checks that read one, and
+  `unrecorded_departure` stopped inferring movement from two location ids
+  (`Story::Audit#left_the_room?`). **When you add a record about the loop, add
+  it there and nowhere else**, and read it back through
+  `Scene#recorded_action` / `#acted_on_record` — a `Scene` also comes out of an
+  `rake eval:run` database whose table was frozen before the column existed.
 - **Every check answers to an error the captain named while playing**, in his
   own words, and nothing here was added because it sounded checkable. A new
   check needs a complaint behind it and a measurement in front of it.
@@ -550,17 +565,23 @@ The debug view shows the same four tables for one playthrough.
   therefore **no place check and no person check**, and adding one back needs a
   measurement, not an argument. `Story::Audit`'s header comment has the full
   reasoning for each check kept and each cut.
-- **Two corpora, pinned by two tests, and never pooled into one number.**
+- **Three corpora, pinned by three tests, and never pooled into one number.**
   `test/fixtures/files/narration_corpus.json` is 24 narrations two remote models
-  really wrote, and `Story::AuditPrecisionTest` pins the 8 item flags they earn.
+  really wrote, and `Story::AuditPrecisionTest` pins the item flags they earn.
   `test/fixtures/files/eval_corpus.json` is those 24 plus all 68 passages from
   the two worlds actually played — 92 in all — and
   `Story::Scoreboard::CorpusTest` pins the exact 19 flags they earn: all true
   positives, zero false positives, and **not one of the 24 lab narrations
-  flagged**. Widening a pattern until it flags "There is no revolver, no pistol,
+  flagged**. `test/fixtures/files/transition_corpus.json` is 119 real `take` and
+  `drop` turns with the transition each one made frozen beside the prose — the
+  only corpus that can answer a check about a change — and
+  `Story::Audit::TransitionTest` pins the 28-of-32 and 4-of-32 the baseline set
+  earns, along with both stated misses and the fact that it carries held-out
+  passages. Widening a pattern until it flags "There is no revolver, no pistol,
   no weapon of any kind on your person", or "the name is stitched into the
-  strap… but it is yours", fails the build. If a set changes, read every new
-  flag and sign for it before touching the fixture.
+  strap… but it is yours", or "You lift the slate and set it on the bench",
+  fails the build. If a set changes, read every new flag and sign for it before
+  touching the fixture.
 - **The three turns the captain actually judged are the validation**, and each
   is caught by a different check: `truncated_prose`, `still_run`,
   `unrecorded_departure`. A scoreboard that cannot catch the errors he noticed

@@ -358,6 +358,129 @@ module Story::Audit::Prose
   end
 
   # ------------------------------------------------------------------------
+  # THE PROSE ARGUES WITH THE TRANSITION THE TURN ACTUALLY MADE.
+  #
+  # Every other predicate here reads a passage against a STATE -- where the
+  # player is, what the records say they hold. These two read it against a
+  # CHANGE, which is what `Scene#resolved_action` and `Scene#acted_on` made
+  # possible: the app owns `take` and `drop` outright (`Playthrough::Turn`
+  # moves the row before any prose exists), so on a turn recorded as one of
+  # them the state before the turn is not in question either.
+  #
+  #   on a recorded `take`  the item was NOT the player's a moment ago. Prose
+  #                         saying it already was denies the pickup the app
+  #                         just made -- `prior_possession_claims`.
+  #   on a recorded `drop`  the item WAS the player's a moment ago. Prose
+  #                         lifting it off a floor or a wall invents a pickup
+  #                         that never happened -- `invented_pickup_claims`.
+  #
+  # THE CAPTAIN'S COMPLAINT BEHIND THEM: *"losing the location of the ledger
+  # when it is put down and picked up"*, seen across all four model arms and
+  # filed as `ta-narrator-invents-exit`. `Playthrough::Turn#taken_fact` hands
+  # the narrator the right sentence and the narrator writes the opposite, on
+  # 28 of the 32 take turns of the 480-turn baseline of 2026-09-03. It took a
+  # person reading a whole run to find it, because no check could see a change.
+  #
+  # MEASURED BEFORE THEY SHIPPED, on 248 real passages that are not transition
+  # turns, and on 143 that are:
+  #
+  #   eval_corpus.json (92)      take grammar 0 detections, drop grammar 2
+  #   narration_corpus.json (24) take grammar 0 detections, drop grammar 2
+  #                              (the same two lab narrations, which
+  #                              `eval_corpus.json` also carries)
+  #   whole_run_corpus.json      take grammar 6 detections, ALL SIX on the 12
+  #   (132, records declared)    turns recorded as `take`; drop grammar 0
+  #   transition_corpus.json     28 of 32 recorded takes, 4 of 32 recorded
+  #   (119, the 2026-09-03       drops on the baseline set
+  #    baseline and three
+  #    smaller sets)
+  #
+  # Not one of the four drop detections outside the transition corpus is on a
+  # turn recorded as a `drop`, so neither check raises a single FLAG on any of
+  # the three existing corpora. `Story::Audit::TransitionTest` pins all of it,
+  # detections and flags apart, because a check that cannot fire looks exactly
+  # like a clean result.
+  # ------------------------------------------------------------------------
+
+  # Verbs that lift a thing off something. `set`, `place` and `lay` are
+  # deliberately absent: they are how putting a thing DOWN is written, which is
+  # the turn this reads.
+  PICKUP_VERBS = %w[
+    lift lifts lifted lifting pick picks picked scoop scoops scooped
+    retrieve retrieves retrieved gather gathers gathered hoist hoists hoisted
+    grab grabs grabbed snatch snatches snatched collect collects collected
+    take takes took taking pull pulls pulled draw draws drew raise raises raised
+  ].freeze
+
+  # One sentence that argues with the transition.
+  Claim = Data.define(:name, :sentence)
+
+  # THE PROSE SAYS THE PLAYER ALREADY HAD IT.
+  #
+  # Two grammars, and `already` is required by both. That one word is what
+  # separates a denial from a description: "the slate is heavy in your hands"
+  # is what a good take narration says AFTER the pickup and is correct, and
+  # "you already hold the slate" is the same sentence claiming the pickup was
+  # never needed. Nothing here reads a possession claim on its own --
+  # `Story::Audit#possession_claimed?` already does that, against a different
+  # record, for a different question.
+  #
+  #   1. the player, `already`, a possession verb, the name:
+  #      "You already hold the Assize tide-slate"
+  #   2. the name, `already`, and the name on the player's person:
+  #      "The Ward Office 12 daybook is already in your hands",
+  #      "You reach for the daybook, but it is already in your hands"
+  #
+  # WHAT IT KNOWINGLY MISSES, and it is four of the 32 baseline takes: the
+  # narration that denies the pickup by handing the thing to somebody else --
+  # "your fingers close on empty air, Odile Vance has already taken it", of a
+  # world whose protagonist IS Odile Vance. That sentence says the player does
+  # NOT have it, which is the opposite claim, and reading it needs the
+  # protagonist's name rather than the item's. `third_person_protagonist`
+  # catches every one of the four from its own side.
+  def prior_possession_claims(text, names)
+    verbs = Regexp.union(Story::Audit::POSSESSION_VERBS)
+    places = Regexp.union(Story::Audit::ON_THE_PERSON)
+
+    claims(text, names) do |sentence, word|
+      sentence.match?(/\byou\b[^.!?;:]{0,40}?\balready\b[^.!?;:]{0,30}?\b#{verbs}\b[^.!?;:]{0,40}?\b#{word}\b/i) ||
+        sentence.match?(/\b#{word}\b[^.!?;:]{0,80}?\balready\b[^.!?;:]{0,20}?\b(?:in|on|at|against|under)\s+your\s+(?:#{places})\b/i)
+    end
+  end
+
+  # THE PROSE PICKS UP WHAT THE TURN PUT DOWN.
+  #
+  # The player, a pickup verb, the name, and then where it came FROM -- in that
+  # order, in one sentence. The source is what makes it a pickup rather than a
+  # description of the hand that is already holding it, and it is also the one
+  # guard this needs: taking a thing out of your own coat is not picking it up
+  # off the floor, so a source on the player's person (`ON_THE_PERSON`, with or
+  # without a determiner -- prose writes "from the satchel" as readily as "from
+  # your satchel") ends the match.
+  #
+  # "You lift the slate and set it on the bench" is NOT flagged and must not
+  # be: lifting a thing out of your own hands is what putting it down is. Five
+  # of the 32 baseline drops read that way and none of them is a defect.
+  #
+  # WHAT IT KNOWINGLY MISSES: the same sentence written about a name the
+  # records do not hold. "You lift the slate from the flagstones" of an item
+  # recorded as the "Assize tide-slate" matches nothing, because `.item_names`
+  # gives "Assize tide-slate" and "tide-slate" and prose is free to write
+  # "slate". That is the alias rule the whole sweep works to and widening it
+  # here would move counts three other checks are pinned on.
+  def invented_pickup_claims(text, names)
+    verbs = Regexp.union(PICKUP_VERBS)
+    places = Regexp.union(Story::Audit::ON_THE_PERSON)
+
+    claims(text, names) do |sentence, word|
+      sentence.match?(
+        /\byou\b[^.!?;:]{0,30}?\b#{verbs}\b[^.!?;:]{0,40}?\b#{word}\b[^.!?;:]{0,15}?
+         \bfrom\b(?!\s+(?:the\s+|your\s+|his\s+|her\s+|their\s+|its\s+)?(?:#{places})\b)/xi
+      )
+    end
+  end
+
+  # ------------------------------------------------------------------------
 
   # Sentences, split on a terminator followed by whitespace -- the same split
   # `Story::Audit#excerpt` makes, kept identical so an excerpt and a flag can
@@ -365,6 +488,30 @@ module Story::Audit::Prose
   def sentences(text) = text.to_s.split(/(?<=[.!?])\s+/)
 
   private
+
+  # THE SHAPE BOTH TRANSITION PREDICATES SHARE: every sentence, against every
+  # name the item answers to, with the negation guard `Story::Audit` takes
+  # everywhere -- a sentence that denies its own claim is the opposite of one.
+  #
+  # ONE PER NAME, on the same rule `.arrival_claims` and
+  # `Story::Audit#items_elsewhere` follow: a passage that says the same wrong
+  # thing twice is one wrong claim.
+  def claims(text, names)
+    body = text.to_s
+    return [] if body.blank? || names.empty?
+
+    found = []
+
+    sentences(body).each do |sentence|
+      next if sentence.match?(Story::Audit::NEGATIONS)
+
+      names.each do |name|
+        found << Claim.new(name: name, sentence: sentence.strip) if yield(sentence, Regexp.escape(name))
+      end
+    end
+
+    found.uniq(&:name)
+  end
 
   # Each sentence with the offset it starts at in the whole passage, which is
   # what the quotation guard needs: a quoted span is found in the passage and

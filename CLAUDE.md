@@ -44,10 +44,12 @@ rake eval:compare BEFORE=a AFTER=b  # REAL / NOISE / INCONCLUSIVE, per check
 # Check the stories in the database, fix what can be fixed, delete what cannot
 rake game:doctor                    # or rake 'game:doctor[3]' for one story
 rake game:audit                     # where narration contradicts the records; VERBOSE=1 for unjudged checks
+rake game:backfill_transitions      # label old turns with what they did, from the stored
+                                    # classifier answers. Offline; DRY_RUN=1 to see it first
 rake game:score                     # the scoreboard: a rate per check, the movement since the
                                     # baseline, and every flagged turn with what was typed and
-                                    # the passage. SAVE=1 to re-baseline, CORPUS=corpus for the
-                                    # frozen one alone
+                                    # the passage. SAVE=1 to re-baseline; CORPUS=corpus or
+                                    # CORPUS=transitions for one frozen corpus alone
 rake 'game:repair[3]'               # safe repairs; GENERATE=1 to allow model calls
 rake 'game:delete[3]'               # prints what would go; DRY_RUN=1 or CONFIRM='<title>'
 
@@ -195,6 +197,19 @@ The current database includes the following story-related models with proper ass
   and `drop` app-owned state changes rather than prose
 - **Scene** → `typed`, what the player typed to cause the turn, written on every
   branch by `Playthrough::Turn#play`. Nil only on an opening arrival
+- **Scene** → `resolved_action` and `acted_on` (polymorphic), **what the turn
+  DID and to which record** — the move's destination, the person spoken to, the
+  item taken or dropped. Written beside `typed`, in the same one place that has
+  the command and the scene on every branch, and by `Playthrough::Mechanics` on
+  the one branch that mode writes a Scene from. Both nullable: an opening
+  arrival did nothing, a turn played before the columns existed recorded
+  nothing, and an action with no record is a reach that resolved to nothing.
+  `Scene#took?` / `#dropped?` / `#moved_to?` need BOTH halves, which is what
+  makes them seams a check can trust. `rake game:backfill_transitions` labels
+  old turns from the stored classifier answers and **refuses to guess**; read
+  `Scene::TransitionBackfill`'s header before changing it. Read the columns
+  through `#recorded_action` / `#acted_on_record`: a `Scene` also comes out of
+  an `rake eval:run` database whose table predates them
 - **Playthrough** → **Playthrough::Drifts**: one row per turn on which a reach
   resolved to nothing. The drift counter; never pruned
 - **Playthrough::Feedback** → the player's verdict on one turn (`good` / `weak`
@@ -279,14 +294,25 @@ The current database includes the following story-related models with proper ass
   see its header comment and `Story::AuditPrecisionTest`, which pins the exact
   flags 24 real narrations earn. Do not add a check that scans prose for a name;
   that was measured and it does not work.
-- It carries **nine checks in five categories that are never merged**:
+- It carries **eleven checks in five categories that are never merged**:
   contradictions (`unreachable_transition`, `item_not_held`,
-  `unrecorded_departure`, `unrecorded_arrival`), defects (`truncated_prose`,
-  `third_person_protagonist`), drift (`reached_for_nothing`), limits
-  (`named_more_than_one` — the loop's limit, not a defect) and pacing
-  (`still_run` — evidence about pacing, explicitly *not* a defect).
-  `Story::Audit::Prose` holds the three text predicates as pure functions so the
-  live database and the frozen corpus read them through the same code.
+  `unrecorded_departure`, `unrecorded_arrival`, `take_denied`,
+  `pickup_invented`), defects (`truncated_prose`, `third_person_protagonist`),
+  drift (`reached_for_nothing`), limits (`named_more_than_one` — the loop's
+  limit, not a defect) and pacing (`still_run` — evidence about pacing,
+  explicitly *not* a defect). `Story::Audit::Prose` holds the text predicates as
+  pure functions so the live database and the frozen corpora read them through
+  the same code.
+- **`take_denied` and `pickup_invented` read a CHANGE, not a state**, and they
+  are the only two that can. Every other check reads one scene against the world
+  as it stands; these read a narration against `Scene#resolved_action` and
+  `Scene#acted_on` — what the turn DID. On a turn recorded as a `take` the item
+  was demonstrably not the player's a moment earlier, so prose saying it already
+  was denies the pickup the app made; on a `drop` it was, so prose lifting it
+  off a floor invents one. Measured at **28 of 32 takes and 4 of 32 drops** on
+  the 480-turn baseline of 2026-09-03, with zero flags on all three existing
+  corpora. `Story::Audit::TransitionTest` pins it and states both misses. The
+  prose fix is a separate task; this is the instrument that measures it.
 - `Playthrough::Drift` is the classifier drift counter: one row per turn on which
   a `move`, `talk`, `take` or `drop` resolved to nothing. Never pruned.
 - `Playthrough::Overreach` is the other counter and never the same one: one row
@@ -327,11 +353,13 @@ The current database includes the following story-related models with proper ass
   only under `SAVE=1`), the agreement with `Playthrough::Feedback` verdicts, and
   **every flagged turn with what the player typed and the offending passage** —
   so the captain's attention goes only to what a check caught.
-- **Two corpora, reported separately and never pooled**: the local database (his
-  own playthroughs, true but small and drifting) and
+- **Three corpora, reported separately and never pooled**: the local database
+  (his own playthroughs, true but small and drifting),
   `test/fixtures/files/eval_corpus.json` (92 real passages, frozen,
-  reproducible with no database). A check the frozen corpus cannot answer is
-  reported **unavailable**, never as zero.
+  reproducible with no database) and `test/fixtures/files/transition_corpus.json`
+  (119 real take and drop turns with the transition each one made frozen beside
+  the prose — the only corpus that can answer a check about a change). A check a
+  corpus cannot answer is reported **unavailable**, never as zero.
 - **No prose score, no judge model, no aggregate quality number.** Every check
   counts an error that is objectively present or absent, each measured for false
   positives on real prose before it shipped. `Story::Scoreboard::CorpusTest`

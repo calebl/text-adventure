@@ -83,6 +83,19 @@
 #    price: roughly half the real possession claims are missed, because prose
 #    says "wrench the revolver free" and no closed verb list has every verb.
 #
+# 4. AND THE RECORDS DID NOT SAY WHAT A TURN DID, which is why the largest
+#    measured defect in the game was invisible to every check above. `scenes`
+#    carried the raw line the player typed and where they ended up -- what the
+#    world IS after a turn, never what the turn DID -- so a check reading a
+#    narration against the state BEFORE it had nothing to read, and
+#    `unrecorded_departure` was reduced to inferring movement by comparing two
+#    location ids. On the 480-turn baseline of 2026-09-03 the prose on a
+#    resolved `take` denied the pickup on 28 of 32 take turns and a `drop`
+#    invented one on 4 of 32, and a person reading a whole run found it where
+#    nine checks did not. `Scene#resolved_action` and `Scene#acted_on` are the
+#    record; `take_denied` and `pickup_invented` are the first two checks that
+#    read one. See `#check_take`.
+#
 # WHAT IT CANNOT DO, stated so nobody expects it to: deterministic verification
 # catches the MISUSE of things that exist. It cannot catch the INVENTION of
 # things that do not, because you cannot scan prose for a name you were never
@@ -98,7 +111,12 @@
 class Story::Audit
   # A DISAGREEMENT THE RECORDS PROVE. Every one of these is a defect in the
   # game, not a matter of taste about the prose.
-  CONTRADICTIONS = %i[unreachable_transition item_not_held unrecorded_departure unrecorded_arrival].freeze
+  # `take_denied` and `pickup_invented` are the two that read a CHANGE rather
+  # than a state, and they are here rather than in a bucket of their own
+  # because what they prove is the same thing: the records say what the turn
+  # did and the narration says otherwise. See `#check_take`.
+  CONTRADICTIONS = %i[unreachable_transition item_not_held unrecorded_departure unrecorded_arrival
+                      take_denied pickup_invented].freeze
 
   # THE PROSE BROKE A RULE THE APP STATES, provable from the row itself and one
   # record. Not a disagreement between two records -- a defect in the passage.
@@ -298,6 +316,14 @@ class Story::Audit
     when :truncated_prose
       # Two fields per turn are read, not one: see `#check_truncation`.
       scenes.size + scenes.sum { |scene| scene.interactions.size }
+    when :take_denied
+      # THE TURNS THAT MADE THIS TRANSITION, and nothing else. A check that
+      # reads a change can only be run on a turn that made one, so its
+      # denominator is the recorded takes -- counting every scene in would
+      # report a rate the check never earned. See `Scene#took?`.
+      scenes.count { |scene| scene.took? && scene.description.present? }
+    when :pickup_invented
+      scenes.count { |scene| scene.dropped? && scene.description.present? }
     else
       scenes.size
     end
@@ -342,6 +368,8 @@ class Story::Audit
       check_third_person(scene)
       check_departure(scene)
       check_arrival(scene)
+      check_take(scene)
+      check_drop(scene)
     end
 
     check_stillness
@@ -693,7 +721,7 @@ class Story::Audit
   def check_departure(scene)
     previous = scene.previous_scene
     return if previous.nil?
-    return if previous.location_id != scene.location_id
+    return if left_the_room?(scene, previous)
 
     Prose.departure_claims(scene.description).each do |claim|
       flag(:unrecorded_departure, scene,
@@ -704,6 +732,28 @@ class Story::Audit
            "previous scene" => "##{previous.id} (#{previous.location&.name})",
            typed: scene.typed.presence)
     end
+  end
+
+  # WHETHER THE PLAYER LEFT THIS ROOM ON THIS TURN -- read off the record where
+  # there is one, inferred from the two location ids where there is not.
+  #
+  # `Scene#moved_to?` is the record, and it is exact: `Playthrough::Turn#move_to`
+  # is the only thing in the app that moves anybody, and it now writes down that
+  # it did. Comparing the ids is what this check had before that column existed,
+  # and it is an inference with a hole that matters here -- a move whose
+  # destination is the room it started from reads as staying put, so a door
+  # closing at the player's back would be flagged on a turn they really did walk
+  # through. Nothing seeds a loop edge today; `Location::Generator` writing one
+  # is a change away, and this check should not be what discovers it.
+  #
+  # A turn that recorded an action which is NOT a move did not move, whatever
+  # the ids say. A turn with no action on record falls back to the ids, which is
+  # every turn played before the column existed and is why no pinned count
+  # moves: on all of them the two answers are the same.
+  def left_the_room?(scene, previous)
+    return scene.moved_to? if scene.recorded_action.present?
+
+    previous.location_id != scene.location_id
   end
 
   # ------------------------------------------------------------------------
@@ -737,6 +787,12 @@ class Story::Audit
     Prose.arrival_claims(scene.description, place_names.keys).each do |arrival|
       claimed = place_names.fetch(arrival.name)
       # ARRIVING WHERE YOU ARE IS WHAT A `move` TURN NARRATES, and is correct.
+      #
+      # THIS HALF NEEDED NO RECORD, which is worth saying next to
+      # `#left_the_room?`, where the same question did. `Scene#location` IS the
+      # destination on a move turn -- `Playthrough::Turn#move_to` writes both --
+      # so where the player ended up was never inferred here, only where they
+      # came from was, and this check does not ask that.
       next if claimed == scene.location.name
 
       flag(:unrecorded_arrival, scene,
@@ -767,6 +823,93 @@ class Story::Audit
            .reject { |name, _| claimed[name.downcase] > 1 }
            .to_h
     end
+  end
+
+  # ------------------------------------------------------------------------
+  # THE PROSE DENIES THE PICKUP THE APP JUST MADE.
+  #
+  # THE FIRST CHECK HERE THAT READS A CHANGE RATHER THAN A STATE, and it is
+  # what `Scene#resolved_action` and `Scene#acted_on` were added for. Every
+  # other check reads one scene against the world as it stands: the records
+  # carry what the world IS after a turn and never carried what the turn DID,
+  # so the largest measured defect in the game was invisible to all nine of
+  # them. On the 480-turn baseline of 2026-09-03 the narration denied the
+  # pickup on 28 of 32 turns the app had already recorded as a `take`, and it
+  # took a person reading a whole run for twenty minutes to find that.
+  #
+  # THE RECORD IS EXACT AND THE PROSE IS THE ONLY LOOSE HALF, which is the
+  # shape every check here wants. `Playthrough::Turn#take_item` moves the row
+  # out of the closed set the classifier resolved against and BEFORE any prose
+  # exists, so a scene that answers `Scene#took?` is a scene on which the item
+  # was demonstrably not the player's a moment earlier -- the state before the
+  # turn, read off the transition itself rather than inferred from a
+  # neighbouring row. `Playthrough::Turn#taken_fact` then hands the narrator
+  # that sentence in the app's own words. This counts how often it is ignored.
+  #
+  # `Story::Audit::Prose.prior_possession_claims` is the reading, its two
+  # grammars and its stated miss are documented there, and the measurement --
+  # zero flags on all three existing corpora, six detections on the twelve
+  # recorded takes of `whole_run_corpus.json` -- is in
+  # `Story::Audit::TransitionTest`.
+  # ------------------------------------------------------------------------
+  def check_take(scene)
+    return if scene.description.blank?
+    return unless scene.took?
+
+    item = scene.acted_on
+    claim = Prose.prior_possession_claims(scene.description, Prose.item_names(item)).first
+    return if claim.nil?
+
+    flag(:take_denied, scene,
+         "this turn picked the #{item.name} up, and the narration tells the player they already had it",
+         item: item.name,
+         "named as" => claim.name,
+         "the turn did" => "take #{item.name}",
+         "so before it" => "the #{item.name} was lying in #{scene.location&.name || "this room"}, not held",
+         claim: claim.sentence.truncate(220),
+         typed: scene.typed.presence,
+         where: scene.location&.name,
+         at: scene.story_timestamp)
+  end
+
+  # ------------------------------------------------------------------------
+  # THE PROSE PICKS UP WHAT THE TURN PUT DOWN.
+  #
+  # `check_take` from the other end, and the same guarantee behind it:
+  # `Playthrough::Turn#drop_item` moves the row out of the closed set of what
+  # the records say the player is carrying, so a scene that answers
+  # `Scene#dropped?` is a scene on which the item WAS in the player's hands a
+  # moment earlier. Prose that lifts it off a floor or a wall first has
+  # invented a pickup, and the next turn's records disagree with the paragraph
+  # the player just read.
+  #
+  # SEPARATE FROM `take_denied` AND NEVER MERGED WITH IT, on the rule the whole
+  # sweep works to: they read different sentences, they miss different things,
+  # and one number for both would say less than either. On the baseline this
+  # fires on 4 of 32 recorded drops where the other fires on 28 of 32.
+  #
+  # `Story::Audit::Prose.invented_pickup_claims` is the reading and its stated
+  # miss -- prose that writes "the slate" of an "Assize tide-slate" -- is in
+  # its header.
+  # ------------------------------------------------------------------------
+  def check_drop(scene)
+    return if scene.description.blank?
+    return unless scene.dropped?
+
+    item = scene.acted_on
+    claim = Prose.invented_pickup_claims(scene.description, Prose.item_names(item)).first
+    return if claim.nil?
+
+    flag(:pickup_invented, scene,
+         "this turn put the #{item.name} down, and the narration has the player pick it up first",
+         item: item.name,
+         "named as" => claim.name,
+         "the turn did" => "drop #{item.name}",
+         "so before it" => "the #{item.name} was in the player's hands, not lying anywhere",
+         claim: claim.sentence.truncate(220),
+         typed: scene.typed.presence,
+         where: scene.location&.name,
+         at: scene.story_timestamp)
   end
 
   # ------------------------------------------------------------------------

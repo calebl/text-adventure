@@ -225,6 +225,37 @@ class Story::AuditPrecisionTest < ActiveSupport::TestCase
                         "this case is now caught -- read it, confirm it is right, and move it into EXPECTED"
   end
 
+  # THE TWO TRANSITION CHECKS, ON THE HARDEST NEGATIVE CASE THERE IS. Not one
+  # of the 24 is a turn the records call a `take`, so `take_denied` cannot fire
+  # on them and the headline test above already proves the sweep is silent.
+  # This asks the counterfactual instead, which is the question that decides
+  # whether the check is precise: if every one of these narrations WERE a take
+  # of the thing it argues about, would the grammar still keep quiet?
+  #
+  # It would. Twenty-four narrations, fifteen of which name a planted item and
+  # eleven of which claim the player is holding one, and ZERO say the player
+  # already had it -- which is the word the check turns on. Possession is not
+  # prior possession, and that distinction is the whole check.
+  test "not one of the 24 lab narrations denies a take, even when recorded as one" do
+    plant_lures
+    story = @stories.fetch("The Unrecorded Hour")
+    room = story.locations.find_by!(name: "Ward Office 12")
+    item = Item.find_by!(name: "daybook")
+
+    flagged = CORPUS.each_with_index.filter_map do |row, index|
+      scene = Scene.create!(
+        story: story, location: room, previous_scene: story.opening_scene,
+        description: row["narration"], typed: row["command"], summary: "counterfactual take",
+        resolved_action: "take", acted_on: item,
+        story_timestamp: story.opening_scene.story_timestamp + ((index + 1) * 5).minutes
+      )
+      codes = Story::Audit.new(story, scenes: story.scenes.where(id: scene.id)).flags.map(&:code)
+      row if codes.include?(:take_denied)
+    end
+
+    assert_empty flagged, flagged.map { |row| row["narration"].truncate(160) }.join("\n")
+  end
+
   test "the sweep stays offline and fast enough to run over everything ever written" do
     plant_lures
     replay

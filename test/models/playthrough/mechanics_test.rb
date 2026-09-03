@@ -277,15 +277,19 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_equal "A mysterious place filled with wonder and potential adventure", @closet.reload.description
   end
 
-  # The two stamps `Playthrough::Turn#play` makes on every branch, so a turn
-  # walked here reads afterwards like one walked in the browser.
-  test "an arrival records what was typed and joins the turn log" do
+  # The stamps `Playthrough::Turn#play` makes on every branch, so a turn walked
+  # here reads afterwards like one walked in the browser -- and a sweep cannot
+  # tell them apart. `move` is the only branch in this mode that writes a
+  # `Scene` at all, so this is the whole of that obligation.
+  test "an arrival records what was typed, what it did, and joins the turn log" do
     before = @playthrough.current_scene
 
     interpret("into the closet", CLASSIFY.call("move", "The Supply Closet"), ARRIVAL)
 
     scene = @playthrough.reload.current_scene
     assert_equal "into the closet", scene.typed
+    assert_equal "move", scene.resolved_action
+    assert_equal @closet, scene.acted_on
     assert_equal before, scene.previous_scene
     assert_includes @playthrough.scene_chain, scene
   end

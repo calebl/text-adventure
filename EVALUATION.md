@@ -183,10 +183,21 @@ found a defect on 94% of a mechanic the app owns.
 
 ## What is measured
 
-Eight checks, all of them from `Story::Audit`, all offline and deterministic.
+Ten checks, all of them from `Story::Audit`, all offline and deterministic.
 Four categories that are never merged — see `AGENTS.md` → *Auditing the
 difference*. Each one counts an error that is objectively present or absent and
 each was measured for false positives on real prose before it shipped.
+
+**Two of them read a change rather than a state**, which is new and is the
+reason the board's recall was poor before. `take_denied` and `pickup_invented`
+read a narration against `Scene#resolved_action` and `Scene#acted_on` — what
+the turn DID, written by `Playthrough::Turn#play` beside the typed line. The
+app owns `take` and `drop` outright, so on a turn recorded as one of them the
+state *before* the turn is not in question either, and the prose is the only
+loose half. They are the first two checks that are fully available to a sweep
+**and** fully available offline: a script's fixed line has no bearing on what
+the narrator does with a fact it was handed, so they are deliberately not in
+`Eval::UNAVAILABLE_TO_A_SCRIPT`.
 
 **Richness is reported beside them and never folded in.** It counts what the
 prose committed to: the room, the exits, the items and the people the records
@@ -218,6 +229,53 @@ a rate that did not come from fitting the passages.
 `Eval::Board` prints the two corpora apart and labels them, so an accidental
 pooling is visible in the output. When an agent is driving this loop rather than
 a person, that convention needs teeth; today it does not have them.
+
+---
+
+## The transition corpus
+
+`test/fixtures/files/transition_corpus.json` is 119 turns that the classifier
+resolved to a `take` or a `drop`, cut out of the `rake eval:run` databases on
+this machine on 2026-09-03 before they were lost. `Story::Scoreboard::Transitions`
+scores it and `rake game:score CORPUS=transitions` prints it.
+
+Each row carries the typed line, the resolved action, the item, **where that
+item was before the turn and after it**, the closed set the classifier was
+offered, and the prose. The action was recovered offline from the classifier's
+own stored answer (`messages.content_raw`, kept by default since PR 97) and
+confirmed against that same prompt's list — no generation, no spend. The
+position before and after needs no item history: `take` resolves against what
+is lying in the room and `drop` against what the player is carrying, so the
+action itself says where the row was.
+
+**The set `main20` is the 24-run, 480-turn baseline** the manual read of that
+day was done against; it carries exactly 32 takes and 32 drops, and every
+headline figure is quoted for it:
+
+| | flagged | of | rate |
+| --- | --- | --- | --- |
+| `take_denied` | 28 | 32 | 87.5% |
+| `pickup_invented` | 4 | 32 | 12.5% |
+
+**Two things about this corpus are worse than the others and are stated rather
+than hidden.**
+
+- **It contains held-out passages.** `The Salt Assizes` is `Eval::HELD_OUT` and
+  the convention above says not to add its passages to a fixture. It is in here
+  because the run databases were about to be lost and freezing half of them
+  would have thrown away half the evidence for nothing. The consequence is
+  uneven: `take_denied` has positives in both worlds and an independent
+  confirmation in `whole_run_corpus.json` (six real detections in the tuning
+  world, every one on a turn that corpus records as a `take`), while
+  `pickup_invented` has flags **only** in the held-out world. Its tuning-world
+  evidence is that the grammar fires on real tuning prose — the two lab
+  narrations of "burn the daybook in the grate" — plus a constructed positive
+  case, not an independent rate.
+- **It is two worlds and two items.** Every row argues about the "Assize
+  tide-slate" or the "Ward Office 12 daybook", because those are the only items
+  any seeded world has (`Item` rows are created in one place in the whole app,
+  the seed loader — see `ta-item-registry`). A rate here is a rate over a lot of
+  runs of a little prose.
 
 ---
 
@@ -254,8 +312,10 @@ candidates against it:
    while playing, in his own words.
 2. **A measured false-positive rate on real prose**, in a test, not in a commit
    message. The corpora are `eval_corpus.json` (92 passages),
-   `narration_corpus.json` (24) and `whole_run_corpus.json` (132 whole-run
-   narrations with the records around them).
+   `narration_corpus.json` (24), `whole_run_corpus.json` (132 whole-run
+   narrations with the records around them) and — for a check that reads a
+   change — `transition_corpus.json` (119 real `take` and `drop` turns with the
+   transition each one made frozen beside the prose).
 3. **A demonstrated positive case.** A check that cannot fire looks exactly like
    a clean result, which is worse than no check. If the real corpora contain no
    violation, take a real sentence and move the record underneath it —
