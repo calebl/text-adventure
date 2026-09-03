@@ -15,7 +15,7 @@
   <%= link_to "the classifier", "#classifier" %> &middot;
   <%= link_to "conversations (#{@debug.durable_conversations.size})", "#conversations" %> &middot;
   <%= link_to "the world", "#world" %> &middot;
-  <%= link_to "the audit (#{@debug.contradictions.size + @debug.defects.size + @debug.drifts.size + @debug.pacing.size})", "#audit" %> &middot;
+  <%= link_to "the audit (#{@debug.contradictions.size + @debug.defects.size + @debug.drifts.size + @debug.overreaches.size + @debug.pacing.size})", "#audit" %> &middot;
   <%= link_to "what you thought (#{@debug.feedback.size})", "#feedback" %> &middot;
   <%= link_to "earlier turns (#{@debug.earlier_turns.size})", "#log" %> &middot;
   <%= link_to "the cast (#{@debug.cast.size})", "#cast" %> &middot;
@@ -304,6 +304,13 @@
         turns this player reached for something the records do not have<%= " — #{@debug.drift_tally.map { |action, count| "#{count} #{action}" }.join(", ")}" if @debug.drifts.any? %>
       </span>
     </div>
+    <div class="k">named two here</div>
+    <div class="v">
+      <%= @debug.overreaches.size %>
+      <span class="note">
+        turns this player named two things the records have and the turn did one<%= " — #{@debug.overreach_tally.map { |action, count| "#{count} #{action}" }.join(", ")}" if @debug.overreaches.any? %> &mdash; the loop's limit, not a defect
+      </span>
+    </div>
     <div class="k">not judged</div>
     <div class="v"><%= @debug.audit.unjudged.size %> <span class="note">checks the records cannot answer honestly &mdash; a moved graph, an undated row</span></div>
   </div>
@@ -405,6 +412,33 @@
       <% end %>
       <% if @debug.drifts.empty? %>
         <tr><td colspan="5" class="absent">(none &mdash; every move, talk and take this player tried resolved to a record)</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%# NEXT TO THE DRIFTS AND NEVER ADDED TO THEM: a drift is a reach that found
+    nothing, this is a reach that found more than one turn can answer. Nothing
+    here is a defect -- the turn did what a turn can do, and said so. See
+    Playthrough::Overreach. %>
+<h3>named two &mdash; the line asked for more than one turn can do</h3>
+<div class="scroll">
+  <table>
+    <thead>
+      <tr><th>at</th><th>tried to</th><th>typed</th><th>acted on</th><th>left undone</th></tr>
+    </thead>
+    <tbody>
+      <% @debug.overreaches.each do |overreach| %>
+        <tr>
+          <td><%= debug_time(overreach.story_timestamp) %></td>
+          <td><code><%= overreach.action %></code></td>
+          <td><%= overreach.command %></td>
+          <td><%= overreach.acted %></td>
+          <td class="note"><%= overreach.unacted %></td>
+        </tr>
+      <% end %>
+      <% if @debug.overreaches.empty? %>
+        <tr><td colspan="5" class="absent">(none &mdash; every line this player typed named one thing)</td></tr>
       <% end %>
     </tbody>
   </table>
