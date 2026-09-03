@@ -35,6 +35,12 @@ bundle install
 rake 'game:new[a debt collector in a city built on a dead god]'
 rake game:list
 
+# Generate runs across the three seeded worlds, score them, print a board with
+# its own noise floor. Generation spends money; scoring is free. See EVALUATION.md.
+rake eval:run                       # ~$0.22 at the defaults; prints an estimate first
+rake eval:score SET=main            # offline, no key, no network
+rake eval:compare BEFORE=a AFTER=b  # REAL / NOISE / INCONCLUSIVE, per check
+
 # Check the stories in the database, fix what can be fixed, delete what cannot
 rake game:doctor                    # or rake 'game:doctor[3]' for one story
 rake game:audit                     # where narration contradicts the records; VERBOSE=1 for unjudged checks
@@ -265,6 +271,21 @@ The current database includes the following story-related models with proper ass
 - `Item` is in exactly one place — held by a character or lying in a location.
   `take` and `drop` are both app-owned: the row moves first, the narrator is told
   afterwards.
+
+### Generating runs and judging a change against them
+- `rake eval:run` is the whole automated loop: play three seeded worlds through
+  the real turn loop, keep every row, score them, print a board with its own
+  noise floor. **[EVALUATION.md](EVALUATION.md) is the protocol.**
+- **Generated runs are model output and two identical runs disagree.** One
+  unchanged configuration produced 0–8 `third_person_protagonist` flags on the
+  same eleven turns. Judge a change with `rake eval:compare BEFORE= AFTER=`,
+  which answers REAL / NOISE / INCONCLUSIVE from an exact rank test; four runs a
+  side is the arithmetic minimum for any verdict.
+- **Generation costs money and never runs in CI**; scoring is offline and free.
+- **`Eval::Richness` is printed beside the defect counts and never folded in** —
+  prose that says less cannot contradict the records, so it is the check on the
+  checks.
+- `The Salt Assizes` is the held-out world. Tune on the other two.
 
 ### The evaluation loop
 - `Story::Scoreboard` (`rake game:score`) is the one command: a rate per check,

@@ -1,0 +1,83 @@
+# THE SCRIPT FOR "The Lunar Cartographer", written for this pipeline and shaped
+# to the same eleven beats as the other two so the three worlds can be read
+# against each other.
+#
+# TWO THINGS THIS WORLD DOES THAT THE OTHERS CANNOT.
+#
+#   1. IT CARRIES NO ITEMS AT ALL. So t06 is a `take` that MUST resolve to
+#      nothing, and its whole purpose is to write a `Playthrough::Drift` row --
+#      the `reached_for_nothing` check's only live source. `item_not_held` has
+#      nothing to fire on here and is reported as such rather than as clean.
+#   2. IT SHUFFLES ITS CONNECTIONS NIGHTLY (`WorldMechanic`), which makes
+#      `unreachable_transition` UNJUDGEABLE on it: the graph the player walked
+#      is not the graph the sweep reads back, and `Story::Audit` says so instead
+#      of guessing. That is a feature of the corpus, not a hole in it -- it is
+#      the only world in the three that exercises the unjudged path.
+#
+# The moves go out and back rather than onward, because the rooftops connect to
+# Room 3 and not to the lane: a script that walked lane -> rooftops would be
+# measuring the classifier refusing an edge that does not exist, which t06
+# already covers.
+story: The Lunar Cartographer
+turns:
+- id: t01-examine
+  command: look closely at the fresh field note in the satchel that I do not remember writing
+  expect: narrate
+  beat: OBJECT
+  note: looking hard at a thing the opening prose put on the floor
+- id: t02-talk-1
+  command: Grenn, you were awake when I came in last night. What hour was it?
+  expect: talk
+  beat: TALK 1/4
+  note: opening the exchange, nothing at stake yet
+- id: t03-talk-2
+  command: Grenn, whose hand was it that pushed a folded paper into mine?
+  expect: talk
+  beat: TALK 2/4
+  note: information he may hold, asked obliquely
+- id: t04-talk-3
+  command: Grenn, tell me who you let in after the tenth bell, and do not tell me you were asleep.
+  expect: talk
+  beat: TALK 3/4 -- DEFLECT
+  note: |-
+    a demand a landlord at midnight has every reason to refuse. NAMES NO PLACE, and
+    that is not a stylistic choice: the first version of this turn said "take me up
+    onto the Larkspur Quarter rooftops" and Playthrough::Classifier resolved it as a
+    MOVE on all eight runs -- correctly, since the sentence names a destination the
+    room has an exit to. The whole rest of the run then played out somewhere else
+    than the script says. A talk beat has to be unambiguously a talk beat.
+- id: t05-talk-4
+  command: Tell me plainly, Grenn. Did somebody pay you to leave the front door unbolted last night?
+  expect: talk
+  beat: TALK 4/4 -- THE LIE
+  note: the question his position gives him a specific reason to lie about
+- id: t06-take-nothing
+  command: pick up the lunar compass
+  expect: narrate
+  beat: DRIFT (deliberate)
+  note: this world has no items, so the reach MUST resolve to nothing and write a Playthrough::Drift row
+- id: t07-move-new
+  command: go down the stairs and out into Mournwell Lane
+  expect: move
+  beat: ARRIVAL (new)
+  note: movement into a stub -- Location::Generator writes the room, Scene::Generator narrates finding it
+- id: t08-move-back
+  command: climb back up to Room 3
+  expect: move
+  beat: ARRIVAL (return)
+  note: the same call site narrating coming BACK, because the visit was stamped
+- id: t09-impossible
+  command: reach out of the window and pull the moon down close enough to read the writing on its underside
+  expect: narrate
+  beat: IMPOSSIBLE
+  note: a narrator that has to say no -- where voice shows most
+- id: t10-move-rooftops
+  command: climb out onto the Larkspur Quarter rooftops
+  expect: move
+  beat: ARRIVAL (new)
+  note: the second stub, reached from the room it is actually joined to
+- id: t11-move-back
+  command: climb back down into Room 3
+  expect: move
+  beat: ARRIVAL (return)
+  note: a return over an edge this run walked outward twenty minutes of story time ago

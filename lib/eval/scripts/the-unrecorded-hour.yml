@@ -1,0 +1,71 @@
+# THE SCRIPT FOR "The Unrecorded Hour", carried over unchanged from
+# `data/ta-conversation-read-2/lab/script.rb` (firstmate repo) -- the eleven
+# commands the four-arm whole-run sweep of 2026-09-02 played. Kept identical on
+# purpose: the noise figures quoted in `Eval::Noise` and the token cost in
+# `Eval::Cost::PER_TURN` were measured on these exact turns, and changing one
+# would silently invalidate both.
+#
+# WHY THE ITEM IS NAMED IN FULL on t06 and t09. `Playthrough::IntentSchema`
+# builds `target` as a closed enum of exactly what the records say is here or
+# carried, and the entry is "Ward Office 12 daybook". A first pass of this run
+# typed "the daybook" and the classifier answered `drop`/`nothing` -- a
+# `Playthrough::Drift` row and a narrated non-event, which costs the run the
+# take/drop branch it exists to exercise. t10 is where a reach is SUPPOSED to
+# resolve to nothing.
+story: The Unrecorded Hour
+turns:
+- id: t01-examine
+  command: look closely at the ruled gap between four and five in my daybook
+  expect: narrate
+  beat: OBJECT
+  note: the ordinary texture of play -- looking hard at a thing
+- id: t02-talk-1
+  command: Sub-Inspector Rowe, you are forty minutes early.
+  expect: talk
+  beat: TALK 1/4
+  note: opening the exchange, nothing at stake yet
+- id: t03-talk-2
+  command: Rowe, what happened to the desk across from mine?
+  expect: talk
+  beat: TALK 2/4
+  note: information he holds, asked obliquely
+- id: t04-talk-3
+  command: Rowe, I want the supporting file for the boundary amendment. Hand it over and I will read it out to you, line by line.
+  expect: talk
+  beat: TALK 3/4 -- DEFLECT
+  note: a demand he is obliged to refuse, and his sheet's stated dislike, in one sentence
+- id: t05-talk-4
+  command: Tell me plainly, Rowe. Did you read Perrin Lasco's file before you signed it?
+  expect: talk
+  beat: TALK 4/4 -- THE LIE
+  note: the one question his backstory gives him a specific reason to lie about
+- id: t06-drop
+  command: put the Ward Office 12 daybook down on the desk
+  expect: drop
+  beat: CONSEQUENCE
+  note: an app-owned state change -- the record leaves her hand in front of an inspector
+- id: t07-move-new
+  command: go out into the long hallway
+  expect: move
+  beat: ARRIVAL (new)
+  note: movement into a stub -- Location::Generator writes the room, Scene::Generator narrates finding it
+- id: t08-move-back
+  command: walk back into Ward Office 12
+  expect: move
+  beat: ARRIVAL (return)
+  note: the same call site narrating coming BACK, and the turn the item check fires on
+- id: t09-take
+  command: pick up the Ward Office 12 daybook
+  expect: take
+  beat: CONSEQUENCE
+  note: the mirror of t06, over state this run produced
+- id: t10-impossible
+  command: reach into the gap in the ledger and pull the missing hour back out of it with my bare hands
+  expect: narrate
+  beat: IMPOSSIBLE
+  note: a narrator that has to say no -- where voice shows most, and a reach that should resolve to nothing
+- id: t11-move-closet
+  command: open the narrow door and step into the supply closet
+  expect: move
+  beat: ARRIVAL (realized, unvisited)
+  note: somewhere already written but never stood in, to close the run

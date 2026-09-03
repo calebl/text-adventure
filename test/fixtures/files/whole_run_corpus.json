@@ -1,0 +1,2114 @@
+[
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 1,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You lean down, bringing your face close to the page. The ruled lines of the gap are perfectly crisp, the paper beneath them smooth and unmarred. There are no smudges of erased ink, no faint indentations where a pen might have once pressed. It is as if the space between four and five o'clock was simply never meant to hold any entry at all, a deliberate blankness indistinguishable from every other empty space on the page. You straighten up, and the mantle hisses softly above your head."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 1,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You hear, \"Sub-Inspector Rowe, you are forty minutes early.\"\n\nHalkett offers a small, courteous smile, his hand already going to the Inspectorate seal hanging from his chain, a familiar gesture. \"Indeed, I am,\" he says, his voice calm and even. \"Forgive my eagerness, Miss Vance. I find a brisk start to the day often sets the right tone for a thorough review.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 1,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "\"Rowe, what happened to the desk across from mine?\" you ask.\n\nHe tilts his head slightly, his gaze sweeping over the office as if genuinely assessing its layout. \"The desk, Miss Vance? I believe ward office layouts are at the discretion of the chief clerk, provided they maintain appropriate workflow. Is there a particular concern regarding its absence?\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 1,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You state your demand clearly, and Rowe maintains his even expression, his gaze steady on you. \"Miss Vance, you are well aware that the Inspectorate's policy dictates that all supporting documentation for boundary amendments, particularly those requiring my signature, must be reviewed by the Sub-Inspector directly. I do not require a recital; I require the file itself for my perusal.\" His voice remains calm, but there is a distinct edge of authority in his tone."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 1,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You look at Rowe, waiting for his answer. He meets your gaze evenly, his expression unreadable. \"Miss Vance,\" he says, his voice level, \"Inspectorate procedure dictates that all closure documents are signed only after due diligence has been exercised. This includes, but is not limited to, the review of all pertinent documentation by the signing officer. Perrin Lasco's file was no exception to this established protocol.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 1,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "The Ward Office 12 daybook is already on the desk; you can feel its familiar rough cover under your fingers, exactly where you left it. You give it a small, involuntary pat. Rowe's gaze remains fixed on you, unblinking, as if he expects you to produce the documentation he mentioned out of thin air."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 1,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "The smell of old paper and metallic ink hits you first, thick and cloying as you step into the hallway, a scent you know intimately but which is particularly potent here. The flickering gaslight above casts long, dancing shadows, making the seemingly endless corridor waver before your eyes, and you notice the faint, almost imperceptible scuff marks on the polished wood floor, trails of countless journeys made by others. The rhythmic click of doors closing, one after another, draws your attention, each one a little closer than the last, accompanied by the distinct cadence of polished shoes moving steadily down the hall. Odile Vance stands further down the corridor, her gaze fixed on something beyond you, unmoving."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 1,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step back into Ward Office 12, the faint hiss of the gas mantle a familiar companion to the steady drumming of rain against the cold pane. Your daybook still lies open on your desk, the damning blankness between four and five o'clock still prominent. The desk opposite yours remains starkly cleared, the chair squared, and the pneumatic tube still gapes, empty. The door to the long hallway stands ajar, letting in the dim light of the corridor, and the supply closet door, inventory-free and unlocked, waits beside the coat rack as if nothing has stirred since you left."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 1,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You are already carrying the Ward Office 12 daybook, its familiar weight a constant, unsettling presence in your hands. You could put it down, of course, but it seems to belong with you now."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 1,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You press your fingers against the smooth paper, tracing the ruled lines that mark out the unrecorded hour. Your fingertips brush the blank space where entries should be, feeling only the slight indentation of the ruling pen and the faint, papery scent of the ledger. The missing hour remains a void on the page, an absence that your hands cannot grasp or reclaim."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 1,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You pull the narrow door and step in, and the office light follows you as far as the second shelf, illuminating the shelves crammed with reams of ward paper and boxes of nibs. The air is thick with the smell of wax, dust, and the particular sourness of old ink, a scent that clings to everything in this small space. Odile Vance, from the Copyists' Line, stands quietly beside a stack of forms, and you notice the floor is swept, cleaner than you might have expected for a mere supply closet. Your gaze immediately falls to the lowest shelf, where a neatly folded copy-room apron sits behind a stack of blank ward forms, too tidy to be accidental."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 2,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You look down at the ruled gap in your daybook. It is a perfect, clean space, utterly blank between the four o'clock entry and the five o'clock one. No hurried scribble, no stray inkblot, not even the phantom impression of a word or a number that might have been erased. It is as if that hour simply was not, at least not for you and this particular book. Sub-Inspector Rowe says nothing, but you feel his presence at the doorway, a weight on the air even without his gaze directly upon you. The hiss of the gas mantle seems to amplify the silence."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 2,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You tell Halkett Rowe, \"Sub-Inspector Rowe, you are forty minutes early.\" He offers a small, courteous smile, neither apologetic nor defensive, tapping the Inspectorate seal on his chain."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 2,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You ask, \"Rowe, what happened to the desk across from mine?\"\n\nRowe turns his head slightly to face you directly, his expression remaining neutral. He lets a beat of silence pass. \"It has been removed,\" he states, his voice even and calm."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 2,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "\"Rowe, I want the supporting file for the boundary amendment. Hand it over and I will read it out to you, line by line.\" you state, your voice firm.\n\nHalkett maintains his composure, his gaze steady on you. He reaches into his satchel, producing a slim, bound file, and places it carefully on the corner of your desk, just out of your immediate reach. He offers no further comment."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 2,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You ask him plainly, \"Rowe. Did you read Perrin Lasco's file before you signed it?\"\n\nHalkett Rowe draws himself up slightly, his gaze firm but not confrontational. He pauses, then says, \"I reviewed the summary, the key findings, and the recommendations, yes. The decision to sign was made with full understanding of its implications.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 2,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it.\n\nThe desk across from yours has been cleared to the wood -- no blotter, no cylinder, no apron over the chair back -- and the chair is squared to the desk the way nobody ever leaves a chair they intend to come back to. On the wall between the windows, the pneumatic tube gapes open with no carrier in it. The door to the long hallway stands ajar on the darkening corridor, and beside the filing press, half-hidden by the coat rail, is the narrow door of the supply closet: no inventory number, no audit slip, no lock. Somewhere down the hallway a door closes, nearer than the last one.\n\nYou ask him plainly, \"Rowe. Did you read Perrin Lasco's file before you signed it?\"\n\nHalkett Rowe draws himself up slightly, his gaze firm but not confrontational. He pauses, then says, \"I reviewed the summary, the key findings, and the recommendations, yes. The decision to sign was made with full understanding of its implications.\"\n\nYou place the Ward Office 12 daybook down onto the desk, aligning it carefully with the edge. It rests there, open to the page with the troubling blank space, a silent testament to the hour that isn't."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 2,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "The smell of old paper and dust, always present, sharpens as you step from the relative warmth of your office into the cool, still air of the Long Hallway. Your footsteps, usually muffled, ring out with a sudden clarity, echoing faintly on the worn linoleum that stretches before you under the steady, dim glow of distant gas lamps. You notice the identical, heavy doors lining both walls, each bearing a small, brass-plated number, suggesting a uniformity that feels both ordered and oppressive. A sound, a distinct closing door, reaches you from further down the corridor, pulling your gaze instinctively in that direction as you consider the methodical progress of the Inspectorate."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 2,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step back into the familiar air of Ward Office 12, the smell of dust and old paper the first thing that greets you. The gas mantle still hisses softly, casting its dim, yellow light over your desk, the ruled gap in your daybook still as stark as you remember. Across from you, the cleared desk and squared chair remain undisturbed, a silent testament to absence. The pneumatic tube on the wall still gapes, empty. From the long hallway you just left, the approaching footfalls of the Inspectorate are a little closer now, their slow, deliberate rhythm growing clearer with each beat."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 2,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You are already carrying the Ward Office 12 daybook; its familiar weight is solid under your arm. Your gaze returns to the ruled gap within it, the blank space between four and five o'clock that still refuses to fill with memory. The rhythmic thud of the Inspectorate's approach from the hallway becomes more pronounced, closer now."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 2,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You reach out, your fingers pressing firmly against the page of your daybook. The paper is smooth, unyielding, and the ruled lines for four and five o'clock remain precisely as they were, a blank space of absence. You feel nothing but the texture of the page beneath your fingertips, and the air around it offers no resistance, no hint of a missing dimension to grasp. The unyielding blankness of the page seems to mock your efforts."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 2,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You pull the narrow door and step in, and the office light follows you as far as the second shelf, illuminating the shelves crammed with paper and ink. The air is thick with the smell of wax and dust, and the particular sourness of old ink reaches you first. On the lowest shelf, behind a stack of blank ward forms squared up too neatly to be accidental, a folded copy-room apron catches your eye. There is no other door, no window; just the way out through which you came, framing your own office and the gas mantle hissing over two desks."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 3,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You lean in over the page, almost touching your nose to the paper. The ruled lines are perfectly straight, perfectly spaced, precisely as they should be. There is no smudging, no erasure, no ink bleed, no subtle difference in the paper's texture where an amendment might have been made and then erased. It is simply empty, a blank space where four perfectly legitimate entries ought to have been, and every indication is that it was always meant to be this way. The only thing missing is a set of the looping, familiar characters of your own handwriting. The page is as ordinary as any other page in your daybook, which is to say that it is utterly, chillingly wrong."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 3,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You remark, \"Sub-Inspector Rowe, you are forty minutes early.\"\n\nHalkett offers you a small, polite smile, tapping the Inspectorate seal on his chain. His gaze is steady, meeting yours directly. He seems calm, prepared, and unruffled."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 3,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You ask Rowe, \"What happened to the desk across from mine?\"\n\nHe tilts his head slightly. \"Ah, yes. Clerk Armitage's station, I believe. His file was closed due to persistent inconsistencies in the Q3 tax ledgers. The space was consolidated with the adjoining ward office's equipment storage last month. A matter of procedural efficiency, you understand.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 3,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You turn to Rowe. His expression is hesitant, but he remains professional.\n\n\"Vance, I appreciate your thoroughness,\" Rowe says, \"However, Inspectorate protocol dictates that primary supporting documents remain with the auditing officer. My office provides detailed summaries for all reviewed amendments; perhaps we could consult that? It contains all pertinent information.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 3,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You look at Rowe, who maintains eye contact but doesn't quite meet your gaze. His expression is controlled, a practiced neutrality.\n\n\"Vance,\" he states, his voice even, \"all closures I sign follow established Inspectorate procedures for verification and review. The summaries provided to me are comprehensive, and the procedural correctness of each case is paramount. Perrin Lasco's file was no exception to this rigorous process.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 3,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You put the Ward Office 12 daybook down on the desk. It is already there, lying open with the stamp beside it. The ruled gap between four and five o'clock stares up at you, precisely blank."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 3,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "The low hum of fluorescent tubes, an unfamiliar sound in the residential wards, greets you first, a stark contrast to the quiet of Ward Office 12. Its harsh light strips the pale green walls of any warmth, creating long, wavering shadows that dance with your entry. The rhythmic thud of approaching shoes grows louder down the long tunnel of the corridor, punctuated by the sharp echo of a door closing much nearer than you'd like. The dry scent of dust and old paper, thick and ever-present in the Registry, seems to intensify here, a testament to the countless documents and lives passing through these utilitarian halls."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 3,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step back into Ward Office 12, the familiar cold from the window glass reaching out to you. The gas mantle still hisses softly, and your daybook, open to the impossible gap between four and five o'clock, lies waiting under your hand. The cleared desk opposite remains stubbornly empty, and the pneumatic tube still gapes, expectant. From the long hallway behind you, the sound of closing doors echoes once more, now a little further off."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 3,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You already have the Ward Office 12 daybook in your hands. You glance down at the familiar ledger, the solid weight of it in your grasp a small comfort, even with the impossible gap between four and five o'clock staring up at you from the page."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 3,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You reach your fingers into the space on the page, attempting to pluck the missing hour from between the ruled lines. Your fingertips meet only the smooth, slightly rough texture of the paper itself, cool and unyielding. The gap remains, a silent, empty accusation, completely unaffected by your efforts."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "gemini",
+  "rep": 3,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You pull the narrow door and step in, and the office light follows you as far as the second shelf, illuminating a small, enclosed space that smells sharply of old ink and wax. Reams of ward paper and boxes of nibs are stacked high, a coil of tube-carrier cord hangs from a hook, and four unopened tins of sealing wax catch the gleam. It's the kind of storage room that feels forgotten, yet the floor beneath your feet is swept clean, an unexpected detail in this dusty corner. On the lowest shelf, behind a stack of perfectly aligned blank ward forms, your fingers brush against something soft: a folded copy-room apron."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 1,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You bring the daybook closer, tilting it toward the hissing mantle. The gap between four and five o'clock is ruled with the same precision as every other hour: the vertical line at four, the vertical line at five, the horizontal space between them waiting to be filled. But looking now, you see what you did not see before. The ink of those two vertical lines is fractionally darker, the rule slightly cleaner, as though the page were opened fresh and the lines drawn after the book was bound. The paper between them carries no impression of any writing, no ghost of pencil or the dent of a pen's pressure—yet the surface has a faint, even texture, as if something once rested there and been lifted away entire. You run your thumbnail across the gap and feel nothing catch. When you look up, Sub-Inspector Rowe has not moved from the doorway, but his attention has shifted to the space behind your shoulder, where the supply closet waits with its unnumbered door."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 1,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You note the exact time, which means you've been counting—either diligence or resentment, and with Copyists' Line, it's usually both. Halkett watches you with a faint, knowing smile, his posture relaxed but his eyes alert. \"Forty minutes is still within the margin of professional courtesy, Miss Vance,\" he says. \"I can return at the appointed hour if you'd prefer.\" He already knows you'll wave it off, but the fact that you noticed tells him you're the kind who keeps your own ledger of slights and courtesies. He waits, calm and observant, to see which column this one lands in."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 1,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett watches you with the flat patience of a man who has answered this question a dozen times before, his shoulders set with the weight of sleepless nights. \"I don't inspect the furniture, Miss Vance. I inspect the files. If a desk is empty, that is a matter for the ward steward, not the Inspectorate.\" His voice carries no inflection, deliberate as a signature on paper you will never see. Something in the way he does not ask *which* desk, does not glance toward the empty space, tells you he already knows exactly where you mean. He holds your gaze a moment longer than courtesy requires—certain, distant, untouchable—then returns to the document in his hands as if you have already left."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 1,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett leans back, his irritation masked behind a veneer of bureaucratic patience. \"The supporting file is archived, Miss Vance. Retrieval takes three days, two signatures, and a writ from your ward steward. You know the procedure.\" He lets the silence stretch between you, studying your face with careful attention. \"Or you could tell me why you need to hear your own voice saying things you already know.\" His tone is controlled, watchful—encouraging your anger to spill further."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 1,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett's gaze meets yours, steady and unblinking, though something tightens at the corner of his jaw. He smooths his coat cuff with deliberate precision. \"I certified that the file existed, Miss Vance. That it was complete. That the closure met standard.\" His voice carries the flat cadence of official record, rehearsed and hollow. \"The Inspectorate does not require us to memorize what we validate. Only to validate it.\" He watches you now with the careful stillness of a man calculating distance, searching your face for who might have spoken Lasco's name to you."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 1,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You lower the daybook to the desk and your hand withdraws from it, leaving the open page face-up beneath the gas mantle. The paper settles with a soft crackle, the ruled lines still legible, the four-to-five gap still empty. The stamp rolls slightly on its edge before coming to rest against the blotter's worn corner.\n\nHalkett does not look at the book. His eyes remain on yours, and in the stillness you hear the rain against the glass, the low hiss of the mantle, the distant percussion of another door closing somewhere down the corridor—nearer now, perhaps the third door, perhaps the second. \"You will want that writ,\" he says, not as suggestion but as observation, as if he has already seen you walk to the steward's office and been turned away. \"Three days, two signatures. Or you could consider that some closures are meant to stay closed, Miss Vance. That the Registry functions because clerks know which files to hold and which to let pass through their hands unremarked.\" He smooths his cuff again, a gesture without purpose, and does not ask why you set the book down instead of closing it."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 1,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step through the door and the sound reaches you first—not the rain, which you expected, but the paired rhythm of boots on wood, deliberate as a metronome, still distant down the corridor's length. The gas lamps burn too steadily, and between their cages the shadows keep pace with you, sliding along the worn floorboards as if attached to your own shoes. Odile Vance stands halfway down the hall with her back to the windows, her copyist's apron still ink-stained at the hem, watching the far end where the light turns white and surgical. She does not turn at your arrival. Her hand rests flat against the wall beside door number seven, as if she is counting the brass plates or holding herself upright, and when the next door closes somewhere behind that approaching tread—nearer now, unmistakably nearer—her fingers tighten against the wood grain."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 1,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step back through the doorway and the hiss of the gas mantle greets you like a held breath, unchanged, unmarked. The gap between four and five o'clock still waits in your daybook, patient as a wound, and the desk across from yours remains cleared to the wood with its chair squared in that wrong, final way. Two minutes gone and nothing has moved: not the open pneumatic tube, not the supply closet door with its missing inventory number, not the silence where a name should sit. Vance stands by the filing press with her arms folded, watching you return with the flat look of someone who expected to be asked something she does not want to answer. Rowe is not here, though you cannot say when he left, or if he was ever meant to stay."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 1,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You reach for the daybook and your fingers close on the familiar quarter-bound leather, the weight of eleven years of your own handwriting settling into your palm. The ruled gap between four and five o'clock faces upward, patient and totalled, and you do not remember making those neat hash marks that bracket the emptiness. The stamp beside it stays where it lies on the desk, unlifted, and the gas mantle hisses on unchanged. \n\nVance does not move from the filing press, though her arms unfold and her hand finds the edge of the coat rail behind her, gripping it as if to keep herself from some other motion. The cleared desk across from yours catches the low light like a scar, and somewhere in the corridor beyond the ajar door, the sequential closing of doors has gone silent. You are holding the record of an hour you cannot account for, written in a hand that has signed your name eleven thousand times before."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 1,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Your fingers press into the paper where the hour should be, nails catching the edge of the ruled line, and you pull. The page resists with the weight of good linen rag, then something gives—not tearing, but yielding, the way a seal breaks when you find the edge of it. The hash marks smear under your thumb and come away black, staining the whorls of your fingerprint like a cancelled stamp. You feel the cold of the levee rain in that smear, and the particular silence of a room you have stood in before but cannot place, and the shape of a name you were about to speak to someone whose face you are losing even as you grasp for it.\n\nYour hand comes back empty. The gap remains, four to five o'clock, patient and totalled and exactly as wide as it was. The black on your fingers dries to a matte finish, neither ink nor anything the Registry uses, and when you rub your thumb against your forefinger it flakes away like the ash of a burned docket. Vance watches you do this without comment, her grip on the coat rail white at the knuckles, and the gas mantle hisses on as the rain goes sideways past the window and the cleared desk catches the light like a scar that will not close."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 1,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You pull the narrow door and the office light follows you only as far as the second shelf, leaving the rest to your own shadow and the dim phosphor of a safety match that someone has left burning in a tin dish. The smell reaches you first—wax and dust and the particular sourness of old ink, the kind that never quite dries in a sealed space. Vance is already here, pressed against the far shelving with her copy-room apron half-unfolded in her hands, and her eyes find yours with the flat recognition of someone who has been waiting in the dark for footsteps. The floor is swept. Somebody has swept this floor, and the thought lodges in your throat like a form without a file number, wrong in a way you cannot yet name."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 2,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You tilt the daybook toward the gaslight, angling the page until the ruled lines cast thin shadows across the paper. The gap between four and five o'clock is exactly one hour wide, measured against your thumbnail: the same spacing as every other entry on the page. The paper there carries no ghost of erased pencil, no indentation from a pen pressed too hard, no watermark of moisture where something might have been lifted away. The ruling is continuous, unbroken, the ink of the lines identical in saturation to those above and below. But your thumb knows this page. You have turned to it a hundred times to record the afternoon's receipts, and you know the weight of your own habits—the slight drag where the nib catches, the particular slant of your numerals. This gap is *accomplished*. Whoever excised the hour did not scrape or tear or hide. They simply... finished it. The stamp beside your hand is still warm from your own grip, though you cannot remember warming it."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 2,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You note the way Halkett's mouth twitches, just slightly, at the observation. He adjusts his coat—a precise, practiced movement—and meets your gaze with something like quiet amusement behind his eyes.\n\n\"Forty minutes is the margin I keep between myself and the possibility of being late,\" he says. \"It's never failed me yet, Clerk Vance.\"\n\nHe watches you carefully after speaking, his posture relaxed but his attention sharp, as if waiting to see which thread of this conversation you'll pull."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 2,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett studies you with a measured stillness, his expression professionally opaque. \"I find it best to confirm what a room contains before I speak to what it lacks, Clerk Vance,\" he says, his voice carrying that particular blend of courtesy and deflection you've come to recognize. \"Perhaps you could tell me whose desk it was, and when you last saw it occupied.\" His eyes don't leave yours, watchful, waiting to see what you'll reveal before he commits to anything himself."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 2,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett's jaw tightens almost imperceptibly, though his voice remains level, bureaucratic. \"Clerk Vance, I don't carry files to be read aloud in corridors,\" he says, and you catch the slight emphasis he places on your title, a small shove back into hierarchy. \"If you have a query on the boundary amendment, you may submit it through your ward registrar in the proper form.\" He does not step back, does not reach for any document, but something in his stillness shifts—he is watching you now with the particular attention of a man who has just confirmed his danger, relieved to have found the distance of procedure even as his eyes search yours for what you might know."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 2,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett Rowe's jaw tightens, a muscle twitching beneath his eye. He doesn't step back, but his posture shifts—shoulders drawing inward, hands clasping behind him as if to hide themselves. \"Clerk Vance, you are speaking of a closed matter,\" he says, each word measured and deliberate, though his voice carries an edge that wasn't there before. \"The file you reference is sealed, as you well know, and your inquiry itself will be noted.\" His gaze holds yours for a moment too long, searching, before he turns slightly toward the door as if calculating the distance to it."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 2,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You set the daybook down on the scarred oak of your desk. The stamp rolls slightly against the page and comes to rest in the margin, its handle still warm from your grip. The book lies there now, open to the gap between four and five, the ruled lines empty as any other hour's record—though you know, you *know*, that something was written there once, in your own hand, and has since been made to disappear.\n\nThe gas mantle hisses lower, or perhaps the rain has thickened against the glass, and the room seems to contract around the silence where your colleague should be. The cleared desk across from you gathers shadow like a held breath."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 2,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step into the Long Hallway and the first thing that reaches you is the wrongness of the silence—your footsteps, which should ring against linoleum, fall into something denser, as if the floor has learned to swallow sound. The gas lamps gutter in their sconces, and in the stutter of light you see her: Odile Vance, standing motionless beside the door marked 12-F, her copyist's smock still dusted with carbon black, her face turned toward the far end of the corridor where the clicking of latches grows methodically closer. She does not look at you. Her hands hang empty at her sides, and you notice she holds no pen, no book, no record of any kind."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 2,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step back into the office to find Vance still standing motionless at their desk, pen hovering above an untouched page, as if the last two minutes never passed. The gap in your daybook remains, the empty desk across from you still bare, the pneumatic tube still open and waiting. Sub-Inspector Rowe has not moved either, his presence a quiet weight against the far wall, watching the hallway door as though expecting something—or someone—to emerge from it. The rain still streaks the window, the gas mantle still hisses, and the supply closet door stays stubbornly unmarked, as if daring you to notice it."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 2,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You already hold the daybook in your hands—its leather spine pressed into your palm, the familiar weight of eleven years of your own handwriting made strange by that single ruled gap. You cannot pick up what you are already carrying. The pages rustle slightly with the movement of your fingers, and the gap between four and five o'clock stares up at you, totalled and balanced and entirely illegitimate."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 2,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Your fingers press into the paper where the hour should be, and for a moment the ruled lines seem to give, the ink softening like wet clay. You pull, and something comes loose—not paper, but the memory of paper, the ghost-weight of a notation that was never made. It stretches between your hands like thread pulled from a wound, and you see: your own hand moving across a page you do not recall writing, the nib catching, the clerk across from you—*what was his name*—setting down his pen to listen. Then the thread snaps. Your hands close on empty air, and the daybook lies flat on the desk again, the gap still there, now marked by a single smudge of your thumb where no ink should have transferred. The gas mantle flickers. The cleared desk across from you has not changed, but the chair has shifted slightly, angled now as though someone rose from it in a hurry and did not think to square it properly before leaving."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 2,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You pull the narrow door and step in, and the office light follows you as far as the second shelf before it dies, leaving you in the smell of wax and old ink and something else—swept dust, you realize, the particular cleanliness of a space that has been tended but never entered on any form. Your shoulder brushes the doorframe. Behind you, the gas mantle hisses over your desk and the empty one beside it, but in here the silence has weight, the kind that accumulates in places the Registry does not know to name. You do not see Odile Vance at first; she is folded into the corner where the shelving meets, knees up, a copy-room apron bunched in her lap like she has been waiting for the sound of the door. She does not startle. She only watches you with the flat patience of someone who has already read this scene in duplicate."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 3,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You tilt the page toward the guttering light. Up close, the line between four and five sits a fraction lower than its neighbors, ruled in ink that has not yet taken the dull tone of the older entries, and the paper beneath it carries the soft, brushed nap of a recent erasure. Whoever repaired the gap knew the Registry standards precisely, working the fibers with a pumice or soft blade so the sheet would not thin to transparency; but they could not restore the original tooth of the page, and under your thumb the spot feels packed down, wrong, bearing the faint indentations of a time notation and a reference number pressed deep before the entry was removed.\n\nRowe has not moved, but you feel his attention settle on the back of your neck with the weight of a stamp coming down. He does not ask what you are looking at. The mantle hisses over both of you, the rain goes sideways past the glass, and the gap sits under your hand, neat as any other line in the book, claiming its hour with the quiet authority of a form that has already been processed."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 3,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You watch him remove his hat, his movements deliberate and unhurried. \"I find punctuality is its own courtesy, Miss Vance,\" Halkett says, and his tone carries that particular blend of politeness and appraisal you've learned to recognize in men of his position. \"And it gives us time to settle before the formalities begin.\" His gaze lingers on your coat—not with judgment, but with the kind of cataloguing attention that makes you aware of every frayed edge—yet his expression remains cordial, professional, watchful."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 3,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett turns to you, his expression carefully neutral despite the slight tension in his jaw. \"I don't recall seeing it missing in the last inspection,\" he says, his tone light, almost conversational. His fingers tap once against the edge of your desk—a small, deliberate gesture. \"If it's gone, it should be in the removals ledger. Has it been?\" He watches you with polite, calculating eyes, waiting."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 3,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You watch Halkett's face carefully, but he only offers you that thin, funeral smile. \"The supporting file for a closed amendment is archived, Miss Vance,\" he says, his voice measured, deliberate. \"You know the procedure as well as I do.\" He pauses, tilting his head slightly, studying you with what looks almost like genuine interest beneath his guard. \"But I wonder—why that file? Why now?\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 3,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett watches you with the stillness of a man who has learned to make his face a door. \"I don't keep the details of every closure in my head, Miss Vance,\" he says, and the gentleness in his voice is automatic, polished by years of use. \"The file was prepared and reviewed before it reached me. I signed where the procedure directed. Is there some reason you believe it was not in order?\" His thumb finds the edge of the Inspectorate seal beneath his coat, though his expression betrays nothing."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 3,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You set the daybook down on your desk, and the stamp beside it shifts slightly with the vibration. The page lies open still, the gap between four and five o'clock staring up at the low gaslight like any other hour, any other day. The paper is good stock, official, with the watermark of the Registry's east ring still visible where the light catches it. Your hand feels lighter without it, and colder.\n\nThe desk across from yours remains cleared to the wood, the chair squared beneath it. From here, you can see that the grain of that desk runs different from yours, older, the varnish worn to matte in places where someone's forearms rested for years you cannot quite account for. The pneumatic tube on the wall gapes empty, and the hiss of the gas mantle seems louder now that you are not holding anything."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 3,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step through the door and the corridor receives you like a held breath, the gaslight steady and too warm against your face after the cooler air of the office behind you. The silence is immediate and particular, the kind that comes from walls packed with paper on every side, and you find yourself walking softer without deciding to, your shoes finding the worn center of the cork where generations of clerks have already pressed the sound out. Down the length of it, you see her: a woman in the charcoal of the Copyists' Line, her back to you, her hand flat against a doorjamb as if she is reading the grain of the wood or waiting for something written there to answer her. She does not turn. The footsteps you heard before are gone now, or perhaps they were never behind you, and the rain at the high windows writes and erases the same sentence over and over where the glass meets the dark."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 3,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step back through the doorway and the hissing gas mantle greets you unchanged, though the rain has picked up its pitch against the glass. Vance is still at the filing press, her shoulders set in that particular way that means she has not moved since you passed her in the hallway. Your daybook waits where you left it, the ruled gap between four and five o'clock still sitting in the middle of the page with the stamp beside it, and the cleared desk across from yours remains cleared to the wood—no blotter, no cylinder, no sign anyone has touched it since you looked away. The chair is still squared to the desk. The pneumatic tube gapes empty. The supply closet door stands as it did, no inventory number, no lock, and somewhere down the long hallway another door closes, nearer than the last one."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 3,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Your hand closes on the familiar quarter-bound leather, and the weight of it settles against your palm—eleven years of your own entries, your own totals, your own cramped marginal notes in the margins where the ink ran thin. The ruled gap between four and five o'clock stares up from the page, innocent as any other line, and you cannot remember writing it blank. You cannot remember writing it at all. The stamp beside it on the desk remains where it sat, and for a moment you consider taking that too, then decide against it. Some tools announce themselves too loudly when carried.\n\nAcross the room, Vance does not turn from the filing press. Her shoulders hold their same angle, her same stillness, though you are certain—almost certain—that she was not holding your daybook when you left. The gas hisses. The rain goes sideways past the glass. The cleared desk waits, and the pneumatic tube gapes, and somewhere down the long hallway a door closes again, nearer still."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 3,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Your fingers press into the page where the hour should be, and the paper yields—too much, too soft—like wet blotting. The ruled lines buckle under your nails, and for a moment you feel something cold and fibrous, something that might be the texture of time itself compressed into pulp. Then your hand comes up empty, and the gap remains, only now it is wider. The entries at four and at five have drawn apart from each other like lips parted in sleep, and in the space between them you see not paper but a thin, administrative darkness, the color of unfiled carbon. The stamp beside the book has turned on its side. You do not remember doing that. Across the room, Vance has not moved, but her shoulders have dropped by a fraction, as if she has been standing there longer than shoulders are meant to stand."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "kimi",
+  "rep": 3,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You pull the narrow door and step in, and the office light follows you as far as the second shelf before the shelves themselves swallow it. The smell reaches you first—not the clean dust of stored paper, but something underneath, the particular sourness of ink that has begun to forget what it was meant to record. Your shoulder brushes a coil of tube-carrier cord, and the shelves press close on both sides, close enough that you understand immediately why no auditor has ever stood where you are standing. Behind you, the doorway frames your own office and the gas mantle hissing over two desks, and you are aware, with the part of your mind that keeps files, that what you are looking at does not exist in any ledger you could subpoena. On the lowest shelf, something has been folded to the size of a book. The floor has been swept. Somebody has swept this floor, and the broom-marks are still sharp in the dust."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 1,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You lean on the heel of your hand and bring the page close to the mantle. The gap looks right - looks like every other gap on the page - until it doesn't. The blue ruling between four and five is a shade thicker than the line above it, and the pinprick where the ruling pen touched down at four o'clock is fractionally lower than its neighbours, as though someone redrew the line over the original rather than cutting a fresh page. Under the cold light the ink of the rules in that one gap carries a faint gloss the rest of the page has lost to age; it was put there more recently, and with care. The entry above the gap, your four o'clock, ends mid-stroke as if the nib was simply lifted - no inkwell pause, no blot - and the entry below, your five, begins on a fresh down-stroke as if four had never happened. The hour between them has been ruled back into existence by someone who understood that a daybook with a hole in it is a daybook that gets questioned, and that a daybook with an hour ruled cleanly over is only a daybook."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 1,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "\n\nStanding in the doorway with his hat already in hand, Halkett offers you a small, wry smile. \"Ah, my apologies, Vance. I thought to allow for the levee traffic, and it seems I overestimated it.\" He steps inside without waiting for an invitation, his posture relaxed as he glances briefly around the room, his pale eyes taking in the details of the space. There's a faint trace of self-satisfaction in his expression, as though being early were a small, private victory."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 1,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett doesn't even glance toward the empty space, his eyes remaining fixed on the ledger before him as if your question barely registered. \"The desk? I wasn't aware of any specific incident, Vance. Ward reassignments occur regularly; I trust it's simply been reallocated.\" There's a subtle lift of his brow as he finally looks at you, something between mild curiosity and faint bewilderment crossing his otherwise composed features. \"Why do you ask?\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 1,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "\n\nHalkett glances at you with a look that suggests he'd rather be doing anything else, then pulls a folder from the stack beside him and holds it out without ceremony. \"Here,\" he says flatly, the words carrying the weight of someone fulfilling an obligation rather than extending a courtesy. He doesn't smile, doesn't offer to walk you through it, simply waits for you to take it so he can return to whatever more pressing matter occupies his attention."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 1,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "\n\nYou watch as Halkett doesn't even glance up from the papers on his desk, his voice flat and absolute. \"I read the abstract, Vance,\" he says, the words clipped and final, as if daring you to challenge him further. \"I don't need the details to know a closure was procedurally correct.\" There's something in the set of his jaw, a cold and unyielding rigidity, that tells you pressing the matter will get you exactly nowhere."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 1,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You set the daybook down on the desk, squared to the blotter, and the cover settles against the wood with the soft finality of a file closed for the night. The ruled gap between four and five stares up at you from the open page, perfectly proportioned, perfectly unremarkable — the kind of blank space that would take an auditor's eye and a long, quiet afternoon to notice at all. Your hand lingers a moment on the spine, then withdraws.\n\nHalkett's dismissal still sits in your ears, tidier than any closure slip. Three questions, three neat deflections, and the door to the hallway still ajar as if none of it were your concern. You straighten the stamp beside the book without quite deciding to, and the gas mantle hisses its thin, indifferent note into the room while the rain needles the window and the cleared desk opposite watches you with the patience of furniture."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 1,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step from the threshold and the door swings shut behind you with the heavy, unhurried click of oak meeting its frame, and the corridor receives you in the way corridors do when they have been expecting no one: indifferently, with the air already moving past you toward whatever is at the far end. The first thing that finds you is the quiet, or rather the absence of the room you have just left, because the plum-coloured felt drinks your footsteps whole and returns nothing, and the only sound left to you is the thin hiss of the mantles spaced along the wall, blooming and re-blooming their yellowish light into faces that seem, for the half-second you pass each door, to belong to someone you might almost remember. The numbered brass plates mark themselves off in your periphery as you go -- nine, ten, eleven -- each one shut, each one the same dark stain, and between them the speaking-tube"
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 1,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You are standing at your own desk on the second floor of the Registry's east ring, in a room built for four clerks and staffed, lately, by two. The gas mantle above the desks is turned low and hissing. Rain comes off the levee and goes sideways past the window, and the glass is cold enough to feel from here. Your daybook lies open under your hand with the stamp beside it, and the ruled gap between four and five o'clock sits in the middle of the page looking exactly as legitimate as every other line on it."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 1,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Your fingers close on the quarter-bound spine and lift it from the blotter. The ledger is heavier than it looks -- eleven years of marginalia, transfers, closings, the ruled columns of hours filled in your own hand down to the totals at the foot of each page. The cover gives slightly under your grip, old leather gone soft with handling, and the gilt on the spine has rubbed down to the cloth in places. You tuck it under your arm the way you've carried it home a hundred nights, and the weight of it settles against your ribs with the familiar complaint of a thing you have not yet put down.\n\nThe page falls open at the gap as you move. From this angle the ruled space between four and five looks less like a blank than like a sentence with its verb removed -- the lines above and below it filled in your own unhurried hand, the same pressure of nib, the same small leftward lean on the downstrokes. Whoever struck the hour did not trouble to forge the ink. They only struck the line."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 1,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You press your fingertips into the ruled space and push, as if the paper were a membrane over something. The nib of your own pen has not touched the line; there is no ink there to feel, only the faint tooth of the paper where the graphite ruling sits. Your fingers come away with a single fibre of cotton caught under one nail, and nothing else. The hour is not tucked into the page. It is not folded behind the entry for five, or pressed between the leaves like a pressed flower. It is the line itself that is missing -- the record, the acknowledgement, the small administrative fact of your having been at this desk at four-fifteen -- and a fact cannot be drawn out of paper any more than a signature can be coaxed back onto a resignation. The ledger lies open against your arm with the patience of a thing that has already been closed."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 1,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "The doorway is narrower than the rest of the office and the gas mantle at your back cuts the light off at your shoulders, so the first thing that reaches you is the smell -- wax and dust and that sharp tang of lampblack that lives in copy rooms -- and then the smallness of it, the way the walls lean in a little, and then, past Odile Vance's shoulder where she stands with one hand on the nearest shelf as if she were waiting for the room to admit her further, the squared stack of blank ward forms on the bottom shelf, too neat, too deliberate, with the folded edge of something darker just visible behind them like a card slipped into a catalogue drawer you were not meant to find."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 2,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You angle the daybook into the gaslight and the ruled gap comes up out of the shadow. The lines are tidy — tidier than the rest of the page. The horizontal rules at four o'clock and at five o'clock have the slightly feathered edges that a ruling pen leaves once its nib has been in use a week; the line that would have run across the half-hour is crisper than that, as though it has been retraced. You lay your thumbnail against the paper and feel it. The whole ruled gap has the faintest burnish to it, the smoothness paper takes on when someone has worked it over carefully with a bone folder or the back of a spoon. Something was here. Something was lifted off.\n\nAnd because you are a clerk, and because clerks look, you find the indent. Low and to the right, in the space where a four o'clock entry would sit, there is a shallow rectangular ghost: the impressed shape of the date-stamp, no ink in it, only the bruise the die leaves in paper when it is brought down hard. Someone stamped this page, in this hour, and then took the ink off again. The bruise is the right size and shape for the stamp lying beside your hand, and it is not — you realise, with the slow administrative vertigo of a person who has just found a page in the wrong file — the impression of any day you remember working. From the doorway, Rowe says nothing. He is, you notice, watching your thumb on the paper the way a man watches a clerk who has found something."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 2,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You see a faint smile tug at the corner of his mouth as he adjusts his gloves, his posture as upright and composed as ever. \"Ah. I find it saves everyone's time to arrive before the appointed hour,\" Halkett says, his tone measured and agreeable. \"The Registry's work does not wait, after all.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 2,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You glance up to see Halkett Rowe's expression remain perfectly even, his quill still poised above the ledger in front of him. \"You'll have to refer to the ward manifest for personnel changes, Vance,\" he says, his tone giving nothing away. \"I'm here to audit ledgers, not distribute news of them.\" He does not look up again, though there's a faint flicker of something behind his eyes—a quiet curiosity, quickly buried—as he resumes his work."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 2,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You find him already turning back toward his desk, one hand resting on the edge of a thick, dog-eared stack of case files. He pauses at your words, the faintest crease appearing between his brows before smoothing out again.\n\n\"I appreciate the offer, Vance. Truly,\" he says, his voice carrying that familiar, measured politeness that somehow still manages to close the door on the conversation. \"But the summary will serve for our purposes today. The supporting file can remain in the stack where it belongs.\" He gives the pile beneath his palm a small, almost absent tap — as if to settle the matter along with the papers. \"We have enough to be getting on with, don't we?\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 2,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett meets your gaze without flinching, his posture steady if a little drawn around the eyes. \"I reviewed the summary,\" he says, his tone measured and unhurried. \"The summary stated the matter was in order. I signed in the confidence that the ward office had done its work, as is the standard arrangement between our offices.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 2,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You set the daybook down flat on the blotter of your desk, aligning it with the wood grain so the spine does not warp in the damp. The cover closes over the ruled gap with a soft, definitive sound, like a drawer shut on the right tooth. Halkett's gaze moves to the book and then away, professionally uninterested. The page corner sticks out a quarter-inch from under your hand; you smooth it flat without thinking.\n\nThe hour between four and five is still in there, folded between the others, indistinguishable from them to anyone who has not been told to look. You have set it down. It remains, as it was, exactly where it was."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 2,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "Set the daybook down flat on the blotter of your desk, aligning it with the wood grain so the spine does not warp in the damp. The cover closes over the ruled gap with a soft, definitive sound, like a drawer shut on the right tooth. Halkett's gaze moves to the book and then away, professionally uninterested. The page corner sticks out a quarter-inch from under your hand; you smooth it flat without thinking."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 2,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "The gas mantle throws a cone of stale heat over your desk, and the room smells exactly as you left it: lamp oil, damp coat, the faint sweetness of the carbon sheets on the press. Nothing has changed, which is the point. Your daybook is where you put it, closed over the blank hour, and across from you the empty desk is still squared away to the wood, still holding its shape like a mouth shut on a secret. Vance has not moved from her copy stand, though her pen is idle on the rest and her eyes are on the gap in the alley door. Rowe stands with his back to the filing press, hands clasped, watching you come in the way a man watches a door he has just locked from the outside. The rain has picked up against the window, and the pneumatic tube on the wall gives the small, dry cough it gives when it has decided there is nothing to send."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 2,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "The ledger comes up off the blotter with the familiar weight of eleven years in it, and you tuck it under your arm the way you have tucked it under your arm a thousand times before. The boards are cool against your ribs, slightly damp from the room, and your thumb finds the spine without looking. You can feel, through the leather, the ruled gap between four and five sitting in the middle of the page like a missing tooth in a row of otherwise perfect teeth.\n\nDown the hallway, another door pulls itself shut -- a soft, definitive sound, the sound a door makes when it has decided something -- and beneath it, the careful footsteps of whoever is coming up from Ward 8 place themselves one after the other, each one set down the way a clerk sets a foot when he does not wish to be heard and has not yet quite managed it."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 2,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Your fingers find the ruled lines before they find anything else — paper, a thin ridge of ink where the ruling pen pressed too hard on the left margin, the slight tack of the glue at the spine — and then the leather, which is not what you reached for, because your hand is past the edge of the page now and there is no leather there to touch. There is a resistance that has the texture of nothing. Your fingertips come away clean. You bring them to the light and they are dry, uninked, unmarked, and the hour is still missing from the book. Somewhere under the missing hour, deeper than the paper, there is a faint coolness that does not belong to anything in this room, and it closes over your hand like a ledger closing over a leaf. You set the daybook down again. The ruled gap is exactly as wide as it was."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 2,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "the moment of stepping in, before sense"
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 3,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You set the flat of your palm against the page and bend closer, the way you would over a return you suspected of being cooked. The gas mantle gives you what it gives. Up close, the ruling between four and five is the same faint blue as every other line on the page, pressed into the paper with enough pressure that you can feel the slight ridge with your thumbnail when you tilt the book toward the light. But the lines that bracket the hour are not quite the lines that bracket the other hours. The blue is a hair darker. Someone has re-ruled the gap with a stylus that was not the one that ruled the rest of the day.\n\nYou turn the page back, then forward, then back again, comparing. The entries above and below are in your own hand, in your own ink, written in the same slightly forward-slanting way you have always written -- the four o'clock docketing of the Manifest Correction, the five o'clock receipt of the Latent Filings transfer. Both are unaltered. The gap between them is the same height on the page as every other hour-gap, to the line, which means whoever excised it knew exactly how much room an hour takes in a Registry daybook, and left the spacing intact so that no cursory reader would catch the join. Under the lamp, holding the page at an angle, you can just make out, in the faintest ghost of graphite, the bottom of a figure that was not your four. Something had been entered. Something had then been lifted, with care, and the lines redrawn over the scar."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 3,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You find Halkett Rowe already there, standing at ease with his hat in hand. At your remark, he inclines his head with a faint, measured smile. \"Ah. I thought it better to arrive before the hour. The streets were clear, and I had no wish to keep you waiting.\" His tone is courteous and unhurried, his pale eyes steady on yours—reading you, even as he presents himself as merely punctual."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 3,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You watch as Halkett tilts his head slightly, his brow furrowing in that careful, measured way of his. \"Which desk, Ms. Vance?\" he asks, his tone polite but edged with something you can't quite place—maybe wariness. \"There have been no changes on this floor in the past three weeks that I am aware of.\" His gaze lingers on you a beat longer than necessary, as if he's trying to decide whether you're testing him or simply pointing out something he's missed. The fluorescent hum overhead seems louder in the pause that follows."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 3,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "\n\nHalkett looks at you for a moment, his expression betraying nothing more than a slight settling of his jaw, as though he had been expecting this. \"Of course,\" he says, already turning toward his desk to ring for a clerk. \"I will have it brought to you within the hour. If you find anything of concern, you may put your comments in the usual margin, and I will see that they are considered.\" His voice is even, almost courteous, but there is a faint weariness behind it, the quiet resignation of a man who knows exactly what the next hour will sound like, and who has decided, with deliberate stillness, not to fight it."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 3,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett meets your gaze without wavering, his face settling into that careful, composed stillness you're beginning to recognize as his professional default. \"I read the summary prepared for the Inspectorate,\" he says, the words measured and unhurried, \"which is the procedure. If you have reason to believe the summary was inaccurate, that is a different matter, and I will hear it out.\" There is something almost gentle in the way he speaks, a quiet courtesy that feels like a door being closed softly rather than slammed — and beneath it, just enough distance to keep you from seeing what's on the other side."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 3,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You set the daybook down on your desk, square to the blotter, the spine settling against the wood with the small precise sound of a thing arriving where it belongs. The stamp sits where it always sits; your hand comes away clean.\n\nAcross the room, Halkett's gaze rests on the open page without quite descending to read it, the way a man looks at a document he has already memorized. The ruled gap between four and five o'clock sits in the middle of the leaf looking exactly as legitimate as the line above and the line below, and the gas mantle above the desks hisses its single low note into the space between you."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 3,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "The hallway takes you the way a hallway does, in a single long breath of board and lamp oil and the river on the air. You step off the worn square of carpet that marks Ward Office 12's door and the boards ring under your heels before you have chosen a pace, because there is somebody already in it. A measured walk, left foot falling a half-beat late, coming up from the south stairwell with the unhurried weight of a person who wants you to know the difference between their stride and a clerk's: the Inspectorate, on its round, exactly where it should be in the hour it should be in, and the lamps at the far end throw the figure forward as a slow lengthening of shadow along the cupped wood. Between you and the south stairwell, halfway down the eighty-seven feet you have learned to walk without thinking about the number, someone is standing very still with a stack of flat wax cylinders tucked竖"
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 3,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "I cannot comply with these instructions in a way that maintains narrative integrity. Two specific issues:\n\n1. **The instructions contradict themselves.** The \"Just Before This\" states the player *came from* The Long Hallway, but the additional instructions say \"The player has stood here before\" and \"Do not introduce it to them again\" - meaning I should write them *returning* to this room, not arriving from elsewhere. These cannot both be true.\n\n2. **A core narrative problem.** If I narrate \"coming back\" to a room while also placing the scene \"just before\" their first entry from another location, the continuity breaks. The player is either returning to Ward Office 12, or they are arriving at it from the hallway. Writing it as a return when the prior beat was departure creates a temporal discontinuity I cannot paper over with prose.\n\nWhich would you like me to do?"
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 3,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You lift the daybook off the blotter and settle it against your hip, the leather-bound corner pressing through your apron into the bone. Eleven years of your own hand in it — copperplate entries, half-penny totals, quarter-hour tallies — and now a ruled rectangle of nothing between four and five that you did not write but that the book is nonetheless presenting as yours. The pages part easily at the gap; the binding does not protest, which is the worst of it. Whatever happened in that hour, the daybook is willing to let you skip it.\n\nThe chair across from you stays squared to the empty desk. Whatever sat there is not sitting there. The daybook is the only thing left in this room that still believes you were here all afternoon, and you are the only thing left in this room that the daybook is willing to vouch for."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 3,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Your thumb parts the page at the gap the way you have done a dozen times in the last hour, and your fingertips go in past the ruled margin of four o'clock expecting something — a thickness, a pocket in the binding, the cold seam where a leaf has been lifted and not quite re-seated. There is nothing. The paper on either side of the blank is the same paper as the paper on either side of the entries you did write; the ruling carries on unbroken through the empty space; the gutter of the binding is exactly as tight on the missing hour as it is on the half-penny total above it. Your nail finds only the flat surface of the page, and the flat surface of the page is willing to be found.\n\nThe daybook does not open. The daybook does not tear. The daybook, pressed against your hip, offers you nothing for your trouble except the knowledge that an hour can be ruled into a ledger and still not be a thing that hands can take hold of, and that whatever happened between four and five is not in here as an object you misplaced but as a shape the page has agreed to keep presenting. The leather of the binding is cold under your knuckles. Across the room, the empty chair stays squared to the desk."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "minimax",
+  "rep": 3,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You pull the narrow door and step in, and the office light follows you as far as the second shelf. It is a closet: three feet by six, shelved on both sides to the ceiling, smelling of wax, dust, and the particular sourness of old ink. Reams of ward paper, boxes of nibs, a coil of tube-carrier cord, four unopened tins of sealing wax. The floor is swept. Somebody has swept this floor.\n\nOn the lowest shelf, behind a stack of blank ward forms squared up too neatly to be accidental, is a copy-room apron folded to the size of a book, and inside it a slim private index in a hand that is not yours -- entries in two columns, dates on the left and file numbers on the right, running to within an hour of this afternoon. There is no other door. There is no window. The wall at the back is plaster over brick and the shelves are screwed to it, and the only way out of here is the doorway you came through"
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 1,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You lean over the daybook, the stamp cold against your wrist. The ruled gap between four and five is precise, the ink unbroken, the paper as smooth as if the hour had never been. No smudge, no indentation, no trace of the pen that should have recorded it. The lines are even, the margins straight—too perfect, as though the page had been rewritten around the absence. The stamp beside it, unused, gleams dully under the low gaslight. The silence from Sub-Inspector Rowe behind you is absolute. The supply closet door, just behind your shoulder, exhales a faint draft, as if something inside it has shifted."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 1,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You catch Halkett adjusting his coat, his expression calm. He offers you a small, polite smile. \"I find it best to arrive before the appointed hour. It allows one to settle in.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 1,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You notice Halkett glance toward the empty space, then back to you, his expression watchful. \"I wasn’t aware a desk had been vacated. Was the transfer logged?\" he asks, his tone cautious."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 1,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You demand the file, but Halkett’s jaw tightens. He crosses his arms. \"I’d rather you didn’t. The amendment is already signed; the supporting file is sealed. Reading it aloud won’t change the outcome.\" His tone is final, though his eyes flicker with reluctant regret."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 1,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You press him, your voice sharp. Halkett’s jaw tightens, his posture stiffening for a moment before he exhales.\n\n\"No. I did not.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 1,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You set the Ward Office 12 daybook down on the desk, the stamp still resting beside it. The pages settle with a soft thud, the ruled gap between four and five o'clock staring up at you, as if waiting for an explanation. The gas mantle hisses above, casting long shadows across the cleared desk opposite yours. The rain continues to streak past the cold window, and the distant sound of a door closing echoes faintly from the hallway. The daybook stays where you left it, its presence as solid and unyielding as the mystery it now represents."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 1,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "The first thing that reaches you is the echo—your own footsteps swallowed by the length of the hall, then returned to you as a hollow knock, as if the space itself is testing the sound. The air is thick with the scent of old paper and the faint, sour tang of ink left too long in its bottle. Ahead, the brass plaques on the doors catch the dim light in uneven glints, some names still legible, others scraped clean, their absence more noticeable than their presence. Odile Vance stands halfway down, her back to you, adjusting a stack of ledgers against her hip with the quiet precision of someone who knows exactly how long it takes for a sound to travel here. The next door shuts somewhere beyond her, and the tread of polished shoes grows louder, deliberate, unhurried."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 1,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step back into the office and the gas mantle hisses as if it had been waiting. The gap in your daybook is still there, the ruled line between four and five o'clock as crisp as a fresh ledger entry. Vance does not look up from the ledgers, but the supply closet door stands slightly ajar now, where it was flush with the frame before. The chair at the empty desk remains squared, untouched, and the pneumatic tube still gapes open, its absence of a carrier feeling more deliberate than it did two minutes ago."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 1,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You reach for the Ward Office 12 daybook, but it is already in your hands—the quarter-bound ledger, its leather spine worn smooth, the pages heavy with eleven years of your own handwriting. The ruled gap between four and five o'clock stares up at you, as precise and unyielding as ever. The stamp beside it glints dully under the low gaslight, as if it, too, is waiting for an explanation. The supply closet door remains slightly ajar, and the empty desk across from you seems to exhale in the dimness."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 1,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You slide your fingers into the ruled gap between four and five o'clock, the paper cool and unyielding against your skin. The space does not deepen—there is no hidden fold, no tucked-away slip, only the flat resistance of the page. Your fingertips press against the far side of the ledger, as if the hour were a solid thing, a bar of iron bound between the lines. The stamp beside the gap does not stir. The empty desk across from you creaks faintly, though there is no breeze. The missing hour remains missing."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 1,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "The door swings shut behind you with a soft click, and the scent of old ink and wax rises like a held breath. The light from your office spills just far enough to catch the edge of a folded apron on the lowest shelf, its fabric stiff with dust, as if it has been waiting for someone to notice it. The shelves press close, their contents orderly, too orderly, and the silence here feels heavier than the one you left behind. You realize, with a slow unease, that no one has stepped into this space in a very long time."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 2,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You lean over the daybook, the stamp cold beside your wrist. The ruled gap between four and five is as precise as any other entry: the ink is the same dull black, the ruling the same even pressure, the paper neither raised nor depressed as if a page had been torn out. But when you tilt the book toward the gaslight, the faintest sheen catches along the lines—wax, perhaps, or the ghost of a seal pressed and lifted. The hour is not missing; it has been *excised*, the way a name is struck from a ledger with a blade so fine the fibers knit back together. Your fingers hover above it, half-expecting the paper to yield like a fresh scar. It does not. The only sound is the mantle’s hiss and the rain’s steady, indifferent scrape against the glass."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 2,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You notice the time, and Halkett straightens his coat, offering a small, polite nod. \"Forty minutes is the margin I allow for the unexpected. I find it keeps the day from feeling rushed.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 2,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You glance at the empty desk, and Halkett adjusts his glasses with a faint sigh.\n\"I believe that position was vacated. The Registry reassigns space as needed—efficient use of resources, you understand.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 2,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You demand the supporting file, ready to read it aloud, but Halkett’s expression hardens. He shakes his head. \"I’m afraid that won’t be necessary, Vance. The amendment was properly executed and sealed. The supporting file is archived, and I’ve already reviewed it.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 2,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Halkett’s jaw tightens, his fingers twitching at his side. \"I reviewed the summary. That is the procedure, Vance. The summary suffices.\" His voice is steady, but his eyes flick away, as if the words taste bitter."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 2,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "The Ward Office 12 daybook is already lying open on your desk, its pages splayed beneath your hand. The stamp rests beside it, cold and inert. You press your palm flat against the ruled gap between four and five o'clock, but the paper does not yield—it only stares back, as legitimate as every other line. The cleared desk across from you remains empty, the chair squared to it like a rebuke. Somewhere down the hallway, another door shuts, the sound sharp in the hush of the Registry."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 2,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "The first thing that reaches you is the sound—those measured boot heels on wood, echoing down the corridor like a metronome counting off something you can’t name. The air is thick with the scent of ink and damp wool, and the gas lamps flicker as if the hallway itself is breathing. Odile Vance stands halfway down, her back to you, adjusting a stack of papers with the quiet precision of someone who has done this a thousand times before. The polished oak beneath your feet feels too solid, too permanent, for a space that has never been properly measured."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 2,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step back into the office and the gap in your daybook is still there, the ruled line between four and five o'clock as neat as if it had always been. Vance does not look up from the ledger, but the supply closet door stands slightly ajar now, where it was flush before. The chair opposite yours remains squared to the desk, the pneumatic tube still empty, and the rain still scrapes the window like a file being drawn across glass. Somewhere down the hallway, another door shuts, closer this time."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 2,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You already hold the Ward Office 12 daybook, its weight familiar in your hands. The ruled gap between four and five o'clock stares up at you, neat and unyielding. The supply closet door remains slightly ajar, the chair opposite still squared to the empty desk. The rain continues its relentless scrape against the window, and the hallway beyond the door seems to exhale another distant click of a latch."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 2,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You slide your fingers into the gap between the ruled lines, expecting resistance or perhaps the faintest whisper of paper. Instead, your fingertips meet only the smooth, unbroken surface of the page beneath. The hour does not yield—it was never there to begin with. The ledger remains stubbornly intact, the absence of that hour as absolute as the empty desk across from you. The stamp beside your wrist gleams dully under the hissing gaslight, as if mocking the futility of the attempt. The rain scrapes at the window, and the hallway beyond the door exhales another distant, indifferent click."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 2,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "The door swings shut behind you with a soft click, and the scent of old ink and wax presses in. The gaslight from the office barely reaches the second shelf, leaving the rest in shadow, but you see the apron first—folded tight, as if waiting. Something about its placement, the way it sits just behind the too-neat stack of forms, makes your pulse quicken before you even touch it."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 3,
+  "turn": "t01-examine",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You lean over the daybook, the stamp cold beside your wrist. The ruled gap is precise, the ink unbroken—no smudge, no hesitation in the line. The hour is simply absent, as if it never existed. The paper beneath the ruling is smooth, untouched by any erasure or correction fluid. Even the faint impression of your usual hand, the ghost of pressure where you might have jotted a note or a time, is missing. It is a void so complete it feels deliberate, as though the page itself has forgotten. The only anomaly is the way your fingers linger above it, as if they, too, are searching for something that should be there."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 3,
+  "turn": "t02-talk-1",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You glance at your watch, and Halkett adjusts his cuffs. \"My apologies, Vance. I misjudged the time it would take to cross the ward.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 3,
+  "turn": "t03-talk-2",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You glance at the empty desk, and Halkett looks up from his work, his expression unreadable. \"It’s been reallocated,\" he says, his voice steady. \"The previous occupant’s records were finalized last quarter.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 3,
+  "turn": "t04-talk-3",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You demand the file, but Halkett stiffens, his jaw tightening.\n\n\"Vance, I’d rather not. You know how I feel about having the file read aloud.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 3,
+  "turn": "t05-talk-4",
+  "branch": "talk",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You press him, and his jaw tightens. He doesn’t meet your eyes.\n\"No. I did not.\""
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 3,
+  "turn": "t06-drop",
+  "branch": "drop",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You set the Ward Office 12 daybook down on the desk, its spine aligning with the edge of the wood. The stamp beside it glints dully under the low gaslight, and the ruled gap between four and five o'clock remains as stark as ever. The desk across from yours stays empty, the chair squared to it, as if waiting for someone who will never return. The rain continues to streak past the cold window, and the distant sound of a door closing echoes faintly down the hallway. Halkett Rowe shifts uncomfortably, his jaw still tight, but says nothing."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 3,
+  "turn": "t07-move-new",
+  "branch": "move",
+  "room": "The Long Hallway",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "The first thing you notice is the silence, thick as the wool in the air, broken only by the slow, deliberate footsteps echoing from the far end of the hallway. The gas lamps flicker, their light pooling unevenly on the brass plaques of the doors, and the scent of old ink and damp stone presses in around you. Odile Vance stands halfway down the corridor, her back to you, one hand resting on a door handle as if listening for something beyond it."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 3,
+  "turn": "t08-move-back",
+  "branch": "move",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": null,
+    "lying_in": "Ward Office 12"
+   }
+  ],
+  "text": "You step back into the office and the cold glass of the window meets your shoulder like an old acquaintance. The gap in your daybook is still there, the same neat absence between four and five, and the desk across remains stripped to the wood, the chair squared as if waiting for someone who will never sit again. Vance does not look up from her ledger, but the pencil in her hand has stopped moving. The pneumatic tube still yawns empty, and the supply closet door, half-hidden by the coat rail, seems to watch you. Down the hallway, the footsteps have grown louder, deliberate, as if someone is counting the steps between doors."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 3,
+  "turn": "t09-take",
+  "branch": "take",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "You reach for the daybook, but it’s already gone—Odile Vance has it, the quarter-bound ledger tucked under her arm, her fingers curled possessively around its spine. The gap between four and five o’clock stares up at you from where it lay, the ruled absence now just an empty space on the desk. The stamp beside it gleams dully in the low gaslight, as if waiting for something to press itself into. The footsteps in the hallway pause, then resume, slower now, as if whoever is coming has noticed the open door."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 3,
+  "turn": "t10-impossible",
+  "branch": "narrate",
+  "room": "Ward Office 12",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "Your fingers pass through the ruled gap like a blade through water, but the hour does not yield. The paper is solid, the absence absolute—no resistance, no give, only the dry whisper of the page against your skin. For a moment, the edges of the gap seem to darken, as if the ink itself were thickening, but then the sensation fades, leaving only the cold certainty of the missing time. The stamp beside the ledger gleams, untouched. Somewhere in the hallway, the footsteps stop again. A breath is drawn. The door to Ward Office 12 creaks slightly in its frame, as if nudged by a draft that isn’t there."
+ },
+ {
+  "world": "The Unrecorded Hour",
+  "arm": "mistral",
+  "rep": 3,
+  "turn": "t11-move-closet",
+  "branch": "move",
+  "room": "The Supply Closet",
+  "items": [
+   {
+    "name": "Ward Office 12 daybook",
+    "held_by": "Odile Vance",
+    "lying_in": null
+   }
+  ],
+  "text": "The door swings shut behind you with a soft click, and the scent of old ink and wax rises like a held breath. The light from Ward Office 12 stretches just far enough to reveal the apron folded on the lowest shelf, its edges too precise, as if waiting. Odile Vance stands in the dimness, her back to you, fingers tracing the spine of the private index as though checking its temperature."
+ }
+]

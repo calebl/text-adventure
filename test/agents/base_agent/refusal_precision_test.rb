@@ -283,7 +283,7 @@ class BaseAgent::RefusalPrecisionTest < ActiveSupport::TestCase
                       .map { |row| [ row["case"], row["model"], row["arm"] ] }
   end
 
-  # And the prose that ships with the app: both checked-in worlds' opening
+  # And the prose that ships with the app: every checked-in world's opening
   # arrivals and every realized room in them. A detector that flagged a seeded
   # world's own narration would fail the game's very first turn, before a player
   # had typed anything.
@@ -291,7 +291,7 @@ class BaseAgent::RefusalPrecisionTest < ActiveSupport::TestCase
     WorldSeed::Loader.load_all(io: nil)
     prose = Scene.pluck(:description) + Location.where.not(description: nil).pluck(:description)
 
-    assert_equal 2, Scene.where(is_opening: true).count, "both worlds carry their own opening arrival"
+    assert_equal WorldSeed.files.size, Scene.where(is_opening: true).count, "every checked-in world carries its own opening arrival"
     assert_operator prose.size, :>=, 5
     assert_empty prose.select { |text| BaseAgent::Refusal.flags(text).any? }
   end
