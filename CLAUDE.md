@@ -45,9 +45,10 @@ rake game:score                     # the scoreboard: a rate per check, the move
 rake 'game:repair[3]'               # safe repairs; GENERATE=1 to allow model calls
 rake 'game:delete[3]'               # prints what would go; DRY_RUN=1 or CONFIRM='<title>'
 
-# Walk the engine with no model in the loop at all: move, take, drop, and read
-# the records back after every command. No classifier, no narrator, no API key.
+# Walk the engine with the NARRATION off and nothing else off: the classifier
+# still reads what you type and the world still generates as you walk into it.
 rake 'game:mechanics[The Unrecorded Hour]'   # or by id; PLAYTHROUGH=<id> to attach
+NO_MODEL=1 rake 'game:mechanics[2]'          # offline fallback: fixed grammar, no generation
 
 # Play it in the browser. `bin/dev` starts both processes a turn needs -- the
 # web server and the job worker -- under foreman. `PORT=3142 bin/dev` to move off
@@ -175,13 +176,14 @@ The current database includes the following story-related models with proper ass
 - **Story** → `#clock`, what time it is in the fiction, derived from
   `scenes.story_timestamp`. Never use `Time.current` for story time; see
   `AGENTS.md` → *Story time, and a world that moves on its own*
-- **Playthrough::Mechanics** → the game with the prose taken out
-  (`rake game:mechanics`): a fixed grammar over the same closed sets
-  `Playthrough::Classifier` offers a model, writing the world through
-  `Playthrough::Turn#stand_in!` / `#carry!` / `#put_down!` — the same three
-  statements the narrated loop uses — and printing the records back. Writes no
-  `Scene` and makes no model call; `Playthrough::MechanicsTest` asserts that with
-  `BaseAgent.new` raising. See `AGENTS.md` → *The mechanics on their own*
+- **Playthrough::Mechanics** → the game with the prose taken out, and nothing
+  else taken out with it (`rake game:mechanics`). The classifier still reads the
+  command and prints what it resolved to; the world still generates itself, so a
+  move is `Playthrough::Turn#move_to` whole. Only `Scene::Narrator` and
+  `InteractionAgent` are dropped, and `talk` / `examine` are refused as prose.
+  `model: false` (`NO_MODEL=1`) is the offline fallback — a fixed grammar, no
+  generation, no model call at all — and it is the mode the engine-direct tests
+  run in. See `AGENTS.md` → *The mechanics on their own, with the narration off*
 - **Item** → belongs to **Character** *or* **Location**, exactly one of the two:
   held by somebody, or lying in a place. The second half is what makes `take`
   and `drop` app-owned state changes rather than prose

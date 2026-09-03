@@ -233,17 +233,25 @@ namespace :game do
     puts "Deleted #{story.title.inspect} and #{removed.values.sum} record(s) that belonged to it."
   end
 
-  desc "Walk a world with no model in the loop: move, take, drop, read the records back. Usage: rake 'game:mechanics[3]'"
+  desc "Walk a world with the narration switched off. Usage: rake 'game:mechanics[3]', NO_MODEL=1 for the offline grammar"
   task :mechanics, [ :story ] => :environment do |t, args|
     playthrough = Helpers.mechanics_playthrough!(args[:story])
-    mechanics = Playthrough::Mechanics.new(playthrough)
+    model = ENV["NO_MODEL"].blank?
+    mechanics = Playthrough::Mechanics.new(playthrough, model: model)
     story = playthrough.story
 
-    puts "#{story.title} (story ##{story.id}) -- MECHANICS ONLY."
-    puts "No model call, no API key, no network, and no narration: this walks the engine."
-    puts "Nothing here writes a Scene, so the story's clock and the turn log are untouched."
+    puts "#{story.title} (story ##{story.id}) -- MECHANICS ONLY: the narration is off."
+    if model
+      puts "The classifier still reads what you type (one model call a command, so this needs"
+      puts "a key), and the world still generates itself as you walk into it. What you do not"
+      puts "get is prose: no narrator, no character, just the records and what changed."
+      puts "NO_MODEL=1 for the offline grammar instead."
+    else
+      puts "NO MODEL AT ALL: a fixed grammar instead of the classifier, no generation, no API"
+      puts "key, no network. A room nobody has written stays unwritten. `help` for the grammar."
+    end
     puts "Playing as #{playthrough.character&.fullname || "nobody"}, playthrough ##{playthrough.id}."
-    puts "`help` for the grammar, `quit` to stop."
+    puts "`help` for what this understands, `quit` to stop."
     puts
     puts mechanics.read
     puts
@@ -261,7 +269,17 @@ namespace :game do
       puts "> #{line}" unless interactive
       break if Helpers::MECHANICS_QUIT.include?(line.strip.downcase)
 
-      puts mechanics.run(line)
+      # A FAILED MODEL CALL IS NOT A BAD COMMAND, and the console says which it
+      # was rather than dying on it: the classifier is the only thing here that
+      # can fail that way, and a session that ends on a rate limit loses the walk
+      # that was being set up.
+      begin
+        puts mechanics.run(line)
+      rescue StandardError => e
+        puts "  FAILED:     the classifier call did not land -- #{e.class}: #{e.message}"
+        puts "              Nothing changed. Try again, or run with NO_MODEL=1 for the offline grammar."
+        puts mechanics.state
+      end
       puts
     end
 

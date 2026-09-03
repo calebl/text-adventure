@@ -1,43 +1,53 @@
-# THE GAME WITH THE PROSE TAKEN OUT: move, take, drop, and read the records
-# back. No model call, no API key, no network, and no narration at all.
+# THE GAME WITH THE PROSE TAKEN OUT, and nothing else taken out with it.
 #
-# WHY IT EXISTS. Every turn of the real loop runs two model calls -- the
-# classifier that decides what was typed, and the narrator or generator that
-# writes what the player reads -- and a turn that goes wrong could have gone
-# wrong in either of them or in the engine underneath. Testing movement and
-# possession therefore meant testing them alongside prose quality, with the
-# prose in the way. This mode removes both calls and leaves the engine:
+# WHY IT EXISTS. A turn that goes wrong could have gone wrong in the classifier,
+# in the prose, or in the engine underneath, and the three arrive together. This
+# mode removes exactly one of them:
 #
-#   the classifier  is replaced by a fixed grammar (`VERBS`) and a name
-#                   resolver (`#resolve`), against the SAME closed sets
-#                   `Playthrough::Classifier` builds -- its `exits_here`,
-#                   `characters_here`, `items_here` and `items_carried` are
-#                   called directly here, so the two modes can never disagree
-#                   about what is reachable, present or holdable. Building a
-#                   classifier makes no model call; only `#classify` does, and
-#                   this class never calls it.
-#   the narrator    is replaced by nothing. What comes back is the engine's own
-#                   view of the world, straight off the records, plus one line
-#                   saying what just changed.
+#   the classifier   KEPT. Free text goes to `Playthrough::Classifier` and the
+#                    intent it resolved is printed -- `understood: take -> ward
+#                    stamp` -- so how the typing was read is visible instead of
+#                    inferred from what happened next. One model call per
+#                    command, which is why this path needs a key.
+#   generating the   KEPT. Walking into a stub calls `Playthrough::Turn#move_to`
+#   world            whole: `Location::Generator` writes the room, its exits and
+#                    the connection rows, and `Scene::Generator` writes the
+#                    arrival that stamps the visit and records who is standing
+#                    there. The world auto-generates exactly as it does in the
+#                    browser, so what is walked is the real world and not a
+#                    frozen one.
+#   the narration    DROPPED. No `Scene::Narrator`, no `InteractionAgent`, no
+#                    character prose, and nothing prose-shaped is printed. What
+#                    comes back is the engine's own view of the records after
+#                    the command, plus one line saying what changed.
 #
-# WHAT IT WRITES is `playthroughs.current_location_id` and `items.character_id`
-# / `items.location_id`, through `Playthrough::Turn#stand_in!`, `#carry!` and
-# `#put_down!` -- the same three statements the narrated loop moves the world
-# with. That is the whole point: a mechanics mode with its own copy of the line
-# that moves the player would be testing itself. It writes no `Scene`, so it
-# costs no story time and leaves the turn log alone.
+# The arrival Scene is still written, because it is world state -- the cast, the
+# visit stamp and the story clock all hang off it -- and its prose is simply not
+# shown. That is the one place this mode pays for words nobody reads, and it is
+# the price of the world moving the way it really does.
 #
-# WHAT IT DOES NOT DO is realize a stub. Walking into an unwritten room in the
-# real loop calls `Location::Generator`, which is a model call; here the
-# playthrough simply moves into the stub and the read-out says the room has
-# never been written. That is honest -- the row and the graph are real, the
-# prose is what is missing -- and it is the one place the narrated loop would
-# have reached for a model.
+# WITHOUT A MODEL AT ALL: `model: false`. A fixed grammar (`VERBS`) replaces the
+# classifier and a move stands the player in the room without realizing it. That
+# is the fallback for a machine with no key and the mode the engine-direct tests
+# run in; it is not the default, because a mode that cannot read what was typed
+# is testing a smaller thing than the one that can.
+#
+# WHAT IT WRITES is `playthroughs.current_location_id` and `items.character_id` /
+# `items.location_id`, through `Playthrough::Turn#move_to`, `#stand_in!`,
+# `#carry!` and `#put_down!` -- the same statements the narrated loop moves the
+# world with. A mechanics mode with its own copy of the line that moves the
+# player would be testing itself.
+#
+# WHAT IT IS NOT is `rake game:play`, which is still ruled out. It renders no
+# prose and duplicates no part of the loop; the moment it grew a narrator it
+# would be the second UI that rule exists to prevent. The dispatch below is the
+# one thing it does not share with `Playthrough::Turn#play`, and deliberately:
+# that method returns a Scene and streams prose into a block, and this one has
+# to be able to say what changed, what was refused and why.
 class Playthrough::Mechanics
-  # THE WHOLE GRAMMAR. A closed table rather than anything clever: what is being
-  # tested is the engine, so the parser in front of it has to be the part nobody
-  # has to wonder about. Two-word verbs are matched before their one-word
-  # prefixes -- see `#verb_for`.
+  # THE FALLBACK GRAMMAR, for `model: false`. A closed table rather than
+  # anything clever: with the classifier switched off, the parser in front of
+  # the engine has to be the part nobody has to wonder about.
   #
   # Everything that only reads goes to `:look`, because the read-out is always
   # the whole engine view. `inventory`, `exits`, `items` and `who` are in the
@@ -53,9 +63,9 @@ class Playthrough::Mechanics
     "help" => :help
   }.freeze
 
-  # What `help` prints, and what an unknown word is refused with. Written out
-  # rather than derived from `VERBS` because the aliases matter less than the
-  # shape of a command does.
+  # What `help` prints in the no-model mode, and what an unknown word is refused
+  # with. Written out rather than derived from `VERBS` because the aliases
+  # matter less than the shape of a command does.
   GRAMMAR = [
     "go <exit>        move into one of the ways out (also: move, walk, enter)",
     "take <item>      pick up something lying here (also: get, grab, pick up)",
@@ -66,7 +76,21 @@ class Playthrough::Mechanics
     "",
     "A name is matched against the records: exactly first, then as an",
     "unambiguous prefix, then as an unambiguous fragment. Case and extra spaces",
-    "do not matter. Nothing here calls a model."
+    "do not matter. This is the no-model fallback -- drop it to have the",
+    "classifier read what you type and the world generate as you walk."
+  ].freeze
+
+  # What the classifier mode says instead, since there is no grammar to learn.
+  CLASSIFIER_HELP = [
+    "Type what you would type in the game. `Playthrough::Classifier` reads it",
+    "against the exits, the cast, what is lying here and what you are carrying,",
+    "and the line above each read-out says what it resolved to.",
+    "",
+    "move, take and drop change the world and are shown as a diff. talk and",
+    "examine are prose, so this mode says so and changes nothing.",
+    "",
+    "Walking into a room nobody has written generates it, exactly as the browser",
+    "does. `quit` to stop."
   ].freeze
 
   # WHERE THE PLAYTHROUGH STANDS, read out of the records after the command ran.
@@ -94,22 +118,33 @@ class Playthrough::Mechanics
     end
   end
 
-  # ONE COMMAND AND WHAT IT DID. `change` is the one-line diff of the write --
-  # nil when the command only read -- and `refusal` is why nothing happened.
-  # Never both. `state` is always there, because the reason to type anything in
-  # this mode is to see the records afterwards.
-  Report = Data.define(:command, :change, :refusal, :note, :state) do
+  # ONE COMMAND AND WHAT IT DID. `understood` is how the command was read --
+  # the classifier's resolved intent, or the grammar's -- and it is printed even
+  # when nothing happened, because "it did not do what I meant" and "it did not
+  # understand me" are different bugs. `change` is the one-line diff of the
+  # write; `refusal` is why there was none. Never both.
+  Report = Data.define(:command, :understood, :change, :refusal, :note, :state) do
     def refused? = refusal.present?
     def changed? = change.present?
 
     def to_s
       lines = []
-      lines << "  changed:  #{change}" if changed?
-      lines << "  refused:  #{refusal}" if refused?
+      lines << "  understood: #{understood}" if understood.present?
+      lines << "  changed:    #{change}" if changed?
+      lines << "  refused:    #{refusal}" if refused?
       lines.concat(note.map { |line| "  #{line}" }) if note.present?
       lines << state.to_s
       lines.join("\n")
     end
+  end
+
+  # HOW ONE TYPED LINE WAS READ, whichever of the two read it. `intent` is a
+  # `Playthrough::Classifier::Intent` either way -- the grammar builds one
+  # rather than inventing a second vocabulary -- so the dispatch below is one
+  # path and not two, which is the whole reason the fallback is trustworthy.
+  # A reading with no intent and no refusal is a command that only reads.
+  Reading = Data.define(:intent, :refusal, :note, :understood) do
+    def initialize(intent: nil, refusal: nil, note: nil, understood: nil, **rest) = super
   end
 
   # A typed name against the records it could have meant. `record` is what the
@@ -121,108 +156,123 @@ class Playthrough::Mechanics
 
   attr_reader :playthrough
 
-  def initialize(playthrough)
+  # `model:` is the whole switch. True -- the default -- reads the command with
+  # `Playthrough::Classifier` and lets a move generate the room it walks into.
+  # False makes the mode offline: the fixed grammar, and a move that stands the
+  # player in a stub without writing it.
+  def initialize(playthrough, model: true)
     @playthrough = playthrough
+    @model = model
   end
 
-  # Runs one typed line and returns a Report. Never raises on bad input: an
-  # unknown word, an unknown name and an ambiguous name are all refusals with
-  # the valid options in them, because the point of the mode is to be able to
-  # tell a rejected command from a broken engine at a glance.
+  def model? = @model
+
+  # Runs one typed line and returns a Report. Raises only what the classifier
+  # raises -- a model call that failed is a failed call, not a misunderstood
+  # command, and the console says so and keeps going. Everything the player can
+  # get wrong is a refusal carrying what would have worked.
   def run(command)
-    verb, argument = parse(command)
+    # THE WORLD MOVES FIRST, exactly as it does in `Playthrough::Turn#play`, and
+    # for the same reason: the exits a command resolves against have to be
+    # tonight's. No model call, no tokens.
+    playthrough.story.catch_up_world!
+
+    reading = model? ? classify(command) : parse(command)
 
     report =
-      case verb
-      when nil, :look then read
-      when :help then read(note: GRAMMAR)
-      when :go then go(argument)
-      when :take then take(argument)
-      when :drop then drop(argument)
-      else unknown(argument)
+      if reading.refusal
+        refuse(reading.refusal, note: reading.note, understood: reading.understood)
+      elsif reading.intent.nil?
+        read(note: reading.note)
+      else
+        act(reading.intent, command, reading.understood)
       end
 
     report.with(command: command)
   end
 
   # The read-out with nothing changed. What the console prints before the first
-  # command, and what every read verb produces.
-  def read(note: nil)
-    Report.new(command: nil, change: nil, refusal: nil, note: note, state: state)
+  # command.
+  def read(note: nil, understood: nil)
+    Report.new(command: nil, understood: understood, change: nil, refusal: nil, note: note, state: state)
   end
 
+  def help = read(note: model? ? CLASSIFIER_HELP : GRAMMAR)
+
   # THE ENGINE'S VIEW, out of the same four readers `Playthrough::Classifier`
-  # offers a model. Rebuilt on every call: `sets` holds a classifier, and a
-  # classifier memoizes nothing it reads.
+  # offers a model. Rebuilt on every call: `classifier` memoizes nothing it
+  # reads.
   def state
     State.new(
       location: playthrough.current_location,
-      exits: sets.exits_here,
-      items_here: sets.items_here,
-      carried: sets.items_carried,
-      present: sets.characters_here
+      exits: classifier.exits_here,
+      items_here: classifier.items_here,
+      carried: classifier.items_carried,
+      present: classifier.characters_here
     )
+  end
+
+  # The classifier, and in the no-model mode still the classifier -- for its
+  # four closed-set readers and nothing else. It is the inverse of `#resolve`
+  # below: the list a model is offered is the list a typed name is matched
+  # against, and sharing it is what stops the two ways in drifting apart about
+  # what is reachable from here. Building one makes no model call; `#classify`
+  # is the only method on it that talks to one.
+  def classifier
+    @classifier ||= Playthrough::Classifier.new(playthrough)
   end
 
   private
 
-  def go(argument)
-    return refuse("go where? The ways out are: #{names(sets.exits_here)}") if argument.blank?
+  # --- reading the command --------------------------------------------------
 
-    match = resolve(sets.exits_here, argument)
-    return refuse(cannot_find("way out", argument, match, sets.exits_here)) unless match.found?
+  # THE CLASSIFIER PATH. One model call, against the closed sets, and the intent
+  # it returns is the same `Intent` the real loop branches on. A reach that
+  # resolved to nothing still writes a `Playthrough::Drift` row -- that happens
+  # inside `#classify` and is deliberately not bypassed here, because drift is
+  # what this mode is for measuring.
+  def classify(command)
+    return Reading.new(note: CLASSIFIER_HELP) if command.to_s.strip.downcase == "help"
+    return Reading.new if command.to_s.strip.empty?
 
-    from = playthrough.current_location
-    turn.stand_in!(match.record)
-
-    change("moved: #{from&.name || "nowhere"} -> #{match.record.name}#{unwritten(match.record)}")
+    intent = classifier.classify(command)
+    Reading.new(intent: intent, understood: describe(intent))
   end
 
-  def take(argument)
-    return refuse("this playthrough has no protagonist, so nobody can carry anything") if playthrough.character.nil?
-    return refuse("take what? Lying here: #{names(sets.items_here)}") if argument.blank?
-
-    match = resolve(sets.items_here, argument)
-    return refuse(cannot_find("thing lying here", argument, match, sets.items_here)) unless match.found?
-
-    item = match.record
-    was = item.location
-    turn.carry!(item)
-
-    change("took: #{item.name} (was lying in #{was&.name || "nowhere"}, now carried by #{playthrough.character.fullname})")
+  # How the command was read, in the same shape whichever read it.
+  def describe(intent)
+    "#{intent.action} -> #{label(intent.subject) || "nothing"}"
   end
 
-  def drop(argument)
-    return refuse("this playthrough is standing nowhere, so there is no room to put anything down in") if playthrough.current_location.nil?
-    return refuse("drop what? Carrying: #{names(sets.items_carried)}") if argument.blank?
+  def label(record)
+    return nil if record.nil?
 
-    match = resolve(sets.items_carried, argument)
-    return refuse(cannot_find("thing you are carrying", argument, match, sets.items_carried)) unless match.found?
-
-    item = match.record
-    was = item.character
-    turn.put_down!(item)
-
-    change("dropped: #{item.name} (was carried by #{was&.fullname || "nobody"}, now lying in #{playthrough.current_location.name})")
+    record.respond_to?(:fullname) ? record.fullname : record.name
   end
 
-  # THE PARSER. Longest verb first so `pick up` is not read as `pick`, and the
-  # verb has to be the whole line or be followed by a space -- otherwise
+  # THE NO-MODEL PATH. Longest verb first so `pick up` is not read as `pick`,
+  # and the verb has to be the whole line or be followed by a space -- otherwise
   # `lease the room` would parse as `l` and lose four words.
   #
   # A line that matches no verb at all gets one more chance against the exit
   # names, which is what makes a bare `north` work in a world whose exits are
-  # named that way. It is tried last and only on an unambiguous match, so it
-  # can never shadow a verb.
+  # named that way. It is tried last and only on an unambiguous match, so it can
+  # never shadow a verb.
   def parse(command)
     text = command.to_s.strip.gsub(/\s+/, " ")
-    return [ nil, nil ] if text.empty?
+    return Reading.new if text.empty?
 
     verb = verb_for(text)
-    return [ VERBS.fetch(verb), text[verb.length..].to_s.strip ] if verb
-    return [ :go, text ] if resolve(sets.exits_here, text).found?
+    argument = verb ? text[verb.length..].to_s.strip : text
 
-    [ :unknown, text ]
+    case verb && VERBS.fetch(verb)
+    when :look then Reading.new
+    when :help then Reading.new(note: GRAMMAR)
+    when :go then read_move(argument)
+    when :take then read_take(argument)
+    when :drop then read_drop(argument)
+    else resolve(classifier.exits_here, text).found? ? read_move(text) : unknown(text)
+    end
   end
 
   def verb_for(text)
@@ -232,11 +282,161 @@ class Playthrough::Mechanics
          .find { |verb| downcased == verb || downcased.start_with?("#{verb} ") }
   end
 
-  # HOW A TYPED NAME BECOMES A RECORD, and the whole of what this mode has where
-  # the real loop has a model. Exact first, then an unambiguous prefix, then an
-  # unambiguous fragment -- so `take daybook` finds the "Ward Office 12 daybook"
-  # and `go the` finds nothing rather than guessing. Case and repeated spaces
-  # are ignored, because somebody typing at a prompt is not a JSON enum.
+  def read_move(argument)
+    return Reading.new(refusal: "go where? The ways out are: #{names(classifier.exits_here)}") if argument.blank?
+
+    exits = classifier.exits_here
+    match = resolve(exits, argument)
+    return Reading.new(refusal: cannot_find("way out", argument, match, exits)) unless match.found?
+
+    intent(:move, destination: match.record)
+  end
+
+  def read_take(argument)
+    here = classifier.items_here
+    return Reading.new(refusal: "take what? Lying here: #{names(here)}") if argument.blank?
+
+    match = resolve(here, argument)
+    return Reading.new(refusal: cannot_find("thing lying here", argument, match, here)) unless match.found?
+
+    intent(:take, item: match.record)
+  end
+
+  def read_drop(argument)
+    carried = classifier.items_carried
+    return Reading.new(refusal: "drop what? Carrying: #{names(carried)}") if argument.blank?
+
+    match = resolve(carried, argument)
+    return Reading.new(refusal: cannot_find("thing you are carrying", argument, match, carried)) unless match.found?
+
+    intent(:drop, item: match.record)
+  end
+
+  # The grammar's answer, in the classifier's own vocabulary.
+  def intent(action, **resolved)
+    built = Playthrough::Classifier::Intent.new(action: action, **resolved)
+    Reading.new(intent: built, understood: describe(built))
+  end
+
+  # A word that is not in the table. The grammar comes with the refusal rather
+  # than a suggestion to type `help`: with the classifier switched off there is
+  # nothing here to guess what was meant, so the honest answer is the whole of
+  # what this mode understands.
+  def unknown(text)
+    Reading.new(
+      refusal: "I do not understand #{text.to_s.split.first.inspect}. The no-model grammar is fixed:",
+      note: GRAMMAR
+    )
+  end
+
+  # --- acting on it ---------------------------------------------------------
+
+  # THE DISPATCH, branch for branch the one `Playthrough::Turn#play` makes, over
+  # the same `Intent`. What differs is only the two ends: nothing streams, and
+  # the branches that exist to produce prose say so instead.
+  def act(intent, command, understood)
+    return move(intent.destination, command, understood) if intent.destination
+    return talk(intent.speaker, understood) if intent.speaker
+    return intent.drop? ? drop(intent.item, understood) : take(intent.item, understood) if intent.item
+
+    nothing(intent, understood)
+  end
+
+  # MOVING, and with a model in the loop this is `Playthrough::Turn#move_to`
+  # whole: the stub is realized, the arrival is written, the visit is stamped
+  # and the playthrough moves only once both calls have landed. The prose that
+  # arrival contains is not printed, and that is the only thing this branch does
+  # differently from the browser.
+  def move(destination, command, understood)
+    from = playthrough.current_location
+    return stand_in(from, destination, understood) unless model?
+
+    unwritten = destination.stub?
+    scene = turn.move_to(destination)
+
+    # What was typed, filed under the turn it produced, and the classifier's own
+    # exchange filed with it -- the two stamps `Playthrough::Turn#play` makes
+    # for every branch. A turn this mode wrote should be as readable afterwards
+    # as one the browser wrote.
+    scene.update!(typed: command)
+    classifier.agent.attribute_to!(scene)
+    playthrough.prune_conversations!
+
+    change("moved: #{label(from) || "nowhere"} -> #{destination.name} " \
+           "(#{unwritten ? "written for the first time" : "already written"}, " \
+           "arrival scene ##{scene.id}; its prose is not shown)", understood)
+  end
+
+  # The same move with no model available: the row moves and the room stays
+  # unwritten. Said out loud, because a stub is the one thing the offline mode
+  # reads differently from the real loop.
+  def stand_in(from, destination, understood)
+    turn.stand_in!(destination)
+
+    change("moved: #{label(from) || "nowhere"} -> #{destination.name}" \
+           "#{" (a stub -- nobody has written this room, and no-model mode cannot)" if destination.stub?}",
+           understood)
+  end
+
+  def take(item, understood)
+    return refuse("this playthrough has no protagonist, so nobody can carry anything", understood: understood) if playthrough.character.nil?
+
+    was = item.location
+    turn.carry!(item)
+
+    change("took: #{item.name} (was lying in #{label(was) || "nowhere"}, now carried by #{playthrough.character.fullname})", understood)
+  end
+
+  def drop(item, understood)
+    return refuse("this playthrough is standing nowhere, so there is no room to put anything down in", understood: understood) if playthrough.current_location.nil?
+
+    was = item.character
+    turn.put_down!(item)
+
+    change("dropped: #{item.name} (was carried by #{label(was) || "nobody"}, now lying in #{playthrough.current_location.name})", understood)
+  end
+
+  # TALKING IS PROSE, and prose is the one thing this mode does not do. The
+  # person it resolved to is named anyway: that the classifier found them is
+  # worth seeing, and it is the half of the turn this mode can still check.
+  def talk(character, understood)
+    refuse("#{character.fullname} is here and the classifier resolved them, but talking is prose " \
+           "and this mode writes none. Nothing changed. Play the browser game to speak to somebody.",
+           understood: understood)
+  end
+
+  # A turn that resolved to no record. Told apart the way the loop tells them
+  # apart, because they are different facts about the world.
+  def nothing(intent, understood)
+    reason =
+      if intent.reached_for_nothing?
+        "#{drift_reason(intent.action)} Nothing changed, and a Playthrough::Drift row was written."
+      else
+        "`#{intent.action}` does not move anything: it is answered in prose, and this mode writes none. Nothing changed."
+      end
+
+    refuse(reason, understood: understood)
+  end
+
+  # The four closed sets, named by the one that came up empty. The lists
+  # themselves are in the read-out below, so this only says which was consulted.
+  def drift_reason(action)
+    case action
+    when :move then "That is not one of the ways out of here."
+    when :talk then "Nobody of that name is here."
+    when :take then "Nothing of that name is lying here."
+    when :drop then "You are not carrying anything of that name."
+    else "That resolved to nothing."
+    end
+  end
+
+  # --- resolving a typed name (no-model mode) --------------------------------
+
+  # HOW A TYPED NAME BECOMES A RECORD when there is no model to read it. Exact
+  # first, then an unambiguous prefix, then an unambiguous fragment -- so `take
+  # daybook` finds the "Ward Office 12 daybook" and `go the` finds nothing
+  # rather than guessing. Case and repeated spaces are ignored, because somebody
+  # typing at a prompt is not a JSON enum.
   #
   # An exact match that hits two records takes the first, which is exactly what
   # `Playthrough::Classifier#find_item` does with two identical items in one
@@ -275,47 +475,19 @@ class Playthrough::Mechanics
     records.map(&:name).presence&.join(", ") || "nothing"
   end
 
-  # Said out loud on arrival, because a stub is the one thing this mode reads
-  # differently from the narrated loop: there, walking in writes the room.
-  def unwritten(location)
-    return "" unless location.stub?
+  # --- reports --------------------------------------------------------------
 
-    " (a stub -- nobody has written this room; the narrated game realizes it on arrival)"
+  def change(line, understood = nil)
+    Report.new(command: nil, understood: understood, change: line, refusal: nil, note: nil, state: state)
   end
 
-  def change(line)
-    Report.new(command: nil, change: line, refusal: nil, note: nil, state: state)
+  def refuse(reason, note: nil, understood: nil)
+    Report.new(command: nil, understood: understood, change: nil, refusal: reason, note: note, state: state)
   end
 
-  def refuse(reason)
-    Report.new(command: nil, change: nil, refusal: reason, note: nil, state: state)
-  end
-
-  # A word that is not in the table. The grammar comes with the refusal rather
-  # than a suggestion to type `help`: there is no model here to guess what was
-  # meant, so the honest answer is the whole of what this mode understands.
-  def unknown(text)
-    Report.new(
-      command: nil,
-      change: nil,
-      refusal: "I do not understand #{text.to_s.split.first.inspect}. This mode has a fixed grammar and no model to guess with:",
-      note: GRAMMAR,
-      state: state
-    )
-  end
-
-  # The loop that owns the three writes. Built once; it holds nothing but the
+  # The loop that owns the writes. Built once; it holds nothing but the
   # playthrough, and no model call is made by building it.
   def turn
     @turn ||= Playthrough::Turn.new(playthrough)
-  end
-
-  # The classifier, for its four closed-set readers and nothing else. It is the
-  # inverse of the resolver above -- the list a model is offered is the list a
-  # typed name is matched against -- and sharing it is what stops the two modes
-  # drifting apart about what is reachable from here. `#classify` is the only
-  # method on it that talks to a model, and this class never calls it.
-  def sets
-    @sets ||= Playthrough::Classifier.new(playthrough)
   end
 end

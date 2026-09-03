@@ -76,64 +76,102 @@ step — deliberately outside the Gemfile, installed on demand by `bin/dev`.
 
 ## Play the mechanics on their own
 
-`rake game:mechanics` walks the same world with **no model in the loop at all**:
-no classifier, no narrator, no generator, no API key, no network. It moves the
-player, picks things up and puts them down, and prints the engine's own view of
-the records after every command.
+`rake game:mechanics` walks a world with **the narration switched off and
+nothing else switched off with it**. The classifier still reads what you type,
+the world still generates itself as you walk into it, and what you do not get is
+prose.
 
 ```bash
-bin/rails db:seed                          # if you have not already
-rake 'game:mechanics[The Unrecorded Hour]' # or by id: rake 'game:mechanics[2]'
+rake 'game:mechanics[The Unrecorded Hour]'   # or by id: rake 'game:mechanics[2]'
 ```
 
 ```
-> take stamp
-  changed:  took: ward stamp (was lying in Ward Office 12, now carried by Odile Vance)
+> pick up the stamp
+  understood: take -> ward stamp
+  changed:    took: ward stamp (was lying in Ward Office 12, now carried by Odile Vance)
 Ward Office 12 [#8, realized]
   exits       The Supply Closet [realized], The Long Hallway [stub]
   lying here  nothing to pick up
   carrying    Ward Office 12 daybook [#1], ward stamp [#2]
   present     Halkett Rowe
+
+> go out into the long hallway
+  understood: move -> The Long Hallway
+  changed:    moved: Ward Office 12 -> The Long Hallway (written for the first time, arrival scene #5; its prose is not shown)
+The Long Hallway [#10, realized]
+  exits       Ward Office 12 [realized], The Supply Closet [realized], the stairhead [stub]
+  lying here  nothing to pick up
+  carrying    nothing
+  present     nobody else
 ```
 
-**Why it exists.** Every real turn runs two model calls, so a turn that goes
-wrong could have gone wrong in the classifier, in the prose, or in the engine
-underneath — and testing movement and possession meant testing them alongside
-prose quality, with the prose in the way. This mode takes both calls out and
-leaves the engine.
+**Why it exists.** A turn that goes wrong could have gone wrong in the
+classifier, in the prose, or in the engine underneath, and all three arrive
+together. This takes exactly one of them away.
 
-The grammar is fixed and closed: `go <exit>`, `take <item>`, `drop <item>`,
-`look` (also `where`, `inventory`, `exits`, `items`, `who`), `help`, `quit`. A
-typed name is matched against the records exactly, then as an unambiguous
-prefix, then as an unambiguous fragment — so `take daybook` finds the "Ward
-Office 12 daybook" — and anything unknown or ambiguous is a refusal that lists
-what would have worked. An exit name typed on its own is a move, so a world
-whose exits are called `north` can be walked that way.
+What is **kept**:
 
-What it writes is `playthroughs.current_location_id` and `items.character_id` /
-`items.location_id`, through `Playthrough::Turn#stand_in!`, `#carry!` and
-`#put_down!` — **the same three statements the narrated loop moves the world
-with**, and the closed sets come from `Playthrough::Classifier`'s own readers.
-A mechanics mode with its own copy of the line that moves the player would be
+- **The classifier**, so free text still resolves against the exits, the cast,
+  what is lying here and what you are carrying — and the `understood:` line says
+  what it resolved to, so how your typing was read is visible rather than
+  inferred from what happened next. One model call per command, so this path
+  needs `OPENROUTER_API_KEY` or a local ollama.
+- **The world generating itself.** A move is `Playthrough::Turn#move_to` whole:
+  `Location::Generator` writes the room, its exits and the connection rows, and
+  `Scene::Generator` writes the arrival that stamps the visit and records who is
+  standing there. The hallway above went from `stub` to `realized` and grew a
+  new way out, which is exactly what the browser would have done.
+- **Drift counting.** A reach that resolved to nothing still writes a
+  `Playthrough::Drift` row, and the refusal says so.
+
+What is **dropped** is `Scene::Narrator` and `InteractionAgent` — no narration,
+no character prose, nothing prose-shaped printed. `talk` and `examine` are
+answered by saying they are prose and changing nothing.
+
+The arrival `Scene` is still written, because it *is* world state — the cast,
+the visit stamp and the story clock all hang off it — and its prose is simply
+not shown. That is the one place this mode pays for words nobody reads, and it
+is the price of the world moving the way it really does.
+
+### With no model at all
+
+```bash
+NO_MODEL=1 rake 'game:mechanics[2]'
+```
+
+A fixed grammar replaces the classifier and nothing is generated: `go <exit>`,
+`take <item>`, `drop <item>`, `look` (also `where`, `inventory`, `exits`,
+`items`, `who`), `help`, `quit`. A typed name is matched against the records
+exactly, then as an unambiguous prefix, then as an unambiguous fragment — so
+`take daybook` finds the "Ward Office 12 daybook" — and anything unknown or
+ambiguous is a refusal listing what would have worked. An exit name typed on its
+own is a move, so a world whose exits are called `north` can be walked that way.
+A move stands the player in a stub without writing it, and says so.
+
+This is the fallback for a machine with no key, and the mode the engine-direct
+tests run in. It is not the default: a mode that cannot read what you typed is
+testing a smaller thing than the one that can.
+
+### What it writes, and what it never does
+
+Both modes write `playthroughs.current_location_id` and `items.character_id` /
+`items.location_id` through `Playthrough::Turn#move_to`, `#stand_in!`, `#carry!`
+and `#put_down!` — **the same statements the narrated loop moves the world
+with**, and the closed sets come from `Playthrough::Classifier`'s own readers. A
+mechanics mode with its own copy of the line that moves the player would be
 testing itself.
 
-Three things to know:
+It starts a **fresh playthrough** each session rather than editing whichever one
+was last played. Where items are is world state and is shared either way:
+something left in the closet here is still in the closet in the browser.
+`PLAYTHROUGH=<id or token> rake 'game:mechanics[2]'` attaches to an existing
+playthrough when inspecting a real game is the point.
 
-- It writes **no `Scene`**, so the story's clock and the turn log are untouched
-  and the narrated game plays exactly as it did.
-- It **does not realize a stub**. Walking into an unwritten room in the real
-  loop is a model call; here the playthrough moves in and the read-out says the
-  room has never been written.
-- It starts a **fresh playthrough** each session rather than editing whichever
-  one was last played. Where items are is world state and is shared either way:
-  something left in the closet here is still in the closet in the browser.
-  `PLAYTHROUGH=<id or token> rake 'game:mechanics[2]'` attaches to an existing
-  playthrough when inspecting a real game is the point.
-
-`Playthrough::Mechanics` is the whole of it, and
-`test/models/playthrough/mechanics_test.rb` runs every one of its tests with
-`BaseAgent.new` raising — the guarantee that no path here reaches a model is
-asserted rather than assumed.
+`Playthrough::Mechanics` is the whole of it.
+`test/models/playthrough/mechanics_test.rb` runs the offline half with
+`BaseAgent.new` raising, and drives the classifier half through a `FakeAgent`
+whose queued responses *are* the calls the mode is allowed to make — so a
+narrator call it must not make fails the suite instead of passing quietly.
 
 ## How a turn works
 

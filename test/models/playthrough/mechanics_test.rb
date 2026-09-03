@@ -5,10 +5,18 @@ require "test_helper"
 # DATABASE says what the read-out said, and that a refused command changed
 # nothing at all.
 #
-# EVERY TEST RUNS WITH `BaseAgent.new` RAISING. That is the guarantee the mode
-# exists for, and it is asserted rather than assumed: no API key is deleted, no
-# network is blocked, nothing is hoped for. If any path through this class ever
-# reaches for a model, every test in this file fails on the spot.
+# TWO PATHS IN, AND THE FILE IS SPLIT ALONG THEM:
+#
+#   `play`      the offline mode (`model: false`), run with `BaseAgent.new`
+#               RAISING. That guarantee is asserted rather than assumed -- no
+#               API key is deleted, no network is blocked, nothing is hoped for.
+#               If any path through the offline mode ever reaches for a model,
+#               every test using this helper fails on the spot.
+#   `interpret` the default mode, driven through a FakeAgent standing in for
+#               every BaseAgent the command builds. The queued responses ARE the
+#               model calls the mode is allowed to make, in order, and running
+#               out of them raises -- so a narrator call this mode must not make
+#               fails the test loudly instead of passing quietly.
 #
 # The world is shaped like `the-unrecorded-hour.yml` -- an opening room, a
 # realized dead end off it, an unwritten stub, something on each floor and
@@ -31,7 +39,14 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     @index = create(:item, :lying, location: @closet, name: "Perrin's private index")
     @daybook = create(:item, character: @vance, name: "Ward Office 12 daybook")
 
-    @playthrough = create(:playthrough, story: @story, character: @vance, current_location: @office)
+    # The world's opening arrival, which is what puts Rowe in the room:
+    # `Scene::Generator.characters_present` answers from the last scene played
+    # in a location, so a world with no scene at all has nobody standing in it.
+    # The seeded worlds carry one for exactly this reason.
+    @opening = create(:scene, story: @story, location: @office, characters: [ @vance, @rowe ],
+                              description: "The gap in the daybook is still under your hand.")
+    @playthrough = create(:playthrough, story: @story, character: @vance,
+                                        current_location: @office, current_scene: @opening)
   end
 
   def connect(from, to)
@@ -41,14 +56,42 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
                                  distance: "adjacent", travel_method: "walking")
   end
 
-  # One command, with no model reachable from anywhere inside it.
+  # One command in the OFFLINE mode, with no model reachable from anywhere
+  # inside it.
   def play(command)
-    BaseAgent.stub(:new, ->(*) { raise "mechanics mode made a model call" }) do
-      Playthrough::Mechanics.new(@playthrough).run(command)
+    BaseAgent.stub(:new, ->(*) { raise "the offline mechanics mode made a model call" }) do
+      Playthrough::Mechanics.new(@playthrough, model: false).run(command)
     end
   end
 
-  # --- the scripted walk ----------------------------------------------------
+  # One command in the DEFAULT mode: the classifier reads it and the world
+  # generates itself. `responses` are the model calls this command is allowed to
+  # make, in order -- a classification, then whatever a move has to generate.
+  # The agent comes back so a test can count the prompts and prove no more were
+  # asked for.
+  def interpret(command, *responses)
+    agent = FakeAgent.new(*responses)
+
+    report = BaseAgent.stub(:new, agent) do
+      Playthrough::Mechanics.new(@playthrough).run(command)
+    end
+
+    [ report, agent ]
+  end
+
+  CLASSIFY = ->(intent, target) { { "intent" => intent, "target" => target } }
+
+  DETAIL = {
+    "description" => "Doors on both sides, and the gas turned down to nothing.",
+    "lore" => "The east ring's hallways were built for carts that no longer exist."
+  }.freeze
+
+  ARRIVAL = {
+    "description" => "You step out and the hallway takes the sound of the door away.",
+    "summary" => "Vance leaves the office for the long hallway."
+  }.freeze
+
+  # --- the offline mode: a scripted walk -------------------------------------
 
   test "a walk through the world moves the playthrough and the items, and the records say so at every step" do
     report = play("take stamp")
@@ -88,7 +131,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     end
   end
 
-  test "walking into a stub moves the playthrough without writing the room" do
+  test "the offline mode walks into a stub without writing the room, because writing it is a model call" do
     report = play("go hallway")
 
     assert_equal @hallway, @playthrough.reload.current_location
@@ -97,7 +140,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_includes report.change, "a stub"
   end
 
-  test "nothing writes a Scene, so the turn log and the story clock are untouched" do
+  test "the offline mode writes no Scene, so the turn log and the story clock are untouched" do
     scenes = @story.scenes.count
     clock = @story.clock
 
@@ -107,7 +150,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_equal clock, @story.clock
   end
 
-  # --- refusals -------------------------------------------------------------
+  # --- the offline mode: refusals --------------------------------------------
 
   test "an exit that does not exist is refused, and nothing moves" do
     report = play("go cellar")
@@ -164,7 +207,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_refusal play("drop"), "drop what?"
   end
 
-  # --- resolving a typed name -----------------------------------------------
+  # --- the offline mode: resolving a typed name ------------------------------
 
   test "a name resolves exactly, then by prefix, then by fragment, ignoring case and spacing" do
     assert_change play("go   THE supply CLOSET  "), "-> The Supply Closet"
@@ -180,6 +223,120 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
 
     assert_change report, "moved: Ward Office 12 -> north"
     assert_equal north, @playthrough.reload.current_location
+  end
+
+
+  # --- the default mode: the classifier reads it, the world generates ---------
+
+  # THE POINT OF THE WHOLE MODE. One classification, then the same engine
+  # method the browser calls, and nothing else asked of any model.
+  test "a take goes through the classifier to the same engine write, and asks for nothing more" do
+    report, agent = interpret("pick up that stamp", CLASSIFY.call("take", "ward stamp"))
+
+    assert_equal "take -> ward stamp", report.understood
+    assert_includes report.change, "took: ward stamp"
+    assert_equal @vance, @stamp.reload.character
+    assert_nil @stamp.location
+    # One prompt: the classification. A narrator call would have been a second,
+    # and FakeAgent would have raised on it.
+    assert_equal 1, agent.prompts.count
+  end
+
+  test "a drop goes through the classifier to the same engine write, and asks for nothing more" do
+    report, agent = interpret("put the daybook down", CLASSIFY.call("drop", "Ward Office 12 daybook"))
+
+    assert_equal "drop -> Ward Office 12 daybook", report.understood
+    assert_includes report.change, "dropped: Ward Office 12 daybook"
+    assert_equal @office, @daybook.reload.location
+    assert_nil @daybook.character
+    assert_equal 1, agent.prompts.count
+  end
+
+  # THE WORLD STILL GENERATES ITSELF. Walking into a room nobody has written
+  # writes it, its exits and the arrival -- exactly the calls the browser makes,
+  # and no narrator among them.
+  test "walking into a stub realizes it and writes the arrival, as the real game does" do
+    report, agent = interpret("go out into the hallway",
+                              CLASSIFY.call("move", "The Long Hallway"),
+                              DETAIL, { "exits" => [] }, ARRIVAL)
+
+    assert_predicate @hallway.reload, :realized?
+    assert_equal DETAIL["description"], @hallway.description
+    assert_equal @hallway, @playthrough.reload.current_location
+    assert_equal ARRIVAL["description"], @playthrough.current_scene.description
+    assert_includes report.change, "written for the first time"
+    # classify, detail, exits, arrival. Nothing narrated on top.
+    assert_equal 4, agent.prompts.count
+  end
+
+  test "walking back into a realized room generates nothing but the arrival" do
+    _report, agent = interpret("into the closet", CLASSIFY.call("move", "The Supply Closet"), ARRIVAL)
+
+    assert_equal @closet, @playthrough.reload.current_location
+    assert_equal 2, agent.prompts.count
+    assert_equal "A mysterious place filled with wonder and potential adventure", @closet.reload.description
+  end
+
+  # The two stamps `Playthrough::Turn#play` makes on every branch, so a turn
+  # walked here reads afterwards like one walked in the browser.
+  test "an arrival records what was typed and joins the turn log" do
+    before = @playthrough.current_scene
+
+    interpret("into the closet", CLASSIFY.call("move", "The Supply Closet"), ARRIVAL)
+
+    scene = @playthrough.reload.current_scene
+    assert_equal "into the closet", scene.typed
+    assert_equal before, scene.previous_scene
+    assert_includes @playthrough.scene_chain, scene
+  end
+
+  # THE PROSE IS THE ONE THING DROPPED. Talking is answered by a character, so
+  # it is refused rather than half-played -- and the person it resolved to is
+  # still named, because that half is worth seeing.
+  test "talking is refused without a character call, and writes no Interaction" do
+    report, agent = interpret("ask Rowe what he wants", CLASSIFY.call("talk", "Halkett Rowe"))
+
+    assert_predicate report, :refused?
+    assert_equal "talk -> Halkett Rowe", report.understood
+    assert_includes report.refusal, "Halkett Rowe"
+    assert_includes report.refusal, "prose"
+    assert_equal 0, Interaction.count
+    assert_equal 1, agent.prompts.count
+  end
+
+  test "an examine is refused without a narrator call" do
+    report, agent = interpret("look closely at the tube", CLASSIFY.call("examine", "nothing"))
+
+    assert_predicate report, :refused?
+    assert_equal "examine -> nothing", report.understood
+    assert_includes report.refusal, "prose"
+    assert_equal 1, agent.prompts.count
+  end
+
+  # DRIFT IS STILL COUNTED, because it is one of the things this mode exists to
+  # watch: the classifier reached for a way out that the records do not have.
+  test "a reach that resolved to nothing is refused, counted as drift, and changes nothing" do
+    report, = interpret("go down to the cellar", CLASSIFY.call("move", "nothing"))
+
+    assert_predicate report, :refused?
+    assert_equal "move -> nothing", report.understood
+    assert_includes report.refusal, "Playthrough::Drift"
+    assert_equal @office, @playthrough.reload.current_location
+    assert_equal 1, @playthrough.drifts.count
+    assert_equal "move", @playthrough.drifts.sole.action
+  end
+
+  test "the read-out after a classified command matches the database too" do
+    report, = interpret("pick up that stamp", CLASSIFY.call("take", "ward stamp"))
+    assert_reads_true report, report.command
+
+    report, = interpret("into the closet", CLASSIFY.call("move", "The Supply Closet"), ARRIVAL)
+    assert_reads_true report, report.command
+  end
+
+  test "help says what the mode understands, in whichever mode is running" do
+    assert_includes Playthrough::Mechanics.new(@playthrough).help.to_s, "Playthrough::Classifier"
+    assert_includes Playthrough::Mechanics.new(@playthrough, model: false).help.to_s, "go <exit>"
   end
 
   # --- the closed sets ------------------------------------------------------
