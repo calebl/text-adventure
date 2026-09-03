@@ -543,6 +543,64 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     assert_not_predicate intent, :named_more_than_one?
   end
 
+  # ONE RECORD ANSWERS TO MORE THAN ONE NAME. `#find_character` matches a
+  # fullname OR a nickname, so "Halkett Rowe" and "Rowe" are two strings for one
+  # person -- and comparing the STRINGS counted them as two things, wrote an
+  # overreach row naming him on both sides, and told the player a turn had left
+  # him undone while he was the one it acted on.
+  test "a fullname and a nickname for one person are one thing, not two" do
+    rowe = create(:character, story: @story, fullname: "Halkett Rowe", nickname: "Rowe")
+    create(:scene, story: @story, location: @here, characters: [ rowe ])
+
+    assert_no_difference "Playthrough::Overreach.count" do
+      intent, = classify({ "intent" => "talk", "target" => "Halkett Rowe", "also_named" => "Rowe" },
+                         command: "ask Rowe about the file")
+
+      assert_equal rowe, intent.speaker
+      assert_nil intent.also_named
+      assert_not_predicate intent, :named_more_than_one?
+    end
+  end
+
+  test "the nickname as the target and the fullname as the second is the same one thing" do
+    rowe = create(:character, story: @story, fullname: "Halkett Rowe", nickname: "Rowe")
+    create(:scene, story: @story, location: @here, characters: [ rowe ])
+
+    intent, = classify({ "intent" => "talk", "target" => "Rowe", "also_named" => "Halkett Rowe" })
+
+    assert_equal rowe, intent.speaker
+    assert_nil intent.also_named
+  end
+
+  # Two items of the same name in one room resolve to the same first record, so
+  # they are one thing to a player typing the name -- the same rule, arrived at
+  # from the other direction. See Playthrough::Classifier#find_item.
+  test "two identical names in one room are one thing" do
+    create(:item, :lying, location: @here, name: "ward stamp")
+    create(:item, :lying, location: @here, name: "ward stamp")
+
+    assert_no_difference "Playthrough::Overreach.count" do
+      intent, = classify({ "intent" => "take", "target" => "ward stamp", "also_named" => "ward stamp" })
+
+      assert_nil intent.also_named
+    end
+  end
+
+  # And a genuinely different person still counts, so the fix above did not buy
+  # its correctness by never counting anything.
+  test "two different people named in one line are still two things" do
+    rowe = create(:character, story: @story, fullname: "Halkett Rowe", nickname: "Rowe")
+    lasco = create(:character, story: @story, fullname: "Perrin Lasco")
+    create(:scene, story: @story, location: @here, characters: [ rowe, lasco ])
+
+    assert_difference "Playthrough::Overreach.count", 1 do
+      intent, = classify({ "intent" => "talk", "target" => "Rowe", "also_named" => "Perrin Lasco" })
+
+      assert_equal rowe, intent.speaker
+      assert_equal lasco, intent.also_named
+    end
+  end
+
   test "`nothing`, a blank and the target repeated all mean one thing was named" do
     stair = connect("The Sunken Stair")
 
