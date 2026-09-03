@@ -443,15 +443,47 @@ class Playthrough::Mechanics
     refuse(reason, understood: understood)
   end
 
-  # The four closed sets, named by the one that came up empty. The lists
-  # themselves are in the read-out below, so this only says which was consulted.
+  # WHY THE REACH RESOLVED TO NOTHING, and it is two different facts told
+  # apart: the set was empty, or the set had things in it and the command did
+  # not land on one of them. It used to be one sentence for both, so "pickup
+  # everything" in a room with three things on the floor was refused with
+  # "Nothing of that name is lying here" -- directly above a read-out listing
+  # all three. The command had named no name at all.
+  #
+  # Neither branch says what the player typed and neither repeats the lists:
+  # the read-out below is where the records are printed, and a refusal that
+  # guesses at the typing is how a wrong guess gets stated as a fact.
   def drift_reason(action)
+    return empty_set_reason(action) if offered_for(action).empty?
+
     case action
-    when :move then "That is not one of the ways out of here."
-    when :talk then "Nobody of that name is here."
-    when :take then "Nothing of that name is lying here."
-    when :drop then "You are not carrying anything of that name."
+    when :move then "That did not resolve to one of the ways out of here."
+    when :talk then "That did not resolve to anybody who is here."
+    when :take then "That did not resolve to anything lying here."
+    when :drop then "That did not resolve to anything you are carrying."
     else "That resolved to nothing."
+    end
+  end
+
+  def empty_set_reason(action)
+    case action
+    when :move then "There is no way out of here at all."
+    when :talk then "There is nobody here to talk to."
+    when :take then "There is nothing lying here to pick up."
+    when :drop then "You are carrying nothing, so there is nothing to put down."
+    else "That resolved to nothing."
+    end
+  end
+
+  # The closed set the action reads against -- the same four the read-out
+  # prints and the same four the classifier offers a model.
+  def offered_for(action)
+    case action
+    when :move then classifier.exits_here
+    when :talk then classifier.characters_here
+    when :take then classifier.items_here
+    when :drop then classifier.items_carried
+    else []
     end
   end
 

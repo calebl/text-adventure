@@ -326,6 +326,42 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_equal "move", @playthrough.drifts.sole.action
   end
 
+  # A REFUSAL THAT CONTRADICTED THE READ-OUT UNDER IT. "pickup everything" in a
+  # room with three things on the floor resolved to nothing -- a quantifier is
+  # not a name -- and the refusal said "Nothing of that name is lying here",
+  # directly above a read-out listing all three. The set being empty and the
+  # command not landing on anything in it are two different facts.
+  test "a reach that found nothing says so without denying what is lying here" do
+    report, = interpret("pickup everything", CLASSIFY.call("take", "nothing"))
+
+    assert_predicate report, :refused?
+    assert_includes report.refusal, "did not resolve to anything lying here"
+    assert_not_includes report.refusal, "Nothing of that name"
+    assert_includes report.to_s, @stamp.name, "the read-out still says what is really here"
+  end
+
+  test "an empty set is refused by saying it is empty, not that nothing matched" do
+    @stamp.update!(location: @closet)
+
+    report, = interpret("pickup everything", CLASSIFY.call("take", "nothing"))
+
+    assert_includes report.refusal, "There is nothing lying here to pick up"
+  end
+
+  test "empty hands are refused the same way as an empty floor" do
+    @daybook.update!(character: nil, location: @office)
+
+    report, = interpret("drop it all", CLASSIFY.call("drop", "nothing"))
+
+    assert_includes report.refusal, "carrying nothing"
+  end
+
+  test "a set with something in it is refused by saying the command did not land on it" do
+    report, = interpret("drop the lot", CLASSIFY.call("drop", "nothing"))
+
+    assert_includes report.refusal, "did not resolve to anything you are carrying"
+  end
+
   test "the read-out after a classified command matches the database too" do
     report, = interpret("pick up that stamp", CLASSIFY.call("take", "ward stamp"))
     assert_reads_true report, report.command

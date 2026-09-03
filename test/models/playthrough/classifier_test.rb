@@ -193,6 +193,36 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # One list, decided in one place. Scene::Generator writes the cast onto the
   # arrival scene; this reads that same answer back, so the classifier accepts
   # exactly the people the arrival paragraph introduced.
+  # "pickup everything" used to resolve to nothing, which refused the turn and
+  # wrote a Playthrough::Drift row -- and drift is the count of the player
+  # reaching for what the records DO NOT HAVE. Everything named existed; `all`
+  # is a quantifier and not a missing name. `take all`, `get everything` and
+  # `drop all` are ordinary text-adventure verbs, so this was a standing stream
+  # of drift rows with no drift in them.
+  test "the instructions tell the model that a collective word names the list" do
+    _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
+
+    assert_includes agent.instructions, "means ALL of them"
+    assert_includes agent.instructions, "is not `nothing`"
+    assert_includes agent.instructions, "also_named"
+  end
+
+  # And when it answers that way, the turn lands in the path that exists: one
+  # thing taken, the next named, counted as an overreach and NOT as drift.
+  test "a collective word answered as the first thing is an overreach and not drift" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+    create(:item, :lying, location: @here, name: "copy-room apron")
+
+    assert_difference "Playthrough::Overreach.count", 1 do
+      assert_no_difference "Playthrough::Drift.count" do
+        intent, = classify({ "intent" => "take", "target" => index.name, "also_named" => "copy-room apron" },
+                           command: "pickup everything")
+
+        assert_equal index, intent.item
+      end
+    end
+  end
+
   test "the cast is Scene::Generator's answer, minus the player" do
     maren = holdover("Maren Vosk")
     companion = create(:character, story: @story, fullname: "Dell Roy", is_companion: true)

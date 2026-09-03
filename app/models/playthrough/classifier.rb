@@ -76,6 +76,12 @@ class Playthrough::Classifier
     lists, answer `nothing`. Do not answer with a place they cannot reach from
     here, a person who is not here, something that is not lying in this room, or
     something they are not carrying.
+
+    A word that means ALL of them -- "everything", "all", "the lot", "both" --
+    is naming what is on the list rather than something missing from it, so it
+    is not `nothing`. Answer with the first thing on the list the action reads
+    against, and put one more in `also_named`: a turn does one thing, and the
+    game says out loud what it left undone.
   PROMPT
 
   attr_reader :playthrough
