@@ -27,6 +27,19 @@ class Story::DoctorTest < ActiveSupport::TestCase
     Story::Doctor.new(story).findings.map(&:code)
   end
 
+  # THE SHAPE OF AN OLD DATABASE: an item on the story's one protagonist row
+  # that one playthrough's turn log records taking. Returns the pair.
+  def a_shared_inventory(story)
+    played = create(:playthrough, story: story, character: story.protagonist,
+                                  current_location: story.locations.first)
+    item = create(:item, character: story.protagonist, name: "ward stamp")
+    played.update!(current_scene: create(:scene, story: story, location: story.locations.first,
+                                                 story_timestamp: story.start_time + 1.hour,
+                                                 typed: "take the ward stamp",
+                                                 resolved_action: "take", acted_on: item))
+    [ played, item ]
+  end
+
   def finding(story, code)
     Story::Doctor.new(story).findings.find { |f| f.code == code }
   end
@@ -266,13 +279,76 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_empty Story::Doctor.new(story).findings
   end
 
-  test "reports an item that is neither held nor lying anywhere" do
+  test "a story whose party is carrying things is still healthy" do
+    story = healthy_story
+    played = create(:playthrough, story: story, character: story.protagonist,
+                                  current_location: story.locations.first)
+    create(:item, :carried, playthrough: played, name: "ward stamp")
+
+    assert_empty Story::Doctor.new(story).findings
+  end
+
+  test "reports an item that is neither held nor carried nor lying anywhere" do
     story = healthy_story
     item = create(:item, :lying, location: story.locations.first)
     item.update_columns(location_id: nil, character_id: nil)
 
     assert_includes codes(story), :items_nowhere
     assert_match(/neither held by anybody nor lying anywhere/, finding(story, :items_nowhere).message)
+  end
+
+  # `Item#in_exactly_one_place` refuses to SAVE one, so like `items_nowhere`
+  # this can only arrive through raw SQL or a schema older than the rule.
+  test "reports an item in two of its three places at once" do
+    story = healthy_story
+    played = create(:playthrough, story: story, character: story.protagonist)
+    item = create(:item, :lying, location: story.locations.first, name: "ward stamp")
+    item.update_columns(playthrough_id: played.id)
+
+    assert_includes codes(story), :items_in_several_places
+    assert_match(/both offered and already done/, finding(story, :items_in_several_places).message)
+  end
+
+  # --- the shared inventory this column closed --------------------------------
+  #
+  # An item held by the protagonist that a playthrough's turn log records TAKING
+  # is that player's, left on the story's one protagonist row by a build of the
+  # app in which every play of a world shared one pair of hands.
+
+  test "reports an item the protagonist holds that a playthrough's turn log took" do
+    story = healthy_story
+    played, item = a_shared_inventory(story)
+
+    assert_includes codes(story), :protagonist_holds_a_taken_item
+    finding = finding(story, :protagonist_holds_a_taken_item)
+    assert_match(/playthrough ##{played.id}'s turn log records taking it/, finding.message)
+    assert_equal :safe, finding.remedy
+    assert_equal item, finding.subject
+  end
+
+  test "the story's starting inventory is not reported: nobody's turn log took it" do
+    story = healthy_story
+    create(:playthrough, story: story, character: story.protagonist,
+                         current_location: story.locations.first)
+    create(:item, character: story.protagonist, name: "Ward Office 12 daybook")
+
+    assert_not_includes codes(story), :protagonist_holds_a_taken_item
+  end
+
+  # Every playthrough carries its OWN copy of what the story starts the player
+  # with, so a world played four times holds five rows of one name and none of
+  # them is a collision -- no closed set ever offers two, because a party sees
+  # only its own.
+  test "copies of the starting inventory are not two things answering to one name" do
+    story = healthy_story
+    create(:item, character: story.protagonist, name: "Ward Office 12 daybook")
+    3.times do
+      create(:playthrough, story: story, character: story.protagonist,
+                           current_location: story.locations.first)
+    end
+
+    assert_equal 4, Item.in_story(story).where("LOWER(name) = ?", "ward office 12 daybook").count
+    assert_not_includes codes(story), :duplicate_items
   end
 
   test "reports two things in one world answering to one name" do
@@ -306,6 +382,21 @@ class Story::DoctorTest < ActiveSupport::TestCase
     (Item::Registry::MAX_PER_STORY + 1).times { |n| create(:item, character: holder, name: "thing #{n}") }
 
     assert_includes codes(story), :story_over_item_cap
+  end
+
+  # THE CAP IS ON THE ONTOLOGY -- how many distinct things this world contains --
+  # so the copies of one starting inventory spend it once, not once per player.
+  test "the world cap counts names rather than rows" do
+    story = healthy_story
+    holder = story.characters.first
+    Item::Registry::MAX_PER_STORY.times { |n| create(:item, character: holder, name: "thing #{n}") }
+    5.times do
+      create(:playthrough, story: story, character: story.protagonist,
+                           current_location: story.locations.first)
+    end
+
+    assert_operator Item.in_story(story).count, :>, Item::Registry::MAX_PER_STORY
+    assert_not_includes codes(story), :story_over_item_cap
   end
 
   test "reports an item named after somebody in the story" do

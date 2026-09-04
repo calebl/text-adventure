@@ -120,26 +120,28 @@ class EngineSweep::Invariants
            over.map { |room| "#{room.name} leads #{room.exits.size} ways out, and the cap is #{Location::ExitsSchema::MAX_EXITS}" }.join("; "))
   end
 
-  # An item is reachable through the person holding it or the room it is lying
-  # in, and through nothing else -- `Item` has no story of its own. Which is
-  # what makes this check work in both directions at once: an item holding both
-  # owners is found twice and named by `astray`, and an item that ended up
-  # holding NEITHER is found by nobody and shows up as gone from the world.
+  # An item is reachable through the person holding it, the party carrying it or
+  # the room it is lying in, and through nothing else -- `Item` has no story of
+  # its own. Which is what makes this check work in both directions at once: an
+  # item holding two of the three owners is found and named by `astray`, and an
+  # item that ended up holding NONE of them is found by nobody, so it shows up
+  # as gone from the world in `missing`.
   def items_now
-    Item.where(character_id: story.characters.select(:id))
-        .or(Item.where(location_id: story.locations.select(:id)))
-        .to_a
+    Item.in_story(story).to_a
   end
 
+  # `missing` is by NAME and the file's protagonist items now exist twice over
+  # -- once as the story's starting inventory and once in the party's hands --
+  # so a name found on either side is accounted for.
   def items_accounted
     items = items_now
-    astray = items.reject { |item| item.character_id.present? ^ item.location_id.present? }
+    astray = items.select { |item| Item::PLACES.count { |place| item[place].present? } > 1 }
     missing = items_in_file - items.map(&:name)
 
     return nil if astray.empty? && missing.empty?
 
     broken("items_accounted",
-           [ astray.any? ? "in two places at once: #{astray.map(&:name).join(", ")}" : nil,
+           [ astray.any? ? "in more than one place at once: #{astray.map(&:name).join(", ")}" : nil,
              missing.any? ? "in no place at all: #{missing.join(", ")}" : nil ].compact.join(", "))
   end
 

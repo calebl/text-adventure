@@ -162,4 +162,43 @@ class StoryTest < ActiveSupport::TestCase
   test "should belong to universe" do
     assert_equal @universe, @story.universe
   end
+  # --- what the player starts out holding -------------------------------------
+  #
+  # World data, not anybody's progress: `characters[].items` under the
+  # protagonist in a seed file, held by the protagonist row, carried by nobody.
+  # It is the inventory's counterpart of `#opening_location` -- the one thing
+  # every playthrough of a world begins from.
+
+  test "the starting inventory is what the protagonist holds" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    daybook = create(:item, character: protagonist, name: "Ward Office 12 daybook")
+
+    assert_equal [ daybook ], story.starting_inventory.to_a
+  end
+
+  test "what one of the world's own people holds is not the starting inventory" do
+    story = create(:story)
+    create(:character, :protagonist, story: story)
+    landlord = create(:character, story: story, fullname: "Grenn Ollivar")
+    create(:item, character: landlord, name: "Iron Ledger")
+
+    assert_empty story.starting_inventory
+  end
+
+  # A GENERATED WORLD HAS NONE, and legitimately: only `WorldSeed::Loader` ever
+  # writes a protagonist item, so `rake game:new` produces a story whose player
+  # starts with empty hands.
+  test "a story with no protagonist has no starting inventory rather than raising" do
+    assert_empty create(:story).starting_inventory
+  end
+
+  test "what a party is carrying is not the starting inventory either" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    played = create(:playthrough, story: story, character: protagonist)
+    create(:item, :carried, playthrough: played, name: "Brass Key")
+
+    assert_empty story.starting_inventory
+  end
 end

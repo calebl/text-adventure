@@ -651,9 +651,18 @@ class Story::Audit
     text[(start ? start + 1 : 0)..(match.end(0) + (finish || after.length))].to_s
   end
 
-  # Everything in the story that the protagonist is not holding. An item in
-  # somebody else's hands or lying on a floor is the only kind that can be
-  # falsely claimed; what the player really has needs no checking.
+  # Everything in the story that no player is holding. An item in somebody
+  # else's hands or lying on a floor is the only kind that can be falsely
+  # claimed; what the player really has needs no checking.
+  #
+  # WHAT "THE PLAYER" MEANS HERE IS EVERY PLAYTHROUGH OF THE STORY, and it has
+  # to be, because a `Scene` carries no playthrough: the turn log is a
+  # `previous_scene` chain read backwards from a playthrough, so there is no
+  # column to join on. So this excludes the union of what any party carries,
+  # plus the story's starting inventory, which is held by the protagonist and
+  # copied into every party's hands. Precision over recall, which is this
+  # class's rule everywhere: a name one player is genuinely holding is not
+  # flagged in another player's turn.
   #
   # ONE PER NAME. Two items called "brass stamp" in two different places is a
   # real state, but a sentence that says "you put the brass stamp in your
@@ -662,13 +671,15 @@ class Story::Audit
   # positive.
   def items_elsewhere
     @items_elsewhere ||= begin
-      held = story.protagonist ? Item.for_character(story.protagonist) : Item.none
+      in_hand = Item.carried_by(story.playthroughs).pluck(:name) + story.starting_inventory.pluck(:name)
+      in_hand = in_hand.map { |name| name.to_s.downcase.strip }.to_set
+
       Item.where(character: story.characters).or(Item.where(location: story.locations))
-          .where.not(id: held.select(:id))
           .includes(:character, :location)
           .order(:id)
           .to_a
           .uniq { |item| item.name.to_s.downcase.strip }
+          .reject { |item| in_hand.include?(item.name.to_s.downcase.strip) }
     end
   end
 

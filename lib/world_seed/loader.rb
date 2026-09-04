@@ -160,6 +160,13 @@ class WorldSeed::Loader
   # `location:` for something lying in a room, and the other half is written nil
   # so that re-seeding cannot leave an item in two places at once.
   #
+  # A PROTAGONIST'S ITEMS ARE THE STORY'S STARTING INVENTORY. They stay held by
+  # the protagonist row, carried by nobody, and every playthrough of the world
+  # begins with a COPY of each -- `Story#starting_inventory` and
+  # `Playthrough#take_up_the_starting_inventory` have the argument. So the file
+  # keeps writing exactly what it wrote before and the meaning of the row is
+  # what changed: world data rather than one shared pair of hands.
+  #
   # Items under a LOCATION are what a HAND-WRITTEN world carries so that
   # anything in it is takeable. A generated room furnishes itself now
   # (`Item::Registry`, written at realization), so this is no longer the only
@@ -169,28 +176,44 @@ class WorldSeed::Loader
   #
   # MATCHED ON (story, name), NOT ON THE OWNER, because an item is the one thing
   # in these files that MOVES: `Playthrough::Turn#carry!` and `#put_down!` write
-  # `items.character_id` and `items.location_id` on every take and drop. Keying
-  # on the owner would look for the daybook in the hands the file puts it in,
-  # not find it because the player left it on a shelf, and seed a second one.
+  # `items.playthrough_id` and `items.location_id` on every take and drop.
+  # Keying on the owner would look for the daybook in the hands the file puts it
+  # in, not find it because the player left it on a shelf, and seed a second one.
   # Keying on the story finds the one that exists and puts it back where the
   # file says it belongs -- the same "the file re-asserts itself over a played
   # world" rule the connections already follow.
+  # `playthrough: nil` is written on every leg for the reason the callers write
+  # the other one: `Item` is in exactly one of three places, and re-seeding a
+  # world somebody is playing finds room items in a party's hands. Leaving the
+  # column set would save a row that is in two places at once, which `Item`
+  # refuses.
   def load_items!(story, documents, **place)
     Array(documents).each do |attributes|
       name = attributes.fetch("name")
       item = find_item(story, name) || Item.new(name: name)
-      item.assign_attributes(attributes.except("name").merge(place))
+      item.assign_attributes(attributes.except("name").merge(playthrough: nil, **place))
       item.save!
     end
   end
 
-  # An item of this story by name, held by anybody in it or lying anywhere in
-  # it. Two queries rather than one because `Item` has no `story_id` -- it is
-  # owned by whoever is holding it.
+  # An item of this story by name: held by one of its people, lying anywhere in
+  # it, or -- last -- carried by a party playing it.
+  #
+  # THE WORLD'S OWN ROWS COME FIRST AND THAT ORDER IS THE POINT. A protagonist
+  # item in one of these files is the story's STARTING INVENTORY, and every
+  # playthrough carries a copy of it (`Playthrough#carried`). Finding a copy
+  # would re-assert the file onto one player's row and take the daybook out of
+  # their hands, while the world's own starting inventory stayed wherever it
+  # was. The carried leg is still searched, because a ROOM item a player is
+  # holding right now is on `playthrough_id` and re-seeding has always put such
+  # a thing back where the file says it belongs.
   def find_item(story, name)
-    Item.where(name: name, character_id: story.characters.select(:id))
-        .or(Item.where(name: name, location_id: story.locations.select(:id)))
-        .first
+    by_name = Item.where(name: name)
+
+    by_name.where(character_id: story.characters.select(:id))
+           .or(by_name.where(location_id: story.locations.select(:id)))
+           .first ||
+      by_name.where(playthrough_id: story.playthroughs.select(:id)).first
   end
 
   # A world's own laws: which fixed Ruby operation runs on which cadence, and the

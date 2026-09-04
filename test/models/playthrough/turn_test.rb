@@ -390,9 +390,14 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
 
     key.reload
 
-    assert_equal @protagonist, key.character
+    # INTO THE PARTY'S HANDS, not the protagonist's. The protagonist is one row
+    # per story, so writing it there gave every playthrough of a world one
+    # shared inventory.
+    assert_equal @playthrough, key.playthrough
+    assert_nil key.character_id
     assert_nil key.location_id
-    assert_predicate key, :held?
+    assert_predicate key, :carried?
+    assert_not_predicate key, :held?
   end
 
   test "a take keeps the moment as a scene the player can read back" do
@@ -439,7 +444,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   test "the narrator cannot grant an item the app did not resolve" do
     key = create(:item, :lying, location: @here, name: "Brass Key")
 
-    assert_no_changes -> { [ key.reload.character_id, key.reload.location_id ] } do
+    assert_no_changes -> { [ key.reload.playthrough_id, key.reload.location_id ] } do
       # The classifier read a take and resolved NOTHING -- the player named
       # something that is not on the floor -- and the narrator then writes the
       # most confident possible sentence about taking it anyway.
@@ -449,7 +454,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
       assert_equal @here, scene.location
     end
 
-    assert_equal 0, Item.for_character(@protagonist).count
+    assert_equal 0, @playthrough.carried.count
   end
 
   test "a take of something nobody has ever seen grants nothing and narrates the attempt" do
@@ -460,7 +465,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
       assert_equal "There is no locket here, and your hand closes on nothing.", scene.description
     end
 
-    assert_equal 0, Item.for_character(@protagonist).count
+    assert_equal 0, @playthrough.carried.count
   end
 
   # An item somebody is holding is not on the floor, so the classifier never
@@ -484,7 +489,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
       Playthrough::Turn.new(nobody).play("take the key")
     end
 
-    assert_nil key.reload.character_id
+    assert_nil key.reload.playthrough_id
     assert_equal @here, key.location
   end
 
@@ -495,14 +500,14 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # stale the first time a player sets something on a table.
 
   test "dropping something moves the row out of the player's hands and into the room" do
-    key = create(:item, character: @protagonist, name: "Brass Key")
+    key = create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     play("put down the key", CLASSIFY.call("drop", "Brass Key"),
          "You set the key on the sill and it slides an inch.")
 
     key.reload
 
-    assert_nil key.character_id
+    assert_nil key.playthrough_id
     assert_equal @here, key.location
     assert_predicate key, :lying?
   end
@@ -510,7 +515,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # It lands in the ROOM, not nowhere -- which is what makes an inventory a
   # record of the world rather than a note somebody kept.
   test "what the player drops is there to pick up again" do
-    key = create(:item, character: @protagonist, name: "Brass Key")
+    key = create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     play("put down the key", CLASSIFY.call("drop", "Brass Key"), "You set the key on the sill.")
 
@@ -518,7 +523,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "the narrator is told what the app already did when something is dropped" do
-    create(:item, character: @protagonist, name: "Brass Key")
+    create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     _scene, _chunks, agent = play("put down the key", CLASSIFY.call("drop", "Brass Key"),
                                   "You set the key on the sill.")
@@ -530,7 +535,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a drop costs the story one beat in the room" do
-    create(:item, character: @protagonist, name: "Brass Key")
+    create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     before = @playthrough.story_now
     scene, = play("put down the key", CLASSIFY.call("drop", "Brass Key"), "You set the key down.")
@@ -541,14 +546,14 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # THE MIRROR OF THE TEST ABOVE, and between them they are the whole claim:
   # prose cannot move an item in EITHER direction.
   test "the narrator cannot put down an item the app did not resolve" do
-    key = create(:item, character: @protagonist, name: "Brass Key")
+    key = create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
-    assert_no_changes -> { [ key.reload.character_id, key.reload.location_id ] } do
+    assert_no_changes -> { [ key.reload.playthrough_id, key.reload.location_id ] } do
       play("leave the key on the sill", CLASSIFY.call("drop", "nothing"),
            "You set the brass key down on the sill and walk away from it for good.")
     end
 
-    assert_equal [ key ], Item.for_character(@protagonist).to_a
+    assert_equal [ key ], @playthrough.carried.to_a
   end
 
   test "the narrator cannot give away an item on somebody else's behalf" do
@@ -568,14 +573,14 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # test is what it does NOT do to the item on the way there.
   test "a drop by a playthrough standing nowhere moves nothing" do
     adrift = create(:playthrough, story: @story, character: @protagonist)
-    key = create(:item, character: @protagonist, name: "Brass Key")
+    key = create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     agent = FakeAgent.new(CLASSIFY.call("drop", "Brass Key"), "There is no floor here to set it on.")
     assert_raises(ActiveRecord::RecordInvalid) do
       BaseAgent.stub(:new, agent) { Playthrough::Turn.new(adrift).play("put down the key") }
     end
 
-    assert_equal @protagonist, key.reload.character
+    assert_equal @playthrough, key.reload.playthrough
     assert_nil key.location_id
   end
 
@@ -586,16 +591,16 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
 
     play("take the key", CLASSIFY.call("take", "Brass Key"), "You lift the key.")
 
-    assert_equal @protagonist, key.reload.character
+    assert_equal @playthrough, key.reload.playthrough
 
     play("put down the key", CLASSIFY.call("drop", "Brass Key"), "You set the key down.")
 
     assert_equal @here, key.reload.location
-    assert_nil key.character_id
+    assert_nil key.playthrough_id
 
     play("take the key", CLASSIFY.call("take", "Brass Key"), "You lift it again.")
 
-    assert_equal @protagonist, key.reload.character
+    assert_equal @playthrough, key.reload.playthrough
   end
 
   # --- what the player typed ----------------------------------------------
@@ -629,7 +634,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a dropping turn records what the player typed" do
-    create(:item, character: @protagonist, name: "Brass Key")
+    create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     scene, = play("put down the brass key", CLASSIFY.call("drop", "Brass Key"), "You set the key down.")
 
@@ -691,7 +696,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a dropping turn records the drop and the item it moved" do
-    key = create(:item, character: @protagonist, name: "Brass Key")
+    key = create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     scene, = play("put down the brass key", CLASSIFY.call("drop", "Brass Key"), "You set the key down.")
 

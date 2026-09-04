@@ -58,6 +58,23 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal [ "A Sealed Letter" ], document["items"].map { |item| item["name"] }
   end
 
+  # A SEED FILE IS THE WORLD, NOT SOMEBODY'S PROGRESS. What a party is carrying
+  # is `items.playthrough_id`, so it belongs in an export no more than a turn
+  # log does -- and the protagonist's own items, which ARE exported, are the
+  # story's starting inventory that every playthrough begins with a copy of.
+  test "does not export what a party is carrying" do
+    protagonist = create(:character, story: @story, fullname: "Someone Specific", is_protagonist: true)
+    create(:item, character: protagonist, name: "A Sealed Letter")
+    played = create(:playthrough, story: @story, character: protagonist, current_location: @opening)
+    create(:item, :carried, playthrough: played, name: "Something They Picked Up")
+
+    document = WorldSeed::Exporter.new(@story).document
+
+    assert_equal [ "A Sealed Letter" ],
+                 document.fetch("characters").first["items"].map { |item| item["name"] }
+    assert_not_includes WorldSeed.dump(document), "Something They Picked Up"
+  end
+
   # WHERE THE WORLD PUTS THEM. `Character.present_in` is the closed set `talk`
   # resolves against, so a world exported without it loads with nobody standing
   # anywhere -- and there is nobody in it to speak to.

@@ -55,6 +55,74 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **A new playthrough starts with its own hands** (`ta-inventory-per-playthrough`).
+  The captain's report: he started playthrough 17 of a story and the
+  protagonist was already carrying things from a previous playthrough.
+
+  **The defect.** The party's inventory was `items.character_id` pointing at
+  `story.protagonist` — **one `Character` row per story** — and
+  `PlaythroughsController#create`, `rake game:mechanics` and
+  `EngineSweep::Walk` all create a playthrough with that same row. So every
+  play of one world shared one pair of hands, and nothing on creation emptied
+  them or put the things back. Reproduced offline in two commands before
+  anything was changed, and that reproduction is now
+  `PlaythroughsControllerTest` → *"a new playthrough does not open holding what
+  an earlier one picked up"*.
+
+  **The fix is the position shape**, and PR 109's argument word for word: where
+  the player stands is `playthroughs.current_location_id` rather than a column
+  on the protagonist, because two people playing one seeded world stand in two
+  rooms at once — and they carry two different sets of things. So
+  `items.playthrough_id`, and an `Item` is in exactly one of **three** places:
+  lying in a room (`location_id`, story-level and shared), held by one of the
+  world's own people (`character_id`), or **carried by the party of one
+  playthrough** (`playthrough_id`). `Playthrough#carried` is the one reader and
+  `Playthrough::Turn#carry!` / `#put_down!` the only writers; `Item.in_story` is
+  the one place the three-leg "every item in this world" query lives.
+
+  **The starting inventory is world data, and it is copied rather than handed
+  over.** A seed file's `characters[].items` under the protagonist is
+  `Story#starting_inventory`: held by the protagonist row, carried by nobody,
+  exported by the exporter, and given to each new playthrough as its own copy
+  (`Playthrough#take_up_the_starting_inventory`, an `after_create` so all three
+  creators of a playthrough agree). Position needs no copy because a `Location`
+  holds two parties at once; an `Item` does not, so handing the daybook over by
+  reference would leave the second player empty-handed. Only
+  `WorldSeed::Loader` ever writes a protagonist item — `rake game:new` gives a
+  generated protagonist none — so a generated world's starting inventory is
+  legitimately empty, which is why the captain's playthrough 17 of *The Lunar
+  Cartographer* now opens with nothing at all.
+
+  **The backfill, run against a copy of the captain's real database.**
+  `rake game:backfill_inventory` (`Item::InventoryBackfill`) attributes what is
+  still on a protagonist out of the takes recorded on `scenes.resolved_action` /
+  `scenes.acted_on`, with four outcomes told apart: **attributed** (6 items),
+  **the starting kit** (3, left on the protagonist and copied into the 7
+  playthroughs owed one), **ambiguous** (two playthroughs' takes at one story
+  moment — nothing written, named in the output) and **unrecoverable** (put
+  down where the last party that could have held it stands, on
+  `Playthrough::Turn#drop_item`'s own rule, and stated every time). It took the
+  captain's three stories from 6 shared-inventory findings to 0 and left
+  playthrough 15 holding the four things its own turn log records taking.
+  `rake game:doctor`'s `protagonist_holds_a_taken_item` is the `safe` finding
+  `rake game:repair` acts on, one item at a time.
+
+  **What it deliberately does not do.** Rooms stay story-level and shared, on
+  the captain's explicit ruling that he is thinking about that separately — so a
+  room one party has emptied is empty for the other. That is not left as folklore:
+  `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml` asserts it, so a
+  future change to it fails a test rather than surprising somebody. Items carried
+  by the world's own NPCs stay on `items.character_id`, which is where they
+  belong — nothing has ever read a companion's items as the player's. And no
+  narrator prose rule changed, no narrator tool was added and no per-turn model
+  check exists; this is engine and records only.
+
+  **`player:` on a sweep step** is the one grammar extension, and it is what
+  makes the defect regression-testable offline: a distinct name is a second
+  `Playthrough` of the same loaded copy of the world. With the inventory on the
+  story's protagonist row both games read the same hands, so no one-player
+  script could tell a story-level inventory from a playthrough-level one.
+
 - **Character whereabouts, and the Tide Post remembering who is chained to it**
   (`ta-character-whereabouts`). The captain's ruling was *"go with shape one"* —
   a whereabouts record of a character's own, the `Item` shape, over making the
@@ -1335,6 +1403,23 @@ What it still owes, roughly in order:
       and two were healthy.
 
 ## Known issues
+
+- **A room one party has emptied is empty for the other**
+  (`ta-inventory-per-playthrough`, 2026-09-04, and the captain's to decide).
+  `items.location_id` is story-level and stays that way: a playthrough that
+  picks the ward stamp off the floor takes it out of the room for every other
+  play of that world, and one that puts something down leaves it there for
+  everybody. That is what the inventory change deliberately did **not** touch —
+  the captain said he is thinking about the room half separately, so it was left
+  alone rather than half-scoped.
+
+  It is written down here and asserted rather than left as folklore:
+  `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml`, step
+  `second-finds-the-office-emptied`, pins the current behaviour, so a change to
+  it fails a test instead of surprising somebody. Two options when it comes up:
+  scope `items.location_id` per playthrough the way the carried half now is
+  (which forks the world and makes "the world keeps what it generates" a
+  per-player claim), or leave rooms shared and say so in the interface.
 
 - **The narration erases the `take` and invents the pickup on a `drop`**
   (`ta-take-drop-narration`, queued). **Two checks see it now** — see the

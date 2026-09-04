@@ -255,6 +255,59 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/The first player turns left\./, response.body)
   end
 
+  # --- THE CAPTAIN'S REPORT, AS A REGRESSION TEST -----------------------------
+  #
+  # He started a new playthrough and the protagonist was already carrying things
+  # from a previous one. The party's inventory was `items.character_id` pointing
+  # at `story.protagonist` -- one Character row per story -- so every play of a
+  # world shared one pair of hands and nothing on creation emptied them.
+  #
+  # THIS IS THE POSITION SHAPE, and PR 109's argument: two people playing one
+  # seeded world stand in two rooms, and carry two different sets of things.
+
+  test "a new playthrough does not open holding what an earlier one picked up" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    opening = create(:location, story: story)
+    create(:scene, :opening, story: story, location: opening, story_timestamp: story.start_time)
+    stamp = create(:item, :lying, location: opening, name: "ward stamp")
+
+    post playthroughs_path, params: { story_id: story.id }
+    first = story.playthroughs.last
+    Playthrough::Turn.new(first).send(:carry!, stamp)
+    assert_equal [ "ward stamp" ], first.carried.pluck(:name)
+
+    post playthroughs_path, params: { story_id: story.id }
+    second = story.playthroughs.last
+
+    assert_not_equal first, second
+    assert_empty second.carried, "a new game opened holding the last one's things"
+    assert_equal first, stamp.reload.playthrough
+    assert_nil protagonist.items.reload.first, "and nothing was left on the story's protagonist"
+  end
+
+  # WHAT A NEW GAME DOES START WITH is the story's own starting inventory -- the
+  # seed file's `characters[].items` under the protagonist -- as its own copy,
+  # because an `Item` is in exactly one place and a second player must not find
+  # the daybook already in somebody else's hands.
+  test "each new playthrough opens with its own copy of the story's starting inventory" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    opening = create(:location, story: story)
+    create(:scene, :opening, story: story, location: opening, story_timestamp: story.start_time)
+    daybook = create(:item, character: protagonist, name: "Ward Office 12 daybook")
+
+    post playthroughs_path, params: { story_id: story.id }
+    first = story.playthroughs.last
+    post playthroughs_path, params: { story_id: story.id }
+    second = story.playthroughs.last
+
+    assert_equal [ daybook.name ], first.carried.pluck(:name)
+    assert_equal [ daybook.name ], second.carried.pluck(:name)
+    assert_not_equal first.carried.sole.id, second.carried.sole.id
+    assert_equal protagonist, daybook.reload.character
+  end
+
   # THE STORY-TIME HAZARD.
   #
   # An opening arrival is written when the WORLD is built and loaded out of a

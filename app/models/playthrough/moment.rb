@@ -186,10 +186,12 @@ class Playthrough::Moment
     playthrough.exits.map(&:name).join(", ")
   end
 
+  # WHAT THE PARTY HAS IN ITS HANDS, out of the playthrough's own record --
+  # `Playthrough#carried`, the same closed set the classifier resolves a `drop`
+  # against. Not the protagonist's `items`: that is one row per story and it is
+  # the story's starting inventory, shared by every play of the world.
   def carried_names
-    return "" if protagonist.nil?
-
-    Item.for_character(protagonist).order(:id).map(&:name).join(", ")
+    playthrough.carried.map(&:name).join(", ")
   end
 
   # WHAT IS ON THE FLOOR OF THIS ROOM -- the same closed set

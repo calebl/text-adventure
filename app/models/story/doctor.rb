@@ -492,16 +492,14 @@ class Story::Doctor
     end
   end
 
+  # A malformed world file is `WorldSeed::Loader`'s to complain about, not this
+  # class's -- a doctor that raised on one would stop reporting everything else
+  # about the story -- which is why the read and its rescue live in
+  # `WorldSeed.checked_in_document`, shared with `Item::InventoryBackfill`.
   def seed_document
     return @seed_document if defined?(@seed_document)
 
-    path = WorldSeed::DIRECTORY.join("#{WorldSeed.slug(story.title)}.yml")
-    @seed_document = File.exist?(path) ? WorldSeed.parse(File.read(path)) : nil
-  rescue StandardError
-    # A malformed world file is `WorldSeed::Loader`'s to complain about, not
-    # this class's: a doctor that raised on one would stop reporting everything
-    # else about the story.
-    @seed_document = nil
+    @seed_document = WorldSeed.checked_in_document(story.title)
   end
 
   def seed_basename
@@ -557,29 +555,32 @@ class Story::Doctor
   # nothing on record says which item is the surplus one.
   def item_rows
     findings = []
-    items = story_items.includes(:location, :character).order(:id).to_a
+    items = story_items.includes(:location, :character, :playthrough).order(:id).to_a
+    names = items.map { |item| item.name.to_s.downcase }.uniq.size
 
     findings.concat(items_nowhere)
+    findings.concat(items_in_several_places(items))
+    findings.concat(shared_inventory(items))
     findings.concat(duplicate_items(items))
     findings.concat(rooms_over_the_item_cap)
     findings.concat(items_colliding_with_a_name(items))
 
-    if items.size > Item::Registry::MAX_PER_STORY
+    if names > Item::Registry::MAX_PER_STORY
       findings << finding(:story_over_item_cap, :warning,
-                          "holds #{items.size} items, past the #{Item::Registry::MAX_PER_STORY} one world may have "                           "(Item::Registry::MAX_PER_STORY); nothing breaks, but the registry will furnish no further room "                           "in it and the ontology it was bounding is no longer bounded",
+                          "holds #{names} distinctly named items, past the #{Item::Registry::MAX_PER_STORY} one world may have "                           "(Item::Registry::MAX_PER_STORY); nothing breaks, but the registry will furnish no further room "                           "in it and the ontology it was bounding is no longer bounded",
                           :manual)
     end
 
     findings
   end
 
-  # An item in neither place. `Item#in_exactly_one_place` refuses to save one,
-  # so this can only arrive through raw SQL or a schema older than that
-  # validation -- and such a row belongs to no story at all, which is why it is
+  # An item in none of its three places. `Item#in_exactly_one_place` refuses to
+  # save one, so this can only arrive through raw SQL or a schema older than
+  # that validation -- and such a row belongs to no story at all, which is why it is
   # reported once against every story rather than attributed to one: there is
   # nothing on the row that says whose it was.
   def items_nowhere
-    orphans = Item.where(character_id: nil, location_id: nil).order(:id).to_a
+    orphans = Item.where(character_id: nil, location_id: nil, playthrough_id: nil).order(:id).to_a
     return [] if orphans.empty?
 
     [ finding(:items_nowhere, :warning,
@@ -587,10 +588,69 @@ class Story::Doctor
               :manual) ]
   end
 
+  # AN ITEM IN MORE THAN ONE OF ITS THREE PLACES. `Item#in_exactly_one_place`
+  # refuses to save one, so like `items_nowhere` this can only arrive through
+  # raw SQL or a schema older than the rule -- and it is the state that makes a
+  # `take` unanswerable, since the thing is takeable and already taken.
+  def items_in_several_places(items)
+    astray = items.select { |item| Item::PLACES.count { |place| item[place].present? } > 1 }
+    return [] if astray.empty?
+
+    [ finding(:items_in_several_places, :warning,
+              "#{astray.size} item#{"s" unless astray.one?} (#{astray.map(&:name).join(", ")}) " \
+              "#{astray.one? ? "is" : "are"} in more than one place at once -- lying in a room and in a pair of " \
+              "hands together -- so a `take` of #{astray.one? ? "it" : "them"} is both offered and already done",
+              :manual, subject: astray.first) ]
+  end
+
+  # THE SHARED INVENTORY THIS COLUMN CLOSED. An item held by the protagonist
+  # that some playthrough's turn log records TAKING is not the story's starting
+  # inventory: it is one player's, left on the story's one protagonist row by a
+  # build of the app in which every play of a world shared one pair of hands.
+  #
+  # `safe` -- the answer is on record, in `scenes.resolved_action` and
+  # `scenes.acted_on`. `rake game:repair` runs `Item::InventoryBackfill` for the
+  # story, which attributes what the takes can answer for and refuses to guess
+  # the rest. What it refuses is reported here again on the next run rather than
+  # quietly dropped.
+  def shared_inventory(items)
+    return [] if story.protagonist.nil?
+
+    items.filter_map do |item|
+      next unless item.character_id == story.protagonist.id && taken_items.key?(item.id)
+
+      finding(:protagonist_holds_a_taken_item, :warning,
+              "#{item.name.inspect} is held by #{story.protagonist.fullname}, but playthrough " \
+              "##{taken_items[item.id]}'s turn log records taking it -- so it is that player's and not the " \
+              "story's starting inventory. Before `items.playthrough_id` every play of a world shared one " \
+              "inventory, and a new game opened holding the last one's things",
+              :safe, subject: item)
+    end
+  end
+
+  # `{ item id => the playthrough whose chain last took it }`, out of the same
+  # reading `Item::InventoryBackfill` does -- one instance, so the doctor and
+  # the repair cannot disagree about who took what.
+  def taken_items
+    @taken_items ||= Item::InventoryBackfill.new(story).run(dry_run: true)
+                                            .select(&:attributed?)
+                                            .to_h { |answer| [ answer.item.id, answer.playthrough.id ] }
+  end
+
   # Two things in one world answering to one name. `Playthrough::Classifier`
   # resolves a typed line against a list of names, so the player types the name
   # and gets whichever the ordering hands over.
+  #
+  # THE STARTING INVENTORY AND ITS COPIES ARE ONE THING. Every playthrough
+  # carries its own copy of what the story starts the player with
+  # (`Playthrough#take_up_the_starting_inventory`), so a world played four times
+  # holds five rows called "Ward Office 12 daybook" and none of them is a
+  # collision: no closed set ever offers two, because a party sees only its own.
+  # The copies are dropped here and the world's own row speaks for them.
   def duplicate_items(items)
+    starting = story.starting_inventory.pluck(:name).map { |name| name.to_s.downcase }.to_set
+    items = items.reject { |item| item.carried? && starting.include?(item.name.to_s.downcase) }
+
     items.group_by { |item| item.name.to_s.downcase }.filter_map do |name, group|
       next if group.one? || name.blank?
 
@@ -635,12 +695,10 @@ class Story::Doctor
     end
   end
 
-  # Every item in this story, on either side of `Item`'s one-place rule --
-  # the same pair of queries `Item::Registry#story_items` runs, and for the
-  # same reason: there is no `items.story_id`.
+  # Every item in this story, on whichever of the three sides of `Item`'s
+  # one-place rule it sits -- `Item.in_story`, the one place those queries live.
   def story_items
-    Item.where(character_id: story.characters.select(:id))
-        .or(Item.where(location_id: story.locations.select(:id)))
+    Item.in_story(story)
   end
 
   def earliest_scene_timestamp

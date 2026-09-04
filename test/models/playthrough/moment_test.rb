@@ -61,8 +61,8 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   end
 
   test "the narration context lists what the player is carrying" do
-    create(:item, character: @protagonist, name: "Brass Key")
-    create(:item, character: @protagonist, name: "Theodolite")
+    create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
+    create(:item, :carried, playthrough: @playthrough, name: "Theodolite")
     create(:item, :lying, location: @here, name: "Ledger")
 
     context = moment.narration_context
@@ -80,7 +80,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   test "the narration context lists what is lying here" do
     create(:item, :lying, location: @here, name: "Ledger")
     create(:item, :lying, location: @here, name: "Oil Lamp")
-    create(:item, character: @protagonist, name: "Brass Key")
+    create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
     create(:item, :lying, location: connect("The Sunken Stair"), name: "Crowbar")
 
     context = moment.narration_context

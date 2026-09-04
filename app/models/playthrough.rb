@@ -26,6 +26,30 @@ class Playthrough < ApplicationRecord
   # Every conversation this playthrough has had with a model. Destroyed with it:
   # they are this player's progress, not the world's -- see Chat.
   has_many :chats, dependent: :destroy
+  # WHAT THIS PARTY IS CARRYING -- read through `#carried`, never through the
+  # association, so the ordering and the one query live in one place.
+  #
+  # DESTROYED WITH THE PLAYTHROUGH, on the same reasoning as the chats: a
+  # carried row is this player's progress. Putting them down instead would
+  # leave a shared world littered with one daybook per deleted game, because a
+  # copy of the starting inventory has no room it came from.
+  has_many :items, dependent: :destroy
+
+  # THE STORY'S STARTING INVENTORY, COPIED INTO THIS PLAYTHROUGH'S HANDS, and
+  # the reason a new game does not open holding the last game's loot.
+  #
+  # A copy rather than the row itself because an `Item` is in exactly one place
+  # and `Story#starting_inventory` has to stay world data -- the file writes it,
+  # the exporter reads it back, and a second player starting must not find the
+  # daybook already in somebody else's hands. Position needs no copy: a
+  # Location holds two parties at once.
+  #
+  # An after_create rather than a line in `PlaythroughsController#create`,
+  # because three callers create playthroughs -- the controller, `rake
+  # game:mechanics` and `EngineSweep::Walk` -- and a starting inventory that
+  # only one of them issued would make the browser and the sweep test different
+  # games.
+  after_create :take_up_the_starting_inventory
 
   # Generated at initialize rather than on create so the presence validation
   # below sees it. This is the only thing binding a browser session to a
@@ -36,6 +60,20 @@ class Playthrough < ApplicationRecord
   validate :character_belongs_to_story
   validate :current_location_belongs_to_story
   validate :current_scene_belongs_to_story
+
+  # WHAT THE PARTY IS CARRYING: the closed set `drop` resolves against, and the
+  # ONE reader of it in the app. `Playthrough::Classifier#items_carried`,
+  # `Playthrough::Moment#carried_names`, `Playthrough::Mechanics`'s `carrying`
+  # line and the debug page all come through here, for the same reason
+  # `Scene::Generator.characters_present` is the one reader of who is in a room:
+  # a second copy of the query is a second answer waiting to disagree.
+  #
+  # Not `character.items`. That is what one of the world's own people is
+  # holding, and for the protagonist it is the story's starting inventory --
+  # shared by every playthrough, which is the defect this column closes.
+  def carried
+    Item.carried_by(self).order(:id)
+  end
 
   # WHERE THIS PLAYTHROUGH STANDS ON THE STORY'S CLOCK -- the moment the player
   # is living in, which is the moment their last scene happened at.
@@ -210,6 +248,23 @@ class Playthrough < ApplicationRecord
   end
 
   private
+
+  # One row per thing the story starts the player with. Skipped when this
+  # playthrough already carries something, so re-running it -- or creating a
+  # playthrough with items already attached, as a test fixture may -- cannot
+  # hand out the kit twice.
+  #
+  # `properties` is copied with the rest: a copy of a thing is that thing, and
+  # a daybook with no page count is a different object from the one the file
+  # describes.
+  def take_up_the_starting_inventory
+    return if story.nil? || items.exists?
+
+    story.starting_inventory.each do |original|
+      items.create!(name: original.name, description: original.description,
+                    properties: original.properties)
+    end
+  end
 
   # The character, location and scene are all facets of one story; pointing at
   # another story's records would silently mix two worlds together.

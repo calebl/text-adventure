@@ -231,6 +231,12 @@ class WorldSeed::Exporter
       # against. Items somebody is holding are exported under that character,
       # by the same method -- an item is in exactly one place, so it is written
       # exactly once.
+      #
+      # WHAT A PARTY IS CARRYING IS NOT EXPORTED AT ALL, and that is the same
+      # rule: `items.playthrough_id` is one player's progress, not the world, so
+      # it belongs in a seed file no more than a turn log does. The protagonist's
+      # own items ARE exported -- they are the story's STARTING INVENTORY, which
+      # every playthrough begins with a copy of. See `Story#starting_inventory`.
       items = items_document(location)
       document["items"] = items if items.any?
       document

@@ -337,4 +337,84 @@ class PlaythroughTest < ActiveSupport::TestCase
     create(:message, :assistant, chat: chat, scene: scene)
     chat
   end
+  # --- what the party is carrying ---------------------------------------------
+  #
+  # THE DEFECT THIS COLUMN CLOSES: the inventory used to be
+  # `items.character_id` pointing at `story.protagonist` -- one Character row
+  # per story -- so every playthrough of one world shared one set of things and
+  # a new game opened holding the last game's loot.
+
+  test "carried is this party's own things and nobody else's" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    mine = create(:playthrough, story: story, character: protagonist)
+    theirs = create(:playthrough, story: story, character: protagonist)
+
+    key = create(:item, :carried, playthrough: mine, name: "Brass Key")
+    create(:item, :carried, playthrough: theirs, name: "Iron Ledger")
+
+    assert_equal [ key ], mine.carried.to_a
+  end
+
+  test "what one of the world's own people holds is not what any party carries" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    landlord = create(:character, story: story, fullname: "Grenn Ollivar")
+    played = create(:playthrough, story: story, character: protagonist)
+    create(:item, character: landlord, name: "Iron Ledger")
+
+    assert_empty played.carried
+  end
+
+  # A COPY, not the row itself: `Story#starting_inventory` is world data -- the
+  # seed file writes it and the exporter reads it back -- and an `Item` is in
+  # exactly one place, so a second player starting must not find the daybook
+  # already in somebody else's hands.
+  test "a new playthrough takes up its own copy of the story's starting inventory" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    daybook = create(:item, character: protagonist, name: "Ward Office 12 daybook")
+
+    played = create(:playthrough, story: story, character: protagonist)
+
+    assert_equal [ daybook.name ], played.carried.pluck(:name)
+    assert_not_equal daybook.id, played.carried.sole.id
+    assert_equal daybook.properties, played.carried.sole.properties, "a copy of a thing is that thing"
+    assert_equal protagonist, daybook.reload.character, "the world's own row is left where it is"
+  end
+
+  test "two playthroughs of one world start with the same kit and carry two different sets" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    room = create(:location, story: story)
+    create(:item, character: protagonist, name: "Ward Office 12 daybook")
+
+    first = create(:playthrough, story: story, character: protagonist, current_location: room)
+    second = create(:playthrough, story: story, character: protagonist, current_location: room)
+    create(:item, :lying, location: room, name: "ward stamp").update!(playthrough: first, location: nil)
+
+    assert_equal [ "Ward Office 12 daybook", "ward stamp" ], first.carried.pluck(:name).sort
+    assert_equal [ "Ward Office 12 daybook" ], second.carried.pluck(:name)
+  end
+
+  test "a story with no starting inventory starts a playthrough empty-handed" do
+    story = create(:story)
+    create(:character, :protagonist, story: story)
+
+    assert_empty create(:playthrough, story: story).carried
+  end
+
+  # A playthrough handed items in the same breath as its creation -- which a
+  # test fixture may do -- must not also be given the kit.
+  test "a playthrough that already carries something is not issued the kit" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    create(:item, character: protagonist, name: "Ward Office 12 daybook")
+
+    played = Playthrough.new(story: story, character: protagonist)
+    played.items.build(name: "Brass Key", description: "cold")
+    played.save!
+
+    assert_equal [ "Brass Key" ], played.carried.pluck(:name)
+  end
 end

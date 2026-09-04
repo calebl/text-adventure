@@ -130,10 +130,18 @@ module Eval::Richness
   # player's hands. An item in another room is not something this passage could
   # have committed to, and counting it would punish a narration for staying
   # where it is.
+  #
+  # "THE PLAYER'S HANDS" IS EVERY PARTY PLAYING THE STORY, plus its starting
+  # inventory, because a `Scene` carries no playthrough to narrow it to. Exact
+  # for the runs this reads -- `rake eval:run` plays each world once -- and a
+  # deliberate over-count on a database somebody has played twice, which is the
+  # safe direction: richness is the check on the checks and is never folded into
+  # a defect count, so a slightly wider vocabulary can only understate a
+  # narration's coverage.
   def items_around(scene)
-    protagonist = scene.story&.protagonist
+    story = scene.story
     here = scene.location ? Item.lying_in(scene.location).to_a : []
-    carried = protagonist ? Item.for_character(protagonist).to_a : []
+    carried = story ? Item.carried_by(story.playthroughs).to_a + story.starting_inventory.to_a : []
 
     (here + carried).uniq { |item| item.name.to_s.downcase }
   end

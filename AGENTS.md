@@ -481,13 +481,40 @@ before changing the loop; the rules below are what it does not fit.
   `move`, `talk`, `take` or `drop` writes a `Playthrough::Drift` row — see
   *Auditing the difference* below.
 - **`take` and `drop` are the app moving a row, in that order: the record first,
-  the sentence after.** `Item` is in exactly one place — held by a character or
-  lying in a location — and the closed set each action resolves against is that
-  distinction (`Item.lying_in`, `Item.for_character`). The narrator is then told
-  what already happened, via `Scene::Narrator#narrate(command, fact:)`, and has
-  no say in whether it is true. **Both directions or neither**: an app that owns
-  picking up while the narrator asserts putting down has records that go stale
-  the first time a player sets something on a table.
+  the sentence after.** `Item` is in exactly one of three places — lying in a
+  location, held by one of the world's own people, or carried by the party of
+  one playthrough — and the closed set each action resolves against is that
+  distinction (`Item.lying_in`, `Playthrough#carried`). The narrator is then
+  told what already happened, via `Scene::Narrator#narrate(command, fact:)`, and
+  has no say in whether it is true. **Both directions or neither**: an app that
+  owns picking up while the narrator asserts putting down has records that go
+  stale the first time a player sets something on a table.
+- **WHAT THE PARTY IS CARRYING IS THE PLAYTHROUGH'S, and this is the same
+  argument as position.** It was `items.character_id` pointing at
+  `story.protagonist` — one `Character` row per story — so every playthrough of
+  one world shared one pair of hands, and the captain started playthrough 17 of
+  a story holding what 16 had picked up. It is `items.playthrough_id` now, read
+  through **`Playthrough#carried`, the one reader** (the classifier's closed
+  set, `Playthrough::Moment`, the mechanics `carrying` line and the debug page
+  all come through it) and written only by `#carry!` / `#put_down!`. Do not add
+  a second copy of that query; that is how the room's cast came to disagree
+  with the arrival paragraph.
+- **The protagonist's own items are the story's STARTING INVENTORY**, not an
+  inventory: world data out of a seed file's `characters[].items`, held by the
+  protagonist row, carried by nobody, exported by the exporter, and given to
+  each new playthrough as **its own copy** (`Story#starting_inventory`,
+  `Playthrough#take_up_the_starting_inventory`). A copy rather than the row
+  because a `Location` holds two parties at once and an `Item` does not, so
+  handing position over by reference works and handing a thing over by
+  reference would leave the second player empty-handed. `Item.in_story` is the
+  one place the three-leg "every item in this world" query lives — a leg
+  missing from a copy is an item the registry caps cannot see.
+- **ROOMS STAY STORY-LEVEL and shared between playthroughs**, on the captain's
+  explicit ruling: he is thinking about that separately. So a room one party has
+  emptied is empty for the other, and
+  `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml` pins it either
+  way — a future change to it fails a test rather than surprising somebody.
+  Do not scope room contents per playthrough as a side effect of something else.
 - **`Item::Registry` is the one thing in the app that creates an `Item`**, at
   room realization and out of the same call that describes the room. A seed file
   is the other writer and puts one in somebody's hands or on the floor
@@ -594,6 +621,13 @@ expectations asserted against the records after every typed line. It runs in
   replaces `BaseAgent.new` for the length of a run. Never weaken that to make a
   script "work"; a sweep that made a model call would be a different instrument
   with the same name.
+- **A step may name a `player:`, and a distinct name is a second `Playthrough`
+  of the same loaded copy of the world.** It is the one thing a single walk
+  cannot see: with the party's inventory on the story's protagonist row both
+  games read the same hands, so no one-player script could tell a story-level
+  inventory from a playthrough-level one. `the-unrecorded-hour-two-players.yml`
+  is that script. A step with no `player:` goes to the default, so every other
+  script is one playthrough and unchanged.
 - **Every walk gets its own copy of the world**, loaded under
   `EngineSweep::Walk::TITLE_SUFFIX` inside a rolled-back transaction. A sweep
   must stay safe to run against a database somebody is playing in.
@@ -770,6 +804,15 @@ path, and answers in sentences.
   before it makes them). **It never invents data to make a validation pass.**
   Anything else is reported as `:manual` and left exactly as it was; for most
   such stories the honest answer is `rake game:delete`.
+- **A one-time backfill recovers what a schema change left behind, and it
+  refuses to guess.** `rake game:backfill_transitions`,
+  `rake game:backfill_whereabouts` and `rake game:backfill_inventory` are all
+  the same shape: offline, no model call, `DRY_RUN=1` first, and every outcome
+  it could not derive reported by name rather than filled in with something
+  plausible. A blank column says *not known*; a wrong one says something false.
+  The one exception is stated out loud where it happens — `Item::InventoryBackfill`
+  puts an unattributable item DOWN, in the room the last party that could have
+  held it stands in, because an item nowhere is a state no closed set can offer.
 - `Story::Deletion` prints a manifest, requires the story's **title** typed back
   (an id is precisely what gets mistyped), and destroys the universe only when
   no other story is built on it. `Story::DeletionTest` counts every table before

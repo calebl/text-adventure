@@ -162,11 +162,14 @@ class Playthrough::Classifier
   # something down is a state change, so the app has to know which row moved.
   # A player cannot drop what the records do not say they hold, however
   # confidently a narration once said they picked it up.
+  #
+  # THE ANSWER BELONGS TO THE PLAYTHROUGH, asked of `Playthrough#carried` --
+  # the exact counterpart of `#items_here` reading `Item.lying_in`. It used to
+  # be `Item.for_character(playthrough.character)`, and since every playthrough
+  # of a story plays the same one protagonist row, one world had one inventory:
+  # a second player opened holding the first one's loot.
   def items_carried
-    character = playthrough.character
-    return [] if character.nil?
-
-    Item.for_character(character).order(:id).to_a
+    playthrough.carried.to_a
   end
 
   # Instructions go through `with_instructions` rather than the constructor to
