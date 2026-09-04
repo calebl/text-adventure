@@ -54,6 +54,33 @@ class Eval::Classifier::CorpusTest < ActiveSupport::TestCase
                     "an `other` must NOT be refused either"
   end
 
+  # THE SAME LINE AT THE SAME POSITION TWICE is one measurement counted twice,
+  # and it is the easiest thing to do wrong in a file this size -- two of them
+  # were in the first draft, both because a line lifted from a stored
+  # conversation was already there under a different id.
+  #
+  # BYTE-FOR-BYTE, and deliberately: `TAKE THE WARD STAMP` and
+  # `take the ward stamp` are two measurements, because whether case matters is
+  # one of the things this corpus is FOR, and so is
+  # `"   go    to   the   supply   closet   "` against the same line squeezed.
+  test "no line is the same typed line at the same position as another" do
+    duplicates = Eval::Classifier.corpus.lines
+                                 .group_by { |line| [ line.position, line.typed ] }
+                                 .select { |_key, group| group.size > 1 }
+
+    assert_empty duplicates.transform_values { |group| group.map(&:id) },
+                 "the same line at one position is one measurement counted twice"
+  end
+
+  test "every line says what it is for" do
+    corpus = Eval::Classifier.corpus
+
+    assert_empty corpus.lines.select { |line| line.why.to_s.strip.empty? }.map(&:id),
+                 "a label with no `why` is a label nobody can audit -- see the file's header"
+    assert_empty corpus.lines.select { |line| line.shape.to_s.strip.empty? }.map(&:id),
+                 "a line with no `shape` is invisible on the board's per-shape table"
+  end
+
   # `unreadable` IS DELIBERATELY ABSENT and this is where that is stated rather
   # than left to be noticed: it is an `intent` outside the closed enum, so no
   # typed line can provoke it. `Playthrough::RefusalTest` covers it from the

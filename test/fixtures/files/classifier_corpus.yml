@@ -2313,13 +2313,18 @@ lines:
   shape: talk
   why: real; a question about him that is also said to him, and the stored answer read it that way
 
-- id: real-tell-him-not-good-time
+- id: real-go-to-the-bell
   position: room-3
-  typed: tell him now is not a good time
-  intent: talk
-  target: Grenn Ollivar
-  shape: talk
-  why: real; the first talk in the database and the stored answer agrees
+  typed: go to the bell
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: >-
+    REAL, AND THE STORED ANSWER WAS `move` / "The Bell of Saint Aravel" -- which
+    IS a `Location` in this world and is NOT an exit from Room 3; it leads off
+    the boarding house hallway. So the answer here must be nothing. It is the
+    strongest form of `real-go-the-stacks`: the room exists, the model knows the
+    name, and the closed set this call is built from does not hold it
 
 - id: real-tell-him-pay
   position: room-3
@@ -2602,12 +2607,22 @@ lines:
   - intent: other
     target:
 
-- id: real-keep-doing
-  position: room-3
-  typed: keep doing what you are doing
+- id: real-anything-to-pickup
+  position: closet
+  typed: is there anything I can pickup?
   intent: other
   shape: other
-  why: real; the stored answer agrees. Already in the corpus above; kept here as the section's first line
+  why: >-
+    REAL, and the stored answer in his generated world was a `take` naming TWO
+    items -- so under the ruling of 2026-09-04 this line is now refused with
+    "Lying here: Perrin's private index, copy-room apron", which happens to be
+    the answer to the question. That is a pleasant accident and not a design, so
+    both readings are accepted: asking what is available is not taking, and the
+    refusal answers anyway
+  also_accept:
+  - intent: take
+    target: Perrin's private index
+    also_named: copy-room apron
 
 - id: real-get-up-close-door
   position: room-3
