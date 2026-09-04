@@ -43,24 +43,48 @@ class Eval::Classifier::Arm
 
   class UnknownProvider < StandardError; end
 
-  attr_reader :provider, :model
+  # A THINKING MODEL ANSWERING THE CLASSIFIER, WITH THE THINKING OFF.
+  #
+  # Measured on this machine, same prompt and same schema, warm: `qwen3:4b`
+  # answers in 2.95s with `think: false` and does not answer inside 120s with
+  # thinking on. It is a request field the ollama daemon takes, so it reaches the
+  # call through `BaseAgent.default_provider_params` -- the seam that exists for
+  # exactly this and is empty in every shipped path.
+  #
+  # ASKED FOR EXPLICITLY, NEVER INFERRED. An arm carries it because a spec said
+  # `+nothink`, so a run that does not ask measures the model the way the app
+  # would really use it. Two arms of one model with different thinking are two
+  # rows on the board, which is the comparison the captain asked for.
+  NO_THINKING = { think: false }.freeze
+
+  # The suffix that asks for it. A `+` because it modifies the arm rather than
+  # naming part of the model, and an ollama tag can hold neither.
+  NOTHINK_SUFFIX = "+nothink".freeze
+
+  attr_reader :provider, :model, :provider_params
 
   # `"ollama:qwen3:8b"` -> ollama, `qwen3:8b`. Anything with no known provider
   # prefix is OpenRouter, which is what the app's own ids are.
+  # `"ollama:qwen3:8b+nothink"` asks for `think: false` as well.
   def self.parse(spec)
     text = spec.to_s.strip
+    nothink = text.end_with?(NOTHINK_SUFFIX)
+    text = text.delete_suffix(NOTHINK_SUFFIX) if nothink
     prefix, rest = text.split(":", 2)
+    params = nothink ? NO_THINKING : {}
 
-    return new(provider: prefix.to_sym, model: rest) if rest.present? && PROVIDERS.include?(prefix.to_sym)
+    if rest.present? && PROVIDERS.include?(prefix.to_sym)
+      return new(provider: prefix.to_sym, model: rest, provider_params: params)
+    end
 
-    new(provider: :openrouter, model: text)
+    new(provider: :openrouter, model: text, provider_params: params)
   end
 
   # Accepts specs OR arms, so a caller that already has arms does not have to
   # remember which it is holding.
   def self.all(specs) = Array(specs).map { |spec| spec.is_a?(self) ? spec : parse(spec) }
 
-  def initialize(provider:, model:)
+  def initialize(provider:, model:, provider_params: {})
     unless PROVIDERS.include?(provider.to_sym)
       raise UnknownProvider, "#{provider.inspect} is not one of #{PROVIDERS.inspect}"
     end
@@ -68,12 +92,21 @@ class Eval::Classifier::Arm
 
     @provider = provider.to_sym
     @model = model.to_s.strip
+    @provider_params = provider_params.to_h
+    if @provider_params.any? && !local?
+      raise UnknownProvider, "provider params are only for a local arm; #{id} is hosted, and changing " \
+                             "the shape of a remote request is not what the seam is for"
+    end
   end
 
   # THE NAME A SET RECORDS AND A BOARD PRINTS. A local model keeps its provider
   # in the label, because `qwen3:8b` and a hosted model of the same name would
-  # otherwise be one row in a cross-model table.
-  def id = local? ? "#{provider}:#{model}" : model
+  # otherwise be one row in a cross-model table -- and an arm with the thinking
+  # off keeps that in the label too, for the same reason: it is a different
+  # measurement of the same model.
+  def id = [ local? ? "#{provider}:#{model}" : model, thinking_off? ? NOTHINK_SUFFIX : nil ].compact.join
+
+  def thinking_off? = provider_params == NO_THINKING
 
   def local? = provider == :ollama
 
@@ -83,9 +116,12 @@ class Eval::Classifier::Arm
     { provider: provider, model: model, assume_model_exists: true }
   end
 
-  def ==(other) = other.is_a?(self.class) && other.provider == provider && other.model == model
+  def ==(other)
+    other.is_a?(self.class) && other.provider == provider && other.model == model &&
+      other.provider_params == provider_params
+  end
   alias eql? ==
-  def hash = [ provider, model ].hash
+  def hash = [ provider, model, provider_params ].hash
 
   # WHAT IT COSTS PER CALL. A local model costs nothing -- it is the captain's
   # own hardware and his own electricity -- and saying "unpriced" for it would
@@ -134,12 +170,16 @@ class Eval::Classifier::Arm
   # `ensure` including when the block raises -- a failed pass must not leave a
   # poisoned `BaseAgent` behind for the rest of a process.
   def pinned
-    original = BaseAgent.method(:default_model_options)
+    was_options = BaseAgent.method(:default_model_options)
+    was_params = BaseAgent.method(:default_provider_params)
     options = [ model_options ]
+    params = provider_params
 
     BaseAgent.singleton_class.send(:define_method, :default_model_options) { options }
+    BaseAgent.singleton_class.send(:define_method, :default_provider_params) { params }
     yield self
   ensure
-    BaseAgent.singleton_class.send(:define_method, :default_model_options, original)
+    BaseAgent.singleton_class.send(:define_method, :default_model_options, was_options)
+    BaseAgent.singleton_class.send(:define_method, :default_provider_params, was_params)
   end
 end

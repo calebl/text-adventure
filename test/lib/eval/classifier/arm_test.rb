@@ -103,6 +103,37 @@ class Eval::Classifier::ArmTest < ActiveSupport::TestCase
     assert_not_equal Eval::Classifier::Arm.parse("ollama:qwen3:8b"), Eval::Classifier::Arm.parse("qwen3:8b")
   end
 
+  # THE SUFFIX COMES OFF BEFORE THE PREFIX GOES ON, which is the one ordering
+  # bug available here: read the other way round, the model would be
+  # `qwen3:4b+nothink` and ollama would be asked for a tag it does not have.
+  test "the thinking suffix is read off the end and leaves the ollama tag intact" do
+    arm = Eval::Classifier::Arm.parse("ollama:qwen3:4b+nothink")
+
+    assert_equal :ollama, arm.provider
+    assert_equal "qwen3:4b", arm.model
+    assert_equal({ provider: :ollama, model: "qwen3:4b", assume_model_exists: true }, arm.model_options,
+                 "the suffix is an arm's request shape and never part of the model's name")
+    assert_predicate arm, :thinking_off?
+    assert_equal "ollama:qwen3:4b+nothink", arm.id
+  end
+
+  # THE OTHER HALF OF `#pinned`, and the reason it is tested here as well as in
+  # `BaseAgent::ProviderParamsTest`: the arm sets BOTH seams, so a pass that
+  # asked for `think: false` and got the app's empty default would have measured
+  # a thinking model and said otherwise.
+  test "pinning sets the provider params too, and restores the app's empty default" do
+    Eval::Classifier::Arm.parse("ollama:qwen3:4b+nothink").pinned do
+      assert_equal({ think: false }, BaseAgent.default_provider_params)
+    end
+
+    assert_empty BaseAgent.default_provider_params
+
+    Eval::Classifier::Arm.parse("ollama:qwen3:4b").pinned do
+      assert_empty BaseAgent.default_provider_params,
+                   "an arm that did not ask must not inherit the last arm's request shape"
+    end
+  end
+
   test "a list may hold specs or arms, so a caller need not know which it is holding" do
     mixed = Eval::Classifier::Arm.all([ "ollama:qwen3:4b", Eval::Classifier::Arm.parse("minimax/minimax-m3") ])
 
