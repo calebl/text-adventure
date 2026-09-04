@@ -414,6 +414,16 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_not_includes codes(story), :room_over_cast_cap
   end
 
+  # The counterpart of `story_over_item_cap`: nothing breaks, and no further
+  # room in the world will be generated with anybody in it.
+  test "reports a world past the cast it was meant to be bounded by" do
+    story = healthy_story
+    (Character::Registry::MAX_PER_STORY + 1 - story.characters.count).times { create(:character, story: story) }
+
+    assert_includes codes(story), :story_over_cast_cap
+    assert Story::Doctor.new(story).playable?
+  end
+
   # THE PREMISE CHECK. Only asked of a story that IS one of the checked-in
   # worlds, and the answer is on record in the file -- so it is `safe` and
   # `Story::Repair` puts them back.

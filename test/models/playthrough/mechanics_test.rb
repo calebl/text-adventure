@@ -527,6 +527,58 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_includes Playthrough::Mechanics.new(@playthrough, model: false).help.to_s, "talk <person>"
   end
 
+  # --- a room born with somebody in it --------------------------------------
+  #
+  # The captain's ruling, walked end to end: the world writes a room, the room
+  # comes out with a person in it, and the very next line the player types can
+  # reach them. This is the classifier mode, so the world really generates --
+  # `Playthrough::Turn#move_to` whole, `Location::Generator` and
+  # `Scene::Generator` both.
+
+  test "walking into an unwritten room that generates a person lists them and lets a talk resolve" do
+    peopled = DETAIL.merge("people" => [ {
+      "fullname" => "Perrin Lasco", "nickname" => "Perrin",
+      "appearance" => "Slight, dark-haired, a copy-room apron over ordinary clothes.",
+      "personality" => "Quick, funny, and careful in a way people mistake for nerves.",
+      "backstory" => "Perrin Lasco keeps a private index of every amendment that came through the ward.",
+      "likes" => "An index that catches something, other people's strong tea",
+      "dislikes" => "Being asked to repeat his name, doors that lock from one side",
+      "fears" => "Being closed quietly, on a Tuesday"
+    } ])
+
+    report, = interpret("out into the long hallway",
+                        CLASSIFY.call("move", @hallway.name), peopled, { "exits" => [] }, ARRIVAL)
+
+    lasco = Character.present_in(@hallway).sole
+    assert_equal "Perrin Lasco", lasco.fullname
+    assert_predicate @hallway.reload, :realized?
+    assert_equal [ lasco ], report.state.present
+    assert_includes report.state.to_s, "present     Perrin Lasco"
+
+    # AND THE VERY NEXT LINE REACHES THEM. `Character.present_in` is the closed
+    # set, so the classifier's cast and the read-out are the same answer.
+    talk, = interpret("ask Perrin about the index", CLASSIFY.call("talk", "Perrin Lasco"))
+
+    assert_equal "talk -> Perrin Lasco", talk.understood
+    assert_includes talk.refusal, "Perrin Lasco is here"
+  end
+
+  # THE ARRIVAL CAST IS WRITTEN FROM THE RECORDS, not the other way round: the
+  # person is created and placed before `Scene::Generator` reads who is here.
+  test "the arrival scene records the person the room was born with" do
+    peopled = DETAIL.merge("people" => [ {
+      "fullname" => "Perrin Lasco", "nickname" => "Perrin",
+      "appearance" => "Slight and dark-haired.", "personality" => "Quick and careful.",
+      "backstory" => "Perrin Lasco kept an index nobody asked for.",
+      "likes" => "Strong tea", "dislikes" => "Being asked twice", "fears" => "A quiet Tuesday"
+    } ])
+
+    interpret("out into the long hallway", CLASSIFY.call("move", @hallway.name), peopled, { "exits" => [] }, ARRIVAL)
+
+    arrival = @hallway.scenes.order(:id).last
+    assert_equal [ "Odile Vance", "Perrin Lasco" ], arrival.characters.order(:id).pluck(:fullname)
+  end
+
   # --- the closed sets ------------------------------------------------------
 
   test "the read-out offers exactly what the classifier would offer a model" do

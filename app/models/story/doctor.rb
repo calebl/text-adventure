@@ -378,7 +378,7 @@ class Story::Doctor
                 .where(is_companion: [ false, nil ]).order(:id).to_a
 
     [ *characters_nowhere(cast), *characters_in_a_stub(cast), *characters_outside_the_story(cast),
-      *rooms_over_the_cast_cap, *characters_the_seed_placed_elsewhere ]
+      *rooms_over_the_cast_cap, *story_over_the_cast_cap, *characters_the_seed_placed_elsewhere ]
   end
 
   # Nobody has said where they are. `rake game:backfill_whereabouts` recovers
@@ -451,6 +451,22 @@ class Story::Doctor
               "on every turn",
               :manual, subject: room)
     end
+  end
+
+  # A WORLD PAST THE CAST IT WAS MEANT TO BE BOUNDED BY, the exact counterpart
+  # of `story_over_item_cap`. Not broken either: a hand-authored world may carry
+  # a crowd. What it means is that `Character::Registry` will people no further
+  # room in it -- rooms generate with nobody in them from here on -- and that
+  # the ontology the cap was bounding is no longer bounded.
+  def story_over_the_cast_cap
+    count = story.characters.count
+    return [] if count <= Character::Registry::MAX_PER_STORY
+
+    [ finding(:story_over_cast_cap, :warning,
+              "has #{count} characters, past the #{Character::Registry::MAX_PER_STORY} one world may hold " \
+              "(Character::Registry::MAX_PER_STORY); nothing breaks, but no further room in it will be " \
+              "generated with anybody in it",
+              :manual) ]
   end
 
   # THE WORLD FILE SAYS SOMEWHERE ELSE. Only asked of a story that IS one of
