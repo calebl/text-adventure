@@ -283,6 +283,39 @@ through the fixed grammar) and `cast:` (a whereabouts written through
 `Character#move_to!` — the one thing no typed line can do, and the only way two
 people in one room is reachable at all).
 
+### The baseline of 2026-09-04
+
+`SET=classifier-baseline`, 300 lines × 4 reps × 2 models = **2,400 calls, $0.39**.
+
+| | `mistralai/mistral-medium-3.1` | `minimax/minimax-m3` |
+| --- | --- | --- |
+| `strict_accuracy` | 0.939..0.943 (median 0.941) | 0.910..0.939 (median 0.918) |
+| `accuracy` | 0.943..0.947 (median 0.945) | 0.913..0.937 (median 0.920) |
+| `intent_accuracy` | 0.980..0.980 | 0.973..0.980 (median 0.978) |
+| `refusal_agreement` | 0.947..0.951 | 0.947..0.963 (median 0.955) |
+| `closed_set_misses` | 10..11 (median 10) | 13..19 (median 17) |
+| `also_named` precision / recall | **1.000** / 0.862 | 0.738 / **0.948** |
+| omission rate | **0.000** (0 of 1200) | **0.000** (0 of 1200) |
+| rotations | 0 of 1200 | 4 of 1200 |
+
+**The two models fail `also_named` in opposite directions**, and that is the
+figure to read first: mistral misses a second name (the engine plays half a
+line), minimax invents one (the engine refuses a line that should have played).
+Since the ruling of 2026-09-04 both are things a player notices. The shipped
+order gets the safe one.
+
+**The band is real and it is not wide.** mistral's `intent_accuracy` came back
+0.980 on all four repetitions and `strict_accuracy` spanned 0.004; minimax's
+spanned 0.029 on its own, which is why a 0.023 gap between the two models reads
+NOISE on that figure while `accuracy` and `closed_set_misses` separate for real.
+
+**Rotations are reported, not hidden.** An earlier run of this same bench had
+`minimax/minimax-m3` fail **223 of 1,200** classifier calls (34% of one
+repetition, decaying to 9%) — so mistral answered them, and the board said
+`READ WITH CARE: some lines were answered by another model` rather than
+crediting minimax with mistral's numbers. Transient, almost certainly rate
+limiting. An arm with rotations is an arm whose figures are stated as impure.
+
 ### The set, and comparing two of them after the fact
 
 **The captain's instruction of 2026-09-04:** *"store every classifier bench run

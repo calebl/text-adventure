@@ -87,10 +87,20 @@ The full audit of every planned piece of work against this constraint is in
   reach-that-finds-nothing right and none of the `other` or `examine-nothing`
   lines.
 
-  **PR 102's finding F4 is answered.** The `also_named` omission rate is read
-  off the provider's own JSON (`messages.content_raw`, kept since PR 97) rather
-  than inferred from the resolved `Intent`, which cannot tell an omitted field
-  from an answer of `nothing`.
+  **The baseline of 2026-09-04**, 2,400 calls: `mistralai/mistral-medium-3.1`
+  strict accuracy **0.939..0.943**, intent accuracy **0.980** flat over four
+  repetitions, **10..11** closed-set misses, `also_named` precision **1.000** and
+  recall **0.862**; `minimax/minimax-m3` strict accuracy **0.910..0.939**,
+  **13..19** closed-set misses, and the mirror-image `also_named` — precision
+  **0.738**, recall **0.948**. The two fail in opposite directions and the
+  shipped order gets the safe one: a missed second name plays half a line, an
+  invented one refuses a line that should have played.
+
+  **PR 102's finding F4 is answered: the omission rate is 0.000.** Over 2,400
+  answers on two models the required `also_named` field never came back absent
+  or null. It is read off the provider's own JSON (`messages.content_raw`, kept
+  since PR 97) rather than inferred from the resolved `Intent`, which cannot
+  tell an omitted field from an answer of `nothing`.
 
   **No prompt changed.** The findings are in the PR body for the captain. See
   [EVALUATION.md](EVALUATION.md) → *The classifier bench*.
