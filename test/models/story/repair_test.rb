@@ -191,4 +191,21 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_empty repair.deferred
     assert_empty repair.manual
   end
+  # THE ANSWER IS ON RECORD IN A CHECKED-IN FILE, which is what makes putting a
+  # displaced character back a `safe` repair rather than an invention -- the
+  # same argument the connection reversal makes.
+  test "puts a seeded character back where the world file places them" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    neb = story.characters.find_by(fullname: "Neb Halloran")
+    neb.move_to!(story.locations.find_by(name: "The Vestry Hulk"))
+    repair = Story::Repair.new(story)
+
+    assert_equal [ :character_moved_from_the_seed ], repair.plan.map(&:code)
+    assert_equal 0, repair.model_calls
+
+    result = BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) { repair.apply!.sole }
+
+    assert_predicate result, :repaired?
+    assert_equal "The Tide Post", neb.reload.location.name
+  end
 end

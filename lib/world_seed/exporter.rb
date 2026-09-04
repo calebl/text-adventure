@@ -200,6 +200,12 @@ class WorldSeed::Exporter
   def characters_document
     story.characters.order(:id).map do |character|
       document = { "fullname" => character.fullname, "race" => character.race.name }
+      # WHERE THE WORLD PUTS THEM, and omitted rather than written null when
+      # the records put them nowhere -- the same rule `opening` and `mobile`
+      # follow on a location. The key is what makes a seeded cast reachable:
+      # `Character.present_in` is the closed set `talk` resolves against, so a
+      # world exported without it loads with nobody standing anywhere.
+      document["location"] = character.location.name if character.location
       CHARACTER_FIELDS.each { |field| document[field.to_s] = value(character.public_send(field)) }
       items = items_document(character)
       document["items"] = items if items.any?

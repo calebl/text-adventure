@@ -27,7 +27,6 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   def setup
     @story = create(:story)
     @vance = create(:character, story: @story, fullname: "Odile Vance", is_protagonist: true)
-    @rowe = create(:character, story: @story, fullname: "Halkett Rowe")
 
     @office = create(:location, story: @story, name: "Ward Office 12")
     @closet = create(:location, story: @story, name: "The Supply Closet")
@@ -35,14 +34,17 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     connect(@office, @closet)
     connect(@office, @hallway)
 
+    # Rowe is standing in the office, and that is a record on him now rather
+    # than something read back out of a scene's cast.
+    @rowe = create(:character, story: @story, fullname: "Halkett Rowe", location: @office)
+
     @stamp = create(:item, :lying, location: @office, name: "ward stamp")
     @index = create(:item, :lying, location: @closet, name: "Perrin's private index")
     @daybook = create(:item, character: @vance, name: "Ward Office 12 daybook")
 
-    # The world's opening arrival, which is what puts Rowe in the room:
-    # `Scene::Generator.characters_present` answers from the last scene played
-    # in a location, so a world with no scene at all has nobody standing in it.
-    # The seeded worlds carry one for exactly this reason.
+    # The world's opening arrival. What puts Rowe in the room is his own
+    # whereabouts (`characters.location_id`, set on the factory above); the
+    # scene's cast is a snapshot of that and no longer the source of it.
     @opening = create(:scene, story: @story, location: @office, characters: [ @vance, @rowe ],
                               description: "The gap in the daybook is still under your hand.")
     @playthrough = create(:playthrough, story: @story, character: @vance,
@@ -469,6 +471,114 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_includes Playthrough::Mechanics.new(@playthrough, model: false).help.to_s, "go <exit>"
   end
 
+  # --- talking, in the offline grammar --------------------------------------
+  #
+  # Talking is prose and this mode writes none, so `talk` here resolves somebody
+  # and then refuses. WHETHER it resolves is an engine question, and since
+  # presence became a record (`Character.present_in`) it is one that can be
+  # answered with no model at all -- which is what lets `rake game:sweep`
+  # regression-test who is in a room.
+
+  test "a talk offline resolves somebody the records place here, and then refuses the prose" do
+    report = play("talk to Halkett Rowe")
+
+    assert_equal "talk -> Halkett Rowe", report.understood
+    assert_predicate report, :refused?
+    assert_not report.changed?
+    assert_includes report.refusal, "talking is prose"
+  end
+
+  # A person answers to two names and both are in the closed enum the classifier
+  # offers a model, so both have to resolve here or the offline grammar would
+  # refuse a name the classifier accepts.
+  test "a talk offline resolves a nickname too" do
+    @rowe.update!(nickname: "Sub-Inspector Rowe")
+
+    assert_equal "talk -> Halkett Rowe", play("talk to the Sub-Inspector").understood
+  end
+
+  # THE ACCEPTANCE CASE. Somebody the records place in another room is not here,
+  # and the refusal names the cast that IS.
+  test "a talk to somebody recorded in another room is refused with the cast that is here" do
+    create(:character, story: @story, fullname: "Perrin Lasco", location: @closet)
+
+    report = play("talk to Perrin Lasco")
+
+    assert_predicate report, :refused?
+    assert_includes report.refusal, "there is no person here"
+    assert_includes report.refusal, "Halkett Rowe"
+  end
+
+  test "an empty room is refused differently from a name that missed" do
+    @rowe.move_to!(@closet)
+
+    assert_includes play("talk").refusal, "There is nobody here."
+    assert_includes play("talk to Halkett Rowe").refusal, "there is no person here"
+  end
+
+  test "nobody is moved by talking, or by failing to" do
+    play("talk to Halkett Rowe")
+    play("talk to Perrin Lasco")
+
+    assert_equal @office, @rowe.reload.location
+  end
+
+  test "the offline grammar says it understands talking" do
+    assert_includes Playthrough::Mechanics.new(@playthrough, model: false).help.to_s, "talk <person>"
+  end
+
+  # --- a room born with somebody in it --------------------------------------
+  #
+  # The captain's ruling, walked end to end: the world writes a room, the room
+  # comes out with a person in it, and the very next line the player types can
+  # reach them. This is the classifier mode, so the world really generates --
+  # `Playthrough::Turn#move_to` whole, `Location::Generator` and
+  # `Scene::Generator` both.
+
+  test "walking into an unwritten room that generates a person lists them and lets a talk resolve" do
+    peopled = DETAIL.merge("people" => [ {
+      "fullname" => "Perrin Lasco", "nickname" => "Perrin",
+      "appearance" => "Slight, dark-haired, a copy-room apron over ordinary clothes.",
+      "personality" => "Quick, funny, and careful in a way people mistake for nerves.",
+      "backstory" => "Perrin Lasco keeps a private index of every amendment that came through the ward.",
+      "likes" => "An index that catches something, other people's strong tea",
+      "dislikes" => "Being asked to repeat his name, doors that lock from one side",
+      "fears" => "Being closed quietly, on a Tuesday"
+    } ])
+
+    report, = interpret("out into the long hallway",
+                        CLASSIFY.call("move", @hallway.name), peopled, { "exits" => [] }, ARRIVAL)
+
+    lasco = Character.present_in(@hallway).sole
+    assert_equal "Perrin Lasco", lasco.fullname
+    assert_predicate @hallway.reload, :realized?
+    assert_equal [ lasco ], report.state.present
+    assert_includes report.state.to_s, "present     Perrin Lasco"
+
+    # AND THE VERY NEXT LINE REACHES THEM. `Character.present_in` is the closed
+    # set, so the classifier's cast and the read-out are the same answer.
+    talk, = interpret("ask Perrin about the index", CLASSIFY.call("talk", "Perrin Lasco"))
+
+    assert_equal "talk -> Perrin Lasco", talk.understood
+    assert_includes talk.refusal, "Perrin Lasco is here"
+  end
+
+  # THE ARRIVAL CAST IS WRITTEN FROM THE RECORDS, not the other way round: the
+  # person is created and placed before `Scene::Generator` reads who is here.
+  test "the arrival scene records the person the room was born with" do
+    peopled = DETAIL.merge("people" => [ {
+      "fullname" => "Perrin Lasco", "nickname" => "Perrin",
+      "appearance" => "Slight and dark-haired.", "personality" => "Quick and careful.",
+      "backstory" => "Perrin Lasco kept an index nobody asked for.",
+      "likes" => "Strong tea", "dislikes" => "Being asked twice", "fears" => "A quiet Tuesday"
+    } ])
+
+    interpret("out into the long hallway", CLASSIFY.call("move", @hallway.name), peopled, { "exits" => [] }, ARRIVAL)
+
+    arrival = @hallway.scenes.order(:id).last
+    assert_equal [ "Odile Vance", "Perrin Lasco" ], arrival.characters.order(:id).pluck(:fullname)
+  end
+
   # --- the closed sets ------------------------------------------------------
 
   test "the read-out offers exactly what the classifier would offer a model" do
@@ -569,8 +679,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   # name goes through the same closed set as the action, so a talk's is another
   # person and never an item.
   test "a turn that is refused still says what else the line named" do
-    lasco = create(:character, story: @story, fullname: "Perrin Lasco")
-    @opening.update!(characters: [ @vance, @rowe, lasco ])
+    lasco = create(:character, story: @story, fullname: "Perrin Lasco", location: @office)
 
     report, = interpret("ask Rowe and Lasco where the file went",
                         CLASSIFY.call("talk", @rowe.fullname, lasco.fullname))

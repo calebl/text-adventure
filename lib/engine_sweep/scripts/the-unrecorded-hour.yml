@@ -25,6 +25,11 @@ steps:
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
     here: [ward stamp]
     carrying: [Ward Office 12 daybook]
+    # Rowe is in this room because `characters[].location` says so, not because
+    # a scene once recorded him -- an offline walk writes no scenes at all.
+    # Perrin Lasco is nowhere on purpose (this world is about him having been
+    # removed from it), so he is in no room's `present` anywhere in this file.
+    present: [Halkett Rowe]
     changed: false
     refused: false
 
@@ -44,6 +49,7 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
+    present: []
     exits: [Ward Office 12 (realized)]
     here: [Perrin's private index, copy-room apron]
     carrying: [Ward Office 12 daybook, ward stamp]
@@ -125,6 +131,7 @@ steps:
     changed: true
     change: a stub -- nobody has written this room
     location: The Long Hallway (stub)
+    present: []
     exits: [Ward Office 12 (realized)]
     exits_exclude: [The Supply Closet]
     here: []

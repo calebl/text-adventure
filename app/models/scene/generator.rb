@@ -150,17 +150,27 @@ class Scene::Generator
   #   the protagonist  -- they are the one arriving
   #   companions       -- they travel with the protagonist, so they are wherever
   #                       the protagonist is
-  #   holdovers        -- whoever was in the last scene played in this location.
-  #                       The world persists, and so do the people in it: the
-  #                       innkeeper you left behind the counter is still there.
+  #   the room's cast  -- `Character.present_in(location)`: the people the
+  #                       records place here. One column, read back.
   #
-  # Nothing here invents a character. There is no column saying where anyone
-  # stands, so a location nobody has visited and no companion follows you into
-  # is empty, which is honest. Populating it is `ta-narrator-memory`'s job --
-  # the narrator creating characters by tool call -- and this method is the one
-  # place it has to add them.
+  # THE THIRD SOURCE USED TO BE `holdovers` -- whoever was in the last scene
+  # played in this location -- and that is the whole of what changed. Nothing
+  # recorded where anybody stood, so the cast was reconstructed on every
+  # arrival out of the last scene that happened to have written one, and a
+  # place nobody had visited was empty however central the person standing in
+  # it was. Arriving at The Tide Post recorded the protagonist alone, on all
+  # three runs checked, in a world whose premise is Neb Halloran chained to
+  # that post. The record answers that outright, and the cast this returns is
+  # now written INTO the Scene from the records rather than being the only
+  # place the records ever existed. See `Character`'s header.
+  #
+  # THE PARTY IS STILL DERIVED and always will be: the protagonist and their
+  # companions are wherever the PLAYTHROUGH is, and two players walking the
+  # same world stand in different rooms at once, so a story-level column on
+  # `characters` cannot hold that. This method is the one place the party and
+  # the world's own people are added together.
   def characters_present
-    ([ story.protagonist ] + companions + holdovers).compact.uniq
+    ([ story.protagonist ] + companions + Character.present_in(location).to_a).compact.uniq
   end
 
   # The same answer without building an arrival. `Playthrough::Classifier` needs
@@ -277,21 +287,5 @@ class Scene::Generator
 
   def companions
     story.characters.where(is_companion: true).to_a
-  end
-
-  # Whoever was here when the player last left. Ordered by story time rather
-  # than by id so a scene backdated into the story's past does not win.
-  #
-  # The join is what makes this survive the game loop. Only an arrival records
-  # a cast; a turn spent examining something writes a `Scene::Narrator` scene
-  # with nobody in it. Reading the plain latest scene therefore emptied the
-  # room after any turn that was not an arrival, so the innkeeper vanished
-  # because the player looked at the fireplace on the way out. The last scene
-  # that recorded anyone is the last thing the game actually knows.
-  def holdovers
-    last_scene_here = location.scenes.joins(:characters)
-                              .order(story_timestamp: :desc, id: :desc).first
-
-    last_scene_here ? last_scene_here.characters.to_a : []
   end
 end

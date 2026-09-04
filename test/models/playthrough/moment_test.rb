@@ -20,9 +20,12 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     neighbour
   end
 
-  # Somebody the records put in this room: recorded in the last scene played here.
-  def holdover(fullname, nickname: nil)
-    character = create(:character, story: @story, fullname: fullname, nickname: nickname)
+  # Somebody the records put in this room -- `Character.present_in`, the closed
+  # set `talk` resolves against. The scene is still written because several of
+  # these tests read the last turn; the cast on it is no longer what puts
+  # anybody in the room.
+  def stands_here(fullname, nickname: nil)
+    character = create(:character, story: @story, fullname: fullname, nickname: nickname, location: @here)
     scene = create(:scene, story: @story, location: @here, characters: [ character ],
                            typed: "shake the rain off my coat",
                            summary: "The player came in out of the rain.")
@@ -45,13 +48,13 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   end
 
   test "the narration context lists who else is here, by name" do
-    holdover("Maren Vosk", nickname: "Maren")
+    stands_here("Maren Vosk", nickname: "Maren")
 
     assert_match(/Also here: Maren Vosk \(Maren\)\. Nobody else is present\./, moment.narration_context)
   end
 
   test "the player is not listed among the people also here" do
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
 
     assert_no_match(/Also here:.*Iri Calder/, moment.narration_context)
     assert_match(/The player is Iri Calder\./, moment.narration_context)
@@ -99,7 +102,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   end
 
   test "the narration context carries the room, the last turn and the recap" do
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
     first = create(:scene, story: @story, location: @here, summary: "The player came in out of the rain.",
                            description: "Long prose about the rain.")
     second = create(:scene, story: @story, location: @here, previous_scene: first,
@@ -129,7 +132,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   # block on the next two turns, so it is kept to what a person in the room
   # would actually be aware of.
   test "the character context names the room, the hour and what the player just did" do
-    maren = holdover("Maren Vosk")
+    maren = stands_here("Maren Vosk")
     @playthrough.current_scene.update!(story_timestamp: Time.utc(2026, 8, 31, 23, 0))
 
     context = moment.character_context(maren)
@@ -188,9 +191,8 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   end
 
   test "the character context names the others in the room, and neither of the two talking" do
-    maren = holdover("Maren Vosk")
-    bystander = create(:character, story: @story, fullname: "Tobin Ashe", nickname: "Tobin")
-    @playthrough.current_scene.characters << bystander
+    maren = stands_here("Maren Vosk")
+    bystander = create(:character, story: @story, fullname: "Tobin Ashe", nickname: "Tobin", location: @here)
 
     context = moment.character_context(maren)
 
@@ -200,7 +202,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   end
 
   test "a character alone with the player is told about nobody else" do
-    maren = holdover("Maren Vosk")
+    maren = stands_here("Maren Vosk")
 
     assert_no_match(/Also here/, moment.character_context(maren))
   end
@@ -213,7 +215,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   # `Chat#prune_history!` keeps the last two verbatim; nothing had ever read the
   # rest back into a prompt.
   test "the character is reminded what it concluded on exchanges the chat no longer replays" do
-    maren = holdover("Maren Vosk")
+    maren = stands_here("Maren Vosk")
     exchanges = converse(maren, "I will hear this stranger out.",
                                 "She is lying about the ledger.",
                                 "I will not mention the cellar again.",
@@ -231,14 +233,14 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   end
 
   test "a conversation that has not outgrown the replay has nothing to be reminded of" do
-    maren = holdover("Maren Vosk")
+    maren = stands_here("Maren Vosk")
     converse(maren, "I will hear this stranger out.")
 
     assert_no_match(/already concluded/, moment.character_context(maren, replayed: 2))
   end
 
   test "conclusions from another playthrough of the same world are not this one's" do
-    maren = holdover("Maren Vosk")
+    maren = stands_here("Maren Vosk")
     other = create(:playthrough, story: @story, current_location: @here)
     other_scene = create(:scene, story: @story, location: @here)
     other.update!(current_scene: other_scene)
@@ -252,7 +254,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   # and these sentences are read back into the character's own prompt, where
   # "the player" is a stand-in nobody in the room would use.
   test "conclusions fall back to what the character did when nothing was resolved" do
-    maren = holdover("Maren Vosk")
+    maren = stands_here("Maren Vosk")
     record_exchange(maren, @playthrough.current_scene, nil, summary: "the player said \"hello\" -- She nods.")
 
     assert_equal [ "She nods." ], moment.conclusions(maren, replayed: 0)
@@ -260,7 +262,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   end
 
   test "conclusions stay under their budget, newest kept first" do
-    maren = holdover("Maren Vosk")
+    maren = stands_here("Maren Vosk")
     converse(maren, "A" * 300, "B" * 300, "C" * 50)
 
     assert_equal [ "B" * 300, "C" * 50 ], moment.conclusions(maren, replayed: 0)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_03_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_04_120000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -22,6 +22,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_170000) do
     t.boolean "is_companion"
     t.boolean "is_protagonist", default: false, null: false
     t.text "likes"
+    t.integer "location_id"
     t.string "nickname"
     t.text "personality"
     t.integer "race_id", null: false
@@ -29,6 +30,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_170000) do
     t.integer "story_id", null: false
     t.datetime "updated_at", null: false
     t.index "story_id, LOWER(fullname)", name: "index_characters_on_story_id_and_lower_fullname", unique: true
+    t.index ["location_id", "id"], name: "index_characters_on_location_id_and_id"
+    t.index ["location_id"], name: "index_characters_on_location_id"
     t.index ["race_id"], name: "index_characters_on_race_id"
     t.index ["story_id", "is_protagonist"], name: "index_characters_on_story_id_and_is_protagonist"
     t.index ["story_id"], name: "index_characters_on_story_id"
@@ -329,6 +332,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_170000) do
     t.index ["story_id"], name: "index_world_mechanics_on_story_id"
   end
 
+  add_foreign_key "characters", "locations"
   add_foreign_key "characters", "races"
   add_foreign_key "characters", "stories"
   add_foreign_key "chats", "characters"

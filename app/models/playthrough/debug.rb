@@ -427,14 +427,17 @@ class Playthrough::Debug
     flags.select { |flag| scene_ids.include?(flag.scene&.id) }.reverse
   end
 
-  # Whoever was in the last scene in this location that recorded anyone. The
-  # same read `Scene::Generator#holdovers` makes, and deliberately so: it is
-  # what the game will answer with next time somebody walks in here, so a
-  # second opinion would be a second answer.
+  # Who the records place in this room. The same read
+  # `Scene::Generator.characters_present` makes, through the same scope, and
+  # deliberately so: it is what the game will answer with next time somebody
+  # walks in here, so a second opinion would be a second answer.
+  #
+  # It used to read the last scene in this location that had recorded anybody,
+  # because that was the only place presence lived. `characters.location_id` is
+  # the record now -- see `Character` -- so a room nobody has walked into
+  # answers with the people who are in it rather than with nobody.
   def cast_recorded_at(place)
-    scene = place.scenes.joins(:characters).order(story_timestamp: :desc, id: :desc).first
-
-    scene ? scene.characters.to_a : []
+    Character.present_in(place).to_a
   end
 
   # The latest scene, in story time, that recorded this character anywhere.
@@ -454,7 +457,10 @@ class Playthrough::Debug
   #                 chain starts here, which is the fallback opening scene
   #                 `PlaythroughsController` writes for a world with none.
   #   narration     everything else: `Scene::Narrator` answers the command in
-  #                 place, and records no cast.
+  #                 place. It records a cast like every other branch does --
+  #                 `Playthrough::Turn#play` snapshots the room's people onto
+  #                 every turn -- so the cast is not what tells the branches
+  #                 apart.
   def branch_for(scene, previous)
     return :opening if scene.is_opening?
     return :conversation if scene.interactions.any?
@@ -465,8 +471,9 @@ class Playthrough::Debug
   end
 
   # The reasoning, in the open. Anything surprising is reported as surprising
-  # rather than smoothed over: a narrated turn that somehow recorded a cast is
-  # the sort of thing this view exists to make visible.
+  # rather than smoothed over: a turn whose recorded cast no longer matches the
+  # room, or carries none at all, is the sort of thing this view exists to make
+  # visible.
   def evidence_for(scene, previous, branch, elapsed, cost)
     lines = []
 
@@ -482,15 +489,31 @@ class Playthrough::Debug
       else
         "location changed: #{previous.location.name} -> #{scene.location.name}"
       end
-      lines << "cast recorded (#{scene.characters.size}) -- only Scene::Generator records one" if scene.characters.any?
+      lines << cast_line(scene)
     when :narration
-      lines << "no Interaction, no cast, same location -- Scene::Narrator answered the command in place"
-      lines << "ANOMALY: a narrated turn recorded #{scene.characters.size} character(s); Scene::Narrator records none" if scene.characters.any?
+      lines << "no Interaction, same location -- Scene::Narrator answered the command in place"
+      lines << cast_line(scene)
     end
 
     lines << "story time +#{format_minutes(elapsed)}: #{cost}" if cost
     lines << "no summary written -- Scene::Generator writes one, Scene::Narrator does not" if scene.summary.blank?
     lines
+  end
+
+  # THE CAST ON THE TURN, and whether it still agrees with the records. Every
+  # branch writes one now -- `Playthrough::Turn#play` snapshots
+  # `Character.present_in` onto the turn beside `typed` -- so an EMPTY cast is
+  # the surprising case rather than a full one, and a cast that no longer
+  # matches the room is a record of somebody having moved since.
+  def cast_line(scene)
+    recorded = scene.characters.to_a
+    return "no cast recorded -- a turn played before Playthrough::Turn#play snapshotted one" if recorded.empty?
+
+    now = Scene::Generator.characters_present(scene.location)
+    moved = (recorded - now).map(&:fullname)
+
+    "cast recorded (#{recorded.size}), snapshotted from Character.present_in" +
+      (moved.any? ? " -- #{moved.join(", ")} #{moved.one? ? "is" : "are"} no longer in this room" : "")
   end
 
   # WHAT THE TURN COST IN STORY TIME, checked against the fixed tables that are

@@ -333,4 +333,121 @@ class Story::DoctorTest < ActiveSupport::TestCase
 
     assert Story::Doctor.new(story).playable?
   end
+  # --- where the cast is ------------------------------------------------------
+  #
+  # `Character.present_in(location)` is the closed set `talk` resolves against,
+  # so a whereabouts is not decoration: a character with none is somebody the
+  # player can never speak to.
+
+  test "reports a character standing nowhere" do
+    story = healthy_story
+    create(:character, story: story, fullname: "Perrin Lasco")
+
+    assert_includes codes(story), :character_nowhere
+    assert_match(/Perrin Lasco is nowhere/, finding(story, :character_nowhere).message)
+    assert Story::Doctor.new(story).playable?
+  end
+
+  # THE PARTY IS NOT ASKED ABOUT: the protagonist and any companion are wherever
+  # the PLAYTHROUGH is, so nowhere is the correct state for them and reporting
+  # it would be reporting the design.
+  test "the protagonist and companions standing nowhere is not a finding" do
+    story = healthy_story
+    create(:character, :companion, story: story)
+
+    assert_not_includes codes(story), :character_nowhere
+  end
+
+  # A person outlives a building, so a destroyed room nullifies the column
+  # rather than the character -- and they land in the same finding.
+  test "a character whose room was destroyed reads as nowhere" do
+    story = healthy_story
+    room = create(:location, story: story, name: "The Vestry Hulk")
+    create(:character, story: story, fullname: "Neb Halloran", location: room)
+    room.destroy!
+
+    assert_includes codes(story.reload), :character_nowhere
+  end
+
+  # Legal, and it plays -- but `Location::Generator` writes the room's
+  # description without knowing anybody is in it, so the prose and the records
+  # disagree from the moment the room exists.
+  test "reports a character standing in a room nobody has written" do
+    story = healthy_story
+    create(:character, story: story, fullname: "Neb Halloran", location: story.locations.find_by(name: "The Street"))
+
+    assert_includes codes(story), :character_in_a_stub
+    assert_match(/nobody has written yet/, finding(story, :character_in_a_stub).message)
+  end
+
+  # `Character#location_belongs_to_story` refuses to save one, so this arrives
+  # only through raw SQL or a schema older than the validation -- the same shape
+  # as `items_nowhere`, and it plays, because `Character.present_in` does not ask
+  # whose story a room belongs to.
+  test "reports a character standing in another story's room" do
+    story = healthy_story
+    elsewhere = create(:location, story: create(:story), name: "Somewhere Else Entirely")
+    stranger = create(:character, story: story, fullname: "Neb Halloran")
+    stranger.update_columns(location_id: elsewhere.id)
+
+    assert_includes codes(story), :character_outside_the_story
+  end
+
+  # Not broken -- a seed file may hand-author a crowd -- but the registry will
+  # place nobody else there, and the whole cast goes into the classifier's closed
+  # enum on every turn. The exact counterpart of `room_over_item_cap`.
+  test "reports a room holding more people than the engine would ever place in one" do
+    story = healthy_story
+    room = story.locations.find_by(name: "Your Office")
+    (Character::Registry::MAX_PER_ROOM + 1).times { create(:character, story: story, location: room) }
+
+    assert_includes codes(story), :room_over_cast_cap
+    assert_match(/"Your Office" has 4 people standing in it/, finding(story, :room_over_cast_cap).message)
+    assert Story::Doctor.new(story).playable?
+  end
+
+  test "a room at the cast cap exactly is not over it" do
+    story = healthy_story
+    room = story.locations.find_by(name: "Your Office")
+    Character::Registry::MAX_PER_ROOM.times { create(:character, story: story, location: room) }
+
+    assert_not_includes codes(story), :room_over_cast_cap
+  end
+
+  # The counterpart of `story_over_item_cap`: nothing breaks, and no further
+  # room in the world will be generated with anybody in it.
+  test "reports a world past the cast it was meant to be bounded by" do
+    story = healthy_story
+    (Character::Registry::MAX_PER_STORY + 1 - story.characters.count).times { create(:character, story: story) }
+
+    assert_includes codes(story), :story_over_cast_cap
+    assert Story::Doctor.new(story).playable?
+  end
+
+  # THE PREMISE CHECK. Only asked of a story that IS one of the checked-in
+  # worlds, and the answer is on record in the file -- so it is `safe` and
+  # `Story::Repair` puts them back.
+  test "reports a seeded character who is not where the world file puts them" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    neb = story.characters.find_by(fullname: "Neb Halloran")
+    neb.move_to!(story.locations.find_by(name: "The Vestry Hulk"))
+
+    assert_includes codes(story), :character_moved_from_the_seed
+    assert_equal :safe, finding(story, :character_moved_from_the_seed).remedy
+    assert_match(/the-salt-assizes\.yml puts them in "The Tide Post"/, finding(story, :character_moved_from_the_seed).message)
+  end
+
+  test "a story that is not a checked-in world is never asked about a seed file" do
+    story = healthy_story
+    create(:character, story: story, fullname: "Neb Halloran", location: story.locations.first)
+
+    assert_empty Story::Doctor.new(story).seeded_whereabouts
+    assert_not_includes codes(story), :character_moved_from_the_seed
+  end
+
+  test "the checked-in worlds are where their own files put them" do
+    WorldSeed::Loader.load_all(io: nil).each do |story|
+      assert_not_includes codes(story), :character_moved_from_the_seed, story.title
+    end
+  end
 end

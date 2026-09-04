@@ -140,8 +140,12 @@ NO_MODEL=1 rake 'game:mechanics[2]'
 ```
 
 A fixed grammar replaces the classifier and nothing is generated: `go <exit>`,
-`take <item>`, `drop <item>`, `look` (also `where`, `inventory`, `exits`,
-`items`, `who`), `help`, `quit`. A typed name is matched against the records
+`take <item>`, `drop <item>`, `talk <person>` (also `speak`, `ask`), `look`
+(also `where`, `inventory`, `exits`, `items`, `who`), `help`, `quit`. Talking is
+prose and this mode still writes none, so `talk` names whoever it resolved and
+stops — but **whether** it resolves is an engine question, and since presence
+became a record it is one that can be answered with no model at all. A typed
+name is matched against the records
 exactly, then as an unambiguous prefix, then as an unambiguous fragment **read
 both ways round** — so `take daybook` finds the "Ward Office 12 daybook" and
 `drop the tide-slate` finds the "Assize tide-slate" — with a leading
@@ -193,9 +197,10 @@ every build.
   ok     regressions-2026-09-03        8 step(s), The Unrecorded Hour intact
   ok     the-lunar-cartographer        9 step(s), The Lunar Cartographer intact
   ok     the-salt-assizes-grammar      7 step(s), The Salt Assizes intact
+  ok     the-salt-assizes-presence    10 step(s), The Salt Assizes intact
   ok     the-unrecorded-hour          13 step(s), The Unrecorded Hour intact
 
-PASSED: 37 typed line(s) over 4 script(s).
+PASSED: 47 typed line(s) over 5 script(s).
 ```
 
 A script is a YAML fixture in `lib/engine_sweep/scripts/` — a seeded world, an
@@ -215,7 +220,15 @@ steps:
     exits: [The Tide Post (realized), The Vestry Hulk (stub)]
     here: [Assize tide-slate]
     carrying: []
+    present: [Ammon Brace]
 ```
+
+`present:` is who the records place in the room — the closed set `talk` resolves
+against. It could not be swept until `characters.location_id` existed: who was
+in a room was reconstructed from the last scene there that recorded a cast, and
+an offline walk writes no scenes at all, so presence was invisible here by
+construction and the only place to observe it was a generated run costing money.
+`the-salt-assizes-presence.yml` walks the Tide Post defect for free.
 
 `EngineSweep::Expectation::KEYS` is the whole vocabulary — where the player
 stands and whether that room is written, what leads out of here (`exits`,
@@ -293,7 +306,7 @@ flowchart TD
         M3 --> M3B["Item::Registry#admit!<br/>the model proposes, the engine decides<br/>a row per thing, lying in the room<br/>capped per room and per world"]
         M3B --> M4["MODEL CALL, schema'd<br/>Location::ExitsSchema<br/>a stub neighbour per exit, and connection<br/>rows in BOTH directions"]
         M4 --> M5
-        M5["Read FROM RECORDS, before anything is created<br/>last_protagonist_visit: discovery or return<br/>characters_present: who is here"]
+        M5["Read FROM RECORDS, before anything is created<br/>last_protagonist_visit: discovery or return<br/>Character.present_in: who is here"]
         M5 --> M6["MODEL CALL, schema'd<br/>Scene::Schema, the arrival paragraph<br/>Cannot stream: a schema'd call emits JSON"]
         M6 --> M7["Scene.create!<br/>its after_create stamps the visit, which is<br/>what makes the NEXT arrival read as a return"]
         M7 --> M8["playthrough.update! location AND scene<br/>only now, so a failed arrival leaves<br/>the player where they were"]
@@ -399,6 +412,101 @@ generated things up with no further change, in the browser and in
 `rake game:mechanics` alike. `rake game:doctor` reports the states the registry
 refuses but an older world can still be in: items nowhere, duplicate names,
 rooms and worlds over the caps, and an item named after a person or a place.
+
+### Where people are
+
+The people half of the same question, and it had the same shape of answer
+missing. A `Character` belonged to a story and to the scenes it appeared in, and
+that was the whole of what the app knew about **where Ammon Brace is**. So who
+was in a room was worked out again on every arrival — the protagonist, anyone
+`is_companion`, and whoever was in the last scene played there that recorded a
+cast — and only an arrival records one, so 184 of the 480 turns on the baseline
+had no record of who was present at all.
+
+A cast that is regenerated is a cast that forgets. Arriving at **The Tide Post**
+recorded the protagonist alone, on all three runs checked, in a world whose
+entire premise is that Neb Halloran is chained to that post. The narrator put
+him there, correctly and unfalsifiably; no record kept him.
+
+`characters.location_id` is the `Item` shape applied to people — **one place at
+a time, and the app owns it**:
+
+```ruby
+Character.present_in(location)   # the closed set `talk` resolves against
+Item.lying_in(location)          # the closed set `take` resolves against
+```
+
+`Playthrough::Classifier` reads the first, `Playthrough::Moment` tells both the
+narrator and the character prompts out of it, `rake game:mechanics` prints it
+under `present`, and a `Scene`'s cast is now a **snapshot written from it** on
+every branch rather than the only place it ever lived.
+
+Four things write a whereabouts, and prose is not one of them:
+
+| writer | what it does |
+| --- | --- |
+| `characters[].location` in a world file | where the world's own people stand. Absent means *nowhere*, which a file may mean |
+| `Character::Registry` | places somebody who is nowhere, **creates** the people a room is born with, and **never moves somebody who is not** — that rule is the Tide Post defect written down |
+| `Character#move_to!` | the explicit engine call, for a mechanic that means to move a person. Nothing invokes it yet |
+| `rake game:backfill_whereabouts` | once, from the arrival casts still on disk, and it **refuses to guess** when two rooms recorded somebody at the same moment |
+
+The **party** is the deliberate exception and stays derived: the protagonist and
+anyone `is_companion` are wherever the *playthrough* is, because two people
+playing one seeded world stand in two different rooms at once and a story-level
+column cannot hold two answers.
+
+What it unlocks: `speak_to` as an arc trigger that means something, a talk that
+refuses because the person is not in the room (which is now regression-tested
+offline — `rake game:sweep`, `present:`), and `rake game:doctor` able to say
+that a world's premise character is not where the world says.
+
+### Rooms are born with people in them, sometimes
+
+The other half, and it is the same seam the furniture uses.
+`Location::DetailSchema` asks for the description, the lore, *at most three
+portable things* **and at most two people** in one answer, and
+`Character::Registry` turns the sheets into rows placed in the room it just
+described. Still two calls per room; still not a narrator tool and not a scan
+of prose.
+
+**Who they are, the engine decides.** Race, age and sex are rolled per slot
+before the prompt is built and *stated* in it, so the model writes a person the
+engine has already chosen rather than choosing one — `Character::Generator`'s
+rule, that asking for a value the prompt just supplied is a decision bought
+twice:
+
+```
+## Who Is Here
+List AT MOST 2 people who are in this place right now.
+- NOBODY is the right answer for most rooms, and an empty list is a complete
+  answer. Name somebody only when this place would be strange without them
+...
+Who they are is already decided. Write these people and do not change them:
+  the 1st is Bell-Keepers, about 69, trans woman
+  the 2nd is Bell-Keepers, about 49, trans man
+```
+
+The model proposes and the registry disposes, on `Item::Registry`'s rules plus
+one of its own:
+
+| refused | why |
+| --- | --- |
+| a name a character, an item or a place in this story already has | the classifier resolves a typed line against all three closed sets by name |
+| anything past `MAX_PER_CALL` (2) / `MAX_PER_ROOM` (3) / `MAX_PER_STORY` (12) | a world generates rooms for as long as somebody walks, so a per-room cap bounds nothing on its own |
+| a bare name with no sheet behind it | inventing a person from a string puts somebody in the world with no appearance and nothing to say |
+| **a sheet the provider cut off** | a half-written person is worse than none. A truncated field is a *failed call* everywhere else in the app; here it is a refusal, because the call it would fail is the room's own description — already saved, and the expensive half of the realization |
+
+**What it cost, measured.** The prompt grows by exactly **+173 tokens** per
+room realized. On the same room of the same world, the detail call came back at
+**789 output tokens with two complete people in it against 396 with `people`
+suppressed** — about 197 tokens a person, against a schema cap of ~400. Most
+rooms pay only the +173, because the prompt asks for nobody.
+
+The first live realization under this schema is also why the caps are what they
+are: it came back with `appearance` and `personality` severed mid-word — *"She
+is small and"* — so `Character::Registry::PERSON_LIMITS` is sized to a finished
+answer, which is the whole of how `SanitizesGeneratedText` tells truncation
+from a near miss.
 
 The move branch is the heart of it, and the thing to notice is that
 **`Playthrough::Turn#move_to` contains no stub-versus-realized branch at all**:
@@ -582,9 +690,14 @@ wrote, checked in at `test/fixtures/files/narration_corpus.json` and pinned by
 `Story::AuditPrecisionTest`. An earlier spike asked "which known names appear in
 this prose" and raised four flags on those 24; all four were false positives,
 because prose refers to places through windows and people in memory. So there is
-no place check and no person check here — measurement killed both — and the one
-place prose *is* read requires the grammar of a claim about the player rather
-than a mention. On the corpus, with items planted under the names the prose
+no place check and no person check here — measurement killed both, and a
+whereabouts record did not revive the person check either: with the records
+finally authoritative about presence, only 36 of the 248 frozen passages can
+judge such a check at all, exactly one names somebody recorded elsewhere, and
+moving one seeded character one door turns *"From somewhere below, Grenn's voice
+rises"* — correct prose about a man genuinely in another room — into a
+violation. The one place prose *is* read requires the grammar of a claim about
+the player rather than a mention. On the corpus, with items planted under the names the prose
 argues about: **8 flags, 8 true positives, 0 false positives**, against 15
 narrations that name one of those items. About half the real possession claims
 are missed, and that is the price paid on purpose.
@@ -676,11 +789,15 @@ check.
   carries only where it is now — nothing records where it has been, so a check
   on an item's movement has to infer it. `Story::Audit`'s `item_not_held` says
   so at its own definition.
-- **Nothing records where a character stands.** `characters_present` answers
-  from the protagonist, anyone `is_companion`, and whoever was in the last scene
-  in that location that recorded a cast. A place nobody has visited and no
-  companion follows you into has nobody to talk to, so the `talk` branch is
-  unreachable there.
+- **Nobody new gets created while you walk.** Where a character stands is a
+  record now — `characters.location_id`, and `Character.present_in(location)` is
+  the closed set `talk` resolves against — but the only writers are the world
+  file, `Character::Registry` placing somebody who is nowhere, and an explicit
+  `Character#move_to!`. So a room the file did not put anybody in has nobody in
+  it, and the `talk` branch is unreachable there. Populating a generated room
+  with people is `ta-narrator-memory`: a `Character` is nine validated fields and
+  a model call of its own, which is a world-population feature rather than a
+  whereabouts one.
 - **A talk turn keeps no `Scene` and no `Interaction` until both of its calls
   land.** `Scene::Narrator` persists partial prose in an `ensure`; `talk_to` has
   no equivalent, so a `talk` turn that fails halfway writes neither record. The

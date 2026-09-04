@@ -676,10 +676,13 @@
     <p class="note">
       A stub is a name and a teaser, created the moment a neighbour named it as
       an exit. Walking into one is what writes it, once and never again.
-      &ldquo;Who is here&rdquo; is the holdover rule
-      (`Scene::Generator#characters_present`): whoever was in the last scene
-      recorded in that place. The protagonist and any companion travel with the
-      player, so they are left out of it &mdash; they would be in every row.
+      &ldquo;Who is here&rdquo; is the record (`Character.present_in`): the closed
+      set a <code>talk</code> resolves against, and the same one
+      <code>Scene::Generator#characters_present</code> reads. It used to be
+      whoever was in the last scene recorded in that place, so a room nobody had
+      walked into had nobody in it. The protagonist and any companion travel
+      with the player, so they are left out of it &mdash; they would be in every
+      row.
     </p>
     <div class="scroll">
       <table>

@@ -56,7 +56,7 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
 
   test "loads a character with its race, protagonist flag and items" do
     story = WorldSeed::Loader.new(document).load!
-    character = story.characters.sole
+    character = story.protagonist
 
     assert_equal "Vesper Aal", character.fullname
     assert_equal "Riverkin", character.race.name
@@ -85,7 +85,7 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
   # player left on a shelf, and seed a second daybook.
   test "re-seeding a played world moves its items back rather than duplicating them" do
     story = WorldSeed::Loader.new(document).load!
-    daybook = story.characters.sole.items.sole
+    daybook = story.protagonist.items.sole
     closet = story.locations.find_by(name: "The Closet")
 
     # The player picks the index up and puts the daybook down, which is exactly
@@ -345,6 +345,51 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     edited
   end
 
+  # --- where the file puts people -------------------------------------------
+
+  # `characters[].location` is the closed set `talk` resolves against, written
+  # by the file. Without it a seeded world's cast exists nowhere and can only be
+  # spoken to in whatever room the opening arrival's cast happened to name.
+  test "a character is placed where the file says they stand" do
+    story = WorldSeed::Loader.new(document).load!
+    closet = story.locations.find_by(name: "The Closet")
+
+    assert_equal [ "Corbel Ashe" ], Character.present_in(closet).pluck(:fullname)
+    assert_equal closet, story.characters.find_by(fullname: "Corbel Ashe").location
+  end
+
+  # Nowhere is a real state and the file is allowed to mean it: `The Unrecorded
+  # Hour` leaves Perrin Lasco nowhere because that world is about him having
+  # been removed from it.
+  test "a character the file does not place stays nowhere" do
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_predicate story.characters.find_by(fullname: "Vesper Aal"), :nowhere?
+  end
+
+  # An item is matched on (story, name) and not on its owner precisely because
+  # it moves; a character's whereabouts is re-asserted for the same reason. The
+  # file is the decision, so re-seeding puts a played world's cast back.
+  test "re-seeding puts a character back where the file says" do
+    story = WorldSeed::Loader.new(document).load!
+    corbel = story.characters.find_by(fullname: "Corbel Ashe")
+    corbel.move_to!(story.locations.find_by(name: "The Hallway"))
+
+    WorldSeed::Loader.new(document).load!
+
+    assert_equal "The Closet", corbel.reload.location.name
+  end
+
+  # The one mistake this key can make is otherwise silent: the character loads
+  # standing nowhere and the room they were meant to be in is empty.
+  test "a character placed in a room the file does not declare is refused" do
+    misplaced = document
+    misplaced["characters"].last["location"] = "The Boiler Room"
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(misplaced).load! }
+    assert_match(/Corbel Ashe.*placed in "The Boiler Room"/, error.message)
+  end
+
   # Built fresh on every call so a test can edit it without touching another's.
   def document
     WorldSeed.parse(WorldSeed.dump(
@@ -386,6 +431,14 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
           "likes" => "A ledger that balances", "dislikes" => "Amendments in another hand",
           "fears" => "Signing something that closed a file",
           "items" => [ { "name" => "A Daybook", "description" => "Eleven years of her own handwriting.", "properties" => '{"registered": true}' } ]
+        },
+        {
+          "fullname" => "Corbel Ashe", "race" => "Ashfolk", "location" => "The Closet", "nickname" => "Corbel",
+          "age" => 33, "sex" => "male", "is_protagonist" => false, "is_companion" => false,
+          "backstory" => "Kept the records after the fire.", "personality" => "Watchful and unhurried.",
+          "appearance" => "Soot at the cuff, whatever he is wearing.",
+          "likes" => "A shelf in the right order", "dislikes" => "Being asked twice",
+          "fears" => "A door with no inventory number"
         }
       ],
       "locations" => [

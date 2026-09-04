@@ -111,17 +111,28 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
     assert_match(/matches no fixed table/, Playthrough::Debug.new(playthrough).latest_turn.cost_reading)
   end
 
-  # An arrival records a cast and a narrated turn does not, so a narrated turn
-  # that recorded one is a contradiction between two records. Say so rather
-  # than picking whichever one the label happened to be.
-  test "a narrated turn that recorded a cast is flagged as an anomaly" do
+  # EVERY BRANCH RECORDS A CAST NOW -- `Playthrough::Turn#play` snapshots
+  # `Character.present_in` onto the turn beside `typed` -- so a narrated turn
+  # with one is ordinary and the EMPTY one is what is worth saying. What the
+  # view reports instead is a snapshot that no longer agrees with the records,
+  # which is how somebody having moved since reads.
+  test "a cast that no longer matches the room says who has moved since" do
     playthrough = create(:playthrough, :in_scene)
     scene = next_scene(playthrough, minutes: 5)
-    scene.characters = [ create(:character, story: playthrough.story) ]
+    grenn = create(:character, story: playthrough.story, fullname: "Grenn Ollivar")
+    scene.characters = [ grenn ]
 
-    turn = Playthrough::Debug.new(playthrough).latest_turn
+    evidence = Playthrough::Debug.new(playthrough).latest_turn.evidence.join(" ")
 
-    assert_match(/ANOMALY/, turn.evidence.join(" "))
+    assert_match(/cast recorded \(1\), snapshotted from Character.present_in/, evidence)
+    assert_match(/Grenn Ollivar is no longer in this room/, evidence)
+  end
+
+  test "a turn with no cast at all says it was played before one was snapshotted" do
+    playthrough = create(:playthrough, :in_scene)
+    next_scene(playthrough, minutes: 5)
+
+    assert_match(/no cast recorded/, Playthrough::Debug.new(playthrough).latest_turn.evidence.join(" "))
   end
 
   # THE CLOSED SET, asked of the classifier itself rather than worked out
@@ -133,8 +144,8 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
                                                       location: playthrough.current_location))
     exit_to = create(:location, story: playthrough.story, name: "The Sunken Stair")
     create(:location_connection, location: playthrough.current_location, connected_location: exit_to)
-    grenn = create(:character, story: playthrough.story, fullname: "Grenn Ollivar", nickname: "Old Grenn")
-    playthrough.current_scene.characters = [ playthrough.character, grenn ]
+    create(:character, story: playthrough.story, fullname: "Grenn Ollivar", nickname: "Old Grenn",
+                       location: playthrough.current_location)
 
     debug = Playthrough::Debug.new(playthrough)
 
@@ -312,9 +323,7 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
     lane = create(:location, story: story, name: "Mournwell Lane")
     empty = create(:location, :stub, story: story, name: "The Celestial Spire")
 
-    grenn = create(:character, story: story, fullname: "Grenn Ollivar")
-    scene = create(:scene, story: story, location: lane, story_timestamp: story.start_time)
-    scene.characters = [ grenn ]
+    create(:character, story: story, fullname: "Grenn Ollivar", location: lane)
     playthrough.update!(current_scene: create(:scene, story: story, location: here,
                                                        story_timestamp: story.start_time + 5.minutes))
 
@@ -326,19 +335,18 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
     assert_not places["Mournwell Lane"].here
   end
 
-  # Only an arrival records a cast, so the last scene that recorded ANYONE is
-  # the last thing the game actually knows -- reading the plain latest scene
-  # empties the room after any narrated turn. Same defect `holdovers` had.
-  test "a narrated turn in a room does not empty it" do
+  # The map reads `Character.present_in`, not a scene's cast, so no turn can
+  # empty a room -- which is what a narrated turn used to do here, because the
+  # view read back the last scene that had recorded anybody. A scene whose
+  # snapshot is stale does not put anybody back either.
+  test "no turn can empty a room the records have somebody in" do
     playthrough = create(:playthrough, :started)
     story = playthrough.story
     here = playthrough.current_location
-    grenn = create(:character, story: story, fullname: "Grenn Ollivar")
+    grenn = create(:character, story: story, fullname: "Grenn Ollivar", location: here)
 
-    arrival = create(:scene, story: story, location: here, story_timestamp: story.start_time)
-    arrival.characters = [ grenn ]
-    create(:scene, story: story, location: here, previous_scene: arrival,
-                   story_timestamp: story.start_time + 5.minutes)
+    create(:scene, story: story, location: here, story_timestamp: story.start_time)
+    create(:scene, story: story, location: here, story_timestamp: story.start_time + 5.minutes)
 
     place = Playthrough::Debug.new(playthrough).places.find { |candidate| candidate.location == here }
 

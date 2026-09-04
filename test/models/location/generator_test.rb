@@ -20,6 +20,23 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     ]
   ).freeze
 
+  # One person in the room, as `Location::DetailSchema`'s `people` array answers
+  # with them: the sheet a `Character` is validated on, and nothing the engine
+  # decides for itself (race, age and sex are `Character::Registry#slots`').
+  PERSON = {
+    "fullname" => "Maren Vosk", "nickname" => "Maren",
+    "appearance" => "Waist-deep, sleeves pinned, counting something under her breath.",
+    "personality" => "Brisk with strangers and slower to stop working than to answer.",
+    "backstory" => "Maren Vosk was sent to close this house's books and stayed when the water came in.",
+    "likes" => "A column that adds up, dry paper",
+    "dislikes" => "Being asked twice, standing water",
+    "fears" => "A debt nobody can prove"
+  }.freeze
+
+  # The same answer with somebody in the room. `people` rides on the detail call
+  # exactly as `items` does, so this is still one response and not a third.
+  PEOPLED = DETAIL.merge("people" => [ PERSON ]).freeze
+
   EXITS = {
     "exits" => [
       {
@@ -599,5 +616,130 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     realize(location, FakeAgent.new(FURNISHED, EXITS))
 
     assert_equal 0, Item.lying_in(location).count
+  end
+  # --- who the room is born with --------------------------------------------
+  #
+  # The captain's ruling: *"rooms should be born with people in them
+  # sometimes."* The same shape as the furniture above it -- structured records
+  # out of the call that describes the room, never a narrator tool and never a
+  # scan of prose.
+
+  test "a person the model named is created and placed in the realized room" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    assert_difference -> { Character.count }, 1 do
+      realize(location, FakeAgent.new(PEOPLED, EXITS))
+    end
+
+    maren = Character.present_in(location).sole
+    assert_equal "Maren Vosk", maren.fullname
+    assert_equal "Maren", maren.nickname
+    assert_equal PERSON["appearance"], maren.appearance
+    assert_includes @story.universe.races, maren.race
+  end
+
+  # Two calls, not three: the cast is a field on the detail answer, the same way
+  # the furniture is.
+  test "peopling the room costs no extra model call" do
+    location = stub_location(name: "The Drowned Ledger")
+    agent = FakeAgent.new(PEOPLED, EXITS)
+
+    realize(location, agent)
+
+    assert_equal 2, agent.prompts.size
+    assert_equal [ Location::DetailSchema, Location::ExitsSchema ], agent.schemas
+  end
+
+  # NOBODY IS THE ORDINARY ANSWER, and an omitted `people` and an empty one mean
+  # the same thing -- the field is optional precisely so a model may leave it
+  # out rather than fail its own realization.
+  test "a room the model peopled with nobody is peopled with nobody" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL.merge("people" => []), EXITS))
+
+    assert location.reload.realized?
+    assert_equal [], Character.present_in(location).to_a
+  end
+
+  test "a model that omits the field leaves the room empty of people rather than failing" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL, EXITS))
+
+    assert location.reload.realized?
+    assert_equal [], Character.present_in(location).to_a
+  end
+
+  # The registry decides, not the model, and a refusal costs the room a person
+  # and never its description.
+  test "a refused person name does not cost the room its description" do
+    create(:character, story: @story, fullname: "Maren Vosk")
+    location = stub_location(name: "The Drowned Ledger")
+
+    assert_no_difference -> { Character.count } do
+      realize(location, FakeAgent.new(PEOPLED, EXITS))
+    end
+
+    assert_equal DETAIL["description"], location.reload.description
+  end
+
+  # THE ROOM IS TOLD WHO IT MAY NAME AND WHO THEY ARE, before the model answers.
+  # Race, age and sex are the engine's rolls, stated per slot on
+  # `Character::Generator`'s rule -- so what comes back has to be a person the
+  # prompt already described.
+  test "the prompt states the people the engine has already decided on" do
+    location = stub_location(name: "The Drowned Ledger")
+    agent = FakeAgent.new(PEOPLED, EXITS)
+
+    realize(location, agent)
+    prompt = agent.prompts.first
+
+    assert_match(/List AT MOST #{Character::Registry::MAX_PER_CALL} people/, prompt)
+    assert_match(/NOBODY is the right answer for most rooms/, prompt)
+    assert_match(/the 1st is .+, about \d+, /, prompt)
+    assert_match(/the 2nd is .+, about \d+, /, prompt)
+  end
+
+  # The room the prompt described and the row that came out have to be the same
+  # person: one registry, one set of rolls.
+  test "the person written is the person the prompt described" do
+    location = stub_location(name: "The Drowned Ledger")
+    agent = FakeAgent.new(PEOPLED, EXITS)
+
+    realize(location, agent)
+
+    maren = Character.present_in(location).sole
+    assert_match(/the 1st is #{Regexp.escape(maren.race.name)}, about #{maren.age}, #{maren.sex_label}/,
+                 agent.prompts.first)
+  end
+
+  # ASKED FOR AT MOST WHAT IS LEFT, the way the exits and the items prompts are.
+  test "a room already at its cast cap is asked for nobody" do
+    location = stub_location(name: "The Drowned Ledger")
+    Character::Registry::MAX_PER_ROOM.times { create(:character, story: @story, location: location) }
+    agent = FakeAgent.new(DETAIL, EXITS)
+
+    realize(location, agent)
+
+    assert_match(/Do not list any people/, agent.prompts.first)
+  end
+
+  test "a world already at its cast cap is asked for nobody" do
+    location = stub_location(name: "The Drowned Ledger")
+    Character::Registry::MAX_PER_STORY.times { create(:character, story: @story) }
+    agent = FakeAgent.new(DETAIL, EXITS)
+
+    realize(location, agent)
+
+    assert_match(/Do not list any people/, agent.prompts.first)
+  end
+
+  test "does not people a room it declined to realize" do
+    location = create(:location, story: @story, name: "The Drowned Ledger")
+
+    assert_no_difference -> { Character.count } do
+      realize(location, FakeAgent.new(PEOPLED, EXITS))
+    end
   end
 end

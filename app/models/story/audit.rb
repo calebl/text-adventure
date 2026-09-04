@@ -96,6 +96,55 @@
 #    record; `take_denied` and `pickup_invented` are the first two checks that
 #    read one. See `#check_take`.
 #
+# 5. AND A WHEREABOUTS RECORD DOES NOT REVIVE THE PERSON CHECK, which is the
+#    thing `ta-character-whereabouts` was expected to change and measurement
+#    says it does not. `characters.location_id` landed, so the records are
+#    finally authoritative about presence -- the objection in 2a ("a
+#    `Scene::Narrator` turn records no cast at all, so on those turns EVERY
+#    character reads as absent") is gone, and the candidate set is now the
+#    strongest possible one: only somebody the records positively place in
+#    ANOTHER ROOM. Somebody nowhere is unjudgeable and is never a candidate.
+#    Measured over all three corpora -- 248 passages, whereabouts taken from
+#    the checked-in world files:
+#
+#      36 passages are judgeable at all (12 in `eval_corpus.json`, 0 in
+#      `narration_corpus.json`, 24 in `whole_run_corpus.json`), and ONE of
+#      those 36 even names the absent person. It is a true positive: a `move`
+#      turn into The Long Hallway whose prose is the previous turn's office
+#      narration, with "Halkett's gaze moves to the book" in a room the
+#      records place him nowhere near. So the check has a demonstrated positive
+#      case (bar point 3) and no false-positive rate to report (bar point 2),
+#      because n = 1.
+#
+#    AND THE ZERO IS AN ARTIFACT OF WHERE THE SEED FILES PUT PEOPLE, which a
+#    sensitivity run settles. Move one character one door -- Grenn Ollivar into
+#    the boarding-house hallway instead of Room 3, which is where a landlord
+#    plausibly is and is an authoring choice, not a defect -- and the same
+#    corpora produce 41 flags on a name scan and 4 on the narrowest grammar
+#    that still keeps a true positive (a speech verb in the sentence, negations
+#    dropped). Two of those four are the same false positive, and it is
+#    finding 2's: *"From somewhere below, Grenn's voice rises in a muffled,
+#    irritated shout"* -- correct prose about somebody genuinely in another
+#    room. The name scan adds *"Grenn keeps the front door bolted after the
+#    tenth bell"* (habitual) and *"a narrow room on the third floor of Grenn's
+#    boarding house"* (a PLACE whose name contains a person's).
+#
+#    A window-based grammar -- the name, then a presence verb within twenty
+#    characters -- survives that run with no false positives, and it is not
+#    shipped either: twenty is a constant with nothing behind it, the FP
+#    sentences clear it by a few characters rather than by grammar, and it was
+#    tuned against the corpus it was measured on. That is what `Eval::HELD_OUT`
+#    exists to stop.
+#
+#    SO THERE IS STILL NO PERSON CHECK. What would settle it is a corpus of
+#    turns from a world whose cast is spread across rooms, which is now
+#    possible to generate for the first time -- presence is a record, so
+#    `rake eval:run` can produce runs in which people are demonstrably
+#    elsewhere. Until that exists, the gap stays covered from the other side by
+#    `Playthrough::Drift`, and by the engine: `Character.present_in` is the
+#    closed set `talk` resolves against, so the player cannot SPEAK to somebody
+#    who is not there whatever the prose says about them.
+#
 # WHAT IT CANNOT DO, stated so nobody expects it to: deterministic verification
 # catches the MISUSE of things that exist. It cannot catch the INVENTION of
 # things that do not, because you cannot scan prose for a name you were never
@@ -924,11 +973,12 @@ class Story::Audit
   # with somebody standing there is the thing he stopped to write about.
   #
   # SOMEBODY HAS TO BE IN THE ROOM, and that is the second half of his sentence
-  # rather than a refinement of the first. Who is in the room is the HOLDOVER
-  # rule -- whoever was in the last scene here that recorded anyone -- read
-  # historically, because that is the answer `Playthrough::Classifier` would
-  # have given on that turn and a second opinion would be a second answer. See
-  # `Scene::Generator#holdovers`.
+  # rather than a refinement of the first. It is read HISTORICALLY -- who was in
+  # the room on that turn, not who is there now -- because the complaint is
+  # about the turn. Every turn carries that answer on it now
+  # (`Playthrough::Turn#play` snapshots `Character.present_in` onto every
+  # branch); a turn played before it did falls back to the old rule, whoever was
+  # in the last scene here that recorded anyone. See `#cast_recorded_by`.
   #
   # THIS IS NOT A DEFECT AND IT IS NOT COUNTED AS ONE. Nothing here proves the
   # turn was bad; a player reading a daybook for four turns is playing the game
@@ -1012,6 +1062,17 @@ class Story::Audit
   # The protagonist is dropped -- they are the player, and a player is never the
   # answer to "who is in the room with me".
   def cast_recorded_by(scene)
+    # THE TURN'S OWN SNAPSHOT FIRST, because since `ta-character-whereabouts` it
+    # has one: `Playthrough::Turn#play` writes the room's cast onto every branch
+    # out of `Character.present_in`, so the exact answer for this turn is on
+    # this turn. It used to be written only by an arrival and a talk -- 184 of
+    # the 480 baseline turns had none -- which is why the scan below exists and
+    # why it stays: a turn played before the snapshot did still has to be judged
+    # the way it would have been judged then, and re-reading history under a new
+    # rule would move a measured number without anything about the game having
+    # changed.
+    return scene.characters.to_a - [ story.protagonist ].compact if scene.characters.any?
+
     candidates = scenes.select do |other|
       other.location_id == scene.location_id && other.characters.any? &&
         (other.story_timestamp.nil? || scene.story_timestamp.nil? ||

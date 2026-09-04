@@ -93,12 +93,40 @@ class SeededWorldsTest < ActiveSupport::TestCase
     end
   end
 
+  # WHERE THE CAST STANDS, and it is `characters[].location` in the file --
+  # `Character.present_in`, the closed set `talk` resolves against. It replaced
+  # reading the last scene in a room that recorded anybody, which meant a room
+  # nobody had walked into had nobody in it however central the person standing
+  # there was.
+  test "every checked-in world places its cast, or means not to" do
+    WorldSeed::Loader.load_all(io: nil).each do |story|
+      placed = story.characters.somewhere.to_a
+
+      assert placed.any?, "#{story.title}: nobody in this world is anywhere, so `talk` can never resolve"
+      placed.each do |character|
+        assert_equal story, character.location.story, "#{story.title}: #{character.fullname} stands in another story"
+        assert_not character.is_protagonist?,
+                   "#{story.title}: the protagonist's position is the playthrough's, not the story's"
+      end
+    end
+  end
+
+  # The premise character is the reason this whole record exists: The Salt
+  # Assizes is about a man chained to the tide post, and arriving there used to
+  # record the protagonist alone.
+  test "the premise character of the held-out world is at the post" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    post = story.locations.find_by(name: "The Tide Post")
+
+    assert_equal [ "Neb Halloran" ], Character.present_in(post).pluck(:fullname)
+    assert_equal [ "Neb Halloran" ], Scene::Generator.characters_present(post).map(&:fullname) - [ story.protagonist.fullname ]
+  end
+
   # The reason the opening arrival is world data rather than something a
-  # playthrough invents. `Scene::Generator.characters_present` reads the last
-  # scene in a location that recorded anyone, so an opening arrival with a
-  # hand-authored cast is what makes `Playthrough::Classifier` offer somebody to
-  # talk to -- previously it answered with the protagonist alone in both worlds,
-  # and the talk branch was unreachable in a seeded world.
+  # playthrough invents: it is the prose a player reads first. Who is standing
+  # in the opening room is now `characters[].location` rather than that cast, so
+  # the two have to agree -- an arrival that introduces somebody the classifier
+  # will not offer is the defect this record replaced, running the other way.
   test "every checked-in world has somebody to talk to on turn one" do
     WorldSeed::Loader.load_all(io: nil).each do |story|
       present = Scene::Generator.characters_present(story.opening_location)

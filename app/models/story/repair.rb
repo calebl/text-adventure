@@ -39,6 +39,7 @@ class Story::Repair
     one_way_connection: { calls: 0, handler: :repair_one_way_connection },
     connection_directions_disagree: { calls: 0, handler: :repair_disagreeing_connection },
     playthrough_without_location: { calls: 0, handler: :repair_playthrough_location },
+    character_moved_from_the_seed: { calls: 0, handler: :repair_seeded_whereabouts },
     no_realized_location: { calls: 2, handler: :repair_no_realized_location },
     opening_location_is_a_stub: { calls: 2, handler: :repair_opening_location_stub },
     opening_has_no_exits: { calls: 1, handler: :repair_missing_exits },
@@ -153,6 +154,24 @@ class Story::Repair
     location = playthrough.current_scene.location
     playthrough.update!(current_location: location)
     "put playthrough ##{playthrough.id} back in #{location.name}, where its current scene happens"
+  end
+
+  # Where the world file says that person stands. On record and checked in --
+  # `characters[].location` in `db/seeds/worlds/*.yml` -- so this is the same
+  # kind of repair the connection reversal is: a value that already exists
+  # somewhere else, written back. It is the same thing re-seeding does, minus
+  # re-asserting the rest of the file over a world somebody has played.
+  #
+  # `Character#move_to!` and not the registry, because this IS the explicit
+  # decision: the file says so.
+  def repair_seeded_whereabouts(finding)
+    character = finding.subject
+    room = doctor.seeded_whereabouts[character.fullname]
+    location = story.locations.find_by(name: room)
+    raise ArgumentError, "the world file places #{character.fullname} in #{room.inspect}, which this story has no location called" if location.nil?
+
+    character.move_to!(location)
+    "put #{character.fullname} back in #{location.name}, where the world file places them"
   end
 
   # Two model calls: the room's description and lore, then its exits.

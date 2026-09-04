@@ -24,6 +24,9 @@ steps:
   why: Room 3 leads three ways out and every one of them is unwritten
   expect:
     location: Grenn's Boarding House, Room 3 (realized)
+    # Placed by `characters[].location` in the world file, and read straight
+    # back out of `Character.present_in` -- no scene involved.
+    present: [Grenn Ollivar]
     exits:
     - Mournwell Lane (stub)
     - Grenn's Boarding House hallway (stub)
@@ -41,6 +44,10 @@ steps:
     exits:
     - "Grenn's Boarding House, Room 3 (realized)"
     - Sovereign's Circle (stub)
+    # Walking out of Room 3 does not bring Grenn along. Nothing in a walk
+    # writes a whereabouts; `cast_unmoved` asserts it again over the whole
+    # world after the script.
+    present: []
 
 - id: two-rooms-deep
   type: go to Sovereign's Circle
@@ -92,6 +99,7 @@ steps:
   expect:
     changed: true
     location: Grenn's Boarding House, Room 3 (realized)
+    present: [Grenn Ollivar]
     exits:
     - Mournwell Lane (stub)
     - Grenn's Boarding House hallway (stub)

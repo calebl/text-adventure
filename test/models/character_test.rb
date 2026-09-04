@@ -409,4 +409,76 @@ class CharacterTest < ActiveSupport::TestCase
     assert_equal "their", they.determiner
     assert_equal "theirs", they.possessive
   end
+  # --- whereabouts -----------------------------------------------------------
+  #
+  # `characters.location_id` is the `Item` shape applied to people: one place at
+  # a time, owned by the app, and `Character.present_in` is the closed set
+  # `talk` resolves against. See the class header.
+
+  test "a character starts nowhere, and nowhere is a legal state" do
+    character = create(:character, story: @story)
+
+    assert_predicate character, :nowhere?
+    assert_not character.somewhere?
+    assert_equal "nowhere", character.whereabouts
+    assert_includes Character.nowhere, character
+    assert_not_includes Character.somewhere, character
+  end
+
+  test "present_in is the closed set for one room, and only that room" do
+    here = create(:location, story: @story, name: "The Tide Post")
+    there = create(:location, story: @story, name: "The Causeway Court")
+    neb = create(:character, story: @story, fullname: "Neb Halloran", location: here)
+    brace = create(:character, story: @story, fullname: "Ammon Brace", location: there)
+    create(:character, story: @story, fullname: "Nobody At All")
+
+    assert_equal [ neb ], Character.present_in(here).to_a
+    assert_equal [ brace ], Character.present_in(there).to_a
+    assert_equal "in The Tide Post", neb.whereabouts
+    assert_predicate neb, :somewhere?
+  end
+
+  test "present_in is ordered by id, so two people in one room are offered stably" do
+    here = create(:location, story: @story)
+    first = create(:character, story: @story, location: here)
+    second = create(:character, story: @story, location: here)
+
+    assert_equal [ first, second ], Character.present_in(here).to_a
+  end
+
+  # THE EXPLICIT ENGINE CALL, and the only unconditional one. Nothing in the app
+  # invokes it yet, which is the point: movement is a decision.
+  test "move_to! moves somebody whether or not they were already somewhere" do
+    here = create(:location, story: @story)
+    there = create(:location, story: @story)
+    character = create(:character, story: @story, location: here)
+
+    character.move_to!(there)
+    assert_equal there, character.reload.location
+
+    character.move_to!(nil)
+    assert_predicate character.reload, :nowhere?
+  end
+
+  # A whereabouts pointing into another world is a row no closed set can offer,
+  # because `Character.present_in` is always asked about one story's rooms.
+  test "a character cannot stand in another story's room" do
+    elsewhere = create(:location, story: create(:story), name: "Somewhere Else Entirely")
+    character = build(:character, story: @story, location: elsewhere)
+
+    assert_not character.valid?
+    assert_includes character.errors[:location], "must be a place in this story"
+  end
+
+  # A person outlives a building: `Location has_many :characters, dependent:
+  # :nullify`, so a destroyed room leaves its cast nowhere rather than killing
+  # them. `rake game:doctor` reports it.
+  test "destroying a room leaves the people in it nowhere" do
+    room = create(:location, story: @story)
+    character = create(:character, story: @story, location: room)
+
+    room.destroy!
+
+    assert_predicate character.reload, :nowhere?
+  end
 end

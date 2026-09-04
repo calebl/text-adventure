@@ -201,34 +201,48 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
     assert_not_includes scene.characters, bystander
   end
 
-  # The world persists and so do the people in it: whoever was here when the
-  # player left is still here when they come back.
-  test "whoever was in the last scene here is still here" do
+  # The world persists and so do the people in it: whoever the records place
+  # here is here, whether or not anybody has ever walked in.
+  test "whoever the records place here is here" do
     location = realized_location(last_protagonist_visit: 1.hour.ago)
-    innkeeper = create(:character, story: @story, fullname: "Grenn Halloway")
-    earlier = create(:scene, story: @story, location: location, story_timestamp: 1.hour.ago)
-    earlier.characters << innkeeper
+    innkeeper = create(:character, story: @story, fullname: "Grenn Halloway", location: location)
 
     scene, = generate(location)
 
     assert_includes scene.characters, innkeeper
   end
 
-  # The bug the game loop makes reachable. Only an arrival records a cast, so a
-  # turn spent examining something writes a scene with nobody in it -- and
-  # reading the plain latest scene emptied the room because the player looked at
-  # the fireplace on their way out.
-  test "a turn that recorded nobody does not empty the room" do
+  # WHAT THE WHEREABOUTS RECORD REPLACED. The cast used to be reconstructed
+  # from the last scene in this room that had recorded anybody, so presence
+  # depended on a scene having been written -- and only an arrival writes a
+  # cast. A room nobody had walked into was therefore empty however central the
+  # person standing in it was: The Tide Post recorded the protagonist alone in
+  # a world about a man chained to it. Nothing here writes a scene at all.
+  test "presence does not depend on any scene having recorded a cast" do
     location = realized_location(last_protagonist_visit: 1.hour.ago)
-    innkeeper = create(:character, story: @story, fullname: "Grenn Halloway")
-    create(:scene, story: @story, location: location, story_timestamp: 2.hours.ago)
-      .characters << innkeeper
-    # A narrated turn: a later scene in the same room, with no cast.
-    create(:scene, story: @story, location: location, story_timestamp: 1.hour.ago)
+    innkeeper = create(:character, story: @story, fullname: "Grenn Halloway", location: location)
+
+    assert_equal [], location.scenes.to_a
+    assert_equal [ innkeeper ], Scene::Generator.characters_present(location)
 
     scene, = generate(location)
 
     assert_includes scene.characters, innkeeper
+  end
+
+  # And the other half of it: a scene's cast is a SNAPSHOT of the records, so a
+  # stale one cannot put somebody back in a room the records have moved them
+  # out of.
+  test "an old scene's cast does not override the records" do
+    location = realized_location(last_protagonist_visit: 1.hour.ago)
+    elsewhere = realized_location(name: "The Pump Gallery")
+    innkeeper = create(:character, story: @story, fullname: "Grenn Halloway", location: elsewhere)
+    create(:scene, story: @story, location: location, story_timestamp: 1.hour.ago)
+      .characters << innkeeper
+
+    scene, = generate(location)
+
+    assert_not_includes scene.characters, innkeeper
   end
 
   # `.characters_present(location)` is the same answer without building an
@@ -246,8 +260,7 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
 
   test "people in some other location are not here" do
     elsewhere = realized_location(name: "The Pump Gallery")
-    stranger = create(:character, story: @story)
-    create(:scene, story: @story, location: elsewhere).characters << stranger
+    stranger = create(:character, story: @story, location: elsewhere)
 
     scene, = generate(realized_location(name: "The Drowned Ledger"))
 

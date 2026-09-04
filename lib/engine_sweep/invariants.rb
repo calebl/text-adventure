@@ -2,11 +2,14 @@
 #
 # These are not per-step expectations and no script asks for them: they run
 # after every script, against the world it just walked, compared with the file
-# it was loaded from. They are the four statements the engine defects of
+# it was loaded from. Four of them are the statements the engine defects of
 # 2026-09-03 violated, written down as facts about the records rather than as
 # facts about one turn -- because that is the shape they had. Nobody typed a
 # line that said "give the closet a second door"; a room was realized and the
-# closet had two doors afterwards.
+# closet had two doors afterwards. The fifth, `cast_unmoved`, is the same
+# statement about people, added with the whereabouts record: nothing a player
+# types may move anybody, and now that presence is a record there is finally
+# something to assert it against.
 #
 #   doors_unchanged      no edge was opened or closed by walking. `Do not open a
 #                        new door into a room that is already written` (53e7fbf)
@@ -26,6 +29,24 @@
 #                        `Item::Registry` writes only at realization, which this
 #                        mode cannot reach: a walk that gained an item would
 #                        mean something else had started making them.
+#   cast_unmoved         every character is standing exactly where the world
+#                        file put them, and anybody the file left nowhere is
+#                        still nowhere. `characters.location_id` is the closed
+#                        set `talk` resolves against, and NOTHING in a walk may
+#                        write it: the seed file, `Character::Registry` (at
+#                        realization, which this mode cannot reach) and an
+#                        explicit `Character#move_to!` are the only writers, so
+#                        a walk that moved somebody means a typed line has
+#                        started moving people. It is stated as "unmoved"
+#                        rather than as "nobody is nowhere" because nowhere is
+#                        a legitimate state that two of the three checked-in
+#                        worlds are in: the protagonist and any companion carry
+#                        no whereabouts at all (the party is wherever the
+#                        PLAYTHROUGH is), and `The Unrecorded Hour` leaves
+#                        Perrin Lasco nowhere on purpose. Comparing against the
+#                        file catches everything "nobody is nowhere" would --
+#                        somebody who LOST their room during the walk fails it
+#                        -- and does not fail on a world that means it.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
@@ -62,7 +83,7 @@ class EngineSweep::Invariants
   end
 
   def check
-    [ doors_unchanged, exit_cap, items_accounted, nothing_was_written ].flatten.compact
+    [ doors_unchanged, exit_cap, items_accounted, cast_unmoved, nothing_was_written ].flatten.compact
   end
 
   private
@@ -126,6 +147,26 @@ class EngineSweep::Invariants
     (Array(seed["locations"]) + Array(seed["characters"]))
       .flat_map { |owner| Array(owner["items"]) }
       .map { |item| item["name"] }
+  end
+
+  # WHERE THE FILE PUTS EACH OF THEM, by full name. A character the file does
+  # not place is in here as nil, so somebody who acquired a room during the
+  # walk fails just as loudly as somebody who lost one.
+  def cast_in_file
+    Array(seed["characters"]).to_h { |row| [ row["fullname"], row["location"] ] }
+  end
+
+  def cast_unmoved
+    moved = story.characters.includes(:location).order(:id).filter_map do |character|
+      wanted = cast_in_file[character.fullname]
+      next if character.location&.name == wanted
+
+      "#{character.fullname} is #{character.whereabouts} and the file says " \
+        "#{wanted ? "in #{wanted}" : "nowhere"}"
+    end
+    return nil if moved.empty?
+
+    broken("cast_unmoved", moved.join("; "))
   end
 
   def nothing_was_written

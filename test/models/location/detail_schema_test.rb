@@ -4,22 +4,24 @@ require "test_helper"
 # the two columns a realized location is validated on. A field that drifts here
 # produces a location that fails to save after the model call has been paid for.
 #
-# And `items`, which is not a location column at all: it is the room's
-# furniture riding on the same call, written by `Item::Registry` into rows of
-# its own. It is the one field here that is deliberately OPTIONAL, because a
-# room containing nothing is the ordinary case and an empty required array
+# And `items` and `people`, which are not location columns at all: they are the
+# room's furniture and its cast riding on the same call, written by
+# `Item::Registry` and `Character::Registry` into rows of their own. They are
+# the two fields here that are deliberately OPTIONAL, because a room containing
+# nothing and holding nobody is the ordinary case and an empty required array
 # reads as an omitted field to `BaseAgent#missing_schema_keys`.
 class Location::DetailSchemaTest < ActiveSupport::TestCase
   include SchemaAssertions
 
   SCHEMA = Location::DetailSchema
 
-  test "describes the two fields a realized location needs, and what is lying in it" do
-    assert_equal %w[description lore items], schema_properties(SCHEMA).keys
+  test "describes the two fields a realized location needs, plus what is in it and who" do
+    assert_equal %w[description lore items people], schema_properties(SCHEMA).keys
   end
 
-  # `items` is not among them, and that is the point: a room with nothing in it
-  # would otherwise fail its own realization and rotate to another model.
+  # Neither `items` nor `people` is among them, and that is the point: a room
+  # with nothing in it and nobody in it would otherwise fail its own realization
+  # and rotate to another model.
   test "every field a location is validated on is required" do
     assert_equal %w[description lore], schema_required(SCHEMA)
   end
@@ -53,7 +55,44 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
   end
 
   test "every prose field maps to a location column" do
-    assert_equal [], schema_properties(SCHEMA).keys - Location.column_names - [ "items" ]
+    assert_equal [], schema_properties(SCHEMA).keys - Location.column_names - %w[items people]
+  end
+
+  # THE BOUND ON ONE ANSWER, and the captain's number: nobody or one is the
+  # ordinary case, not a crowd. The bound on the ROOM and on the WORLD is
+  # `Character::Registry`'s, read against the records, because a seeded room can
+  # already be at one.
+  test "people is bounded at what one answer may name" do
+    people = schema_properties(SCHEMA)["people"]
+
+    assert_equal "array", people["type"]
+    assert_equal Character::Registry::MAX_PER_CALL, people["maxItems"]
+    assert_equal 2, Character::Registry::MAX_PER_CALL
+  end
+
+  # Race, age and sex are NOT here: `Character::Registry#slots` rolls them and
+  # the prompt states them before the model answers, on Character::Generator's
+  # rule that asking for a value the prompt just supplied is a decision bought
+  # twice.
+  test "a person carries the sheet a Character is validated on, and nothing the engine decides" do
+    fields = schema_properties(SCHEMA).dig("people", "items", "properties")
+
+    assert_equal %w[fullname nickname appearance personality backstory likes dislikes fears], fields.keys
+    assert_equal [], %w[race age sex] & fields.keys
+    assert_equal [], Character::Registry::SHEET.map(&:to_s) - fields.keys
+  end
+
+  # Shorter than `Character::Schema`'s equivalents, every one of them: this
+  # rides on a call that already costs ~670 output tokens, and a person written
+  # at full length would be the most expensive thing in a room.
+  test "a generated person's sheet is capped shorter than a generated character's" do
+    riding = schema_properties(SCHEMA).dig("people", "items", "properties")
+    alone = schema_properties(Character::Schema)
+
+    Character::Registry::SHEET.each do |field|
+      assert_operator riding.fetch(field.to_s)["maxLength"], :<, alone.fetch(field.to_s)["maxLength"],
+                      "#{field} is not shorter than Character::Schema's"
+    end
   end
 
   # The bound on ONE ANSWER, which is not the bound on the room -- that is

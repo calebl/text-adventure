@@ -58,6 +58,32 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal [ "A Sealed Letter" ], document["items"].map { |item| item["name"] }
   end
 
+  # WHERE THE WORLD PUTS THEM. `Character.present_in` is the closed set `talk`
+  # resolves against, so a world exported without it loads with nobody standing
+  # anywhere -- and there is nobody in it to speak to.
+  test "exports where a character stands, and says nothing when they stand nowhere" do
+    create(:character, story: @story, fullname: "Someone Present", location: @opening)
+    create(:character, story: @story, fullname: "Someone Removed")
+
+    document = WorldSeed::Exporter.new(@story).document.fetch("characters")
+
+    assert_equal "The Opening Room", document.first["location"]
+    assert_not document.last.key?("location"), "nowhere is written by omission, like `opening` and `mobile`"
+  end
+
+  # A round trip is the real assertion: what comes out has to load back into the
+  # same closed set it came from.
+  test "a round trip keeps the cast standing where it stood" do
+    create(:character, story: @story, fullname: "Someone Present", location: @opening, is_protagonist: true)
+    document = WorldSeed::Exporter.new(@story).document
+    document["story"]["title"] = "A World Reloaded"
+
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load!
+    opening = reloaded.locations.find_by(name: "The Opening Room")
+
+    assert_equal [ "Someone Present" ], Character.present_in(opening).pluck(:fullname)
+  end
+
   # An item is written under whichever of the two places it is in, and only
   # there: `Item` is in exactly one, so it is exported exactly once.
   test "exports an item lying in a location under that location" do

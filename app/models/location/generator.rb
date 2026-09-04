@@ -52,8 +52,8 @@ class Location::Generator
     location
   end
 
-  # What the player reads on arrival, persisted immediately -- and what is
-  # lying in it, out of the same answer.
+  # What the player reads on arrival, persisted immediately -- and what is lying
+  # in it and who is standing in it, out of the same answer.
   #
   # THE ITEMS RIDE ON THIS CALL rather than a third one of their own. A room
   # already costs two calls to realize; asking separately what is on the floor
@@ -72,6 +72,13 @@ class Location::Generator
     location.save!
 
     registry.admit!(detail["items"])
+    # AND WHO IS IN IT, on the captain's ruling that *rooms should be born with
+    # people in them sometimes.* The same shape as the line above it and for the
+    # same reasons: structured records out of the call that describes the room,
+    # never a narrator tool and never a scan of prose. `Character::Registry`
+    # decides -- it refuses a taken name, it refuses past the room's cap and the
+    # world's, and it never moves somebody who already stands somewhere.
+    cast_registry.admit!(detail["people"])
 
     location
   end
@@ -81,6 +88,15 @@ class Location::Generator
   # can be read into the prompt and then enforced against the records.
   def registry
     @registry ||= Item::Registry.new(location)
+  end
+
+  # WHO MAY COME TO EXIST HERE. Held rather than built per call for a stronger
+  # reason than the item registry's: it rolls the race, age and sex of each
+  # person this call may name, and the PROMPT states those before the model
+  # answers. A second instance would roll a second set, and the room would be
+  # described around one person and written around another.
+  def cast_registry
+    @cast_registry ||= Character::Registry.new(location)
   end
 
   # The ways out, as stub neighbours plus connection rows in both directions,
@@ -153,7 +169,56 @@ class Location::Generator
       - Respect the stated length of each field
 
       #{items_instructions}
+
+      #{people_instructions}
     PROMPT
+  end
+
+  # WHAT THE MODEL IS TOLD ABOUT WHO IS IN THIS ROOM. Two things, and the second
+  # is what keeps this cheap: how many people it may name at all, and WHO THEY
+  # ALREADY ARE. Race, age and sex are rolled by `Character::Registry#slots`
+  # before this prompt is built and stated here per slot, so the model writes a
+  # person the engine has already decided rather than deciding one -- the rule
+  # `Character::Generator` states as *asking for a value the prompt just
+  # supplied is a decision bought twice.*
+  #
+  # NOBODY IS THE ORDINARY ANSWER and the sentence says so twice, because a room
+  # with somebody in it is a room with a conversation in it and most rooms are
+  # not that. A world at its cap is asked for nobody at all, and the schema's
+  # array can honestly come back empty.
+  def people_instructions
+    allowance = cast_registry.allowance
+
+    return "Do not list any people: there is nobody left for this world to hold." if allowance.zero?
+
+    <<~PROMPT.rstrip
+      ## Who Is Here
+      List AT MOST #{allowance} #{"person".pluralize(allowance)} who #{allowance == 1 ? "is" : "are"} in this place right now.
+      - NOBODY is the right answer for most rooms, and an empty list is a complete
+        answer. Name somebody only when this place would be strange without them
+      - Anyone you name is somebody the player can walk up to and talk to, so they
+        have to have a reason to be standing here and something they want
+      - Do not write the player, and do not write somebody passing through
+      - Never give them the name of a place, of a thing, or any name already
+        spoken for above
+
+      #{slot_details(allowance)}
+    PROMPT
+  end
+
+  # The people the engine has already decided on, one line each, in the order
+  # the answer's entries are read back in.
+  def slot_details(allowance)
+    lines = cast_registry.slots.first(allowance).each_with_index.map do |details, index|
+      race = details[:race]
+      # `details[:sex]` is the STORED value rather than the enum key -- "trans
+      # woman", not "trans_woman" -- so the line reads as English. Same reason
+      # `Character#sex_label` exists and the same value `Character::Generator`
+      # states in its own predetermined block.
+      "  the #{(index + 1).ordinalize} is #{race&.name}, about #{details[:age]}, #{details[:sex]}"
+    end
+
+    "Who they are is already decided. Write these people and do not change them:\n#{lines.join("\n")}"
   end
 
   # WHAT THE MODEL IS TOLD ABOUT THE FLOOR OF THIS ROOM. It is asked for at
@@ -184,9 +249,10 @@ class Location::Generator
   end
 
   # The names already spoken for in this story, so the model does not spend an
-  # item on one. Truncated rather than unbounded: this rides on a prompt sent
-  # once per room, and a world with two hundred names in it would pay for the
-  # whole list to say "not these".
+  # item or a person on one. Truncated rather than unbounded: this rides on a
+  # prompt sent once per room, and a world with two hundred names in it would
+  # pay for the whole list to say "not these". Read by both instruction blocks,
+  # because both registries refuse a name the other's records already hold.
   def known_names_note
     taken = (story.characters.order(:id).limit(20).pluck(:fullname) +
              registry.story_items.order(:id).limit(20).pluck(:name)).compact_blank

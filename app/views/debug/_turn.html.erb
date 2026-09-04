@@ -40,7 +40,7 @@
     </div>
 
     <div class="k">cast recorded</div>
-    <div class="v"><%= debug_value(turn.cast.map(&:fullname).to_sentence.presence, absent: "nobody — a narrated turn records no cast") %></div>
+    <div class="v"><%= debug_value(turn.cast.map(&:fullname).to_sentence.presence, absent: "nobody — a turn played before Playthrough::Turn#play snapshotted one") %></div>
 
     <div class="k">summary</div>
     <div class="v"><%= debug_value(turn.scene.summary, absent: "none — Scene::Generator writes one, Scene::Narrator does not") %></div>

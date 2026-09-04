@@ -60,6 +60,15 @@ class Playthrough::Mechanics
     "go" => :go, "move" => :go, "walk" => :go, "enter" => :go,
     "take" => :take, "get" => :take, "grab" => :take, "pick up" => :take,
     "drop" => :drop, "put down" => :drop, "leave" => :drop,
+    # TALKING IS PROSE AND THIS MODE WRITES NONE, so `talk` here resolves a
+    # person and then refuses -- which is the whole point of it. Who is
+    # standing here is `Character.present_in`, a record, so whether a `talk`
+    # RESOLVES is an engine question that can be answered with no model at all,
+    # and answering it offline is what lets `rake game:sweep` regression-test
+    # presence. Before the whereabouts column there was nothing to resolve
+    # against: the room's cast was reconstructed from the last scene here that
+    # recorded anybody, and an offline walk writes no scenes.
+    "talk" => :talk, "speak" => :talk, "ask" => :talk,
     "help" => :help
   }.freeze
 
@@ -70,6 +79,8 @@ class Playthrough::Mechanics
     "go <exit>        move into one of the ways out (also: move, walk, enter)",
     "take <item>      pick up something lying here (also: get, grab, pick up)",
     "drop <item>      put down something you are carrying (also: put down, leave)",
+    "talk <person>    resolve somebody standing here (also: speak, ask). The",
+    "                 talking itself is prose, so this mode names them and stops",
     "look             the engine's whole view of where you are (also: where,",
     "                 inventory, exits, items, who, state)",
     "help             this list",
@@ -297,6 +308,7 @@ class Playthrough::Mechanics
     when :go then read_move(argument)
     when :take then read_take(argument)
     when :drop then read_drop(argument)
+    when :talk then read_talk(argument)
     else resolve(classifier.exits_here, text).found? ? read_move(text) : unknown(text)
     end
   end
@@ -336,6 +348,22 @@ class Playthrough::Mechanics
     return Reading.new(refusal: cannot_find("thing you are carrying", argument, match, carried)) unless match.found?
 
     intent(:drop, item: match.record)
+  end
+
+  # WHO IS HERE IS A RECORD, so this resolves out of `Character.present_in` --
+  # the same closed set `Playthrough::Classifier` offers a model, read through
+  # the same method. A name that lands on nobody is refused with the cast that
+  # IS here, which is the answer a player standing in the wrong room needs.
+  def read_talk(argument)
+    cast = classifier.characters_here
+    if argument.blank?
+      return Reading.new(refusal: cast.any? ? "talk to whom? Here: #{names(cast)}" : "talk to whom? There is nobody here.")
+    end
+
+    match = resolve(cast, argument)
+    return Reading.new(refusal: cannot_find("person here", argument, match, cast)) unless match.found?
+
+    intent(:talk, speaker: match.record)
   end
 
   # The grammar's answer, in the classifier's own vocabulary.
@@ -579,16 +607,28 @@ class Playthrough::Mechanics
   # ONE READING OF THE TYPED NAME against the records, in the order a person
   # would try them.
   def match_once(records, wanted)
-    exact = records.select { |record| normalize(record.name) == wanted }
+    exact = records.select { |record| names_of(record).any? { |name| normalize(name) == wanted } }
     return Match.new(record: exact.first, candidates: exact) if exact.any?
 
     HOW_A_NAME_MATCHES.each do |how|
-      hits = records.select { |record| how.call(normalize(record.name), wanted) }
+      hits = records.select { |record| names_of(record).any? { |name| how.call(normalize(name), wanted) } }
       return Match.new(record: hits.first, candidates: hits) if hits.one?
       return Match.new(record: nil, candidates: hits) if hits.many?
     end
 
     Match.new(record: nil, candidates: [])
+  end
+
+  # THE NAMES A RECORD ANSWERS TO. A place and a thing have one; a person has
+  # two, and both are in the closed enum `Playthrough::Classifier` offers a
+  # model (`#cast_names`) -- so both have to be matchable here, or the offline
+  # grammar would refuse a name the classifier accepts. A player types "Neb" as
+  # readily as "Neb Halloran", which is the same reason
+  # `Playthrough::Classifier#find_character` matches either.
+  def names_of(record)
+    return [ record.fullname, record.nickname ].compact_blank if record.respond_to?(:fullname)
+
+    [ record.name ].compact_blank
   end
 
   def normalize(text)
@@ -605,8 +645,10 @@ class Playthrough::Mechanics
     "there is no #{kind} called #{typed.inspect}. There is: #{names(records)}"
   end
 
+  # As the player would have typed them -- `label` gives a person their
+  # fullname, which is the name a refusal should offer back.
   def names(records)
-    records.map(&:name).presence&.join(", ") || "nothing"
+    records.map { |record| label(record) }.presence&.join(", ") || "nothing"
   end
 
   # --- reports --------------------------------------------------------------

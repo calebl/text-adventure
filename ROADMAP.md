@@ -55,6 +55,117 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **Character whereabouts, and the Tide Post remembering who is chained to it**
+  (`ta-character-whereabouts`). The captain's ruling was *"go with shape one"* —
+  a whereabouts record of a character's own, the `Item` shape, over making the
+  scene cast authoritative. `characters.location_id` is that record, and
+  `Character.present_in(location)` is now the closed set `talk` resolves
+  against, exactly as `Item.lying_in(location)` is the one `take` resolves
+  against.
+
+  **The defect it closes.** Who was in a room was worked out again on every
+  arrival — the protagonist, anyone `is_companion`, and whoever was in the last
+  scene played there that had recorded a cast — and only an arrival records one,
+  so 184 of the 480 baseline turns had no record of who was present at all. A
+  cast that is regenerated is a cast that forgets: arriving at **The Tide Post**
+  recorded the protagonist alone, on all three runs checked, in a world whose
+  whole premise is that Neb Halloran is chained to that post. It now records him,
+  the arrival narration names him, `rake game:mechanics` lists him under
+  `present`, and a `talk` to him resolves — while a `talk` to him from the court
+  is refused with the cast that *is* there.
+
+  **Why the protagonist does not carry one, and never will.** Where the player
+  stands belongs to the playthrough (`playthroughs.current_location_id`),
+  because two people playing one seeded world stand in two different rooms at
+  the same time and a story-level column cannot hold both answers. The party —
+  the protagonist and anyone `is_companion` — stays derived for that reason, and
+  `Scene::Generator.characters_present` is the one place the party and the
+  world's own people are added together.
+
+  **Four writers, and prose is not one of them**: `characters[].location` in a
+  world file, `Character::Registry` (which places somebody who is nowhere and
+  **never moves somebody who is not** — that rule is the Tide Post defect
+  written down), the explicit `Character#move_to!`, and
+  `rake game:backfill_whereabouts` once, which refuses to guess when two rooms
+  recorded somebody at the same moment. No narrator tool, no per-turn model
+  check, no scan of prose for a name.
+
+  **The scene cast is kept and its direction reversed.** It is a derived
+  snapshot now, written on every branch by `Playthrough::Turn#play` beside
+  `typed` and `resolved_action`. Kept rather than dropped because it answers a
+  different question — where somebody *was* — which a column with no history
+  cannot reconstruct and which `Eval::Richness`, `still_run` and both frozen
+  corpora read.
+
+  **What it cost the prompts: nothing that matters, and it was measured.** Every
+  prompt has the same shape and the same line per person; only the content of
+  the list changed. Across every room of all three seeded worlds exactly one
+  room's cast differs from what the old derivation produced — The Tide Post,
+  gaining Neb Halloran — at **+7 tokens** on the arrival prompt (once per
+  arrival), **−1** net on the per-turn classifier prompt (−5 on the cast list,
+  +4 on the closed enum, because "Nobody. There is no one here to talk to." is
+  longer than the line that replaced it) and **+9** on
+  `Playthrough::Moment#narration_context`. Every other room: zero.
+
+  **`character_not_present` was measured and NOT shipped**, which is the one
+  deliverable that did not land and is stated rather than quietly dropped. The
+  record removed the stated blocker — the records are authoritative about
+  presence now — and the corpora still cannot support the check: 36 of 248
+  frozen passages are judgeable, exactly ONE names somebody recorded elsewhere
+  (a true positive, so there is a demonstrated positive case and no
+  false-positive rate, because n = 1), and moving one seeded character one door
+  turns real, correct prose — *"From somewhere below, Grenn's voice rises in a
+  muffled, irritated shout"* — into a violation. `Story::Audit`'s finding 5 has
+  the numbers and `Story::AuditPresenceTest` pins them. **What would settle it
+  is now generatable for the first time**: presence is a record, so
+  `rake eval:run` can produce runs in which people are demonstrably elsewhere.
+  Meanwhile the gap is covered by the engine rather than by a check — a player
+  cannot SPEAK to somebody who is not there whatever the prose says.
+
+  **AND ROOMS ARE BORN WITH PEOPLE IN THEM, SOMETIMES** — the captain's scope
+  addition, and it is built the way `ta-item-registry` built the furniture.
+  `Location::DetailSchema` gains an optional, bounded `people` array (0–2, and
+  the prompt makes *nobody* the ordinary answer) and `Character::Registry`
+  turns the sheets into rows placed in the room it just described. Structured
+  records out of the call that describes the room; **not a narrator tool call
+  and not a scan of prose**, which is the standing constraint and is why this
+  **supersedes `ta-narrator-memory`'s characters-by-tool-call for CREATION** —
+  that item keeps the memory and cast-list half.
+
+  *Who they are, the engine decides.* Race, age and sex are rolled per slot by
+  `Character::Registry#slots` and stated in the prompt before the model answers,
+  on `Character::Generator`'s rule that asking for a value the prompt just
+  supplied is a decision bought twice — so one registry instance per
+  realization, or the room is described around one person and written around
+  another. Three bounds, each read back from the records rather than counted
+  down: `MAX_PER_CALL` (2) on one answer, `MAX_PER_ROOM` (3) on the room and
+  `MAX_PER_STORY` (12) on the world, the last two reported by
+  `rake game:doctor`. It refuses a name a character, an item or a place already
+  has, and it never moves somebody who already stands somewhere.
+
+  **And it refuses a sheet the provider cut off**, which the first live
+  realization under this schema found: `appearance` and `personality` came back
+  severed mid-word at their caps — *"She is small and"*. So
+  `Character::Registry::PERSON_LIMITS` is sized to a finished answer (the whole
+  of how `SanitizesGeneratedText` tells truncation from a near miss) and a
+  sheet that still arrives at one is dropped. A truncated field is a FAILED
+  CALL everywhere else in the app; here it must not be, because the call it
+  would fail is the room's own description — already saved, and the expensive
+  half of the realization.
+
+  **Cost, measured.** The realization prompt grows by exactly **+173 tokens**
+  per room. On the same room of the same world the detail call came back at
+  **789 output tokens with two complete people in it against 396 with `people`
+  suppressed by the cap** — about 197 tokens a person, against a schema bound
+  of ~400. Most rooms pay only the +173, because the prompt asks for nobody.
+
+  **What it unlocks**, stated because it was the argument for doing it:
+  `speak_to` as an arc trigger that means something, an interaction that can
+  refuse to happen because the person is not in the room (regression-tested
+  offline now — `rake game:sweep`, `present:`, and
+  `lib/engine_sweep/scripts/the-salt-assizes-presence.yml`), and a
+  `character_not_present` check the day a corpus can judge one.
+
 - **The scripted offline engine sweep** (`ta-engine-sweep`). *"focus on the game
   engine and the classifier, with a reliable way of testing before more
   changes."* `rake game:sweep` walks stored scripts of typed lines through
@@ -843,9 +954,10 @@ reading one held-out run the board scored at zero flags.
   richness not falling. Fold in PR-98's **F3** (the floor list into
   `Moment#narration_context`) and **F1** (a rule about *removing* a possession):
   both are the diagnosed cause and both are already measured.
-- **`ta-character-whereabouts`** — there is no record of where anybody is. The
-  people half of the noun registry; overlaps `ta-narrator-memory` below and
-  should be designed with it.
+- ~~**`ta-character-whereabouts`**~~ — **landed.** `characters.location_id`, the
+  `Item` shape applied to people; see **Done**. What it left for
+  `ta-narrator-memory` is stated there: `Character::Registry` places people and
+  does not invent them, and `#admit!` is the seam creation plugs into.
 
 ### Alongside those, the older queued work
 
@@ -866,10 +978,16 @@ reading one held-out run the board scored at zero flags.
   narrator only renders them, non-compliance corrupts prose but never facts.
   **Land it before the laws digest** — everything prompt-shaped should wait for
   this split. Detail in **4. Persistence and history** is unaffected by it.
-- **`ta-narrator-memory`** — a cast list and memory beyond one turn; the people
-  half of the noun registry, and the same stub-then-realize shape (9) needs.
-  Carries a live tension worth naming: its tool-call character creation is
-  itself a narrator-compliance dependency.
+- **`ta-narrator-memory`** — **narrowed to the memory half.**
+  `ta-character-whereabouts` took creation: `Character::Registry` writes 0–2
+  people as structured records when a room is realized, out of the same call
+  that describes it, so **characters-by-tool-call is superseded** and the live
+  tension that item carried — that tool-call creation is itself a
+  narrator-compliance dependency — is resolved by not depending on one. What is
+  left is what the name says: a cast list and memory beyond one turn, and
+  characters *mentioned in passing* becoming real records, which is a different
+  and harder question than a room's own cast. `Playthrough::Moment#conclusions`
+  already opened the interaction memory; this is the rest of it.
 - ~~**`ta-chat-persist`**~~ — **landed.** Conversations are kept, bounded and
   visible: see **Done** and **4** below. The arc's dependency on scene
   summarisation is discharged — `Playthrough#recap` is there and costs no call.
@@ -1249,17 +1367,15 @@ What it still owes, roughly in order:
   changed: that is `ta-take-drop-narration`, and it is now a number that can
   move.
 
-- **Nothing records where a character is** (`ta-character-whereabouts`, queued).
-  `Character` has no location: `belongs_to :story`, `has_and_belongs_to_many
-  :scenes`, and that is the whole answer to *"where is Ammon Brace"*. Only
-  arrival turns write a cast at all — 296 of 480 baseline turns have one, the
-  other 184 have no record of who was in the room. Two consequences: a
-  `character_not_present` check **must not be built** (the records are not
-  authoritative, so it would measure the harness like `reached_for_nothing`
-  does), and the generated cast quietly drops people the world is about —
-  arriving at The Tide Post recorded the protagonist alone, on all three runs
-  checked, in a world whose premise is that Neb Halloran is chained to that post.
-  The narrator put him there and no record kept it.
+- ~~**Nothing records where a character is**~~ — **fixed**
+  (`ta-character-whereabouts`, 2026-09-04). `characters.location_id` is the
+  record and `Character.present_in` is the closed set `talk` resolves against;
+  the scene cast is a derived snapshot written on every branch rather than the
+  only place presence ever lived. The Tide Post records Neb Halloran. See
+  **Done**. The `character_not_present` check that this entry said must not be
+  built was then measured with the records in place and **still not built** —
+  `Story::Audit` finding 5 has the numbers, and the reason is now a property of
+  prose rather than of the records.
 
 - **The local model rotation is off by default** (`TA_LOCAL_MODELS=1` to bring
   it back), on the captain's ruling of 2026-09-03: *"if we are still falling
@@ -1369,19 +1485,14 @@ What it still owes, roughly in order:
   -- `Scene#typed`, written on every branch, and the debug view reads it -- but
   the turn log is still narration only, so a reloaded transcript reads as
   answers without questions. That is presentation, not plumbing.
-- **Nothing records where a character stands.** `characters` has no location
-  column, so `Scene::Generator#characters_present` answers from the three
-  things the app can actually know: the protagonist, anyone `is_companion`,
-  and whoever was in the last scene played in that location. A place nobody has
-  visited and no companion follows you into is therefore empty. That is honest
-  rather than correct, and it is what `ta-narrator-memory` — the narrator
-  creating characters by tool call — plugs into.
-  It used to mean you could not talk to anyone in a freshly seeded world at all.
-  **That is fixed:** both checked-in worlds now ship an `opening_scene` with a
-  hand-authored cast, so `characters_present` answers with somebody besides the
-  protagonist and the `talk` branch is reachable from turn one. The underlying
-  gap is unchanged — walk two rooms away and the world is empty again, because
-  nothing records where a character stands. That is still `ta-narrator-memory`.
+- ~~**A generated room has nobody in it**~~ — **fixed** in the same PR. A room
+  is realized with 0–2 people written as records out of the call that describes
+  it (`Character::Registry`), and the prompt asks for nobody as the ordinary
+  answer. What is still true, and is the honest limit: **a person the model
+  names in prose is still nobody**, because nothing reads narration for a name
+  and nothing should. Only the structured `people` array becomes a record. A
+  character mentioned in passing becoming real is `ta-narrator-memory`'s
+  remaining half.
 - **Solid Queue's worker count is the new ceiling on concurrent turns.** The
   Puma-thread problem is genuinely gone — WebSockets consume no request threads,
   and the turn runs outside the request entirely — but it has a successor:
