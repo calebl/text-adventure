@@ -14,12 +14,22 @@
 # writes a record too, on the one turn where there is not one yet -- see
 # `#read_item`.
 #
-# Everything else -- a look at something with nothing written on it, a move
-# nobody can make, a `talk` with nobody to talk to, a `take` of something that is
-# not here, a `drop` of something the player is not carrying, anything
+# Everything else -- a look at something with nothing written on it, and anything
 # unclassifiable -- falls through to `Scene::Narrator`, which answers the raw
 # command in prose. They are told apart so the classification is honest and so
 # the branches that need to exist have somewhere to land.
+#
+# AND A LAST OUTCOME THAT IS NOT A TURN AT ALL, SINCE 2026-09-04: a line the
+# engine will not play. Two acts on one line, a reach that resolved to nothing,
+# or a classifier answer the app cannot read are REFUSED whole -- no write, no
+# narrator, no `Scene`, no story time -- and `#play` answers with a
+# `Playthrough::Refusal` instead of a turn. That is the captain's ruling, and it
+# replaced narrating the attempt: a `move` to a door that is not there, a `talk`
+# to nobody, a `take` of what is not lying here and a `drop` of what is not
+# carried all used to reach `Scene::Narrator` with a fact saying so. A look at
+# something with nothing written on it is NOT one of them -- an `examine` is not
+# reaching for a record it can miss, so it narrates exactly as it always did.
+# Read `Playthrough::Refusal`'s header before changing which lines land there.
 class Playthrough::Turn
   attr_reader :playthrough
 
@@ -28,10 +38,16 @@ class Playthrough::Turn
   end
 
   # Plays `command` and returns the Scene it produced, or nil if it produced
-  # none. Chunks of prose are yielded as they become available: `Scene::Narrator`
+  # none, or a `Playthrough::Refusal` for a line the engine will not play at
+  # all. Chunks of prose are yielded as they become available: `Scene::Narrator`
   # streams token by token, and a schema'd generator yields its finished
   # paragraph in one piece, because a schema'd call cannot stream (see the
   # comment on `Scene::Narrator`).
+  #
+  # THE THIRD RETURN IS THE ONE THING A CONSUMER HAS TO KNOW about this method:
+  # a refusal is not a turn, so there is no Scene to hand back, and the text is
+  # the app's own rather than anything a model wrote. `NarrationJob` shows it
+  # where `Playthrough::SafetyNotice` goes and for the same reason.
   def play(command, &block)
     # THE WORLD MOVES FIRST, and it moves whether or not anybody was watching.
     # Every boundary the story's clock has passed since the last turn is applied
@@ -42,6 +58,15 @@ class Playthrough::Turn
     playthrough.story.catch_up_world!
 
     intent = classifier.classify(command)
+
+    # THE LINE THE ENGINE WILL NOT PLAY, and it stops HERE -- in front of the
+    # dispatch, so nothing moves, no `Scene` exists, `Location`'s visit stamp is
+    # untouched, the story's clock does not advance and no narrator is asked for
+    # a sentence about a turn that did not happen. Two acts on one line, a reach
+    # that found nothing, or a classifier answer the app cannot read: the
+    # captain's ruling of 2026-09-04. `Playthrough::Refusal` has the three
+    # shapes, the wording, and what is deliberately NOT refused.
+    return refuse(intent, command) if intent.refused?
 
     scene = if intent.destination
       move_to(intent.destination, &block)
@@ -104,6 +129,24 @@ class Playthrough::Turn
     playthrough.prune_conversations!
 
     scene
+  end
+
+  # THE REFUSAL, RETURNED RATHER THAN NARRATED.
+  #
+  # It writes nothing and calls nothing: the whole of a refused turn is the
+  # sentence, built out of the closed set the action reads against. The counter
+  # row is ALREADY WRITTEN by the time this is reached --
+  # `Playthrough::Classifier#classify` takes the `Playthrough::Overreach` or
+  # `Playthrough::Drift` measurement before it returns, which is why the ruling
+  # cost the instruments nothing.
+  #
+  # The retention cap is still applied, for the same reason the played path
+  # applies it: the classifier had a conversation, and `TA_CHAT_KEEP_TURNS`
+  # should take effect on every turn rather than on the ones that landed.
+  def refuse(intent, command)
+    playthrough.prune_conversations!
+
+    Playthrough::Refusal.for(intent, typed: command, offered: classifier.offered_for(intent.action))
   end
 
   # THE LOAD-OR-GENERATE SEAM. Everything the project is about is these four
@@ -379,51 +422,21 @@ class Playthrough::Turn
   # sets `current_scene` itself. Movement is the one thing it cannot do, which
   # is why it does not touch `current_location`.
   #
-  # `intent` is what the classifier decided, when the caller has one. It used
-  # to be dropped here: a `move` that resolved to no exit, a `talk` with nobody
-  # to answer and an `examine` all reached the narrator as the bare command, so
-  # the narrator walked the player through the door anyway and the next arrival
-  # contradicted it. Now a reach that resolved to nothing is stated as a fact
-  # (`#reach_fact`) and the intent label goes along for the narrator's one line
-  # about what kind of turn this is.
-  def narrate(command, intent: nil, &block)
-    Scene::Narrator.new(playthrough).narrate(command, fact: reach_fact(intent), intent: intent&.action, &block)
-  end
-
-  # WHAT THE RECORDS SAY ABOUT A REACH THAT FOUND NOTHING, in the app's own
-  # words, through the same `fact:` seam `take` and `drop` use for what they
-  # did. The classifier resolved the command against the closed set of what
-  # is actually here and nothing matched; that is a fact about the world, not
-  # an opinion about the prose, and the narrator is told it rather than left
-  # to guess. The lists themselves are already in the prompt
-  # (`Playthrough::Moment`), so this only has to say which one came up empty
-  # and that nothing moved.
+  # `intent` is what the classifier decided, when the caller has one, and it
+  # goes along only as the label for the narrator's one line about what kind of
+  # turn this is (`Scene::Narrator::DOING`) -- so a look is narrated as a look.
   #
-  # The cost is the case where the classifier was wrong -- a real exit it failed
-  # to match -- and the narrator now denies a door that is there. That is a
-  # worse turn than before; the turn where it narrated a move that never
-  # happened was a worse GAME, because the records and the prose parted ways.
-  # Either way `Playthrough::Drift` has the row.
-  def reach_fact(intent)
-    return nil unless intent&.reached_for_nothing?
-
-    here = playthrough.current_location&.name || "where they are"
-
-    case intent.action
-    when :move
-      "The player reached for a way out that does not exist here. The ways out are " \
-        "exactly the ones listed above, and none of them is what they tried. They have not moved: " \
-        "they are still in #{here}."
-    when :talk
-      "The player tried to speak to somebody who is not here. The only people present are " \
-        "the ones listed above; nobody else answers."
-    when :take
-      "The player reached for something that is not lying here. Nothing was picked up, and " \
-        "they are carrying exactly what is listed above."
-    when :drop
-      "The player tried to put down something they are not carrying. Nothing changed hands, and " \
-        "they are carrying exactly what is listed above."
-    end
+  # WHAT USED TO ARRIVE HERE AND NO LONGER DOES is a reach that resolved to
+  # nothing. `#reach_fact` stated it to the narrator as a fact -- the ways out
+  # are exactly the ones listed, nothing moved -- because before that the
+  # narrator got the bare command and walked the player through a door that did
+  # not exist. It was the right answer while a failed reach still had to produce
+  # a turn; on the captain's ruling of 2026-09-04 it does not, so the whole
+  # branch is gone and `#refuse` answers instead. That also retires its one
+  # known cost: a classifier miss on a real exit used to read as prose denying a
+  # door that is there, and now nothing is written at all.
+  def narrate(command, intent: nil, &block)
+    Scene::Narrator.new(playthrough).narrate(command, intent: intent&.action, &block)
   end
 
   # WHAT THE TURN DID, in the two columns `Scene` keeps it in.
@@ -437,9 +450,12 @@ class Playthrough::Turn
   # one there would say a row moved that did not, and `Scene#took?` is the seam
   # a check trusts outright.
   #
-  # Everything else is recorded exactly as it resolved, including a reach that
-  # found nothing: an action with no record is the drift case, told apart here
-  # the same way `Playthrough::Classifier::Intent` tells it apart.
+  # Everything else is recorded exactly as it resolved. An action with no record
+  # here is `other`, which resolves to none by design -- a reach that found
+  # nothing never reaches this method now, because the turn it would have
+  # produced is refused instead (`#refuse`). An `examine` DOES carry one, and
+  # keeps it even when the thing turned out to have nothing written on it: the
+  # classifier resolved the record, so the turn was a look at THAT stamp.
   # WHO WAS IN THE ROOM WHEN THIS TURN HAPPENED, snapshotted onto the turn.
   #
   # A SNAPSHOT AND NOT THE RECORD. `Character.present_in` is where somebody is

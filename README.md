@@ -300,12 +300,16 @@ flowchart TD
     end
     W0 --> C1
 
-    C3 --> D{"Dispatch on the resolved RECORD,<br/>never on the intent label"}
+    C3 --> R{"Will the engine play this line at all?<br/>two acts on one line, a reach that found nothing,<br/>or an answer the app cannot read"}
+    R -->|"no"| X1
+    R -->|"yes"| D{"Dispatch on the resolved RECORD,<br/>never on the intent label"}
+
+    X1["Playthrough::Refusal, NO MODEL CALL<br/>the engine's own sentence out of the closed set<br/>no write, no Scene, no story time, no narrator<br/>the counter row is already taken"]
 
     D -->|"a Location"| M1
     D -->|"a Character"| T1
     D -->|"an Item"| I1
-    D -->|"none of them"| N1
+    D -->|"other, or a look at nothing"| N1
 
     subgraph MV["move: the load-or-generate seam"]
         M1{"Location::Generator#realize!<br/>realized already?"}
@@ -331,14 +335,14 @@ flowchart TD
         T6 --> T7["playthrough.update! scene"]
     end
 
-    subgraph IT["take / drop: the app moves the row, then says so"]
-        I1["The row moves FIRST<br/>take: Item.character = the player, location = nil<br/>drop: Item.character = nil, location = this room<br/>out of the closed set the classifier resolved against"]
+    subgraph IT["take / drop / read: the app owns the row, then says so"]
+        I1["An examine of a READABLE thing is answered from the records<br/>(Item#inscription, handed to the narrator verbatim).<br/>Otherwise the row moves FIRST<br/>take: into the party's hands. drop: into this room<br/>out of the closed set the classifier resolved against"]
         I1 --> I2["MODEL CALL, unschema'd, STREAMS<br/>the narrator is TOLD what already happened<br/>and writes the sentence about it"]
         I2 --> I3["Scene persisted by the narrator, as any other<br/>A narration that forgets the item, or invents one,<br/>cannot change who holds what"]
     end
 
     subgraph NR["everything else: Scene::Narrator answers the raw command"]
-        N1["Reached by examine, other, a move whose target<br/>did not resolve, a talk with nobody here, and a<br/>take or drop of something the records do not have"]
+        N1["Reached by other, and by a look at something with<br/>nothing written on it -- lines that ask for no record<br/>or for one the app does not answer from. A move that<br/>did not resolve, a talk with nobody here and a take or<br/>drop of what the records lack are REFUSED instead"]
         N1 --> N2["MODEL CALL, unschema'd, STREAMS<br/>the one documented streaming exception"]
         N2 --> N3["Persists in an ensure, and sets the scene itself<br/>Nobody has to be watching: the job outlives the tab<br/>Never touches the location: moving is not its job"]
     end
@@ -348,6 +352,7 @@ flowchart TD
     T7 --> OUT
     T4 --> OUT
     N3 --> OUT
+    X1 --> OUT2["The refusal is returned instead of a Scene.<br/>Nothing streamed. The job replaces #turn_log with<br/>the log unchanged, the refusal in the app's own voice<br/>where the turn would have been, and the input back"]
 
     classDef llm fill:#4c1d95,stroke:#a78bfa,stroke-width:2px,color:#ffffff
     classDef rec fill:#134e4a,stroke:#5eead4,stroke-width:2px,color:#ffffff
@@ -355,14 +360,44 @@ flowchart TD
     classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
 
     class C2,M3,M4,M6,T1,T2,I2,N2 llm
-    class W0,C1,C3,M1,M3B,M5,M7,M8,T5,T6,T7,I1,I3,N3 rec
+    class W0,C1,C3,M1,M3B,M5,M7,M8,T5,T6,T7,I1,I3,N3,X1 rec
     class N1,T4 gap
-    class IN,SSE,OUT,D,T3 io
+    class IN,SSE,OUT,OUT2,D,R,T3 io
 ```
 
 The two orange boxes are the honest ones. The narration box is where the
 classifications with nothing more specific to do end up; the blank branch of
 `talk` is a turn that produced nothing and kept nothing.
+
+**The refusal branch is teal, and that is the point of it.** *One line, one
+act* — the captain's ruling of 2026-09-04:
+
+> *"If someone tries to do two things or more at a time, we should refuse and
+> prompt the player to pick only 1 thing. Or if we can't determine what they are
+> trying to do, then we should refuse and ask for clarification. This can all be
+> in the mechanics and doesn't need to go through narration."*
+
+So three shapes stop in front of the dispatch and no model is asked to write
+them: a line naming two things the records both have, a reach the closed sets
+cannot answer, and a classifier answer outside the intent table that still named
+a record. A *look* is in the first of those and never the second — since a look
+resolves a record it can name two things, and it was never reaching for one it
+could miss, so "read the note and the index" is refused and "look at the sky"
+is narrated. `Playthrough::Refusal` is the one author of what the player reads, and
+both front ends read it — the browser gets the sentence plus what *is* here,
+`rake game:mechanics` gets the sentence and prints the records underneath as it
+always did. A refused line writes nothing at all: no row moves, no `Scene`
+exists, `Location#last_protagonist_visit` is untouched and `Story#clock` does
+not advance, because nothing happened. What it *does* leave is the measurement —
+the `Playthrough::Overreach` or `Playthrough::Drift` row, taken inside
+`Playthrough::Classifier#classify` before the loop asks whether it will play the
+line. The ruling changed what a turn does, not what is counted.
+
+The branch it replaced was `Playthrough::Turn#reach_fact`, which told the
+narrator that a failed reach had changed nothing and let it write the turn
+anyway. That was the right answer while a failed reach still had to produce
+prose; it also had a known cost — a classifier miss on a real exit read as prose
+denying a door that is there — and refusing writes nothing instead.
 
 **The `take` / `drop` branch is the principle in its shortest form.** The row
 moves before any prose exists, out of a set the app closed — what the records

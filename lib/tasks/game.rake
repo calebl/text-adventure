@@ -807,7 +807,7 @@ namespace :game do
       puts "#{scanned} scene#{"s" unless scanned == 1} in #{(elapsed * 1000).round} ms#{per_scene}"
       puts "#{contradictions} contradiction#{"s" unless contradictions == 1} -- the records say the narration is wrong"
       puts "#{drifts} drift#{"s" unless drifts == 1} -- the player reached for something the records do not have"
-      puts "#{limits} line#{"s" unless limits == 1} that named two things -- the turn could only do one"
+      puts "#{limits} line#{"s" unless limits == 1} that named two things -- a turn is one act, so they were refused"
       puts "#{unjudged} check#{"s" unless unjudged == 1} not judged"
       puts
       puts "A contradiction is a defect. A drift is evidence, not proof -- see Playthrough::Drift."

@@ -55,6 +55,71 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **One line, one act — and a line that is not one is refused whole**
+  (`ta-one-act-refusal`). The captain's ruling of 2026-09-04, in his words:
+
+  > *"If someone tries to do two things or more at a time, we should refuse and
+  > prompt the player to pick only 1 thing. Or if we can't determine what they
+  > are trying to do, then we should refuse and ask for clarification. This can
+  > all be in the mechanics and doesn't need to go through narration."*
+
+  **What it replaced.** A two-act line did its first act and recorded the rest:
+  the browser took the index, said nothing about the apron, and counted the
+  apron as a `Playthrough::Overreach`; `rake game:mechanics` printed
+  `also named: copy-room apron -- one line is one act, so this turn did not
+  touch it`. And a reach that resolved to nothing was narrated with a fact
+  saying so (`Playthrough::Turn#reach_fact`), which had a known cost of its own
+  — a classifier miss on a real exit read as prose denying a door that is there.
+
+  **What is built.** `Playthrough::Refusal` is the one author of what the engine
+  says when it will not play a line, read by both front ends; the decision is
+  `Playthrough::Classifier::Intent#refused?`, so the two modes cannot come to
+  disagree about a line. Three shapes: **two acts on one line**, **a reach the
+  closed sets cannot answer**, and **a classifier answer outside the intent
+  table that still named a record** (which used to be coerced to `other`, which
+  threw the record away and narrated the raw line). A refused line writes
+  nothing at all — no row, no `Scene`, no visit stamp, no story time, no
+  narrator call, and no tokens beyond the classifier that had already run. In
+  the browser it arrives through `NarrationJob`'s ordinary end-of-turn
+  `#turn_log` replace, in the app's own voice where the turn would have been,
+  with the typed line echoed and the input back under it — the same place and
+  the same `.notice` as `Playthrough::SafetyNotice`, because it is the same kind
+  of thing.
+
+  **A refusal is not a `Scene`,** and that is the load-bearing decision.
+  `Scene#description` is read as NARRATION by `Story::Audit`, `Eval::Richness`
+  and both frozen corpora, so a row of engine copy in that column would be
+  audited as prose a model wrote; and a refusal has no moment in it, so writing
+  one would move `Story#clock` and stamp
+  `Location#last_protagonist_visit` on a turn whose whole point is that nothing
+  happened. The durable record of a refused line is the counter row.
+
+  **The counters are untouched.** `Playthrough::Overreach` and
+  `Playthrough::Drift` rows are written from exactly where they were, inside
+  `Playthrough::Classifier#classify`, before the loop asks whether it will play
+  the line: the ruling changed what a turn does, not what is measured.
+  `rake game:score` is byte-identical across the change. What did change is what
+  the two reach rates *mean* going forward — a refused turn writes no `Scene`,
+  so the denominator counts played turns; the note is on
+  `Story::Audit#judgeable_for` and fixing it is its own measurable task.
+
+  **The boundary, stated.** `other`, and an `examine` that landed on nothing,
+  are NOT undeterminable and stay narrated — "look at the sky", "wait", a remark
+  to nobody — or narrated play would refuse everything that is not one of the
+  acts that move a row. An `examine` that named TWO things IS refused, like any
+  other line asking for two acts: since `ta-item-inscriptions` a look resolves a
+  record, and a readable thing named alongside another thing is one line asking
+  twice. `Playthrough::Overreach::ACTIONS` gained `examine` for exactly that —
+  it was an alias of `Playthrough::Drift::ACTIONS`, and the row would have
+  failed its own validation and been logged away, so the refusal would have
+  fired uncounted. The two lists are no longer identical and the model header
+  says why: a look can overreach and it cannot drift. Two acts across two
+  *different* closed sets ("take the stamp and go to the hallway") are still not
+  refused, in either mode, because `#also_record` resolves the second name
+  through the action's own closed set; widening that would change what
+  `Playthrough::Overreach` counts, so it is pinned as a gap in
+  `lib/engine_sweep/scripts/one-act-per-line.yml` rather than closed here.
+
 - **What a note says is a record** (`ta-item-inscriptions`). *"when an item is a
   note or piece of paper, etc that has writing on it, we need to store that
   writing so it is permanently held in the game state."* Playthrough 15, scene
@@ -1206,11 +1271,17 @@ queued task, the task id is named.
 
 ### 3. The game loop
 
-- [x] A reach that resolves to nothing is **stated to the narrator as a fact**
-      (`Playthrough::Turn#reach_fact`), through the same `fact:` seam `take` and
-      `drop` use, and the narrator prompt carries the room's exits, cast and the
-      player's inventory (`Playthrough::Moment`). The narrator can still
-      disobey; it can no longer claim it was not told.
+- [x] A reach that resolves to nothing is **refused, and the player is asked
+      for one thing they can actually do** (`Playthrough::Refusal`) — the ruling
+      of 2026-09-04. It used to be stated to the narrator as a fact
+      (`Playthrough::Turn#reach_fact`, now gone) through the same `fact:` seam
+      `take` and `drop` still use for what they DID. The narrator prompt still
+      carries the room's exits, cast and the player's inventory
+      (`Playthrough::Moment`) on every turn it is asked for.
+- [x] **A line that names two things is refused whole**, and the player is asked
+      to pick one. Same ruling, same author, and the same three shapes in
+      `rake game:mechanics` as in the browser — the mode's `also named:` note is
+      gone with the half-played turn it reported.
 - [x] Classify player input: move / talk / examine / take / drop / other, in one
       schema'd `BaseAgent` call. `Playthrough::IntentSchema` is a factory rather
       than a declared schema because `target` is an enum built per turn from the

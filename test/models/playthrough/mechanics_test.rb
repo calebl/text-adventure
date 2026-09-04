@@ -755,51 +755,104 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   end
   # --- a line that named more than one thing ---------------------------------
 
-  # ONE LINE IS ONE ACT, and the half it did not do used to vanish: the index
-  # was taken, the apron went nowhere, and nothing said so or counted it -- the
-  # reach resolved, so `Playthrough::Drift` wrote nothing either.
-  test "a line that names two things acts on one and says which it left" do
+  # ONE LINE IS ONE ACT, and this mode used to DO the first of the two and add a
+  # note about the second: `also named: copy-room apron -- one line is one act,
+  # so this turn did not touch it`. That was the honest report of a half-played
+  # turn. On the captain's ruling of 2026-09-04 there is no half-played turn --
+  # the line is refused whole and the player is asked to pick one, in the same
+  # words the browser uses (`Playthrough::Refusal`).
+  test "a line that names two things is refused whole and moves neither" do
     apron = create(:item, :lying, location: @office, name: "copy-room apron")
 
     report, = interpret("pickup the ward stamp and the apron",
                         CLASSIFY.call("take", @stamp.name, apron.name))
 
-    assert_predicate report, :changed?
-    assert_equal @playthrough, @stamp.reload.playthrough, "the first thing is still taken"
-    assert_nil apron.reload.playthrough, "the second is not"
+    assert_predicate report, :refused?
+    assert_not_predicate report, :changed?
+    assert_nil @stamp.reload.playthrough, "the first thing is not taken either"
+    assert_equal @office, @stamp.location
+    assert_nil apron.reload.playthrough
     assert_equal @office, apron.location
 
-    assert_includes report.note.join, apron.name
-    assert_includes report.to_s, "also named: copy-room apron"
-    assert_includes report.to_s, "one line is one act"
+    assert_includes report.refusal, "two things at once"
+    assert_includes report.refusal, "take ward stamp"
+    assert_includes report.refusal, "take copy-room apron"
+    assert_includes report.refusal, "One line is one act"
+    assert_includes report.refusal, "Playthrough::Overreach"
+
+    # The reading names BOTH, or `understood: take -> ward stamp` printed above
+    # a refusal would read as though the stamp had been taken.
+    assert_equal "take -> ward stamp (and copy-room apron)", report.understood
   end
 
-  # The note is added once, for every branch, so a turn this mode REFUSES still
-  # says what else the line named rather than only why it refused. The second
-  # name goes through the same closed set as the action, so a talk's is another
-  # person and never an item.
-  test "a turn that is refused still says what else the line named" do
+  # The second name goes through the same closed set as the action, so a talk's
+  # is another person and never an item -- and a talk this mode would have
+  # refused for being prose is refused for the ruling instead, one step earlier.
+  test "two people named on one line is refused before the prose refusal" do
     lasco = create(:character, story: @story, fullname: "Perrin Lasco", location: @office)
 
     report, = interpret("ask Rowe and Lasco where the file went",
                         CLASSIFY.call("talk", @rowe.fullname, lasco.fullname))
 
     assert_predicate report, :refused?
-    assert_includes report.to_s, "also named: Perrin Lasco"
+    assert_includes report.refusal, "talk to Halkett Rowe"
+    assert_includes report.refusal, "talk to Perrin Lasco"
+    assert_not_includes report.refusal, "talking is prose"
   end
 
-  test "a line that names one thing says nothing extra" do
+  # THE REFUSAL DOES NOT REPEAT THE READ-OUT, which is printed under every
+  # report in this mode. The browser has no read-out and gets the lists; here
+  # they would be said twice and could contradict what is printed below.
+  test "the refusal leaves the lists to the read-out under it" do
+    report, = interpret("go down to the cellar", CLASSIFY.call("move", "nothing"))
+
+    assert_includes report.refusal, "did not resolve to one of the ways out"
+    assert_not_includes report.refusal, "The ways out are:"
+    assert_includes report.to_s, @closet.name, "the read-out is where the records are printed"
+  end
+
+  # A READ IS AN ACT LIKE ANY OTHER, so a line naming two readable things is
+  # refused before this mode recites either of them.
+  test "a read that names two things is refused before it recites either" do
+    note = create(:item, :lying, location: @office, name: "folded note",
+                                 readable: true, inscription: "Midnight. The Bell.")
+
+    report, = interpret("read the note and the daybook",
+                        CLASSIFY.call("examine", note.name, @daybook.name))
+
+    assert_predicate report, :refused?
+    assert_includes report.refusal, "read folded note"
+    assert_includes report.refusal, "read Ward Office 12 daybook"
+    assert_includes report.refusal, "Playthrough::Overreach"
+    assert_not_includes report.to_s, "reads:", "neither one was recited"
+  end
+
+  # And a look that landed on nothing is not refused for the ruling -- it is
+  # refused for being prose, which is this mode's own rule and a different
+  # sentence.
+  test "a look that resolved to nothing is refused as prose and not as a reach" do
+    report, = interpret("look at the ceiling", CLASSIFY.call("examine", "nothing"))
+
+    assert_predicate report, :refused?
+    assert_includes report.refusal, "answered in prose"
+    assert_not_includes report.refusal, "Playthrough::Drift"
+    assert_equal 0, @playthrough.drifts.count
+  end
+
+  test "a line that names one thing is played" do
     report, = interpret("take the stamp", CLASSIFY.call("take", @stamp.name))
 
     assert_predicate report, :changed?
-    assert_not_includes report.to_s, "also named"
+    assert_not_predicate report, :refused?
+    assert_equal @playthrough, @stamp.reload.playthrough
   end
 
-  # The offline grammar has no way to name two things, and does not pretend to.
-  test "the offline grammar names one thing and adds no note" do
+  # The offline grammar has no way to name two things, and does not pretend to:
+  # `also_named` is the classifier's answer and there is no classifier here.
+  test "the offline grammar names one thing and plays it" do
     report = play("take stamp")
 
     assert_predicate report, :changed?
-    assert_not_includes report.to_s, "also named"
+    assert_not_predicate report, :refused?
   end
 end

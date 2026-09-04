@@ -48,10 +48,21 @@ class Playthrough::OverreachTest < ActiveSupport::TestCase
     assert_equal location, record(scene: scene, location: location).location
   end
 
+  # A LOOK CAN OVERREACH AND IT CANNOT DRIFT, which is why these two lists stopped
+  # being the same one. `examine` resolves a record since `ta-item-inscriptions`
+  # -- against both item sets at once -- so "read the note and the index" names
+  # two things the records have and is refused like any other two-act line;
+  # without the value here the row would have failed its own validation and the
+  # refusal would have fired uncounted. An `examine` that lands on nothing is
+  # still not a drift: it was not reaching for a record it could miss.
   test "the action has to be one the loop resolves against a closed set" do
-    assert_nil record(action: "examine"), "examine resolves to no record, so it cannot name two"
+    assert_not_nil record(action: "examine"), "a look resolves a record, so it can name two"
     assert_nil record(action: "sing")
-    assert_equal Playthrough::Drift::ACTIONS, Playthrough::Overreach::ACTIONS
+    assert_nil record(action: "other"), "other resolves to no record at all"
+
+    assert_equal %w[move talk take drop examine], Playthrough::Overreach::ACTIONS
+    assert_equal Playthrough::Drift::ACTIONS + %w[examine], Playthrough::Overreach::ACTIONS
+    assert_not_includes Playthrough::Drift::ACTIONS, "examine"
   end
 
   test "a row with nothing on either side of the line is not a measurement" do

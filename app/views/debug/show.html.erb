@@ -339,7 +339,7 @@
     <div class="v">
       <%= @debug.overreaches.size %>
       <span class="note">
-        turns this player named two things the records have and the turn did one<%= " — #{@debug.overreach_tally.map { |action, count| "#{count} #{action}" }.join(", ")}" if @debug.overreaches.any? %> &mdash; the loop's limit, not a defect
+        turns this player named two things the records have, so the line was refused whole<%= " — #{@debug.overreach_tally.map { |action, count| "#{count} #{action}" }.join(", ")}" if @debug.overreaches.any? %> &mdash; the loop's limit, not a defect
       </span>
     </div>
     <div class="k">not judged</div>
@@ -450,13 +450,16 @@
 
 <%# NEXT TO THE DRIFTS AND NEVER ADDED TO THEM: a drift is a reach that found
     nothing, this is a reach that found more than one turn can answer. Nothing
-    here is a defect -- the turn did what a turn can do, and said so. See
-    Playthrough::Overreach. %>
+    here is a defect -- the line was refused whole and the player was asked to
+    pick one (the ruling of 2026-09-04; rows written before it had the first of
+    the two done). "resolved to" is which of the pair the loop would have acted
+    on, not what happened to it. See Playthrough::Overreach and
+    Playthrough::Refusal. %>
 <h3>named two &mdash; the line asked for more than one turn can do</h3>
 <div class="scroll">
   <table>
     <thead>
-      <tr><th>at</th><th>tried to</th><th>typed</th><th>acted on</th><th>left undone</th></tr>
+      <tr><th>at</th><th>tried to</th><th>typed</th><th>resolved to</th><th>also named</th></tr>
     </thead>
     <tbody>
       <% @debug.overreaches.each do |overreach| %>

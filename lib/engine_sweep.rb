@@ -51,6 +51,14 @@
 # behaviour and stay pinned by `Playthrough::ClassifierTest`. What the sweep
 # holds of those turns is the half the fixed grammar can still answer for -- see
 # the script comments, which say so turn by turn.
+#
+# THE REFUSALS OF 2026-09-04 ARE THE WORKED EXAMPLE OF THAT LINE.
+# `Playthrough::Refusal` is one author read by both modes, so what a script can
+# assert is whether a line is refused and whether anything moved -- which is
+# the whole of the ruling as the engine sees it. What it cannot assert is the
+# classifier answer that triggers two of the three shapes.
+# `one-act-per-line.yml` walks what is reachable and names, shape by shape,
+# what is not and where that half is pinned instead.
 module EngineSweep
   # Raised when anything under a sweep tries to build an agent. Not rescued
   # anywhere: a sweep that quietly made a model call would be a different

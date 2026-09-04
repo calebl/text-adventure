@@ -16,6 +16,13 @@
 #      `also_named` is the classifier's answer and there is no classifier here.
 #      What the fixed grammar owes is the other half -- that a line naming two
 #      things does not quietly do one of them -- and `two-nouns` pins that.
+#      SUPERSEDED IN WHAT IT DOES, not in what it counts: on the captain's
+#      ruling of 2026-09-04 such a line is refused WHOLE and the player is
+#      asked to pick one, so the index is no longer taken either. The
+#      `Playthrough::Overreach` row is still written. `one-act-per-line.yml`
+#      is the walk for the ruling and says which halves of it an offline mode
+#      can see; this step is unchanged, because a fixed grammar refused this
+#      particular line before the ruling and refuses it after.
 #   3. COLLECTIVE WORDS WRITING DRIFT ROWS (aa02b7d). "pickup everything" in a
 #      room with three things on the floor was refused with "Nothing of that
 #      name is lying here", printed directly above a read-out listing all three,
