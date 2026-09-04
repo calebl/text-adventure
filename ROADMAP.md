@@ -55,6 +55,45 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **The classifier bench** (`ta-classifier-bench`). The classifier had no
+  instrument of its own. `Playthrough::Drift` and `Playthrough::Overreach` count
+  its misses indirectly and **neither knows whether the answer was right** — a
+  drift row is written whether the player reached for a door that is not there
+  or the model failed to see a door that is. Since the ruling of 2026-09-04 that
+  gap costs the player something they read, so it is worth measuring.
+
+  **What it is.** `test/fixtures/files/classifier_corpus.yml` — 300 hand-labelled
+  typed lines across 11 positions in the three seeded worlds, each with the
+  expected intent, target, `also_named` and refusal kind — replayed through the
+  real `Playthrough::Classifier` by `rake eval:classifier`. The board reports
+  accuracy per intent, a confusion matrix, closed-set misses (right branch,
+  wrong record), `also_named` precision and recall, refusal-kind agreement, and
+  every figure as a band across repetitions, per model, on `EVALUATION.md`'s own
+  noise discipline. `rake eval:classifier_compare` judges a later prompt change
+  with the same exact rank test the prose loop uses.
+
+  **The labels are verified mechanically, not asserted.**
+  `Eval::Classifier::CorpusTest` runs offline in CI: every `target` and
+  `also_named` is checked back against the closed set the action really reads at
+  its position, and a stated `refusal:` is re-derived from the label and
+  compared — two readings of one line have to agree. 54 of the 300 lines carry
+  `also_accept` because their English admits two readings, and the headline rate
+  excludes them.
+
+  **The offline floor is the number that says what a call is buying.**
+  `rake eval:classifier_offline` runs the same 300 lines through the fixed
+  grammar with no model at all: **126 of 300 (0.420)**, and 157 of the 174
+  failures are lines it refused that should have played. It gets every
+  reach-that-finds-nothing right and none of the `other` or `examine-nothing`
+  lines.
+
+  **PR 102's finding F4 is answered.** The `also_named` omission rate is read
+  off the provider's own JSON (`messages.content_raw`, kept since PR 97) rather
+  than inferred from the resolved `Intent`, which cannot tell an omitted field
+  from an answer of `nothing`.
+
+  **No prompt changed.** The findings are in the PR body for the captain. See
+  [EVALUATION.md](EVALUATION.md) → *The classifier bench*.
 - **Three abilities, and a seeded check kernel** (`ta-ability-scores`). The
   captain's ruling of 2026-09-04, evening, verbatim:
 

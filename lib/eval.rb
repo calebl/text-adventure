@@ -71,6 +71,14 @@ module Eval
     app/models/story/scoreboard/transitions.rb
     lib/eval.rb
     lib/eval/board.rb
+    lib/eval/classifier.rb
+    lib/eval/classifier/bench.rb
+    lib/eval/classifier/comparison.rb
+    lib/eval/classifier/corpus.rb
+    lib/eval/classifier/offline.rb
+    lib/eval/classifier/report.rb
+    lib/eval/classifier/result.rb
+    lib/eval/classifier/stage.rb
     lib/eval/comparison.rb
     lib/eval/cost.rb
     lib/eval/noise.rb
@@ -86,6 +94,7 @@ module Eval
     test/fixtures/files/narration_corpus.json
     test/fixtures/files/whole_run_corpus.json
     test/fixtures/files/transition_corpus.json
+    test/fixtures/files/classifier_corpus.yml
   ].freeze
 
   # CHECKS A SCRIPTED RUN CANNOT ANSWER, AND WHY -- reported unavailable rather

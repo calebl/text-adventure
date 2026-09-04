@@ -1009,6 +1009,44 @@ using any of this.** What belongs here is the part that changes how you work:
 - **`Eval::MEASUREMENT_FILES` is the list an improving agent may not change.**
   Declared, not enforced; `rake eval:manifest` prints it with digests.
 
+### Measuring the classifier, which is the call the engine acts on
+
+`rake eval:classifier` (`ta-classifier-bench`). Everything in the section above
+measures **narration**; this measures the one model call whose answer moves a
+row. **[EVALUATION.md](EVALUATION.md) → *The classifier bench* is the protocol.**
+What belongs here is the part that changes how you work:
+
+- **`Playthrough::Drift` and `Playthrough::Overreach` do not know whether the
+  answer was right**, and it is easy to read them as though they did. A drift
+  row is written whether the player reached for a door that is not there or the
+  model failed to see a door that is. The bench is the only thing that can tell
+  those apart, and the captain's own database has a stored example of the second
+  — `tell Halkett what you think of him` answered `talk` / `nothing` with
+  Halkett Rowe standing in the room.
+- **The corpus is 300 hand-labelled lines and the labels are checked
+  mechanically.** `Eval::Classifier::CorpusTest` runs offline on every
+  `bin/rails test`: every `target` and `also_named` is checked back against the
+  closed set the action really reads at that position, and a stated `refusal:`
+  is re-derived from the label and compared. Add a line under its shape with a
+  `why`; add a position rather than stretching a label.
+- **A line whose English admits two readings carries `also_accept`**, and the
+  headline rate is taken over the lines that do not. 54 of 300 do. A bench that
+  marked a defensible answer wrong would be measuring its own labelling.
+- **Every rate comes with its band, per model, never pooled.** The classifier
+  runs at `TEMPERATURE = 0.0` and a provider is still not deterministic; four
+  repetitions is the default because four is `Eval::Noise::MIN_RUNS`, so a run
+  taken at the default can be judged by `rake eval:classifier_compare` later.
+- **Read `closed_set_misses` first.** Right branch, wrong record is the failure
+  the closed enum was built to prevent, and it is the one a headline accuracy
+  hides.
+- **`rake eval:classifier_offline` is free and says what a call is buying.** The
+  same corpus through the fixed grammar: 126 of 300 (0.420) on 2026-09-04, with
+  157 of the failures being lines it refused that should have played. Quote it
+  next to the model figure or the model figure means nothing.
+- **No prompt change belongs in the same commit as a bench change.** The
+  instrument and the thing it measures move separately, and
+  `Eval::MEASUREMENT_FILES` now lists the bench.
+
 ### When a world outlives the schema
 
 A story is written once and then sits in the database while features land

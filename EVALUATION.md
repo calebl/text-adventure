@@ -181,18 +181,218 @@ found a defect on 94% of a mechanic the app owns.
 
 ---
 
+## The classifier bench
+
+Everything above measures **narration**. This measures the one model call the
+engine *acts* on.
+
+`Playthrough::Classifier` runs on every turn and turns a typed line into a
+branch and a record: a `move` writes `playthroughs.current_location_id`, a
+`take` moves an `items` row, a `talk` picks which character prompt gets built.
+Until 2026-09-04 nothing scored whether it was right. `Playthrough::Drift` and
+`Playthrough::Overreach` count its misses *indirectly* and **neither knows the
+answer** — a drift row is written whether the player reached for a door that is
+not there or the model failed to see a door that is.
+
+**The ruling of 2026-09-04 made that gap cost the player something.** Since
+`Playthrough::Refusal` shipped, a wrong resolution is a refusal somebody reads
+and a wrong `also_named` refuses a line that should have played. So:
+
+```bash
+rake eval:classifier                    # 300 labelled lines x 4 reps x 2 models, ~$0.39
+rake eval:classifier_offline            # the same corpus with NO model -- free, and in CI
+rake eval:classifier_omission           # the also_named omission rate alone (~30 lines)
+rake eval:classifier_compare BEFORE=a AFTER=b
+```
+
+| knob | what it does |
+| --- | --- |
+| `REPS=4` | repetitions. **Four is the default because four is `Eval::Noise::MIN_RUNS`** — a run taken at the default can actually be judged later |
+| `MODELS=a,b` | which models to ask. Defaults to `BaseAgent::REMOTE_MODEL_IDS` |
+| `SET=name` | where the numbers land (`tmp/eval/<set>/classifier.json`). Defaults to a timestamp |
+| `SAMPLE=20` | how many missed lines the board prints in full |
+| `YES=1` | spend past the $0.50 ceiling |
+
+### What it measures
+
+Every figure is printed as **min..max with the median in the middle**, per
+model, never pooled — the same discipline as the prose loop, and for the same
+reason: the classifier runs at `TEMPERATURE = 0.0` and a provider is *still* not
+deterministic.
+
+| figure | what it is |
+| --- | --- |
+| `strict_accuracy` | **the headline.** The whole answer — intent *and* record — over the lines whose English admits one reading |
+| `accuracy` | the same over every line, arguable ones included |
+| `intent_accuracy` | the branch right, whatever record it landed on |
+| `refusal_agreement` | whether the line earned the refusal `Playthrough::Refusal` gives it |
+| `closed_set_misses` | **right branch, wrong record** — a count, not a rate, because it is the failure the closed enum exists to prevent |
+
+Beside them: **accuracy per intent** (six branches with six different
+consequences), a **confusion matrix**, **`also_named` precision and recall** (it
+is a detector, so it has two ways to be wrong), the **omission rate**, and the
+**offline floor**. Every missed line is printed with what was typed, what was
+expected and what came back — the same rule `rake game:score` follows.
+
+### The corpus
+
+`test/fixtures/files/classifier_corpus.yml` — **300 hand-labelled lines across
+11 positions in the three seeded worlds.** YAML rather than JSON like its four
+siblings, because every line carries a `why` and three hundred of those in JSON
+is a file nobody audits.
+
+A line names a **position** — a seeded world, a room, and the typed lines that
+get to the state the label was written against — because a classifier answer is
+only meaningful next to the closed sets the model was offered. `take the apron`
+resolves to a record in the supply closet and to nothing in the office.
+
+**How the labels were verified**, which is the part worth being suspicious of:
+
+1. **The closed sets were read off the records and printed**, not read out of
+   the seed file. Every `target` and `also_named` was written against that
+   printout.
+2. **`Eval::Classifier::Corpus#problems` checks every name back** against the
+   set the action really reads (`Playthrough::Classifier#offered_for`), and
+   `Eval::Classifier::CorpusTest` fails the build if one does not fit. A label
+   naming something out of reach cannot survive a commit.
+3. **`refusal:` is redundant on purpose.** The three kinds are derivable from
+   intent, target and `also_named` through the same predicates
+   `Playthrough::Classifier::Intent#refused?` uses; the validator derives them
+   and compares. Two readings of one line have to agree.
+4. **What neither can check** is whether the label is the right reading of the
+   English. That is the hand-verification, line by line, and `why` states it.
+   **54 of the 300 lines carry `also_accept`** — a second answer the bench
+   counts as correct — because their English really does admit two readings, and
+   the headline rate excludes them.
+
+Where the lines came from: **the 61 stored classifier conversations in the
+captain's own database** (`chats.purpose = "classifier"`, kept since PR 97 —
+what a person really typed, with the room and the sets the model was really
+shown), **the 60 turns of the `rake eval:run` scripts**, and the shapes the
+ruling made load-bearing and nothing yet types. `unreadable` is deliberately
+absent: it is an `intent` outside the closed enum, so no typed line can provoke
+it.
+
+### Adding a corpus line
+
+Put it under the shape it belongs to, give it a `why`, and run
+`bin/rails test test/lib/eval/classifier/corpus_test.rb`. If the shape you need
+is not reachable from any position, **add a position rather than stretching an
+existing label**. A position may carry `setup:` (typed lines, walked offline
+through the fixed grammar) and `cast:` (a whereabouts written through
+`Character#move_to!` — the one thing no typed line can do, and the only way two
+people in one room is reachable at all).
+
+### The set, and comparing two of them after the fact
+
+**The captain's instruction of 2026-09-04:** *"store every classifier bench run
+as a named set with a durable scores artifact… a set should record which model
+produced it, and comparing model A's set against model B's set must work from
+the stored scores alone."*
+
+Same convention as the prose loop. `SET=<name>`, defaulting to
+`classifier-<timestamp>`; the durable artifact is
+**`tmp/eval/<set>/classifier.json`**, beside the `scores.json` an `eval:run` set
+writes. It is `classifier.json` and not `scores.json` because one set can
+legitimately hold both a prose run and a bench, and two files of one name
+cannot.
+
+The file holds **every reading of every pass**, not just the rates, so a change
+to how a rate is defined does not need the calls paid for again — the same rule
+that keeps the prose loop's run databases. It records:
+
+| field | why |
+| --- | --- |
+| `arms` | **which models the set measured.** The field the cross-model comparison pairs on |
+| `answered_by` | the models that *really* answered, read back off the readings — different from `arms` when the rotation answered a line |
+| `corpus_digest` | a fingerprint of the labelled lines. Two sets scored on different corpora are not comparable, and a mismatch is **warned about above the verdicts** rather than reported as a change in the model |
+| `reps`, `corpus_size` | the shape of the run |
+
+**Comparing two models** works off those files alone:
+
+```bash
+rake eval:classifier SET=arm-mistral MODELS=mistralai/mistral-medium-3.1
+rake eval:classifier SET=arm-minimax MODELS=minimax/minimax-m3
+rake eval:classifier_compare BEFORE=arm-mistral AFTER=arm-minimax
+```
+
+With **no model in common and one a side**, the two are paired and the board
+says loudly that it is comparing two *different models* rather than two versions
+of one. With models in common, each is compared against itself — the ordinary
+before/after of a prompt change. With nothing in common and several a side it
+**refuses rather than guessing**, and names `BEFORE_MODEL=` / `AFTER_MODEL=`;
+those also pick one arm out of a two-model set on either side.
+
+### While it runs
+
+A bench run holds **one write transaction per pass** — a pass being one model's
+one repetition of the corpus, a few minutes — against a copy of each seeded
+world loaded under a title of its own and rolled back at the end. So it is safe
+against a database somebody is mid-game in, exactly as `rake game:sweep` is, but
+SQLite gives one writer at a time: **while a pass is open, another writing task
+in the next terminal (`rake game:sweep`, a browser turn) will wait and may fail
+with `database is locked`.** Run one at a time.
+
+### The offline floor
+
+`rake eval:classifier_offline` runs the same 300 lines through the fixed grammar
+`Playthrough::Mechanics` uses with `model: false` — no key, no network, no
+spend, and it runs in `bin/rails test`. **It is what a classifier call is bought
+against**, and the answer is a number rather than an assumption.
+
+Five outcomes, told apart: `resolved`, `refused` (right refusal, possibly the
+wrong reason — the grammar has no refusal *kinds*), `wrong` (an answer the label
+does not accept, produced silently), `over_refused` (a line it refused that
+should have played) and `unparsed`.
+
+**Measured 2026-09-04: 126 of 300 right (0.420), and 157 of the 174 failures are
+over-refusals.** It gets every reach-that-finds-nothing right and *none* of the
+`other` or `examine-nothing` lines — a fixed grammar has no word for an ordinary
+remark, so it refuses every one.
+
+### The `also_named` omission rate
+
+PR 102's review finding **F4**: `also_named` is a **required** field on the
+commonest model call in the app, and the worry was that a provider would send it
+missing or null. Neither the resolved `Intent` nor a rate over it can tell an
+omitted field from an answer of `nothing`, so the bench reads the provider's own
+JSON back off `messages.content_raw` and counts.
+
+It is reported on every bench run at no extra cost, over every call the run
+already paid for. `rake eval:classifier_omission` is the targeted probe — the
+~30 two-noun lines alone, for a fraction of a cent — for re-checking it on its
+own.
+
+**The claim being checked is that a truly absent field is a *failed call*:**
+`BaseAgent#missing_schema_keys` rotates on it, so an omission shows up as a
+rotation or a failure and never as a quiet nil.
+
+### What it is not
+
+**It does not tune a prompt.** A prompt fitted against the run that measured it
+is a prompt fitted to 300 lines. The bench is the instrument;
+`rake eval:classifier_compare` is how the next change is judged, and four
+repetitions a side is the same arithmetic floor as everywhere else in this file.
+
+There is **no held-out half**, and that is a difference from the prose loop
+rather than an oversight: holding `The Salt Assizes` out is about not tuning
+narration checks on prose nobody has read, and a labelled line is not prose
+anybody tuned a check on. All three worlds are in the corpus.
+
+---
+
 ## The instrument this is not: `rake game:sweep`
 
 Everything above measures **narration**, costs money and is noisy enough to need
 a rank test. The engine sweep is the other half and shares none of those
 properties:
 
-| | `rake eval:run` | `rake game:sweep` |
-| --- | --- | --- |
-| what it reads | prose, against the records | the records, after a typed line |
-| what it needs | a key, the network, minutes, dollars | nothing |
-| what it answers | a rate with a noise floor | pass or fail |
-| in CI | never | every `bin/rails test` |
+| | `rake eval:run` | `rake game:sweep` | `rake eval:classifier` |
+| --- | --- | --- | --- |
+| what it reads | prose, against the records | the records, after a typed line | the classifier's answer, against a label |
+| what it needs | a key, the network, minutes, dollars | nothing | a key, minutes, cents |
+| what it answers | a rate with a noise floor | pass or fail | a rate with a noise floor |
+| in CI | never | every `bin/rails test` | its offline floor and its corpus validator, yes; the calls, never |
 
 It plays stored scripts through `Playthrough::Mechanics` with **no model at all**
 — the classifier off, the fixed grammar in front of the engine, and
@@ -325,6 +525,8 @@ lib/tasks/eval.rake                  the commands
 script/eval_run.rb                   the harness
 db/eval_baseline.json                the line the next run moves against
 test/fixtures/files/*_corpus.json    the passages the checks were measured on
+lib/eval/classifier*                 the classifier bench
+test/fixtures/files/classifier_corpus.yml   the 300 labelled lines
 ```
 
 Snapshot the digests before a change and again after: nothing in the list may

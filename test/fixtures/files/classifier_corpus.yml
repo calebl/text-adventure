@@ -1,0 +1,3405 @@
+# THE CLASSIFIER CORPUS: typed lines with the answer written beside them.
+#
+# WHAT IT IS FOR. `Playthrough::Classifier` is the only model call in this app
+# whose answer the engine ACTS on, it runs on every turn, and until 2026-09-04
+# nothing measured whether it was right. `Playthrough::Drift` and
+# `Playthrough::Overreach` count its misses INDIRECTLY and neither knows the
+# answer: a drift row is written whether the player reached for a door that is
+# not there or the model failed to see a door that is. Since the ruling of
+# 2026-09-04 that gap costs the player a refusal they can read, so it is worth
+# an instrument. `Eval::Classifier` is the instrument and this is its corpus.
+#
+# HOW A LINE IS LABELLED, and how the label is verified. Every line names a
+# POSITION -- a seeded world, a room, and the typed lines that get to the state
+# the label was written against -- because a classifier answer is only
+# meaningful next to the closed sets the model was offered. `take the apron`
+# resolves to a record in the supply closet and to nothing in the office.
+#
+#   1. THE CLOSED SETS ARE READ OFF THE RECORDS, not off the seed file, and
+#      printed. Every `target` and `also_named` in this file was written against
+#      that printout.
+#   2. `Eval::Classifier::Corpus#problems` CHECKS EVERY NAME back against the
+#      set the action really reads (`Playthrough::Classifier#offered_for`), and
+#      `Eval::Classifier::CorpusTest` fails the build if one does not fit. A
+#      label naming a thing that is not in reach cannot survive a commit.
+#   3. `refusal:` IS REDUNDANT ON PURPOSE. The three kinds are derivable from
+#      intent, target and `also_named` through the same predicates
+#      `Playthrough::Classifier::Intent#refused?` uses, and the validator
+#      derives them and compares. Two readings of one line have to agree, and a
+#      disagreement is a failing test rather than a number nobody checked.
+#   4. WHAT NEITHER CAN CHECK is whether the label is the right reading of the
+#      English. That is the hand-verification, and every line carries a `why`
+#      saying what it is here to measure. A line whose English genuinely admits
+#      two readings carries `also_accept`, and the board reports how many there
+#      are -- a bench that marked a defensible answer wrong would be measuring
+#      its own labelling.
+#
+# WHERE THE LINES CAME FROM. Three sources, and none of them invented whole:
+#
+#   * the 61 stored classifier conversations in the captain's own database
+#     (`chats.purpose = "classifier"`, kept since PR 97) -- what a person really
+#     typed, with the room and the closed sets the model was really shown;
+#   * the 20-turn `rake eval:run` scripts and the `rake game:sweep` scripts,
+#     which are the lines two instruments already play;
+#   * the shapes the ruling of 2026-09-04 made load-bearing and nothing yet
+#     types: two names out of one closed set, two names across two sets, an
+#     `examine` that landed on nothing, an `other` that must NOT be refused.
+#
+# A line lifted from a real conversation is played against the position whose
+# closed sets match the ones it was really shown; where no seeded position
+# matches, the line is rewritten against a position that does and `why` says so.
+#
+# WHAT IS DELIBERATELY NOT IN HERE:
+#
+#   * `unreadable`. It is an `intent` outside `Playthrough::IntentSchema::INTENTS`
+#     answered by a provider that ignored a closed enum, so it cannot be
+#     provoked by a typed line at all. `Playthrough::RefusalTest` and
+#     `Playthrough::TurnTest` pin it from the other side.
+#   * mismatched-gender pronouns and other trick questions. The bench measures
+#     the readings a player types, not the ones a labeller can argue about.
+#
+# EDITING THIS FILE: add a line under the shape it belongs to, give it a `why`,
+# and run `bin/rails test test/lib/eval/classifier_corpus_test.rb`. If the shape
+# you need is not reachable from any position here, add a position rather than
+# stretching an existing label.
+---
+positions:
+- id: office
+  story: The Unrecorded Hour
+  room: Ward Office 12
+  why: >-
+    The opening room exactly as seeded, and the position most of this corpus is
+    written against: two ways out (one realized, one a stub), one person, one
+    thing on the floor, one thing in the hands.
+
+- id: office-empty-handed
+  story: The Unrecorded Hour
+  room: Ward Office 12
+  setup: [drop the Ward Office 12 daybook]
+  why: >-
+    THE EMPTY DROP SET. `Playthrough::Refusal::EMPTY` says a different sentence
+    from `MISSED`, and a corpus with nothing carried anywhere could not tell the
+    two apart. Also puts two things on one floor, which a `take` overreach needs.
+
+- id: office-carrying-three
+  story: The Unrecorded Hour
+  room: Ward Office 12
+  setup: [go to the Supply Closet, take the private index, take the apron, go to Ward Office 12]
+  why: >-
+    THREE THINGS IN ONE PAIR OF HANDS, which is what a `drop` overreach needs
+    and what no seeded world starts with. Reached by walking, so it is a state a
+    player can really be in.
+
+- id: office-with-perrin
+  story: The Unrecorded Hour
+  room: Ward Office 12
+  cast:
+    Perrin Lasco: Ward Office 12
+  why: >-
+    TWO PEOPLE IN ONE ROOM, which no seeded world has and no typed line can
+    make -- see `Eval::Classifier::Corpus::Position` for why the records are
+    written here rather than typed. It is the only way to label a `talk` that
+    named two people, which is a shape the ruling of 2026-09-04 hangs on. Perrin
+    Lasco is `absent: true` in the seed file and `#move_to!` clears the marker,
+    so this is a world where the premise no longer holds -- fine for a bench and
+    stated so nobody reads it as the world.
+
+- id: closet
+  story: The Unrecorded Hour
+  room: The Supply Closet
+  why: >-
+    A DEAD END WITH NOBODY IN IT and two things on the floor: the empty `talk`
+    set, and the pair a two-noun `take` needs.
+
+- id: closet-swept-clean
+  story: The Unrecorded Hour
+  room: The Supply Closet
+  setup: [go to the Supply Closet, take the private index, take the apron]
+  why: >-
+    THE EMPTY TAKE SET with a full pair of hands -- the mirror of
+    `office-empty-handed`, and the position a `take` refusal's "there is nothing
+    lying here" sentence is labelled against.
+
+- id: court
+  story: The Salt Assizes
+  room: The Causeway Court
+  why: >-
+    The held-out world's opening room: two ways out, one person, nothing on the
+    floor, one readable thing carried.
+
+- id: court-slate-down
+  story: The Salt Assizes
+  room: The Causeway Court
+  setup: [drop the tide-slate]
+  why: >-
+    THE SAME ROOM WITH THE SLATE ON THE FLOOR. One item, one room, and the
+    `take`/`drop` sets swapped -- which is what makes "pick it up" and "put it
+    down" two different labels against one line of English.
+
+- id: court-with-both
+  story: The Salt Assizes
+  room: The Causeway Court
+  cast:
+    Neb Halloran: The Causeway Court
+  why: >-
+    The second two-person room, in the held-out world, and with a NICKNAME on
+    each of them ("Justicar Brace", "Neb") -- so a two-name `talk` can be
+    labelled where one name is a nickname, which is the case
+    `Playthrough::Classifier#also_record` was fixed for.
+
+- id: tide-post
+  story: The Salt Assizes
+  room: The Tide Post
+  why: >-
+    One way out, one person, nothing on the floor. The position for a `move`
+    with a single exit and for a `talk` by nickname.
+
+- id: room-3
+  story: The Lunar Cartographer
+  room: Grenn's Boarding House, Room 3
+  why: >-
+    THREE WAYS OUT AND EMPTY HANDS. The only position with three exits -- so a
+    two-name `move` can be labelled -- and the only one with no items at all in
+    reach, which is where an `examine` has nothing to land on.
+
+lines:
+# ===========================================================================
+# ONE ACT: A MOVE THAT RESOLVES
+#
+# The commonest turn in the game and the one with the most at stake: a `move`
+# writes `playthroughs.current_location_id` and, on a stub, calls
+# `Location::Generator`. The lines below name the destination the way players
+# actually do -- by the room's name, by the door, by the direction the prose
+# used, and by the travel method the prompt states beside each exit.
+# ===========================================================================
+- id: move-hallway-plain
+  position: office
+  typed: go to The Long Hallway
+  intent: move
+  target: The Long Hallway
+  shape: move
+  why: the destination named exactly as the enum holds it -- the floor case, and it has to be right
+
+- id: move-hallway-script
+  position: office
+  typed: go out into the long hallway
+  intent: move
+  target: The Long Hallway
+  shape: move
+  why: t07 of the eval script, verbatim -- lower case and a preposition around the name
+
+- id: move-hallway-door
+  position: office
+  typed: step through the door into the hallway
+  intent: move
+  target: The Long Hallway
+  shape: move
+  why: the door and not the room, which is how a player who has just read the arrival says it
+
+- id: move-hallway-fragment
+  position: office
+  typed: hallway
+  intent: move
+  target: The Long Hallway
+  shape: move
+  why: a bare fragment with no verb at all -- the shortest thing a player types
+
+- id: move-hallway-follow
+  position: office
+  typed: follow the sound of the closing doors down the hallway
+  intent: move
+  target: The Long Hallway
+  shape: move
+  why: the destination inside a clause about why -- a whole sentence, one act
+
+- id: move-closet-script
+  position: office
+  typed: open the narrow door and step into the supply closet
+  intent: move
+  target: The Supply Closet
+  shape: move
+  why: >-
+    t11 of the eval script, verbatim. TWO VERBS AND ONE ACT: opening the door is
+    how you enter the closet, not a second thing to resolve, and nothing in
+    either closed set is named twice. It is here because it looks like the
+    overreach shape and is not.
+
+- id: move-closet-plain
+  position: office
+  typed: go into the supply closet
+  intent: move
+  target: The Supply Closet
+  shape: move
+  why: the plain form of the line above, as the control for it
+
+- id: move-closet-behind-me
+  position: office
+  typed: turn around and open the closet at my back
+  intent: move
+  target: The Supply Closet
+  shape: move
+  why: the room named by where it is rather than by its name -- the arrival paragraph's own phrasing
+
+- id: move-closet-audit
+  position: office
+  typed: I am going to inventory that closet myself
+  intent: move
+  target: The Supply Closet
+  shape: move
+  why: a statement of intention rather than a command, which is how the captain types
+  also_accept:
+  - intent: other
+    target:
+
+- id: move-back-to-office
+  position: closet
+  typed: step back out into Ward Office 12
+  intent: move
+  target: Ward Office 12
+  shape: move
+  why: t13 of the eval script, verbatim -- the return leg, and the only exit there is
+
+- id: move-back-plain
+  position: closet
+  typed: go back to the office
+  intent: move
+  target: Ward Office 12
+  shape: move
+  why: "\"the office\" for \"Ward Office 12\" -- a fragment of the name, and the only exit"
+
+- id: move-back-out
+  position: closet
+  typed: out
+  intent: move
+  target: Ward Office 12
+  shape: move
+  why: one word, no name at all, and only one place it can mean
+
+- id: move-back-script-2
+  position: closet
+  typed: walk back into Ward Office 12
+  intent: move
+  target: Ward Office 12
+  shape: move
+  why: t08 of the eval script, verbatim
+
+- id: move-back-shut
+  position: closet
+  typed: pull the door shut behind me and go back to my desk
+  intent: move
+  target: Ward Office 12
+  shape: move
+  why: the destination named as the desk in it -- and no record called a desk, so the room is the only reading
+
+- id: move-tide-post
+  position: court
+  typed: go to The Tide Post
+  intent: move
+  target: The Tide Post
+  shape: move
+  why: exact name, held-out world
+
+- id: move-tide-post-along
+  position: court
+  typed: walk along the causeway to the tide post
+  intent: move
+  target: The Tide Post
+  shape: move
+  why: lower case and a route described on the way
+
+- id: move-vestry-stub
+  position: court
+  typed: go aboard the Vestry Hulk
+  intent: move
+  target: The Vestry Hulk
+  shape: move
+  why: >-
+    A STUB IS A LEGITIMATE DESTINATION -- it is only realized because somebody
+    walked into it -- and "aboard" is the verb this one asks for
+
+- id: move-vestry-fragment
+  position: court
+  typed: the hulk
+  intent: move
+  target: The Vestry Hulk
+  shape: move
+  why: a fragment of the name with a leading article and nothing else
+
+- id: move-court-back
+  position: tide-post
+  typed: back to the Causeway Court
+  intent: move
+  target: The Causeway Court
+  shape: move
+  why: no verb, one exit
+
+- id: move-court-court
+  position: tide-post
+  typed: return to court before the tide turns
+  intent: move
+  target: The Causeway Court
+  shape: move
+  why: "\"court\" alone, inside a reason -- the fragment a player uses after reading the room once"
+
+- id: move-lane
+  position: room-3
+  typed: go out to Mournwell Lane
+  intent: move
+  target: Mournwell Lane
+  shape: move
+  why: one of three exits named exactly -- the three-exit room is where a move can be got wrong
+
+- id: move-lane-climb
+  position: room-3
+  typed: climb out of the window down into the lane
+  intent: move
+  target: Mournwell Lane
+  shape: move
+  why: >-
+    the travel method the prompt states beside this exit ("adjacent, climbing")
+    typed as the verb, and the name reduced to "the lane"
+
+- id: move-hallway-lc
+  position: room-3
+  typed: go into the hallway
+  intent: move
+  target: Grenn's Boarding House hallway
+  shape: move
+  why: >-
+    "the hallway" against an enum entry of "Grenn's Boarding House hallway",
+    with two other exits to be wrong about
+
+- id: move-rooftops
+  position: room-3
+  typed: get up onto the Larkspur Quarter rooftops
+  intent: move
+  target: Larkspur Quarter rooftops
+  shape: move
+  why: exact name, three-exit room
+
+- id: move-rooftops-fragment
+  position: room-3
+  typed: up onto the roofs
+  intent: move
+  target: Larkspur Quarter rooftops
+  shape: move
+  why: >-
+    "roofs" for "rooftops" -- not a fragment of the enum entry at all, which is
+    exactly the reading a fixed grammar cannot make and a classifier call is
+    bought for
+
+- id: move-third-stair
+  position: room-3
+  typed: down the stairs, past the third one from the bottom that creaks
+  intent: move
+  target: Grenn's Boarding House hallway
+  shape: move
+  why: >-
+    the stairs are in the world's own opening prose and lead into the boarding
+    house hallway; the line names no room, so the only exit it can mean is that
+    one
+  also_accept:
+  - intent: move
+    target: Mournwell Lane
+
+# ===========================================================================
+# ONE ACT: A TALK THAT RESOLVES
+#
+# `talk` picks which character prompt `InteractionAgent` builds, so a wrong
+# speaker is a conversation with the wrong person. The closed set is
+# `Character.present_in` plus the party, and it holds BOTH a fullname and a
+# nickname for everybody -- so a line naming either one has to resolve, and to
+# the same record. That is the fix of PR 102 and it is measured here.
+# ===========================================================================
+- id: talk-rowe-fullname
+  position: office
+  typed: talk to Halkett Rowe
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: the fullname, plainly -- the floor case
+
+- id: talk-rowe-nickname
+  position: office
+  typed: talk to Sub-Inspector Rowe
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    THE NICKNAME RESOLVES TO THE SAME RECORD. Both names are in the enum
+    (`Playthrough::Classifier#cast_names`), and the arrival prose calls him this
+    one, so this is the name a player has actually been shown
+
+- id: talk-rowe-surname
+  position: office
+  typed: Rowe, what happened to the desk across from mine?
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    t03 of the eval script, verbatim. Addressed speech with no verb -- the
+    commonest shape of a talk turn in real play, and the surname alone
+
+- id: talk-rowe-early
+  position: office
+  typed: Sub-Inspector Rowe, you are forty minutes early.
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: t02 of the eval script, verbatim -- a statement rather than a question
+
+- id: talk-rowe-demand
+  position: office
+  typed: Rowe, I want the supporting file for the boundary amendment. Hand it over and I will read it out to you, line by line.
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    t04 of the eval script, verbatim. TWO SENTENCES AND ONE ACT: everything in
+    it is said TO Rowe, and "hand it over" names no record any closed set here
+    holds, so there is nothing for `also_named` to find. Here because it is the
+    longest real talk line in the scripts
+
+- id: talk-rowe-lie
+  position: office
+  typed: Tell me plainly, Rowe. Did you read Perrin Lasco's file before you signed it?
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    t05 of the eval script, verbatim, and the labelling trap in it is the point:
+    it names PERRIN LASCO, who is `absent: true` in this world and in nobody's
+    closed set at this position, so the second name resolves to nothing and the
+    line is one act. Compare `talk-two-people-perrin`, where he is in the room
+
+- id: talk-rowe-ask
+  position: office
+  typed: ask him about the hour missing out of my daybook
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    A PRONOUN AND NO NAME, with exactly one person in the set. It also names the
+    daybook, which IS carried -- but a `talk` resolves against the cast alone,
+    so the daybook is invisible to `also_named` by design and this is one act.
+    The cross-set gap, on a talk
+
+- id: talk-rowe-greet
+  position: office
+  typed: good evening, sub-inspector
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: a title with no name at all, and one person to be it
+
+- id: talk-rowe-say-nothing
+  position: office
+  typed: say nothing and wait for him to speak first
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    THE LINE THAT ARGUES WITH ITSELF: it is addressed at him and it is a refusal
+    to speak. `other` is a defensible reading and is accepted; what must not
+    happen is a resolved talk to nobody
+  also_accept:
+  - intent: other
+    target:
+
+- id: talk-brace-fullname
+  position: court
+  typed: talk to Ammon Brace
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: the fullname, held-out world
+
+- id: talk-brace-nickname
+  position: court
+  typed: talk to Justicar Brace
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: the nickname, which is what the seeded prose calls him
+
+- id: talk-brace-address
+  position: court
+  typed: Justicar, the tide-slate does not agree with the court record.
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: >-
+    a title alone, and the line also names the tide-slate -- which is CARRIED,
+    not in the cast, so a `talk` cannot see it and this is one act
+
+- id: talk-brace-plea
+  position: court
+  typed: ask Brace to stand the hearing down until the water drops
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: surname alone inside a request
+
+- id: talk-neb-nickname
+  position: tide-post
+  typed: talk to Neb
+  intent: talk
+  target: Neb Halloran
+  shape: talk
+  why: >-
+    THE ONE-WORD NICKNAME, which `Playthrough::Mechanics`'s own header names as
+    the case a player types as readily as the full name
+
+- id: talk-neb-fullname
+  position: tide-post
+  typed: ask Neb Halloran who moved the chain on the post
+  intent: talk
+  target: Neb Halloran
+  shape: talk
+  why: fullname inside a question about the room
+
+- id: talk-neb-pronoun
+  position: tide-post
+  typed: ask her what the water did last night
+  intent: talk
+  target: Neb Halloran
+  shape: talk
+  why: >-
+    a pronoun with one person in the set and no sex stated anywhere in the
+    prompt -- the classifier is not told, so the only reading is the one person
+    there is
+
+- id: talk-grenn-nickname
+  position: room-3
+  typed: talk to Old Grenn
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: the nickname the seeded prose uses
+
+- id: talk-grenn-real
+  position: room-3
+  typed: tell him now is not a good time
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: >-
+    LIFTED VERBATIM out of the captain's own stored classifier conversation in
+    this exact room, and the answer stored beside it was `talk` / "Grenn Ollivar"
+
+- id: talk-grenn-ask-lantern
+  position: room-3
+  typed: Grenn, what do you know about the lantern that weeps
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: surname alone, no verb, the world's own premise as the subject
+
+- id: talk-grenn-rent
+  position: room-3
+  typed: apologise to my landlord for the rent
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: >-
+    THE PERSON NAMED BY THEIR ROLE and not by either of their names -- the
+    reading no closed-set string match can make, and the clearest case of what a
+    classifier call is buying over the fixed grammar
+
+# ===========================================================================
+# ONE ACT: A TAKE THAT RESOLVES
+#
+# `take` is app-owned: the `items` row moves before the narrator is told, so a
+# wrong resolution moves the wrong thing into the party's hands and every
+# subsequent `drop` set is wrong with it. The closed set is `Item.lying_in`
+# alone -- what somebody is holding is not takeable, deliberately.
+# ===========================================================================
+- id: take-stamp-plain
+  position: office
+  typed: take the ward stamp
+  intent: take
+  target: ward stamp
+  shape: take
+  why: the only thing on this floor, named exactly -- the floor case
+
+- id: take-stamp-pickup
+  position: office
+  typed: pick up my ward stamp
+  intent: take
+  target: ward stamp
+  shape: take
+  why: a possessive in front of the name, which is how the seeded description of it reads
+
+- id: take-stamp-pocket
+  position: office
+  typed: put the stamp in my pocket before he sees the ink is wet
+  intent: take
+  target: ward stamp
+  shape: take
+  why: >-
+    A TAKE PHRASED AS A PUT, which is the reading most likely to come back as a
+    `drop`. "put ... in my pocket" is picking up; the fixed grammar reads "put
+    down" as a drop and would have to get this wrong
+
+- id: take-stamp-fragment
+  position: office
+  typed: stamp
+  intent: take
+  target: ward stamp
+  shape: take
+  why: >-
+    one word, no verb, and it is also an enum entry for `examine`. `take` is the
+    reading that changes the records, and `examine` is accepted rather than
+    called wrong
+  also_accept:
+  - intent: examine
+    target: ward stamp
+
+- id: take-index-plain
+  position: closet
+  typed: take Perrin's private index
+  intent: take
+  target: Perrin's private index
+  shape: take
+  why: the exact name, with a second thing on the same floor to be wrong about
+
+- id: take-index-fragment
+  position: closet
+  typed: take the index
+  intent: take
+  target: Perrin's private index
+  shape: take
+  why: >-
+    a fragment of the name against TWO candidates on this floor. This is the
+    line the eval script's own header says a first pass got wrong at the item
+    level ("the daybook" answered `nothing`), which is why it is in here
+
+- id: take-index-shelf
+  position: closet
+  typed: get the slim index off the lowest shelf
+  intent: take
+  target: Perrin's private index
+  shape: take
+  why: the thing named by where the seeded description puts it
+
+- id: take-index-two-columns
+  position: closet
+  typed: take the thing with the dates on the left and the file numbers on the right
+  intent: take
+  target: Perrin's private index
+  shape: take
+  why: >-
+    THE THING NAMED BY WHAT IS IN IT and not by its name at all -- the seeded
+    description's own words. No string match can make this reading
+
+- id: take-apron-plain
+  position: closet
+  typed: take the copy-room apron
+  intent: take
+  target: copy-room apron
+  shape: take
+  why: the other thing on the same floor, named exactly -- the control for `take-index-plain`
+
+- id: take-apron-fragment
+  position: closet
+  typed: pick up the apron
+  intent: take
+  target: copy-room apron
+  shape: take
+  why: a fragment against two candidates
+
+- id: take-apron-folded
+  position: closet
+  typed: take the folded thing behind the blank forms
+  intent: take
+  target: copy-room apron
+  shape: take
+  why: named by where it is, out of the seeded description, with the index beside it
+
+- id: take-daybook-off-floor
+  position: office-empty-handed
+  typed: pick up the Ward Office 12 daybook
+  intent: take
+  target: Ward Office 12 daybook
+  shape: take
+  why: >-
+    t09 of the eval script, verbatim, against the state that turn really has:
+    the daybook on the desk after t06 put it there. The full name, which the
+    script's header says it is spelled out for on purpose
+
+- id: take-daybook-fragment
+  position: office-empty-handed
+  typed: take my daybook back
+  intent: take
+  target: Ward Office 12 daybook
+  shape: take
+  why: >-
+    "my daybook" against an enum entry of "Ward Office 12 daybook", with the
+    ward stamp on the same floor
+
+- id: take-slate-plain
+  position: court-slate-down
+  typed: take the Assize tide-slate
+  intent: take
+  target: Assize tide-slate
+  shape: take
+  why: the held-out world's only item, named exactly, off the floor
+
+- id: take-slate-fragment
+  position: court-slate-down
+  typed: take the tide-slate
+  intent: take
+  target: Assize tide-slate
+  shape: take
+  why: >-
+    the fragment `Playthrough::Mechanics`'s own header cites as the one a
+    leading article used to be fatal to
+
+- id: take-slate-pronoun
+  position: court-slate-down
+  typed: pick it up again
+  intent: take
+  target: Assize tide-slate
+  shape: take
+  why: A PRONOUN AND NOTHING ELSE, with exactly one thing on the floor to be it
+
+- id: take-slate-bench
+  position: court-slate-down
+  typed: lift the slate off the bench before the water reaches it
+  intent: take
+  target: Assize tide-slate
+  shape: take
+  why: >-
+    "lift" rather than "take", and the bench is where the eval script's own
+    `drop` narration put it -- so this is the line a real player types next
+
+# ===========================================================================
+# ONE ACT: A DROP THAT RESOLVES
+#
+# The mirror of `take`, and here for the reason `Playthrough::IntentSchema`
+# gives: an app that owns picking up and leaves putting down to the narrator has
+# records that go stale the first time a player sets something on a table. The
+# closed set is `Playthrough#carried` -- the PARTY's hands, not the
+# protagonist's row.
+# ===========================================================================
+- id: drop-daybook-script
+  position: office
+  typed: put the Ward Office 12 daybook down on the desk
+  intent: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: t06 of the eval script, verbatim -- the full name, and the only thing carried
+
+- id: drop-daybook-fragment
+  position: office
+  typed: drop the daybook
+  intent: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: the fragment the script's header says a first pass of the eval run got `nothing` for
+
+- id: drop-daybook-hand-over
+  position: office
+  typed: hand the daybook to Rowe and let him read the gap himself
+  intent: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: >-
+    GIVING SOMETHING UP IS A DROP, which is the intent table's own word for it
+    ("putting down, leaving or giving up"). It also names Rowe, who is in the
+    CAST and not in the carried set, so a `drop` cannot see him -- one act, and
+    the cross-set gap again
+  also_accept:
+  - intent: talk
+    target: Halkett Rowe
+
+- id: drop-daybook-leave
+  position: office
+  typed: leave the daybook open on the desk where he can see it
+  intent: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: "\"leave\" -- the third of the intent table's three words for this act"
+
+- id: drop-index
+  position: office-carrying-three
+  typed: drop Perrin's private index
+  intent: drop
+  target: Perrin's private index
+  shape: drop
+  why: one of THREE things carried, named exactly -- the position no seeded world starts in
+
+- id: drop-index-fragment
+  position: office-carrying-three
+  typed: put the index down on my desk
+  intent: drop
+  target: Perrin's private index
+  shape: drop
+  why: a fragment against three candidates
+
+- id: drop-apron-fragment
+  position: office-carrying-three
+  typed: drop the apron
+  intent: drop
+  target: copy-room apron
+  shape: drop
+  why: the second of the three, to prove the first is not just the head of the list
+
+- id: drop-daybook-of-three
+  position: office-carrying-three
+  typed: set the daybook down and nothing else
+  intent: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: >-
+    the third of the three, and the "and nothing else" is there because it looks
+    like a second clause and names no second record
+
+- id: drop-slate-script
+  position: court
+  typed: put the Assize tide-slate down on the bench
+  intent: drop
+  target: Assize tide-slate
+  shape: drop
+  why: >-
+    lifted from `transition_corpus.json` (main/the-salt-assizes-r1/scene-9),
+    where the classifier really answered `drop` / "Assize tide-slate"
+
+- id: drop-slate-fragment
+  position: court
+  typed: put the slate down
+  intent: drop
+  target: Assize tide-slate
+  shape: drop
+  why: the same act with the name reduced to one word
+
+- id: drop-slate-pronoun
+  position: court
+  typed: set it down where the Justicar can read it
+  intent: drop
+  target: Assize tide-slate
+  shape: drop
+  why: >-
+    a pronoun for the only thing carried, and the Justicar named beside it --
+    who is in the cast, not the carried set, so this is one act
+
+- id: drop-slate-give
+  position: tide-post
+  typed: give the tide-slate to Neb
+  intent: drop
+  target: Assize tide-slate
+  shape: drop
+  why: >-
+    GIVING IT TO SOMEBODY, which the intent table calls a drop and which the app
+    plays as one: `Playthrough::Turn#put_down!` puts it on the floor, because no
+    record says how handing a thing to a person goes. Neb is in the cast and
+    invisible to a `drop`'s closed set
+  also_accept:
+  - intent: talk
+    target: Neb Halloran
+
+# ===========================================================================
+# ONE ACT: AN EXAMINE THAT RESOLVES TO A RECORD
+#
+# `examine` grew a resolved target in `ta-item-inscriptions`, and it is the only
+# action that reads against BOTH item sets at once -- the floor and the hands --
+# because looking at a thing does not move it. `Playthrough::Turn#read_item` is
+# what is on the other side: a readable thing's words come out of
+# `Item#inscription` verbatim, so a wrong resolution here quotes the wrong
+# document at the player. The floor comes first when two things share a name.
+# ===========================================================================
+- id: examine-daybook-read
+  position: office
+  typed: read the Ward Office 12 daybook
+  intent: examine
+  target: Ward Office 12 daybook
+  shape: examine
+  why: the readable thing in the player's hands, named exactly -- the floor case for a read
+
+- id: examine-daybook-gap
+  position: office
+  typed: look closely at the ruled gap between four and five in my daybook
+  intent: examine
+  target: Ward Office 12 daybook
+  shape: examine
+  why: >-
+    t01 of the eval script, verbatim, and the thing it looks at is a feature of
+    the item rather than the item -- the reading a fragment match cannot make
+
+- id: examine-daybook-entries
+  position: office
+  typed: read back the last entries before the gap
+  intent: examine
+  target: Ward Office 12 daybook
+  shape: examine
+  why: >-
+    THE ITEM NAMED BY ITS CONTENTS ALONE. `Item#inscription` really does hold
+    those entries, so a resolution to the daybook is the answer that recites the
+    right document
+
+- id: examine-stamp
+  position: office
+  typed: examine the ward stamp
+  intent: examine
+  target: ward stamp
+  shape: examine
+  why: >-
+    the thing on the FLOOR, examined -- which resolves because an examine reads
+    both sets, and is the half of that seam a `take` cannot test
+
+- id: examine-stamp-ink
+  position: office
+  typed: look at how wet the ink still is on the pad
+  intent: examine
+  target: ward stamp
+  shape: examine
+  why: >-
+    the stamp named by the detail the seeded description gives it. NOT REFUSED
+    even if it resolved to nothing -- `examine` is not in
+    `Playthrough::Drift::ACTIONS` -- so the only thing at stake here is the
+    record, which is what makes it worth labelling
+
+- id: examine-index-read
+  position: closet
+  typed: read Perrin's private index
+  intent: examine
+  target: Perrin's private index
+  shape: examine
+  why: the second readable thing in this world, on the floor, named exactly
+
+- id: examine-index-columns
+  position: closet
+  typed: read the two columns in the private index on the lowest shelf
+  intent: examine
+  target: Perrin's private index
+  shape: examine
+  why: t12 of the eval script, verbatim
+
+- id: examine-index-fragment
+  position: closet
+  typed: what does the index say
+  intent: examine
+  target: Perrin's private index
+  shape: examine
+  why: >-
+    A QUESTION RATHER THAN A COMMAND, which is the shape a player asks for
+    writing in. Two things on this floor and one of them is not readable, so the
+    resolution matters
+
+- id: examine-apron
+  position: closet
+  typed: look at the apron
+  intent: examine
+  target: copy-room apron
+  shape: examine
+  why: >-
+    AN EXAMINE OF SOMETHING WITH NO WRITING ON IT, which resolves a record all
+    the same and then narrates rather than recites -- `Item#readable` is the
+    whole gate and this line is the control that proves the resolution is not
+    doing the gating
+
+- id: examine-daybook-in-closet
+  position: closet
+  typed: read my own daybook again
+  intent: examine
+  target: Ward Office 12 daybook
+  shape: examine
+  why: >-
+    THE HANDS, WITH TWO THINGS ON THE FLOOR BESIDE THEM. This is the line that
+    proves an examine reads both sets: the daybook is in neither `take`'s set
+    nor anything lying here
+
+- id: examine-slate
+  position: court
+  typed: read the Assize tide-slate
+  intent: examine
+  target: Assize tide-slate
+  shape: examine
+  why: the held-out world's readable thing, carried
+
+- id: examine-slate-chalk
+  position: court
+  typed: look at the chalked figure on the slate
+  intent: examine
+  target: Assize tide-slate
+  shape: examine
+  why: the item named by what is written on it, out of the transition corpus's own prose
+
+- id: examine-slate-floor
+  position: court-slate-down
+  typed: crouch down and read what is chalked on the slate
+  intent: examine
+  target: Assize tide-slate
+  shape: examine
+  why: the same thing, now on the floor -- the other leg of the both-sets rule
+
+# ===========================================================================
+# NOT REFUSED: AN EXAMINE THAT LANDS ON NOTHING
+#
+# `Playthrough::Refusal`'s header is explicit about this and it is the shape
+# most at risk of being got wrong: an `examine` is NEVER `:unresolved`. A look
+# is not reaching for a record it could have missed, which is why
+# `Playthrough::Drift::ACTIONS` does not carry `examine`. These lines must come
+# back `examine` / nothing and MUST NOT be refused -- a refusal here would
+# refuse looking at the sky.
+# ===========================================================================
+- id: examine-nothing-window
+  position: office
+  typed: look out of the window at the rain coming off the levee
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    the window is in the seeded description and is not a record -- so the
+    resolution is nothing and the turn still narrates
+  also_accept:
+  - intent: other
+    target:
+
+- id: examine-nothing-desk
+  position: office
+  typed: look at the desk across from mine, cleared to the wood
+  intent: examine
+  shape: examine-nothing
+  why: the desk is prose, not an item; the premise of the whole world and still not a record
+  also_accept:
+  - intent: other
+    target:
+
+- id: examine-nothing-tube
+  position: office
+  typed: examine the pneumatic tube on the wall
+  intent: examine
+  shape: examine-nothing
+  why: another thing the seeded room describes and no `items` row holds
+  also_accept:
+  - intent: other
+    target:
+
+- id: examine-nothing-rowe
+  position: office
+  typed: look at Rowe's face for anything at all
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    AN EXAMINE OF A PERSON. `examine` resolves against the two ITEM sets and
+    never against the cast, so the answer is nothing -- and it must not become a
+    `talk`, because looking at somebody is not speaking to them
+  also_accept:
+  - intent: other
+    target:
+
+- id: examine-nothing-shelves
+  position: closet
+  typed: look along the shelves for anything with a ward mark on it
+  intent: examine
+  shape: examine-nothing
+  why: the shelves are the room, not a thing in it
+  also_accept:
+  - intent: other
+    target:
+
+- id: examine-nothing-back-wall
+  position: closet
+  typed: examine the plaster on the back wall
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    the seeded description says the back wall is plaster over brick, and no
+    record holds a wall
+  also_accept:
+  - intent: other
+    target:
+
+- id: examine-nothing-empty-hands
+  position: room-3
+  typed: look at my own hands
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    AN EXAMINE IN A POSITION WHERE BOTH ITEM SETS ARE EMPTY -- there is nothing
+    for it to resolve to at all, and it is still not refused
+  also_accept:
+  - intent: other
+    target:
+
+- id: examine-nothing-boots
+  position: room-3
+  typed: look at the boots by the door and the dark iridescence dried on them
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    lifted out of `Eval::UNAVAILABLE_TO_A_SCRIPT`'s own worked example of a line
+    naming two things, and it resolves to NEITHER because this world has no
+    items at all -- so it is one act, unrefused, and a good test that
+    `also_named` does not fire on prose nouns
+
+- id: examine-nothing-satchel
+  position: room-3
+  typed: examine the field note in the satchel
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    the satchel and the note are in the world's own opening prose and neither is
+    an `items` row -- exactly the shape `Story::Audit`'s `pickup_invented` exists
+    for, seen from the classifier's side
+  also_accept:
+  - intent: other
+    target:
+
+- id: examine-nothing-chain
+  position: tide-post
+  typed: look at the chain on the tide post
+  intent: examine
+  shape: examine-nothing
+  why: the post's chain is in the seeded prose of the held-out world and is not a record
+  also_accept:
+  - intent: other
+    target:
+
+# ===========================================================================
+# NOT REFUSED: `other`
+#
+# The other half of what `Playthrough::Refusal`'s header protects. An `other`
+# reaches for no record by design, so it is never `:unresolved` -- "wait", a
+# remark to nobody, a thing the world does not do. Refusing these would refuse
+# everything that is not one of the four acts that move a row, which is a
+# different game. They must come back `other` / nothing.
+# ===========================================================================
+- id: other-wait
+  position: office
+  typed: wait
+  intent: other
+  shape: other
+  why: the shortest `other` there is, and the one `Playthrough::Refusal`'s header names
+
+- id: other-wait-long
+  position: office
+  typed: wait for him to say something first
+  intent: other
+  shape: other
+  why: the same act with a reason on it
+  also_accept:
+  - intent: talk
+    target: Halkett Rowe
+
+- id: other-keep-going
+  position: room-3
+  typed: keep doing what you are doing
+  intent: other
+  shape: other
+  why: >-
+    LIFTED VERBATIM out of the captain's own stored classifier conversation in
+    this exact room -- the answer stored beside it was `other` / `nothing`, and
+    it is the first classifier call in his database
+
+- id: other-think
+  position: office
+  typed: think about what could have carried a total across a gap
+  intent: other
+  shape: other
+  why: a line about the player's own reasoning, which is nothing the engine owns
+
+- id: other-listen
+  position: office
+  typed: listen to the doors closing down the hallway
+  intent: other
+  shape: other
+  why: >-
+    A LINE THAT NAMES AN EXIT AND IS NOT A MOVE. Listening down the hallway is
+    not going into it, and a `move` / "The Long Hallway" here would walk the
+    player out of the room they meant to stay in -- the most costly confusion
+    this bench can catch
+  also_accept:
+  - intent: examine
+    target:
+
+- id: other-smell
+  position: closet
+  typed: smell the wax and the old ink
+  intent: other
+  shape: other
+  why: a sense that is not looking, against a room whose description leads on the smell
+  also_accept:
+  - intent: examine
+    target:
+
+- id: other-count
+  position: closet
+  typed: count the tins of sealing wax
+  intent: other
+  shape: other
+  why: >-
+    the tins are seeded prose and not records, and counting is not examining --
+    accepted either way, but it must not resolve to one of the two things that
+    ARE on this floor
+  also_accept:
+  - intent: examine
+    target:
+
+- id: other-shout
+  position: closet
+  typed: shout for anybody at all
+  intent: other
+  shape: other
+  why: >-
+    SPEAKING WITH NOBODY IN THE ROOM. The cast here is empty, so a `talk` would
+    be `:unresolved` and refused -- and `Playthrough::Refusal`'s header says a
+    remark to nobody is exactly what must not be refused. Either reading is
+    accepted; what the board watches is how often it lands on the refused one
+  also_accept:
+  - intent: talk
+    target:
+
+- id: other-pray
+  position: court
+  typed: pray to the Fair Copy that the water holds
+  intent: other
+  shape: other
+  why: the universe's own religion, which is lore and not a record
+
+- id: other-sing
+  position: tide-post
+  typed: sing the tide-count under my breath
+  intent: other
+  shape: other
+  why: an act the world has no mechanic for at all
+
+- id: other-write
+  position: office
+  typed: write the missing hour into the gap in my own hand
+  intent: other
+  shape: other
+  why: >-
+    the act the whole world is about, and there is no mechanic for it. It names
+    the daybook only by implication, so nothing resolves
+  also_accept:
+  - intent: examine
+    target: Ward Office 12 daybook
+
+- id: other-impossible
+  position: office
+  typed: reach into the gap in the ledger and pull the missing hour back out of it with my bare hands
+  intent: other
+  shape: other
+  why: >-
+    t10 of the eval script, verbatim -- the turn its own note calls IMPOSSIBLE
+    and "a reach that should resolve to nothing". Under the ruling of 2026-09-04
+    the reading matters more than it did: `other` narrates and a `take` here
+    would be REFUSED, which would take the run's impossible-turn beat away
+  also_accept:
+  - intent: examine
+    target: Ward Office 12 daybook
+
+- id: other-sleep
+  position: room-3
+  typed: go back to sleep
+  intent: other
+  shape: other
+  why: >-
+    A LINE THAT STARTS WITH `go` AND IS NOT A MOVE. The fixed grammar reads the
+    verb and looks for an exit called "back to sleep"; this is the confusion a
+    verb table cannot avoid and a classifier call should
+  also_accept:
+  - intent: move
+    target:
+
+- id: other-remember
+  position: room-3
+  typed: try to remember where I was last night
+  intent: other
+  shape: other
+  why: the world's premise as a command, and nothing in the records answers it
+
+- id: other-nonsense
+  position: office
+  typed: asdf
+  intent: other
+  shape: other
+  why: >-
+    NOISE. A player's slipped keystroke has to come back `other` and not resolve
+    to anything -- an `other` narrates and any of the four acts would be refused
+
+- id: other-empty-question
+  position: court
+  typed: what time is it
+  intent: other
+  shape: other
+  why: a question to the game rather than to anybody in it
+
+# ===========================================================================
+# REFUSED: `:unresolved` -- THE REACH THAT FOUND NOTHING
+#
+# One of the four acts that resolve a record, aimed at something the closed set
+# does not have. `Playthrough::Drift` counts it, and since 2026-09-04 the line
+# is refused whole: nothing moves and the player is asked for clarification.
+# So the LABEL here is intent + nothing, and the validator derives the refusal.
+#
+# BOTH SHAPES OF IT ARE IN HERE, because `Playthrough::Refusal` says two
+# different sentences: the set was EMPTY, or the set had things in it and the
+# line did not land on one. A corpus with only one of them could not tell.
+# ===========================================================================
+- id: unresolved-move-sealed-room
+  position: office
+  typed: go up to the Sealed Room
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: >-
+    the Sealed Room is in the universe's own lore, has no `Location` row at all,
+    and is certainly not an exit from here. The set is non-empty, so this is the
+    MISSED sentence and not the EMPTY one
+
+- id: unresolved-move-courtyard
+  position: office
+  typed: cross the courtyard
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: lore again -- "a courtyard nobody has permission to cross" -- and not a room
+
+- id: unresolved-move-basement
+  position: closet
+  typed: go down to the basements below the flood line
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: >-
+    lore, from a position with exactly ONE exit -- the hardest place for a wrong
+    resolution to hide, because there is only one thing it could wrongly be
+
+- id: unresolved-move-other-world
+  position: office
+  typed: go to The Tide Post
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: >-
+    A REAL ROOM FROM ANOTHER WORLD, named exactly as its own enum holds it.
+    Nothing here has heard of it, and the enum this call is built from does not
+    contain the string -- so a resolution would mean the schema was ignored
+
+- id: unresolved-move-spire
+  position: court
+  typed: climb the Celestial Spire
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: a real room from The Lunar Cartographer, typed in the held-out world
+
+- id: unresolved-move-bell
+  position: tide-post
+  typed: go to the Bell of Saint Aravel
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: the same cross-world reach from a one-exit room
+
+- id: unresolved-move-window
+  position: room-3
+  typed: go out through the skylight
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: >-
+    A DOOR THE PROSE COULD PLAUSIBLY HAVE INVENTED, in the three-exit room. This
+    is the shape `Playthrough::Drift` exists to count in real play, and the
+    rooftops exit is close enough to be a tempting wrong answer
+  also_accept:
+  - intent: move
+    target: Larkspur Quarter rooftops
+
+- id: unresolved-talk-perrin
+  position: office
+  typed: talk to Perrin Lasco
+  intent: talk
+  refusal: unresolved
+  shape: unresolved-talk
+  why: >-
+    PERRIN LASCO IS DELIBERATELY NOWHERE in this world (`absent: true`), which
+    is the premise of it. The line is walked by `one-act-per-line.yml` offline
+    and this is the classifier half of the same step
+
+- id: unresolved-talk-inspectorate
+  position: office
+  typed: talk to the rest of the Inspectorate
+  intent: talk
+  refusal: unresolved
+  shape: unresolved-talk
+  why: a body the lore has and the records do not, with one real person standing here
+
+- id: unresolved-talk-nobody-here
+  position: closet
+  typed: talk to whoever swept this floor
+  intent: talk
+  refusal: unresolved
+  shape: unresolved-talk
+  why: >-
+    THE EMPTY CAST. `Playthrough::Refusal::EMPTY` says "There is nobody here to
+    talk to", which is a different sentence from the MISSED one, and this is the
+    position that earns it
+
+- id: unresolved-talk-grenn-in-court
+  position: court
+  typed: talk to Old Grenn
+  intent: talk
+  refusal: unresolved
+  shape: unresolved-talk
+  why: a real person from another world, by nickname, with a real person present here
+
+- id: unresolved-talk-neb-in-court
+  position: court
+  typed: ask Neb what the water did
+  intent: talk
+  refusal: unresolved
+  shape: unresolved-talk
+  why: >-
+    A PERSON WHO IS ONE ROOM AWAY IN THIS WORLD -- Neb Halloran is at The Tide
+    Post -- which is the closest a reach can get to resolving and still have to
+    fail. `Character.present_in` is the closed set and it does not hold him here
+
+- id: unresolved-talk-landlord
+  position: court
+  typed: ask my landlord for another week
+  intent: talk
+  refusal: unresolved
+  shape: unresolved-talk
+  why: >-
+    the counterpart of `talk-grenn-rent`: a person named by their role, in a
+    world where nobody holds that role. The reading that makes `talk-grenn-rent`
+    right has to not fire here
+
+- id: unresolved-take-empty-floor
+  position: closet-swept-clean
+  typed: take the private index
+  intent: take
+  refusal: unresolved
+  shape: unresolved-take
+  why: >-
+    THE EMPTY FLOOR, and the thing named is in the player's own hands. A `take`
+    resolves against `Item.lying_in` alone, so this must not resolve -- and the
+    refusal is the EMPTY one
+
+- id: unresolved-take-carried
+  position: court
+  typed: pick up the Assize tide-slate
+  intent: take
+  refusal: unresolved
+  shape: unresolved-take
+  why: >-
+    the same rule in the held-out world: the slate is CARRIED, the floor is
+    empty, and taking what you already hold resolves to nothing
+
+- id: unresolved-take-nibs
+  position: closet
+  typed: take a box of nibs
+  intent: take
+  refusal: unresolved
+  shape: unresolved-take
+  why: >-
+    THE NIBS ARE IN THE SEEDED DESCRIPTION OF THIS ROOM and are not an `items`
+    row. The hardest kind of drift to avoid, because the prose really did put
+    them there -- and two real items are on this floor to be wrongly resolved to
+
+- id: unresolved-take-tide-slate
+  position: closet
+  typed: take the tide-slate
+  intent: take
+  refusal: unresolved
+  shape: unresolved-take
+  why: >-
+    walked offline by `one-act-per-line.yml` (a-name-that-lands-on-nothing);
+    this is the classifier half. A real item from another world
+
+- id: unresolved-take-blank-writ
+  position: office
+  typed: take a blank writ out of the press
+  intent: take
+  refusal: unresolved
+  shape: unresolved-take
+  why: >-
+    the thing the whole world is afraid of, which the lore says officially does
+    not exist outside the Sealed Room -- and no record has it
+
+- id: unresolved-drop-empty-hands
+  position: office-empty-handed
+  typed: drop the Ward Office 12 daybook
+  intent: drop
+  refusal: unresolved
+  shape: unresolved-drop
+  why: >-
+    THE EMPTY HANDS, with the daybook lying at the player's feet. `drop` reads
+    `Playthrough#carried` alone, so the thing being on the floor is exactly what
+    makes this unresolvable -- and the refusal is EMPTY, not MISSED
+
+- id: unresolved-drop-not-carried
+  position: office
+  typed: drop the ward stamp
+  intent: drop
+  refusal: unresolved
+  shape: unresolved-drop
+  why: >-
+    A NON-EMPTY CARRIED SET AND THE WRONG THING NAMED: the stamp is on the
+    floor, the daybook is in the hands. This is the MISSED sentence, and a
+    resolution to the daybook would be a wrong record rather than a miss
+
+- id: unresolved-drop-apron
+  position: closet
+  typed: drop the copy-room apron
+  intent: drop
+  refusal: unresolved
+  shape: unresolved-drop
+  why: the apron is on this floor and not carried -- the same rule with two floor items to confuse it
+
+- id: unresolved-drop-slate
+  position: court-slate-down
+  typed: put the tide-slate down
+  intent: drop
+  refusal: unresolved
+  shape: unresolved-drop
+  why: >-
+    ALREADY DOWN. The hands are empty in this position, so putting the slate
+    down again resolves to nothing -- and the `take` set holds exactly the thing
+    named, which is the tempting wrong answer
+
+- id: unresolved-drop-coat
+  position: room-3
+  typed: drop my coat on the floor
+  intent: drop
+  refusal: unresolved
+  shape: unresolved-drop
+  why: >-
+    empty hands in a world with no items at all -- nothing to resolve to and
+    nothing to be wrong about, so the only question is whether the intent is
+    read as a drop
+
+# ===========================================================================
+# REFUSED: `:named_more_than_one` -- TWO ACTS ON ONE LINE
+#
+# The captain's ruling of 2026-09-04, and the shape this whole bench was built
+# because of: a line naming TWO things the records really have is refused whole
+# and the player is asked to pick one. `Playthrough::IntentSchema#also_named` is
+# how the loop knows, and it is the field PR 102's review finding F4 worried
+# about -- one more name out of the SAME closed set as `target`, resolved by the
+# same matcher.
+#
+# ORDER IS NOT SCORED. Nothing in the app says which of two explicitly named
+# things is `target` and which is `also_named` -- both are resolved through the
+# same set by the same matcher and neither is acted on -- so the bench compares
+# the PAIR and not the order. The label writes the first-on-the-list one first,
+# which is the order the prompt's own "everything" rule suggests.
+# ===========================================================================
+- id: two-names-take-office
+  position: office-empty-handed
+  typed: take the ward stamp and the daybook
+  intent: take
+  target: ward stamp
+  also_named: Ward Office 12 daybook
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    THE CANONICAL CASE, and it is deliberately the same English as
+    `one-act-per-line.yml`'s `two-acts-across-two-sets` -- which is NOT refused,
+    because there the daybook is in the hands. Here both are on one floor, so
+    one closed set holds both names and the line is refused. The pair pins that
+    the refusal follows the SETS and not the words
+
+- id: two-names-take-office-full
+  position: office-empty-handed
+  typed: pick up the ward stamp and the Ward Office 12 daybook
+  intent: take
+  target: ward stamp
+  also_named: Ward Office 12 daybook
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: both names in full, which is the easiest form of the shape to see
+
+- id: two-names-take-closet
+  position: closet
+  typed: take Perrin's private index and copy-room apron
+  intent: take
+  target: Perrin's private index
+  also_named: copy-room apron
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    walked offline by `one-act-per-line.yml` (both-names-in-full), where the
+    fixed grammar reaches the same refusal by its own ambiguity rule. This is
+    the classifier half -- the `also_named` field, which no grammar produces
+
+- id: two-names-take-closet-fragments
+  position: closet
+  typed: take the index and the apron
+  intent: take
+  target: Perrin's private index
+  also_named: copy-room apron
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    the same pair as FRAGMENTS of both names, which is how a player types it.
+    Both have to resolve through `#find_item` for the refusal to fire
+
+- id: two-names-take-both
+  position: closet
+  typed: take both
+  intent: take
+  target: Perrin's private index
+  also_named: copy-room apron
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    "BOTH" IS A WORD THAT NAMES WHAT IS ON THE LIST, which `Playthrough::Classifier::INSTRUCTIONS`
+    says explicitly -- so it is not `nothing`, and with two things on this floor
+    it is the pair. The instruction was added because "take everything" used to
+    be counted as drift
+
+- id: two-names-take-everything
+  position: closet
+  typed: take everything on that shelf
+  intent: take
+  target: Perrin's private index
+  also_named: copy-room apron
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    "EVERYTHING", the word the instruction names first, and the line that the
+    engine sweep's `regressions-2026-09-03.yml` was written for
+
+- id: two-names-take-the-lot
+  position: office-empty-handed
+  typed: take the lot
+  intent: take
+  target: ward stamp
+  also_named: Ward Office 12 daybook
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: the third of the instruction's four words for all of them, against a different pair
+
+- id: two-names-drop-three
+  position: office-carrying-three
+  typed: drop the index and the apron
+  intent: drop
+  target: Perrin's private index
+  also_named: copy-room apron
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    TWO OUT OF THREE CARRIED. `also_named` is one name and not a list on purpose
+    (see the constant's comment), so a line naming two of three is exactly the
+    shape it holds -- and the daybook must not appear in either slot
+
+- id: two-names-drop-all-three
+  position: office-carrying-three
+  typed: put everything I am carrying down on the desk
+  intent: drop
+  target: Perrin's private index
+  also_named: copy-room apron
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    THREE THINGS NAMED AT ONCE, and the stated cost of `also_named` being one
+    field: the count of lines that overreached is exact and the report names one
+    of the two it skipped. ANY TWO OF THE THREE CARRIED is a right pair here, so
+    all three pairs are stated -- and the pair is scored as a set, so six answers
+    are correct
+  also_accept:
+  - intent: drop
+    target: Perrin's private index
+    also_named: Ward Office 12 daybook
+  - intent: drop
+    target: copy-room apron
+    also_named: Ward Office 12 daybook
+
+- id: two-names-drop-daybook-apron
+  position: office-carrying-three
+  typed: leave the daybook and the apron here
+  intent: drop
+  target: copy-room apron
+  also_named: Ward Office 12 daybook
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    a different pair out of the same three, to prove the resolution is reading
+    the line and not the head of the list
+
+- id: two-names-drop-closet
+  position: closet-swept-clean
+  typed: drop the index and the daybook
+  intent: drop
+  target: Perrin's private index
+  also_named: Ward Office 12 daybook
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: two of three carried in the other room, with an empty floor underneath
+
+- id: two-names-talk-two-people
+  position: office-with-perrin
+  typed: ask Rowe and Perrin what happened at four o'clock
+  intent: talk
+  target: Perrin Lasco
+  also_named: Halkett Rowe
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    TWO PEOPLE ON ONE LINE, the shape `one-act-per-line.yml` says is NOT
+    REACHABLE AT ALL offline -- no seeded world has two people in a room. This
+    is the position that makes it reachable, and one act means one conversation
+
+- id: two-names-talk-perrin
+  position: office-with-perrin
+  typed: Perrin, tell Rowe what you found in the amendments
+  intent: talk
+  target: Perrin Lasco
+  also_named: Halkett Rowe
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    one person addressed and the other named inside what is said to them, which
+    is the hardest two-name talk to be sure about -- and the app's answer is
+    that a line naming two people it can resolve is refused whichever way round.
+    No `also_accept` is needed for the swap: the pair is scored as a SET
+
+- id: two-names-talk-both
+  position: office-with-perrin
+  typed: talk to both of them
+  intent: talk
+  target: Perrin Lasco
+  also_named: Halkett Rowe
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: "\"both\" against a cast of two rather than a floor of two"
+
+- id: two-names-talk-court
+  position: court-with-both
+  typed: ask Justicar Brace and Neb about the chain
+  intent: talk
+  target: Ammon Brace
+  also_named: Neb Halloran
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    TWO PEOPLE, EACH BY A DIFFERENT KIND OF NAME -- a nickname title and a
+    one-word nickname. `Playthrough::Classifier#also_record` compares RECORDS
+    and not typed names precisely so that this pair counts as two people; the
+    bug it fixed named one man on both sides of an overreach row
+
+- id: two-names-talk-court-full
+  position: court-with-both
+  typed: talk to Ammon Brace and Neb Halloran
+  intent: talk
+  target: Ammon Brace
+  also_named: Neb Halloran
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: the same pair in full names, as the control
+
+- id: two-names-move-office
+  position: office
+  typed: go into the supply closet and then out into the hallway
+  intent: move
+  target: The Supply Closet
+  also_named: The Long Hallway
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    TWO DESTINATIONS ON ONE LINE, which is a route rather than a move. Both are
+    exits from here, so one closed set holds both and the line is refused -- the
+    player is asked to walk one door at a time
+
+- id: two-names-move-court
+  position: court
+  typed: go to the Tide Post and then aboard the Vestry Hulk
+  intent: move
+  target: The Tide Post
+  also_named: The Vestry Hulk
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: the same shape in the held-out world, one realized exit and one stub
+
+- id: two-names-move-room-3
+  position: room-3
+  typed: go out to Mournwell Lane or up onto the Larkspur Quarter rooftops
+  intent: move
+  target: Mournwell Lane
+  also_named: Larkspur Quarter rooftops
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    TWO NAMED WITH `or` RATHER THAN `and`, out of three exits. It is a player
+    asking which, and the ruling's answer is the same: one line, one act, pick
+    one. Worth labelling because "or" is the form most likely to come back as a
+    single resolved move
+
+- id: two-names-examine-office
+  position: office
+  typed: look at the ward stamp and the daybook side by side
+  intent: examine
+  target: ward stamp
+  also_named: Ward Office 12 daybook
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    AN EXAMINE CAN OVERREACH AND CANNOT DRIFT, which is the asymmetry
+    `Playthrough::Overreach::ACTIONS` states by carrying `examine` where
+    `Playthrough::Drift::ACTIONS` does not. One thing on the floor and one in
+    the hands, and an examine reads both -- so this IS one set
+
+- id: two-names-examine-closet
+  position: closet
+  typed: read Perrin's private index and Ward Office 12 daybook
+  intent: examine
+  target: Perrin's private index
+  also_named: Ward Office 12 daybook
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    walked offline by `one-act-per-line.yml` (two-readable-names-in-full) -- both
+    of this world's readable things, one on the floor and one in the hands. The
+    classifier half of the same step
+
+- id: two-names-examine-closet-fragments
+  position: closet
+  typed: compare the index against my daybook
+  intent: examine
+  target: Perrin's private index
+  also_named: Ward Office 12 daybook
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    THE SAME PAIR AS A COMPARISON, which is the one act a player most wants and
+    the engine most clearly cannot do: two documents, two inscriptions, one
+    resolved target. Refused, and the refusal is the honest answer
+
+- id: two-names-examine-court
+  position: court-slate-down
+  typed: read the slate and then look at the bench it was on
+  intent: examine
+  target: Assize tide-slate
+  refusal: none
+  shape: two-names-one-set
+  why: >-
+    THE CONTROL FOR THIS WHOLE SECTION: two things looked at, and only ONE of
+    them is a record. The bench is prose, so `also_named` must come back
+    `nothing` and the line must NOT be refused. A bench with no line like this
+    could not tell a working `also_named` from one that fires on any conjunction
+
+# ===========================================================================
+# THE GAP PR 112 PINNED: TWO ACTS ACROSS TWO CLOSED SETS
+#
+# `#also_named` resolves the second name through the ACTION'S OWN closed set,
+# because a second and looser way into the records is what a closed set exists
+# to prevent. So "take the ward stamp and the daybook" -- one on the floor, one
+# in the hands -- names two things a player would call two acts, and only one of
+# them is in the set a `take` reads. The line is PLAYED, not refused, and
+# `lib/engine_sweep/scripts/one-act-per-line.yml` pins it as a gap so that
+# closing it is a deliberate act.
+#
+# These lines are labelled as the app answers them: one act, `also_named`
+# nothing, no refusal. If they start failing, the gap was closed on purpose and
+# `one-act-per-line.yml`'s header is the thing to read first.
+# ===========================================================================
+- id: two-sets-take-stamp-daybook
+  position: office
+  typed: take the ward stamp and the daybook
+  intent: take
+  target: ward stamp
+  refusal: none
+  shape: two-sets
+  why: >-
+    THE EXACT LINE AND THE EXACT POSITION `one-act-per-line.yml`'s
+    `two-acts-across-two-sets` walks. The stamp is lying here, the daybook is
+    carried, a `take` reads the floor alone -- so `also_named` is nothing and
+    the turn takes the stamp. Compare `two-names-take-office`, the same English
+    against a floor holding both
+
+- id: two-sets-drop-daybook-stamp
+  position: office
+  typed: put the daybook down and pick up the stamp
+  intent: drop
+  target: Ward Office 12 daybook
+  refusal: none
+  shape: two-sets
+  why: >-
+    TWO DIFFERENT VERBS as well as two different sets, which is the clearest
+    two-act line in the corpus -- and still not refused, because a `drop` reads
+    the hands alone and the stamp is not in them. The most uncomfortable
+    consequence of the gap, stated
+  also_accept:
+  - intent: take
+    target: ward stamp
+
+- id: two-sets-take-index-daybook
+  position: closet
+  typed: take the index and read my daybook
+  intent: take
+  target: Perrin's private index
+  refusal: none
+  shape: two-sets
+  why: >-
+    a take and a read on one line: the index is on the floor, the daybook is in
+    the hands, and a `take` cannot see the second one
+  also_accept:
+  - intent: examine
+    target: Ward Office 12 daybook
+
+- id: two-sets-talk-and-move
+  position: office
+  typed: tell Rowe I am going into the closet
+  intent: talk
+  target: Halkett Rowe
+  refusal: none
+  shape: two-sets
+  why: >-
+    A TALK AND A MOVE. The closet is in the exit set and Rowe is in the cast, so
+    the second name is in a different set and invisible -- one act, and the act
+    is the talking
+  also_accept:
+  - intent: move
+    target: The Supply Closet
+
+- id: two-sets-take-and-move
+  position: court-slate-down
+  typed: pick up the slate and carry it to the Tide Post
+  intent: take
+  target: Assize tide-slate
+  refusal: none
+  shape: two-sets
+  why: >-
+    the held-out world's version: an item off the floor and an exit named, two
+    sets, one act. `also_named` must be nothing
+  also_accept:
+  - intent: move
+    target: The Tide Post
+
+- id: two-sets-talk-and-take
+  position: court-slate-down
+  typed: ask the Justicar to let me take the slate up again
+  intent: talk
+  target: Ammon Brace
+  refusal: none
+  shape: two-sets
+  why: a person and a floor item, and asking is the act
+  also_accept:
+  - intent: take
+    target: Assize tide-slate
+
+- id: two-sets-move-and-talk
+  position: tide-post
+  typed: go back to the court and tell Brace what Neb said
+  intent: move
+  target: The Causeway Court
+  refusal: none
+  shape: two-sets
+  why: >-
+    THREE NAMES AND ONLY ONE IN THE MOVE SET: the court is an exit, Brace is in
+    another world's room, Neb is the person here. A `move`'s `also_named` reads
+    exits alone, so nothing else can land in it
+
+# ===========================================================================
+# ARTICLES, PRONOUNS AND THE THINGS A FIXED GRAMMAR CHOKES ON
+#
+# `Playthrough::Mechanics#resolve` has `LEADING_WORDS`, prefix matching, fragment
+# matching in both directions and an ambiguity rule, and its own header says why:
+# "the player is not a JSON enum". Every one of those rules was added because a
+# real line was refused. A classifier call is bought instead of that grammar, so
+# what it is bought FOR is worth measuring on its own -- these are the lines the
+# grammar gets wrong or cannot see, and the offline floor
+# (`rake eval:classifier_offline`) prints exactly how many.
+# ===========================================================================
+- id: grammar-the-only
+  position: office
+  typed: the closet
+  intent: move
+  target: The Supply Closet
+  shape: articles-and-pronouns
+  why: >-
+    A LEADING ARTICLE AND A FRAGMENT AND NO VERB. `LEADING_WORDS` exists because
+    "drop the tide-slate" was refused underneath a refusal listing the
+    tide-slate; this is the same shape on a move
+
+- id: grammar-to-the-into
+  position: office
+  typed: to the closet
+  intent: move
+  target: The Supply Closet
+  shape: articles-and-pronouns
+  why: two leading words, which is what `#without_leading_words` shifts in a loop
+
+- id: grammar-it-take
+  position: court-slate-down
+  typed: take it
+  intent: take
+  target: Assize tide-slate
+  shape: articles-and-pronouns
+  why: >-
+    A BARE PRONOUN with exactly one candidate. `#resolve` matches the record's
+    NAMES, and "it" is not one of them -- so a fixed grammar cannot answer this
+    at all and a classifier can
+
+- id: grammar-it-drop
+  position: court
+  typed: drop it
+  intent: drop
+  target: Assize tide-slate
+  shape: articles-and-pronouns
+  why: the same pronoun on the other side, one thing carried
+
+- id: grammar-them-two
+  position: closet
+  typed: take them
+  intent: take
+  target: Perrin's private index
+  also_named: copy-room apron
+  refusal: named_more_than_one
+  shape: articles-and-pronouns
+  why: >-
+    A PLURAL PRONOUN, which names both things on the floor exactly as "both"
+    does -- so it is an overreach and not a miss. The refusal follows
+
+- id: grammar-him-talk
+  position: office
+  typed: talk to him
+  intent: talk
+  target: Halkett Rowe
+  shape: articles-and-pronouns
+  why: a pronoun for the only person in the set
+
+- id: grammar-her-talk
+  position: tide-post
+  typed: speak to her
+  intent: talk
+  target: Neb Halloran
+  shape: articles-and-pronouns
+  why: the same, in the held-out world
+
+- id: grammar-that-one
+  position: closet
+  typed: take that one on the lowest shelf
+  intent: take
+  target: Perrin's private index
+  shape: articles-and-pronouns
+  why: >-
+    A DEMONSTRATIVE PLUS A PLACE. Two things are on this floor and the seeded
+    description puts only the index on the lowest shelf, so the room's own prose
+    is what disambiguates -- a reading no matcher over names can make
+
+- id: grammar-mine
+  position: office
+  typed: pick up mine
+  intent: take
+  target: ward stamp
+  shape: articles-and-pronouns
+  why: >-
+    A POSSESSIVE PRONOUN AND NOTHING ELSE. The stamp is the only thing on this
+    floor and the seed calls it "her own ward stamp" -- so "mine" is the one
+    reading, and the fixed grammar has no name to match
+
+- id: grammar-a-an
+  position: office-empty-handed
+  typed: take a daybook
+  intent: take
+  target: Ward Office 12 daybook
+  shape: articles-and-pronouns
+  why: "\"a\" rather than \"the\" -- another of `LEADING_WORDS`, on a floor with two things"
+
+- id: grammar-trailing-punctuation
+  position: office
+  typed: take the ward stamp!
+  intent: take
+  target: ward stamp
+  shape: articles-and-pronouns
+  why: >-
+    TRAILING PUNCTUATION, which `#normalize` does not strip -- it lower-cases and
+    squeezes whitespace and nothing else, so an exact match on "ward stamp!"
+    fails and only the FRAGMENT rule saves it. A real thing a player types
+
+- id: grammar-extra-spaces
+  position: office
+  typed: "   go    to   the   supply   closet   "
+  intent: move
+  target: The Supply Closet
+  shape: articles-and-pronouns
+  why: repeated whitespace, which both readers do normalize -- the control for the line above
+
+- id: grammar-capitals
+  position: office
+  typed: TAKE THE WARD STAMP
+  intent: take
+  target: ward stamp
+  shape: articles-and-pronouns
+  why: shouted, and case must not matter on either path
+
+- id: grammar-hyphen
+  position: court
+  typed: read the tide slate
+  intent: examine
+  target: Assize tide-slate
+  shape: articles-and-pronouns
+  why: >-
+    THE HYPHEN DROPPED. "tide slate" is not a substring of "Assize tide-slate",
+    so no fragment rule in `#resolve` can find it -- a spelling a player will
+    certainly type and the grammar certainly cannot answer
+
+- id: grammar-plural
+  position: closet
+  typed: take the aprons
+  intent: take
+  target: copy-room apron
+  shape: articles-and-pronouns
+  why: >-
+    A PLURAL WHERE ONE EXISTS. "aprons" does not contain and is not contained by
+    "copy-room apron" either way round, so the fragment rule fails both
+    directions -- and there is exactly one apron, so this is one act, not a pair
+
+- id: grammar-misspelling
+  position: office
+  typed: talk to Halket Row
+  intent: talk
+  target: Halkett Rowe
+  shape: articles-and-pronouns
+  why: >-
+    A NAME MISSPELLED BOTH WAYS. Neither "Halket" nor "Row" matches by prefix or
+    fragment in either direction, so the grammar refuses; a player who typed
+    what they heard should still be understood
+
+- id: grammar-possessive-name
+  position: office
+  typed: read Vance's daybook
+  intent: examine
+  target: Ward Office 12 daybook
+  shape: articles-and-pronouns
+  why: >-
+    THE ITEM NAMED BY WHOSE IT IS -- and "Vance" is the PROTAGONIST's nickname,
+    who is deliberately not in the cast a `talk` reads. So this must resolve to
+    the daybook and never to a person
+
+- id: grammar-name-only-place
+  position: room-3
+  typed: Mournwell Lane
+  intent: move
+  target: Mournwell Lane
+  shape: articles-and-pronouns
+  why: >-
+    A BARE EXIT NAME WITH NO VERB, which the fixed grammar handles on purpose --
+    `#parse`'s last resort tries the exit names, "which is what makes a bare
+    `north` work". The control that says the grammar is not simply worse
+
+- id: grammar-nickname-only
+  position: room-3
+  typed: Old Grenn
+  intent: talk
+  target: Grenn Ollivar
+  shape: articles-and-pronouns
+  why: >-
+    A BARE NICKNAME WITH NO VERB, which the grammar's last resort does NOT try
+    -- it tries exits only, so this falls through to `#unknown`. The classifier
+    should read a name said aloud as speaking to them
+  also_accept:
+  - intent: examine
+    target:
+
+# ===========================================================================
+# LINES THE CAPTAIN REALLY TYPED
+#
+# Cut out of `chats.purpose = "classifier"` in his own database -- 61 stored
+# conversations, each holding the room, the closed sets the model was shown and
+# the answer it gave. They are the reason a bench is worth building: they are
+# what play actually looks like, and it looks nothing like a script.
+#
+# Every one is replayed against the position whose closed sets match the ones it
+# was really shown. Where the stored answer and the label disagree, `why` says so
+# -- a stored answer is evidence about the model, not the label.
+# ===========================================================================
+- id: real-ask-about-perrin
+  position: office
+  typed: ask him what happened to Perrin
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    real, and the stored answer agrees. A pronoun and the name of somebody the
+    records place NOWHERE -- so there is nothing for `also_named` to find and
+    this is one act
+
+- id: real-ask-why-early
+  position: office
+  typed: ask him why he is early
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: real; the stored answer agrees
+
+- id: real-tell-him-come-back
+  position: office
+  typed: tell him you can't close out your daybook until 7 so he will have to come back
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    real; the stored answer agrees. It names the daybook, which is CARRIED and
+    invisible to a `talk`'s closed set -- one act, and the cross-set gap in the
+    wild
+
+- id: real-say-of-course
+  position: office
+  typed: "say: of course"
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: real; two words of dialogue with a colon in front of them
+
+- id: real-ask-can-i-go
+  position: office
+  typed: "ask: do you still me for something or can I go?"
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    real, typo and all ("do you still me"), and the stored answer resolved it.
+    Typed input is not proofread and the bench should say whether that matters
+
+- id: real-tell-halkett
+  position: office
+  typed: tell Halkett what you think of him
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    REAL, AND THE STORED ANSWER WAS `talk` / `nothing` -- A MISS. Halkett Rowe is
+    standing in the room and "Halkett" is the first word of the enum entry
+    "Halkett Rowe", so the reach did resolve and the model said it did not. It
+    cost a `Playthrough::Drift` row and a narrated non-event then; since
+    2026-09-04 it costs the player a refusal. This line is the single clearest
+    reason this bench exists
+
+- id: real-tell-him-only-wanted
+  position: office
+  typed: tell him you only wanted to see it
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    real; the stored answer was "Sub-Inspector Rowe" -- the NICKNAME, which
+    `#find_character` resolves to the same record. Both names are right answers
+    and the bench compares records
+
+- id: real-look-up-annoyed
+  position: room-3
+  typed: look up at him, annoyed at being interrupted
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: >-
+    real; the stored answer was `talk`. A LINE THAT IS ONLY A LOOK and was read
+    as speech, because looking up at somebody who has interrupted you is
+    answering them. `examine` is accepted -- what matters is that it must not
+    refuse
+  also_accept:
+  - intent: examine
+    target:
+
+- id: real-laugh-at-joke
+  position: room-3
+  typed: laugh at the joke you made
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: real; the stored answer agrees. Laughing at somebody's joke is addressed at them
+
+- id: real-does-he-need-anything
+  position: room-3
+  typed: does he need anything else? I'm trying to work
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: real; a question about him that is also said to him, and the stored answer read it that way
+
+- id: real-tell-him-not-good-time
+  position: room-3
+  typed: tell him now is not a good time
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: real; the first talk in the database and the stored answer agrees
+
+- id: real-tell-him-pay
+  position: room-3
+  typed: tell him you will pay him as soon as you can
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: real; the stored answer agrees
+
+- id: real-agree-to-terms
+  position: room-3
+  typed: agree to his terms
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: >-
+    REAL, AND THE STORED ANSWER WAS `other` / `nothing`. Agreeing to somebody's
+    terms is said to them and there is exactly one person here, so a resolved
+    talk is the better reading -- but `other` is defensible enough to accept,
+    and the board counts how often each comes back
+  also_accept:
+  - intent: other
+    target:
+
+- id: real-that-makes-no-sense
+  position: room-3
+  typed: that doesn't even make sense
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: >-
+    real; the stored answer was `other`. A remark with one person in the room to
+    hear it, and either reading is defensible -- the point of labelling it is
+    that neither is a refusal
+  also_accept:
+  - intent: other
+    target:
+
+- id: real-what-are-you-talking-about
+  position: room-3
+  typed: what are you even talking about? everywhere shifts under foot
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: real; the stored answer was `other`, and the line is addressed at somebody in the second person
+  also_accept:
+  - intent: other
+    target:
+
+- id: real-get-out-onto-rooftops
+  position: room-3
+  typed: get out onto the rooftops
+  intent: move
+  target: Larkspur Quarter rooftops
+  shape: move
+  why: >-
+    real; the stored answer agrees. "rooftops" against "Larkspur Quarter
+    rooftops", with two other exits
+
+- id: real-go-out-to-rooftops
+  position: room-3
+  typed: go out to the rooftops
+  intent: move
+  target: Larkspur Quarter rooftops
+  shape: move
+  why: real, a second time and phrased differently; the stored answer agrees
+
+- id: real-go-out-onto-rooftops
+  position: room-3
+  typed: go out onto the rooftops
+  intent: move
+  target: Larkspur Quarter rooftops
+  shape: move
+  why: >-
+    real, a third time -- the captain typed this line three ways in one evening,
+    which is itself the finding: a player rephrases until something happens
+
+- id: real-go-to-mornwell-lane
+  position: room-3
+  typed: go to mornwell lane
+  intent: move
+  target: Mournwell Lane
+  shape: move
+  why: >-
+    REAL, MISSPELLED ("mornwell" for "Mournwell"), and the stored answer resolved
+    it anyway. `#resolve`'s fragment rule could not: "mornwell lane" is neither
+    a prefix nor a substring of "Mournwell Lane" in either direction
+
+- id: real-go-to-supply-closet
+  position: office
+  typed: go to the supply closet
+  intent: move
+  target: The Supply Closet
+  shape: move
+  why: real, twice, and the stored answers agree -- the plainest move in the database
+
+- id: real-go-to-closet
+  position: office
+  typed: go to the closet
+  intent: move
+  target: The Supply Closet
+  shape: move
+  why: real; a fragment of the name
+
+- id: real-go-to-hallway
+  position: office
+  typed: go to the hallway
+  intent: move
+  target: The Long Hallway
+  shape: move
+  why: real; the stored answer agrees
+
+- id: real-walk-out-into-hallway
+  position: office
+  typed: walk out into the long hallway
+  intent: move
+  target: The Long Hallway
+  shape: move
+  why: real; the stored answer agrees
+
+- id: real-standup-pickup-walk-out
+  position: office-empty-handed
+  typed: standup, pickup your daybook and walk out into the long hallway
+  intent: move
+  target: The Long Hallway
+  shape: two-sets
+  why: >-
+    REAL, AND THE THREE-ACT LINE. The stored answer was `move` / "The Long
+    Hallway" -- so the pickup went nowhere and nothing counted it, which is the
+    exact defect the ruling of 2026-09-04 was made for. It is labelled here as
+    the app answers it TODAY: a `move`'s `also_named` reads the EXITS, so the
+    daybook is invisible to it and the line plays as a move. The pair
+    ("take the daybook and walk out") is the same gap
+    `one-act-per-line.yml` pins; closing it would change this label
+  also_accept:
+  - intent: take
+    target: Ward Office 12 daybook
+
+- id: real-go-back-into-office
+  position: closet
+  typed: go back into the office. how much time do I have before he comes back?
+  intent: move
+  target: Ward Office 12
+  shape: move
+  why: >-
+    real; the stored answer agrees. A MOVE AND A QUESTION TO THE GAME on one
+    line, and the question names no record -- so it is one act
+
+- id: real-go-back-inside
+  position: room-3
+  typed: go back inside
+  intent: move
+  target: Grenn's Boarding House hallway
+  shape: move
+  why: >-
+    real, typed from the rooftops in his own game; the stored answer was the
+    boarding house hallway. Replayed from Room 3, where "inside" has no obvious
+    referent at all -- so this line is arguable and any exit is defensible
+  also_accept:
+  - intent: other
+    target:
+
+- id: real-pickup-your-daybook
+  position: office-empty-handed
+  typed: pick up your daybook
+  intent: take
+  target: Ward Office 12 daybook
+  shape: take
+  why: real; the stored answer agrees, and there is a second thing on this floor
+
+- id: real-pickup-the-daybook
+  position: office-empty-handed
+  typed: pick up the daybook
+  intent: take
+  target: Ward Office 12 daybook
+  shape: take
+  why: real, the same act with "the" for "your"
+
+- id: real-pickup-the-stamp
+  position: office
+  typed: pickup the stamp
+  intent: take
+  target: ward stamp
+  shape: take
+  why: >-
+    real; the stored answer agrees. "pickup" as one word, which the fixed
+    grammar's `VERBS` table does not hold -- it has "pick up" -- so the grammar
+    falls through to the exit names and refuses
+
+- id: real-pick-up-the-index
+  position: closet
+  typed: pick up the index
+  intent: take
+  target: Perrin's private index
+  shape: take
+  why: real, twice, and the stored answers agree -- with the apron on the same floor
+
+- id: real-close-and-put-down
+  position: office
+  typed: close the daybook and put it down
+  intent: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: >-
+    real; the stored answer agrees. TWO VERBS ON ONE NOUN, which is one act --
+    closing a book is not a record the app has
+
+- id: real-give-him-your-daybook
+  position: office
+  typed: give him your daybook
+  intent: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: >-
+    real; the stored answer was `drop` / "Ward Office 12 daybook", which is the
+    intent table's own reading of giving something up. It names him by pronoun,
+    and a `drop` cannot see the cast
+
+- id: real-examine-your-daybook
+  position: office
+  typed: examine your daybook, try to remember anything you can about the gap
+  intent: examine
+  target: Ward Office 12 daybook
+  shape: examine
+  why: >-
+    REAL, AND THE STORED ANSWER WAS `examine` / `nothing` -- A MISS, and one that
+    matters more now than it did: `examine` resolves a record since
+    `ta-item-inscriptions`, and the daybook is READABLE, so a resolved answer
+    recites `Item#inscription` verbatim and `nothing` narrates around it. The
+    stored answer predates that seam, which is exactly why the bench has to be
+    re-run rather than read off the database
+
+- id: real-read-the-note-again
+  position: closet
+  typed: read the index again
+  intent: examine
+  target: Perrin's private index
+  shape: examine
+  why: >-
+    modelled on the captain's own "read the note again" in a generated world
+    whose items this corpus cannot reconstruct; replayed against the readable
+    thing a seeded position really has. `why` says so because the line is not
+    verbatim
+
+- id: real-examine-rest-of-desk
+  position: office
+  typed: examine the rest of your desk
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    real; the stored answer was `examine` / `nothing` and it is RIGHT -- the desk
+    is prose. It is here as the control for `real-examine-your-daybook`: the same
+    intent, the same room, and `nothing` is correct in one and a miss in the other
+  also_accept:
+  - intent: other
+    target:
+
+- id: real-what-is-on-my-desk
+  position: office
+  typed: what is on my desk?
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    real; the stored answer was `examine` / `nothing`. A QUESTION ABOUT THE ROOM,
+    which resolves nothing and must not be refused
+  also_accept:
+  - intent: other
+    target:
+
+- id: real-look-around
+  position: closet
+  typed: look around
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    real; the stored answer was `examine` / `nothing`. Two things are on this
+    floor and it names neither -- so `also_named` must be nothing too, and a
+    resolved answer here would be the model naming a thing the player did not
+  also_accept:
+  - intent: other
+    target:
+
+- id: real-keep-doing
+  position: room-3
+  typed: keep doing what you are doing
+  intent: other
+  shape: other
+  why: real; the stored answer agrees. Already in the corpus above; kept here as the section's first line
+
+- id: real-get-up-close-door
+  position: room-3
+  typed: get up and close your door
+  intent: other
+  shape: other
+  why: >-
+    REAL, and the stored answer was `other` / `nothing` -- which is right, and
+    the near miss is the interesting part: the door of Room 3 is not a
+    `Location`, and three exits are on the table for a `move` to wrongly pick
+  also_accept:
+  - intent: move
+    target:
+
+- id: real-wait-for-him-to-leave
+  position: office
+  typed: wait for him to leave
+  intent: other
+  shape: other
+  why: real; the stored answer agrees -- waiting is not speaking, and there is somebody here to be wrongly resolved to
+  also_accept:
+  - intent: talk
+    target: Halkett Rowe
+
+- id: real-tap-foot
+  position: office
+  typed: tap your foot impatiently
+  intent: other
+  shape: other
+  why: real; the stored answer agrees
+
+- id: real-consider-daybook-gap
+  position: office
+  typed: consider what will happen if you present your daybook with a gap
+  intent: other
+  shape: other
+  why: >-
+    real; the stored answer agrees. IT NAMES THE DAYBOOK and is still `other`,
+    because considering is not examining -- the line most likely to come back as
+    a resolved `examine`
+  also_accept:
+  - intent: examine
+    target: Ward Office 12 daybook
+
+- id: real-check-what-time
+  position: office
+  typed: check what time it is
+  intent: other
+  shape: other
+  why: real; the stored answer agrees
+
+- id: real-correct-high-water
+  position: court
+  typed: correct the high water time
+  intent: other
+  shape: other
+  why: >-
+    real, typed in the held-out world; the stored answer was `other` / `nothing`.
+    The high-water figure is chalked on the tide-slate, which IS a record and IS
+    carried, so a resolved `examine` is arguable -- but correcting a figure is
+    not an act the app has
+  also_accept:
+  - intent: examine
+    target: Assize tide-slate
+
+- id: real-say-hello-to-iz
+  position: room-3
+  typed: say hello to Iz
+  intent: talk
+  refusal: unresolved
+  shape: unresolved-talk
+  why: >-
+    REAL, AND `nothing` IS THE RIGHT ANSWER. "Iz" is the PROTAGONIST's own
+    nickname, and `#characters_here` subtracts the protagonist from the cast --
+    you cannot talk to yourself. The stored answer got it right and the line is
+    in here because that subtraction is easy to lose
+
+- id: real-take-seal-from-rowe
+  position: office
+  typed: take the inspectorate seal from rowe
+  intent: take
+  refusal: unresolved
+  shape: unresolved-take
+  why: >-
+    REAL, AND `nothing` IS RIGHT for two reasons worth keeping: the seal is not
+    an `items` row at all, and `#items_here` is `Item.lying_in` alone -- taking
+    something off a person is "a different act, with somebody on the other side
+    of it who has an opinion", which no record says how to play
+
+- id: real-give-him-the-index
+  position: office
+  typed: give him the index
+  intent: drop
+  refusal: unresolved
+  shape: unresolved-drop
+  why: >-
+    REAL, AND `nothing` IS RIGHT: at that point in his game the index was not in
+    his hands. Replayed against a position whose carried set is the daybook
+    alone, so the same answer is the same answer -- and the tempting wrong one
+    (the daybook) is right there in the set
+
+- id: real-go-the-stacks
+  position: office
+  typed: go the stacks
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: >-
+    REAL, AND THE STORED ANSWER WAS `move` / "Central Stacks" -- A ROOM THAT
+    EXISTS IN HIS GENERATED WORLD AND NOT IN THIS ONE. Replayed here the answer
+    must be nothing, because the enum this call is built from does not contain
+    the string. It is the clearest test that a resolution is coming out of the
+    closed set and not out of the model's memory of the world
+
+# ===========================================================================
+# THE LINES THE `rake eval:run` SCRIPTS PLAY
+#
+# Sixty turns across three worlds, written by hand and played by every sweep.
+# They are already the app's most-exercised input, and until now nothing checked
+# that the classifier read them the way the script's own `expect:` says. A
+# script turn that lands on the wrong branch is reported by `Eval::Board` as
+# script divergence -- a fact about the harness -- and this is where the same
+# fact becomes a fact about the classifier.
+# ===========================================================================
+- id: script-sa-t01
+  position: court
+  typed: read the high-water figure chalked above the day's cases against my own hand
+  intent: examine
+  target: Assize tide-slate
+  shape: examine
+  why: >-
+    t01 of the held-out script, verbatim, whose `expect:` is `narrate`. The
+    high-water figure is chalked on the slate the player is carrying, so a
+    resolved examine is the reading that recites the record -- and `nothing`
+    still narrates, so both are playable
+  also_accept:
+  - intent: examine
+    target:
+
+- id: script-sa-t02
+  position: court
+  typed: Justicar Brace, the figure above your cases is not in my hand.
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: t02 of the held-out script, verbatim -- addressed by nickname
+
+- id: script-sa-t03
+  position: court
+  typed: Brace, who else has been at the slate since the ebb?
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: >-
+    t03, verbatim. It names the slate, which is carried and not in the cast, so
+    a `talk` cannot see it -- one act
+
+- id: script-sa-t04
+  position: court
+  typed: Brace, adjourn the hearing and have Halloran off that post before I source you a number.
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: >-
+    t04, verbatim, AND IT NAMES A SECOND PERSON -- Halloran, who is at The Tide
+    Post and not here. So the second name resolves to nothing and the line is
+    one act. Compare `two-names-talk-court`, where he IS here and the same shape
+    is refused
+
+- id: script-sa-t05
+  position: court
+  typed: Tell me plainly, Brace. Did you put seventy minutes on that slate yourself?
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: t05, verbatim -- two sentences, one act
+
+- id: script-sa-t07
+  position: court
+  typed: go over into the Vestry Hulk
+  intent: move
+  target: The Vestry Hulk
+  shape: move
+  why: t07, verbatim -- the move into the stub
+
+- id: script-sa-t08
+  position: court-slate-down
+  typed: walk back into the Causeway Court
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: >-
+    t08, verbatim, AND REPLAYED FROM THE ROOM IT NAMES. In the script the player
+    is in the Vestry Hulk and this resolves; from the Causeway Court itself the
+    court is not one of its own exits, so the answer is nothing. It is here
+    because "go to where I already am" is a real thing players type and the
+    closed set has no entry for it
+
+- id: script-sa-t11
+  position: court
+  typed: walk out to the Tide Post
+  intent: move
+  target: The Tide Post
+  shape: move
+  why: t11, verbatim
+
+- id: script-sa-t12
+  position: tide-post
+  typed: look at the stain band on the iron post and count the hand's width above the wet
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    t12, verbatim, whose `expect:` is `narrate`. The post and its stain band are
+    the room, not an item -- so nothing resolves, nothing is refused, and the
+    slate in the player's hands must NOT be the answer
+  also_accept:
+  - intent: other
+    target:
+
+- id: script-sa-t14
+  position: court
+  typed: Brace, read me the case above the figure and tell me whose fee it is.
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: t14, verbatim -- two imperatives inside one thing said to one person
+
+- id: script-sa-t16
+  position: court
+  typed: Brace, the water does not wait on a signature. Rise the court.
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: >-
+    t16, verbatim, and "Rise the court" names the room the player is standing in
+    -- which is not one of its own exits, so nothing else can resolve
+
+- id: script-sa-t18
+  position: court
+  typed: look for the court's own papers in the wreck
+  intent: examine
+  shape: examine-nothing
+  why: t18, verbatim -- no papers are a record in any seeded world
+  also_accept:
+  - intent: other
+    target:
+
+- id: script-sa-t10
+  position: court
+  typed: hold the water off the rock with my bare hands until the hearing is finished
+  intent: other
+  shape: other
+  why: t10, verbatim -- the held-out script's IMPOSSIBLE turn
+
+- id: script-lc-t01
+  position: room-3
+  typed: look closely at the fresh field note in the satchel that I do not remember writing
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    t01 of the Lunar Cartographer script, verbatim. The note and the satchel are
+    both in the world's own opening prose and neither is an `items` row -- this
+    world has none at all
+
+- id: script-lc-t02
+  position: room-3
+  typed: Grenn, you were awake when I came in last night. What hour was it?
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: t02, verbatim
+
+- id: script-lc-t03
+  position: room-3
+  typed: Grenn, whose hand was it that pushed a folded paper into mine?
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: t03, verbatim
+
+- id: script-lc-t04
+  position: room-3
+  typed: Grenn, tell me who you let in after the tenth bell, and do not tell me you were asleep.
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: t04, verbatim -- two clauses joined with "and", one person, one act
+
+- id: script-lc-t05
+  position: room-3
+  typed: Tell me plainly, Grenn. Did somebody pay you to leave the front door unbolted last night?
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: t05, verbatim
+
+- id: script-lc-t06
+  position: room-3
+  typed: look at the satchel on the floor and everything that is in it
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    t06, verbatim, and it is the "everything" line in a world with NOTHING. The
+    instruction says a word meaning all of them is naming what is on the list --
+    and this list is empty, so the answer is nothing and `also_named` is nothing.
+    The one line that proves "everything" is read against the set and not as a
+    keyword
+
+- id: script-lc-t07
+  position: room-3
+  typed: go down the stairs and out into Mournwell Lane
+  intent: move
+  target: Mournwell Lane
+  shape: move
+  why: >-
+    t07, verbatim, and `Eval::UNAVAILABLE_TO_A_SCRIPT`'s own example of a line
+    that looks like it names two places. "the stairs" is not a `Location`, so
+    only one name resolves and the line is one act -- which is the finding, not
+    a flaw
+
+- id: script-lc-t09
+  position: room-3
+  typed: reach out of the window and pull the moon down close enough to read the writing on its underside
+  intent: other
+  shape: other
+  why: t09, verbatim -- the impossible turn, and it must not resolve an exit
+  also_accept:
+  - intent: examine
+    target:
+
+- id: script-lc-t10
+  position: room-3
+  typed: climb out onto the Larkspur Quarter rooftops
+  intent: move
+  target: Larkspur Quarter rooftops
+  shape: move
+  why: t10, verbatim -- the exact name with the travel method as the verb
+
+- id: script-lc-t12
+  position: room-3
+  typed: Grenn, tell me what the quarter was joined to last night.
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: t12, verbatim
+
+- id: script-lc-t14
+  position: room-3
+  typed: go out into the boarding house hallway
+  intent: move
+  target: Grenn's Boarding House hallway
+  shape: move
+  why: t14, verbatim -- the name without the possessive on the front of it
+
+- id: script-lc-t15
+  position: room-3
+  typed: listen at the doors along the hallway and count them
+  intent: other
+  shape: other
+  why: >-
+    t15, verbatim, and it NAMES AN EXIT while doing something that is not going
+    there. Under the ruling a wrong `move` here walks the player out of the room
+  also_accept:
+  - intent: examine
+    target:
+
+- id: script-lc-t17
+  position: room-3
+  typed: Grenn, I am not asking again. Who was on the stairs?
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: t17, verbatim
+
+- id: script-lc-t19
+  position: room-3
+  typed: look up at the Celestial Spire from the lane and take its bearing
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    t19, verbatim, AND IT NAMES A REAL ROOM in this world -- the Celestial Spire,
+    which is a `Location` but NOT an exit from Room 3. So a `move` would resolve
+    to nothing and be refused, and an `examine` narrates. Replayed from Room 3
+    rather than the lane, which `why` states because the script types it there
+  also_accept:
+  - intent: move
+    target:
+
+- id: script-lc-t20
+  position: room-3
+  typed: hold the quarter still with my hands until midnight has gone past
+  intent: other
+  shape: other
+  why: t20, verbatim -- the second impossible turn
+
+- id: script-uh-t20-take
+  position: office-empty-handed
+  typed: take the ward stamp off the desk before he asks about it
+  intent: take
+  target: ward stamp
+  shape: take
+  why: >-
+    the shape turns 12-20 of the Unrecorded Hour script were added to repeat, on
+    a floor holding two things -- so the wrong one is available
+
+# ===========================================================================
+# THE LAST OF THE SHAPES, FILLED OUT
+#
+# What the sections above left thin: more reaches that must find nothing (the
+# check with the most at stake since the ruling, because a wrong one is a
+# refusal the player reads), more two-name lines, and the last of the readings a
+# fixed grammar cannot make.
+# ===========================================================================
+- id: unresolved-move-levee
+  position: office
+  typed: go out past the levee to the flood plains
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: the universe's geography, two rooms of which do not exist as records
+
+- id: unresolved-move-copy-room
+  position: closet
+  typed: go through to the copy room
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: >-
+    the seeded description of the apron calls it a copy-room apron, so the words
+    are in the prompt -- and no room by that name exists. The nearest thing to a
+    trap the closed set has
+
+- id: unresolved-move-stairs
+  position: office
+  typed: take the stairs down to the courtyard
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: >-
+    A MOVE THAT STARTS WITH `take`. The verb belongs to another action and the
+    destination is not a record, so the answer is `move` / nothing -- and a
+    `take` / nothing would be the same refusal for the wrong reason, which the
+    confusion matrix is what separates
+
+- id: unresolved-move-desk
+  position: office
+  typed: go and sit at Perrin's desk
+  intent: move
+  refusal: unresolved
+  shape: unresolved-move
+  why: the cleared desk is the premise of the world and is not a place you can go
+
+- id: unresolved-talk-sealed-room
+  position: office
+  typed: talk to whoever is in the Sealed Room
+  intent: talk
+  refusal: unresolved
+  shape: unresolved-talk
+  why: the lore's own unreachable authority, with a real person standing here to be wrongly picked
+
+- id: unresolved-talk-vance
+  position: office
+  typed: talk to Odile Vance
+  intent: talk
+  refusal: unresolved
+  shape: unresolved-talk
+  why: >-
+    THE PROTAGONIST BY HER OWN FULL NAME, which `#characters_here` subtracts --
+    the counterpart of `real-say-hello-to-iz` and the strongest form of it,
+    because the fullname is the one a player is most likely to type
+
+- id: unresolved-talk-empty-room-3
+  position: closet-swept-clean
+  typed: ask Rowe what he wants
+  intent: talk
+  refusal: unresolved
+  shape: unresolved-talk
+  why: >-
+    a real person from this world, one room away, into an EMPTY cast -- the
+    EMPTY refusal, not the MISSED one
+
+- id: unresolved-take-shelf
+  position: closet-swept-clean
+  typed: take the ward paper off the shelf
+  intent: take
+  refusal: unresolved
+  shape: unresolved-take
+  why: the reams of ward paper are seeded prose, into an empty floor
+
+- id: unresolved-take-seal
+  position: court
+  typed: take Brace's seal of office
+  intent: take
+  refusal: unresolved
+  shape: unresolved-take
+  why: nothing off a person, in the held-out world, with an empty floor
+
+- id: unresolved-take-window
+  position: room-3
+  typed: take the field note out of the satchel
+  intent: take
+  refusal: unresolved
+  shape: unresolved-take
+  why: >-
+    the world's own opening prose, in the world with NO items at all -- so the
+    refusal is the EMPTY one and there is nothing at all to resolve to
+
+- id: unresolved-drop-stamp-in-closet
+  position: closet
+  typed: put the ward stamp down here
+  intent: drop
+  refusal: unresolved
+  shape: unresolved-drop
+  why: >-
+    the stamp is on the floor of the OTHER room, and the hands hold the daybook
+    -- so this is the MISSED refusal with a real candidate in the set
+
+- id: unresolved-drop-apron-of-three
+  position: office-empty-handed
+  typed: drop the copy-room apron
+  intent: drop
+  refusal: unresolved
+  shape: unresolved-drop
+  why: an item of this world into empty hands -- the EMPTY refusal
+
+- id: two-names-take-stamp-daybook-full
+  position: office-empty-handed
+  typed: take both the stamp and the daybook off the desk
+  intent: take
+  target: ward stamp
+  also_named: Ward Office 12 daybook
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: "\"both\" AND the two names, which is the shape with the most signal in it"
+
+- id: two-names-take-all
+  position: office-empty-handed
+  typed: take all of it
+  intent: take
+  target: ward stamp
+  also_named: Ward Office 12 daybook
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: "\"all\", the second of the instruction's four words, against a floor of two"
+
+- id: two-names-drop-both
+  position: office-carrying-three
+  typed: drop both the index and the apron on the desk
+  intent: drop
+  target: Perrin's private index
+  also_named: copy-room apron
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: two of three carried, named in full with "both" in front of them
+
+- id: two-names-move-closet-hallway
+  position: office
+  typed: check the closet and then the hallway
+  intent: move
+  target: The Supply Closet
+  also_named: The Long Hallway
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    TWO EXITS WITH NO MOVEMENT VERB AT ALL. "check" is not going anywhere, so
+    `examine` is a defensible reading -- and an `examine` naming two of the
+    same closed set's things is refused too -- except that an `examine` resolves
+    against ITEMS, and both names here are places, so an examine resolves nothing
+    and is not refused. Both readings are accepted and the board counts which
+    came back
+  also_accept:
+  - intent: examine
+    target:
+
+- id: two-names-examine-three
+  position: office-carrying-three
+  typed: read the index and the daybook against each other
+  intent: examine
+  target: Perrin's private index
+  also_named: Ward Office 12 daybook
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: the comparison a player most wants, with three things in reach rather than two
+
+- id: two-names-talk-court-and
+  position: court-with-both
+  typed: talk to Brace and then to Neb
+  intent: talk
+  target: Ammon Brace
+  also_named: Neb Halloran
+  refusal: named_more_than_one
+  shape: two-names-one-set
+  why: >-
+    two people as a SEQUENCE rather than as a pair, which is the phrasing most
+    likely to come back as one resolved talk
+
+- id: grammar-numbers
+  position: office
+  typed: read ward office 12 daybook
+  intent: examine
+  target: Ward Office 12 daybook
+  shape: articles-and-pronouns
+  why: the whole name in lower case with the number in it, and no article
+
+- id: grammar-word-order
+  position: closet
+  typed: the index, take it
+  intent: take
+  target: Perrin's private index
+  shape: articles-and-pronouns
+  why: >-
+    THE NOUN FIRST AND THE VERB AFTER IT, which `#verb_for` cannot see at all --
+    it requires the verb to be the whole line or the first word
+
+- id: grammar-double-negative
+  position: office
+  typed: do not take the stamp
+  intent: other
+  shape: other
+  why: >-
+    A NEGATED COMMAND, which contains an exact enum entry and asks for the
+    opposite of the act. `take` / "ward stamp" would move a row the player asked
+    not to move -- the most costly single misreading in this corpus, and the
+    label is deliberately STRICT: nothing about "do not take" accepts a `take`
+
+- id: grammar-conditional
+  position: office
+  typed: if the closet is unlocked, go in
+  intent: move
+  target: The Supply Closet
+  shape: articles-and-pronouns
+  why: >-
+    a conditional whose condition the world already answers ("no lock", says the
+    seed) -- one destination, one act
+
+- id: grammar-question-move
+  position: office
+  typed: can I get into the supply closet from here?
+  intent: move
+  target: The Supply Closet
+  shape: articles-and-pronouns
+  why: >-
+    A QUESTION ABOUT AN EXIT rather than a command to use it. `other` is
+    defensible; a resolved move is the reading that answers the player, and
+    either is playable -- what must not happen is a refusal
+  also_accept:
+  - intent: other
+    target:
+
+- id: grammar-i-would-like
+  position: closet
+  typed: I would like to take the apron please
+  intent: take
+  target: copy-room apron
+  shape: articles-and-pronouns
+  why: politeness in front of the verb, with two things on the floor
+
+- id: grammar-and-nothing-else
+  position: closet
+  typed: take the apron and nothing else
+  intent: take
+  target: copy-room apron
+  refusal: none
+  shape: two-sets
+  why: >-
+    THE WORD `nothing` TYPED BY THE PLAYER, and it is the enum's own answer for
+    "named nothing". `also_named` must come back `nothing` because that is what
+    the line SAYS, and the index on the same floor must not land in it. The
+    trickiest one-act line in the corpus
+
+- id: grammar-repeat
+  position: office
+  typed: again
+  intent: other
+  shape: other
+  why: >-
+    A LINE THAT REFERS TO THE LAST TURN, which the classifier is not told about
+    -- it is stateless by design and gets the room and nothing else. So the
+    honest answer is `other`, and the bench measures whether it is given
+
+- id: grammar-empty-ish
+  position: office
+  typed: "..."
+  intent: other
+  shape: other
+  why: >-
+    punctuation alone. `Playthrough::Mechanics#parse` returns a read-only
+    reading for an empty line and the classifier is never called; this is what
+    the classifier does with the nearest thing to it that reaches it
+
+- id: grammar-two-word-verb
+  position: office-empty-handed
+  typed: pick up stamp
+  intent: take
+  target: ward stamp
+  shape: articles-and-pronouns
+  why: >-
+    no article at all, which is telegraphic and common -- and "pick up" is the
+    two-word verb `#verb_for` sorts by length to find first
+
+- id: grammar-yell-name
+  position: court-with-both
+  typed: Neb!
+  intent: talk
+  target: Neb Halloran
+  shape: articles-and-pronouns
+  why: >-
+    A NICKNAME AND AN EXCLAMATION MARK, with two people in the room -- so the
+    resolution has to pick, and it must not overreach onto the other one
+
+- id: grammar-titles-only
+  position: court-with-both
+  typed: your honour
+  intent: talk
+  target: Ammon Brace
+  shape: articles-and-pronouns
+  why: >-
+    A FORM OF ADDRESS THAT IS NOT EITHER NAME, in a room with two people, and
+    only one of them is a Justicar. The clearest single case of a reading the
+    closed-set matcher cannot make and the classifier can
+
+- id: drop-slate-tide-post
+  position: tide-post
+  typed: drop the Assize tide-slate
+  intent: drop
+  target: Assize tide-slate
+  shape: drop
+  why: the plainest drop, in the one position that has a person and a single exit
+
+- id: drop-slate-post
+  position: tide-post
+  typed: hang the slate on the post and leave it there
+  intent: drop
+  target: Assize tide-slate
+  shape: drop
+  why: >-
+    PUTTING SOMETHING DOWN SOMEWHERE SPECIFIC, and the post is not a record --
+    so only the slate resolves. `Playthrough::Turn#put_down!` puts it in the
+    room whatever the line said about where
+
+- id: drop-daybook-in-hallway
+  position: office-carrying-three
+  typed: I do not want to be holding the index when he reads it
+  intent: drop
+  target: Perrin's private index
+  shape: drop
+  why: >-
+    A DROP STATED AS A WISH, with no verb from the intent table in it at all --
+    the reading that most needs a model, out of three things carried
+  also_accept:
+  - intent: other
+    target:
+
+- id: drop-apron-closet
+  position: closet-swept-clean
+  typed: put the apron back where it was
+  intent: drop
+  target: copy-room apron
+  shape: drop
+  why: >-
+    "put back" against three things carried and an empty floor -- and it is a
+    take-shaped phrasing of a drop, the mirror of `take-stamp-pocket`
+
+- id: examine-slate-both
+  position: court-with-both
+  typed: read the slate again in front of them
+  intent: examine
+  target: Assize tide-slate
+  shape: examine
+  why: >-
+    a read with TWO PEOPLE in the room, which is the position most likely to
+    pull an answer onto the cast -- and `examine` never resolves against it
+
+- id: take-stamp-with-perrin
+  position: office-with-perrin
+  typed: take the stamp
+  intent: take
+  target: ward stamp
+  shape: take
+  why: the plainest take in the two-person room -- the control that a full cast does not disturb an item resolution
+
+- id: other-both-of-them
+  position: office-with-perrin
+  typed: watch both of them without saying anything
+  intent: other
+  shape: other
+  why: >-
+    "BOTH" IN A ROOM WITH TWO PEOPLE IN IT, and the act is neither speaking nor
+    looking at a thing. The instruction's rule about words meaning all of them
+    is about the list an ACTION reads, and `other` reads none -- so this must
+    not become a refused two-name talk. The hardest line in the corpus for
+    `also_named` to get right
+  also_accept:
+  - intent: examine
+    target:

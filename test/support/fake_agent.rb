@@ -64,4 +64,15 @@ class FakeAgent
   def attribute_to!(_scene) = nil
 
   def recorded_chat = nil
+
+  # WHICH MODEL WOULD HAVE ANSWERED. A fake has no rotation, so it answers the
+  # one it was told about -- `Eval::Classifier::Bench` reads this to tell a line
+  # its arm answered from a line the rotation answered, and a fake standing in
+  # here has to be able to say something.
+  def current_model = { provider: :fake, model: @model || "fake/model" }
+
+  def with_model(model)
+    @model = model
+    self
+  end
 end
