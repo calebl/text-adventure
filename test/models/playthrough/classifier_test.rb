@@ -114,7 +114,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
 
   # --- the other three -----------------------------------------------------
 
-  test "examine, take and other carry no target" do
+  test "an action never resolves against a set that is not its own" do
     connect("The Sunken Stair")
     stands_here("Maren Vosk")
 
@@ -124,7 +124,54 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
       assert_equal action.to_sym, intent.action
       assert_nil intent.destination
       assert_nil intent.speaker
+      assert_nil intent.item
     end
+  end
+
+  # --- looking at something -------------------------------------------------
+
+  # `examine` IS THE ONLY ACTION THAT READS BOTH ITEM SETS. Looking at a thing
+  # does not move it, so neither the floor nor the hands is the wrong one -- and
+  # `Playthrough::Turn#read_item` is what is on the other side of the seam.
+  test "an examine resolves to a thing lying here" do
+    note = create(:item, :lying, location: @here, name: "folded note")
+
+    intent, = classify({ "intent" => "examine", "target" => "folded note" })
+
+    assert intent.examine?
+    assert_equal note, intent.item
+    assert_nil intent.destination
+    assert_nil intent.speaker
+  end
+
+  test "an examine resolves to a thing the party is carrying" do
+    daybook = create(:item, :carried, playthrough: @playthrough, name: "the daybook")
+
+    intent, = classify({ "intent" => "examine", "target" => "the daybook" })
+
+    assert_equal daybook, intent.item
+  end
+
+  # The floor first, because that is the order the prompt lists the two sets in
+  # and the order `Playthrough::Moment` states them to the narrator. With two
+  # things of one name it resolves the nearer one, stably.
+  test "two things of one name resolve to the one lying here" do
+    here = create(:item, :lying, location: @here, name: "folded note")
+    create(:item, :carried, playthrough: @playthrough, name: "folded note")
+
+    intent, = classify({ "intent" => "examine", "target" => "folded note" })
+
+    assert_equal here, intent.item
+  end
+
+  test "both item sets are offered to an examine, and each name once" do
+    create(:item, :lying, location: @here, name: "folded note")
+    create(:item, :carried, playthrough: @playthrough, name: "the daybook")
+
+    _intent, agent = classify({ "intent" => "examine", "target" => "folded note" })
+
+    enum = agent.schemas.last.new.to_json_schema.dig(:schema, :properties, :target, :enum)
+    assert_equal [ "folded note", "the daybook", "nothing" ], enum
   end
 
   # A model that answers outside its own enum is the failure BaseAgent exists to
@@ -497,7 +544,14 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     end
   end
 
+  # DRIFT IS THE FOUR ACTIONS THAT REACH FOR SOMETHING THE APP WOULD MOVE, and
+  # `examine` is deliberately not one of them even now that it resolves a
+  # record. Looking at the ceiling is an ordinary turn in a room with nothing on
+  # the floor; counting it would make the drift number a number about how people
+  # look around rather than about what the world does not have.
   test "examine and other reach for no record, so they cannot miss one" do
+    create(:item, :lying, location: @here, name: "folded note")
+
     assert_no_difference "Playthrough::Drift.count" do
       classify({ "intent" => "examine", "target" => "nothing" })
       classify({ "intent" => "other", "target" => "nothing" })

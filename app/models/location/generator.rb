@@ -244,9 +244,23 @@ class Location::Generator
         bolted to it -- something a person could put in a pocket or under an arm
       - Each one must be consistent with the description you just wrote, and worth
         the player noticing
+      - If a thing has WRITING on it -- a note, a letter, a handbill, a label, a
+        docket, a page, a sign -- mark it readable and WRITE OUT WHAT IS WRITTEN
+        ON IT, exactly as it appears on the thing. The words themselves, not a
+        description of them, and short enough to finish -- a few words, a line,
+        or a few short lines. The game keeps those words and a player reading it
+        twice reads the same ones
       - Never name it after a person or after a place#{known_names_note}
     PROMPT
   end
+
+  # WHY THE WRITING IS ASKED FOR HERE AND NOT LATER. A thing marked readable with
+  # no words is a thing whose words the first read has to pay a round trip for
+  # (`Item::Inscriber`), written by a model that has not seen this room. Measured
+  # before this line existed: four live realizations named three readable things
+  # and supplied an inscription for none of them, because nothing asked. The
+  # field is optional in the schema and has to be, so the sentence is what makes
+  # it the ordinary answer.
 
   # The names already spoken for in this story, so the model does not spend an
   # item or a person on one. Truncated rather than unbounded: this rides on a

@@ -165,7 +165,7 @@ class Story::Audit
   # because what they prove is the same thing: the records say what the turn
   # did and the narration says otherwise. See `#check_take`.
   CONTRADICTIONS = %i[unreachable_transition item_not_held unrecorded_departure unrecorded_arrival
-                      take_denied pickup_invented].freeze
+                      take_denied pickup_invented inscription_misquoted].freeze
 
   # THE PROSE BROKE A RULE THE APP STATES, provable from the row itself and one
   # record. Not a disagreement between two records -- a defect in the passage.
@@ -373,6 +373,11 @@ class Story::Audit
       scenes.count { |scene| scene.took? && scene.description.present? }
     when :pickup_invented
       scenes.count { |scene| scene.dropped? && scene.description.present? }
+    when :inscription_misquoted
+      # THE TURNS THAT TOUCHED A THING WITH WORDS ON RECORD, which is the whole
+      # of what this can be run on: no record, nothing to compare a quotation
+      # with. See `#check_inscription`.
+      scenes.count { |scene| inscribed_subject(scene) && scene.description.present? }
     else
       scenes.size
     end
@@ -419,6 +424,7 @@ class Story::Audit
       check_arrival(scene)
       check_take(scene)
       check_drop(scene)
+      check_inscription(scene)
     end
 
     check_stillness
@@ -970,6 +976,89 @@ class Story::Audit
          typed: scene.typed.presence,
          where: scene.location&.name,
          at: scene.story_timestamp)
+  end
+
+  # ------------------------------------------------------------------------
+  # THE PROSE QUOTES A NOTE AND THE NOTE SAYS SOMETHING ELSE.
+  #
+  # THE COMPLAINT IT ANSWERS is the captain's, and it is the whole reason
+  # `items.inscription` exists. Playthrough 15, scene 77: he typed *"pickup the
+  # note. what does it say?"* and read back *"Midnight. The Bell. They know
+  # about the maps."* -- invented on the spot, kept nowhere, and free to be
+  # something different the next time he unfolded it. The words are a record
+  # now; this is the check that reads a passage against it.
+  #
+  # WHAT IT READS is a CHANGE-shaped fact in the same sense `take_denied` is:
+  # the item this turn acted on is known exactly (`Scene#acted_on`), and what is
+  # written on it is a column the narrator was handed verbatim
+  # (`Playthrough::Turn#read_fact`). So a quotation in the prose is comparable
+  # with something rather than with an impression.
+  #
+  # IT IS NOT SCOPED TO A READ, and that is deliberate rather than loose. The
+  # turn that produced the complaint was a `take`: the player picked the note up
+  # and asked what it said in one line, and the loop recorded a take. A
+  # quotation of written text contradicts the record whichever verb the turn
+  # resolved to, and scoping this to `examine` would have excluded the one turn
+  # it was built for.
+  #
+  # PRECISION, MEASURED. `Story::Audit::Prose.inscription_quotes` is the reading
+  # half and its numbers are on the method: over all 367 real passages in the
+  # four corpora, 92 hold a double-quoted span and 177 spans in total -- nearly
+  # every one of them dialogue -- and the cue rule raises ZERO of them. The
+  # positive case is the captain's own narration above, with the record put
+  # under it; `Story::Audit::InscriptionTest` pins both.
+  #
+  # WHAT IT KNOWINGLY MISSES, and it is most of the recall:
+  #
+  #   * prose that says what a note says WITHOUT quoting it -- "the note names a
+  #     time and a place" is unjudgeable, and a paraphrase that contradicts the
+  #     record reads exactly like one that agrees with it.
+  #   * prose that quotes with `says` -- "the note says 'Midnight'". `says` is
+  #     the commonest speech attribution in the corpus and putting it on the cue
+  #     list flagged seven passages of dialogue and nothing else. The item's own
+  #     name in place of a cue was measured too and raised three flags, all
+  #     dialogue.
+  #   * MOST REAL READS, AS THINGS STAND. Three live narrations of a read, two
+  #     of them quoting the recorded words in quote marks, and this detected
+  #     neither: both set the quotation on its own line after a paragraph break,
+  #     with no cue near it. The check is nearly silent on well-behaved prose,
+  #     and that is a stated cost rather than a discovered one -- what it catches
+  #     is the shape that produced the complaint, prose that announces text as
+  #     written and then writes different text.
+  #   * a thing nobody has written the words down for. A readable item with no
+  #     inscription has no record to disagree with, so the turn is not counted
+  #     in the denominator either -- see `#judgeable_for`.
+  # ------------------------------------------------------------------------
+  def check_inscription(scene)
+    return if scene.description.blank?
+
+    item = inscribed_subject(scene)
+    return if item.nil?
+
+    Prose.inscription_quotes(scene.description).each do |quote|
+      next if Prose.same_written_words?(quote.text, item.inscription)
+
+      flag(:inscription_misquoted, scene,
+           "the narration quotes what is written on the #{item.name}, and the records hold different words",
+           item: item.name,
+           "the records say" => item.inscription.to_s.truncate(220),
+           "the narration says" => quote.text.truncate(220),
+           claim: quote.sentence.truncate(220),
+           typed: scene.typed.presence,
+           where: scene.location&.name,
+           at: scene.story_timestamp)
+    end
+  end
+
+  # THE THING THIS TURN ACTED ON, when it is a thing with words on record. Both
+  # halves are needed and neither is enough: a turn with no `acted_on` acted on
+  # nothing nameable, and a readable item nobody has read yet holds no words for
+  # a quotation to disagree with.
+  def inscribed_subject(scene)
+    item = scene.acted_on_record
+    return nil unless item.is_a?(Item) && item.inscribed?
+
+    item
   end
 
   # ------------------------------------------------------------------------

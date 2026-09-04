@@ -140,12 +140,17 @@ NO_MODEL=1 rake 'game:mechanics[2]'
 ```
 
 A fixed grammar replaces the classifier and nothing is generated: `go <exit>`,
-`take <item>`, `drop <item>`, `talk <person>` (also `speak`, `ask`), `look`
-(also `where`, `inventory`, `exits`, `items`, `who`), `help`, `quit`. Talking is
-prose and this mode still writes none, so `talk` names whoever it resolved and
-stops — but **whether** it resolves is an engine question, and since presence
-became a record it is one that can be answered with no model at all. A typed
-name is matched against the records
+`take <item>`, `drop <item>`, `talk <person>` (also `speak`, `ask`),
+`read <item>` (also `examine`, `x`, `look at`), `look` (also `where`,
+`inventory`, `exits`, `items`, `who`), `help`, `quit`. Talking is prose and this
+mode still writes none, so `talk` names whoever it resolved and stops — but
+**whether** it resolves is an engine question, and since presence became a
+record it is one that can be answered with no model at all. `read` is the same
+argument one step further: what is written on a thing is a record too, so it
+prints `Item#inscription` straight out and refuses a thing with nothing written
+on it. It will not *write* the words a readable thing lacks — that is one model
+call, and this mode makes none on that branch. A typed name is matched against
+the records
 exactly, then as an unambiguous prefix, then as an unambiguous fragment **read
 both ways round** — so `take daybook` finds the "Ward Office 12 daybook" and
 `drop the tide-slate` finds the "Assize tide-slate" — with a leading
@@ -200,9 +205,10 @@ every build.
   ok     the-lunar-cartographer        9 step(s), The Lunar Cartographer intact
   ok     the-salt-assizes-grammar      7 step(s), The Salt Assizes intact
   ok     the-salt-assizes-presence    10 step(s), The Salt Assizes intact
-  ok     the-unrecorded-hour          13 step(s), The Unrecorded Hour intact
+  ok     the-unrecorded-hour-two-players  9 step(s), The Unrecorded Hour intact
+  ok     the-unrecorded-hour          17 step(s), The Unrecorded Hour intact
 
-PASSED: 47 typed line(s) over 5 script(s).
+PASSED: 60 typed line(s) over 6 script(s).
 ```
 
 A script is a YAML fixture in `lib/engine_sweep/scripts/` — a seeded world, an
@@ -235,9 +241,10 @@ construction and the only place to observe it was a generated run costing money.
 `EngineSweep::Expectation::KEYS` is the whole vocabulary — where the player
 stands and whether that room is written, what leads out of here (`exits`,
 `exits_include`, `exits_exclude`, each with the detail level), what is lying
-here, what is carried, whether the line `changed` anything or was `refused`,
-what the refusal `offers` as an alternative, how the engine `understood` the
-line, and how many `drifts` rows it wrote. **A key outside that list raises**, so
+here, what is carried, what the records say is written on a named thing
+(`inscription`), whether the line `changed` anything or was `refused`, what the
+refusal `offers` as an alternative, how the engine `understood` the line, and
+how many `drifts` rows it wrote. **A key outside that list raises**, so
 a fixture typo cannot become an expectation that silently holds.
 
 After every walk, four **invariants** are checked over the whole world against
@@ -408,6 +415,51 @@ because a room's description is expensive and a room nobody walks into should
 not be paid for. An item is a name and one line riding on a call already being
 made, so deferring the line would save ~15 output tokens now and cost a whole
 round trip the first time somebody examined it.
+
+### Things that can be read
+
+A note, a letter, a sign, a docket, a label: **what is written on it is a
+record.** `items.readable` says a thing has words on it and `items.inscription`
+holds them, bounded at 400 characters.
+
+The captain's own turn is why. He typed *"pickup the note. what does it say?"*
+and the narrator answered *"Midnight. The Bell. They know about the maps."* —
+invented on the spot, kept nowhere, and free to be something different the next
+time he unfolded it. In his words: *"when an item is a note or piece of paper,
+etc that has writing on it, we need to store that writing so it is permanently
+held in the game state."*
+
+The words are written in exactly two places and read everywhere:
+
+| written by | when |
+| --- | --- |
+| `Item::Registry` | at room realization, out of the same answer that named the thing — `Location::DetailSchema` asks for `readable` and, when it is true, the text itself |
+| a seed file | `readable: true` plus `inscription:` under any item, hand-authored (`db/seeds/worlds/README.md`) |
+| `Item::Inscriber` | **once**, on the first read of a readable thing that arrived with no words. One structured call, one field, before any prose exists |
+
+`readable` is the whole gate. Nothing generates text for a thing the world did
+not mark readable — ask to read a ward stamp and you get a look at a ward stamp,
+now and forever. `Item` refuses an inscription on anything unreadable outright.
+
+**Reading is a branch of the loop, not a prompt.** `Playthrough::Classifier`
+gives `examine` a resolved target against what is lying here **plus** what the
+player carries — the only action that reads both sets, because looking at a
+thing does not move it — and `Playthrough::Turn#read_item` hands the narrator
+the recorded words *verbatim and quoted*, the way `take` hands it the pickup.
+The turn is recorded in `scenes.resolved_action` / `scenes.acted_on` like any
+other. A `take` of a thing whose words are already on record hands them over
+too, because that is the shape of the turn that produced the complaint; it never
+*generates* them, because picking a thing up is not reading it.
+
+So the second reading of a note is a database read. The same string, both
+times, and no model in the loop at all.
+
+`Story::Audit`'s `inscription_misquoted` is the third clause: prose that quotes
+what is written on a thing whose words the records hold, and quotes it
+differently. Measured for false positives on all 367 real passages in the four
+corpora — 92 of them quote somebody, and it flags none of them — with the
+captain's own narration as the positive case. See
+`test/models/story/audit/inscription_test.rb`.
 
 `Item.lying_in` is unchanged, so the closed set `take` resolves against picks
 generated things up with no further change, in the browser and in

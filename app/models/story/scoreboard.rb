@@ -58,6 +58,7 @@ class Story::Scoreboard
     item_not_held: "the prose handed the player something somebody else holds",
     take_denied: "the prose said the player already had what this turn picked up",
     pickup_invented: "the prose picked up what this turn put down",
+    inscription_misquoted: "the prose quotes what is written on a thing, and the records say other words",
     truncated_prose: "stored prose stops mid-sentence",
     third_person_protagonist: "the narration wrote the player as somebody else",
     reached_for_nothing: "the player reached for something the records do not have",

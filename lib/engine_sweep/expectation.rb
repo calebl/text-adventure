@@ -19,6 +19,10 @@
 #   present         the whole set of people standing here, by full name -- the
 #                   closed set `talk` resolves against (`Character.present_in`),
 #                   minus the player themselves
+#   inscription     what the records say is written on a named thing -- a
+#                   mapping of item name to text the stored inscription has to
+#                   contain, or to `false` for a thing with no writing on it.
+#                   Read off `Item#inscription`, never off anything printed
 #   changed         whether the engine wrote something
 #   change          text the one-line diff of that write has to contain, which
 #                   is how a script pins that a stub was walked into as a stub
@@ -34,7 +38,7 @@
 # test fixture must not have.
 class EngineSweep::Expectation
   KEYS = %w[
-    location exits exits_include exits_exclude here carrying present
+    location exits exits_include exits_exclude here carrying present inscription
     changed change refused offers understood note drifts
   ].freeze
 
@@ -81,6 +85,7 @@ class EngineSweep::Expectation
       check_items("here", state.items_here),
       check_items("carrying", state.carried),
       check_people("present", state.present),
+      check_inscriptions(state),
       check_flag("changed", report.changed?),
       check_contains("change", report.change),
       check_flag("refused", report.refused?),
@@ -96,10 +101,31 @@ class EngineSweep::Expectation
   attr_reader :where
 
   def validate!
+    validate_inscriptions!
     Array(document["exits"]).each { |entry| named(entry) }
     Array(document["exits_include"]).each { |entry| named(entry) }
     Array(document["exits_exclude"]).each { |entry| named(entry) }
     named(document["location"]) if document.key?("location")
+  end
+
+  # A mapping and nothing else, for the same reason `KEYS` is closed: a list of
+  # item names here would look like an expectation and assert nothing.
+  def validate_inscriptions!
+    return unless document.key?("inscription")
+
+    wanted = document["inscription"]
+    unless wanted.is_a?(Hash)
+      raise EngineSweep::InvalidScript,
+            "#{where}: \"inscription\" is a mapping of item name to the text it must contain " \
+            "(or to false for a thing with nothing written on it), got #{wanted.inspect}"
+    end
+
+    wanted.each_value do |expected|
+      next if expected == false || expected.is_a?(String)
+
+      raise EngineSweep::InvalidScript,
+            "#{where}: an \"inscription\" entry is text to look for or false, got #{expected.inspect}"
+    end
   end
 
   def named(entry)
@@ -203,6 +229,48 @@ class EngineSweep::Expectation
     return nil if wanted.sort == actual.sort
 
     unmet(key, wanted, actual)
+  end
+
+  # WHAT IS WRITTEN ON A THING, off the row and not off the screen.
+  #
+  # The one expectation here that reads a column rather than a set, and it is a
+  # column rather than the printed line on purpose: `Playthrough::Mechanics`
+  # prints an inscription as a note, so a script asserting the note would be
+  # asserting that the read-out is wired up. This asserts what the ENGINE holds,
+  # which is the thing that must not drift between two readings -- and a script
+  # that reads the same note twice and expects the same text twice is then
+  # making a claim the records have to keep.
+  #
+  # The item is looked for in both sets a read resolves against, here and in the
+  # player's hands, because reading does not care which. A name that matches
+  # nothing is unmet rather than skipped: a typo must not read as a pass.
+  def check_inscriptions(state)
+    return nil unless document.key?("inscription")
+
+    wanted = document["inscription"]
+    records = state.items_here + state.carried
+
+    wanted.filter_map do |name, expected|
+      item = records.find { |record| record.name == name }
+      next unmet("inscription", "#{name}: #{render(expected)}", "no #{name} here or in hand") if item.nil?
+
+      check_one_inscription(name, expected, item)
+    end
+  end
+
+  # `false` means the thing has no writing on it at all; anything else is text
+  # the stored inscription has to contain.
+  def check_one_inscription(name, expected, item)
+    if expected == false
+      return nil unless item.readable? || item.inscription.present?
+
+      return unmet("inscription", "#{name}: nothing written on it", "#{name}: #{item.inscription.inspect}")
+    end
+
+    return nil if item.inscription.to_s.include?(expected.to_s)
+
+    unmet("inscription", "#{name}: text containing #{expected.to_s.inspect}",
+          "#{name}: #{item.inscription.presence.inspect || "nothing written down"}")
   end
 
   def check_flag(key, actual)

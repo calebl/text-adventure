@@ -361,6 +361,43 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     assert_match "A cracked lantern", response.body
   end
 
+  # WHAT IS WRITTEN ON THE THINGS IN FRONT OF HIM, verbatim -- the same string
+  # `Playthrough::Turn#read_fact` hands the narrator. Seeing the record beside
+  # the prose the turn produced is how a misquote is caught by eye before
+  # `inscription_misquoted` catches it by rule.
+  test "the room section shows what is written on a readable thing" do
+    playthrough = played_playthrough
+    create(:item, :lying, :readable, location: playthrough.current_location, name: "A folded note")
+
+    get playthrough_debug_path(playthrough)
+
+    assert_response :success
+    assert_select ".k", text: /\Areads/
+    assert_match "Midnight. The Bell. They know about the maps.", response.body
+  end
+
+  test "a readable thing nobody has read yet says so on the page" do
+    playthrough = played_playthrough
+    create(:item, :lying, :readable, :unwritten, location: playthrough.current_location,
+           name: "A folded note")
+
+    get playthrough_debug_path(playthrough)
+
+    assert_response :success
+    assert_match "readable, nothing written down yet", response.body
+  end
+
+  test "a thing with no writing on it gets no line of its own" do
+    playthrough = played_playthrough
+    create(:item, :lying, location: playthrough.current_location, name: "A cracked lantern")
+
+    get playthrough_debug_path(playthrough)
+
+    assert_response :success
+    assert_match "A cracked lantern", response.body
+    assert_select ".k", text: /\Areads/, count: 0
+  end
+
   test "an empty floor and empty hands are spelled out rather than left blank" do
     playthrough = played_playthrough
 

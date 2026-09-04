@@ -115,6 +115,32 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal [ "A Sealed Letter" ], document["characters"].first["items"].map { |item| item["name"] }
   end
 
+  # `readable` IS OMITTED RATHER THAN WRITTEN FALSE, like `opening` and `mobile`:
+  # the file says which things have writing on them and stays quiet about the
+  # ones that do not.
+  test "exports what is written on a readable thing and says nothing about the rest" do
+    create(:item, :lying, :readable, location: @opening, name: "A Folded Note")
+    create(:item, :lying, location: @opening, name: "A Ward Stamp")
+
+    items = WorldSeed::Exporter.new(@story).document["locations"].first["items"].index_by { |item| item["name"] }
+
+    assert_equal true, items["A Folded Note"]["readable"]
+    assert_equal "Midnight. The Bell. They know about the maps.", items["A Folded Note"]["inscription"]
+    assert_not items["A Ward Stamp"].key?("readable")
+    assert_not items["A Ward Stamp"].key?("inscription")
+  end
+
+  # A readable thing nobody has read yet exports as readable with no words, which
+  # is exactly what it is -- and reloads into the same shape.
+  test "exports a readable thing whose words nobody has written down" do
+    create(:item, :lying, :readable, :unwritten, location: @opening, name: "A Folded Note")
+
+    item = WorldSeed::Exporter.new(@story).document["locations"].first["items"].sole
+
+    assert_equal true, item["readable"]
+    assert_not item.key?("inscription")
+  end
+
   test "warns about a one-way edge instead of dropping it" do
     LocationConnection.find_by(location: @stub, connected_location: @opening).destroy!
 

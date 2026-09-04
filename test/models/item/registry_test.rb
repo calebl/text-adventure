@@ -54,6 +54,76 @@ class Item::RegistryTest < ActiveSupport::TestCase
     assert_equal "Still wet.", item.description
   end
 
+  # --- what is written on the ones that have writing on them ----------------
+
+  test "a thing named readable with words on it is born with them" do
+    item = admit(candidate("folded note").merge("readable" => true, "inscription" => "Midnight. The Bell.")).sole
+
+    assert item.readable?
+    assert_equal "Midnight. The Bell.", item.inscription
+    assert item.inscribed?
+  end
+
+  # The ordinary answer, and the one most rooms give.
+  test "a thing with nothing written on it carries no inscription" do
+    item = admit(candidate("ward stamp").merge("readable" => false)).sole
+
+    assert_not item.readable?
+    assert_nil item.inscription
+  end
+
+  # A field that never arrived is not a thing with writing on it. `readable` is
+  # read as a boolean and nothing else, so nothing acquires an inscription by a
+  # field arriving in the wrong shape.
+  test "readable is true and nothing else" do
+    created = admit(
+      candidate("first note").merge("inscription" => "Some words."),
+      candidate("second note").merge("readable" => "true", "inscription" => "More words."),
+      candidate("third note").merge("readable" => "yes")
+    )
+
+    assert_equal [ false, false, false ], created.map(&:readable)
+    assert_equal [ nil, nil, nil ], created.map(&:inscription)
+  end
+
+  # THE THING IS KEPT AND THE WORDS ARE DROPPED. `readable` is the gate; a field
+  # that disagrees with the gate is not evidence against it. Losing the room's
+  # furniture over the contradiction would cost more than the contradiction.
+  test "an inscription on a thing not marked readable is dropped and the thing is kept" do
+    item = admit(candidate("ward stamp").merge("readable" => false, "inscription" => "Ward 12.")).sole
+
+    assert_equal "ward stamp", item.name
+    assert_nil item.inscription
+    assert_not item.readable?
+  end
+
+  test "strips emoji out of an inscription too" do
+    item = admit(candidate("folded note").merge("readable" => true, "inscription" => "Midnight. 🔔 The Bell.")).sole
+
+    assert_equal "Midnight.  The Bell.".squeeze(" "), item.inscription.squeeze(" ")
+  end
+
+  # A field at its cap was cut off rather than finished, and this one is
+  # persisted verbatim and quoted to the player forever afterwards -- so half of
+  # it is not a shorter note, it is a note whose end is missing.
+  #
+  # IT IS DROPPED RATHER THAN RAISED, which is the opposite of every other
+  # truncated field in the app, and the reason is where this runs: the room's
+  # description is already saved and its exits are not written yet, so a raise
+  # here leaves a realized room with no way out of it. The thing stays readable
+  # and `Item::Inscriber` writes the words whole on the first read. Measured
+  # live: a Sovereign's Circle handbill came back at exactly the cap.
+  test "an inscription cut off at the cap is dropped and the thing stays readable" do
+    cut = "x" * Item::INSCRIPTION_LIMIT
+
+    item = admit(candidate("folded handbill").merge("readable" => true, "inscription" => cut)).sole
+
+    assert_equal "folded handbill", item.name
+    assert item.readable?
+    assert_nil item.inscription
+    assert_not item.inscribed?
+  end
+
   test "refuses a thing with no name and a thing with no description" do
     created = admit(candidate("", description: "Something."), candidate("a thing", description: ""))
 

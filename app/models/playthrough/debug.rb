@@ -213,6 +213,15 @@ class Playthrough::Debug
   def candidate_items = @candidate_items ||= classifier.items_here
   def candidate_carried = @candidate_carried ||= classifier.items_carried
 
+  # WHAT IS WRITTEN ON THE THINGS IN FRONT OF THE PLAYER, out of the two sets
+  # above and in their order -- the floor, then the hands, which is the order an
+  # `examine` resolves against them (`Playthrough::Classifier#build_intent`).
+  #
+  # Every readable one, whether or not anybody has read it: a readable thing with
+  # no inscription is a thing whose words the next read will write, once, and
+  # that is worth seeing before it happens rather than after.
+  def readable_items = (candidate_items + candidate_carried).select(&:readable?)
+
   # The enum `Playthrough::IntentSchema.for` would be built over: the answers
   # the model is physically able to give, plus `nothing`.
   def candidate_enum

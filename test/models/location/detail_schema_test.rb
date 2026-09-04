@@ -103,7 +103,7 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
 
     assert_equal "array", items["type"]
     assert_equal Item::Registry::MAX_PER_ROOM, items["maxItems"]
-    assert_equal %w[name description], items.dig("items", "properties").keys
+    assert_equal %w[name description readable inscription], items.dig("items", "properties").keys
   end
 
   test "an item names itself and says what it is, both bounded" do
@@ -111,6 +111,39 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
 
     assert_equal 60, fields.dig("name", "maxLength")
     assert_equal 400, fields.dig("description", "maxLength")
+  end
+
+  # A NOTE IS BORN WITH ITS WORDS or it is born without them, out of the one
+  # call that has just described the room it is lying in. `Item::Inscriber` is
+  # the later call, and it exists only for the readable thing that arrived here
+  # with none.
+  test "an item says whether it has writing on it, and what is written" do
+    fields = schema_properties(SCHEMA).dig("items", "items", "properties")
+
+    assert_equal "boolean", fields.dig("readable", "type")
+    assert_equal "string", fields.dig("inscription", "type")
+    assert_equal Item::INSCRIPTION_LIMIT, fields.dig("inscription", "maxLength")
+  end
+
+  # `readable` IS REQUIRED AND `inscription` IS NOT, which is the shape that
+  # makes the pair honest: most things have nothing written on them, so
+  # `readable: false` with no inscription beside it is the ordinary answer.
+  test "readable is asked for every thing and an inscription only when there is one" do
+    required = json_schema_body(SCHEMA).dig("properties", "items", "items", "required").map(&:to_s)
+
+    assert_includes required, "readable"
+    assert_not_includes required, "inscription"
+  end
+
+  # The words themselves, not a description of the object -- that is what
+  # `description` already holds, and the difference is the whole reason the
+  # field exists. `Playthrough::Turn#read_fact` hands this to the narrator
+  # verbatim.
+  test "an inscription is asked for as the text itself" do
+    described = schema_properties(SCHEMA).dig("items", "items", "properties", "inscription", "description")
+
+    assert_match(/exactly as they appear/, described)
+    assert_match(/not a description of it/, described)
   end
 
   # The collision the classifier cannot survive: an item and an exit, or an

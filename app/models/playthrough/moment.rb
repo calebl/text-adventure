@@ -100,6 +100,10 @@ class Playthrough::Moment
       lines << attempt
     end
 
+    if (reading = last_reading)
+      lines << reading
+    end
+
     if (concluded = conclusions(character, replayed: replayed)).any? && protagonist
       lines << "What you have already concluded about #{protagonist.fullname}, earlier in this conversation:\n" +
                concluded.map { |sentence| "- #{sentence}" }.join("\n")
@@ -180,6 +184,38 @@ class Playthrough::Moment
     return nil if typed.blank?
 
     %(What #{protagonist.fullname} did a moment ago: "#{typed.truncate(200)}")
+  end
+
+  # WHAT THE PLAYER WAS READING A MOMENT AGO, AND WHAT IT SAID, for somebody
+  # standing next to them while they read it.
+  #
+  # The same shape as `#last_attempt` and for the same reason: it is a RECORD and
+  # not prose. `Scene#resolved_action` says the last turn was an examine,
+  # `Scene#acted_on` says of what, and `Item#inscription` holds the words the
+  # engine owns -- so this is three columns read out, in the register a character
+  # prompt can carry (somebody in the room, doing something), and nothing a model
+  # wrote about the moment.
+  #
+  # WHY A CHARACTER IS TOLD AT ALL: an NPC watching the player read a docket and
+  # then answering as though the page were blank is the same defect as a narrator
+  # inventing what it says, one prompt over. The words are quoted here for
+  # exactly the reason `Playthrough::Turn#read_fact` quotes them -- a paraphrase
+  # is what drifts.
+  #
+  # WHAT IT DOES NOT COVER, stated rather than implied: being SHOWN something.
+  # Handing a note to somebody is not an act the app owns -- there is no record
+  # of it and no closed set it resolves against -- so nothing here pretends to
+  # know it happened. Reading is an act the records hold, and this is that act.
+  def last_reading
+    scene = playthrough.current_scene
+    return nil unless scene&.recorded_action == "examine"
+
+    item = scene.acted_on_record
+    return nil unless item.is_a?(Item) && item.inscribed?
+
+    reader = protagonist ? protagonist.fullname : "The person you are speaking to"
+    %(What #{reader} was reading a moment ago: the #{item.name}, which says, word for word: ) +
+      %("#{item.inscription}")
   end
 
   def exit_names

@@ -8,6 +8,13 @@
 # `Playthrough::Turn`, and between them they are the whole of what the engine
 # does without a model.
 #
+# AND THE ONE THING IN IT THAT IS WRITTEN ON PAPER. Two of this world's items
+# are readable and their words are in the seed file, so this is where a read is
+# swept: out of the hands, off the floor, twice over on one item, and refused on
+# a ward stamp that has nothing written on it. `Item::Inscriber` is never
+# reached -- every readable thing here arrives with its words -- which is what
+# makes the whole read path assertable with no model in the process at all.
+#
 # A NOTE ON THE STUB. Walking into The Long Hallway offline moves the player and
 # leaves the room unwritten, because there is nothing here to write it with:
 # realizing a room is `Location::Generator`, which is two model calls. So the
@@ -43,6 +50,36 @@ steps:
     carrying: [Ward Office 12 daybook, ward stamp]
     drifts: 0
 
+- id: read-the-daybook-in-hand
+  type: read the daybook
+  why: |-
+    WHAT IS WRITTEN ON A THING IS A RECORD, so it reads out with no model at
+    all -- and it reads out of the player's OWN HANDS, which is the half of the
+    closed set a `take` never touches. The text is the seed file's, word for
+    word: nothing in this walk could have written it and nothing in this walk
+    can change it.
+  expect:
+    changed: false
+    refused: false
+    understood: examine -> Ward Office 12 daybook
+    note: ["reads: Ward Office 12 daybook", "Query 1188 (Marchmain acre 7) still open"]
+    inscription:
+      Ward Office 12 daybook: "3.40 — Levee boundary, Marchmain acre 7."
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: nothing-is-written-on-a-stamp
+  type: read the ward stamp
+  why: |-
+    The gate is `Item#readable` and it is the whole gate. A stamp has no writing
+    on it, so there is nothing to read and nothing is ever generated for it --
+    refused, and the refusal says which of the two facts it is.
+  expect:
+    refused: true
+    changed: false
+    offers: [there is nothing written on the ward stamp]
+    inscription:
+      ward stamp: false
+
 - id: carry-it-next-door
   type: go to the Supply Closet
   why: a move into a room that IS written; what is carried comes along
@@ -71,6 +108,35 @@ steps:
     understood: take -> copy-room apron
     here: [Perrin's private index, ward stamp]
     carrying: [Ward Office 12 daybook, copy-room apron]
+
+- id: read-what-is-lying-on-the-floor
+  type: read Perrin's private index
+  why: |-
+    The other half of the closed set an `examine` resolves against: a thing
+    lying in the room, not carried. Same branch, same records, and the index is
+    still on the floor afterwards -- reading something moves nothing.
+  expect:
+    changed: false
+    refused: false
+    understood: examine -> Perrin's private index
+    note: ["1188/12 — amended. Same hand as 0714 and 0902."]
+    inscription:
+      Perrin's private index: "19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open"
+    here: [Perrin's private index, ward stamp]
+
+- id: read-it-again-and-it-says-the-same-thing
+  type: x the private index
+  why: |-
+    THE WHOLE POINT, in one step. The words came out of the records the first
+    time, so the second reading is the same string and not another guess at it.
+    This is the step that fails the day anything starts regenerating an
+    inscription.
+  expect:
+    changed: false
+    refused: false
+    understood: examine -> Perrin's private index
+    inscription:
+      Perrin's private index: "19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open"
 
 - id: inventory
   type: inventory

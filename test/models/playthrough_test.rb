@@ -383,6 +383,39 @@ class PlaythroughTest < ActiveSupport::TestCase
     assert_equal protagonist, daybook.reload.character, "the world's own row is left where it is"
   end
 
+  # WHAT IS WRITTEN ON IT COMES ALONG, and the copy is asserted by column rather
+  # than by field list on purpose: naming the fields is what silently left
+  # `readable` and `inscription` behind, so each player's copy of a seeded note
+  # opened blank while the world's own row held the words. `NOT_COPIED` is the
+  # whole of what must not travel.
+  test "the kit's copy of a readable thing keeps what is written on it" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    note = create(:item, :readable, character: protagonist, name: "a folded note")
+
+    copy = create(:playthrough, story: story, character: protagonist).carried.sole
+
+    assert copy.readable?
+    assert copy.inscribed?
+    assert_equal note.inscription, copy.inscription
+  end
+
+  # EVERY COLUMN BUT WHERE IT IS. A column added to `items` later must come
+  # along without anybody remembering to add it here.
+  test "the kit copies every column except the three that say where a thing is" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    original = create(:item, :readable, character: protagonist, name: "a folded note")
+
+    copy = create(:playthrough, story: story, character: protagonist).carried.sole
+    ignored = Playthrough::NOT_COPIED
+
+    assert_equal original.attributes.except(*ignored), copy.attributes.except(*ignored)
+    assert_equal Item::PLACES.map(&:to_s).sort, (ignored - %w[id created_at updated_at]).sort
+    assert_nil copy.character_id
+    assert_nil copy.location_id
+  end
+
   test "two playthroughs of one world start with the same kit and carry two different sets" do
     story = create(:story)
     protagonist = create(:character, :protagonist, story: story)

@@ -55,6 +55,62 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **What a note says is a record** (`ta-item-inscriptions`). *"when an item is a
+  note or piece of paper, etc that has writing on it, we need to store that
+  writing so it is permanently held in the game state."* Playthrough 15, scene
+  77: he typed *"pickup the note. what does it say?"* and read back *"Midnight.
+  The Bell. They know about the maps."* — invented on the spot, kept nowhere,
+  and free to be something different the next time he unfolded it.
+
+  `items.readable` says a thing has words on it and `items.inscription` holds
+  them, bounded at 400 characters and validated as a pair: an inscription on a
+  thing nobody marked readable is the one shape `Item` refuses. **`readable` is
+  the whole gate** — nothing in the app ever generates text for an item the
+  world did not mark readable, so a ward stamp stays a ward stamp forever.
+
+  **The words are written in three places and only three.** `Item::Registry`
+  writes them at room realization, out of the same answer that named the thing
+  (`Location::DetailSchema` gained `readable` and an optional `inscription`, and
+  the realization prompt now asks for the text — measured live, four
+  realizations named three readable things and supplied words for none of them
+  until it did). A seed file writes them by hand: the Ward Office 12 daybook,
+  Perrin's private index and the Assize tide-slate all carry real text now. And
+  `Item::Inscriber` writes them **once**, on the first read of a readable thing
+  that arrived with none — one structured call, one field, before any prose
+  exists, and never again.
+
+  **Reading is a branch of the loop.** `Playthrough::Classifier` gives `examine`
+  a resolved target against what is lying here *plus* what is carried — the only
+  action that reads both sets, because looking at a thing does not move it — and
+  `Playthrough::Turn#read_item` hands the narrator the recorded words verbatim
+  and quoted, the way `take` hands it the pickup. A `take` of a thing whose words
+  are already on record hands them over too, because the turn that produced the
+  complaint was a take; it never generates them, because picking a thing up is
+  not reading it. `Playthrough::Moment#character_context` tells somebody standing
+  in the room what the player was reading and what it said, out of the same
+  three columns. `rake game:mechanics` prints an inscription with no model at
+  all, `NO_MODEL=1` gained `read` / `examine` / `x` / `look at`, and the engine
+  sweep reads a seeded note twice offline and asserts the same words both times.
+
+  **`inscription_misquoted` is the third clause**, and it is an honest one:
+  precision measured at 0 flags over all 367 real passages in the four corpora —
+  92 of which quote somebody — with the captain's own narration as the positive
+  case, and two plausible widenings measured and killed (`says` as a cue, 7
+  flags of dialogue; the item's own name, 3 flags of dialogue). Its recall is
+  **low and stated**: three live read narrations, two quoting the record inside
+  quote marks, and it detected neither, because both set the quotation on its
+  own after a paragraph break with no cue near it. It catches the shape that
+  produced the complaint — prose announcing text as written and then writing
+  different text — and nothing here pretends it catches more.
+
+  **What it costs.** The realization call carries +138 tokens of schema
+  (measured at 0 tokens of provider-reported input difference on the same room
+  and prompt) and one extra sentence of prompt; a room with nothing readable in
+  it pays nothing more. A read turn adds ~116 tokens of stated fact to the
+  narrator prompt. The one-off inscription call, measured live on a seeded note
+  with no words, cost 1,058 input and 163 output tokens — once, for the life of
+  the item. Every later reading is a database read.
+
 - **A new playthrough starts with its own hands** (`ta-inventory-per-playthrough`).
   The captain's report: he started playthrough 17 of a story and the
   protagonist was already carrying things from a previous playthrough.
@@ -242,8 +298,8 @@ The full audit of every planned piece of work against this constraint is in
   written, what is lying here, what is carried, and what was refused. Free,
   deterministic, offline, and it runs in `bin/rails test` — so the half of the
   game that `rake eval:run` cannot see, and that nobody was testing without
-  sitting at a keyboard, is now regression-tested on every build. 37 typed lines
-  over four scripts and the three seeded worlds.
+  sitting at a keyboard, is now regression-tested on every build. 60 typed lines
+  over six scripts and the three seeded worlds.
 
   **Three things make it repeatable, and one of them is a guard rather than an
   intention.** `BaseAgent.new` is replaced for the length of a run, so a model

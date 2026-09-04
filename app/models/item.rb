@@ -35,14 +35,36 @@
 # narrator may or may not call -- read that class's header for why the
 # distinction is the whole point. This class still only answers WHERE the ones
 # that exist are; a seed file is now one writer of them among two.
+#
+# AND WHAT IS WRITTEN ON IT, for the things that have writing on them. A note, a
+# letter, a sign, a label: `readable` says the thing has words on it and
+# `inscription` holds them, so what a note says is a record the engine owns
+# rather than a sentence the narrator improvised and nothing kept. It is the
+# same argument `items.playthrough_id` settles for possession, one column
+# further on: a fact the game depends on, held in a paragraph, is a fact that
+# drifts. It is orthogonal to WHERE the thing is -- all three of `PLACES` keep
+# their text, because writing belongs to the note and not to the shelf. The
+# words reach the prose through `Playthrough::Turn#read_fact`, verbatim and
+# stated; `Item::Inscriber` writes them once for a readable thing that arrived
+# without any, and never again.
 class Item < ApplicationRecord
+  # HOW MANY CHARACTERS A THING CAN HAVE WRITTEN ON IT. What a player reads off
+  # an object in one turn -- a note, a docket line, a sign, a page of an index --
+  # and not a chapter. It is the cap `Item::InscriptionSchema` and
+  # `Location::DetailSchema` both ask for and the ceiling this validates, so a
+  # generated inscription arriving AT it is a truncated answer
+  # (`SanitizesGeneratedText`) rather than a row that quietly will not save.
+  INSCRIPTION_LIMIT = 400
+
   belongs_to :character, optional: true
   belongs_to :location, optional: true
   belongs_to :playthrough, optional: true
 
   validates :name, presence: true
   validates :description, presence: true
+  validates :inscription, length: { maximum: INSCRIPTION_LIMIT }
   validate :in_exactly_one_place
+  validate :inscription_requires_readable
 
   # WHAT ONE OF THE WORLD'S OWN PEOPLE IS HOLDING, which since the party's
   # inventory moved to the playthrough is no longer what the player has. Asked
@@ -82,11 +104,31 @@ class Item < ApplicationRecord
       .or(where(playthrough_id: story.playthroughs.select(:id)))
   }
 
+  # THE THINGS WITH WORDS ON THEM. It cuts across all three places: a note lying
+  # in a room, a note in an NPC's hands and a note a party is carrying all keep
+  # their text, because what is written on a thing is a fact about the thing and
+  # not about where it is. Nothing in the app generates text for an item outside
+  # this scope -- see `Item::Inscriber`.
+  #
+  # A row-level question everywhere it matters -- `#readable?` on the record the
+  # classifier resolved -- so this is the set query, for a report about a whole
+  # world. `#unwritten` is the one worth asking: a readable thing nobody has read
+  # is not a defect (the first read writes it), so no instrument reports it, and
+  # what a person actually wants to know is which notes hold words yet.
+  scope :readable, -> { where(readable: true) }
+  scope :unwritten, -> { readable.where(inscription: nil) }
+
   def held? = character_id.present?
 
   def lying? = character_id.nil? && playthrough_id.nil? && location_id.present?
 
   def carried? = playthrough_id.present?
+
+  # There is something written on this AND the records hold it. The two halves
+  # are separate on purpose: `readable?` is what the world says about the thing,
+  # `inscribed?` is whether anybody has written the words down yet, and only the
+  # second is what `Playthrough::Turn#read_fact` can quote.
+  def inscribed? = readable? && inscription.present?
 
   # Where it is, in one sentence, for a report a person reads.
   def whereabouts
@@ -121,6 +163,26 @@ class Item < ApplicationRecord
   end
 
   private
+
+  # WORDS ON A THING THAT HAS NO WRITING ON IT is the state this refuses, and it
+  # is refused rather than tidied away because the two columns are one fact read
+  # from two sides. `readable` is what closes the set `Item::Inscriber` may ever
+  # write into: an inscription on an item nobody marked readable is text that
+  # arrived from somewhere other than that gate, which is the shape this whole
+  # mechanic exists to make impossible.
+  #
+  # The other way round is legal and stays legal: a readable thing with no
+  # inscription is one nobody has read yet. See `#inscribed?`.
+  #
+  # It says NOTHING ABOUT WHERE THE THING IS, deliberately: what is written on a
+  # note is a fact about the note, so all three of `PLACES` keep it, and a copy
+  # made for a playthrough's starting inventory copies the words with everything
+  # else (`Playthrough#take_up_the_starting_inventory`).
+  def inscription_requires_readable
+    return if inscription.blank? || readable?
+
+    errors.add(:inscription, "cannot be written on something that is not readable")
+  end
 
   # EXACTLY ONE OF THE THREE, and the two failures are different facts.
   #

@@ -135,6 +135,42 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal played, copy.reload.playthrough
   end
 
+  # WHAT IS WRITTEN ON A THING, carried by the file. A seeded room is realized by
+  # the file rather than by a model call, so what a note in one says is whatever
+  # the file says and nothing else -- and `Item::Inscriber` never runs for it.
+  test "loads what is written on a readable thing" do
+    written = document
+    written["locations"].find { |place| place["name"] == "The Closet" }["items"].first.merge!(
+      "readable" => true, "inscription" => "19 Thaw — 1188/12 — QUERY RAISED"
+    )
+
+    story = WorldSeed::Loader.new(written).load!
+    index = story.locations.find_by(name: "The Closet").items.sole
+
+    assert index.readable?
+    assert index.inscribed?
+    assert_equal "19 Thaw — 1188/12 — QUERY RAISED", index.inscription
+  end
+
+  test "a thing the file says nothing about has no writing on it" do
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_not story.locations.find_by(name: "The Closet").items.sole.readable?
+  end
+
+  # `Item` refuses the pair the other way round inside the same transaction, so
+  # the file would not load either way. This names the file and the item, which
+  # is what somebody editing YAML needs.
+  test "rejects an inscription on a thing the file did not mark readable" do
+    bad = document
+    bad["locations"].find { |place| place["name"] == "The Closet" }["items"].first["inscription"] = "Words on nothing."
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(bad).load! }
+
+    assert_match(/A Private Index/, error.message)
+    assert_match(/readable: true/, error.message)
+  end
+
   test "rejects a file with the same item name twice" do
     twice = document
     twice["locations"].last["items"] = [ { "name" => "A Daybook", "description" => "The wrong one.", "properties" => "{}" } ]

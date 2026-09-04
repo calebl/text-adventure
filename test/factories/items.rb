@@ -23,6 +23,24 @@ FactoryBot.define do
       association :playthrough
     end
 
+    # A THING WITH WRITING ON IT. `readable` is the gate and the inscription is
+    # the words; `Item` refuses the pair the other way round, so a factory that
+    # set one without the other would build an invalid record.
+    trait :readable do
+      name { "folded note" }
+      description { "A square of ward paper folded twice, the ink smudged along one crease." }
+      readable { true }
+      inscription { "Midnight. The Bell. They know about the maps." }
+    end
+
+    # Readable and nobody has read it yet -- a seeded note whose file did not
+    # spell the words out, or a row older than the columns. `Item::Inscriber`
+    # writes them on the first read, once.
+    trait :unwritten do
+      readable { true }
+      inscription { nil }
+    end
+
     trait :weapon do
       name { "Steel Sword" }
       description { "A well-crafted blade with a sharp edge" }

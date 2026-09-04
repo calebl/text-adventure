@@ -158,6 +158,100 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_equal clock, @story.clock
   end
 
+  # --- reading what is written on something ----------------------------------
+
+  # WHAT IS WRITTEN ON A THING IS A RECORD, so it reads out with no model at all.
+  # This is not the mode growing a narrator: `Item#inscription` is a column, and
+  # printing it is printing a record exactly as the read-out prints an exit.
+  test "the offline mode reads out the words on a thing, with no model" do
+    @stamp.update!(readable: true, inscription: "WARD 12 — REGISTRY OF AMENDMENTS")
+
+    report = play("read the ward stamp")
+
+    assert_not report.refused?
+    assert_not report.changed?
+    assert_equal "examine -> ward stamp", report.understood
+    assert_includes report.to_s, "WARD 12 — REGISTRY OF AMENDMENTS"
+  end
+
+  test "the offline mode reads a thing out of the player's own hands" do
+    @daybook.update!(readable: true, inscription: "5.15 — Query 1188 still open. O.V.")
+
+    assert_includes play("read the daybook").to_s, "5.15 — Query 1188 still open. O.V."
+  end
+
+  # `examine`, `x` and `look at` are the same verb, and `look` on its own is
+  # still the whole read-out.
+  test "the offline grammar reads by four names and keeps look for the read-out" do
+    @index.update!(readable: true, inscription: "1188/12 — amended.")
+    play("go to the closet")
+
+    [ "read the index", "examine the index", "x the index", "look at the index" ].each do |line|
+      assert_includes play(line).to_s, "1188/12 — amended.", line
+    end
+
+    assert_not_includes play("look").to_s, "1188/12 — amended."
+  end
+
+  # THE GATE. A thing with nothing written on it is refused, and the refusal
+  # says which of the two facts it is -- nothing generates text for it, ever.
+  test "the offline mode refuses to read a thing with nothing written on it" do
+    report = play("read the ward stamp")
+
+    assert report.refused?
+    assert_not report.changed?
+    assert_includes report.refusal, "there is nothing written on the ward stamp"
+  end
+
+  # And it will not WRITE the words either: that is one model call, and this mode
+  # makes none here. It says what is missing rather than inventing it.
+  test "the offline mode says so rather than writing the words a readable thing lacks" do
+    @stamp.update!(readable: true, inscription: nil)
+
+    report = play("read the ward stamp")
+
+    assert report.refused?
+    assert_includes report.refusal, "the records do not hold the words yet"
+    assert_nil @stamp.reload.inscription
+  end
+
+  test "reading nothing in particular asks against both sets at once" do
+    report = play("read")
+
+    assert report.refused?
+    assert_includes report.refusal, "read what?"
+    assert_includes report.refusal, "ward stamp"
+    assert_includes report.refusal, "Ward Office 12 daybook"
+  end
+
+  test "reading something that is not here is refused with what is" do
+    report = play("read the lighthouse ledger")
+
+    assert report.refused?
+    assert_includes report.refusal, "thing here or in your hands"
+  end
+
+  # Reading moves nothing. The records after a read are the records before it.
+  test "reading changes no row at all" do
+    @index.update!(readable: true, inscription: "1188/12 — amended.")
+    play("go to the closet")
+
+    assert_no_changes -> { [ @index.reload.attributes, @playthrough.reload.current_location_id ] } do
+      play("read the index")
+    end
+  end
+
+  # The classifier path reaches the same branch, off the same resolved record.
+  test "the classifier mode reads what the classifier resolved" do
+    @index.update!(readable: true, inscription: "1188/12 — amended.")
+    @playthrough.update!(current_location: @closet)
+
+    report, agent = interpret("what does the index say?", CLASSIFY.call("examine", "Perrin's private index"))
+
+    assert_includes report.to_s, "1188/12 — amended."
+    assert_equal 1, agent.prompts.size, "reading a record is not a second model call"
+  end
+
   # --- the offline mode: refusals --------------------------------------------
 
   test "an exit that does not exist is refused, and nothing moves" do

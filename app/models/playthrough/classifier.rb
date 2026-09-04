@@ -35,6 +35,7 @@ class Playthrough::Classifier
     def talk? = action == :talk
     def take? = action == :take
     def drop? = action == :drop
+    def examine? = action == :examine
 
     # The record the loop acts on, whichever kind it turned out to be. There is
     # at most one, by construction.
@@ -71,7 +72,9 @@ class Playthrough::Classifier
 
     Then pick what they aimed it at from the lists you are given, copied
     exactly: a way out for `move`, a person for `talk`, a thing lying here for
-    `take`, a thing they are carrying for `drop`. If the intent is none of
+    `take`, a thing they are carrying for `drop`, and for `examine` a thing on
+    either of those two lists -- looking at something works whether it is in
+    their hands or on the floor in front of them. If the intent is none of
     those, or they named a place, a person or a thing that is not on those
     lists, answer `nothing`. Do not answer with a place they cannot reach from
     here, a person who is not here, something that is not lying in this room, or
@@ -217,10 +220,20 @@ class Playthrough::Classifier
 
   private
 
-  # Only ever one of the two, and only when the name resolved. `examine`,
-  # `take` and `other` carry no target today -- they all fall through to
-  # `Scene::Narrator`, which answers the raw command anyway -- so resolving one
-  # would be building a seam with nothing on the other side of it.
+  # Only ever one slot, and only when the name resolved. `other` carries no
+  # target and never will: it falls through to `Scene::Narrator`, which answers
+  # the raw command anyway, so resolving one would be building a seam with
+  # nothing on the other side of it.
+  #
+  # `examine` DOES carry one now, and it is the only action that resolves
+  # against BOTH item sets at once. Looking at a thing does not move it, so
+  # neither closed set is the wrong one: a note in the player's hands and a note
+  # on the floor are both in front of them. The floor comes first, because that
+  # is the order the prompt lists them in and the order `Playthrough::Moment`
+  # states them to the narrator -- with two things of one name it resolves the
+  # nearer one, stably. `Playthrough::Turn#read_item` is what is on the other
+  # side of the seam: a readable thing is read out of the records, and anything
+  # else narrates exactly as it always did.
   def build_intent(intent, target, exits, cast, items = [], carried = [], also = nil)
     action = Playthrough::IntentSchema::INTENTS.include?(intent) ? intent.to_sym : :other
     name = target.to_s
@@ -235,6 +248,7 @@ class Playthrough::Classifier
     when :talk then [ cast, :find_character, :speaker ]
     when :take then [ items, :find_item, :item ]
     when :drop then [ carried, :find_item, :item ]
+    when :examine then [ items + carried, :find_item, :item ]
     else return Intent.new(action: action)
     end
 
@@ -248,8 +262,8 @@ class Playthrough::Classifier
   end
 
   # The second name, or nil. `nothing` and a blank both mean the line named one
-  # thing. `examine` and `other` never reach here: they resolve to no record at
-  # all, so there is no "the other one" for them to have.
+  # thing. `other` never reaches here: it resolves to no record at all, so there
+  # is no "the other one" for it to have.
   #
   # THE COMPARISON IS BETWEEN RECORDS AND NOT BETWEEN THE TYPED NAMES, because
   # one record answers to more than one name: `#find_character` matches a

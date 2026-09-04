@@ -207,6 +207,50 @@ fastest way to see this half of the world work; see the README.
 `Item#properties_hash`. Entries are exported sorted by name, so keep them that
 way in the file or a re-export will reorder them.
 
+#### `readable` and `inscription`: what is written on a thing
+
+A note, a letter, a sign, a docket, a label. **What is written on it is a
+record**, so the file carries the words and a player reading the same note twice
+reads the same words:
+
+```yaml
+  items:
+  - name: Perrin's private index
+    description: |-
+      A slim index in a hand that is not hers: two columns, dates on the left...
+    readable: true
+    inscription: |-
+      11 Frost — 0714/12 — closed, no query raised
+      19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open
+```
+
+- `readable` is **omitted rather than written `false`**, like `opening` and
+  `mobile`: the file says which things have writing on them and stays quiet
+  about the ones that do not. It is the whole gate — nothing in the app ever
+  generates text for a thing that is not marked readable.
+- `inscription` is **the words themselves**, as a player would read them off the
+  object, not a description of it — that is what `description` already holds.
+  Bounded at `Item::INSCRIPTION_LIMIT` (400 characters).
+- An `inscription` without `readable: true` is **refused by the loader**, naming
+  the file and the item. `Item` validates the same pair, so such a file would
+  not load either way; the loader's message is the one worth reading.
+- `readable: true` with no `inscription` is legal and means *nobody has written
+  the words down yet*. `Item::Inscriber` writes them on the **first read**, once
+  and never again, in one structured call. Spelling them out in the file is
+  better where the words matter: it costs no call and it is the version somebody
+  hand-edited.
+- It works on **either side** of `Item::PLACES`, and on the starting inventory
+  in particular. `Playthrough#take_up_the_starting_inventory` copies the
+  protagonist's items into each new playthrough's hands and copies the words
+  with them, so a seeded daybook says the same thing to every player. Writing
+  belongs to the note, not to the shelf.
+- Three seeded things carry words today: the **Ward Office 12 daybook** and
+  **Perrin's private index** in `the-unrecorded-hour.yml`, and the **Assize
+  tide-slate** in `the-salt-assizes.yml`. `the-lunar-cartographer.yml` carries
+  no items at all and deliberately keeps none —
+  `lib/engine_sweep/scripts/the-lunar-cartographer.yml` is the script about the
+  graph alone, and its whole premise is a world with nothing in it.
+
 ### `characters[].location`, and where a person stands
 
 A character carries **where they are**, by location name:
@@ -269,6 +313,8 @@ nowhere and never moves somebody who is not), `Character#move_to!` and
   deliberately absent from the file.
 - Item names are unique within the file (case-insensitively), on both sides —
   an item is matched on `(story, name)`, so two of a name are one item.
+- An item with an `inscription` is marked `readable: true`. Words on a thing
+  with no writing on it is the one shape `Item` refuses outright.
 - A `mechanics` entry has a `name`, unique within the file, a `kind` in
   `WorldMechanic::KINDS` and a `cadence` in `WorldMechanic::CADENCES`.
 - A `shuffle_connections` mechanic needs **at least two connections** joining a

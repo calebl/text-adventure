@@ -59,6 +59,20 @@
 # the world, is `Item::Registry`'s and `Character::Registry`'s, for the reason
 # `Location::ExitsSchema` spells out at length: rows arrive from outside this
 # call too.
+#
+# `readable` AND `inscription` RIDE ON THE SAME ANSWER, for the same reason the
+# items do. A note is born with its words or it is born without them, and the
+# call that just wrote the room is the one call that can say what a note in it
+# says. Asking later -- when somebody reads it -- costs a round trip and gets a
+# note written by a model that has not seen the room. `Item::Inscriber` is that
+# later call and it exists only for the readable thing that arrived here
+# without words: a seeded one, or a row older than the columns.
+#
+# `inscription` is OPTIONAL and `readable` is not, which is the shape that makes
+# the pair honest. Most things have nothing written on them, so `readable:
+# false` is the ordinary answer and an omitted `inscription` beside it means
+# exactly that. `Item::Registry` refuses an inscription on a thing marked
+# unreadable rather than believing either half over the other.
 class Location::DetailSchema < RubyLLM::Schema
   string :description, description: "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.", max_length: 1200
   string :lore, description: "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.", max_length: 900
@@ -70,6 +84,8 @@ class Location::DetailSchema < RubyLLM::Schema
     object do
       string :name, description: "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.", max_length: 60
       string :description, description: "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.", max_length: 400
+      boolean :readable, description: "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things."
+      string :inscription, description: "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.", required: false, max_length: Item::INSCRIPTION_LIMIT
     end
   end
 

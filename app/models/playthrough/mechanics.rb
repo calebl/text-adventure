@@ -20,6 +20,13 @@
 #                    character prose, and nothing prose-shaped is printed. What
 #                    comes back is the engine's own view of the records after
 #                    the command, plus one line saying what changed.
+#   what is written  KEPT, because it is a record. `read the folded note` prints
+#   on a thing        `Item#inscription` verbatim, with no model call at all: the
+#                    words belong to the engine, so this mode can read them out
+#                    the way it reads out an exit. What it will NOT do is write
+#                    them -- a readable thing nobody has read yet says so
+#                    plainly, because generating one is a model call and this
+#                    mode never makes one on this branch.
 #
 # The arrival Scene is still written, because it is world state -- the cast, the
 # visit stamp and the story clock all hang off it -- and its prose is simply not
@@ -69,6 +76,7 @@ class Playthrough::Mechanics
     # against: the room's cast was reconstructed from the last scene here that
     # recorded anybody, and an offline walk writes no scenes.
     "talk" => :talk, "speak" => :talk, "ask" => :talk,
+    "read" => :read, "examine" => :read, "x" => :read, "look at" => :read,
     "help" => :help
   }.freeze
 
@@ -81,6 +89,9 @@ class Playthrough::Mechanics
     "drop <item>      put down something you are carrying (also: put down, leave)",
     "talk <person>    resolve somebody standing here (also: speak, ask). The",
     "                 talking itself is prose, so this mode names them and stops",
+    "read <item>      what is written on something, out of the records (also:",
+    "                 examine, x, look at). Only a thing marked readable has",
+    "                 words; this mode prints them and never writes them",
     "look             the engine's whole view of where you are (also: where,",
     "                 inventory, exits, items, who, state)",
     "help             this list",
@@ -123,8 +134,10 @@ class Playthrough::Mechanics
     "against the exits, the cast, what is lying here and what you are carrying,",
     "and the line above each read-out says what it resolved to.",
     "",
-    "move, take and drop change the world and are shown as a diff. talk and",
-    "examine are prose, so this mode says so and changes nothing.",
+    "move, take and drop change the world and are shown as a diff. examine of a",
+    "thing with writing on it prints what is written, out of the records. talk,",
+    "and a look at anything else, are prose -- this mode says so and changes",
+    "nothing.",
     "",
     "Walking into a room nobody has written generates it, exactly as the browser",
     "does. `quit` to stop."
@@ -309,6 +322,7 @@ class Playthrough::Mechanics
     when :take then read_take(argument)
     when :drop then read_drop(argument)
     when :talk then read_talk(argument)
+    when :read then read_reading(argument)
     else resolve(classifier.exits_here, text).found? ? read_move(text) : unknown(text)
     end
   end
@@ -366,6 +380,21 @@ class Playthrough::Mechanics
     intent(:talk, speaker: match.record)
   end
 
+  # READING SOMETHING, against BOTH item sets at once -- what is lying here and
+  # what is in the player's hands. The same closed set
+  # `Playthrough::Classifier#build_intent` resolves an `examine` against, in the
+  # same order, so the grammar and the classifier cannot disagree about which
+  # note `read the note` meant. Nothing is moved either way; see `#recite`.
+  def read_reading(argument)
+    readable = classifier.items_here + classifier.items_carried
+    return Reading.new(refusal: "read what? Here and in your hands: #{names(readable)}") if argument.blank?
+
+    match = resolve(readable, argument)
+    return Reading.new(refusal: cannot_find("thing here or in your hands", argument, match, readable)) unless match.found?
+
+    intent(:examine, item: match.record)
+  end
+
   # The grammar's answer, in the classifier's own vocabulary.
   def intent(action, **resolved)
     built = Playthrough::Classifier::Intent.new(action: action, **resolved)
@@ -395,12 +424,21 @@ class Playthrough::Mechanics
       elsif intent.speaker
         talk(intent.speaker, understood)
       elsif intent.item
-        intent.drop? ? drop(intent.item, understood) : take(intent.item, understood)
+        item_branch(intent, understood)
       else
         nothing(intent, understood)
       end
 
     overreach(report, intent)
+  end
+
+  # THE THREE THINGS A LINE CAN DO TO ONE THING, dispatched on the action the way
+  # `Playthrough::Turn#play` dispatches them, and reading is first because it is
+  # the one that moves nothing.
+  def item_branch(intent, understood)
+    return recite(intent.item, understood) if intent.examine?
+
+    intent.drop? ? drop(intent.item, understood) : take(intent.item, understood)
   end
 
   # WHAT THE LINE ALSO NAMED AND THIS TURN DID NOT DO. One typed line is one
@@ -479,6 +517,40 @@ class Playthrough::Mechanics
 
     change("dropped: #{item.name} (was carried by #{playthrough.character&.fullname || "the party"}, " \
            "now lying in #{playthrough.current_location.name})", understood)
+  end
+
+  # WHAT IS WRITTEN ON IT, STRAIGHT OUT OF THE RECORDS, and this is the one
+  # branch here that answers a command with content rather than with a diff.
+  # That is not this mode growing a narrator: `Item#inscription` is a column, so
+  # printing it is printing a record, exactly as the read-out prints an exit
+  # name. Nothing is generated and nothing is written.
+  #
+  # THE THREE ANSWERS, told apart because they are three different facts:
+  #
+  #   words on record  printed verbatim, as a note rather than a change, because
+  #                    reading something does not change anything.
+  #   readable, none   said plainly. Writing them is one model call
+  #   written yet      (`Item::Inscriber`) and this mode makes none on this
+  #                    branch -- so it says what is missing rather than
+  #                    inventing it or pretending the thing is blank.
+  #   nothing written  a refusal, because there is nothing to read: the world
+  #   on it            says this thing has no writing on it at all.
+  def recite(item, understood)
+    unless item.readable?
+      return refuse("there is nothing written on the #{item.name}. Looking at something that has no " \
+                    "writing on it is prose, and this mode writes none. Nothing changed.",
+                    understood: understood)
+    end
+
+    unless item.inscribed?
+      return refuse("the #{item.name} has writing on it and the records do not hold the words yet. " \
+                    "Writing them down is one model call (Item::Inscriber) and this mode makes none " \
+                    "here. Read it in the browser once and it is a record from then on.",
+                    understood: understood)
+    end
+
+    Report.new(command: nil, understood: understood, change: nil, refusal: nil,
+               note: [ "reads: #{item.name}", "  #{item.inscription}" ], state: state)
   end
 
   # TALKING IS PROSE, and prose is the one thing this mode does not do. The
