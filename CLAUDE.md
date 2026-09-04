@@ -54,8 +54,8 @@ rake game:backfill_transitions      # label old turns with what they did, from t
                                     # classifier answers. Offline; DRY_RUN=1 to see it first
 rake game:backfill_whereabouts      # place characters who have none, from the arrival casts
                                     # still on disk. Offline; refuses to guess; DRY_RUN=1
-rake game:backfill_inventory        # attribute what the protagonist is holding to the playthrough
-                                    # whose turn log took it. Offline; refuses to guess; DRY_RUN=1
+rake game:backfill_items            # split one shared set of items into the world's own rows and
+                                    # each playthrough's copies. Offline; refuses to guess; DRY_RUN=1
 rake game:score                     # the scoreboard: a rate per check, the movement since the
                                     # baseline, and every flagged turn with what was typed and
                                     # the passage. SAVE=1 to re-baseline; CORPUS=corpus or
@@ -235,39 +235,59 @@ The current database includes the following story-related models with proper ass
   grammar, no generation, no model call at all — and it is the mode the
   engine-direct tests run in. See `AGENTS.md` → *The mechanics on their own,
   with the narration off*
-- **Item** → belongs to **Location**, **Character** *or* **Playthrough**,
-  exactly one of the three (`Item::PLACES`): lying in a place, held by one of
-  the world's own people, or **carried by the party of one playthrough**. The
-  second leg is what makes `take` and `drop` app-owned state changes rather than
-  prose; the third is the party's inventory, which is the playthrough's and not
-  the story's — the exact shape of `playthroughs.current_location_id`, because
-  two people playing one seeded world stand in two rooms and carry two
-  different sets of things. Read it through `Playthrough#carried`, **the one
-  reader**, and write it only through `Playthrough::Turn#carry!` / `#put_down!`.
-  `Item.in_story` is the one place the three-leg "every item in this world"
-  query lives; a leg missing from a copy of it is an item the registry caps
-  cannot see. Rooms stay STORY-LEVEL and shared between playthroughs on the
-  captain's explicit ruling — a room one party emptied is empty for the other,
-  pinned either way by `the-unrecorded-hour-two-players.yml`
+- **Item** → **TWO LAYERS, ONE TABLE**, and `items.playthrough_id` is which
+  layer a row is in — the captain's ruling of 2026-09-04, *"each play through
+  should have its own copy of items"*. NIL is one of **the world's own rows** (a
+  TEMPLATE): what a room or a person was seeded or generated with, lying in a
+  room or held by one of the world's people (`Item::PLACES`, exactly one of the
+  two), written by `WorldSeed::Loader` and `Item::Registry`, exported by the
+  exporter, counted by the caps, and never touched by anybody playing. SET is
+  **one game's own copy** (an INSTANCE): `location_id` (lying in a room, in that
+  game), `character_id` (in that person's hands, in that game) or NEITHER, which
+  is the party's own hands. `items.template_id` is the durable link.
+  **Play reads the playthrough layer and nothing else**, through three readers
+  and only three — `Playthrough#carried`, `#items_lying_in`, `#items_held_by` —
+  and writes it only through `Playthrough::Turn#carry!` / `#put_down!`.
+  `Item.in_story` is the one place the "every row in this world" query lives;
+  narrow it with `.templates` to mean the world. The ROOMS THEMSELVES stay
+  shared — geometry, descriptions, cast — and it is what is LYING in them that
+  each game copies; pinned by `the-unrecorded-hour-two-players.yml` (independence),
+  `the-unrecorded-hour-first-contact.yml` (timing) and
+  `EngineSweep::Invariants#world_items_unmoved`
+- **Item::Snapshot** → **THE INITIAL SNAPSHOT ANY PLAYTHROUGH USES**, and the
+  only thing in the app that creates a row in the playthrough layer. LAZY, AT
+  FIRST CONTACT: a room and the people standing in it are copied when the party
+  arrives (`Playthrough::Turn#move_to`, *after* the room is realized) and at the
+  top of every turn on the room they are in; `Playthrough::Mechanics` calls the
+  same two. **The guard is per TEMPLATE, not per room** — "this room is done"
+  would refurnish a room the party had just emptied, once per return trip, for
+  ever. A copy carries every column but where it is and whose it is
+  (`Item::NOT_COPIED`), so the next column added to `items` comes along by
+  itself. A template held by the PROTAGONIST is the one stated exception to
+  "a copy lands where its template is": it lands in the party's own hands
 - **Story** → `#starting_inventory`, WHAT THE PLAYER STARTS OUT HOLDING: the
   seed file's `characters[].items` under the protagonist, held by the
-  protagonist row and carried by nobody. The inventory's counterpart of
-  `#opening_location`, and the one thing every playthrough of a world begins
-  from. Position is handed over by reference (a `Location` holds two parties);
-  an `Item` is in exactly one place, so `Playthrough#take_up_the_starting_inventory`
-  gives each new playthrough its own COPY. Only `WorldSeed::Loader` ever writes
-  one — a generated protagonist is given nothing — so a generated world's is
-  legitimately empty
-- **Item::InventoryBackfill** → `rake game:backfill_inventory`, once: whose
-  hands a thing is in, out of the takes recorded on `scenes.resolved_action` /
-  `scenes.acted_on`. Four outcomes told apart — attributed, the starting kit
-  (copied into every existing playthrough, because before the column they were
-  all reading that one row), **ambiguous** (two playthroughs' takes at one
-  story moment: nothing is written and it is named), and unrecoverable (put
-  down where the last party that could have held it stands, on
-  `Playthrough::Turn#drop_item`'s own rule). Offline, `DRY_RUN=1` first, and
-  `rake game:doctor`'s `protagonist_holds_a_taken_item` is the `safe` finding
-  `rake game:repair` acts on one item at a time
+  protagonist row **in the world layer** (`.templates` is the whole guard). The
+  inventory's counterpart of `#opening_location`, and the one thing every
+  playthrough of a world begins from — `Item::Snapshot#of_the_party!` gives each
+  new playthrough its own COPY, in the party's hands. Only `WorldSeed::Loader`
+  ever writes one — a generated protagonist is given nothing — so a generated
+  world's is legitimately empty
+- **Item::LayerBackfill** → `rake game:backfill_items` and one of `bin/update`'s
+  steps: split an older database's one shared layer in two. Four outcomes told
+  apart — the world's own (left exactly where it stands), attributed (the row
+  becomes the copy of the player whose chain took it, and one of the world's own
+  rows goes back to the room the take happened in, out of `scenes.location_id`),
+  **ambiguous** (two chains' takes at one story moment: nothing is written and
+  it is named), and unrecoverable (a copy nothing accounts for: LEFT where it
+  is, in that player's hands, and named). Then every existing game is handed its
+  copy of the rooms it has walked through. Offline, idempotent, `DRY_RUN=1`
+  first — and the dry run counts what the REAL run would copy, which is not what
+  today's rows say. It SUPERSEDES `Item::InventoryBackfill`: whose hands a thing
+  is in is one case of which layer it belongs in. The checked-in world file is
+  authority for exactly one question — whether a protagonist-held row is the
+  story's starting kit — because a pre-PR-111 take wrote that same row and the
+  turn log therefore cannot answer
 - **Character** → `location`, WHERE THEY ARE: one place at a time, the `Item`
   shape applied to people, and `Character.present_in(location)` is the closed
   set `talk` resolves against exactly as `Item.lying_in` is the one `take`
@@ -296,9 +316,9 @@ The current database includes the following story-related models with proper ass
 - **Item** → `readable` and `inscription`, **what is written on a thing that has
   writing on it**. A note, a letter, a sign, a label: the words are a record the
   engine owns, so what a note says cannot drift between two readings. It is
-  orthogonal to `Item::PLACES` — a note lying in a room, one in an NPC's hands
-  and one a party is carrying all keep their text, and the copy
-  `Playthrough#take_up_the_starting_inventory` makes copies the words with it.
+  orthogonal to WHERE it is and WHICH LAYER it is in — a note lying in a room,
+  one in an NPC's hands and one a party is carrying all keep their text, and
+  every copy `Item::Snapshot` makes copies the words with it.
   `readable` is the whole gate — nothing generates text for an item the world
   did not mark readable, and `Item` refuses an inscription on one that is not.
   Written in two places only: `Item::Registry` at room realization, out of the

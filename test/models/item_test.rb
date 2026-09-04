@@ -188,12 +188,27 @@ class ItemTest < ActiveSupport::TestCase
     assert_not_predicate item, :lying?
   end
 
-  test "an item in nobody's hands and nowhere at all is not a state the world has" do
+  # THE WORLD'S OWN ROWS HAVE A PLACE OR THEY ARE NOTHING. Nobody is playing a
+  # world, so there is no pair of hands for one of its rows to be in: a template
+  # lies in a room or somebody holds it.
+  test "one of the world's own rows in nobody's hands and nowhere at all is not a state the world has" do
     item = build(:item, character: nil, location: nil)
 
     assert_not_predicate item, :valid?
     assert_includes item.errors[:base],
-                    "must be lying in a location, held by a character or carried by a playthrough"
+                    "is a template in no place at all; the world's own rows lie in a location or " \
+                    "are held by a character, and only one playthrough's own copy may be in the party's hands"
+  end
+
+  # AND ON A PLAYTHROUGH'S OWN COPY, NO PLACE IS A PLACE: the party's hands. It
+  # is the most ordinary state an instance has, and it is the one thing that
+  # separates the two layers' halves of `#in_exactly_one_place`.
+  test "a playthrough's own copy in no room and nobody's hands is in the party's hands" do
+    item = build(:item, character: nil, location: nil, playthrough: create(:playthrough, story: @story))
+
+    assert_predicate item, :valid?
+    assert_predicate item, :carried?
+    assert_predicate item, :instance?
   end
 
   # Two at once would be an item that is takeable and already taken.
@@ -205,21 +220,47 @@ class ItemTest < ActiveSupport::TestCase
     assert_includes item.errors[:base], "is in 2 places at once (character_id, location_id); it may only be in one"
   end
 
-  test "an item cannot be carried by a party and lying in a room at the same time" do
+  # ONE PLAYTHROUGH'S OWN COPY LYING IN A ROOM IS A REAL STATE and the ruling of
+  # 2026-09-04 is what made it one: her copy of the stamp is on the closet floor
+  # and the world's own stamp is still in the office.
+  test "a playthrough's own copy can lie in a room, and that is one place and not two" do
     room = create(:location, story: @story)
-    item = build(:item, :carried, playthrough: create(:playthrough, story: @story), location: room)
+    item = build(:item, playthrough: create(:playthrough, story: @story), location: room, character: nil)
 
-    assert_not_predicate item, :valid?
-    assert_includes item.errors[:base], "is in 2 places at once (location_id, playthrough_id); it may only be in one"
+    assert_predicate item, :valid?
+    assert_predicate item, :lying?
+    assert_not_predicate item, :carried?
   end
 
-  # THE STATE THE OLD SHARED INVENTORY PRODUCED, refused now: a thing cannot be
-  # the story's starting inventory and in one player's hands at the same time.
-  test "an item cannot be held by a character and carried by a party at once" do
-    item = build(:item, character: @character, playthrough: create(:playthrough, story: @story))
+  # And so is one in an NPC's hands, in one game.
+  test "a playthrough's own copy can be in one of the world's people's hands" do
+    item = build(:item, playthrough: create(:playthrough, story: @story), character: @character, location: nil)
+
+    assert_predicate item, :valid?
+    assert_predicate item, :held?
+    assert_not_predicate item, :carried?
+  end
+
+  # A COPY OF A COPY IS NOT A THING, and neither is one of the world's own rows
+  # copying another. The link points one way, from the playthrough layer into
+  # the world layer, exactly once.
+  test "one of the world's own rows may not be a copy of anything" do
+    room = create(:location, story: @story)
+    template = create(:item, :lying, location: room)
+    item = build(:item, :lying, location: room, template: template)
 
     assert_not_predicate item, :valid?
-    assert_includes item.errors[:base], "is in 2 places at once (character_id, playthrough_id); it may only be in one"
+    assert_includes item.errors[:template], "is only for a playthrough's own copy; the world's own rows copy nothing"
+  end
+
+  test "a copy may not be a copy of another playthrough's copy" do
+    room = create(:location, story: @story)
+    other = create(:item, playthrough: create(:playthrough, story: @story), location: room, character: nil)
+    item = build(:item, playthrough: create(:playthrough, story: @story), location: room, character: nil,
+                        template: other)
+
+    assert_not_predicate item, :valid?
+    assert_includes item.errors[:template], "must be one of the world's own rows, not another playthrough's copy"
   end
 
   test "lying_in offers only what is on the floor of that room" do
@@ -253,7 +294,7 @@ class ItemTest < ActiveSupport::TestCase
 
   # THERE IS NO `items.story_id` -- an item is reached through whoever has it --
   # so a leg missing from this query is an item the registry caps cannot see.
-  test "in_story finds an item on all three sides of the one-place rule" do
+  test "in_story finds an item on all three legs, in both layers" do
     room = create(:location, story: @story)
     playthrough = create(:playthrough, story: @story)
     held = create(:item, character: @character, name: "Vilya")
@@ -266,14 +307,26 @@ class ItemTest < ActiveSupport::TestCase
     assert_equal [ held, lying, carried ].map(&:id).sort, Item.in_story(@story).pluck(:id).sort
   end
 
-  test "whereabouts says where it is in one sentence" do
+  # WHICH LAYER IS PART OF WHERE. "Lying in Ward Office 12" is two different
+  # facts depending on whether it is the world's own row or one game's copy of
+  # it, and a doctor finding that did not say which would send somebody looking
+  # in the wrong place.
+  test "whereabouts says where it is and whose it is in one sentence" do
     room = create(:location, story: @story, name: "Ward Office 12")
     playthrough = create(:playthrough, story: @story)
 
-    assert_equal "held by #{@character.fullname}", create(:item, character: @character).whereabouts
-    assert_equal "lying in Ward Office 12", create(:item, :lying, location: room).whereabouts
-    assert_equal "carried by playthrough ##{playthrough.id}",
+    assert_equal "held by #{@character.fullname} (the world's own)",
+                 create(:item, character: @character).whereabouts
+    assert_equal "lying in Ward Office 12 (the world's own)",
+                 create(:item, :lying, location: room).whereabouts
+    assert_equal "in the party's hands (playthrough ##{playthrough.id}'s)",
                  create(:item, :carried, playthrough: playthrough).whereabouts
+
+    template = create(:item, :lying, location: room, name: "ward stamp")
+    copy = create(:item, playthrough: playthrough, location: room, character: nil,
+                         name: "ward stamp", template: template)
+    assert_equal "lying in Ward Office 12 (playthrough ##{playthrough.id}'s copy of ##{template.id})",
+                 copy.whereabouts
   end
 
   # A PLAYTHROUGH'S ITEMS ARE THAT PLAYER'S PROGRESS, like their chats, so they

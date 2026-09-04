@@ -238,6 +238,12 @@ class Playthrough::Mechanics
     # tonight's. No model call, no tokens.
     playthrough.story.catch_up_world!
 
+    # AND THIS GAME TAKES ITS SNAPSHOT OF WHERE IT IS STANDING, exactly as
+    # `Playthrough::Turn#play` does and before the same four closed sets are
+    # read. The two modes have to agree about what is lying here, and the only
+    # way they can is by taking the copy at the same point. No model call.
+    Item::Snapshot.new(playthrough).of_the_room!(playthrough.current_location)
+
     reading = model? ? classify(command) : parse(command)
 
     report =
@@ -511,6 +517,11 @@ class Playthrough::Mechanics
   # reads differently from the real loop.
   def stand_in(from, destination, understood)
     turn.stand_in!(destination)
+    # `Playthrough::Turn#move_to` snapshots after realizing; this is the offline
+    # half of the same statement, and it is here rather than left to the next
+    # turn because the read-out printed under THIS move is what a sweep script
+    # asserts `here:` against.
+    Item::Snapshot.new(playthrough).of_the_room!(destination)
 
     change("moved: #{label(from) || "nowhere"} -> #{destination.name}" \
            "#{" (a stub -- nobody has written this room, and no-model mode cannot)" if destination.stub?}",

@@ -100,22 +100,27 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal 2, Item.where(id: story.protagonist.item_ids + closet.item_ids).count
   end
 
-  # WHAT A PLAYER IS CARRYING IS NOW `items.playthrough_id`, and re-seeding has
-  # always put a room's things back where the file says they belong -- so a room
-  # item in somebody's hands comes back, and `playthrough_id` has to be cleared
-  # with it or the row would be saved in two places at once.
-  test "re-seeding takes a room's item out of a party's hands and puts it back" do
+  # THE FILE RE-ASSERTS ITSELF OVER THE WORLD LAYER AND REACHES NO GAME AT ALL.
+  # It used to reach into a party's hands, because before the captain's ruling
+  # of 2026-09-04 a room item somebody had picked up WAS the world's only row --
+  # so putting the room back meant taking the thing off the player. Now the
+  # world's own row never left the closet, so re-seeding has nothing to take
+  # back, and the copy in her hands is hers.
+  test "re-seeding puts nothing back because the world's own row never moved, and leaves the party's copy alone" do
     story = WorldSeed::Loader.new(document).load!
     closet = story.locations.find_by(name: "The Closet")
     played = create(:playthrough, story: story, character: story.protagonist, current_location: closet)
-    index = closet.items.find_by(name: "A Private Index")
-    Playthrough::Turn.new(played).send(:carry!, index)
+    template = closet.items.templates.find_by(name: "A Private Index")
+    copy = played.items_lying_in(closet).find_by(name: "A Private Index")
+    Playthrough::Turn.new(played).send(:carry!, copy)
 
     WorldSeed::Loader.new(document).load!
 
-    assert_equal closet, index.reload.location
-    assert_nil index.playthrough_id
-    assert_equal [ "A Private Index" ], closet.reload.items.pluck(:name)
+    assert_equal closet, template.reload.location
+    assert_predicate template, :template?
+    assert_predicate copy.reload, :carried?
+    assert_equal played, copy.playthrough
+    assert_equal [ "A Private Index" ], closet.reload.items.templates.pluck(:name)
   end
 
   # THE FILE OWNS THE STARTING INVENTORY AND NOT A PLAYER'S COPY OF IT. Every

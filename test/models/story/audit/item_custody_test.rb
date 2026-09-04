@@ -221,7 +221,7 @@ class Story::Audit::ItemCustodyTest < ActiveSupport::TestCase
 
     assert_equal [ :item_not_held ], flags.map(&:code)
     assert_equal "daybook", flags.first.evidence["named as"]
-    assert_equal "lying in Ward Office 12", flags.first.evidence["records say"]
+    assert_equal "lying in Ward Office 12 (the world's own)", flags.first.evidence["records say"]
   end
 
   test "the same room and a bare possessive is not a flag" do

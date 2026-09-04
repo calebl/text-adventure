@@ -15,20 +15,25 @@
 # THE TWO THINGS TO KNOW ABOUT WHAT A RE-SEED DOES HERE, because both look like
 # defects until you know they are the rule:
 #
-#   THE FILE RE-ASSERTS ITSELF over a played world. An item the file puts on a
-#   shelf goes back on the shelf, out of whoever's hands it was in -- see
-#   `WorldSeed::Loader#load_items!`. That is deliberate and long-standing, and
-#   it is what makes a seed file the authority on the world rather than a
-#   suggestion. What is asserted below is that it happens ONCE: one row moves
-#   back, and no second row appears anywhere.
+#   THE FILE RE-ASSERTS ITSELF OVER THE WORLD LAYER, and over that layer only.
+#   An item the file puts on a shelf is back on the shelf when the load
+#   finishes -- see `WorldSeed::Loader#load_items!` -- and that is what makes a
+#   seed file the authority on the world rather than a suggestion. What is
+#   asserted below is that it happens ONCE: one row moves back, and no second
+#   row appears anywhere.
 #
-#   THE PARTY'S OWN COPY OF THE STARTING INVENTORY IS NOT THE FILE'S ROW.
-#   `Playthrough#take_up_the_starting_inventory` copies the protagonist's
-#   seeded kit into each new playthrough, and `#find_item` searches the world's
-#   own rows before a party's, so a re-seed re-asserts the file onto the
-#   protagonist's row and leaves the daybook in the player's hands. That is the
-#   one thing a one-player script cannot tell from luck, so the second player
-#   below reads it back too.
+#   AND IT REACHES NO GAME AT ALL. Since the captain's ruling of 2026-09-04 the
+#   world's own rows are the templates each playthrough copies at first contact
+#   (`Item::Snapshot`), so what a party is carrying, and what a party left lying
+#   in a room, is that party's and the file does not touch it. This script used
+#   to assert the opposite of that -- the stamp taken out of the player's hands
+#   and put back on the shelf mid-game -- because before the layer split there
+#   was one row and re-asserting the file necessarily reached into whoever had
+#   it. The steps below are the same walk with the new rule read off it: the
+#   FIRST player's stamp stays in the closet where they dropped it, and the
+#   SECOND player, who never moved anything, sees the world's own stamp back in
+#   the office. Two games, one file, and the load is visible in exactly one of
+#   them.
 #
 # WHAT THIS SCRIPT CANNOT SEE, in the sweep's usual habit of writing it down:
 # THE SHUFFLED DOORWAY, which is the other half of the defect. It needs
@@ -97,10 +102,13 @@ steps:
     refused: false
     location: The Supply Closet (realized)
     exits: [Ward Office 12 (realized)]
-    # The stamp is gone from here because the file says it lies in Ward Office
-    # 12. What matters is that the closet's OWN two items are still its own two
-    # items -- not four, and not two of one name.
-    here: [Perrin's private index, copy-room apron]
+    # THE STAMP IS STILL HERE, because this is this player's own copy of it and
+    # they put it down in this room. The file moved the WORLD's stamp back to
+    # Ward Office 12 -- step `the-second-player-still-holds-its-own-daybook`
+    # reads that back from the game that never touched it. What matters here is
+    # that the closet's own things are still its own things: not four, and not
+    # two of one name.
+    here: [Perrin's private index, copy-room apron, ward stamp]
     carrying: [Ward Office 12 daybook]
     present: []
     note: re-seeded from the-unrecorded-hour.yml
@@ -116,7 +124,10 @@ steps:
     changed: true
     location: Ward Office 12 (realized)
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
-    here: [ward stamp]
+    # EMPTY FOR THIS PLAYER, because their copy of the stamp is in the closet
+    # where they left it. The world's own stamp is lying here again -- the
+    # second player reads it back in the next step.
+    here: []
     carrying: [Ward Office 12 daybook]
     present: [Halkett Rowe]
 
@@ -124,9 +135,11 @@ steps:
   type: look
   player: second
   why: |-
-    The re-seed re-asserted the file onto the protagonist's row -- the story's
-    starting inventory -- and not onto this party's copy of it. One daybook in
-    these hands, and it is still here.
+    TWO THINGS AT ONCE, from the game that never touched anything. The re-seed
+    re-asserted the file onto the world's own rows and not onto this party's
+    copies, so the daybook is still in these hands -- AND the world's ward stamp
+    is lying in the office again, which is what the first player's empty floor
+    one step up cannot show.
   expect:
     location: Ward Office 12 (realized)
     carrying: [Ward Office 12 daybook]
@@ -140,7 +153,7 @@ steps:
     changed: false
     location: Ward Office 12 (realized)
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
-    here: [ward stamp]
+    here: []
     carrying: [Ward Office 12 daybook]
     present: [Halkett Rowe]
 
@@ -157,11 +170,15 @@ steps:
     stamp lying beside the first. `exits` and `here` are whole sets, so either
     of those fails this step; the `note` pins that the loader RECOGNIZED them
     rather than got lucky.
+
+    THE RENAME IS THE WORLD'S, so this player's floor is still empty: their own
+    copy is in the closet, under the name it was copied with. A copy keeps its
+    name and keeps its `template_id`, which is what still ties the two together.
   expect:
     changed: false
     location: Ward Office 12 (realized)
     exits: [Supply Closet (realized), The Long Hallway (stub)]
-    here: [Ward Stamp]
+    here: []
     carrying: [Ward Office 12 daybook]
     present: [Halkett Rowe]
     note: 'is "Supply Closet" in the file, so the row was renamed'
@@ -177,7 +194,7 @@ steps:
     changed: true
     location: Supply Closet (realized)
     exits: [Ward Office 12 (realized)]
-    here: [Perrin's private index, copy-room apron]
+    here: [Perrin's private index, copy-room apron, ward stamp]
     carrying: [Ward Office 12 daybook]
 
 - id: and-renaming-it-back-renames-the-same-row-again
@@ -190,5 +207,5 @@ steps:
     changed: false
     location: The Supply Closet (realized)
     exits: [Ward Office 12 (realized)]
-    here: [Perrin's private index, copy-room apron]
+    here: [Perrin's private index, copy-room apron, ward stamp]
     note: 'is "The Supply Closet" in the file, so the row was renamed'

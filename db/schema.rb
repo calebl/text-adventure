@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_04_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_04_190000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -88,12 +88,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_180000) do
     t.integer "playthrough_id"
     t.text "properties"
     t.boolean "readable", default: false, null: false
+    t.integer "template_id"
     t.datetime "updated_at", null: false
     t.index ["character_id"], name: "index_items_on_character_id"
     t.index ["location_id", "character_id"], name: "index_items_on_location_id_and_character_id"
     t.index ["location_id"], name: "index_items_on_location_id"
     t.index ["playthrough_id", "id"], name: "index_items_on_playthrough_id_and_id"
+    t.index ["playthrough_id", "template_id"], name: "index_items_on_playthrough_id_and_template_id"
     t.index ["playthrough_id"], name: "index_items_on_playthrough_id"
+    t.index ["template_id"], name: "index_items_on_template_id"
   end
 
   create_table "location_connections", force: :cascade do |t|

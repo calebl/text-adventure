@@ -63,7 +63,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   test "the narration context lists what the player is carrying" do
     create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
     create(:item, :carried, playthrough: @playthrough, name: "Theodolite")
-    create(:item, :lying, location: @here, name: "Ledger")
+    lying_here(@playthrough, @here, name: "Ledger")
 
     context = moment.narration_context
 
@@ -78,10 +78,10 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   # the thing was in the room. It is also what makes the item registry visible:
   # a generated room's furniture reaches the narrator through the records.
   test "the narration context lists what is lying here" do
-    create(:item, :lying, location: @here, name: "Ledger")
-    create(:item, :lying, location: @here, name: "Oil Lamp")
+    lying_here(@playthrough, @here, name: "Ledger")
+    lying_here(@playthrough, @here, name: "Oil Lamp")
     create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
-    create(:item, :lying, location: connect("The Sunken Stair"), name: "Crowbar")
+    lying_here(@playthrough, connect("The Sunken Stair"), name: "Crowbar")
 
     context = moment.narration_context
 
@@ -172,7 +172,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   # inventing what it says, one prompt over.
   test "the character context carries what the player was reading, quoted" do
     maren = create(:character, story: @story, fullname: "Maren Vosk")
-    note = create(:item, :lying, :readable, location: @here, name: "folded note")
+    note = lying_here(@playthrough, @here, :readable, name: "folded note")
     read = create(:scene, story: @story, location: @here, characters: [ maren ],
                           typed: "read the note", resolved_action: "examine", acted_on: note,
                           description: "You unfold it.")
@@ -186,7 +186,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
 
   test "a thing with no words on record is not quoted to anybody" do
     maren = create(:character, story: @story, fullname: "Maren Vosk")
-    stamp = create(:item, :lying, location: @here, name: "ward stamp")
+    stamp = lying_here(@playthrough, @here, name: "ward stamp")
     read = create(:scene, story: @story, location: @here, characters: [ maren ],
                           typed: "look at the stamp", resolved_action: "examine", acted_on: stamp,
                           description: "Brass, worn smooth.")
@@ -197,7 +197,7 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
 
   test "a turn that was not a read tells nobody about anything written" do
     maren = create(:character, story: @story, fullname: "Maren Vosk")
-    note = create(:item, :lying, :readable, location: @here, name: "folded note")
+    note = lying_here(@playthrough, @here, :readable, name: "folded note")
     taken = create(:scene, story: @story, location: @here, characters: [ maren ],
                            typed: "take the note", resolved_action: "take", acted_on: note,
                            description: "You pocket it.")

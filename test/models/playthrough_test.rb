@@ -400,20 +400,24 @@ class PlaythroughTest < ActiveSupport::TestCase
     assert_equal note.inscription, copy.inscription
   end
 
-  # EVERY COLUMN BUT WHERE IT IS. A column added to `items` later must come
-  # along without anybody remembering to add it here.
-  test "the kit copies every column except the three that say where a thing is" do
+  # EVERY COLUMN BUT WHERE IT IS AND WHOSE IT IS. A column added to `items`
+  # later must come along without anybody remembering to add it here.
+  test "the kit copies every column except the ones that say where a thing is and whose it is" do
     story = create(:story)
     protagonist = create(:character, :protagonist, story: story)
     original = create(:item, :readable, character: protagonist, name: "a folded note")
 
     copy = create(:playthrough, story: story, character: protagonist).carried.sole
-    ignored = Playthrough::NOT_COPIED
+    ignored = Item::NOT_COPIED
 
     assert_equal original.attributes.except(*ignored), copy.attributes.except(*ignored)
-    assert_equal Item::PLACES.map(&:to_s).sort, (ignored - %w[id created_at updated_at]).sort
+    assert_equal (Item::PLACES.map(&:to_s) + %w[playthrough_id template_id]).sort,
+                 (ignored - %w[id created_at updated_at]).sort
     assert_nil copy.character_id
     assert_nil copy.location_id
+    # AND THE COPY KNOWS WHAT IT IS A COPY OF, which is what tells this
+    # playthrough's folded note from a fresh thing of the same name.
+    assert_equal original, copy.template
   end
 
   test "two playthroughs of one world start with the same kit and carry two different sets" do
@@ -422,12 +426,19 @@ class PlaythroughTest < ActiveSupport::TestCase
     room = create(:location, story: story)
     create(:item, character: protagonist, name: "Ward Office 12 daybook")
 
+    create(:item, :lying, location: room, name: "ward stamp")
+
     first = create(:playthrough, story: story, character: protagonist, current_location: room)
     second = create(:playthrough, story: story, character: protagonist, current_location: room)
-    create(:item, :lying, location: room, name: "ward stamp").update!(playthrough: first, location: nil)
+    Playthrough::Turn.new(first).carry!(first.items_lying_in(room).sole)
 
     assert_equal [ "Ward Office 12 daybook", "ward stamp" ], first.carried.pluck(:name).sort
     assert_equal [ "Ward Office 12 daybook" ], second.carried.pluck(:name)
+
+    # AND THE ROOM IS AS IT WAS GENERATED FOR THE SECOND PLAYER, which is the
+    # captain's ruling of 2026-09-04 and the half PR 111 deliberately left open.
+    assert_empty first.items_lying_in(room)
+    assert_equal [ "ward stamp" ], second.items_lying_in(room).pluck(:name)
   end
 
   test "a story with no starting inventory starts a playthrough empty-handed" do
@@ -437,9 +448,13 @@ class PlaythroughTest < ActiveSupport::TestCase
     assert_empty create(:playthrough, story: story).carried
   end
 
-  # A playthrough handed items in the same breath as its creation -- which a
-  # test fixture may do -- must not also be given the kit.
-  test "a playthrough that already carries something is not issued the kit" do
+  # THE GUARD IS PER TEMPLATE, not "does this playthrough carry anything", and
+  # the difference shows here: a playthrough handed a thing in the same breath
+  # as its creation -- which a test fixture may do -- still gets the world's kit,
+  # because the world's daybook is not the thing it was handed. It used to be
+  # skipped whole, which meant one hand-built row silently cost a game its
+  # starting inventory. See `Item::Snapshot`.
+  test "a playthrough handed something at creation is still issued the world's kit" do
     story = create(:story)
     protagonist = create(:character, :protagonist, story: story)
     create(:item, character: protagonist, name: "Ward Office 12 daybook")
@@ -448,6 +463,23 @@ class PlaythroughTest < ActiveSupport::TestCase
     played.items.build(name: "Brass Key", description: "cold")
     played.save!
 
-    assert_equal [ "Brass Key" ], played.carried.pluck(:name)
+    assert_equal [ "Brass Key", "Ward Office 12 daybook" ], played.carried.pluck(:name).sort
+  end
+
+  # And running it twice hands nothing out twice: the second snapshot sees a
+  # copy of every template it was going to make one of.
+  test "taking the opening snapshot again copies nothing" do
+    story = create(:story)
+    protagonist = create(:character, :protagonist, story: story)
+    room = create(:location, story: story)
+    create(:item, character: protagonist, name: "Ward Office 12 daybook")
+    create(:item, :lying, location: room, name: "ward stamp")
+
+    playthrough = create(:playthrough, story: story, character: protagonist, current_location: room)
+
+    assert_no_difference -> { Item.count } do
+      Item::Snapshot.new(playthrough).of_the_party!
+      Item::Snapshot.new(playthrough).of_the_room!(room)
+    end
   end
 end

@@ -26,30 +26,32 @@ class Playthrough < ApplicationRecord
   # Every conversation this playthrough has had with a model. Destroyed with it:
   # they are this player's progress, not the world's -- see Chat.
   has_many :chats, dependent: :destroy
-  # WHAT THIS PARTY IS CARRYING -- read through `#carried`, never through the
-  # association, so the ordering and the one query live in one place.
+  # THIS PLAYTHROUGH'S OWN COPY OF THE WORLD'S THINGS -- every `Item` in the
+  # playthrough layer, wherever it is in this game: in the party's hands, lying
+  # in a room, or in one of the world's people's hands. Read through `#carried`,
+  # `#items_lying_in` and `#items_held_by`, never through the association, so
+  # each closed set has one query and one ordering.
   #
-  # DESTROYED WITH THE PLAYTHROUGH, on the same reasoning as the chats: a
-  # carried row is this player's progress. Putting them down instead would
-  # leave a shared world littered with one daybook per deleted game, because a
-  # copy of the starting inventory has no room it came from.
+  # DESTROYED WITH THE PLAYTHROUGH, on the same reasoning as the chats: an
+  # instance is this player's progress and nothing else's. The world's own rows
+  # -- the templates these are copies of -- are untouched, which is the whole
+  # point of the split: deleting a game cannot empty a room.
   has_many :items, dependent: :destroy
 
-  # THE STORY'S STARTING INVENTORY, COPIED INTO THIS PLAYTHROUGH'S HANDS, and
-  # the reason a new game does not open holding the last game's loot.
+  # THE WORLD, COPIED INTO THIS GAME AS IT BEGINS: the story's starting
+  # inventory into the party's own hands, and the room the player opens in.
   #
-  # A copy rather than the row itself because an `Item` is in exactly one place
-  # and `Story#starting_inventory` has to stay world data -- the file writes it,
-  # the exporter reads it back, and a second player starting must not find the
-  # daybook already in somebody else's hands. Position needs no copy: a
-  # Location holds two parties at once.
+  # A copy rather than the rows themselves because the world layer has to stay
+  # the world -- the file writes it, the exporter reads it back, the caps count
+  # it, and a second player starting must not find the daybook already in
+  # somebody else's hands or the opening room already emptied by somebody else's
+  # game. See `Item::Snapshot`, which is the one writer of the playthrough layer.
   #
   # An after_create rather than a line in `PlaythroughsController#create`,
   # because three callers create playthroughs -- the controller, `rake
-  # game:mechanics` and `EngineSweep::Walk` -- and a starting inventory that
-  # only one of them issued would make the browser and the sweep test different
-  # games.
-  after_create :take_up_the_starting_inventory
+  # game:mechanics` and `EngineSweep::Walk` -- and a snapshot that only one of
+  # them took would make the browser and the sweep test different games.
+  after_create :take_up_the_opening_snapshot
 
   # Generated at initialize rather than on create so the presence validation
   # below sees it. This is the only thing binding a browser session to a
@@ -68,11 +70,38 @@ class Playthrough < ApplicationRecord
   # `Scene::Generator.characters_present` is the one reader of who is in a room:
   # a second copy of the query is a second answer waiting to disagree.
   #
-  # Not `character.items`. That is what one of the world's own people is
-  # holding, and for the protagonist it is the story's starting inventory --
-  # shared by every playthrough, which is the defect this column closes.
+  # THIS PLAYTHROUGH'S OWN ROWS, in the party's own hands -- an instance with no
+  # room and no holder (`Item.in_hand`). Not `character.items`: that is what one
+  # of the world's own people is holding, and for the protagonist it is the
+  # story's STARTING INVENTORY, which is world data every game copies from.
   def carried
-    Item.carried_by(self).order(:id)
+    Item.of_playthrough(self).in_hand.order(:id)
+  end
+
+  # WHAT IS LYING IN A ROOM, IN THIS GAME: the closed set `take` resolves
+  # against, and the ONE reader of it. This playthrough's own instances and not
+  # the world's templates, which is the whole of the captain's ruling of
+  # 2026-09-04 -- what one party picks up off the floor is gone from ITS floor
+  # and from nobody else's.
+  #
+  # It reads rather than writes: `Item::Snapshot` puts the copies there, at the
+  # top of a turn and on arrival, so a read can never be the thing that changes
+  # the world. A room this playthrough has never been in reads empty here, which
+  # is honest -- it has not seen it yet.
+  def items_lying_in(location)
+    return Item.none if location.nil?
+
+    Item.of_playthrough(self).lying_in(location).order(:id)
+  end
+
+  # WHAT ONE OF THE WORLD'S PEOPLE IS HOLDING, IN THIS GAME. The same statement
+  # one place over, and it is a separate reader rather than an argument to the
+  # one above because the two answer different closed sets: what is lying here
+  # is takeable and what somebody is holding is not.
+  def items_held_by(character)
+    return Item.none if character.nil?
+
+    Item.of_playthrough(self).for_character(character).order(:id)
   end
 
   # WHERE THIS PLAYTHROUGH STANDS ON THE STORY'S CLOCK -- the moment the player
@@ -249,31 +278,25 @@ class Playthrough < ApplicationRecord
 
   private
 
-  # One row per thing the story starts the player with. Skipped when this
-  # playthrough already carries something, so re-running it -- or creating a
-  # playthrough with items already attached, as a test fixture may -- cannot
-  # hand out the kit twice.
+  # THE SNAPSHOT A GAME OPENS ON: the story's starting inventory in the party's
+  # hands, and the room the player is standing in.
   #
-  # EVERY COLUMN BUT WHERE IT IS, and that is why this copies attributes rather
-  # than naming fields. A copy of a thing IS that thing: a daybook with no page
-  # count, or a note with nothing written on it, is a different object from the
-  # one the file describes. Naming the fields meant the next column added to
-  # `items` was silently left behind -- which is exactly what happened to
-  # `readable` and `inscription`, so each player's copy of a seeded note opened
-  # blank while the world's own row held the words.
+  # The room is snapshotted here as well as at the top of every turn because a
+  # playthrough is looked at before it is played -- the play page renders the
+  # opening arrival, and `Playthrough::Debug` prints the closed sets -- and a
+  # first turn is not the first time somebody wants to know what is on the
+  # floor. `Item::Snapshot`'s guard is per template, so doing it twice does
+  # nothing the second time.
   #
-  # `Item::PLACES` is the whole of what must NOT come along: the original is
-  # held by the protagonist and the copy is carried by this playthrough, and an
-  # item in two of the three places at once is the one state `Item` refuses.
-  # `id` and the timestamps belong to the row rather than to the thing.
-  NOT_COPIED = (Item::PLACES.map(&:to_s) + %w[id created_at updated_at]).freeze
+  # `current_location` is nil for a playthrough whose room is assigned after
+  # creation, which `EngineSweep::Walk` and `rake game:mechanics` both do; the
+  # turn loop covers those.
+  def take_up_the_opening_snapshot
+    return if story.nil?
 
-  def take_up_the_starting_inventory
-    return if story.nil? || items.exists?
-
-    story.starting_inventory.each do |original|
-      items.create!(original.attributes.except(*NOT_COPIED))
-    end
+    snapshot = Item::Snapshot.new(self)
+    snapshot.of_the_party!
+    snapshot.of_the_room!(current_location)
   end
 
   # The character, location and scene are all facets of one story; pointing at

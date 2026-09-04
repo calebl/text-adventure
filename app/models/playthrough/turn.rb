@@ -57,6 +57,16 @@ class Playthrough::Turn
     # almost every turn; zero tokens either way. See WorldMechanic.
     playthrough.story.catch_up_world!
 
+    # AND THIS GAME TAKES ITS SNAPSHOT OF WHERE IT IS STANDING, before the
+    # closed sets are read. The world layer is the template and the playthrough
+    # owns the instances (the captain's ruling of 2026-09-04), so what is lying
+    # here for THIS party has to exist before `Playthrough::Classifier` offers
+    # it. Idempotent per template, so this is one query on every turn after the
+    # first in a room -- and it is here rather than only on arrival because a
+    # room can gain a template, or a person carrying one, long after the party
+    # walked in. See `Item::Snapshot`.
+    Item::Snapshot.new(playthrough).of_the_room!(playthrough.current_location)
+
     intent = classifier.classify(command)
 
     # THE LINE THE ENGINE WILL NOT PLAY, and it stops HERE -- in front of the
@@ -169,6 +179,15 @@ class Playthrough::Turn
   def move_to(destination, &block)
     realizer = Location::Generator.new(destination, playthrough: playthrough)
     realizer.realize!
+
+    # REALIZED, THEN COPIED, THEN NARRATED, and the order is the point.
+    # `Item::Registry` writes the room's furniture into the WORLD layer as part
+    # of realizing it; this party's own copies have to exist before
+    # `Scene::Generator` builds the moment, or the arrival narration would be
+    # written about a room the records say is empty for this game. A room that
+    # was already realized copies whatever this playthrough has not seen yet,
+    # which is how a second player walks into the office as it was generated.
+    Item::Snapshot.new(playthrough).of_the_room!(destination)
 
     scene = Scene::Generator.new(
       destination, previous_scene: playthrough.current_scene, playthrough: playthrough
@@ -353,17 +372,29 @@ class Playthrough::Turn
     playthrough.update!(current_location: destination, current_scene: scene)
   end
 
-  # INTO THE PARTY'S HANDS, which is `items.playthrough_id` and not the
-  # protagonist's `character_id`. The protagonist is one row per story, so
-  # writing the inventory there gave every playthrough of a world one shared
-  # set of things: a new game opened holding what the last one had picked up.
-  # `Item` is in exactly one of three places, so the other two are written nil.
+  # INTO THE PARTY'S HANDS, which since the captain's ruling of 2026-09-04 is
+  # the ABSENCE of a room and a holder on a row that is already this
+  # playthrough's own. The party's hands are a place inside a game, not a layer:
+  # `playthrough_id` says whose game the row belongs to and it is written here
+  # only because it is already true -- the classifier resolved this item out of
+  # `Playthrough#items_lying_in`, which offers nothing else.
+  #
+  # WHAT IT MUST NEVER DO IS MOVE A TEMPLATE. The world's own row stays lying in
+  # the room it was seeded or generated in, whoever picks up their copy of it;
+  # that is the whole of the ruling. Nothing offers a template to a `take`, so
+  # this cannot be reached with one, and `Item` refuses the row either way -- a
+  # template with a `template_id` is a copy of a copy.
   def carry!(item)
     item.update!(playthrough: playthrough, character: nil, location: nil)
   end
 
+  # AND BACK ONTO THE FLOOR OF THIS GAME. `playthrough` is deliberately NOT
+  # cleared: clearing it is what would turn one player's copy back into one of
+  # the world's own rows and put it on every other player's floor. It used to
+  # be written nil here, when the column meant "carried"; the drop that
+  # exercised it is `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml`.
   def put_down!(item)
-    item.update!(playthrough: nil, character: nil, location: playthrough.current_location)
+    item.update!(playthrough: playthrough, character: nil, location: playthrough.current_location)
   end
 
   # What the narrator is told, in the app's own words. Stated as done, because

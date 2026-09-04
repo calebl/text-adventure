@@ -414,7 +414,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # sentence the narrator produces can add to it or take from it.
 
   test "taking an item that is lying here moves the row into the player's hands" do
-    key = create(:item, :lying, location: @here, name: "Brass Key")
+    key = lying_here(@playthrough, @here, name: "Brass Key")
 
     play("pick up the brass key", CLASSIFY.call("take", "Brass Key"),
          "You lift the key and feel the cold of it.")
@@ -432,7 +432,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a take keeps the moment as a scene the player can read back" do
-    create(:item, :lying, location: @here, name: "Brass Key")
+    lying_here(@playthrough, @here, name: "Brass Key")
 
     scene, chunks, = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"),
                           "You lift the key and feel the cold of it.")
@@ -444,7 +444,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a take costs the story one beat in the room" do
-    create(:item, :lying, location: @here, name: "Brass Key")
+    lying_here(@playthrough, @here, name: "Brass Key")
 
     before = @playthrough.story_now
     scene, = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"), "You lift the key.")
@@ -456,7 +456,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # than asked for one. This is the generator/narrator split: the app owns what
   # is true, the narrator owns the sentence about it.
   test "the narrator is told what the app already did" do
-    create(:item, :lying, location: @here, name: "Brass Key",
+    lying_here(@playthrough, @here, name: "Brass Key",
                           description: "Worn smooth, with a bell-shaped bow.")
 
     _scene, _chunks, agent = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"),
@@ -479,7 +479,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # reach one: `other`, a line the classifier placed and that asks for no record.
   # The claim is untouched, and it is the claim that matters.
   test "the narrator cannot grant an item the app did not resolve" do
-    key = create(:item, :lying, location: @here, name: "Brass Key")
+    key = lying_here(@playthrough, @here, name: "Brass Key")
 
     assert_no_changes -> { [ key.reload.playthrough_id, key.reload.location_id ] } do
       scene, = play("what about that key then", CLASSIFY.call("other", "nothing"),
@@ -517,14 +517,14 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
 
   test "a take by a playthrough with nobody to hold the item narrates instead" do
     nobody = create(:playthrough, story: @story, current_location: @here)
-    key = create(:item, :lying, location: @here, name: "Brass Key")
+    key = lying_here(@playthrough, @here, name: "Brass Key")
 
     agent = FakeAgent.new(CLASSIFY.call("take", "Brass Key"), "Your hands are not there to take it.")
     BaseAgent.stub(:new, agent) do
       Playthrough::Turn.new(nobody).play("take the key")
     end
 
-    assert_nil key.reload.playthrough_id
+    refute_predicate key.reload, :carried?
     assert_equal @here, key.location
   end
 
@@ -542,9 +542,13 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
 
     key.reload
 
-    assert_nil key.playthrough_id
+    # STILL THIS GAME'S OWN ROW, on the floor of this game's room.
+    # `playthrough_id` is the layer since the ruling of 2026-09-04, so clearing
+    # it here is what would put one player's key on everybody else's floor.
+    assert_equal @playthrough, key.playthrough
     assert_equal @here, key.location
     assert_predicate key, :lying?
+    refute_predicate key, :carried?
   end
 
   # It lands in the ROOM, not nowhere -- which is what makes an inventory a
@@ -627,7 +631,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # Take, then drop, then take again: the row ends up where the app last put it
   # and nowhere else, which is the only claim an inventory has to make.
   test "an item can be picked up, put down and picked up again" do
-    key = create(:item, :lying, location: @here, name: "Brass Key")
+    key = lying_here(@playthrough, @here, name: "Brass Key")
 
     play("take the key", CLASSIFY.call("take", "Brass Key"), "You lift the key.")
 
@@ -636,7 +640,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     play("put down the key", CLASSIFY.call("drop", "Brass Key"), "You set the key down.")
 
     assert_equal @here, key.reload.location
-    assert_nil key.playthrough_id
+    refute_predicate key, :carried?
 
     play("take the key", CLASSIFY.call("take", "Brass Key"), "You lift it again.")
 
@@ -666,7 +670,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a taking turn records what the player typed" do
-    create(:item, :lying, location: @here, name: "Brass Key")
+    lying_here(@playthrough, @here, name: "Brass Key")
 
     scene, = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"), "You lift the key.")
 
@@ -725,7 +729,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a taking turn records the take and the item it moved" do
-    key = create(:item, :lying, location: @here, name: "Brass Key")
+    key = lying_here(@playthrough, @here, name: "Brass Key")
 
     scene, = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"), "You lift the key.")
 
@@ -774,7 +778,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # row moved that did not, and `Scene#took?` is a seam a check trusts outright.
   test "a take nobody could make records the take and no item" do
     @playthrough.update!(character: nil)
-    create(:item, :lying, location: @here, name: "Brass Key")
+    lying_here(@playthrough, @here, name: "Brass Key")
 
     scene, = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"), "Nothing here is yours to lift.")
 
@@ -888,8 +892,8 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # to pick one -- and the counter row is written exactly as before, because the
   # ruling changed what the turn does and not what is measured.
   test "a line that named two things is refused whole and neither one moves" do
-    index = create(:item, :lying, location: @here, name: "Perrin's private index")
-    apron = create(:item, :lying, location: @here, name: "copy-room apron")
+    index = lying_here(@playthrough, @here, name: "Perrin's private index")
+    apron = lying_here(@playthrough, @here, name: "copy-room apron")
 
     refusal = nil
     assert_no_difference "Scene.count" do
@@ -907,7 +911,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_match(/take copy-room apron/, refusal.text)
     assert_match(/One line is one act/, refusal.text)
 
-    assert_nil index.reload.playthrough_id, "the first thing is not taken either"
+    refute_predicate index.reload, :carried?, "the first thing is not taken either"
     assert_equal @here, index.location
     assert_equal @here, apron.reload.location
     assert_equal 0, @playthrough.carried.count
@@ -919,7 +923,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # Neither is read, no `Item::Inscriber` call is made, and the counter row is
   # taken, which is what `Playthrough::Overreach::ACTIONS` gained `examine` for.
   test "a read that named two things is refused whole and reads neither" do
-    note = create(:item, :lying, location: @here, name: "folded note",
+    note = lying_here(@playthrough, @here, name: "folded note",
                                  readable: true, inscription: "Midnight. The Bell.")
     index = create(:item, :carried, playthrough: @playthrough, name: "private index",
                                     readable: true, inscription: "1188/12 -- amended.")
@@ -955,7 +959,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # should not happen; the branch exists because the old coercion read it as
   # `other`, threw the record it named on the floor and narrated the raw line.
   test "an intent outside the table that still named a record is refused" do
-    create(:item, :lying, location: @here, name: "Brass Key")
+    lying_here(@playthrough, @here, name: "Brass Key")
 
     refusal, _chunks, agent = play("steal the brass key",
                                    { "intent" => "steal", "target" => "Brass Key",
@@ -991,7 +995,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # what the note says rather than asked what it might say, so two readings of
   # one note agree.
   test "a read hands the narrator the recorded words, quoted" do
-    note = create(:item, :lying, :readable, location: @here, name: "folded note")
+    note = lying_here(@playthrough, @here, :readable, name: "folded note")
 
     scene, _chunks, agent = play("read the note", CLASSIFY.call("examine", "folded note"),
                                  "You unfold it. The ink is smudged but the words are plain.")
@@ -1007,7 +1011,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # anything asked a model for the words again, the fake would run out and this
   # would fail loudly.
   test "reading the same thing twice quotes the same words and asks nothing again" do
-    note = create(:item, :lying, :readable, location: @here, name: "folded note")
+    note = lying_here(@playthrough, @here, :readable, name: "folded note")
 
     _scene, _chunks, first = play("read the note", CLASSIFY.call("examine", "folded note"), "Once.")
     _scene, _chunks, again = play("read the note again", CLASSIFY.call("examine", "folded note"), "Twice.")
@@ -1020,7 +1024,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # A readable thing nobody has read yet: ONE structured call writes the words
   # as a record, before any prose exists, and never again.
   test "the first read of a readable thing with no words writes them once" do
-    note = create(:item, :lying, :unwritten, location: @here, name: "folded note")
+    note = lying_here(@playthrough, @here, :unwritten, name: "folded note")
 
     _scene, _chunks, agent = play("read the note", CLASSIFY.call("examine", "folded note"),
                                   { "inscription" => "Come to the west stair. Burn this." },
@@ -1034,7 +1038,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # exactly as it always did, and nothing generates text for it -- one queued
   # response and no more.
   test "looking at a thing with no writing on it generates nothing and narrates" do
-    stamp = create(:item, :lying, location: @here, name: "ward stamp")
+    stamp = lying_here(@playthrough, @here, name: "ward stamp")
 
     scene, _chunks, agent = play("look at the stamp", CLASSIFY.call("examine", "ward stamp"),
                                  "Brass, worn smooth at the grip.")
@@ -1048,7 +1052,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # The turn that produced the complaint was a `take`. The words the records
   # already hold go over with the pickup; nothing is generated on this branch.
   test "taking a thing whose words are on record hands them over too" do
-    note = create(:item, :lying, :readable, location: @here, name: "folded note")
+    note = lying_here(@playthrough, @here, :readable, name: "folded note")
 
     _scene, _chunks, agent = play("pickup the note. what does it say?",
                                   CLASSIFY.call("take", "folded note"),
@@ -1062,7 +1066,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # so a readable thing with no words yet is simply not quoted -- one queued
   # narration, and the fake would raise if anything asked for an inscription.
   test "taking a readable thing with no words on record writes none" do
-    note = create(:item, :lying, :unwritten, location: @here, name: "folded note")
+    note = lying_here(@playthrough, @here, :unwritten, name: "folded note")
 
     _scene, _chunks, agent = play("take the note", CLASSIFY.call("take", "folded note"),
                                   "You put it in your pocket.")

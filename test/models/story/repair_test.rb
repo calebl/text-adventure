@@ -277,15 +277,25 @@ class Story::RepairTest < ActiveSupport::TestCase
                                                  resolved_action: "take", acted_on: stamp))
     repair = Story::Repair.new(story)
 
-    assert_equal [ :protagonist_holds_a_taken_item ], repair.plan.map(&:code)
+    # The same game is also owed its copy of what it has walked past, which is
+    # a second safe repair and a different one: this test is about the first.
+    assert_includes repair.plan.map(&:code), :protagonist_holds_a_taken_item
     assert_equal 0, repair.model_calls
 
-    result = BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) { repair.apply!.sole }
+    results = BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) { repair.apply! }
+    result = results.find { |row| row.code == :protagonist_holds_a_taken_item }
 
     assert_predicate result, :repaired?
     assert_match(/gave ward stamp to playthrough ##{played.id}/, result.message)
     assert_equal played, stamp.reload.playthrough
     assert_nil stamp.character_id
+    assert_predicate stamp, :carried?
+
+    # AND THE WORLD IS NOT A THING POORER FOR HER HAVING PICKED IT UP: one of
+    # the world's own rows is put back in the room the take happened in.
+    assert_match(/put the world's own row back in Your Office/, result.message)
+    assert_equal "Your Office", stamp.template.location.name
+    assert_predicate stamp.template, :template?
   end
 
   # ONE FINDING IS ONE ITEM. A repair run that reshuffled a story's whole
@@ -305,10 +315,13 @@ class Story::RepairTest < ActiveSupport::TestCase
                                                  typed: "take the ward stamp",
                                                  resolved_action: "take", acted_on: stamp))
 
-    Story::Repair.new(story).apply!
+    repair = Story::Repair.new(story)
+    finding = repair.plan.find { |row| row.code == :protagonist_holds_a_taken_item }
+    repair.send(:repair_shared_inventory, finding)
 
     assert_equal played, stamp.reload.playthrough
     assert_equal story.protagonist, daybook.reload.character
+    assert_predicate daybook, :template?
     assert_empty played.carried.by_name(daybook.name), "no copy was handed out by a one-item repair"
   end
 

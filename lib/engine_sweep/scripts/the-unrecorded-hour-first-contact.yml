@@ -1,0 +1,98 @@
+# LAZY, AT FIRST CONTACT, AND EXACTLY ONCE -- the other half of the captain's
+# ruling of 2026-09-04, walked in one game.
+#
+# `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml` proves the
+# copies are INDEPENDENT: what one party picks up is still on the other party's
+# floor. This one proves they are made at the right MOMENT and never made twice,
+# which one walk can see and two cannot:
+#
+#   at the right moment  a room this game has never been in has no copies in it.
+#                        `Item::Snapshot` runs when the party arrives
+#                        (`Playthrough::Turn#move_to`, after the room is
+#                        realized) and at the top of every turn on the room they
+#                        are standing in, so the closet's index is on the floor
+#                        the instant they walk in and not before.
+#   and never twice      walking back into a room the party has emptied finds it
+#                        empty. The guard is per TEMPLATE and not per room --
+#                        "this room is done" would put the ward stamp back on
+#                        the floor of a room the player had just carried it out
+#                        of, once per return trip, for ever.
+#
+# The second of those is the one that would silently duplicate a world. It is
+# the reason `Item::Snapshot#already_copied` asks which templates this
+# playthrough holds a copy of rather than which rooms it has been in.
+story: The Unrecorded Hour
+why: a room is copied into a game when the party first stands in it, and never copied again
+steps:
+- id: the-opening-room-is-already-snapshotted
+  type: look
+  why: a playthrough takes its opening room's snapshot when it is created, not on its first turn
+  expect:
+    location: Ward Office 12 (realized)
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+    changed: false
+    refused: false
+
+- id: take-the-stamp-off-this-games-floor
+  type: take the ward stamp
+  why: the row that moves is this game's copy; the world's own row never leaves the office
+  expect:
+    changed: true
+    understood: take -> ward stamp
+    here: []
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: the-office-stays-empty-on-the-next-turn
+  type: look
+  why: THE ONE THAT WOULD DUPLICATE A WORLD. A per-room guard would re-copy the stamp here
+  expect:
+    changed: false
+    refused: false
+    here: []
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: the-closet-is-copied-when-the-party-walks-in
+  type: go to the Supply Closet
+  why: first contact with a room is arrival, and the index is on the floor the instant they are
+  expect:
+    changed: true
+    location: The Supply Closet (realized)
+    here: [copy-room apron, Perrin's private index]
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: put-the-stamp-down-somewhere-it-was-never-seeded
+  type: drop the ward stamp
+  why: a copy lies where the party leaves it, in a room the world's own stamp has never been in
+  expect:
+    changed: true
+    change: now lying in The Supply Closet
+    here: [copy-room apron, Perrin's private index, ward stamp]
+    carrying: [Ward Office 12 daybook]
+
+- id: walk-back-to-an-office-that-is-still-empty
+  type: go to Ward Office 12
+  why: returning is not first contact. The world's own stamp is still lying here and stays the world's
+  expect:
+    changed: true
+    location: Ward Office 12 (realized)
+    here: []
+    carrying: [Ward Office 12 daybook]
+
+- id: and-the-closet-still-holds-what-was-left-there
+  type: go to the Supply Closet
+  why: a second arrival copies nothing and moves nothing; what is on the floor is what was left on it
+  expect:
+    changed: true
+    location: The Supply Closet (realized)
+    here: [copy-room apron, Perrin's private index, ward stamp]
+    carrying: [Ward Office 12 daybook]
+
+- id: the-index-is-still-takeable-after-all-that
+  type: take the index
+  why: the closed set `take` resolves against is this game's floor, whatever has been carried across it
+  expect:
+    changed: true
+    understood: take -> Perrin's private index
+    here: [copy-room apron, ward stamp]
+    carrying: [Perrin's private index, Ward Office 12 daybook]

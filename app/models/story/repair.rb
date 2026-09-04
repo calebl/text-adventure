@@ -56,6 +56,7 @@ class Story::Repair
     character_absent_in_the_seed: { calls: 0, handler: :repair_seeded_absence },
     character_absent_but_somewhere: { calls: 0, handler: :repair_deliberate_absence },
     protagonist_holds_a_taken_item: { calls: 0, handler: :repair_shared_inventory },
+    playthrough_missing_a_copy: { calls: 0, handler: :repair_missing_copies },
     duplicate_locations: { calls: 0, handler: :repair_duplicate_locations },
     duplicate_items: { calls: 0, handler: :repair_duplicate_items },
     mobile_doorway_re_asserted: { calls: 0, handler: :repair_re_asserted_doorway },
@@ -242,21 +243,39 @@ class Story::Repair
     "took #{character.fullname} out of #{room.inspect} and back to nowhere, which the record says is deliberate"
   end
 
-  # PUTS ONE ITEM IN THE HANDS THAT PICKED IT UP, out of `Item::InventoryBackfill`
-  # -- the same reading the finding was raised from, run for real this time.
+  # PUTS ONE ROW IN THE LAYER IT BELONGS IN, out of `Item::LayerBackfill` -- the
+  # same reading the finding was raised from, run for real this time. The row
+  # becomes the copy of the player whose chain took it, and one of the world's
+  # own rows is put back in the room the take happened in, so the world is not a
+  # thing poorer for somebody having picked it up.
   #
-  # Safe because the answer is on record: `scenes.resolved_action` and
-  # `scenes.acted_on` say which turn took this row, and a turn belongs to one
-  # playthrough. The backfill is asked for THIS item's answer and nothing else
-  # is written, so a run that repairs one finding does not quietly reshuffle a
-  # story's whole inventory; and if the answer has stopped being attributable
-  # since the doctor read it, this says so rather than guessing.
+  # Safe because the answer is on record: `scenes.resolved_action`,
+  # `scenes.acted_on` and `scenes.location_id` say which turn took this row and
+  # where. The backfill is asked for THIS row's answer and nothing else is
+  # written, so a run that repairs one finding does not quietly re-furnish a
+  # story's rooms; and if the answer has stopped being attributable since the
+  # doctor read it, this says so rather than guessing.
   def repair_shared_inventory(finding)
     item = finding.subject
-    answer = Item::InventoryBackfill.new(story).run(only: item.id).first
+    answer = Item::LayerBackfill.new(story).run(only: item.id).answers.first
     raise ArgumentError, "no turn records taking #{item.name.inspect} any more, so there is nobody to attribute it to" unless answer&.attributed?
 
-    "gave #{item.name} to playthrough ##{answer.playthrough.id}, whose turn log records taking it"
+    "gave #{item.name} to playthrough ##{answer.playthrough.id}, whose turn log records taking it" \
+      "#{", and put the world's own row back in #{answer.location.name}" if answer.location}"
+  end
+
+  # TAKES THE SNAPSHOT A GAME WAS OWED, out of `Item::Snapshot` -- the same
+  # class the live loop calls on arrival and at the top of every turn.
+  #
+  # Safe because every row it writes is a copy of a row that already exists:
+  # this is the world it has already walked through, written down for that game.
+  # Nothing is invented and nothing anybody is holding is touched.
+  def repair_missing_copies(finding)
+    playthrough = finding.subject
+    result = Item::LayerBackfill.new(story).run
+    made = result.snapshots.find { |snapshot| snapshot.playthrough.id == playthrough.id }&.copies || []
+
+    "gave playthrough ##{playthrough.id} its own copy of #{made.size} thing(s) it had walked past"
   end
 
   # TWO ROWS THAT ARE ONE ROOM, FOLDED ONTO THE ONE WITH THE HISTORY -- and the

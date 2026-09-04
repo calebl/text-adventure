@@ -1,26 +1,35 @@
-# TWO PEOPLE PLAYING ONE WORLD, and the defect that made this script necessary.
+# TWO PEOPLE PLAYING ONE WORLD, and the two defects that made this script
+# necessary -- one closed by PR 111 and one by the captain's ruling of
+# 2026-09-04.
 #
-# The party's inventory used to be `items.character_id` pointing at
+# THE PARTY'S HANDS. The inventory used to be `items.character_id` pointing at
 # `story.protagonist` -- one `Character` row per story. So every playthrough of
 # a world shared one pair of hands: the captain started playthrough 17 of a
-# story and it opened holding what 16 had picked up. It is now
-# `items.playthrough_id`, on the same reasoning as `playthroughs.current_location_id`
-# for position: two people playing one seeded world stand in two rooms, and
-# carry two different sets of things.
+# story and it opened holding what 16 had picked up.
+#
+# THE ROOM'S FLOOR. That left the other half open and this script used to pin
+# it as a known issue: `items.location_id` was the world's, so what `first`
+# picked up was gone from the floor for `second` too. The captain's ruling:
+# *"each play through should have its own copy of items. If a location is
+# generated with items in it, that should become the initial snapshot that any
+# playthrough uses but what happens to the items after that should be managed by
+# the playthrough."* Step `second-finds-the-office-as-it-was-generated` is the
+# inverse of the step that used to be here, and it is the whole ruling in one
+# typed line.
 #
 # WHAT ONLY TWO PLAYTHROUGHS CAN SEE. Every other script in this directory is
-# one walk, so none of them can tell an inventory on the story from an inventory
-# on the playthrough -- both read the same in one game. `player:` names whose
-# game a step is typed into; the two here are playthroughs of THE SAME loaded
-# copy of the world, created the same way the browser creates one.
+# one walk, so none of them can tell one shared world from two independent
+# copies of it -- both read the same in one game. `player:` names whose game a
+# step is typed into; the two here are playthroughs of THE SAME loaded copy of
+# the world, created the same way the browser creates one.
 #
-# THE ROOMS ARE STILL SHARED, deliberately, and step `second-finds-the-office-emptied`
-# pins it: what `first` picks up is gone from the floor for `second` too,
-# because a room is the world and the world is the story's. That is a known open
-# question the captain is thinking about separately, and it is written down here
-# so a future change to it fails a test rather than surprising somebody.
+# THE ROOMS THEMSELVES ARE STILL SHARED and always were: the geometry, the
+# descriptions and the cast are the world. It is what is LYING in them that each
+# game now holds its own copy of. `EngineSweep::Invariants#world_items_unmoved`
+# asserts the other side of that after every walk -- the world's own rows never
+# move, whatever anybody picks up.
 story: The Unrecorded Hour
-why: two playthroughs of one world carry two different sets of things
+why: two playthroughs of one world carry two different sets of things and stand on two different floors
 steps:
 - id: first-opens-with-the-starting-kit
   type: look
@@ -55,20 +64,39 @@ steps:
 - id: second-is-not-holding-it
   type: inventory
   player: second
-  why: THE DEFECT. Before `items.playthrough_id` this read [daybook, ward stamp]
+  why: THE FIRST DEFECT. Before `items.playthrough_id` this read [daybook, ward stamp]
   expect:
     changed: false
     refused: false
     carrying: [Ward Office 12 daybook]
 
-- id: second-finds-the-office-emptied
-  type: take the ward stamp
-  why: the rooms ARE shared -- what the other party took is gone from the floor for everybody
+- id: second-finds-the-office-as-it-was-generated
+  type: look
+  player: second
+  why: THE SECOND DEFECT, and the captain's ruling. Before the layer split this room was empty
   expect:
-    refused: true
     changed: false
-    offers: [there is no thing lying here]
+    refused: false
+    location: Ward Office 12 (realized)
+    here: [ward stamp]
+
+- id: second-takes-its-own-stamp
+  type: take the ward stamp
+  player: second
+  why: two parties can each pick up the ward stamp, because there are two ward stamps to pick up
+  expect:
+    changed: true
+    understood: take -> ward stamp
     here: []
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: first-still-holds-the-one-it-took
+  type: inventory
+  why: the second player taking theirs did not reach into the first player's hands
+  expect:
+    changed: false
+    refused: false
+    carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: second-can-still-drop-its-own-copy
   type: drop the daybook
@@ -78,14 +106,15 @@ steps:
     changed: true
     change: now lying in Ward Office 12
     here: [Ward Office 12 daybook]
-    carrying: []
+    carrying: [ward stamp]
 
-- id: first-still-has-its-own-daybook
-  type: inventory
-  why: the drop above moved one row and one row only
+- id: first-does-not-see-the-other-players-daybook
+  type: look
+  why: what one party puts down is on ITS floor. The office is empty for the first player
   expect:
     changed: false
     refused: false
+    here: []
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: first-walks-off-with-the-stamp
@@ -94,14 +123,32 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
+    here: [copy-room apron, Perrin's private index]
     carrying: [Ward Office 12 daybook, ward stamp]
 
-- id: second-is-still-in-the-office
-  type: look
+- id: first-takes-the-index
+  type: take the index
+  why: what the closet was seeded with, in the first player's hands
+  expect:
+    changed: true
+    here: [copy-room apron]
+    carrying: [Perrin's private index, Ward Office 12 daybook, ward stamp]
+
+- id: second-walks-into-a-closet-that-still-has-its-index
+  type: go to the Supply Closet
   player: second
-  why: moving one playthrough moved one playthrough
+  why: a room is snapshotted on ARRIVAL, out of the world's own rows and not out of the other game
+  expect:
+    changed: true
+    location: The Supply Closet (realized)
+    here: [copy-room apron, Perrin's private index]
+    carrying: [ward stamp]
+
+- id: first-is-still-in-the-closet-with-its-own-floor
+  type: look
+  why: moving one playthrough moved one playthrough, and its floor is still its own
   expect:
     changed: false
-    location: Ward Office 12 (realized)
-    here: [Ward Office 12 daybook]
-    carrying: []
+    location: The Supply Closet (realized)
+    here: [copy-room apron]
+    carrying: [Perrin's private index, Ward Office 12 daybook, ward stamp]

@@ -253,11 +253,15 @@ class WorldSeed::Exporter
       # by the same method -- an item is in exactly one place, so it is written
       # exactly once.
       #
-      # WHAT A PARTY IS CARRYING IS NOT EXPORTED AT ALL, and that is the same
-      # rule: `items.playthrough_id` is one player's progress, not the world, so
-      # it belongs in a seed file no more than a turn log does. The protagonist's
-      # own items ARE exported -- they are the story's STARTING INVENTORY, which
-      # every playthrough begins with a copy of. See `Story#starting_inventory`.
+      # NO PLAYTHROUGH'S OWN COPY IS EXPORTED AT ALL, and since the layer split
+      # that is one rule rather than a list of cases: a seed file describes the
+      # WORLD, and an instance -- lying in a room in one game, in an NPC's hands
+      # in one game, or in one party's own hands -- is that player's progress. It
+      # belongs in a seed file no more than a turn log does. The protagonist's
+      # own TEMPLATES are exported -- they are the story's STARTING INVENTORY,
+      # which every playthrough begins with a copy of. See
+      # `Story#starting_inventory` and `#items_document`, which is where
+      # `.templates` is written.
       items = items_document(location)
       document["items"] = items if items.any?
       document
@@ -269,8 +273,14 @@ class WorldSeed::Exporter
   # writing on them and stays quiet about the ones that do not. `inscription`
   # goes with it and only with it -- `Item` refuses the pair the other way round,
   # so a file that carried one alone would not load.
+  #
+  # `.templates` IS WHAT MAKES THIS THE WORLD. `location.items` and
+  # `character.items` reach both layers, so without it a world played twice
+  # would export a room's chair three times -- once as the world's and once per
+  # game that had walked in -- and re-loading the file would refuse the
+  # duplicate names.
   def items_document(owner)
-    owner.items.order(:name).map do |item|
+    owner.items.templates.order(:name).map do |item|
       document = { "name" => item.name, "description" => text(item.description) }
       if item.readable?
         document["readable"] = true

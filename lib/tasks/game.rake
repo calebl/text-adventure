@@ -205,16 +205,18 @@ namespace :game do
     end
   end
 
-  desc "Attribute what the protagonist is holding to the playthrough that took it. Usage: rake game:backfill_inventory, DRY_RUN=1 to see it first"
-  task :backfill_inventory, [ :story_id ] => :environment do |t, args|
+  desc "Split today's items into the world's own rows and each playthrough's copies. Usage: rake game:backfill_items, DRY_RUN=1 to see it first"
+  task :backfill_items, [ :story_id ] => :environment do |t, args|
     scope = args[:story_id] ? Story.where(id: Helpers.story!(args[:story_id]).id) : Story.all
     dry = ENV["DRY_RUN"].present?
 
-    puts "WHOSE HANDS A THING IS IN, recovered from the turn that picked it up."
-    puts "`items.playthrough_id` is the closed set `drop` resolves against and is written from"
-    puts "now on. Before it, the party's inventory sat on the story's ONE protagonist row, so"
-    puts "every play of a world shared one set of things. This attributes what is still there"
-    puts "to the playthrough whose turn log records the take, and it REFUSES TO GUESS."
+    puts "THE WORLD IS THE TEMPLATE AND THE PLAYTHROUGH OWNS THE INSTANCES."
+    puts "Before the captain's ruling of 2026-09-04 there was one layer and every game shared"
+    puts "it: a party that picked the ward stamp up took it out of the room for every other"
+    puts "play of that world. This puts the world's own rows back where the turn log says they"
+    puts "were taken from, hands each row a take records to the player who took it, and gives"
+    puts "every existing game its own copy of what is lying in the rooms it has walked through."
+    puts "It REFUSES TO GUESS, and it is idempotent: a second run reports nothing to do."
     puts "Offline, no model call."
     puts "DRY RUN: nothing is written." if dry
     puts
@@ -222,50 +224,56 @@ namespace :game do
     total = Hash.new(0)
     copied = 0
     scope.order(:created_at, :id).each do |story|
-      answers = Item::InventoryBackfill.new(story).run(dry_run: dry)
-      next if answers.empty?
+      result = Item::LayerBackfill.new(story).run(dry_run: dry)
+      answers = result.answers
+      snapshots = result.snapshots.reject { |snapshot| snapshot.copies.empty? }
+      next if answers.empty? && snapshots.empty?
 
-      puts format("  %-40s attributed %3d, starting kit %3d, left alone %3d, put down %3d",
+      puts format("  %-40s the world's own %3d, attributed %3d, left alone %3d, unaccounted %3d",
                   story.title.truncate(40),
-                  answers.count(&:attributed?), answers.count(&:starting?),
-                  answers.count(&:ambiguous?), answers.count { |answer| answer.unrecoverable? && answer.location })
+                  answers.count(&:template?), answers.count(&:attributed?),
+                  answers.count(&:ambiguous?), answers.count(&:unrecoverable?))
 
       answers.each do |answer|
         total[answer.outcome] += 1
         case answer.outcome
         when :attributed
-          puts "      #{answer.item.name} -> playthrough ##{answer.playthrough.id}, which recorded taking it"
-        when :starting
-          copied += answer.playthroughs.size
-          puts "      #{answer.item.name} -- the story's starting inventory: nobody ever picked it up. Left on " \
-               "#{story.protagonist.fullname}#{", copied into #{answer.playthroughs.size} playthrough(s)" if answer.playthroughs.any?}"
+          where = answer.location ? ", and the world's own row goes back to #{answer.location.name}" : ""
+          puts "      #{answer.item.name} -> playthrough ##{answer.playthrough.id}'s own copy#{where}"
         when :ambiguous
           puts "      #{answer.item.name} -- LEFT ALONE: playthrough(s) #{answer.playthroughs.map { |p| "##{p.id}" }.join(" and ")} " \
-               "record taking it at the same moment, and an item is in one place"
+               "record taking it at the same moment, and an item was in one place"
         when :unrecoverable
-          if answer.location
-            puts "      #{answer.item.name} -- PUT DOWN in #{answer.location.name}: no turn records taking it and the " \
-                 "world file does not start the player with it, so it is left where the last party to hold it stands"
-          else
-            puts "      #{answer.item.name} -- LEFT ALONE: no turn records taking it and this story has no realized " \
-                 "room to put it down in"
-          end
+          puts "      #{answer.item.name} -- LEFT WHERE IT IS: nothing on record says what it is a copy of. " \
+               "It stays in that player's game and `rake game:doctor` reports it"
         end
+      end
+
+      snapshots.each do |snapshot|
+        copied += snapshot.copies.size
+        puts "      playthrough ##{snapshot.playthrough.id} takes its own copy of #{snapshot.copies.size} thing(s) " \
+             "across #{snapshot.rooms.size} room(s) it has been in: #{snapshot.copies.map(&:name).join(", ")}"
       end
     end
 
     puts
-    if total.values.sum.zero?
-      puts "Nothing to do: no protagonist in the database is holding anything."
+    if total.values.sum.zero? && copied.zero?
+      puts "Nothing to do: this database has no items in it."
+    elsif total[:attributed].zero? && total[:ambiguous].zero? && total[:unrecoverable].zero? && copied.zero?
+      puts "Nothing to do: every row is already in the layer it belongs in and every game holds its copies."
     else
-      puts "#{total[:attributed]} item(s) moved into the hands of the playthrough whose turn log took them."
-      puts "#{total[:starting]} left on the protagonist as the story's starting inventory#{", and copied into #{copied} playthrough(s)" if copied.positive?}."
+      puts "#{total[:template]} row(s) are the world's own and were left exactly where they stand."
+      puts "#{total[:attributed]} row(s) became the copy of the player whose turn log took them, with the world's"
+      puts "  own row put back in the room the take happened in."
+      puts "#{copied} copy(ies) handed to existing playthroughs for the rooms they have walked through."
       puts "#{total[:ambiguous]} left alone: two playthroughs took the same thing at the same moment, and choosing"
-      puts "  between them would be inventing which player has it."
-      puts "#{total[:unrecoverable]} put down where the last party that could have held them stands: no turn records"
-      puts "  taking them and no world file starts the player with them. `rake game:doctor` shows the result."
+      puts "  between them would be inventing which player had it."
+      puts "#{total[:unrecoverable]} left where they are: nothing says what they are a copy of, and taking a thing"
+      puts "  out of somebody's hands to tidy the records is the one destructive thing this could do."
+      puts "`rake game:doctor` shows the result."
     end
   end
+
 
   desc "Place characters who have no whereabouts, from the arrival casts still on disk. Usage: rake game:backfill_whereabouts, DRY_RUN=1 to see it first"
   task :backfill_whereabouts, [ :story_id ] => :environment do |t, args|

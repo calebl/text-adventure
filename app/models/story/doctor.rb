@@ -185,6 +185,12 @@ class Story::Doctor
   # Whether anybody has handled this item: a party carrying it, or a turn log
   # recording the take or the drop that moved it (`scenes.acted_on`). The item
   # half of `#stood_in?`, and the line a `safe` fold of a duplicate stops at.
+  # Since the layer split the first clause is a statement about the LAYER: one
+  # of the world's own rows has no playthrough on it by definition, so what is
+  # really being asked is whether any turn log records acting on this row. It is
+  # kept whole rather than trimmed because the question is "has anybody touched
+  # it", and a row that somehow carried a playthrough would be somebody's
+  # whatever the turn log said.
   def untouched?(item)
     item.playthrough_id.nil? && !Scene.where(acted_on: item).exists?
   end
@@ -226,8 +232,11 @@ class Story::Doctor
     Location.where(story_id: story.id).order(:id).select { |room| WorldSeed.natural_key(room.name) == key }
   end
 
+  # THE WORLD'S OWN ROWS ONLY, exactly as `#duplicate_items` asks the question:
+  # a playthrough's copy shares its template's name and is nobody's collision,
+  # so a repair that folded one would be folding somebody's game.
   def duplicate_item_rows(key)
-    duplicate_item_candidates(story_items.to_a).select { |item| WorldSeed.natural_key(item.name) == key }
+    story_items.templates.to_a.select { |item| WorldSeed.natural_key(item.name) == key }
   end
 
   # The fullnames the checked-in file marks `absent: true` -- nowhere on
@@ -816,7 +825,7 @@ class Story::Doctor
   # A malformed world file is `WorldSeed::Loader`'s to complain about, not this
   # class's -- a doctor that raised on one would stop reporting everything else
   # about the story -- which is why the read and its rescue live in
-  # `WorldSeed.checked_in_document`, shared with `Item::InventoryBackfill`.
+  # `WorldSeed.checked_in_document`, shared with `Item::LayerBackfill`.
   def seed_document
     return @seed_document if defined?(@seed_document)
 
@@ -870,6 +879,16 @@ class Story::Doctor
   # under no rule at all, and the first thing that notices is the classifier
   # resolving one word two ways mid-turn.
   #
+  # EVERY ONE OF THEM NAMES ITS LAYER, and since the captain's ruling of
+  # 2026-09-04 that is the first thing the reader needs. THE WORLD'S OWN ROWS
+  # are what the caps bound, what two of a name is a collision in, and what a
+  # seed file writes; ONE PLAYTHROUGH'S OWN COPIES are that game's progress, and
+  # two of a name across two games is not a collision at all -- no closed set
+  # ever offers a party anything but its own. So the caps, the duplicates and
+  # the name collisions ask about templates, and the two findings below them ask
+  # about copies. `Item#whereabouts` says which layer a row is in, so a message
+  # that prints it cannot be read against the wrong one.
+  #
   # Duplicates and collisions are `manual`: which of two things called "the
   # ledger" the player meant is not derivable, and deleting one of them is
   # deleting world data. Being over the cap is `manual` for the same reason --
@@ -877,90 +896,147 @@ class Story::Doctor
   def item_rows
     findings = []
     items = story_items.includes(:location, :character, :playthrough).order(:id).to_a
-    names = items.map { |item| item.name.to_s.downcase }.uniq.size
+    templates = items.select(&:template?)
+    names = templates.map { |item| item.name.to_s.downcase }.uniq.size
 
     findings.concat(items_nowhere)
     findings.concat(items_in_several_places(items))
-    findings.concat(shared_inventory(items))
-    findings.concat(duplicate_items(items))
+    findings.concat(shared_inventory(templates))
+    findings.concat(copies_without_a_template(items))
+    findings.concat(missing_copies)
+    findings.concat(duplicate_items(templates))
     findings.concat(rooms_over_the_item_cap)
-    findings.concat(items_colliding_with_a_name(items))
+    findings.concat(items_colliding_with_a_name(templates))
 
     if names > Item::Registry::MAX_PER_STORY
       findings << finding(:story_over_item_cap, :warning,
-                          "holds #{names} distinctly named items, past the #{Item::Registry::MAX_PER_STORY} one world may have "                           "(Item::Registry::MAX_PER_STORY); nothing breaks, but the registry will furnish no further room "                           "in it and the ontology it was bounding is no longer bounded",
+                          "the world itself holds #{names} distinctly named items, past the "                           "#{Item::Registry::MAX_PER_STORY} one world may have (Item::Registry::MAX_PER_STORY); nothing breaks, "                           "but the registry will furnish no further room in it and the ontology it was bounding is no "                           "longer bounded. Each playthrough's own copies are not counted -- they are the same things, "                           "once per player",
                           :manual)
     end
 
     findings
   end
 
-  # An item in none of its three places. `Item#in_exactly_one_place` refuses to
-  # save one, so this can only arrive through raw SQL or a schema older than
-  # that validation -- and such a row belongs to no story at all, which is why it is
-  # reported once against every story rather than attributed to one: there is
-  # nothing on the row that says whose it was.
+  # ONE OF THE WORLD'S OWN ROWS IN NEITHER OF ITS TWO PLACES.
+  # `Item#in_exactly_one_place` refuses to save one, so this can only arrive
+  # through raw SQL or a schema older than that validation -- and such a row
+  # belongs to no story at all, which is why it is reported once against every
+  # story rather than attributed to one: there is nothing on the row that says
+  # whose it was.
+  #
+  # A PLAYTHROUGH'S OWN COPY IN NEITHER PLACE IS NOT THIS. It is in the party's
+  # hands, which is where most of them are, so the query is narrowed to the
+  # world layer rather than counting the ordinary state as a defect.
   def items_nowhere
-    orphans = Item.where(character_id: nil, location_id: nil, playthrough_id: nil).order(:id).to_a
+    orphans = Item.templates.where(character_id: nil, location_id: nil).order(:id).to_a
     return [] if orphans.empty?
 
     [ finding(:items_nowhere, :warning,
-              "#{orphans.size} item#{"s" unless orphans.one?} in the database "               "(##{orphans.first(5).map(&:id).join(", #")}#{", ..." if orphans.size > 5}) "               "#{orphans.one? ? "is" : "are"} neither held by anybody nor lying anywhere, so no closed set can ever "               "offer #{orphans.one? ? "it" : "them"}; the row has nothing on it saying which story it belonged to",
+              "#{orphans.size} of the world's own item row#{"s" unless orphans.one?} in the database "               "(##{orphans.first(5).map(&:id).join(", #")}#{", ..." if orphans.size > 5}) "               "#{orphans.one? ? "is" : "are"} neither held by anybody nor lying anywhere, so no closed set can ever "               "offer #{orphans.one? ? "it" : "them"}; the row has nothing on it saying which story it belonged to",
               :manual) ]
   end
 
-  # AN ITEM IN MORE THAN ONE OF ITS THREE PLACES. `Item#in_exactly_one_place`
-  # refuses to save one, so like `items_nowhere` this can only arrive through
-  # raw SQL or a schema older than the rule -- and it is the state that makes a
-  # `take` unanswerable, since the thing is takeable and already taken.
+  # AN ITEM IN BOTH OF ITS PLACES AT ONCE -- lying in a room and in a pair of
+  # hands together. `Item#in_exactly_one_place` refuses to save one in either
+  # layer, so like `items_nowhere` this can only arrive through raw SQL or a
+  # schema older than the rule, and it is the state that makes a `take`
+  # unanswerable: the thing is takeable and already taken.
   def items_in_several_places(items)
     astray = items.select { |item| Item::PLACES.count { |place| item[place].present? } > 1 }
     return [] if astray.empty?
 
     [ finding(:items_in_several_places, :warning,
-              "#{astray.size} item#{"s" unless astray.one?} (#{astray.map(&:name).join(", ")}) " \
+              "#{astray.size} item#{"s" unless astray.one?} (#{astray.map { |item| "#{item.name} -- #{item.whereabouts}" }.join("; ")}) " \
               "#{astray.one? ? "is" : "are"} in more than one place at once -- lying in a room and in a pair of " \
               "hands together -- so a `take` of #{astray.one? ? "it" : "them"} is both offered and already done",
               :manual, subject: astray.first) ]
   end
 
-  # THE SHARED INVENTORY THIS COLUMN CLOSED. An item held by the protagonist
-  # that some playthrough's turn log records TAKING is not the story's starting
-  # inventory: it is one player's, left on the story's one protagonist row by a
-  # build of the app in which every play of a world shared one pair of hands.
+  # THE SHARED INVENTORY THE LAYERS CLOSED. One of the world's own rows held by
+  # the protagonist that some playthrough's turn log records TAKING is not the
+  # story's starting inventory: it is one player's copy, left in the world layer
+  # by a build of the app in which a take moved the world's only row.
   #
   # `safe` -- the answer is on record, in `scenes.resolved_action` and
-  # `scenes.acted_on`. `rake game:repair` runs `Item::InventoryBackfill` for the
-  # story, which attributes what the takes can answer for and refuses to guess
-  # the rest. What it refuses is reported here again on the next run rather than
-  # quietly dropped.
-  def shared_inventory(items)
+  # `scenes.acted_on`. `rake game:repair` runs `Item::LayerBackfill` for this
+  # one row, which gives the taker its copy, puts the world's own row back in
+  # the room the take happened in, and refuses to guess the rest. What it
+  # refuses is reported here again on the next run rather than quietly dropped.
+  def shared_inventory(templates)
     return [] if story.protagonist.nil?
 
-    items.filter_map do |item|
+    templates.filter_map do |item|
       next unless item.character_id == story.protagonist.id && taken_items.key?(item.id)
 
       finding(:protagonist_holds_a_taken_item, :warning,
-              "#{item.name.inspect} is held by #{story.protagonist.fullname}, but playthrough " \
-              "##{taken_items[item.id]}'s turn log records taking it -- so it is that player's and not the " \
-              "story's starting inventory. Before `items.playthrough_id` every play of a world shared one " \
-              "inventory, and a new game opened holding the last one's things",
+              "#{item.name.inspect} is one of the world's own rows, held by #{story.protagonist.fullname}, but " \
+              "playthrough ##{taken_items[item.id]}'s turn log records taking it -- so it is that player's copy " \
+              "and not the story's starting inventory. Before the layer split a take moved the world's only row, " \
+              "so picking a thing up took it out of the world for everybody",
               :safe, subject: item)
     end
   end
 
   # `{ item id => the playthrough whose chain last took it }`, out of the same
-  # reading `Item::InventoryBackfill` does -- one instance, so the doctor and
-  # the repair cannot disagree about who took what.
+  # reading `Item::LayerBackfill` does -- one instance, so the doctor and the
+  # repair cannot disagree about who took what.
   def taken_items
-    @taken_items ||= Item::InventoryBackfill.new(story).run(dry_run: true)
-                                            .select(&:attributed?)
-                                            .to_h { |answer| [ answer.item.id, answer.playthrough.id ] }
+    @taken_items ||= Item::LayerBackfill.new(story).run(dry_run: true).answers
+                                        .select { |answer| answer.attributed? && answer.item.template? }
+                                        .to_h { |answer| [ answer.item.id, answer.playthrough.id ] }
   end
 
-  # Two things in one world answering to one name. `Playthrough::Classifier`
-  # resolves a typed line against a list of names, so the player types the name
-  # and gets whichever the ordering hands over.
+  # A PLAYTHROUGH'S OWN COPY OF NOTHING. `items.template_id` is what tells this
+  # game's ward stamp from a fresh thing of the same name, and it is nullable
+  # on purpose -- deleting one of the world's own rows nullifies its copies
+  # rather than reaching into a game in progress and taking the thing out of
+  # somebody's hands. So this is a REPORT and not a defect: the row is a real
+  # thing that player really holds, and only its provenance is gone.
+  #
+  # `manual` because there is nothing to derive it from. A copy of a template
+  # that no longer exists cannot be re-linked, and guessing by name is the one
+  # thing every backfill in this app refuses to do.
+  def copies_without_a_template(items)
+    orphans = items.select { |item| item.instance? && item.template_id.nil? }
+    return [] if orphans.empty?
+
+    [ finding(:instance_without_a_template, :warning,
+              "#{orphans.size} of the playthroughs' own item row#{"s" unless orphans.one?} " \
+              "(#{orphans.first(5).map { |item| "#{item.name} -- #{item.whereabouts}" }.join("; ")}" \
+              "#{"; ..." if orphans.size > 5}) #{orphans.one? ? "is" : "are"} a copy of one of the world's own " \
+              "rows that no longer exists, so nothing says what #{orphans.one? ? "it is" : "they are"} a copy of. " \
+              "Nobody loses anything by it: the row is still in that player's game",
+              :manual, subject: orphans.first) ]
+  end
+
+  # A ROOM A PLAYER HAS BEEN IN AND HAS NO COPY OF. Every game holds its own
+  # copy of what is lying in each room it has walked through
+  # (`Item::Snapshot`), so a template lying in a visited room that this
+  # playthrough has no copy of is a snapshot that was never taken -- a database
+  # older than the layers, or one whose backfill has not been run.
+  #
+  # `safe` -- there is nothing to derive and nothing to guess. `rake game:repair`
+  # takes the snapshot, which is a copy of a row that already exists.
+  #
+  # A ROOM THE PARTY EMPTIED IS NOT THIS. The guard is per template rather than
+  # per room, so a copy the player took and carried off still counts as held --
+  # which is the whole reason `Item::Snapshot` guards the way it does.
+  def missing_copies
+    Item::LayerBackfill.new(story).run(dry_run: true).snapshots.filter_map do |snapshot|
+      next if snapshot.copies.empty?
+
+      finding(:playthrough_missing_a_copy, :warning,
+              "playthrough ##{snapshot.playthrough.id} has been in #{snapshot.rooms.size} room(s) and holds no copy " \
+              "of #{snapshot.copies.size} of the world's own item row(s) it has stood in front of " \
+              "(#{snapshot.copies.first(5).map(&:name).join(", ")}#{", ..." if snapshot.copies.size > 5}); that " \
+              "player's floor is emptier than the world's",
+              :safe, subject: snapshot.playthrough)
+    end
+  end
+
+  # Two of THE WORLD'S OWN THINGS answering to one name.
+  # `Playthrough::Classifier` resolves a typed line against a list of names, so
+  # the player types the name and gets whichever the ordering hands over.
   #
   # GROUPED ON `WorldSeed.natural_key`, the key `WorldSeed::Loader` now matches
   # an item under, because that is where the pair came from: a seed file whose
@@ -968,21 +1044,23 @@ class Story::Doctor
   # that did not exist, and the captain's database held two
   # `Ward Office 12 daybook` rows in one pair of hands because of it.
   #
-  # THE STARTING INVENTORY AND ITS COPIES ARE ONE THING. Every playthrough
-  # carries its own copy of what the story starts the player with
-  # (`Playthrough#take_up_the_starting_inventory`), so a world played four times
-  # holds five rows called "Ward Office 12 daybook" and none of them is a
-  # collision: no closed set ever offers two, because a party sees only its own.
-  # The copies are dropped here and the world's own row speaks for them.
+  # IT ASKS THE WORLD LAYER, and that REPLACED a special case rather than adding
+  # one. A world played four times holds five rows called "ward stamp" and
+  # exactly one of them is the world's; the other four are one per game, and no
+  # closed set ever offers a party anything but its own. This used to reject the
+  # starting inventory's copies by name (`#duplicate_item_candidates`, gone with
+  # the layer split) -- asking the question of the templates answers it for
+  # every kind of copy at once, including the ones a party dropped in a room.
   #
   # SAFE ONLY WHEN THE FILE NAMES ONE OF THEM AND NOBODY HAS TOUCHED THE REST.
   # The file declares one item under that key, and the loader has already
   # written the file's own description, place and inscription onto the row it
   # named -- so what is left over is a row nothing refers to, and
-  # `rake game:repair` removes it. A leftover a party is carrying, or one a turn
-  # log records taking, is somebody's and no fold of it is honest: `manual`.
-  def duplicate_items(items)
-    duplicate_item_candidates(items).group_by { |item| WorldSeed.natural_key(item.name) }.filter_map do |key, group|
+  # `rake game:repair` removes it. A leftover a turn log records taking, or one
+  # some game still holds a copy of, is somebody's and no fold of it is honest:
+  # `manual`.
+  def duplicate_items(templates)
+    templates.group_by { |item| WorldSeed.natural_key(item.name) }.filter_map do |key, group|
       next if group.one? || key.blank?
 
       seeded = seeded_item_names[key]
@@ -991,7 +1069,7 @@ class Story::Doctor
       remedy = survivor && leftovers.all? { |item| untouched?(item) } ? :safe : :manual
 
       finding(:duplicate_items, :warning,
-              "#{group.size} items are one thing to a re-seed " \
+              "#{group.size} of the world's own items are one thing to a re-seed " \
               "(#{group.map { |item| "##{item.id} #{item.name.inspect} #{item.whereabouts}" }.join("; ")}); " \
               "the classifier resolves a take or a drop by name, so which one the player gets is an ordering " \
               "accident#{duplicate_item_verdict(seeded, leftovers, remedy)}",
@@ -1013,40 +1091,35 @@ class Story::Doctor
     end
   end
 
-  # Every item of this story that could be half of a collision: the starting
-  # inventory's per-playthrough copies are dropped, because a party sees only
-  # its own and no closed set ever offers two.
-  def duplicate_item_candidates(items)
-    starting = story.starting_inventory.pluck(:name).map { |name| WorldSeed.natural_key(name) }.to_set
-
-    items.reject { |item| item.carried? && starting.include?(WorldSeed.natural_key(item.name)) }
-  end
-
-  # A room holding more than `Item::Registry` would ever put in one. The
-  # registry counts against the records on every admission, so this is a seeded
-  # room or a room a player has been dropping things in -- neither of which is
-  # broken, and both of which are worth saying out loud, because the room will
-  # accept nothing more.
+  # A room holding more of THE WORLD'S OWN things than `Item::Registry` would
+  # ever put in one. The registry counts against the records on every admission,
+  # so this is a seeded room -- neither broken, and worth saying out loud,
+  # because the room will accept nothing more.
+  #
+  # A PARTY DROPPING FOUR THINGS ON THIS FLOOR IS NOT THIS. Those are that
+  # game's own copies and they bound nothing; the cap is on the world.
   def rooms_over_the_item_cap
-    counts = Item.where(location: story.locations, character_id: nil).group(:location_id).count
+    counts = Item.templates.where(location: story.locations, character_id: nil).group(:location_id).count
 
     counts.filter_map do |location_id, count|
       next if count <= Item::Registry::MAX_PER_ROOM
 
       finding(:room_over_item_cap, :warning,
-              "#{story.locations.find(location_id).name.inspect} has #{count} items lying in it, past the "               "#{Item::Registry::MAX_PER_ROOM} one room may have (Item::Registry::MAX_PER_ROOM)",
+              "#{story.locations.find(location_id).name.inspect} has #{count} of the world's own items lying in it, "               "past the #{Item::Registry::MAX_PER_ROOM} one room may have (Item::Registry::MAX_PER_ROOM)",
               :manual, subject: story.locations.find(location_id))
     end
   end
 
   # An item sharing its name with a person or a place. Two of the classifier's
   # closed sets then answer to one word, and which action the turn takes is
-  # decided inside the classifier rather than by the player.
-  def items_colliding_with_a_name(items)
+  # decided inside the classifier rather than by the player. Asked of the
+  # world's own rows, because a copy has its template's name and reporting both
+  # would name one collision twice.
+  def items_colliding_with_a_name(templates)
     people = story.characters.pluck(:fullname, :nickname).flatten.compact_blank.index_by(&:downcase)
     places = story.locations.pluck(:name).compact_blank.index_by(&:downcase)
 
-    items.filter_map do |item|
+    templates.filter_map do |item|
       name = item.name.to_s.downcase
       kind, matched = ([ "character", people[name] ] if people.key?(name)) || ([ "location", places[name] ] if places.key?(name))
       next if kind.nil?
@@ -1057,8 +1130,8 @@ class Story::Doctor
     end
   end
 
-  # Every item in this story, on whichever of the three sides of `Item`'s
-  # one-place rule it sits -- `Item.in_story`, the one place those queries live.
+  # Every row in this story, both layers, on whichever of the three legs it sits
+  # -- `Item.in_story`, the one place those queries live.
   def story_items
     Item.in_story(story)
   end

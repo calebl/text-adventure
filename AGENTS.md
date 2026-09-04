@@ -542,40 +542,54 @@ before changing the loop; the rules below are what it does not fit.
 - **`Playthrough::Drift` is still the counter for an unresolved reach**, one row
   per turn — see *Auditing the difference* below.
 - **`take` and `drop` are the app moving a row, in that order: the record first,
-  the sentence after.** `Item` is in exactly one of three places — lying in a
-  location, held by one of the world's own people, or carried by the party of
-  one playthrough — and the closed set each action resolves against is that
-  distinction (`Item.lying_in`, `Playthrough#carried`). The narrator is then
-  told what already happened, via `Scene::Narrator#narrate(command, fact:)`, and
-  has no say in whether it is true. **Both directions or neither**: an app that
-  owns picking up while the narrator asserts putting down has records that go
-  stale the first time a player sets something on a table.
-- **WHAT THE PARTY IS CARRYING IS THE PLAYTHROUGH'S, and this is the same
-  argument as position.** It was `items.character_id` pointing at
-  `story.protagonist` — one `Character` row per story — so every playthrough of
-  one world shared one pair of hands, and the captain started playthrough 17 of
-  a story holding what 16 had picked up. It is `items.playthrough_id` now, read
-  through **`Playthrough#carried`, the one reader** (the classifier's closed
-  set, `Playthrough::Moment`, the mechanics `carrying` line and the debug page
-  all come through it) and written only by `#carry!` / `#put_down!`. Do not add
-  a second copy of that query; that is how the room's cast came to disagree
-  with the arrival paragraph.
+  the sentence after.** The row is always **this playthrough's own copy** — the
+  closed set each action resolves against is `Playthrough#items_lying_in` and
+  `Playthrough#carried`, and neither ever offers one of the world's own rows.
+  The narrator is then told what already happened, via
+  `Scene::Narrator#narrate(command, fact:)`, and has no say in whether it is
+  true. **Both directions or neither**: an app that owns picking up while the
+  narrator asserts putting down has records that go stale the first time a
+  player sets something on a table.
+- **THE WORLD IS THE TEMPLATE AND THE PLAYTHROUGH OWNS THE INSTANCES**, the
+  captain's ruling of 2026-09-04, and `items.playthrough_id` is which layer a
+  row is in. Nil is one of **the world's own rows** — what a room or a person
+  was seeded or generated with, lying in a room or in somebody's hands, written
+  by `WorldSeed::Loader` and `Item::Registry`, exported by the exporter, counted
+  by the caps, and **never touched by anybody playing**. Set is **one game's own
+  copy**, placed by `location_id`, `character_id`, or neither, which is the
+  party's own hands. **Play reads the playthrough layer and nothing else**,
+  through three readers and only three — `Playthrough#carried`,
+  `#items_lying_in`, `#items_held_by` — and writes it only through
+  `Playthrough::Turn#carry!` / `#put_down!`. Do not add a second copy of one of
+  those queries; that is how the room's cast came to disagree with the arrival
+  paragraph. Do not narrow a reader to the world layer to "see everything": a
+  closed set that offers a template offers a thing the player cannot have.
+- **The copies are made lazily, at first contact, by `Item::Snapshot` and by
+  nothing else.** On arrival (`Playthrough::Turn#move_to`, *after* the room is
+  realized so the registry's rows exist) and at the top of every turn on the
+  room the party is standing in; `Playthrough::Mechanics` calls the same two, so
+  the two modes cannot disagree about what is on the floor. **The guard is per
+  TEMPLATE, not per room** (`items.template_id`) — "this room is done" would
+  refurnish a room the party had just emptied, once per return trip, for ever.
+  A copy carries every column but where it is and whose it is
+  (`Item::NOT_COPIED`), so the next column added to `items` comes along without
+  anybody remembering it.
 - **The protagonist's own items are the story's STARTING INVENTORY**, not an
   inventory: world data out of a seed file's `characters[].items`, held by the
-  protagonist row, carried by nobody, exported by the exporter, and given to
-  each new playthrough as **its own copy** (`Story#starting_inventory`,
-  `Playthrough#take_up_the_starting_inventory`). A copy rather than the row
-  because a `Location` holds two parties at once and an `Item` does not, so
-  handing position over by reference works and handing a thing over by
-  reference would leave the second player empty-handed. `Item.in_story` is the
-  one place the three-leg "every item in this world" query lives — a leg
-  missing from a copy is an item the registry caps cannot see.
-- **ROOMS STAY STORY-LEVEL and shared between playthroughs**, on the captain's
-  explicit ruling: he is thinking about that separately. So a room one party has
-  emptied is empty for the other, and
-  `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml` pins it either
-  way — a future change to it fails a test rather than surprising somebody.
-  Do not scope room contents per playthrough as a side effect of something else.
+  protagonist row in the world layer, exported by the exporter, and copied into
+  each new playthrough's own hands (`Story#starting_inventory`,
+  `Item::Snapshot#of_the_party!`). That is the one stated exception to "a copy
+  lands where its template is": the protagonist is the player, and the party is
+  wherever the *playthrough* is. Companions are not the exception — a
+  companion's lantern copies into the companion's hands like anybody else's.
+  `Item.in_story` is the one place the "every row in this world" query lives —
+  narrow it with `.templates` to mean the world.
+- **THE ROOMS THEMSELVES ARE STILL SHARED** — the geometry, the descriptions,
+  the cast. It is what is LYING in them that each game holds its own copy of.
+  `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml` pins the
+  independence, `…-first-contact.yml` pins the timing, and
+  `EngineSweep::Invariants#world_items_unmoved` asserts the other side after
+  every walk: no typed line may move one of the world's own rows.
 - **`Item::Registry` is the one thing in the app that creates an `Item`**, at
   room realization and out of the same call that describes the room. A seed file
   is the other writer and puts one in somebody's hands or on the floor
@@ -591,14 +605,21 @@ before changing the loop; the rules below are what it does not fit.
   (so a ward stamp never grows a paragraph), and **the words are written once**
   — and neither cares which of `Item::PLACES` the thing is in: writing belongs
   to the note and not to the shelf, so a note lying in a room, one in an NPC's
-  hands and one a party is carrying all keep their text, including the copy
-  `Playthrough#take_up_the_starting_inventory` makes. The three writers are
-  `Item::Registry` at realization, a seed file, and `Item::Inscriber` on the
-  first read of a readable thing that arrived with none. A second reading is a
-  database read and makes no call at all. Do not add a third writer, and do not
-  re-generate — "a third writer" means a fourth place text can come from, not
-  the copy above: the whole point is that the same note says the same thing
-  twice.
+  hands and one a party is carrying all keep their text, including every copy
+  `Item::Snapshot` makes. The three writers are `Item::Registry` at realization,
+  a seed file, and `Item::Inscriber` on the first read of a readable thing that
+  arrived with none. A second reading is a database read and makes no call at
+  all. Do not add a third writer, and do not re-generate — "a third writer"
+  means a fourth place text can come from, not the copies above: the whole point
+  is that the same note says the same thing twice.
+  **`Item::Inscriber` writes the words onto the instance AND back onto its
+  template**, and it is the one place in the app where a turn writes the world
+  layer. That is deliberate and it is the same category of act as
+  `Item::Registry` writing a room's furniture mid-game: filling a gap in the
+  world's record at first contact, never changing an answer the world already
+  has. A world whose note said one thing to the first player and something else
+  to the second would be exactly the drift this mechanic exists to stop, one
+  layer up.
   `inscription_misquoted` audits the difference, and its recall is deliberately
   poor — read `Story::Audit::Prose#inscription_quotes` before widening the cue
   list, because two widenings have already been measured and killed.
@@ -911,13 +932,16 @@ path, and answers in sentences.
   such stories the honest answer is `rake game:delete`.
 - **A one-time backfill recovers what a schema change left behind, and it
   refuses to guess.** `rake game:backfill_transitions`,
-  `rake game:backfill_whereabouts` and `rake game:backfill_inventory` are all
-  the same shape: offline, no model call, `DRY_RUN=1` first, and every outcome
-  it could not derive reported by name rather than filled in with something
-  plausible. A blank column says *not known*; a wrong one says something false.
-  The one exception is stated out loud where it happens — `Item::InventoryBackfill`
-  puts an unattributable item DOWN, in the room the last party that could have
-  held it stands in, because an item nowhere is a state no closed set can offer.
+  `rake game:backfill_whereabouts` and `rake game:backfill_items` are all
+  the same shape: offline, no model call, `DRY_RUN=1` first, idempotent, and
+  every outcome it could not derive reported by name rather than filled in with
+  something plausible. A blank column says *not known*; a wrong one says
+  something false. Each one is also an `Update::Step`, so `bin/update` is the
+  command a captain actually types. **A dry run has to count what the real run
+  would write**, which is not always what today's rows say:
+  `Item::LayerBackfill` runs two phases and the first changes what the second
+  reads, so its dry run corrects for both directions rather than reading the
+  table as it stands.
 - `Story::Deletion` prints a manifest, requires the story's **title** typed back
   (an id is precisely what gets mistyped), and destroys the universe only when
   no other story is built on it. `Story::DeletionTest` counts every table before
@@ -962,8 +986,9 @@ database he already has. So:
   `generate:` half is exactly the shape of thing it is for, and
   `Update::Steps::SafeRepairs` passes `generate: false` in the open.
 - The steps run in the registry's order because it is **dependency order**:
-  `backfill_transitions` before `backfill_inventory` (attribution reads
-  `Scene#took?`, which needs both columns the first one writes), every backfill
+  `backfill_transitions` before `backfill_items` (attribution reads
+  `Scene#took?`, which needs both columns the first one writes, and
+  `scenes.location_id` to know which room to put a world row back in), every backfill
   before the repairs (a safe repair acts on findings a backfill removes), and
   the doctor last because it reports and never writes.
 

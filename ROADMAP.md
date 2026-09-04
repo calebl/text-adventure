@@ -55,6 +55,65 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **The world is the template, the playthrough owns the instances**
+  (`ta-items-per-playthrough`). The captain's ruling of 2026-09-04, verbatim:
+
+  > *"each play through should have its own copy of items. If a location is
+  > generated with items in it, that should become the initial snapshot that any
+  > playthrough uses but what happens to the items after that should be managed
+  > by the playthrough."*
+
+  **What it closes.** `ta-inventory-per-playthrough` made the party's HANDS
+  per-playthrough and deliberately left the ROOMS shared, which was written down
+  under *Known issues* with two options. This is the first of those two: a room
+  one party has emptied is furnished again for the next player.
+
+  **The shape is one table and two layers.** `items.playthrough_id` stops
+  meaning "the party is carrying this" and starts meaning WHICH LAYER: nil is
+  one of the world's own rows (a *template*), set is one game's own copy (an
+  *instance*), whose place is `location_id`, `character_id`, or neither — which
+  is the party's own hands. `items.template_id` is the durable link, so the
+  doctor can tell this playthrough's ward stamp from a fresh thing of the same
+  name and a template written into a room nobody has visited still reaches every
+  game that walks in later. The alternatives — a fourth column keeping
+  `playthrough_id` as the hands, or a second table — are stated and rejected in
+  `Item`'s header: both make a carried row name its playthrough twice, or fork
+  `Item.in_story` and every query that reads it.
+
+  **What it costs, stated.** The old rule was "exactly one of three places,
+  never two and never none", and "none" was a real defect. For an instance
+  "none" is now a place, so the never-none leg survives on templates only and a
+  bug that nulled an instance's `location_id` reads as carried rather than as
+  broken. `Item#in_exactly_one_place` says both halves and its header says why.
+
+  **The copies are lazy and made exactly once.** `Item::Snapshot` copies a room
+  — its floor and what the people standing on it hold — when the party arrives
+  and at the top of every turn on the room they are in, guarded per TEMPLATE
+  rather than per room: "this room is done" would refurnish a room the party had
+  just emptied, once per return trip, for ever. The protagonist's seeded kit
+  became an ordinary case of the same rule, replacing
+  `Playthrough#take_up_the_starting_inventory`, with one stated exception —
+  it lands in the party's hands rather than the protagonist's, because the
+  protagonist is the player.
+
+  **The instruments were rewritten per layer.** The caps, `duplicate_items`,
+  `room_over_item_cap` and the name collisions ask about the world; two new
+  findings ask about the copies (`playthrough_missing_a_copy`, `safe`;
+  `instance_without_a_template`, a report and not a defect). `Item#whereabouts`
+  names the layer, so no finding can be read against the wrong one.
+  `Item::LayerBackfill` (`rake game:backfill_items`, an `Update::Step`)
+  supersedes `Item::InventoryBackfill`: whose hands a thing is in is one case of
+  which layer it belongs in, and two backfills deciding it are two answers
+  waiting to disagree. On the captain's own database it answered 7 world rows
+  left alone, 16 rows attributed with the world's row put back in the room the
+  take happened in, 27 copies handed out, and **0 ambiguous and 0
+  unrecoverable** — after which all three stories read healthy.
+
+  **`Item::Inscriber` writes the words back onto the template** as well as onto
+  the instance, and it is the one place a turn writes the world layer. A world
+  whose note said one thing to the first player and something else to the second
+  would be the drift the inscription mechanic exists to stop, one layer up.
+
 - **One command after a pull** (`ta-bin-update`). The captain's request of
   2026-09-04, in his words:
 
@@ -1603,22 +1662,17 @@ What it still owes, roughly in order:
 
 ## Known issues
 
-- **A room one party has emptied is empty for the other**
-  (`ta-inventory-per-playthrough`, 2026-09-04, and the captain's to decide).
-  `items.location_id` is story-level and stays that way: a playthrough that
-  picks the ward stamp off the floor takes it out of the room for every other
-  play of that world, and one that puts something down leaves it there for
-  everybody. That is what the inventory change deliberately did **not** touch —
-  the captain said he is thinking about the room half separately, so it was left
-  alone rather than half-scoped.
-
-  It is written down here and asserted rather than left as folklore:
-  `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml`, step
-  `second-finds-the-office-emptied`, pins the current behaviour, so a change to
-  it fails a test instead of surprising somebody. Two options when it comes up:
-  scope `items.location_id` per playthrough the way the carried half now is
-  (which forks the world and makes "the world keeps what it generates" a
-  per-player claim), or leave rooms shared and say so in the interface.
+- ~~**A room one party has emptied is empty for the other**~~ — **fixed**
+  (`ta-items-per-playthrough`, 2026-09-04, on the captain's ruling). The world
+  is the template and the playthrough owns the instances: `items.playthrough_id`
+  is the LAYER, `items.template_id` is the link, and `Item::Snapshot` copies a
+  room's contents into a game at first contact. The two options this entry
+  listed were "scope room contents per playthrough" and "leave rooms shared and
+  say so"; the captain chose the first, and what stays shared is the world
+  itself — the geometry, the descriptions, the cast. See **Done**, and
+  `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml` (independence),
+  `…-first-contact.yml` (timing) and `EngineSweep::Invariants#world_items_unmoved`
+  (no typed line moves one of the world's own rows).
 
 - **The narration erases the `take` and invents the pickup on a `drop`**
   (`ta-take-drop-narration`, queued). **Two checks see it now** — see the

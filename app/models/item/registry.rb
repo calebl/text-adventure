@@ -45,6 +45,17 @@
 # validates that -- and the one other writer, `Item::Inscriber`, only ever fills
 # in a readable thing that arrived with none.
 #
+# IT WRITES THE WORLD LAYER AND ONLY THE WORLD LAYER. Since the captain's
+# ruling of 2026-09-04 an `Item` row is either one of the world's own -- a
+# TEMPLATE -- or one playthrough's copy of one, and everything here is a
+# template: this is the world writing down what a room contains, which is true
+# whether nobody is playing or three people are. A realization triggered mid-game
+# writes the templates and THEN the playthrough that triggered it takes its copy
+# (`Playthrough::Turn#move_to`), in that order, so the party that opened the door
+# sees the room it just paid for and everybody else sees it when they walk in.
+# The caps read templates for the same reason: they bound the world's ontology,
+# not how many people have looked at it.
+#
 # AN INSCRIPTION ON A THING MARKED UNREADABLE IS DROPPED AND THE THING IS KEPT,
 # which is the same trade every refusal here makes: a stamp that came back with
 # words on it is still a good stamp, and losing a room's furniture over a
@@ -105,8 +116,13 @@ class Item::Registry
   # counted once, for the same reason `Location::Generator#room_for_exits` is:
   # rows are written as the loop goes, and a budget worked out before it would
   # not notice.
+  #
+  # THE WORLD'S OWN ROWS AND NOT ANY GAME'S. Both caps bound the WORLD -- what a
+  # room and a story contain -- and every playthrough holds its own copy of all
+  # of it (`Item::Snapshot`), so counting instances would spend a room's budget
+  # of three on one thing three players had each seen once.
   def room_for_items
-    [ MAX_PER_ROOM - Item.lying_in(location).count, 0 ].max
+    [ MAX_PER_ROOM - Item.lying_in(location).templates.count, 0 ].max
   end
 
   # Whether this world has room for another thing at all.
@@ -114,22 +130,28 @@ class Item::Registry
     [ MAX_PER_STORY - story_item_count, 0 ].max
   end
 
-  # Every item in this story, on whichever of the three sides of `Item`'s
-  # one-place rule it sits -- `Item.in_story`, which is the one place those
-  # queries are written. The playthrough leg is not optional here: when a
-  # player takes something the row leaves `location_id` for `playthrough_id`,
-  # and a count that could not see it would let the registry furnish the world
-  # past its own ceiling one pickup at a time.
+  # EVERY ONE OF THE WORLD'S OWN THINGS IN THIS STORY, reached through whoever
+  # has it -- `Item.in_story`, which is the one place those queries are written,
+  # narrowed to the world layer.
+  #
+  # THE PLAYTHROUGH LEG IS STILL IN THE QUERY and it is still not optional: it
+  # reaches a template lying in a room or held by a character exactly as the
+  # other two legs do, and `.templates` is what keeps every game's own copies
+  # out. Before the layer split a taken item left `location_id` for
+  # `playthrough_id`, and a count that could not see it let the registry furnish
+  # the world past its own ceiling one pickup at a time; now a take moves an
+  # instance and the template never leaves the room, so this count is exact
+  # rather than merely complete.
   def story_items
-    Item.in_story(story)
+    Item.in_story(story).templates
   end
 
   private
 
   # BY NAME, not by row. `MAX_PER_STORY` bounds the ONTOLOGY -- how many
-  # distinct things this world contains -- and every playthrough carries its
-  # own copy of the story's starting inventory, so counting rows would spend
-  # the world's budget on the same daybook once per player.
+  # distinct things this world contains -- and a name is what the classifier
+  # resolves a typed line against, so two rows of one name are one thing to a
+  # player however they came to exist.
   def story_item_count = story_items.distinct.count(:name)
 
   def admit_one(attributes, created)
@@ -139,7 +161,12 @@ class Item::Registry
     reason = refusal(name, description, created)
     return refuse(name, reason) if reason
 
+    # A TEMPLATE, always: `playthrough` and `template` are both nil, because this
+    # is the world writing down what a room contains. The party's own copy of it
+    # is `Item::Snapshot`'s, taken by whichever playthrough triggered the
+    # realization on its way through `Playthrough::Turn#move_to`.
     location.items.create!(name: name, description: description, character: nil,
+                           playthrough: nil, template: nil,
                            **writing_on(name, attributes))
   end
 

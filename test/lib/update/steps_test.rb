@@ -116,34 +116,36 @@ class Update::StepsTest < ActiveSupport::TestCase
     assert_match(/1 turn\(s\) left blank/, report.notes.first)
   end
 
-  test "the inventory step has nothing to do when the protagonist holds nothing" do
+  test "the item step has nothing to do when the world holds nothing" do
     story = create(:story)
     create(:character, :protagonist, story: story)
 
-    assert_predicate Update::Steps::BackfillInventory.new.call, :nothing_to_do?
+    assert_predicate Update::Steps::BackfillItems.new.call, :nothing_to_do?
   end
 
-  # THE ONE STEP WHERE "NOTHING TO DO" TOOK READING RATHER THAN ASSUMING.
-  # `Item::InventoryBackfill` answers `starting` for the story's kit on every
-  # run for ever, because the row stays on the protagonist; what makes the
-  # second run quiet is that no playthrough is owed a copy any more.
-  test "the inventory step copies the starting kit once and then has nothing to do" do
+  # THE ONE STEP WHERE "NOTHING TO DO" TOOK READING RATHER THAN ASSUMING. The
+  # row phase re-derives the same answers on every run for ever, because the
+  # world's own rows stay where they are; what makes the second run quiet is
+  # that every playthrough already holds the copies it is owed.
+  test "the item step gives a game its copies once and then has nothing to do" do
     story = create(:story)
     protagonist = create(:character, :protagonist, story: story)
     room = create(:location, story: story)
     create(:item, character: protagonist, location: nil, name: "Assize tide-slate")
+    create(:item, :lying, location: room, name: "a hand bell")
     playthrough = create(:playthrough, story: story, character: protagonist, current_location: room)
     playthrough.items.destroy_all
 
-    report = Update::Steps::BackfillInventory.new.call
+    report = Update::Steps::BackfillItems.new.call
 
     assert_predicate report, :changed?
-    assert_match(/starting kit -- copied into 1 playthrough/, report.lines.first)
+    assert_match(/takes its own copy of 2 thing\(s\)/, report.lines.first)
     assert_equal [ "Assize tide-slate" ], playthrough.reload.carried.pluck(:name)
-    assert_predicate Update::Steps::BackfillInventory.new.call, :nothing_to_do?
+    assert_equal [ "a hand bell" ], playthrough.items_lying_in(room).pluck(:name)
+    assert_predicate Update::Steps::BackfillItems.new.call, :nothing_to_do?
   end
 
-  test "the inventory step writes nothing in a dry run" do
+  test "the item step writes nothing in a dry run" do
     story = create(:story)
     protagonist = create(:character, :protagonist, story: story)
     room = create(:location, story: story)
@@ -151,7 +153,7 @@ class Update::StepsTest < ActiveSupport::TestCase
     playthrough = create(:playthrough, story: story, character: protagonist, current_location: room)
     playthrough.items.destroy_all
 
-    assert_predicate Update::Steps::BackfillInventory.new(dry_run: true).call, :changed?
+    assert_predicate Update::Steps::BackfillItems.new(dry_run: true).call, :changed?
     assert_empty playthrough.reload.carried, "a dry run handed out the starting kit"
   end
 

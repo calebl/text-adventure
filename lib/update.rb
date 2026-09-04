@@ -50,25 +50,28 @@ module Update
   # THE STEPS, IN THE ORDER THEY RUN. Order is dependency order and it is
   # asserted by `Update::RegistryTest`, not inferred at run time:
   #
-  #   transitions before inventory  `Item::InventoryBackfill` reads
-  #                                 `Scene#took?`, which needs BOTH
-  #                                 `resolved_action` and `acted_on` -- exactly
-  #                                 what the transition backfill writes. Run the
-  #                                 other way round, every take is invisible and
-  #                                 every held item reads as unrecoverable.
+  #   transitions before items      `Item::LayerBackfill` reads `Scene#took?`,
+  #                                 which needs BOTH `resolved_action` and
+  #                                 `acted_on` -- exactly what the transition
+  #                                 backfill writes -- and `scenes.location_id`
+  #                                 to know which room to put the world's own
+  #                                 row back in. Run the other way round, every
+  #                                 take is invisible, every row a player
+  #                                 carried off reads as one of the world's own,
+  #                                 and the rooms stay empty for everybody.
   #   backfills before repairs      `Story::Repair`'s safe remedies act on
   #                                 findings the backfills remove
-  #                                 (`protagonist_holds_a_taken_item` is
-  #                                 literally one item of the inventory
-  #                                 backfill's work). Repairing first spends the
-  #                                 findings and then the backfill reports them
-  #                                 again.
+  #                                 (`protagonist_holds_a_taken_item` and
+  #                                 `playthrough_missing_a_copy` are literally
+  #                                 two pieces of the item backfill's work).
+  #                                 Repairing first spends the findings and then
+  #                                 the backfill reports them again.
   #   doctor last                   it reports and never writes, so it is the
   #                                 summary of everything above it.
   REGISTRY = [
     Update::Steps::BackfillTransitions,
     Update::Steps::BackfillWhereabouts,
-    Update::Steps::BackfillInventory,
+    Update::Steps::BackfillItems,
     Update::Steps::SafeRepairs,
     Update::Steps::Doctor
   ].freeze

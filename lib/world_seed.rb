@@ -67,7 +67,7 @@ module WorldSeed
   # Nil on a malformed file too: a caller reading the file for corroborating
   # evidence must not be the thing that raises on a broken one, which is
   # `WorldSeed::Loader`'s job to complain about. `Story::Doctor` and
-  # `Item::InventoryBackfill` both read it here rather than each opening the
+  # `Item::LayerBackfill` both read it here rather than each opening the
   # path, so "is this one of ours" has one answer.
   def self.checked_in_document(title)
     path = DIRECTORY.join("#{slug(title)}.yml")

@@ -72,6 +72,14 @@
 #
 # It still adds and updates and never deletes: a row play created is never
 # touched. `rake game:delete` plus `bin/rails db:seed` is the clean rebuild.
+#
+# AND SINCE THE CAPTAIN'S RULING OF 2026-09-04, "a row play created" is a whole
+# LAYER rather than a judgement call. Every playthrough holds its own copy of
+# the world's things (`Item::Snapshot`), and this loader writes the world layer
+# and only the world layer -- `Item.templates` in `#find_item` and
+# `#find_renamed_item`, `playthrough: nil, template: nil` on every row it saves.
+# So re-asserting the file can no longer take a thing out of somebody's hands
+# mid-game: it puts the world's own row back and leaves every game alone.
 class WorldSeed::Loader
   class InvalidWorld < StandardError; end
 
@@ -355,17 +363,34 @@ class WorldSeed::Loader
     end
   end
 
-  # THE THINGS IN THE WORLD, on whichever side of `Item`'s one-place rule they
-  # sit: `place` is `character:` for something somebody is holding and
-  # `location:` for something lying in a room, and the other half is written nil
-  # so that re-seeding cannot leave an item in two places at once.
+  # THE THINGS IN THE WORLD, on whichever side of `Item`'s place rule they sit:
+  # `place` is `character:` for something somebody is holding and `location:`
+  # for something lying in a room, and the other half is written nil so that
+  # re-seeding cannot leave an item in two places at once.
+  #
+  # IT WRITES THE WORLD LAYER AND NEVER AN INSTANCE, and since the captain's
+  # ruling of 2026-09-04 that is the whole of what "the file re-asserts itself
+  # over a played world" now means. A seed file describes a WORLD: what a room
+  # was built holding, what a person was written carrying. Every playthrough
+  # takes its own copy of that at first contact (`Item::Snapshot`), and those
+  # copies are the games in progress -- so a re-seed that reached into them
+  # would take a thing out of somebody's hands mid-game to put it back on a
+  # shelf that already has one. `playthrough: nil` and `template: nil` are
+  # written on every leg to say it in the row.
+  #
+  # WHAT THAT COSTS, stated: an already-copied instance keeps the description
+  # the file gave it when the party first walked in, so editing a room's item
+  # text reaches every game that has not been there yet and no game that has.
+  # That is inherent in copying and it is the right way round -- the alternative
+  # is a file edit rewriting what a player is holding.
   #
   # A PROTAGONIST'S ITEMS ARE THE STORY'S STARTING INVENTORY. They stay held by
-  # the protagonist row, carried by nobody, and every playthrough of the world
-  # begins with a COPY of each -- `Story#starting_inventory` and
-  # `Playthrough#take_up_the_starting_inventory` have the argument. So the file
-  # keeps writing exactly what it wrote before and the meaning of the row is
-  # what changed: world data rather than one shared pair of hands.
+  # the protagonist row, in the world layer, and every playthrough of the world
+  # begins with a COPY of each in the PARTY'S own hands --
+  # `Story#starting_inventory` and `Item::Snapshot#of_the_party!` have the
+  # argument. So the file keeps writing exactly what it wrote before and the
+  # meaning of the row is what changed: world data rather than one shared pair
+  # of hands.
   #
   # Items under a LOCATION are what a HAND-WRITTEN world carries so that
   # anything in it is takeable. A generated room furnishes itself now
@@ -374,48 +399,43 @@ class WorldSeed::Loader
   # rather than by a model call, so what is lying in one is whatever the file
   # says and nothing else. The registry leaves seeded rooms alone.
   #
-  # MATCHED ON (story, name), NOT ON THE OWNER, because an item is the one thing
-  # in these files that MOVES: `Playthrough::Turn#carry!` and `#put_down!` write
-  # `items.playthrough_id` and `items.location_id` on every take and drop.
+  # MATCHED ON (story, name), NOT ON THE OWNER, because a template can still
+  # move: `rake game:backfill_items` puts one back where a pre-layer take
+  # carried it off from, and a hand-edited database can put one anywhere.
   # Keying on the owner would look for the daybook in the hands the file puts it
-  # in, not find it because the player left it on a shelf, and seed a second one.
-  # Keying on the story finds the one that exists and puts it back where the
-  # file says it belongs -- the same "the file re-asserts itself over a played
-  # world" rule the connections already follow.
-  # `playthrough: nil` is written on every leg for the reason the callers write
-  # the other one: `Item` is in exactly one of three places, and re-seeding a
-  # world somebody is playing finds room items in a party's hands. Leaving the
-  # column set would save a row that is in two places at once, which `Item`
-  # refuses.
+  # in, not find it, and seed a second one. Keying on the story finds the one
+  # that exists and puts it back where the file says it belongs -- the same rule
+  # the connections already follow.
   def load_items!(story, documents, **place)
     Array(documents).each do |attributes|
       name = attributes.fetch("name")
       item = find_item(story, name) || Item.new(name: name)
       note_rename("item", item, name)
       note_creation("item", name) unless item.persisted?
-      item.assign_attributes(attributes.merge("name" => name, playthrough: nil, **place))
+      item.assign_attributes(attributes.merge("name" => name, playthrough: nil, template: nil, **place))
       item.save!
     end
   end
 
-  # An item of this story by name: held by one of its people, lying anywhere in
-  # it, or -- last -- carried by a party playing it.
+  # ONE OF THE WORLD'S OWN ROWS of this story by name: held by one of its people
+  # or lying anywhere in it, and those are a template's only two places.
   #
-  # THE WORLD'S OWN ROWS COME FIRST AND THAT ORDER IS THE POINT. A protagonist
-  # item in one of these files is the story's STARTING INVENTORY, and every
-  # playthrough carries a copy of it (`Playthrough#carried`). Finding a copy
-  # would re-assert the file onto one player's row and take the daybook out of
-  # their hands, while the world's own starting inventory stayed wherever it
-  # was. The carried leg is still searched, because a ROOM item a player is
-  # holding right now is on `playthrough_id` and re-seeding has always put such
-  # a thing back where the file says it belongs.
+  # `.templates` IS THE WHOLE GUARD. Every playthrough holds a copy of the
+  # world's things under the same name, so a search that could return one would
+  # re-assert the file onto one player's row -- putting the daybook back on the
+  # shelf out of somebody's hands, while the world's own daybook stayed wherever
+  # it was. Before the layer split the carried leg had to be searched, because a
+  # room item a player was holding WAS the world's only row; it is not any more,
+  # and searching it now would be the defect rather than the fix.
+  #
+  # `#find_renamed_item` is the last resort and it is the same statement one
+  # step wider: a row the file has renamed is still that row.
   def find_item(story, name)
-    by_name = Item.where(name: name)
+    by_name = Item.where(name: name).templates
 
     by_name.where(character_id: story.characters.select(:id))
            .or(by_name.where(location_id: story.locations.select(:id)))
            .first ||
-      by_name.where(playthrough_id: story.playthroughs.select(:id)).first ||
       find_renamed_item(story, name)
   end
 
@@ -425,18 +445,24 @@ class WorldSeed::Loader
   # database held two `Ward Office 12 daybook` rows in the protagonist's hands
   # for exactly this reason.
   #
-  # THE THREE LEGS ARE SEARCHED IN THE SAME ORDER `#find_item` searches them,
-  # and that is the load-bearing part rather than the normalizing. A seeded
-  # protagonist item is the story's starting inventory and every playthrough
-  # carries a COPY of it; finding a copy first would re-assert the file onto one
-  # player's row and take the daybook out of their hands while the world's own
-  # row kept the old name.
+  # `.templates` AGAIN, and here it replaces a rule rather than adding one. This
+  # used to search all three legs in `#find_item`'s own order and prefer a row
+  # with no playthrough on it, because a seeded protagonist item is the story's
+  # starting inventory and every playthrough carries a copy of it under the same
+  # name -- so finding a copy first would rename one player's row and leave the
+  # world's own row spelt the old way. Since the layer split the world's own
+  # rows are the only ones this can see at all, so the preference has nothing
+  # left to choose between: what it was guarding against is now unreachable.
+  #
+  # A COPY KEEPS THE NAME IT WAS COPIED WITH, which is the same trade the
+  # descriptions make one method up: a file edit reaches every game that has not
+  # met the thing yet and no game that has. `items.template_id` is what still
+  # ties them together, so `rake game:doctor` reads the copy as this
+  # playthrough's copy of the renamed row rather than as a stray.
   def find_renamed_item(story, name)
     key = WorldSeed.natural_key(name)
-    candidates = Item.in_story(story).select { |item| WorldSeed.natural_key(item.name) == key }
-    return nil if candidates.empty?
 
-    candidates.detect { |item| item.playthrough_id.nil? } || candidates.first
+    Item.in_story(story).templates.detect { |item| WorldSeed.natural_key(item.name) == key }
   end
 
   # A world's own laws: which fixed Ruby operation runs on which cadence, and the
