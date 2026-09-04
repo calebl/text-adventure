@@ -392,6 +392,15 @@ send again: one system instruction, one schema, one model.
 - `db/seeds/worlds/*.yml` are two checked-in playable worlds, loaded offline and
   idempotently by `db/seeds.rb`. `WorldSeed::Loader` matches on natural keys
   (story title, race name, character fullname, location name) — never on `id`.
+- **A world places its own cast**, with `characters[].location`. That column is
+  the closed set `talk` resolves against, so a world exported without it loads
+  with nobody standing anywhere and nobody to speak to. The key is optional and
+  an absent one means *nowhere*, which is a real state a file may mean —
+  `the-unrecorded-hour.yml` leaves Perrin Lasco nowhere because that world is
+  about him having been removed from it, and `rake game:doctor` reports him. The
+  protagonist never carries one; see *Playing the world*. A `location` naming a
+  room the file does not declare is refused, because that mistake is otherwise
+  silent.
 - **A world carries its own opening arrival**, as `opening_scene`. It is the one
   `Scene` that is world rather than progress, which is a line the exporter
   otherwise holds hard; `db/seeds/worlds/README.md` has the ruling and the two
@@ -495,11 +504,34 @@ before changing the loop; the rules below are what it does not fit.
   stored prompt: that survives only while the audit trail does, and
   `TA_CHAT_KEEP_TURNS` can still be set to prune it, which is how it used to
   disappear from older turns.
-- **Who is standing in a room is answered in one place**, `Scene::Generator.characters_present`,
-  because the classifier must accept exactly the people the arrival paragraph
-  introduced. It reads the last scene in that location that recorded *anyone* —
-  only an arrival records a cast, so reading the plain latest scene emptied the
-  room after any narrated turn.
+- **Who is standing in a room is a RECORD**, `characters.location_id`, and
+  `Character.present_in(location)` is the closed set `talk` resolves against —
+  the exact counterpart of `Item.lying_in` for `take`. Everything asks it
+  through one method, `Scene::Generator.characters_present`, because the
+  classifier must accept exactly the people the arrival paragraph introduced.
+  It used to reconstruct the cast from the last scene in that location that had
+  recorded *anyone*, and only an arrival records one — so a room nobody had
+  walked into had nobody in it however central the person standing there was.
+  Arriving at The Tide Post recorded the protagonist alone, on all three runs
+  checked, in a world whose premise is a man chained to that post.
+- **The PARTY is the one thing still derived, and has to be.** The protagonist
+  and anyone `is_companion` are wherever the *playthrough* is
+  (`playthroughs.current_location_id`), because two people playing one seeded
+  world stand in two rooms at once and a story-level column cannot hold both.
+  `Scene::Generator.characters_present` is the one place the party and the
+  world's own people are added together.
+- **Four things write a whereabouts and prose is not one of them**: the seed
+  file's `characters[].location`, `Character::Registry` (which places somebody
+  who is nowhere and NEVER moves somebody who is not — that rule is the Tide
+  Post defect written down), the explicit `Character#move_to!`, and
+  `rake game:backfill_whereabouts` once. Do not add a narrator tool, a
+  per-turn model check, or a scan of prose for a name.
+- **A `Scene`'s cast is a derived snapshot**, written from the records on every
+  branch by `Playthrough::Turn#play` beside `typed` and `resolved_action`. It is
+  kept rather than dropped because it answers a different question — where
+  somebody WAS — which a column with no history cannot reconstruct and which
+  `Eval::Richness`, `still_run` and both frozen corpora read. Do not read it
+  back to decide who is present; that is the direction that forgot people.
 - **Tools on the narrator were evaluated and rejected for movement** (see the
   ROADMAP): `gemma3:12b`, first in `LOCAL_MODEL_OPTIONS`, has no tool
   capability at all, and a model that cannot call tools does not fail — it
@@ -559,7 +591,15 @@ expectations asserted against the records after every typed line. It runs in
 - **The invariants are the generator defects' own shape.** `EngineSweep::Invariants`
   checks the whole world after every walk because no typed line can open a door
   or overfill a room — `Location::Generator` does. They hold trivially today and
-  that is not a reason to drop them.
+  that is not a reason to drop them. `cast_unmoved` is the same statement about
+  people, and it compares against the world file rather than asserting "nobody
+  is nowhere": nowhere is a state the checked-in worlds deliberately hold, so
+  the file is the only honest thing to compare a walk with.
+- **`present:` is what made presence sweepable at all.** Who is in a room was
+  reconstructed from a scene an offline walk never writes, so it was invisible
+  here by construction and the only place to observe it was a generated run
+  costing money. It is a column now, so
+  `lib/engine_sweep/scripts/the-salt-assizes-presence.yml` walks it for free.
 - **Say what the sweep cannot see.** With the classifier off, a defect in how a
   model read a line is out of reach and belongs to `Playthrough::ClassifierTest`.
   `lib/engine_sweep/scripts/regressions-2026-09-03.yml` is the worked example:
@@ -608,6 +648,17 @@ The debug view shows the same four tables for one playthrough.
   therefore **no place check and no person check**, and adding one back needs a
   measurement, not an argument. `Story::Audit`'s header comment has the full
   reasoning for each check kept and each cut.
+- **A whereabouts record did not revive the person check, and that was measured
+  too.** `characters.location_id` made the records authoritative about presence,
+  which was the stated blocker — and the corpora still cannot support
+  `character_not_present`: 36 of 248 frozen passages are judgeable, exactly ONE
+  names somebody recorded elsewhere, and moving one seeded character one door
+  turns real, correct prose (*"From somewhere below, Grenn's voice rises"*) into
+  a violation. `Story::Audit`'s finding 5 has the numbers and
+  `Story::AuditPresenceTest` pins them, so the decision gets re-read rather than
+  inherited. The gap is covered by the engine instead: `Character.present_in` is
+  the closed set `talk` resolves against, so a player cannot SPEAK to somebody
+  who is not there whatever the prose says about them.
 - **Three corpora, pinned by three tests, and never pooled into one number.**
   `test/fixtures/files/narration_corpus.json` is 24 narrations two remote models
   really wrote, and `Story::AuditPrecisionTest` pins the item flags they earn.

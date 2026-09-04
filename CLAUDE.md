@@ -46,6 +46,8 @@ rake game:doctor                    # or rake 'game:doctor[3]' for one story
 rake game:audit                     # where narration contradicts the records; VERBOSE=1 for unjudged checks
 rake game:backfill_transitions      # label old turns with what they did, from the stored
                                     # classifier answers. Offline; DRY_RUN=1 to see it first
+rake game:backfill_whereabouts      # place characters who have none, from the arrival casts
+                                    # still on disk. Offline; refuses to guess; DRY_RUN=1
 rake game:score                     # the scoreboard: a rate per check, the movement since the
                                     # baseline, and every flagged turn with what was typed and
                                     # the passage. SAVE=1 to re-baseline; CORPUS=corpus or
@@ -200,12 +202,35 @@ The current database includes the following story-related models with proper ass
 - **Item** → belongs to **Character** *or* **Location**, exactly one of the two:
   held by somebody, or lying in a place. The second half is what makes `take`
   and `drop` app-owned state changes rather than prose
+- **Character** → `location`, WHERE THEY ARE: one place at a time, the `Item`
+  shape applied to people, and `Character.present_in(location)` is the closed
+  set `talk` resolves against exactly as `Item.lying_in` is the one `take`
+  resolves against. Nullable, because nowhere is a real state. Written by the
+  seed file (`characters[].location`), by `Character::Registry`, by the explicit
+  `Character#move_to!` and by `rake game:backfill_whereabouts` — and **by no
+  prose, ever**. The PARTY is the deliberate exception and stays derived: the
+  protagonist and anyone `is_companion` are wherever the *playthrough* is, since
+  two people playing one world stand in two rooms at once
+- **Character::Registry** → the people half of the noun registry: it places
+  somebody who is nowhere and it **never moves somebody who is not**. That rule
+  is the Tide Post defect written down — arriving there recorded the protagonist
+  alone on all three runs checked, in a world whose premise is a man chained to
+  that post, because the cast was regenerated from scratch on every arrival. It
+  places and it does not invent; creating people is `ta-narrator-memory`'s
 - **Item::Registry** → how items come to *exist*, and the only thing in the app
   that creates one: 0–3 things written as records when a room is realized, out
   of the same call that describes it (`Location::DetailSchema`'s optional
   `items`). Not a narrator tool and not a scan of prose — the engine owns what
   exists and `Playthrough::Moment` tells the narrator. Capped per room and per
   world, and it refuses a name a person, a place or another item already has
+- **Scene** → `characters`, a DERIVED SNAPSHOT of who the records put in the
+  room, written on every branch by `Playthrough::Turn#play` out of
+  `Character.present_in`. Kept rather than dropped because it answers a
+  different question from the whereabouts column — where somebody WAS, which a
+  column with no history cannot reconstruct, and which `Eval::Richness`, the
+  `still_run` check and both frozen corpora read. Only its direction changed:
+  184 of the 480 baseline turns had no cast at all, because only an arrival and
+  a talk ever wrote one
 - **Scene** → `typed`, what the player typed to cause the turn, written on every
   branch by `Playthrough::Turn#play`. Nil only on an opening arrival
 - **Scene** → `resolved_action` and `acted_on` (polymorphic), **what the turn
@@ -342,13 +367,21 @@ The current database includes the following story-related models with proper ass
 - `Item` is in exactly one place — held by a character or lying in a location.
   `take` and `drop` are both app-owned: the row moves first, the narrator is told
   afterwards.
+- **`character_not_present` was measured and NOT shipped**, and `Story::Audit`'s
+  finding 5 has the numbers. The whereabouts record made the check conceivable —
+  the records are authoritative about presence now — and the corpora still
+  cannot support it: 36 of 248 passages are judgeable, exactly one names
+  somebody recorded elsewhere, and moving one seeded character one door makes
+  real, correct prose ("Grenn's voice rises from somewhere below") read as a
+  violation. The gap stays covered by the engine instead: a player cannot SPEAK
+  to somebody who is not there, whatever the prose says about them.
 
 ### Sweeping the engine with stored scripts
 - `rake game:sweep` (`EngineSweep`) walks YAML scripts of typed lines through
   `Playthrough::Mechanics` with `model: false` and asserts the records after
   each one: location, exits (with detail level), what is lying here, what is
-  carried, refusals and their offered alternatives. **Offline, deterministic,
-  free, and run by `bin/rails test`** — the engine half of the game, which
+  carried, **who is standing here** (`present:`), refusals and their offered
+  alternatives. **Offline, deterministic, free, and run by `bin/rails test`** — the engine half of the game, which
   `rake eval:run` cannot see and which nobody was testing without a keyboard.
 - **No model is a guard, not an intention:** `BaseAgent.new` is replaced for the
   length of a run and raises `EngineSweep::ModelCalled`. Each walk loads its own
@@ -357,7 +390,10 @@ The current database includes the following story-related models with proper ass
 - `EngineSweep::Expectation::KEYS` is **closed** — an unknown key raises rather
   than passing quietly. `EngineSweep::Invariants` checks the whole world after
   every walk, because an invented door and an over-full room are things
-  `Location::Generator` writes and no typed line can.
+  `Location::Generator` writes and no typed line can. `cast_unmoved` is the same
+  statement about people: nothing a player types may write a whereabouts, and it
+  is stated as *unmoved* rather than *nobody is nowhere* because nowhere is a
+  state two of the three checked-in worlds deliberately hold.
 - What an offline walk cannot see is written into the scripts themselves; see
   `lib/engine_sweep/scripts/regressions-2026-09-03.yml`.
 
