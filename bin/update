@@ -1,0 +1,291 @@
+#!/usr/bin/env ruby
+# BRING A CHECKOUT UP TO DATE: pull the default branch, then do everything the
+# code you just pulled needs done to the database you already have.
+#
+# THE PROBLEM IT SOLVES. A world here outlives the schema that made it, so a PR
+# that adds a column also adds a hand list to its own body: pull, migrate, run
+# this backfill, then that repair, then the doctor. Five landed in one week and
+# the captain was reading five merged PR bodies to work out what his own
+# database still needed. `lib/update.rb` is that list, in the repo, in
+# dependency order; this is the command that runs it.
+#
+#   bin/update              pull, install, migrate, apply, report
+#   bin/update --dry-run    fetch and say what WOULD happen. Writes nothing --
+#                           not the pull, not the migration, not a row.
+#   bin/update --skip-pull  "I already pulled, just apply."
+#
+# WHAT IT NEVER DOES, and this is the promise the refusals at the top exist to
+# keep: it never stashes, resets, checks out, merges, rebases or forces
+# anything, it never makes a model call (`Update::Step.model_calls?` is the gate
+# and no step asks for it), and it never touches a running process. A dev server
+# caches the schema it started with, so it TELLS you to restart yours and leaves
+# it alone.
+#
+# RUBY RATHER THAN SHELL, following `bin/setup` -- which is the script this most
+# resembles, an idempotent bring-your-environment-up-to-date runner. It also
+# reads git's output and branches on it a dozen times, which is the point where
+# shell stops being the shorter of the two.
+
+require "open3"
+
+APP_ROOT = File.expand_path("..", __dir__)
+Dir.chdir APP_ROOT
+
+# So an `abort` (stderr) cannot print above the stdout it is about.
+$stdout.sync = true
+
+DRY_RUN = ARGV.delete("--dry-run") || ARGV.delete("-n")
+SKIP_PULL = ARGV.delete("--skip-pull")
+HELP = ARGV.delete("--help") || ARGV.delete("-h")
+
+USAGE = <<~TEXT
+  Usage: bin/update [--dry-run] [--skip-pull]
+
+    --dry-run, -n   fetch, then say what would happen. Writes nothing at all.
+    --skip-pull     apply to the tree as it stands; do not fetch or pull.
+
+  It refuses to pull unless you are on the default branch with a clean tree,
+  and it never stashes, resets or checks out anything.
+TEXT
+
+if HELP
+  puts USAGE
+  exit 0
+end
+
+unless ARGV.empty?
+  abort "bin/update: I do not know what #{ARGV.join(" ")} means.\n\n#{USAGE}"
+end
+
+# ----------------------------------------------------------------------------
+# Running things.
+# ----------------------------------------------------------------------------
+
+# Git's answer to a question, and whether it could answer at all. Everything
+# this script decides is decided on one of these, so the failure comes back as
+# a value rather than as an exception to be caught somewhere else.
+def capture(*args)
+  out, status = Open3.capture2e(*args)
+  [ out.strip, status.success? ]
+end
+
+def git(*args) = capture("git", *args)
+
+# A command whose output the captain should see, run for real. Returns whether
+# it worked; nothing here decides to carry on past a failure without saying so.
+def loud(*args)
+  puts "     $ #{args.join(" ")}"
+  system(*args)
+end
+
+def section(title)
+  puts
+  puts title
+end
+
+def say(line) = puts("     #{line}")
+
+# ----------------------------------------------------------------------------
+# Refusing, before anything is touched.
+# ----------------------------------------------------------------------------
+
+inside, ok = git("rev-parse", "--is-inside-work-tree")
+abort "bin/update: #{APP_ROOT} is not a git checkout." unless ok && inside == "true"
+
+# The default branch as the remote itself names it, so a repo that renames it
+# does not need this script edited. `origin/HEAD` is set by `git clone` and by
+# `git remote set-head origin --auto`; a checkout missing it falls back to main
+# and says which it used.
+head, ok = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD")
+DEFAULT_BRANCH = ok && head.start_with?("origin/") ? head.delete_prefix("origin/") : "main"
+
+branch, = git("rev-parse", "--abbrev-ref", "HEAD")
+
+puts "BRINGING THIS CHECKOUT UP TO DATE#{" -- DRY RUN, nothing will be written" if DRY_RUN}"
+say "#{APP_ROOT} on #{branch}, default branch #{DEFAULT_BRANCH}"
+
+if SKIP_PULL
+  say "--skip-pull: not fetching and not pulling. Applying to the tree as it stands."
+else
+  # THE THREE REFUSALS. Each one prints the reason and stops; none of them
+  # attempts a fix, because every fix available here (stash, reset, checkout)
+  # is a way to lose work that is not this script's to lose.
+  if branch != DEFAULT_BRANCH
+    abort "\nbin/update: you are on #{branch}, not #{DEFAULT_BRANCH}.\n" \
+          "This only ever pulls the default branch, and it will not check one out for you.\n" \
+          "Switch with `git switch #{DEFAULT_BRANCH}`, or apply to this tree with `bin/update --skip-pull`."
+  end
+
+  dirty, = git("status", "--porcelain")
+  unless dirty.empty?
+    listed = dirty.lines.first(10).map(&:rstrip)
+    abort "\nbin/update: the working tree is dirty, so there is nothing safe to fast-forward onto:\n" \
+          "#{listed.join("\n")}#{"\n  ... and more" if dirty.lines.size > 10}\n" \
+          "Commit or set those aside yourself. This never stashes, resets or checks out anything."
+  end
+
+  section "FETCHING"
+  fetch_output, ok = git("fetch", "--prune", "origin")
+  unless ok
+    abort "\nbin/update: `git fetch origin` failed, so I do not know what is on the remote:\n#{fetch_output}"
+  end
+  say fetch_output.empty? ? "origin fetched." : fetch_output
+end
+
+# ----------------------------------------------------------------------------
+# The range, and moving onto it.
+# ----------------------------------------------------------------------------
+
+OLD, = git("rev-parse", "HEAD")
+TARGET, target_known = SKIP_PULL ? [ OLD, true ] : git("rev-parse", "origin/#{DEFAULT_BRANCH}")
+
+abort "\nbin/update: there is no origin/#{DEFAULT_BRANCH} to pull." unless target_known
+
+moved = false
+
+if SKIP_PULL
+  # Nothing to compare against, so nothing is claimed about what changed.
+elsif OLD == TARGET
+  section "ALREADY UP TO DATE"
+  say "#{DEFAULT_BRANCH} is at #{OLD[0, 12]} and so are you. Nothing to pull."
+else
+  # A fast-forward or nothing. `git pull --ff-only` would refuse this itself,
+  # but it refuses AFTER printing a wall of git advice, and the useful sentence
+  # is the one about what this script will not do about it.
+  _, can_ff = git("merge-base", "--is-ancestor", "HEAD", TARGET)
+  unless can_ff
+    abort "\nbin/update: your #{DEFAULT_BRANCH} has commits that origin's does not, so a fast-forward is " \
+          "impossible.\nSort that out by hand -- this never merges, rebases, resets or forces anything."
+  end
+
+  section "PULLING #{OLD[0, 12]}..#{TARGET[0, 12]}"
+  log, = git("log", "--oneline", "--no-decorate", "#{OLD}..#{TARGET}")
+  log.lines.each { |line| say line.rstrip }
+
+  if DRY_RUN
+    say "(dry run: not pulling)"
+  else
+    abort "\nbin/update: `git pull --ff-only` failed. Nothing else has run." unless loud("git", "pull", "--ff-only")
+    moved = true
+  end
+end
+
+# ----------------------------------------------------------------------------
+# Dependencies. Only when the lockfile moved in the range -- silent otherwise,
+# except for the one case that has no range to read (`--skip-pull`, or a gem
+# changed by hand), where `bundle check` is asked instead.
+# ----------------------------------------------------------------------------
+
+section "DEPENDENCIES"
+
+lockfile_moved =
+  if SKIP_PULL || OLD == TARGET
+    false
+  else
+    changed, = git("diff", "--name-only", OLD, TARGET, "--", "Gemfile", "Gemfile.lock")
+    !changed.empty?
+  end
+
+satisfied = capture("bundle", "check").last
+
+if lockfile_moved || !satisfied
+  say lockfile_moved ? "the Gemfile or its lockfile moved in that range." : "`bundle check` says the bundle is not satisfied."
+  if DRY_RUN
+    say "would run: bundle install"
+  else
+    abort "\nbin/update: `bundle install` failed. Fix that and run again." unless loud("bundle", "install")
+  end
+else
+  say "unchanged and satisfied."
+end
+
+# ----------------------------------------------------------------------------
+# The schema.
+# ----------------------------------------------------------------------------
+
+section "MIGRATIONS"
+
+status, ok = capture("bin/rails", "db:migrate:status")
+unless ok
+  abort "\nbin/update: `bin/rails db:migrate:status` failed, so I cannot tell what is pending:\n#{status}\n" \
+        "If this database does not exist yet, `bin/rails db:prepare` makes it."
+end
+
+# ONLY THE FIRST DATABASE'S SECTION, which is the app's own: development has
+# three (`config/database.yml`), and Solid Queue's and Solid Cable's report
+# their one schema-loaded row as `NO FILE`, which is normal and not pending
+# work. `bin/rails db:migrate` still migrates all three.
+pending = status.split(/^database: /).drop(1).first.to_s
+                .lines.map(&:strip).select { |line| line.start_with?("down") }
+
+migrated = false
+
+if pending.empty?
+  say "none pending."
+else
+  pending.each { |line| say line }
+  if DRY_RUN
+    say "would run: bin/rails db:migrate"
+  else
+    abort "\nbin/update: `bin/rails db:migrate` failed. The post-update steps read the columns it " \
+          "adds, so nothing further has run." unless loud("bin/rails", "db:migrate")
+    migrated = true
+  end
+end
+
+# ----------------------------------------------------------------------------
+# The post-update steps. `lib/update.rb` is the list and its header is how a PR
+# adds to it; this only runs it.
+#
+# A DRY RUN WITH MIGRATIONS PENDING CANNOT ASK THE STEPS ANYTHING, and says so
+# rather than crashing on a column that does not exist yet: the steps read the
+# very columns the pending migrations add.
+# ----------------------------------------------------------------------------
+
+section "APPLYING WHAT THE NEW CODE NEEDS"
+
+steps_ran = false
+
+if DRY_RUN && pending.any?
+  say "#{pending.size} migration(s) are pending and the steps read the columns those add,"
+  say "so their dry pass is skipped. They would run, in this order:"
+  registry, ok = capture("bin/rails", "game:update:list")
+  ok ? registry.lines.each { |line| say line.strip } : say("see lib/update.rb")
+else
+  env = DRY_RUN ? { "DRY_RUN" => "1" } : {}
+  unless system(env, "bin/rails", "game:update")
+    abort "\nbin/update: a post-update step failed -- see above. Nothing after it has run."
+  end
+  steps_ran = !DRY_RUN
+end
+
+# ----------------------------------------------------------------------------
+# What happened.
+# ----------------------------------------------------------------------------
+
+section "SUMMARY"
+
+if DRY_RUN
+  say "DRY RUN: nothing was written. No pull, no migration, no row."
+  say "Run `bin/update` to do it."
+  exit 0
+end
+
+say(if moved
+  "moved #{OLD[0, 12]}..#{TARGET[0, 12]} on #{DEFAULT_BRANCH}."
+elsif SKIP_PULL
+  "did not pull (--skip-pull); applied to #{OLD[0, 12]}."
+else
+  "already on #{OLD[0, 12]}; nothing was pulled."
+end)
+say migrated ? "the schema was migrated." : "the schema was already current."
+say steps_ran ? "the post-update steps ran; what each one did, or had nothing to do, is above." : "no post-update steps ran."
+
+if migrated || moved
+  port = ENV["PORT"] || "3000"
+  puts
+  say "RESTART YOUR DEV SERVER. A server caches each table's columns when it first uses them, so"
+  say "one that was up before this serves models built from the old schema (`StaleSchemaGuard`"
+  say "catches the obvious cases and says the same thing). It is yours to restart, not mine:"
+  say "  PORT=#{port} bin/dev"
+end
