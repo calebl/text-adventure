@@ -71,6 +71,7 @@ class Story::Doctor
       *playthrough_rows,
       *item_rows,
       *stat_blocks,
+      *abilities,
       *vitals_rows
     ]
   end
@@ -1160,6 +1161,62 @@ class Story::Doctor
               "#{character.fullname} has #{character.level.present? || character.hit_die.present? ? "half a stat block" : "no stat block"} " \
               "(level #{character.level.inspect}, hit die #{character.hit_die.inspect}), so the engine has no maximum " \
               "for their body and no playthrough can record anything happening to them",
+              :safe, subject: character)
+    end
+  end
+
+  # ------------------------------------------------------------------------
+  # THE THREE ABILITIES, and they are reported SEPARATELY from the stat block
+  # above rather than folded into it.
+  #
+  # `Character#abilities?` is its own predicate for a reason stated in that
+  # class's header: `#stat_block?` gates `#max_hp` and through it every
+  # `playthrough_vitals` row in the database, so widening it to want the
+  # abilities would make every existing maximum nil and every existing game's
+  # condition unreadable in the window between the migration and the backfill.
+  # The two facts are separate, so the two findings are.
+  #
+  # `:safe` FOR THE SAME REASON `character_without_a_stat_block` IS, and the
+  # same stretch of the word: nothing on record implies a strength. It is safe
+  # because the ENGINE is the sole author of that number by the captain's
+  # rulings of 2026-09-04 -- *"A model cannot set an NPC's numbers, the engine
+  # rolls them"*, and *"let's go with the 3 abilities"* -- so rolling 3d6 is not
+  # inventing world data to make a validation pass, it is the only thing that
+  # was ever going to decide it. `Character::StatBlock.for_existing` is
+  # deterministic, so a rehearsal and the repair agree.
+  def abilities
+    story.characters.order(:id).flat_map do |character|
+      [ *missing_abilities(character), *abilities_out_of_range(character) ]
+    end
+  end
+
+  # NOBODY HAS ROLLED THEM. Every character in a database older than the columns
+  # is one of these, and so is a row with a partial set -- which
+  # `Character#abilities_are_whole` refuses to save, so it arrived through raw
+  # SQL or a schema older than the validation.
+  def missing_abilities(character)
+    return [] if character.abilities?
+
+    held = Character::ABILITIES.select { |ability| character[ability].present? }
+    [ finding(:character_without_abilities, :warning,
+              "#{character.fullname} has #{held.any? ? "only #{held.size} of #{Character::ABILITIES.size} abilities " \
+              "(#{held.join(", ")})" : "no abilities"}, so the engine cannot roll a check for them at all",
+              :safe, subject: character) ]
+  end
+
+  # A NUMBER 3d6 COULD NEVER HAVE COME UP. `Character` refuses one outside
+  # `ABILITY_RANGE`, so this arrived through raw SQL or a schema older than the
+  # validation -- and re-rolling the three is the only honest fix, because there
+  # is no record anywhere that says what the intended number was.
+  def abilities_out_of_range(character)
+    Character::ABILITIES.filter_map do |ability|
+      score = character[ability]
+      next if score.nil? || Character::ABILITY_RANGE.include?(score)
+
+      finding(:ability_out_of_range, :warning,
+              "#{character.fullname} has #{ability} #{score.inspect}, outside the " \
+              "#{Character::ABILITY_RANGE.first}..#{Character::ABILITY_RANGE.last} that 3d6 rolls, so it came " \
+              "from somewhere that is not the engine",
               :safe, subject: character)
     end
   end

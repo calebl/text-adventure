@@ -55,6 +55,54 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **Three abilities, and a seeded check kernel** (`ta-ability-scores`). The
+  captain's ruling of 2026-09-04, evening, verbatim:
+
+  > *"let's go with the 3 abilities"*
+
+  Strength, dexterity and will — Cairn's set, and **exactly three**. It corrects
+  the *"No abilities for now"* below, which was a misunderstanding of the word:
+  an ability here is a number a die is thrown against, not a special power.
+
+  **The shape is the stat block's, one column-set wider.** `characters.strength`,
+  `.dexterity` and `.will` are nullable integers in `Character::ABILITY_RANGE`
+  (3..18, which is what 3d6 rolls), drawn by `Character::StatBlock` from **one
+  generator in one fixed order** — the hit die, then `Character::ABILITIES` in
+  its stated order — so a body stays re-derivable for ever and `DRY_RUN=1`
+  prints the numbers the real run writes. `Roll.pool(3, 6, rng:)` is the one new
+  die. Every number is the engine's: no schema and no prompt gained a field, and
+  `EngineSweep::Invariants#stat_blocks_unmoved` now reads all five columns off
+  the world file, so no typed line may write one.
+
+  **`Character#stat_block?` was deliberately NOT widened.** It gates `#max_hp`
+  and through it every `playthrough_vitals` row in the database; widening it
+  would have made every existing maximum nil and every game's condition
+  unreadable between the migration and the backfill. `#abilities?` is its own
+  predicate, with its own whole-or-nothing validation, its own doctor findings
+  (`character_without_abilities`, `ability_out_of_range`) and its own safe
+  repairs.
+
+  **`#max_hp` gains nothing, and that is stated in `Character`'s header so the
+  question is not reopened**: there is no constitution among the three, `will` is
+  nerve rather than stamina, and the body's capacity is `hit_die` and nothing
+  else.
+
+  **The check is one kernel: d20-under the ability**, with the penalty
+  subtracted from the TARGET rather than added to the die — so difficulty is a
+  parameter on the thing being tried, the shape `LocationConnection::DISTANCES`
+  already has, and there is no modifier function and no DC ladder.
+  `Character#check` is the arithmetic, `Character::Check` the record it answers,
+  and `Playthrough::Turn#check` builds the seed beside `#harm!` and `#mend!`. At
+  a target of zero or less **no die is thrown at all** — the pass rate there is
+  zero for ever, so the engine says the thing cannot be done. `rake
+  game:mechanics` walks it (`stats`, `check <ability> [penalty]`, printing
+  `check strength -> d20(7) <= 12 PASS`) and
+  `lib/engine_sweep/scripts/a-check-against-an-ability.yml` sweeps it offline.
+
+  **Not built, and deferred rather than missing**: combat, monsters, hostility,
+  throwing, terrain damage, a battle view, any prose check reading an ability,
+  any classifier or prompt change, and any ability beyond the three.
+
 - **Hit points, death, and inert levels** (`ta-character-stats`). The captain's
   rulings of 2026-09-04, verbatim:
 
@@ -65,6 +113,10 @@ The full audit of every planned piece of work against this constraint is in
   > *"No abilities for now. Levels are stored but inert in the first PR. A model
   > cannot set an NPC's numbers, the engine rolls them."*
 
+  The first sentence was **withdrawn the same evening** — see
+  `ta-ability-scores` above. The rest stands unchanged: levels are still stored
+  and inert, and the engine is still the sole author of every number.
+
   **The shape is `ta-items-per-playthrough`'s, applied to people.** Who somebody
   IS is the world's (`characters.level`, `characters.hit_die`, nullable, rolled
   by `Character::StatBlock` through the seeded `Roll` kernel); how much is LEFT
@@ -72,7 +124,8 @@ The full audit of every planned piece of work against this constraint is in
   character, written lazily at first contact by
   `Playthrough::Vitals::Snapshot`). An absent row means unhurt.
   `Character#max_hp = hit_die + (level - 1) * (hit_die / 2 + 1)` — derived, never
-  stored, and with no ability term in it because there are no abilities.
+  stored, and with no ability term in it. It gained none when the three
+  abilities landed either: none of them is a constitution.
 
   **Death is terminal.** `Playthrough::Turn#harm!` writes the last hit point and
   `playthroughs.ended_at` in one transaction; `Playthrough::Turn#play` and

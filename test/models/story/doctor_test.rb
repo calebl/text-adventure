@@ -889,6 +889,77 @@ class Story::DoctorTest < ActiveSupport::TestCase
     end
   end
 
+  # --- the three abilities ---------------------------------------------------
+  #
+  # Reported SEPARATELY from the stat block, because `Character#abilities?` is a
+  # separate predicate for a stated reason: `#stat_block?` gates `#max_hp` and
+  # through it every condition row in the database.
+
+  test "somebody with no abilities is reported, and repairably" do
+    story = create(:story)
+    nobody = create(:character, :without_abilities, story: story)
+
+    finding = Story::Doctor.new(story).findings.find { |row| row.code == :character_without_abilities }
+
+    assert_not_nil finding
+    assert_equal :safe, finding.remedy
+    assert_equal nobody, finding.subject
+    assert_match(/no abilities/, finding.message)
+  end
+
+  # A body with no abilities is ONE finding and not two: the sheet is whole on
+  # one side and empty on the other, and saying both would say the same gap twice.
+  test "a body with no abilities earns the ability finding and not the stat block one" do
+    story = create(:story)
+    create(:character, :without_abilities, story: story, level: 1, hit_die: 8)
+
+    assert_includes codes(story), :character_without_abilities
+    assert_not_includes codes(story), :character_without_a_stat_block
+  end
+
+  test "a character with all three abilities is no finding" do
+    story = create(:story)
+    create(:character, story: story, strength: 12, dexterity: 10, will: 14)
+
+    assert_not_includes codes(story), :character_without_abilities
+  end
+
+  # A PARTIAL SET, which `Character#abilities_are_whole` refuses to save -- so it
+  # is written past the validation the way the database really gets one.
+  test "a partial set of abilities is reported and says how much of it there is" do
+    story = create(:story)
+    somebody = create(:character, story: story)
+    Character.where(id: somebody.id).update_all(dexterity: nil, will: nil)
+
+    finding = Story::Doctor.new(story).findings.find { |row| row.code == :character_without_abilities }
+
+    assert_not_nil finding
+    assert_match(/only 1 of 3 abilities \(strength\)/, finding.message)
+  end
+
+  # A NUMBER 3d6 COULD NEVER HAVE COME UP. `Character` refuses one, so this
+  # arrived through raw SQL -- and there is no record of the intended value,
+  # which is what makes re-rolling the set the only honest answer.
+  test "an ability outside the range 3d6 rolls is reported" do
+    story = create(:story)
+    somebody = create(:character, story: story)
+    Character.where(id: somebody.id).update_all(strength: 25)
+
+    finding = Story::Doctor.new(story).findings.find { |row| row.code == :ability_out_of_range }
+
+    assert_not_nil finding
+    assert_equal :safe, finding.remedy
+    assert_equal somebody, finding.subject
+    assert_match(/strength 25/, finding.message)
+  end
+
+  test "the checked-in worlds give everybody three abilities in range" do
+    WorldSeed::Loader.load_all(io: nil).each do |story|
+      assert_not_includes codes(story), :character_without_abilities, story.title
+      assert_not_includes codes(story), :ability_out_of_range, story.title
+    end
+  end
+
   # The world that moves, one night on, with the file's own doorway written
   # back over the arrangement the night produced -- which is exactly what a
   # re-seed used to do. Built by hand rather than by running the mechanic, so

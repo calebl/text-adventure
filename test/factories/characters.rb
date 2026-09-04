@@ -29,6 +29,17 @@ FactoryBot.define do
     # older-database state.
     level { 1 }
     hit_die { 8 }
+    # THE THREE ABILITIES ARE DEFAULTED TOO, on the same reasoning and with the
+    # same choice of fixed numbers over a roll: a factory that rolled would make
+    # any test asserting a check outcome flake. They are the ordinary middle of
+    # 3d6 with enough spread that a d20-under check against one is not the same
+    # question as a check against another. `:without_abilities` is the trait for
+    # the older-database state, and it is SEPARATE from
+    # `:without_a_stat_block` because the two predicates do not merge -- see
+    # `Character`'s header.
+    strength { 12 }
+    dexterity { 10 }
+    will { 14 }
     # WHERE THEY ARE is deliberately not defaulted: nowhere is a real state and
     # it is the one a character starts in, so a test that needs somebody
     # standing in a room says `location:` and means it. See Character's header
@@ -53,6 +64,25 @@ FactoryBot.define do
     trait :without_a_stat_block do
       level { nil }
       hit_die { nil }
+    end
+
+    # A DATABASE OLDER THAN THE ABILITY COLUMNS. All three nil, because a partial
+    # set is a row `Character#abilities_are_whole` refuses to save -- and a
+    # SEPARATE trait from the one above, because `Character#stat_block?` and
+    # `#abilities?` are separate predicates and a fixture has to be able to hold
+    # a body with no abilities (which is exactly what a database looks like
+    # between the migration and `rake game:backfill_stat_blocks`).
+    trait :without_abilities do
+      strength { nil }
+      dexterity { nil }
+      will { nil }
+    end
+
+    # THE WHOLE SHEET MISSING: what every character in a database older than
+    # both migrations has.
+    trait :without_a_sheet do
+      without_a_stat_block
+      without_abilities
     end
 
     # NOWHERE ON PURPOSE: what a seed file asserts with `absent: true`. Not the

@@ -63,6 +63,42 @@ class RollTest < ActiveSupport::TestCase
     assert_equal Character::HIT_DICE.sort, drawn.uniq.sort
   end
 
+  # 3d6 IS WHAT AN ABILITY SCORE IS, so a pool of three six-sided dice covers
+  # 3..18 and nothing outside it -- which is exactly `Character::ABILITY_RANGE`,
+  # and the reason that range is the roll's own bounds rather than a taste.
+  test "a pool of 3d6 covers the whole of Character::ABILITY_RANGE and nothing else" do
+    rng = Roll.generator(story: 9)
+    rolls = 5_000.times.map { Roll.pool(3, 6, rng: rng) }
+
+    assert_equal Character::ABILITY_RANGE.to_a, rolls.uniq.sort
+  end
+
+  # A pool is the sum of its dice off ONE generator, in order -- written out here
+  # against three separate `#die` calls on a second generator built from the
+  # same seed, which is the same sequence of draws by hand.
+  test "a pool is the sum of its dice, drawn in order from the generator it is handed" do
+    by_hand = 3.times.sum { Roll.die(6, rng: @same ||= Roll.generator(story: 4, sequence: 1)) }
+
+    assert_equal by_hand, Roll.pool(3, 6, rng: Roll.generator(story: 4, sequence: 1))
+  end
+
+  # THE ORDER OF THE DRAWS IS THE ANSWER, which is what `Character::StatBlock`'s
+  # header says must not be tidied: a pool takes its dice from the generator it
+  # is handed, in sequence, so the draws after it see the generator advanced.
+  test "a pool advances the generator by one draw per die" do
+    one = Roll.generator(story: 6, sequence: 3)
+    other = Roll.generator(story: 6, sequence: 3)
+
+    Roll.pool(3, 6, rng: one)
+    3.times { Roll.die(6, rng: other) }
+
+    assert_equal Roll.die(20, rng: one), Roll.die(20, rng: other)
+  end
+
+  test "a pool of no dice is refused rather than answering zero" do
+    assert_raises(ArgumentError) { Roll.pool(0, 6, rng: Roll.generator(story: 1)) }
+  end
+
   test "one_of refuses an empty list rather than answering nil" do
     assert_raises(ArgumentError) { Roll.one_of([], rng: Roll.generator(story: 1)) }
   end

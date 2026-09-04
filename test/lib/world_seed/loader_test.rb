@@ -68,13 +68,36 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
 
   # --- the stat block, which a hand-authored world IS the decision about ------
 
+  # `WorldSeed::Loader::STAT_KEYS` is all five: the level, the hit die and the
+  # three abilities. A whole sheet, because that is what the file carries or
+  # nothing.
+  def sheet(level: 1, hit_die: 8, strength: 12, dexterity: 10, will: 14)
+    { "level" => level, "hit_die" => hit_die, "strength" => strength,
+      "dexterity" => dexterity, "will" => will }
+  end
+
   test "loads a character's stat block when the file gives one" do
     world = document
-    world["characters"].first["stats"] = { "level" => 2, "hit_die" => 10 }
+    world["characters"].first["stats"] = sheet(level: 2, hit_die: 10)
 
     character = WorldSeed::Loader.new(world).load!.protagonist
 
     assert_equal [ 2, 10 ], [ character.level, character.hit_die ]
+    assert_equal 16, character.max_hp
+  end
+
+  # THE ABILITIES ARE THE FILE'S DECISION TOO, and they are not part of
+  # `#max_hp`: the captain's ruling that the body's capacity is the hit die and
+  # nothing else. This is that stated as a test -- the maximum for a d10 at
+  # level 2 is 16 whatever the will says.
+  test "loads a character's three abilities, and none of them touches the maximum" do
+    world = document
+    world["characters"].first["stats"] = sheet(level: 2, hit_die: 10, strength: 7, dexterity: 15, will: 18)
+
+    character = WorldSeed::Loader.new(world).load!.protagonist
+
+    assert_equal [ 7, 15, 18 ], [ character.strength, character.dexterity, character.will ]
+    assert_predicate character, :abilities?
     assert_equal 16, character.max_hp
   end
 
@@ -85,30 +108,37 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     character = WorldSeed::Loader.new(document).load!.protagonist
 
     assert_not_predicate character, :stat_block?
+    assert_not_predicate character, :abilities?
   end
 
-  test "re-seeding re-asserts the file's stat block over a played world" do
+  test "re-seeding re-asserts the file's whole sheet over a played world" do
     world = document
-    world["characters"].first["stats"] = { "level" => 1, "hit_die" => 10 }
+    world["characters"].first["stats"] = sheet(hit_die: 10, strength: 15)
     story = WorldSeed::Loader.new(world).load!
-    story.protagonist.update!(hit_die: 6)
+    story.protagonist.update!(hit_die: 6, strength: 3)
 
     WorldSeed::Loader.new(world).load!
 
-    assert_equal 10, story.protagonist.reload.hit_die
+    assert_equal [ 10, 15 ], [ story.protagonist.reload.hit_die, story.protagonist.strength ]
   end
 
-  test "rejects a stat block with only half of itself" do
-    world = document
-    world["characters"].first["stats"] = { "level" => 1 }
+  # ALL FIVE KEYS OR NONE. The record refuses the two halves separately; the FILE
+  # is held to the whole sheet, because a hand-authored world is the decision and
+  # a half-authored one is an editing slip.
+  test "rejects a stats mapping with only some of the five keys" do
+    [ { "level" => 1 }, { "level" => 1, "hit_die" => 8 },
+      { "level" => 1, "hit_die" => 8, "strength" => 12 } ].each do |partial|
+      world = document
+      world["characters"].first["stats"] = partial
 
-    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
-    assert_match(/both together or neither/, error.message)
+      error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+      assert_match(/all of them together or none/, error.message)
+    end
   end
 
   test "rejects a hit die the engine would never roll" do
     world = document
-    world["characters"].first["stats"] = { "level" => 1, "hit_die" => 7 }
+    world["characters"].first["stats"] = sheet(hit_die: 7)
 
     error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
     assert_match(/hit die 7/, error.message)
@@ -116,10 +146,23 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
 
   test "rejects a level outside the declared range" do
     world = document
-    world["characters"].first["stats"] = { "level" => 0, "hit_die" => 8 }
+    world["characters"].first["stats"] = sheet(level: 0)
 
     error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
     assert_match(/level 0/, error.message)
+  end
+
+  # 3d6 CANNOT COME UP 2 OR 19, so a number outside `Character::ABILITY_RANGE`
+  # came from somewhere that is not the engine -- and the file's error names the
+  # person and the ability, which is what somebody editing YAML needs.
+  test "rejects an ability outside the range 3d6 rolls" do
+    [ [ :strength, 19 ], [ :dexterity, 2 ], [ :will, 0 ] ].each do |ability, score|
+      world = document
+      world["characters"].first["stats"] = sheet(**{ ability => score })
+
+      error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+      assert_match(/#{ability} #{score}/, error.message)
+    end
   end
 
   # WHAT IS LYING IN A ROOM, which is the closed set `take` resolves against and

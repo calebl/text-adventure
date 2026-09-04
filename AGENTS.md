@@ -721,9 +721,9 @@ variables at the same time"* — and the rules it lives under are short:
 
 ### A body, a condition, and what zero means
 
-`characters.level` / `characters.hit_die` and `playthrough_vitals` are the stat
-system, and they are `Item`'s two layers applied to people. The captain's
-rulings of 2026-09-04:
+`characters.level` / `characters.hit_die`, the three abilities and
+`playthrough_vitals` are the stat system, and they are `Item`'s two layers
+applied to people. The captain's rulings of 2026-09-04:
 
 > *"zero hit points means death. Playthrough is over and you can't do anything
 > else. You have to start a new playthrough. Eventually, we can add going back
@@ -731,6 +731,14 @@ rulings of 2026-09-04:
 >
 > *"No abilities for now. Levels are stored but inert in the first PR. A model
 > cannot set an NPC's numbers, the engine rolls them."*
+>
+> *(the same evening)* *"let's go with the 3 abilities"*
+
+The last one **withdraws the first sentence of the one above it** — that was a
+misunderstanding of the word, and an ability here is a number a die is thrown
+against rather than a special power. Everything else in the middle ruling
+stands: levels are stored and inert, and the engine is the sole author of every
+number.
 
 - **The world owns the body, one game owns the condition.** `characters.hit_die`
   is who somebody is, exactly like `race` and `age`; `playthrough_vitals` is how
@@ -751,8 +759,37 @@ rulings of 2026-09-04:
   for the same reason.
 - **Max HP is derived and never stored.**
   `hit_die + (level - 1) * (hit_die / 2 + 1)` — the whole die at first level and
-  the die's average rounded up after it. **No ability term**, because there are
-  no abilities: not three, not six, and no `check <ability> <dc>`.
+  the die's average rounded up after it. **No ability term, and it gained none
+  when the three abilities landed**: there is no constitution among them, `will`
+  is nerve rather than stamina, and the body's capacity is `hit_die`. It is said
+  in `Character`'s header so the question is not reopened; an ability term would
+  give one column two jobs and let a re-seed silently move every playthrough's
+  ceiling.
+- **There are exactly three abilities and one way to roll against them.**
+  `Character::ABILITIES` is `%i[strength dexterity will]`, each 3d6
+  (`Character::ABILITY_RANGE` is 3..18, the roll's own bounds), and the check is
+  **d20-under the ability with the penalty taken off the TARGET** —
+  `Character#check`, answering a `Character::Check`. The difficulty is therefore
+  a parameter on the thing being tried, the shape
+  `LocationConnection::DISTANCES` and `world_mechanics.cadence` already have,
+  and there is no modifier function, no DC ladder and no second kernel. **At a
+  target of zero or less no die is thrown**: the pass rate there is zero for
+  ever, so the honest answer is refusal-shaped and the generator is left
+  untouched. `Playthrough::Turn#check` builds the seed, beside `#harm!` and
+  `#mend!` and for the same reason.
+- **`Character#stat_block?` and `#abilities?` are TWO predicates and they do not
+  merge.** The first is `level` and `hit_die` — `#max_hp`'s gate, and through it
+  every `playthrough_vitals` row in the database. Folding the abilities into it
+  would make every existing maximum nil and every game's condition unreadable in
+  the window between a migration and `rake game:backfill_stat_blocks`. Each half
+  has its own whole-or-nothing validation, its own doctor finding and its own
+  safe repair.
+- **The order of the draws is load-bearing.** `Character::StatBlock` takes the
+  hit die and then the three abilities from ONE generator in `ABILITIES`'s stated
+  order, so a body is re-derivable for ever — which is what makes `DRY_RUN=1`
+  worth anything and what lets a sweep assert a check. Reordering either list
+  re-rolls every derived body in every database; `Character::StatBlockTest` pins
+  it.
 - **A level is stored and inert.** Nothing reads it for behaviour and nothing
   advances it; `Character#advance!` is the explicit call, deliberately invoked
   from nowhere, exactly as `Character#move_to!` was when it landed.
@@ -764,9 +801,16 @@ rulings of 2026-09-04:
   `Playthrough::Refusal.dead`, and `Playthrough::DeathNotice` is the one author
   of what a dead player is told. Read its header before changing a word.
 - **A stat block is the WORLD's, so no typed line may write one.**
-  `EngineSweep::Invariants#stat_blocks_unmoved` says it, the way `cast_unmoved`
-  says it about a whereabouts. `lib/engine_sweep/scripts/death-ends-a-playthrough.yml`
-  and `the-unrecorded-hour-two-bodies.yml` walk the ruling offline.
+  `EngineSweep::Invariants#stat_blocks_unmoved` says it over **all five
+  columns**, the way `cast_unmoved` says it about a whereabouts.
+  `lib/engine_sweep/scripts/death-ends-a-playthrough.yml` and
+  `the-unrecorded-hour-two-bodies.yml` walk the death half offline and
+  `a-check-against-an-ability.yml` walks the sheet half — a check writes
+  nothing, so every other verb in that script is the same assertion again.
+  A seed file's `characters[].stats` carries **all five keys or none**
+  (`WorldSeed::Loader::STAT_KEYS`); the record allows a body with no abilities
+  and the FILE does not, because a hand-authored world is the decision and a
+  half-authored one is an editing slip.
 - **The prose integration is ONE line.** `Playthrough::Moment#narration_context`
   states the party's condition as a fact and asks the narrator to decide
   nothing. A prose check reading HP against narration is deliberately NOT

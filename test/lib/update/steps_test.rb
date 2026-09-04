@@ -198,7 +198,7 @@ class Update::StepsTest < ActiveSupport::TestCase
     assert_match(/by hand/, report.notes.first)
   end
 
-  # --- the stat block backfill ---------------------------------------------
+  # --- the sheet backfill: the stat block and the three abilities -----------
 
   test "the stat block step rolls a body for somebody who has none" do
     story = create(:story)
@@ -207,8 +207,23 @@ class Update::StepsTest < ActiveSupport::TestCase
     report = Update::Steps::BackfillStatBlocks.new.call
 
     assert_predicate report, :changed?
-    assert_match(/rolled 1 stat block/, report.lines.first)
+    assert_match(/filled 1 sheet/, report.lines.first)
     assert_predicate nobody.reload, :stat_block?
+  end
+
+  # IT NEEDED NO CHANGE WHEN THE ABILITIES LANDED: the step asks
+  # `Character::StatBackfill` for a story's answers, and that class's candidate
+  # set is "missing any of the five columns". This is that stated as a test --
+  # a database that already has bodies gets its abilities out of the same step.
+  test "the same step fills in the three abilities, and leaves a hand-authored body alone" do
+    story = create(:story)
+    nobody = create(:character, :without_abilities, story: story, level: 2, hit_die: 10)
+
+    report = Update::Steps::BackfillStatBlocks.new.call
+
+    assert_predicate report, :changed?
+    assert_predicate nobody.reload, :abilities?
+    assert_equal [ 2, 10 ], [ nobody.level, nobody.hit_die ]
   end
 
   test "the stat block step writes nothing in a dry run, and still says what it would do" do

@@ -524,7 +524,10 @@ class CharacterTest < ActiveSupport::TestCase
   # --- the stat block --------------------------------------------------------
   #
   # Two integers and one formula, and the formula is the whole of what the app
-  # derives from them. No abilities: the captain's ruling of 2026-09-04.
+  # derives from them. It gains NO ability term now that there are abilities:
+  # there is no constitution among the three, `will` is nerve rather than
+  # stamina, and the body's capacity is the hit die -- the captain's ruling of
+  # 2026-09-04.
 
   test "a level 1 body holds its whole hit die" do
     Character::HIT_DICE.each do |die|
@@ -576,5 +579,151 @@ class CharacterTest < ActiveSupport::TestCase
 
     assert_equal 2, character.reload.level
     assert_equal 13, character.max_hp  # 8 + 1 * 5
+  end
+
+  # --- the three abilities ---------------------------------------------------
+  #
+  # The captain's ruling of 2026-09-04, evening: *"let's go with the 3
+  # abilities"* -- strength, dexterity, will, and exactly those three.
+
+  test "there are exactly three abilities and they are the captain's three" do
+    assert_equal %i[strength dexterity will], Character::ABILITIES
+  end
+
+  # THE RANGE IS 3d6's OWN BOUNDS, not a taste, which is why it is stated as a
+  # closed range the way `HIT_DICE` is stated as a closed list.
+  test "an ability is 3..18, which is what 3d6 rolls" do
+    assert_equal (3..18), Character::ABILITY_RANGE
+    assert_not build(:character, story: @story, strength: 2).valid?
+    assert_not build(:character, story: @story, dexterity: 19).valid?
+    assert_not build(:character, story: @story, will: 0).valid?
+  end
+
+  # A PARTIAL SET IS NOT A SET, the mirror of `#a_stat_block_is_whole` -- and it
+  # is refused in every direction rather than only the obvious one.
+  test "a partial set of abilities is refused, and none at all is fine" do
+    Character::ABILITIES.each do |ability|
+      assert_not build(:character, :without_abilities, story: @story, ability => 12).valid?,
+                 "one #{ability} and nothing else should be refused"
+    end
+
+    assert build(:character, :without_abilities, story: @story).valid?
+  end
+
+  # THE TWO PREDICATES DO NOT MERGE, and this is the test that says so: a body
+  # with no abilities still has a maximum, because `#max_hp` reads `#stat_block?`
+  # and every `Playthrough::Vitals` row in the database hangs off that.
+  test "a body with no abilities still has a stat block and a maximum" do
+    nobody = build(:character, :without_abilities, story: @story, level: 2, hit_die: 8)
+
+    assert_predicate nobody, :stat_block?
+    assert_not_predicate nobody, :abilities?
+    assert_equal 13, nobody.max_hp
+  end
+
+  test "abilities with no stat block are still abilities" do
+    somebody = build(:character, :without_a_stat_block, story: @story)
+
+    assert_predicate somebody, :abilities?
+    assert_not_predicate somebody, :stat_block?
+    assert_nil somebody.max_hp
+  end
+
+  # NO ABILITY TERM IN THE MAXIMUM, stated as a test so the question is not
+  # reopened: the same body with the three abilities at their floor and at their
+  # ceiling holds exactly the same number of hit points.
+  test "the maximum is the same whatever the abilities say" do
+    floor = build(:character, story: @story, level: 3, hit_die: 8, strength: 3, dexterity: 3, will: 3)
+    ceiling = build(:character, story: @story, level: 3, hit_die: 8, strength: 18, dexterity: 18, will: 18)
+
+    assert_equal 18, floor.max_hp
+    assert_equal floor.max_hp, ceiling.max_hp
+  end
+
+  # --- the check kernel ------------------------------------------------------
+  #
+  # d20-under the ability, with the penalty taken off the TARGET rather than
+  # added to the die. One kernel: no modifier, no DC ladder.
+
+  test "a check passes when the die comes up at or below the score" do
+    character = build(:character, story: @story, strength: 12)
+
+    assert_predicate character.check(:strength, rng: fixed(12)), :passed?
+    assert_predicate character.check(:strength, rng: fixed(1)), :passed?
+    assert_predicate character.check(:strength, rng: fixed(13)), :failed?
+    assert_predicate character.check(:strength, rng: fixed(20)), :failed?
+  end
+
+  # THE PENALTY MOVES THE TARGET AND NOT THE DIE, which is the whole shape of the
+  # kernel: the difficulty is a parameter on the thing being tried.
+  test "a penalty is taken off the target and the die is untouched" do
+    character = build(:character, story: @story, strength: 12)
+
+    result = character.check(:strength, penalty: 4, rng: fixed(10))
+
+    assert_equal 8, result.target
+    assert_equal 10, result.die
+    assert_predicate result, :failed?
+    assert_equal 12, result.score
+  end
+
+  # AT A TARGET OF ZERO OR LESS THERE IS NO ROLL. The pass rate is zero for ever,
+  # so the engine says the thing cannot be done -- refusal-shaped -- and the
+  # generator is left untouched, so asking the impossible does not consume
+  # somebody else's die.
+  test "an impossible check throws no die at all" do
+    character = build(:character, story: @story, strength: 6)
+    rng = Roll.generator(story: 1, sequence: 1)
+    next_die = Roll.die(20, rng: Roll.generator(story: 1, sequence: 1))
+
+    result = character.check(:strength, penalty: 6, rng: rng)
+
+    assert_predicate result, :impossible?
+    assert_nil result.die
+    assert_not result.passed?
+    assert_not result.failed?
+    assert_equal next_die, Roll.die(20, rng: rng)
+  end
+
+  # `check strength -> d20(7) <= 12 PASS`, which is what `rake game:mechanics`
+  # prints and `rake game:sweep` asserts. One definition of the sentence.
+  test "a check reads out as a record" do
+    character = build(:character, story: @story, strength: 12)
+
+    assert_equal "strength -> d20(7) <= 12 PASS", character.check(:strength, rng: fixed(7)).to_s
+    assert_equal "strength -> d20(15) <= 10 FAIL", character.check(:strength, penalty: 2, rng: fixed(15)).to_s
+    assert_equal "strength -> 12 - 12 = 0, IMPOSSIBLE (no roll)",
+                 character.check(:strength, penalty: 12, rng: fixed(3)).to_s
+  end
+
+  test "somebody with no abilities cannot be checked at all" do
+    nobody = build(:character, :without_abilities, story: @story)
+
+    assert_nil nobody.check(:will, rng: fixed(1))
+  end
+
+  test "an ability outside the three is refused rather than answered" do
+    character = build(:character, story: @story)
+
+    assert_raises(ArgumentError) { character.check(:constitution, rng: fixed(1)) }
+    assert_raises(ArgumentError) { character.check(:charisma, rng: fixed(1)) }
+  end
+
+  test "a check reads the column it names" do
+    character = build(:character, story: @story, strength: 4, dexterity: 11, will: 18)
+
+    assert_equal [ 4, 11, 18 ],
+                 Character::ABILITIES.map { |ability| character.check(ability, rng: fixed(1)).score }
+  end
+
+  private
+
+  # A generator that always comes up the same face, so a test about the kernel is
+  # a test about the kernel and not about `Roll`'s seed.
+  def fixed(face)
+    Class.new do
+      def initialize(face) = @face = face
+      def rand(_range) = @face
+    end.new(face)
   end
 end

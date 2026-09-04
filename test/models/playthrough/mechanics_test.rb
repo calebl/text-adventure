@@ -969,4 +969,123 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_predicate report, :refused?
     assert_match(/no stat block/, report.refusal)
   end
+
+  # --- the sheet, and the check kernel --------------------------------------
+  #
+  # `stats` reads and `check <ability> [penalty]` throws one d20 and WRITES
+  # NOTHING, which is what makes it the one verb here safe to type into a real
+  # game as often as you like. Both are engine-view commands, so neither costs
+  # a model call in either mode. The walk is
+  # `lib/engine_sweep/scripts/a-check-against-an-ability.yml`; these pin what a
+  # script cannot see.
+
+  test "the read-out carries the world's own numbers for the player" do
+    @vance.update!(level: 1, hit_die: 6, strength: 9, dexterity: 11, will: 15)
+
+    read_out = play("stats").state.to_s
+
+    assert_includes read_out, "sheet       level 1, d6, strength 9 dexterity 11 will 15"
+  end
+
+  test "a check prints the roll and changes nothing" do
+    @vance.update!(strength: 12)
+
+    report = play("check strength")
+
+    assert_not_predicate report, :changed?
+    assert_not_predicate report, :refused?
+    assert_equal "check -> strength", report.understood
+    assert_match(/\Acheck strength -> d20\(\d+\) <= 12 (PASS|FAIL)\z/, report.note.sole)
+  end
+
+  # The die is `Playthrough::Turn#check`'s, which is seeded -- so the read-out
+  # and the engine cannot disagree about the roll, and a sweep can assert it.
+  test "the roll it prints is the roll the engine makes" do
+    @vance.update!(strength: 12)
+    wanted = Playthrough::Turn.new(@playthrough).check(@vance, :strength)
+
+    assert_match(/d20\(#{wanted.die}\)/, play("check strength").note.sole)
+  end
+
+  test "a penalty is taken off the target and named in the reading" do
+    @vance.update!(dexterity: 14)
+
+    report = play("check dexterity 4")
+
+    assert_equal "check -> dexterity (penalty 4)", report.understood
+    assert_match(/<= 10 /, report.note.sole)
+  end
+
+  # An unambiguous prefix, because a player at a prompt is not a JSON enum --
+  # and NOT a fragment, because a three-word list would let `check ill` mean
+  # `will`.
+  test "an ability may be named by an unambiguous prefix and not by a fragment" do
+    assert_equal "check -> dexterity", play("check dex").understood
+    assert_predicate play("check ill"), :refused?
+  end
+
+  test "a check with no ability is refused with the three there are" do
+    report = play("check")
+
+    assert_predicate report, :refused?
+    assert_match(/strength, dexterity, will/, report.refusal)
+  end
+
+  test "a penalty that is not a number is refused rather than read as zero" do
+    report = play("check will lots")
+
+    assert_predicate report, :refused?
+    assert_match(/a penalty is a whole number/, report.refusal)
+  end
+
+  # A REFUSAL AND NOT A ROLL: the pass rate at a target of zero or less is zero
+  # for ever, so the engine says the thing cannot be done.
+  test "a check it cannot win is refused instead of rolled" do
+    @vance.update!(strength: 6)
+
+    report = play("check strength 6")
+
+    assert_predicate report, :refused?
+    assert_match(/cannot do it at all/, report.refusal)
+    assert_match(/No die was thrown/, report.refusal)
+  end
+
+  test "there is nothing to check on a protagonist with no abilities" do
+    @vance.update!(strength: nil, dexterity: nil, will: nil)
+
+    report = play("check will")
+
+    assert_predicate report, :refused?
+    assert_match(/no abilities/, report.refusal)
+  end
+
+  test "stats and check are not classified even when a model is there" do
+    _, reading = interpret("stats")
+    assert_empty reading.prompts
+
+    @vance.update!(strength: 12)
+    report, agent = interpret("check strength")
+
+    assert_empty agent.prompts
+    assert_match(/check strength -> d20/, report.note.sole)
+  end
+
+  # `check` IS THE ONE ENGINE-VIEW WORD A PLAYER PLAUSIBLY MEANS IN THE FICTION.
+  # *"check the ledger"* is ordinary English, so with a model available it goes
+  # to the classifier like any other line rather than being swallowed here --
+  # otherwise the instrument would have cost the mode a verb.
+  test "check followed by something that is not an ability goes to the classifier" do
+    report, agent = interpret("check the daybook", CLASSIFY.call("examine", "nothing"))
+
+    assert_equal 1, agent.prompts.size
+    assert_match(/examine/, report.understood)
+  end
+
+  # With no model there is nothing to hand it to, so the fixed grammar answers.
+  test "offline, check of something that is not an ability is refused by the grammar" do
+    report = play("check the daybook")
+
+    assert_predicate report, :refused?
+    assert_match(/not one of the three abilities/, report.refusal)
+  end
 end

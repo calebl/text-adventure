@@ -85,6 +85,9 @@ characters:
   stats:
     level: 1
     hit_die: 6
+    strength: 9
+    dexterity: 11
+    will: 15
   nickname: Vance
   age: 41
   sex: female
@@ -116,6 +119,9 @@ characters:
   stats:
     level: 1
     hit_die: 6
+    strength: 10
+    dexterity: 14
+    will: 8
   nickname: Perrin
   age: 29
   sex: male
@@ -136,6 +142,9 @@ characters:
   stats:
     level: 1
     hit_die: 8
+    strength: 11
+    dexterity: 9
+    will: 13
   nickname: Sub-Inspector Rowe
   age: 52
   sex: male

@@ -22,7 +22,9 @@
 #             decide it, doing so. The roll is deterministic
 #             (`Character::StatBlock`), so a rehearsal and the repair agree and
 #             a re-run a year later re-derives the same body. See
-#             `Story::Doctor#stat_blocks`.
+#             `Story::Doctor#stat_blocks`. `character_without_abilities` and
+#             `ability_out_of_range` are the same stretch one column-set over,
+#             and `Story::Doctor#abilities` carries the same note.
 #
 #             A FOLD IS A SAFE REPAIR TOO, and it is the only kind that removes
 #             a row. Re-seeding a played world used to leave two rows where the
@@ -70,6 +72,8 @@ class Story::Repair
     protagonist_holds_a_taken_item: { calls: 0, handler: :repair_shared_inventory },
     playthrough_missing_a_copy: { calls: 0, handler: :repair_missing_copies },
     character_without_a_stat_block: { calls: 0, handler: :repair_missing_stat_block },
+    character_without_abilities: { calls: 0, handler: :repair_missing_abilities },
+    ability_out_of_range: { calls: 0, handler: :repair_ability_out_of_range },
     hp_above_maximum: { calls: 0, handler: :repair_hp_above_maximum },
     vitals_for_an_unmet_character: { calls: 0, handler: :repair_unmet_vitals },
     protagonist_without_vitals: { calls: 0, handler: :repair_missing_vitals },
@@ -304,6 +308,44 @@ class Story::Repair
     character.update!(**rolled)
 
     "rolled #{character.fullname} a body: level #{rolled[:level]}, d#{rolled[:hit_die]} (#{character.max_hp} hp)"
+  end
+
+  # THE THREE ABILITIES FOR SOMEBODY WHO HAD NONE, rolled rather than recovered
+  # -- the mirror of `#repair_missing_stat_block` above and safe on exactly the
+  # same argument, which the header states. It writes ONLY the ability columns:
+  # a hand-authored hit die is a record and the records win over a derivation,
+  # so re-deriving the whole sheet here would quietly rewrite one.
+  # `Character::StatBackfill` is the same act for a whole story at once, and
+  # `bin/update` runs it first.
+  def repair_missing_abilities(finding)
+    character = finding.subject
+    rolled = roll_abilities!(character)
+
+    "rolled #{character.fullname} three abilities: #{rolled.map { |ability, score| "#{ability} #{score}" }.join(", ")}"
+  end
+
+  # A NUMBER 3d6 COULD NEVER HAVE COME UP, replaced by three the engine did roll.
+  # `Character` refuses one outside `Character::ABILITY_RANGE`, so the row
+  # arrived through raw SQL -- and there is no record of what the intended
+  # number was, which makes re-rolling the set the only honest answer and the
+  # engine's own authorship the thing that makes it safe.
+  def repair_ability_out_of_range(finding)
+    character = finding.subject
+    before = Character::ABILITIES.to_h { |ability| [ ability, character[ability] ] }
+    rolled = roll_abilities!(character, all: true)
+
+    "re-rolled #{character.fullname}'s abilities from #{before.values.join("/")} to #{rolled.values.join("/")}"
+  end
+
+  # THE ABILITY HALF OF THE SHEET AND NOTHING ELSE. `all: false` fills the empty
+  # columns, which is what a missing set needs; `all: true` overwrites the three,
+  # which is what a number the engine could not have rolled needs.
+  def roll_abilities!(character, all: false)
+    rolled = Character::StatBlock.for_existing(character).slice(*Character::ABILITIES)
+    rolled = rolled.select { |ability, _| character[ability].nil? } unless all
+    character.update!(**rolled)
+
+    rolled
   end
 
   # A CONDITION CLAMPED BACK TO WHAT THE TEMPLATE ALLOWS. On record, on the

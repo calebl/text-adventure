@@ -21,6 +21,13 @@
 #                   minus the player themselves
 #   hp              the player's current hit points, exactly -- read through
 #                   `Playthrough#vitals_for`, never off the printed read-out
+#   abilities       the player's three abilities, as a mapping of
+#                   strength/dexterity/will to the exact score -- read off the
+#                   `Character` columns, never off the printed read-out, and a
+#                   script may name one, two or all three. It is ONE key rather
+#                   than three because they are one fact the world holds about a
+#                   body, and because `Character::ABILITIES` is what a reader
+#                   iterates everywhere else
 #   dead            whether the playthrough is over: `playthroughs.ended_at` is
 #                   set, which since the captain's ruling of 2026-09-04 happens
 #                   for exactly one reason and stays true for ever
@@ -44,7 +51,7 @@
 class EngineSweep::Expectation
   KEYS = %w[
     location exits exits_include exits_exclude here carrying present inscription
-    hp dead changed change refused offers understood note drifts
+    hp abilities dead changed change refused offers understood note drifts
   ].freeze
 
   # "The Vestry Hulk (stub)" -> the name and the detail level it has to be in.
@@ -92,6 +99,7 @@ class EngineSweep::Expectation
       check_people("present", state.present),
       check_inscriptions(state),
       check_equals("hp", state.condition&.hp),
+      check_abilities(report),
       check_flag("dead", state.over),
       check_flag("changed", report.changed?),
       check_contains("change", report.change),
@@ -108,11 +116,39 @@ class EngineSweep::Expectation
   attr_reader :where
 
   def validate!
+    validate_abilities!
     validate_inscriptions!
     Array(document["exits"]).each { |entry| named(entry) }
     Array(document["exits_include"]).each { |entry| named(entry) }
     Array(document["exits_exclude"]).each { |entry| named(entry) }
     named(document["location"]) if document.key?("location")
+  end
+
+  # A mapping of one of the three abilities to an integer, and nothing else --
+  # for the same reason `KEYS` is closed. A misspelt ability would look like an
+  # expectation and assert nothing at all, which is the one failure mode a
+  # fixture must not have.
+  def validate_abilities!
+    return unless document.key?("abilities")
+
+    wanted = document["abilities"]
+    unless wanted.is_a?(Hash)
+      raise EngineSweep::InvalidScript,
+            "#{where}: \"abilities\" is a mapping of #{Character::ABILITIES.join("/")} to a score, " \
+            "got #{wanted.inspect}"
+    end
+
+    unknown = wanted.keys.map(&:to_s) - Character::ABILITIES.map(&:to_s)
+    if unknown.any?
+      raise EngineSweep::InvalidScript,
+            "#{where}: \"abilities\" names #{unknown.inspect}; there is: #{Character::ABILITIES.join(", ")}"
+    end
+
+    wanted.each_value do |score|
+      next if score.is_a?(Integer)
+
+      raise EngineSweep::InvalidScript, "#{where}: an \"abilities\" entry is a whole score, got #{score.inspect}"
+    end
   end
 
   # A mapping and nothing else, for the same reason `KEYS` is closed: a list of
@@ -278,6 +314,28 @@ class EngineSweep::Expectation
 
     unmet("inscription", "#{name}: text containing #{expected.to_s.inspect}",
           "#{name}: #{item.inscription.presence.inspect || "nothing written down"}")
+  end
+
+  # WHAT THE WORLD SAYS THE PLAYER'S ABILITIES ARE, off the columns and not off
+  # the screen -- the same rule `#check_inscriptions` is under and for the same
+  # reason: a script asserting the printed sheet would be asserting that the
+  # read-out is wired up, and what must not drift is what the ENGINE holds.
+  #
+  # Only the abilities the script names. A step that pins one is making a claim
+  # about that one, which is what lets a walk say "the file's strength survived
+  # everything typed at it" without restating the whole sheet.
+  def check_abilities(report)
+    return nil unless document.key?("abilities")
+
+    who = report.state.character
+    return [ unmet("abilities", document["abilities"], "no protagonist") ] if who.nil?
+
+    document["abilities"].filter_map do |ability, expected|
+      actual = who[ability.to_s]
+      next if actual == expected
+
+      unmet("abilities", "#{ability}: #{expected}", "#{ability}: #{actual.nil? ? "none" : actual}")
+    end
   end
 
   def check_flag(key, actual)

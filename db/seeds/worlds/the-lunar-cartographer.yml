@@ -76,6 +76,9 @@ characters:
   stats:
     level: 1
     hit_die: 8
+    strength: 11
+    dexterity: 14
+    will: 13
   nickname: Iz
   age: 34
   sex: female
@@ -96,6 +99,9 @@ characters:
   stats:
     level: 1
     hit_die: 6
+    strength: 9
+    dexterity: 7
+    will: 12
   nickname: Old Grenn
   age: 61
   sex: male
