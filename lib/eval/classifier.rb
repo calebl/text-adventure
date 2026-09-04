@@ -101,10 +101,13 @@ module Eval::Classifier
   # affordable at all.
   PER_CALL = { input: 372, output: 20 }.freeze
 
+  # `models` is `Eval::Classifier::Arm`s, and each one prices itself -- a local
+  # arm costs nothing, which is why `Arm#price` answers for it rather than this
+  # method asking the registry about a model the registry has never heard of.
   def self.estimate(lines:, reps:, models:)
     calls = lines * reps
-    models.sum do |model|
-      Eval::Cost.price(model).of(calls * PER_CALL[:input], calls * PER_CALL[:output])
+    Arm.all(models).sum do |arm|
+      arm.price.of(calls * PER_CALL[:input], calls * PER_CALL[:output])
     end
   end
 end

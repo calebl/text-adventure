@@ -149,9 +149,22 @@ namespace :eval do
 
     def reps = (ENV["REPS"].presence || default_reps).to_i
 
+    # THE EXPLICIT ARM SELECTOR, on the captain's instruction of 2026-09-04:
+    # `MODELS=` names exactly which models a run measures and the app's rotation
+    # is not consulted at all. A bare id is OpenRouter; `ollama:qwen3:8b` names
+    # the provider, because an ollama tag has a colon in it.
+    #
+    #   MODELS=mistralai/mistral-medium-3.1
+    #   MODELS=ollama:qwen3:4b,ollama:gemma3:12b
+    #
+    # `TA_LOCAL_MODELS` is NOT read and not needed: it gates the app's own
+    # rotation, and an arm replaces the rotation rather than joining it. The
+    # default is still `BaseAgent::REMOTE_MODEL_IDS`, which is what a player
+    # gets.
     def arms
       named = ENV["MODELS"].presence&.split(",")&.map(&:strip)
-      named.presence || BaseAgent::REMOTE_MODEL_IDS
+
+      Eval::Classifier::Arm.all(named.presence || BaseAgent::REMOTE_MODEL_IDS)
     end
 
     def set_name = ENV["SET"].presence || Time.current.utc.strftime("classifier-%Y%m%d-%H%M%S")
@@ -172,13 +185,15 @@ namespace :eval do
       puts format("ESTIMATE: %d calls (%d lines x %d reps x %d model%s), about $%.3f. Measured at %d in / %d out a call.",
                   calls, corpus.size, reps, arms.size, arms.one? ? "" : "s", priced,
                   Eval::Classifier::PER_CALL[:input], Eval::Classifier::PER_CALL[:output])
-      abort_without_a_key
+      puts "Local arms (#{arms.select(&:local?).map(&:id).join(", ")}) cost nothing and are not in that figure; " \
+           "they are slow instead." if arms.any?(&:local?)
+      abort_without_a_key(arms)
       if priced > SPEND_CEILING && ENV["YES"] != "1"
         abort "That is over the $#{format("%.2f", SPEND_CEILING)} this task will spend unattended. " \
               "Re-run with YES=1, or lower REPS."
       end
 
-      puts "Replaying #{corpus.size} lines on #{arms.join(", ")}."
+      puts "Replaying #{corpus.size} lines on #{arms.map(&:id).join(", ")}."
       puts
       result = Eval::Classifier::Bench.new(corpus: corpus, arms: arms, reps: reps).run
 
@@ -202,12 +217,12 @@ namespace :eval do
       puts "#{corpus.size} two-noun lines x #{reps} rep#{"s" unless reps == 1} x #{arms.size} model#{"s" unless arms.one?} " \
            "= #{corpus.size * reps * arms.size} calls, about " \
            "$#{format("%.3f", Eval::Classifier.estimate(lines: corpus.size, reps: reps, models: arms))}."
-      abort_without_a_key
+      abort_without_a_key(arms)
       puts
 
       result = Eval::Classifier::Bench.new(corpus: corpus, arms: arms, reps: reps).run
       puts
-      arms.each do |arm|
+      arms.map(&:id).each do |arm|
         rows = result.for_arm(arm).flat_map { |pass| pass.rows.map { |row| row.transform_keys(&:to_s) } }
         answered = rows.reject { |row| row["error"] }
         omitted = answered.count { |row| row["also_omitted"] }
@@ -223,9 +238,16 @@ namespace :eval do
       result
     end
 
-    def abort_without_a_key
-      abort "OPENROUTER_API_KEY is not set. The bench is the only half of this instrument that spends " \
-            "money; the offline floor needs nothing: `rake eval:classifier_offline`." if ENV["OPENROUTER_API_KEY"].blank?
+    # A KEY IS ONLY NEEDED FOR A HOSTED ARM. A run of nothing but local models
+    # asks the captain's own daemon and needs no key at all, so demanding one
+    # would refuse a free measurement.
+    def abort_without_a_key(arms)
+      if arms.any? { |arm| !arm.local? } && ENV["OPENROUTER_API_KEY"].blank?
+        abort "OPENROUTER_API_KEY is not set and #{arms.reject(&:local?).map(&:id).join(", ")} " \
+              "#{arms.reject(&:local?).one? ? "is" : "are"} hosted. Name local arms instead " \
+              "(MODELS=ollama:qwen3:4b), or run the offline floor, which needs nothing: " \
+              "`rake eval:classifier_offline`."
+      end
       abort "The bench must not run in the test environment." if Rails.env.test?
     end
   end

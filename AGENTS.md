@@ -1043,6 +1043,20 @@ What belongs here is the part that changes how you work:
   same corpus through the fixed grammar: 127 of 300 (0.423) on 2026-09-04, with
   156 of the failures being lines it refused that should have played. Quote it
   next to the model figure or the model figure means nothing.
+- **`MODELS=` is an arm selector, and an arm is ONE model with nothing behind
+  it.** `MODELS=ollama:qwen3:8b` measures a local model; a bare id is
+  OpenRouter. It replaces `BaseAgent.default_model_options` for the length of a
+  pass and changes nothing in `app/` — so `TA_LOCAL_MODELS` stays off and
+  `REMOTE_MODEL_IDS` keeps its order. The rotation being off is the point: an
+  arm of one cannot retry, so a failed call is attributable and a latency is
+  clean. If `rotations` is ever non-zero the pinning failed and the board says
+  so rather than crediting the wrong model.
+- **Speed is a measured figure, and every latency is a WARM-CACHE figure.** Each
+  arm's first call is timed separately and excluded, because on a local model it
+  is mostly the model being loaded; repetitions run contiguously and models are
+  never interleaved. Read `latency_median` with `failures` beside it — a slow arm
+  and a flaky arm are different problems, and an arm that failed a third of its
+  calls has a median over the two thirds that answered.
 - **No prompt change belongs in the same commit as a bench change.** The
   instrument and the thing it measures move separately, and
   `Eval::MEASUREMENT_FILES` now lists the bench.

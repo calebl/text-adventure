@@ -14,13 +14,45 @@
 # judges a later prompt change against that band with the same exact rank test
 # `Eval::Noise` gives the prose loop.
 #
-# PER MODEL. `OPENROUTER_MODEL` is unshifted onto `BaseAgent::REMOTE_MODEL_IDS`,
-# which is the app's own pin and what `script/eval_run.rb` uses -- so an arm asks
-# the model it names FIRST and the rotation is still behind it. The model that
-# actually answered is read back off the agent (`BaseAgent#current_model`) and
-# any line answered by a different one is counted and reported as a ROTATION
-# rather than quietly attributed to the arm. An arm with rotations is an arm
-# whose purity is stated.
+# PER MODEL, AND ONE MODEL PER ARM WITH NOTHING BEHIND IT. An arm is an
+# `Eval::Classifier::Arm` -- a provider and a model named explicitly, hosted or
+# local -- and `Arm#pinned` replaces `BaseAgent.default_model_options` for the
+# length of one pass. So the rotation is off by construction and a failed call
+# is a failed line attributed to the model that failed it; read that class's
+# header for the three reasons that is what a measurement wants. `#rotated?`
+# survives as a guard rather than a figure: it reads the model that ACTUALLY
+# answered off `BaseAgent#current_model`, and if it is ever anything but the arm
+# the board says so instead of quietly crediting the wrong model.
+#
+# AND SPEED IS A MEASURED FACTOR, on the captain's instruction of 2026-09-04.
+# Every call is timed on `CLOCK_MONOTONIC` -- monotonic rather than wall clock
+# because a wall clock can step backwards under NTP and a negative latency is a
+# figure nobody can read -- and the board prints the median and the p95 per
+# model with a band across repetitions, exactly as it prints the accuracies. The
+# median is what a turn usually costs the player; the p95 is what the worst turn
+# in twenty costs them, which on a local model is a different number entirely.
+# A LATENCY IS ONLY MEANINGFUL WITH THE FAILURES BESIDE IT: a slow arm and a
+# flaky arm read differently, and an arm that failed a third of its calls has a
+# median measured over the two thirds that answered.
+#
+# AND THE FIRST CALL IS ITS OWN FIGURE, on the captain's follow-up of
+# 2026-09-04. A local model pays a load cost of seconds to tens of seconds on
+# the first call, and ollama unloads it again after about five minutes idle --
+# so a run that folded that into the median would report the model-load time as
+# the model's speed. Every arm therefore gets ONE WARM CALL before its first
+# pass, timed and reported as `cold_start`, excluded from the pass entirely. The
+# figures the board prints are WARM-CACHE FIGURES and say so.
+#
+# For a hosted arm the same warm call makes the first-call outlier -- connection
+# setup, a cold route -- visible as its own number rather than hidden in the
+# band, which is what the follow-up asked for on that side.
+#
+# THE ARM'S REPETITIONS RUN CONTIGUOUSLY and models are never interleaved: the
+# loop is arms outside, reps inside, so a local model is asked 300 questions
+# four times over without another model being loaded in between. On top of that
+# `Arm#keep_resident!` pins it for 45 minutes through the daemon's own API --
+# out of band, so the app's calls stay ordinary calls. Whether that took is
+# reported.
 #
 # ONE MODEL CALL PER LINE AND NOT ONE MORE. The positions are staged offline
 # (`Eval::Classifier::Stage`), the whole run is inside a rolled-back
@@ -45,7 +77,10 @@ class Eval::Classifier::Bench
   # when a field is truly absent -- so an omission shows up as a rotation or a
   # failure and NOT as a quiet nil, and this is how that claim is checked
   # rather than assumed.
-  Reading = Data.define(:line, :arm, :rep, :answer, :answered_by, :raw, :error) do
+  # `seconds` is the wall clock of the one call, `CLOCK_MONOTONIC`, including
+  # the schema build and the resolution back to records -- which is what a turn
+  # actually waits for, and both are microseconds beside a provider round trip.
+  Reading = Data.define(:line, :arm, :rep, :answer, :answered_by, :raw, :seconds, :error) do
     def id = line.id
     def shape = line.shape
     def arguable? = line.arguable?
@@ -72,7 +107,19 @@ class Eval::Classifier::Bench
 
     def refusal_right? = !failed? && line.refusals.include?(answer.refusal)
 
+    # THE GUARD, not a figure. With an arm of one there is nothing to rotate to,
+    # so this is false on every reading of a healthy run -- and if it is ever
+    # true the pinning failed and the board must not credit this arm.
     def rotated? = !answered_by.nil? && answered_by != arm
+
+    # WHY A CALL FAILED, as a class name. A local model that will not honour a
+    # schema fails differently from a provider that timed out, and a count
+    # cannot tell them apart.
+    #
+    # Split on COLON-SPACE and not on a colon: `#read` writes
+    # `"#{error.class}: #{error.message}"` and the class is usually namespaced,
+    # so a bare colon turns `BaseAgent::SchemaIgnoredError` into `BaseAgent`.
+    def error_class = error&.split(": ")&.first
 
     # --- `also_named` as a detector, which is what precision and recall are of.
     # A POSITIVE is a line whose LABEL carries a second name; that is the corpus
@@ -95,6 +142,14 @@ class Eval::Classifier::Bench
     def also_named_omitted? = [ :missing, nil, "" ].include?(also_named_field) && !raw.nil?
   end
 
+  # WHAT THE FIRST CALL COST, once per arm. `residency` is what the daemon said
+  # about keeping a local model in memory: `:resident`, `:refused`,
+  # `:unreachable`, or `:not_local` for a hosted arm.
+  Warmup = Data.define(:arm, :seconds, :residency, :error) do
+    def failed? = !error.nil?
+    def to_h = { arm:, seconds: seconds&.round(4), residency: residency.to_s, error: }
+  end
+
   # ONE PASS OF THE WHOLE CORPUS ON ONE MODEL.
   Pass = Data.define(:arm, :rep, :readings) do
     def scored = readings.reject(&:failed?)
@@ -107,6 +162,24 @@ class Eval::Classifier::Bench
     def failed = readings.select(&:failed?)
     def failures = failed.size
     def rotations = readings.count(&:rotated?)
+
+    # --- speed. Over the readings that ANSWERED, because a failed call has no
+    # latency to report -- and the failure count beside it is what says how much
+    # of the arm the figure covers.
+    def latencies = scored.map(&:seconds).compact.sort
+
+    def latency_median = Eval.median(latencies)
+
+    # THE WORST TURN IN TWENTY. Nearest-rank rather than interpolated: with a
+    # few hundred readings the difference is noise, and a percentile that is one
+    # of the observed values is one a reader can go and find in the rows.
+    def latency_p95
+      return 0.0 if latencies.empty?
+
+      latencies[[ (latencies.size * 0.95).ceil - 1, 0 ].max]
+    end
+
+    def failures_by_class = failed.map(&:error_class).tally.sort_by { |_klass, count| -count }.to_h
 
     def accuracy = rate(scored.count(&:right?), scored.size)
     def intent_accuracy = rate(scored.count(&:intent_right?), scored.size)
@@ -129,7 +202,9 @@ class Eval::Classifier::Bench
 
     def to_h = { arm:, rep:, accuracy: accuracy.round(4), intent_accuracy: intent_accuracy.round(4),
                  strict_accuracy: strict_accuracy.round(4), refusal_agreement: refusal_agreement.round(4),
-                 closed_set_misses:, rotations:, failures:, readings: rows }
+                 closed_set_misses:, latency_median: latency_median.round(4),
+                 latency_p95: latency_p95.round(4), failures:,
+                 rotations:, failures_by_class: failures_by_class, readings: rows }
 
     def reading_h(reading)
       line = reading.line
@@ -143,7 +218,7 @@ class Eval::Classifier::Bench
         also_expected: reading.also_expected?, also_answered: reading.also_answered?,
         also_tp: reading.also_true_positive?, also_fp: reading.also_false_positive?,
         also_fn: reading.also_false_negative?, also_omitted: reading.also_named_omitted?,
-        answered_by: reading.answered_by, error: reading.error }
+        answered_by: reading.answered_by, seconds: reading.seconds&.round(4), error: reading.error }
     end
   end
 
@@ -155,7 +230,7 @@ class Eval::Classifier::Bench
   # disagreed would put an unjudgeable set on disk.
   def initialize(corpus: Eval::Classifier.corpus, arms: nil, reps: Eval::Noise::MIN_RUNS, io: $stdout)
     @corpus = corpus
-    @arms = arms || BaseAgent::REMOTE_MODEL_IDS
+    @arms = Eval::Classifier::Arm.all(arms.presence || BaseAgent::REMOTE_MODEL_IDS)
     @reps = reps
     @io = io
   end
@@ -177,9 +252,11 @@ class Eval::Classifier::Bench
   # next one.
   def run
     passes = []
+    warmups = []
 
     arms.each do |arm|
-      with_model_pinned(arm) do
+      arm.pinned do
+        warmups << warm(arm)
         (1..reps).each do |rep|
           Eval::Classifier::Stage.open(corpus.positions) { |stages| passes << play(arm, rep, stages) }
         end
@@ -187,19 +264,47 @@ class Eval::Classifier::Bench
     end
 
     Eval::Classifier::Result.new(corpus_size: corpus.size, corpus_digest: Eval::Classifier.digest(corpus),
-                                 arms: arms, reps: reps, passes: passes)
+                                 arms: arms.map(&:id), reps: reps, passes: passes, warmups: warmups)
   end
 
   private
 
+  # ONE CALL BEFORE THE MEASUREMENT, TIMED AND THEN SET ASIDE. It is a real
+  # classifier call on a real position, because a warm-up that took a different
+  # path would warm a different thing -- and its duration is the cold start,
+  # which for a local model is mostly the model being read off disk into memory.
+  #
+  # The residency request comes AFTER it rather than before, deliberately: ask
+  # the daemon to load the model first and the cold start would measure nothing.
+  def warm(arm)
+    line = corpus.lines.first
+    seconds = nil
+    error = nil
+
+    Eval::Classifier::Stage.open([ corpus.position(line.position) ]) do |stages|
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      reading = read(line, stages.fetch(line.position), arm, 0)
+      seconds = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+      error = reading.error
+    end
+
+    residency = arm.keep_resident!
+    warmup = Warmup.new(arm: arm.id, seconds: seconds, residency: residency, error: error)
+    io&.puts format("  %-22s first call %.1fs%s%s", arm.id, seconds,
+                    arm.local? ? " (model load), kept resident: #{residency}" : " (excluded from the figures below)",
+                    error ? " -- FAILED: #{error}" : "")
+    warmup
+  end
+
   def play(arm, rep, stages)
-    io&.print format("  %-28s rep %d ", arm, rep)
+    io&.print format("  %-22s rep %d ", arm.id, rep)
     readings = corpus.lines.map { |line| read(line, stages.fetch(line.position), arm, rep) }
-    pass = Pass.new(arm: arm, rep: rep, readings: readings)
-    io&.puts format("%3d/%-3d right (%.3f), %d closed-set misses%s%s",
+    pass = Pass.new(arm: arm.id, rep: rep, readings: readings)
+    io&.puts format("%3d/%-3d right (%.3f), %2d misses, %.2fs median / %.2fs p95%s%s",
                     pass.scored.count(&:right?), pass.scored.size, pass.accuracy, pass.closed_set_misses,
-                    pass.rotations.positive? ? ", #{pass.rotations} ROTATED" : "",
-                    pass.failures.positive? ? ", #{pass.failures} FAILED" : "")
+                    pass.latency_median, pass.latency_p95,
+                    pass.failures.positive? ? ", #{pass.failures} FAILED (#{pass.failures_by_class.keys.first})" : "",
+                    pass.rotations.positive? ? ", #{pass.rotations} ROTATED -- THE PINNING FAILED" : "")
     pass
   end
 
@@ -208,19 +313,28 @@ class Eval::Classifier::Bench
   # "there is nothing in last turn's exchange worth replaying".
   def read(line, standing, arm, rep)
     classifier = Playthrough::Classifier.new(standing.playthrough)
-    intent = classifier.classify(line.typed)
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-    Reading.new(line: line, arm: arm, rep: rep, error: nil,
-                answered_by: classifier.agent.current_model[:model],
-                raw: raw_answer(classifier),
-                answer: Eval::Classifier::Corpus::Answer.new(
-                  intent: intent.action,
-                  target: Playthrough::Classifier.label_for(intent.subject),
-                  also_named: Playthrough::Classifier.label_for(intent.also_named)
-                ))
-  rescue StandardError => error
-    Reading.new(line: line, arm: arm, rep: rep, answer: nil, answered_by: nil, raw: nil,
-                error: "#{error.class}: #{error.message}")
+    begin
+      intent = classifier.classify(line.typed)
+      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+
+      Reading.new(line: line, arm: arm.id, rep: rep, error: nil, seconds: elapsed,
+                  answered_by: classifier.agent.current_model[:model],
+                  raw: raw_answer(classifier),
+                  answer: Eval::Classifier::Corpus::Answer.new(
+                    intent: intent.action,
+                    target: Playthrough::Classifier.label_for(intent.subject),
+                    also_named: Playthrough::Classifier.label_for(intent.also_named)
+                  ))
+    rescue StandardError => error
+      # A FAILED CALL HAS NO LATENCY, deliberately: how long it took to fail is
+      # a fact about the failure and not about how fast this model answers, and
+      # folding it into the median would make a flaky arm look slow instead of
+      # flaky. The failure count and its error classes are the figure for it.
+      Reading.new(line: line, arm: arm.id, rep: rep, answer: nil, answered_by: nil, raw: nil,
+                  seconds: nil, error: "#{error.class}: #{error.message}")
+    end
   end
 
   # THE PROVIDER'S OWN JSON for the call just made. `#recorded_chat` is the
@@ -232,17 +346,5 @@ class Eval::Classifier::Bench
     body.is_a?(String) ? JSON.parse(body) : body
   rescue JSON::ParserError
     nil
-  end
-
-  # THE APP'S OWN PIN, put back afterwards. `BaseAgent.remote_model_options`
-  # unshifts `OPENROUTER_MODEL` onto the list, so an arm asks its model first
-  # and the rotation is still there behind it -- which is what makes a failed
-  # call a rotation to report rather than a lost line.
-  def with_model_pinned(model)
-    was = ENV["OPENROUTER_MODEL"]
-    ENV["OPENROUTER_MODEL"] = model
-    yield
-  ensure
-    ENV["OPENROUTER_MODEL"] = was
   end
 end

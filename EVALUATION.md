@@ -208,7 +208,7 @@ rake eval:classifier_compare BEFORE=a AFTER=b
 | knob | what it does |
 | --- | --- |
 | `REPS=4` | repetitions. **Four is the default because four is `Eval::Noise::MIN_RUNS`** — a run taken at the default can actually be judged later |
-| `MODELS=a,b` | which models to ask. Defaults to `BaseAgent::REMOTE_MODEL_IDS` |
+| `MODELS=a,b` | **the arm selector.** Names exactly which models the run measures; the app's rotation is not consulted. A bare id is OpenRouter, `ollama:qwen3:8b` names the provider. Defaults to `BaseAgent::REMOTE_MODEL_IDS`, which is what a player gets |
 | `SET=name` | where the numbers land (`tmp/eval/<set>/classifier.json`). Defaults to a timestamp |
 | `SAMPLE=20` | how many missed lines the board prints in full |
 | `YES=1` | spend past the $0.50 ceiling |
@@ -227,6 +227,9 @@ deterministic.
 | `intent_accuracy` | the branch right, whatever record it landed on |
 | `refusal_agreement` | whether the line earned the refusal `Playthrough::Refusal` gives it |
 | `closed_set_misses` | **right branch, wrong record** — a count, not a rate, because it is the failure the closed enum exists to prevent |
+| `latency_median` | seconds the median call took. What a turn usually costs the player |
+| `latency_p95` | seconds the worst call in twenty took. On a local model this is not the same number |
+| `failures` | calls that failed outright. **A slow arm and a flaky arm read differently**, so this is printed beside the latency and compared with it |
 
 Beside them: **accuracy per intent** (six branches with six different
 consequences), a **confusion matrix**, **`also_named` precision and recall** (it
@@ -282,6 +285,64 @@ existing label**. A position may carry `setup:` (typed lines, walked offline
 through the fixed grammar) and `cast:` (a whereabouts written through
 `Character#move_to!` — the one thing no typed line can do, and the only way two
 people in one room is reachable at all).
+
+### Speed, and the arm selector
+
+**An arm is one model with nothing behind it.** `MODELS=` names it —
+`mistralai/mistral-medium-3.1`, or `ollama:qwen3:8b` for one of the captain's
+local models — and `Eval::Classifier::Arm#pinned` replaces
+`BaseAgent.default_model_options` for the length of that arm's passes. Nothing
+in `app/` changes: `REMOTE_MODEL_IDS` is untouched, `OPENROUTER_MODEL` is not
+read, and `TA_LOCAL_MODELS` still defaults to off — it gates the *app's*
+rotation, and an arm **replaces** the rotation rather than joining it.
+
+**The rotation being off is the point, not a side effect.** `BaseAgent#ask`
+retries only while `attempts < @model_options.count`, so an arm of one never
+retries. Three things follow, all of them wanted in a measurement:
+
+- **No cross-contamination.** The first remote baseline pinned with
+  `OPENROUTER_MODEL` and left the rotation behind it; one run had
+  `minimax/minimax-m3` fail **223 of 1,200** calls, so mistral answered them and
+  the board had to declare the arm impure. With an arm of one that cannot
+  happen — and `rotations` survives as a *guard* that says **THE PINNING
+  FAILED** if it is ever non-zero.
+- **Clean latency.** A retried call's wall clock is the failed attempt plus the
+  one that worked.
+- **Flakiness is a failure count with its error classes**, which says *why* — a
+  local model that will not honour a schema fails differently from a provider
+  that timed out.
+
+Latency is `CLOCK_MONOTONIC` (a wall clock can step backwards under NTP, and a
+negative latency is unreadable), taken around the whole `#classify` — the schema
+build and the resolution back to records included, both microseconds beside a
+round trip. **A failed call carries no latency**, deliberately: how long it took
+to fail is a fact about the failure.
+
+### Cold start, and why the latencies are warm-cache figures
+
+A local model pays a load cost of seconds to tens of seconds on its first call,
+and **ollama unloads it again after about five minutes idle** and may evict one
+when another is loaded. So:
+
+- **Every arm gets one warm call before its first pass**, timed and reported as
+  `first call`, and **excluded from the median and the p95.** For a local model
+  that number is mostly the model being read into memory; for a hosted one it
+  makes the first-call outlier visible as its own figure instead of hidden in
+  the band.
+- **Repetitions run contiguously and models are never interleaved** — the loop
+  is arms outside, reps inside — so a local model answers the whole corpus four
+  times over without another model being loaded in between.
+- **`Arm#keep_resident!` pins it for 45 minutes through the daemon's own
+  `/api/generate`**, out of band, so the app's calls stay ordinary calls.
+  `RubyLLM::Chat#with_params` would carry `keep_alive`, but `BaseAgent` does not
+  expose it and reaching through `agent.chat` to set a provider parameter would
+  be the instrument reconfiguring the app's own call. Whether the daemon
+  accepted is printed (`resident` / `refused` / `unreachable`).
+- **The cold start is reported and never judged.** It is one observation per arm
+  per set, and `Eval::Noise` needs `MIN_RUNS` of anything before it will speak.
+
+So **every latency on the board is a warm-cache figure**, and the board says so
+in its own header.
 
 ### The baseline of 2026-09-04
 

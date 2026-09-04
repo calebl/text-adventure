@@ -72,6 +72,7 @@ module Eval
     lib/eval.rb
     lib/eval/board.rb
     lib/eval/classifier.rb
+    lib/eval/classifier/arm.rb
     lib/eval/classifier/bench.rb
     lib/eval/classifier/comparison.rb
     lib/eval/classifier/corpus.rb

@@ -104,6 +104,7 @@ class Eval::Classifier::Comparison
     say Eval::Classifier::Report::RULE
     say "#{before.name} measured #{before.arms.join(", ")}#{" on corpus #{before.corpus_digest}" if before.corpus_digest}"
     say "#{after.name} measured #{after.arms.join(", ")}#{" on corpus #{after.corpus_digest}" if after.corpus_digest}"
+    say "Latencies are WARM-CACHE figures -- each arm's first call is timed apart and excluded."
 
     unless comparable_corpus?
       say
@@ -125,9 +126,11 @@ class Eval::Classifier::Comparison
       say(against == arm ? "MODEL  #{arm}" : "MODEL  #{against} (before)  ->  #{arm} (after)")
       verdicts(arm, against: against).each do |row|
         verdict = row.verdict
-        say format("  %-20s %.3f -> %.3f  %-8s %s", row.metric, verdict.before.median, verdict.after.median,
+        say format("  %-20s %s -> %s  %-8s %s", row.metric,
+                   figure(row.metric, verdict.before.median), figure(row.metric, verdict.after.median),
                    row.direction, verdict.headline)
       end
+      cold(against, arm)
     end
 
     say
@@ -138,6 +141,31 @@ class Eval::Classifier::Comparison
   end
 
   private
+
+  # THE COLD START IS REPORTED AND NOT JUDGED. It is one observation per arm per
+  # set -- `Eval::Noise` needs `MIN_RUNS` of them to say anything at all -- so a
+  # verdict on it would be the sample size talking. It is printed because a
+  # model that answers in half a second and takes forty to load is a different
+  # proposition from one that does neither.
+  def cold(before_arm, after_arm)
+    left = before.warmup(before_arm)
+    right = after.warmup(after_arm)
+    return if left.nil? && right.nil?
+
+    say format("  %-20s %s -> %s  %-8s %s", "first call (cold)",
+               left && left["seconds"] ? format("%.2fs", left["seconds"]) : "--",
+               right && right["seconds"] ? format("%.2fs", right["seconds"]) : "--",
+               "", "one observation an arm; reported, never judged")
+  end
+
+  # A count, a number of seconds and a rate are three different things and a
+  # comparison that printed them all to three decimals would be lying about two.
+  def figure(metric, value)
+    return format("%.2fs", value) if Eval::Classifier::Result::SECONDS.include?(metric)
+    return format("%d", value) if Eval::Classifier::Result::COUNTED.include?(metric)
+
+    format("%.3f", value)
+  end
 
   # WHY THESE TWO MODELS ARE BEING READ AGAINST EACH OTHER, because a forced
   # pair and a pair that fell out of the sets are different facts about the

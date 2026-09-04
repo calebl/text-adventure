@@ -108,6 +108,8 @@ class Eval::Classifier::Report
         "#{result.arms.size} model#{"s" unless result.arms.one?}"
     say "Every rate is min..max over the repetitions with the median in the middle. A"
     say "difference smaller than that band is not a difference -- see EVALUATION.md."
+    say "THE LATENCIES ARE WARM-CACHE FIGURES: every arm's first call is timed separately"
+    say "and excluded, because on a local model it is mostly the model being loaded."
     say RULE
   end
 
@@ -115,7 +117,9 @@ class Eval::Classifier::Report
     passes = result.for_arm(arm)
     rows = passes.flat_map { |pass| pass.rows.map { |row| row.transform_keys(&:to_s) } }
     say
-    say "MODEL  #{arm}   (#{passes.size} rep#{"s" unless passes.size == 1}, #{rows.size} readings)"
+    parsed = Eval::Classifier::Arm.parse(arm)
+    say "MODEL  #{arm}#{"   [LOCAL]" if parsed.local?}   " \
+        "(#{passes.size} rep#{"s" unless passes.size == 1}, #{rows.size} readings)"
     say
 
     Eval::Classifier::Result::METRICS.each do |metric, meaning|
@@ -123,13 +127,7 @@ class Eval::Classifier::Report
       say format("  %-20s %s   %s", metric, band(metric, spread), meaning)
     end
 
-    rotations = passes.sum(&:rotations)
-    failures = passes.sum(&:failures)
-    say format("  %-20s %d   %s", "rotations", rotations,
-               rotations.zero? ? "every line answered by the model this arm names" :
-                                 "READ WITH CARE: some lines were answered by another model")
-    say format("  %-20s %d   %s", "failed calls", failures,
-               "a line whose call failed after the rotation; not scored") if failures.positive?
+    speed_and_flakiness(arm, passes)
 
     say
     per_intent(rows)
@@ -147,11 +145,55 @@ class Eval::Classifier::Report
   # a rate, so formatting it to three decimals would be a lie about what it is.
   def band(metric, spread)
     return format("%3d..%-3d (median %3d)", spread.min, spread.max, spread.median) if counted?(metric)
+    return format("%6.2fs..%-6.2fs (median %6.2fs)", spread.min, spread.max, spread.median) if seconds?(metric)
 
     format("%.3f..%.3f (median %.3f)", spread.min, spread.max, spread.median)
   end
 
-  def counted?(metric) = Eval::Classifier::Result::LOWER_IS_BETTER.include?(metric) || metric == :closed_set_misses
+  def counted?(metric) = Eval::Classifier::Result::COUNTED.include?(metric)
+  def seconds?(metric) = Eval::Classifier::Result::SECONDS.include?(metric)
+
+  # SPEED AND FLAKINESS TOGETHER, because they are the two ways a model can cost
+  # the player a turn and they read differently: a slow arm made them wait, a
+  # flaky arm did not answer at all. An arm with failures has its latency
+  # measured over the calls that ANSWERED, so the coverage is stated on the same
+  # line rather than left to be worked out.
+  def speed_and_flakiness(arm, passes)
+    parsed = Eval::Classifier::Arm.parse(arm)
+    answered = passes.sum { |pass| pass.latencies.size }
+    failures = passes.sum(&:failures)
+    total = answered + failures
+
+    say format("  %-20s %s", "cost", parsed.local? ?
+      "nothing -- a local model on the captain's own hardware, and slow" :
+      "#{format("$%.4f", parsed.price.of(Eval::Classifier::PER_CALL[:input] * total,
+                                         Eval::Classifier::PER_CALL[:output] * total))} over #{total} calls")
+    cold = result.warmup(arm)
+    if cold
+      say format("  %-20s %s   %s", "first call",
+                 cold["seconds"] ? format("%.2fs", cold["seconds"]) : "failed",
+                 parsed.local? ? "the model load, EXCLUDED from the figures above -- " \
+                                 "kept resident: #{cold["residency"]}" :
+                                 "EXCLUDED from the figures above, so an outlier shows as one")
+    end
+    say format("  %-20s %d of %d   %s", "answered", answered, total,
+               failures.zero? ? "every call answered" :
+                                "the latency figures above cover these and not the #{failures} that failed")
+
+    if failures.positive?
+      say format("  %-20s %d   %s", "FAILED CALLS", failures, "no rotation to hide them: an arm is one model")
+      Eval::Classifier::Result.new(corpus_size: 0, arms: [ arm ], reps: passes.size, passes: passes)
+                              .failures_by_class(arm).each do |klass, count|
+        say format("      %-42s %d", klass, count)
+      end
+    end
+
+    rotations = passes.sum(&:rotations)
+    return if rotations.zero?
+
+    say format("  %-20s %d   %s", "ROTATED", rotations,
+               "THE PINNING FAILED -- another model answered and this arm must not be credited")
+  end
 
   def per_intent(rows)
     say "  ACCURACY PER INTENT -- of the lines labelled with each, how many came back whole"

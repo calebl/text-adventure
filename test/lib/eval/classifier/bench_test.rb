@@ -154,6 +154,66 @@ class Eval::Classifier::BenchTest < ActiveSupport::TestCase
     assert_in_delta 1.0, pass.accuracy, 0.001
   end
 
+  # --- speed, on the captain's instruction of 2026-09-04 ------------------
+
+  test "every answered reading is timed and a failed one is deliberately not" do
+    pass = bench(perfect.merge("a-reach" => RuntimeError.new("the provider hung up"))).passes.sole
+
+    assert_equal 4, pass.latencies.size, "a latency per reading that answered"
+    assert pass.latencies.all? { |seconds| seconds >= 0 }, "CLOCK_MONOTONIC never goes backwards"
+    assert_nil pass.readings.find { |row| row.id == "a-reach" }.seconds,
+               "how long a call took to FAIL is a fact about the failure, not about how fast the model answers"
+    assert_operator pass.latency_median, :>=, 0
+  end
+
+  # THE WORST TURN IN TWENTY, nearest-rank, so the figure is one of the observed
+  # values and a reader can go and find it in the rows.
+  test "the p95 is the nearest observed value and not an interpolation" do
+    pass = Eval::Classifier::Bench::Pass.new(arm: "m", rep: 1, readings: timed([ 1, 2, 3, 4, 100 ]))
+
+    assert_equal 3, pass.latency_median
+    assert_equal 100, pass.latency_p95, "five readings: the 95th percentile is the slowest of them"
+    assert_equal 0.0, Eval::Classifier::Bench::Pass.new(arm: "m", rep: 1, readings: []).latency_p95
+  end
+
+  # A SLOW ARM AND A FLAKY ARM READ DIFFERENTLY, which is why the failures are
+  # grouped by what raised rather than counted.
+  test "failures are grouped by error class, because a count cannot say why" do
+    answers = perfect.merge("a-reach" => RuntimeError.new("hung up"),
+                            "an-other" => BaseAgent::SchemaIgnoredError.new("answered prose"))
+    pass = bench(answers).passes.sole
+
+    assert_equal 2, pass.failures
+    assert_equal({ "RuntimeError" => 1, "BaseAgent::SchemaIgnoredError" => 1 }, pass.failures_by_class)
+  end
+
+  test "the board prints speed and flakiness together, and says what the latency covers" do
+    result = bench(perfect.merge("a-reach" => RuntimeError.new("hung up")))
+    out = StringIO.new
+    Eval::Classifier::Report.new(result, io: out).print
+
+    printed = out.string
+    assert_match(/latency_median/, printed)
+    assert_match(/latency_p95/, printed)
+    assert_match(/answered\s+4 of 5/, printed)
+    assert_match(/FAILED CALLS\s+1/, printed)
+    assert_match(/RuntimeError\s+1/, printed)
+  end
+
+  test "a local arm is labelled and its cost is stated as nothing" do
+    agent = ByLine.new(perfect, @corpus)
+    result = BaseAgent.stub(:new, ->(**_options) { agent }) do
+      Eval::Classifier::Bench.new(corpus: @corpus, arms: [ "ollama:qwen3:4b" ], reps: 1, io: nil).run
+    end
+    out = StringIO.new
+    Eval::Classifier::Report.new(result, io: out).print
+
+    assert_equal [ "ollama:qwen3:4b" ], result.arms
+    assert_equal [ "ollama:qwen3:4b" ], result.local_arms
+    assert_match(/\[LOCAL\]/, out.string)
+    assert_match(/cost\s+nothing -- a local model/, out.string)
+  end
+
   test "the persisted rows carry what a board prints and survive a round trip" do
     Dir.mktmpdir do |directory|
       bench(perfect).write!(directory, name: "unit")
@@ -162,6 +222,8 @@ class Eval::Classifier::BenchTest < ActiveSupport::TestCase
       assert_equal "unit", reloaded.name
       assert_equal 5, reloaded.corpus_size
       assert_equal [ 1.0 ], reloaded.values(:strict_accuracy)
+      assert_equal 1, reloaded.values(:latency_median).size, "a stored pass carries its speed"
+      assert_equal [ 0 ], reloaded.values(:failures)
       assert_equal 5, reloaded.rows.size
       assert reloaded.rows.all? { |row| row["right"] }
     end
@@ -181,6 +243,17 @@ class Eval::Classifier::BenchTest < ActiveSupport::TestCase
   end
 
   private
+
+  # Readings with nothing but a latency on them, for the percentile arithmetic.
+  def timed(seconds)
+    line = @corpus.lines.first
+    seconds.map do |value|
+      Eval::Classifier::Bench::Reading.new(
+        line: line, arm: "m", rep: 1, answered_by: "m", raw: nil, seconds: value, error: nil,
+        answer: Eval::Classifier::Corpus::Answer.new(intent: line.intent, target: line.target)
+      )
+    end
+  end
 
   # Every line answered exactly as its label says.
   def perfect

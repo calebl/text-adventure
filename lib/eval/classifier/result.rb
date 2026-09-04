@@ -22,30 +22,55 @@ class Eval::Classifier::Result
   # load-bearing. `closed_set_misses` is a COUNT rather than a rate, because it
   # is the failure the closed enum exists to prevent and a rate hides how few
   # there should be.
+  # SPEED IS ONE OF THEM, on the captain's instruction of 2026-09-04: a model
+  # comparison carries a speed verdict beside accuracy, judged by the same
+  # `Eval::Noise` rule. `latency_median` is what a turn usually costs the player
+  # and `latency_p95` is what the worst turn in twenty costs them -- two figures
+  # because on a local model they are not the same number. `failures` is here
+  # rather than only on the board because a slow arm and a flaky arm read
+  # differently, and a comparison that could not say which had changed would be
+  # reporting the wrong thing.
   METRICS = {
     strict_accuracy: "the whole answer right, over unarguable lines",
     accuracy: "the whole answer right, over every line",
     intent_accuracy: "the intent right, whatever it landed on",
     refusal_agreement: "the refusal the line earns, over unarguable lines",
-    closed_set_misses: "right intent, wrong record (a count, not a rate)"
+    closed_set_misses: "right intent, wrong record (a count, not a rate)",
+    latency_median: "seconds the median call took (CLOCK_MONOTONIC)",
+    latency_p95: "seconds the worst call in twenty took",
+    failures: "calls that failed outright (a count; the arm has no rotation)"
   }.freeze
 
-  # A rate whose direction of improvement is DOWN. Stated because
+  # A FIGURE WHOSE DIRECTION OF IMPROVEMENT IS DOWN. Stated because
   # `Eval::Noise::Verdict#improved?` reads a negative delta as an improvement,
-  # which is right for a defect count and wrong for an accuracy.
-  LOWER_IS_BETTER = %i[closed_set_misses].freeze
+  # which is right for a defect count or a latency and wrong for an accuracy.
+  LOWER_IS_BETTER = %i[closed_set_misses latency_median latency_p95 failures].freeze
 
-  attr_reader :corpus_size, :corpus_digest, :arms, :reps, :passes, :name, :recorded_at
+  # FIGURES THAT ARE COUNTS OR SECONDS RATHER THAN RATES, so a board formats
+  # them as what they are.
+  COUNTED = %i[closed_set_misses failures].freeze
+  SECONDS = %i[latency_median latency_p95].freeze
 
-  def initialize(corpus_size:, arms:, reps:, passes:, corpus_digest: nil, name: nil, recorded_at: nil)
+  attr_reader :corpus_size, :corpus_digest, :arms, :reps, :passes, :warmups, :name, :recorded_at
+
+  def initialize(corpus_size:, arms:, reps:, passes:, warmups: [], corpus_digest: nil,
+                 name: nil, recorded_at: nil)
     @corpus_size = corpus_size
     @corpus_digest = corpus_digest
     @arms = arms
     @reps = reps
     @passes = passes
+    # NORMALIZED TO STRING KEYS ON THE WAY IN, so one lookup serves a live run
+    # and a set loaded off disk -- the same rule `#rows` follows.
+    @warmups = Array(warmups).map { |row| (row.respond_to?(:to_h) ? row.to_h : row).transform_keys(&:to_s) }
     @name = name
     @recorded_at = recorded_at
   end
+
+  # WHAT THE FIRST CALL COST THIS ARM, and what the daemon said about keeping a
+  # local model in memory. Excluded from every figure in `METRICS`, which are
+  # WARM-CACHE FIGURES -- see `Eval::Classifier::Bench`.
+  def warmup(arm) = warmups.find { |row| row["arm"].to_s == arm.to_s }
 
   # WHICH MODELS THIS SET MEASURED, as a set records them. The captain's
   # instruction of 2026-09-04 is that a set has to say which model produced it,
@@ -71,6 +96,7 @@ class Eval::Classifier::Result
     new(name: document["name"], recorded_at: document["recorded_at"],
         corpus_size: document["corpus_size"], corpus_digest: document["corpus_digest"],
         arms: document.fetch("arms"), reps: document["reps"],
+        warmups: document["warmups"].to_a,
         passes: document.fetch("passes").map { |row| Stored.new(row) })
   end
 
@@ -98,10 +124,23 @@ class Eval::Classifier::Result
 
   def spread(metric, arm: nil) = Eval::Noise.spread(metric, values(metric, arm: arm))
 
+  # EVERY FAILURE THIS ARM HAD, by error class, pooled over its repetitions --
+  # the figure that says whether an arm is slow or flaky.
+  def failures_by_class(arm)
+    for_arm(arm).flat_map { |pass| pass.failures_by_class.to_a }
+                .each_with_object({}) { |(klass, count), all| all[klass] = all.fetch(klass, 0) + count }
+                .sort_by { |_klass, count| -count }.to_h
+  end
+
+  # Whether any arm in this set is one of the captain's own local models. Read
+  # by the board, which says so: a local arm costs nothing and is slow, and a
+  # figure printed without that beside it invites the wrong comparison.
+  def local_arms = arms.select { |arm| Eval::Classifier::Arm.parse(arm).local? }
+
   def to_h
     { name: name, recorded_at: recorded_at || Time.current.utc.iso8601,
       corpus_size: corpus_size, corpus_digest: corpus_digest, arms: arms, reps: reps,
-      answered_by: answered_by, passes: passes.map(&:to_h) }
+      answered_by: answered_by, warmups: warmups, passes: passes.map(&:to_h) }
   end
 
   # A PASS READ BACK OFF DISK. It answers the same questions a live
@@ -121,6 +160,7 @@ class Eval::Classifier::Result
     def rows = row["readings"].to_a
     def rotations = row["rotations"].to_i
     def failures = row["failures"].to_i
+    def failures_by_class = (row["failures_by_class"] || {}).to_h
 
     Eval::Classifier::Result::METRICS.each_key do |metric|
       define_method(metric) { row[metric.to_s] }
