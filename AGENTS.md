@@ -1030,7 +1030,7 @@ What belongs here is the part that changes how you work:
   is re-derived from the label and compared. Add a line under its shape with a
   `why`; add a position rather than stretching a label.
 - **A line whose English admits two readings carries `also_accept`**, and the
-  headline rate is taken over the lines that do not. 54 of 300 do. A bench that
+  headline rate is taken over the lines that do not. 55 of 300 do. A bench that
   marked a defensible answer wrong would be measuring its own labelling.
 - **Every rate comes with its band, per model, never pooled.** The classifier
   runs at `TEMPERATURE = 0.0` and a provider is still not deterministic; four

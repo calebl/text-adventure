@@ -261,7 +261,7 @@ resolves to a record in the supply closet and to nothing in the office.
    and compares. Two readings of one line have to agree.
 4. **What neither can check** is whether the label is the right reading of the
    English. That is the hand-verification, line by line, and `why` states it.
-   **54 of the 300 lines carry `also_accept`** — a second answer the bench
+   **55 of the 300 lines carry `also_accept`** — a second answer the bench
    counts as correct — because their English really does admit two readings, and
    the headline rate excludes them.
 

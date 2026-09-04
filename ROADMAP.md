@@ -76,7 +76,7 @@ The full audit of every planned piece of work against this constraint is in
   `Eval::Classifier::CorpusTest` runs offline in CI: every `target` and
   `also_named` is checked back against the closed set the action really reads at
   its position, and a stated `refusal:` is re-derived from the label and
-  compared — two readings of one line have to agree. 54 of the 300 lines carry
+  compared — two readings of one line have to agree. 55 of the 300 lines carry
   `also_accept` because their English admits two readings, and the headline rate
   excludes them.
 
