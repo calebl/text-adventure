@@ -117,6 +117,17 @@ class WorldSeed::Exporter
                    "is their progress through the world rather than the world."
     end
 
+    # A ROW THAT SAYS BOTH THINGS. `deliberately_absent` with a whereabouts is
+    # a contradiction no code path in the app writes -- `Character#move_to!`
+    # clears the marker -- so it arrives through raw SQL or a hand-edited file
+    # that grew a `location` for somebody it also marks absent. The file is
+    # written as the records stand and this says so, because the loader will
+    # refuse it and the person editing the file has to know which half is true.
+    story.characters.deliberately_absent.somewhere.each do |character|
+      @warnings << "#{character.fullname} is marked absent on purpose AND standing in #{character.location.name}: " \
+                   "this file carries both keys and WILL NOT LOAD. Delete whichever one is not true."
+    end
+
     if opening_scene.nil?
       @warnings << "no opening arrival: this story has no scene marked `is_opening`, so the file has no " \
                    "`opening_scene` and WILL NOT LOAD. Write one by hand, or generate the story with a " \
@@ -206,6 +217,16 @@ class WorldSeed::Exporter
       # `Character.present_in` is the closed set `talk` resolves against, so a
       # world exported without it loads with nobody standing anywhere.
       document["location"] = character.location.name if character.location
+      # NOWHERE ON PURPOSE, and written only when the record says so -- the
+      # same "omitted rather than written false" rule `opening`, `mobile` and
+      # `readable` follow. It is mutually exclusive with `location` above
+      # (`WorldSeed::Loader#validate!` refuses the pair), and it cannot be
+      # emitted alongside one from a record the app wrote: `Character#move_to!`
+      # clears the marker whenever it puts somebody in a room. A row that
+      # somehow holds both is exported as it stands and reported below, because
+      # an exporter that silently dropped half of a contradiction would hide
+      # the thing the file's reader needs to fix.
+      document["absent"] = true if character.deliberately_absent?
       CHARACTER_FIELDS.each { |field| document[field.to_s] = value(character.public_send(field)) }
       items = items_document(character)
       document["items"] = items if items.any?

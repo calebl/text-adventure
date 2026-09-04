@@ -495,13 +495,15 @@ narrator and the character prompts out of it, `rake game:mechanics` prints it
 under `present`, and a `Scene`'s cast is now a **snapshot written from it** on
 every branch rather than the only place it ever lived.
 
-Four things write a whereabouts, and prose is not one of them:
+Five things write a whereabouts, and prose is not one of them:
 
 | writer | what it does |
 | --- | --- |
-| `characters[].location` in a world file | where the world's own people stand. Absent means *nowhere*, which a file may mean |
-| `Character::Registry` | places somebody who is nowhere, **creates** the people a room is born with, and **never moves somebody who is not** — that rule is the Tide Post defect written down |
-| `Character#move_to!` | the explicit engine call, for a mechanic that means to move a person. Nothing invokes it yet |
+| `characters[].location` in a world file | where the world's own people stand. Absent means *nowhere*, which `rake game:doctor` reports |
+| `characters[].absent: true` in a world file | **nowhere on purpose** — the world saying this person has been removed from it, which the doctor stays silent about. `The Unrecorded Hour` about Perrin Lasco |
+| `Character::Registry` | places somebody who is nowhere, **creates** the people a room is born with, **never moves somebody who is not**, and **never places somebody absent on purpose** |
+| `Character#move_to!` | the explicit engine call, for a mechanic that means to move a person, and it clears a deliberate absence. Nothing invokes it yet |
+| `Character#absent!` | nowhere, and meant: what a seed file asserts and what `rake game:repair` writes for a world seeded before the marker existed |
 | `rake game:backfill_whereabouts` | once, from the arrival casts still on disk, and it **refuses to guess** when two rooms recorded somebody at the same moment |
 
 The **party** is the deliberate exception and stays derived: the protagonist and

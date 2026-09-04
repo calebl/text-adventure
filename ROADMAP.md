@@ -214,6 +214,14 @@ The full audit of every planned piece of work against this constraint is in
   recorded somebody at the same moment. No narrator tool, no per-turn model
   check, no scan of prose for a name.
 
+  **Nowhere on purpose is now said out loud** (`characters[].absent: true`,
+  `characters.deliberately_absent`). The acceptance transcript for this item
+  read *"playable, 1 warning"* on `The Unrecorded Hour` for exactly one reason:
+  Perrin Lasco is nowhere because that world's premise is that he has been
+  removed from it, and nothing distinguished that from the accidental nowhere
+  the check exists for. All three checked-in worlds are HEALTHY now, and
+  `test/lib/seeded_worlds_test.rb` keeps them that way.
+
   **The scene cast is kept and its direction reversed.** It is a derived
   snapshot now, written on every branch by `Playthrough::Turn#play` beside
   `typed` and `resolved_action`. Kept rather than dropped because it answers a

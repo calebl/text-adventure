@@ -112,6 +112,17 @@ class Character::WhereaboutsBackfillTest < ActiveSupport::TestCase
     assert_predicate friend.reload, :nowhere?
   end
 
+  # NOWHERE ON PURPOSE IS NOT A GAP: an old arrival cast that names somebody a
+  # world has removed from itself is exactly the evidence that must not win.
+  # `Character::Registry` refuses to place them for the same reason.
+  test "somebody absent on purpose is skipped entirely" do
+    perrin = create(:character, :absent, story: @story, fullname: "Perrin Lasco")
+    scene_in(@office, at: 1.hour.ago, cast: perrin)
+
+    assert_equal [], backfill
+    assert_predicate perrin.reload, :absent?
+  end
+
   # This is a backfill, not a re-derivation: the records win over the history
   # everywhere else in this app and they win here too.
   test "somebody who already has a whereabouts is not touched" do

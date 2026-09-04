@@ -110,6 +110,16 @@ class Story::Doctor
     end
   end
 
+  # The fullnames the checked-in file marks `absent: true` -- nowhere on
+  # purpose -- or empty for a story that is not one of the checked-in worlds.
+  # The counterpart of `#seeded_whereabouts` and read for the same reason: what
+  # the file says is on record, so a finding about it can be `safe`.
+  def seeded_absences
+    @seeded_absences ||= Array(seed_document && seed_document["characters"])
+                         .filter_map { |row| row["fullname"] if row["absent"] == true }
+                         .to_set
+  end
+
   private
 
   def finding(code, severity, message, remedy, subject: nil)
@@ -358,7 +368,7 @@ class Story::Doctor
   end
 
   # ------------------------------------------------------------------------
-  # WHERE THE CAST IS, and the three ways that answer goes wrong.
+  # WHERE THE CAST IS, and the ways that answer goes wrong.
   #
   # `Character.present_in(location)` is the closed set `talk` resolves against,
   # so a whereabouts is not decoration: a character with none is somebody the
@@ -366,6 +376,13 @@ class Story::Doctor
   # the defect this column was added for -- The Tide Post recorded the
   # protagonist alone in a world about a man chained to it -- and this is the
   # sweep that finds the rest of them.
+  #
+  # NOWHERE ON PURPOSE IS NOT ONE OF THEM. `characters.deliberately_absent` is a
+  # world's own statement that somebody has been removed from it, and the three
+  # checks that read it (`#characters_nowhere`, `#characters_absent_in_the_seed`,
+  # `#characters_absent_but_somewhere`) exist so that this sweep reports the
+  # accidental nowhere and stays silent about the deliberate one. It reported
+  # `The Unrecorded Hour` on every single run before the marker existed.
   #
   # THE PARTY IS NOT ASKED ABOUT. The protagonist and anyone `is_companion`
   # travel with the playthrough (`playthroughs.current_location_id`), because
@@ -377,25 +394,75 @@ class Story::Doctor
     cast = story.characters.includes(:location).where(is_protagonist: false)
                 .where(is_companion: [ false, nil ]).order(:id).to_a
 
-    [ *characters_nowhere(cast), *characters_in_a_stub(cast), *characters_outside_the_story(cast),
+    [ *characters_nowhere(cast), *characters_absent_in_the_seed(cast), *characters_absent_but_somewhere(cast),
+      *characters_in_a_stub(cast), *characters_outside_the_story(cast),
       *rooms_over_the_cast_cap, *story_over_the_cast_cap, *characters_the_seed_placed_elsewhere ]
   end
 
   # Nobody has said where they are. `rake game:backfill_whereabouts` recovers
   # what the old arrival casts can still answer for and refuses to guess at the
-  # rest, which is why this is `manual` -- and a seeded world can mean it, so
-  # the message says what the state IS rather than calling it a defect.
-  # `The Unrecorded Hour` leaves Perrin Lasco nowhere on purpose: the premise of
-  # that world is that he has been removed from it.
+  # rest, which is why this is `manual`.
+  #
+  # NOWHERE ON PURPOSE IS NOT REPORTED AT ALL. `The Unrecorded Hour` leaves
+  # Perrin Lasco nowhere because the premise of that world is that he has been
+  # removed from it, and this reported him on every single run of the doctor --
+  # a warning about a world working exactly as written, which is how a person
+  # learns to stop reading warnings. `characters.deliberately_absent` is the
+  # difference, and the finding is DROPPED rather than downgraded because there
+  # is no level below `warning` here: `SEVERITIES` is `fatal` and `warning`,
+  # and the doctor's contract is that a story with nothing wrong reports
+  # nothing (`#healthy?`). A healthy-note level would make every healthy story
+  # print something, which is a different tool.
   def characters_nowhere(cast)
-    cast.select(&:nowhere?).map do |character|
+    cast.select { |character| character.nowhere? && !character.deliberately_absent? && !seeded_absences.include?(character.fullname) }.map do |character|
       finding(:character_nowhere, :warning,
               "#{character.fullname} is nowhere: `Character.present_in` never offers them, so nobody can " \
               "speak to them in any room. Recover what the old arrival casts hold with " \
               "`rake game:backfill_whereabouts`, place them in a seed file's `characters[].location`, or " \
               "move them with `Character#move_to!` -- and a character whose room was deleted lands here too, " \
-              "because destroying a Location nullifies this column rather than the person",
+              "because destroying a Location nullifies this column rather than the person. If they are nowhere " \
+              "ON PURPOSE, say so: `absent: true` in a seed file, or `Character#absent!`",
               :manual, subject: character)
+    end
+  end
+
+  # THE FILE ALREADY SAYS THIS IS DELIBERATE AND THE ROW PREDATES THE MARKER.
+  # The one-time case: a world seeded before `characters.deliberately_absent`
+  # existed carries an unmarked nowhere character whose checked-in file says
+  # `absent: true`, so the doctor would report the world working as written.
+  # Safe for exactly the reason `character_moved_from_the_seed` is safe -- the
+  # answer is on record in a file in the repository -- and `rake game:repair`
+  # writes it, as does re-seeding.
+  def characters_absent_in_the_seed(cast)
+    cast.select { |character| character.nowhere? && !character.deliberately_absent? && seeded_absences.include?(character.fullname) }.map do |character|
+      finding(:character_absent_in_the_seed, :warning,
+              "#{character.fullname} is nowhere and #{seed_basename} marks them `absent: true` -- nowhere on " \
+              "purpose -- but the record does not carry the marker, so this story was seeded before it existed. " \
+              "`rake game:repair` writes it, and so does re-seeding",
+              :safe, subject: character)
+    end
+  end
+
+  # NOWHERE ON PURPOSE, AND STANDING IN A ROOM. A contradiction: the marker
+  # says nobody may be offered this person to talk to and the whereabouts puts
+  # them in the closed set for that room. No code path in the app writes it --
+  # `Character#move_to!` clears the marker when it places somebody, and
+  # `Character::Registry` refuses to place a marked character at all -- so this
+  # arrives through raw SQL, or through a re-seed of a file that grew a
+  # `location` for somebody it also marks absent (which `WorldSeed::Loader`
+  # now refuses outright).
+  #
+  # Safe, and the marker is the half that wins: it is the world's own statement
+  # about the person, and it is the half a checked-in file can corroborate.
+  # `rake game:repair` puts them back to nowhere.
+  def characters_absent_but_somewhere(cast)
+    cast.select { |character| character.deliberately_absent? && character.somewhere? }.map do |character|
+      finding(:character_absent_but_somewhere, :warning,
+              "#{character.fullname} is marked absent on purpose and is standing in " \
+              "#{character.location.name.inspect}; the record says both that nobody may be offered them to " \
+              "speak to and that they are in that room's closed set. Nothing in the app writes this -- " \
+              "`Character#move_to!` clears the marker when it places somebody",
+              :safe, subject: character)
     end
   end
 
@@ -479,8 +546,15 @@ class Story::Doctor
   # there is a database in which the world's own premise is unreachable. Safe
   # rather than manual because the answer is on record in a checked-in file:
   # `rake game:repair` puts them back, and so does re-seeding.
+  # THE FILE SAYS NOWHERE ON PURPOSE AND THE ROW IS IN A ROOM is the same
+  # finding read from the other side, and it is here rather than beside
+  # `character_absent_but_somewhere` because the two answer different
+  # questions: that one reads the marker on the record, this one reads the
+  # file, and only this one can see a story seeded before the marker existed.
+  # A file-absent character who IS nowhere is silent -- that is the file and
+  # the record agreeing, which is the whole point of the marker.
   def characters_the_seed_placed_elsewhere
-    seeded_whereabouts.filter_map do |fullname, room|
+    placed = seeded_whereabouts.filter_map do |fullname, room|
       character = story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
       next if character.nil? || character.location&.name == room
 
@@ -490,6 +564,22 @@ class Story::Doctor
               "somebody called it or the world was seeded before the file said this",
               :safe, subject: character)
     end
+
+    absent = seeded_absences.filter_map do |fullname|
+      character = story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
+      next if character.nil? || character.nowhere?
+      # Already reported by `#characters_absent_but_somewhere`, which reads the
+      # record rather than the file; one row, one finding.
+      next if character.deliberately_absent?
+
+      finding(:character_moved_from_the_seed, :warning,
+              "#{character.fullname} is #{character.whereabouts}, and #{seed_basename} marks them " \
+              "`absent: true` -- nowhere on purpose. Either somebody called `Character#move_to!` or the " \
+              "world was seeded before the file said this",
+              :safe, subject: character)
+    end
+
+    placed + absent
   end
 
   # A malformed world file is `WorldSeed::Loader`'s to complain about, not this

@@ -39,7 +39,9 @@
 #   the seed file        `characters[].location` in db/seeds/worlds/*.yml,
 #                        loaded by `WorldSeed::Loader`. A seeded character the
 #                        file does not place stays nowhere and
-#                        `rake game:doctor` reports it.
+#                        `rake game:doctor` reports it -- unless the file says
+#                        `absent: true`, which is nowhere ON PURPOSE. See
+#                        NOWHERE ON PURPOSE below.
 #   placement            `Character::Registry`, the people half of the noun
 #                        registry: it places somebody who is nowhere and it
 #                        NEVER silently moves somebody who is already
@@ -55,6 +57,32 @@
 # narration for a name. The standing constraint (AGENTS.md) is that the engine
 # decides state and the prose is TOLD, and a mechanic that depended on a model
 # calling a tool would stop working the day a model stopped complying.
+#
+# ------------------------------------------------------------------------
+# NOWHERE ON PURPOSE: `characters.deliberately_absent`.
+#
+# Nowhere is a real state and the doctor reports it, because somebody
+# `Character.present_in` never offers is somebody the player can never speak
+# to. One of the three checked-in worlds means it anyway: `The Unrecorded Hour`
+# leaves Perrin Lasco nowhere because its whole premise is that he has been
+# removed from the world, and the doctor reported that on every run -- a
+# warning about the world working as written, which is how a person learns to
+# stop reading warnings.
+#
+# This boolean is the difference between the two nowheres, and it is a fact
+# about the PERSON rather than a lookup: only three stories in the database
+# have a checked-in file, so a caller that answered "is this deliberate" by
+# reading YAML would have no answer for a generated world.
+#
+#   the file says it     `characters[].absent: true`, written by
+#                        `WorldSeed::Loader` and exported back by
+#                        `WorldSeed::Exporter`.
+#   `#absent!`           the explicit engine call: nowhere, and meant.
+#   `#move_to!(room)`    CLEARS it. Bringing Perrin back is the story's
+#                        business, and a person standing in a room is not
+#                        absent from the world.
+#   `Character::Registry` never places one -- the second half of the rule the
+#                        registry exists for.
 # ------------------------------------------------------------------------
 class Character < ApplicationRecord
   belongs_to :story
@@ -215,14 +243,27 @@ class Character < ApplicationRecord
 
   scope :somewhere, -> { where.not(location_id: nil) }
 
+  # NOWHERE AND MEANT. See the header: the state a seed file asserts with
+  # `absent: true`, told apart from the nowhere that is an accident so that the
+  # doctor can report one and stay quiet about the other.
+  scope :deliberately_absent, -> { where(deliberately_absent: true) }
+
   def nowhere? = location_id.nil?
 
   def somewhere? = location_id.present?
+
+  # Nowhere, on purpose, and still nowhere. Both halves are asked because the
+  # marker and the column can contradict each other -- a row written outside
+  # the app, or a file that grew a `location` for somebody it also marks absent
+  # -- and `Story::Doctor` reports that contradiction rather than picking a
+  # winner silently.
+  def absent? = deliberately_absent? && nowhere?
 
   # Where they are, in one sentence, for a report a person reads. The same
   # shape `Item#whereabouts` has and for the same reason -- `rake game:doctor`
   # and the backfill both print it.
   def whereabouts
+    return "nowhere on purpose" if absent?
     return "nowhere" if nowhere?
 
     "in #{location.name}"
@@ -236,8 +277,26 @@ class Character < ApplicationRecord
   # refuses to move somebody who is already somewhere.
   #
   # `nil` is legal and means "off the map": a person can stop being anywhere.
+  #
+  # A ROOM CLEARS `deliberately_absent`. An engine mechanic that brings Perrin
+  # Lasco back into the world is the story's business, and once he is standing
+  # in Ward Office 12 the premise no longer holds -- leaving the marker set
+  # would mean a record that says "absent on purpose" about somebody the
+  # classifier is offering as a person to talk to. `move_to!(nil)` leaves it
+  # exactly as it was, because taking somebody off the map does not decide
+  # whether that is the story or an accident; `#absent!` is the call that says
+  # it is the story.
   def move_to!(location)
-    update!(location: location)
+    update!(location: location, deliberately_absent: location ? false : deliberately_absent)
+  end
+
+  # NOWHERE, AND MEANT: the explicit counterpart of `#move_to!` for the state a
+  # seed file asserts with `absent: true`. `WorldSeed::Loader` writes it on
+  # load and `Story::Repair` writes it for a world seeded before the marker
+  # existed; nothing else in the app decides that somebody's absence is the
+  # premise of a world.
+  def absent!
+    update!(location: nil, deliberately_absent: true)
   end
 
   private

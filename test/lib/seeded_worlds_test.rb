@@ -111,6 +111,33 @@ class SeededWorldsTest < ActiveSupport::TestCase
     end
   end
 
+  # EVERY CHECKED-IN WORLD IS HEALTHY, and this is the assertion that keeps it
+  # that way. `The Unrecorded Hour` was "playable, 1 warning" for one reason:
+  # Perrin Lasco is nowhere on purpose and nothing said so, so the doctor
+  # reported the world working exactly as written. `absent: true` in the file
+  # is what says it.
+  test "every checked-in world is healthy, with nothing for the doctor to report" do
+    WorldSeed::Loader.load_all(io: nil).each do |story|
+      doctor = Story::Doctor.new(story)
+
+      assert_predicate doctor, :healthy?, "#{story.title}: #{doctor.findings.map(&:message).join("; ")}"
+    end
+  end
+
+  # NOWHERE ON PURPOSE, said out loud by the one world that means it. The
+  # counterpart of the tide post below: that world's premise is a man who is
+  # THERE, this one's is a man who is GONE, and both are now records.
+  test "the removed character of The Unrecorded Hour is absent on purpose" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    perrin = story.characters.find_by(fullname: "Perrin Lasco")
+
+    assert_predicate perrin, :absent?
+    story.locations.each do |location|
+      assert_not_includes Character.present_in(location).map(&:fullname), "Perrin Lasco",
+                          "#{location.name} offers somebody the world has removed"
+    end
+  end
+
   # The premise character is the reason this whole record exists: The Salt
   # Assizes is about a man chained to the tide post, and arriving there used to
   # record the protagonist alone.

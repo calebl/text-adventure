@@ -395,12 +395,23 @@ send again: one system instruction, one schema, one model.
 - **A world places its own cast**, with `characters[].location`. That column is
   the closed set `talk` resolves against, so a world exported without it loads
   with nobody standing anywhere and nobody to speak to. The key is optional and
-  an absent one means *nowhere*, which is a real state a file may mean —
-  `the-unrecorded-hour.yml` leaves Perrin Lasco nowhere because that world is
-  about him having been removed from it, and `rake game:doctor` reports him. The
-  protagonist never carries one; see *Playing the world*. A `location` naming a
-  room the file does not declare is refused, because that mistake is otherwise
-  silent.
+  an absent one means *nowhere*, which is a real state — `rake game:doctor`
+  reports it, because somebody `Character.present_in` never offers is somebody
+  the player can never speak to. The protagonist never carries one; see *Playing
+  the world*. A `location` naming a room the file does not declare is refused,
+  because that mistake is otherwise silent.
+- **`characters[].absent: true` is nowhere ON PURPOSE**, and it is a different
+  statement from an omitted `location`. `the-unrecorded-hour.yml` uses it on
+  Perrin Lasco because that world is about him having been removed from it, and
+  without it the doctor reported that world — correctly by its own rule and
+  uselessly — on every single run. It writes `characters.deliberately_absent`,
+  which is a fact about the person rather than a lookup: only three stories in
+  the database have a checked-in file at all. `Story::Doctor` stays silent about
+  a marked character who is nowhere, `Character::Registry` never places one
+  (the second half of *never move somebody who is not nowhere*), and
+  `Character#move_to!` CLEARS the marker — bringing them back is the story's
+  business, and a person standing in a room is not absent from the world. The
+  two keys are mutually exclusive and the loader refuses a file carrying both.
 - **A world carries its own opening arrival**, as `opening_scene`. It is the one
   `Scene` that is world rather than progress, which is a line the exporter
   otherwise holds hard; `db/seeds/worlds/README.md` has the ruling and the two

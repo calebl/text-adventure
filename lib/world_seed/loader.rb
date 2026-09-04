@@ -134,7 +134,19 @@ class WorldSeed::Loader
   #
   # THE KEY IS OPTIONAL AND AN ABSENT ONE MEANS NOWHERE, which is a real state
   # and is left alone rather than guessed at: `rake game:doctor` reports a
-  # seeded character the file did not place. It is written straight rather than
+  # seeded character the file did not place.
+  #
+  # `absent: true` IS THE FILE SAYING IT MEANT THAT. A missing key still means
+  # "nobody has said where they are" and is still reported; the marker says
+  # "nowhere, and that is the story", which is what `The Unrecorded Hour` has
+  # always meant about Perrin Lasco. It writes `characters.deliberately_absent`
+  # and `#validate!` refuses the pair with a `location`, because a file cannot
+  # mean both. Written on every load in both directions -- `absent: true` sets
+  # it, an absent key clears it -- so deleting the marker from the file and
+  # re-seeding takes it off the record, exactly as the placements, the
+  # connections and the items re-assert themselves over a played world.
+  #
+  # It is written straight rather than
   # through `Character::Registry` for the same reason the items above it are
   # written straight -- a seed file IS the decision, so the registry's "do not
   # move somebody who is already somewhere" rule would make re-seeding unable
@@ -148,7 +160,10 @@ class WorldSeed::Loader
                   story.characters.new(fullname: attributes.fetch("fullname"))
       where = attributes["location"].presence && find_location(story, attributes["location"])
 
-      character.assign_attributes(attributes.except("race", "items", "location").merge(race: race, location: where))
+      character.assign_attributes(
+        attributes.except("race", "items", "location", "absent")
+                  .merge(race: race, location: where, deliberately_absent: attributes["absent"] == true)
+      )
       character.save!
 
       load_items!(story, attributes["items"], character: character, location: nil)
@@ -310,6 +325,18 @@ class WorldSeed::Loader
       # `location` is deliberately not required -- nowhere is a real state and
       # `rake game:doctor` reports it -- so only a WRONG name is refused.
       standing = attributes["location"]
+
+      # NOWHERE ON PURPOSE AND STANDING IN A ROOM is a file that means both
+      # things at once, and the record cannot hold both -- `absent: true` is an
+      # assertion that nobody can be offered this person to talk to, and a
+      # `location` is an assertion that they are in the closed set for that
+      # room. Refused here rather than resolved, because which one the author
+      # meant is not derivable.
+      if attributes["absent"] == true && standing.present?
+        raise InvalidWorld, "#{where}: character #{attributes.fetch("fullname").inspect} is `absent: true` and also placed in " \
+                            "#{standing.inspect} -- `absent` means nowhere on purpose, so the two cannot both be true"
+      end
+
       next if standing.blank? || names.any? { |name| name.casecmp?(standing) }
 
       raise InvalidWorld, "#{where}: character #{attributes.fetch("fullname").inspect} is placed in #{standing.inspect}, " \

@@ -55,6 +55,34 @@ class Character::RegistryTest < ActiveSupport::TestCase
     assert_equal [], present
   end
 
+  # THE SECOND HALF OF THAT RULE: nowhere on purpose is not an empty slot.
+  # `The Unrecorded Hour` is about Perrin Lasco having been removed from the
+  # world, so a realization that named him would put him back into the game as a
+  # side effect of describing a room.
+  test "a character who is absent on purpose is not placed" do
+    perrin = create(:character, story: @story, fullname: "Perrin Lasco")
+    perrin.absent!
+
+    present = registry.admit!([ perrin ])
+
+    assert_predicate perrin.reload, :absent?, "the registry undid a world's own premise"
+    assert_equal [], present
+  end
+
+  # `Character#move_to!` is the explicit call for a mechanic that MEANS to bring
+  # somebody back, and it clears the marker -- so once they are in a room the
+  # registry treats them like anybody else who is already somewhere.
+  test "a character brought back explicitly is no longer refused as absent" do
+    perrin = create(:character, story: @story, fullname: "Perrin Lasco")
+    perrin.absent!
+    perrin.move_to!(@there)
+
+    registry.admit!([ perrin ])
+
+    assert_equal @there, perrin.reload.location, "the proposal moved somebody it should only have proposed"
+    assert_not_predicate perrin, :deliberately_absent?
+  end
+
   # A NAME ALONE IS NOT A PERSON. `#admit!` also takes names, and a name with no
   # sheet behind it is somebody the caller believed already existed -- inventing
   # one from a string would put a character in the world with no appearance,

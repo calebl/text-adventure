@@ -439,6 +439,45 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert Story::Doctor.new(story).playable?
   end
 
+  # NOWHERE ON PURPOSE IS NOT REPORTED AT ALL. `The Unrecorded Hour` is about
+  # Perrin Lasco having been removed from the world, and the doctor reported him
+  # on every single run before `characters.deliberately_absent` existed -- a
+  # warning about a world working exactly as written.
+  test "a character who is nowhere on purpose is not a finding" do
+    story = healthy_story
+    create(:character, story: story, fullname: "Perrin Lasco").absent!
+
+    assert_not_includes codes(story), :character_nowhere
+    assert_predicate Story::Doctor.new(story), :healthy?
+  end
+
+  # NOWHERE ON PURPOSE AND STANDING IN A ROOM: the marker says nobody may be
+  # offered this person to talk to and the whereabouts puts them in that room's
+  # closed set. Nothing in the app writes it, and the marker is the half that
+  # wins -- so it is `safe` and `rake game:repair` puts them back.
+  test "reports a character marked absent who is standing somewhere" do
+    story = healthy_story
+    somewhere = create(:character, story: story, fullname: "Perrin Lasco", location: story.locations.first)
+    somewhere.update_column(:deliberately_absent, true)
+
+    assert_includes codes(story), :character_absent_but_somewhere
+    assert_equal :safe, finding(story, :character_absent_but_somewhere).remedy
+    assert_not_includes codes(story), :character_nowhere
+  end
+
+  # `Character#move_to!` clears the marker, which is why no code path in the
+  # app can produce the finding above: bringing somebody back is the story's
+  # business, and once they are in a room they are not absent from the world.
+  test "moving a character who was absent on purpose clears the marker" do
+    story = healthy_story
+    perrin = create(:character, story: story, fullname: "Perrin Lasco")
+    perrin.absent!
+    perrin.move_to!(story.locations.first)
+
+    assert_not_predicate perrin, :deliberately_absent?
+    assert_predicate Story::Doctor.new(story), :healthy?
+  end
+
   # THE PARTY IS NOT ASKED ABOUT: the protagonist and any companion are wherever
   # the PLAYTHROUGH is, so nowhere is the correct state for them and reporting
   # it would be reporting the design.
@@ -534,6 +573,40 @@ class Story::DoctorTest < ActiveSupport::TestCase
 
     assert_empty Story::Doctor.new(story).seeded_whereabouts
     assert_not_includes codes(story), :character_moved_from_the_seed
+  end
+
+  # THE ONE-TIME PATH for a database seeded before the marker existed -- the
+  # captain's own, where Perrin Lasco is nowhere and correct. The file already
+  # says `absent: true`, so the answer is on record and the repair is `safe`.
+  test "reports a seeded character the file marks absent whose row predates the marker" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    perrin = story.characters.find_by(fullname: "Perrin Lasco")
+    perrin.update_column(:deliberately_absent, false)
+
+    assert_includes codes(story), :character_absent_in_the_seed
+    assert_equal :safe, finding(story, :character_absent_in_the_seed).remedy
+    assert_not_includes codes(story), :character_nowhere
+  end
+
+  # The file and the record agreeing is the whole point of the marker, so a
+  # file-absent character who IS nowhere is silent on both checks.
+  test "a seeded character the file marks absent and who is nowhere is no finding at all" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+
+    assert_predicate story.characters.find_by(fullname: "Perrin Lasco"), :absent?
+    assert_predicate Story::Doctor.new(story), :healthy?
+  end
+
+  # The same finding read from the file's side, and the only one that can see a
+  # story seeded before the marker existed: the file says nowhere on purpose and
+  # the row is standing in a room.
+  test "reports a seeded character the file marks absent who is standing somewhere" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    perrin = story.characters.find_by(fullname: "Perrin Lasco")
+    perrin.update_columns(deliberately_absent: false, location_id: story.locations.first.id)
+
+    assert_includes codes(story), :character_moved_from_the_seed
+    assert_match(/marks them `absent: true`/, finding(story, :character_moved_from_the_seed).message)
   end
 
   test "the checked-in worlds are where their own files put them" do

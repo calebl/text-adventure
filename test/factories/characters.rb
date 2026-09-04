@@ -35,6 +35,14 @@ FactoryBot.define do
       is_protagonist { true }
     end
 
+    # NOWHERE ON PURPOSE: what a seed file asserts with `absent: true`. Not the
+    # same as the default nowhere above -- that one is the state nobody has
+    # decided, and `rake game:doctor` reports it.
+    trait :absent do
+      location { nil }
+      deliberately_absent { true }
+    end
+
     trait :companion do
       is_companion { true }
       personality { "Loyal, supportive, and ready to face danger alongside friends" }

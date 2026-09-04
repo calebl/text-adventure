@@ -101,6 +101,50 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal [ "Someone Present" ], Character.present_in(opening).pluck(:fullname)
   end
 
+  # NOWHERE ON PURPOSE, and the marker is written only when the record says so
+  # -- the same "omitted rather than written false" rule `opening`, `mobile` and
+  # `readable` follow.
+  test "exports nowhere on purpose, and stays quiet about a plain nowhere" do
+    create(:character, story: @story, fullname: "Someone Removed").absent!
+    create(:character, story: @story, fullname: "Someone Unplaced")
+
+    document = WorldSeed::Exporter.new(@story).document.fetch("characters")
+    removed = document.detect { |row| row["fullname"] == "Someone Removed" }
+    unplaced = document.detect { |row| row["fullname"] == "Someone Unplaced" }
+
+    assert_equal true, removed["absent"]
+    assert_not removed.key?("location")
+    assert_not unplaced.key?("absent"), "an unmarked nowhere is the accidental one, and the file says nothing"
+  end
+
+  # The round trip is the real assertion: the marker has to come back as the
+  # same state it went out as, or a re-seed would report a world working
+  # exactly as written.
+  test "a round trip keeps a character absent on purpose" do
+    create(:character, story: @story, fullname: "Someone Present", location: @opening, is_protagonist: true)
+    create(:character, story: @story, fullname: "Someone Removed").absent!
+    document = WorldSeed::Exporter.new(@story).document
+    document["story"]["title"] = "A World Reloaded"
+
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load!
+
+    assert_predicate reloaded.characters.find_by(fullname: "Someone Removed"), :absent?
+  end
+
+  # A row that says both things at once. Nothing in the app writes it --
+  # `Character#move_to!` clears the marker when it places somebody -- so it
+  # arrives through raw SQL, and the file is written as the records stand with
+  # a warning saying which half has to go.
+  test "warns about a character marked absent who is standing somewhere" do
+    contradictory = create(:character, story: @story, fullname: "Someone Removed", location: @opening)
+    contradictory.update_column(:deliberately_absent, true)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    exporter.document
+
+    assert_match(/Someone Removed is marked absent on purpose AND standing in The Opening Room/, exporter.warnings.join("\n"))
+  end
+
   # An item is written under whichever of the two places it is in, and only
   # there: `Item` is in exactly one, so it is exported exactly once.
   test "exports an item lying in a location under that location" do
