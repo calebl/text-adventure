@@ -345,7 +345,7 @@ wrong reason — the grammar has no refusal *kinds*), `wrong` (an answer the lab
 does not accept, produced silently), `over_refused` (a line it refused that
 should have played) and `unparsed`.
 
-**Measured 2026-09-04: 126 of 300 right (0.420), and 157 of the 174 failures are
+**Measured 2026-09-04: 127 of 300 right (0.423), and 156 of the 173 failures are
 over-refusals.** It gets every reach-that-finds-nothing right and *none* of the
 `other` or `examine-nothing` lines — a fixed grammar has no word for an ordinary
 remark, so it refuses every one.

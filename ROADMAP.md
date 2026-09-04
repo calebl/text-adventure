@@ -82,7 +82,7 @@ The full audit of every planned piece of work against this constraint is in
 
   **The offline floor is the number that says what a call is buying.**
   `rake eval:classifier_offline` runs the same 300 lines through the fixed
-  grammar with no model at all: **126 of 300 (0.420)**, and 157 of the 174
+  grammar with no model at all: **127 of 300 (0.423)**, and 156 of the 173
   failures are lines it refused that should have played. It gets every
   reach-that-finds-nothing right and none of the `other` or `examine-nothing`
   lines.

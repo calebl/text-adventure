@@ -113,8 +113,8 @@ class Eval::Classifier::Comparison
 
     if cross_model?
       say
-      say "THIS IS A MODEL COMPARISON, not a before/after of one model: the two sets have no"
-      say "model in common, so each side's own model is being read against the other's."
+      say "THIS IS A MODEL COMPARISON, not a before/after of one model."
+      say pairing_note
     end
 
     dropped = (before.arms | after.arms) - pairs.flatten.uniq
@@ -138,6 +138,15 @@ class Eval::Classifier::Comparison
   end
 
   private
+
+  # WHY THESE TWO MODELS ARE BEING READ AGAINST EACH OTHER, because a forced
+  # pair and a pair that fell out of the sets are different facts about the
+  # comparison.
+  def pairing_note
+    return "The pair was named, so one arm of each side is being read against the other." if before_model && after_model
+
+    "The two sets have no model in common, so each side's own model is being read against the other's."
+  end
 
   def say(line = "") = io&.puts(line)
 end

@@ -1040,8 +1040,8 @@ What belongs here is the part that changes how you work:
   the closed enum was built to prevent, and it is the one a headline accuracy
   hides.
 - **`rake eval:classifier_offline` is free and says what a call is buying.** The
-  same corpus through the fixed grammar: 126 of 300 (0.420) on 2026-09-04, with
-  157 of the failures being lines it refused that should have played. Quote it
+  same corpus through the fixed grammar: 127 of 300 (0.423) on 2026-09-04, with
+  156 of the failures being lines it refused that should have played. Quote it
   next to the model figure or the model figure means nothing.
 - **No prompt change belongs in the same commit as a bench change.** The
   instrument and the thing it measures move separately, and
