@@ -843,7 +843,7 @@ lines:
   intent: drop
   target: copy-room apron
   shape: drop
-  why: the second of the three, to prove the first is not just the head of the list
+  why: another of the three carried, to prove the resolution is not just the head of the list
 
 - id: drop-daybook-of-three
   position: office-carrying-three
@@ -852,7 +852,7 @@ lines:
   target: Ward Office 12 daybook
   shape: drop
   why: >-
-    the third of the three, and the "and nothing else" is there because it looks
+    the last of the three, and the "and nothing else" is there because it looks
     like a second clause and names no second record
 
 - id: drop-slate-script

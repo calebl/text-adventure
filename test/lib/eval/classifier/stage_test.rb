@@ -46,8 +46,13 @@ class Eval::Classifier::StageTest < ActiveSupport::TestCase
         standing = stages.fetch("office-carrying-three")
 
         assert_equal "Ward Office 12", standing.location.name, "the room is stated and the room wins"
-        assert_equal [ "Perrin's private index", "copy-room apron", "Ward Office 12 daybook" ],
-                     standing.carried.map(&:name)
+        # SORTED, because the order is `Item::Snapshot`'s and not this class's:
+        # the party's seeded kit is copied when the playthrough is created and
+        # the two the walk picked up land after it. What the corpus depends on
+        # is the CONTENTS -- and, for an `examine`, that the floor comes before
+        # the hands, which the closed-sets test below asserts.
+        assert_equal [ "Perrin's private index", "Ward Office 12 daybook", "copy-room apron" ].sort,
+                     standing.carried.map(&:name).sort
       end
     end
   end

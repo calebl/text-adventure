@@ -152,11 +152,23 @@ class Eval::Classifier::Stage
   # says where the player stands, so a setup that walked somewhere else is a
   # setup line, not the position. Standing is `Playthrough::Turn#stand_in!`'s
   # column and nothing else -- no Scene, so no clock and no visit stamp.
+  #
+  # AND THEN THE SNAPSHOT, because since `ta-items-per-playthrough` the world's
+  # items are TEMPLATES and play reads only this game's own copies of them
+  # (`Item::Snapshot`, made at first contact). Setting `current_location`
+  # directly is not first contact -- `Playthrough::Turn#move_to`,
+  # `Playthrough::Mechanics#run` and `Playthrough#take_up_the_opening_snapshot`
+  # are the three places that snapshot -- so a position that only moved the
+  # column would offer a `take` an EMPTY floor and every item label in the
+  # corpus would fail to validate. Asked of `Item::Snapshot` rather than copied,
+  # and its guard is per template, so calling it here and again on the first
+  # typed line does nothing the second time.
   def move_to_room!(playthrough, story)
     room = story.locations.find_by(name: position.room)
     raise Unstageable, "#{position.id}: #{story.title.inspect} has no room called #{position.room.inspect}" if room.nil?
 
     playthrough.update!(current_location: room)
+    Item::Snapshot.new(playthrough).of_the_room!(room)
   end
 
   def load_world!
