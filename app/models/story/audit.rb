@@ -973,11 +973,12 @@ class Story::Audit
   # with somebody standing there is the thing he stopped to write about.
   #
   # SOMEBODY HAS TO BE IN THE ROOM, and that is the second half of his sentence
-  # rather than a refinement of the first. Who is in the room is the HOLDOVER
-  # rule -- whoever was in the last scene here that recorded anyone -- read
-  # historically, because that is the answer `Playthrough::Classifier` would
-  # have given on that turn and a second opinion would be a second answer. See
-  # `Scene::Generator#holdovers`.
+  # rather than a refinement of the first. It is read HISTORICALLY -- who was in
+  # the room on that turn, not who is there now -- because the complaint is
+  # about the turn. Every turn carries that answer on it now
+  # (`Playthrough::Turn#play` snapshots `Character.present_in` onto every
+  # branch); a turn played before it did falls back to the old rule, whoever was
+  # in the last scene here that recorded anyone. See `#cast_recorded_by`.
   #
   # THIS IS NOT A DEFECT AND IT IS NOT COUNTED AS ONE. Nothing here proves the
   # turn was bad; a player reading a daybook for four turns is playing the game
@@ -1061,6 +1062,17 @@ class Story::Audit
   # The protagonist is dropped -- they are the player, and a player is never the
   # answer to "who is in the room with me".
   def cast_recorded_by(scene)
+    # THE TURN'S OWN SNAPSHOT FIRST, because since `ta-character-whereabouts` it
+    # has one: `Playthrough::Turn#play` writes the room's cast onto every branch
+    # out of `Character.present_in`, so the exact answer for this turn is on
+    # this turn. It used to be written only by an arrival and a talk -- 184 of
+    # the 480 baseline turns had none -- which is why the scan below exists and
+    # why it stays: a turn played before the snapshot did still has to be judged
+    # the way it would have been judged then, and re-reading history under a new
+    # rule would move a measured number without anything about the game having
+    # changed.
+    return scene.characters.to_a - [ story.protagonist ].compact if scene.characters.any?
+
     candidates = scenes.select do |other|
       other.location_id == scene.location_id && other.characters.any? &&
         (other.story_timestamp.nil? || scene.story_timestamp.nil? ||
