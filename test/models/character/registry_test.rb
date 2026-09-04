@@ -161,8 +161,33 @@ class Character::RegistryTest < ActiveSupport::TestCase
 
     assert_equal slot[:race], created.race
     assert_equal slot[:age], created.age
-    assert_equal slot[:sex], created.sex
     assert_includes @story.universe.races, created.race
+
+    # `sex_label` and not `sex`: a slot holds the STORED value -- "non-binary",
+    # "trans woman" -- because that is what the prompt says out loud, and
+    # `Character#sex` reads back the enum KEY. Only `male` and `female` are
+    # spelt the same either way, so asserting on `sex` passes two rolls in five
+    # and fails the other three, which is how this reached CI green locally.
+    assert_equal slot[:sex], created.sex_label
+    assert_equal slot[:sex], Character.sexes.fetch(created.sex)
+  end
+
+  # EVERY ROLL, not the one this run happened to make. `#slots` samples a sex,
+  # and only two of the five are spelt the same as their enum key -- so a test
+  # that asserts on one random roll is green two runs in three and red in CI on
+  # the third. This walks all five.
+  test "every sex the slot can roll writes a row the prompt's own line describes" do
+    Character.sexes.each do |key, stored|
+      # A fresh room per sex: MAX_PER_ROOM is 3 and there are five of them.
+      room = create(:location, story: @story)
+      registry = Character::Registry.new(room)
+      registry.define_singleton_method(:slots) { [ { race: story.universe.races.first, age: 40, sex: stored } ] }
+
+      person = registry.admit!([ sheet(fullname: "Person #{key}") ]).sole
+
+      assert_equal key, person.sex, "the row does not hold the enum key for #{key}"
+      assert_equal stored, person.sex_label, "the row does not read back what the prompt said for #{key}"
+    end
   end
 
   test "the second person in one answer gets the second slot" do
