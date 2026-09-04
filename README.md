@@ -142,11 +142,14 @@ NO_MODEL=1 rake 'game:mechanics[2]'
 A fixed grammar replaces the classifier and nothing is generated: `go <exit>`,
 `take <item>`, `drop <item>`, `look` (also `where`, `inventory`, `exits`,
 `items`, `who`), `help`, `quit`. A typed name is matched against the records
-exactly, then as an unambiguous prefix, then as an unambiguous fragment — so
-`take daybook` finds the "Ward Office 12 daybook" — and anything unknown or
-ambiguous is a refusal listing what would have worked. An exit name typed on its
-own is a move, so a world whose exits are called `north` can be walked that way.
-A move stands the player in a stub without writing it, and says so.
+exactly, then as an unambiguous prefix, then as an unambiguous fragment **read
+both ways round** — so `take daybook` finds the "Ward Office 12 daybook" and
+`drop the tide-slate` finds the "Assize tide-slate" — with a leading
+`the`/`a`/`an`/`to`/`into`/`through`/`onto`/`at` dropped before any of that.
+Anything unknown or ambiguous is a refusal listing what would have worked. An
+exit name typed on its own is a move, so a world whose exits are called `north`
+can be walked that way. A move stands the player in a stub without writing it,
+and says so.
 
 This is the fallback for a machine with no key, and the mode the engine-direct
 tests run in. It is not the default: a mode that cannot read what you typed is
@@ -172,6 +175,77 @@ playthrough when inspecting a real game is the point.
 `BaseAgent.new` raising, and drives the classifier half through a `FakeAgent`
 whose queued responses *are* the calls the mode is allowed to make — so a
 narrator call it must not make fails the suite instead of passing quietly.
+
+## Sweep the engine
+
+```bash
+rake game:sweep                             # every stored script
+rake game:sweep SCRIPT=the-salt-assizes-grammar   # one of them
+```
+
+The same offline mode, walked by **stored scripts instead of by a person**, with
+expectations asserted against the records after every line. It is what the
+mechanics console is for once you have stopped watching it: free, deterministic,
+offline, and it runs in `bin/rails test` so the engine is regression-tested on
+every build.
+
+```
+  ok     regressions-2026-09-03        8 step(s), The Unrecorded Hour intact
+  ok     the-lunar-cartographer        9 step(s), The Lunar Cartographer intact
+  ok     the-salt-assizes-grammar      7 step(s), The Salt Assizes intact
+  ok     the-unrecorded-hour          13 step(s), The Unrecorded Hour intact
+
+PASSED: 37 typed line(s) over 4 script(s).
+```
+
+A script is a YAML fixture in `lib/engine_sweep/scripts/` — a seeded world, an
+ordered list of lines somebody could have typed, and after any of them a block
+of facts somebody could have read off the screen:
+
+```yaml
+story: The Salt Assizes
+steps:
+- id: drop-the-tide-slate
+  type: drop the tide-slate
+  why: an article in front of a fragment, and the fragment is the tail of the name
+  expect:
+    changed: true
+    understood: drop -> Assize tide-slate
+    location: The Causeway Court (realized)
+    exits: [The Tide Post (realized), The Vestry Hulk (stub)]
+    here: [Assize tide-slate]
+    carrying: []
+```
+
+`EngineSweep::Expectation::KEYS` is the whole vocabulary — where the player
+stands and whether that room is written, what leads out of here (`exits`,
+`exits_include`, `exits_exclude`, each with the detail level), what is lying
+here, what is carried, whether the line `changed` anything or was `refused`,
+what the refusal `offers` as an alternative, how the engine `understood` the
+line, and how many `drifts` rows it wrote. **A key outside that list raises**, so
+a fixture typo cannot become an expectation that silently holds.
+
+After every walk, four **invariants** are checked over the whole world against
+the file it was loaded from: no door was opened or closed, no room leads more
+ways out than `Location::ExitsSchema::MAX_EXITS`, every item is in exactly one
+place, and no room got written. Those are the shape the generator defects of
+2026-09-03 had — nobody typed a line that gave The Supply Closet a second door.
+
+Three things make it repeatable. **No model**: `BaseAgent.new` is replaced for
+the length of the run, so a call from anywhere raises instead of reaching a
+provider. **Its own copy of the world**: the seed file is loaded under a title of
+the sweep's own inside a transaction that is rolled back, so running it against a
+half-played database changes neither it nor the game. **A world that does not
+move underneath it**: `WorldMechanic` runs on `Story#clock`, the clock only
+advances when a Scene is written, and an offline move writes none — so The Lunar
+Cartographer's nightly shuffle never comes due, without anything being switched
+off to achieve that.
+
+What it cannot see is said out loud in the scripts themselves: with the
+classifier off, a defect in how a *model* read the line is out of reach and stays
+pinned by `Playthrough::ClassifierTest`. See `lib/engine_sweep.rb` and
+`lib/engine_sweep/scripts/regressions-2026-09-03.yml`, which walks the evening
+that produced all of this and says defect by defect how far the walk gets.
 
 ## How a turn works
 

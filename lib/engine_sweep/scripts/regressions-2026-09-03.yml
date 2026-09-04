@@ -1,0 +1,108 @@
+# THE EVENING'S FIVE DEFECTS, AS A WALK. Found by the captain playing on
+# 2026-09-03, fixed in #102, #103 and #104, and guarded until now only by unit
+# tests written after the fact. This is the script that would have caught them
+# -- as far as an offline walk can, which is not all the way, and where it stops
+# is written down here rather than left to be discovered.
+#
+#   1. AN INVENTED EXIT INTO AN ALREADY-WRITTEN ROOM (53e7fbf). Realizing The
+#      Long Hallway gave The Supply Closet a second door, after the closet's own
+#      prose had said it had none. NOT REACHABLE FROM A TYPED LINE: opening a
+#      door is something `Location::Generator` does, and it needs two model
+#      calls. The sweep holds it as `doors_unchanged`, an invariant over the
+#      whole world after every walk -- see `EngineSweep::Invariants`. `look-at-
+#      the-closet` below is the same statement one room at a time.
+#   2. A TWO-NOUN LINE ACTING ON ONE (fdc7127, 701dfd0). "take the index and the
+#      apron" took the index and said nothing about the apron. HALF REACHABLE:
+#      `also_named` is the classifier's answer and there is no classifier here.
+#      What the fixed grammar owes is the other half -- that a line naming two
+#      things does not quietly do one of them -- and `two-nouns` pins that.
+#   3. COLLECTIVE WORDS WRITING DRIFT ROWS (aa02b7d). "pickup everything" in a
+#      room with three things on the floor was refused with "Nothing of that
+#      name is lying here", printed directly above a read-out listing all three,
+#      and it counted as drift. REACHABLE, and both halves: `collective-words`
+#      asserts the refusal names what is lying here, and that no
+#      `Playthrough::Drift` row was written. The word typed is `take everything`
+#      rather than the captain's own `pickup everything`, because "pickup" is
+#      not in `VERBS` and offline that is refused one step earlier, as a word
+#      this grammar does not have.
+#   4. ONE PERSON UNDER TWO NAMES, COUNTED TWICE (4bd9427). NOT REACHABLE: it is
+#      two fields of one classifier answer compared against each other, and this
+#      mode never asks. It stays pinned by `Playthrough::ClassifierTest`.
+#   5. THE EXIT CAP BOUNDING ONE ANSWER RATHER THAN ONE ROOM (9c55969). NOT
+#      REACHABLE for the same reason as (1); held as the `exit_cap` invariant,
+#      and counted room by room in `the-lunar-cartographer.yml`, which walks the
+#      room it happened in.
+#
+# So: two of five walked, two held as invariants, one out of reach and named.
+story: The Unrecorded Hour
+why: the 2026-09-03 play session, turned into a walk
+steps:
+- id: three-things-on-the-floor
+  type: go to the Supply Closet
+  why: the room the collective-word defect was found in -- two items, and a third to come
+  expect:
+    changed: true
+    location: The Supply Closet (realized)
+    here: [Perrin's private index, copy-room apron]
+
+- id: put-the-daybook-down-too
+  type: drop the daybook
+  why: three on the floor, so an empty set cannot be what a refusal is about
+  expect:
+    changed: true
+    here: [Perrin's private index, copy-room apron, Ward Office 12 daybook]
+    carrying: []
+
+- id: collective-words
+  type: take everything
+  why: DEFECT 3 -- the refusal must name what is lying here, and must not be counted as drift
+  expect:
+    refused: true
+    changed: false
+    drifts: 0
+    offers: [Perrin's private index, copy-room apron, Ward Office 12 daybook]
+    here: [Perrin's private index, copy-room apron, Ward Office 12 daybook]
+
+- id: collective-words-against-the-hands
+  type: drop everything
+  why: the same word read against the other closed set -- empty hands, and it says so
+  expect:
+    refused: true
+    changed: false
+    drifts: 0
+    offers: [there is no thing you are carrying]
+
+- id: two-nouns
+  type: take the index and the apron
+  why: DEFECT 2 -- one line naming two things does not quietly act on one of them
+  expect:
+    refused: true
+    changed: false
+    offers: [Perrin's private index, copy-room apron]
+    here: [Perrin's private index, copy-room apron, Ward Office 12 daybook]
+    carrying: []
+
+- id: one-noun-at-a-time
+  type: take the index
+  why: and the same line split in two is the thing that works
+  expect:
+    changed: true
+    understood: take -> Perrin's private index
+    carrying: [Perrin's private index]
+
+- id: look-at-the-closet
+  type: look
+  why: DEFECT 1, one room at a time -- the closet leads one way out and it is the way in
+  expect:
+    location: The Supply Closet (realized)
+    exits: [Ward Office 12 (realized)]
+    exits_exclude: [The Long Hallway]
+
+- id: and-the-hallway-is-still-a-stub
+  type: go to the Long Hallway
+  why: refused -- the closet does not connect to it, and walking cannot invent the door
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no way out, Ward Office 12]
+    location: The Supply Closet (realized)

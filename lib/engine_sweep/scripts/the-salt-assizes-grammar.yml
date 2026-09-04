@@ -1,0 +1,86 @@
+# THE TWO REFUSALS THAT WERE WRONG, typed exactly as they were typed when they
+# were found.
+#
+#   > drop the tide-slate
+#     refused: there is no thing you are carrying called "the tide-slate".
+#              There is: Assize tide-slate
+#   > go to the Tide Post
+#     refused: there is no way out called "to the Tide Post".
+#              There is: The Tide Post, The Vestry Hulk
+#
+# BOTH REFUSALS LISTED THE THING THEY WERE REFUSING. `Playthrough::Mechanics#resolve`
+# matched one way round only -- the record's name had to start with or contain
+# what was typed -- so a leading article was fatal, and a typed string that
+# HELD the record's name matched nothing at all. Every step here fails on the
+# code as it stood before that was fixed, which is what this file is for: stash
+# the fix and this script goes red while the rest of the sweep stays green.
+#
+# THE WORLD IS THE HELD-OUT ONE and that is fine here. `Eval::HELD_OUT` is about
+# not tuning narration checks on prose nobody has read; this file reads no prose.
+# It walks the same rooms the review scout walked, because reproducing a defect
+# where it was found is worth more than tidiness about which world it was.
+story: The Salt Assizes
+why: the two one-directional name-matching defects, typed as they were found
+steps:
+- id: the-slate-is-in-the-hand
+  type: look
+  why: the starting state the two refusals contradicted
+  expect:
+    location: The Causeway Court (realized)
+    exits: [The Tide Post (realized), The Vestry Hulk (stub)]
+    here: []
+    carrying: [Assize tide-slate]
+
+- id: drop-the-tide-slate
+  type: drop the tide-slate
+  why: DEFECT ONE -- an article in front of a fragment, and the fragment is the tail of the name
+  expect:
+    changed: true
+    refused: false
+    understood: drop -> Assize tide-slate
+    here: [Assize tide-slate]
+    carrying: []
+
+- id: go-to-the-tide-post
+  type: go to the Tide Post
+  why: DEFECT TWO -- a preposition and an article in front of an exact name
+  expect:
+    changed: true
+    refused: false
+    understood: move -> The Tide Post
+    location: The Tide Post (realized)
+    exits: [The Causeway Court (realized)]
+
+- id: pick-it-up-again-with-a-preposition
+  type: go into the Causeway Court
+  why: every word in LEADING_WORDS, not just the two the defects happened to use
+  expect:
+    changed: true
+    location: The Causeway Court (realized)
+
+- id: take-it-back-in-a-whole-sentence
+  type: take the Assize tide-slate
+  why: the name typed in full with an article in front of it
+  expect:
+    changed: true
+    understood: take -> Assize tide-slate
+    here: []
+    carrying: [Assize tide-slate]
+
+- id: an-article-on-its-own-still-names-nothing
+  type: go the
+  why: stripping the words that name nothing must not turn a bare article into a guess
+  expect:
+    refused: true
+    changed: false
+    offers: [matches more than one, The Tide Post, The Vestry Hulk]
+    location: The Causeway Court (realized)
+
+- id: a-name-this-world-does-not-have
+  type: drop the ledger
+  why: an unknown name is still refused, and still says what would have worked
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no thing you are carrying, Assize tide-slate]
+    carrying: [Assize tide-slate]

@@ -1,0 +1,109 @@
+# THE WALK THROUGH "The Lunar Cartographer" -- six rooms, one of them written,
+# and NOT ONE ITEM in the whole world. So this is the script that is only about
+# the graph: which rooms lead where, which of them are written, and what happens
+# when a player walks two rooms deep into a city nobody has described yet.
+#
+# WHY THIS WORLD IS WORTH A SCRIPT OF ITS OWN. It is the only seeded world with
+# a `WorldMechanic` -- the nightly rearrangement, which repoints edges between
+# mobile and anchored places. It does not fire here, and the reason is worth
+# knowing rather than assuming: mechanics run on `Story#clock`, the clock is the
+# latest `scenes.story_timestamp`, and an offline move writes no Scene. So the
+# clock never leaves `start_time` and no boundary ever comes due. NOTHING WAS
+# SWITCHED OFF to get that -- see `EngineSweep`'s header -- which is why the
+# exit sets below can be pinned exactly.
+#
+# It also holds the room that produced the exit-cap defect: Larkspur Quarter
+# rooftops came back from being realized with FIVE ways out, seeded with two.
+# The sweep asserts the two, and `exit_cap` asserts the ceiling over every room
+# in the world after the walk.
+story: The Lunar Cartographer
+why: the graph on its own -- a world with no items and one written room
+steps:
+- id: the-one-written-room
+  type: look
+  why: Room 3 leads three ways out and every one of them is unwritten
+  expect:
+    location: Grenn's Boarding House, Room 3 (realized)
+    exits:
+    - Mournwell Lane (stub)
+    - Grenn's Boarding House hallway (stub)
+    - Larkspur Quarter rooftops (stub)
+    here: []
+    carrying: []
+
+- id: into-the-lane
+  type: go to Mournwell Lane
+  why: a stub is stood in, and arrives with the edges the world file gave it
+  expect:
+    changed: true
+    change: a stub -- nobody has written this room
+    location: Mournwell Lane (stub)
+    exits:
+    - "Grenn's Boarding House, Room 3 (realized)"
+    - Sovereign's Circle (stub)
+
+- id: two-rooms-deep
+  type: go to Sovereign's Circle
+  why: walking on from an unwritten room -- the far end of the graph still holds
+  expect:
+    changed: true
+    location: Sovereign's Circle (stub)
+    exits: [Mournwell Lane (stub)]
+    exits_exclude:
+    - "Grenn's Boarding House, Room 3"
+    - The Celestial Spire
+
+- id: the-rooftops-are-not-reachable-from-here
+  type: go to the Larkspur Quarter rooftops
+  why: a real room of this world that this room does not connect to; refused, not invented
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no way out, Mournwell Lane]
+    location: Sovereign's Circle (stub)
+
+- id: nothing-to-carry-in-this-world
+  type: take the sextant
+  why: an empty floor -- the refusal says the set is empty rather than naming what missed
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no thing lying here]
+    drifts: 0
+
+- id: nothing-in-the-hands-either
+  type: drop
+  why: a bare verb asks its question against the right closed set
+  expect:
+    refused: true
+    changed: false
+    offers: [drop what?]
+
+- id: back-out
+  type: go to Mournwell Lane
+  why: the way back was there before the walk and is unchanged by it
+  expect:
+    changed: true
+    location: Mournwell Lane (stub)
+
+- id: back-to-the-room-that-is-written
+  type: go to Room 3
+  why: a fragment of a long name, and the one room in this world with a description
+  expect:
+    changed: true
+    location: Grenn's Boarding House, Room 3 (realized)
+    exits:
+    - Mournwell Lane (stub)
+    - Grenn's Boarding House hallway (stub)
+    - Larkspur Quarter rooftops (stub)
+
+- id: the-rooftops-still-lead-two-ways
+  type: go to the rooftops
+  why: the exit-cap defect's own room, counted -- seeded with two, and two is what it has
+  expect:
+    changed: true
+    location: Larkspur Quarter rooftops (stub)
+    exits:
+    - "Grenn's Boarding House, Room 3 (realized)"
+    - The Celestial Spire (stub)
+    exits_exclude: [Mournwell Lane, Sovereign's Circle, The Bell of Saint Aravel]
