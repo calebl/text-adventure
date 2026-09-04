@@ -110,6 +110,13 @@ namespace :eval do
     ClassifierTasks.omission!
   end
 
+  desc "Every classifier bench set on disk as one cross-model table. Usage: rake eval:classifier_board SETS=a,b"
+  task classifier_board: :environment do
+    Eval::Classifier::Board.for_sets(ENV["SETS"].presence&.split(",")&.map(&:strip)).print
+  rescue ArgumentError => error
+    abort error.message
+  end
+
   desc "Two classifier bench runs, with a verdict per figure -- including two DIFFERENT models. " \
        "Usage: rake eval:classifier_compare BEFORE=<set> AFTER=<set> [BEFORE_MODEL=] [AFTER_MODEL=]"
   task classifier_compare: :environment do

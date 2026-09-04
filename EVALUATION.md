@@ -467,6 +467,26 @@ rake eval:classifier SET=arm-minimax MODELS=minimax/minimax-m3
 rake eval:classifier_compare BEFORE=arm-mistral AFTER=arm-minimax
 ```
 
+**Every set on disk as one table** — the cross-model comparison the captain
+asked for, and the check on this whole convention, because it reads
+`tmp/eval/<set>/classifier.json` and nothing else. No database, no key, no
+corpus:
+
+```bash
+rake eval:classifier_board                      # every set it can find
+rake eval:classifier_board SETS=arm-mistral,arm-minimax
+```
+
+One column per **arm**, not per set: the hosted pair is measured in one run and
+a local model needs a set to itself (its repetitions have to be contiguous). It
+prints in markdown, because a cross-model table is read in a PR body rather than
+a terminal, and it **gives no verdicts** — a band is printed and overlapping
+bands are visible, but REAL / NOISE / INCONCLUSIVE is `Eval::Noise`'s to say,
+two arms at a time, with the digests checked. A figure a set never recorded
+reads **`not recorded`** and never as a zero; the first baseline predates the
+latency machinery, and a table that printed `0.00s` for it would have invented a
+fast model out of a missing field.
+
 With **no model in common and one a side**, the two are paired and the board
 says loudly that it is comparing two *different models* rather than two versions
 of one. With models in common, each is compared against itself — the ordinary

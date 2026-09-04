@@ -50,6 +50,7 @@ rake eval:classifier MODELS=ollama:qwen3:4b+nothink            # ...and 48x fast
 rake eval:classifier_offline               # the same corpus with no model at all -- free, in CI
 rake eval:classifier_omission              # the also_named omission rate alone
 rake eval:classifier_compare BEFORE=a AFTER=b   # including two DIFFERENT models
+rake eval:classifier_board                 # every stored set as one cross-model table
 
 # Bring a checkout up to date after a pull: fast-forward, bundle, migrate, then
 # everything the new code needs done to the database you already have. Offline,
