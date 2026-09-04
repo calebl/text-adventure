@@ -86,7 +86,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # --- resolving a talk ----------------------------------------------------
 
   test "a talk resolves to the character standing here" do
-    maren = holdover("Maren Vosk", nickname: "Maren")
+    maren = stands_here("Maren Vosk", nickname: "Maren")
 
     intent, = classify({ "intent" => "talk", "target" => "Maren Vosk" })
 
@@ -98,7 +98,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # A player types the name they were shown, and an arrival paragraph calls
   # people by their nickname as often as their full name.
   test "a talk resolves by nickname too" do
-    maren = holdover("Maren Vosk", nickname: "Maren")
+    maren = stands_here("Maren Vosk", nickname: "Maren")
 
     intent, = classify({ "intent" => "talk", "target" => "Maren" })
 
@@ -116,7 +116,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
 
   test "examine, take and other carry no target" do
     connect("The Sunken Stair")
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
 
     %w[examine take other].each do |action|
       intent, = classify({ "intent" => action, "target" => "The Sunken Stair" })
@@ -140,7 +140,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
 
   test "the target enum is exactly the exits and the people here" do
     connect("The Sunken Stair")
-    holdover("Maren Vosk", nickname: "Maren")
+    stands_here("Maren Vosk", nickname: "Maren")
 
     _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
 
@@ -150,7 +150,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
 
   test "the prompt names the room, its exits and who is in it" do
     connect("The Sunken Stair", distance: "adjacent", travel_method: "taking stairs")
-    holdover("Maren Vosk", nickname: "Maren")
+    stands_here("Maren Vosk", nickname: "Maren")
 
     _intent, agent = classify({ "intent" => "other", "target" => "nothing" }, command: "look around")
     prompt = agent.prompts.first
@@ -164,7 +164,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # The player is not somebody to talk to, and offering them as a candidate is
   # how "talk to myself" becomes a resolvable move.
   test "the protagonist is not offered as somebody to talk to" do
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
 
     _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
 
@@ -248,7 +248,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "the cast is Scene::Generator's answer, minus the player" do
-    maren = holdover("Maren Vosk")
+    maren = stands_here("Maren Vosk")
     companion = create(:character, story: @story, fullname: "Dell Roy", is_companion: true)
 
     cast = Playthrough::Classifier.new(@playthrough).characters_here
@@ -337,7 +337,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
 
   test "the item names are in the schema's closed enum alongside exits and cast" do
     connect("The Sunken Stair")
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
     create(:item, :lying, location: @here, name: "Brass Key")
 
     _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
@@ -449,7 +449,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "a talk that resolved to nobody is counted, offering the cast that was here" do
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
 
     assert_difference "Playthrough::Drift.count", 1 do
       classify({ "intent" => "talk", "target" => "nothing" }, command: "talk to the ghost")
@@ -549,8 +549,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # overreach row naming him on both sides, and told the player a turn had left
   # him undone while he was the one it acted on.
   test "a fullname and a nickname for one person are one thing, not two" do
-    rowe = create(:character, story: @story, fullname: "Halkett Rowe", nickname: "Rowe")
-    create(:scene, story: @story, location: @here, characters: [ rowe ])
+    rowe = stands_here("Halkett Rowe", nickname: "Rowe")
 
     assert_no_difference "Playthrough::Overreach.count" do
       intent, = classify({ "intent" => "talk", "target" => "Halkett Rowe", "also_named" => "Rowe" },
@@ -563,8 +562,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "the nickname as the target and the fullname as the second is the same one thing" do
-    rowe = create(:character, story: @story, fullname: "Halkett Rowe", nickname: "Rowe")
-    create(:scene, story: @story, location: @here, characters: [ rowe ])
+    rowe = stands_here("Halkett Rowe", nickname: "Rowe")
 
     intent, = classify({ "intent" => "talk", "target" => "Rowe", "also_named" => "Halkett Rowe" })
 
@@ -589,9 +587,8 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # And a genuinely different person still counts, so the fix above did not buy
   # its correctness by never counting anything.
   test "two different people named in one line are still two things" do
-    rowe = create(:character, story: @story, fullname: "Halkett Rowe", nickname: "Rowe")
-    lasco = create(:character, story: @story, fullname: "Perrin Lasco")
-    create(:scene, story: @story, location: @here, characters: [ rowe, lasco ])
+    rowe = stands_here("Halkett Rowe", nickname: "Rowe")
+    lasco = stands_here("Perrin Lasco")
 
     assert_difference "Playthrough::Overreach.count", 1 do
       intent, = classify({ "intent" => "talk", "target" => "Rowe", "also_named" => "Perrin Lasco" })
@@ -670,12 +667,8 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "a person is counted by the name a player would have typed" do
-    rowe = create(:character, story: @story, fullname: "Halkett Rowe")
-    lasco = create(:character, story: @story, fullname: "Perrin Lasco")
-    # Both in the SAME scene: `Scene::Generator.characters_present` answers from
-    # the last scene played here, so two scenes would leave only one of them
-    # standing in the room.
-    create(:scene, story: @story, location: @here, characters: [ rowe, lasco ])
+    rowe = stands_here("Halkett Rowe")
+    lasco = stands_here("Perrin Lasco")
 
     classify({ "intent" => "talk", "target" => rowe.fullname, "also_named" => lasco.fullname },
              command: "ask Rowe and Lasco where the file went")
@@ -708,11 +701,11 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
 
   private
 
-  # Somebody the game knows is standing here: recorded in the last scene played
-  # in this location, which is how Scene::Generator answers the question.
-  def holdover(fullname, **attributes)
-    character = create(:character, story: @story, fullname: fullname, **attributes)
-    create(:scene, story: @story, location: @here, characters: [ character ])
-    character
+  # Somebody the game knows is standing here: the records place them in this
+  # room, which is how `Character.present_in` -- and so `Scene::Generator` --
+  # answers the question. It used to mean "recorded in the last scene played
+  # here", which is exactly what the whereabouts column replaced.
+  def stands_here(fullname, **attributes)
+    create(:character, story: @story, fullname: fullname, location: @here, **attributes)
   end
 end

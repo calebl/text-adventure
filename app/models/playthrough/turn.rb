@@ -68,7 +68,16 @@ class Playthrough::Turn
     # a check reading a narration against the state before it has nothing to
     # read -- which is why the prose denying a resolved `take` was invisible to
     # every check in `Story::Audit`. See `#resolution_for`.
-    scene&.update!(typed: command, **resolution_for(intent))
+    #
+    # AND WHO WAS IN THE ROOM, on every branch too, which is the third column
+    # this one place now owns. `characters_scenes` used to be written by the
+    # two branches that happened to have a cast in hand -- an arrival and a
+    # talk -- so 184 of the 480 baseline turns of 2026-09-03 had no record of
+    # who was present at all, and the one thing the records could say about
+    # presence was said on 62% of turns. It is a DERIVED SNAPSHOT now: taken
+    # from `Character.present_in` and never the source of it (see
+    # `#cast_of`), so the direction the Tide Post defect ran in is reversed.
+    scene&.update!(typed: command, characters: cast_of(scene), **resolution_for(intent))
 
     # THE CONVERSATIONS THIS TURN HAD, filed under the turn.
     #
@@ -128,9 +137,12 @@ class Playthrough::Turn
   # that keeps two records rather than one:
   #
   #   the Scene        -- the moment, the prose the player reads, the line the
-  #                       turn log shows. `scene.characters` is the protagonist
-  #                       and whoever they spoke to, so the next turn in this
-  #                       room still knows that person is standing in it.
+  #                       turn log shows. Its cast is stamped by `#play` from
+  #                       the whereabouts records, along with `typed` and what
+  #                       the turn did; this branch used to write the
+  #                       protagonist and the person spoken to, because that
+  #                       cast was the only thing keeping them in the room.
+  #                       `Character.present_in` keeps them now.
   #   the Interaction  -- what the character thought and felt on either side of
   #                       answering. The player never sees it; nothing in this
   #                       app had ever written one.
@@ -147,7 +159,6 @@ class Playthrough::Turn
       story: playthrough.story,
       location: playthrough.current_location,
       previous_scene: playthrough.current_scene,
-      characters: [ playthrough.story.protagonist, character ].compact.uniq,
       description: exchange.narration,
       summary: "The player spoke with #{character.fullname}. #{exchange.reaction[:action]}".strip,
       story_timestamp: playthrough.story_time_after("conversation")
@@ -337,6 +348,29 @@ class Playthrough::Turn
   # Everything else is recorded exactly as it resolved, including a reach that
   # found nothing: an action with no record is the drift case, told apart here
   # the same way `Playthrough::Classifier::Intent` tells it apart.
+  # WHO WAS IN THE ROOM WHEN THIS TURN HAPPENED, snapshotted onto the turn.
+  #
+  # A SNAPSHOT AND NOT THE RECORD. `Character.present_in` is where somebody is
+  # NOW; this is where they were then, and the two are different questions that
+  # a single column cannot answer. `Eval::Richness` asks whether a narration
+  # named the person who was standing there, `Story::Audit#check_stillness`
+  # asks whether anybody was in the room on a run of turns that changed
+  # nothing, and both frozen corpora carry the answer beside the prose -- all
+  # three read a past moment that the whereabouts column, which has no history,
+  # cannot reconstruct. So the join table is KEPT, and only its direction
+  # changed: it is written from the records rather than being the only place
+  # the records ever lived.
+  #
+  # Read off `scene.location` rather than `playthrough.current_location`,
+  # because on a move the two are the same room only after `#stand_in!` has
+  # run, and the cast belongs to the room the scene is in either way.
+  def cast_of(scene)
+    here = scene.location || playthrough.current_location
+    return [] if here.nil?
+
+    Scene::Generator.characters_present(here)
+  end
+
   def resolution_for(intent)
     acted_on =
       if (intent.take? && playthrough.character.nil?) || (intent.drop? && playthrough.current_location.nil?)

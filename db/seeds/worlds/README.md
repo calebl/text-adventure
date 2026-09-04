@@ -38,7 +38,7 @@ One file is one universe and one story. Keys are written in this order:
 | `universe`      | the nine prompt fields, plus `races` (name and description)             |
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
-| `characters`    | one entry each, `race` by name, optional `items`                        |
+| `characters`    | one entry each, `race` by name, optional `location` and `items`         |
 | `locations`     | every location, realized or stub; one marked `opening: true`; `items`   |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair              |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
@@ -207,6 +207,50 @@ fastest way to see this half of the world work; see the README.
 `Item#properties_hash`. Entries are exported sorted by name, so keep them that
 way in the file or a re-export will reorder them.
 
+### `characters[].location`, and where a person stands
+
+A character carries **where they are**, by location name:
+
+```yaml
+characters:
+- fullname: Neb Halloran
+  race: Shorefolk
+  location: The Tide Post
+  nickname: Neb
+```
+
+That column — `characters.location_id` — is the closed set `talk` resolves
+against (`Character.present_in`), the same way `Item.lying_in` is the closed set
+`take` resolves against. It is what makes a seeded cast reachable at all. Before
+it existed, who was standing in a room was reconstructed on every arrival from
+the last scene there that happened to record anybody, so **a room nobody had
+walked into had nobody in it** however central the person standing in it was:
+arriving at The Tide Post recorded the protagonist alone on all three runs
+checked, in a world whose whole premise is that Neb Halloran is chained to that
+post.
+
+Two rules about the key, and both are deliberate:
+
+- **The protagonist does not carry one.** Where the player is standing belongs to
+  the playthrough (`playthroughs.current_location_id`), because two people
+  playing one seeded world stand in two different rooms at the same time and a
+  story-level column cannot hold both answers. The story says where it *opens*
+  with `opening: true` on a location. Anyone `is_companion` is derived the same
+  way, for the same reason: they travel with the party.
+- **The key is optional, and leaving it out means nowhere.** Nowhere is a real
+  state and it is left alone rather than guessed at — `rake game:doctor` reports
+  a character nobody can speak to. `the-unrecorded-hour.yml` uses it on purpose:
+  Perrin Lasco has been removed from that world, and a whereabouts saying so is
+  the honest record.
+
+A `location` naming a room the file does not declare is refused by `validate!`,
+because that mistake is otherwise silent — the character loads standing nowhere
+and the room they were meant to be in is empty.
+
+Nothing but this file, `Character::Registry` (which places somebody who is
+nowhere and never moves somebody who is not), `Character#move_to!` and
+`rake game:backfill_whereabouts` ever writes it. **No narration moves anybody.**
+
 ### Rules the loader enforces
 
 - Exactly one location is `opening: true`, and it must be `realized` — a story
@@ -218,6 +262,8 @@ way in the file or a re-export will reorder them.
 - Location names are unique within the file (case-insensitively).
 - Every `between` pair names two locations the file declares.
 - Every character's `race` is one of this universe's races.
+- A character's `location`, when the file gives one, names a location the file
+  declares. Absent is legal and means nowhere; wrong is refused.
 - `distance` and `travel_method` come from `LocationConnection::DISTANCES` and
   `::TRAVEL_METHODS`. `time_to_travel` is derived from those two and is
   deliberately absent from the file.

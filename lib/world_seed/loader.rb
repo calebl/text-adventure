@@ -123,13 +123,32 @@ class WorldSeed::Loader
     end
   end
 
+  # WHERE THE FILE PUTS THEM, and `location` is the key that carries it.
+  #
+  # A world's cast is world data exactly as its items are, so the file is the
+  # writer: `Character.present_in` is the closed set `talk` resolves against,
+  # and until it had a source a seeded world's people existed nowhere and could
+  # only be spoken to in whichever room the opening arrival's cast happened to
+  # name. The Salt Assizes is the case that named it -- its premise is Neb
+  # Halloran chained to the tide post, and nothing recorded him there.
+  #
+  # THE KEY IS OPTIONAL AND AN ABSENT ONE MEANS NOWHERE, which is a real state
+  # and is left alone rather than guessed at: `rake game:doctor` reports a
+  # seeded character the file did not place. It is written straight rather than
+  # through `Character::Registry` for the same reason the items above it are
+  # written straight -- a seed file IS the decision, so the registry's "do not
+  # move somebody who is already somewhere" rule would make re-seeding unable
+  # to put a played world's cast back where the file says they belong. That is
+  # the same "the file re-asserts itself over a played world" rule the
+  # connections and the items already follow.
   def load_characters!(story, universe)
     character_documents.each do |attributes|
       race = universe.races.detect { |candidate| candidate.name == attributes.fetch("race") }
       character = story.characters.find_by("LOWER(fullname) = ?", attributes.fetch("fullname").downcase) ||
                   story.characters.new(fullname: attributes.fetch("fullname"))
+      where = attributes["location"].presence && find_location(story, attributes["location"])
 
-      character.assign_attributes(attributes.except("race", "items").merge(race: race))
+      character.assign_attributes(attributes.except("race", "items", "location").merge(race: race, location: where))
       character.save!
 
       load_items!(story, attributes["items"], character: character, location: nil)
@@ -259,6 +278,17 @@ class WorldSeed::Loader
     character_documents.each do |attributes|
       race = attributes.fetch("race")
       raise InvalidWorld, "#{where}: character #{attributes.fetch("fullname").inspect} has race #{race.inspect}, which this universe does not have" unless race_names.include?(race)
+
+      # A whereabouts pointing at a room the file does not declare is the one
+      # mistake this key can make, and it is silent: the character loads with
+      # no location and the room they were meant to be standing in is empty.
+      # `location` is deliberately not required -- nowhere is a real state and
+      # `rake game:doctor` reports it -- so only a WRONG name is refused.
+      standing = attributes["location"]
+      next if standing.blank? || names.any? { |name| name.casecmp?(standing) }
+
+      raise InvalidWorld, "#{where}: character #{attributes.fetch("fullname").inspect} is placed in #{standing.inspect}, " \
+                          "which this file does not declare as a location"
     end
 
     validate_opening_scene!(names, openings.first.fetch("name"))

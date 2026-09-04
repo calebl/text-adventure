@@ -63,11 +63,12 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     neighbour
   end
 
-  # Somebody the game knows is standing here: recorded in the last scene played
-  # in this location, which is how Scene::Generator answers the question. The
-  # scene doubles as the one the player is currently in.
-  def holdover(fullname, **attributes)
-    character = create(:character, story: @story, fullname: fullname, **attributes)
+  # Somebody the game knows is standing here: the records place them in this
+  # room, which is how `Character.present_in` -- and so Scene::Generator --
+  # answers the question. The scene doubles as the one the player is currently
+  # in; its cast is a snapshot and no longer what keeps anybody in the room.
+  def stands_here(fullname, **attributes)
+    character = create(:character, story: @story, fullname: fullname, location: @here, **attributes)
     scene = create(:scene, story: @story, location: @here, characters: [ character ])
     @playthrough.update!(current_scene: scene)
     character
@@ -171,7 +172,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a conversation costs the story ten minutes" do
-    holdover("Rell Vance")
+    stands_here("Rell Vance")
     before = @playthrough.reload.story_now
 
     scene, = play("ask about the crate", CLASSIFY.call("talk", "Rell Vance"),
@@ -242,7 +243,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # --- talking -------------------------------------------------------------
 
   test "talking to someone here keeps the moment and what the character felt" do
-    maren = holdover("Maren Vosk")
+    maren = stands_here("Maren Vosk")
 
     scene, chunks, = play("ask Maren about the ledger",
                           CLASSIFY.call("talk", "Maren Vosk"),
@@ -260,18 +261,35 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     REACTION.each { |field, value| assert_equal value, interaction.public_send(field) }
   end
 
-  # The next turn in this room has to still know that person is standing in it,
-  # and `Scene::Generator#holdovers` reads exactly this.
-  test "a talk scene records the player and whoever they spoke to" do
-    maren = holdover("Maren Vosk")
+  # THE CAST IS A SNAPSHOT OF THE RECORDS, on every branch, written once in
+  # `#play` rather than by the branches that happen to have a cast in hand.
+  # This branch used to write the protagonist and the person spoken to and
+  # nothing else, because that cast was the only thing keeping them in the
+  # room; `Character.present_in` keeps them now, so the snapshot is the whole
+  # room and a bystander is on it.
+  test "a talk scene snapshots everybody the records put in the room" do
+    maren = stands_here("Maren Vosk")
+    bystander = create(:character, story: @story, fullname: "Tobin Ashe", location: @here)
 
     scene, = play("hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, "She looks up.")
+
+    assert_equal [ @protagonist, maren, bystander ].sort_by(&:id), scene.characters.sort_by(&:id)
+  end
+
+  # And every other branch gets one too -- 184 of the 480 baseline turns of
+  # 2026-09-03 had no record of who was in the room at all, because only an
+  # arrival and a talk ever wrote one.
+  test "a narrated turn snapshots the room's cast too" do
+    maren = stands_here("Maren Vosk")
+
+    scene, = play("look at the awning", CLASSIFY.call("examine", "nothing"),
+                  "Rain has pooled in the canvas.")
 
     assert_equal [ @protagonist, maren ].sort_by(&:id), scene.characters.sort_by(&:id)
   end
 
   test "a talk scene links back to the scene the player was in" do
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
     left_behind = @playthrough.current_scene
 
     scene, = play("hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, "She looks up.")
@@ -280,7 +298,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a talk summary names who was spoken to without a second model call" do
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
 
     scene, _chunks, agent = play("hello", CLASSIFY.call("talk", "Maren Vosk"),
                                  REACTION, "She looks up.")
@@ -300,7 +318,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # Blank prose is not a turn -- Scene validates a description, and a record
   # written from nothing is a turn the player cannot read.
   test "a talk that narrated nothing keeps no records" do
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
 
     assert_no_difference [ -> { Scene.count }, -> { Interaction.count } ] do
       scene, = play("hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, "")
@@ -316,7 +334,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # `NarrationJob`, which shows the app's own message instead. See
   # `Playthrough::SafetyNotice`.
   test "a crisis response on the talk path keeps neither record" do
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
     standing_in = @playthrough.current_scene
 
     assert_no_difference [ -> { Scene.count }, -> { Interaction.count } ] do
@@ -334,7 +352,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # route -- but it only gets here after `BaseAgent#ask` has tried every model,
   # which is the difference the two error classes carry.
   test "an exhausted refusal on the talk path keeps neither record" do
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
 
     assert_no_difference [ -> { Scene.count }, -> { Interaction.count } ] do
       assert_raises(BaseAgent::RefusalError) do
@@ -594,7 +612,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a talking turn records what the player typed" do
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
 
     scene, = play("ask Maren about the flood", CLASSIFY.call("talk", "Maren Vosk"), REACTION,
                   "She looks at the water and says nothing for a while.")
@@ -652,7 +670,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a talking turn records the talk and who was spoken to" do
-    maren = holdover("Maren Vosk")
+    maren = stands_here("Maren Vosk")
 
     scene, = play("ask Maren about the flood", CLASSIFY.call("talk", "Maren Vosk"), REACTION,
                   "She looks at the water and says nothing for a while.")
@@ -725,7 +743,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   test "a turn that produced no scene records nothing rather than raising" do
-    holdover("Maren Vosk")
+    stands_here("Maren Vosk")
 
     assert_nothing_raised do
       scene, = play("say hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, "")

@@ -13,6 +13,13 @@ class Location < ApplicationRecord
   # (Item), and the ones in a place are the closed set `take` resolves
   # against -- so they belong to the durable world and go when it does.
   has_many :items, dependent: :destroy
+  # Who is standing here -- the closed set `talk` resolves against
+  # (`Character.present_in`). NULLIFIED rather than destroyed, which is the
+  # opposite of the items above it and for a reason: a thing lying in a room
+  # belongs to the room, and a person outlives the building. Destroying a
+  # location leaves its cast nowhere, which is a state `Character` allows and
+  # `rake game:doctor` reports.
+  has_many :characters, dependent: :nullify
   has_many :playthroughs, foreign_key: :current_location_id, dependent: :nullify, inverse_of: :current_location
   has_and_belongs_to_many :connected_locations,
                           class_name: "Location",

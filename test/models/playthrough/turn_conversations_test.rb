@@ -19,11 +19,11 @@ class Playthrough::TurnConversationsTest < ActiveSupport::TestCase
     @story = create(:story)
     @protagonist = create(:character, story: @story, fullname: "Iri Calder", is_protagonist: true)
     @here = create(:location, story: @story, name: "Ashgate Market")
-    @grenn = create(:character, story: @story, fullname: "Grenn Ollivar", nickname: "Old Grenn")
+    # Grenn has to be standing here for the talk branch to be reachable at all,
+    # and `characters.location_id` is what says so: `Character.present_in` is
+    # the closed set `talk` resolves against.
+    @grenn = create(:character, story: @story, fullname: "Grenn Ollivar", nickname: "Old Grenn", location: @here)
     @playthrough = create(:playthrough, story: @story, character: @protagonist, current_location: @here)
-    # Grenn has to be standing here for the talk branch to be reachable at all:
-    # the cast comes from the last scene in this location that recorded anybody.
-    create(:scene, story: @story, location: @here, characters: [ @protagonist, @grenn ])
   end
 
   # --- a turn's conversation is persisted ------------------------------------

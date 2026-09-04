@@ -212,7 +212,7 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     here = playthrough.current_location
     stair = create(:location, story: story, name: "The Sunken Stair")
     create(:location_connection, location: here, connected_location: stair, distance: "adjacent", travel_method: "walking")
-    maren = create(:character, story: story, fullname: "Maren Vosk", nickname: "Maren")
+    maren = create(:character, story: story, fullname: "Maren Vosk", nickname: "Maren", location: here)
     playthrough.update!(current_scene: create(:scene, story: story, location: here, characters: [ maren ]))
     create(:item, character: playthrough.character, name: "Brass Key")
 

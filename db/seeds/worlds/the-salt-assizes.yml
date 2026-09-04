@@ -23,6 +23,15 @@
 # The opening scene puts a judge, a bell and a rising tide in one room, so turn
 # one has somebody to talk to and something with a deadline.
 #
+# AND THE CAST IS PLACED. `characters[].location` is where each of them stands
+# (`Character.present_in`, the closed set `talk` resolves against), which is what
+# makes Neb Halloran reachable at all: this world's entire premise is that he is
+# chained to the tide post, and before the whereabouts record existed the arrival
+# there recorded the protagonist alone on all three runs checked. The protagonist
+# carries no `location`, and should not: where the player is standing is the
+# playthrough's (`playthroughs.current_location_id`), because two people playing
+# this world are in two different rooms at once.
+#
 # Loaded offline by db/seeds.rb. No model call, no API key, no network.
 ---
 format: 2
@@ -97,6 +106,7 @@ characters:
     properties: '{"ruled": true, "erasable_by": "bell-keeper", "chalk": "altered"}'
 - fullname: Ammon Brace
   race: Circuit Justicars
+  location: The Causeway Court
   nickname: Justicar Brace
   age: 58
   sex: male
@@ -113,6 +123,7 @@ characters:
   fears: Signing off on a delay that turns out to have been a sentence
 - fullname: Neb Halloran
   race: Shorefolk
+  location: The Tide Post
   nickname: Neb
   age: 33
   sex: male

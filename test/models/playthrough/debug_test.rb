@@ -133,8 +133,8 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
                                                       location: playthrough.current_location))
     exit_to = create(:location, story: playthrough.story, name: "The Sunken Stair")
     create(:location_connection, location: playthrough.current_location, connected_location: exit_to)
-    grenn = create(:character, story: playthrough.story, fullname: "Grenn Ollivar", nickname: "Old Grenn")
-    playthrough.current_scene.characters = [ playthrough.character, grenn ]
+    create(:character, story: playthrough.story, fullname: "Grenn Ollivar", nickname: "Old Grenn",
+                       location: playthrough.current_location)
 
     debug = Playthrough::Debug.new(playthrough)
 

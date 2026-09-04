@@ -1,6 +1,69 @@
+# Somebody in a story, and WHERE THEY ARE is now part of what this class is
+# for. Everything else about them -- the sheet, the pronouns, the prompt every
+# conversation is built on -- is below; this header is about the one column
+# that changed what the game can know.
+#
+# ------------------------------------------------------------------------
+# WHEREABOUTS: ONE PLACE AT A TIME, AND THE APP OWNS IT.
+#
+# `characters.location_id` is the `Item` shape applied to people, chosen by the
+# captain over making the scene cast authoritative. Before it, `Character`
+# belonged to a story and to the scenes it appeared in, and that was the whole
+# answer to "where is Ammon Brace": whereabouts were whatever the last ARRIVAL
+# scene's cast said, and only an arrival writes a cast -- 296 of the 480
+# baseline turns of 2026-09-03 have one and the other 184 have none. So the
+# room's cast was regenerated from scratch on every arrival and quietly dropped
+# the people the world is about. Arriving at The Tide Post recorded the
+# protagonist alone, on all three runs checked, in a world whose premise is Neb
+# Halloran chained to that post; the narrator put him there and no record kept
+# him.
+#
+# `Character.present_in(location)` IS THE CLOSED SET, the same way
+# `Item.lying_in(location)` is the one `take` resolves against.
+# `Playthrough::Classifier#characters_here` reads it, `Playthrough::Moment#others`
+# reads it, `Playthrough::Mechanics`'s `present` line reads it, and the arrival
+# cast a `Scene` records is written FROM it rather than the other way round.
+# One answer, one query, and nothing infers presence from prose.
+#
+# WHO IS NOT IN IT, and this is deliberate: the PARTY. The protagonist and
+# anyone `is_companion` are wherever the PLAYTHROUGH is, and a playthrough is
+# per-player -- two people walking the same seeded world stand in different
+# rooms at once. A story-level column cannot hold two answers, so the party's
+# position stays `playthroughs.current_location_id` and is derived, while this
+# column holds where the WORLD's people are: the ones who stay put until
+# something moves them. `Scene::Generator.characters_present` is the one place
+# the two are added together.
+#
+# WHAT MOVES SOMEBODY, and it is a closed list:
+#
+#   the seed file        `characters[].location` in db/seeds/worlds/*.yml,
+#                        loaded by `WorldSeed::Loader`. A seeded character the
+#                        file does not place stays nowhere and
+#                        `rake game:doctor` reports it.
+#   placement            `Character::Registry`, the people half of the noun
+#                        registry: it places somebody who is nowhere and it
+#                        NEVER silently moves somebody who is already
+#                        somewhere. That rule is the Tide Post defect written
+#                        down.
+#   `#move_to!`          the explicit engine call, for a mechanic that means to
+#                        move a person. Nothing invokes it yet, and that is the
+#                        point: movement is a decision, not a side effect.
+#   the backfill         `rake game:backfill_whereabouts`, once, from the old
+#                        arrival casts -- and it refuses to guess.
+#
+# WHAT DOES NOT: prose. No narrator tool, no per-turn model check, no scan of a
+# narration for a name. The standing constraint (AGENTS.md) is that the engine
+# decides state and the prose is TOLD, and a mechanic that depended on a model
+# calling a tool would stop working the day a model stopped complying.
+# ------------------------------------------------------------------------
 class Character < ApplicationRecord
   belongs_to :story
   belongs_to :race
+  # WHERE THEY ARE. Optional because "nowhere yet" is a real state and the only
+  # honest one for somebody the seed did not place, somebody generated before
+  # this column existed, or somebody whose room has been deleted. See the
+  # header, and `Story::Doctor#whereabouts` for what each of those reads as.
+  belongs_to :location, optional: true
   has_many :interactions, dependent: :destroy
   has_many :items, dependent: :destroy
   has_and_belongs_to_many :scenes
@@ -59,6 +122,7 @@ class Character < ApplicationRecord
   validates :sex, presence: true, inclusion: { in: sexes.keys }
   validate :race_belongs_to_story_universe
   validate :single_protagonist_per_story
+  validate :location_belongs_to_story
   validates :backstory, presence: true
   validates :personality, presence: true
   validates :appearance, presence: true
@@ -137,6 +201,45 @@ class Character < ApplicationRecord
   scope :protagonists, -> { where(is_protagonist: true) }
   scope :companions, -> { where(is_companion: true) }
 
+  # THE CLOSED SET `talk` RESOLVES AGAINST: the people the records place in this
+  # room. The exact counterpart of `Item.lying_in`, and read through
+  # `Scene::Generator.characters_present` by everything that asks who is here.
+  #
+  # Ordered by id so two people in one room are offered in a stable order --
+  # the same reason `Item.lying_in` is ordered where it is read.
+  scope :present_in, ->(location) { where(location: location).order(:id) }
+
+  # Nobody has said where they are. Honest, and reported rather than repaired:
+  # see the header, and `Story::Doctor`.
+  scope :nowhere, -> { where(location_id: nil) }
+
+  scope :somewhere, -> { where.not(location_id: nil) }
+
+  def nowhere? = location_id.nil?
+
+  def somewhere? = location_id.present?
+
+  # Where they are, in one sentence, for a report a person reads. The same
+  # shape `Item#whereabouts` has and for the same reason -- `rake game:doctor`
+  # and the backfill both print it.
+  def whereabouts
+    return "nowhere" if nowhere?
+
+    "in #{location.name}"
+  end
+
+  # THE EXPLICIT ENGINE CALL, and the only unconditional one. It moves somebody
+  # whether or not they were already somewhere, so it is what a mechanic that
+  # MEANS to move a person uses -- an escort, a summons, a companion following
+  # the party -- and it is deliberately not called anywhere yet. Placement, the
+  # thing that happens on its own, goes through `Character::Registry`, which
+  # refuses to move somebody who is already somewhere.
+  #
+  # `nil` is legal and means "off the map": a person can stop being anywhere.
+  def move_to!(location)
+    update!(location: location)
+  end
+
   private
 
   # WHO THE CHARACTER IS TALKING TO. `interaction_instructions` used to name
@@ -196,6 +299,17 @@ class Character < ApplicationRecord
     return unless conflict.exists?
 
     errors.add(:is_protagonist, "is already set on another character in this story")
+  end
+
+  # A character stands in a room of their own story. The counterpart of
+  # `race_belongs_to_story_universe` and of `Item#in_exactly_one_place`: a
+  # whereabouts pointing into another world is a row no closed set can offer,
+  # because `Character.present_in` is always asked about one story's rooms.
+  def location_belongs_to_story
+    return if location.nil? || story_id.nil?
+    return if location.story_id == story_id
+
+    errors.add(:location, "must be a place in this story")
   end
 
   # A character's race is picked from the list generated for their universe, so

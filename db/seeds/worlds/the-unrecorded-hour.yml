@@ -17,6 +17,16 @@
 # See db/seeds/worlds/README.md for the format and the rules the loader checks.
 #
 # Loaded offline by db/seeds.rb. No model call, no API key, no network.
+#
+# PERRIN LASCO IS DELIBERATELY NOWHERE. Every other character carries a
+# `characters[].location` -- where the records place them, which is the closed
+# set `talk` resolves against -- and his is absent on purpose: the premise of
+# this world is that he has been removed from it, and a whereabouts saying so is
+# the honest record. `rake game:doctor` reports him, correctly, as somebody
+# nobody can speak to. Do not "fix" it by putting him in a room.
+#
+# The protagonist carries no `location` either, for a different reason: where
+# the player stands is the playthrough's, not the story's.
 ---
 format: 2
 universe:
@@ -106,6 +116,7 @@ characters:
   fears: Being closed quietly, on a Tuesday, with nobody able to say what was lost
 - fullname: Halkett Rowe
   race: Ledger-Kept
+  location: Ward Office 12
   nickname: Sub-Inspector Rowe
   age: 52
   sex: male

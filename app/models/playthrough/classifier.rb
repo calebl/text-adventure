@@ -127,6 +127,13 @@ class Playthrough::Classifier
   # than worked out again: the arrival narration already told the player who is
   # in the room, and a classifier that disagreed with it would refuse to talk
   # to someone the game just introduced.
+  #
+  # THE ANSWER IS A RECORD NOW. `Character.present_in(location)` is the closed
+  # set, so this is the exact counterpart of `#items_here` reading
+  # `Item.lying_in` -- who is here and what is lying here are both one column,
+  # read back. It used to be reconstructed from the last scene in this room
+  # that had recorded a cast, which meant a room nobody had walked into had
+  # nobody in it to talk to. See `Character`'s header.
   def characters_here
     location = playthrough.current_location
     return [] if location.nil?

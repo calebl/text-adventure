@@ -27,7 +27,6 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   def setup
     @story = create(:story)
     @vance = create(:character, story: @story, fullname: "Odile Vance", is_protagonist: true)
-    @rowe = create(:character, story: @story, fullname: "Halkett Rowe")
 
     @office = create(:location, story: @story, name: "Ward Office 12")
     @closet = create(:location, story: @story, name: "The Supply Closet")
@@ -35,14 +34,17 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     connect(@office, @closet)
     connect(@office, @hallway)
 
+    # Rowe is standing in the office, and that is a record on him now rather
+    # than something read back out of a scene's cast.
+    @rowe = create(:character, story: @story, fullname: "Halkett Rowe", location: @office)
+
     @stamp = create(:item, :lying, location: @office, name: "ward stamp")
     @index = create(:item, :lying, location: @closet, name: "Perrin's private index")
     @daybook = create(:item, character: @vance, name: "Ward Office 12 daybook")
 
-    # The world's opening arrival, which is what puts Rowe in the room:
-    # `Scene::Generator.characters_present` answers from the last scene played
-    # in a location, so a world with no scene at all has nobody standing in it.
-    # The seeded worlds carry one for exactly this reason.
+    # The world's opening arrival. What puts Rowe in the room is his own
+    # whereabouts (`characters.location_id`, set on the factory above); the
+    # scene's cast is a snapshot of that and no longer the source of it.
     @opening = create(:scene, story: @story, location: @office, characters: [ @vance, @rowe ],
                               description: "The gap in the daybook is still under your hand.")
     @playthrough = create(:playthrough, story: @story, character: @vance,
@@ -569,8 +571,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   # name goes through the same closed set as the action, so a talk's is another
   # person and never an item.
   test "a turn that is refused still says what else the line named" do
-    lasco = create(:character, story: @story, fullname: "Perrin Lasco")
-    @opening.update!(characters: [ @vance, @rowe, lasco ])
+    lasco = create(:character, story: @story, fullname: "Perrin Lasco", location: @office)
 
     report, = interpret("ask Rowe and Lasco where the file went",
                         CLASSIFY.call("talk", @rowe.fullname, lasco.fullname))
