@@ -1,0 +1,112 @@
+# WHO IS IN THE ROOM, WALKED. The defect this world was the sighting for:
+# arriving at The Tide Post recorded the protagonist alone -- on all three runs
+# checked -- in a world whose entire premise is that Neb Halloran is chained to
+# that post. The narrator put him there, correctly and unfalsifiably, and no
+# record kept him.
+#
+# WHY IT COULD NOT BE SWEPT BEFORE. Who was standing in a room was reconstructed
+# from the last scene played there that happened to record a cast, and an
+# offline walk writes no scenes at all -- so presence was invisible to this
+# sweep by construction, and the only place it could be observed was a generated
+# run costing money. `characters.location_id` is a record, so it is now readable
+# with no model, and this file is the regression test the defect never had.
+#
+# EVERY STEP IS A FACT OFF `Character.present_in`, which is the closed set
+# `Playthrough::Classifier` resolves a `talk` against and the same one
+# `Playthrough::Moment` tells the narrator about. `present` excludes the player
+# themselves, exactly as the classifier's cast does -- a player cannot talk to
+# themselves.
+#
+# THE WORLD IS THE HELD-OUT ONE and that is fine here, for the reason
+# `the-salt-assizes-grammar.yml` gives: `Eval::HELD_OUT` is about not tuning
+# narration checks on prose nobody has read, and this file reads no prose.
+story: The Salt Assizes
+why: presence as a record -- the Tide Post forgetting Neb Halloran, walked
+steps:
+- id: the-court-has-the-justicar-in-it
+  type: look
+  why: the seeded cast, placed by characters[].location and read straight back
+  expect:
+    location: The Causeway Court (realized)
+    present: [Ammon Brace]
+    carrying: [Assize tide-slate]
+
+- id: talk-to-somebody-who-is-not-here
+  type: talk to Neb
+  why: THE ACCEPTANCE CASE -- refused, and the refusal names the cast that IS here
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no person here, Ammon Brace]
+    present: [Ammon Brace]
+
+- id: talk-to-somebody-who-is
+  type: talk to the Justicar
+  why: a nickname resolves, the way it does through the classifier's closed enum
+  expect:
+    understood: talk -> Ammon Brace
+    refused: true
+    changed: false
+    offers: [Ammon Brace is here and the classifier resolved them]
+    present: [Ammon Brace]
+
+- id: out-to-the-post
+  type: go to the Tide Post
+  why: THE DEFECT -- this room recorded the protagonist alone on all three runs checked
+  expect:
+    changed: true
+    location: The Tide Post (realized)
+    present: [Neb Halloran]
+
+- id: and-he-is-there-to-be-spoken-to
+  type: talk to Neb
+  why: the whole point of the record -- the premise character resolves
+  expect:
+    understood: talk -> Neb Halloran
+    refused: true
+    changed: false
+    offers: [Neb Halloran is here and the classifier resolved them]
+    present: [Neb Halloran]
+
+- id: and-the-justicar-is-not
+  type: talk to Ammon Brace
+  why: presence is one room, both ways round -- the Justicar stayed in the court
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no person here, Neb Halloran]
+    present: [Neb Halloran]
+
+- id: walking-does-not-move-anybody
+  type: go into the Causeway Court
+  why: the player moves and the cast does not travel with them
+  expect:
+    changed: true
+    location: The Causeway Court (realized)
+    present: [Ammon Brace]
+
+- id: a-room-nobody-was-placed-in-is-empty
+  type: go to the Vestry Hulk
+  why: nobody is a real answer, and it is the one the file gives for this room
+  expect:
+    changed: true
+    location: The Vestry Hulk (stub)
+    present: []
+
+- id: and-there-is-nobody-to-talk-to-in-it
+  type: talk
+  why: an empty cast is refused differently from a name that missed
+  expect:
+    refused: true
+    changed: false
+    offers: [talk to whom, There is nobody here]
+    present: []
+
+- id: a-name-in-an-empty-room-misses-too
+  type: talk to Neb
+  why: and the premise character is not reachable from a room he is not in
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no person here]
+    present: []

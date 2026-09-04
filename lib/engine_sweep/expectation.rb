@@ -16,6 +16,9 @@
 #                   invented door
 #   here            the whole set of item names lying in this room
 #   carrying        the whole set of item names the player holds
+#   present         the whole set of people standing here, by full name -- the
+#                   closed set `talk` resolves against (`Character.present_in`),
+#                   minus the player themselves
 #   changed         whether the engine wrote something
 #   change          text the one-line diff of that write has to contain, which
 #                   is how a script pins that a stub was walked into as a stub
@@ -31,7 +34,7 @@
 # test fixture must not have.
 class EngineSweep::Expectation
   KEYS = %w[
-    location exits exits_include exits_exclude here carrying
+    location exits exits_include exits_exclude here carrying present
     changed change refused offers understood note drifts
   ].freeze
 
@@ -77,6 +80,7 @@ class EngineSweep::Expectation
       check_exits(state),
       check_items("here", state.items_here),
       check_items("carrying", state.carried),
+      check_people("present", state.present),
       check_flag("changed", report.changed?),
       check_contains("change", report.change),
       check_flag("refused", report.refused?),
@@ -180,6 +184,22 @@ class EngineSweep::Expectation
 
     wanted = Array(document[key]).map(&:to_s)
     actual = records.map(&:name)
+    return nil if wanted.sort == actual.sort
+
+    unmet(key, wanted, actual)
+  end
+
+  # WHO IS STANDING HERE, by full name. A separate reader from `#check_items`
+  # only because a person answers to `fullname` where a thing answers to
+  # `name` -- it is the same whole-set comparison, over the same kind of closed
+  # set, and an offline walk can assert it because presence is a record now
+  # rather than something reconstructed from a scene an offline walk never
+  # writes.
+  def check_people(key, records)
+    return nil unless document.key?(key)
+
+    wanted = Array(document[key]).map(&:to_s)
+    actual = records.map(&:fullname)
     return nil if wanted.sort == actual.sort
 
     unmet(key, wanted, actual)

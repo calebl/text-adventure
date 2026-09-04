@@ -43,6 +43,7 @@ steps:
   expect:
     changed: true
     location: The Supply Closet (realized)
+    present: []
     here: [Perrin's private index, copy-room apron]
 
 - id: put-the-daybook-down-too

@@ -205,6 +205,53 @@ namespace :game do
     end
   end
 
+  desc "Place characters who have no whereabouts, from the arrival casts still on disk. Usage: rake game:backfill_whereabouts, DRY_RUN=1 to see it first"
+  task :backfill_whereabouts, [ :story_id ] => :environment do |t, args|
+    scope = args[:story_id] ? Story.where(id: Helpers.story!(args[:story_id]).id) : Story.all
+    dry = ENV["DRY_RUN"].present?
+
+    puts "WHERE SOMEBODY WAS, recovered from the only record that ever held it."
+    puts "`characters.location_id` is the closed set `talk` resolves against and is written from"
+    puts "now on -- by the seed file, by Character::Registry, by Character#move_to!. This places"
+    puts "the people a world had before the column existed, out of the cast of the last arrival"
+    puts "Scene that recorded them, and it REFUSES TO GUESS. Offline, no model call."
+    puts "DRY RUN: nothing is written." if dry
+    puts
+
+    total = Hash.new(0)
+    scope.order(:created_at, :id).each do |story|
+      answers = Character::WhereaboutsBackfill.new(story).run(dry_run: dry)
+      next if answers.empty?
+
+      puts format("  %-40s placed %3d, ambiguous %3d, never recorded %3d",
+                  story.title.truncate(40),
+                  answers.count(&:placed?), answers.count(&:ambiguous?),
+                  answers.count { |answer| answer.outcome == :unrecoverable })
+
+      answers.each do |answer|
+        total[answer.outcome] += 1
+        case answer.outcome
+        when :placed then puts "      #{answer.character.fullname} -> #{answer.location.name}"
+        when :ambiguous then puts "      #{answer.character.fullname} -- left nowhere: recorded in #{answer.rooms.join(" and ")} with no order to choose from"
+        end
+      end
+    end
+
+    puts
+    if total.values.sum.zero?
+      puts "Nothing to do: everybody who can carry a whereabouts has one."
+    else
+      puts "#{total[:placed]} character(s) placed where the last arrival that recorded them says they were."
+      puts "#{total[:ambiguous]} left nowhere: two rooms recorded them at the same moment, or the scenes that"
+      puts "  recorded them carry no story time. A person cannot be in two rooms and this will not pick one."
+      puts "#{total[:unrecoverable]} left nowhere: no scene ever recorded them, so there is nothing to recover."
+      puts
+      puts "The protagonist and any companions are deliberately skipped: the party is wherever the"
+      puts "playthrough is (`playthroughs.current_location_id`), and two players stand in two rooms."
+      puts "`rake game:doctor` reports whoever is still nowhere."
+    end
+  end
+
   desc "Score the game against the errors that can be checked. Usage: rake game:score, SAVE=1 to re-baseline, CORPUS=database|corpus|transitions"
   task :score, [ :story_id ] => :environment do |t, args|
     boards =

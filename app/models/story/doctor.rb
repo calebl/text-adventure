@@ -64,6 +64,7 @@ class Story::Doctor
       *opening_scene,
       *connection_rows,
       *cast,
+      *whereabouts,
       *scene_rows,
       *playthrough_rows,
       *item_rows
@@ -95,6 +96,18 @@ class Story::Doctor
   # location, because a stub has a name and a teaser and nothing to read.
   def play_location
     @play_location ||= story.locations.realized.order(:id).first
+  end
+
+  # `{ fullname => room name }` out of the checked-in world file for this
+  # story, or empty for a story that is not one of them -- which is every
+  # generated world and every engine-sweep copy.
+  def seeded_whereabouts
+    @seeded_whereabouts ||= begin
+      document = seed_document
+      Array(document && document["characters"])
+        .filter_map { |row| [ row["fullname"], row["location"] ] if row["location"].present? }
+        .to_h
+    end
   end
 
   private
@@ -342,6 +355,119 @@ class Story::Doctor
     end
 
     findings
+  end
+
+  # ------------------------------------------------------------------------
+  # WHERE THE CAST IS, and the three ways that answer goes wrong.
+  #
+  # `Character.present_in(location)` is the closed set `talk` resolves against,
+  # so a whereabouts is not decoration: a character with none is somebody the
+  # player can never speak to, however central they are to the world. That is
+  # the defect this column was added for -- The Tide Post recorded the
+  # protagonist alone in a world about a man chained to it -- and this is the
+  # sweep that finds the rest of them.
+  #
+  # THE PARTY IS NOT ASKED ABOUT. The protagonist and anyone `is_companion`
+  # travel with the playthrough (`playthroughs.current_location_id`), because
+  # two people playing one world stand in two rooms at once. A story-level
+  # column cannot hold that, so nowhere is the CORRECT state for them and
+  # reporting it would be reporting the design.
+  # ------------------------------------------------------------------------
+  def whereabouts
+    cast = story.characters.includes(:location).where(is_protagonist: false)
+                .where(is_companion: [ false, nil ]).order(:id).to_a
+
+    [ *characters_nowhere(cast), *characters_in_a_stub(cast), *characters_outside_the_story(cast),
+      *characters_the_seed_placed_elsewhere ]
+  end
+
+  # Nobody has said where they are. `rake game:backfill_whereabouts` recovers
+  # what the old arrival casts can still answer for and refuses to guess at the
+  # rest, which is why this is `manual` -- and a seeded world can mean it, so
+  # the message says what the state IS rather than calling it a defect.
+  # `The Unrecorded Hour` leaves Perrin Lasco nowhere on purpose: the premise of
+  # that world is that he has been removed from it.
+  def characters_nowhere(cast)
+    cast.select(&:nowhere?).map do |character|
+      finding(:character_nowhere, :warning,
+              "#{character.fullname} is nowhere: `Character.present_in` never offers them, so nobody can " \
+              "speak to them in any room. Recover what the old arrival casts hold with " \
+              "`rake game:backfill_whereabouts`, place them in a seed file's `characters[].location`, or " \
+              "move them with `Character#move_to!` -- and a character whose room was deleted lands here too, " \
+              "because destroying a Location nullifies this column rather than the person",
+              :manual, subject: character)
+    end
+  end
+
+  # Standing in a room nobody has written. Legal, and it plays: walking in
+  # realizes the room and the arrival introduces them. Worth saying anyway,
+  # because `Location::Generator` writes that description without knowing
+  # anybody is in it -- so the room comes out described as empty with somebody
+  # standing in the middle of it, and the prose and the records disagree from
+  # the moment the room exists.
+  def characters_in_a_stub(cast)
+    cast.select { |character| character.location&.stub? }.map do |character|
+      finding(:character_in_a_stub, :warning,
+              "#{character.fullname} is in #{character.location.name.inspect}, which nobody has written yet. " \
+              "The room realizes when somebody walks in, and its description is written without knowing " \
+              "#{character.pronoun_forms.subject} is there",
+              :manual, subject: character)
+    end
+  end
+
+  # A whereabouts pointing out of this story. `Character#location_belongs_to_story`
+  # refuses to save one, so this arrives only through raw SQL or a schema older
+  # than that validation -- the same shape and the same reasoning as
+  # `#items_nowhere`, and worth a line because the row plays: the closed set
+  # for that room is built from `Character.present_in`, which does not ask
+  # whose story the room belongs to.
+  def characters_outside_the_story(cast)
+    cast.select { |character| character.location && character.location.story_id != story.id }.map do |character|
+      finding(:character_outside_the_story, :warning,
+              "#{character.fullname} is in #{character.location.name.inspect}, which belongs to story " \
+              "##{character.location.story_id} and not this one; the record cannot be saved and no closed set " \
+              "in this story will ever offer them",
+              :manual, subject: character)
+    end
+  end
+
+  # THE WORLD FILE SAYS SOMEWHERE ELSE. Only asked of a story that IS one of
+  # the checked-in worlds, matched on title the way `WorldSeed::Loader` matches
+  # everything else, and only about characters the file actually places -- an
+  # absent `location` in the file means nowhere and is already reported above.
+  #
+  # It is the premise check the seeded worlds needed: `The Salt Assizes` is
+  # about a man chained to the tide post, and a database in which he is not
+  # there is a database in which the world's own premise is unreachable. Safe
+  # rather than manual because the answer is on record in a checked-in file:
+  # `rake game:repair` puts them back, and so does re-seeding.
+  def characters_the_seed_placed_elsewhere
+    seeded_whereabouts.filter_map do |fullname, room|
+      character = story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
+      next if character.nil? || character.location&.name == room
+
+      finding(:character_moved_from_the_seed, :warning,
+              "#{character.fullname} is #{character.whereabouts}, and #{seed_basename} puts them in " \
+              "#{room.inspect}. Nothing in the app moves a character except `Character#move_to!`, so either " \
+              "somebody called it or the world was seeded before the file said this",
+              :safe, subject: character)
+    end
+  end
+
+  def seed_document
+    return @seed_document if defined?(@seed_document)
+
+    path = WorldSeed::DIRECTORY.join("#{WorldSeed.slug(story.title)}.yml")
+    @seed_document = File.exist?(path) ? WorldSeed.parse(File.read(path)) : nil
+  rescue StandardError
+    # A malformed world file is `WorldSeed::Loader`'s to complain about, not
+    # this class's: a doctor that raised on one would stop reporting everything
+    # else about the story.
+    @seed_document = nil
+  end
+
+  def seed_basename
+    "db/seeds/worlds/#{WorldSeed.slug(story.title)}.yml"
   end
 
   # `story_timestamp` is what the story's clock is derived from. A scene without
