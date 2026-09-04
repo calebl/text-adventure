@@ -903,6 +903,42 @@ path, and answers in sentences.
   that and says restart; see the ROADMAP's *Known issues* for why it reports
   rather than repairs.
 
+### A PR that needs a post-update action adds a step, not a sentence
+
+**`bin/update` is the one command the captain runs after a pull**, and
+`Update::REGISTRY` (`lib/update.rb`) is the list of what it then does to the
+database he already has. So:
+
+- **A PR whose code needs something run against existing rows adds a step to
+  that registry**, and says in its body that it did. It does **not** add a hand
+  list of commands to the PR description. Five PRs in one week each did
+  (105, 109, 110, 111, 113), and the result was a captain reading five merged
+  descriptions to work out what his own database still needed. A sentence in a
+  merged PR body is not somewhere a checkout can look things up.
+- Adding one is a file and a line: a subclass of `Update::Step` under
+  `lib/update/steps/`, and its class in `REGISTRY` at the position it must run
+  in. `lib/update.rb`'s header is the whole procedure and
+  `Update::Steps::BackfillWhereabouts` is the shortest example.
+- **Three rules, and `Update::RegistryTest` pins them.** A step must be
+  IDEMPOTENT (running it on an already-updated database writes nothing and
+  reports nothing to do — verify it by running twice, not by believing the
+  backfill's own header), QUIET when it has nothing to do (a run against a
+  current database has to be readable in one screen, or he stops reading it),
+  and OFFLINE (no model call, no network, no key: this runs unattended against
+  his primary development database). A refusal the step will never resolve —
+  `ambiguous`, `unrecoverable` — is a `note`, not a change; counting those as
+  pending work makes the tool cry wolf on every pull for ever.
+- **A model call needs an explicit opt-in and nothing uses it.**
+  `Update::Step.model_calls?` is the gate, built before anything needed it, and
+  the registry test asserts nothing has passed through it. `Story::Repair`'s
+  `generate:` half is exactly the shape of thing it is for, and
+  `Update::Steps::SafeRepairs` passes `generate: false` in the open.
+- The steps run in the registry's order because it is **dependency order**:
+  `backfill_transitions` before `backfill_inventory` (attribution reads
+  `Scene#took?`, which needs both columns the first one writes), every backfill
+  before the repairs (a safe repair acts on findings a backfill removes), and
+  the doctor last because it reports and never writes.
+
 ### Testing
 
 - Generator tests **must not hit a model.** Use `FakeAgent`

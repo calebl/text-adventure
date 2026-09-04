@@ -30,6 +30,38 @@ Generation needs a model. Either:
     | jq '.data[] | select(.id == "MODEL") | .supported_parameters'
   ```
 
+## Updating your checkout
+
+One command after a pull, because a world in your database outlives the schema
+that made it: a PR that adds a column usually also needs a backfill run against
+the rows you already have.
+
+```bash
+bin/update              # pull main, install, migrate, apply what the new code needs, report
+bin/update --dry-run    # fetch, then say what WOULD happen. Writes nothing at all
+bin/update --skip-pull  # "I already pulled, just apply"
+```
+
+It pulls the default branch fast-forward only, runs `bundle install` when the
+lockfile moved in that range, migrates, then runs the post-update steps —
+today's are three backfills, the safe half of `rake game:repair` for every
+story, and `rake game:doctor` for the last word. Each step is asked what it
+would do before it is asked to do it, and a step with nothing to do says so in
+one line, so this is safe to run after every pull rather than only the
+suspicious ones.
+
+**What it never does.** It never stashes, resets, checks out, merges, rebases or
+forces anything: on a dirty tree or a branch that is not the default one it
+prints the reason and stops. It never makes a model call, so it never spends
+tokens because you pulled. And it never touches a running process — it *tells*
+you to restart your dev server, since a server that was up before a migration
+serves models built from the old schema.
+
+The list of steps lives in [`lib/update.rb`](lib/update.rb), in the repo and in
+dependency order; its header is how a PR adds one. `rake game:update` is the
+same steps without the git and bundler half (`DRY_RUN=1` first, `ONLY=<step>`
+for one, `VERBOSE=1` to see what each step is refusing to guess about).
+
 ## Generate a world
 
 ```bash

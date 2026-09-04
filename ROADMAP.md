@@ -55,6 +55,41 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **One command after a pull** (`ta-bin-update`). The captain's request of
+  2026-09-04, in his words:
+
+  > *"I want a bin/update command I can run that will pull the latest from main
+  > and run any fixes or doctor commands necessary to apply the latest changes."*
+
+  **What it replaced.** A hand list at the bottom of every PR body — `git pull
+  && bin/rails db:migrate`, then `DRY_RUN=1 rake game:backfill_whereabouts`,
+  then `game:backfill_inventory`, then `game:backfill_transitions`, then
+  `rake 'game:repair[<id>]'`, then `rake game:doctor`. PRs 105, 109, 110, 111
+  and 113 each added one, so five merged descriptions were the only record of
+  what an existing database still needed.
+
+  **What is built.** `bin/update` (Ruby, in `bin/setup`'s style): pull the
+  default branch fast-forward only, `bundle install` when the lockfile moved in
+  that range, `bin/rails db:migrate`, then the post-update steps, then the
+  doctor, then a summary and a *restart your dev server* notice. `--dry-run`
+  fetches and says what would happen and writes nothing at all — not even the
+  pull; `--skip-pull` applies to the tree as it stands. It refuses before it
+  touches anything on a dirty tree, a branch that is not the default one, or a
+  failed fetch, and it never stashes, resets, checks out, merges, rebases or
+  forces anything (`Update::BinUpdateTest` asserts that against the script's own
+  source, not just its header).
+
+  **The list is in the repo, not in a PR body.** `Update::REGISTRY`
+  (`lib/update.rb`) holds the steps in dependency order and its header is how
+  the next PR adds one; `rake game:update` runs them without the git half
+  (`DRY_RUN=1`, `ONLY=`, `VERBOSE=1`). Each step is asked what it WOULD do and
+  only then asked to do it, so a step with nothing to do costs one line and no
+  write, and `bin/update` is worth running after every pull. A step must be
+  idempotent, quiet when it has nothing to do, and offline — the model-call gate
+  (`Update::Step.model_calls?`) is built, nothing uses it, and
+  `Update::RegistryTest` asserts nothing has. See `AGENTS.md` → *A PR that needs
+  a post-update action adds a step, not a sentence*.
+
 - **One line, one act — and a line that is not one is refused whole**
   (`ta-one-act-refusal`). The captain's ruling of 2026-09-04, in his words:
 

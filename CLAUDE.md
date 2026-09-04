@@ -41,6 +41,12 @@ rake eval:run                       # ~$0.22 at the defaults; prints an estimate
 rake eval:score SET=main            # offline, no key, no network
 rake eval:compare BEFORE=a AFTER=b  # REAL / NOISE / INCONCLUSIVE, per check
 
+# Bring a checkout up to date after a pull: fast-forward, bundle, migrate, then
+# everything the new code needs done to the database you already have. Offline,
+# idempotent, no model call. lib/update.rb is the list of steps.
+bin/update                          # --dry-run writes nothing at all; --skip-pull to only apply
+rake game:update                    # the steps alone; DRY_RUN=1, ONLY=<step>, VERBOSE=1
+
 # Check the stories in the database, fix what can be fixed, delete what cannot
 rake game:doctor                    # or rake 'game:doctor[3]' for one story
 rake game:audit                     # where narration contradicts the records; VERBOSE=1 for unjudged checks
@@ -358,6 +364,25 @@ The current database includes the following story-related models with proper ass
   never behaviour
 
 - All interactions with AI LLMs should use a structured output with RubyLLM::Schema
+
+### Applying a change to a database that already exists
+- **`bin/update` is the one command after a pull**, and `Update::REGISTRY`
+  (`lib/update.rb`) is the repo-owned list of what it then does to the rows
+  already there — three backfills, the safe half of `Story::Repair` for every
+  story, then `Story::Doctor`. A PR that needs a post-update action **adds a
+  step to that registry and says so in its body**; it does not add a hand list
+  of commands to the description. See `AGENTS.md` → *A PR that needs a
+  post-update action adds a step, not a sentence*.
+- A step is a subclass of `Update::Step`: a key, a one-line reason, and a `#call`
+  that honours `dry_run`. Three rules, pinned by `Update::RegistryTest` —
+  idempotent, quiet when it has nothing to do, offline. A refusal the step can
+  never resolve (`ambiguous`, `unrecoverable`) is a `note`, never a change.
+- **No step may make a model call.** `Update::Step.model_calls?` is the gate,
+  built before anything needed it and asserted empty, because this runs
+  unattended against the captain's primary development database.
+- `Update::Runner` asks every step what it WOULD do before asking it to do it,
+  stops on the first failure and names the step. `bin/update --dry-run` writes
+  nothing at all, not even the pull.
 
 ### When a model will not write the turn
 - A refusal is a 200 OK, so it used to be saved as the `Scene` the player reads.
