@@ -3,10 +3,11 @@ require "test_helper"
 # THE SEAM THAT IS EMPTY, AND THE TEST THAT KEEPS IT EMPTY.
 #
 # `BaseAgent.default_provider_params` exists so a classifier bench arm can ask
-# ollama for `think: false` -- qwen3:4b answers a classifier prompt in 2.95
-# seconds without thinking and does not answer inside 120 with it, so a bench
-# arm that cannot say so is not measuring the classifier, it is measuring a
-# reasoning trace. The captain approved the seam on 2026-09-04 with a condition:
+# a local thinking model to stop thinking -- qwen3:4b answers a classifier call
+# in 2.1 seconds with `reasoning_effort: "none"` and 100.2 without it, same
+# prompt, same schema, same answer. A bench arm that cannot say so is not
+# measuring the classifier, it is measuring a reasoning trace. The captain
+# approved the seam on 2026-09-04 with a condition:
 # **no change to BaseAgent's shipped behaviour, and a test pinning that the
 # default request carries no such parameter.** This is that test.
 #
@@ -42,11 +43,11 @@ class BaseAgent::ProviderParamsTest < ActiveSupport::TestCase
     asked = []
     chat = watched(asked)
 
-    BaseAgent.stub(:default_provider_params, { think: false }) do
+    BaseAgent.stub(:default_provider_params, { reasoning_effort: "none" }) do
       BaseAgent.new(purpose: "classifier", chat: chat, model_options: OPTIONS).chat
     end
 
-    assert_equal [ { think: false } ], asked
+    assert_equal [ { reasoning_effort: "none" } ], asked
   end
 
   # THE INSTRUMENT PUTS IT BACK. A bench pass that left this replaced would make
@@ -64,7 +65,7 @@ class BaseAgent::ProviderParamsTest < ActiveSupport::TestCase
   test "a hosted arm cannot carry provider params" do
     error = assert_raises(Eval::Classifier::Arm::UnknownProvider) do
       Eval::Classifier::Arm.new(provider: :openrouter, model: "minimax/minimax-m3",
-                                provider_params: { think: false })
+                                provider_params: { reasoning_effort: "none" })
     end
 
     assert_match(/only for a local arm/, error.message)
@@ -75,7 +76,7 @@ class BaseAgent::ProviderParamsTest < ActiveSupport::TestCase
     plain = Eval::Classifier::Arm.parse("ollama:qwen3:8b")
 
     assert_predicate asked, :thinking_off?
-    assert_equal({ think: false }, asked.provider_params)
+    assert_equal({ reasoning_effort: "none" }, asked.provider_params)
     assert_equal "ollama:qwen3:8b+nothink", asked.id
 
     assert_not_predicate plain, :thinking_off?

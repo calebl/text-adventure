@@ -201,15 +201,18 @@ class BaseAgent
   # because a default that quietly grew a parameter would change every call in
   # the app at once.
   #
-  # WHY THE SEAM EXISTS AT ALL, on the captain's ruling of 2026-09-04. Ollama
-  # takes `think: false` as a REQUEST field, and a thinking model answers the
-  # classifier in 2.95 seconds without it against over 120 with it -- a 40-fold
-  # difference on the one call a player waits for. `Eval::Classifier::Arm`
-  # replaces this for the length of a bench pass so a local arm can be measured
-  # at the speed the model is capable of, and the bench reports the thinking-on
-  # figure beside it so the board shows BOTH what the model can do and what this
-  # app would get today. The instrument reaching in here is the alternative to
-  # the instrument reaching through `#chat` to reconfigure a live conversation.
+  # WHY THE SEAM EXISTS AT ALL, on the captain's ruling of 2026-09-04. A local
+  # thinking model answers the classifier in 2.1 seconds when the request says
+  # `reasoning_effort: "none"` and 100.2 when it says nothing -- same prompt,
+  # same schema, same 23 tokens of answer, measured warm on qwen3:4b. What the
+  # 98 seconds buy is a reasoning block in front of an answer the schema had
+  # already constrained. `Eval::Classifier::Arm::NO_THINKING` has the table, and
+  # `Eval::Classifier::Arm#pinned` replaces this for the length of one bench
+  # pass so a local arm can be measured at the speed the model is capable of,
+  # with the thinking-on figure printed beside it: the board then shows BOTH
+  # what the model can do and what this app would get today. The instrument
+  # reaching in HERE is the alternative to the instrument reaching through
+  # `#chat` to reconfigure a live conversation.
   #
   # IT IS NOT A FEATURE AND MUST NOT BECOME ONE. Making the app fast on ollama
   # is a change to the app, decided on its own evidence; this is a measurement

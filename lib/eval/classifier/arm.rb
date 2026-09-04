@@ -45,17 +45,36 @@ class Eval::Classifier::Arm
 
   # A THINKING MODEL ANSWERING THE CLASSIFIER, WITH THE THINKING OFF.
   #
-  # Measured on this machine, same prompt and same schema, warm: `qwen3:4b`
-  # answers in 2.95s with `think: false` and does not answer inside 120s with
-  # thinking on. It is a request field the ollama daemon takes, so it reaches the
-  # call through `BaseAgent.default_provider_params` -- the seam that exists for
-  # exactly this and is empty in every shipped path.
+  # Measured on this machine, warm, `qwen3:4b`, the app's own prompt shape and
+  # the app's own client -- RubyLLM reaches ollama through its OPENAI-COMPATIBLE
+  # endpoint (`config.ollama_api_base` ends in `/v1`), which is the whole reason
+  # this constant says what it says:
+  #
+  #   nothing asked                            100.2s   a `reasoning` field comes back beside the answer
+  #   think: false                             100.7s   IGNORED -- an ollama-native field, and /v1 is not it
+  #   chat_template_kwargs enable_thinking     100.0s   IGNORED
+  #   reasoning_effort: "low"                  100.2s   honoured, and low is not none
+  #   reasoning_effort: "none"                   2.1s   no reasoning field, same correct answer
+  #
+  # So it is `reasoning_effort`, a STANDARD OpenAI field, and not ollama's own
+  # `think`. The 23 content tokens are the same either way; what the 98 seconds
+  # buy is a reasoning block the schema never constrained, because the schema
+  # constrains the content and the thinking happens in front of it. A 48x
+  # difference on the one call a player waits for, and the field reaches the
+  # daemon through `BaseAgent.default_provider_params` -- the seam that exists
+  # for exactly this and is empty in every shipped path.
+  #
+  # (The native `/api/chat` endpoint with `format:` and `think: false` answers
+  # the same call in 1.95s, measured. The app does not speak it, so neither does
+  # the bench: an instrument that reached past the app's own client would be
+  # measuring a different client.)
   #
   # ASKED FOR EXPLICITLY, NEVER INFERRED. An arm carries it because a spec said
   # `+nothink`, so a run that does not ask measures the model the way the app
-  # would really use it. Two arms of one model with different thinking are two
-  # rows on the board, which is the comparison the captain asked for.
-  NO_THINKING = { think: false }.freeze
+  # would really use it -- which is the 100-second figure, and IS the finding.
+  # Two arms of one model with different thinking are two rows on the board,
+  # which is the comparison the captain asked for.
+  NO_THINKING = { reasoning_effort: "none" }.freeze
 
   # The suffix that asks for it. A `+` because it modifies the arm rather than
   # naming part of the model, and an ollama tag can hold neither.
@@ -65,7 +84,7 @@ class Eval::Classifier::Arm
 
   # `"ollama:qwen3:8b"` -> ollama, `qwen3:8b`. Anything with no known provider
   # prefix is OpenRouter, which is what the app's own ids are.
-  # `"ollama:qwen3:8b+nothink"` asks for `think: false` as well.
+  # `"ollama:qwen3:8b+nothink"` asks for `NO_THINKING` as well.
   def self.parse(spec)
     text = spec.to_s.strip
     nothink = text.end_with?(NOTHINK_SUFFIX)

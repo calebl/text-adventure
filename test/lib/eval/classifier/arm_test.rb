@@ -119,11 +119,11 @@ class Eval::Classifier::ArmTest < ActiveSupport::TestCase
 
   # THE OTHER HALF OF `#pinned`, and the reason it is tested here as well as in
   # `BaseAgent::ProviderParamsTest`: the arm sets BOTH seams, so a pass that
-  # asked for `think: false` and got the app's empty default would have measured
-  # a thinking model and said otherwise.
+  # asked for no thinking and got the app's empty default would have measured a
+  # thinking model at 100 seconds a call and said otherwise.
   test "pinning sets the provider params too, and restores the app's empty default" do
     Eval::Classifier::Arm.parse("ollama:qwen3:4b+nothink").pinned do
-      assert_equal({ think: false }, BaseAgent.default_provider_params)
+      assert_equal({ reasoning_effort: "none" }, BaseAgent.default_provider_params)
     end
 
     assert_empty BaseAgent.default_provider_params

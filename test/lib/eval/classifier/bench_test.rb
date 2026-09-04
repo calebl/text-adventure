@@ -242,6 +242,29 @@ class Eval::Classifier::BenchTest < ActiveSupport::TestCase
     assert_match(/also_named/, printed)
   end
 
+  # THE GUARD MUST FIRE ON A ROTATION AND ON NOTHING ELSE, and the second half
+  # is the one that was wrong: an arm's LABEL carries its provider and its
+  # `+nothink`, `BaseAgent#current_model` reports the bare model, and compared as
+  # strings every local reading read as a rotation. The first real local pass
+  # printed "29 ROTATED -- THE PINNING FAILED" over 29 perfectly pinned calls.
+  test "the rotation guard compares models and not labels, so a local arm is not slandered" do
+    line = @corpus.lines.first
+    answer = Eval::Classifier::Corpus::Answer.new(intent: line.intent, target: line.target)
+    reading = ->(arm, answered_by) do
+      Eval::Classifier::Bench::Reading.new(line: line, arm: arm, rep: 1, answered_by: answered_by,
+                                           raw: nil, seconds: 1.0, error: nil, answer: answer)
+    end
+
+    assert_not_predicate reading.("ollama:qwen3:4b+nothink", "qwen3:4b"), :rotated?
+    assert_not_predicate reading.("ollama:qwen3:8b", "qwen3:8b"), :rotated?
+    assert_not_predicate reading.("minimax/minimax-m3", "minimax/minimax-m3"), :rotated?
+
+    assert_predicate reading.("ollama:qwen3:4b+nothink", "qwen3:8b"), :rotated?
+    assert_predicate reading.("mistralai/mistral-medium-3.1", "minimax/minimax-m3"), :rotated?
+    assert_not_predicate reading.("minimax/minimax-m3", nil), :rotated?,
+                         "a failed call answered by nobody has not rotated"
+  end
+
   private
 
   # Readings with nothing but a latency on them, for the percentile arithmetic.

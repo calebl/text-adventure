@@ -110,7 +110,19 @@ class Eval::Classifier::Bench
     # THE GUARD, not a figure. With an arm of one there is nothing to rotate to,
     # so this is false on every reading of a healthy run -- and if it is ever
     # true the pinning failed and the board must not credit this arm.
-    def rotated? = !answered_by.nil? && answered_by != arm
+    #
+    # COMPARED AS A MODEL AND NOT AS A LABEL. `arm` is the arm's id, which
+    # carries the provider for a local model and `+nothink` for an arm that
+    # asked, while `answered_by` is what `BaseAgent#current_model` says -- the
+    # bare model. Compared as strings, every local reading would have read as a
+    # rotation and the board would have refused to credit a healthy run; it did,
+    # on the first local pass. `Arm#id` round-trips through `Arm.parse`, which is
+    # what makes this the model the arm named.
+    def rotated?
+      return false if answered_by.nil?
+
+      answered_by != Eval::Classifier::Arm.parse(arm).model
+    end
 
     # WHY A CALL FAILED, as a class name. A local model that will not honour a
     # schema fails differently from a provider that timed out, and a count
