@@ -87,17 +87,32 @@ The full audit of every planned piece of work against this constraint is in
   reach-that-finds-nothing right and none of the `other` or `examine-nothing`
   lines.
 
-  **The baseline of 2026-09-04**, 2,400 calls: `mistralai/mistral-medium-3.1`
-  strict accuracy **0.939..0.943**, intent accuracy **0.980** flat over four
-  repetitions, **10..11** closed-set misses, `also_named` precision **1.000** and
-  recall **0.862**; `minimax/minimax-m3` strict accuracy **0.910..0.939**,
-  **13..19** closed-set misses, and the mirror-image `also_named` — precision
-  **0.738**, recall **0.948**. The two fail in opposite directions and the
-  shipped order gets the safe one: a missed second name plays half a line, an
-  invented one refuses a line that should have played.
+  **The baseline of 2026-09-04**, four hosted models and 4,800 calls:
+  `mistralai/mistral-medium-3.1` strict accuracy **0.939..0.951**, **8..11**
+  closed-set misses, 0.61s median / 0.88s p95, **0 failures of 1,200**;
+  `minimax/minimax-m3` **0.905..0.938**, 11..18 misses, the fastest median of the
+  four (0.44s) and the second-worst p95 (1.83s), 7 schema failures;
+  `google/gemini-2.5-flash-lite` **0.898 flat over all four repetitions**, 11
+  misses, the only arm whose p95 stays inside a second, 0 failures, $0.05 per
+  1,000 calls; `mistralai/mistral-small-3.2-24b-instruct` **0.872..0.877** and
+  **30 closed-set misses** — the cheapest arm at $0.03 per 1,000 and three times
+  the wrong records. `also_named` is a precision/recall trade the four sit all
+  over: 1.000/0.888, 0.788/0.897, 1.000/0.862 and **0.553**/0.948. The shipped
+  first model gets the safe direction. The two cheaper models are **bench arms
+  only** — `REMOTE_MODEL_IDS` is untouched.
 
-  **PR 102's finding F4 is answered: the omission rate is 0.000.** Over 2,400
-  answers on two models the required `also_named` field never came back absent
+  **Speed is one of the measured figures**, because the classifier runs in front
+  of the turn and its latency is dead time on every line typed. Median and p95
+  per arm, warm-cache with each arm's first call timed apart and excluded, and a
+  failed call carries no latency at all. **The local models were not measured**:
+  the captain stopped those runs on 2026-09-04 because the machine cannot carry
+  them (19 GB, `size_vram: 0`, swapping with one 6 GB model resident). The arm
+  selector and the default-off provider-params seam are in and green, so
+  `MODELS=ollama:qwen3:4b+nothink REPS=4` is one command away on capable
+  hardware.
+
+  **PR 102's finding F4 is answered: the omission rate is 0.000.** Over 4,754
+  answers on four models the required `also_named` field never came back absent
   or null. It is read off the provider's own JSON (`messages.content_raw`, kept
   since PR 97) rather than inferred from the resolved `Intent`, which cannot
   tell an omitted field from an answer of `nothing`.

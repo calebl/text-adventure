@@ -418,38 +418,63 @@ arm selector, the latency machinery and the seam are all in and green, so
 `MODELS=ollama:qwen3:4b+nothink REPS=4` is one command away on a machine that
 can carry it.
 
-### The baseline of 2026-09-04
+### The baseline of 2026-09-04 — four hosted models, 4,800 calls
 
-`SET=classifier-baseline`, 300 lines × 4 reps × 2 models = **2,400 calls, $0.39**.
+Three sets, printed as one table by `rake eval:classifier_board`. 300 lines × 4
+reps an arm; every rate `min..max (median)` across repetitions, never pooled. A
+single number means the four repetitions agreed exactly.
 
-| | `mistralai/mistral-medium-3.1` | `minimax/minimax-m3` |
-| --- | --- | --- |
-| `strict_accuracy` | 0.939..0.943 (median 0.941) | 0.910..0.939 (median 0.918) |
-| `accuracy` | 0.943..0.947 (median 0.945) | 0.913..0.937 (median 0.920) |
-| `intent_accuracy` | 0.980..0.980 | 0.973..0.980 (median 0.978) |
-| `refusal_agreement` | 0.947..0.951 | 0.947..0.963 (median 0.955) |
-| `closed_set_misses` | 10..11 (median 10) | 13..19 (median 17) |
-| `also_named` precision / recall | **1.000** / 0.862 | 0.738 / **0.948** |
-| omission rate | **0.000** (0 of 1200) | **0.000** (0 of 1200) |
-| rotations | 0 of 1200 | 4 of 1200 |
+| figure | `mistral-medium-3.1` | `minimax-m3` | `mistral-small-3.2-24b` | `gemini-2.5-flash-lite` |
+| --- | --- | --- | --- | --- |
+| set | `classifier-remote` | `classifier-remote` | `classifier-mistral-small` | `classifier-gemini-flash-lite` |
+| `strict_accuracy` | **0.939..0.951 (0.947)** | 0.905..0.938 (0.918) | 0.872..0.877 (0.875) | 0.898 |
+| `accuracy` | **0.943..0.953 (0.950)** | 0.906..0.936 (0.918) | 0.857..0.866 (0.861) | 0.913 |
+| `intent_accuracy` | **0.980..0.983 (0.980)** | 0.966..0.977 (0.973) | 0.962..0.973 (0.967) | 0.950 |
+| `refusal_agreement` | **0.951..0.959 (0.955)** | 0.946..0.971 (0.949) | 0.893..0.902 (0.896) | 0.931 |
+| `closed_set_misses` | **8..11 (9)** | 11..18 (17) | 30..32 (30) | 11 |
+| `also_named` precision | **1.000** | 0.788 | 0.553 | **1.000** |
+| `also_named` recall | 0.888 | 0.897 | **0.948** | 0.862 |
+| omission rate | **0.000** | **0.000** | **0.000** | **0.000** |
+| latency median (warm) | 0.61s | **0.44s** | 0.92s | 0.53s |
+| latency p95 (warm) | 0.88s | 1.83s | 3.23s | **0.64s** |
+| cost per 1,000 calls | $0.19 | $0.14 | **$0.03** | $0.05 |
+| failed calls | **0** | 1..3 (1) | 1..24 (7) | **0** |
+| rotations | 0 of 1200 | 0 of 1200 | 0 of 1200 | 0 of 1200 |
 
-**The two models fail `also_named` in opposite directions**, and that is the
-figure to read first: mistral misses a second name (the engine plays half a
-line), minimax invents one (the engine refuses a line that should have played).
-Since the ruling of 2026-09-04 both are things a player notices. The shipped
-order gets the safe one.
+**`also_named` is a precision/recall trade and the four sit all over it.**
+`mistral-medium` and `gemini-flash-lite` miss a second name (the engine plays
+half a line); `minimax` invents one 28 times in 132; `mistral-small` invents one
+**89 times in 199**, and since the ruling of 2026-09-04 each of those is a
+refusal the player reads for no reason. The shipped first model gets the safe
+direction.
 
-**The band is real and it is not wide.** mistral's `intent_accuracy` came back
-0.980 on all four repetitions and `strict_accuracy` spanned 0.004; minimax's
-spanned 0.029 on its own, which is why a 0.023 gap between the two models reads
-NOISE on that figure while `accuracy` and `closed_set_misses` separate for real.
+**Read `latency_p95` beside `latency_median`, because they do not rank the same
+way.** `minimax-m3` has the fastest median of the four and the second-worst p95:
+one line in twenty costs four times the typical line. `gemini-flash-lite` is the
+only arm whose p95 stays inside a second.
 
-**Rotations are reported, not hidden.** An earlier run of this same bench had
-`minimax/minimax-m3` fail **223 of 1,200** classifier calls (34% of one
-repetition, decaying to 9%) — so mistral answered them, and the board said
-`READ WITH CARE: some lines were answered by another model` rather than
-crediting minimax with mistral's numbers. Transient, almost certainly rate
-limiting. An arm with rotations is an arm whose figures are stated as impure.
+**`gemini-2.5-flash-lite` returned the identical figure on all four
+repetitions** — 274 of 300, 11 closed-set misses, every time. A band of zero,
+which makes it the most sensitive arm a later prompt change could be judged
+against: any movement at all is movement.
+
+**The cheapest arm is not cheap.** `mistral-small-3.2` costs a sixth of
+`mistral-medium` and returns **three times the closed-set misses**, on the one
+call whose answer moves a row.
+
+**Failures are stated, never hidden, and the flakiness ranking is not the
+accuracy ranking.** `minimax-m3` is the only arm that failed the SCHEMA (7 of
+1,200 `BaseAgent::SchemaIgnoredError`; an earlier run of this same bench had
+**223 of 1,200**). `mistral-small-3.2` failed 39 of 1,200 and none of them on
+schema — 27 rate-limit, 12 transport, 24 of them inside one repetition, which is
+why its own band on `failures` is 1..24. An arm of one cannot retry, so every
+one of those is a counted, attributed failure rather than a call some other
+model quietly answered.
+
+**Reproducibility, incidentally.** `classifier-remote` re-measured
+`mistral-medium-3.1` on a different day and a different base from the first
+1,200-call baseline: 0.939..0.943 (0.941) then, 0.939..0.951 (0.947) now.
+Overlapping bands, independent runs.
 
 ### The set, and comparing two of them after the fact
 
