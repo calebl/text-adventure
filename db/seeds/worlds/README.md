@@ -38,7 +38,7 @@ One file is one universe and one story. Keys are written in this order:
 | `universe`      | the nine prompt fields, plus `races` (name and description)             |
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
-| `characters`    | one entry each, `race` by name, optional `location` and `items`         |
+| `characters`    | one entry each, `race` by name, optional `location` (or `absent`) and `items` |
 | `locations`     | every location, realized or stub; one marked `opening: true`; `items`   |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair              |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
@@ -283,16 +283,53 @@ Two rules about the key, and both are deliberate:
   way, for the same reason: they travel with the party.
 - **The key is optional, and leaving it out means nowhere.** Nowhere is a real
   state and it is left alone rather than guessed at — `rake game:doctor` reports
-  a character nobody can speak to. `the-unrecorded-hour.yml` uses it on purpose:
-  Perrin Lasco has been removed from that world, and a whereabouts saying so is
-  the honest record.
+  a character nobody can speak to.
+
+### `characters[].absent`, and nowhere on purpose
+
+```yaml
+characters:
+- fullname: Perrin Lasco
+  race: Marginalia
+  absent: true
+```
+
+An omitted `location` means *nobody has said where they are*, and the doctor
+reports it. `absent: true` means *nowhere, and that is the story*, and the doctor
+says nothing at all. `the-unrecorded-hour.yml` is the world that needs it: its
+whole premise is that Perrin Lasco has been removed from Ambry, so the honest
+record is no whereabouts — and for as long as the file had no word for it, the
+doctor reported that world as one warning short of healthy on every run, which is
+how a person learns to stop reading warnings.
+
+It writes `characters.deliberately_absent`, a column rather than a run-time read
+of this directory: only three stories in the database have a file here at all, so
+a caller that answered "is this deliberate" by reading YAML would have no answer
+for a generated world.
+
+- **The two keys are mutually exclusive** and `validate!` refuses a file carrying
+  both: `absent` asserts that nobody may be offered this person to talk to and
+  `location` asserts that they are in that room's closed set.
+- **Re-seeding re-asserts it in both directions**, like every other placement:
+  `absent: true` writes the marker over a played world, and deleting the key
+  takes it off the record.
+- **`Character::Registry` never places a marked character** — the second half of
+  its "never move somebody who is not nowhere" rule, so a realization cannot
+  undo a world's premise as a side effect of describing a room.
+- **`Character#move_to!` clears the marker.** An engine mechanic that brings
+  Perrin back is the story's business, and a person standing in a room is not
+  absent from the world. `Character#absent!` is the call that puts them back.
+- A database seeded before the column existed carries an unmarked row, and
+  `rake game:repair` writes the marker from this file — a `safe` repair, because
+  the answer is checked in.
 
 A `location` naming a room the file does not declare is refused by `validate!`,
 because that mistake is otherwise silent — the character loads standing nowhere
 and the room they were meant to be in is empty.
 
 Nothing but this file, `Character::Registry` (which places somebody who is
-nowhere and never moves somebody who is not), `Character#move_to!` and
+nowhere, never moves somebody who is not, and never places somebody who is
+absent on purpose), `Character#move_to!`, `Character#absent!` and
 `rake game:backfill_whereabouts` ever writes it. **No narration moves anybody.**
 
 ### Rules the loader enforces
@@ -306,6 +343,8 @@ nowhere and never moves somebody who is not), `Character#move_to!` and
 - Location names are unique within the file (case-insensitively).
 - Every `between` pair names two locations the file declares.
 - Every character's `race` is one of this universe's races.
+- A character carries `location` or `absent: true`, never both — one says which
+  room's closed set they are in and the other says nobody may be offered them.
 - A character's `location`, when the file gives one, names a location the file
   declares. Absent is legal and means nowhere; wrong is refused.
 - `distance` and `travel_method` come from `LocationConnection::DISTANCES` and

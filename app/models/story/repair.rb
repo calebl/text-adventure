@@ -40,6 +40,8 @@ class Story::Repair
     connection_directions_disagree: { calls: 0, handler: :repair_disagreeing_connection },
     playthrough_without_location: { calls: 0, handler: :repair_playthrough_location },
     character_moved_from_the_seed: { calls: 0, handler: :repair_seeded_whereabouts },
+    character_absent_in_the_seed: { calls: 0, handler: :repair_seeded_absence },
+    character_absent_but_somewhere: { calls: 0, handler: :repair_deliberate_absence },
     protagonist_holds_a_taken_item: { calls: 0, handler: :repair_shared_inventory },
     no_realized_location: { calls: 2, handler: :repair_no_realized_location },
     opening_location_is_a_stub: { calls: 2, handler: :repair_opening_location_stub },
@@ -168,11 +170,60 @@ class Story::Repair
   def repair_seeded_whereabouts(finding)
     character = finding.subject
     room = doctor.seeded_whereabouts[character.fullname]
+    # THE SAME FINDING WITH THE OTHER ANSWER: a file that marks somebody
+    # `absent: true` places them nowhere, and putting them back is
+    # `Character#absent!` rather than a room. Both halves of
+    # `character_moved_from_the_seed` are the file's own statement written back,
+    # which is what makes either of them safe.
+    return repair_seeded_absence(finding) if room.nil? && doctor.seeded_absences.include?(character.fullname)
+
     location = story.locations.find_by(name: room)
     raise ArgumentError, "the world file places #{character.fullname} in #{room.inspect}, which this story has no location called" if location.nil?
 
     character.move_to!(location)
     "put #{character.fullname} back in #{location.name}, where the world file places them"
+  end
+
+  # NOWHERE ON PURPOSE, WRITTEN ONTO A ROW THAT PREDATES THE MARKER. The same
+  # kind of repair as the one above, from the same source: `characters[].absent`
+  # in a checked-in `db/seeds/worlds/*.yml`. This is the one-time path for a
+  # database seeded before `characters.deliberately_absent` existed -- the
+  # captain's own, where Perrin Lasco is nowhere and correct and the doctor
+  # reported him on every run.
+  #
+  # It also serves `character_absent_but_somewhere` for a seeded world, which
+  # is the contradiction read from the file's side: the file says absent, so
+  # absent is what gets written.
+  def repair_seeded_absence(finding)
+    character = finding.subject
+    raise ArgumentError, "#{seed_file} does not mark #{character.fullname} `absent: true`" unless doctor.seeded_absences.include?(character.fullname)
+
+    character.absent!
+    "marked #{character.fullname} absent on purpose, as #{seed_file} says they are"
+  end
+
+  # The checked-in file for this story, named the way `Story::Doctor` names it
+  # in its own messages -- `WorldSeed.checked_in_document` is what actually
+  # reads it, and this is only how a repair says which file it read.
+  def seed_file
+    "db/seeds/worlds/#{WorldSeed.slug(story.title)}.yml"
+  end
+
+  # THE MARKER WINS. `deliberately_absent` with a whereabouts is a row saying
+  # two things at once, and the marker is the half that is a statement about the
+  # world rather than a position: it says nobody may be offered this person to
+  # speak to. Safe because no value is invented -- the row already carries the
+  # answer, and putting them back to nowhere is what `Character#absent!` is.
+  #
+  # `Character#move_to!` is what UNDOES this deliberately: it clears the marker
+  # when it places somebody, so an engine mechanic that brings them back leaves
+  # a row this never sees.
+  def repair_deliberate_absence(finding)
+    character = finding.subject
+    room = character.location&.name
+
+    character.absent!
+    "took #{character.fullname} out of #{room.inspect} and back to nowhere, which the record says is deliberate"
   end
 
   # PUTS ONE ITEM IN THE HANDS THAT PICKED IT UP, out of `Item::InventoryBackfill`

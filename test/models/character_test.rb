@@ -460,6 +460,45 @@ class CharacterTest < ActiveSupport::TestCase
     assert_predicate character.reload, :nowhere?
   end
 
+  # NOWHERE ON PURPOSE: the state a seed file asserts with `absent: true`, told
+  # apart from the nowhere nobody meant so that `rake game:doctor` can report
+  # one and stay quiet about the other.
+  test "absent! is nowhere and meant, and reads as such" do
+    character = create(:character, story: @story, location: create(:location, story: @story))
+
+    character.absent!
+
+    assert_predicate character, :nowhere?
+    assert_predicate character, :absent?
+    assert_equal "nowhere on purpose", character.whereabouts
+    assert_includes Character.deliberately_absent, character
+  end
+
+  # An engine mechanic that brings somebody back is the story's business, and a
+  # person standing in a room is not absent from the world.
+  test "move_to! a room clears the deliberate absence, and move_to! nil does not" do
+    room = create(:location, story: @story)
+    character = create(:character, story: @story)
+    character.absent!
+
+    character.move_to!(room)
+    assert_not_predicate character.reload, :deliberately_absent?
+
+    character.absent!
+    character.move_to!(nil)
+    assert_predicate character.reload, :deliberately_absent?, "taking somebody off the map does not decide why"
+  end
+
+  # Both halves are asked, because the marker and the column can contradict each
+  # other and `Story::Doctor` reports that rather than picking a winner.
+  test "a marked character standing somewhere is not absent" do
+    character = create(:character, story: @story, location: create(:location, story: @story))
+    character.update_column(:deliberately_absent, true)
+
+    assert_not_predicate character, :absent?
+    assert_predicate character, :deliberately_absent?
+  end
+
   # A whereabouts pointing into another world is a row no closed set can offer,
   # because `Character.present_in` is always asked about one story's rooms.
   test "a character cannot stand in another story's room" do

@@ -208,6 +208,58 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_predicate result, :repaired?
     assert_equal "The Tide Post", neb.reload.location.name
   end
+
+  # THE ONE-TIME PATH for a database seeded before `characters.deliberately_absent`
+  # existed: the file says `absent: true`, so nowhere on purpose is on record in
+  # the repository and writing the marker costs nothing.
+  test "marks a seeded character the world file says is absent on purpose" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    perrin = story.characters.find_by(fullname: "Perrin Lasco")
+    perrin.update_column(:deliberately_absent, false)
+    repair = Story::Repair.new(story)
+
+    assert_equal [ :character_absent_in_the_seed ], repair.plan.map(&:code)
+    assert_equal 0, repair.model_calls
+
+    result = BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) { repair.apply!.sole }
+
+    assert_predicate result, :repaired?
+    assert_predicate perrin.reload, :absent?
+    assert_predicate Story::Doctor.new(story), :healthy?
+  end
+
+  # THE MARKER WINS over a whereabouts, the same way the file wins over a moved
+  # character: it is the world's own statement that nobody may be offered this
+  # person to speak to.
+  test "puts a character marked absent on purpose back to nowhere" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    perrin = story.characters.find_by(fullname: "Perrin Lasco")
+    perrin.update_column(:location_id, story.locations.first.id)
+    repair = Story::Repair.new(story)
+
+    assert_equal [ :character_absent_but_somewhere ], repair.plan.map(&:code)
+
+    result = repair.apply!.sole
+
+    assert_predicate result, :repaired?
+    assert_predicate perrin.reload, :absent?
+  end
+
+  # The same finding with the other answer: `character_moved_from_the_seed` can
+  # arrive about a character the file marks absent rather than places, and both
+  # halves are the file's own statement written back.
+  test "puts a character the file marks absent back to nowhere from a room" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    perrin = story.characters.find_by(fullname: "Perrin Lasco")
+    perrin.update_columns(deliberately_absent: false, location_id: story.locations.first.id)
+    repair = Story::Repair.new(story)
+
+    assert_equal [ :character_moved_from_the_seed ], repair.plan.map(&:code)
+
+    assert_predicate repair.apply!.sole, :repaired?
+    assert_predicate perrin.reload, :absent?
+  end
+
   # THE ANSWER IS ON RECORD IN THE TURN LOG: `scenes.resolved_action` and
   # `scenes.acted_on` say which turn took the row, and a turn belongs to one
   # playthrough. So attributing a shared inventory costs no model call.

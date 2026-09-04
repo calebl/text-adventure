@@ -26,6 +26,11 @@
 # `talk` resolves against, so a person put in the wrong room is somebody the
 # player can speak to who is not there.
 #
+# SOMEBODY ABSENT ON PURPOSE IS SKIPPED TOO. `characters.deliberately_absent`
+# is the file saying nowhere is the story (`The Unrecorded Hour` about Perrin
+# Lasco), so an old arrival cast that names them is evidence this must not act
+# on: it would undo a premise and write a row that says both things at once.
+#
 # THE PROTAGONIST AND COMPANIONS ARE SKIPPED, because their whereabouts is not
 # this column: the party is wherever the playthrough is
 # (`playthroughs.current_location_id`), and two people playing one world stand
@@ -63,8 +68,15 @@ class Character::WhereaboutsBackfill
   end
 
   # Everybody this could speak for: nowhere, and not the party.
+  #
+  # NOWHERE ON PURPOSE IS NOT A GAP. `characters.deliberately_absent` is a
+  # world's own statement that this person has been removed from it, and an old
+  # arrival cast that happens to name them is exactly the evidence that must
+  # not win -- `Character::Registry` refuses to place them for the same reason.
+  # Recovering a room for them would undo a premise, and it would write a row
+  # that says both things at once.
   def candidates
-    story.characters.nowhere.where(is_protagonist: false)
+    story.characters.nowhere.where(deliberately_absent: false).where(is_protagonist: false)
          .where(is_companion: [ false, nil ]).order(:id).to_a
   end
 

@@ -438,6 +438,75 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_predicate story.characters.find_by(fullname: "Vesper Aal"), :nowhere?
   end
 
+  # `absent: true` IS THE FILE SAYING IT MEANT NOWHERE. Without it, nowhere is
+  # reported by `rake game:doctor` as somebody nobody can speak to -- which is
+  # right for a character nobody placed and wrong for `The Unrecorded Hour`,
+  # whose premise is that Perrin Lasco has been removed from the world.
+  test "a character the file marks absent is nowhere on purpose" do
+    marked = document
+    marked["characters"].last.delete("location")
+    marked["characters"].last["absent"] = true
+
+    story = WorldSeed::Loader.new(marked).load!
+    corbel = story.characters.find_by(fullname: "Corbel Ashe")
+
+    assert_predicate corbel, :deliberately_absent?
+    assert_predicate corbel, :absent?
+    assert_nil corbel.location
+  end
+
+  # A missing key still means "nobody has said where they are", which is the
+  # state the doctor reports. The marker is the only thing that means the other
+  # one, so a file that does not carry it does not assert it.
+  test "a character the file leaves unmarked is not absent on purpose" do
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_not_predicate story.characters.find_by(fullname: "Vesper Aal"), :deliberately_absent?
+  end
+
+  # BOTH DIRECTIONS, on the same "the file re-asserts itself over a played
+  # world" rule the placements, the connections and the items follow: deleting
+  # the marker from the file and re-seeding takes it off the record.
+  test "re-seeding without the marker clears it" do
+    marked = document
+    marked["characters"].last.delete("location")
+    marked["characters"].last["absent"] = true
+    story = WorldSeed::Loader.new(marked).load!
+    corbel = story.characters.find_by(fullname: "Corbel Ashe")
+    assert_predicate corbel, :deliberately_absent?
+
+    WorldSeed::Loader.new(document).load!
+
+    assert_not_predicate corbel.reload, :deliberately_absent?
+    assert_equal "The Closet", corbel.location.name
+  end
+
+  # Re-seeding re-asserts the absence too, for the same reason it re-asserts a
+  # placement: the file is the decision.
+  test "re-seeding puts a character the file marks absent back to nowhere" do
+    marked = document
+    marked["characters"].last.delete("location")
+    marked["characters"].last["absent"] = true
+    story = WorldSeed::Loader.new(marked).load!
+    corbel = story.characters.find_by(fullname: "Corbel Ashe")
+    corbel.move_to!(story.locations.find_by(name: "The Hallway"))
+
+    WorldSeed::Loader.new(marked).load!
+
+    assert_predicate corbel.reload, :absent?
+  end
+
+  # A file that means both things at once, and the record cannot hold both: the
+  # marker says nobody may be offered this person to talk to and the location
+  # says they are in that room's closed set.
+  test "rejects a character the file marks absent and also places" do
+    contradictory = document
+    contradictory["characters"].last["absent"] = true
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(contradictory).load! }
+    assert_match(/Corbel Ashe.*`absent: true` and also placed in "The Closet"/, error.message)
+  end
+
   # An item is matched on (story, name) and not on its owner precisely because
   # it moves; a character's whereabouts is re-asserted for the same reason. The
   # file is the decision, so re-seeding puts a played world's cast back.

@@ -19,6 +19,12 @@
 #   somebody already somewhere else  left exactly where they are. The proposal
 #                                    is evidence about a room, never authority
 #                                    over a person.
+#   somebody absent on purpose       left nowhere. `characters.deliberately_absent`
+#                                    is a world's own statement that this person
+#                                    has been removed from it -- The Unrecorded
+#                                    Hour's whole premise about Perrin Lasco --
+#                                    so placement would undo the premise as a
+#                                    side effect of describing a room.
 #   a room already at its cap        `MAX_PER_ROOM`, read back from the records
 #                                    on every admission the way both of
 #                                    `Item::Registry`'s caps are.
@@ -307,6 +313,16 @@ class Character::Registry
   # names somebody already standing somewhere else should read as "he is at the
   # post", not as "the room is full".
   def refusal(character)
+    # NOWHERE ON PURPOSE IS NOT AN EMPTY SLOT. The second half of the rule this
+    # class exists for: it places somebody who is nowhere, it never moves
+    # somebody who is not, AND it never places somebody whose absence is the
+    # world's premise. `The Unrecorded Hour` is about Perrin Lasco having been
+    # removed from it, so a realization that named him would put him back into
+    # the game as a side effect of describing a room. `Character#move_to!` is
+    # the explicit call for a mechanic that MEANS to bring him back, and it
+    # clears the marker when it does.
+    return "#{character.pronoun_forms.subject} is absent from this world on purpose, and a proposal does not undo that" if character.deliberately_absent?
+
     if character.somewhere?
       return nil if character.location_id == location.id
 
