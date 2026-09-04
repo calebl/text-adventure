@@ -60,6 +60,16 @@
         <% end %>
       </div>
 
+      <%# WHAT IS HERE TO PICK UP AND WHAT HE ALREADY HAS -- straight off `Item`,
+          in the wording and the order `rake game:mechanics` prints them, so the
+          two surfaces read alike. These are also the two closed sets `take` and
+          `drop` resolve against; see the classifier section below. %>
+      <div class="k">lying here</div>
+      <div class="v"><%= debug_value(@debug.candidate_items.map { |item| "#{item.name} [##{item.id}]" }.to_sentence.presence, absent: "nothing to pick up") %></div>
+
+      <div class="k">carrying</div>
+      <div class="v"><%= debug_value(@debug.candidate_carried.map { |item| "#{item.name} [##{item.id}]" }.to_sentence.presence, absent: "carrying nothing") %></div>
+
       <div class="k">parent location</div>
       <div class="v"><%= debug_value(place.parent_location&.name, absent: "none — nothing sets containment yet") %></div>
     </div>
@@ -141,6 +151,12 @@
 
     <div class="k">people offered</div>
     <div class="v"><%= debug_value(@debug.candidate_cast.map(&:fullname).to_sentence.presence, absent: "nobody — no talk can be classified here") %></div>
+
+    <div class="k">items offered</div>
+    <div class="v"><%= debug_value(@debug.candidate_items.map(&:name).to_sentence.presence, absent: "nothing — no take can be classified here") %></div>
+
+    <div class="k">carried offered</div>
+    <div class="v"><%= debug_value(@debug.candidate_carried.map(&:name).to_sentence.presence, absent: "nothing — no drop can be classified here") %></div>
 
     <div class="k">intents</div>
     <div class="v"><code><%= Playthrough::IntentSchema::INTENTS.join(" · ") %></code> &mdash; only <code>move</code> and <code>talk</code> have a branch that acts</div>
