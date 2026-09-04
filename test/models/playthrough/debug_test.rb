@@ -160,7 +160,7 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
   # quietly showing a set the model is not offered.
   test "the enum carries what is lying here and what is carried, as the classifier has them" do
     playthrough = create(:playthrough, :started)
-    lantern = create(:item, :lying, location: playthrough.current_location, name: "A cracked lantern")
+    lantern = lying_here(playthrough, playthrough.current_location, name: "A cracked lantern")
     ledger = create(:item, :carried, playthrough: playthrough, name: "A brass ledger")
 
     debug = Playthrough::Debug.new(playthrough)
@@ -175,7 +175,7 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
 
   test "the reconstructed prompt names the items on both sides of the seam" do
     playthrough = create(:playthrough, :started)
-    create(:item, :lying, location: playthrough.current_location, name: "A cracked lantern")
+    lying_here(playthrough, playthrough.current_location, name: "A cracked lantern")
     create(:item, :carried, playthrough: playthrough, name: "A brass ledger")
 
     prompt = Playthrough::Debug.new(playthrough).classifier_prompt("take the lantern")

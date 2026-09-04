@@ -42,11 +42,33 @@ class Item::Inscriber
   # once and never again; raises what `BaseAgent` raises, because a failed call
   # is a failed turn and a swallowed one would leave the player reading a note
   # the records still do not hold.
+  #
+  # THE WORDS GO BACK TO THE WORLD AS WELL AS TO THE THING IN THE PLAYER'S HAND,
+  # and this is the one place in the app where a turn writes the template layer.
+  # It is deliberate and it is the same category of act as `Item::Registry`
+  # writing a room's furniture during a playthrough: filling a gap in the
+  # world's record at first contact, never changing an answer the world already
+  # has. WHAT IS WRITTEN ON A NOTE IS A FACT ABOUT THE NOTE -- the whole reason
+  # the column exists -- so a world whose note said one thing to the first
+  # player and something else to the second would be exactly the drift this
+  # mechanic was built to stop, one layer up. It also means the second player's
+  # copy is born with the words (`Item::Snapshot` copies every column), so the
+  # call is paid for once per world rather than once per game.
+  #
+  # A template that already holds words is never overwritten, and a template
+  # that is gone -- an instance whose world row was deleted -- simply has
+  # nothing to write to.
   def inscribe!
     return nil unless item.readable?
     return item.inscription if item.inscription.present?
 
-    item.update!(inscription: written_words)
+    words = written_words
+
+    Item.transaction do
+      item.update!(inscription: words)
+      item.template&.update!(inscription: words) if item.template&.readable? && item.template.inscription.blank?
+    end
+
     item.inscription
   end
 
@@ -134,8 +156,11 @@ class Item::Inscriber
     "where it is: #{item.whereabouts}\n#{place.name}: #{place.description.presence || place.teaser}"
   end
 
+  # A carried instance is in no room and in nobody's hands, so the playthrough
+  # is the only thing left that knows which world it belongs to. Read last
+  # rather than first, because a row's own place is the more direct answer.
   def story
-    @story ||= item.location&.story || item.character&.story
+    @story ||= item.location&.story || item.character&.story || item.playthrough&.story
   end
 
   def story_context

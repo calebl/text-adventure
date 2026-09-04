@@ -20,15 +20,23 @@
 #                        `Location::ExitsSchema::MAX_EXITS`. `Make the exit cap
 #                        a cap on the room, not on one answer` (9c55969) was a
 #                        room that came back with five.
-#   items_accounted      every item is in exactly one place -- held by somebody
-#                        or lying somewhere, never both and never neither -- and
-#                        the world still has the same items it started with.
-#                        `take` and `drop` move a row, and a row that moved to
-#                        nowhere is how an item disappears from a game. "The
-#                        same items" is exact rather than a floor because
-#                        `Item::Registry` writes only at realization, which this
-#                        mode cannot reach: a walk that gained an item would
-#                        mean something else had started making them.
+#   items_accounted      every item is in one place -- held by somebody or lying
+#                        somewhere, never both -- one of the world's own rows is
+#                        never in neither, and the world still has the same
+#                        items it started with. `take` and `drop` move a row,
+#                        and a row that moved to nowhere is how an item
+#                        disappears from a game. Since the captain's ruling of
+#                        2026-09-04 "neither" is a place for a playthrough's own
+#                        copy -- the party's hands -- so that half is asked of
+#                        the world layer alone.
+#   world_items_unmoved  every one of THE WORLD'S OWN rows is lying in the room
+#                        the file lays it in. A typed line may carry one game's
+#                        copy of the ward stamp anywhere it likes; it may not
+#                        touch the row the next game copies from. This is the
+#                        item half of `cast_unmoved`, and before the ruling it
+#                        could not have been written at all: `take` moved the
+#                        world's only row, so walking into a room and picking
+#                        something up emptied it for everybody.
 #   cast_unmoved         every character is standing exactly where the world
 #                        file put them, and anybody the file left nowhere is
 #                        still nowhere. `characters.location_id` is the closed
@@ -83,7 +91,7 @@ class EngineSweep::Invariants
   end
 
   def check
-    [ doors_unchanged, exit_cap, items_accounted, cast_unmoved, nothing_was_written ].flatten.compact
+    [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, nothing_was_written ].flatten.compact
   end
 
   private
@@ -120,29 +128,71 @@ class EngineSweep::Invariants
            over.map { |room| "#{room.name} leads #{room.exits.size} ways out, and the cap is #{Location::ExitsSchema::MAX_EXITS}" }.join("; "))
   end
 
-  # An item is reachable through the person holding it, the party carrying it or
-  # the room it is lying in, and through nothing else -- `Item` has no story of
-  # its own. Which is what makes this check work in both directions at once: an
-  # item holding two of the three owners is found and named by `astray`, and an
-  # item that ended up holding NONE of them is found by nobody, so it shows up
-  # as gone from the world in `missing`.
+  # An item is reachable through the person holding it, the room it is lying in
+  # or the playthrough whose copy it is, and through nothing else -- `Item` has
+  # no story of its own. Which is what makes this check work in both directions
+  # at once: a row holding both of its places is found and named by `astray`,
+  # and a row that ended up holding none of them AND belonging to no game is
+  # found by nobody, so it shows up as gone from the world in `missing`.
   def items_now
     Item.in_story(story).to_a
   end
 
-  # `missing` is by NAME and the file's protagonist items now exist twice over
-  # -- once as the story's starting inventory and once in the party's hands --
-  # so a name found on either side is accounted for.
+  # THREE STATEMENTS, ONE PER LAYER AND ONE ABOUT THE FILE.
+  #
+  # `astray` is both layers: an item lying in a room and in a pair of hands
+  # together is takeable and already taken, whoever it belongs to.
+  #
+  # `homeless` is the WORLD LAYER only, and it is where the layers part. One of
+  # the world's own rows in neither place is a row no closed set can ever offer;
+  # a playthrough's own copy in neither place is in the party's hands, which is
+  # the most ordinary state there is. See `Item#in_exactly_one_place`.
+  #
+  # `missing` is by NAME, and every name in the file now exists at least twice
+  # over since the captain's ruling of 2026-09-04 -- once as the world's own row
+  # and once per game that has walked past it -- so a name found anywhere is
+  # accounted for. It is what would catch a walk that DESTROYED one of the
+  # world's things, which no typed line may do.
   def items_accounted
     items = items_now
     astray = items.select { |item| Item::PLACES.count { |place| item[place].present? } > 1 }
+    homeless = items.select { |item| item.template? && Item::PLACES.none? { |place| item[place].present? } }
     missing = items_in_file - items.map(&:name)
 
-    return nil if astray.empty? && missing.empty?
+    return nil if astray.empty? && homeless.empty? && missing.empty?
 
     broken("items_accounted",
            [ astray.any? ? "in more than one place at once: #{astray.map(&:name).join(", ")}" : nil,
+             homeless.any? ? "one of the world's own rows in no place at all: #{homeless.map(&:name).join(", ")}" : nil,
              missing.any? ? "in no place at all: #{missing.join(", ")}" : nil ].compact.join(", "))
+  end
+
+  # WHAT THE WORLD STILL HAS, whoever has been playing it. Every one of the
+  # world's own rows is where the file put it and nowhere else: a typed line may
+  # move one game's COPY of the ward stamp anywhere it likes, and may not touch
+  # the row the next game copies from. It is the item half of `cast_unmoved`,
+  # and it is the invariant the captain's ruling of 2026-09-04 turned from a
+  # wish into a statement -- before it, `take` moved the world's only row and
+  # this could not have been written.
+  def world_items_unmoved
+    moved = story.locations.flat_map { |room| Item.lying_in(room).templates.to_a }.filter_map do |item|
+      wanted = items_in_file_by_name[item.name]
+      next if wanted.nil? || wanted == item.location&.name
+
+      "#{item.name} is #{item.whereabouts} and the file says in #{wanted}"
+    end
+    return nil if moved.empty?
+
+    broken("world_items_unmoved", moved.join("; "))
+  end
+
+  # `{ name => the room the file puts it in }`, for the things the file lays in
+  # rooms. Something the file gives a CHARACTER is not in here: a template held
+  # by somebody has no room to be checked against.
+  def items_in_file_by_name
+    @items_in_file_by_name ||= Array(seed["locations"]).flat_map do |room|
+      Array(room["items"]).map { |item| [ item["name"], room["name"] ] }
+    end.to_h
   end
 
   def items_in_file

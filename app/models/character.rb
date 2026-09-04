@@ -19,7 +19,7 @@
 # him.
 #
 # `Character.present_in(location)` IS THE CLOSED SET, the same way
-# `Item.lying_in(location)` is the one `take` resolves against.
+# `Playthrough#items_lying_in(location)` is the one `take` resolves against.
 # `Playthrough::Classifier#characters_here` reads it, `Playthrough::Moment#others`
 # reads it, `Playthrough::Mechanics`'s `present` line reads it, and the arrival
 # cast a `Scene` records is written FROM it rather than the other way round.
@@ -230,11 +230,16 @@ class Character < ApplicationRecord
   scope :companions, -> { where(is_companion: true) }
 
   # THE CLOSED SET `talk` RESOLVES AGAINST: the people the records place in this
-  # room. The exact counterpart of `Item.lying_in`, and read through
+  # room. The exact counterpart of `Playthrough#items_lying_in`, and read through
   # `Scene::Generator.characters_present` by everything that asks who is here.
   #
+  # WHO IS IN A ROOM IS THE WORLD'S and stays story-level, which is where the
+  # two part company: since the captain's ruling of 2026-09-04 each playthrough
+  # holds its own copy of what is LYING in a room, and the people standing in it
+  # are shared exactly as the room itself is.
+  #
   # Ordered by id so two people in one room are offered in a stable order --
-  # the same reason `Item.lying_in` is ordered where it is read.
+  # the same reason a game's own floor is ordered where it is read.
   scope :present_in, ->(location) { where(location: location).order(:id) }
 
   # Nobody has said where they are. Honest, and reported rather than repaired:

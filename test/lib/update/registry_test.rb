@@ -20,16 +20,18 @@ class Update::RegistryTest < ActiveSupport::TestCase
     assert_equal keys.uniq, keys
   end
 
-  # NOT A PREFERENCE. `Item::InventoryBackfill` reads `Scene#took?`, which needs
-  # both columns `Scene::TransitionBackfill` writes; run the other way round,
-  # every take in an older database is invisible and every held item reads as
-  # unrecoverable -- which is the outcome that puts things down on the floor.
-  test "the transitions backfill runs before the inventory backfill" do
-    assert_operator index_of(Update::Steps::BackfillTransitions), :<, index_of(Update::Steps::BackfillInventory)
+  # NOT A PREFERENCE. `Item::LayerBackfill` reads `Scene#took?`, which needs both
+  # columns `Scene::TransitionBackfill` writes, and `scenes.location_id` to know
+  # which room to put one of the world's own rows back in; run the other way
+  # round, every take in an older database is invisible, every row a player
+  # carried off reads as one of the world's own, and the rooms those things came
+  # out of stay empty for everybody.
+  test "the transitions backfill runs before the item backfill" do
+    assert_operator index_of(Update::Steps::BackfillTransitions), :<, index_of(Update::Steps::BackfillItems)
   end
 
   # `Story::Repair`'s safe remedies act on findings the backfills remove --
-  # `protagonist_holds_a_taken_item` is literally one item of the inventory
+  # `protagonist_holds_a_taken_item` is literally one item of the item
   # backfill's work. Repairing first spends the findings and then the backfill
   # reports them again.
   test "every backfill runs before the repairs" do

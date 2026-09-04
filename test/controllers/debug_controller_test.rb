@@ -354,7 +354,7 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
   test "the room section shows what is carried and what is lying here" do
     playthrough = played_playthrough
     create(:item, :carried, playthrough: playthrough, name: "A brass ledger")
-    create(:item, :lying, location: playthrough.current_location, name: "A cracked lantern")
+    lying_here(playthrough, playthrough.current_location, name: "A cracked lantern")
 
     get playthrough_debug_path(playthrough)
 
@@ -371,7 +371,7 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
   # `inscription_misquoted` catches it by rule.
   test "the room section shows what is written on a readable thing" do
     playthrough = played_playthrough
-    create(:item, :lying, :readable, location: playthrough.current_location, name: "A folded note")
+    lying_here(playthrough, playthrough.current_location, :readable, name: "A folded note")
 
     get playthrough_debug_path(playthrough)
 
@@ -382,8 +382,8 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
 
   test "a readable thing nobody has read yet says so on the page" do
     playthrough = played_playthrough
-    create(:item, :lying, :readable, :unwritten, location: playthrough.current_location,
-           name: "A folded note")
+    lying_here(playthrough, playthrough.current_location, :readable, :unwritten,
+               name: "A folded note")
 
     get playthrough_debug_path(playthrough)
 
@@ -393,7 +393,7 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
 
   test "a thing with no writing on it gets no line of its own" do
     playthrough = played_playthrough
-    create(:item, :lying, location: playthrough.current_location, name: "A cracked lantern")
+    lying_here(playthrough, playthrough.current_location, name: "A cracked lantern")
 
     get playthrough_debug_path(playthrough)
 

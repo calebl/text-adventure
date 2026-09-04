@@ -167,15 +167,26 @@ class Item::RegistryTest < ActiveSupport::TestCase
     assert_equal Item::Registry::MAX_PER_STORY, Item::Registry.new(@room).story_items.count
   end
 
-  # A ROOM ITEM A PLAYER IS HOLDING IS STILL IN THE WORLD: `take` moves the row
-  # from `location_id` to `playthrough_id`, and a count that could not see it
-  # would let the registry furnish this world past its own ceiling one pickup at
-  # a time.
-  test "counts what a party is carrying against the world cap" do
+  # BOTH CAPS BOUND THE WORLD AND NOT ANY GAME. A player's own copy of a thing
+  # is not a second thing in the world -- since the captain's ruling of
+  # 2026-09-04 a take moves that player's copy and the world's own row never
+  # leaves the room -- so counting instances would spend a world's budget of
+  # sixty on the same sixty things once per player.
+  test "what a party is carrying costs the world cap nothing" do
     played = create(:playthrough, story: @story)
     create(:item, :carried, playthrough: played, name: "a thing in the player's hands")
 
-    assert_equal Item::Registry::MAX_PER_STORY - 1, Item::Registry.new(@room).world_for_items
+    assert_equal Item::Registry::MAX_PER_STORY, Item::Registry.new(@room).world_for_items
+  end
+
+  # And the room's cap is the same statement one room down: three things may be
+  # lying in it, however many parties have each taken their own copy of them.
+  test "a party's own copy on the floor costs the room cap nothing" do
+    played = create(:playthrough, story: @story)
+    create(:item, :lying, location: @room, name: "the world's own oar")
+    create(:item, playthrough: played, location: @room, character: nil, name: "a copy of the oar")
+
+    assert_equal Item::Registry::MAX_PER_ROOM - 1, Item::Registry.new(@room).room_for_items
   end
 
   # THE CAP IS ON THE ONTOLOGY -- how many distinct things exist here -- and

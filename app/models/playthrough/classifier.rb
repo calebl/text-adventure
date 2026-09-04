@@ -165,19 +165,23 @@ class Playthrough::Classifier
   end
 
   # WHAT THE PLAYER CAN PICK UP: the items the records say are lying in this
-  # room, which is the whole of it. Not what anybody here is holding -- taking
-  # something off a person is a different act, with somebody on the other side
-  # of it who has an opinion, and no record says how that goes.
+  # room, IN THIS GAME. Not what anybody here is holding -- taking something off
+  # a person is a different act, with somebody on the other side of it who has
+  # an opinion, and no record says how that goes.
+  #
+  # THIS PLAYTHROUGH'S OWN FLOOR, asked of `Playthrough#items_lying_in`, and
+  # that is the captain's ruling of 2026-09-04: the world's own row is the
+  # template a game copies from, and what a party picks up off the floor is gone
+  # from ITS floor and nobody else's. It used to read `Item.lying_in` flat, so a
+  # room one player emptied was empty for every other play of that world.
   #
   # An empty list is still a normal answer -- most rooms hold nothing -- but it
   # is no longer the only one a generated room can give. `Item::Registry` writes
-  # what is lying here when the room is realized, so this set fills itself with
-  # no change at this end of the seam.
+  # what is lying here when the room is realized and `Item::Snapshot` copies it
+  # into this game, so this set fills itself with no change at this end of the
+  # seam.
   def items_here
-    location = playthrough.current_location
-    return [] if location.nil?
-
-    Item.lying_in(location).order(:id).to_a
+    playthrough.items_lying_in(playthrough.current_location).to_a
   end
 
   # WHAT THE PLAYER IS CARRYING, which is the closed set `drop` resolves
@@ -187,7 +191,7 @@ class Playthrough::Classifier
   # confidently a narration once said they picked it up.
   #
   # THE ANSWER BELONGS TO THE PLAYTHROUGH, asked of `Playthrough#carried` --
-  # the exact counterpart of `#items_here` reading `Item.lying_in`. It used to
+  # the exact counterpart of `#items_here` reading `#items_lying_in`. It used to
   # be `Item.for_character(playthrough.character)`, and since every playthrough
   # of a story plays the same one protagonist row, one world had one inventory:
   # a second player opened holding the first one's loot.

@@ -134,7 +134,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # does not move it, so neither the floor nor the hands is the wrong one -- and
   # `Playthrough::Turn#read_item` is what is on the other side of the seam.
   test "an examine resolves to a thing lying here" do
-    note = create(:item, :lying, location: @here, name: "folded note")
+    note = lying_here(@playthrough, @here, name: "folded note")
 
     intent, = classify({ "intent" => "examine", "target" => "folded note" })
 
@@ -156,7 +156,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # and the order `Playthrough::Moment` states them to the narrator. With two
   # things of one name it resolves the nearer one, stably.
   test "two things of one name resolve to the one lying here" do
-    here = create(:item, :lying, location: @here, name: "folded note")
+    here = lying_here(@playthrough, @here, name: "folded note")
     create(:item, :carried, playthrough: @playthrough, name: "folded note")
 
     intent, = classify({ "intent" => "examine", "target" => "folded note" })
@@ -165,7 +165,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "both item sets are offered to an examine, and each name once" do
-    create(:item, :lying, location: @here, name: "folded note")
+    lying_here(@playthrough, @here, name: "folded note")
     create(:item, :carried, playthrough: @playthrough, name: "the daybook")
 
     _intent, agent = classify({ "intent" => "examine", "target" => "folded note" })
@@ -260,8 +260,8 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # whole rather than half-played -- and the count did not; see
   # `Playthrough::Overreach`.
   test "a collective word answered as the first thing is an overreach and not drift" do
-    index = create(:item, :lying, location: @here, name: "Perrin's private index")
-    create(:item, :lying, location: @here, name: "copy-room apron")
+    index = lying_here(@playthrough, @here, name: "Perrin's private index")
+    lying_here(@playthrough, @here, name: "copy-room apron")
 
     assert_difference "Playthrough::Overreach.count", 1 do
       assert_no_difference "Playthrough::Drift.count" do
@@ -278,7 +278,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # set each action reads is the part worth pinning: `drop everything` and `put
   # down everything` both answer out of the player's hands, never the floor.
   test "a collective drop resolves out of the player's hands and is an overreach" do
-    create(:item, :lying, location: @here, name: "copy-room apron")
+    lying_here(@playthrough, @here, name: "copy-room apron")
     sextant = create(:item, :carried, playthrough: @playthrough, name: "brass sextant")
     create(:item, :carried, playthrough: @playthrough, name: "chart tube")
 
@@ -319,7 +319,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # --- resolving a take -----------------------------------------------------
 
   test "a take resolves to the item record lying in this room" do
-    key = create(:item, :lying, location: @here, name: "Brass Key")
+    key = lying_here(@playthrough, @here, name: "Brass Key")
 
     intent, = classify({ "intent" => "take", "target" => "Brass Key" })
 
@@ -330,7 +330,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "an item is resolved by name regardless of case" do
-    key = create(:item, :lying, location: @here, name: "Brass Key")
+    key = lying_here(@playthrough, @here, name: "Brass Key")
 
     intent, = classify({ "intent" => "take", "target" => "brass key" })
 
@@ -338,7 +338,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "what is lying here is offered by name" do
-    create(:item, :lying, location: @here, name: "Brass Key")
+    lying_here(@playthrough, @here, name: "Brass Key")
 
     _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
 
@@ -366,7 +366,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
 
   test "an item lying in another room is not offered" do
     elsewhere = create(:location, story: @story, name: "The Bell of Saint Aravel")
-    create(:item, :lying, location: elsewhere, name: "Iron Ledger")
+    lying_here(@playthrough, elsewhere, name: "Iron Ledger")
 
     _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
 
@@ -377,7 +377,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # The enum makes this unreachable in production; the test is here because the
   # resolution is the seam that decides what the player is carrying.
   test "a name that was never offered resolves to no item at all" do
-    create(:item, :lying, location: @here, name: "Brass Key")
+    lying_here(@playthrough, @here, name: "Brass Key")
 
     intent, = classify({ "intent" => "take", "target" => "Skeleton Key" })
 
@@ -388,7 +388,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   test "the item names are in the schema's closed enum alongside exits and cast" do
     connect("The Sunken Stair")
     stands_here("Maren Vosk")
-    create(:item, :lying, location: @here, name: "Brass Key")
+    lying_here(@playthrough, @here, name: "Brass Key")
 
     _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
     enum = json_schema_body(agent.schemas.first)["properties"]["target"]["enum"]
@@ -441,7 +441,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "an item lying on the floor is not something the player can drop" do
-    create(:item, :lying, location: @here, name: "Brass Key")
+    lying_here(@playthrough, @here, name: "Brass Key")
 
     intent, = classify({ "intent" => "drop", "target" => "Brass Key" })
 
@@ -452,7 +452,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # one place -- so the same name in both lists means two different rows, and
   # each action resolves against its own list.
   test "take and drop resolve against their own lists" do
-    floor = create(:item, :lying, location: @here, name: "Brass Key")
+    floor = lying_here(@playthrough, @here, name: "Brass Key")
     carried = create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     taken, = classify({ "intent" => "take", "target" => "Brass Key" })
@@ -512,7 +512,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "a take that resolved to nothing is counted, offering what was lying here" do
-    create(:item, :lying, location: @here, name: "Brass Key")
+    lying_here(@playthrough, @here, name: "Brass Key")
 
     assert_difference "Playthrough::Drift.count", 1 do
       classify({ "intent" => "take", "target" => "nothing" }, command: "pick up the silver locket")
@@ -553,7 +553,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # the floor; counting it would make the drift number a number about how people
   # look around rather than about what the world does not have.
   test "examine and other reach for no record, so they cannot miss one" do
-    create(:item, :lying, location: @here, name: "folded note")
+    lying_here(@playthrough, @here, name: "folded note")
 
     assert_no_difference "Playthrough::Drift.count" do
       classify({ "intent" => "examine", "target" => "nothing" })
@@ -579,8 +579,8 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # and `Playthrough::Turn` and `Playthrough::Mechanics` both read this one
   # method rather than each working it out again.
   test "the three refusable shapes are refused and nothing else is" do
-    index = create(:item, :lying, location: @here, name: "Perrin's private index")
-    apron = create(:item, :lying, location: @here, name: "copy-room apron")
+    index = lying_here(@playthrough, @here, name: "Perrin's private index")
+    apron = lying_here(@playthrough, @here, name: "copy-room apron")
 
     two, = classify({ "intent" => "take", "target" => index.name, "also_named" => apron.name })
     assert_predicate two, :refused?
@@ -614,7 +614,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # named and narrated the raw line -- so a provider ignoring a closed enum
   # looked exactly like a player musing about the weather.
   test "an intent outside the table that named a record is unreadable" do
-    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+    index = lying_here(@playthrough, @here, name: "Perrin's private index")
 
     intent, = classify({ "intent" => "steal", "target" => index.name, "also_named" => "nothing" })
 
@@ -637,7 +637,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # Neither counter fires: an unreadable answer is a defect on our side, not a
   # reach on the player's, and adding it to either number would corrupt both.
   test "an unreadable answer is counted as neither drift nor overreach" do
-    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+    index = lying_here(@playthrough, @here, name: "Perrin's private index")
 
     assert_no_difference [ "Playthrough::Drift.count", "Playthrough::Overreach.count" ] do
       classify({ "intent" => "steal", "target" => index.name, "also_named" => "nothing" })
@@ -652,7 +652,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   test "offered_for hands back the same four sets the prompt was built from" do
     stair = connect("The Sunken Stair")
     rowe = stands_here("Halkett Rowe")
-    lying = create(:item, :lying, location: @here, name: "ward stamp")
+    lying = lying_here(@playthrough, @here, name: "ward stamp")
     held = create(:item, :carried, playthrough: @playthrough, name: "daybook")
     classifier = Playthrough::Classifier.new(@playthrough)
 
@@ -685,8 +685,8 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # name out of the same closed set, through the same matcher.
 
   test "a second thing named in the same line is resolved, and is not the target" do
-    index = create(:item, :lying, location: @here, name: "Perrin's private index")
-    apron = create(:item, :lying, location: @here, name: "copy-room apron")
+    index = lying_here(@playthrough, @here, name: "Perrin's private index")
+    apron = lying_here(@playthrough, @here, name: "copy-room apron")
 
     intent, = classify({ "intent" => "take", "target" => "Perrin's private index", "also_named" => "copy-room apron" },
                        command: "pickup the index and the apron")
@@ -697,7 +697,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "the second name resolves against the same closed set as the action" do
-    create(:item, :lying, location: @here, name: "Perrin's private index")
+    lying_here(@playthrough, @here, name: "Perrin's private index")
     carried = create(:item, :carried, playthrough: @playthrough, name: "Ward Office 12 daybook")
 
     intent, = classify({ "intent" => "take", "target" => "Perrin's private index", "also_named" => carried.name })
@@ -737,8 +737,8 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # they are one thing to a player typing the name -- the same rule, arrived at
   # from the other direction. See Playthrough::Classifier#find_item.
   test "two identical names in one room are one thing" do
-    create(:item, :lying, location: @here, name: "ward stamp")
-    create(:item, :lying, location: @here, name: "ward stamp")
+    lying_here(@playthrough, @here, name: "ward stamp")
+    lying_here(@playthrough, @here, name: "ward stamp")
 
     assert_no_difference "Playthrough::Overreach.count" do
       intent, = classify({ "intent" => "take", "target" => "ward stamp", "also_named" => "ward stamp" })
@@ -777,7 +777,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # the world: the player named something that is not there, rather than more
   # than the turn can do. The two never collapse into one count.
   test "a reach that resolved to nothing is drift and not an overreach" do
-    create(:item, :lying, location: @here, name: "copy-room apron")
+    lying_here(@playthrough, @here, name: "copy-room apron")
 
     intent, = classify({ "intent" => "take", "target" => "nothing", "also_named" => "copy-room apron" },
                        command: "take the cellar key and the apron")
@@ -790,8 +790,8 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # halves -- what the turn is about to do, and the thing the same line named
   # that it will not.
   test "a line that named two things is counted, with both halves on the row" do
-    index = create(:item, :lying, location: @here, name: "Perrin's private index")
-    apron = create(:item, :lying, location: @here, name: "copy-room apron")
+    index = lying_here(@playthrough, @here, name: "Perrin's private index")
+    apron = lying_here(@playthrough, @here, name: "copy-room apron")
     scene = create(:scene, story: @story, location: @here)
     @playthrough.update!(current_scene: scene)
 
@@ -810,7 +810,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "a line that named one thing is counted as nothing" do
-    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+    index = lying_here(@playthrough, @here, name: "Perrin's private index")
 
     assert_no_difference "Playthrough::Overreach.count" do
       classify({ "intent" => "take", "target" => index.name, "also_named" => "nothing" })
@@ -819,7 +819,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
 
   # The two counts are different facts about the world and never one number.
   test "a reach that found nothing is counted as drift and not as an overreach" do
-    create(:item, :lying, location: @here, name: "copy-room apron")
+    lying_here(@playthrough, @here, name: "copy-room apron")
 
     assert_difference "Playthrough::Drift.count", 1 do
       assert_no_difference "Playthrough::Overreach.count" do
@@ -843,7 +843,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
 
   test "the second name is drawn from the same closed enum as the target" do
     connect("The Sunken Stair")
-    create(:item, :lying, location: @here, name: "Brass Key")
+    lying_here(@playthrough, @here, name: "Brass Key")
 
     _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
     properties = json_schema_body(agent.schemas.first)["properties"]

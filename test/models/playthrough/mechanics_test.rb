@@ -38,9 +38,6 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     # than something read back out of a scene's cast.
     @rowe = create(:character, story: @story, fullname: "Halkett Rowe", location: @office)
 
-    @stamp = create(:item, :lying, location: @office, name: "ward stamp")
-    @index = create(:item, :lying, location: @closet, name: "Perrin's private index")
-
     # The world's opening arrival. What puts Rowe in the room is his own
     # whereabouts (`characters.location_id`, set on the factory above); the
     # scene's cast is a snapshot of that and no longer the source of it.
@@ -48,6 +45,14 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
                               description: "The gap in the daybook is still under your hand.")
     @playthrough = create(:playthrough, story: @story, character: @vance,
                                         current_location: @office, current_scene: @opening)
+
+    # WHAT IS ON THE FLOOR, IN THIS GAME. `lying_here` writes the world's own
+    # row and then takes this playthrough's copy of it, which is what the loop
+    # resolves a `take` against -- so it has to run after the playthrough
+    # exists. The closet is snapshotted here too rather than on arrival,
+    # because a test that walks in wants to assert what is waiting there.
+    @stamp = lying_here(@playthrough, @office, name: "ward stamp")
+    @index = lying_here(@playthrough, @closet, name: "Perrin's private index")
 
     # WHAT THE PLAYER HAS IS THE PLAYTHROUGH'S, not the protagonist's: this is
     # `items.playthrough_id`, the closed set `drop` resolves against. Created
@@ -127,9 +132,13 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_change report, "moved: The Supply Closet -> Ward Office 12"
     assert_equal @office, @playthrough.reload.current_location
 
-    # And the stamp stayed in the closet when she walked out of it.
+    # And the stamp stayed in the closet when she walked out of it. THE OFFICE
+    # IS EMPTY FOR HER AND NOT FOR ANYBODY ELSE: her copy of the stamp is in the
+    # closet now, and the world's own row is still lying in the office for the
+    # next game that walks in.
     assert_equal @closet, @stamp.reload.location
-    assert_empty Item.lying_in(@office)
+    assert_empty @playthrough.items_lying_in(@office)
+    assert_equal [ "ward stamp" ], Item.lying_in(@office).templates.pluck(:name)
     assert_equal [ @daybook, @index ].map(&:id).sort, @playthrough.carried.pluck(:id).sort
   end
 
@@ -266,7 +275,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     report = play("take index")
 
     assert_refusal report, "there is no thing lying here called \"index\""
-    assert_nil @index.reload.playthrough
+    refute_predicate @index.reload, :carried?
     assert_equal @closet, @index.location
   end
 
@@ -286,13 +295,13 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   end
 
   test "an ambiguous name is refused with what it matched rather than resolved to the first" do
-    create(:item, :lying, location: @office, name: "ward stamp pad")
+    lying_here(@playthrough, @office, name: "ward stamp pad")
 
     report = play("take ward")
 
     assert_refusal report, "matches more than one"
     assert_includes report.refusal, "ward stamp pad"
-    assert_nil @stamp.reload.playthrough
+    refute_predicate @stamp.reload, :carried?
   end
 
   test "a word that is not in the grammar is refused with the whole grammar" do
@@ -336,7 +345,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   # item name would be found inside any long enough sentence, which is the
   # failure a containment test invites when the typing is the longer side.
   test "a short name is not swallowed by a longer word that contains it" do
-    create(:item, :lying, location: @office, name: "key")
+    lying_here(@playthrough, @office, name: "key")
 
     assert_refusal play("take the monkey"), "there is no thing lying here"
   end
@@ -345,8 +354,8 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   # copy-room apron" holds BOTH item names, and only one of them is what was
   # typed once the article is off the front.
   test "ambiguity as typed does not hide the match the stripped name finds" do
-    create(:item, :lying, location: @office, name: "apron")
-    create(:item, :lying, location: @office, name: "copy-room apron")
+    lying_here(@playthrough, @office, name: "apron")
+    lying_here(@playthrough, @office, name: "copy-room apron")
 
     assert_change play("take the copy-room apron"), "took: copy-room apron"
   end
@@ -425,8 +434,13 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
                         furnished, { "exits" => [] }, ARRIVAL)
     assert_includes report.change, "written for the first time"
 
-    key = Item.lying_in(@hallway).sole
-    assert_equal "gas key", key.name
+    # TWO ROWS, ONE THING. `Item::Registry` wrote the world's own row when the
+    # room was realized and `Item::Snapshot` gave this game its copy on the way
+    # in, which is the order `Playthrough::Turn#move_to` makes it happen in.
+    template = Item.lying_in(@hallway).templates.sole
+    key = @playthrough.items_lying_in(@hallway).sole
+    assert_equal "gas key", template.name
+    assert_equal template, key.template
 
     # The read-out shows it, out of the same closed set the classifier reads.
     assert_includes report.state.to_s, "gas key"
@@ -434,9 +448,14 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     report, agent = interpret("pick up the gas key", CLASSIFY.call("take", "gas key"))
     assert_equal "take -> gas key", report.understood
     assert_includes report.change, "took: gas key"
-    assert_equal @playthrough, key.reload.playthrough
-    assert_nil key.location
+    assert_predicate key.reload, :carried?
+    assert_equal @playthrough, key.playthrough
     assert_equal 1, agent.prompts.count
+
+    # AND THE WORLD STILL HAS ITS OWN. A take moves one game's copy, so the
+    # hallway is furnished for the next player exactly as it was generated.
+    assert_equal @hallway, template.reload.location
+    assert_predicate template, :template?
 
     report, = interpret("put the gas key down", CLASSIFY.call("drop", "gas key"))
     assert_includes report.change, "dropped: gas key"
@@ -448,13 +467,18 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   # takeable there too -- and NO_MODEL is the mode the engine-direct tests run
   # in, so this is the path a scripted sweep walks.
   test "the offline mode takes and drops a generated thing like any other" do
-    key = Item::Registry.new(@office).admit!(
+    template = Item::Registry.new(@office).admit!(
       [ { "name" => "gas key", "description" => "A key for the gas taps." } ]
     ).sole
 
+    # The snapshot at the top of the turn is what puts this game's copy on the
+    # floor -- the registry wrote a template into a room the party is already
+    # standing in, which is the one case arrival cannot cover.
     report = play("take gas key")
     assert_change report, "took: gas key"
-    assert_equal @playthrough, key.reload.playthrough
+    key = @playthrough.carried.find_by(name: "gas key")
+    assert_equal template, key.template
+    assert_equal @office, template.reload.location
 
     report = play("drop gas key")
     assert_change report, "dropped: gas key"
@@ -695,7 +719,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     @playthrough.update!(character: nil)
 
     assert_refusal play("take stamp"), "no protagonist"
-    assert_nil @stamp.reload.playthrough
+    refute_predicate @stamp.reload, :carried?
   end
 
   test "a playthrough standing nowhere has no room to put anything down in" do
@@ -742,11 +766,15 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     end
 
     assert_equal here ? here.exits.order(:id).to_a : [], state.exits, where
-    assert_equal here ? Item.lying_in(here).order(:id).to_a : [], state.items_here, where
+    # THIS GAME'S FLOOR, not the world's. `Item.lying_in` reaches both layers,
+    # and the read-out prints the closed set `take` resolves against, which is
+    # this playthrough's own copies (`Playthrough#items_lying_in`).
+    assert_equal @playthrough.items_lying_in(here).to_a, state.items_here, where
     assert_equal @playthrough.carried.to_a, state.carried, where
 
     state.items_here.each { |item| assert_equal here, item.reload.location, where }
-    state.carried.each { |item| assert_equal @playthrough, item.reload.playthrough, where }
+    state.carried.each { |item| assert_predicate item.reload, :carried?, where }
+    state.carried.each { |item| assert_equal @playthrough, item.playthrough, where }
 
     # And the printed block names them, so a read-out cannot be right in the
     # records and wrong on the screen.
@@ -762,16 +790,16 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   # the line is refused whole and the player is asked to pick one, in the same
   # words the browser uses (`Playthrough::Refusal`).
   test "a line that names two things is refused whole and moves neither" do
-    apron = create(:item, :lying, location: @office, name: "copy-room apron")
+    apron = lying_here(@playthrough, @office, name: "copy-room apron")
 
     report, = interpret("pickup the ward stamp and the apron",
                         CLASSIFY.call("take", @stamp.name, apron.name))
 
     assert_predicate report, :refused?
     assert_not_predicate report, :changed?
-    assert_nil @stamp.reload.playthrough, "the first thing is not taken either"
+    refute_predicate @stamp.reload, :carried?, "the first thing is not taken either"
     assert_equal @office, @stamp.location
-    assert_nil apron.reload.playthrough
+    refute_predicate apron.reload, :carried?
     assert_equal @office, apron.location
 
     assert_includes report.refusal, "two things at once"
@@ -814,7 +842,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   # A READ IS AN ACT LIKE ANY OTHER, so a line naming two readable things is
   # refused before this mode recites either of them.
   test "a read that names two things is refused before it recites either" do
-    note = create(:item, :lying, location: @office, name: "folded note",
+    note = lying_here(@playthrough, @office, name: "folded note",
                                  readable: true, inscription: "Midnight. The Bell.")
 
     report, = interpret("read the note and the daybook",

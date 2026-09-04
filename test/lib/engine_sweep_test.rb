@@ -128,6 +128,12 @@ class EngineSweepTest < ActiveSupport::TestCase
   # typed, and it is here because a re-seed is what the captain does daily and
   # nothing walked it. See `EngineSweep::Script`'s header.
 
+  # A re-seed re-asserts the file over THE WORLD LAYER and reaches no game at
+  # all, so the stamp this player picked up stays in their hands and the room's
+  # own doorways are unchanged. It used to be asserted the other way round --
+  # `here: [ward stamp]`, `carrying: [daybook]` -- because before the captain's
+  # ruling of 2026-09-04 there was one row and putting the file's item back
+  # necessarily took it off whoever had it.
   test "a re-seed step puts back what the file says and creates nothing" do
     result = walk(<<~SCRIPT)
       story: The Unrecorded Hour
@@ -138,9 +144,32 @@ class EngineSweepTest < ActiveSupport::TestCase
       - reseed: true
         expect:
           changed: false
+          here: []
+          carrying: [Ward Office 12 daybook, ward stamp]
+          exits: [The Supply Closet (realized), The Long Hallway (stub)]
+    SCRIPT
+
+    assert_predicate result, :passed?, result.report
+  end
+
+  # AND THE WORLD'S OWN ROW REALLY DID GO BACK, which the walk above cannot show
+  # from inside one game: the party's floor is empty either way, because their
+  # copy is in their hands. A second player who never touched anything reads it.
+  test "a re-seed puts the world's own row back, and a second game reads it" do
+    result = walk(<<~SCRIPT)
+      story: The Unrecorded Hour
+      steps:
+      - type: take the ward stamp
+        expect:
+          carrying: [Ward Office 12 daybook, ward stamp]
+      - reseed: true
+        expect:
+          here: []
+      - type: look
+        player: second
+        expect:
           here: [ward stamp]
           carrying: [Ward Office 12 daybook]
-          exits: [The Supply Closet (realized), The Long Hallway (stub)]
     SCRIPT
 
     assert_predicate result, :passed?, result.report

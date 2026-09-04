@@ -206,12 +206,13 @@ mechanics mode with its own copy of the line that moves the player would be
 testing itself.
 
 It starts a **fresh playthrough** each session rather than editing whichever one
-was last played. Where items are in the *world* is world state and is shared
-either way: something left in the closet here is still in the closet in the
-browser. What the *party* is carrying is not shared — that is the playthrough's
-— so a fresh session opens with the story's starting inventory and nothing
-another game picked up. `PLAYTHROUGH=<id or token> rake 'game:mechanics[2]'`
-attaches to an existing playthrough when inspecting a real game is the point.
+was last played, and since the captain's ruling of 2026-09-04 that means it sees
+**the world as it was written**: it takes its own copy of every room it walks
+into, so nothing it picks up or puts down is visible to the browser and nothing
+another game did is visible to it. What stays shared is the world itself — the
+rooms, the exits, the cast, and the world's own rows lying in them.
+`PLAYTHROUGH=<id or token> rake 'game:mechanics[2]'` attaches to an existing
+playthrough when inspecting a real game is the point.
 
 `Playthrough::Mechanics` is the whole of it.
 `test/models/playthrough/mechanics_test.rb` runs the offline half with
@@ -348,8 +349,9 @@ flowchart TD
         M1 -->|"yes: walking back in"| M5
         M1 -->|"no: a stub, first time"| M3
         M3["MODEL CALL, schema'd<br/>Location::DetailSchema<br/>description and lore, SAVED IMMEDIATELY<br/>plus 0-3 things lying here, on the SAME call"]
-        M3 --> M3B["Item::Registry#admit!<br/>the model proposes, the engine decides<br/>a row per thing, lying in the room<br/>capped per room and per world"]
-        M3B --> M4["MODEL CALL, schema'd<br/>Location::ExitsSchema<br/>a stub neighbour per exit, and connection<br/>rows in BOTH directions"]
+        M3 --> M3B["Item::Registry#admit!<br/>the model proposes, the engine decides<br/>a WORLD row per thing, lying in the room<br/>capped per room and per world"]
+        M3B --> M3C["Item::Snapshot, no model call<br/>this playthrough takes its own copy of the floor<br/>and of what the people standing on it hold<br/>once per template, never twice"]
+        M3C --> M4["MODEL CALL, schema'd<br/>Location::ExitsSchema<br/>a stub neighbour per exit, and connection<br/>rows in BOTH directions"]
         M4 --> M5
         M5["Read FROM RECORDS, before anything is created<br/>last_protagonist_visit: discovery or return<br/>Character.present_in: who is here"]
         M5 --> M6["MODEL CALL, schema'd<br/>Scene::Schema, the arrival paragraph<br/>Cannot stream: a schema'd call emits JSON"]
@@ -368,7 +370,7 @@ flowchart TD
     end
 
     subgraph IT["take / drop / read: the app owns the row, then says so"]
-        I1["An examine of a READABLE thing is answered from the records<br/>(Item#inscription, handed to the narrator verbatim).<br/>Otherwise the row moves FIRST<br/>take: into the party's hands. drop: into this room<br/>out of the closed set the classifier resolved against"]
+        I1["An examine of a READABLE thing is answered from the records<br/>(Item#inscription, handed to the narrator verbatim).<br/>Otherwise THIS GAME'S OWN COPY moves FIRST<br/>take: into the party's hands. drop: into this room<br/>out of the closed set the classifier resolved against<br/>the world's own row never moves"]
         I1 --> I2["MODEL CALL, unschema'd, STREAMS<br/>the narrator is TOLD what already happened<br/>and writes the sentence about it"]
         I2 --> I3["Scene persisted by the narrator, as any other<br/>A narration that forgets the item, or invents one,<br/>cannot change who holds what"]
     end
@@ -471,6 +473,10 @@ realization:
 | a name a person or a place has | two of the classifier's closed sets would answer to one word |
 | anything past `Item::Registry::MAX_PER_ROOM` (3) | the cap is on the **room**, read from the records — a seeded room can already be at it |
 | anything past `Item::Registry::MAX_PER_STORY` (60) | three per room is three per room *times however far the player walked*; this is the ceiling on the ontology |
+
+Both caps count **the world's own rows only.** Every playthrough holds its own
+copy of all of it, so counting copies would spend a room's budget of three on
+one thing three players had each seen once.
 
 A refusal costs the room its furniture and never its description — by then the
 expensive half of the call is already saved. The room is asked for at most what
@@ -583,36 +589,56 @@ refuses because the person is not in the room (which is now regression-tested
 offline — `rake game:sweep`, `present:`), and `rake game:doctor` able to say
 that a world's premise character is not where the world says.
 
-### What the party is carrying belongs to the playthrough
+### The world is the template, the playthrough owns the instances
 
-The same argument, applied to the other half of the party's state. The
-inventory was `items.character_id` pointing at `story.protagonist` — one
-`Character` row per story — so **every playthrough of one world shared one pair
-of hands**: playthrough 17 of a story opened holding what 16 had picked up, and
-nothing on creation emptied them or put the things back.
+The captain's ruling of 2026-09-04: *"each play through should have its own copy
+of items. If a location is generated with items in it, that should become the
+initial snapshot that any playthrough uses but what happens to the items after
+that should be managed by the playthrough."*
 
-So an `Item` is in exactly one of **three** places, never two and never none:
+So `items` holds **two layers**, and `playthrough_id` is which layer a row is in.
 
-| column | what it means |
-| --- | --- |
-| `location_id` | lying in a room. Story-level and **shared** between playthroughs, deliberately and unchanged — a room is the world |
-| `character_id` | held by one of the world's own people. For the protagonist it is the story's **starting inventory**: world data, written by a seed file, exported by the exporter, carried by nobody |
-| `playthrough_id` | **carried by the party** of that playthrough. The only column `take`, `drop` and the inventory read or write, through `Playthrough#carried` |
+| layer | what it is | who writes it |
+| --- | --- | --- |
+| **the world's own row** — a *template*, `playthrough_id` nil | what a room or a person was seeded or generated with. Lying in a room, or in one of the world's people's hands, and those are its only two places | `WorldSeed::Loader`, `Item::Registry`. Exported by `WorldSeed::Exporter`, counted by the caps, and **never touched by anybody playing** |
+| **one game's own copy** — an *instance*, `playthrough_id` set | that playthrough's copy of a template, placed by `location_id` (lying in a room, in that game), `character_id` (in that person's hands, in that game), or **neither, which is the party's own hands** | `Item::Snapshot` only, and it creates nothing that is not a copy of a template |
 
-Position needs no copy, because a `Location` holds two parties at once. An
-`Item` does not, so `Playthrough#take_up_the_starting_inventory` gives each new
-playthrough **its own copy** of the story's kit — which is why two people
-playing *The Unrecorded Hour* each hold a daybook and neither holds the other's.
+**The playthrough layer is the only one play ever reads.** The classifier's
+closed sets, `Playthrough::Turn#carry!` / `#put_down!` / `#read_item`,
+`Playthrough::Moment`, `Playthrough::Refusal`'s lists and the `rake
+game:mechanics` read-out see instances and nothing else — through
+`Playthrough#carried`, `#items_lying_in` and `#items_held_by`, one reader each.
 
-`rake game:backfill_inventory` recovers an older database, out of the takes on
-`scenes.resolved_action` / `scenes.acted_on`, and **refuses to guess** when two
-playthroughs record taking one thing at the same story moment. `DRY_RUN=1`
-first; `rake game:doctor` reports what is left.
+**The copies are made lazily, at first contact, and exactly once.** When the
+party walks into a room (`Playthrough::Turn#move_to`, after it is realized) and
+at the top of every turn on the room they are standing in, `Item::Snapshot`
+copies what that game has no copy of yet — the floor, and what the people
+standing on it are holding. The protagonist's seeded kit is an ordinary case of
+the same rule with one stated exception: it lands in the **party's** hands,
+because the protagonist is the player. `items.template_id` is the durable link,
+so the guard is per template rather than per room — which is what stops a room
+the party emptied being refurnished the next time they walk back in.
 
-**A room that one party has emptied is empty for the other**, and that is the
-known open question this deliberately does not answer — rooms stay story-level.
-`lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml` pins the current
-behaviour either way, so a future change to it fails a test.
+A copy carries **every column but where it is and whose it is**
+(`Item::NOT_COPIED`), so the next column added to `items` comes along without
+anybody remembering it — which is exactly what did not happen to `readable` and
+`inscription` when they landed.
+
+**A room one party has emptied is still furnished for the next player**, and
+that closes the open question the inventory change left. What stays shared is
+the world itself: the geometry, the descriptions, the cast.
+`lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml` pins the
+independence and `…-first-contact.yml` pins the timing, and
+`EngineSweep::Invariants#world_items_unmoved` asserts the other side after every
+walk — no typed line may move one of the world's own rows.
+
+`rake game:backfill_items` (`Item::LayerBackfill`, and one of `bin/update`'s
+steps) splits an older database: the world's own rows go back to the room the
+turn log says they were taken from, each row a take records goes to the player
+who took it, and every existing game is handed its copy of the rooms it has
+walked through. It **refuses to guess** when two playthroughs record taking one
+thing at the same story moment, and it is idempotent. `DRY_RUN=1` first; `rake
+game:doctor` reports what is left, per layer.
 
 ### Rooms are born with people in them, sometimes
 

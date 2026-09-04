@@ -138,6 +138,12 @@ module Eval::Richness
   # safe direction: richness is the check on the checks and is never folded into
   # a defect count, so a slightly wider vocabulary can only understate a
   # narration's coverage.
+  # BOTH LAYERS, uniq'd by name, and the over-count is the safe direction the
+  # comment above already claims. Since the layer split a room's floor is the
+  # world's template plus one copy per playthrough that has walked in, and an
+  # instance a party dropped somewhere the template never was is in no template
+  # query at all -- so reading both and de-duplicating by name is the only way
+  # this stays a superset of what the passage could have committed to.
   def items_around(scene)
     story = scene.story
     here = scene.location ? Item.lying_in(scene.location).to_a : []

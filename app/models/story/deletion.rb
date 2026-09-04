@@ -43,10 +43,11 @@ class Story::Deletion
   def manifest
     {
       "characters" => characters.count,
-      # All THREE places an item can be (`Item.in_story`): held by one of the
-      # story's characters, lying in one of its locations, or carried by a party
-      # playing it. The second arrived with app-owned `take` and the third with
-      # the party's own inventory; each would otherwise go uncounted.
+      # EVERY ROW IN BOTH LAYERS (`Item.in_story`): the world's own things, held
+      # by one of the story's characters or lying in one of its locations, AND
+      # every playthrough's own copy of them. A story played four times holds
+      # five rows of one name and all five go; the query has all three legs
+      # because a row is reached through whoever has it and nothing else.
       "items" => Item.in_story(story).count,
       "interactions" => Interaction.where(character: characters).count,
       "locations" => locations.count,

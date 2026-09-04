@@ -686,12 +686,18 @@ class Story::Audit
   # pocket" names one thing -- so it earns one flag, not one per row. Reporting
   # both reads as a bug in the sweep, which is the same cost as a false
   # positive.
+  # THE WORLD'S OWN ROWS, and it reads the WORLD LAYER on purpose. Since the
+  # layer split every playthrough holds its own copy of a room's contents, so
+  # reading both layers would count one chair once per player and turn one
+  # false claim into four flags. The names are the same either way -- an
+  # instance is a copy -- so what the check sees is unchanged and only the
+  # arithmetic is honest.
   def items_elsewhere
     @items_elsewhere ||= begin
       in_hand = Item.carried_by(story.playthroughs).pluck(:name) + story.starting_inventory.pluck(:name)
       in_hand = in_hand.map { |name| name.to_s.downcase.strip }.to_set
 
-      Item.where(character: story.characters).or(Item.where(location: story.locations))
+      Item.templates.where(character: story.characters).or(Item.templates.where(location: story.locations))
           .includes(:character, :location)
           .order(:id)
           .to_a

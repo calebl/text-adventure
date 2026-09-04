@@ -82,6 +82,23 @@ module ActiveSupport
     # resolves a model pays nothing for this.
     setup { RubyLLM::Models.instance_variable_set(:@instance, nil) }
 
+    # A THING ON THE FLOOR OF A ROOM, IN ONE GAME -- the world's own row and this
+    # playthrough's copy of it, taken the way the turn loop takes it.
+    #
+    # Since the captain's ruling of 2026-09-04 the closed set `take` resolves
+    # against is the PLAYTHROUGH layer (`Playthrough#items_lying_in`), and
+    # `create(:item, :lying, ...)` writes the WORLD layer -- the template a game
+    # copies from. A test that wrote only the template would be asserting
+    # against a room this party has never seen. So this writes the template and
+    # then calls `Item::Snapshot`, which is the same statement
+    # `Playthrough::Turn#play` and `#move_to` make, and returns the copy the
+    # loop will actually resolve.
+    def lying_here(playthrough, location, *traits, **attributes)
+      create(:item, :lying, *traits, location: location, **attributes)
+      Item::Snapshot.new(playthrough).of_the_room!(location)
+      playthrough.items_lying_in(location).order(:id).last
+    end
+
     # Add more helper methods to be used by all tests here...
   end
 end

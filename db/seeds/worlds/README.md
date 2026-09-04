@@ -246,11 +246,12 @@ reads the same words:
   and never again, in one structured call. Spelling them out in the file is
   better where the words matter: it costs no call and it is the version somebody
   hand-edited.
-- It works on **either side** of `Item::PLACES`, and on the starting inventory
-  in particular. `Playthrough#take_up_the_starting_inventory` copies the
-  protagonist's items into each new playthrough's hands and copies the words
-  with them, so a seeded daybook says the same thing to every player. Writing
-  belongs to the note, not to the shelf.
+- It works **wherever the thing is and whichever layer it is in**, and on the
+  starting inventory in particular. `Item::Snapshot` copies the world's own rows
+  into each playthrough's own game -- the protagonist's items into the party's
+  hands, a room's contents onto that game's floor -- and copies the words with
+  them, so a seeded daybook says the same thing to every player. Writing belongs
+  to the note, not to the shelf.
 - Three seeded things carry words today: the **Ward Office 12 daybook** and
   **Perrin's private index** in `the-unrecorded-hour.yml`, and the **Assize
   tide-slate** in `the-salt-assizes.yml`. `the-lunar-cartographer.yml` carries
@@ -462,12 +463,23 @@ cannot, and still deletes nothing**:
   recognize one.
 
 What still happens on every re-seed, and is the rule rather than a defect: **the
-file re-asserts itself.** An item the file puts on a shelf goes back on the
-shelf out of whoever's hands it was in, a character goes back where the file
-places them, `absent: true` is written and deleting it is taken off. A seed file
-is the authority on the world, not a suggestion. The party's own copy of the
-starting inventory is untouched — the loader searches the world's own rows
-before any playthrough's.
+file re-asserts itself over the world layer.** An item the file puts on a shelf
+is back on the shelf when the load finishes, a character goes back where the
+file places them, `absent: true` is written and deleting it is taken off. A seed
+file is the authority on the world, not a suggestion.
+
+**And it reaches no game at all.** Since the ruling of 2026-09-04 the world's
+own rows are the templates each playthrough copies at first contact, so what a
+party is carrying — and what a party left lying in a room — is that party's, and
+the loader does not touch it (`Item.templates` is the whole guard in
+`WorldSeed::Loader#find_item`). One consequence is worth knowing: **a copy keeps
+the text and the name it was copied with**, so editing a room's item reaches
+every game that has not met the thing yet and no game that has.
+`items.template_id` still ties the two together, which is how `rake game:doctor`
+reads a copy of a renamed row as a copy rather than as a stray.
+`lib/engine_sweep/scripts/reseed-a-played-world.yml` walks both halves: the
+first player's stamp stays where they dropped it, and the second player — who
+never moved anything — sees the world's own stamp back in the office.
 
 **What `rake game:doctor` reports about a database that already has one of these
 shapes**, each with a `safe` repair where the answer is derivable from the file

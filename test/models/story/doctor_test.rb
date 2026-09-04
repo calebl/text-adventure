@@ -279,13 +279,39 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_empty Story::Doctor.new(story).findings
   end
 
-  test "a story whose party is carrying things is still healthy" do
+  test "a story whose party is carrying its own copies is still healthy" do
+    story = healthy_story
+    room = story.locations.first
+    create(:item, :lying, location: room, name: "ward stamp")
+    played = create(:playthrough, story: story, character: story.protagonist, current_location: room)
+    Playthrough::Turn.new(played).carry!(played.items_lying_in(room).sole)
+
+    assert_empty Story::Doctor.new(story).findings
+  end
+
+  # A COPY OF NOTHING IS A REPORT AND NOT A DEFECT: the row is a real thing that
+  # player really holds, and only its provenance is gone. It is what deleting
+  # one of the world's own rows out from under a game in progress leaves behind.
+  test "reports a playthrough's own copy that is a copy of nothing" do
     story = healthy_story
     played = create(:playthrough, story: story, character: story.protagonist,
                                   current_location: story.locations.first)
     create(:item, :carried, playthrough: played, name: "ward stamp")
 
-    assert_empty Story::Doctor.new(story).findings
+    assert_includes codes(story), :instance_without_a_template
+    assert_match(/no longer exists/, finding(story, :instance_without_a_template).message)
+  end
+
+  # EVERY GAME HOLDS ITS OWN COPY OF WHAT IS LYING IN THE ROOMS IT HAS WALKED
+  # THROUGH, and a database older than the layers holds none of them.
+  test "reports a playthrough standing in a room it has no copy of" do
+    story = healthy_story
+    room = story.locations.first
+    played = create(:playthrough, story: story, character: story.protagonist, current_location: room)
+    create(:item, :lying, location: room, name: "ward stamp")
+
+    assert_includes codes(story), :playthrough_missing_a_copy
+    assert_match(/emptier than the world's/, finding(story, :playthrough_missing_a_copy).message)
   end
 
   test "reports an item that is neither held nor carried nor lying anywhere" do
@@ -299,14 +325,14 @@ class Story::DoctorTest < ActiveSupport::TestCase
 
   # `Item#in_exactly_one_place` refuses to SAVE one, so like `items_nowhere`
   # this can only arrive through raw SQL or a schema older than the rule.
-  test "reports an item in two of its three places at once" do
+  test "reports an item in both of its places at once" do
     story = healthy_story
-    played = create(:playthrough, story: story, character: story.protagonist)
     item = create(:item, :lying, location: story.locations.first, name: "ward stamp")
-    item.update_columns(playthrough_id: played.id)
+    item.update_columns(character_id: story.protagonist.id)
 
     assert_includes codes(story), :items_in_several_places
     assert_match(/both offered and already done/, finding(story, :items_in_several_places).message)
+    assert_match(/the world's own/, finding(story, :items_in_several_places).message)
   end
 
   # --- the shared inventory this column closed --------------------------------
@@ -659,13 +685,36 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_equal stamp, finding(story, :duplicate_items).subject, "the row the file names is the one that survives"
   end
 
-  test "a duplicate item a player is carrying is theirs, not the file's" do
+  # A LEFTOVER A TURN LOG RECORDS TAKING IS SOMEBODY'S, and no fold of it is
+  # honest: the row a player picked up is the row their game is about, whatever
+  # the file says about the name.
+  test "a duplicate item a turn log records taking is theirs, not the file's" do
     story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    stamp = Item.in_story(story).templates.find_by(name: "ward stamp")
+    leftover = create(:item, name: "Ward Stamp", description: "The second one.", character: nil, location: stamp.location)
     playthrough = create(:playthrough, story: story, current_location: story.opening_location)
-    create(:item, name: "Ward Stamp", description: "The second one.", character: nil, location: nil, playthrough: playthrough)
+    playthrough.update!(current_scene: create(:scene, story: story, location: story.opening_location,
+                                                      typed: "take the ward stamp", resolved_action: "take",
+                                                      acted_on: leftover))
 
     assert_equal :manual, finding(story, :duplicate_items).remedy
     assert_match(/a player has handled one of the others/, finding(story, :duplicate_items).message)
+  end
+
+  # AND A PLAYTHROUGH'S OWN COPY IS NOT A DUPLICATE AT ALL. Every game holds its
+  # own copy of the world's things under the same name, so a world played four
+  # times holds five ward stamps and exactly one of them is the world's. No
+  # closed set ever offers a party anything but its own -- the copy earns
+  # `instance_without_a_template` when nothing says what it copies, and nothing
+  # else.
+  test "a playthrough's own copy of a name is not a duplicate of the world's row" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    playthrough = create(:playthrough, story: story, current_location: story.opening_location)
+
+    assert_not_includes codes(story), :duplicate_items
+    assert_equal 2, Item.in_story(story).by_name("ward stamp").count,
+                 "the world's own stamp and this game's copy of it"
+    assert_predicate playthrough.items_lying_in(story.opening_location).find_by(name: "ward stamp"), :instance?
   end
 
   # THE PHANTOM DOORWAY, read off the pair rather than off the count: a mobile

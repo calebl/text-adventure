@@ -230,9 +230,11 @@ class Playthrough::Moment
     playthrough.carried.map(&:name).join(", ")
   end
 
-  # WHAT IS ON THE FLOOR OF THIS ROOM -- the same closed set
+  # WHAT IS ON THE FLOOR OF THIS ROOM, IN THIS GAME -- the same closed set
   # `Playthrough::Classifier` resolves a `take` against, said to the narrator
-  # out of the same records. It was the one closed set the classifier computed
+  # out of the same records and through the same one reader
+  # (`Playthrough#items_lying_in`), so the prompt and the enum cannot disagree
+  # about what a party can pick up. It was the one closed set the classifier computed
   # every turn and the prose was never told about (PR 98, F3), which is the
   # narrower half of an old symmetry problem: the narrator knew what the player
   # was carrying but not what they could pick up, so a `take` that resolved to
@@ -244,7 +246,7 @@ class Playthrough::Moment
   def floor_names
     return "" if location.nil?
 
-    Item.lying_in(location).order(:id).map(&:name).join(", ")
+    playthrough.items_lying_in(location).map(&:name).join(", ")
   end
 
   def name_list(people)
