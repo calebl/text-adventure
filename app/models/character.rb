@@ -85,32 +85,56 @@
 #                        registry exists for.
 #
 # ------------------------------------------------------------------------
-# THE STAT BLOCK: `level` AND `hit_die`, AND THE ENGINE ROLLS BOTH.
+# THE STAT BLOCK: `level`, `hit_die` AND THREE ABILITIES, AND THE ENGINE ROLLS
+# EVERY ONE OF THEM.
 #
-# The captain's ruling of 2026-09-04: *"No abilities for now. Levels are stored
-# but inert in the first PR. A model cannot set an NPC's numbers, the engine
-# rolls them."* So the whole of what a body is, here, is two integers:
+# The captain's ruling of 2026-09-04: *"A model cannot set an NPC's numbers, the
+# engine rolls them."* So there is no field for a stat on any schema, nothing in
+# any prompt asks for one, and every number below that the app itself wrote came
+# out of `Character::StatBlock` through `Roll`.
 #
 #   `hit_die`   HOW TOUGH THIS BODY IS. One of `HIT_DICE`, chosen by a roll
-#               (`Roll.one_of`) and never by a model. It is the only number that
-#               says anything about anybody, and `#max_hp` is derived from it.
+#               (`Roll.one_of`) and never by a model. `#max_hp` is derived from
+#               it and from the level, and from NOTHING ELSE.
 #   `level`     STORED AND INERT. Nothing reads it for behaviour, nothing
 #               advances it, and `#advance!` is the explicit call that would --
 #               deliberately called from nowhere, exactly as `#move_to!` was
 #               when it landed. Advancement wants a source (the queued
-#               `ta-story-arc`'s quest completion is the obvious one) and this
-#               PR does not invent one.
+#               `ta-story-arc`'s quest completion is the obvious one) and
+#               nothing here invents one.
+#   `strength`  WHAT A BODY CAN DO, three integers in `ABILITY_RANGE`, each 3d6
+#   `dexterity` (`Roll.pool`). The captain's ruling of 2026-09-04, evening:
+#   `will`      *"let's go with the 3 abilities"* -- strength, dexterity, will,
+#               and exactly those three. It corrects the earlier *"no abilities
+#               for now"*, which was a misunderstanding of the word: an ability
+#               here is a number a die is thrown against, not a special power.
 #
-# THERE ARE NO ABILITY SCORES, and that is a ruling rather than an omission: no
-# strength, no dexterity, no will, and no `check <ability> <dc>`. `#max_hp` has
-# no ability term in it for the same reason.
+# `#max_hp` GAINS NOTHING FROM AN ABILITY, and this sentence is here so the
+# question is not reopened: there is no constitution among the three, `will` is
+# NERVE RATHER THAN STAMINA, and the body's capacity is `hit_die` and nothing
+# else. An ability term would give one column two jobs and let a re-seed
+# silently move every playthrough's ceiling.
 #
-# NULLABLE, on this class's own rule. A character written before the columns
-# existed has no stat block, and that is a real state `rake game:doctor` reports
-# (`character_without_a_stat_block`) rather than one anything invents a value
-# for -- the same rule `location_id` above is nullable under.
-# `rake game:backfill_stat_blocks` rolls one for every such row, offline and
-# deterministically, and it is one of `bin/update`'s steps.
+# THE CHECK IS d20-UNDER THE SCORE and `#check` is the whole of it: one die
+# against one column, with a penalty subtracted from the target rather than
+# added to the die, so the difficulty is a parameter on the thing being tried
+# and never a second table. `Character::Check` is what comes back -- a record,
+# printable, and re-derivable because `Roll` is seeded. There is ONE kernel: no
+# ability modifier, no DC ladder, no advantage, no skill.
+#
+# NULLABLE -- all five -- on this class's own rule. A character written before
+# the columns existed has no stat block and no abilities, and each is a real
+# state `rake game:doctor` reports (`character_without_a_stat_block`,
+# `character_without_abilities`) rather than one anything invents a value for --
+# the same rule `location_id` above is nullable under.
+# `rake game:backfill_stat_blocks` rolls whatever is missing for every such row,
+# offline and deterministically, and it is one of `bin/update`'s steps.
+#
+# TWO PREDICATES AND THEY DO NOT MERGE. `#stat_block?` is `level` and `hit_die`
+# -- `#max_hp`'s gate, and through it every `Playthrough::Vitals` row in the
+# database -- and `#abilities?` is the three. Folding the abilities into
+# `#stat_block?` would make every existing maximum nil and every existing game's
+# condition unreadable in the window between the migration and the backfill.
 #
 # WHAT IS *NOT* HERE, and belongs one layer down: how much is left of the body.
 # `characters.hit_die` is who somebody IS, which two people playing one world
@@ -194,6 +218,70 @@ class Character < ApplicationRecord
   # down.
   LEVELS = (1..20).freeze
 
+  # THE THREE ABILITIES, AND THERE ARE EXACTLY THREE. The captain's ruling of
+  # 2026-09-04, evening: *"let's go with the 3 abilities"* -- strength,
+  # dexterity, will. A fourth is a ruling nobody has made, so this list is the
+  # closed one every reader iterates: the validations below, `#abilities?`,
+  # `Character::StatBlock`, `Character::StatBackfill`, `Story::Doctor`,
+  # `WorldSeed::Loader`, `WorldSeed::Exporter` and
+  # `EngineSweep::Invariants#stat_blocks_unmoved` all read it rather than
+  # naming the three columns again.
+  #
+  # THE ORDER IS LOAD-BEARING and it is this one: `Character::StatBlock` draws
+  # them from one generator in this sequence, so a roll is re-derivable for ever
+  # -- which is what makes `DRY_RUN=1` worth anything. Reordering this list
+  # re-rolls every body the backfill would ever write.
+  ABILITIES = %i[strength dexterity will].freeze
+
+  # WHAT AN ABILITY MAY BE: 3d6, so 3..18, and the range IS the roll's own
+  # bounds rather than a taste. A number outside it arrived from somewhere that
+  # is not the engine -- which is `HIT_DICE`'s argument for being a closed list,
+  # one column over.
+  ABILITY_RANGE = (3..18).freeze
+
+  # THE d20 EVERY CHECK IS THROWN ON. One die, one column, one comparison; see
+  # `#check`.
+  CHECK_DIE = 20
+
+  # ONE ATTEMPT AT SOMETHING, AND IT READS OUT AS A RECORD.
+  #
+  # d20-under the score: the check passes when the die comes up at or below
+  # `score - penalty`. The penalty is subtracted from the TARGET rather than
+  # added to the die, because that keeps the difficulty a parameter on the thing
+  # being tried -- the shape `LocationConnection::DISTANCES` and
+  # `world_mechanics.cadence` already have -- instead of a second table of
+  # numbers to tune beside the ability itself.
+  #
+  # AT `target <= 0` NO DIE IS THROWN AT ALL. The pass rate there is zero for
+  # ever, so rolling would be theatre: `#impossible?` is true, `#die` is nil,
+  # and the honest answer for the engine to give is that the thing cannot be
+  # done -- refusal-shaped, and the same shape `Playthrough::Refusal` gives a
+  # line the engine will not play. A caller that printed a die here would be
+  # printing a number that decided nothing.
+  #
+  # A value and not a record, like `Playthrough::Vitals::Condition`: every
+  # consumer only reads.
+  Check = Data.define(:ability, :score, :penalty, :die) do
+    def target = score - penalty
+
+    def impossible? = target <= 0
+
+    def rolled? = !die.nil?
+
+    def passed? = rolled? && die <= target
+
+    def failed? = rolled? && !passed?
+
+    # `check strength -> d20(7) <= 12 PASS`, which is what `rake game:mechanics`
+    # prints and `rake game:sweep` asserts. One definition, so the read-out and
+    # a log line cannot describe the same roll two ways.
+    def to_s
+      return "#{ability} -> #{score} - #{penalty} = #{target}, IMPOSSIBLE (no roll)" if impossible?
+
+      "#{ability} -> d#{CHECK_DIE}(#{die}) <= #{target} #{passed? ? "PASS" : "FAIL"}"
+    end
+  end
+
   # Two people in one story cannot share a full name -- a player has no other
   # handle on who they are talking to. Case-insensitive, and backed by a unique
   # index on (story_id, LOWER(fullname)) so it holds under concurrency too.
@@ -209,6 +297,14 @@ class Character < ApplicationRecord
   validates :level, inclusion: { in: LEVELS }, allow_nil: true
   validates :hit_die, inclusion: { in: HIT_DICE }, allow_nil: true
   validate :a_stat_block_is_whole
+  # THE ABILITIES, VALIDATED THE SAME WAY AND SEPARATELY. Nullable for the same
+  # reason and refused a value outside `ABILITY_RANGE` for the same reason: 3d6
+  # cannot come up 2 or 19, so a number that did arrived from somewhere that is
+  # not the engine. Whole-or-nothing is `#abilities_are_whole`, the mirror of
+  # `#a_stat_block_is_whole` -- and a SEPARATE validation, because the two
+  # halves are separate facts and the doctor reports them separately.
+  ABILITIES.each { |ability| validates ability, inclusion: { in: ABILITY_RANGE }, allow_nil: true }
+  validate :abilities_are_whole
   validates :sex, presence: true, inclusion: { in: sexes.keys }
   validate :race_belongs_to_story_universe
   validate :single_protagonist_per_story
@@ -362,6 +458,44 @@ class Character < ApplicationRecord
   # refuses to save one, so in practice this is one question asked once.
   def stat_block? = level.present? && hit_die.present?
 
+  # WHETHER THE ENGINE HAS THE THREE ABILITIES FOR THIS PERSON. Its own
+  # predicate, deliberately NOT folded into `#stat_block?` above: that one gates
+  # `#max_hp` and through it every condition row in the database, and widening it
+  # would make every existing maximum nil between the migration and the
+  # backfill. `#abilities_are_whole` refuses to save a partial set, so in
+  # practice this is one question asked once.
+  def abilities? = ABILITIES.all? { |ability| self[ability].present? }
+
+  # ONE ATTEMPT AT SOMETHING, d20-UNDER THE ABILITY. `Character::Check` above is
+  # the whole rule and its header the whole reasoning; this is the call.
+  #
+  #   character.check(:strength, penalty: 2, rng: Roll.generator(...))
+  #
+  # `rng:` IS REQUIRED AND THERE IS NO DEFAULT, on `Roll`'s standing rule: a
+  # caller throwing several dice for one decision throws them from one seed in
+  # one order, and a defaulted generator here would make a check un-re-derivable
+  # -- which is exactly the property `rake game:sweep` asserts against.
+  #
+  # `nil` for somebody with no abilities, which is what makes it safe to ask of
+  # anybody: it is the same honest nothing `#max_hp` answers for a body with no
+  # stat block, and the caller decides what to say about it.
+  #
+  # NO DIE IS THROWN when the target is zero or less: the score is read, the
+  # `Check` says `impossible?`, and the generator is left untouched -- so a
+  # caller that asks the impossible does not silently consume somebody else's
+  # roll.
+  def check(ability, penalty: 0, rng:)
+    ability = ability.to_sym
+    raise ArgumentError, "#{ability.inspect} is not one of #{ABILITIES.join(", ")}" unless ABILITIES.include?(ability)
+    return nil unless abilities?
+
+    score = self[ability]
+    target = score - penalty.to_i
+    die = target.positive? ? Roll.die(CHECK_DIE, rng: rng) : nil
+
+    Check.new(ability: ability, score: score, penalty: penalty.to_i, die: die)
+  end
+
   # HOW MUCH THIS BODY CAN HOLD, DERIVED AND NEVER STORED.
   #
   #   max_hp = hit_die + (level - 1) * (hit_die / 2 + 1)
@@ -369,9 +503,13 @@ class Character < ApplicationRecord
   # A first level is the whole die -- the toughest a body of that kind starts --
   # and every level after it adds the die's AVERAGE ROUNDED UP, which is
   # `hit_die / 2 + 1` in integer arithmetic (a d8 adds 5). It is the arithmetic
-  # an open-RPG stat block has always used with the ability term struck out, and
-  # the term is struck out because there are no abilities: the captain's ruling
-  # of 2026-09-04.
+  # an open-RPG stat block has always used with the ability term struck out.
+  #
+  # THE TERM STAYS STRUCK OUT NOW THAT THERE ARE ABILITIES, and that is a
+  # decision rather than an oversight: none of the three is a constitution,
+  # `will` is nerve rather than stamina, and the body's capacity is `hit_die`.
+  # An ability term would give one column two jobs and let a re-seed editing
+  # `will` silently move every playthrough's ceiling.
   #
   # DERIVED SO THERE IS ONE NUMBER PER BODY AND NOT TWO. A stored maximum is a
   # second place the same fact lives, and the day a re-seed lowers a hit die the
@@ -464,6 +602,22 @@ class Character < ApplicationRecord
 
     errors.add(:base, "has half a stat block (#{level.present? ? "a level and no hit die" : "a hit die and no level"}); " \
                       "the engine rolls both together or neither")
+  end
+
+  # A PARTIAL SET OF ABILITIES IS NOT A SET. The mirror of
+  # `#a_stat_block_is_whole` and separate from it on purpose: `Character::StatBlock`
+  # rolls the three together or not at all, so a row with a strength and no will
+  # is somebody `#check(:will)` cannot answer about while `#check(:strength)`
+  # looks as though the sheet were complete. `rake game:doctor` reports the
+  # honest nothing (`character_without_abilities`) and
+  # `rake game:backfill_stat_blocks` fills it in.
+  def abilities_are_whole
+    present = ABILITIES.count { |ability| self[ability].present? }
+    return if present.zero? || present == ABILITIES.size
+
+    missing = ABILITIES.reject { |ability| self[ability].present? }
+    errors.add(:base, "has #{present} of #{ABILITIES.size} abilities (no #{missing.join(", no ")}); " \
+                      "the engine rolls all three together or none")
   end
 
   # The player is exactly one person, so a story cannot have two characters

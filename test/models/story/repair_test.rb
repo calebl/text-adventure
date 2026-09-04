@@ -423,6 +423,48 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_equal [ wanted[:level], wanted[:hit_die] ], [ nobody.reload.level, nobody.hit_die ]
   end
 
+  # THE ABILITY HALF, and the mirror of the two above. `:safe` on exactly the same
+  # argument: nothing on record implies a strength, and the ENGINE is that
+  # number's sole author by the captain's ruling of 2026-09-04.
+  test "rolls three abilities for somebody who had none" do
+    story = create(:story)
+    nobody = create(:character, :without_abilities, story: story, level: 2, hit_die: 10)
+    repair = Story::Repair.new(story)
+
+    assert_includes repair.plan.map(&:code), :character_without_abilities
+    assert repair.apply!.all?(&:repaired?)
+    assert_predicate nobody.reload, :abilities?
+    assert_equal Character::StatBlock.for_existing(nobody).slice(*Character::ABILITIES),
+                 Character::ABILITIES.index_with { |ability| nobody[ability] }
+  end
+
+  # THE RECORDS WIN OVER A DERIVATION: repairing the abilities must not rewrite a
+  # hand-authored hit die, which is what a seeded world's file says.
+  test "rolling the abilities leaves the stat block exactly where it was" do
+    story = create(:story)
+    nobody = create(:character, :without_abilities, story: story, level: 2, hit_die: 10)
+
+    Story::Repair.new(story).apply!
+
+    assert_equal [ 2, 10 ], [ nobody.reload.level, nobody.hit_die ]
+  end
+
+  # A NUMBER 3d6 COULD NEVER HAVE COME UP, re-rolled -- and the whole set, because
+  # there is no record of what the intended number was and a set with one engine
+  # number in it beside two nobody can account for is not an answer.
+  test "re-rolls an ability the engine could never have rolled" do
+    story = create(:story)
+    somebody = create(:character, story: story)
+    Character.where(id: somebody.id).update_all(strength: 25)
+    repair = Story::Repair.new(story)
+
+    assert_includes repair.plan.map(&:code), :ability_out_of_range
+    assert repair.apply!.all?(&:repaired?)
+    assert_includes Character::ABILITY_RANGE, somebody.reload.strength
+    assert_equal Character::StatBlock.for_existing(somebody).slice(*Character::ABILITIES),
+                 Character::ABILITIES.index_with { |ability| somebody[ability] }
+  end
+
   test "brings a condition back down to what its stat block allows" do
     story = create(:story)
     room = create(:location, story: story)

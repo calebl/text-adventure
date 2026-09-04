@@ -73,4 +73,69 @@ class Character::StatBackfillTest < ActiveSupport::TestCase
     assert_equal answer.hit_die, answer.max_hp
     assert_match(/level 1, d#{answer.hit_die} \(#{answer.max_hp} hp\)/, answer.to_s)
   end
+
+  # --- the three abilities ---------------------------------------------------
+  #
+  # A body is five columns since the captain's ruling of 2026-09-04 evening, and
+  # the candidate set is "missing any of the five".
+
+  test "somebody with a body and no abilities is a candidate, and gets only the abilities" do
+    @with.update!(strength: nil, dexterity: nil, will: nil)
+
+    answers = backfill.run
+
+    assert_includes answers.map(&:character), @with
+    assert_predicate @with.reload, :abilities?
+    assert_equal [ 1, 10 ], [ @with.level, @with.hit_die ], "the records win over a derivation"
+  end
+
+  # THE RECORDS WIN OVER A DERIVATION, one column-set over: a hand-authored hit
+  # die must survive a run that only had to fill in the abilities. This is what
+  # lets `bin/update` run over a seeded world without moving what the file says.
+  test "it fills only the columns that were empty" do
+    @with.update!(will: nil, strength: nil, dexterity: nil)
+
+    answer = backfill.run.find { |candidate| candidate.character == @with }
+
+    assert_equal Character::ABILITIES, answer.filled.keys
+    assert_not answer.body?
+    assert_predicate answer, :abilities?
+  end
+
+  test "a partial set of abilities is a candidate too" do
+    Character.where(id: @with.id).update_all(dexterity: nil)
+
+    assert_includes backfill.candidates, @with
+
+    backfill.run
+
+    assert_predicate @with.reload, :abilities?
+  end
+
+  test "a whole sheet is left alone and the run is still idempotent" do
+    backfill.run
+
+    assert_empty backfill.run
+    assert_equal [ 1, 10, 12, 10, 14 ],
+                 [ @with.reload.level, @with.hit_die, @with.strength, @with.dexterity, @with.will ]
+  end
+
+  # Somebody with nothing at all -- the state every character in a database
+  # older than both migrations is in.
+  test "a character with no sheet at all gets the whole of one" do
+    nobody = create(:character, :without_a_sheet, story: @story)
+
+    backfill.run
+
+    assert_predicate nobody.reload, :stat_block?
+    assert_predicate nobody, :abilities?
+  end
+
+  test "an answer names the abilities it rolled" do
+    nobody = create(:character, :without_a_sheet, story: @story)
+
+    answer = backfill.run.find { |candidate| candidate.character == nobody }
+
+    assert_match(/strength #{nobody.reload.strength} dexterity #{nobody.dexterity} will #{nobody.will}/, answer.to_s)
+  end
 end

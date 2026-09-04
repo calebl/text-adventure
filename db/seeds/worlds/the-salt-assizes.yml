@@ -88,6 +88,9 @@ characters:
   stats:
     level: 1
     hit_die: 8
+    strength: 13
+    dexterity: 10
+    will: 14
   nickname: Vell
   age: 44
   sex: female
@@ -116,6 +119,9 @@ characters:
   stats:
     level: 1
     hit_die: 6
+    strength: 8
+    dexterity: 9
+    will: 16
   nickname: Justicar Brace
   age: 58
   sex: male
@@ -136,6 +142,9 @@ characters:
   stats:
     level: 1
     hit_die: 10
+    strength: 15
+    dexterity: 13
+    will: 9
   nickname: Neb
   age: 33
   sex: male

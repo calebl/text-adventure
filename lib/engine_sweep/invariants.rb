@@ -55,9 +55,14 @@
 #                        file catches everything "nobody is nowhere" would --
 #                        somebody who LOST their room during the walk fails it
 #                        -- and does not fail on a world that means it.
-#   stat_blocks_unmoved  every character's `level` and `hit_die` are what the
-#                        world file says they are, and somebody the file gives
-#                        no `stats` still has none. It is `cast_unmoved` for the
+#   stat_blocks_unmoved  every character's `level`, `hit_die` and three
+#                        abilities are what the world file says they are, and
+#                        somebody the file gives no `stats` still has none.
+#                        All five columns since the captain's ruling of
+#                        2026-09-04 evening -- an ability is the world's on
+#                        exactly the same terms as a hit die, and `check
+#                        strength` throws a die and writes nothing at all.
+#                        It is `cast_unmoved` for the
 #                        body instead of the whereabouts, and it is the world
 #                        half of the captain's ruling of 2026-09-04: a stat
 #                        block is the WORLD's, so no typed line may write one.
@@ -237,29 +242,52 @@ class EngineSweep::Invariants
     broken("cast_unmoved", moved.join("; "))
   end
 
-  # `{ fullname => [level, hit_die] }` out of the file, with nil for somebody it
-  # gives no `stats` -- so a character who ACQUIRED a body during the walk fails
-  # just as loudly as one who lost it, which is the shape `#cast_in_file` uses
-  # for the same reason.
+  # `{ fullname => { "level" => .., "hit_die" => .., "strength" => .., ... } }`
+  # out of the file, with nil for somebody it gives no `stats` -- so a character
+  # who ACQUIRED a body or an ability during the walk fails just as loudly as
+  # one who lost it, which is the shape `#cast_in_file` uses for the same
+  # reason.
+  #
+  # ALL FIVE COLUMNS, which is `WorldSeed::Loader::STAT_KEYS`: the abilities are
+  # the world's on exactly the same terms as the hit die, so no typed line may
+  # write one of them either. What a walk DOES write is `playthrough_vitals`, on
+  # the other side of the layer split, so `harm 5` walks the whole engine
+  # without this moving -- and `check strength` throws a die and writes nothing
+  # at all.
   def stats_in_file
     Array(seed["characters"]).to_h do |row|
       stats = row["stats"]
-      [ row["fullname"], stats.is_a?(Hash) ? [ stats["level"], stats["hit_die"] ] : nil ]
+      [ row["fullname"], stats.is_a?(Hash) ? stats.slice(*WorldSeed::Loader::STAT_KEYS) : nil ]
     end
   end
 
   def stat_blocks_unmoved
     changed = story.characters.order(:id).filter_map do |character|
       wanted = stats_in_file[character.fullname]
-      now = character.stat_block? ? [ character.level, character.hit_die ] : nil
+      now = stats_on_record(character)
       next if now == wanted
 
-      "#{character.fullname} is #{now ? "level #{now.first}, d#{now.last}" : "without a stat block"} and the file " \
-        "says #{wanted ? "level #{wanted.first}, d#{wanted.last}" : "nothing"}"
+      "#{character.fullname} is #{describe_stats(now)} and the file says #{describe_stats(wanted)}"
     end
     return nil if changed.empty?
 
     broken("stat_blocks_unmoved", changed.join("; "))
+  end
+
+  # The five columns as the file would write them, or nil for a sheet that is
+  # not whole -- which is what an unseeded body reads as, and the one thing the
+  # file can say nothing about.
+  def stats_on_record(character)
+    return nil unless character.stat_block? && character.abilities?
+
+    WorldSeed::Loader::STAT_KEYS.to_h { |key| [ key, character.public_send(key) ] }
+  end
+
+  def describe_stats(stats)
+    return "without a whole sheet" if stats.nil?
+
+    "level #{stats["level"]}, d#{stats["hit_die"]}, " \
+      "#{Character::ABILITIES.map { |ability| "#{ability} #{stats[ability.to_s]}" }.join(" ")}"
   end
 
   def nothing_was_written

@@ -350,35 +350,58 @@ characters:
   stats:
     level: 1
     hit_die: 8
+    strength: 11
+    dexterity: 9
+    will: 13
 ```
 
-`level` and `hit_die` are the whole of a stat block: how tough this body is, and
-a level that is **stored and inert** — nothing in the app reads it for behaviour
-and nothing advances it. `Character#max_hp` is derived from the pair, with no
-ability term in it, because there are no abilities:
+Five numbers, and they are the whole of a sheet:
+
+- `hit_die` is **how tough this body is** — one of 6, 8 or 10, the three the
+  engine itself rolls from.
+- `level` is **stored and inert**: nothing in the app reads it for behaviour and
+  nothing advances it.
+- `strength`, `dexterity` and `will` are **what a body can do** — 3..18, which is
+  what 3d6 rolls. Exactly these three, and there is no fourth: the captain's
+  ruling of 2026-09-04, evening, *"let's go with the 3 abilities"*.
+
+`Character#max_hp` is derived from the level and the die, and from **nothing
+else**:
 
 ```
 max_hp = hit_die + (level - 1) * (hit_die / 2 + 1)
 ```
+
+**No ability term, and that is a decision rather than an oversight.** None of the
+three is a constitution, `will` is nerve rather than stamina, and the body's
+capacity is `hit_die`. An ability term would give one column two jobs and let a
+re-seed editing `will` silently move every playthrough's ceiling.
+
+**A check is one d20 under the ability**, with the difficulty subtracted from the
+target rather than added to the die — `Character#check(:strength, penalty: 4)`,
+and `rake game:mechanics` walks it with `check strength 4`. At a target of zero
+or less the engine says the thing cannot be done instead of rolling a die it
+cannot win. One kernel: no modifier, no DC ladder, no skill, no spell.
 
 A hand-authored world **is** the decision, which is why the key exists at all.
 Everywhere else the engine rolls it — `Character::StatBlock`, seeded through
 `Roll` — because a model may not set anybody's numbers (the captain's ruling of
 2026-09-04). Nothing in any schema or prompt asks for one.
 
-- **The key is optional, and leaving it out means no stat block.** Nothing is
+- **The key is optional, and leaving it out means no sheet at all.** Nothing is
   rolled on load: a file that says nothing about a body leaves the columns
   exactly as they are, so a re-seed cannot quietly rewrite a world because
   somebody edited a different part of the file. `rake game:doctor` reports the
-  gap (`character_without_a_stat_block`) and `rake game:backfill_stat_blocks`
-  rolls one.
-- **Both keys or neither.** `Character#max_hp` needs the pair, so `validate!`
-  refuses half a block; `level` is 1..20 and `hit_die` is one of 6, 8, 10 — the
-  three the engine itself rolls from.
+  gaps (`character_without_a_stat_block`, `character_without_abilities`) and
+  `rake game:backfill_stat_blocks` rolls whatever is missing.
+- **All five keys or none.** `validate!` refuses a partial mapping: a `stats:`
+  carrying some of them is a key that looks as though it said something and did
+  not. `level` is 1..20, `hit_die` is one of 6, 8, 10, and an ability is 3..18.
 - **Re-seeding re-asserts it**, like every other placement. Lowering somebody's
   hit die under a game in progress is legitimate and leaves that game's
   condition row above its new maximum, which the doctor reports
-  (`hp_above_maximum`) with a safe repair.
+  (`hp_above_maximum`) with a safe repair. Editing an ability disturbs nothing at
+  all — no playthrough row is derived from one.
 - **What is NOT in the file is how much is left of anybody.** That is
   `playthrough_vitals`, one row per (playthrough, character) — the captain's
   ruling that the world owns the template and each playthrough owns the

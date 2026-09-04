@@ -61,6 +61,19 @@ module Roll
     rng.rand(1..sides.to_i)
   end
 
+  # THREE DICE ADDED, which is what an ability score is: `pool(3, 6, rng:)` is
+  # the 3d6 `Character::StatBlock` draws a strength, a dexterity and a will
+  # from. It is here rather than in the caller for the same reason `#one_of` is
+  # -- one place in the app throws a die -- and it draws from the generator it
+  # is handed, so three ability scores rolled for one body come out of one seed
+  # in one order.
+  def self.pool(count, sides, rng:)
+    count = count.to_i
+    raise ArgumentError, "a pool is at least one die" if count < 1
+
+    count.times.sum { die(sides, rng: rng) }
+  end
+
   # ONE OF A CLOSED LIST, drawn from the same generator. This is how the engine
   # decides which hit die a body has: the list is `Character::HIT_DICE`, the
   # choice is a roll, and no model is asked.

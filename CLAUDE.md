@@ -233,7 +233,12 @@ The current database includes the following story-related models with proper ass
   a record, so no model — and is refused as prose when there is not. The
   ruling's refusals come from `Playthrough::Refusal` and not from a second copy
   here — the mode's old `also named:` note is gone with the half-played turn it
-  reported. `model: false` (`NO_MODEL=1`) is the offline fallback — a fixed
+  reported. `stats` prints the world's five numbers beside the game's condition
+  (the layer split on the screen) and `check <ability> [penalty]` throws one d20
+  through `Playthrough::Turn#check` and **writes nothing at all** — the one verb
+  in `ENGINE_VIEW` a player might plausibly mean in the fiction, so with a model
+  available `check` is the engine's own only when the next word is one of the
+  three abilities and otherwise goes to the classifier. `model: false` (`NO_MODEL=1`) is the offline fallback — a fixed
   grammar, no generation, no model call at all — and it is the mode the
   engine-direct tests run in. See `AGENTS.md` → *The mechanics on their own,
   with the narration off*
@@ -361,13 +366,14 @@ The current database includes the following story-related models with proper ass
   through `#recorded_action` / `#acted_on_record`: a `Scene` also comes out of
   an `rake eval:run` database whose table predates them
 - **Character** → `level` and `hit_die`, **THE STAT BLOCK, AND IT IS THE
-  WORLD'S**. Two integers and nothing else: `hit_die` (one of
-  `Character::HIT_DICE`) is how tough the body is, and `level` is **stored and
-  inert** — nothing reads it for behaviour, nothing advances it, and
-  `#advance!` is the explicit call deliberately invoked from nowhere, exactly
-  as `#move_to!` was when it landed. `#max_hp` is DERIVED and never stored:
-  `hit_die + (level - 1) * (hit_die / 2 + 1)`, with **no ability term**, because
-  there are no abilities at all — the captain's ruling of 2026-09-04. Both
+  WORLD'S**. `hit_die` (one of `Character::HIT_DICE`) is how tough the body is,
+  and `level` is **stored and inert** — nothing reads it for behaviour, nothing
+  advances it, and `#advance!` is the explicit call deliberately invoked from
+  nowhere, exactly as `#move_to!` was when it landed. `#max_hp` is DERIVED and
+  never stored: `hit_die + (level - 1) * (hit_die / 2 + 1)`, with **no ability
+  term** — it gained none when the three abilities landed, because none of them
+  is a constitution, `will` is nerve rather than stamina and the body's capacity
+  is `hit_die`; said in the class header so the question is not reopened. Both
   columns are nullable: a character written before them has no stat block, which
   `rake game:doctor` REPORTS rather than anything inventing a value, and half a
   block is refused. Written by a seed file (`characters[].stats`), by
@@ -375,6 +381,34 @@ The current database includes the following story-related models with proper ass
   `rake game:backfill_stat_blocks` — and **by no model, ever**:
   `Character::StatBlock` rolls it through `Roll`, and nothing in any schema or
   prompt asks for a number
+- **Character** → `strength`, `dexterity` and `will`, **THE THREE ABILITIES, AND
+  THERE ARE EXACTLY THREE**. The captain's ruling of 2026-09-04, evening —
+  *"let's go with the 3 abilities"* — which corrects the earlier *"no
+  abilities"*, a misunderstanding of the word. `Character::ABILITIES` is the
+  closed list every reader iterates and **its order is load-bearing**:
+  `Character::StatBlock` draws the hit die and then the three from ONE
+  `Roll.generator` in that order, so a body is re-derivable for ever.
+  `Character::ABILITY_RANGE` is 3..18 — 3d6's own bounds (`Roll.pool`), so a
+  number outside it came from somewhere that is not the engine. Nullable, whole
+  or nothing, and **`Character#abilities?` is its own predicate that must NOT be
+  folded into `#stat_block?`**: that one gates `#max_hp` and through it every
+  `playthrough_vitals` row, so widening it would nil every existing maximum
+  between a migration and the backfill. Written by a seed file, by
+  `Character::Registry`, by `Character::Generator`, by `Story::Repair` and by
+  `rake game:backfill_stat_blocks` — and **by no model, ever**
+- **Character** → `#check`, **ONE d20 UNDER THE ABILITY, AND THERE IS ONE
+  KERNEL**. `Roll.die(20, rng:) <= score - penalty`: the penalty comes off the
+  TARGET rather than onto the die, so the difficulty is a parameter on the thing
+  being tried (`LocationConnection::DISTANCES`'s shape) instead of a second
+  table. `Character::Check` is the record it answers — printable as
+  `check strength -> d20(7) <= 12 PASS`, which is what `rake game:mechanics`'s
+  `check <ability> [penalty]` prints and `rake game:sweep` asserts. **At a
+  target of zero or less NO DIE IS THROWN**: the pass rate there is zero for
+  ever, the answer is refusal-shaped, and the generator is left untouched so
+  asking the impossible does not consume somebody else's roll.
+  `Playthrough::Turn#check` builds the seed, beside `#harm!` and `#mend!` and
+  for the same reason. There is no ability modifier, no DC ladder, no
+  advantage and no skill
 - **Roll** → the dice, and the one place a seed is built. Plain integer
   arithmetic over `(story, playthrough, story clock, sequence)` — **never
   `String#hash`**, which Ruby salts per process, the trap
@@ -629,8 +663,10 @@ The current database includes the following story-related models with proper ass
 - **What is NOT built, and it is deferred rather than missing**: death saves, an
   unconscious state, scars, revival, restore-from-save, and any level
   advancement rule. There is also no combat, no attack roll, no AC, no
-  initiative, no rest, no ability score, no skill, no spell, no number on an
-  `Item`, and no `Story::Audit` prose check reading HP against narration.
+  initiative, no rest, no skill, no spell, no number on an `Item`, and no
+  `Story::Audit` prose check reading HP against narration. There ARE three
+  ability scores since the evening of 2026-09-04 (see `Character`), and nothing
+  connects a wound to a check: a hurt body rolls against the same number.
 - `lib/engine_sweep/scripts/death-ends-a-playthrough.yml` walks it: harm to
   zero, then every kind of line refused with nothing written.
   `the-unrecorded-hour-two-bodies.yml` walks the other half — one game ending is
@@ -648,8 +684,10 @@ The current database includes the following story-related models with proper ass
   copy of the seeded world under a title of its own inside a rolled-back
   transaction, so it is safe against a database mid-game.
 - `stat_blocks_unmoved` is the same statement about a BODY: no typed line may
-  write `characters.level` or `characters.hit_die`, because a stat block is the
-  world's. What a walk DOES write is `playthrough_vitals`, on the other side of
+  write `characters.level`, `characters.hit_die` or any of the three abilities,
+  because a sheet is the world's — `check strength` throws a die and writes
+  nothing at all, which is what
+  `lib/engine_sweep/scripts/a-check-against-an-ability.yml` walks. What a walk DOES write is `playthrough_vitals`, on the other side of
   the layer split, so `harm 5` walks the whole engine without this moving.
 - `EngineSweep::Expectation::KEYS` is **closed** — an unknown key raises rather
   than passing quietly. `EngineSweep::Invariants` checks the whole world after

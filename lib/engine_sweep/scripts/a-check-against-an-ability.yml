@@ -1,0 +1,204 @@
+# THE THREE ABILITIES ARE THE WORLD'S, AND A CHECK AGAINST ONE WRITES NOTHING.
+#
+# The captain's ruling of 2026-09-04, evening: *"let's go with the 3
+# abilities"* -- strength, dexterity, will. This is that ruling as a walk, on
+# the world whose file hand-authors all three for all three of its people.
+#
+# WHAT ONLY A WALK CAN SEE HERE, and it is two things:
+#
+#   THAT THE FILE'S NUMBERS SURVIVE EVERYTHING TYPED AT THEM. A unit test can
+#   assert that `Character#check` throws no die and `Playthrough::Turn#check`
+#   writes no row. What it cannot assert is that no OTHER verb writes one
+#   either -- and `EngineSweep::Invariants#stat_blocks_unmoved` reads all five
+#   columns off the file after this walk, so a take, a drop, a move, a read, a
+#   harm and a mend are each that assertion too. `abilities:` on the steps is
+#   the same statement said turn by turn, so a failure names the line that did
+#   it.
+#
+#   THAT A CHECK COSTS NO MODEL CALL. `check` is in
+#   `Playthrough::Mechanics::ENGINE_VIEW`, so it is read by the fixed grammar in
+#   BOTH modes; `EngineSweep` replaces `BaseAgent.new` with something that
+#   raises for the length of a run, so every step below is that assertion too.
+#
+# WHAT THIS SCRIPT DELIBERATELY DOES NOT PIN: the face of the die. `Roll`'s seed
+# is built from the story and the playthrough ids among other things, and a walk
+# loads its own copy of the world and creates its own game -- so the number is
+# re-derivable inside one process and not across two databases, which is
+# exactly what `Playthrough::TurnCheckTest` is for. What IS pinned here is what
+# a script can honestly hold: the TARGET the die was thrown at (the score less
+# the penalty, off the file's own numbers), that a d20 was thrown at all, and
+# the one outcome that needs no die -- a target of zero or less, where the
+# engine says the thing cannot be done instead of rolling something it cannot
+# win.
+#
+# The numbers: `the-unrecorded-hour.yml` gives Odile Vance `strength: 9`,
+# `dexterity: 11`, `will: 15` on a `hit_die: 6`, so `Character#max_hp` is 6 --
+# unchanged by any of the three, because there is no ability term in it.
+story: The Unrecorded Hour
+why: the three abilities are the world's, and a check against one writes nothing
+steps:
+- id: the-sheet-as-seeded
+  type: stats
+  why: the file's three numbers, read off the columns and not off the read-out
+  expect:
+    location: Ward Office 12 (realized)
+    abilities:
+      strength: 9
+      dexterity: 11
+      will: 15
+    # THE MAXIMUM HAS NO ABILITY TERM IN IT: a d6 at level 1 holds 6, whatever
+    # the will says. The captain's ruling, as one line of a fixture.
+    hp: 6
+    changed: false
+    refused: false
+
+- id: a-check-throws-one-die-at-the-score
+  type: check strength
+  why: d20-under, and the target is the column -- no modifier and no DC
+  expect:
+    understood: check -> strength
+    note:
+    - 'check strength -> d20('
+    - '<= 9 '
+    # IT WRITES NOTHING, which is the whole property that makes this safe to
+    # type into a real game. No row moved, so `changed:` is false.
+    changed: false
+    refused: false
+    abilities:
+      strength: 9
+    hp: 6
+
+- id: the-penalty-comes-off-the-target
+  type: check will 5
+  why: the difficulty is a parameter on the thing tried, not a second table
+  expect:
+    understood: check -> will (penalty 5)
+    note:
+    - 'check will -> d20('
+    - '<= 10 '
+    changed: false
+    refused: false
+
+- id: a-penalty-of-zero-is-the-plain-check
+  type: check dexterity 0
+  why: zero is what the command means without one, so it is read and not refused
+  expect:
+    understood: check -> dexterity
+    note: '<= 11 '
+    changed: false
+    refused: false
+
+- id: an-ability-by-an-unambiguous-prefix
+  type: check dex
+  why: a player at a prompt is not a JSON enum
+  expect:
+    understood: check -> dexterity
+    changed: false
+    refused: false
+
+- id: and-not-by-a-fragment
+  type: check ill
+  why: a fragment over a three-word list would let this mean `will`
+  expect:
+    refused: true
+    offers: not one of the three abilities
+    changed: false
+
+- id: a-check-it-cannot-win-is-refused-and-not-rolled
+  type: check strength 9
+  why: the one outcome that needs no die -- the pass rate at a target of 0 is 0 for ever
+  expect:
+    understood: check -> strength (penalty 9)
+    refused: true
+    offers:
+    - cannot do it at all
+    - strength 9 less a penalty of 9 is 0
+    - No die was thrown
+    changed: false
+    abilities:
+      strength: 9
+
+- id: past-impossible-is-still-impossible
+  type: check strength 12
+  why: below zero is the same answer, said the same way
+  expect:
+    refused: true
+    offers: is -3
+    changed: false
+
+- id: no-ability-at-all-is-refused-with-the-three-there-are
+  type: check
+  why: the closed set lives in code, and a refusal names it
+  expect:
+    refused: true
+    offers: 'strength, dexterity, will'
+    changed: false
+
+- id: a-penalty-that-is-not-a-number-is-refused
+  type: check will lots
+  why: read strictly, because the number is the whole of what it means
+  expect:
+    refused: true
+    offers: a penalty is a whole number
+    changed: false
+
+# --- and now everything else the engine does, with the sheet watched ---------
+#
+# Each of these is a real write in `Playthrough::Turn`, and each carries the
+# file's three numbers as an expectation -- so a line that touched a body's
+# sheet fails on the step that did it rather than on the invariant afterwards.
+
+- id: a-take-does-not-touch-the-sheet
+  type: take the ward stamp
+  why: an item transfer is the playthrough's layer; a sheet is the world's
+  expect:
+    carrying: [Ward Office 12 daybook, ward stamp]
+    changed: true
+    abilities:
+      strength: 9
+      dexterity: 11
+      will: 15
+
+- id: a-move-does-not-touch-the-sheet
+  type: go the supply closet
+  why: the party moves and nobody's body changes
+  expect:
+    location: The Supply Closet (realized)
+    changed: true
+    abilities:
+      strength: 9
+      dexterity: 11
+      will: 15
+
+- id: harm-moves-the-condition-and-not-the-sheet
+  type: harm 2
+  why: THE LAYER SPLIT IN ONE STEP -- `playthrough_vitals` is this game's, the five columns are the world's
+  expect:
+    hp: 4
+    changed: true
+    abilities:
+      strength: 9
+      dexterity: 11
+      will: 15
+
+- id: and-a-check-still-reads-the-world-after-being-hurt
+  type: check will
+  why: a wound is not a penalty; nothing in this app connects the two yet
+  expect:
+    note: '<= 15 '
+    hp: 4
+    changed: false
+    refused: false
+    abilities:
+      will: 15
+
+- id: mend-is-the-mirror-and-the-sheet-is-still-the-file's
+  type: mend 2
+  why: the last write in the engine, and the last chance for one to move a column
+  expect:
+    hp: 6
+    changed: true
+    abilities:
+      strength: 9
+      dexterity: 11
+      will: 15

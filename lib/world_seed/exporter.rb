@@ -133,6 +133,8 @@ class WorldSeed::Exporter
                    "`opening_scene` and WILL NOT LOAD. Write one by hand, or generate the story with a " \
                    "`rake game:new` new enough to call Scene::Generator.opening."
     end
+
+    report_partial_stats
   end
 
   # Re-exporting overwrites the file, which would throw away a header somebody
@@ -229,18 +231,42 @@ class WorldSeed::Exporter
       document["absent"] = true if character.deliberately_absent?
       # WHAT THE ENGINE ROLLED FOR THIS BODY, so re-seeding a world gives back
       # the same people rather than re-rolling them. Omitted rather than written
-      # null when there is no stat block -- the same "omitted rather than
+      # null when the sheet is not whole -- the same "omitted rather than
       # written false" rule `opening`, `mobile`, `absent` and `readable` follow
       # -- and an omitted key means the loader leaves the columns alone, which
       # for a fresh row is the nothing `rake game:doctor` reports.
       #
-      # Both keys or neither: `Character#a_stat_block_is_whole` refuses to save
-      # half a block and `WorldSeed::Loader#validate_stats!` refuses to load one.
-      document["stats"] = { "level" => character.level, "hit_die" => character.hit_die } if character.stat_block?
+      # ALL FIVE KEYS OR NONE, which is `WorldSeed::Loader::STAT_KEYS` and what
+      # `WorldSeed::Loader#validate_stats!` will load. The record allows a body
+      # with no abilities -- the two predicates do not merge, see `Character` --
+      # so a row halfway through `rake game:backfill_stat_blocks` exports no
+      # `stats` at all rather than a mapping the loader would refuse, and says
+      # so in `#warnings`.
+      document["stats"] = stats_document(character) if character.stat_block? && character.abilities?
       CHARACTER_FIELDS.each { |field| document[field.to_s] = value(character.public_send(field)) }
       items = items_document(character)
       document["items"] = items if items.any?
       document
+    end
+  end
+
+  # THE FIVE NUMBERS, in `WorldSeed::Loader::STAT_KEYS` order so the file reads
+  # the way the sheet does: what the body is, then what it can do.
+  def stats_document(character)
+    WorldSeed::Loader::STAT_KEYS.to_h { |key| [ key, character.public_send(key) ] }
+  end
+
+  # HALF A SHEET, SAID OUT LOUD. A file cannot carry it (the loader takes all
+  # five or none), so the honest export is to omit `stats` and name the person:
+  # writing the two columns alone would produce a file that refuses to load, and
+  # dropping it silently would lose a hand-authored hit die.
+  def report_partial_stats
+    story.characters.order(:id).each do |character|
+      next if character.stat_block? == character.abilities?
+
+      @warnings << "#{character.fullname} has #{character.stat_block? ? "a stat block and no abilities" : "abilities and no stat block"}: " \
+                   "no `stats` key was written, because a file carries all five numbers or none. " \
+                   "`rake game:backfill_stat_blocks` rolls what is missing, then re-export."
     end
   end
 

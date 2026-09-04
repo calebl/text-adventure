@@ -10,13 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_05_090100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_05_100000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
     t.text "backstory"
     t.datetime "created_at", null: false
     t.boolean "deliberately_absent", default: false, null: false
+    t.integer "dexterity"
     t.text "dislikes"
     t.text "fears"
     t.string "fullname"
@@ -31,7 +32,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_090100) do
     t.integer "race_id", null: false
     t.string "sex"
     t.integer "story_id", null: false
+    t.integer "strength"
     t.datetime "updated_at", null: false
+    t.integer "will"
     t.index "story_id, LOWER(fullname)", name: "index_characters_on_story_id_and_lower_fullname", unique: true
     t.index ["location_id", "id"], name: "index_characters_on_location_id_and_id"
     t.index ["location_id"], name: "index_characters_on_location_id"

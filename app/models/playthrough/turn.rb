@@ -468,6 +468,41 @@ class Playthrough::Turn
     row.condition
   end
 
+  # ONE ATTEMPT AT SOMETHING, ROLLED FROM THIS GAME'S OWN SEED, and it writes
+  # NOTHING. `Character#check` is the kernel -- d20-under the ability, the
+  # penalty subtracted from the target -- and this is where the generator it
+  # needs is built, beside `#harm!` and `#mend!` for the same reason those live
+  # here: the statement belongs to the turn, and a caller with its own copy of it
+  # would be testing itself. `rake game:mechanics`'s `check <ability> [penalty]`
+  # is what calls it today; what will call it is whatever mechanic the captain
+  # rules on next.
+  #
+  # THE SEED IS THE ROLL'S IDENTITY, which is `Roll`'s whole doctrine: which
+  # world, which game, where the STORY's clock stood, and which roll within that
+  # moment. So one ability checked twice at one story moment is ONE roll and
+  # comes up the same die -- the property that lets `rake game:sweep` assert a
+  # check outcome offline -- and the three abilities are three rolls because
+  # `Character::ABILITIES`'s index is the sequence.
+  #
+  # THE PENALTY IS NOT IN THE SEED, deliberately: it moves the TARGET and not the
+  # die, so `check strength` and `check strength 4` at one moment throw the same
+  # d20 at two different numbers. That is the kernel's shape read back out of it.
+  #
+  # Nil for somebody with no abilities, which is `Character#check`'s answer and
+  # the same honest nothing `#harm!` gives a body with no stat block.
+  def check(character, ability, penalty: 0)
+    return nil if character.nil?
+
+    # A name outside `Character::ABILITIES` falls through to `Character#check`,
+    # which raises -- one error about one thing, from the class that owns the
+    # list, rather than a second refusal invented here.
+    sequence = Character::ABILITIES.index(ability.to_s.to_sym).to_i + 1
+    rng = Roll.generator(story: playthrough.story_id, playthrough: playthrough.id,
+                         at: playthrough.story.clock.to_i, sequence: sequence)
+
+    character.check(ability, penalty: penalty, rng: rng)
+  end
+
   # What the narrator is told, in the app's own words. Stated as done, because
   # it is: the row is already written by the time this is read.
   # AND WHAT IS WRITTEN ON IT, WHEN THE RECORDS ALREADY HOLD THE WORDS. The turn

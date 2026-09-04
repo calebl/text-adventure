@@ -369,36 +369,64 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal "shuffle_connections", reloaded.world_mechanics.sole.kind
   end
 
-  # --- the stat block --------------------------------------------------------
+  # --- the sheet: the stat block and the three abilities ---------------------
 
-  test "exports a character's stat block, so re-seeding gives back the same body" do
-    create(:character, :protagonist, story: @story, level: 2, hit_die: 10)
+  test "exports a character's whole sheet, so re-seeding gives back the same body" do
+    create(:character, :protagonist, story: @story, level: 2, hit_die: 10,
+           strength: 7, dexterity: 15, will: 18)
 
     stats = WorldSeed::Exporter.new(@story).document["characters"].first["stats"]
 
-    assert_equal({ "level" => 2, "hit_die" => 10 }, stats)
+    assert_equal({ "level" => 2, "hit_die" => 10, "strength" => 7, "dexterity" => 15, "will" => 18 }, stats)
+  end
+
+  # The keys come out in `WorldSeed::Loader::STAT_KEYS` order so the file reads
+  # the way the sheet does: what the body is, then what it can do.
+  test "the sheet's keys are written in the order the loader states" do
+    create(:character, :protagonist, story: @story)
+
+    stats = WorldSeed::Exporter.new(@story).document["characters"].first["stats"]
+
+    assert_equal WorldSeed::Loader::STAT_KEYS, stats.keys
   end
 
   # Omitted rather than written null, like `opening`, `mobile`, `absent` and
   # `readable`: the file says which bodies the world decided and stays quiet
   # about the ones nobody has.
-  test "a character with no stat block carries no stats key at all" do
-    create(:character, :protagonist, :without_a_stat_block, story: @story)
+  test "a character with no sheet at all carries no stats key" do
+    create(:character, :protagonist, :without_a_sheet, story: @story)
 
     assert_not WorldSeed::Exporter.new(@story).document["characters"].first.key?("stats")
+  end
+
+  # HALF A SHEET CANNOT GO IN A FILE, because the loader takes all five keys or
+  # none -- so the honest export omits `stats` and says so, rather than writing
+  # a mapping that would refuse to load or dropping a hand-authored hit die in
+  # silence. It is exactly what a database looks like between the migration and
+  # `rake game:backfill_stat_blocks`.
+  test "a body with no abilities exports no stats key and is named in the warnings" do
+    create(:character, :protagonist, :without_abilities, story: @story, level: 2, hit_die: 10)
+
+    exporter = WorldSeed::Exporter.new(@story)
+
+    assert_not exporter.document["characters"].first.key?("stats")
+    assert_match(/a stat block and no abilities/, exporter.warnings.join("\n"))
   end
 
   # Export, load the file back over the world it came from, export again: the
   # file has to be the same file, which is the whole point of the exporter and
   # the one way a re-seed can be trusted not to drift a body.
-  test "a stat block survives a round trip" do
-    character = create(:character, :protagonist, story: @story, level: 3, hit_die: 6)
+  test "a whole sheet survives a round trip" do
+    character = create(:character, :protagonist, story: @story, level: 3, hit_die: 6,
+                       strength: 4, dexterity: 11, will: 17)
     first = WorldSeed.dump(WorldSeed::Exporter.new(@story).document)
 
-    character.update!(level: 1, hit_die: 8)
+    character.update!(level: 1, hit_die: 8, strength: 12, dexterity: 12, will: 12)
     reloaded = WorldSeed::Loader.new(WorldSeed.parse(first)).load!
 
-    assert_equal [ 3, 6 ], [ reloaded.protagonist.level, reloaded.protagonist.hit_die ]
+    assert_equal [ 3, 6, 4, 11, 17 ],
+                 [ reloaded.protagonist.level, reloaded.protagonist.hit_die,
+                   reloaded.protagonist.strength, reloaded.protagonist.dexterity, reloaded.protagonist.will ]
     assert_equal first, WorldSeed.dump(WorldSeed::Exporter.new(reloaded).document)
   end
 
