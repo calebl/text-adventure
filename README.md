@@ -446,7 +446,7 @@ Four things write a whereabouts, and prose is not one of them:
 | writer | what it does |
 | --- | --- |
 | `characters[].location` in a world file | where the world's own people stand. Absent means *nowhere*, which a file may mean |
-| `Character::Registry` | places somebody who is nowhere, and **never moves somebody who is not** — that rule is the Tide Post defect written down |
+| `Character::Registry` | places somebody who is nowhere, **creates** the people a room is born with, and **never moves somebody who is not** — that rule is the Tide Post defect written down |
 | `Character#move_to!` | the explicit engine call, for a mechanic that means to move a person. Nothing invokes it yet |
 | `rake game:backfill_whereabouts` | once, from the arrival casts still on disk, and it **refuses to guess** when two rooms recorded somebody at the same moment |
 
@@ -459,6 +459,54 @@ What it unlocks: `speak_to` as an arc trigger that means something, a talk that
 refuses because the person is not in the room (which is now regression-tested
 offline — `rake game:sweep`, `present:`), and `rake game:doctor` able to say
 that a world's premise character is not where the world says.
+
+### Rooms are born with people in them, sometimes
+
+The other half, and it is the same seam the furniture uses.
+`Location::DetailSchema` asks for the description, the lore, *at most three
+portable things* **and at most two people** in one answer, and
+`Character::Registry` turns the sheets into rows placed in the room it just
+described. Still two calls per room; still not a narrator tool and not a scan
+of prose.
+
+**Who they are, the engine decides.** Race, age and sex are rolled per slot
+before the prompt is built and *stated* in it, so the model writes a person the
+engine has already chosen rather than choosing one — `Character::Generator`'s
+rule, that asking for a value the prompt just supplied is a decision bought
+twice:
+
+```
+## Who Is Here
+List AT MOST 2 people who are in this place right now.
+- NOBODY is the right answer for most rooms, and an empty list is a complete
+  answer. Name somebody only when this place would be strange without them
+...
+Who they are is already decided. Write these people and do not change them:
+  the 1st is Bell-Keepers, about 69, trans woman
+  the 2nd is Bell-Keepers, about 49, trans man
+```
+
+The model proposes and the registry disposes, on `Item::Registry`'s rules plus
+one of its own:
+
+| refused | why |
+| --- | --- |
+| a name a character, an item or a place in this story already has | the classifier resolves a typed line against all three closed sets by name |
+| anything past `MAX_PER_CALL` (2) / `MAX_PER_ROOM` (3) / `MAX_PER_STORY` (12) | a world generates rooms for as long as somebody walks, so a per-room cap bounds nothing on its own |
+| a bare name with no sheet behind it | inventing a person from a string puts somebody in the world with no appearance and nothing to say |
+| **a sheet the provider cut off** | a half-written person is worse than none. A truncated field is a *failed call* everywhere else in the app; here it is a refusal, because the call it would fail is the room's own description — already saved, and the expensive half of the realization |
+
+**What it cost, measured.** The prompt grows by exactly **+173 tokens** per
+room realized. On the same room of the same world, the detail call came back at
+**789 output tokens with two complete people in it against 396 with `people`
+suppressed** — about 197 tokens a person, against a schema cap of ~400. Most
+rooms pay only the +173, because the prompt asks for nobody.
+
+The first live realization under this schema is also why the caps are what they
+are: it came back with `appearance` and `personality` severed mid-word — *"She
+is small and"* — so `Character::Registry::PERSON_LIMITS` is sized to a finished
+answer, which is the whole of how `SanitizesGeneratedText` tells truncation
+from a near miss.
 
 The move branch is the heart of it, and the thing to notice is that
 **`Playthrough::Turn#move_to` contains no stub-versus-realized branch at all**:

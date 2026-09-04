@@ -211,16 +211,22 @@ The current database includes the following story-related models with proper ass
   prose, ever**. The PARTY is the deliberate exception and stays derived: the
   protagonist and anyone `is_companion` are wherever the *playthrough* is, since
   two people playing one world stand in two rooms at once
-- **Character::Registry** → the people half of the noun registry: it places
-  somebody who is nowhere and it **never moves somebody who is not**. That rule
-  is the Tide Post defect written down — arriving there recorded the protagonist
-  alone on all three runs checked, in a world whose premise is a man chained to
-  that post, because the cast was regenerated from scratch on every arrival. It
-  places and it does not invent; creating people is `ta-narrator-memory`'s, and
-  `#admit!` is the seam it plugs into. **Nothing in `app/` calls `#admit!`
-  today** and the class header says so: nothing produces a proposed cast yet.
-  `MAX_PER_ROOM` is live — `rake game:doctor` reports a room past it, exactly
-  as it does for `Item::Registry::MAX_PER_ROOM`
+- **Character::Registry** → the people half of the noun registry, and the only
+  thing in the app that creates a `Character` outside `rake game:new`. Two
+  jobs, and the first is the Tide Post defect written down: it places somebody
+  who is nowhere and **never moves somebody who is not**. The second is the
+  captain's *"rooms should be born with people in them sometimes"* — 0–2 people
+  written as records when a room is realized, out of the same call that
+  describes it (`Location::DetailSchema`'s optional `people`), exactly the way
+  `Item::Registry` writes the furniture. **Who they are the engine decides**:
+  race, age and sex are rolled by `#slots` and stated in the prompt before the
+  model answers, so one instance per realization or the room is described
+  around one person and written around another. Three bounds read back from
+  the records — `MAX_PER_CALL` (2), `MAX_PER_ROOM` (3), `MAX_PER_STORY` (12),
+  the last two reported by `rake game:doctor`. It refuses a name a character,
+  an item or a place already has, and **a sheet the provider cut off**: a
+  truncated field is a failed call everywhere else, and here it must not be,
+  because the call it would fail is the room's description, already saved
 - **Item::Registry** → how items come to *exist*, and the only thing in the app
   that creates one: 0–3 things written as records when a room is realized, out
   of the same call that describes it (`Location::DetailSchema`'s optional

@@ -122,17 +122,42 @@ The full audit of every planned piece of work against this constraint is in
   Meanwhile the gap is covered by the engine rather than by a check — a player
   cannot SPEAK to somebody who is not there whatever the prose says.
 
-  **Also not done, and deliberately**: generating NEW people at room
-  realization. An `Item` is a name and one line riding on a call the room is
-  already paying for, which is why `Item::Registry` can create one outright; a
-  `Character` is nine validated fields and a model call of its own, so putting
-  people into `Location::DetailSchema` would add a round trip's worth of output
-  to the most expensive thing a move does, on every room, and change what every
-  generated world contains with no measurement to judge it by. That is a
-  world-population feature and the ROADMAP already assigns the stub-then-realize
-  character shape to `ta-narrator-memory`. `Character::Registry#admit!` is the
-  seam it plugs into: it already takes names and already refuses an unknown one
-  with the reason, so creation is the one branch that has to change.
+  **AND ROOMS ARE BORN WITH PEOPLE IN THEM, SOMETIMES** — the captain's scope
+  addition, and it is built the way `ta-item-registry` built the furniture.
+  `Location::DetailSchema` gains an optional, bounded `people` array (0–2, and
+  the prompt makes *nobody* the ordinary answer) and `Character::Registry`
+  turns the sheets into rows placed in the room it just described. Structured
+  records out of the call that describes the room; **not a narrator tool call
+  and not a scan of prose**, which is the standing constraint and is why this
+  **supersedes `ta-narrator-memory`'s characters-by-tool-call for CREATION** —
+  that item keeps the memory and cast-list half.
+
+  *Who they are, the engine decides.* Race, age and sex are rolled per slot by
+  `Character::Registry#slots` and stated in the prompt before the model answers,
+  on `Character::Generator`'s rule that asking for a value the prompt just
+  supplied is a decision bought twice — so one registry instance per
+  realization, or the room is described around one person and written around
+  another. Three bounds, each read back from the records rather than counted
+  down: `MAX_PER_CALL` (2) on one answer, `MAX_PER_ROOM` (3) on the room and
+  `MAX_PER_STORY` (12) on the world, the last two reported by
+  `rake game:doctor`. It refuses a name a character, an item or a place already
+  has, and it never moves somebody who already stands somewhere.
+
+  **And it refuses a sheet the provider cut off**, which the first live
+  realization under this schema found: `appearance` and `personality` came back
+  severed mid-word at their caps — *"She is small and"*. So
+  `Character::Registry::PERSON_LIMITS` is sized to a finished answer (the whole
+  of how `SanitizesGeneratedText` tells truncation from a near miss) and a
+  sheet that still arrives at one is dropped. A truncated field is a FAILED
+  CALL everywhere else in the app; here it must not be, because the call it
+  would fail is the room's own description — already saved, and the expensive
+  half of the realization.
+
+  **Cost, measured.** The realization prompt grows by exactly **+173 tokens**
+  per room. On the same room of the same world the detail call came back at
+  **789 output tokens with two complete people in it against 396 with `people`
+  suppressed by the cap** — about 197 tokens a person, against a schema bound
+  of ~400. Most rooms pay only the +173, because the prompt asks for nobody.
 
   **What it unlocks**, stated because it was the argument for doing it:
   `speak_to` as an arc trigger that means something, an interaction that can
@@ -953,18 +978,16 @@ reading one held-out run the board scored at zero flags.
   narrator only renders them, non-compliance corrupts prose but never facts.
   **Land it before the laws digest** — everything prompt-shaped should wait for
   this split. Detail in **4. Persistence and history** is unaffected by it.
-- **`ta-narrator-memory`** — a cast list and memory beyond one turn, and now
-  narrowed to what `ta-character-whereabouts` deliberately left it: **putting
-  people into a room the world wrote for itself**. Where somebody stands is a
-  record (`characters.location_id`) and `Character::Registry` places them; it
-  never invents one, because a `Character` is nine validated fields and a model
-  call of its own rather than an item's name-and-a-line, and adding that to
-  `Location::DetailSchema` would change what every generated world contains with
-  no measurement to judge it by. So this is the stub-then-realize shape (9)
-  applied to people, plus `Character::Registry#admit!` gaining a create branch —
-  and nothing else about presence has to move. The live tension is unchanged and
-  worth naming: tool-call character creation is itself a narrator-compliance
-  dependency, which the registry's own header argues against.
+- **`ta-narrator-memory`** — **narrowed to the memory half.**
+  `ta-character-whereabouts` took creation: `Character::Registry` writes 0–2
+  people as structured records when a room is realized, out of the same call
+  that describes it, so **characters-by-tool-call is superseded** and the live
+  tension that item carried — that tool-call creation is itself a
+  narrator-compliance dependency — is resolved by not depending on one. What is
+  left is what the name says: a cast list and memory beyond one turn, and
+  characters *mentioned in passing* becoming real records, which is a different
+  and harder question than a room's own cast. `Playthrough::Moment#conclusions`
+  already opened the interaction memory; this is the rest of it.
 - ~~**`ta-chat-persist`**~~ — **landed.** Conversations are kept, bounded and
   visible: see **Done** and **4** below. The arc's dependency on scene
   summarisation is discharged — `Playthrough#recap` is there and costs no call.
@@ -1462,15 +1485,14 @@ What it still owes, roughly in order:
   -- `Scene#typed`, written on every branch, and the debug view reads it -- but
   the turn log is still narration only, so a reloaded transcript reads as
   answers without questions. That is presentation, not plumbing.
-- **A generated room still has nobody in it.** Where a character stands is a
-  record now (`characters.location_id`), and `Scene::Generator#characters_present`
-  reads it — so walking two rooms away no longer empties the world of the people
-  the file placed. What it does not do is PUT anybody in a room the world wrote
-  for itself: `Character::Registry` places somebody who is nowhere and never
-  invents one, because a `Character` is nine validated fields and a model call
-  of its own rather than an item's name-and-a-line. Populating a generated room
-  is `ta-narrator-memory`, and `Character::Registry#admit!` is the seam it plugs
-  into.
+- ~~**A generated room has nobody in it**~~ — **fixed** in the same PR. A room
+  is realized with 0–2 people written as records out of the call that describes
+  it (`Character::Registry`), and the prompt asks for nobody as the ordinary
+  answer. What is still true, and is the honest limit: **a person the model
+  names in prose is still nobody**, because nothing reads narration for a name
+  and nothing should. Only the structured `people` array becomes a record. A
+  character mentioned in passing becoming real is `ta-narrator-memory`'s
+  remaining half.
 - **Solid Queue's worker count is the new ceiling on concurrent turns.** The
   Puma-thread problem is genuinely gone — WebSockets consume no request threads,
   and the turn runs outside the request entirely — but it has a successor:

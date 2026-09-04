@@ -493,6 +493,8 @@ before changing the loop; the rules below are what it does not fit.
   is the other writer and puts one in somebody's hands or on the floor
   (`locations[].items`); the registry leaves seeded rooms alone. See *Generating
   the world* above for the caps and the collisions it refuses.
+  `Character::Registry` is its counterpart for people and rides on the same
+  call — see above.
 - **The three writes that move the world are named methods on
   `Playthrough::Turn`** — `#stand_in!`, `#carry!`, `#put_down!` — because
   `Playthrough::Mechanics` writes through the same ones. Put a new state change
@@ -526,6 +528,17 @@ before changing the loop; the rules below are what it does not fit.
   Post defect written down), the explicit `Character#move_to!`, and
   `rake game:backfill_whereabouts` once. Do not add a narrator tool, a
   per-turn model check, or a scan of prose for a name.
+- **`Character::Registry` is the one thing that creates a `Character`** outside
+  `rake game:new`, at room realization and out of the same call that describes
+  the room — the people half of what `Item::Registry` does for the furniture,
+  and the captain's *"rooms should be born with people in them sometimes."*
+  **Who a new person is, the engine decides**: race, age and sex are rolled by
+  `#slots` and stated in the prompt before the model answers, so build one
+  registry per realization or the room is described around one person and
+  written around another. It refuses a name a character, an item or a place
+  already has, and a sheet the provider cut off — that last one is dropped
+  rather than raised, because the call it would fail is the room's own
+  description, already saved and the expensive half of the realization.
 - **A `Scene`'s cast is a derived snapshot**, written from the records on every
   branch by `Playthrough::Turn#play` beside `typed` and `resolved_action`. It is
   kept rather than dropped because it answers a different question — where
