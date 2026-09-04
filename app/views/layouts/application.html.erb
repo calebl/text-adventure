@@ -68,6 +68,27 @@
       .notice p { margin: .5rem 0; }
       .notice strong { color: #cfd3d8; font-weight: normal; }
 
+      /* THE SLASH MENU -- what the play box can complete this turn with. It is
+         a list under the input rather than an overlay: the input sits at the
+         foot of the page, the log above it is what the player is reading, and a
+         floating panel would cover the turn they just took. `.ask` is the
+         positioning context and the only thing between the form and the page.
+
+         Styled out of the pieces already here -- the input's own border and
+         background, the log's dim grey for the hint -- so the menu reads as
+         part of the box and not as a widget bolted to it. */
+      .ask { position: relative; }
+      .slash-menu {
+        list-style: none; margin: .35rem 0 0; padding: 0;
+        border: 1px solid #333b44; background: #0e1013; max-height: 12rem; overflow-y: auto;
+      }
+      .slash-option {
+        padding: .25rem .6rem; cursor: pointer;
+        display: flex; gap: .75rem; align-items: baseline; justify-content: space-between;
+      }
+      .slash-option[aria-selected="true"] { background: #262b31; color: #e6e9ec; }
+      .slash-hint { color: #6b737b; font-size: 12px; }
+
       /* THE VERDICT ON A TURN -- the evaluation instrument, and the least
          styling that makes it usable without competing with the prose. The
          reading experience is still `ta-api-iface`'s job; this is not the

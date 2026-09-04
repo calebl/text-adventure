@@ -39,6 +39,18 @@
 # something with nothing written on it is NOT one of them -- an `examine` is not
 # reaching for a record it can miss, so it narrates exactly as it always did.
 # Read `Playthrough::Refusal`'s header before changing which lines land there.
+#
+# AND THE LINE IS NOT ALWAYS READ BY A MODEL, since the captain's ruling of
+# 2026-09-04, evening: *"support a slash prefix autocomplete in the text box,
+# and resolve those and verb-prefixed lines offline then fallback to the
+# model."* A line beginning with `/` goes to `Playthrough::Grammar` first and
+# reaches `Playthrough::Classifier` only when the grammar could not resolve the
+# noun; a line WITHOUT one is not claimed at all, whatever it begins with, which
+# is his ruling of 2026-09-05 -- *"I think we should only auto accept the slash
+# commands"* -- after he objected that *"a line beginning with `move`"* should
+# not always be a move. `#read_line` is the whole of it, `scenes.resolved_by` is
+# which reader answered, and everything below the read is one path either way --
+# the grammar builds the same `Intent` the classifier does, on purpose.
 class Playthrough::Turn
   attr_reader :playthrough
 
@@ -83,7 +95,11 @@ class Playthrough::Turn
     # walked in. See `Item::Snapshot`.
     Playthrough::Snapshot.new(playthrough).of_the_room!(playthrough.current_location)
 
-    intent = classifier.classify(command)
+    # THE LINE IS READ, BY THE GRAMMAR FIRST AND BY THE MODEL AFTER. See
+    # `#read_line`: `typed` is the line with its slash taken off, and
+    # `resolved_by` is which of the two answered.
+    typed = Playthrough::Grammar.unslashed(command)
+    intent, resolved_by = read_line(command, typed)
 
     # THE LINE THE ENGINE WILL NOT PLAY, and it stops HERE -- in front of the
     # dispatch, so nothing moves, no `Scene` exists, `Location`'s visit stamp is
@@ -92,12 +108,12 @@ class Playthrough::Turn
     # that found nothing, or a classifier answer the app cannot read: the
     # captain's ruling of 2026-09-04. `Playthrough::Refusal` has the three
     # shapes, the wording, and what is deliberately NOT refused.
-    return refuse(intent, command) if intent.refused?
+    return refuse(intent, typed) if intent.refused?
 
     scene = if intent.destination
       move_to(intent.destination, &block)
     elsif intent.speaker
-      talk_to(intent.speaker, command, &block)
+      talk_to(intent.speaker, typed, &block)
     elsif intent.item
       # THREE THINGS A LINE CAN DO TO ONE THING. The item is the resolved record
       # in every case; the action says which. Dispatching on the action here
@@ -106,9 +122,9 @@ class Playthrough::Turn
       #
       # Reading is first because it is the one that changes nothing about where
       # the item is: `take` and `drop` move a row and this only reads one.
-      intent.examine? ? read_item(intent.item, command, &block) : move_item(intent, command, &block)
+      intent.examine? ? read_item(intent.item, typed, &block) : move_item(intent, typed, &block)
     else
-      narrate(command, intent: intent, &block)
+      narrate(typed, intent: intent, &block)
     end
 
     # WHAT THE PLAYER TYPED, AND WHAT THE TURN DID WITH IT, filed under the turn
@@ -137,7 +153,8 @@ class Playthrough::Turn
     # presence was said on 62% of turns. It is a DERIVED SNAPSHOT now: taken
     # from `Character.present_in` and never the source of it (see
     # `#cast_of`), so the direction the Tide Post defect ran in is reversed.
-    scene&.update!(typed: command, characters: cast_of(scene), **resolution_for(intent))
+    scene&.update!(typed: typed, characters: cast_of(scene), resolved_by: resolved_by,
+                   **resolution_for(intent))
 
     # THE CONVERSATIONS THIS TURN HAD, filed under the turn.
     #
@@ -146,7 +163,10 @@ class Playthrough::Turn
     # turn makes and the only record of what the player actually typed on a turn
     # that was not a conversation. Every branch stamps its own; see
     # `BaseAgent#attribute_to!`.
-    classifier.agent.attribute_to!(scene) if scene
+    # THE CLASSIFIER ONLY IF IT RAN. A turn the grammar resolved made no call at
+    # all, and `BaseAgent#attribute_to!` on an agent that never spoke would file
+    # an empty conversation under the turn.
+    classifier.agent.attribute_to!(scene) if scene && resolved_by == "model"
 
     # And the retention cap is applied -- which by default does nothing at all,
     # because nothing is pruned unless `TA_CHAT_KEEP_TURNS` says so. Still called
@@ -155,6 +175,64 @@ class Playthrough::Turn
     playthrough.prune_conversations!
 
     scene
+  end
+
+  # WHICH READER ANSWERS THE LINE, AND THE GRAMMAR GETS FIRST REFUSAL.
+  #
+  # THE CAPTAIN'S RULING OF 2026-09-04, EVENING, in his words: *"support a slash
+  # prefix autocomplete in the text box, and resolve those and verb-prefixed
+  # lines offline then fallback to the model."*
+  #
+  # And then, 2026-09-05, after he objected that a line beginning with `move`
+  # might be *"move the lamp off the desk"*: ***"I think we should only auto
+  # accept the slash commands."*** He was right and it was worse than the
+  # example -- `Playthrough::Grammar::MEANS_SOMETHING_ELSE` has the four
+  # measured wrong answers a leading verb alone produced.
+  #
+  # So A LINE THAT BEGINS WITH `/` is read by `Playthrough::Grammar` before
+  # anything is spent on it, and a line without one is not claimed at all
+  # whatever its first word. If the grammar RESOLVED A RECORD out of the same
+  # closed set the classifier would have been offered, that is the answer and
+  # there is no model call at all: the turn saves ~0.6s of the player's time and
+  # the app a call, and `Eval::Classifier` measured the verb half at
+  # ~0.98 while the TARGET half is where the misses are -- and a target is a
+  # match against ONE closed list, which is not a thing a model is needed for.
+  #
+  # EVERYTHING ELSE GOES TO THE CLASSIFIER, EXACTLY AS BEFORE -- which since the
+  # slash became the whole claim is every line a player types without one,
+  # measured at 300 of 300 on `Eval::Classifier`'s corpus. And a SLASHED line the
+  # grammar could not RESOLVE falls through too -- a name it could not place, a
+  # name that matched two records, a verb it does not have. That is deliberate
+  # and it is the whole reason the model is still here: every one of those
+  # refusals is "I could not read the noun", which is `Playthrough::Classifier`'s
+  # job, and taking the grammar's word for it would refuse lines the model plays
+  # today. The grammar answers when it is sure and gets out of the way when it
+  # is not.
+  #
+  # ONE LINE ONE ACT SURVIVES THIS, and it survives without a second copy of the
+  # rule. The grammar has no `also_named` -- nothing in a fixed verb table
+  # produces one -- so a line naming two things out of one closed set would
+  # resolve the first and PLAY it. `Playthrough::Grammar::JOINING_WORDS` is what
+  # stops that: such a line is handed on, the classifier sees both names, and the
+  # refusal and the `Playthrough::Overreach` row happen exactly where they always
+  # did. Measured on `Eval::Classifier`'s 300 lines; the constant has the figures.
+  #
+  # WHAT THIS COSTS, STATED. A grammar-resolved turn writes no
+  # `Playthrough::Drift` and no `Playthrough::Overreach` row -- both are taken
+  # inside `Playthrough::Classifier#classify`, which did not run -- so it is
+  # invisible to those counters and to the classifier bench.
+  # `scenes.resolved_by` is what makes that legible instead of silent: every
+  # instrument can size its denominator on the turns its reader actually read.
+  #
+  # Returns `[intent, resolved_by]`, and `resolved_by` is one of
+  # `Playthrough::Grammar::PATHS` -- never `engine_view`, because the browser has
+  # no engine view: `stats`, `harm 5` and `check the ledger` are not claimed and
+  # reach the classifier the way they always did.
+  def read_line(command, typed)
+    reading = grammar.reading_first(command)
+    return [ reading.intent, "grammar" ] if reading&.resolved?
+
+    [ classifier.classify(typed), "model" ]
   end
 
   # THE REFUSAL, RETURNED RATHER THAN NARRATED.
@@ -629,5 +707,12 @@ class Playthrough::Turn
 
   def classifier
     @classifier ||= Playthrough::Classifier.new(playthrough)
+  end
+
+  # The fixed grammar, handed this turn's own classifier so the list it matches
+  # a typed name against is the same list the model would have been offered.
+  # Building either makes no model call.
+  def grammar
+    @grammar ||= Playthrough::Grammar.new(playthrough, classifier: classifier)
   end
 end

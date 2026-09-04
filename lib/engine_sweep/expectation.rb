@@ -42,6 +42,12 @@
 #   offers          text the refusal has to contain, which is how a script pins
 #                   that a refusal named what WOULD have worked
 #   understood      the engine's own reading of the line, exactly
+#   resolved_by     WHICH READER ANSWERED the line, exactly: `grammar`, `model`
+#                   or `engine_view` (`Playthrough::Grammar::PATHS`). A walk runs
+#                   `model: false`, so `model` is unreachable in a script and
+#                   that is the point of asserting the other two -- it is how a
+#                   script pins that a slashed or verb-first line was read
+#                   offline and cost nothing at all
 #   note            text the note has to contain
 #   drifts          `Playthrough::Drift` rows this line wrote
 #
@@ -51,7 +57,7 @@
 class EngineSweep::Expectation
   KEYS = %w[
     location exits exits_include exits_exclude here carrying present inscription
-    hp abilities dead changed change refused offers understood note drifts
+    hp abilities dead changed change refused offers understood resolved_by note drifts
   ].freeze
 
   # "The Vestry Hulk (stub)" -> the name and the detail level it has to be in.
@@ -106,6 +112,7 @@ class EngineSweep::Expectation
       check_flag("refused", report.refused?),
       check_contains("offers", report.refusal),
       check_equals("understood", report.understood),
+      check_equals("resolved_by", report.resolved_by),
       check_contains("note", Array(report.note).join("\n")),
       check_equals("drifts", drifts)
     ].flatten.compact

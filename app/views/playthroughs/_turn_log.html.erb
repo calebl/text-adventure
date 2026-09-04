@@ -152,16 +152,40 @@
       <% end %>
     </p>
 
-    <%= form_with url: playthrough_turns_path(playthrough) do |form| %>
-      <%# A Stimulus target so the play controller can put focus back here after
-          a turn without knowing the markup around it. Targets are resolved by a
-          live `querySelectorAll` at access time, not from a registry an observer
-          fills in later, so this is safe to read in the same tick the stream
-          render finished. %>
-      <%= form.text_field :command, autofocus: autofocus, autocomplete: "off",
-                                    placeholder: "what do you do?",
-                                    data: { play_target: "command" } %>
-      <%= form.submit "Go" %>
-    <% end %>
+    <%# THE SLASH MENU'S SCOPE, and it is INSIDE `#turn_log` on purpose -- the
+        opposite of the play controller's, which has to survive the end-of-turn
+        replace. This one has to be RENEWED by it: the closed sets it completes
+        against are this turn's exits, cast and items, so the controller is torn
+        down and rebuilt with them and there is never a request to make.
+
+        `Playthrough::SlashMenu` is the one author of what is in here, out of
+        `Playthrough::Grammar::RESOLVING` and `Playthrough::Classifier#offered_for`
+        -- the same closed sets the model is offered and a typed name is matched
+        against, so the box cannot offer a word or a name the engine will not
+        read back. `/take slate` submits as ordinary text; the slash is stripped
+        by `Playthrough::Grammar` before the line is read.
+
+        With no JavaScript this is a plain text field in a plain form and
+        nothing is lost but the menu. %>
+    <div class="ask" data-controller="slash"
+         data-slash-menu-value="<%= Playthrough::SlashMenu.new(playthrough).to_json %>">
+      <%= form_with url: playthrough_turns_path(playthrough) do |form| %>
+        <%# Two targets on one field, and they belong to two controllers: `play`
+            puts focus back here after a turn (see the note above), `slash`
+            reads and completes what is in it. Targets are resolved by a live
+            `querySelectorAll` at access time, not from a registry an observer
+            fills in later, so this is safe to read in the same tick the stream
+            render finished. %>
+        <%= form.text_field :command, autofocus: autofocus, autocomplete: "off",
+                                      placeholder: "what do you do? (/ to complete)",
+                                      role: "combobox", aria: { expanded: false, controls: "slash_menu",
+                                                                autocomplete: "list" },
+                                      data: { play_target: "command", slash_target: "input",
+                                              action: "input->slash#refresh focus->slash#refresh " \
+                                                      "keydown->slash#navigate blur->slash#dismiss" } %>
+        <%= form.submit "Go" %>
+      <% end %>
+      <ul class="slash-menu" id="slash_menu" role="listbox" aria-label="commands" data-slash-target="menu" hidden></ul>
+    </div>
   <% end %>
 </div>

@@ -585,10 +585,11 @@ with `database is locked`.** Run one at a time.
 
 ### The offline floor
 
-`rake eval:classifier_offline` runs the same 300 lines through the fixed grammar
-`Playthrough::Mechanics` uses with `model: false` — no key, no network, no
-spend, and it runs in `bin/rails test`. **It is what a classifier call is bought
-against**, and the answer is a number rather than an assumption.
+`rake eval:classifier_offline` runs the same 300 lines through
+`Playthrough::Grammar`, the fixed grammar `Playthrough::Mechanics` uses with
+`model: false` — no key, no network, no spend, and it runs in `bin/rails test`.
+**It is what a classifier call is bought against**, and the answer is a number
+rather than an assumption.
 
 Five outcomes, told apart: `resolved`, `refused` (right refusal, possibly the
 wrong reason — the grammar has no refusal *kinds*), `wrong` (an answer the label
@@ -599,6 +600,32 @@ should have played) and `unparsed`.
 over-refusals.** It gets every reach-that-finds-nothing right and *none* of the
 `other` or `examine-nothing` lines — a fixed grammar has no word for an ordinary
 remark, so it refuses every one.
+
+**And since `ta-slash-input` this floor is no longer only a fallback**, because
+the browser reads a slashed or verb-first line with the same grammar before it
+spends a call. The floor is unaffected by that and stays byte-identical: it
+reaches `Playthrough::Grammar#parse`, while what the browser is ALLOWED to take
+is decided one level up in `#reading_first`, which takes only a reading that
+RESOLVED a record and defers a line still joining two things together
+(`JOINING_WORDS`). **The two numbers are different questions and both are worth
+having**: this one is what the grammar CAN do, and the one below is what the
+loop actually takes of it.
+
+| through `#reading_first`, every line in slash form | n |
+| --- | --- |
+| resolves offline, and the label accepts it | **59 of 300 (19.7%)** |
+| resolves offline, and the label does not | **0** |
+| falls back to `Playthrough::Classifier` | 241 of 300 (80.3%) |
+
+**Typed as they stand, with no slash: 0 of 300** — the captain's ruling of
+2026-09-05, *"I think we should only auto accept the slash commands"*, as a
+number. Nothing changes for a player who never types one. By shape the slashed
+form answers `move` 20/41,
+`take` 13/23, `articles-and-pronouns` 10/27, `talk` 7/46, `examine` 5/17 and
+`drop` 4/18 — and **nothing at all** of `other`, `examine-nothing`, `two-sets`,
+`two-names-one-set` or any `unresolved-*`, every one of which is a line the model
+is bought for. Re-take it with `Playthrough::Grammar#reading_first` over
+`Eval::Classifier.corpus` if the verb table or the guard ever changes.
 
 ### The `also_named` omission rate
 
@@ -659,6 +686,15 @@ default is about $0.40** — the checked-in `classifier-remote` set cost $0.389.
    grammar-first router, say — does not change the prompt but does change the
    population the model still answers, and earns one measurement after it
    lands.
+   *`ta-slash-input` is the worked example of (2), and it is here because the
+   answer was "no paid re-run".* The router it added sends a line to
+   `Playthrough::Grammar` instead of the model **only when the player prefixes
+   it with `/`** (the captain's ruling of 2026-09-05). Every line typed without
+   one still reaches the classifier: **0 of the 300 corpus lines change hands as
+   they stand**, so the population the hosted arms were measured on is unchanged
+   and the checked-in sets still describe this code. What is owed is a
+   measurement of the *slashed* population once players type slashes — which
+   cannot be taken until there are any.
 3. **The model or its settings.** `BaseAgent::REMOTE_MODEL_IDS` or its order,
    `TEMPERATURE`, provider params, any RubyLLM/OpenRouter plumbing in
    `BaseAgent` that touches the call.
@@ -697,10 +733,23 @@ properties:
 | in CI | never | every `bin/rails test` | its offline floor and its corpus validator, yes; the calls, never |
 
 It plays stored scripts through `Playthrough::Mechanics` with **no model at all**
-— the classifier off, the fixed grammar in front of the engine, and
+— the classifier off, `Playthrough::Grammar` in front of the engine, and
 `BaseAgent.new` replaced for the length of the run so a call from anywhere raises
 rather than reaching a provider. Each script loads its own copy of a seeded world
 and rolls it back, so it can be run against a database somebody is mid-game in.
+
+**A script can now say WHICH READER answered a line** (`resolved_by:`), which
+matters because since the captain's ruling of 2026-09-04 (evening) the browser
+reads a slashed or verb-first line with that same grammar before it spends a
+classifier call. `model` is unreachable in a walk by construction, so what a
+script pins is `grammar` and `engine_view` —
+`lib/engine_sweep/scripts/a-slash-in-front-of-the-line.yml` is the walk, and its
+claim is an equivalence: a slashed line and its plain twin leave the same
+records. **The offline half of the classifier bench is unaffected** by that
+routing: `Eval::Classifier::Offline` reaches `Playthrough::Grammar#parse`, and
+the deferring guard the browser uses (`JOINING_WORDS`) lives on
+`#reading_first`, one level above it — so the offline floor is byte-identical
+across the change.
 
 **It asserts; it does not measure.** There is no rate, no baseline and no
 comparison, because there is no sampling: two runs of a script are identical to

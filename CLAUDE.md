@@ -140,6 +140,20 @@ bundle exec brakeman
      *Talking to models*.
 
 2. **The turn loop** (`Playthrough::Turn`):
+   - **A SLASHED line is read by `Playthrough::Grammar` first and by the model
+     second** — the captain's ruling of 2026-09-04, evening: *"support a slash
+     prefix autocomplete in the text box, and resolve those and verb-prefixed
+     lines offline then fallback to the model"*, narrowed by his ruling of
+     2026-09-05: ***"I think we should only auto accept the slash commands."***
+     A line carrying a `/` is matched against the SAME closed set the classifier
+     would have been offered, for no model call; a noun the grammar cannot place
+     falls through to the classifier exactly as before, and **a line with no
+     slash is not claimed at all, whatever it begins with** — a leading verb is
+     a coincidence of English (`Playthrough::Grammar::MEANS_SOMETHING_ELSE` has
+     the four measured wrong answers it produced).
+     `Playthrough::Turn#read_line` is the decision, `scenes.resolved_by` is
+     which reader answered, and `Playthrough::SlashMenu` is what the browser box
+     completes on.
    - `Playthrough::Classifier` reads what the player typed against a closed
      enum of the room's exits, its cast, what is lying in it and what the player
      carries, and the turn branches on the answer: `Scene::Generator` for
@@ -492,6 +506,37 @@ The current database includes the following story-related models with proper ass
   created is moved onto the row with the history first, and a row anybody has
   touched is refused. `lib/engine_sweep/scripts/reseed-a-played-world.yml`
   walks it offline
+
+- **Playthrough::Grammar** → **THE FIXED GRAMMAR, AND IT IS ONE COPY**: a closed
+  verb table and a name matched against `Playthrough::Classifier#offered_for`,
+  making no model call and writing nothing. It was `Playthrough::Mechanics`'s
+  private half until the captain's ruling of 2026-09-04, evening, and is now the
+  FIRST reader of a SLASHED browser line too. `#reading_first` is what a caller
+  with a model behind it asks — it claims a line beginning with `/` **and
+  nothing else** (the ruling of 2026-09-05), answers only when it RESOLVED a
+  record, and defers everything else; `#parse` is what `model: false` and
+  `Eval::Classifier::Offline` reach, and it always answers, slash or no slash.
+  `JOINING_WORDS` is the one guard that lives on the first and not the second:
+  a resolved line still carrying `and`, `then` or a comma once the matched name
+  is cut out of it goes to the classifier instead, because a fixed grammar has
+  no `also_named` and playing half a line would break the one-line-one-act
+  ruling. Measured on the classifier bench's 300 labelled lines: 59 of 300
+  resolve offline in slash form, none of them wrongly — and **0 of 300 without a
+  slash**, which is the ruling of 2026-09-05 stated as a number
+- **Scene** → `resolved_by`, **WHICH READER ANSWERED THE LINE**, one of
+  `Playthrough::Grammar::PATHS`. Nullable by history and stamped `model` on older
+  turns by `Update::Steps::StampResolvedBy`; nil for ever on an opening arrival.
+  `Scene::TURN_READERS` is the narrower list a turn can honestly carry and
+  `rake game:doctor` names a row outside it (`scene_with_an_unknown_reader`). It
+  exists because a grammar-resolved turn calls no classifier and so writes no
+  `Playthrough::Drift` or `Playthrough::Overreach` row
+- **Playthrough::SlashMenu** → what the play box completes on, rendered into the
+  form as a data attribute on every turn and fetched from nowhere: the five verbs
+  of `Playthrough::Grammar::RESOLVING` and, per verb, the closed set
+  `Playthrough::Classifier#offered_for` gives that action. One Stimulus
+  controller reads it (`slash_controller.js`, scoped INSIDE `#turn_log` so the
+  end-of-turn replace renews it), and with no JavaScript the box is a plain text
+  field
 
 - All interactions with AI LLMs should use a structured output with RubyLLM::Schema
 

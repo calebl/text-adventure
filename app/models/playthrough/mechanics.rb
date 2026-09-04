@@ -33,11 +33,23 @@
 # shown. That is the one place this mode pays for words nobody reads, and it is
 # the price of the world moving the way it really does.
 #
-# WITHOUT A MODEL AT ALL: `model: false`. A fixed grammar (`VERBS`) replaces the
+# WITHOUT A MODEL AT ALL: `model: false`. `Playthrough::Grammar` replaces the
 # classifier and a move stands the player in the room without realizing it. That
 # is the fallback for a machine with no key and the mode the engine-direct tests
 # run in; it is not the default, because a mode that cannot read what was typed
 # is testing a smaller thing than the one that can.
+#
+# THE GRAMMAR IS NO LONGER THIS CLASS'S OWN, since the captain's ruling of
+# 2026-09-04, evening: *"support a slash prefix autocomplete in the text box, and
+# resolve those and verb-prefixed lines offline then fallback to the model."* It
+# lives in `Playthrough::Grammar`, `Playthrough::Turn` reads a SLASHED browser
+# line with it first, and this mode reads one with it first too -- in
+# `#classify`, in front of the model call -- so `rake game:mechanics` cannot
+# report a reading the browser would never have made. A line with NO slash goes
+# to the classifier in both, which is his ruling of 2026-09-05: *"I think we
+# should only auto accept the slash commands."* `#parse` survives as a private
+# hop, because `Eval::Classifier::Offline` reaches for it -- and it has no slash
+# rule at all, because `model: false` has nothing to defer to.
 #
 # WHAT IT WRITES is `playthroughs.current_location_id` and `items.playthrough_id`
 # / `items.location_id`, through `Playthrough::Turn#move_to`, `#stand_in!`,
@@ -52,102 +64,6 @@
 # that method returns a Scene and streams prose into a block, and this one has
 # to be able to say what changed, what was refused and why.
 class Playthrough::Mechanics
-  # THE FALLBACK GRAMMAR, for `model: false`. A closed table rather than
-  # anything clever: with the classifier switched off, the parser in front of
-  # the engine has to be the part nobody has to wonder about.
-  #
-  # Everything that only reads goes to `:look`, because the read-out is always
-  # the whole engine view. `inventory`, `exits`, `items` and `who` are in the
-  # table so that typing the obvious word gets the records rather than a
-  # refusal, not because each prints a different thing.
-  VERBS = {
-    "look" => :look, "l" => :look, "where" => :look, "state" => :look,
-    "inventory" => :look, "inv" => :look, "i" => :look,
-    "exits" => :look, "items" => :look, "who" => :look,
-    "go" => :go, "move" => :go, "walk" => :go, "enter" => :go,
-    "take" => :take, "get" => :take, "grab" => :take, "pick up" => :take,
-    "drop" => :drop, "put down" => :drop, "leave" => :drop,
-    # TALKING IS PROSE AND THIS MODE WRITES NONE, so `talk` here resolves a
-    # person and then refuses -- which is the whole point of it. Who is
-    # standing here is `Character.present_in`, a record, so whether a `talk`
-    # RESOLVES is an engine question that can be answered with no model at all,
-    # and answering it offline is what lets `rake game:sweep` regression-test
-    # presence. Before the whereabouts column there was nothing to resolve
-    # against: the room's cast was reconstructed from the last scene here that
-    # recorded anybody, and an offline walk writes no scenes.
-    "talk" => :talk, "speak" => :talk, "ask" => :talk,
-    "read" => :read, "examine" => :read, "x" => :read, "look at" => :read,
-    # THE ENGINE-VIEW COMMANDS FOR A BODY. `vitals` only reads, so it goes to
-    # `:look` with everything else that does; `harm` and `mend` are the two
-    # writers `Playthrough::Turn` owns, reached from here the way `go` reaches
-    # `#stand_in!`. They take a number rather than a name, which is the one
-    # shape no other verb in this table has -- see `#read_harm`.
-    "vitals" => :look, "hp" => :look, "condition" => :look,
-    "harm" => :harm, "hurt" => :harm, "damage" => :harm,
-    "mend" => :mend, "heal" => :mend,
-    # THE THREE ABILITIES, AND THE ONE THING A GAME DOES WITH THEM. `stats` and
-    # `abilities` only read, so they go to `:look`; `check` throws a d20 and
-    # writes NOTHING AT ALL, which makes it the first verb in this table that
-    # changes the world in no way and is still worth typing -- the whole point
-    # of it is that the roll it prints is the roll the engine would make.
-    "stats" => :look, "abilities" => :look,
-    "check" => :check,
-    "help" => :help
-  }.freeze
-
-  # THE VERBS THIS MODE ANSWERS ITSELF IN BOTH MODES, and the whole of why they
-  # are a list rather than a branch.
-  #
-  # Everything else typed with a model available goes to
-  # `Playthrough::Classifier` -- that is what the mode is for. These do not,
-  # because they are not things a player does in the fiction: they are the
-  # engine's own instruments, `Playthrough::IntentSchema::INTENTS` has no word
-  # for any of them, and sending `harm 5` or `check strength` to a closed enum
-  # of six intents would spend a model call to be told it was `other`. `help`
-  # was here first for exactly this reason; the body's verbs joined it, and the
-  # sheet's have now.
-  #
-  # SO THEY MAKE NO MODEL CALL IN EITHER MODE, which is what makes them
-  # assertable by `rake game:sweep` and safe to type into a real game.
-  ENGINE_VIEW = %w[vitals hp condition stats abilities check harm hurt damage mend heal help].freeze
-
-  # What `help` prints in the no-model mode, and what an unknown word is refused
-  # with. Written out rather than derived from `VERBS` because the aliases
-  # matter less than the shape of a command does.
-  GRAMMAR = [
-    "go <exit>        move into one of the ways out (also: move, walk, enter)",
-    "take <item>      pick up something lying here (also: get, grab, pick up)",
-    "drop <item>      put down something you are carrying (also: put down, leave)",
-    "talk <person>    resolve somebody standing here (also: speak, ask). The",
-    "                 talking itself is prose, so this mode names them and stops",
-    "read <item>      what is written on something, out of the records (also:",
-    "                 examine, x, look at). Only a thing marked readable has",
-    "                 words; this mode prints them and never writes them",
-    "look             the engine's whole view of where you are (also: where,",
-    "                 inventory, exits, items, who, state, vitals)",
-    "stats            the player's level, hit die and three abilities, out of",
-    "                 the world's own records (also: abilities)",
-    "check <ability> [penalty]",
-    "                 throw one d20 against strength, dexterity or will and",
-    "                 print what it came up: d20-under the score, with the",
-    "                 penalty taken off the TARGET. It writes nothing, and at a",
-    "                 target of zero or less it says so instead of rolling",
-    "harm <n>         take n hit points off the player, through",
-    "                 Playthrough::Turn#harm!. Zero is death and death ends the",
-    "                 playthrough (also: hurt, damage)",
-    "mend <n>         put n back, up to the maximum. It never raises the dead",
-    "                 (also: heal)",
-    "help             this list",
-    "",
-    "A name is matched against the records: exactly first, then as an",
-    "unambiguous prefix, then as an unambiguous fragment -- and a fragment is",
-    "read both ways round, so `drop the tide-slate` finds the Assize",
-    "tide-slate. A leading the/a/an/to/into/through/onto/at is dropped before",
-    "any of that. Case and extra spaces do not matter. This is the no-model",
-    "fallback -- drop it to have the classifier read what you type and the",
-    "world generate as you walk."
-  ].freeze
-
   # WHAT A REFUSED LINE LEFT BEHIND, said out loud and only in this mode. The
   # counter is what this instrument exists to take, so a refusal that took one
   # should say which table now has a row -- and naming a Ruby class at the
@@ -158,29 +74,6 @@ class Playthrough::Mechanics
     unresolved: "A Playthrough::Drift row was written.",
     named_more_than_one: "A Playthrough::Overreach row was written."
   }.freeze
-
-  # WORDS THAT NAME NOTHING, taken off the FRONT of a typed name and nowhere
-  # else. `go to the Tide Post` and `drop the tide-slate` were both refused
-  # underneath a refusal listing the very thing they named, because an article
-  # or a preposition at the front is fatal to a prefix match and to a fragment
-  # match alike. Only the front: "The Bell of Saint Aravel" has to keep its
-  # "of", and a word in the middle of a name is part of the name.
-  LEADING_WORDS = %w[the a an to into through onto at].freeze
-
-  # THE THREE WAYS A NAME CAN MATCH once it is not exact, tried in this order
-  # and each only on an unambiguous hit.
-  #
-  # The third one is the direction that was missing: what was TYPED holds the
-  # record's whole name. It is the only one tested on word boundaries, because
-  # it is the only one where a short record name could be swallowed by a long
-  # typed line -- an item called "key" would otherwise be found by somebody
-  # typing "monkey". The first two are left exactly as they were: `take aybook`
-  # has always found the daybook and there is no reason today to stop it.
-  HOW_A_NAME_MATCHES = [
-    ->(name, typed) { name.start_with?(typed) },
-    ->(name, typed) { name.include?(typed) },
-    ->(name, typed) { typed.match?(/(?<![[:alnum:]])#{Regexp.escape(name)}(?![[:alnum:]])/) }
-  ].freeze
 
   # What the classifier mode says instead, since there is no grammar to learn.
   CLASSIFIER_HELP = [
@@ -256,43 +149,29 @@ class Playthrough::Mechanics
   # when nothing happened, because "it did not do what I meant" and "it did not
   # understand me" are different bugs. `change` is the one-line diff of the
   # write; `refusal` is why there was none. Never both.
-  Report = Data.define(:command, :understood, :change, :refusal, :note, :state) do
+  #
+  # `resolved_by` is WHICH READER ANSWERED -- one of `Playthrough::Grammar::PATHS`,
+  # and nil for a read-out nobody typed (the state printed before the first
+  # command, and a `reseed:` step). It is on the report rather than derived
+  # because the two readers are told apart before anything acts, and
+  # `EngineSweep::Expectation`'s `resolved_by:` is how a script pins that a
+  # slashed line cost no model call.
+  Report = Data.define(:command, :understood, :change, :refusal, :note, :resolved_by, :state) do
+    def initialize(resolved_by: nil, **rest) = super
+
     def refused? = refusal.present?
     def changed? = change.present?
 
     def to_s
       lines = []
       lines << "  understood: #{understood}" if understood.present?
+      lines << "  read by:    #{resolved_by}" if resolved_by.present?
       lines << "  changed:    #{change}" if changed?
       lines << "  refused:    #{refusal}" if refused?
       lines.concat(note.map { |line| "  #{line}" }) if note.present?
       lines << state.to_s
       lines.join("\n")
     end
-  end
-
-  # HOW ONE TYPED LINE WAS READ, whichever of the two read it. `intent` is a
-  # `Playthrough::Classifier::Intent` either way -- the grammar builds one
-  # rather than inventing a second vocabulary -- so the dispatch below is one
-  # path and not two, which is the whole reason the fallback is trustworthy.
-  # A reading with no intent and no refusal is a command that only reads.
-  # `wound` is the one reading that is not an `Intent` and cannot be: `harm 5`
-  # names a NUMBER where every intent in the closed enum names a record, so
-  # there is nothing for `Playthrough::Classifier::Intent` to hold. It is
-  # `[:harm | :mend, n]` and `#wound` is what acts on it.
-  # `attempt` is the third reading that is not an `Intent`, for the same reason
-  # `wound` is not one: `check strength 2` names an ABILITY and a NUMBER where
-  # every intent in the closed enum names a record. It is `[ability, penalty]`
-  # and `#attempt` is what acts on it.
-  Reading = Data.define(:intent, :refusal, :note, :understood, :wound, :attempt) do
-    def initialize(intent: nil, refusal: nil, note: nil, understood: nil, wound: nil, attempt: nil, **rest) = super
-  end
-
-  # A typed name against the records it could have meant. `record` is what the
-  # command acts on; `candidates` is what to say when it is nil.
-  Match = Data.define(:record, :candidates) do
-    def found? = !record.nil?
-    def ambiguous? = record.nil? && candidates.any?
   end
 
   attr_reader :playthrough
@@ -346,19 +225,24 @@ class Playthrough::Mechanics
       elsif reading.intent.nil?
         read(note: reading.note)
       else
-        act(reading.intent, command, reading.understood)
+        act(reading.intent, command, reading.understood, reading.resolved_by)
       end
 
-    report.with(command: command)
+    # WHICH READER ANSWERED THE LINE, carried onto the report from the reading
+    # rather than worked out again here. `rake game:sweep` asserts it
+    # (`resolved_by:`), and it is the same value `Playthrough::Turn` writes to
+    # `scenes.resolved_by` -- one vocabulary, `Playthrough::Grammar::PATHS`.
+    report.with(command: command, resolved_by: reading.resolved_by)
   end
 
   # The read-out with nothing changed. What the console prints before the first
   # command.
   def read(note: nil, understood: nil)
-    Report.new(command: nil, understood: understood, change: nil, refusal: nil, note: note, state: state)
+    Report.new(command: nil, understood: understood, change: nil, refusal: nil, note: note,
+               resolved_by: nil, state: state)
   end
 
-  def help = read(note: model? ? CLASSIFIER_HELP : GRAMMAR)
+  def help = read(note: model? ? CLASSIFIER_HELP : Playthrough::Grammar::HELP)
 
   # THE ENGINE'S VIEW, out of the same four readers `Playthrough::Classifier`
   # offers a model. Rebuilt on every call: `classifier` memoizes nothing it
@@ -386,277 +270,104 @@ class Playthrough::Mechanics
   end
 
   # The classifier, and in the no-model mode still the classifier -- for its
-  # four closed-set readers and nothing else. It is the inverse of `#resolve`
-  # below: the list a model is offered is the list a typed name is matched
-  # against, and sharing it is what stops the two ways in drifting apart about
-  # what is reachable from here. Building one makes no model call; `#classify`
-  # is the only method on it that talks to one.
+  # four closed-set readers and nothing else. It is the inverse of
+  # `Playthrough::Grammar#resolve`: the list a model is offered is the list a
+  # typed name is matched against, and sharing it is what stops the two ways in
+  # drifting apart about what is reachable from here. Building one makes no
+  # model call; `#classify` is the only method on it that talks to one.
   def classifier
     @classifier ||= Playthrough::Classifier.new(playthrough)
+  end
+
+  # THE FIXED GRAMMAR, and it is the same object `Playthrough::Turn` reads a
+  # browser line with. It was this class's own private half until the captain's
+  # ruling of 2026-09-04, evening; keeping a copy here is what would let the two
+  # modes come to read one line two ways. It is handed this mode's own
+  # classifier so both are offered exactly the same closed sets.
+  def grammar
+    @grammar ||= Playthrough::Grammar.new(playthrough, classifier: classifier)
   end
 
   private
 
   # --- reading the command --------------------------------------------------
 
-  # THE CLASSIFIER PATH. One model call, against the closed sets, and the intent
-  # it returns is the same `Intent` the real loop branches on. A reach that
-  # resolved to nothing still writes a `Playthrough::Drift` row -- that happens
-  # inside `#classify` and is deliberately not bypassed here, because drift is
-  # what this mode is for measuring.
+  # THE CLASSIFIER PATH, WITH THE GRAMMAR IN FRONT OF IT. One model call, against
+  # the closed sets, and the intent it returns is the same `Intent` the real loop
+  # branches on. A reach that resolved to nothing still writes a
+  # `Playthrough::Drift` row -- that happens inside `Playthrough::Classifier#classify`
+  # and is deliberately not bypassed here, because drift is what this mode is
+  # for measuring.
+  #
+  # THE ORDER IS THE BROWSER'S ORDER, and it is the same order for the same
+  # reason: `Playthrough::Turn#play` reads a slashed or verb-first line with the
+  # grammar before it spends a call, so this mode has to as well or
+  # `rake game:mechanics` would report a reading the browser never made.
   def classify(command)
-    return Reading.new if command.to_s.strip.empty?
+    return Playthrough::Grammar::Reading.new if command.to_s.strip.empty?
 
     # THE ENGINE'S OWN INSTRUMENTS ARE NOT CLASSIFIED, in either mode. `help`
     # was always read here rather than sent to a model; `vitals`, `harm <n>` and
-    # `mend <n>` join it for the reason `ENGINE_VIEW` states -- there is no
-    # intent in the closed enum for any of them, so the call could only ever
-    # come back `other`, and it would cost a model call to do it.
+    # `mend <n>` join it for the reason `Playthrough::Grammar::ENGINE_VIEW`
+    # states -- there is no intent in the closed enum for any of them, so the
+    # call could only ever come back `other`, and it would cost a model call to
+    # do it. They are read FIRST, so a slash cannot turn one into a fiction verb.
     engine_view = engine_view_reading(command)
     return engine_view if engine_view
 
-    intent = classifier.classify(command)
-    Reading.new(intent: intent, understood: describe(intent))
+    # AND THE LINE THE GRAMMAR CAN ANSWER ON ITS OWN, for no call at all. Only a
+    # reading that resolved a record is taken: a refusal here is a name the
+    # grammar could not place, which is exactly what the model is bought for.
+    offline = grammar.reading_first(command)
+    return offline if offline&.resolved?
+
+    intent = classifier.classify(Playthrough::Grammar.unslashed(command))
+    Playthrough::Grammar::Reading.new(intent: intent, understood: describe(intent), resolved_by: "model")
   end
 
   # ONE OF THE ENGINE-VIEW COMMANDS, READ BY THE FIXED GRAMMAR, whichever mode
   # is running. Nil for anything else, which is what sends the line on to the
-  # classifier.
+  # grammar and then to the classifier.
   def engine_view_reading(command)
-    text = command.to_s.strip.gsub(/\s+/, " ")
-    verb = verb_for(text)
-    return nil unless verb && ENGINE_VIEW.include?(verb)
+    reading = grammar.engine_view_reading(command, model: model?)
+    return nil if reading.nil?
 
-    return Reading.new(note: CLASSIFIER_HELP) if VERBS.fetch(verb) == :help && model?
-    return nil if in_the_fiction?(verb, text)
-
-    parse(text)
-  end
-
-  # `check` IS THE ONE WORD IN `ENGINE_VIEW` A PLAYER PLAUSIBLY MEANS IN THE
-  # FICTION. Nobody types `vitals` or `mend 3` at a story; *"check the ledger"*
-  # is ordinary English, and swallowing it here would have made the instrument
-  # cost the mode a verb. So with a model available, `check` is the engine's own
-  # only when the next word is one of the three abilities -- otherwise the line
-  # goes to `Playthrough::Classifier` like any other. With no model there is
-  # nothing to hand it to, so the fixed grammar answers and refuses.
-  def in_the_fiction?(verb, text)
-    return false unless model? && VERBS.fetch(verb) == :check
-
-    resolve_ability(text[verb.length..].to_s.strip.split(/\s+/).first).nil?
-  end
-
-  # How the command was read, in the same shape whichever read it.
-  #
-  # THE SECOND NAME IS PART OF THE READING and is said here too, because since
-  # the ruling of 2026-09-04 a line that named two things is refused -- and
-  # `understood: take -> Perrin's private index` printed alone above that
-  # refusal reads as though the index had been taken. What the engine understood
-  # is both names; what it did is nothing. The fixed grammar never produces one,
-  # so nothing offline changes.
-  def describe(intent)
-    reading = "#{intent.action} -> #{label(intent.subject) || "nothing"}"
-    reading += " (and #{label(intent.also_named)})" if intent.named_more_than_one?
+    return Playthrough::Grammar::Reading.new(note: CLASSIFIER_HELP, resolved_by: "engine_view") if help?(command) && model?
 
     reading
   end
+
+  def help?(command)
+    verb = grammar.verb_for(Playthrough::Grammar.unslashed(command))
+
+    verb && Playthrough::Grammar::VERBS[verb] == :help
+  end
+
+  # How the command was read, in the same shape whichever read it, out of the
+  # one place that builds it.
+  def describe(intent) = Playthrough::Grammar.describe(intent)
 
   # The name a record answers to, out of the class that owns the closed sets a
   # typed name is matched against. One definition, so the read-out, the refusals
   # and the counter rows cannot name the same person three ways.
   def label(record) = Playthrough::Classifier.label_for(record)
 
-  # THE NO-MODEL PATH. Longest verb first so `pick up` is not read as `pick`,
-  # and the verb has to be the whole line or be followed by a space -- otherwise
-  # `lease the room` would parse as `l` and lose four words.
-  #
-  # A line that matches no verb at all gets one more chance against the exit
-  # names, which is what makes a bare `north` work in a world whose exits are
-  # named that way. It is tried last and only on an unambiguous match, so it can
-  # never shadow a verb.
-  def parse(command)
-    text = command.to_s.strip.gsub(/\s+/, " ")
-    return Reading.new if text.empty?
-
-    verb = verb_for(text)
-    argument = verb ? text[verb.length..].to_s.strip : text
-
-    case verb && VERBS.fetch(verb)
-    when :look then Reading.new
-    when :help then Reading.new(note: GRAMMAR)
-    when :go then read_move(argument)
-    when :take then read_take(argument)
-    when :drop then read_drop(argument)
-    when :talk then read_talk(argument)
-    when :read then read_reading(argument)
-    when :harm then read_wound(argument, :harm)
-    when :mend then read_wound(argument, :mend)
-    when :check then read_check(argument)
-    else resolve(classifier.exits_here, text).found? ? read_move(text) : unknown(text)
-    end
-  end
-
-  def verb_for(text)
-    downcased = text.downcase
-
-    VERBS.keys.sort_by { |verb| -verb.length }
-         .find { |verb| downcased == verb || downcased.start_with?("#{verb} ") }
-  end
-
-  def read_move(argument)
-    return Reading.new(refusal: "go where? The ways out are: #{names(classifier.exits_here)}") if argument.blank?
-
-    exits = classifier.exits_here
-    match = resolve(exits, argument)
-    return Reading.new(refusal: cannot_find("way out", argument, match, exits)) unless match.found?
-
-    intent(:move, destination: match.record)
-  end
-
-  def read_take(argument)
-    here = classifier.items_here
-    return Reading.new(refusal: "take what? Lying here: #{names(here)}") if argument.blank?
-
-    match = resolve(here, argument)
-    return Reading.new(refusal: cannot_find("thing lying here", argument, match, here)) unless match.found?
-
-    intent(:take, item: match.record)
-  end
-
-  def read_drop(argument)
-    carried = classifier.items_carried
-    return Reading.new(refusal: "drop what? Carrying: #{names(carried)}") if argument.blank?
-
-    match = resolve(carried, argument)
-    return Reading.new(refusal: cannot_find("thing you are carrying", argument, match, carried)) unless match.found?
-
-    intent(:drop, item: match.record)
-  end
-
-  # WHO IS HERE IS A RECORD, so this resolves out of `Character.present_in` --
-  # the same closed set `Playthrough::Classifier` offers a model, read through
-  # the same method. A name that lands on nobody is refused with the cast that
-  # IS here, which is the answer a player standing in the wrong room needs.
-  def read_talk(argument)
-    cast = classifier.characters_here
-    if argument.blank?
-      return Reading.new(refusal: cast.any? ? "talk to whom? Here: #{names(cast)}" : "talk to whom? There is nobody here.")
-    end
-
-    match = resolve(cast, argument)
-    return Reading.new(refusal: cannot_find("person here", argument, match, cast)) unless match.found?
-
-    intent(:talk, speaker: match.record)
-  end
-
-  # READING SOMETHING, against BOTH item sets at once -- what is lying here and
-  # what is in the player's hands. The same closed set
-  # `Playthrough::Classifier#build_intent` resolves an `examine` against, in the
-  # same order, so the grammar and the classifier cannot disagree about which
-  # note `read the note` meant. Nothing is moved either way; see `#recite`.
-  def read_reading(argument)
-    readable = classifier.items_here + classifier.items_carried
-    return Reading.new(refusal: "read what? Here and in your hands: #{names(readable)}") if argument.blank?
-
-    match = resolve(readable, argument)
-    return Reading.new(refusal: cannot_find("thing here or in your hands", argument, match, readable)) unless match.found?
-
-    intent(:examine, item: match.record)
-  end
-
-  # A NUMBER OF HIT POINTS, which is the one argument in this grammar that is
-  # not a name. It is read strictly -- digits and nothing else, and greater than
-  # zero -- because a number is the whole of what the command means and a
-  # tolerant reading of `harm a lot` would have to invent one.
-  #
-  # Zero is refused rather than accepted as a no-op: somebody who typed it meant
-  # something, and quietly doing nothing is the answer that teaches nothing.
-  def read_wound(argument, kind)
-    unless argument.to_s.strip.match?(/\A[1-9][0-9]*\z/)
-      return Reading.new(refusal: "#{kind} how much? `#{kind} <n>` takes a whole number of hit points " \
-                                  "greater than zero, and #{argument.presence.inspect} is not one")
-    end
-
-    amount = argument.to_i
-    Reading.new(wound: [ kind, amount ], understood: "#{kind} -> #{amount} hit point#{"s" unless amount == 1}")
-  end
-
-  # AN ABILITY AND AN OPTIONAL PENALTY, which is the other argument shape in this
-  # grammar that is not a name off a closed set of records -- `Character::ABILITIES`
-  # IS the closed set, and it is three words long and lives in code rather than
-  # in the database.
-  #
-  # The ability is matched exactly or as an unambiguous prefix (`check dex`),
-  # which is the first two of `HOW_A_NAME_MATCHES` and deliberately not the
-  # third: a fragment match over a three-word list would let `check ill` mean
-  # `will`, and there is no record here for a player to have been reading a name
-  # off.
-  #
-  # The penalty is read strictly -- digits, and zero IS allowed, because zero is
-  # what the command means without one and typing it is not a mistake. That is
-  # the opposite of `#read_wound`'s rule, and for the opposite reason: `harm 0`
-  # asks for a change and would make none, while `check strength 0` asks for a
-  # roll and gets exactly the roll it asked for.
-  def read_check(argument)
-    words = argument.to_s.strip.split(/\s+/)
-    if words.empty?
-      return Reading.new(refusal: "check what? `check <ability> [penalty]`, and an ability is: " \
-                                  "#{Character::ABILITIES.join(", ")}")
-    end
-
-    ability = resolve_ability(words.first)
-    unless ability
-      return Reading.new(refusal: "#{words.first.inspect} is not one of the three abilities. There is: " \
-                                  "#{Character::ABILITIES.join(", ")}")
-    end
-
-    penalty = words[1]
-    if penalty && !penalty.match?(/\A[0-9]+\z/)
-      return Reading.new(refusal: "a penalty is a whole number of points taken off the target, and " \
-                                  "#{penalty.inspect} is not one")
-    end
-
-    Reading.new(attempt: [ ability, penalty.to_i ],
-                understood: "check -> #{ability}#{" (penalty #{penalty.to_i})" if penalty.to_i.positive?}")
-  end
-
-  # One of the three, exactly or as an unambiguous prefix. Nil for anything else,
-  # which is a refusal rather than a guess.
-  def resolve_ability(typed)
-    typed = typed.to_s.downcase
-    return typed.to_sym if Character::ABILITIES.include?(typed.to_sym)
-
-    matches = Character::ABILITIES.select { |ability| ability.to_s.start_with?(typed) }
-    matches.one? ? matches.first : nil
-  end
-
-  # The grammar's answer, in the classifier's own vocabulary.
-  def intent(action, **resolved)
-    built = Playthrough::Classifier::Intent.new(action: action, **resolved)
-    Reading.new(intent: built, understood: describe(built))
-  end
-
-  # A word that is not in the table. The grammar comes with the refusal rather
-  # than a suggestion to type `help`: with the classifier switched off there is
-  # nothing here to guess what was meant, so the honest answer is the whole of
-  # what this mode understands.
-  def unknown(text)
-    Reading.new(
-      refusal: "I do not understand #{text.to_s.split.first.inspect}. The no-model grammar is fixed:",
-      note: GRAMMAR
-    )
-  end
+  # THE FIXED GRAMMAR'S OWN READING OF A LINE, kept as a private hop because
+  # `Eval::Classifier::Offline` -- the free floor a classifier call is bought
+  # against -- reaches for exactly this and must not have to know the grammar
+  # moved house.
+  def parse(command) = grammar.parse(command)
 
   # --- acting on it ---------------------------------------------------------
 
   # THE DISPATCH, branch for branch the one `Playthrough::Turn#play` makes, over
   # the same `Intent`. What differs is only the two ends: nothing streams, and
   # the branches that exist to produce prose say so instead.
-  def act(intent, command, understood)
+  def act(intent, command, understood, resolved_by)
     return refuse_line(intent, command, understood) if intent.refused?
 
     if intent.destination
-      move(intent.destination, command, understood)
+      move(intent.destination, command, understood, resolved_by)
     elsif intent.speaker
       talk(intent.speaker, understood)
     elsif intent.item
@@ -699,7 +410,7 @@ class Playthrough::Mechanics
   # and the playthrough moves only once both calls have landed. The prose that
   # arrival contains is not printed, and that is the only thing this branch does
   # differently from the browser.
-  def move(destination, command, understood)
+  def move(destination, command, understood, resolved_by)
     from = playthrough.current_location
     return stand_in(from, destination, understood) unless model?
 
@@ -712,8 +423,12 @@ class Playthrough::Mechanics
     # should be as readable afterwards as one the browser wrote, and a sweep
     # must not be able to tell them apart: `move` is the only branch here that
     # writes a `Scene` at all, so this is the whole of that obligation.
-    scene.update!(typed: command, resolved_action: "move", acted_on: destination)
-    classifier.agent.attribute_to!(scene)
+    scene.update!(typed: Playthrough::Grammar.unslashed(command), resolved_action: "move",
+                  acted_on: destination, resolved_by: resolved_by)
+    # THE CLASSIFIER ONLY IF IT RAN, exactly as `Playthrough::Turn#play` does it:
+    # a move the grammar resolved made no call, and filing an empty conversation
+    # under the turn would say it had.
+    classifier.agent.attribute_to!(scene) if resolved_by == "model"
     playthrough.prune_conversations!
 
     change("moved: #{label(from) || "nowhere"} -> #{destination.name} " \
@@ -884,114 +599,6 @@ class Playthrough::Mechanics
   def nothing(intent, understood)
     refuse("`#{intent.action}` does not move anything: it is answered in prose, and this mode writes none. " \
            "Nothing changed.", understood: understood)
-  end
-
-  # --- resolving a typed name (no-model mode) --------------------------------
-
-  # HOW A TYPED NAME BECOMES A RECORD when there is no model to read it. Exact
-  # first, then an unambiguous prefix, then an unambiguous fragment -- so `take
-  # daybook` finds the "Ward Office 12 daybook" and `go the` finds nothing
-  # rather than guessing. Case and repeated spaces are ignored, because somebody
-  # typing at a prompt is not a JSON enum.
-  #
-  # An exact match that hits two records takes the first, which is exactly what
-  # `Playthrough::Classifier#find_item` does with two identical items in one
-  # room: to a player typing the name they are the same thing, and `find` on an
-  # id-ordered list makes which one stable.
-  #
-  # MATCHING USED TO RUN ONE WAY ONLY -- the record's name had to start with or
-  # contain what was typed -- and both halves of that failed on ordinary
-  # English. `drop the tide-slate` was refused underneath a refusal listing
-  # "Assize tide-slate", because a leading article is fatal to a prefix and to a
-  # fragment alike; `go to the Tide Post` was refused while offering "The Tide
-  # Post", for the same reason one word earlier. So a typed name is read twice,
-  # as typed and again with `LEADING_WORDS` taken off the front, and a fragment
-  # is now looked for in both directions. It is the same shape as the fix the
-  # classifier path got in #102: the player is not a JSON enum.
-  #
-  # Ambiguity found on the first reading is remembered rather than returned, so
-  # the stripped reading still gets its turn -- and is only reported when
-  # nothing else resolved. A refusal that says "matches more than one" when a
-  # later reading would have found exactly one is the same defect wearing a
-  # better message.
-  def resolve(records, typed)
-    ambiguous = nil
-
-    readings_of(typed).each do |wanted|
-      match = match_once(records, wanted)
-      return match if match.found?
-
-      ambiguous ||= match if match.ambiguous?
-    end
-
-    ambiguous || Match.new(record: nil, candidates: [])
-  end
-
-  # WHAT WAS TYPED, AND WHAT WAS TYPED WITHOUT THE WORDS THAT NAME NOTHING. In
-  # that order, so a record actually called "The Tide Post" is still found by
-  # its own name before anything is thrown away, and `go the` still resolves to
-  # nothing rather than guessing.
-  def readings_of(typed)
-    wanted = normalize(typed)
-
-    [ wanted, without_leading_words(wanted) ].uniq.reject(&:empty?)
-  end
-
-  # Never down to nothing: a player who typed only "the" typed a name this
-  # grammar does not have, and the refusal for it is the one that lists what it
-  # does have.
-  def without_leading_words(wanted)
-    words = wanted.split(" ")
-    words.shift while words.many? && LEADING_WORDS.include?(words.first)
-
-    words.join(" ")
-  end
-
-  # ONE READING OF THE TYPED NAME against the records, in the order a person
-  # would try them.
-  def match_once(records, wanted)
-    exact = records.select { |record| names_of(record).any? { |name| normalize(name) == wanted } }
-    return Match.new(record: exact.first, candidates: exact) if exact.any?
-
-    HOW_A_NAME_MATCHES.each do |how|
-      hits = records.select { |record| names_of(record).any? { |name| how.call(normalize(name), wanted) } }
-      return Match.new(record: hits.first, candidates: hits) if hits.one?
-      return Match.new(record: nil, candidates: hits) if hits.many?
-    end
-
-    Match.new(record: nil, candidates: [])
-  end
-
-  # THE NAMES A RECORD ANSWERS TO. A place and a thing have one; a person has
-  # two, and both are in the closed enum `Playthrough::Classifier` offers a
-  # model (`#cast_names`) -- so both have to be matchable here, or the offline
-  # grammar would refuse a name the classifier accepts. A player types "Neb" as
-  # readily as "Neb Halloran", which is the same reason
-  # `Playthrough::Classifier#find_character` matches either.
-  def names_of(record)
-    return [ record.fullname, record.nickname ].compact_blank if record.respond_to?(:fullname)
-
-    [ record.name ].compact_blank
-  end
-
-  def normalize(text)
-    text.to_s.downcase.strip.gsub(/\s+/, " ")
-  end
-
-
-  # A refusal that says what would have worked. Ambiguity and absence are told
-  # apart because they are different mistakes: one is a name that was too short,
-  # the other a name for something that is not there.
-  def cannot_find(kind, typed, match, records)
-    return "#{typed.inspect} matches more than one #{kind}: #{names(match.candidates)}" if match.ambiguous?
-
-    "there is no #{kind} called #{typed.inspect}. There is: #{names(records)}"
-  end
-
-  # As the player would have typed them -- `label` gives a person their
-  # fullname, which is the name a refusal should offer back.
-  def names(records)
-    records.map { |record| label(record) }.presence&.join(", ") || "nothing"
   end
 
   # --- reports --------------------------------------------------------------

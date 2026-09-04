@@ -251,6 +251,67 @@ class Update::StepsTest < ActiveSupport::TestCase
     assert_empty Update::Steps::BackfillStatBlocks.new.call.notes
   end
 
+  # --- the reader stamp -----------------------------------------------------
+
+  # A database older than `scenes.resolved_by`: turns with an action on record
+  # and no reader, plus an opening arrival that nobody typed. Every one of those
+  # turns was answered by the classifier, because there was nothing else in the
+  # app that could answer one.
+  def a_world_with_unattributed_turns
+    story = create(:story)
+    room = create(:location, story: story, name: "Ward Office 12")
+    opening = create(:scene, story: story, location: room, is_opening: true,
+                             story_timestamp: story.start_time)
+    turn = create(:scene, story: story, location: room, story_timestamp: story.start_time,
+                          typed: "take the stamp", resolved_action: "take")
+
+    [ story, opening, turn ]
+  end
+
+  test "the reader stamp says the classifier answered every turn already on disk" do
+    _story, opening, turn = a_world_with_unattributed_turns
+
+    report = Update::Steps::StampResolvedBy.new.call
+
+    assert_predicate report, :changed?
+    assert_match(/1 turn stamped `model`/, report.lines.first)
+    assert_equal "model", turn.reload.resolved_by
+    assert_nil opening.reload.resolved_by, "an opening arrival was read by nobody and keeps nil"
+  end
+
+  test "the reader stamp writes nothing in a dry run, and still says what it would do" do
+    _story, _opening, turn = a_world_with_unattributed_turns
+
+    report = Update::Steps::StampResolvedBy.new(dry_run: true).call
+
+    assert_predicate report, :changed?
+    assert_match(/1 turn stamped/, report.lines.first)
+    assert_nil turn.reload.resolved_by
+  end
+
+  test "the reader stamp has nothing to do the second time" do
+    a_world_with_unattributed_turns
+    Update::Steps::StampResolvedBy.new.call
+
+    report = Update::Steps::StampResolvedBy.new.call
+
+    assert_predicate report, :nothing_to_do?
+    assert_empty report.lines
+  end
+
+  # A turn the grammar answered is left exactly as it is: the step's candidates
+  # are the rows with NO reader, so nothing it writes can overwrite one.
+  test "the reader stamp leaves a turn that already names its reader alone" do
+    story = create(:story)
+    room = create(:location, story: story, name: "Ward Office 12")
+    theirs = create(:scene, story: story, location: room, story_timestamp: story.start_time,
+                            typed: "/take the stamp", resolved_action: "take", resolved_by: "grammar")
+
+    Update::Steps::StampResolvedBy.new.call
+
+    assert_equal "grammar", theirs.reload.resolved_by
+  end
+
   test "the doctor step reports every story and writes nothing" do
     story = create(:story)
     create(:character, :protagonist, story: story)

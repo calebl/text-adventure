@@ -1,4 +1,13 @@
 class Scene < ApplicationRecord
+  # THE READERS THAT WRITE A TURN, which is `Playthrough::Grammar::PATHS` minus
+  # `engine_view`: `harm`, `check` and the read-outs write no `Scene` at all, so
+  # a scene carrying that value is a defect and `rake game:doctor` names it
+  # (`scene_with_an_unknown_reader`). The VALIDATION stays on the whole of
+  # `PATHS` -- one vocabulary for the column -- and this is what the doctor
+  # measures against, because the two questions are different: what the column
+  # may hold, and what a turn can honestly say.
+  TURN_READERS = (Playthrough::Grammar::PATHS - [ "engine_view" ]).freeze
+
   # How much STORY time a turn costs when it is not a journey. A fixed table in
   # code, for exactly the reason `LocationConnection::DISTANCES` is one: how
   # long something takes in the fiction is the app's to decide, so it is a
@@ -68,6 +77,35 @@ class Scene < ApplicationRecord
   # counted by `Playthrough::Drift` rather than left to be inferred here.
   belongs_to :acted_on, polymorphic: true, optional: true
 
+  # WHICH READER ANSWERED THE LINE THIS TURN CAME OUT OF -- one of
+  # `Playthrough::Grammar::PATHS`, written by `Playthrough::Turn#play` beside
+  # `typed` and `resolved_action`, in the one place that has the command and the
+  # scene on every branch.
+  #
+  # THE CAPTAIN'S RULING OF 2026-09-04, EVENING made it a question worth
+  # recording: *"support a slash prefix autocomplete in the text box, and
+  # resolve those and verb-prefixed lines offline then fallback to the model."*
+  # Two readers now answer the lines one reader used to, and a miss attributed
+  # to "the classifier" that the classifier never saw would send the next prompt
+  # change at the wrong thing. `Playthrough::Drift` and `Playthrough::Overreach`
+  # are written from inside `Playthrough::Classifier#classify`, so they are
+  # already `model`-only by construction; this is what says so on the turn, and
+  # what lets `rake game:score` and `Eval::Classifier` size their denominators.
+  #
+  # `engine_view` is in the closed list and NO SCENE CARRIES IT: `harm`, `check`
+  # and the read-outs are `Playthrough::Mechanics`'s own instruments and write no
+  # `Scene` at all. It is in the list because the list is one vocabulary for both
+  # readers and both consumers, and `rake game:doctor` is what would name a row
+  # that somehow got one.
+  #
+  # NULLABLE, AND NIL IS TWO THINGS: an opening arrival, which nobody typed and
+  # no reader read, and a turn played before the column existed -- which is
+  # every turn in the captain's database and in every stored `rake eval:run` set.
+  # `Update::Steps::StampResolvedBy` stamps the second, because before this
+  # column there was exactly one reader; an opening arrival keeps nil for ever.
+  # Read it through `#resolved_by_reader` for the same reason `#recorded_action`
+  # exists: an older run's `scenes` table has no such column at all.
+
   # WHAT THE PLAYER TYPED TO CAUSE THIS TURN, on every branch. `typed` is
   # nil only for a `Scene` nobody asked for: the opening arrival, which is
   # world data written before anybody plays.
@@ -85,6 +123,10 @@ class Scene < ApplicationRecord
   # column is not an `enum`: `Scene.take` is already an ActiveRecord finder, so
   # an enum named for one of these intents would quietly redefine it.
   validates :resolved_action, inclusion: { in: Playthrough::IntentSchema::INTENTS }, allow_nil: true
+  # WHICH READER ANSWERED THE LINE, out of the class that owns the two readers.
+  # A string and not an enum for the same reason above, and `allow_nil` for a
+  # different one: see `#resolved_by`'s note below.
+  validates :resolved_by, inclusion: { in: Playthrough::Grammar::PATHS }, allow_nil: true
   validate :single_opening_scene_per_story
 
   after_create :mark_location_visit
@@ -125,6 +167,11 @@ class Scene < ApplicationRecord
   def recorded_action = has_attribute?("resolved_action") ? resolved_action : nil
 
   def acted_on_record = has_attribute?("acted_on_type") ? acted_on : nil
+
+  # Nil for a scene out of a database whose `scenes` table predates the column,
+  # which is every set `rake eval:score` opens from before 2026-09-05 -- the
+  # truth about that run rather than a raise.
+  def resolved_by_reader = has_attribute?("resolved_by") ? resolved_by : nil
 
   # HOW THE TURN READ, in one line, for a person: `rake eval:read` and the debug
   # page print it beside what was typed. Nil for a turn with no action on

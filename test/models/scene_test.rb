@@ -167,6 +167,28 @@ class SceneTest < ActiveSupport::TestCase
     assert_includes invented.errors[:resolved_action], "is not included in the list"
   end
 
+  # WHICH READER ANSWERED, and it is a wider list than what a turn can honestly
+  # say: the COLUMN may hold any of `Playthrough::Grammar::PATHS`, and
+  # `Scene::TURN_READERS` is what `rake game:doctor` measures a turn against.
+  # The two questions are different and the constants are two on purpose.
+  test "the reader that resolved the turn is one of the grammar's paths, or nothing" do
+    Playthrough::Grammar::PATHS.each do |path|
+      assert build(:scene, story: @story, location: @location, resolved_by: path).valid?
+    end
+
+    assert build(:scene, story: @story, location: @location, resolved_by: nil).valid?
+
+    invented = build(:scene, story: @story, location: @location, resolved_by: "vibes")
+
+    assert_not invented.valid?
+    assert_includes invented.errors[:resolved_by], "is not included in the list"
+  end
+
+  test "the readers that write a turn are the two that read a typed line" do
+    assert_equal %w[grammar model], Scene::TURN_READERS
+    assert_not_includes Scene::TURN_READERS, "engine_view"
+  end
+
   # Three kinds of record out of one reference, which is the closed set the
   # classifier answers from.
   test "the record a turn acted on is a place, a person or a thing" do

@@ -28,6 +28,9 @@ class Update::RegistryTest < ActiveSupport::TestCase
   # out of stay empty for everybody.
   test "the transitions backfill runs before the item backfill" do
     assert_operator index_of(Update::Steps::BackfillTransitions), :<, index_of(Update::Steps::BackfillItems)
+    # The stamp tells a turn from an opening arrival by `scenes.resolved_action`,
+    # which is the column the transition backfill writes.
+    assert_operator index_of(Update::Steps::BackfillTransitions), :<, index_of(Update::Steps::StampResolvedBy)
   end
 
   # `Story::Repair`'s safe remedies act on findings the backfills remove --

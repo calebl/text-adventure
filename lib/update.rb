@@ -74,6 +74,12 @@ module Update
   #                                 two pieces of the item backfill's work).
   #                                 Repairing first spends the findings and then
   #                                 the backfill reports them again.
+  #   stamping after           `Update::Steps::StampResolvedBy` reads
+  #   the transition backfill  `scenes.resolved_action` to tell a turn from an
+  #                            opening arrival, and the transition backfill is
+  #                            what writes that column on an older database. Run
+  #                            the other way round and every turn it would have
+  #                            labelled reads as an arrival and keeps nil.
   #   doctor last                   it reports and never writes, so it is the
   #                                 summary of everything above it.
   REGISTRY = [
@@ -81,6 +87,7 @@ module Update
     Update::Steps::BackfillWhereabouts,
     Update::Steps::BackfillItems,
     Update::Steps::BackfillStatBlocks,
+    Update::Steps::StampResolvedBy,
     Update::Steps::SafeRepairs,
     Update::Steps::Doctor
   ].freeze
