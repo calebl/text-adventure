@@ -1,0 +1,107 @@
+# TWO PEOPLE PLAYING ONE WORLD, and the defect that made this script necessary.
+#
+# The party's inventory used to be `items.character_id` pointing at
+# `story.protagonist` -- one `Character` row per story. So every playthrough of
+# a world shared one pair of hands: the captain started playthrough 17 of a
+# story and it opened holding what 16 had picked up. It is now
+# `items.playthrough_id`, on the same reasoning as `playthroughs.current_location_id`
+# for position: two people playing one seeded world stand in two rooms, and
+# carry two different sets of things.
+#
+# WHAT ONLY TWO PLAYTHROUGHS CAN SEE. Every other script in this directory is
+# one walk, so none of them can tell an inventory on the story from an inventory
+# on the playthrough -- both read the same in one game. `player:` names whose
+# game a step is typed into; the two here are playthroughs of THE SAME loaded
+# copy of the world, created the same way the browser creates one.
+#
+# THE ROOMS ARE STILL SHARED, deliberately, and step `second-finds-the-office-emptied`
+# pins it: what `first` picks up is gone from the floor for `second` too,
+# because a room is the world and the world is the story's. That is a known open
+# question the captain is thinking about separately, and it is written down here
+# so a future change to it fails a test rather than surprising somebody.
+story: The Unrecorded Hour
+why: two playthroughs of one world carry two different sets of things
+steps:
+- id: first-opens-with-the-starting-kit
+  type: look
+  why: the story's starting inventory, which is `characters[].items` in the world file
+  expect:
+    location: Ward Office 12 (realized)
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+    changed: false
+    refused: false
+
+- id: second-opens-with-the-same-starting-kit
+  type: look
+  player: second
+  why: a second game of one world starts from the same world, not from the first game's state
+  expect:
+    location: Ward Office 12 (realized)
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+    changed: false
+    refused: false
+
+- id: first-takes-the-stamp
+  type: take the ward stamp
+  why: one app-owned transfer, into ONE party's hands
+  expect:
+    changed: true
+    understood: take -> ward stamp
+    here: []
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: second-is-not-holding-it
+  type: inventory
+  player: second
+  why: THE DEFECT. Before `items.playthrough_id` this read [daybook, ward stamp]
+  expect:
+    changed: false
+    refused: false
+    carrying: [Ward Office 12 daybook]
+
+- id: second-finds-the-office-emptied
+  type: take the ward stamp
+  why: the rooms ARE shared -- what the other party took is gone from the floor for everybody
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no thing lying here]
+    here: []
+
+- id: second-can-still-drop-its-own-copy
+  type: drop the daybook
+  player: second
+  why: each party's starting kit is its own row, so dropping one is not dropping the other's
+  expect:
+    changed: true
+    change: now lying in Ward Office 12
+    here: [Ward Office 12 daybook]
+    carrying: []
+
+- id: first-still-has-its-own-daybook
+  type: inventory
+  why: the drop above moved one row and one row only
+  expect:
+    changed: false
+    refused: false
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: first-walks-off-with-the-stamp
+  type: go to the Supply Closet
+  why: two parties in two rooms at once, which is what makes the position column per-playthrough
+  expect:
+    changed: true
+    location: The Supply Closet (realized)
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: second-is-still-in-the-office
+  type: look
+  player: second
+  why: moving one playthrough moved one playthrough
+  expect:
+    changed: false
+    location: Ward Office 12 (realized)
+    here: [Ward Office 12 daybook]
+    carrying: []

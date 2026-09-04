@@ -229,8 +229,8 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # down everything` both answer out of the player's hands, never the floor.
   test "a collective drop resolves out of the player's hands and is an overreach" do
     create(:item, :lying, location: @here, name: "copy-room apron")
-    sextant = create(:item, character: @protagonist, name: "brass sextant")
-    create(:item, character: @protagonist, name: "chart tube")
+    sextant = create(:item, :carried, playthrough: @playthrough, name: "brass sextant")
+    create(:item, :carried, playthrough: @playthrough, name: "chart tube")
 
     [ "drop everything", "put down everything" ].each do |command|
       assert_difference "Playthrough::Overreach.count", 1 do
@@ -355,7 +355,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # down.
 
   test "a drop resolves to the item record the player is carrying" do
-    key = create(:item, character: @protagonist, name: "Brass Key")
+    key = create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     intent, = classify({ "intent" => "drop", "target" => "Brass Key" })
 
@@ -365,7 +365,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "what the player is carrying is offered by name" do
-    create(:item, character: @protagonist, name: "Brass Key")
+    create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     _intent, agent = classify({ "intent" => "other", "target" => "nothing" })
 
@@ -403,7 +403,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   # each action resolves against its own list.
   test "take and drop resolve against their own lists" do
     floor = create(:item, :lying, location: @here, name: "Brass Key")
-    carried = create(:item, character: @protagonist, name: "Brass Key")
+    carried = create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     taken, = classify({ "intent" => "take", "target" => "Brass Key" })
     dropped, = classify({ "intent" => "drop", "target" => "Brass Key" })
@@ -475,7 +475,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
   end
 
   test "a drop that resolved to nothing is counted, offering what the player holds" do
-    create(:item, character: @protagonist, name: "Brass Key")
+    create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
 
     assert_difference "Playthrough::Drift.count", 1 do
       classify({ "intent" => "drop", "target" => "nothing" }, command: "put down the lantern")
@@ -535,7 +535,7 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
 
   test "the second name resolves against the same closed set as the action" do
     create(:item, :lying, location: @here, name: "Perrin's private index")
-    carried = create(:item, character: @protagonist, name: "Ward Office 12 daybook")
+    carried = create(:item, :carried, playthrough: @playthrough, name: "Ward Office 12 daybook")
 
     intent, = classify({ "intent" => "take", "target" => "Perrin's private index", "also_named" => carried.name })
 

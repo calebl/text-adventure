@@ -208,4 +208,55 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_predicate result, :repaired?
     assert_equal "The Tide Post", neb.reload.location.name
   end
+  # THE ANSWER IS ON RECORD IN THE TURN LOG: `scenes.resolved_action` and
+  # `scenes.acted_on` say which turn took the row, and a turn belongs to one
+  # playthrough. So attributing a shared inventory costs no model call.
+  test "gives an item the protagonist holds to the playthrough whose turn log took it" do
+    story = story_with_one_way_edge
+    street = story.locations.find_by(name: "The Street")
+    create(:location_connection, location: street, connected_location: story.locations.find_by(name: "Your Office"),
+                                 distance: "a short walk", travel_method: "walking")
+    played = create(:playthrough, story: story.reload, character: story.protagonist,
+                                  current_location: story.locations.find_by(name: "Your Office"))
+    stamp = create(:item, character: story.protagonist, name: "ward stamp")
+    played.update!(current_scene: create(:scene, story: story, location: played.current_location,
+                                                 story_timestamp: story.start_time + 1.hour,
+                                                 typed: "take the ward stamp",
+                                                 resolved_action: "take", acted_on: stamp))
+    repair = Story::Repair.new(story)
+
+    assert_equal [ :protagonist_holds_a_taken_item ], repair.plan.map(&:code)
+    assert_equal 0, repair.model_calls
+
+    result = BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) { repair.apply!.sole }
+
+    assert_predicate result, :repaired?
+    assert_match(/gave ward stamp to playthrough ##{played.id}/, result.message)
+    assert_equal played, stamp.reload.playthrough
+    assert_nil stamp.character_id
+  end
+
+  # ONE FINDING IS ONE ITEM. A repair run that reshuffled a story's whole
+  # inventory would be doing something the captain did not ask for, so the
+  # backfill is asked for this row's answer and nothing else.
+  test "repairing one item leaves the story's starting inventory alone" do
+    story = story_with_one_way_edge
+    street = story.locations.find_by(name: "The Street")
+    create(:location_connection, location: street, connected_location: story.locations.find_by(name: "Your Office"),
+                                 distance: "a short walk", travel_method: "walking")
+    played = create(:playthrough, story: story.reload, character: story.protagonist,
+                                  current_location: story.locations.find_by(name: "Your Office"))
+    stamp = create(:item, character: story.protagonist, name: "ward stamp")
+    daybook = create(:item, character: story.protagonist, name: "a daybook nobody took")
+    played.update!(current_scene: create(:scene, story: story, location: played.current_location,
+                                                 story_timestamp: story.start_time + 1.hour,
+                                                 typed: "take the ward stamp",
+                                                 resolved_action: "take", acted_on: stamp))
+
+    Story::Repair.new(story).apply!
+
+    assert_equal played, stamp.reload.playthrough
+    assert_equal story.protagonist, daybook.reload.character
+    assert_empty played.carried.by_name(daybook.name), "no copy was handed out by a one-item repair"
+  end
 end

@@ -299,9 +299,7 @@ class Character::Registry
   end
 
   def thing_named?(name)
-    Item.where(character_id: story.characters.select(:id))
-        .or(Item.where(location_id: story.locations.select(:id)))
-        .where("LOWER(name) = ?", name.downcase).exists?
+    Item.in_story(story).where("LOWER(name) = ?", name.downcase).exists?
   end
 
   # The one place that says no, and it says which no. The whereabouts check is

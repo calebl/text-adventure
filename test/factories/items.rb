@@ -7,11 +7,20 @@ FactoryBot.define do
 
     # LYING IN A ROOM rather than in somebody's hands, which is the state that
     # makes an item takeable -- the closed set `Playthrough::Classifier`
-    # resolves `take` against. An item is in exactly one of the two places, so
+    # resolves `take` against. An item is in exactly one of the three places, so
     # the character has to go.
     trait :lying do
       character { nil }
       association :location
+    end
+
+    # CARRIED BY A PARTY, which is what the player HAS: `items.playthrough_id`,
+    # the closed set `drop` resolves against. The default `character` is the
+    # world's own people holding their own things -- for the protagonist, the
+    # story's starting inventory -- and it is deliberately not the same state.
+    trait :carried do
+      character { nil }
+      association :playthrough
     end
 
     trait :weapon do

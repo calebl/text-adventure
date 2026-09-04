@@ -109,9 +109,10 @@ class ItemTest < ActiveSupport::TestCase
   end
   # --- where it is --------------------------------------------------------
 
-  # An item is in exactly one of two places, and that is what makes `take`
-  # answerable: `Item#character` is the app's answer to "does the player have
-  # it", and `Item#location` is what puts it on the floor to be picked up.
+  # An item is in exactly one of THREE places, and that is what makes `take`
+  # answerable: `Item#playthrough` is the app's answer to "does the player have
+  # it", `Item#character` is what one of the world's own people is holding, and
+  # `Item#location` is what puts it on the floor to be picked up.
 
   test "an item lying in a location is valid and takeable" do
     room = create(:location, story: @story)
@@ -122,20 +123,48 @@ class ItemTest < ActiveSupport::TestCase
     assert_not_predicate item, :held?
   end
 
+  test "an item a party is carrying is valid, and is neither held nor lying" do
+    playthrough = create(:playthrough, story: @story)
+    item = build(:item, :carried, playthrough: playthrough)
+
+    assert_predicate item, :valid?
+    assert_predicate item, :carried?
+    assert_not_predicate item, :held?
+    assert_not_predicate item, :lying?
+  end
+
   test "an item in nobody's hands and nowhere at all is not a state the world has" do
     item = build(:item, character: nil, location: nil)
 
     assert_not_predicate item, :valid?
-    assert_includes item.errors[:base], "must be held by somebody or lying in a location"
+    assert_includes item.errors[:base],
+                    "must be lying in a location, held by a character or carried by a playthrough"
   end
 
-  # Both at once would be an item that is takeable and already taken.
+  # Two at once would be an item that is takeable and already taken.
   test "an item cannot be held and lying somewhere at the same time" do
     room = create(:location, story: @story)
     item = build(:item, character: @character, location: room)
 
     assert_not_predicate item, :valid?
-    assert_includes item.errors[:location], "must be empty while somebody is holding this"
+    assert_includes item.errors[:base], "is in 2 places at once (character_id, location_id); it may only be in one"
+  end
+
+  test "an item cannot be carried by a party and lying in a room at the same time" do
+    room = create(:location, story: @story)
+    item = build(:item, :carried, playthrough: create(:playthrough, story: @story), location: room)
+
+    assert_not_predicate item, :valid?
+    assert_includes item.errors[:base], "is in 2 places at once (location_id, playthrough_id); it may only be in one"
+  end
+
+  # THE STATE THE OLD SHARED INVENTORY PRODUCED, refused now: a thing cannot be
+  # the story's starting inventory and in one player's hands at the same time.
+  test "an item cannot be held by a character and carried by a party at once" do
+    item = build(:item, character: @character, playthrough: create(:playthrough, story: @story))
+
+    assert_not_predicate item, :valid?
+    assert_includes item.errors[:base], "is in 2 places at once (character_id, playthrough_id); it may only be in one"
   end
 
   test "lying_in offers only what is on the floor of that room" do
@@ -156,11 +185,53 @@ class ItemTest < ActiveSupport::TestCase
     assert_equal [ carried ], Item.held.to_a
   end
 
+  test "carried_by offers only what that one party holds" do
+    playthrough = create(:playthrough, story: @story)
+    other = create(:playthrough, story: @story)
+    mine = create(:item, :carried, playthrough: playthrough, name: "Brass Key")
+    create(:item, :carried, playthrough: other, name: "Iron Ledger")
+    create(:item, character: @character, name: "Vilya")
+
+    assert_equal [ mine ], Item.carried_by(playthrough).to_a
+    assert_equal [ mine ], playthrough.carried.to_a
+  end
+
+  # THERE IS NO `items.story_id` -- an item is reached through whoever has it --
+  # so a leg missing from this query is an item the registry caps cannot see.
+  test "in_story finds an item on all three sides of the one-place rule" do
+    room = create(:location, story: @story)
+    playthrough = create(:playthrough, story: @story)
+    held = create(:item, character: @character, name: "Vilya")
+    lying = create(:item, :lying, location: room, name: "Brass Key")
+    carried = create(:item, :carried, playthrough: playthrough, name: "Iron Ledger")
+
+    elsewhere = create(:story)
+    create(:item, character: create(:character, story: elsewhere), name: "Narya")
+
+    assert_equal [ held, lying, carried ].map(&:id).sort, Item.in_story(@story).pluck(:id).sort
+  end
+
   test "whereabouts says where it is in one sentence" do
     room = create(:location, story: @story, name: "Ward Office 12")
+    playthrough = create(:playthrough, story: @story)
 
     assert_equal "held by #{@character.fullname}", create(:item, character: @character).whereabouts
     assert_equal "lying in Ward Office 12", create(:item, :lying, location: room).whereabouts
+    assert_equal "carried by playthrough ##{playthrough.id}",
+                 create(:item, :carried, playthrough: playthrough).whereabouts
+  end
+
+  # A PLAYTHROUGH'S ITEMS ARE THAT PLAYER'S PROGRESS, like their chats, so they
+  # go with it. Putting them down instead would leave a shared world littered
+  # with one starting-inventory copy per deleted game.
+  test "what a party was carrying goes when the playthrough does" do
+    playthrough = create(:playthrough, story: @story)
+    item = create(:item, :carried, playthrough: playthrough)
+
+    assert_difference -> { Item.count }, -1 do
+      playthrough.destroy!
+    end
+    assert_not Item.exists?(item.id)
   end
 
   # Picking something up is the app moving one row, and the row has to end up in

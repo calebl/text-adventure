@@ -48,6 +48,8 @@ rake game:backfill_transitions      # label old turns with what they did, from t
                                     # classifier answers. Offline; DRY_RUN=1 to see it first
 rake game:backfill_whereabouts      # place characters who have none, from the arrival casts
                                     # still on disk. Offline; refuses to guess; DRY_RUN=1
+rake game:backfill_inventory        # attribute what the protagonist is holding to the playthrough
+                                    # whose turn log took it. Offline; refuses to guess; DRY_RUN=1
 rake game:score                     # the scoreboard: a rate per check, the movement since the
                                     # baseline, and every flagged turn with what was typed and
                                     # the passage. SAVE=1 to re-baseline; CORPUS=corpus or
@@ -199,9 +201,39 @@ The current database includes the following story-related models with proper ass
   `model: false` (`NO_MODEL=1`) is the offline fallback — a fixed grammar, no
   generation, no model call at all — and it is the mode the engine-direct tests
   run in. See `AGENTS.md` → *The mechanics on their own, with the narration off*
-- **Item** → belongs to **Character** *or* **Location**, exactly one of the two:
-  held by somebody, or lying in a place. The second half is what makes `take`
-  and `drop` app-owned state changes rather than prose
+- **Item** → belongs to **Location**, **Character** *or* **Playthrough**,
+  exactly one of the three (`Item::PLACES`): lying in a place, held by one of
+  the world's own people, or **carried by the party of one playthrough**. The
+  second leg is what makes `take` and `drop` app-owned state changes rather than
+  prose; the third is the party's inventory, which is the playthrough's and not
+  the story's — the exact shape of `playthroughs.current_location_id`, because
+  two people playing one seeded world stand in two rooms and carry two
+  different sets of things. Read it through `Playthrough#carried`, **the one
+  reader**, and write it only through `Playthrough::Turn#carry!` / `#put_down!`.
+  `Item.in_story` is the one place the three-leg "every item in this world"
+  query lives; a leg missing from a copy of it is an item the registry caps
+  cannot see. Rooms stay STORY-LEVEL and shared between playthroughs on the
+  captain's explicit ruling — a room one party emptied is empty for the other,
+  pinned either way by `the-unrecorded-hour-two-players.yml`
+- **Story** → `#starting_inventory`, WHAT THE PLAYER STARTS OUT HOLDING: the
+  seed file's `characters[].items` under the protagonist, held by the
+  protagonist row and carried by nobody. The inventory's counterpart of
+  `#opening_location`, and the one thing every playthrough of a world begins
+  from. Position is handed over by reference (a `Location` holds two parties);
+  an `Item` is in exactly one place, so `Playthrough#take_up_the_starting_inventory`
+  gives each new playthrough its own COPY. Only `WorldSeed::Loader` ever writes
+  one — a generated protagonist is given nothing — so a generated world's is
+  legitimately empty
+- **Item::InventoryBackfill** → `rake game:backfill_inventory`, once: whose
+  hands a thing is in, out of the takes recorded on `scenes.resolved_action` /
+  `scenes.acted_on`. Four outcomes told apart — attributed, the starting kit
+  (copied into every existing playthrough, because before the column they were
+  all reading that one row), **ambiguous** (two playthroughs' takes at one
+  story moment: nothing is written and it is named), and unrecoverable (put
+  down where the last party that could have held it stands, on
+  `Playthrough::Turn#drop_item`'s own rule). Offline, `DRY_RUN=1` first, and
+  `rake game:doctor`'s `protagonist_holds_a_taken_item` is the `safe` finding
+  `rake game:repair` acts on one item at a time
 - **Character** → `location`, WHERE THEY ARE: one place at a time, the `Item`
   shape applied to people, and `Character.present_in(location)` is the closed
   set `talk` resolves against exactly as `Item.lying_in` is the one `take`
@@ -374,9 +406,9 @@ The current database includes the following story-related models with proper ass
   list, because an empty required array reads as an omitted field to
   `BaseAgent#missing_schema_keys` — see the constant's comment before changing
   its shape.
-- `Item` is in exactly one place — held by a character or lying in a location.
-  `take` and `drop` are both app-owned: the row moves first, the narrator is told
-  afterwards.
+- `Item` is in exactly one place — lying in a location, held by one of the
+  world's own characters, or carried by a playthrough's party. `take` and `drop`
+  are both app-owned: the row moves first, the narrator is told afterwards.
 - **`character_not_present` was measured and NOT shipped**, and `Story::Audit`'s
   finding 5 has the numbers. The whereabouts record made the check conceivable —
   the records are authoritative about presence now — and the corpora still
@@ -404,6 +436,12 @@ The current database includes the following story-related models with proper ass
   statement about people: nothing a player types may write a whereabouts, and it
   is stated as *unmoved* rather than *nobody is nowhere* because nowhere is a
   state two of the three checked-in worlds deliberately hold.
+- A step may carry `player:`, and **a distinct name is a second `Playthrough` of
+  the same loaded copy of the world**. It is the one thing a single walk cannot
+  see: with the inventory on the story's protagonist row both games read the
+  same hands, so no one-player script could tell a story-level inventory from a
+  playthrough-level one. `the-unrecorded-hour-two-players.yml` is that script,
+  and it also pins what rooms still share.
 - What an offline walk cannot see is written into the scripts themselves; see
   `lib/engine_sweep/scripts/regressions-2026-09-03.yml`.
 

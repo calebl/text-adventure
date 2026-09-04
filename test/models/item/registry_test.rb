@@ -97,6 +97,29 @@ class Item::RegistryTest < ActiveSupport::TestCase
     assert_equal Item::Registry::MAX_PER_STORY, Item::Registry.new(@room).story_items.count
   end
 
+  # A ROOM ITEM A PLAYER IS HOLDING IS STILL IN THE WORLD: `take` moves the row
+  # from `location_id` to `playthrough_id`, and a count that could not see it
+  # would let the registry furnish this world past its own ceiling one pickup at
+  # a time.
+  test "counts what a party is carrying against the world cap" do
+    played = create(:playthrough, story: @story)
+    create(:item, :carried, playthrough: played, name: "a thing in the player's hands")
+
+    assert_equal Item::Registry::MAX_PER_STORY - 1, Item::Registry.new(@room).world_for_items
+  end
+
+  # THE CAP IS ON THE ONTOLOGY -- how many distinct things exist here -- and
+  # every playthrough carries its own copy of the story's starting inventory, so
+  # counting rows would spend the world's budget on one daybook once per player.
+  test "the world cap counts names, so copies of the starting inventory cost one" do
+    protagonist = create(:character, :protagonist, story: @story)
+    create(:item, character: protagonist, name: "Ward Office 12 daybook")
+    4.times { create(:playthrough, story: @story, character: protagonist) }
+
+    assert_equal 5, Item.in_story(@story).where(name: "Ward Office 12 daybook").count
+    assert_equal Item::Registry::MAX_PER_STORY - 1, Item::Registry.new(@room).world_for_items
+  end
+
   test "counts items held by people in this story against the world cap" do
     holder = create(:character, story: @story)
     create(:item, character: holder, name: "carried thing")

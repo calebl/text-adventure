@@ -40,6 +40,7 @@ class Story::Repair
     connection_directions_disagree: { calls: 0, handler: :repair_disagreeing_connection },
     playthrough_without_location: { calls: 0, handler: :repair_playthrough_location },
     character_moved_from_the_seed: { calls: 0, handler: :repair_seeded_whereabouts },
+    protagonist_holds_a_taken_item: { calls: 0, handler: :repair_shared_inventory },
     no_realized_location: { calls: 2, handler: :repair_no_realized_location },
     opening_location_is_a_stub: { calls: 2, handler: :repair_opening_location_stub },
     opening_has_no_exits: { calls: 1, handler: :repair_missing_exits },
@@ -172,6 +173,23 @@ class Story::Repair
 
     character.move_to!(location)
     "put #{character.fullname} back in #{location.name}, where the world file places them"
+  end
+
+  # PUTS ONE ITEM IN THE HANDS THAT PICKED IT UP, out of `Item::InventoryBackfill`
+  # -- the same reading the finding was raised from, run for real this time.
+  #
+  # Safe because the answer is on record: `scenes.resolved_action` and
+  # `scenes.acted_on` say which turn took this row, and a turn belongs to one
+  # playthrough. The backfill is asked for THIS item's answer and nothing else
+  # is written, so a run that repairs one finding does not quietly reshuffle a
+  # story's whole inventory; and if the answer has stopped being attributable
+  # since the doctor read it, this says so rather than guessing.
+  def repair_shared_inventory(finding)
+    item = finding.subject
+    answer = Item::InventoryBackfill.new(story).run(only: item.id).first
+    raise ArgumentError, "no turn records taking #{item.name.inspect} any more, so there is nobody to attribute it to" unless answer&.attributed?
+
+    "gave #{item.name} to playthrough ##{answer.playthrough.id}, whose turn log records taking it"
   end
 
   # Two model calls: the room's description and lore, then its exits.

@@ -100,6 +100,41 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal 2, Item.where(id: story.protagonist.item_ids + closet.item_ids).count
   end
 
+  # WHAT A PLAYER IS CARRYING IS NOW `items.playthrough_id`, and re-seeding has
+  # always put a room's things back where the file says they belong -- so a room
+  # item in somebody's hands comes back, and `playthrough_id` has to be cleared
+  # with it or the row would be saved in two places at once.
+  test "re-seeding takes a room's item out of a party's hands and puts it back" do
+    story = WorldSeed::Loader.new(document).load!
+    closet = story.locations.find_by(name: "The Closet")
+    played = create(:playthrough, story: story, character: story.protagonist, current_location: closet)
+    index = closet.items.find_by(name: "A Private Index")
+    Playthrough::Turn.new(played).send(:carry!, index)
+
+    WorldSeed::Loader.new(document).load!
+
+    assert_equal closet, index.reload.location
+    assert_nil index.playthrough_id
+    assert_equal [ "A Private Index" ], closet.reload.items.pluck(:name)
+  end
+
+  # THE FILE OWNS THE STARTING INVENTORY AND NOT A PLAYER'S COPY OF IT. Every
+  # playthrough carries its own copy of what the story starts the player with,
+  # so `#find_item` searches the world's own rows first: re-asserting the file
+  # onto a copy would take the daybook out of one player's hands and leave the
+  # world's row wherever it was.
+  test "re-seeding leaves each party's copy of the starting inventory alone" do
+    story = WorldSeed::Loader.new(document).load!
+    played = create(:playthrough, story: story, character: story.protagonist)
+    copy = played.carried.sole
+
+    WorldSeed::Loader.new(document).load!
+
+    assert_equal [ "A Daybook" ], story.protagonist.reload.items.pluck(:name)
+    assert_equal copy, played.carried.sole
+    assert_equal played, copy.reload.playthrough
+  end
+
   test "rejects a file with the same item name twice" do
     twice = document
     twice["locations"].last["items"] = [ { "name" => "A Daybook", "description" => "The wrong one.", "properties" => "{}" } ]

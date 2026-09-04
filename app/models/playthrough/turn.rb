@@ -207,9 +207,13 @@ class Playthrough::Turn
   # with nothing in it. A taken item with no sentence about it is a record the
   # next turn can still read.
   #
-  # A playthrough with no character cannot hold anything, so it narrates the
-  # attempt instead. Nothing in the app creates one, but `Playthrough#character`
-  # is optional and a world can be seeded without a protagonist.
+  # A playthrough with no character has nobody to NAME as having picked the
+  # thing up, so it narrates the attempt instead. Since the inventory moved to
+  # `items.playthrough_id` the record itself no longer needs one -- the guard is
+  # about the sentence handed to the narrator, and it stays because a fact that
+  # says "somebody picked it up" is not a fact. Nothing in the app creates such
+  # a playthrough, but `Playthrough#character` is optional and a world can be
+  # seeded without a protagonist.
   def take_item(item, command, &block)
     taker = playthrough.character
     return narrate(command, &block) if taker.nil?
@@ -262,12 +266,17 @@ class Playthrough::Turn
     playthrough.update!(current_location: destination, current_scene: scene)
   end
 
+  # INTO THE PARTY'S HANDS, which is `items.playthrough_id` and not the
+  # protagonist's `character_id`. The protagonist is one row per story, so
+  # writing the inventory there gave every playthrough of a world one shared
+  # set of things: a new game opened holding what the last one had picked up.
+  # `Item` is in exactly one of three places, so the other two are written nil.
   def carry!(item)
-    item.update!(character: playthrough.character, location: nil)
+    item.update!(playthrough: playthrough, character: nil, location: nil)
   end
 
   def put_down!(item)
-    item.update!(character: nil, location: playthrough.current_location)
+    item.update!(playthrough: nil, character: nil, location: playthrough.current_location)
   end
 
   # What the narrator is told, in the app's own words. Stated as done, because

@@ -43,10 +43,11 @@ class Story::Deletion
   def manifest
     {
       "characters" => characters.count,
-      # Both places an item can be: held by one of the story's characters, or
-      # lying in one of its locations (Item). The second half arrived with
-      # app-owned `take` and would otherwise go uncounted.
-      "items" => Item.where(character: characters).or(Item.where(location: locations)).count,
+      # All THREE places an item can be (`Item.in_story`): held by one of the
+      # story's characters, lying in one of its locations, or carried by a party
+      # playing it. The second arrived with app-owned `take` and the third with
+      # the party's own inventory; each would otherwise go uncounted.
+      "items" => Item.in_story(story).count,
       "interactions" => Interaction.where(character: characters).count,
       "locations" => locations.count,
       # One row per DIRECTION, which is what is actually deleted: an edge is

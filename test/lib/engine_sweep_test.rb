@@ -109,6 +109,69 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_match(/carrying/, error.message)
   end
 
+  test "a misspelt step key raises too, so a second player cannot be silently ignored" do
+    error = assert_raises(EngineSweep::InvalidScript) do
+      walk(<<~SCRIPT)
+        story: The Unrecorded Hour
+        steps:
+        - type: look
+          plyer: second
+      SCRIPT
+    end
+
+    assert_match(/plyer/, error.message)
+  end
+
+  # --- two people playing one world -----------------------------------------
+  #
+  # THE ONE THING A SINGLE WALK CANNOT SEE. With the inventory on the story's
+  # protagonist row both playthroughs read the same hands, so no one-player
+  # script could tell a story-level inventory from a playthrough-level one.
+
+  test "a second player is a second playthrough of the same loaded world" do
+    result = walk(<<~SCRIPT)
+      story: The Unrecorded Hour
+      steps:
+      - type: take the ward stamp
+        expect:
+          changed: true
+          carrying: [Ward Office 12 daybook, ward stamp]
+      - type: inventory
+        player: second
+        expect:
+          carrying: [Ward Office 12 daybook]
+      - type: look
+        expect:
+          carrying: [Ward Office 12 daybook, ward stamp]
+    SCRIPT
+
+    assert_predicate result, :passed?, result.report
+  end
+
+  test "a step with no player goes to the same one game as every other" do
+    assert_equal [ EngineSweep::Script::DEFAULT_PLAYER ],
+                 script(<<~SCRIPT).players
+                   story: The Unrecorded Hour
+                   steps:
+                   - type: look
+                   - type: inventory
+                 SCRIPT
+  end
+
+  test "a failure names which player typed the line" do
+    result = walk(<<~SCRIPT)
+      story: The Unrecorded Hour
+      steps:
+      - type: look
+        player: second
+        expect:
+          carrying: []
+    SCRIPT
+
+    assert_not_predicate result, :passed?
+    assert_match(/\(second\)/, result.failures.sole.to_s)
+  end
+
   test "a script naming a world that is not seeded says so" do
     error = assert_raises(EngineSweep::InvalidScript) do
       walk("story: A World Nobody Wrote\nsteps:\n- type: look\n")
@@ -255,10 +318,17 @@ class EngineSweepTest < ActiveSupport::TestCase
   # ones. Written to a file because a script IS a file -- there is no second way
   # to build one, so there is no second thing for this test to be testing.
   def walk(yaml)
+    EngineSweep.run([ script(yaml) ]).sole
+  end
+
+  # A script parsed from a string, written to a real file because `Script.load`
+  # reports every failure by path and a fixture with no path reads as a bug in
+  # the sweep.
+  def script(yaml)
     file = Rails.root.join("tmp", "engine_sweep_test_#{SecureRandom.hex(4)}.yml")
     file.write(yaml)
 
-    EngineSweep.run([ EngineSweep::Script.load(file) ]).sole
+    EngineSweep::Script.load(file)
   ensure
     file&.delete if file&.exist?
   end

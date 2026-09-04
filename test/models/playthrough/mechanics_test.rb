@@ -40,7 +40,6 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
 
     @stamp = create(:item, :lying, location: @office, name: "ward stamp")
     @index = create(:item, :lying, location: @closet, name: "Perrin's private index")
-    @daybook = create(:item, character: @vance, name: "Ward Office 12 daybook")
 
     # The world's opening arrival. What puts Rowe in the room is his own
     # whereabouts (`characters.location_id`, set on the factory above); the
@@ -49,6 +48,13 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
                               description: "The gap in the daybook is still under your hand.")
     @playthrough = create(:playthrough, story: @story, character: @vance,
                                         current_location: @office, current_scene: @opening)
+
+    # WHAT THE PLAYER HAS IS THE PLAYTHROUGH'S, not the protagonist's: this is
+    # `items.playthrough_id`, the closed set `drop` resolves against. Created
+    # after the playthrough on purpose -- an item held by the protagonist would
+    # be the story's STARTING INVENTORY, which a new playthrough copies rather
+    # than carries, and the copy is not the row a test can then follow.
+    @daybook = create(:item, :carried, playthrough: @playthrough, name: "Ward Office 12 daybook")
   end
 
   def connect(from, to)
@@ -98,7 +104,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   test "a walk through the world moves the playthrough and the items, and the records say so at every step" do
     report = play("take stamp")
     assert_change report, "took: ward stamp"
-    assert_equal @vance, @stamp.reload.character
+    assert_equal @playthrough, @stamp.reload.playthrough
     assert_nil @stamp.location
 
     report = play("go closet")
@@ -115,7 +121,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
 
     report = play("take index")
     assert_change report, "took: Perrin's private index"
-    assert_equal @vance, @index.reload.character
+    assert_equal @playthrough, @index.reload.playthrough
 
     report = play("go ward office")
     assert_change report, "moved: The Supply Closet -> Ward Office 12"
@@ -124,7 +130,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     # And the stamp stayed in the closet when she walked out of it.
     assert_equal @closet, @stamp.reload.location
     assert_empty Item.lying_in(@office)
-    assert_equal [ @daybook, @index ].map(&:id).sort, Item.for_character(@vance).pluck(:id).sort
+    assert_equal [ @daybook, @index ].map(&:id).sort, @playthrough.carried.pluck(:id).sort
   end
 
   test "the read-out matches the database after every command of the walk" do
@@ -166,7 +172,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     report = play("take index")
 
     assert_refusal report, "there is no thing lying here called \"index\""
-    assert_nil @index.reload.character
+    assert_nil @index.reload.playthrough
     assert_equal @closet, @index.location
   end
 
@@ -174,7 +180,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     report = play("take daybook")
 
     assert_refusal report, "there is no thing lying here called \"daybook\""
-    assert_equal @vance, @daybook.reload.character
+    assert_equal @playthrough, @daybook.reload.playthrough
   end
 
   test "dropping something the player is not carrying is refused, and nothing moves" do
@@ -192,7 +198,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
 
     assert_refusal report, "matches more than one"
     assert_includes report.refusal, "ward stamp pad"
-    assert_nil @stamp.reload.character
+    assert_nil @stamp.reload.playthrough
   end
 
   test "a word that is not in the grammar is refused with the whole grammar" do
@@ -275,7 +281,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
 
     assert_equal "take -> ward stamp", report.understood
     assert_includes report.change, "took: ward stamp"
-    assert_equal @vance, @stamp.reload.character
+    assert_equal @playthrough, @stamp.reload.playthrough
     assert_nil @stamp.location
     # One prompt: the classification. A narrator call would have been a second,
     # and FakeAgent would have raised on it.
@@ -334,7 +340,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     report, agent = interpret("pick up the gas key", CLASSIFY.call("take", "gas key"))
     assert_equal "take -> gas key", report.understood
     assert_includes report.change, "took: gas key"
-    assert_equal @vance, key.reload.character
+    assert_equal @playthrough, key.reload.playthrough
     assert_nil key.location
     assert_equal 1, agent.prompts.count
 
@@ -354,7 +360,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
 
     report = play("take gas key")
     assert_change report, "took: gas key"
-    assert_equal @vance, key.reload.character
+    assert_equal @playthrough, key.reload.playthrough
 
     report = play("drop gas key")
     assert_change report, "dropped: gas key"
@@ -445,7 +451,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   end
 
   test "empty hands are refused the same way as an empty floor" do
-    @daybook.update!(character: nil, location: @office)
+    @daybook.update!(playthrough: nil, location: @office)
 
     report, = interpret("drop it all", CLASSIFY.call("drop", "nothing"))
 
@@ -595,7 +601,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     @playthrough.update!(character: nil)
 
     assert_refusal play("take stamp"), "no protagonist"
-    assert_nil @stamp.reload.character
+    assert_nil @stamp.reload.playthrough
   end
 
   test "a playthrough standing nowhere has no room to put anything down in" do
@@ -603,7 +609,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     report = play("drop daybook")
 
     assert_refusal report, "standing nowhere"
-    assert_equal @vance, @daybook.reload.character
+    assert_equal @playthrough, @daybook.reload.playthrough
     assert_includes report.to_s, "nowhere"
   end
 
@@ -643,10 +649,10 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
 
     assert_equal here ? here.exits.order(:id).to_a : [], state.exits, where
     assert_equal here ? Item.lying_in(here).order(:id).to_a : [], state.items_here, where
-    assert_equal who ? Item.for_character(who).order(:id).to_a : [], state.carried, where
+    assert_equal @playthrough.carried.to_a, state.carried, where
 
     state.items_here.each { |item| assert_equal here, item.reload.location, where }
-    state.carried.each { |item| assert_equal who, item.reload.character, where }
+    state.carried.each { |item| assert_equal @playthrough, item.reload.playthrough, where }
 
     # And the printed block names them, so a read-out cannot be right in the
     # records and wrong on the screen.
@@ -665,8 +671,8 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
                         CLASSIFY.call("take", @stamp.name, apron.name))
 
     assert_predicate report, :changed?
-    assert_equal @vance, @stamp.reload.character, "the first thing is still taken"
-    assert_nil apron.reload.character, "the second is not"
+    assert_equal @playthrough, @stamp.reload.playthrough, "the first thing is still taken"
+    assert_nil apron.reload.playthrough, "the second is not"
     assert_equal @office, apron.location
 
     assert_includes report.note.join, apron.name

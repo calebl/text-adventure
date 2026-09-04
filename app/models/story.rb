@@ -25,6 +25,26 @@ class Story < ApplicationRecord
   validates :summary, presence: true
   validates :start_time, presence: true
 
+  # WHAT THE PLAYER STARTS OUT HOLDING, and it is world data rather than
+  # anybody's progress: the seed file's `characters[].items` under the
+  # protagonist, held by the protagonist row, carried by nobody.
+  #
+  # It is the inventory's counterpart of `#opening_location` -- the one thing
+  # every playthrough of this world begins from. A Location can hold two
+  # parties at once, so position is handed over by reference; an `Item` is in
+  # exactly one place, so `Playthrough#take_up_the_starting_inventory` gives
+  # each playthrough ITS OWN COPY of each of these and the rows below are never
+  # carried, never takeable and never in any closed set.
+  #
+  # Only `WorldSeed::Loader` ever writes one: `rake game:new` gives a generated
+  # protagonist nothing, and `Item::Registry` furnishes rooms and never people.
+  # So a generated world's starting inventory is legitimately empty.
+  def starting_inventory
+    return Item.none if protagonist.nil?
+
+    Item.for_character(protagonist).order(:id)
+  end
+
   # The place the story opens in. Story::Generator creates it as a stub
   # alongside the story, so it is the story's oldest location; realizing it is
   # Location::Generator.opening's whole job.

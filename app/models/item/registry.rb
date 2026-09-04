@@ -99,18 +99,23 @@ class Item::Registry
     [ MAX_PER_STORY - story_item_count, 0 ].max
   end
 
-  # Every item in this story, on either side of `Item`'s one-place rule. There
-  # is no `items.story_id` -- an item is owned by whoever holds it -- so this
-  # is the two queries that answer for a story, and it is the same pair
-  # `WorldSeed::Loader#find_item` uses.
+  # Every item in this story, on whichever of the three sides of `Item`'s
+  # one-place rule it sits -- `Item.in_story`, which is the one place those
+  # queries are written. The playthrough leg is not optional here: when a
+  # player takes something the row leaves `location_id` for `playthrough_id`,
+  # and a count that could not see it would let the registry furnish the world
+  # past its own ceiling one pickup at a time.
   def story_items
-    Item.where(character_id: story.characters.select(:id))
-        .or(Item.where(location_id: story.locations.select(:id)))
+    Item.in_story(story)
   end
 
   private
 
-  def story_item_count = story_items.count
+  # BY NAME, not by row. `MAX_PER_STORY` bounds the ONTOLOGY -- how many
+  # distinct things this world contains -- and every playthrough carries its
+  # own copy of the story's starting inventory, so counting rows would spend
+  # the world's budget on the same daybook once per player.
+  def story_item_count = story_items.distinct.count(:name)
 
   def admit_one(attributes, created)
     name = sanitize_string(attributes["name"].to_s)

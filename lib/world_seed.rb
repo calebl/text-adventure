@@ -33,6 +33,22 @@ module WorldSeed
     title.to_s.downcase.gsub(/[^a-z0-9]+/, "-").delete_prefix("-").delete_suffix("-")
   end
 
+  # THE CHECKED-IN FILE FOR ONE STORY, matched on title the way
+  # `WorldSeed::Loader` matches everything else, or nil for a story that is not
+  # one of them -- which is every generated world and every engine-sweep copy.
+  #
+  # Nil on a malformed file too: a caller reading the file for corroborating
+  # evidence must not be the thing that raises on a broken one, which is
+  # `WorldSeed::Loader`'s job to complain about. `Story::Doctor` and
+  # `Item::InventoryBackfill` both read it here rather than each opening the
+  # path, so "is this one of ours" has one answer.
+  def self.checked_in_document(title)
+    path = DIRECTORY.join("#{slug(title)}.yml")
+    File.exist?(path) ? parse(File.read(path)) : nil
+  rescue StandardError
+    nil
+  end
+
   # Prose is stored as a literal block scalar (`|-`) rather than a folded or
   # quoted one: one paragraph is one physical line, so editing a sentence
   # produces a one-line diff instead of reflowing the whole field, and what you

@@ -32,8 +32,8 @@
 # run in; it is not the default, because a mode that cannot read what was typed
 # is testing a smaller thing than the one that can.
 #
-# WHAT IT WRITES is `playthroughs.current_location_id` and `items.character_id` /
-# `items.location_id`, through `Playthrough::Turn#move_to`, `#stand_in!`,
+# WHAT IT WRITES is `playthroughs.current_location_id` and `items.playthrough_id`
+# / `items.location_id`, through `Playthrough::Turn#move_to`, `#stand_in!`,
 # `#carry!` and `#put_down!` -- the same statements the narrated loop moves the
 # world with. A mechanics mode with its own copy of the line that moves the
 # player would be testing itself.
@@ -459,8 +459,12 @@ class Playthrough::Mechanics
            understood)
   end
 
+  # The guard is `Playthrough::Turn#take_item`'s and it is about the SENTENCE,
+  # not about the record: the row goes onto `items.playthrough_id`, which needs
+  # no character at all, but the fact the narrator is handed names whoever
+  # picked the thing up. Nothing in the app makes a playthrough without one.
   def take(item, understood)
-    return refuse("this playthrough has no protagonist, so nobody can carry anything", understood: understood) if playthrough.character.nil?
+    return refuse("this playthrough has no protagonist, so there is nobody to name as carrying anything", understood: understood) if playthrough.character.nil?
 
     was = item.location
     turn.carry!(item)
@@ -471,10 +475,10 @@ class Playthrough::Mechanics
   def drop(item, understood)
     return refuse("this playthrough is standing nowhere, so there is no room to put anything down in", understood: understood) if playthrough.current_location.nil?
 
-    was = item.character
     turn.put_down!(item)
 
-    change("dropped: #{item.name} (was carried by #{label(was) || "nobody"}, now lying in #{playthrough.current_location.name})", understood)
+    change("dropped: #{item.name} (was carried by #{playthrough.character&.fullname || "the party"}, " \
+           "now lying in #{playthrough.current_location.name})", understood)
   end
 
   # TALKING IS PROSE, and prose is the one thing this mode does not do. The

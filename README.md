@@ -161,7 +161,7 @@ testing a smaller thing than the one that can.
 
 ### What it writes, and what it never does
 
-Both modes write `playthroughs.current_location_id` and `items.character_id` /
+Both modes write `playthroughs.current_location_id` and `items.playthrough_id` /
 `items.location_id` through `Playthrough::Turn#move_to`, `#stand_in!`, `#carry!`
 and `#put_down!` — **the same statements the narrated loop moves the world
 with**, and the closed sets come from `Playthrough::Classifier`'s own readers. A
@@ -169,10 +169,12 @@ mechanics mode with its own copy of the line that moves the player would be
 testing itself.
 
 It starts a **fresh playthrough** each session rather than editing whichever one
-was last played. Where items are is world state and is shared either way:
-something left in the closet here is still in the closet in the browser.
-`PLAYTHROUGH=<id or token> rake 'game:mechanics[2]'` attaches to an existing
-playthrough when inspecting a real game is the point.
+was last played. Where items are in the *world* is world state and is shared
+either way: something left in the closet here is still in the closet in the
+browser. What the *party* is carrying is not shared — that is the playthrough's
+— so a fresh session opens with the story's starting inventory and nothing
+another game picked up. `PLAYTHROUGH=<id or token> rake 'game:mechanics[2]'`
+attaches to an existing playthrough when inspecting a real game is the point.
 
 `Playthrough::Mechanics` is the whole of it.
 `test/models/playthrough/mechanics_test.rb` runs the offline half with
@@ -459,6 +461,37 @@ What it unlocks: `speak_to` as an arc trigger that means something, a talk that
 refuses because the person is not in the room (which is now regression-tested
 offline — `rake game:sweep`, `present:`), and `rake game:doctor` able to say
 that a world's premise character is not where the world says.
+
+### What the party is carrying belongs to the playthrough
+
+The same argument, applied to the other half of the party's state. The
+inventory was `items.character_id` pointing at `story.protagonist` — one
+`Character` row per story — so **every playthrough of one world shared one pair
+of hands**: playthrough 17 of a story opened holding what 16 had picked up, and
+nothing on creation emptied them or put the things back.
+
+So an `Item` is in exactly one of **three** places, never two and never none:
+
+| column | what it means |
+| --- | --- |
+| `location_id` | lying in a room. Story-level and **shared** between playthroughs, deliberately and unchanged — a room is the world |
+| `character_id` | held by one of the world's own people. For the protagonist it is the story's **starting inventory**: world data, written by a seed file, exported by the exporter, carried by nobody |
+| `playthrough_id` | **carried by the party** of that playthrough. The only column `take`, `drop` and the inventory read or write, through `Playthrough#carried` |
+
+Position needs no copy, because a `Location` holds two parties at once. An
+`Item` does not, so `Playthrough#take_up_the_starting_inventory` gives each new
+playthrough **its own copy** of the story's kit — which is why two people
+playing *The Unrecorded Hour* each hold a daybook and neither holds the other's.
+
+`rake game:backfill_inventory` recovers an older database, out of the takes on
+`scenes.resolved_action` / `scenes.acted_on`, and **refuses to guess** when two
+playthroughs record taking one thing at the same story moment. `DRY_RUN=1`
+first; `rake game:doctor` reports what is left.
+
+**A room that one party has emptied is empty for the other**, and that is the
+known open question this deliberately does not answer — rooms stay story-level.
+`lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml` pins the current
+behaviour either way, so a future change to it fails a test.
 
 ### Rooms are born with people in them, sometimes
 

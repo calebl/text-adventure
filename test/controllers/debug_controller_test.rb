@@ -349,7 +349,7 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
   # halves of the game state the page used to leave out.
   test "the room section shows what is carried and what is lying here" do
     playthrough = played_playthrough
-    create(:item, character: playthrough.character, name: "A brass ledger")
+    create(:item, :carried, playthrough: playthrough, name: "A brass ledger")
     create(:item, :lying, location: playthrough.current_location, name: "A cracked lantern")
 
     get playthrough_debug_path(playthrough)

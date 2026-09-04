@@ -163,8 +163,24 @@ class Story::AuditTest < ActiveSupport::TestCase
     assert_equal :item_not_held, audit.contradictions.first.code
   end
 
+  # HELD BY THE PROTAGONIST IS THE STORY'S STARTING INVENTORY, which every
+  # playthrough begins with a copy of -- so a narration about it is a narration
+  # about something the player has.
   test "an item the player really holds is never flagged" do
     create(:item, character: @protagonist, name: "lunar compass")
+    scene_at(@here, description: "You read your lunar compass and the needle wanders.")
+
+    assert_empty audit.flags
+  end
+
+  # A `Scene` CARRIES NO PLAYTHROUGH -- the turn log is a `previous_scene` chain
+  # read backwards from one -- so there is no column to narrow this to the party
+  # whose turn it was. What any party of this story carries is therefore excluded
+  # together, which is precision over recall: a name one player is genuinely
+  # holding is not flagged in another player's turn.
+  test "an item a party is carrying is never flagged" do
+    played = create(:playthrough, story: @story, character: @protagonist, current_location: @here)
+    create(:item, :carried, playthrough: played, name: "lunar compass")
     scene_at(@here, description: "You read your lunar compass and the needle wanders.")
 
     assert_empty audit.flags

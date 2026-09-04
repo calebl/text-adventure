@@ -205,6 +205,68 @@ namespace :game do
     end
   end
 
+  desc "Attribute what the protagonist is holding to the playthrough that took it. Usage: rake game:backfill_inventory, DRY_RUN=1 to see it first"
+  task :backfill_inventory, [ :story_id ] => :environment do |t, args|
+    scope = args[:story_id] ? Story.where(id: Helpers.story!(args[:story_id]).id) : Story.all
+    dry = ENV["DRY_RUN"].present?
+
+    puts "WHOSE HANDS A THING IS IN, recovered from the turn that picked it up."
+    puts "`items.playthrough_id` is the closed set `drop` resolves against and is written from"
+    puts "now on. Before it, the party's inventory sat on the story's ONE protagonist row, so"
+    puts "every play of a world shared one set of things. This attributes what is still there"
+    puts "to the playthrough whose turn log records the take, and it REFUSES TO GUESS."
+    puts "Offline, no model call."
+    puts "DRY RUN: nothing is written." if dry
+    puts
+
+    total = Hash.new(0)
+    copied = 0
+    scope.order(:created_at, :id).each do |story|
+      answers = Item::InventoryBackfill.new(story).run(dry_run: dry)
+      next if answers.empty?
+
+      puts format("  %-40s attributed %3d, starting kit %3d, left alone %3d, put down %3d",
+                  story.title.truncate(40),
+                  answers.count(&:attributed?), answers.count(&:starting?),
+                  answers.count(&:ambiguous?), answers.count { |answer| answer.unrecoverable? && answer.location })
+
+      answers.each do |answer|
+        total[answer.outcome] += 1
+        case answer.outcome
+        when :attributed
+          puts "      #{answer.item.name} -> playthrough ##{answer.playthrough.id}, which recorded taking it"
+        when :starting
+          copied += answer.playthroughs.size
+          puts "      #{answer.item.name} -- the story's starting inventory: nobody ever picked it up. Left on " \
+               "#{story.protagonist.fullname}#{", copied into #{answer.playthroughs.size} playthrough(s)" if answer.playthroughs.any?}"
+        when :ambiguous
+          puts "      #{answer.item.name} -- LEFT ALONE: playthrough(s) #{answer.playthroughs.map { |p| "##{p.id}" }.join(" and ")} " \
+               "record taking it at the same moment, and an item is in one place"
+        when :unrecoverable
+          if answer.location
+            puts "      #{answer.item.name} -- PUT DOWN in #{answer.location.name}: no turn records taking it and the " \
+                 "world file does not start the player with it, so it is left where the last party to hold it stands"
+          else
+            puts "      #{answer.item.name} -- LEFT ALONE: no turn records taking it and this story has no realized " \
+                 "room to put it down in"
+          end
+        end
+      end
+    end
+
+    puts
+    if total.values.sum.zero?
+      puts "Nothing to do: no protagonist in the database is holding anything."
+    else
+      puts "#{total[:attributed]} item(s) moved into the hands of the playthrough whose turn log took them."
+      puts "#{total[:starting]} left on the protagonist as the story's starting inventory#{", and copied into #{copied} playthrough(s)" if copied.positive?}."
+      puts "#{total[:ambiguous]} left alone: two playthroughs took the same thing at the same moment, and choosing"
+      puts "  between them would be inventing which player has it."
+      puts "#{total[:unrecoverable]} put down where the last party that could have held them stands: no turn records"
+      puts "  taking them and no world file starts the player with them. `rake game:doctor` shows the result."
+    end
+  end
+
   desc "Place characters who have no whereabouts, from the arrival casts still on disk. Usage: rake game:backfill_whereabouts, DRY_RUN=1 to see it first"
   task :backfill_whereabouts, [ :story_id ] => :environment do |t, args|
     scope = args[:story_id] ? Story.where(id: Helpers.story!(args[:story_id]).id) : Story.all
@@ -368,7 +430,7 @@ namespace :game do
     puts
     puts "Left #{playthrough.character&.fullname || "the playthrough"} in " \
          "#{playthrough.current_location&.name || "nowhere"}, carrying " \
-         "#{Item.for_character(playthrough.character).order(:id).pluck(:name).presence&.join(", ") || "nothing"}."
+         "#{playthrough.carried.pluck(:name).presence&.join(", ") || "nothing"}."
     puts "Pick it up again with: PLAYTHROUGH=#{playthrough.id} rake 'game:mechanics[#{story.id}]'"
   end
 
@@ -442,9 +504,12 @@ namespace :game do
     # attaches to an existing one -- by id or by the token in its URL -- for
     # when inspecting a real game is the point.
     #
-    # Where items ARE is world state and is shared either way: something left in
-    # the closet in one session is still in the closet in the next one, and in
-    # the browser. That is the thing being tested, so it is not isolated.
+    # Where items ARE in the WORLD is world state and is shared either way:
+    # something left in the closet in one session is still in the closet in the
+    # next one, and in the browser. That is the thing being tested, so it is not
+    # isolated. What a PARTY is carrying is not shared -- it is on
+    # `items.playthrough_id` -- so a fresh playthrough here opens with the
+    # story's starting inventory and nothing another game picked up.
     def self.mechanics_playthrough!(reference)
       if ENV["PLAYTHROUGH"].present?
         named = ENV["PLAYTHROUGH"]

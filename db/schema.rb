@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_04_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_04_160000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -83,11 +83,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_120000) do
     t.text "description"
     t.integer "location_id"
     t.string "name"
+    t.integer "playthrough_id"
     t.text "properties"
     t.datetime "updated_at", null: false
     t.index ["character_id"], name: "index_items_on_character_id"
     t.index ["location_id", "character_id"], name: "index_items_on_location_id_and_character_id"
     t.index ["location_id"], name: "index_items_on_location_id"
+    t.index ["playthrough_id", "id"], name: "index_items_on_playthrough_id_and_id"
+    t.index ["playthrough_id"], name: "index_items_on_playthrough_id"
   end
 
   create_table "location_connections", force: :cascade do |t|
@@ -343,6 +346,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_120000) do
   add_foreign_key "interactions", "scenes"
   add_foreign_key "items", "characters"
   add_foreign_key "items", "locations"
+  add_foreign_key "items", "playthroughs"
   add_foreign_key "location_connections", "locations"
   add_foreign_key "location_connections", "locations", column: "connected_location_id"
   add_foreign_key "locations", "locations", column: "parent_location_id"
