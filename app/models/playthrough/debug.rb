@@ -38,6 +38,10 @@
 #     its receipts, and that is said out loud where it happens rather than left
 #     to look like a turn that cost nothing.
 #
+# WHAT HE IS CARRYING AND WHAT IS LYING AT HIS FEET are rows on the room
+# section now, read straight off `Item`, and the classifier reconstruction
+# mirrors those same two closed sets rather than only the exits and the cast.
+#
 # WHAT THE PLAYER TYPED IS NO LONGER ONE OF THEM. `Scene#typed` is a column now,
 # written on every branch by `Playthrough::Turn#play`, so it survives whatever
 # the retention setting is -- see `#typed_on`, whose two fallbacks exist only for
@@ -201,11 +205,21 @@ class Playthrough::Debug
   def candidate_exits = @candidate_exits ||= classifier.exits_here
   def candidate_cast = @candidate_cast ||= classifier.characters_here
 
+  # The other two closed sets, and they are the classifier's own: what `take`
+  # resolves against is what is lying in this room, what `drop` resolves
+  # against is what the protagonist is carrying. Asked of the classifier for
+  # the same reason the exits and the cast are -- a second opinion about what
+  # is on the floor is the drift this page exists to catch.
+  def candidate_items = @candidate_items ||= classifier.items_here
+  def candidate_carried = @candidate_carried ||= classifier.items_carried
+
   # The enum `Playthrough::IntentSchema.for` would be built over: the answers
   # the model is physically able to give, plus `nothing`.
   def candidate_enum
     names = candidate_exits.map(&:name) +
-            candidate_cast.flat_map { |character| [ character.fullname, character.nickname ] }
+            candidate_cast.flat_map { |character| [ character.fullname, character.nickname ] } +
+            candidate_items.map(&:name) +
+            candidate_carried.map(&:name)
 
     names.map(&:to_s).map(&:strip).reject(&:empty?).uniq + [ Playthrough::IntentSchema::NOTHING ]
   end
@@ -218,7 +232,7 @@ class Playthrough::Debug
   # standing constraint is about: it is where the app closes the set, and
   # seeing it is seeing the set.
   def classifier_prompt(command = "<what you type next>")
-    classifier.command_prompt(command, candidate_exits, candidate_cast)
+    classifier.command_prompt(command, candidate_exits, candidate_cast, candidate_items, candidate_carried)
   end
 
   # WHERE HE IS STANDING, and what leads out of it in both directions.

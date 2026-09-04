@@ -344,6 +344,33 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/max-width: 76rem/, response.body)
   end
 
+  # WHAT HE IS CARRYING AND WHAT IS AT HIS FEET, on the room section, out of
+  # `Item` -- the two closed sets `take` and `drop` resolve against, and the
+  # halves of the game state the page used to leave out.
+  test "the room section shows what is carried and what is lying here" do
+    playthrough = played_playthrough
+    create(:item, character: playthrough.character, name: "A brass ledger")
+    create(:item, :lying, location: playthrough.current_location, name: "A cracked lantern")
+
+    get playthrough_debug_path(playthrough)
+
+    assert_response :success
+    assert_select ".k", text: "carrying"
+    assert_select ".k", text: "lying here"
+    assert_match "A brass ledger", response.body
+    assert_match "A cracked lantern", response.body
+  end
+
+  test "an empty floor and empty hands are spelled out rather than left blank" do
+    playthrough = played_playthrough
+
+    get playthrough_debug_path(playthrough)
+
+    assert_response :success
+    assert_match "nothing to pick up", response.body
+    assert_match "carrying nothing", response.body
+  end
+
   private
 
   # A world that has been played: an opening, a conversation, a stub nobody has

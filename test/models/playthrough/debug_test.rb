@@ -155,6 +155,37 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
     assert_not_includes debug.candidate_cast, playthrough.character, "the player cannot talk to themselves"
   end
 
+  # THE OTHER TWO CLOSED SETS. Asserted against the classifier's own methods,
+  # so the day `take` stops resolving against the floor this fails rather than
+  # quietly showing a set the model is not offered.
+  test "the enum carries what is lying here and what is carried, as the classifier has them" do
+    playthrough = create(:playthrough, :started)
+    lantern = create(:item, :lying, location: playthrough.current_location, name: "A cracked lantern")
+    ledger = create(:item, character: playthrough.character, name: "A brass ledger")
+
+    debug = Playthrough::Debug.new(playthrough)
+    classifier = Playthrough::Classifier.new(playthrough)
+
+    assert_equal classifier.items_here, debug.candidate_items
+    assert_equal classifier.items_carried, debug.candidate_carried
+    assert_includes debug.candidate_enum, lantern.name
+    assert_includes debug.candidate_enum, ledger.name
+    assert_includes debug.candidate_enum, Playthrough::IntentSchema::NOTHING
+  end
+
+  test "the reconstructed prompt names the items on both sides of the seam" do
+    playthrough = create(:playthrough, :started)
+    create(:item, :lying, location: playthrough.current_location, name: "A cracked lantern")
+    create(:item, character: playthrough.character, name: "A brass ledger")
+
+    prompt = Playthrough::Debug.new(playthrough).classifier_prompt("take the lantern")
+
+    assert_match "A cracked lantern", prompt
+    assert_match "A brass ledger", prompt
+    assert_match "## What Is Lying Here", prompt
+    assert_match "## What The Player Is Carrying", prompt
+  end
+
   test "the reconstructed classifier prompt carries the exits and the cast" do
     playthrough = create(:playthrough, :started)
     exit_to = create(:location, story: playthrough.story, name: "The Sunken Stair")
