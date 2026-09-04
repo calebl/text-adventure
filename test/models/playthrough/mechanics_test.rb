@@ -471,6 +471,62 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_includes Playthrough::Mechanics.new(@playthrough, model: false).help.to_s, "go <exit>"
   end
 
+  # --- talking, in the offline grammar --------------------------------------
+  #
+  # Talking is prose and this mode writes none, so `talk` here resolves somebody
+  # and then refuses. WHETHER it resolves is an engine question, and since
+  # presence became a record (`Character.present_in`) it is one that can be
+  # answered with no model at all -- which is what lets `rake game:sweep`
+  # regression-test who is in a room.
+
+  test "a talk offline resolves somebody the records place here, and then refuses the prose" do
+    report = play("talk to Halkett Rowe")
+
+    assert_equal "talk -> Halkett Rowe", report.understood
+    assert_predicate report, :refused?
+    assert_not report.changed?
+    assert_includes report.refusal, "talking is prose"
+  end
+
+  # A person answers to two names and both are in the closed enum the classifier
+  # offers a model, so both have to resolve here or the offline grammar would
+  # refuse a name the classifier accepts.
+  test "a talk offline resolves a nickname too" do
+    @rowe.update!(nickname: "Sub-Inspector Rowe")
+
+    assert_equal "talk -> Halkett Rowe", play("talk to the Sub-Inspector").understood
+  end
+
+  # THE ACCEPTANCE CASE. Somebody the records place in another room is not here,
+  # and the refusal names the cast that IS.
+  test "a talk to somebody recorded in another room is refused with the cast that is here" do
+    create(:character, story: @story, fullname: "Perrin Lasco", location: @closet)
+
+    report = play("talk to Perrin Lasco")
+
+    assert_predicate report, :refused?
+    assert_includes report.refusal, "there is no person here"
+    assert_includes report.refusal, "Halkett Rowe"
+  end
+
+  test "an empty room is refused differently from a name that missed" do
+    @rowe.move_to!(@closet)
+
+    assert_includes play("talk").refusal, "There is nobody here."
+    assert_includes play("talk to Halkett Rowe").refusal, "there is no person here"
+  end
+
+  test "nobody is moved by talking, or by failing to" do
+    play("talk to Halkett Rowe")
+    play("talk to Perrin Lasco")
+
+    assert_equal @office, @rowe.reload.location
+  end
+
+  test "the offline grammar says it understands talking" do
+    assert_includes Playthrough::Mechanics.new(@playthrough, model: false).help.to_s, "talk <person>"
+  end
+
   # --- the closed sets ------------------------------------------------------
 
   test "the read-out offers exactly what the classifier would offer a model" do

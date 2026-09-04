@@ -172,6 +172,73 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_match(/ward stamp/, broken.to_s)
   end
 
+  # NOTHING A PLAYER TYPES MAY MOVE ANYBODY. The seed file, `Character::Registry`
+  # at realization (which this mode cannot reach) and an explicit
+  # `Character#move_to!` are the only writers of a whereabouts, so a walk that
+  # moved somebody means a typed line has started moving people.
+  test "somebody who moved during an offline walk is caught after it" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    story.characters.find_by(fullname: "Halkett Rowe")
+         .move_to!(story.locations.find_by(name: "The Supply Closet"))
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "cast_unmoved", broken.invariant
+    assert_match(/Halkett Rowe is in The Supply Closet and the file says in Ward Office 12/, broken.to_s)
+  end
+
+  test "somebody who lost their room during an offline walk is caught too" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    story.characters.find_by(fullname: "Halkett Rowe").move_to!(nil)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "cast_unmoved", broken.invariant
+    assert_match(/is nowhere and the file says in Ward Office 12/, broken.to_s)
+  end
+
+  # NOWHERE IS A LEGITIMATE STATE and the invariant is stated as "unmoved"
+  # rather than "nobody is nowhere" for exactly this: the protagonist carries no
+  # whereabouts at all, and Perrin Lasco is nowhere because that world means it.
+  test "the people the file leaves nowhere are not a broken invariant" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+
+    assert_predicate story.characters.find_by(fullname: "Perrin Lasco"), :nowhere?
+    assert_predicate story.protagonist, :nowhere?
+    assert_empty EngineSweep::Invariants.new(story, seed: seed).check
+  end
+
+  # `present` is the closed set `talk` resolves against, read back with no
+  # model -- which is what it took to make presence sweepable at all.
+  test "a present expectation reads who the records place in the room" do
+    result = walk(<<~YAML)
+      story: The Salt Assizes
+      steps:
+      - type: look
+        expect:
+          present: [Ammon Brace]
+      - type: go to the Tide Post
+        expect:
+          present: [Neb Halloran]
+    YAML
+
+    assert_predicate result, :passed?, result.report
+  end
+
+  test "a present expectation that does not hold names both sides" do
+    result = walk(<<~YAML)
+      story: The Salt Assizes
+      steps:
+      - type: look
+        expect:
+          present: [Neb Halloran]
+    YAML
+
+    assert_not result.passed?
+    assert_match(/expected present: Neb Halloran/, result.report)
+    assert_match(/the records say:      Ammon Brace/, result.report)
+  end
+
   test "a room that got written during an offline walk is caught after it" do
     seed, story = seeded_copy("the-unrecorded-hour")
     story.locations.find_by(name: "The Long Hallway")

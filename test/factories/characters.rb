@@ -16,6 +16,11 @@ FactoryBot.define do
     backstory { "A person with a mysterious past who has seen both joy and hardship" }
     is_companion { false }
     is_protagonist { false }
+    # WHERE THEY ARE is deliberately not defaulted: nowhere is a real state and
+    # it is the one a character starts in, so a test that needs somebody
+    # standing in a room says `location:` and means it. See Character's header
+    # -- `Character.present_in(location)` is the closed set `talk` resolves
+    # against, so defaulting it would put people in rooms nobody asked for.
 
     trait :protagonist do
       fullname { "Hero Protagonist" }

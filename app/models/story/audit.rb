@@ -96,6 +96,55 @@
 #    record; `take_denied` and `pickup_invented` are the first two checks that
 #    read one. See `#check_take`.
 #
+# 5. AND A WHEREABOUTS RECORD DOES NOT REVIVE THE PERSON CHECK, which is the
+#    thing `ta-character-whereabouts` was expected to change and measurement
+#    says it does not. `characters.location_id` landed, so the records are
+#    finally authoritative about presence -- the objection in 2a ("a
+#    `Scene::Narrator` turn records no cast at all, so on those turns EVERY
+#    character reads as absent") is gone, and the candidate set is now the
+#    strongest possible one: only somebody the records positively place in
+#    ANOTHER ROOM. Somebody nowhere is unjudgeable and is never a candidate.
+#    Measured over all three corpora -- 248 passages, whereabouts taken from
+#    the checked-in world files:
+#
+#      36 passages are judgeable at all (12 in `eval_corpus.json`, 0 in
+#      `narration_corpus.json`, 24 in `whole_run_corpus.json`), and ONE of
+#      those 36 even names the absent person. It is a true positive: a `move`
+#      turn into The Long Hallway whose prose is the previous turn's office
+#      narration, with "Halkett's gaze moves to the book" in a room the
+#      records place him nowhere near. So the check has a demonstrated positive
+#      case (bar point 3) and no false-positive rate to report (bar point 2),
+#      because n = 1.
+#
+#    AND THE ZERO IS AN ARTIFACT OF WHERE THE SEED FILES PUT PEOPLE, which a
+#    sensitivity run settles. Move one character one door -- Grenn Ollivar into
+#    the boarding-house hallway instead of Room 3, which is where a landlord
+#    plausibly is and is an authoring choice, not a defect -- and the same
+#    corpora produce 41 flags on a name scan and 4 on the narrowest grammar
+#    that still keeps a true positive (a speech verb in the sentence, negations
+#    dropped). Two of those four are the same false positive, and it is
+#    finding 2's: *"From somewhere below, Grenn's voice rises in a muffled,
+#    irritated shout"* -- correct prose about somebody genuinely in another
+#    room. The name scan adds *"Grenn keeps the front door bolted after the
+#    tenth bell"* (habitual) and *"a narrow room on the third floor of Grenn's
+#    boarding house"* (a PLACE whose name contains a person's).
+#
+#    A window-based grammar -- the name, then a presence verb within twenty
+#    characters -- survives that run with no false positives, and it is not
+#    shipped either: twenty is a constant with nothing behind it, the FP
+#    sentences clear it by a few characters rather than by grammar, and it was
+#    tuned against the corpus it was measured on. That is what `Eval::HELD_OUT`
+#    exists to stop.
+#
+#    SO THERE IS STILL NO PERSON CHECK. What would settle it is a corpus of
+#    turns from a world whose cast is spread across rooms, which is now
+#    possible to generate for the first time -- presence is a record, so
+#    `rake eval:run` can produce runs in which people are demonstrably
+#    elsewhere. Until that exists, the gap stays covered from the other side by
+#    `Playthrough::Drift`, and by the engine: `Character.present_in` is the
+#    closed set `talk` resolves against, so the player cannot SPEAK to somebody
+#    who is not there whatever the prose says about them.
+#
 # WHAT IT CANNOT DO, stated so nobody expects it to: deterministic verification
 # catches the MISUSE of things that exist. It cannot catch the INVENTION of
 # things that do not, because you cannot scan prose for a name you were never
