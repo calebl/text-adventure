@@ -102,7 +102,7 @@ namespace :eval do
     Eval::Classifier::Report.new(
       Eval::Classifier::Result.new(corpus_size: corpus.size, arms: [], reps: 0, passes: []),
       floor: Eval::Classifier::Offline.new(corpus: corpus).summary
-    ).send(:offline_floor)
+    ).offline_floor
   end
 
   desc "The `also_named` omission rate on its own -- the two-noun lines only. Usage: rake eval:classifier_omission REPS=1"

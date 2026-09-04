@@ -64,6 +64,42 @@ class Eval::Classifier::Report
     closing
   end
 
+  # PUBLIC, because `rake eval:classifier_offline` prints this and nothing else:
+  # the free half of the instrument is a command of its own, and a rake task
+  # reaching into a private method for it would be a seam nobody declared.
+  def offline_floor
+    return if floor.nil?
+
+    say
+    say RULE
+    say "THE OFFLINE FLOOR -- the same #{floor.size} lines through the fixed grammar"
+    say "(`Playthrough::Mechanics` with `model: false`), no model, no key, no spend. This is"
+    say "what a classifier call is bought against, and it is free."
+    say
+    say format("  right                    %s", ratio(floor.right, floor.size))
+    Eval::Classifier::Offline::OUTCOMES.each do |outcome|
+      say format("    %-16s %3d   %s", outcome, floor.count(outcome), OUTCOME_MEANINGS.fetch(outcome))
+    end
+    say
+    say "  `refused` is GENEROUS to the grammar: it counts a refusal on a line the label"
+    say "  says earns one, and the grammar has no refusal KINDS to check -- its refusals are"
+    say "  strings it composes, not `Playthrough::Refusal` objects. So the floor can say"
+    say "  whether a line was refused and never which kind. It has no `also_named` at all."
+    say
+    say "  BY SHAPE"
+    floor.by_shape.sort.each do |shape, figures|
+      say format("    %-22s %3d/%-4d %.3f", shape, figures[:right], figures[:size], figures[:rate])
+    end
+  end
+
+  OUTCOME_MEANINGS = {
+    resolved: "the grammar produced an answer the label accepts",
+    refused: "the grammar refused, and the label says the line earns a refusal",
+    wrong: "the grammar produced an answer the label does not accept -- silently",
+    over_refused: "the grammar refused a line the label says should have played",
+    unparsed: "no verb it knows and no exit by that name, so the whole grammar is printed"
+  }.freeze
+
   private
 
   def heading
@@ -218,39 +254,6 @@ class Eval::Classifier::Report
       say format("    %-9s%s", expected, cells.join)
     end
   end
-
-  def offline_floor
-    return if floor.nil?
-
-    say
-    say RULE
-    say "THE OFFLINE FLOOR -- the same #{floor.size} lines through the fixed grammar"
-    say "(`Playthrough::Mechanics` with `model: false`), no model, no key, no spend. This is"
-    say "what a classifier call is bought against, and it is free."
-    say
-    say format("  right                    %s", ratio(floor.right, floor.size))
-    Eval::Classifier::Offline::OUTCOMES.each do |outcome|
-      say format("    %-16s %3d   %s", outcome, floor.count(outcome), OUTCOME_MEANINGS.fetch(outcome))
-    end
-    say
-    say "  `refused` is GENEROUS to the grammar: it counts a refusal on a line the label"
-    say "  says earns one, and the grammar has no refusal KINDS to check -- its refusals are"
-    say "  strings it composes, not `Playthrough::Refusal` objects. So the floor can say"
-    say "  whether a line was refused and never which kind. It has no `also_named` at all."
-    say
-    say "  BY SHAPE"
-    floor.by_shape.sort.each do |shape, figures|
-      say format("    %-22s %3d/%-4d %.3f", shape, figures[:right], figures[:size], figures[:rate])
-    end
-  end
-
-  OUTCOME_MEANINGS = {
-    resolved: "the grammar produced an answer the label accepts",
-    refused: "the grammar refused, and the label says the line earns a refusal",
-    wrong: "the grammar produced an answer the label does not accept -- silently",
-    over_refused: "the grammar refused a line the label says should have played",
-    unparsed: "no verb it knows and no exit by that name, so the whole grammar is printed"
-  }.freeze
 
   def closing
     say
