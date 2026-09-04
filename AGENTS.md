@@ -1067,7 +1067,11 @@ What belongs here is the part that changes how you work:
   reaches the call through `BaseAgent.default_provider_params` — **empty in every
   shipped path, pinned empty by `BaseAgent::ProviderParamsTest`**, refused for a
   hosted arm, and not a feature. The app as shipped would run qwen3 with thinking
-  ON; changing that is a change to the app, on its own evidence.
+  ON; changing that is a change to the app, on its own evidence. **There is no
+  local bench set** — the captain stopped the local runs on 2026-09-04 because
+  this machine cannot carry them (19 GB of RAM, `size_vram: 0`, swapping with one
+  6 GB model resident), so those are SPOT single-call figures and the arm is one
+  command away on hardware that can.
 - **No prompt change belongs in the same commit as a bench change.** The
   instrument and the thing it measures move separately, and
   `Eval::MEASUREMENT_FILES` now lists the bench.

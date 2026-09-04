@@ -350,13 +350,21 @@ in its own header.
 
 ### A local model, and the reasoning block in front of the answer
 
-The captain asked for the bench to be run against the ollama models on his own
-machine. Two things had to be measured before that was a measurement of the
-classifier at all.
+**There is no local bench set, on the captain's direction of 2026-09-04: this
+machine is not powerful enough to run one.** What is below is a handful of spot
+single-call measurements and the machinery that makes the run possible later on
+hardware that can carry it. Read every figure here as one call, not as a bench
+result — a bench result is four repetitions of 300 lines with a band, and none
+was taken.
+
+Two things had to be measured before a local arm would have been a measurement
+of the classifier at all, and they are worth keeping written down because they
+are what a later run on better hardware needs to know.
 
 **The machine is CPU-only.** `/api/ps` reports `size_vram: 0` for every loaded
 model, so every figure below is a CPU figure and none of them transfers to a
-box with a working GPU driver.
+box with a working GPU driver. It has 19 GB of RAM, and one 6 GB model resident
+beside a running pass put it into swap.
 
 **And a thinking model thinks before it answers, even under a schema.** RubyLLM
 reaches ollama through its **OpenAI-compatible** endpoint —
@@ -396,10 +404,19 @@ footnote to it. Making the app fast on ollama is a change to the app, to be
 decided on its own evidence; the seam is a measurement asking a question. Two
 arms of one model with the thinking on and off are two rows on the board.
 
-**`gemma3:12b` is unmeasurable on this machine** and is reported as such rather
-than as a bad score: a single schema-constrained classifier call hit a **600s
-cap with no answer at all**, cold and warm alike. It has no thinking mode to
-turn off, so there is nothing to try next. Not run.
+**The spot figures, all warm, all one call each.** Stated as what they are:
+
+| model | one warm call | |
+| --- | --- | --- |
+| `qwen3:4b` no thinking | **3.0s** | and >120s with thinking on |
+| `qwen3:8b` no thinking | **7.2s** | cold load 60.9s |
+| `gemma3:12b` | **no answer in 600s** | cold and warm alike; it has no thinking mode to turn off, so there is nothing to try next |
+
+`gemma3:12b` is recorded as **unmeasurable on this machine** rather than as a bad
+score, and the other two are recorded as unmeasured rather than as absent. The
+arm selector, the latency machinery and the seam are all in and green, so
+`MODELS=ollama:qwen3:4b+nothink REPS=4` is one command away on a machine that
+can carry it.
 
 ### The baseline of 2026-09-04
 
