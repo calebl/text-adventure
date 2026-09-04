@@ -1,4 +1,4 @@
-<%# locals: (playthrough:, command: nil, error: nil, safety_notice: false, autofocus: false) %>
+<%# locals: (playthrough:, command: nil, error: nil, safety_notice: false, refusal: nil, autofocus: false) %>
 <%# EVERYTHING A TURN CHANGES, in one Turbo Stream target.
 
     Three callers render this partial and they render the same two states:
@@ -71,6 +71,28 @@
       <% Playthrough::SafetyNotice::PARAGRAPHS.each do |paragraph| %>
         <p><%= paragraph %></p>
       <% end %>
+    </div>
+  <% end %>
+
+  <%# THE LINE THE ENGINE WOULD NOT PLAY, and it is NOT a turn: no `Scene` was
+      written, story time did not move and the playthrough is standing exactly
+      where it was, so there is nothing in the log above for the player to read
+      it in. It stands where the turn would have been, in the app's own voice --
+      the same place and the same `.notice` as the safety notice, because it is
+      the same kind of thing: the app talking rather than the world, and nothing
+      has gone wrong.
+
+      The typed line is echoed because the replace takes `#stream` and its `>`
+      line away with it, and a refusal with no line above it leaves the player
+      guessing which one it answered.
+
+      The copy is `Playthrough::Refusal`'s, engine-authored, out of the records;
+      no model wrote a word of it. Read that class's header before changing what
+      lands here. %>
+  <% if refusal %>
+    <p class="command">&gt; <%= refusal.typed %></p>
+    <div class="notice">
+      <p><%= refusal.text %></p>
     </div>
   <% end %>
 

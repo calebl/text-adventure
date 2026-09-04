@@ -177,11 +177,13 @@ class Story::Audit
   # narration. See Playthrough::Drift.
   DRIFTS = %i[reached_for_nothing].freeze
 
-  # NOT A DEFECT AND NOT A DRIFT: the player named two things the records
-  # really have, and a turn is one act, so the loop did one of them. Nothing
-  # here is wrong -- the count exists to answer whether one act per line is a
-  # limit worth lifting, which is a question about how people type rather than
-  # a matter of opinion. See Playthrough::Overreach.
+  # NOT A DEFECT AND NOT A DRIFT: the player named two things the records really
+  # have, and a turn is one act, so the whole line is refused and they are asked
+  # to pick one (the captain's ruling of 2026-09-04 -- before it, the loop did
+  # the first of the two). Nothing here is wrong. The count is how often people
+  # type two acts on one line, which is a question about how people type rather
+  # than a matter of opinion, and it is now also how often the refusal fires.
+  # See Playthrough::Overreach and Playthrough::Refusal.
   LIMITS = %i[named_more_than_one].freeze
 
   # NOT A DEFECT AT ALL, and counted apart from everything above for that
@@ -357,6 +359,15 @@ class Story::Audit
     when :unreachable_transition, :unrecorded_departure, :still_run
       scenes.count(&:follows_a_turn?)
     when :reached_for_nothing, :named_more_than_one
+      # TURNS THE PLAYER TYPED, WHICH SINCE 2026-09-04 IS TURNS THAT PLAYED.
+      # Both numerators are counter rows and both are written on a turn that is
+      # now REFUSED -- and a refused turn writes no `Scene`, so it is in the
+      # numerator and not in this denominator. The rate reads as "reaches per
+      # played turn" from here on, and on a short run of mostly refused lines it
+      # can exceed 1. Left as it is on purpose: the ruling changed what a turn
+      # does, and changing what is measured in the same pass would make the
+      # movement since the baseline unreadable. Counting refusals in the
+      # denominator is its own measurable task.
       scenes.count { |scene| scene.typed.present? }
     when :unrecorded_arrival
       # Every scene with prose in it, whether or not a turn came before. A
@@ -1202,20 +1213,24 @@ class Story::Audit
   end
 
   # ------------------------------------------------------------------------
-  # A LINE THAT NAMED TWO THINGS, AND THE ONE THE TURN DID NOT DO. Not a
-  # defect: both names resolved and the turn acted on one, because one line is
-  # one act. Reported so the limit is a number rather than an impression. See
-  # Playthrough::Overreach.
+  # A LINE THAT NAMED TWO THINGS WHEN A TURN IS ONE ACT. Not a defect: both
+  # names resolved, and the line is refused whole so the player can pick one.
+  # Reported so the limit is a number rather than an impression.
+  #
+  # THE SENTENCE IS TRUE OF BOTH ERAS on purpose -- this reads every row ever
+  # written, and rows from before the ruling of 2026-09-04 had the first of the
+  # two done rather than neither. What the columns say is which pair the line
+  # reached for; see Playthrough::Overreach.
   # ------------------------------------------------------------------------
   def check_overreaches
     Playthrough::Overreach.for_story(story).in_story_order.includes(:scene, :location).each do |overreach|
       flag(:named_more_than_one, overreach.scene,
            "the player typed #{overreach.command.to_s.strip.inspect}, which named two things the records have, " \
-           "and the turn could only #{overreach.action} one of them",
+           "and a turn can #{overreach.action} only one of them",
            action: overreach.action,
            typed: overreach.command,
-           "acted on" => overreach.acted,
-           "left undone" => overreach.unacted,
+           "resolved to" => overreach.acted,
+           "also named" => overreach.unacted,
            where: overreach.location&.name,
            at: overreach.story_timestamp)
     end

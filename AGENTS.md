@@ -117,16 +117,16 @@ constraint* has the captain's wording and where the full audit lives.
   invitation. This is the cheap half of the standing constraint done with facts
   rather than rules; it does not make the narrator obey, and `Playthrough::Drift`
   is what says whether it helped. Add a fact to the `Moment`, not to a caller.
-- **A REACH THAT RESOLVED TO NOTHING IS STATED AS A FACT, through the same
-  `fact:` seam `take` and `drop` use.** `Playthrough::Turn#reach_fact` tells the
-  narrator that a `move` to no exit, a `talk` to nobody, a `take` of nothing
-  lying here or a `drop` of nothing carried changed nothing — in the app's words,
-  as something already true. Before this the narrator got the bare command,
-  walked the player through the door anyway, and the next arrival contradicted
-  it. The known cost is a classifier miss on a real exit, which now reads as a
-  denied door instead of a phantom move; the drift row is written either way.
-  `examine` goes along as an intent label (`Scene::Narrator::DOING`) so a look
-  is narrated as a look. Everything else is still the bare command.
+- **A REACH THAT RESOLVED TO NOTHING IS REFUSED, NOT NARRATED**, on the ruling
+  of 2026-09-04. It used to be stated to the narrator as a fact through the same
+  `fact:` seam `take` and `drop` use (`Playthrough::Turn#reach_fact`, now gone):
+  before *that* the narrator got the bare command, walked the player through the
+  door anyway, and the next arrival contradicted it. Refusing writes nothing at
+  all, which also retires that branch's one known cost — a classifier miss on a
+  real exit read as prose denying a door that is there. `take` and `drop` still
+  use `fact:` for what they DID, so the seam is live; only the reach case left
+  it. `examine` goes along as an intent label (`Scene::Narrator::DOING`) so a
+  look is narrated as a look. Everything else is still the bare command.
 - **THE CHARACTER IS TOLD THE MOMENT TOO, in the per-turn message and not the
   sheet.** `Playthrough::Moment#character_context` gives the character pass the
   room's *name*, the story hour, who else is standing there, **what the player
@@ -486,11 +486,42 @@ before changing the loop; the rules below are what it does not fit.
   Do not move resolution into the loop and do not open the enum to free text: a
   fuzzy matcher on this seam guesses about where the player is standing and what
   they are holding.
-- A classification the loop cannot act on falls through to `Scene::Narrator`,
-  which narrates the attempt. Being unable to do a thing is part of the game;
-  silently doing a different thing is not. **And it is counted**: an unresolved
-  `move`, `talk`, `take` or `drop` writes a `Playthrough::Drift` row — see
-  *Auditing the difference* below.
+- **ONE LINE, ONE ACT — AND A LINE THAT IS NOT ONE IS REFUSED WHOLE.** The
+  captain's ruling of 2026-09-04: *"If someone tries to do two things or more at
+  a time, we should refuse and prompt the player to pick only 1 thing. Or if we
+  can't determine what they are trying to do, then we should refuse and ask for
+  clarification. This can all be in the mechanics and doesn't need to go through
+  narration."* `Playthrough::Classifier::Intent#refused?` is the predicate,
+  `Playthrough::Refusal` is the one author of the sentence, and three shapes
+  stop in front of the dispatch in both `Playthrough::Turn#play` and
+  `Playthrough::Mechanics#act`: a line that named two things the records have, a
+  reach the closed sets cannot answer, and an intent outside
+  `Playthrough::IntentSchema::INTENTS` that still named a record. **A refused
+  line writes nothing** — no row, no `Scene`, no visit stamp, no story time, no
+  narrator call, no tokens beyond the classifier that had already run. It is not
+  a `Scene` on purpose: `Scene#description` is read as NARRATION by
+  `Story::Audit`, `Eval::Richness` and both frozen corpora, so engine copy in
+  that column would be audited as prose a model wrote. **And it is still
+  counted**: the `Playthrough::Overreach` or `Playthrough::Drift` row is taken
+  inside `#classify`, before the loop asks whether it will play the line, so the
+  ruling changed what a turn DOES and not what is measured.
+- **WHAT IS NOT REFUSED, and the boundary matters as much as the rule.** A
+  coherent non-mechanic line — `other`, or an `examine` that landed on nothing —
+  is *not* undeterminable. "look at the sky", "wait", a remark to nobody: the
+  classifier placed them, they reach for no record they could have missed, and
+  they stay narrated. Refusing them would refuse everything that is not one of
+  the acts that move a row. **An `examine` that named TWO things IS refused**,
+  like any other line asking twice — since `ta-item-inscriptions` a look
+  resolves a record, so `Playthrough::Overreach::ACTIONS` carries `examine`
+  where `Playthrough::Drift::ACTIONS` deliberately does not: *a look can
+  overreach and it cannot drift.* Two acts across two DIFFERENT closed sets
+  ("take the stamp and go to the hallway") are also not refused, in either mode:
+  `#also_record` resolves the second name through the action's own closed set,
+  because a second and looser way into the records is what a closed set exists
+  to prevent, and widening it would change what `Playthrough::Overreach` counts.
+  That gap is pinned as a gap in `lib/engine_sweep/scripts/one-act-per-line.yml`.
+- **`Playthrough::Drift` is still the counter for an unresolved reach**, one row
+  per turn — see *Auditing the difference* below.
 - **`take` and `drop` are the app moving a row, in that order: the record first,
   the sentence after.** `Item` is in exactly one of three places — lying in a
   location, held by one of the world's own people, or carried by the party of
@@ -624,6 +655,14 @@ variables at the same time"* — and the rules it lives under are short:
 - **`Scene::Narrator` and `InteractionAgent` are the only things dropped.**
   `talk` and `examine` are refused with a line saying they are prose. If a
   branch needs prose, refuse it and say so; do not half-play it.
+- **THE RULING'S REFUSALS ARE READ FROM THE SAME PLACE THE BROWSER READS THEM.**
+  This mode used to do the first act of a two-noun line and add a note —
+  `also named: copy-room apron -- one line is one act, so this turn did not
+  touch it` — which was the honest report of exactly the half-played turn the
+  ruling struck. `Playthrough::Refusal` is now the one author for both modes;
+  this one reads `#reason` because it prints the whole engine read-out
+  underneath, and the browser reads `#text`, which folds what IS here into the
+  sentence. Do not write a second copy of either.
 - **The arrival `Scene` is still written**, and its prose is not printed. That is
   deliberate: the cast, `last_protagonist_visit` and the story clock all hang off
   it, so skipping it would make the world this mode walks a different world.
@@ -698,7 +737,15 @@ The debug view shows the same four tables for one playthrough.
   (`truncated_prose`, `third_person_protagonist`). DRIFT is
   `Playthrough::Drift`: the player reached for something the closed sets do not
   have, which is how an invented exit becomes observable — by its consequences,
-  not by scanning prose for a door. PACING (`still_run`) is not a defect at all
+  not by scanning prose for a door.
+- **THE TWO REACH COUNTS NOW MEASURE REFUSED TURNS, AND THEIR DENOMINATOR DOES
+  NOT.** Since the ruling of 2026-09-04 a `reached_for_nothing` or
+  `named_more_than_one` turn writes no `Scene`, and
+  `Story::Audit#judgeable_for` counts scenes with a `typed` line — so both rates
+  read as "reaches per *played* turn" from here on and can exceed 1 on a short
+  run of mostly refused lines. Left as it is deliberately: changing what is
+  measured in the same pass as changing what a turn does would make the movement
+  since the baseline unreadable. The note is on the method. PACING (`still_run`) is not a defect at all
   and must never be counted as one: it is a stretch of turns on which the
   records show nothing happening with somebody in the room.
 - **A check reads a STATE or it reads a CHANGE, and until 2026-09-03 they all

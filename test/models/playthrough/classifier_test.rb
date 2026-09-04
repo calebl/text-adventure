@@ -254,8 +254,11 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     assert_includes agent.instructions, "also_named"
   end
 
-  # And when it answers that way, the turn lands in the path that exists: one
-  # thing taken, the next named, counted as an overreach and NOT as drift.
+  # And when it answers that way, the turn lands in the path that exists: two
+  # names resolved out of one list, counted as an overreach and NOT as drift.
+  # What the loop then DOES with it changed on 2026-09-04 -- the line is refused
+  # whole rather than half-played -- and the count did not; see
+  # `Playthrough::Overreach`.
   test "a collective word answered as the first thing is an overreach and not drift" do
     index = create(:item, :lying, location: @here, name: "Perrin's private index")
     create(:item, :lying, location: @here, name: "copy-room apron")
@@ -558,8 +561,9 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     end
   end
 
-  # An unresolved reach still returns an intent the loop can act on: the point
-  # of counting drift is that the turn goes on exactly as it did before.
+  # An unresolved reach still returns a whole intent: the drift row and the
+  # refusal are two different things the loop does with the same answer, and the
+  # answer is the same either way.
   test "counting drift does not change what the loop is told" do
     intent, = classify({ "intent" => "move", "target" => "nothing" }, command: "go north")
 
@@ -568,12 +572,117 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     assert_predicate intent, :reached_for_nothing?
   end
 
+  # --- what the engine will not play ----------------------------------------
+
+  # THE CAPTAIN'S RULING OF 2026-09-04, as a predicate on the answer. The
+  # classifier decides which lines are refused; `Playthrough::Refusal` says it,
+  # and `Playthrough::Turn` and `Playthrough::Mechanics` both read this one
+  # method rather than each working it out again.
+  test "the three refusable shapes are refused and nothing else is" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+    apron = create(:item, :lying, location: @here, name: "copy-room apron")
+
+    two, = classify({ "intent" => "take", "target" => index.name, "also_named" => apron.name })
+    assert_predicate two, :refused?
+
+    missed, = classify({ "intent" => "take", "target" => "nothing" })
+    assert_predicate missed, :refused?
+
+    unreadable, = classify({ "intent" => "steal", "target" => index.name, "also_named" => "nothing" })
+    assert_predicate unreadable, :refused?
+
+    played, = classify({ "intent" => "take", "target" => index.name, "also_named" => "nothing" })
+    assert_not_predicate played, :refused?
+  end
+
+  # A COHERENT LINE THAT REACHES FOR NO RECORD IS NOT UNDETERMINABLE, and this
+  # is the boundary the ruling has to stop at: "look at the sky", "wait", a
+  # remark to nobody. The classifier placed them, they resolve to no record by
+  # design, and refusing them would refuse everything that is not one of the
+  # four acts.
+  test "examine and other are not refused" do
+    %w[examine other].each do |intent|
+      answered, = classify({ "intent" => intent, "target" => "nothing" })
+
+      assert_not_predicate answered, :refused?, "#{intent} is prose, not an unreadable line"
+      assert_not_predicate answered, :unreadable?
+    end
+  end
+
+  # AN ANSWER OUTSIDE THE TABLE THAT STILL NAMED A RECORD is kept as unreadable
+  # rather than coerced. The coercion read it as `other`, dropped the record it
+  # named and narrated the raw line -- so a provider ignoring a closed enum
+  # looked exactly like a player musing about the weather.
+  test "an intent outside the table that named a record is unreadable" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+
+    intent, = classify({ "intent" => "steal", "target" => index.name, "also_named" => "nothing" })
+
+    assert_predicate intent, :unreadable?
+    assert_equal "steal", intent.unknown_action
+    assert_equal :other, intent.action
+    assert_nil intent.item, "nothing was resolved: there is no branch to send it down"
+  end
+
+  # And one that named NOTHING loses nothing by being read as `other`, because
+  # there is no record to drop -- so it still is.
+  test "an intent outside the table that named nothing is read as other" do
+    intent, = classify({ "intent" => "sing", "target" => "nothing", "also_named" => "nothing" })
+
+    assert_equal :other, intent.action
+    assert_not_predicate intent, :unreadable?
+    assert_not_predicate intent, :refused?
+  end
+
+  # Neither counter fires: an unreadable answer is a defect on our side, not a
+  # reach on the player's, and adding it to either number would corrupt both.
+  test "an unreadable answer is counted as neither drift nor overreach" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+
+    assert_no_difference [ "Playthrough::Drift.count", "Playthrough::Overreach.count" ] do
+      classify({ "intent" => "steal", "target" => index.name, "also_named" => "nothing" })
+    end
+  end
+
+  # --- the closed set an action reads against -------------------------------
+
+  # THE INVERSE OF THE CANDIDATE LIST, asked for by action. Both refusal paths
+  # need it to say what WOULD have worked, and a second copy of the table is how
+  # the two ways into the records start disagreeing about what is reachable.
+  test "offered_for hands back the same four sets the prompt was built from" do
+    stair = connect("The Sunken Stair")
+    rowe = stands_here("Halkett Rowe")
+    lying = create(:item, :lying, location: @here, name: "ward stamp")
+    held = create(:item, :carried, playthrough: @playthrough, name: "daybook")
+    classifier = Playthrough::Classifier.new(@playthrough)
+
+    assert_equal [ stair ], classifier.offered_for(:move)
+    assert_equal [ rowe ], classifier.offered_for(:talk)
+    assert_equal [ lying ], classifier.offered_for(:take)
+    assert_equal [ held ], classifier.offered_for(:drop)
+    # A look reads BOTH item sets, in the order `#build_intent` resolves against.
+    assert_equal [ lying, held ], classifier.offered_for(:examine)
+    assert_empty classifier.offered_for(:other)
+    assert_empty classifier.offered_for(nil)
+  end
+
+  # One definition of the name a record answers to, because the read-out, the
+  # refusals and the counter rows must not name the same person three ways.
+  test "label_for gives a person their fullname and everything else its name" do
+    assert_equal "Halkett Rowe", Playthrough::Classifier.label_for(stands_here("Halkett Rowe", nickname: "Rowe"))
+    assert_equal "Ashgate Market", Playthrough::Classifier.label_for(@here)
+    assert_nil Playthrough::Classifier.label_for(nil)
+  end
+
   # --- a line that named more than one thing --------------------------------
 
   # ONE LINE IS ONE ACT. "take the index and the apron" has an answer the loop
   # cannot make, and what used to happen is that the second half went nowhere
   # at all: no write, no refusal, and no drift row either, because the reach
-  # resolved. `also_named` is that half kept.
+  # resolved. `also_named` is that half kept -- and since the ruling of
+  # 2026-09-04 it is also what makes the line refusable, so this is the field
+  # the whole refusal hangs on. Resolution is unchanged: it is still one more
+  # name out of the same closed set, through the same matcher.
 
   test "a second thing named in the same line is resolved, and is not the target" do
     index = create(:item, :lying, location: @here, name: "Perrin's private index")

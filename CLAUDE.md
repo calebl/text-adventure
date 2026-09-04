@@ -124,12 +124,16 @@ bundle exec brakeman
      enum of the room's exits, its cast, what is lying in it and what the player
      carries, and the turn branches on the answer: `Scene::Generator` for
      arriving somewhere, `InteractionAgent` for talking to somebody, an app-owned
-     `Item` transfer for `take` and `drop`, `Scene::Narrator` for everything
-     else. An unresolved reach writes a `Playthrough::Drift` row **and is stated
-   to the narrator as a fact** (`Turn#reach_fact`). `Playthrough::Moment` is the
-   one builder of what the prose and the character are told about the moment:
-   room, exits, cast, inventory, last turn, recap. Add a fact there, not to a
-   caller.
+     `Item` transfer for `take` and `drop`, `Scene::Narrator` for `examine` and
+     `other`. **ONE LINE, ONE ACT: a line that is not one is refused whole** —
+     `Playthrough::Refusal`, the captain's ruling of 2026-09-04. Two acts on one
+     line, a reach the closed sets cannot answer, or a classifier answer outside
+     the intent table that still named a record: the turn stops in front of the
+     dispatch, writes nothing, calls no narrator, and answers with the engine's
+     own sentence. The `Playthrough::Drift` / `Playthrough::Overreach` row is
+     still written. `Playthrough::Moment` is the one builder of what the prose
+     and the character are told about the moment: room, exits, cast, inventory,
+     last turn, recap. Add a fact there, not to a caller.
    - It runs in `NarrationJob`, which broadcasts what the player reads as Turbo
      Streams over Action Cable — so a turn outlives the tab and holds no Puma
      thread. The loop takes a block and knows nothing about the consumer.
@@ -193,16 +197,38 @@ The current database includes the following story-related models with proper ass
 - **Story** → `#clock`, what time it is in the fiction, derived from
   `scenes.story_timestamp`. Never use `Time.current` for story time; see
   `AGENTS.md` → *Story time, and a world that moves on its own*
+- **Playthrough::Refusal** → **THE ONE AUTHOR OF WHAT THE ENGINE SAYS WHEN IT
+  WILL NOT PLAY A LINE**, read by `Playthrough::Turn` and
+  `Playthrough::Mechanics` alike so the two modes cannot disagree about a line.
+  Three kinds, told apart because they are different facts:
+  `named_more_than_one` (two things the records both have — counted by
+  `Playthrough::Overreach`), `unresolved` (a reach the closed sets cannot answer
+  — counted by `Playthrough::Drift`) and `unreadable` (an intent outside
+  `Playthrough::IntentSchema::INTENTS` that still named a record — counted by
+  nothing, because it is a defect on our side, and logged). `#reason` for the
+  consumer that prints the records underneath, `#text` for the one that does
+  not. **A refusal is not a `Scene`** and must not become one: `#description` is
+  read as narration by `Story::Audit`, `Eval::Richness` and both frozen corpora,
+  and a refusal has no moment in it to move the clock with. Read the header
+  before changing a word of what the player is shown, and
+  `Playthrough::Classifier::Intent#refused?` before changing which lines land
+  there — a coherent `other` and an `examine` that landed on nothing are
+  deliberately NOT refused, and an `examine` that named TWO things is (a
+  readable thing named alongside another thing is one line asking for two acts,
+  like any other)
 - **Playthrough::Mechanics** → the game with the prose taken out, and nothing
   else taken out with it (`rake game:mechanics`). The classifier still reads the
   command and prints what it resolved to; the world still generates itself, so a
   move is `Playthrough::Turn#move_to` whole. Only `Scene::Narrator` and
   `InteractionAgent` are dropped, `talk` is refused as prose, and an `examine`
   prints `Item#inscription` out of the records when there is one to print —
-  a record, so no model — and is refused as prose when there is not.
-  `model: false` (`NO_MODEL=1`) is the offline fallback — a fixed grammar, no
-  generation, no model call at all — and it is the mode the engine-direct tests
-  run in. See `AGENTS.md` → *The mechanics on their own, with the narration off*
+  a record, so no model — and is refused as prose when there is not. The
+  ruling's refusals come from `Playthrough::Refusal` and not from a second copy
+  here — the mode's old `also named:` note is gone with the half-played turn it
+  reported. `model: false` (`NO_MODEL=1`) is the offline fallback — a fixed
+  grammar, no generation, no model call at all — and it is the mode the
+  engine-direct tests run in. See `AGENTS.md` → *The mechanics on their own,
+  with the narration off*
 - **Item** → belongs to **Location**, **Character** *or* **Playthrough**,
   exactly one of the three (`Item::PLACES`): lying in a place, held by one of
   the world's own people, or **carried by the party of one playthrough**. The
@@ -395,7 +421,9 @@ The current database includes the following story-related models with proper ass
   `unrecorded_departure`, `unrecorded_arrival`, `take_denied`,
   `pickup_invented`, `inscription_misquoted`), defects (`truncated_prose`, `third_person_protagonist`),
   drift (`reached_for_nothing`), limits (`named_more_than_one` — the loop's
-  limit, not a defect) and pacing (`still_run` — evidence about pacing,
+  limit, not a defect; both of these count REFUSED turns since the ruling, and
+  `Story::Audit#judgeable_for`'s note says what that did to the denominator)
+  and pacing (`still_run` — evidence about pacing,
   explicitly *not* a defect). `Story::Audit::Prose` holds the text predicates as
   pure functions so the live database and the frozen corpora read them through
   the same code.
@@ -421,16 +449,23 @@ The current database includes the following story-related models with proper ass
 - `Playthrough::Drift` is the classifier drift counter: one row per turn on which
   a `move`, `talk`, `take` or `drop` resolved to nothing. Never pruned.
 - `Playthrough::Overreach` is the other counter and never the same one: one row
-  per turn on which the typed line named **two things the records really have**
-  and the loop did one, because a turn is one act. Drift is a reach that found
-  nothing; this is a reach that found more than a turn can answer. Adding them
-  together would produce a number that is neither. Never pruned. Both are
+  per turn on which the typed line named **two things the records really have**,
+  which since 2026-09-04 is refused whole rather than half-played. Drift is a
+  reach that found nothing; this is a reach that found more than a turn can
+  answer. Adding them together would produce a number that is neither. Read
+  `acted` as what the line RESOLVED to, not as what was done to it. Never
+  pruned. Both are
   **unavailable to a scripted `rake eval:run`** — a script types a fixed line,
   so either figure would measure the yml file (`Eval::UNAVAILABLE_TO_A_SCRIPT`).
-- `Playthrough::IntentSchema#also_named` is how the loop says what it left
-  undone: one more name out of the **same closed set** as `target`, resolved by
-  the same matcher against the same list the action reads. One name and not a
-  list, because an empty required array reads as an omitted field to
+- `Playthrough::IntentSchema#also_named` is how the loop knows the line asked
+  for two things: one more name out of the **same closed set** as `target`,
+  resolved by the same matcher against the same list the action reads. It is
+  what the whole refusal hangs on, and it is deliberately narrow — a second name
+  in a DIFFERENT set ("take the stamp and go to the hallway") is invisible to
+  it, in both modes, because a second and looser way into the records is what a
+  closed set exists to prevent; pinned as a gap in
+  `lib/engine_sweep/scripts/one-act-per-line.yml`. One name and not a list,
+  because an empty required array reads as an omitted field to
   `BaseAgent#missing_schema_keys` — see the constant's comment before changing
   its shape.
 - `Item` is in exactly one place — lying in a location, held by one of the
@@ -444,6 +479,32 @@ The current database includes the following story-related models with proper ass
   real, correct prose ("Grenn's voice rises from somewhere below") read as a
   violation. The gap stays covered by the engine instead: a player cannot SPEAK
   to somebody who is not there, whatever the prose says about them.
+
+### When the engine will not play a line
+- **One line, one act.** The captain's ruling of 2026-09-04: two acts on one
+  line are refused and the player is asked to pick one; a line the engine cannot
+  resolve is refused and the player is asked for clarification. Both stay in the
+  mechanics — no narrator, no model call beyond the classifier that had already
+  run. `Playthrough::Refusal` is the one author of the sentence and
+  `Playthrough::Classifier::Intent#refused?` the one decision.
+- **A refused line writes nothing**: no row moves, no `Scene` exists,
+  `Location#last_protagonist_visit` is untouched, `Story#clock` does not advance
+  and the playthrough stays where it was. In the browser it arrives through
+  `NarrationJob`'s ordinary end-of-turn `#turn_log` replace, with the typed line
+  echoed and the input back under it.
+- **The counters are untouched by the ruling.** `Playthrough::Overreach` and
+  `Playthrough::Drift` are written from inside
+  `Playthrough::Classifier#classify`, before the loop asks whether it will play
+  the line. It changed what a turn does, not what is measured; `rake game:score`
+  is byte-identical across it.
+- **What is NOT refused**: `examine`, and `other` with nothing failing to
+  resolve. "look at the sky", "wait", a remark to nobody — the classifier placed
+  them and they reach for no record by design. And two acts across two different
+  closed sets, which `#also_named` cannot see; that gap is pinned as a gap in
+  `lib/engine_sweep/scripts/one-act-per-line.yml`.
+- `Playthrough::Turn#reach_fact` is **gone**, with the branch that narrated a
+  failed reach. `take` and `drop` still use `Scene::Narrator#narrate(fact:)` for
+  what they DID; only the reach case left that seam.
 
 ### Sweeping the engine with stored scripts
 - `rake game:sweep` (`EngineSweep`) walks YAML scripts of typed lines through

@@ -26,10 +26,13 @@ class Playthrough::Classifier
   # on -- see `Playthrough::IntentSchema` for why one and not a list. It is
   # evidence and never a target: nothing in the loop reads it to do anything,
   # only to say what it left undone.
-  Intent = Data.define(:action, :destination, :speaker, :item, :also_named) do
+  # `unknown_action` is the word the model answered when it answered outside
+  # `Playthrough::IntentSchema::INTENTS` and still named a record -- nil every
+  # other time, which with a compliant provider is always. See `#unreadable?`.
+  Intent = Data.define(:action, :destination, :speaker, :item, :also_named, :unknown_action) do
     # Defaulted so a caller naming only what it resolved reads the way it
     # means -- `Intent.new(action: :other)` is a turn that reached for nothing.
-    def initialize(destination: nil, speaker: nil, item: nil, also_named: nil, **rest) = super
+    def initialize(destination: nil, speaker: nil, item: nil, also_named: nil, unknown_action: nil, **rest) = super
 
     def move? = action == :move
     def talk? = action == :talk
@@ -42,10 +45,11 @@ class Playthrough::Classifier
     def subject = destination || speaker || item
 
     # THE OVERREACH CASE. The line named two things the closed sets both know,
-    # and one act is all a turn is. The first was done; this says which one was
-    # not, so the game can tell the player rather than let half a sentence
-    # vanish. Only ever true for an action that resolved -- a reach that found
-    # nothing at all is drift, and a different fact about the world.
+    # and one act is all a turn is. It used to do the first and say which one it
+    # had left; on the captain's ruling of 2026-09-04 the whole line is refused
+    # and the player is asked to pick one -- see `Playthrough::Refusal`. Only
+    # ever true for an action that resolved: a reach that found nothing at all is
+    # drift, and a different fact about the world.
     def named_more_than_one? = !also_named.nil? && !subject.nil?
 
     # THE DRIFT CASE. The player was reaching for something -- a way out, a
@@ -55,6 +59,22 @@ class Playthrough::Classifier
     def reached_for_nothing?
       Playthrough::Drift::ACTIONS.include?(action.to_s) && subject.nil?
     end
+
+    # THE ANSWER THE APP CANNOT READ. `intent` is a closed enum, so this should
+    # never be true; it is a branch rather than a coercion because the coercion
+    # read an out-of-table answer as `other`, threw the record it named away and
+    # narrated the raw line -- a provider ignoring the table looked exactly like
+    # a player musing about the weather.
+    def unreadable? = !unknown_action.nil?
+
+    # WHETHER THE ENGINE WILL PLAY THIS LINE AT ALL, and the captain's ruling of
+    # 2026-09-04 is these three predicates in this order. A refused line does
+    # nothing: `Playthrough::Turn#play` stops before any branch and
+    # `Playthrough::Mechanics#act` before any write, and the player is answered
+    # by `Playthrough::Refusal` -- the app's own words, no narrator, no model
+    # call. Read that class's header for the shapes and for what is deliberately
+    # NOT refused.
+    def refused? = named_more_than_one? || reached_for_nothing? || unreadable?
   end
 
   INSTRUCTIONS = <<~PROMPT.freeze
@@ -175,6 +195,37 @@ class Playthrough::Classifier
     playthrough.carried.to_a
   end
 
+  # THE CLOSED SET AN ACTION READS AGAINST, asked for by the action rather than
+  # by picking one of the four readers above.
+  #
+  # `Playthrough::Turn` and `Playthrough::Mechanics` both need it to say what
+  # WOULD have worked when a reach resolved to nothing, and a second copy of
+  # this table is how the two ways into the records start disagreeing about what
+  # is reachable from here -- which is the same argument that keeps resolution
+  # in this class next to the candidate list it is the inverse of.
+  def offered_for(action)
+    case action&.to_sym
+    when :move then exits_here
+    when :talk then characters_here
+    when :take then items_here
+    when :drop then items_carried
+    # BOTH ITEM SETS, in the order `#build_intent` resolves an examine against.
+    # Looking at a thing does not move it, so neither set is the wrong one.
+    when :examine then items_here + items_carried
+    else []
+    end
+  end
+
+  # THE NAME A RECORD ANSWERS TO, as the player would have typed it: `fullname`
+  # for a person, `name` for a place or a thing -- the same two the closed enum
+  # is built from, which is why this lives here and not beside each caller.
+  # `Playthrough::Mechanics` and `Playthrough::Refusal` both read it.
+  def self.label_for(record)
+    return nil if record.nil?
+
+    record.respond_to?(:fullname) ? record.fullname : record.name
+  end
+
   # Instructions go through `with_instructions` rather than the constructor to
   # match the two generators -- same shape, same FakeAgent seam in tests.
   #
@@ -235,8 +286,16 @@ class Playthrough::Classifier
   # side of the seam: a readable thing is read out of the records, and anything
   # else narrates exactly as it always did.
   def build_intent(intent, target, exits, cast, items = [], carried = [], also = nil)
-    action = Playthrough::IntentSchema::INTENTS.include?(intent) ? intent.to_sym : :other
+    known = Playthrough::IntentSchema::INTENTS.include?(intent)
+    action = known ? intent.to_sym : :other
     name = target.to_s
+
+    # AN ANSWER OUTSIDE THE TABLE THAT STILL NAMED A RECORD is unusable, not
+    # `other`: there is no branch to send it down and something real was named,
+    # so the honest outcome is to refuse and ask again rather than to narrate
+    # around it. An out-of-table answer that named `nothing` loses nothing by
+    # being read as `other`, and is.
+    return Intent.new(action: action, unknown_action: intent.to_s) if !known && named_something?(name)
 
     # The closed set this action resolves against, the matcher that reads a
     # name out of it, and which of the Intent's slots the record lands in.
@@ -274,11 +333,19 @@ class Playthrough::Classifier
   # items of the same name in one room resolve to the same first record for the
   # same reason (see `#find_item`).
   def also_record(set, finder, also, found)
-    name = also.to_s.strip
-    return nil if name.empty? || name == Playthrough::IntentSchema::NOTHING
+    return nil unless named_something?(also)
 
-    other = send(finder, set, name)
+    other = send(finder, set, also.to_s.strip)
     other unless other.nil? || other == found
+  end
+
+  # Whether an enum slot points at a record at all. `nothing` and a blank both
+  # mean it does not, and the schema guarantees it is one of those two or a name
+  # something in the room really has.
+  def named_something?(value)
+    name = value.to_s.strip
+
+    !name.empty? && name != Playthrough::IntentSchema::NOTHING
   end
 
   def find_exit(exits, name)
@@ -371,9 +438,15 @@ class Playthrough::Classifier
 
   # THE ROW THAT MAKES ONE-ACT-PER-LINE A NUMBER. Written here for the same
   # reason the drift row is: this is the only place that knows both halves --
-  # what the turn is about to do, and the thing the same line named that it
-  # will not. Neither half is a failure, which is why this is a separate table
-  # from drift rather than another kind of it. See Playthrough::Overreach.
+  # what the line resolved to, and the thing the same line named beside it.
+  # Neither half is a failure, which is why this is a separate table from drift
+  # rather than another kind of it. See Playthrough::Overreach.
+  #
+  # STILL WRITTEN NOW THE LINE IS REFUSED, and from exactly here. The captain's
+  # ruling of 2026-09-04 changed what the turn DOES, not what is measured, so
+  # the counter is taken before the loop asks whether it will play the line at
+  # all -- and `acted` is what the line resolved to rather than what was done to
+  # it, which on a refused turn is nothing. See `Playthrough::Refusal`.
   def record_overreach(command, intent)
     Playthrough::Overreach.record(
       playthrough: playthrough,
@@ -381,15 +454,9 @@ class Playthrough::Classifier
       location: playthrough.current_location,
       action: intent.action,
       command: command,
-      acted: label_for(intent.subject),
-      unacted: label_for(intent.also_named),
+      acted: self.class.label_for(intent.subject),
+      unacted: self.class.label_for(intent.also_named),
       story_timestamp: playthrough.story_now
     )
-  end
-
-  # A record as the player would have typed it. `fullname` for a person, `name`
-  # for a place or a thing -- the same two the closed enum was built from.
-  def label_for(record)
-    record.respond_to?(:fullname) ? record.fullname : record.name
   end
 end

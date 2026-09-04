@@ -45,13 +45,25 @@ class NarrationJob < ApplicationJob
     playthrough = Playthrough.find(playthrough_id)
     buffer = +""
 
-    Playthrough::Turn.new(playthrough).play(command) do |chunk|
+    outcome = Playthrough::Turn.new(playthrough).play(command) do |chunk|
       buffer << chunk
       flush(playthrough, buffer) if buffer.length >= BATCH_SIZE
     end
 
     flush(playthrough, buffer)
-    finish(playthrough)
+
+    # A LINE THE ENGINE WOULD NOT PLAY comes back instead of a Scene, and this
+    # is the second place the job knows something about what a turn contained --
+    # paid here for the same reason the crisis interception is (see below):
+    # `Playthrough::Turn` produces scenes, and nothing it returns can carry
+    # "show the player something that is not a scene". The consumer is what has
+    # a screen.
+    #
+    # It streamed NOTHING, deliberately: the text is the app's own paragraph,
+    # not prose arriving token by token, and `#stream` is styled as narration.
+    # It arrives with the same `#turn_log` replace every turn ends with, so the
+    # player reads it and the form comes back under it.
+    finish(playthrough, refusal: outcome.is_a?(Playthrough::Refusal) ? outcome : nil)
   rescue ActiveRecord::RecordNotFound
     # The playthrough is gone. There is nobody to tell.
     Rails.logger.info { "Narration skipped: playthrough #{playthrough_id} no longer exists" }
@@ -106,13 +118,13 @@ class NarrationJob < ApplicationJob
   # so the log, the new location line and the input all arrive in one element and
   # the page ends up exactly where a reload would have left it -- without the
   # reload, and so without losing where the player had scrolled to.
-  def finish(playthrough, error: nil, safety_notice: false)
+  def finish(playthrough, error: nil, safety_notice: false, refusal: nil)
     Turbo::StreamsChannel.broadcast_replace_to(
       playthrough,
       target: "turn_log",
       partial: "playthroughs/turn_log",
       locals: { playthrough: playthrough.reload, command: nil, error: error,
-                safety_notice: safety_notice }
+                safety_notice: safety_notice, refusal: refusal }
     )
   end
 end

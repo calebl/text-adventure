@@ -228,16 +228,34 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
 
   # --- moving when the move cannot be made ---------------------------------
 
-  test "a move nobody can make is narrated instead, and the player stays put" do
+  # REFUSED, NOT NARRATED, on the captain's ruling of 2026-09-04. One queued
+  # response and one only: the FakeAgent raises when it runs out, so a narrator
+  # call on this branch fails the test rather than passing quietly.
+  test "a move nobody can make is refused, and the player stays put" do
     connect("Drowned Vestibule")
 
-    scene, chunks, = play("go north", CLASSIFY.call("move", "nothing"),
-                          "There is nothing north of here but the river wall.")
+    refusal, chunks, agent = play("go north", CLASSIFY.call("move", "nothing"))
 
+    assert_instance_of Playthrough::Refusal, refusal
+    assert_equal :unresolved, refusal.kind
+    assert_equal "go north", refusal.typed
+    assert_match(/did not resolve to one of the ways out/, refusal.text)
+    assert_match(/Drowned Vestibule/, refusal.text, "it says what WOULD have worked")
     assert_equal @here, @playthrough.reload.current_location
-    assert_equal "There is nothing north of here but the river wall.", scene.description
-    assert_equal @here, scene.location
-    assert_equal "There is nothing north of here but the river wall.", chunks.join
+    assert_empty chunks, "a refusal is the app's own paragraph and does not stream"
+    assert_equal 1, agent.prompts.size, "the classifier ran and nothing else did"
+  end
+
+  test "a refused move writes no turn and does not move the story's clock" do
+    connect("Drowned Vestibule")
+    was = @story.clock
+
+    assert_no_difference "Scene.count" do
+      play("go north", CLASSIFY.call("move", "nothing"))
+    end
+
+    assert_equal was, @story.reload.clock
+    assert_nil @playthrough.reload.current_scene
   end
 
   # --- talking -------------------------------------------------------------
@@ -307,12 +325,25 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_equal 3, agent.prompts.count # classify, character, narrator
   end
 
-  test "talking to nobody is narrated instead" do
-    scene, = play("talk to the ghost", CLASSIFY.call("talk", "nothing"),
-                  "Nobody answers. The stalls are empty.")
+  test "talking to nobody is refused, and says so out of the records" do
+    refusal, _chunks, agent = play("talk to the ghost", CLASSIFY.call("talk", "nothing"))
 
-    assert_equal "Nobody answers. The stalls are empty.", scene.description
-    assert_empty scene.interactions
+    assert_instance_of Playthrough::Refusal, refusal
+    assert_match(/There is nobody here to talk to/, refusal.text)
+    assert_equal 1, agent.prompts.size
+    assert_equal 0, Interaction.count
+  end
+
+  # The empty set and a name that did not land in a set with people in it are
+  # two different facts, and the refusal says which -- the same distinction
+  # `Playthrough::Mechanics` has drawn since the "pickup everything" defect.
+  test "a talk that lands on nobody in a room with people in it names them" do
+    stands_here("Maren Vosk")
+
+    refusal, = play("ask the ghost about the ledger", CLASSIFY.call("talk", "nothing"))
+
+    assert_match(/did not resolve to anybody who is here/, refusal.text)
+    assert_match(/Maren Vosk/, refusal.text)
   end
 
   # Blank prose is not a turn -- Scene validates a description, and a record
@@ -441,14 +472,17 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # THE TEST THIS WHOLE BRANCH EXISTS FOR. The narrator says the player pocketed
   # something; the app never resolved a take; nothing is granted. Prose is not a
   # state change and cannot become one.
+  #
+  # THE TURN IT IS ASKED ON CHANGED, and only that. It used to be a `take` the
+  # classifier resolved to nothing -- which is refused now and never reaches a
+  # narrator -- so the confident sentence is put on the branch that still does
+  # reach one: `other`, a line the classifier placed and that asks for no record.
+  # The claim is untouched, and it is the claim that matters.
   test "the narrator cannot grant an item the app did not resolve" do
     key = create(:item, :lying, location: @here, name: "Brass Key")
 
     assert_no_changes -> { [ key.reload.playthrough_id, key.reload.location_id ] } do
-      # The classifier read a take and resolved NOTHING -- the player named
-      # something that is not on the floor -- and the narrator then writes the
-      # most confident possible sentence about taking it anyway.
-      scene, = play("pocket the brass key", CLASSIFY.call("take", "nothing"),
+      scene, = play("what about that key then", CLASSIFY.call("other", "nothing"),
                     "You pick up the brass key and slip it into your coat, and it is yours now.")
 
       assert_equal @here, scene.location
@@ -457,12 +491,13 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_equal 0, @playthrough.carried.count
   end
 
-  test "a take of something nobody has ever seen grants nothing and narrates the attempt" do
-    assert_no_difference "Item.count" do
-      scene, = play("take the silver locket", CLASSIFY.call("take", "Silver Locket"),
-                    "There is no locket here, and your hand closes on nothing.")
+  test "a take of something nobody has ever seen grants nothing and is refused" do
+    assert_no_difference [ "Item.count", "Scene.count" ] do
+      refusal, _chunks, agent = play("take the silver locket", CLASSIFY.call("take", "Silver Locket"))
 
-      assert_equal "There is no locket here, and your hand closes on nothing.", scene.description
+      assert_instance_of Playthrough::Refusal, refusal
+      assert_match(/There is nothing lying here to pick up/, refusal.text)
+      assert_equal 1, agent.prompts.size
     end
 
     assert_equal 0, @playthrough.carried.count
@@ -571,16 +606,21 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   # drop does not happen. The turn then fails on the same thing every branch
   # fails on from nowhere -- a `Scene` needs a location -- and the point of the
   # test is what it does NOT do to the item on the way there.
+  # The key is in the ADRIFT playthrough's hands, so the classifier resolves it
+  # out of a closed set that really has it and the turn is not refused -- which
+  # is what puts `#drop_item`'s own guard, the one this test is about, in the
+  # path. A key held by somebody else would be refused one step earlier and the
+  # guard would never run.
   test "a drop by a playthrough standing nowhere moves nothing" do
     adrift = create(:playthrough, story: @story, character: @protagonist)
-    key = create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
+    key = create(:item, :carried, playthrough: adrift, name: "Brass Key")
 
     agent = FakeAgent.new(CLASSIFY.call("drop", "Brass Key"), "There is no floor here to set it on.")
     assert_raises(ActiveRecord::RecordInvalid) do
       BaseAgent.stub(:new, agent) { Playthrough::Turn.new(adrift).play("put down the key") }
     end
 
-    assert_equal @playthrough, key.reload.playthrough
+    assert_equal adrift, key.reload.playthrough
     assert_nil key.location_id
   end
 
@@ -713,16 +753,19 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_equal "examine -> nothing", scene.resolution
   end
 
-  # A REACH THAT FOUND NOTHING IS AN ACTION WITH NO RECORD, which is what that
-  # turn really was -- and the same fact `Playthrough::Drift` counts. It must
-  # not read as a resolved move.
-  test "a move nobody can make records the move and no room" do
-    scene, = play("go through the cellar door", CLASSIFY.call("move", "nothing"), "There is no cellar door.")
+  # A REACH THAT FOUND NOTHING NOW RECORDS NO TURN AT ALL, because there is no
+  # turn: the line is refused, nothing is written, and the durable record of it
+  # is the `Playthrough::Drift` row. The two columns had held `move` with no
+  # record, which was honest while the attempt was still narrated.
+  test "a move nobody can make records a drift row and no turn" do
+    assert_no_difference "Scene.count" do
+      assert_difference "Playthrough::Drift.count", 1 do
+        play("go through the cellar door", CLASSIFY.call("move", "nothing"))
+      end
+    end
 
-    assert_equal "move", scene.resolved_action
-    assert_nil scene.acted_on
-    assert_not_predicate scene, :moved_to?
-    assert_equal "move -> nothing", scene.resolution
+    assert_equal "move", @playthrough.drifts.sole.action
+    assert_equal "go through the cellar door", @playthrough.drifts.sole.command
   end
 
   # THE ONE PLACE THE RECORD IS NOT THE CLASSIFIER'S ANSWER. A playthrough with
@@ -784,46 +827,153 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
            { "description" => "", "lore" => "" })
     end
   end
-  # --- a reach that found nothing is stated, not left to the prose -----------
+  # --- a reach that found nothing is refused, not narrated --------------------
 
-  # THE NARRATOR USED TO BE TOLD NOTHING about a move that resolved to no exit,
-  # so it walked the player through the door anyway and the next arrival
-  # contradicted it. The classifier's finding is a fact about the world and it
-  # goes through the same `fact:` seam `take` and `drop` use.
-  test "a move to nowhere tells the narrator the player has not moved" do
+  # THE NARRATOR USED TO BE TOLD ABOUT IT. A move that resolved to no exit
+  # reached `Scene::Narrator` with a fact saying the player had not moved
+  # (`#reach_fact`), because before that it reached it with the bare command and
+  # the narrator walked the player through the door anyway. On the captain's
+  # ruling of 2026-09-04 the narrator is not asked at all: the line is refused,
+  # nothing is written, and the drift row is taken exactly as before.
+  #
+  # ONE QUEUED RESPONSE PER TEST, which is the assertion that matters as much as
+  # the text -- the FakeAgent raises when it runs out, so a narrator call on any
+  # of these four branches fails the test.
+  test "a move that reached for no exit is refused with the ways out that exist" do
     connect("The Sunken Stair")
 
-    _scene, _chunks, agent = play("go north", CLASSIFY.call("move", "nothing"),
-                                  "There is no way north. The wall is solid.")
-    prompt = agent.prompts.last
+    refusal, _chunks, agent = play("go north", CLASSIFY.call("move", "nothing"))
 
-    assert_match(/ALREADY happened/, prompt)
-    assert_match(/reached for a way out that does not exist here/, prompt)
-    assert_match(/still in Ashgate Market/, prompt)
-    assert_match(/Ways out of here: The Sunken Stair\./, prompt)
+    assert_match(/did not resolve to one of the ways out of here/, refusal.text)
+    assert_match(/The ways out are: The Sunken Stair\./, refusal.text)
+    assert_equal 1, agent.prompts.size
     assert_equal @here, @playthrough.reload.current_location
   end
 
-  test "a talk to nobody tells the narrator nobody else is here to answer" do
-    _scene, _chunks, agent = play("talk to the ghost", CLASSIFY.call("talk", "nothing"),
-                                  "Nobody answers.")
+  test "a talk to nobody is refused by saying there is nobody here" do
+    refusal, _chunks, agent = play("talk to the ghost", CLASSIFY.call("talk", "nothing"))
 
-    assert_match(/tried to speak to somebody who is not here/, agent.prompts.last)
+    assert_match(/There is nobody here to talk to/, refusal.text)
+    assert_equal 1, agent.prompts.size
   end
 
-  test "a take of nothing tells the narrator nothing was picked up" do
-    _scene, _chunks, agent = play("pocket the brass key", CLASSIFY.call("take", "nothing"),
-                                  "Your hand closes on nothing.")
+  test "a take of nothing is refused by saying the floor is empty" do
+    refusal, _chunks, agent = play("pocket the brass key", CLASSIFY.call("take", "nothing"))
 
-    assert_match(/reached for something that is not lying here/, agent.prompts.last)
-    assert_match(/Nothing was picked up/, agent.prompts.last)
+    assert_match(/There is nothing lying here to pick up/, refusal.text)
+    assert_equal 1, agent.prompts.size
   end
 
-  test "a drop of nothing tells the narrator nothing changed hands" do
-    _scene, _chunks, agent = play("drop the crown", CLASSIFY.call("drop", "nothing"),
-                                  "You are not carrying any crown.")
+  test "a drop of nothing is refused by saying the hands are empty" do
+    refusal, _chunks, agent = play("drop the crown", CLASSIFY.call("drop", "nothing"))
 
-    assert_match(/tried to put down something they are not carrying/, agent.prompts.last)
+    assert_match(/You are carrying nothing/, refusal.text)
+    assert_equal 1, agent.prompts.size
+  end
+
+  test "a drop that lands on nothing while carrying something names what is carried" do
+    create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
+
+    refusal, = play("drop the crown", CLASSIFY.call("drop", "nothing"))
+
+    assert_match(/did not resolve to anything you are carrying/, refusal.text)
+    assert_match(/You are carrying: Brass Key\./, refusal.text)
+  end
+
+  # --- two acts on one line ---------------------------------------------------
+
+  # THE CAPTAIN'S RULING, and the defect it replaced: "pick up the index and the
+  # apron" took the index, said nothing about the apron in the browser, and
+  # counted the apron as an overreach. Now nothing moves and the player is asked
+  # to pick one -- and the counter row is written exactly as before, because the
+  # ruling changed what the turn does and not what is measured.
+  test "a line that named two things is refused whole and neither one moves" do
+    index = create(:item, :lying, location: @here, name: "Perrin's private index")
+    apron = create(:item, :lying, location: @here, name: "copy-room apron")
+
+    refusal = nil
+    assert_no_difference "Scene.count" do
+      assert_difference "Playthrough::Overreach.count", 1 do
+        refusal, _chunks, agent = play("pick up the index and the apron",
+                                       { "intent" => "take", "target" => index.name,
+                                         "also_named" => apron.name })
+        assert_equal 1, agent.prompts.size, "no narrator was asked"
+      end
+    end
+
+    assert_equal :named_more_than_one, refusal.kind
+    assert_match(/two things at once/, refusal.text)
+    assert_match(/take Perrin's private index/, refusal.text)
+    assert_match(/take copy-room apron/, refusal.text)
+    assert_match(/One line is one act/, refusal.text)
+
+    assert_nil index.reload.playthrough_id, "the first thing is not taken either"
+    assert_equal @here, index.location
+    assert_equal @here, apron.reload.location
+    assert_equal 0, @playthrough.carried.count
+  end
+
+  # A READABLE THING NAMED ALONGSIDE ANOTHER THING IS TWO ACTS, and that is the
+  # one shape `ta-item-inscriptions` added to this rule: since an `examine`
+  # resolves a record -- out of both item sets at once -- a look can overreach.
+  # Neither is read, no `Item::Inscriber` call is made, and the counter row is
+  # taken, which is what `Playthrough::Overreach::ACTIONS` gained `examine` for.
+  test "a read that named two things is refused whole and reads neither" do
+    note = create(:item, :lying, location: @here, name: "folded note",
+                                 readable: true, inscription: "Midnight. The Bell.")
+    index = create(:item, :carried, playthrough: @playthrough, name: "private index",
+                                    readable: true, inscription: "1188/12 -- amended.")
+
+    refusal = nil
+    assert_no_difference "Scene.count" do
+      assert_difference "Playthrough::Overreach.count", 1 do
+        refusal, _chunks, agent = play("read the note and the index",
+                                       { "intent" => "examine", "target" => note.name,
+                                         "also_named" => index.name })
+        assert_equal 1, agent.prompts.size, "no narrator and no inscriber were asked"
+      end
+    end
+
+    assert_equal :named_more_than_one, refusal.kind
+    assert_match(/read folded note/, refusal.text)
+    assert_match(/read private index/, refusal.text)
+    assert_equal "examine", Playthrough::Overreach.sole.action
+  end
+
+  # And a look that landed on nothing is NOT refused: it was not reaching for a
+  # record it could have missed, so it narrates as it always did.
+  test "a look that resolved to nothing is narrated, not refused" do
+    scene, = play("look at the sky", CLASSIFY.call("examine", "nothing"),
+                  "Wet canvas, and a strip of grey above it.")
+
+    assert_equal "Wet canvas, and a strip of grey above it.", scene.description
+    assert_equal 0, @playthrough.drifts.count
+    assert_equal 0, Playthrough::Overreach.count
+  end
+
+  # A CLASSIFIER ANSWER THE APP CANNOT READ. `intent` is a closed enum so this
+  # should not happen; the branch exists because the old coercion read it as
+  # `other`, threw the record it named on the floor and narrated the raw line.
+  test "an intent outside the table that still named a record is refused" do
+    create(:item, :lying, location: @here, name: "Brass Key")
+
+    refusal, _chunks, agent = play("steal the brass key",
+                                   { "intent" => "steal", "target" => "Brass Key",
+                                     "also_named" => "nothing" })
+
+    assert_equal :unreadable, refusal.kind
+    assert_match(/did not come back as anything the game knows how to do/, refusal.text)
+    assert_equal 1, agent.prompts.size
+  end
+
+  # And an out-of-table answer that named NOTHING loses nothing by being read as
+  # `other`, so it still is: there is no record to drop and the line is prose.
+  test "an intent outside the table that named nothing is narrated as other" do
+    scene, = play("sing something", { "intent" => "sing", "target" => "nothing",
+                                      "also_named" => "nothing" },
+                  "You sing, and the canvas takes it.")
+
+    assert_equal "You sing, and the canvas takes it.", scene.description
   end
 
   test "an examine is passed to the narrator as a look" do

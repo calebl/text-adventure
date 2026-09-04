@@ -12,21 +12,47 @@
 # exists, and the limit is the loop's rather than the world's. Adding the two
 # together would produce a number that is neither, so nothing does.
 #
-# WHY IT IS NOT A DEFECT EITHER, and `Story::Audit` files it under LIMITS on
-# its own for that reason: nothing here is wrong. The turn did what it could
-# and `Playthrough::Mechanics` says out loud what it left. What the count is
-# for is deciding whether one act per line is a limit worth lifting -- see the
-# ROADMAP -- and that is a question about how people actually type, which is
-# not answerable by opinion.
+# WHAT THE TURN DOES NOW, AND WHAT THIS COUNT STILL MEANS. The captain's ruling
+# of 2026-09-04, in his words: *"If someone tries to do two things or more at a
+# time, we should refuse and prompt the player to pick only 1 thing."* So the
+# line is refused WHOLE -- the index is not taken either, nothing is written,
+# and `Playthrough::Refusal` asks the player to pick one. The row is written
+# exactly as before, from exactly the same place
+# (`Playthrough::Classifier#record_overreach`), because the ruling changed what
+# the turn DOES and not what is measured.
+#
+# READ `acted` AS WHAT THE LINE RESOLVED TO, then, and not as what was done to
+# it. On a refused turn nothing was done to either name; the two columns are the
+# pair the line reached for, and which of them the loop would have picked.
+#
+# STILL NOT A DEFECT, and `Story::Audit` still files it under LIMITS on its own:
+# nothing here is wrong. What the count is for is how often people type two acts
+# on one line -- a question about how people actually type, which is not
+# answerable by opinion -- and it is now also the measure of how often the
+# refusal fires.
 #
 # NOT PRUNED with the conversations (`Playthrough#prune_conversations!`), for
 # the same reason drift is not: a measurement that expires cannot be watched
 # over time.
 class Playthrough::Overreach < ApplicationRecord
-  # The intents that resolve against a closed set, and so the only ones that
-  # can name two things out of one. The same four as `Playthrough::Drift`, and
-  # the same reason: `examine` and `other` resolve to no record at all.
-  ACTIONS = Playthrough::Drift::ACTIONS
+  # The intents that resolve against a closed set, and so the only ones that can
+  # name two things out of one.
+  #
+  # NO LONGER THE SAME LIST AS `Playthrough::Drift`'s, and the difference is
+  # `examine`. It used to be an alias of it, on the reasoning that `examine` and
+  # `other` resolve to no record at all -- true until `ta-item-inscriptions`,
+  # after which a look resolves a record out of both item sets at once
+  # (`Playthrough::Classifier#build_intent`). So "read the note and the index"
+  # names two things the records have and asks for two acts, and since the
+  # ruling of 2026-09-04 it is refused like any other such line. Without the
+  # value here the row would have failed its own validation and been logged
+  # away, so the refusal would have fired uncounted.
+  #
+  # A LOOK CAN OVERREACH AND IT CANNOT DRIFT, which is why only this list gained
+  # it: an `examine` that landed on nothing is not reaching for a record it can
+  # miss -- "look at the sky" is a look at the sky -- and it stays narrated. See
+  # `Playthrough::Refusal` for the boundary written out.
+  ACTIONS = (Playthrough::Drift::ACTIONS + %w[examine]).freeze
 
   belongs_to :playthrough
   belongs_to :scene, optional: true
@@ -44,7 +70,8 @@ class Playthrough::Overreach < ApplicationRecord
   # `Playthrough::Drift.record` and for the same reason. This is a measurement
   # taken alongside a turn the player is waiting on, so a validation it misses
   # must not be able to turn an ordinary "take the index and the apron" into a
-  # broken game. It logs and returns nil.
+  # broken game. It logs and returns nil -- and since the ruling that means the
+  # player still gets their refusal, unmeasured.
   def self.record(playthrough:, action:, command:, acted:, unacted:, scene: nil, location: nil, story_timestamp: nil)
     create!(
       playthrough: playthrough,

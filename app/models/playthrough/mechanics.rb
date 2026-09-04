@@ -105,6 +105,17 @@ class Playthrough::Mechanics
     "world generate as you walk."
   ].freeze
 
+  # WHAT A REFUSED LINE LEFT BEHIND, said out loud and only in this mode. The
+  # counter is what this instrument exists to take, so a refusal that took one
+  # should say which table now has a row -- and naming a Ruby class at the
+  # person typing is exactly right here and exactly wrong in the browser, which
+  # is why `Playthrough::Refusal` does not carry it. `:unreadable` counts
+  # nothing: it is a defect on our side, and it goes to the log.
+  ROW_WRITTEN = {
+    unresolved: "A Playthrough::Drift row was written.",
+    named_more_than_one: "A Playthrough::Overreach row was written."
+  }.freeze
+
   # WORDS THAT NAME NOTHING, taken off the FRONT of a typed name and nowhere
   # else. `go to the Tide Post` and `drop the tide-slate` were both refused
   # underneath a refusal listing the very thing they named, because an article
@@ -290,15 +301,24 @@ class Playthrough::Mechanics
   end
 
   # How the command was read, in the same shape whichever read it.
+  #
+  # THE SECOND NAME IS PART OF THE READING and is said here too, because since
+  # the ruling of 2026-09-04 a line that named two things is refused -- and
+  # `understood: take -> Perrin's private index` printed alone above that
+  # refusal reads as though the index had been taken. What the engine understood
+  # is both names; what it did is nothing. The fixed grammar never produces one,
+  # so nothing offline changes.
   def describe(intent)
-    "#{intent.action} -> #{label(intent.subject) || "nothing"}"
+    reading = "#{intent.action} -> #{label(intent.subject) || "nothing"}"
+    reading += " (and #{label(intent.also_named)})" if intent.named_more_than_one?
+
+    reading
   end
 
-  def label(record)
-    return nil if record.nil?
-
-    record.respond_to?(:fullname) ? record.fullname : record.name
-  end
+  # The name a record answers to, out of the class that owns the closed sets a
+  # typed name is matched against. One definition, so the read-out, the refusals
+  # and the counter rows cannot name the same person three ways.
+  def label(record) = Playthrough::Classifier.label_for(record)
 
   # THE NO-MODEL PATH. Longest verb first so `pick up` is not read as `pick`,
   # and the verb has to be the whole line or be followed by a space -- otherwise
@@ -418,18 +438,17 @@ class Playthrough::Mechanics
   # the same `Intent`. What differs is only the two ends: nothing streams, and
   # the branches that exist to produce prose say so instead.
   def act(intent, command, understood)
-    report =
-      if intent.destination
-        move(intent.destination, command, understood)
-      elsif intent.speaker
-        talk(intent.speaker, understood)
-      elsif intent.item
-        item_branch(intent, understood)
-      else
-        nothing(intent, understood)
-      end
+    return refuse_line(intent, command, understood) if intent.refused?
 
-    overreach(report, intent)
+    if intent.destination
+      move(intent.destination, command, understood)
+    elsif intent.speaker
+      talk(intent.speaker, understood)
+    elsif intent.item
+      item_branch(intent, understood)
+    else
+      nothing(intent, understood)
+    end
   end
 
   # THE THREE THINGS A LINE CAN DO TO ONE THING, dispatched on the action the way
@@ -441,22 +460,23 @@ class Playthrough::Mechanics
     intent.drop? ? drop(intent.item, understood) : take(intent.item, understood)
   end
 
-  # WHAT THE LINE ALSO NAMED AND THIS TURN DID NOT DO. One typed line is one
-  # act, so "take the index and the apron" takes the index -- and the apron
-  # used to go nowhere at all: no write, no refusal, and no `Playthrough::Drift`
-  # row either, because the reach resolved. Half a sentence vanished and nothing
-  # counted it.
+  # THE LINE THIS MODE WILL NOT PLAY EITHER, and it is the same rule read out of
+  # the same place: `Playthrough::Classifier::Intent#refused?` decides and
+  # `Playthrough::Refusal` says it, so the two modes cannot come to disagree
+  # about a line. The captain's ruling of 2026-09-04.
   #
-  # Said as a note rather than folded into `changed:` or `refused:`, because it
-  # is neither: something did happen, and something else was left undone. The
-  # note is added here rather than in each branch so every branch gets it,
-  # including the ones that refuse.
-  def overreach(report, intent)
-    return report unless intent.named_more_than_one?
+  # WHAT THIS REPLACED. Two acts on one line used to do the FIRST and add a note
+  # -- `also named: copy-room apron -- one line is one act, so this turn did not
+  # touch it` -- which was the honest report of a half-played turn, and the half
+  # a turn the ruling struck. Nothing is done now and nothing is left undone.
+  #
+  # `#reason` and never `#text`: the read-out is printed under every report in
+  # this mode, so a refusal that also listed what is here would say it twice.
+  # The browser, which has no read-out, reads `#text`.
+  def refuse_line(intent, command, understood)
+    refusal = Playthrough::Refusal.for(intent, typed: command, offered: classifier.offered_for(intent.action))
 
-    report.with(note: Array(report.note) + [
-      "also named: #{label(intent.also_named)} -- one line is one act, so this turn did not touch it. Type it on its own."
-    ])
+    refuse([ refusal.reason, ROW_WRITTEN[refusal.kind] ].compact.join(" "), understood: understood)
   end
 
   # MOVING, and with a model in the loop this is `Playthrough::Turn#move_to`
@@ -562,61 +582,15 @@ class Playthrough::Mechanics
            understood: understood)
   end
 
-  # A turn that resolved to no record. Told apart the way the loop tells them
-  # apart, because they are different facts about the world.
+  # A turn that resolved to no record and was NOT refused: `other`, and an
+  # `examine` that landed on nothing -- looking at the sky is not reaching for a
+  # record it can miss. Both are answered in prose, and this mode writes none. A
+  # `move`, `talk`, `take` or `drop` that resolved to nothing used to arrive here
+  # too and does not any more: it is refused above, by the same rule and in the
+  # same words the browser refuses it in.
   def nothing(intent, understood)
-    reason =
-      if intent.reached_for_nothing?
-        "#{drift_reason(intent.action)} Nothing changed, and a Playthrough::Drift row was written."
-      else
-        "`#{intent.action}` does not move anything: it is answered in prose, and this mode writes none. Nothing changed."
-      end
-
-    refuse(reason, understood: understood)
-  end
-
-  # WHY THE REACH RESOLVED TO NOTHING, and it is two different facts told
-  # apart: the set was empty, or the set had things in it and the command did
-  # not land on one of them. It used to be one sentence for both, so "pickup
-  # everything" in a room with three things on the floor was refused with
-  # "Nothing of that name is lying here" -- directly above a read-out listing
-  # all three. The command had named no name at all.
-  #
-  # Neither branch says what the player typed and neither repeats the lists:
-  # the read-out below is where the records are printed, and a refusal that
-  # guesses at the typing is how a wrong guess gets stated as a fact.
-  def drift_reason(action)
-    return empty_set_reason(action) if offered_for(action).empty?
-
-    case action
-    when :move then "That did not resolve to one of the ways out of here."
-    when :talk then "That did not resolve to anybody who is here."
-    when :take then "That did not resolve to anything lying here."
-    when :drop then "That did not resolve to anything you are carrying."
-    else "That resolved to nothing."
-    end
-  end
-
-  def empty_set_reason(action)
-    case action
-    when :move then "There is no way out of here at all."
-    when :talk then "There is nobody here to talk to."
-    when :take then "There is nothing lying here to pick up."
-    when :drop then "You are carrying nothing, so there is nothing to put down."
-    else "That resolved to nothing."
-    end
-  end
-
-  # The closed set the action reads against -- the same four the read-out
-  # prints and the same four the classifier offers a model.
-  def offered_for(action)
-    case action
-    when :move then classifier.exits_here
-    when :talk then classifier.characters_here
-    when :take then classifier.items_here
-    when :drop then classifier.items_carried
-    else []
-    end
+    refuse("`#{intent.action}` does not move anything: it is answered in prose, and this mode writes none. " \
+           "Nothing changed.", understood: understood)
   end
 
   # --- resolving a typed name (no-model mode) --------------------------------

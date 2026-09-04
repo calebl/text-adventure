@@ -1,0 +1,181 @@
+# ONE LINE, ONE ACT -- THE CAPTAIN'S RULING OF 2026-09-04, AS A WALK.
+#
+# In his words: *"If someone tries to do two things or more at a time, we should
+# refuse and prompt the player to pick only 1 thing. Or if we can't determine
+# what they are trying to do, then we should refuse and ask for clarification.
+# This can all be in the mechanics and doesn't need to go through narration."*
+#
+# So a refused line writes nothing, narrates nothing and moves nobody, and the
+# next line still plays. This script walks that -- the second clause of it in
+# full, and the first as far as a fixed grammar can see a second noun at all.
+#
+# WHAT AN OFFLINE WALK CAN AND CANNOT SEE OF THE RULING, stated here rather
+# than left to be discovered:
+#
+#   TWO NAMES OUT OF ONE SET: REACHABLE, and it lands on the refusal by the
+#   grammar's own ambiguity rule -- a line holding two of the room's item names
+#   in full matches more than one record, and an ambiguous match has always
+#   been refused. `both-names-in-full` pins it. What it does NOT reach is the
+#   classifier's `also_named`, which is the field the browser's refusal hangs
+#   on and which no fixed grammar produces; that half is
+#   `Playthrough::ClassifierTest`, `Playthrough::RefusalTest`,
+#   `Playthrough::TurnTest` and `NarrationJobTest`.
+#
+#   TWO NAMES OUT OF *TWO* SETS: NOT REFUSED, in either mode, and
+#   `two-acts-across-two-sets` pins that as the boundary rather than leaving it
+#   to be found. `take the ward stamp and the daybook` names something on the
+#   floor and something in the hands; a `take` resolves against the floor
+#   alone, so the second noun is invisible to the resolver -- deliberately, on
+#   both paths (`Playthrough::Classifier#also_record` resolves the second name
+#   through the action's own closed set, because a second and looser way into
+#   the records is what a closed set exists to prevent). The ruling did not
+#   change what is measured, and widening that would. If this step ever starts
+#   failing, the gap was closed on purpose and the `why` below is the thing to
+#   read first.
+#
+#   TWO PEOPLE NAMED ON ONE LINE: NOT REACHABLE AT ALL, and not for want of a
+#   grammar -- no room in any of the three seeded worlds has two people in it,
+#   so there is no second name for a `talk` to resolve. Pinned by
+#   `Playthrough::MechanicsTest` and `Playthrough::TurnTest` instead.
+#
+#   TWO READABLE THINGS NAMED ON ONE LINE: REACHABLE, by the same ambiguity
+#   rule, and worth its own step because `examine` is the action the rule grew
+#   to cover last -- a look resolves a record since `ta-item-inscriptions`, so
+#   it can overreach (and still cannot drift). `two-readable-names-in-full`
+#   pins it.
+#
+#   A CLASSIFIER ANSWER THE APP CANNOT READ: NOT REACHABLE. It is an `intent`
+#   outside `Playthrough::IntentSchema::INTENTS`, and this mode never asks.
+#   `unreadable-offline` walks the fixed grammar's own version of the same
+#   thing -- a word that is not in `VERBS` -- which is refused with the whole
+#   grammar rather than with a guess.
+story: The Unrecorded Hour
+why: the ruling of 2026-09-04 -- a refused line writes nothing, and the next line still plays
+steps:
+- id: the-office-as-seeded
+  type: look
+  why: the starting state, so a failure later has a known beginning
+  expect:
+    location: Ward Office 12 (realized)
+    exits: [The Supply Closet (realized), The Long Hallway (stub)]
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+    present: [Halkett Rowe]
+    changed: false
+    refused: false
+
+- id: somebody-who-is-not-here
+  type: talk to Perrin Lasco
+  why: CANNOT DETERMINE -- he is nowhere in this world, and the refusal names the person who IS here
+  expect:
+    refused: true
+    changed: false
+    drifts: 0
+    # The refusal quotes back what was typed after the verb, leading
+    # preposition and all -- `LEADING_WORDS` is stripped for MATCHING and not
+    # for the message. Asserted as it stands rather than pinned to a wording
+    # nobody has decided to change.
+    offers: [there is no person here called, Perrin Lasco, Halkett Rowe]
+    present: [Halkett Rowe]
+    carrying: [Ward Office 12 daybook]
+
+- id: unreadable-offline
+  type: ponder the ward stamp
+  why: a word this grammar does not have -- refused with the whole grammar, and never with a guess at what was meant
+  expect:
+    refused: true
+    changed: false
+    note: 'take <item>      pick up something lying here'
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+
+- id: into-the-room-with-two-things-in-it
+  type: go to the Supply Closet
+  why: two items on one floor is what a two-noun line needs to be visible to a fixed grammar
+  expect:
+    changed: true
+    location: The Supply Closet (realized)
+    here: [Perrin's private index, copy-room apron]
+    carrying: [Ward Office 12 daybook]
+    present: []
+
+- id: both-names-in-full
+  type: take Perrin's private index and copy-room apron
+  why: TWO ACTS ON ONE LINE -- refused whole, and BOTH things stay on the floor
+  expect:
+    refused: true
+    changed: false
+    drifts: 0
+    offers: [matches more than one thing lying here, Perrin's private index, copy-room apron]
+    here: [Perrin's private index, copy-room apron]
+    carrying: [Ward Office 12 daybook]
+
+- id: two-readable-names-in-full
+  type: read Perrin's private index and Ward Office 12 daybook
+  why: >-
+    A READ IS AN ACT LIKE ANY OTHER. Both of this world's readable things are in
+    reach here -- the index on the floor, the daybook in the hands -- which is
+    the one closed set an `examine` resolves against, and naming both of them in
+    full is one line asking twice. Refused, and neither one recited.
+  expect:
+    refused: true
+    changed: false
+    drifts: 0
+    offers: [matches more than one thing here or in your hands, Perrin's private index, Ward Office 12 daybook]
+    here: [Perrin's private index, copy-room apron]
+    carrying: [Ward Office 12 daybook]
+
+- id: and-one-of-them-on-its-own-still-reads
+  type: read the private index
+  why: a refusal is not sticky on this branch either -- picking one has to work, and the words are the seed file's
+  expect:
+    changed: false
+    refused: false
+    understood: examine -> Perrin's private index
+    note: ["reads: Perrin's private index"]
+    here: [Perrin's private index, copy-room apron]
+
+- id: and-the-next-line-plays
+  type: take the index
+  why: a refusal is not sticky -- the ruling asks the player to pick one, so picking one has to work
+  expect:
+    changed: true
+    understood: take -> Perrin's private index
+    here: [copy-room apron]
+    carrying: [Perrin's private index, Ward Office 12 daybook]
+
+- id: a-name-that-lands-on-nothing
+  type: take the tide-slate
+  why: CANNOT DETERMINE, the other half -- a real thing from another world, refused with what IS lying here
+  expect:
+    refused: true
+    changed: false
+    drifts: 0
+    offers: ['there is no thing lying here called "the tide-slate"', copy-room apron]
+    here: [copy-room apron]
+    carrying: [Perrin's private index, Ward Office 12 daybook]
+
+- id: back-to-the-office
+  type: go to Ward Office 12
+  why: the ward stamp and the daybook are the two-set pair, and they are only both in reach here
+  expect:
+    changed: true
+    location: Ward Office 12 (realized)
+    here: [ward stamp]
+    carrying: [Perrin's private index, Ward Office 12 daybook]
+    present: [Halkett Rowe]
+
+- id: two-acts-across-two-sets
+  type: take the ward stamp and the daybook
+  why: >-
+    THE BOUNDARY THE RULING HAS NOT CLOSED, pinned so that closing it is a
+    deliberate act. The stamp is on the floor and the daybook is in the hands,
+    a `take` resolves against the floor alone, and so only one of the two names
+    is ever seen -- in this mode by `#resolve`, in the browser by
+    `Playthrough::Classifier#also_record`. The line is played rather than
+    refused. Read the header before changing this.
+  expect:
+    changed: true
+    understood: take -> ward stamp
+    here: []
+    carrying: [Perrin's private index, Ward Office 12 daybook, ward stamp]

@@ -296,4 +296,67 @@ class NarrationJobTest < ActiveJob::TestCase
   test "a turn for a playthrough that is gone is dropped rather than raised" do
     assert_nothing_raised { NarrationJob.perform_now(0, "open the ledger") }
   end
+
+  # --- the line the engine will not play -------------------------------------
+
+  # THE CAPTAIN'S RULING OF 2026-09-04, END TO END IN THE BROWSER. Two acts on
+  # one line: nothing is written, no narrator is asked, and the player reads the
+  # engine's own words and gets the input back so the next line can follow.
+  #
+  # `NOT_A_MOVE` and nothing else is queued -- the FakeAgent raises when it runs
+  # out -- so a narrator call on this path would fail the test.
+  test "two acts on one line arrive as a refusal with the input back" do
+    playthrough = create(:playthrough, :started)
+    here = playthrough.current_location
+    index = create(:item, :lying, location: here, name: "Perrin's private index")
+    apron = create(:item, :lying, location: here, name: "copy-room apron")
+
+    streams = play(playthrough, "pick up the index and the apron",
+                   { "intent" => "take", "target" => index.name, "also_named" => apron.name })
+    replace = streams.last
+
+    assert_empty appends(streams), "a refusal is the app's paragraph, not prose arriving"
+    assert_equal "replace", replace["action"]
+    assert_equal "turn_log", replace["target"]
+    assert_match "two things at once", replace.to_html
+    assert_match "One line is one act", replace.to_html
+    assert_match "pick up the index and the apron", replace.to_html, "the line it refused is echoed"
+    assert_match "what do you do?", replace.to_html, "and the next line can follow"
+    assert_no_match(/class="alert"/, replace.to_html, "nothing failed, so it must not read as an error")
+
+    assert_nil playthrough.reload.current_scene, "no turn was written"
+    assert_nil index.reload.playthrough_id
+    assert_nil apron.reload.playthrough_id
+  end
+
+  # THE OTHER SHAPE: a reach the records cannot answer. It names what IS here,
+  # which `Playthrough::Mechanics` leaves to its read-out and the browser has to
+  # say out loud.
+  test "a reach that found nothing arrives as a refusal naming what is here" do
+    playthrough = create(:playthrough, :started)
+    create(:item, :lying, location: playthrough.current_location, name: "ward stamp")
+
+    replace = play(playthrough, "pick up the cellar key",
+                   { "intent" => "take", "target" => "nothing" }).last.to_html
+
+    assert_match "did not resolve to anything lying here", replace
+    assert_match "Lying here: ward stamp.", replace
+    assert_match "what do you do?", replace
+    assert_nil playthrough.reload.current_scene
+    assert_equal 1, playthrough.drifts.count, "and the drift row is taken as it always was"
+  end
+
+  # WHERE IT STANDS is the safety notice's place, for the same reason: the page
+  # anchors at `#bottom`, so a message above a long transcript is one the player
+  # has to scroll up to find.
+  test "a refusal stands below the log and above the input" do
+    playthrough = create(:playthrough, :started)
+
+    html = play(playthrough, "go down to the cellar",
+                { "intent" => "move", "target" => "nothing" }).last.to_html
+    refusal = html.index("Nothing has changed")
+
+    assert_operator refusal, :>, html.index('class="log"')
+    assert_operator refusal, :<, html.index("what do you do?")
+  end
 end

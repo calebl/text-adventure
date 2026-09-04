@@ -84,7 +84,11 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h3", text: /named two/
-    assert_select "th", text: "left undone"
+    # "resolved to" rather than "acted on": since the ruling of 2026-09-04 the
+    # line is refused whole, so neither name was acted on. See
+    # `Playthrough::Overreach`.
+    assert_select "th", text: "also named"
+    assert_select "th", text: "resolved to"
     assert_match "pickup the index and the apron", response.body
     assert_match "copy-room apron", response.body
     assert_match "the loop's limit, not a defect", response.body
