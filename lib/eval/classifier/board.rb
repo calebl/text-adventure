@@ -13,6 +13,12 @@
 # hosted pair is measured in one run) and an arm may have a set to itself (a
 # local model runs contiguously, so it must). What is compared is models.
 #
+# ONE EXCEPTION TO "the stored file and nothing else": THE COST ROW reads the
+# `models` registry, because a set does not record what its calls were priced
+# at. A model the registry has never heard of reads `unpriced` rather than as
+# free -- the same rule `Eval::Cost#price` follows -- and the rest of the table
+# is unaffected either way.
+#
 # MARKDOWN, DELIBERATELY. `Eval::Classifier::Report` prints for a terminal; this
 # prints for the place a cross-model comparison is actually read, which is a PR
 # body or EVALUATION.md. A pipe table also survives a column count nobody
@@ -92,6 +98,7 @@ class Eval::Classifier::Board
         "latency median (warm)" => ->(column) { band(column, :latency_median) },
         "latency p95 (warm)" => ->(column) { band(column, :latency_p95) },
         "first call (cold, excluded)" => ->(column) { cold(column) },
+        "cost per 1,000 calls" => ->(column) { cost(column) },
         "failed calls" => ->(column) { band(column, :failures) },
         "rotations" => ->(column) { rotations(column) }
       )
@@ -152,11 +159,27 @@ class Eval::Classifier::Board
       format("%.3f (%d of %d)", omitted.fdiv(answered.size), omitted, answered.size)
     end
 
+    # WHAT A THOUSAND CLASSIFIER CALLS COST ON THIS ARM, which is the figure that
+    # makes a cheaper model worth asking about at all: priced on
+    # `Eval::Classifier::PER_CALL`, measured over the 61 real classifier calls in
+    # the captain's own database rather than modelled.
+    def cost(column)
+      price = Eval::Classifier::Arm.parse(column.arm).price
+      return "free (the captain's own hardware)" if column.local?
+      return "unpriced -- the registry has no row" if price == Eval::Cost::UNKNOWN
+
+      per_call = Eval::Classifier::PER_CALL
+      format("$%.2f", price.of(per_call[:input] * 1_000, per_call[:output] * 1_000))
+    end
+
     def cold(column)
       warmup = column.result.warmup(column.arm)
       return "not recorded" if warmup.nil? || warmup["seconds"].nil?
 
-      residency = warmup["residency"].presence
+      # The residency answer is only meaningful for a local arm -- a hosted
+      # provider has no model to keep in memory, and printing `not_local` in a
+      # cross-model table is noise in the column that matters least.
+      residency = column.local? ? warmup["residency"].presence : nil
       format("%.1fs%s", warmup["seconds"], residency ? " (#{residency})" : "")
     end
 

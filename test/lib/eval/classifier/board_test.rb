@@ -64,6 +64,17 @@ class Eval::Classifier::BoardTest < ActiveSupport::TestCase
     assert_match(/first call \(cold, excluded\) \| 61\.4s \(resident\)/, board_for("local").lines.join("\n"))
   end
 
+  # A HOSTED PROVIDER HAS NO MODEL TO KEEP IN MEMORY, so `not_local` in the
+  # cold-start cell is noise in the column that matters least.
+  test "a hosted arm's cold start is a time and not a residency answer" do
+    stored("hosted", arms: [ "minimax/minimax-m3" ], cold: 0.6, residency: "not_local")
+
+    printed = board_for("hosted").lines.join("\n")
+
+    assert_match(/first call \(cold, excluded\) \| 0\.6s/, printed)
+    assert_no_match(/not_local/, printed)
+  end
+
   # TWO SETS SCORED ON DIFFERENT LABELS ARE NOT COMPARABLE, and a table is the
   # easiest place to forget it -- the same rule `Comparison` follows.
   test "a corpus digest mismatch is said out loud above nothing and below the table" do
@@ -72,6 +83,26 @@ class Eval::Classifier::BoardTest < ActiveSupport::TestCase
 
     assert_match(/not scored on the same corpus/, board_for("one", "two").warnings.join("\n"))
     assert_empty board_for("one").warnings, "one set cannot disagree with itself"
+  end
+
+  # THE FIGURE THAT MAKES A CHEAPER MODEL WORTH ASKING ABOUT, and the one row
+  # that reads the registry rather than the stored file -- so a model the
+  # registry has never heard of has to read `unpriced` and never as free.
+  test "cost per 1,000 calls is priced off the registry, and an unknown model says so" do
+    create(:model)   # the registry row `mistralai/mistral-medium-3.1` is priced off
+    stored("hosted", arms: [ "mistralai/mistral-medium-3.1", "nobody/never-heard-of-it" ])
+
+    printed = board_for("hosted").lines.join("\n")
+
+    assert_match(/cost per 1,000 calls \| \$[0-9]/, printed)
+    assert_match(/unpriced/, printed)
+    assert_no_match(/\$0\.00/, printed, "an unpriced model must not read as a free one")
+  end
+
+  test "a local arm's calls are free, which is not the same as unpriced" do
+    stored("local", arms: [ "ollama:qwen3:4b+nothink" ], seconds: 3.0)
+
+    assert_match(/cost per 1,000 calls \| free/, board_for("local").lines.join("\n"))
   end
 
   test "a rotation is named in the cell, because the arm's figures are then impure" do
