@@ -149,17 +149,21 @@ class Eval::Classifier::Bench
 
   attr_reader :corpus, :arms, :reps, :io
 
-  def initialize(corpus: Eval::Classifier.corpus, arms: nil, reps: 3, io: $stdout)
+  # `reps` defaults to `Eval::Noise::MIN_RUNS` and not to a number of its own,
+  # for the reason the rake task states: a run taken at the default has to be a
+  # run a later comparison can give a verdict against. Two defaults that
+  # disagreed would put an unjudgeable set on disk.
+  def initialize(corpus: Eval::Classifier.corpus, arms: nil, reps: Eval::Noise::MIN_RUNS, io: $stdout)
     @corpus = corpus
     @arms = arms || BaseAgent::REMOTE_MODEL_IDS
     @reps = reps
     @io = io
   end
 
-  # Returns an `Eval::Classifier::Result`. Raises only what the classifier
-  # raises after its own rotation is exhausted -- and not even then: a line that
-  # failed is recorded as a failure and the pass keeps going, because a provider
-  # dropping one call in three hundred must not cost the whole run.
+  # Returns an `Eval::Classifier::Result`. A line whose call failed after the
+  # rotation is recorded as a failure and the pass keeps going, because a
+  # provider dropping one call in three hundred must not cost the whole run.
+  #
   # ONE TRANSACTION PER PASS AND NOT ONE FOR THE RUN, which is a fact about
   # SQLite rather than about isolation. A whole run is a few thousand calls and
   # the better part of an hour; one open write transaction across that locks the
