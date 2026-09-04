@@ -97,6 +97,12 @@ characters:
   - name: Ward Office 12 daybook
     description: |-
       A quarter-bound ledger, eleven years of her own handwriting, with a ruled and totalled gap between four and five o'clock this afternoon that she did not write.
+    readable: true
+    inscription: |-
+      3.40 — Levee boundary, Marchmain acre 7. Amendment received, ward-marked, entered. O.V.
+      4.00 —
+      5.00 —
+      5.15 — Query 1188 (Marchmain acre 7) still open. Second application made. O.V.
     properties: '{"pages": 340, "sealed": false, "registered": true}'
 - fullname: Perrin Lasco
   race: Marginalia
@@ -164,6 +170,12 @@ locations:
   - name: Perrin's private index
     description: |-
       A slim index in a hand that is not hers: two columns, dates on the left and file numbers on the right, running to within an hour of this afternoon. Nothing in it carries a ward mark, which means no copy of it exists anywhere in the Registry.
+    readable: true
+    inscription: |-
+      11 Frost — 0714/12 — closed, no query raised
+      2 Thaw — 0902/12 — closed, no query raised
+      19 Thaw — 1188/12 — QUERY RAISED (O.V.) — still open
+      This day, 4th hour — 1188/12 — amended. Same hand as 0714 and 0902. P.L.
     properties: '{"registered": false, "columns": 2}'
   - name: copy-room apron
     description: |-

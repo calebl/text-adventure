@@ -23,6 +23,61 @@ class ItemTest < ActiveSupport::TestCase
     assert_includes @item.errors[:description], "can't be blank"
   end
 
+  # --- what is written on it ------------------------------------------------
+
+  test "nothing has writing on it unless the world says so" do
+    item = create(:item, character: @character)
+
+    assert_not item.readable?
+    assert_nil item.inscription
+    assert_not item.inscribed?
+  end
+
+  test "a readable thing holds the words the engine owns" do
+    item = create(:item, :readable, character: @character)
+
+    assert item.readable?
+    assert item.inscribed?
+    assert_equal "Midnight. The Bell. They know about the maps.", item.inscription
+  end
+
+  # THE ONE SHAPE IT REFUSES: words on a thing nobody marked readable. `readable`
+  # closes the set anything may ever write an inscription into.
+  test "refuses an inscription on something that is not readable" do
+    item = build(:item, character: @character, readable: false, inscription: "Midnight.")
+
+    assert_not item.valid?
+    assert_includes item.errors[:inscription], "cannot be written on something that is not readable"
+  end
+
+  # The other way round is legal and stays legal: a readable thing nobody has
+  # read yet.
+  test "a readable thing may have no words written down yet" do
+    item = build(:item, :unwritten, character: @character)
+
+    assert item.valid?
+    assert item.readable?
+    assert_not item.inscribed?
+  end
+
+  test "an inscription is bounded" do
+    item = build(:item, :readable, character: @character,
+                 inscription: "x" * (Item::INSCRIPTION_LIMIT + 1))
+
+    assert_not item.valid?
+    assert_includes item.errors[:inscription].first, "too long"
+  end
+
+  test "the readable and unwritten scopes answer the two questions an instrument asks" do
+    plain = create(:item, character: @character)
+    written = create(:item, :readable, character: @character)
+    blank = create(:item, :readable, :unwritten, character: @character)
+
+    assert_equal [ written, blank ].map(&:id).sort, Item.readable.pluck(:id).sort
+    assert_equal [ blank.id ], Item.unwritten.pluck(:id)
+    assert_not_includes Item.readable.pluck(:id), plain.id
+  end
+
   test "should belong to character" do
     assert_equal @character, @item.character
   end

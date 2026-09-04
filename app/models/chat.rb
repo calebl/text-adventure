@@ -36,6 +36,7 @@ class Chat < ApplicationRecord
     CHARACTER,              # InteractionAgent, first pass -- the character
     "interaction-narration", # InteractionAgent, second pass -- the prose
     "location",             # Location::Generator -- realizing a room
+    "inscription",          # Item::Inscriber -- what a readable thing says, once
     "world"                 # the world-building generators, off the turn path
   ].freeze
 

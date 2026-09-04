@@ -7,13 +7,19 @@
 # handing this class a string and a block to write chunks into.
 #
 # `move`, `talk`, `take` and `drop` are the four outcomes that do something
-# particular, and each of them writes a record before any prose exists.
-# Everything else -- `examine`, a move nobody can make, a `talk` with nobody to
-# talk to, a `take` of something that is not here, a `drop` of something the
-# player is not carrying, anything unclassifiable -- falls through to
-# `Scene::Narrator`, which answers the raw command in prose. They are told apart
-# so the classification is honest and so the branches that need to exist have
-# somewhere to land.
+# particular, and each of them writes a record before any prose exists. Reading
+# is the fifth: an `examine` that resolved to a thing the records say has WRITING
+# on it is answered out of `Item#inscription`, which the narrator is handed
+# verbatim, so what a note says cannot change between two readings of it. It
+# writes a record too, on the one turn where there is not one yet -- see
+# `#read_item`.
+#
+# Everything else -- a look at something with nothing written on it, a move
+# nobody can make, a `talk` with nobody to talk to, a `take` of something that is
+# not here, a `drop` of something the player is not carrying, anything
+# unclassifiable -- falls through to `Scene::Narrator`, which answers the raw
+# command in prose. They are told apart so the classification is honest and so
+# the branches that need to exist have somewhere to land.
 class Playthrough::Turn
   attr_reader :playthrough
 
@@ -42,11 +48,14 @@ class Playthrough::Turn
     elsif intent.speaker
       talk_to(intent.speaker, command, &block)
     elsif intent.item
-      # BOTH DIRECTIONS OF ONE SEAM. The item is the resolved record either way;
-      # the action says which way it moves. Dispatching on the action here
-      # rather than on two different fields keeps the branch on a record --
+      # THREE THINGS A LINE CAN DO TO ONE THING. The item is the resolved record
+      # in every case; the action says which. Dispatching on the action here
+      # rather than on three different fields keeps the branch on a record --
       # `intent.item` is what makes this branch reachable at all.
-      move_item(intent, command, &block)
+      #
+      # Reading is first because it is the one that changes nothing about where
+      # the item is: `take` and `drop` move a row and this only reads one.
+      intent.examine? ? read_item(intent.item, command, &block) : move_item(intent, command, &block)
     else
       narrate(command, intent: intent, &block)
     end
@@ -245,6 +254,41 @@ class Playthrough::Turn
     Scene::Narrator.new(playthrough).narrate(command, fact: dropped_fact(item, here), &block)
   end
 
+  # READING WHAT IS WRITTEN ON SOMETHING, and the words come out of the records.
+  #
+  # THE ORDER IS THE POINT, exactly as it is in `#take_item`: the inscription is
+  # a record before there is a sentence about it, and the narrator is then told
+  # what the thing says rather than asked what it might say. That is what makes
+  # two readings of one note agree -- the second read is a database read, and
+  # `#read_fact` quotes the same string both times.
+  #
+  # A THING WITH NOTHING WRITTEN ON IT NARRATES AS IT ALWAYS DID. `Item#readable?`
+  # is the whole gate, and it is set at the moment the thing came to exist
+  # (`Item::Registry`, or a seed file) rather than decided here: an examine that
+  # resolved to a ward stamp is a look at a ward stamp, and no text is generated
+  # for it, ever. The classifier still resolved the record, so the turn is
+  # recorded as an `examine` OF that stamp either way -- see `#resolution_for`.
+  #
+  # `Item::Inscriber` is the one call this branch can make, and only for a
+  # readable thing that arrived with no words: a seeded one whose file did not
+  # spell them out, or a row older than the columns. It writes them once. On
+  # every later reading it makes no call at all.
+  def read_item(item, command, &block)
+    return narrate(command, &block) unless item.readable?
+
+    inscriber = Item::Inscriber.new(item, playthrough: playthrough)
+    words = inscriber.inscribe!
+
+    scene = Scene::Narrator.new(playthrough).narrate(command, fact: read_fact(item, words), &block)
+
+    # The words cost a call on the one turn that wrote them, and that call
+    # happens before there is a scene to file it under -- so the scene it paid
+    # for stamps it here, the way `#move_to` stamps a realization.
+    inscriber.agent.attribute_to!(scene) if scene && inscriber.asked?
+
+    scene
+  end
+
   # THE THREE WRITES THAT MOVE THE WORLD, each one named rather than left inline
   # in the branch above it.
   #
@@ -281,14 +325,53 @@ class Playthrough::Turn
 
   # What the narrator is told, in the app's own words. Stated as done, because
   # it is: the row is already written by the time this is read.
+  # AND WHAT IS WRITTEN ON IT, WHEN THE RECORDS ALREADY HOLD THE WORDS. The turn
+  # that produced the whole complaint was a `take`, not a read: *"pickup the
+  # note. what does it say?"* is one line, the loop does one act, and the act it
+  # did was picking the note up. Handing over the words the records already have
+  # costs nothing and closes that case; NOT generating them here is the other
+  # half of the rule, because picking a thing up is not reading it and a take
+  # must not silently become a model call. A readable thing with no words yet is
+  # simply not quoted, and the first read writes them.
   def taken_fact(item, taker)
     "#{taker.fullname} has picked up the #{item.name} and is now carrying it" \
-      "#{" -- #{item.description}" if item.description.present?}."
+      "#{" -- #{item.description}" if item.description.present?}." \
+      "#{" #{written_words_fact(item)}" if item.inscribed?}"
   end
 
   def dropped_fact(item, here)
     "The #{item.name} is no longer carried: it is now lying in #{here.name}, " \
       "where it stays until somebody picks it up."
+  end
+
+  # WHAT IS WRITTEN ON IT, QUOTED, and this is the one fact in the app that is
+  # handed over word for word rather than summarised. The records hold the text;
+  # a paraphrase of it in the prompt is a paraphrase the player reads, and the
+  # next reading would paraphrase the paraphrase.
+  #
+  # It says the words are fixed as well as saying what they are. That is not a
+  # rule the narrator has to obey for the mechanic to hold -- the record is the
+  # record whatever the paragraph does with it, and `inscription_misquoted`
+  # measures the difference -- it is the cheap half of *inform the prose*.
+  #
+  # `words` is nil only for a readable thing whose inscription could not be
+  # written, which `#read_item` does not reach; the guard is here so the fact is
+  # never the string "quoted nothing".
+  def read_fact(item, words)
+    return nil if words.blank?
+
+    "The #{item.name} has writing on it. #{written_words_fact(item, words)}"
+  end
+
+  # THE WORDS THEMSELVES, and this is the one fact in the app that is handed
+  # over word for word rather than summarised, from the one place that builds
+  # it. The records hold the text; a paraphrase of it in the prompt is a
+  # paraphrase the player reads, and the next reading would paraphrase the
+  # paraphrase.
+  def written_words_fact(item, words = item.inscription)
+    "This is exactly what is written on it, word for word: \"#{words}\" -- those are " \
+      "the words on it, and they do not change between readings. Quote them as they " \
+      "are; do not add to them, and do not write different ones."
   end
 
   # Everything else. `Scene::Narrator` owns its own turn end to end: it streams,

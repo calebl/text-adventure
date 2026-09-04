@@ -834,6 +834,93 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_no_match(/ALREADY happened/, agent.prompts.last)
   end
 
+  # --- reading what is written on something ---------------------------------
+
+  # THE WORDS COME OUT OF THE RECORDS AND GO INTO THE PROMPT VERBATIM. This is
+  # the fact `Item#inscription` exists to make possible: the narrator is told
+  # what the note says rather than asked what it might say, so two readings of
+  # one note agree.
+  test "a read hands the narrator the recorded words, quoted" do
+    note = create(:item, :lying, :readable, location: @here, name: "folded note")
+
+    scene, _chunks, agent = play("read the note", CLASSIFY.call("examine", "folded note"),
+                                 "You unfold it. The ink is smudged but the words are plain.")
+    prompt = agent.prompts.last
+
+    assert_includes prompt, %(word for word: "#{note.inscription}")
+    assert_includes prompt, "they do not change between readings"
+    assert_equal "examine", scene.reload.resolved_action
+    assert_equal note, scene.acted_on
+  end
+
+  # A SECOND READING IS A DATABASE READ. Two queued responses and no third: if
+  # anything asked a model for the words again, the fake would run out and this
+  # would fail loudly.
+  test "reading the same thing twice quotes the same words and asks nothing again" do
+    note = create(:item, :lying, :readable, location: @here, name: "folded note")
+
+    _scene, _chunks, first = play("read the note", CLASSIFY.call("examine", "folded note"), "Once.")
+    _scene, _chunks, again = play("read the note again", CLASSIFY.call("examine", "folded note"), "Twice.")
+
+    assert_includes first.prompts.last, note.inscription
+    assert_includes again.prompts.last, note.inscription
+    assert_equal note.inscription, note.reload.inscription
+  end
+
+  # A readable thing nobody has read yet: ONE structured call writes the words
+  # as a record, before any prose exists, and never again.
+  test "the first read of a readable thing with no words writes them once" do
+    note = create(:item, :lying, :unwritten, location: @here, name: "folded note")
+
+    _scene, _chunks, agent = play("read the note", CLASSIFY.call("examine", "folded note"),
+                                  { "inscription" => "Come to the west stair. Burn this." },
+                                  "You unfold it and read.")
+
+    assert_equal "Come to the west stair. Burn this.", note.reload.inscription
+    assert_includes agent.prompts.last, %(word for word: "Come to the west stair. Burn this.")
+  end
+
+  # THE GATE. An examine that resolved to a thing with no writing on it narrates
+  # exactly as it always did, and nothing generates text for it -- one queued
+  # response and no more.
+  test "looking at a thing with no writing on it generates nothing and narrates" do
+    stamp = create(:item, :lying, location: @here, name: "ward stamp")
+
+    scene, _chunks, agent = play("look at the stamp", CLASSIFY.call("examine", "ward stamp"),
+                                 "Brass, worn smooth at the grip.")
+
+    assert_nil stamp.reload.inscription
+    assert_not_includes agent.prompts.last, "word for word"
+    assert_equal "examine", scene.reload.resolved_action
+    assert_equal stamp, scene.acted_on
+  end
+
+  # The turn that produced the complaint was a `take`. The words the records
+  # already hold go over with the pickup; nothing is generated on this branch.
+  test "taking a thing whose words are on record hands them over too" do
+    note = create(:item, :lying, :readable, location: @here, name: "folded note")
+
+    _scene, _chunks, agent = play("pickup the note. what does it say?",
+                                  CLASSIFY.call("take", "folded note"),
+                                  "You unfold it as you lift it.")
+
+    assert_includes agent.prompts.last, "has picked up the folded note"
+    assert_includes agent.prompts.last, %(word for word: "#{note.inscription}")
+  end
+
+  # AND A TAKE NEVER BECOMES A MODEL CALL. Picking a thing up is not reading it,
+  # so a readable thing with no words yet is simply not quoted -- one queued
+  # narration, and the fake would raise if anything asked for an inscription.
+  test "taking a readable thing with no words on record writes none" do
+    note = create(:item, :lying, :unwritten, location: @here, name: "folded note")
+
+    _scene, _chunks, agent = play("take the note", CLASSIFY.call("take", "folded note"),
+                                  "You put it in your pocket.")
+
+    assert_nil note.reload.inscription
+    assert_not_includes agent.prompts.last, "word for word"
+  end
+
   test "an unclassifiable turn is narrated with no fact and no label" do
     _scene, _chunks, agent = play("hum a tune", CLASSIFY.call("other", "nothing"),
                                   "You hum, and the canvas hums back.")

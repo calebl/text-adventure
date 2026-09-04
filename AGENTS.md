@@ -522,6 +522,25 @@ before changing the loop; the rules below are what it does not fit.
   the world* above for the caps and the collisions it refuses.
   `Character::Registry` is its counterpart for people and rides on the same
   call — see above.
+- **What is WRITTEN on a thing is a record, and `Item#readable` is the gate.**
+  A note, a letter, a sign, a label: `items.inscription` holds the words, and
+  `Playthrough::Turn#read_fact` hands them to the narrator verbatim and quoted,
+  through the same `fact:` seam `take` uses. Two rules govern it and neither
+  bends: **nothing generates text for an item the world did not mark readable**
+  (so a ward stamp never grows a paragraph), and **the words are written once**
+  — and neither cares which of `Item::PLACES` the thing is in: writing belongs
+  to the note and not to the shelf, so a note lying in a room, one in an NPC's
+  hands and one a party is carrying all keep their text, including the copy
+  `Playthrough#take_up_the_starting_inventory` makes. The three writers are
+  `Item::Registry` at realization, a seed file, and `Item::Inscriber` on the
+  first read of a readable thing that arrived with none. A second reading is a
+  database read and makes no call at all. Do not add a third writer, and do not
+  re-generate — "a third writer" means a fourth place text can come from, not
+  the copy above: the whole point is that the same note says the same thing
+  twice.
+  `inscription_misquoted` audits the difference, and its recall is deliberately
+  poor — read `Story::Audit::Prose#inscription_quotes` before widening the cue
+  list, because two widenings have already been measured and killed.
 - **The three writes that move the world are named methods on
   `Playthrough::Turn`** — `#stand_in!`, `#carry!`, `#put_down!` — because
   `Playthrough::Mechanics` writes through the same ones. Put a new state change

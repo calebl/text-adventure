@@ -487,6 +487,139 @@ module Story::Audit::Prose
   # never quote different spans of the same passage.
   def sentences(text) = text.to_s.split(/(?<=[.!?])\s+/)
 
+  # ------------------------------------------------------------------------
+  # THE PROSE QUOTES WHAT IS WRITTEN ON A THING, AND THE RECORDS HOLD THE WORDS.
+  #
+  # The captain's own turn, and the reason the records hold them at all. He
+  # typed `pickup the note. what does it say?` and read back:
+  #
+  #   ...The words are hurried, as if written in haste: *"Midnight. The Bell.
+  #   They know about the maps."*
+  #
+  # Nothing kept that. The note was an `Item` with a name and a line of
+  # description, so the next reading of it was free to say something else
+  # entirely, and there was no record either could be checked against. `Item#inscription`
+  # is that record now, and this is the predicate that reads a passage against it.
+  #
+  # THE HARD PART IS DIALOGUE, and it is the whole of the difficulty. A read
+  # turn happens in a room with people in it, so a passage that quotes a note
+  # also quotes whoever is standing there. Measured on all 367 real passages in
+  # the four corpora: 92 of them contain a double-quoted span and 177 spans in
+  # total, and effectively every one is somebody talking. A check that compared
+  # quoted spans to an inscription would flag all of them.
+  #
+  # SO A QUOTE COUNTS ONLY WHEN THE PROSE SAYS IT IS WRITTEN. `INSCRIPTION_CUES`
+  # is the closed list -- reads, written, inscribed, scrawled, scratched,
+  # printed, lettered, penned, stamped -- and it must sit within a short bridge
+  # of the opening quote that contains no other quote mark and no sentence end.
+  # Measured on the same 367 passages: ZERO spans, which is the number a
+  # dialogue-heavy corpus should give.
+  #
+  # `says` IS DELIBERATELY NOT ON THE LIST, and it is the one word that would
+  # buy recall here: a note "says" things in ordinary English. It is also the
+  # commonest speech attribution in the corpus, and putting it on the list took
+  # the count from 0 spans to 7, every one of them dialogue -- `he says, "..."`.
+  # Precision over recall, decided by measurement, exactly as `Story::Audit`'s
+  # header requires.
+  #
+  # AND NEITHER IS THE ITEM'S OWN NAME, which was the obvious second rule and
+  # was measured and rejected: a quoted span introduced by the name of the thing
+  # the turn acted on ("the note, in a hurried hand: ..."). Over the same 367
+  # passages it raised 3 flags and all 3 are dialogue -- `ledger under his arm,
+  # and says, "..."`, `"You will want that writ," he says`. A name near a quote
+  # is a name near a quote; it is the same finding `Story::Audit`'s header
+  # records twice already.
+  #
+  # WHAT THAT COSTS, measured on real read turns rather than guessed at: three
+  # live narrations of a read, two of which quote the recorded words inside
+  # quote marks, and this detected NEITHER -- both put the quotation on its own
+  # after a paragraph break with no cue anywhere near it. So the recall on real
+  # prose is low and the check is nearly silent, which is stated here and in
+  # `Story::Audit#check_inscription` rather than discovered later. It is still
+  # worth shipping: it fires on the one shape that matters most -- prose that
+  # announces text as written and then writes different text, which is exactly
+  # what the captain read -- and the alternative measured rules make it an
+  # instrument that cannot be trusted at all.
+  # ------------------------------------------------------------------------
+
+  # What the prose calls the act of something being written down. Reading verbs
+  # only: a speech verb here reads every line of dialogue in the passage as a
+  # quotation of a note. See the note on `says` above.
+  # `writ` IS NOT ON IT EITHER, and it is the one word measurement removed after
+  # the fact: it looked like a cheap way to catch every form of "write", and in
+  # The Unrecorded Hour a writ is a legal document somebody hands you. It was
+  # the single flag the list raised over 367 passages -- `"You will want that
+  # writ," he says` -- which is dialogue, one cue away from being read as a
+  # docket.
+  INSCRIPTION_CUES = %w[reads written inscribed scrawled scratched printed lettered penned stamped].freeze
+
+  # How far the cue may sit from the quote it introduces. Long enough for "as if
+  # written in haste:" and for "written on it in a hurried hand:", short enough
+  # that a cue in one clause cannot reach a quotation in the next. The bridge
+  # may hold no quote mark and no sentence end, which is what stops it stepping
+  # over a preceding quotation to reach the following one.
+  INSCRIPTION_BRIDGE = 40
+
+  # A quoted span the prose presents as written text, and the sentence it sits
+  # in. `text` is what is between the quote marks, exactly.
+  Inscription = Data.define(:text, :sentence)
+
+  # HOW MANY WORDS A QUOTE HAS TO HAVE before it is compared with a record. A
+  # single quoted word is a word the prose is holding up -- *"amended"*, the
+  # word the player is staring at -- and not a rendering of the whole
+  # inscription; comparing one against the recorded text would call every close
+  # reading a misquote. Three is the shortest thing that reads as a line off a
+  # page ("Midnight. The Bell." is four).
+  MIN_INSCRIPTION_WORDS = 3
+
+  # SCANNED OVER THE WHOLE PASSAGE and not sentence by sentence, which is the
+  # one place this differs from every other predicate here. A quoted inscription
+  # holds its own full stops -- *"Midnight. The Bell. They know about the maps."*
+  # is three sentences inside one pair of quote marks -- so any sentence splitter
+  # cuts it in half and the cue ends up in a different piece from the quote it
+  # introduced. The bridge does the work a sentence boundary would have done:
+  # it may hold no `.`, `!` or `?` and no other quote mark, so a cue still
+  # cannot reach across a finished sentence to a quotation that follows it.
+  def inscription_quotes(text)
+    passage = text.to_s
+    cues = Regexp.union(INSCRIPTION_CUES)
+    pattern = /\b#{cues}\b[^"“”.!?]{0,#{INSCRIPTION_BRIDGE}}?["“]([^"“”]{1,400})["”]/i
+
+    found = []
+    passage.scan(pattern) do
+      quoted = Regexp.last_match(1).to_s.strip
+      next if quoted.split.size < MIN_INSCRIPTION_WORDS
+
+      found << Inscription.new(text: quoted, sentence: Regexp.last_match(0).to_s.strip)
+    end
+
+    found
+  end
+
+  # WHETHER TWO RENDERINGS OF WRITTEN TEXT ARE THE SAME WORDS.
+  #
+  # Containment either way, on letters and digits alone: the prose legitimately
+  # quotes ONE line of a four-line index, and it legitimately re-punctuates,
+  # re-cases and reflows what it quotes -- a docket written in small capitals is
+  # not misquoted by prose that writes it in sentence case. What it may not do
+  # is say different words.
+  #
+  # THIS IS WHERE THE RECALL GOES. Prose that quotes the note accurately and
+  # then adds half a clause of its own inside the same quote marks is a
+  # difference this calls material, and prose that paraphrases a long
+  # inscription into a shorter true one is a difference it calls material too.
+  # Both are the check being strict about a record that exists to be exact.
+  def same_written_words?(quoted, recorded)
+    one = written_words_key(quoted)
+    other = written_words_key(recorded)
+    return false if one.empty? || other.empty?
+
+    one.include?(other) || other.include?(one)
+  end
+
+  def written_words_key(text)
+    text.to_s.downcase.gsub(/[^a-z0-9]+/, " ").strip
+  end
   private
 
   # THE SHAPE BOTH TRANSITION PREDICATES SHARE: every sentence, against every
@@ -512,6 +645,7 @@ module Story::Audit::Prose
 
     found.uniq(&:name)
   end
+
 
   # Each sentence with the offset it starts at in the whole passage, which is
   # what the quotation guard needs: a quoted span is found in the passage and

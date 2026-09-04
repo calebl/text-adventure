@@ -356,3 +356,12 @@ candidates against it:
 
 A check that cannot be made precise is reported **unavailable**, never shipped
 loose.
+
+`inscription_misquoted` is the most recent one through this, and it is the
+worked example of a check that clears the bar on precision and admits to poor
+recall: 0 flags over all 367 real passages, the captain's own narration as the
+positive case, and two plausible widenings (`says` as a cue; the item's own
+name) measured and killed at 7 and 3 flags of dialogue. Its stated miss is
+larger than most — three live read narrations, two of which quote the record
+inside quote marks, and it detected neither. See
+`test/models/story/audit/inscription_test.rb`.

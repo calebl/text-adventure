@@ -165,6 +165,47 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     assert_no_match(/run your thumb/, context, "the narrator's second person is addressed to the player, not to this character")
   end
 
+  # WHAT THE PLAYER WAS READING, for somebody standing next to them while they
+  # read it. Three columns read out -- the action, the record it acted on, the
+  # words the engine owns -- in a register a character prompt can carry. An NPC
+  # answering as though the page were blank is the same defect as a narrator
+  # inventing what it says, one prompt over.
+  test "the character context carries what the player was reading, quoted" do
+    maren = create(:character, story: @story, fullname: "Maren Vosk")
+    note = create(:item, :lying, :readable, location: @here, name: "folded note")
+    read = create(:scene, story: @story, location: @here, characters: [ maren ],
+                          typed: "read the note", resolved_action: "examine", acted_on: note,
+                          description: "You unfold it.")
+    @playthrough.update!(current_scene: read)
+
+    context = moment.character_context(maren)
+
+    assert_match(/What Iri Calder was reading a moment ago: the folded note/, context)
+    assert_includes context, %("#{note.inscription}")
+  end
+
+  test "a thing with no words on record is not quoted to anybody" do
+    maren = create(:character, story: @story, fullname: "Maren Vosk")
+    stamp = create(:item, :lying, location: @here, name: "ward stamp")
+    read = create(:scene, story: @story, location: @here, characters: [ maren ],
+                          typed: "look at the stamp", resolved_action: "examine", acted_on: stamp,
+                          description: "Brass, worn smooth.")
+    @playthrough.update!(current_scene: read)
+
+    assert_no_match(/was reading a moment ago/, moment.character_context(maren))
+  end
+
+  test "a turn that was not a read tells nobody about anything written" do
+    maren = create(:character, story: @story, fullname: "Maren Vosk")
+    note = create(:item, :lying, :readable, location: @here, name: "folded note")
+    taken = create(:scene, story: @story, location: @here, characters: [ maren ],
+                           typed: "take the note", resolved_action: "take", acted_on: note,
+                           description: "You pocket it.")
+    @playthrough.update!(current_scene: taken)
+
+    assert_no_match(/was reading a moment ago/, moment.character_context(maren))
+  end
+
   test "the character context does not tell a character that the player spoke with it" do
     maren = create(:character, story: @story, fullname: "Maren Vosk")
     talked = create(:scene, story: @story, location: @here, characters: [ @protagonist, maren ],

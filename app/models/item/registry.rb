@@ -36,6 +36,21 @@
 # the world is at its cap. Refusals are dropped, never raised: a room realized
 # with two of the three things the model named is a good room, and a
 # realization that threw away its description over an item name would not be.
+#
+# AND WHAT IS WRITTEN ON THE ONES THAT HAVE WRITING ON THEM. `readable` and
+# `inscription` come back in the same structured answer
+# (`Location::DetailSchema`) and are stored as records here, so a note is born
+# with its words the way a room is born with its exits. Nothing else in the app
+# may write an inscription on a thing this did not mark readable -- `Item`
+# validates that -- and the one other writer, `Item::Inscriber`, only ever fills
+# in a readable thing that arrived with none.
+#
+# AN INSCRIPTION ON A THING MARKED UNREADABLE IS DROPPED AND THE THING IS KEPT,
+# which is the same trade every refusal here makes: a stamp that came back with
+# words on it is still a good stamp, and losing a room's furniture over a
+# contradiction between two fields of one answer would cost more than the
+# contradiction does. The words are what goes, because `readable` is the gate
+# and a field that disagrees with the gate is not evidence against it.
 class Item::Registry
   include SanitizesGeneratedText
 
@@ -124,7 +139,54 @@ class Item::Registry
     reason = refusal(name, description, created)
     return refuse(name, reason) if reason
 
-    location.items.create!(name: name, description: description, character: nil)
+    location.items.create!(name: name, description: description, character: nil,
+                           **writing_on(name, attributes))
+  end
+
+  # WHAT IS WRITTEN ON IT, out of the same answer that named it. `readable` is
+  # the gate and it is read as a boolean and nothing else: a missing field, a
+  # string, anything at all that is not `true` means this thing has no writing
+  # on it, so an item cannot acquire an inscription by a field arriving in the
+  # wrong shape.
+  def writing_on(name, attributes)
+    readable = attributes["readable"] == true
+    inscription = readable ? written_words(name, attributes["inscription"]) : nil
+
+    if attributes["inscription"].present? && !readable
+      refuse_inscription(name, "it was not marked readable")
+    end
+
+    { readable: readable, inscription: inscription }
+  end
+
+  # THE WORDS, OR NONE, AND NEVER HALF OF THEM.
+  #
+  # A field at its `max_length` was cut off rather than finished, and this is the
+  # one field in the app that would be persisted verbatim and then quoted to the
+  # player on every later reading -- so half a note would be half a note forever.
+  #
+  # IT IS DROPPED HERE RATHER THAN RAISED, which is the opposite of what every
+  # other truncated field in the app does, and the reason is where this runs.
+  # `Location::Generator#write_detail!` has already SAVED the description by the
+  # time the items are admitted, and `#write_exits!` has not run yet: a raise on
+  # this line leaves a realized room with no way out of it, which is a worse
+  # world than a note with no words. And a note with no words is a shape the app
+  # already answers for -- `Item::Inscriber` writes them on the first read, once,
+  # from a call whose whole budget is that one field. So the thing stays
+  # readable, the fragment goes, and the words arrive later and whole.
+  def written_words(name, raw)
+    sanitize_string(raw.to_s, max_length: Item::INSCRIPTION_LIMIT).presence
+  rescue SanitizesGeneratedText::TruncatedTextError => e
+    refuse_inscription(name, "the words were cut off at the cap (#{e.message.truncate(80)})")
+    nil
+  end
+
+  def refuse_inscription(name, reason)
+    Rails.logger.info do
+      "[items] #{location.name.inspect} kept #{name.presence.inspect || "an unnamed thing"} " \
+        "and dropped its inscription: #{reason}"
+    end
+    nil
   end
 
   # The one place that says no, and it says which no. Ordered cheapest first:

@@ -254,15 +254,25 @@ class Playthrough < ApplicationRecord
   # playthrough with items already attached, as a test fixture may -- cannot
   # hand out the kit twice.
   #
-  # `properties` is copied with the rest: a copy of a thing is that thing, and
-  # a daybook with no page count is a different object from the one the file
-  # describes.
+  # EVERY COLUMN BUT WHERE IT IS, and that is why this copies attributes rather
+  # than naming fields. A copy of a thing IS that thing: a daybook with no page
+  # count, or a note with nothing written on it, is a different object from the
+  # one the file describes. Naming the fields meant the next column added to
+  # `items` was silently left behind -- which is exactly what happened to
+  # `readable` and `inscription`, so each player's copy of a seeded note opened
+  # blank while the world's own row held the words.
+  #
+  # `Item::PLACES` is the whole of what must NOT come along: the original is
+  # held by the protagonist and the copy is carried by this playthrough, and an
+  # item in two of the three places at once is the one state `Item` refuses.
+  # `id` and the timestamps belong to the row rather than to the thing.
+  NOT_COPIED = (Item::PLACES.map(&:to_s) + %w[id created_at updated_at]).freeze
+
   def take_up_the_starting_inventory
     return if story.nil? || items.exists?
 
     story.starting_inventory.each do |original|
-      items.create!(name: original.name, description: original.description,
-                    properties: original.properties)
+      items.create!(original.attributes.except(*NOT_COPIED))
     end
   end
 

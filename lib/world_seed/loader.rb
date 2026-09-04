@@ -290,6 +290,8 @@ class WorldSeed::Loader
     duplicates = item_names.group_by { |name| name.downcase }.select { |_, group| group.size > 1 }.keys
     raise InvalidWorld, "#{where}: duplicate item names: #{duplicates.join(", ")} -- an item is matched on (story, name), so two of a name are one item" if duplicates.any?
 
+    validate_inscriptions!
+
     connection_documents.each do |attributes|
       pair = Array(attributes["between"])
       raise InvalidWorld, "#{where}: a connection needs `between: [a, b]`, got #{pair.inspect}" unless pair.size == 2
@@ -316,6 +318,23 @@ class WorldSeed::Loader
 
     validate_opening_scene!(names, openings.first.fetch("name"))
     validate_mechanics!
+  end
+
+  # WORDS ON A THING WITH NOTHING WRITTEN ON IT, caught here rather than three
+  # records later. `Item` validates the same pair inside the transaction, so a
+  # file with the fault never loads either way -- but the record's error names a
+  # column and this one names the file and the item, which is what somebody
+  # editing YAML needs. Same reason the mechanics are checked here.
+  def validate_inscriptions!
+    (character_documents + location_documents).each do |owner|
+      Array(owner["items"]).each do |item|
+        next if item["inscription"].blank? || item["readable"] == true
+
+        raise InvalidWorld,
+              "#{where}: item #{item.fetch("name").inspect} has an `inscription` and is not `readable: true` -- " \
+              "an inscription is the words on a thing that has writing on it, so the two go together"
+      end
+    end
   end
 
   # A mechanic that cannot run is the worst kind of seed-file typo: the world

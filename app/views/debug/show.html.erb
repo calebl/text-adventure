@@ -70,6 +70,21 @@
       <div class="k">carrying</div>
       <div class="v"><%= debug_value(@debug.candidate_carried.map { |item| "#{item.name} [##{item.id}]" }.to_sentence.presence, absent: "carrying nothing") %></div>
 
+      <%# WHAT IS WRITTEN ON THE ONES THAT HAVE WRITING ON THEM -- `Item#inscription`
+          verbatim, which is the same string `Playthrough::Turn#read_fact` hands the
+          narrator. It is here rather than folded into the two lines above because it is
+          the thing that must not drift: seeing the record beside the prose the turn
+          produced is how a misquote is caught by eye before `inscription_misquoted`
+          catches it by rule. A readable thing with no words yet says so -- it gets them
+          on the first read (`Item::Inscriber`), once, and never again. %>
+      <% @debug.readable_items.each do |item| %>
+        <div class="k">reads (#<%= item.id %>)</div>
+        <div class="v">
+          <strong><%= item.name %></strong>
+          <%= debug_value(item.inscription.presence, absent: "readable, nothing written down yet — the first read writes it, once") %>
+        </div>
+      <% end %>
+
       <div class="k">parent location</div>
       <div class="v"><%= debug_value(place.parent_location&.name, absent: "none — nothing sets containment yet") %></div>
     </div>
@@ -159,7 +174,7 @@
     <div class="v"><%= debug_value(@debug.candidate_carried.map(&:name).to_sentence.presence, absent: "nothing — no drop can be classified here") %></div>
 
     <div class="k">intents</div>
-    <div class="v"><code><%= Playthrough::IntentSchema::INTENTS.join(" · ") %></code> &mdash; only <code>move</code> and <code>talk</code> have a branch that acts</div>
+    <div class="v"><code><%= Playthrough::IntentSchema::INTENTS.join(" · ") %></code> &mdash; <code>move</code>, <code>talk</code>, <code>take</code>, <code>drop</code> and an <code>examine</code> of something with writing on it each have a branch that acts</div>
   </div>
 
   <h3>the prompt as it would be built</h3>

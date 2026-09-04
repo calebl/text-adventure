@@ -243,9 +243,20 @@ class WorldSeed::Exporter
     end
   end
 
+  # WHAT IS ON IT AND WHAT IS WRITTEN ON IT. `readable` is omitted rather than
+  # written `false`, like `opening` and `mobile`: the file says which things have
+  # writing on them and stays quiet about the ones that do not. `inscription`
+  # goes with it and only with it -- `Item` refuses the pair the other way round,
+  # so a file that carried one alone would not load.
   def items_document(owner)
     owner.items.order(:name).map do |item|
-      { "name" => item.name, "description" => text(item.description), "properties" => text(item.properties) }
+      document = { "name" => item.name, "description" => text(item.description) }
+      if item.readable?
+        document["readable"] = true
+        document["inscription"] = text(item.inscription) if item.inscription.present?
+      end
+      document["properties"] = text(item.properties)
+      document
     end
   end
 

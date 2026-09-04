@@ -197,7 +197,9 @@ The current database includes the following story-related models with proper ass
   else taken out with it (`rake game:mechanics`). The classifier still reads the
   command and prints what it resolved to; the world still generates itself, so a
   move is `Playthrough::Turn#move_to` whole. Only `Scene::Narrator` and
-  `InteractionAgent` are dropped, and `talk` / `examine` are refused as prose.
+  `InteractionAgent` are dropped, `talk` is refused as prose, and an `examine`
+  prints `Item#inscription` out of the records when there is one to print —
+  a record, so no model — and is refused as prose when there is not.
   `model: false` (`NO_MODEL=1`) is the offline fallback — a fixed grammar, no
   generation, no model call at all — and it is the mode the engine-direct tests
   run in. See `AGENTS.md` → *The mechanics on their own, with the narration off*
@@ -259,6 +261,22 @@ The current database includes the following story-related models with proper ass
   an item or a place already has, and **a sheet the provider cut off**: a
   truncated field is a failed call everywhere else, and here it must not be,
   because the call it would fail is the room's description, already saved
+- **Item** → `readable` and `inscription`, **what is written on a thing that has
+  writing on it**. A note, a letter, a sign, a label: the words are a record the
+  engine owns, so what a note says cannot drift between two readings. It is
+  orthogonal to `Item::PLACES` — a note lying in a room, one in an NPC's hands
+  and one a party is carrying all keep their text, and the copy
+  `Playthrough#take_up_the_starting_inventory` makes copies the words with it.
+  `readable` is the whole gate — nothing generates text for an item the world
+  did not mark readable, and `Item` refuses an inscription on one that is not.
+  Written in two places only: `Item::Registry` at room realization, out of the
+  same answer that named the thing (`Location::DetailSchema`), and a seed file.
+  `Item::Inscriber` is the third and it fills a gap rather than opening one —
+  **one structured call, on the first read of a readable thing that arrived with
+  no words, once and never again**. `Playthrough::Classifier` gives `examine` a
+  resolved target against what is lying here PLUS what the party carries (the
+  only action that reads both sets), and `Playthrough::Turn#read_item` hands the
+  narrator the words verbatim and quoted
 - **Item::Registry** → how items come to *exist*, and the only thing in the app
   that creates one: 0–3 things written as records when a room is realized, out
   of the same call that describes it (`Location::DetailSchema`'s optional
@@ -372,10 +390,10 @@ The current database includes the following story-related models with proper ass
   see its header comment and `Story::AuditPrecisionTest`, which pins the exact
   flags 24 real narrations earn. Do not add a check that scans prose for a name;
   that was measured and it does not work.
-- It carries **eleven checks in five categories that are never merged**:
+- It carries **twelve checks in five categories that are never merged**:
   contradictions (`unreachable_transition`, `item_not_held`,
   `unrecorded_departure`, `unrecorded_arrival`, `take_denied`,
-  `pickup_invented`), defects (`truncated_prose`, `third_person_protagonist`),
+  `pickup_invented`, `inscription_misquoted`), defects (`truncated_prose`, `third_person_protagonist`),
   drift (`reached_for_nothing`), limits (`named_more_than_one` — the loop's
   limit, not a defect) and pacing (`still_run` — evidence about pacing,
   explicitly *not* a defect). `Story::Audit::Prose` holds the text predicates as
@@ -391,6 +409,15 @@ The current database includes the following story-related models with proper ass
   the 480-turn baseline of 2026-09-03, with zero flags on all three existing
   corpora. `Story::Audit::TransitionTest` pins it and states both misses. The
   prose fix is a separate task; this is the instrument that measures it.
+- `inscription_misquoted` reads prose that QUOTES what is written on a thing
+  whose words the records hold, and quotes it differently. Measured on all 367
+  real passages in the four corpora — 92 of them quote somebody, 177 spans, and
+  it flags **none** — with the captain's own narration (playthrough 15, scene 77)
+  as the positive case. Two candidate widenings were measured and killed: `says`
+  as a cue (7 flags, all dialogue) and the item's own name (3 flags, all
+  dialogue). Its recall on real read prose is LOW and stated: three live read
+  narrations, two quoting the record, and it detected neither. See
+  `Story::Audit::InscriptionTest`
 - `Playthrough::Drift` is the classifier drift counter: one row per turn on which
   a `move`, `talk`, `take` or `drop` resolved to nothing. Never pruned.
 - `Playthrough::Overreach` is the other counter and never the same one: one row

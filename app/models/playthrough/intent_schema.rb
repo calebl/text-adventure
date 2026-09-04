@@ -21,9 +21,14 @@ class Playthrough::IntentSchema
   # `take` and `drop` are BOTH here and that is not symmetry for its own sake:
   # an app that owns picking up but leaves putting down to the narrator has
   # records that go stale the first time a player sets something on a table.
-  # Both directions, or neither is real. `examine` and `other` are told apart so
-  # the narrator knows what it is answering and so inspection has a seam to land
-  # in later.
+  # Both directions, or neither is real. `examine` resolves a record too now, and
+  # the seam it lands in is `Playthrough::Turn#read_item`: looking at a thing the
+  # records say has WRITING on it is a read, answered out of `Item#inscription`
+  # rather than out of the narrator's imagination. It is the only action that
+  # resolves against both item sets at once -- see
+  # `Playthrough::Classifier#build_intent` -- and looking at anything else
+  # narrates exactly as it always did. `other` is still the one intent that
+  # carries no record and never will.
   INTENTS = %w[move talk examine take drop other].freeze
 
   # The answer for "the player did not name anything on either list". Needed
@@ -66,7 +71,7 @@ class Playthrough::IntentSchema
              description: "What the player is trying to do. Pick the closest.",
              enum: INTENTS
       string :target,
-             description: "What they aimed it at, copied exactly from the lists you were given: a way out for `move`, a person for `talk`, a thing lying here for `take`, a thing they are carrying for `drop`. Answer `#{NOTHING}` for anything else, or when they named something that is not on those lists.",
+             description: "What they aimed it at, copied exactly from the lists you were given: a way out for `move`, a person for `talk`, a thing lying here for `take`, a thing they are carrying for `drop`, and for `examine` a thing on either of those two lists. Answer `#{NOTHING}` for anything else, or when they named something that is not on those lists.",
              enum: choices
       string :also_named,
              description: "One more thing on those lists that the player named in the SAME line and that `target` is not already pointing at, copied exactly -- as in \"take the index and the apron\". One line does one thing, so nothing here is acted on; naming it is only how the game says what it is leaving undone. Answer `#{NOTHING}` when they named one thing or none, which is usual.",
