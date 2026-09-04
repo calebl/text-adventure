@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_04_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_05_090100) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -20,8 +20,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_190000) do
     t.text "dislikes"
     t.text "fears"
     t.string "fullname"
+    t.integer "hit_die"
     t.boolean "is_companion"
     t.boolean "is_protagonist", default: false, null: false
+    t.integer "level"
     t.text "likes"
     t.integer "location_id"
     t.string "nickname"
@@ -231,11 +233,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_190000) do
     t.index ["scene_id"], name: "index_playthrough_overreaches_on_scene_id"
   end
 
+  create_table "playthrough_vitals", force: :cascade do |t|
+    t.integer "character_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "hp_current", null: false
+    t.integer "playthrough_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id"], name: "index_playthrough_vitals_on_character_id"
+    t.index ["playthrough_id", "character_id"], name: "index_playthrough_vitals_on_playthrough_and_character", unique: true
+    t.index ["playthrough_id"], name: "index_playthrough_vitals_on_playthrough_id"
+  end
+
   create_table "playthroughs", force: :cascade do |t|
     t.integer "character_id"
     t.datetime "created_at", null: false
     t.integer "current_location_id"
     t.integer "current_scene_id"
+    t.datetime "ended_at"
     t.integer "story_id", null: false
     t.string "token", null: false
     t.datetime "updated_at", null: false
@@ -370,6 +384,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_190000) do
   add_foreign_key "playthrough_overreaches", "locations"
   add_foreign_key "playthrough_overreaches", "playthroughs"
   add_foreign_key "playthrough_overreaches", "scenes"
+  add_foreign_key "playthrough_vitals", "characters"
+  add_foreign_key "playthrough_vitals", "playthroughs"
   add_foreign_key "playthroughs", "characters"
   add_foreign_key "playthroughs", "locations", column: "current_location_id"
   add_foreign_key "playthroughs", "scenes", column: "current_scene_id"

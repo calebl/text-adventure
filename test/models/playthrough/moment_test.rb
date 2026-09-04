@@ -13,6 +13,40 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
 
   def moment = Playthrough::Moment.new(@playthrough)
 
+  # --- what the prose is told about the player's body ------------------------
+  #
+  # ONE LINE, and it is the whole prose integration of the stat block: the
+  # narrator is TOLD what the engine decided, exactly as it is told what is
+  # lying on the floor, and is asked to decide nothing. See
+  # `Playthrough::Vitals`.
+
+  test "the narrator is told the player is unhurt when nothing has happened" do
+    assert_match(/Iri Calder is unhurt\./, moment.narration_context)
+  end
+
+  test "the narrator is told the numbers when the player is hurt" do
+    Playthrough::Turn.new(@playthrough).harm!(@protagonist, 3)
+
+    assert_match(/Iri Calder is hurt \(5 of 8\)\./, moment.narration_context)
+  end
+
+  # SILENCE IS THE HONEST ANSWER for somebody with no stat block: "unhurt" would
+  # be an assertion about a body the engine does not have.
+  test "the narrator is told nothing about a player with no stat block" do
+    @protagonist.update!(level: nil, hit_die: nil)
+
+    assert_no_match(/Iri Calder is /, moment.narration_context)
+  end
+
+  # A character prompt is a different register and a much tighter budget, and a
+  # body is not something one person in a room knows a number for.
+  test "a character is told nothing about the player's hit points" do
+    Playthrough::Turn.new(@playthrough).harm!(@protagonist, 3)
+    somebody = create(:character, story: @story, location: @here, fullname: "Maren Vosk")
+
+    assert_no_match(/hurt|hit point/, moment.character_context(somebody))
+  end
+
   def connect(name)
     neighbour = create(:location, story: @story, name: name)
     create(:location_connection, location: @here, connected_location: neighbour,

@@ -520,4 +520,61 @@ class CharacterTest < ActiveSupport::TestCase
 
     assert_predicate character.reload, :nowhere?
   end
+
+  # --- the stat block --------------------------------------------------------
+  #
+  # Two integers and one formula, and the formula is the whole of what the app
+  # derives from them. No abilities: the captain's ruling of 2026-09-04.
+
+  test "a level 1 body holds its whole hit die" do
+    Character::HIT_DICE.each do |die|
+      assert_equal die, build(:character, story: @story, level: 1, hit_die: die).max_hp
+    end
+  end
+
+  # `hit_die / 2 + 1` per level after the first -- the die's average rounded up,
+  # in integer arithmetic. Written out here rather than recomputed, so a change
+  # to the formula has to be a change to a stated number.
+  test "each level after the first adds the die's average rounded up" do
+    assert_equal 14, build(:character, story: @story, level: 3, hit_die: 6).max_hp   # 6 + 2 * 4
+    assert_equal 18, build(:character, story: @story, level: 3, hit_die: 8).max_hp   # 8 + 2 * 5
+    assert_equal 28, build(:character, story: @story, level: 4, hit_die: 10).max_hp  # 10 + 3 * 6
+  end
+
+  test "somebody with no stat block has no maximum at all" do
+    nobody = build(:character, :without_a_stat_block, story: @story)
+
+    assert_not nobody.stat_block?
+    assert_nil nobody.max_hp
+  end
+
+  test "a hit die outside the three the engine rolls is refused" do
+    assert_not build(:character, story: @story, hit_die: 7).valid?
+    assert_not build(:character, story: @story, hit_die: 12).valid?
+  end
+
+  test "a level outside the declared range is refused" do
+    assert_not build(:character, story: @story, level: 0).valid?
+    assert_not build(:character, story: @story, level: 21).valid?
+  end
+
+  # HALF A BLOCK IS NOT ONE: `#max_hp` needs both, so a row with one column set
+  # looks as though the engine can say something about it and cannot.
+  test "half a stat block is refused in both directions" do
+    assert_not build(:character, story: @story, level: 1, hit_die: nil).valid?
+    assert_not build(:character, story: @story, level: nil, hit_die: 8).valid?
+    assert build(:character, story: @story, level: nil, hit_die: nil).valid?
+  end
+
+  # THE EXPLICIT CALL, deliberately invoked from nowhere -- exactly as
+  # `#move_to!` was when it landed. Levels are stored and inert; this is the
+  # statement whatever advances them one day will use.
+  test "advancing a level raises the maximum and nothing else" do
+    character = create(:character, story: @story, level: 1, hit_die: 8)
+
+    character.advance!
+
+    assert_equal 2, character.reload.level
+    assert_equal 13, character.max_hp  # 8 + 1 * 5
+  end
 end

@@ -77,8 +77,31 @@ class Playthrough::Mechanics
     # recorded anybody, and an offline walk writes no scenes.
     "talk" => :talk, "speak" => :talk, "ask" => :talk,
     "read" => :read, "examine" => :read, "x" => :read, "look at" => :read,
+    # THE ENGINE-VIEW COMMANDS FOR A BODY. `vitals` only reads, so it goes to
+    # `:look` with everything else that does; `harm` and `mend` are the two
+    # writers `Playthrough::Turn` owns, reached from here the way `go` reaches
+    # `#stand_in!`. They take a number rather than a name, which is the one
+    # shape no other verb in this table has -- see `#read_harm`.
+    "vitals" => :look, "hp" => :look, "condition" => :look,
+    "harm" => :harm, "hurt" => :harm, "damage" => :harm,
+    "mend" => :mend, "heal" => :mend,
     "help" => :help
   }.freeze
+
+  # THE VERBS THIS MODE ANSWERS ITSELF IN BOTH MODES, and the whole of why they
+  # are a list rather than a branch.
+  #
+  # Everything else typed with a model available goes to
+  # `Playthrough::Classifier` -- that is what the mode is for. These four do
+  # not, because they are not things a player does in the fiction: they are the
+  # engine's own instruments, `Playthrough::IntentSchema::INTENTS` has no word
+  # for any of them, and sending `harm 5` to a closed enum of six intents would
+  # spend a model call to be told it was `other`. `help` was already here for
+  # exactly this reason; these three join it.
+  #
+  # SO THEY MAKE NO MODEL CALL IN EITHER MODE, which is what makes them
+  # assertable by `rake game:sweep` and safe to type into a real game.
+  ENGINE_VIEW = %w[vitals hp condition harm hurt damage mend heal help].freeze
 
   # What `help` prints in the no-model mode, and what an unknown word is refused
   # with. Written out rather than derived from `VERBS` because the aliases
@@ -93,7 +116,12 @@ class Playthrough::Mechanics
     "                 examine, x, look at). Only a thing marked readable has",
     "                 words; this mode prints them and never writes them",
     "look             the engine's whole view of where you are (also: where,",
-    "                 inventory, exits, items, who, state)",
+    "                 inventory, exits, items, who, state, vitals)",
+    "harm <n>         take n hit points off the player, through",
+    "                 Playthrough::Turn#harm!. Zero is death and death ends the",
+    "                 playthrough (also: hurt, damage)",
+    "mend <n>         put n back, up to the maximum. It never raises the dead",
+    "                 (also: heal)",
     "help             this list",
     "",
     "A name is matched against the records: exactly first, then as an",
@@ -158,7 +186,7 @@ class Playthrough::Mechanics
   # Every field is a fresh read rather than anything carried along from before
   # the write, so the read-out is what the database says and not what this class
   # believed it had done.
-  State = Data.define(:location, :exits, :items_here, :carried, :present) do
+  State = Data.define(:location, :exits, :items_here, :carried, :present, :condition, :over) do
     def to_s
       [ heading, *rows ].join("\n")
     end
@@ -174,7 +202,13 @@ class Playthrough::Mechanics
         [ "exits", exits.map { |exit| "#{exit.name} [#{exit.detail_level}]" }, "no way out of here" ],
         [ "lying here", items_here.map { |item| "#{item.name} [##{item.id}]" }, "nothing to pick up" ],
         [ "carrying", carried.map { |item| "#{item.name} [##{item.id}]" }, "nothing" ],
-        [ "present", present.map(&:fullname), "nobody else" ]
+        [ "present", present.map(&:fullname), "nobody else" ],
+        # HOW MUCH IS LEFT OF THE PLAYER, out of `Playthrough#vitals_for` -- the
+        # same one reader `Playthrough::Moment` states it to the narrator from,
+        # so the prose and the read-out cannot disagree about a number. Empty
+        # for a playthrough whose protagonist has no stat block, which is the
+        # honest nothing rather than an invented "unhurt".
+        [ "condition", [ condition&.in_words, ("THIS PLAYTHROUGH IS OVER" if over) ].compact, "no stat block" ]
       ].map { |label, values, empty| format("  %-11s %s", label, values.presence&.join(", ") || empty) }
     end
   end
@@ -204,8 +238,12 @@ class Playthrough::Mechanics
   # rather than inventing a second vocabulary -- so the dispatch below is one
   # path and not two, which is the whole reason the fallback is trustworthy.
   # A reading with no intent and no refusal is a command that only reads.
-  Reading = Data.define(:intent, :refusal, :note, :understood) do
-    def initialize(intent: nil, refusal: nil, note: nil, understood: nil, **rest) = super
+  # `wound` is the one reading that is not an `Intent` and cannot be: `harm 5`
+  # names a NUMBER where every intent in the closed enum names a record, so
+  # there is nothing for `Playthrough::Classifier::Intent` to hold. It is
+  # `[:harm | :mend, n]` and `#wound` is what acts on it.
+  Reading = Data.define(:intent, :refusal, :note, :understood, :wound) do
+    def initialize(intent: nil, refusal: nil, note: nil, understood: nil, wound: nil, **rest) = super
   end
 
   # A typed name against the records it could have meant. `record` is what the
@@ -233,6 +271,16 @@ class Playthrough::Mechanics
   # command, and the console says so and keeps going. Everything the player can
   # get wrong is a refusal carrying what would have worked.
   def run(command)
+    # THE GAME BEING OVER COMES BEFORE EVERYTHING, exactly as it does in
+    # `Playthrough::Turn#play` and out of the same `Playthrough::Refusal`, so
+    # this mode and the browser cannot come to disagree about whether a
+    # playthrough is finished. Nothing below runs: not the world catching up,
+    # not the snapshot, and not the classifier.
+    if playthrough.over?
+      refusal = Playthrough::Refusal.dead(typed: command, character: playthrough.character)
+      return refuse(refusal.reason).with(command: command)
+    end
+
     # THE WORLD MOVES FIRST, exactly as it does in `Playthrough::Turn#play`, and
     # for the same reason: the exits a command resolves against have to be
     # tonight's. No model call, no tokens.
@@ -242,13 +290,15 @@ class Playthrough::Mechanics
     # `Playthrough::Turn#play` does and before the same four closed sets are
     # read. The two modes have to agree about what is lying here, and the only
     # way they can is by taking the copy at the same point. No model call.
-    Item::Snapshot.new(playthrough).of_the_room!(playthrough.current_location)
+    Playthrough::Snapshot.new(playthrough).of_the_room!(playthrough.current_location)
 
     reading = model? ? classify(command) : parse(command)
 
     report =
       if reading.refusal
         refuse(reading.refusal, note: reading.note, understood: reading.understood)
+      elsif reading.wound
+        wound(reading.wound, reading.understood)
       elsif reading.intent.nil?
         read(note: reading.note)
       else
@@ -275,7 +325,13 @@ class Playthrough::Mechanics
       exits: classifier.exits_here,
       items_here: classifier.items_here,
       carried: classifier.items_carried,
-      present: classifier.characters_here
+      present: classifier.characters_here,
+      condition: playthrough.condition,
+      # WHETHER THE GAME IS OVER, off `playthroughs.ended_at` and not derived
+      # from the condition beside it: a playthrough with no protagonist has no
+      # condition and could still, one day, be ended by a mechanic nobody has
+      # written. It is what `EngineSweep::Expectation`'s `dead:` reads.
+      over: playthrough.over?
     )
   end
 
@@ -299,11 +355,31 @@ class Playthrough::Mechanics
   # inside `#classify` and is deliberately not bypassed here, because drift is
   # what this mode is for measuring.
   def classify(command)
-    return Reading.new(note: CLASSIFIER_HELP) if command.to_s.strip.downcase == "help"
     return Reading.new if command.to_s.strip.empty?
+
+    # THE ENGINE'S OWN INSTRUMENTS ARE NOT CLASSIFIED, in either mode. `help`
+    # was always read here rather than sent to a model; `vitals`, `harm <n>` and
+    # `mend <n>` join it for the reason `ENGINE_VIEW` states -- there is no
+    # intent in the closed enum for any of them, so the call could only ever
+    # come back `other`, and it would cost a model call to do it.
+    engine_view = engine_view_reading(command)
+    return engine_view if engine_view
 
     intent = classifier.classify(command)
     Reading.new(intent: intent, understood: describe(intent))
+  end
+
+  # ONE OF THE ENGINE-VIEW COMMANDS, READ BY THE FIXED GRAMMAR, whichever mode
+  # is running. Nil for anything else, which is what sends the line on to the
+  # classifier.
+  def engine_view_reading(command)
+    text = command.to_s.strip.gsub(/\s+/, " ")
+    verb = verb_for(text)
+    return nil unless verb && ENGINE_VIEW.include?(verb)
+
+    return Reading.new(note: CLASSIFIER_HELP) if VERBS.fetch(verb) == :help && model?
+
+    parse(text)
   end
 
   # How the command was read, in the same shape whichever read it.
@@ -349,6 +425,8 @@ class Playthrough::Mechanics
     when :drop then read_drop(argument)
     when :talk then read_talk(argument)
     when :read then read_reading(argument)
+    when :harm then read_wound(argument, :harm)
+    when :mend then read_wound(argument, :mend)
     else resolve(classifier.exits_here, text).found? ? read_move(text) : unknown(text)
     end
   end
@@ -419,6 +497,23 @@ class Playthrough::Mechanics
     return Reading.new(refusal: cannot_find("thing here or in your hands", argument, match, readable)) unless match.found?
 
     intent(:examine, item: match.record)
+  end
+
+  # A NUMBER OF HIT POINTS, which is the one argument in this grammar that is
+  # not a name. It is read strictly -- digits and nothing else, and greater than
+  # zero -- because a number is the whole of what the command means and a
+  # tolerant reading of `harm a lot` would have to invent one.
+  #
+  # Zero is refused rather than accepted as a no-op: somebody who typed it meant
+  # something, and quietly doing nothing is the answer that teaches nothing.
+  def read_wound(argument, kind)
+    unless argument.to_s.strip.match?(/\A[1-9][0-9]*\z/)
+      return Reading.new(refusal: "#{kind} how much? `#{kind} <n>` takes a whole number of hit points " \
+                                  "greater than zero, and #{argument.presence.inspect} is not one")
+    end
+
+    amount = argument.to_i
+    Reading.new(wound: [ kind, amount ], understood: "#{kind} -> #{amount} hit point#{"s" unless amount == 1}")
   end
 
   # The grammar's answer, in the classifier's own vocabulary.
@@ -521,7 +616,7 @@ class Playthrough::Mechanics
     # half of the same statement, and it is here rather than left to the next
     # turn because the read-out printed under THIS move is what a sweep script
     # asserts `here:` against.
-    Item::Snapshot.new(playthrough).of_the_room!(destination)
+    Playthrough::Snapshot.new(playthrough).of_the_room!(destination)
 
     change("moved: #{label(from) || "nowhere"} -> #{destination.name}" \
            "#{" (a stub -- nobody has written this room, and no-model mode cannot)" if destination.stub?}",
@@ -582,6 +677,39 @@ class Playthrough::Mechanics
 
     Report.new(command: nil, understood: understood, change: nil, refusal: nil,
                note: [ "reads: #{item.name}", "  #{item.inscription}" ], state: state)
+  end
+
+  # HURTING AND MENDING THE PLAYER, THROUGH THE ENGINE'S OWN TWO WRITERS.
+  #
+  # It calls `Playthrough::Turn#harm!` and `#mend!` and holds no copy of either,
+  # which is the same rule `#take` and `#drop` are under: a mechanics mode with
+  # its own version of the statement that moves the world would be testing
+  # itself. So death happens HERE exactly as it happens in the browser -- the
+  # last hit point and `playthroughs.ended_at` in one transaction -- and the
+  # next line typed into this mode is refused by the same
+  # `Playthrough::Refusal.dead` the browser refuses it with.
+  #
+  # IT IS ALWAYS THE PLAYER. Hurting an NPC is a mechanic nobody has ruled on
+  # and there is no verb for it; this is an instrument for walking the one body
+  # whose zero ends a game.
+  def wound(pair, understood)
+    kind, amount = pair
+    who = playthrough.character
+    return refuse("this playthrough has no protagonist, so there is no body to #{kind}", understood: understood) if who.nil?
+
+    before = playthrough.vitals_for(who)
+    if before.nil?
+      return refuse("#{who.fullname} has no stat block, so there is nothing to #{kind}. " \
+                    "`rake game:backfill_stat_blocks` rolls one, offline",
+                    understood: understood)
+    end
+
+    after = kind == :harm ? turn.harm!(who, amount) : turn.mend!(who, amount)
+
+    change("#{kind == :harm ? "harmed" : "mended"}: #{who.fullname} #{before.in_words} -> #{after.in_words}" \
+           "#{". THIS PLAYTHROUGH IS OVER -- every line from here is refused" if playthrough.over?}" \
+           "#{" (nothing changed: death is terminal and a mend never raises the dead)" if after.dead? && kind == :mend}",
+           understood)
   end
 
   # TALKING IS PROSE, and prose is the one thing this mode does not do. The

@@ -761,6 +761,134 @@ class Story::DoctorTest < ActiveSupport::TestCase
     end
   end
 
+  # --- the bodies, and the conditions --------------------------------------
+
+  test "somebody with no stat block is reported, and repairably" do
+    story = create(:story)
+    nobody = create(:character, :without_a_stat_block, story: story)
+
+    finding = Story::Doctor.new(story).findings.find { |row| row.code == :character_without_a_stat_block }
+
+    assert_not_nil finding
+    assert_equal :safe, finding.remedy
+    assert_equal nobody, finding.subject
+    assert_match(/no stat block/, finding.message)
+  end
+
+  test "a character with a whole stat block is no finding" do
+    story = create(:story)
+    create(:character, story: story, level: 1, hit_die: 8)
+
+    assert_not_includes codes(story), :character_without_a_stat_block
+  end
+
+  # THE SHAPE A LEGITIMATE FILE EDIT LEAVES: a re-seed lowers somebody's hit die
+  # under a game already in progress, and that game's row is now above its new
+  # maximum. `Playthrough::Vitals` refuses to SAVE one, so it is written past
+  # the validation the way the database really gets one.
+  test "a condition above the maximum its stat block allows is reported" do
+    story = create(:story)
+    room = create(:location, story: story)
+    rowe = create(:character, story: story, location: room, level: 1, hit_die: 10)
+    game = create(:playthrough, story: story, character: create(:character, :protagonist, story: story),
+                                current_location: room)
+    row = Playthrough::Vitals.instantiate!(game, rowe)
+    rowe.update!(hit_die: 6)
+
+    finding = Story::Doctor.new(story).findings.find { |candidate| candidate.code == :hp_above_maximum }
+
+    assert_not_nil finding
+    assert_equal :safe, finding.remedy
+    assert_equal row, finding.subject
+  end
+
+  test "a condition for somebody the world no longer has is reported and manual" do
+    story = create(:story)
+    room = create(:location, story: story)
+    rowe = create(:character, story: story, location: room, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: create(:character, :protagonist, story: story),
+                                current_location: room)
+    row = Playthrough::Vitals.instantiate!(game, rowe)
+    # A foreign key stops this happening today, and `dependent: :destroy` takes
+    # the row with the person before the key is ever consulted. It is written
+    # here the way an older database really holds one -- with the constraint
+    # deferred -- because the doctor's whole premise is a world that outlives
+    # the schema, and this is the shape a build without either would leave.
+    ActiveRecord::Base.connection.disable_referential_integrity do
+      Character.where(id: rowe.id).delete_all
+    end
+
+    finding = Story::Doctor.new(story).findings.find { |candidate| candidate.code == :vitals_without_a_template }
+
+    assert_not_nil finding
+    assert_equal :manual, finding.remedy
+    assert_equal row.id, finding.subject.id
+  end
+
+  # NOTHING IN THE APP CAN WRITE ONE: the snapshot writes at first contact and
+  # nowhere else, so a row for somebody two rooms away is a row about an
+  # encounter that never happened.
+  test "a condition for somebody that game has never met is reported and repairable" do
+    story = create(:story)
+    room = create(:location, story: story)
+    elsewhere = create(:location, story: story)
+    stranger = create(:character, story: story, location: elsewhere, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: create(:character, :protagonist, story: story),
+                                current_location: room)
+    row = Playthrough::Vitals.create!(playthrough: game, character: stranger, hp_current: 8)
+
+    finding = Story::Doctor.new(story).findings.find { |candidate| candidate.code == :vitals_for_an_unmet_character }
+
+    assert_not_nil finding
+    assert_equal :safe, finding.remedy
+    assert_equal row, finding.subject
+  end
+
+  # THE PARTY IS NEVER ONE OF THOSE: the protagonist and any companion are
+  # wherever the playthrough is rather than in a room, which is the same
+  # exception `cast_unmoved` makes.
+  test "the party's own condition is never reported as an unmet character" do
+    story = create(:story)
+    room = create(:location, story: story)
+    vance = create(:character, :protagonist, story: story, level: 1, hit_die: 6)
+    create(:playthrough, story: story, character: vance, current_location: room)
+
+    assert_not_includes codes(story), :vitals_for_an_unmet_character
+  end
+
+  test "a game with no condition for its own protagonist is reported and repairable" do
+    story = create(:story)
+    room = create(:location, story: story)
+    vance = create(:character, :protagonist, story: story, level: 1, hit_die: 6)
+    game = create(:playthrough, story: story, character: vance, current_location: room)
+    game.vitals.destroy_all
+
+    finding = Story::Doctor.new(story).findings.find { |row| row.code == :protagonist_without_vitals }
+
+    assert_not_nil finding
+    assert_equal :safe, finding.remedy
+    assert_equal game, finding.subject
+  end
+
+  # Said once about the person rather than once per game of them: a protagonist
+  # with no stat block is `character_without_a_stat_block`, and there is nothing
+  # to write a condition from.
+  test "a protagonist with no stat block earns no missing-condition finding" do
+    story = create(:story)
+    room = create(:location, story: story)
+    vance = create(:character, :protagonist, :without_a_stat_block, story: story)
+    create(:playthrough, story: story, character: vance, current_location: room)
+
+    assert_not_includes codes(story), :protagonist_without_vitals
+    assert_includes codes(story), :character_without_a_stat_block
+  end
+
+  test "the checked-in worlds give everybody a body" do
+    WorldSeed::Loader.load_all(io: nil).each do |story|
+      assert_not_includes codes(story), :character_without_a_stat_block, story.title
+    end
+  end
+
   # The world that moves, one night on, with the file's own doorway written
   # back over the arrangement the night produced -- which is exactly what a
   # re-seed used to do. Built by hand rather than by running the mechanic, so

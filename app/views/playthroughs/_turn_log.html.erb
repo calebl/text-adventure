@@ -89,14 +89,51 @@
       The copy is `Playthrough::Refusal`'s, engine-authored, out of the records;
       no model wrote a word of it. Read that class's header before changing what
       lands here. %>
+  <%# A REFUSAL BECAUSE THE GAME IS OVER SHOWS ONLY THE ECHO. The typed line is
+      still worth printing -- it says which line this answered -- but the
+      sentence is not, because the standing death statement below says the same
+      thing in full and two of it on one screen reads as a bug.
+      `Playthrough::Refusal#game_over?` is the one question that tells the
+      shapes apart. %>
   <% if refusal %>
     <p class="command">&gt; <%= refusal.typed %></p>
-    <div class="notice">
-      <p><%= refusal.text %></p>
-    </div>
+    <% unless refusal.game_over? %>
+      <div class="notice">
+        <p><%= refusal.text %></p>
+      </div>
+    <% end %>
   <% end %>
 
-  <% if command %>
+  <%# THE GAME IS OVER, AND THIS IS WHERE THE INPUT USED TO BE.
+
+      The captain's ruling of 2026-09-04: at zero hit points the character is
+      dead, the playthrough is over, and the only way on is a new one. So the
+      form is not disabled and it is not left there to be refused line after
+      line -- it is GONE, and what stands in its place says why and offers the
+      one thing that is left.
+
+      `Playthrough::DeathNotice` is the one author of these words, and it also
+      writes the sentence `Playthrough::Refusal.dead` answers a typed line with,
+      so the standing statement and the refusal cannot come to disagree about
+      whether the game is over. Read its header before changing any of them.
+
+      The same `.notice` as the safety notice and the refusal above, and for the
+      same reason: this is the app talking rather than the world. It is NOT an
+      alert -- nothing went wrong, the player died. %>
+  <% if playthrough.over? %>
+    <div class="notice">
+      <p><strong><%= Playthrough::DeathNotice::HEADING %></strong></p>
+      <% Playthrough::DeathNotice::PARAGRAPHS.each do |paragraph| %>
+        <p><%= paragraph %></p>
+      <% end %>
+      <%# The same POST the index's Play button makes, so there is exactly one
+          way a playthrough is created and this is not a second one. %>
+      <%= form_with url: playthroughs_path do |form| %>
+        <%= form.hidden_field :story_id, value: playthrough.story_id %>
+        <%= form.submit "Start a new playthrough" %>
+      <% end %>
+    </div>
+  <% elsif command %>
     <p class="command">&gt; <%= command %></p>
     <%# NarrationJob appends batched chunks of prose here, and replaces this
         whole element when the turn lands. The cursor is what the player watches

@@ -85,6 +85,9 @@ opening_scene:
 characters:
 - fullname: Coraith Vell
   race: Bell-Keepers
+  stats:
+    level: 1
+    hit_die: 8
   nickname: Vell
   age: 44
   sex: female
@@ -110,6 +113,9 @@ characters:
 - fullname: Ammon Brace
   race: Circuit Justicars
   location: The Causeway Court
+  stats:
+    level: 1
+    hit_die: 6
   nickname: Justicar Brace
   age: 58
   sex: male
@@ -127,6 +133,9 @@ characters:
 - fullname: Neb Halloran
   race: Shorefolk
   location: The Tide Post
+  stats:
+    level: 1
+    hit_die: 10
   nickname: Neb
   age: 33
   sex: male

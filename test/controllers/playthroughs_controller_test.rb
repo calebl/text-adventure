@@ -482,4 +482,56 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "#bottom"
   end
+  # --- a playthrough that is over -------------------------------------------
+  #
+  # The captain's ruling of 2026-09-04: at zero hit points the character is dead
+  # and the playthrough is over. The input is not disabled and not left there to
+  # be refused line after line -- it is gone, and what stands in its place says
+  # why and offers the one thing that is left.
+
+  test "a dead playthrough shows the death statement instead of the input" do
+    playthrough = dead_playthrough
+
+    get playthrough_path(playthrough)
+
+    assert_response :success
+    assert_select "input[name=command]", 0
+    assert_select "div.notice", text: /#{Regexp.escape(Playthrough::DeathNotice::HEADING)}/
+  end
+
+  test "a dead playthrough offers the one way on: a new playthrough of the same world" do
+    playthrough = dead_playthrough
+
+    get playthrough_path(playthrough)
+
+    assert_select "form[action=?]", playthroughs_path do
+      assert_select "input[name=?][value=?]", "story_id", playthrough.story_id.to_s
+    end
+  end
+
+  test "a playthrough that is still running keeps its input" do
+    playthrough = dead_playthrough
+    playthrough.update!(ended_at: nil)
+
+    get playthrough_path(playthrough)
+
+    assert_select "input[name=command]", 1
+    assert_select "div.notice", 0
+  end
+
+  private
+
+  # A game the player has died in, through the engine's own writer rather than
+  # by setting the column: `Playthrough::Turn#harm!` is where the ending is
+  # written, and a test that wrote `ended_at` by hand would not notice if it
+  # stopped being.
+  def dead_playthrough
+    story = create(:story)
+    room = create(:location, story: story)
+    hero = create(:character, :protagonist, story: story, level: 1, hit_die: 6)
+    playthrough = create(:playthrough, story: story, character: hero, current_location: room,
+                                       current_scene: create(:scene, story: story, location: room))
+    Playthrough::Turn.new(playthrough).harm!(hero, 99)
+    playthrough
+  end
 end

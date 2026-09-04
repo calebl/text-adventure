@@ -19,6 +19,11 @@
 #   present         the whole set of people standing here, by full name -- the
 #                   closed set `talk` resolves against (`Character.present_in`),
 #                   minus the player themselves
+#   hp              the player's current hit points, exactly -- read through
+#                   `Playthrough#vitals_for`, never off the printed read-out
+#   dead            whether the playthrough is over: `playthroughs.ended_at` is
+#                   set, which since the captain's ruling of 2026-09-04 happens
+#                   for exactly one reason and stays true for ever
 #   inscription     what the records say is written on a named thing -- a
 #                   mapping of item name to text the stored inscription has to
 #                   contain, or to `false` for a thing with no writing on it.
@@ -39,7 +44,7 @@
 class EngineSweep::Expectation
   KEYS = %w[
     location exits exits_include exits_exclude here carrying present inscription
-    changed change refused offers understood note drifts
+    hp dead changed change refused offers understood note drifts
   ].freeze
 
   # "The Vestry Hulk (stub)" -> the name and the detail level it has to be in.
@@ -86,6 +91,8 @@ class EngineSweep::Expectation
       check_items("carrying", state.carried),
       check_people("present", state.present),
       check_inscriptions(state),
+      check_equals("hp", state.condition&.hp),
+      check_flag("dead", state.over),
       check_flag("changed", report.changed?),
       check_contains("change", report.change),
       check_flag("refused", report.refused?),

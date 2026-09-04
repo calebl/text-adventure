@@ -16,6 +16,19 @@ FactoryBot.define do
     backstory { "A person with a mysterious past who has seen both joy and hardship" }
     is_companion { false }
     is_protagonist { false }
+    # THE STAT BLOCK IS DEFAULTED, and it is the opposite decision from the
+    # whereabouts below -- so it is worth saying why. Nowhere is a state the
+    # game is written to handle; having no body is a state the game is written
+    # to REPORT (`rake game:doctor` -> `character_without_a_stat_block`), and
+    # every character the app itself writes is given one at the moment it is
+    # created. A factory with no stat block would make every fixture look like a
+    # database older than the columns.
+    #
+    # A d8 rather than a roll: a factory that rolled would make a test that
+    # asserts a maximum flake. `:without_a_stat_block` is the trait for the
+    # older-database state.
+    level { 1 }
+    hit_die { 8 }
     # WHERE THEY ARE is deliberately not defaulted: nowhere is a real state and
     # it is the one a character starts in, so a test that needs somebody
     # standing in a room says `location:` and means it. See Character's header
@@ -33,6 +46,13 @@ FactoryBot.define do
       backstory { "An ordinary person thrust into extraordinary circumstances" }
       is_companion { false }
       is_protagonist { true }
+    end
+
+    # A DATABASE OLDER THAN THE COLUMNS. Both nil, because half a block is a row
+    # `Character#a_stat_block_is_whole` refuses to save.
+    trait :without_a_stat_block do
+      level { nil }
+      hit_die { nil }
     end
 
     # NOWHERE ON PURPOSE: what a seed file asserts with `absent: true`. Not the

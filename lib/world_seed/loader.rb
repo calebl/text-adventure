@@ -7,7 +7,9 @@
 #   Story      title                     (the file's identity; keep them unique)
 #   Universe   the story's universe      (the table has no natural key of its own)
 #   Race       (universe, name)          unique index
-#   Character  (story, fullname)         unique index
+#   Character  (story, fullname)         unique index; `stats` is the file's own
+#                                        answer for a body, re-asserted like a
+#                                        placement and left alone when absent
 #   Location   (story, name)             case-insensitively first, matching
 #                                        Location::Generator#find_location, and
 #                                        then on WorldSeed.natural_key, which is
@@ -354,13 +356,39 @@ class WorldSeed::Loader
       where = attributes["location"].presence && find_location(story, attributes["location"])
 
       character.assign_attributes(
-        attributes.except("race", "items", "location", "absent")
-                  .merge(race: race, location: where, deliberately_absent: attributes["absent"] == true)
+        attributes.except("race", "items", "location", "absent", "stats")
+                  .merge(race: race, location: where, deliberately_absent: attributes["absent"] == true,
+                         **stat_block(attributes))
       )
       character.save!
 
       load_items!(story, attributes["items"], character: character, location: nil)
     end
+  end
+
+  # WHAT THE FILE SAYS THIS BODY IS, and the file is the decision -- the same
+  # rule `location` and `absent` above are under. `characters[].stats` carries
+  # `level` and `hit_die`; `Character` validates both against its own tables, so
+  # a hit die of 7 is refused rather than loaded.
+  #
+  # AN ABSENT KEY IS NOT A ROLL. A file that says nothing about a body leaves
+  # both columns exactly as they are -- which for a fresh row is nil, a state
+  # `rake game:doctor` reports and `rake game:backfill_stat_blocks` fills in. It
+  # is deliberately NOT rolled here, for the reason every other absent key in
+  # this loader is left alone: a re-seed must not quietly rewrite a world every
+  # time somebody edits a different part of the file, and a hand-authored world
+  # that wants a particular body says so.
+  #
+  # THE FILE RE-ASSERTS ITSELF over a played world when the key IS there,
+  # exactly as the placements and the items do. Lowering somebody's hit die
+  # under a game in progress is legitimate and leaves that game's condition row
+  # above its new maximum, which `rake game:doctor` reports
+  # (`hp_above_maximum`) with a safe repair.
+  def stat_block(attributes)
+    stats = attributes["stats"]
+    return {} unless stats.is_a?(Hash)
+
+    { level: stats["level"], hit_die: stats["hit_die"] }.compact
   end
 
   # THE THINGS IN THE WORLD, on whichever side of `Item`'s place rule they sit:
@@ -581,6 +609,8 @@ class WorldSeed::Loader
                             "#{standing.inspect} -- `absent` means nowhere on purpose, so the two cannot both be true"
       end
 
+      validate_stats!(attributes)
+
       next if standing.blank? || names.any? { |name| name.casecmp?(standing) }
 
       raise InvalidWorld, "#{where}: character #{attributes.fetch("fullname").inspect} is placed in #{standing.inspect}, " \
@@ -589,6 +619,37 @@ class WorldSeed::Loader
 
     validate_opening_scene!(names, openings.first.fetch("name"))
     validate_mechanics!
+  end
+
+  # A BODY THE ENGINE COULD NEVER HAVE ROLLED, caught here rather than three
+  # records later. `Character` validates the same two columns inside the
+  # transaction, so a file with the fault never loads either way -- but the
+  # record's error names a column and this one names the file and the person,
+  # which is what somebody editing YAML needs. Same reason the inscriptions are
+  # checked here.
+  #
+  # HALF A BLOCK IS REFUSED TOO: `Character#max_hp` needs both, so a `stats:`
+  # with only a level is a key that looks as though it said something and did
+  # not.
+  def validate_stats!(attributes)
+    stats = attributes["stats"]
+    return if stats.nil?
+
+    who = attributes.fetch("fullname").inspect
+    unless stats.is_a?(Hash) && stats.keys.sort == %w[hit_die level]
+      raise InvalidWorld, "#{where}: character #{who} has `stats: #{stats.inspect}` -- it is a mapping of " \
+                          "`level` and `hit_die`, and both together or neither"
+    end
+
+    unless Character::LEVELS.include?(stats["level"])
+      raise InvalidWorld, "#{where}: character #{who} has level #{stats["level"].inspect}; " \
+                          "a level is #{Character::LEVELS.first}..#{Character::LEVELS.last}"
+    end
+
+    return if Character::HIT_DICE.include?(stats["hit_die"])
+
+    raise InvalidWorld, "#{where}: character #{who} has hit die #{stats["hit_die"].inspect}; " \
+                        "the engine rolls one of #{Character::HIT_DICE.join(", ")}"
   end
 
   # WORDS ON A THING WITH NOTHING WRITTEN ON IT, caught here rather than three

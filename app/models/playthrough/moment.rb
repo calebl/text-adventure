@@ -55,6 +55,17 @@ class Playthrough::Moment
     end
 
     parts << "The player is #{protagonist.fullname}." if protagonist
+    # HOW MUCH IS LEFT OF THE PLAYER, stated as a fact and only when the records
+    # have one. It is a whole sentence for a reason `Playthrough::Vitals`'s
+    # header gives: a number nobody can see is worse than no number, and this
+    # line is the entire prose integration of the stat block -- the narrator is
+    # TOLD what the engine decided, exactly as it is told what is lying on the
+    # floor, and it is asked to decide nothing.
+    #
+    # SILENT FOR SOMEBODY WITH NO STAT BLOCK. `Playthrough#vitals_for` answers
+    # nil for them, and saying nothing is the honest answer where "unhurt" would
+    # be an assertion about a body the engine does not have.
+    parts << condition.to_s if condition
     parts << (others.any? ? "Also here: #{name_list(others)}. Nobody else is present." : "Nobody else is here.")
     parts << "Lying here, and takeable: #{floor_names.presence || "nothing"}."
     parts << "The player is carrying: #{carried_names.presence || "nothing"}."
@@ -157,6 +168,11 @@ class Playthrough::Moment
   def story = playthrough.story
   def location = playthrough.current_location
   def protagonist = playthrough.character
+
+  # Through `Playthrough#condition`, which is `#vitals_for` on the protagonist
+  # -- the one reader, so this prompt and the `rake game:mechanics` read-out
+  # cannot come to disagree about a number.
+  def condition = playthrough.condition
 
   # WHAT THE PLAYER JUST DID, FROM THE RECORD OF WHAT THEY TYPED rather than
   # from the prose that answered it.

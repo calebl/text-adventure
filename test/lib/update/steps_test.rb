@@ -198,6 +198,44 @@ class Update::StepsTest < ActiveSupport::TestCase
     assert_match(/by hand/, report.notes.first)
   end
 
+  # --- the stat block backfill ---------------------------------------------
+
+  test "the stat block step rolls a body for somebody who has none" do
+    story = create(:story)
+    nobody = create(:character, :without_a_stat_block, story: story)
+
+    report = Update::Steps::BackfillStatBlocks.new.call
+
+    assert_predicate report, :changed?
+    assert_match(/rolled 1 stat block/, report.lines.first)
+    assert_predicate nobody.reload, :stat_block?
+  end
+
+  test "the stat block step writes nothing in a dry run, and still says what it would do" do
+    story = create(:story)
+    nobody = create(:character, :without_a_stat_block, story: story)
+
+    report = Update::Steps::BackfillStatBlocks.new(dry_run: true).call
+
+    assert_predicate report, :changed?
+    assert_not_predicate nobody.reload, :stat_block?
+  end
+
+  test "the stat block step has nothing to do the second time" do
+    create(:character, :without_a_stat_block, story: create(:story))
+    Update::Steps::BackfillStatBlocks.new.call
+
+    assert_predicate Update::Steps::BackfillStatBlocks.new.call, :nothing_to_do?
+  end
+
+  # A roll cannot be ambiguous, so unlike every other backfill in the registry
+  # this one has no permanent refusals to report.
+  test "the stat block step has no notes at all" do
+    create(:character, :without_a_stat_block, story: create(:story))
+
+    assert_empty Update::Steps::BackfillStatBlocks.new.call.notes
+  end
+
   test "the doctor step reports every story and writes nothing" do
     story = create(:story)
     create(:character, :protagonist, story: story)

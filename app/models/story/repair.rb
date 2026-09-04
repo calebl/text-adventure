@@ -12,6 +12,18 @@
 #             start_time; a playthrough's location, which its own current scene
 #             names. No model, no key, no judgement.
 #
+#             ONE REPAIR STRETCHES THAT SENTENCE AND IT IS STATED HERE RATHER
+#             THAN DISCOVERED: `character_without_a_stat_block` rolls a hit die,
+#             and nothing on record implies one. It is safe because the ENGINE
+#             is that number's sole author by the captain's ruling of
+#             2026-09-04 -- *"A model cannot set an NPC's numbers, the engine
+#             rolls them"* -- so writing one is not inventing world data to make
+#             a validation pass; it is the only thing that was ever going to
+#             decide it, doing so. The roll is deterministic
+#             (`Character::StatBlock`), so a rehearsal and the repair agree and
+#             a re-run a year later re-derives the same body. See
+#             `Story::Doctor#stat_blocks`.
+#
 #             A FOLD IS A SAFE REPAIR TOO, and it is the only kind that removes
 #             a row. Re-seeding a played world used to leave two rows where the
 #             file declares one thing -- two supply closets, two daybooks, a
@@ -57,6 +69,10 @@ class Story::Repair
     character_absent_but_somewhere: { calls: 0, handler: :repair_deliberate_absence },
     protagonist_holds_a_taken_item: { calls: 0, handler: :repair_shared_inventory },
     playthrough_missing_a_copy: { calls: 0, handler: :repair_missing_copies },
+    character_without_a_stat_block: { calls: 0, handler: :repair_missing_stat_block },
+    hp_above_maximum: { calls: 0, handler: :repair_hp_above_maximum },
+    vitals_for_an_unmet_character: { calls: 0, handler: :repair_unmet_vitals },
+    protagonist_without_vitals: { calls: 0, handler: :repair_missing_vitals },
     duplicate_locations: { calls: 0, handler: :repair_duplicate_locations },
     duplicate_items: { calls: 0, handler: :repair_duplicate_items },
     mobile_doorway_re_asserted: { calls: 0, handler: :repair_re_asserted_doorway },
@@ -276,6 +292,57 @@ class Story::Repair
     made = result.snapshots.find { |snapshot| snapshot.playthrough.id == playthrough.id }&.copies || []
 
     "gave playthrough ##{playthrough.id} its own copy of #{made.size} thing(s) it had walked past"
+  end
+
+  # A BODY FOR SOMEBODY WHO HAD NONE, rolled rather than recovered -- the one
+  # `safe` repair in this class that writes a number nothing else on record
+  # implies. The header says why that is still safe; `Character::StatBackfill`
+  # is the same act for a whole story at once, and `bin/update` runs it first.
+  def repair_missing_stat_block(finding)
+    character = finding.subject
+    rolled = Character::StatBlock.for_existing(character)
+    character.update!(**rolled)
+
+    "rolled #{character.fullname} a body: level #{rolled[:level]}, d#{rolled[:hit_die]} (#{character.max_hp} hp)"
+  end
+
+  # A CONDITION CLAMPED BACK TO WHAT THE TEMPLATE ALLOWS. On record, on the
+  # character: `Character#max_hp` is derived from the stat block, so this writes
+  # a value the world already holds. It happens when a re-seed lowers a hit die
+  # under a game in progress, which is a legitimate file edit.
+  def repair_hp_above_maximum(finding)
+    row = finding.subject
+    was = row.hp_current
+    row.update!(hp_current: row.character.max_hp)
+
+    "brought #{row.character.fullname} in playthrough ##{row.playthrough_id} from #{was} down to " \
+      "#{row.hp_current}, the most that body can hold"
+  end
+
+  # A CONDITION FOR SOMEBODY THAT GAME NEVER MET, removed. Safe because an
+  # absent row MEANS unhurt (`Playthrough::Vitals`), which is exactly what an
+  # unmet person is -- so deleting it loses no fact, and the row said something
+  # about an encounter that never happened.
+  def repair_unmet_vitals(finding)
+    row = finding.subject
+    who = row.character.fullname
+    game = row.playthrough_id
+    row.destroy!
+
+    "dropped playthrough ##{game}'s condition for #{who}, who that game has never stood in a room with"
+  end
+
+  # THE PLAYER'S OWN CONDITION, WRITTEN FROM THE TEMPLATE. Derived and not
+  # chosen: `Playthrough::Vitals.instantiate!` starts a body at
+  # `Character#max_hp`, which is the same statement the snapshot makes when a
+  # playthrough is created. `playthrough_missing_a_copy`'s argument, one table
+  # over.
+  def repair_missing_vitals(finding)
+    playthrough = finding.subject
+    row = Playthrough::Vitals.instantiate!(playthrough, playthrough.character)
+
+    "gave playthrough ##{playthrough.id} a condition for #{playthrough.character.fullname}, " \
+      "at the #{row.hp_current} their stat block starts them on"
   end
 
   # TWO ROWS THAT ARE ONE ROOM, FOLDED ONTO THE ONE WITH THE HISTORY -- and the

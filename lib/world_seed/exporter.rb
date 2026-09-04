@@ -227,6 +227,16 @@ class WorldSeed::Exporter
       # an exporter that silently dropped half of a contradiction would hide
       # the thing the file's reader needs to fix.
       document["absent"] = true if character.deliberately_absent?
+      # WHAT THE ENGINE ROLLED FOR THIS BODY, so re-seeding a world gives back
+      # the same people rather than re-rolling them. Omitted rather than written
+      # null when there is no stat block -- the same "omitted rather than
+      # written false" rule `opening`, `mobile`, `absent` and `readable` follow
+      # -- and an omitted key means the loader leaves the columns alone, which
+      # for a fresh row is the nothing `rake game:doctor` reports.
+      #
+      # Both keys or neither: `Character#a_stat_block_is_whole` refuses to save
+      # half a block and `WorldSeed::Loader#validate_stats!` refuses to load one.
+      document["stats"] = { "level" => character.level, "hit_die" => character.hit_die } if character.stat_block?
       CHARACTER_FIELDS.each { |field| document[field.to_s] = value(character.public_send(field)) }
       items = items_document(character)
       document["items"] = items if items.any?

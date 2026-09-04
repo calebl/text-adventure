@@ -55,6 +55,39 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **Hit points, death, and inert levels** (`ta-character-stats`). The captain's
+  rulings of 2026-09-04, verbatim:
+
+  > *"zero hit points means death. Playthrough is over and you can't do anything
+  > else. You have to start a new playthrough. Eventually, we can add going back
+  > to saved previous state."*
+  >
+  > *"No abilities for now. Levels are stored but inert in the first PR. A model
+  > cannot set an NPC's numbers, the engine rolls them."*
+
+  **The shape is `ta-items-per-playthrough`'s, applied to people.** Who somebody
+  IS is the world's (`characters.level`, `characters.hit_die`, nullable, rolled
+  by `Character::StatBlock` through the seeded `Roll` kernel); how much is LEFT
+  of them is one game's (`playthrough_vitals`, one row per playthrough and
+  character, written lazily at first contact by
+  `Playthrough::Vitals::Snapshot`). An absent row means unhurt.
+  `Character#max_hp = hit_die + (level - 1) * (hit_die / 2 + 1)` — derived, never
+  stored, and with no ability term in it because there are no abilities.
+
+  **Death is terminal.** `Playthrough::Turn#harm!` writes the last hit point and
+  `playthroughs.ended_at` in one transaction; `Playthrough::Turn#play` and
+  `Playthrough::Mechanics#run` refuse every further line in front of the
+  classifier, so a line typed into a finished game costs no model call and
+  writes nothing. `Playthrough::Refusal`'s fourth shape (`:dead`) says it and
+  `Playthrough::DeathNotice` is the one author of the words; the play page drops
+  the input and offers a new playthrough.
+
+  **No prose decides anything.** `Playthrough::Moment` gains ONE line — "X is
+  badly hurt (4 of 11)." — and nothing else about the prompts changed. Nothing
+  in any schema asks a model for a number, and
+  `EngineSweep::Invariants#stat_blocks_unmoved` asserts that no typed line ever
+  writes one.
+
 - **The world is the template, the playthrough owns the instances**
   (`ta-items-per-playthrough`). The captain's ruling of 2026-09-04, verbatim:
 

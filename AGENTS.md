@@ -719,6 +719,61 @@ variables at the same time"* — and the rules it lives under are short:
 - **It is not `rake game:play`**, which is still ruled out. The moment it prints
   prose it becomes the second UI that rule exists to prevent.
 
+### A body, a condition, and what zero means
+
+`characters.level` / `characters.hit_die` and `playthrough_vitals` are the stat
+system, and they are `Item`'s two layers applied to people. The captain's
+rulings of 2026-09-04:
+
+> *"zero hit points means death. Playthrough is over and you can't do anything
+> else. You have to start a new playthrough. Eventually, we can add going back
+> to saved previous state."*
+>
+> *"No abilities for now. Levels are stored but inert in the first PR. A model
+> cannot set an NPC's numbers, the engine rolls them."*
+
+- **The world owns the body, one game owns the condition.** `characters.hit_die`
+  is who somebody is, exactly like `race` and `age`; `playthrough_vitals` is how
+  much is left of them in ONE game. Two people playing a seeded world meet the
+  same Justicar Brace and can hurt him separately. **An absent row means
+  unhurt** — writing one per NPC per game would be writing the default down.
+- **One reader, two writers, and no prose anywhere near them.**
+  `Playthrough#vitals_for` is the only reader (it answers a
+  `Playthrough::Vitals::Condition`, never the record); `Playthrough::Turn#harm!`
+  and `#mend!` are the only writers. There is no narrator tool for damage and
+  there is not going to be one — the standing constraint, and
+  `data/ta-direction/report.md` §12 already ruled it out once.
+- **The engine rolls every number.** `Character::StatBlock` through `Roll`, and
+  nothing in `Character::Schema`, `Location::DetailSchema` or any prompt asks a
+  model for one. Seeds are **plain integer arithmetic** over `(story,
+  playthrough, story clock, sequence)` — never `String#hash`, which Ruby salts
+  per process; `WorldMechanic::ShuffleConnections`'s header has the same warning
+  for the same reason.
+- **Max HP is derived and never stored.**
+  `hit_die + (level - 1) * (hit_die / 2 + 1)` — the whole die at first level and
+  the die's average rounded up after it. **No ability term**, because there are
+  no abilities: not three, not six, and no `check <ability> <dc>`.
+- **A level is stored and inert.** Nothing reads it for behaviour and nothing
+  advances it; `Character#advance!` is the explicit call, deliberately invoked
+  from nowhere, exactly as `Character#move_to!` was when it landed.
+- **Zero is death and death is the end of the game.** No death saves, no
+  unconscious state, no scars, no revival, no restore-from-save. `#harm!` writes
+  the last hit point and `playthroughs.ended_at` in one transaction, and the
+  turn loop refuses every further line **in front of the classifier** — so a
+  line typed into a finished game costs nothing. Both modes read the same
+  `Playthrough::Refusal.dead`, and `Playthrough::DeathNotice` is the one author
+  of what a dead player is told. Read its header before changing a word.
+- **A stat block is the WORLD's, so no typed line may write one.**
+  `EngineSweep::Invariants#stat_blocks_unmoved` says it, the way `cast_unmoved`
+  says it about a whereabouts. `lib/engine_sweep/scripts/death-ends-a-playthrough.yml`
+  and `the-unrecorded-hour-two-bodies.yml` walk the ruling offline.
+- **The prose integration is ONE line.** `Playthrough::Moment#narration_context`
+  states the party's condition as a fact and asks the narrator to decide
+  nothing. A prose check reading HP against narration is deliberately NOT
+  shipped: two plausible prose-reading checks have already died on the
+  24-narration corpus (see *Auditing the difference*), and the instrument comes
+  after there are flagged turns to measure it on.
+
 ### Sweeping the engine with stored scripts
 
 `rake game:sweep` (`EngineSweep`, README → *Sweep the engine*) is the same
