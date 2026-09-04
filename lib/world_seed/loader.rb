@@ -8,25 +8,70 @@
 #   Universe   the story's universe      (the table has no natural key of its own)
 #   Race       (universe, name)          unique index
 #   Character  (story, fullname)         unique index
-#   Location   (story, name)             case-insensitively, matching
-#                                        Location::Generator#find_location
-#   Connection (location, connected)     unique index, written both ways
+#   Location   (story, name)             case-insensitively first, matching
+#                                        Location::Generator#find_location, and
+#                                        then on WorldSeed.natural_key, which is
+#                                        what recognizes a room the file renamed
+#   Connection (location, connected)     unique index, written both ways -- and
+#                                        a mobile room's doorway is matched on
+#                                        ARITY as well, because the world's own
+#                                        mechanic moves the far end of it
 #   Item       (story, name)             NOT (owner, name): an item moves, and a
 #                                        world that has been played has items
 #                                        somewhere other than where the file
 #                                        puts them. Keying on the owner would
 #                                        re-seed a dropped daybook as a second
 #                                        daybook; keying on the story finds the
-#                                        one that exists and puts it back.
+#                                        one that exists and puts it back. On
+#                                        WorldSeed.natural_key after that, for
+#                                        the same reason a location is.
 #   Scene      (story, is_opening)       the story's one opening arrival, which
 #                                        is the only Scene that is world rather
 #                                        than progress -- see WorldSeed::Exporter
 #   Mechanic   (story, name)             unique index; a world's own laws are
 #                                        world data, so they are seeded with it
 #
-# The loader adds and updates; it does not delete rows the file no longer
-# mentions. So renaming a location in the file and re-seeding leaves the old one
-# behind -- drop the database for a clean rebuild.
+# RE-SEEDING A WORLD SOMEBODY HAS PLAYED, which is what this file's rules are
+# actually about. The captain re-seeds his long-lived development database to
+# pick up a file change and then keeps playing the same stories for days, so
+# "add and never look" is not a tidiness problem here: it is how one world came
+# to hold two supply closets with the office opening onto both, and how a
+# nightly connection shuffle came to be re-asserted as a SECOND doorway off
+# every mobile lane.
+#
+# THE RULE IS: RECONCILE WHAT THE FILE CAN PROVE, SAY OUT LOUD WHAT IT CANNOT,
+# AND DELETE NOTHING. Three reconciliations, and each one is a fact the file
+# already carries rather than a guess:
+#
+#   A RENAMED ROW IS THE SAME ROW. Identity is `WorldSeed.natural_key`, one
+#   step wider than the written name -- case, whitespace and a leading article
+#   are not part of it -- so editing "Supply Closet" to "The Supply Closet"
+#   renames the row that exists instead of creating a second one beside it.
+#   Locations and items both; the file's spelling wins, which is the same
+#   "the file re-asserts itself" rule the placements follow.
+#
+#   A DOORWAY THE WORLD'S OWN MECHANIC MOVED HAS NOT GONE MISSING.
+#   `WorldMechanic::ShuffleConnections` repoints the anchored end of every
+#   mobile <-> anchored edge and preserves each room's degree, so a file edge
+#   whose pair is no longer on record is USUALLY not a missing doorway but a
+#   moved one. Where the mobile end already carries every doorway the file
+#   gives it, the file's pair is left unwritten and said so. Which anchored
+#   place a mobile room has come to rest against is progress, like
+#   `last_run_at` and `last_protagonist_visit`, and the file deliberately
+#   carries none of those.
+#
+#   WHAT IT CANNOT PROVE IS A RENAME NO NORMALIZED NAME RECOGNIZES -- "The
+#   Supply Closet" edited to "The Broom Cupboard" is, to any loader, a room
+#   that does not exist yet. Nothing in the file says which room it replaced,
+#   and merging two rooms on a guess would destroy play rather than duplicate
+#   it. So the loader creates the new row, and WARNS: `#warnings` names every
+#   location and item a re-seed created in a story that has been played, and
+#   points at `rake game:doctor`, which reports the pair it can recognize
+#   (`duplicate_locations`, `duplicate_items`,
+#   `mobile_location_over_its_seeded_arity`) with a safe repair.
+#
+# It still adds and updates and never deletes: a row play created is never
+# touched. `rake game:delete` plus `bin/rails db:seed` is the clean rebuild.
 class WorldSeed::Loader
   class InvalidWorld < StandardError; end
 
@@ -34,8 +79,11 @@ class WorldSeed::Loader
 
   def self.load_all(io: $stdout)
     WorldSeed.files.map do |path|
-      story = load_file(path)
+      loader = new(WorldSeed.parse(File.read(path)), source: path)
+      story = loader.load!
       io&.puts "Seeded world #{story.title.inspect} (story ##{story.id}, #{story.locations.count} locations, #{story.characters.count} characters)"
+      loader.reconciled.each { |line| io&.puts "  reconciled: #{line}" }
+      loader.warnings.each { |line| io&.puts "  WARNING: #{line}" }
       story
     end
   end
@@ -47,6 +95,26 @@ class WorldSeed::Loader
   def initialize(document, source: nil)
     @document = document
     @source = source
+    @reconciled = []
+    @warnings = []
+  end
+
+  # WHAT THE LOAD PUT RIGHT WITHOUT BEING TOLD, one line each: a row it
+  # recognized under a new name, a doorway it left where the world's own
+  # mechanic had moved it. Read after `#load!`, printed by `#load_all`, and
+  # asserted by `WorldSeed::LoaderTest` -- a reconciliation that happened
+  # silently would be indistinguishable from the accumulation it replaced.
+  def reconciled
+    @reconciled ||= []
+  end
+
+  # WHAT IT COULD NOT TELL APART, and the only half of a re-seed that is still
+  # capable of leaving a world with two of something. Every entry is a row a
+  # re-seed created in a story somebody has PLAYED, which is either a genuine
+  # addition to the file or a rename no normalized name recognizes -- and
+  # nothing in the file says which.
+  def warnings
+    @warnings ||= []
   end
 
   # Returns the Story. Everything happens in one transaction, so a file that
@@ -54,11 +122,19 @@ class WorldSeed::Loader
   def load!
     validate!
 
+    # Read BEFORE anything is written, because both answers change the moment
+    # `load_story!` saves: whether this is a re-seed at all, and whether the
+    # world it is landing on has been played. Together they decide whether a
+    # created row is worth warning about -- a first seed creates everything by
+    # definition, and a world nobody has played can be dropped and rebuilt.
+    @re_seeding = existing_story.present?
+    @played = @re_seeding && played?(existing_story)
+
     Story.transaction do
       universe = load_universe!
       story = load_story!(universe)
       locations = load_locations!(story)
-      load_connections!(locations)
+      load_connections!(story, locations)
       load_characters!(story, universe)
       load_mechanics!(story)
       # Last, because it names a location AND a cast by natural key and both
@@ -96,11 +172,20 @@ class WorldSeed::Loader
   # The opening location is created first because Story#opening_location is the
   # story's lowest-id location. A file whose opening room is a stub would load
   # into a story the browser refuses to start, so that is rejected in #validate!.
+  #
+  # THE NAME IS NOW WRITTEN rather than excluded, which is what makes a rename
+  # converge instead of accumulate: `find_location` recognizes the row under
+  # its old spelling and this puts the file's spelling on it. The row keeps its
+  # id, so its doorways, its scenes, its `last_protagonist_visit` and anybody
+  # standing in it are all untouched -- which is the whole difference between
+  # renaming the room and creating a second one beside it.
   def load_locations!(story)
     location_documents.to_h do |attributes|
       name = attributes.fetch("name")
       location = find_location(story, name) || story.locations.new(name: name)
-      location.assign_attributes(attributes.except("name", "opening", "items"))
+      note_rename("location", location, name)
+      note_creation("location", name) unless location.persisted?
+      location.assign_attributes(attributes.except("opening", "items").merge("name" => name))
       location.save!
       load_items!(story, attributes["items"], character: nil, location: location)
 
@@ -110,17 +195,117 @@ class WorldSeed::Loader
 
   # Both directions, from one entry. See WorldSeed::Exporter's comment on why
   # the file holds an unordered pair.
-  def load_connections!(locations)
-    connection_documents.each do |attributes|
+  #
+  # AN EDGE THE FILE DECLARES AND THE RECORDS NO LONGER HAVE IS NOT
+  # AUTOMATICALLY A MISSING DOORWAY. `WorldMechanic::ShuffleConnections`
+  # repoints the anchored end of every mobile <-> anchored edge, deleting the
+  # old row and writing a new one, and it preserves every room's degree while
+  # doing it. So on a world whose nights have run, the file's pair is gone and
+  # a DIFFERENT pair off the same mobile room is there instead -- and writing
+  # the file's pair back gives the room a second doorway that the mechanic then
+  # reports as having moved on a later night. That is the phantom
+  # "Mournwell Lane now opens onto X instead of Y" the captain read.
+  #
+  # So a shufflable file edge is written only where the mobile end is SHORT of
+  # the doorways the file gives it. `#moved_doorways` does the counting; the
+  # rest of this method is what it always was.
+  def load_connections!(story, locations)
+    @story = story
+    @edges = connection_documents.map do |attributes|
       from, to = attributes.fetch("between").map { |name| locations.fetch(name) }
-      values = attributes.slice("distance", "travel_method")
-
-      [ [ from, to ], [ to, from ] ].each do |(origin, destination)|
-        connection = LocationConnection.find_or_initialize_by(location: origin, connected_location: destination)
-        connection.assign_attributes(values)
-        connection.save!
-      end
+      { attributes: attributes, from: from, to: to }
     end
+
+    on_record, absent = @edges.partition { |edge| edge_on_record?(edge) }
+    on_record.each { |edge| write_edge!(edge) }
+
+    budget = moved_doorways(absent)
+    absent.each do |edge|
+      mobile = mobile_end(edge)
+      if mobile && budget[mobile.id].to_i.positive?
+        budget[mobile.id] -= 1
+        reconciled << "left #{mobile.name.inspect} opening where the world put it rather than re-writing the file's " \
+                      "doorway to #{other_end(edge, mobile).name.inspect} -- it already leads every way out the file gives it, " \
+                      "and #{shuffle_mechanic.name.inspect} moves the far end of those"
+        next
+      end
+
+      write_edge!(edge)
+    end
+  end
+
+  def write_edge!(edge)
+    values = edge.fetch(:attributes).slice("distance", "travel_method")
+
+    [ [ edge[:from], edge[:to] ], [ edge[:to], edge[:from] ] ].each do |(origin, destination)|
+      connection = LocationConnection.find_or_initialize_by(location: origin, connected_location: destination)
+      connection.assign_attributes(values)
+      connection.save!
+    end
+  end
+
+  def edge_on_record?(edge)
+    LocationConnection.where(location: edge[:from], connected_location: edge[:to])
+                      .or(LocationConnection.where(location: edge[:to], connected_location: edge[:from]))
+                      .exists?
+  end
+
+  # HOW MANY DOORWAYS OFF EACH MOBILE ROOM THE WORLD HAS ALREADY MOVED, as
+  # `{ location id => count }`, and it is a count rather than a pairing because
+  # a permutation does not leave one behind: the mechanic's arrangement says
+  # which anchored place each doorway has come to rest against, and the file
+  # only ever said how many there are.
+  #
+  #   wanted  the doorways the file gives this mobile room, out of the edges it
+  #           declares with exactly one mobile end
+  #   present the doorways the records give it -- the same directional rows
+  #           `ShuffleConnections#anchor_edges` shuffles
+  #
+  # `present - (wanted - absent)` is what the room has that the file did not
+  # name: the doorways the mechanic moved. Nothing is skipped where that is
+  # zero or negative, so a genuinely missing edge is still written, a file that
+  # ADDS a doorway to a mobile room still gets it, and a world whose nights
+  # have never run reconciles nothing at all.
+  def moved_doorways(absent)
+    return {} if shuffle_mechanic.nil? || shuffle_mechanic.last_run_at.nil?
+
+    absent_by_mobile = absent.filter_map { |edge| mobile_end(edge)&.id }.tally
+
+    absent_by_mobile.to_h do |id, absent_count|
+      wanted = shufflable_file_edges.count { |edge| mobile_end(edge)&.id == id }
+      present = LocationConnection.where(location_id: id, connected_location_id: anchored_ids).count
+
+      [ id, [ present - (wanted - absent_count), absent_count ].min ]
+    end
+  end
+
+  # The world's own connection shuffle, or nil. Read rather than assumed:
+  # leaving a file edge unwritten is only honest where something in the world
+  # is entitled to have moved it, and this mechanic is the only such thing.
+  def shuffle_mechanic
+    return @shuffle_mechanic if defined?(@shuffle_mechanic)
+
+    @shuffle_mechanic = @story.world_mechanics.find_by(kind: "shuffle_connections")
+  end
+
+  # Every file edge with exactly one mobile end -- the ones the mechanic moves.
+  # Read off the rows just saved by `#load_locations!`, so the file's `mobile`
+  # flags are what decides it either way.
+  def shufflable_file_edges
+    @shufflable_file_edges ||= @edges.select { |edge| mobile_end(edge) }
+  end
+
+  def mobile_end(edge)
+    mobile = [ edge[:from], edge[:to] ].select(&:mobile?)
+    mobile.one? ? mobile.first : nil
+  end
+
+  def other_end(edge, one)
+    edge[:from] == one ? edge[:to] : edge[:from]
+  end
+
+  def anchored_ids
+    @anchored_ids ||= @story.locations.where(mobile: false).pluck(:id)
   end
 
   # WHERE THE FILE PUTS THEM, and `location` is the key that carries it.
@@ -206,7 +391,9 @@ class WorldSeed::Loader
     Array(documents).each do |attributes|
       name = attributes.fetch("name")
       item = find_item(story, name) || Item.new(name: name)
-      item.assign_attributes(attributes.except("name").merge(playthrough: nil, **place))
+      note_rename("item", item, name)
+      note_creation("item", name) unless item.persisted?
+      item.assign_attributes(attributes.merge("name" => name, playthrough: nil, **place))
       item.save!
     end
   end
@@ -228,7 +415,28 @@ class WorldSeed::Loader
     by_name.where(character_id: story.characters.select(:id))
            .or(by_name.where(location_id: story.locations.select(:id)))
            .first ||
-      by_name.where(playthrough_id: story.playthroughs.select(:id)).first
+      by_name.where(playthrough_id: story.playthroughs.select(:id)).first ||
+      find_renamed_item(story, name)
+  end
+
+  # THE SAME ITEM UNDER THE NAME THE FILE USED TO GIVE IT. Without this, an
+  # item whose name was edited -- a capital letter is enough -- is a row that
+  # does not exist yet, and the world ends up with two of it: the captain's
+  # database held two `Ward Office 12 daybook` rows in the protagonist's hands
+  # for exactly this reason.
+  #
+  # THE THREE LEGS ARE SEARCHED IN THE SAME ORDER `#find_item` searches them,
+  # and that is the load-bearing part rather than the normalizing. A seeded
+  # protagonist item is the story's starting inventory and every playthrough
+  # carries a COPY of it; finding a copy first would re-assert the file onto one
+  # player's row and take the daybook out of their hands while the world's own
+  # row kept the old name.
+  def find_renamed_item(story, name)
+    key = WorldSeed.natural_key(name)
+    candidates = Item.in_story(story).select { |item| WorldSeed.natural_key(item.name) == key }
+    return nil if candidates.empty?
+
+    candidates.detect { |item| item.playthrough_id.nil? } || candidates.first
   end
 
   # A world's own laws: which fixed Ruby operation runs on which cadence, and the
@@ -297,13 +505,23 @@ class WorldSeed::Loader
     raise InvalidWorld, "#{where}: exactly one location must be marked `opening: true` (found #{openings.size})" unless openings.one?
     raise InvalidWorld, "#{where}: the opening location #{openings.first.fetch("name").inspect} must be realized, or the story cannot be played" unless openings.first["detail_level"] == "realized"
 
+    # ON THE NATURAL KEY rather than on the downcased name, because that is now
+    # the key a re-seed matches a row under: two rooms the loader could not tell
+    # apart would make a rename ambiguous, and it would pick one of them.
     names = location_documents.map { |attributes| attributes.fetch("name") }
-    duplicates = names.group_by { |name| name.downcase }.select { |_, group| group.size > 1 }.keys
-    raise InvalidWorld, "#{where}: duplicate location names: #{duplicates.join(", ")}" if duplicates.any?
+    duplicates = names.group_by { |name| WorldSeed.natural_key(name) }.select { |_, group| group.size > 1 }.values
+    if duplicates.any?
+      raise InvalidWorld, "#{where}: these location names are one name to a re-seed (WorldSeed.natural_key): " \
+                          "#{duplicates.map { |group| group.join(" / ") }.join("; ")}"
+    end
 
     item_names = (character_documents + location_documents).flat_map { |attributes| Array(attributes["items"]).map { |item| item.fetch("name") } }
-    duplicates = item_names.group_by { |name| name.downcase }.select { |_, group| group.size > 1 }.keys
-    raise InvalidWorld, "#{where}: duplicate item names: #{duplicates.join(", ")} -- an item is matched on (story, name), so two of a name are one item" if duplicates.any?
+    duplicates = item_names.group_by { |name| WorldSeed.natural_key(name) }.select { |_, group| group.size > 1 }.values
+    if duplicates.any?
+      raise InvalidWorld, "#{where}: these item names are one name to a re-seed (WorldSeed.natural_key): " \
+                          "#{duplicates.map { |group| group.join(" / ") }.join("; ")} -- an item is matched on " \
+                          "(story, name), so two of a name are one item"
+    end
 
     validate_inscriptions!
 
@@ -387,12 +605,48 @@ class WorldSeed::Loader
       raise InvalidWorld, "#{where}: mechanic #{name.inspect} has cadence #{cadence.inspect}; the cadences are #{WorldMechanic::CADENCES.keys.join(", ")}" unless WorldMechanic::CADENCES.key?(cadence)
 
       next unless kind == "shuffle_connections"
-      next if shufflable_edge_count >= 2
 
-      raise InvalidWorld, "#{where}: mechanic #{name.inspect} shuffles connections, but the file declares " \
-                          "#{shufflable_edge_count} connection(s) between a `mobile: true` location and one that is not. " \
-                          "It needs at least two, or nothing can move."
+      if shufflable_edge_count < 2
+        raise InvalidWorld, "#{where}: mechanic #{name.inspect} shuffles connections, but the file declares " \
+                            "#{shufflable_edge_count} connection(s) between a `mobile: true` location and one that is not. " \
+                            "It needs at least two, or nothing can move."
+      end
+
+      # TWO EDGES ARE NOT ENOUGH IF THEY HANG OFF THE SAME MOBILE ROOM, and
+      # that is the rule PR 85 wrote into db/seeds/worlds/README.md as
+      # authoring guidance and left uncheckable. `ShuffleConnections` judges an
+      # arrangement on the ADJACENCY it induces -- which places end up joined --
+      # so swapping one lane's own two exits leaves the lane opening onto
+      # exactly the two places it already did, and every such candidate is
+      # refused as a no-op. A world with all its shufflable edges on one mobile
+      # room therefore loads, validates, plays, and never moves: the worst kind
+      # of seed-file typo, and the same one the arity rule above exists to
+      # catch, counted on the right thing.
+      next if shufflable_mobile_rooms.size >= 2
+
+      raise InvalidWorld, "#{where}: mechanic #{name.inspect} shuffles connections, and every one of its " \
+                          "#{shufflable_edge_count} shufflable connections hangs off the same `mobile: true` location " \
+                          "(#{shufflable_mobile_rooms.to_a.join(", ")}). Permuting one room's own exits among themselves " \
+                          "leaves it opening onto the same places, which the mechanic refuses as a no-op, so nothing " \
+                          "can ever move. Spread them over at least two mobile locations."
     end
+  end
+
+  # The `mobile: true` locations the file's shufflable edges hang off, by name.
+  # Counted from the FILE, like the edges themselves.
+  def shufflable_mobile_rooms
+    @shufflable_mobile_rooms ||= begin
+      mobile = mobile_names
+
+      connection_documents.filter_map do |attributes|
+        pair = Array(attributes["between"]).select { |name| mobile.include?(name) }
+        pair.first if pair.one?
+      end.to_set
+    end
+  end
+
+  def mobile_names
+    @mobile_names ||= location_documents.select { |attributes| attributes["mobile"] }.map { |attributes| attributes.fetch("name") }.to_set
   end
 
   # Counted from the FILE rather than from the database, so a hand edit is
@@ -401,7 +655,7 @@ class WorldSeed::Loader
   # piece with its own doors intact.
   def shufflable_edge_count
     @shufflable_edge_count ||= begin
-      mobile = location_documents.select { |attributes| attributes["mobile"] }.map { |attributes| attributes.fetch("name") }.to_set
+      mobile = mobile_names
 
       connection_documents.count do |attributes|
         pair = Array(attributes["between"])
@@ -441,8 +695,59 @@ class WorldSeed::Loader
     @existing_story = Story.find_by(title: story_document.fetch("title"))
   end
 
+  # A location of this story, by the name the file gives it -- and then by the
+  # name the file USED to give it.
+  #
+  # The case-insensitive match comes first and is matched exactly as
+  # `Location::Generator#find_location` matches it, so nothing about how the
+  # generator and the loader agree on a room has changed. The natural-key pass
+  # behind it is what recognizes a rename: see `WorldSeed.natural_key` for how
+  # far it goes and why it goes no further. `#validate!` refuses a file whose
+  # own rooms collide on that key, so there is never more than one answer.
   def find_location(story, name)
-    story.locations.where("LOWER(name) = ?", name.downcase).first
+    exact = story.locations.where("LOWER(name) = ?", name.downcase).first
+    return exact if exact
+
+    # `Location.where(story_id:)` and not `story.locations`, deliberately: a
+    # bare association read LOADS AND CACHES it, and this runs in the middle of
+    # writing the very rows it would be caching. A caller that read
+    # `story.locations` afterwards -- `EngineSweep::Invariants` does -- would get
+    # the loader's half-written snapshot instead of the records.
+    key = WorldSeed.natural_key(name)
+    found = Location.where(story_id: story.id).pluck(:id, :name).detect { |(_, candidate)| WorldSeed.natural_key(candidate) == key }
+
+    found && Location.find(found.first)
+  end
+
+  # A row recognized under a different written name, said out loud. The rename
+  # itself is done by the caller's `assign_attributes` -- this only reports it,
+  # so a load that quietly renamed something is not a shape this class has.
+  def note_rename(kind, record, name)
+    return unless record.persisted?
+    return if record.name == name
+
+    reconciled << "#{kind} #{record.name.inspect} is #{name.inspect} in the file, so the row was renamed rather " \
+                  "than a second #{kind} created beside it (##{record.id}, unchanged otherwise)"
+  end
+
+  # A ROW A RE-SEED CREATED IN A WORLD SOMEBODY HAS PLAYED, which is the one
+  # thing left that can still leave two of something. It is either a genuine
+  # addition to the file or a rename `WorldSeed.natural_key` cannot see, and
+  # nothing in the file distinguishes them -- so it is reported rather than
+  # resolved, because the resolution would be a guess that destroyed play.
+  def note_creation(kind, name)
+    return unless @played
+
+    warnings << "created #{kind} #{name.inspect}, which this story did not have. The world has been played, so if " \
+                "that is a RENAME of #{kind == "location" ? "a room" : "something"} already in it, the old row is " \
+                "still there with everything hanging off it -- `rake game:doctor` names a pair it can recognize"
+  end
+
+  # Has anybody played this world? Playthroughs, or a Scene that is not the
+  # opening arrival -- the same line `WorldSeed::Exporter` draws between world
+  # and progress.
+  def played?(story)
+    story.playthroughs.exists? || story.scenes.where(is_opening: false).exists?
   end
 
   def universe_document

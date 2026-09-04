@@ -155,8 +155,9 @@ that means for the graph you author:** two shufflable edges are not enough if
 they both hang off the *same* `mobile` location. Swapping a lane's own two
 exits leaves the lane opening onto exactly the two places it already did, so
 such a world loads, validates, plays — and never moves. Spread the edges over
-at least two `mobile` locations. (The loader's arity rule below counts edges,
-not the locations they hang off, so it does not catch this.)
+at least two `mobile` locations. **The loader refuses a file that does not** —
+it counts the mobile rooms the shufflable edges hang off as well as the edges
+themselves, so this is a rule rather than advice.
 
 The consequence worth designing around: **an edge with two `mobile` ends is
 never touched.** So a building whose rooms are all marked `mobile` travels as
@@ -171,10 +172,16 @@ The permutation comes from a `Random` seeded from the story id and the
 story-time boundary, so the same night shuffles the same way in any process,
 after any restart.
 
-One honest caveat: the loader **adds and updates, it never deletes**, so
-re-seeding a world that has been played re-asserts the edges the file declares
-on top of wherever the mechanic has since moved them. Drop the database for a
-clean rebuild, as with a renamed location.
+**Re-seeding a world whose nights have run does not re-assert the doorways the
+mechanic has moved.** It used to: the loader wrote the file's own pair back on
+top of the arrangement the world had moved to, so every mobile room ended up
+with two ways into the fixed city and a later night reported one of them as
+having moved when a player standing there saw no such thing. The loader now
+leaves a shufflable doorway where the world put it wherever the mobile room
+already leads every way out the file gives it, and says so on the way past.
+Which anchored place a mobile room has come to rest against is *progress*, like
+`last_run_at` — the file was never meant to carry it. See **Re-seeding a world
+somebody has played** below.
 
 ### `items`, and the two places a thing can be
 
@@ -340,7 +347,9 @@ absent on purpose), `Character#move_to!`, `Character#absent!` and
   `opening: true`, and it must have a `description`. Required rather than
   optional on purpose: a key that is usually there closes neither of the two
   defects above. Its `characters` must all be characters the file declares.
-- Location names are unique within the file (case-insensitively).
+- Location names are unique within the file, on `WorldSeed.natural_key` — so
+  `The Closet` and `Closet` are one name and the pair is refused, because a
+  re-seed matches a room on that key and could not tell which one you renamed.
 - Every `between` pair names two locations the file declares.
 - Every character's `race` is one of this universe's races.
 - A character carries `location` or `absent: true`, never both — one says which
@@ -350,17 +359,19 @@ absent on purpose), `Character#move_to!`, `Character#absent!` and
 - `distance` and `travel_method` come from `LocationConnection::DISTANCES` and
   `::TRAVEL_METHODS`. `time_to_travel` is derived from those two and is
   deliberately absent from the file.
-- Item names are unique within the file (case-insensitively), on both sides —
-  an item is matched on `(story, name)`, so two of a name are one item.
+- Item names are unique within the file on `WorldSeed.natural_key`, on both
+  sides — an item is matched on `(story, name)` and then on that key, so two of
+  a name are one item.
 - An item with an `inscription` is marked `readable: true`. Words on a thing
   with no writing on it is the one shape `Item` refuses outright.
 - A `mechanics` entry has a `name`, unique within the file, a `kind` in
   `WorldMechanic::KINDS` and a `cadence` in `WorldMechanic::CADENCES`.
 - A `shuffle_connections` mechanic needs **at least two connections** joining a
-  `mobile: true` location to one that is not — otherwise the world says it
-  rearranges itself every night and nothing can move, which loads and plays and
-  silently never happens. Counted from the file, so a hand edit is caught before
-  it reaches the database.
+  `mobile: true` location to one that is not, **hanging off at least two
+  different `mobile` locations** — otherwise the world says it rearranges itself
+  every night and nothing can move, which loads and plays and silently never
+  happens. Both counted from the file, so a hand edit is caught before it
+  reaches the database.
 - `sex` is a `Character.sexes` key: `male`, `female`, `non_binary`,
   `trans_woman`, `trans_man`. Not checked by `validate!` -- it is `Character`'s
   own `inclusion` validation that rejects a bad one, inside the same
@@ -415,9 +426,65 @@ daybook. Keying on the story finds it and puts it back, which is the same
 "the file re-asserts itself over a played world" rule the connections follow.
 Item names are therefore unique within a file, and the loader checks it.
 
-The loader adds and updates; it never deletes rows a file no longer mentions.
-Renaming a location and re-seeding therefore leaves the old one behind — drop
-the database when you need a clean rebuild.
+## Re-seeding a world somebody has played
+
+This is the case the rules above are actually about. Re-seeding is how you pick
+up a file change on a database you have been playing for days, so it has to be
+safe against a world in progress — and for a long time it was not. It **added
+and never reconciled**, which left three shapes behind:
+
+| what you edited | what used to happen |
+| --- | --- |
+| a location's name | a second room, with the office opening onto both |
+| an item's name (a capital letter is enough) | a second item, and the classifier resolving a take by an ordering accident |
+| nothing at all, on a world whose nights had run | a second doorway off every mobile room, and a phantom "now opens onto X instead of Y" on the next night |
+
+The loader now **reconciles what the file can prove, says out loud what it
+cannot, and still deletes nothing**:
+
+- **A renamed row is the same row.** Identity is `WorldSeed.natural_key` — one
+  step wider than the written name: case, runs of whitespace and a leading
+  article are not part of it. So `Supply Closet` → `The Supply Closet` renames
+  the row that exists, which keeps its id and therefore its doorways, its
+  scenes, its `last_protagonist_visit` and anybody standing in it. It goes no
+  wider than that on purpose: punctuation, possessives and plurals stay
+  significant, because folding two genuinely different rooms into one would
+  destroy play rather than duplicate it. **Two names in one file that are one
+  name to a re-seed are refused** by `validate!`, so a rename never has two
+  candidates.
+- **A moved doorway has not gone missing** — the paragraph under `mechanics`
+  above.
+- **A rename no normalized name recognizes** — `The Supply Closet` edited to
+  `The Broom Cupboard` — is, to any loader, a room that does not exist yet.
+  Nothing in the file says which room it replaced. So the row is created and the
+  load prints a `WARNING:` naming it, on a world that has been played; the old
+  room is still there and `rake game:doctor` reports the pair whenever it can
+  recognize one.
+
+What still happens on every re-seed, and is the rule rather than a defect: **the
+file re-asserts itself.** An item the file puts on a shelf goes back on the
+shelf out of whoever's hands it was in, a character goes back where the file
+places them, `absent: true` is written and deleting it is taken off. A seed file
+is the authority on the world, not a suggestion. The party's own copy of the
+starting inventory is untouched — the loader searches the world's own rows
+before any playthrough's.
+
+**What `rake game:doctor` reports about a database that already has one of these
+shapes**, each with a `safe` repair where the answer is derivable from the file
+(`rake 'game:repair[<id>]'`, no model call):
+
+| finding | what it means | when it is `safe` |
+| --- | --- | --- |
+| `duplicate_locations` | two rows that are one room to a re-seed | the file declares one of the names and only one row has anybody's history in it — the fold moves the other row's items, cast and doorways over and removes what is left |
+| `duplicate_items` | two rows that are one item | the file names one of them and nothing refers to the others |
+| `mobile_doorway_re_asserted` | the file's own doorway is back on record after a night had moved it | closing it leaves the mobile room the arity the file gives it and strands nothing |
+
+For a clean rebuild rather than a reconciliation, `rake 'game:delete[<id>]'`
+then `bin/rails db:seed`, or drop the database.
+
+`lib/engine_sweep/scripts/reseed-a-played-world.yml` walks all of this offline:
+it plays a few turns, re-seeds mid-game, re-seeds again with the closet renamed,
+and asserts the records after each one.
 
 ## The worlds
 

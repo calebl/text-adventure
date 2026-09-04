@@ -1095,6 +1095,35 @@ The full audit of every planned piece of work against this constraint is in
   checks are ordered and never merged — one response can be both.
   (`ta-refusal-range`; `data/ta-refusal-range/report.md` is the sweep.)
 
+- **Re-seeding a played world reconciles instead of accumulating.** The loader
+  added and never looked, so seeding on top of a world in progress could leave
+  two of something — and the captain's own database had three shapes of it at
+  once: `The Supply Closet` and `Supply Closet` in *The Unrecorded Hour* with
+  the office opening onto both, two `Ward Office 12 daybook` rows in one pair of
+  hands, and two anchored doorways off every mobile room in *The Lunar
+  Cartographer*, which is where the phantom "Mournwell Lane now opens onto X
+  instead of Y" came from. **Decided behaviour: reconcile what the file can
+  prove, say out loud what it cannot, delete nothing.** A renamed row is the
+  same row, on `WorldSeed.natural_key` — case, whitespace and a leading article
+  are not part of a name and nothing wider, because folding two genuinely
+  different rooms into one would destroy play rather than duplicate it. A
+  doorway `WorldMechanic::ShuffleConnections` has moved is left where the world
+  put it: which anchored place a mobile room has come to rest against is
+  progress, like `last_run_at`, and the file never carried it. A rename no
+  normalized name recognizes is created and **warned about** by name, because
+  nothing in the file says which room it replaced. Refusing a played re-seed
+  outright was rejected — it is the captain's only way to pick up a file change
+  on the database he plays. `rake game:doctor` reports the shapes an older
+  database already holds (`duplicate_locations`, `duplicate_items`,
+  `mobile_doorway_re_asserted`), each with a `safe` fold in `rake game:repair`
+  that moves what is on the row a re-seed created onto the row with the history
+  and refuses a row anybody has touched — the first repairs in that class that
+  remove anything. `validate!` gained PR 85's authoring note as a rule: a
+  connection shuffle's edges must hang off at least two mobile rooms, or the
+  world validates, plays and never moves. Walked offline by
+  `lib/engine_sweep/scripts/reseed-a-played-world.yml`, which gained a
+  `reseed:` step kind for it. (`ta-reseed-safety`.)
+
 ### Not built yet
 
 Everything left is in **Next up** below. The loop moves, talks and narrates,
@@ -1722,10 +1751,16 @@ What it still owes, roughly in order:
   player can walk into a city that rearranged itself while they personally did
   nothing. Irrelevant for one player; the fix, if it matters, is a per-world
   clock rather than a per-story one.
-- **Re-seeding a played world re-asserts the graph the file declares.** The
-  loader adds and updates and never deletes, so seeding on top of a world whose
-  mechanic has moved edges leaves both the seeded edge and the moved one. Drop
-  the database for a clean rebuild — the same caveat as renaming a location.
+- ~~**Re-seeding a played world re-asserts the graph the file declares**~~ —
+  **fixed.** `WorldSeed::Loader` reconciles what the file can prove: a room or
+  an item the file renamed is the same row renamed (`WorldSeed.natural_key`),
+  and a doorway the nightly shuffle has moved is left where the world put it
+  rather than written back as a second one. What it cannot prove — a rename no
+  normalized name recognizes — is created and **warned about** on a world that
+  has been played, and `rake game:doctor` names the pair whenever it can
+  recognize one (`duplicate_locations`, `duplicate_items`,
+  `mobile_doorway_re_asserted`), each with a `safe` fold in `rake game:repair`.
+  Still adds and updates and never deletes anything play created.
 - **A failed arrival leaves a realized room nobody has stood in**, which is the
   designed behaviour working and is worth knowing how to read. Observed in the
   same run: the move's `Scene::Generator` call rotated to `qwen3:8b`, which

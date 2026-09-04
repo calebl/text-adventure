@@ -614,4 +614,114 @@ class Story::DoctorTest < ActiveSupport::TestCase
       assert_not_includes codes(story), :character_moved_from_the_seed, story.title
     end
   end
+
+  # --- what re-seeding a played world used to leave behind --------------------
+  #
+  # These three are the shapes the captain's own database holds. The loader
+  # cannot make them any more (`WorldSeed::Loader`'s header); a database that
+  # already has one needs to be told, which is what these are for.
+
+  test "reports two rooms that are one room to a re-seed" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    story.locations.find_by(name: "The Supply Closet").update!(last_protagonist_visit: story.start_time)
+    create(:location, story: story, name: "Supply Closet", detail_level: "stub", teaser: "The second one.")
+
+    assert_includes codes(story), :duplicate_locations
+    assert_equal :safe, finding(story, :duplicate_locations).remedy
+    assert_match(/declares one, "The Supply Closet"/, finding(story, :duplicate_locations).message)
+  end
+
+  test "two rooms both stood in cannot be folded, and says so" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    story.locations.find_by(name: "The Supply Closet").update!(last_protagonist_visit: story.start_time)
+    create(:location, story: story, name: "Supply Closet", detail_level: "stub",
+                      teaser: "The second one.", last_protagonist_visit: story.start_time)
+
+    assert_equal :manual, finding(story, :duplicate_locations).remedy
+    assert_match(/two histories cannot be folded into one/, finding(story, :duplicate_locations).message)
+  end
+
+  test "two rooms in a world with no checked-in file are nobody's to fold" do
+    story = healthy_story
+    create(:location, story: story, name: story.locations.first.name.downcase, detail_level: "stub", teaser: "x")
+
+    assert_equal :manual, finding(story, :duplicate_locations).remedy
+    assert_match(/no checked-in file declares any of them/, finding(story, :duplicate_locations).message)
+  end
+
+  test "reports two items that are one item to a re-seed" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    stamp = Item.in_story(story).find_by(name: "ward stamp")
+    create(:item, name: "Ward Stamp", description: "The second one.", character: nil, location: stamp.location)
+
+    assert_includes codes(story), :duplicate_items
+    assert_equal :safe, finding(story, :duplicate_items).remedy
+    assert_equal stamp, finding(story, :duplicate_items).subject, "the row the file names is the one that survives"
+  end
+
+  test "a duplicate item a player is carrying is theirs, not the file's" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    playthrough = create(:playthrough, story: story, current_location: story.opening_location)
+    create(:item, name: "Ward Stamp", description: "The second one.", character: nil, location: nil, playthrough: playthrough)
+
+    assert_equal :manual, finding(story, :duplicate_items).remedy
+    assert_match(/a player has handled one of the others/, finding(story, :duplicate_items).message)
+  end
+
+  # THE PHANTOM DOORWAY, read off the pair rather than off the count: a mobile
+  # room's arity is not the file's on a played world, because realizing it
+  # writes stub neighbours. What the file proves is that the doorway it declares
+  # is one the mechanic MOVES -- so that pair being on record after a night has
+  # run means something wrote it back.
+  test "reports the file's own doorway back on record after the world had moved it" do
+    story = moved_cartographer
+    circle = story.locations.find_by(name: "Sovereign's Circle")
+    # Somewhere else for the circle to hang off, so closing the lane's doorway
+    # onto it does not strand it -- which is what makes the finding `safe`.
+    connect(story.locations.find_by(name: "Larkspur Quarter rooftops"), circle)
+
+    assert_includes codes(story), :mobile_doorway_re_asserted
+    assert_equal :safe, finding(story, :mobile_doorway_re_asserted).remedy
+    assert_match(/which is the doorway db\/seeds\/worlds\/the-lunar-cartographer\.yml declares for it/,
+                 finding(story, :mobile_doorway_re_asserted).message)
+  end
+
+  # A doorway whose far side leads nowhere else cannot be closed at all, so the
+  # finding says so rather than promising a repair that would refuse.
+  test "a re-asserted doorway that cannot be closed without stranding something is by hand" do
+    story = moved_cartographer
+
+    assert_equal :manual, finding(story, :mobile_doorway_re_asserted).remedy
+    assert_match(/reachable from nowhere/, finding(story, :mobile_doorway_re_asserted).message)
+  end
+
+  test "the file's own doorway is no finding until a night has run" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-lunar-cartographer.yml"))
+    lane = story.locations.find_by(name: "Mournwell Lane")
+    connect(lane, create(:location, story: story, name: "The Long Quay", detail_level: "stub", teaser: "Barges."))
+
+    assert_nil story.world_mechanics.sole.last_run_at
+    assert_not_includes codes(story), :mobile_doorway_re_asserted
+  end
+
+  test "the checked-in worlds have no re-asserted doorway of their own" do
+    WorldSeed::Loader.load_all(io: nil).each do |story|
+      assert_not_includes codes(story), :mobile_doorway_re_asserted, story.title
+      assert_not_includes codes(story), :duplicate_locations, story.title
+      assert_not_includes codes(story), :duplicate_items, story.title
+    end
+  end
+
+  # The world that moves, one night on, with the file's own doorway written
+  # back over the arrangement the night produced -- which is exactly what a
+  # re-seed used to do. Built by hand rather than by running the mechanic, so
+  # the shape under test does not depend on which permutation came up.
+  def moved_cartographer
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-lunar-cartographer.yml"))
+    story.world_mechanics.sole.update!(last_run_at: story.start_time + 1.day)
+
+    lane = story.locations.find_by(name: "Mournwell Lane")
+    connect(lane, create(:location, story: story, name: "The Long Quay", detail_level: "stub", teaser: "Barges."))
+    story
+  end
 end

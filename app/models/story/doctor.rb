@@ -60,9 +60,11 @@ class Story::Doctor
       *story_fields,
       *universe_fields,
       *opening_location,
+      *duplicate_locations,
       *exits,
       *opening_scene,
       *connection_rows,
+      *re_asserted_doorways,
       *cast,
       *whereabouts,
       *scene_rows,
@@ -108,6 +110,124 @@ class Story::Doctor
         .filter_map { |row| [ row["fullname"], row["location"] ] if row["location"].present? }
         .to_h
     end
+  end
+
+  # `{ natural key => the name the file writes }` for this story's rooms, out
+  # of the checked-in world file, or empty for a story that is not one of them.
+  #
+  # KEYED ON `WorldSeed.natural_key` because that is the key `WorldSeed::Loader`
+  # matches a room under, so this answers the only question a duplicate-room
+  # finding needs: does the FILE say these two rows are one room, and what does
+  # it call it. A story with no file answers nothing and its duplicates are
+  # reported `manual`.
+  def seeded_location_names
+    @seeded_location_names ||= Array(seed_document && seed_document["locations"])
+                               .filter_map { |row| [ WorldSeed.natural_key(row["name"]), row["name"] ] if row["name"].present? }
+                               .to_h
+  end
+
+  # `{ natural key => the name the file writes }` for this story's items, on
+  # both sides of `Item::PLACES`, out of the checked-in world file. Empty for a
+  # story that is not one of them, which makes every duplicate in a generated
+  # world `manual` -- as it must be, since nothing is on record about which of
+  # two rows the world meant.
+  def seeded_item_names
+    @seeded_item_names ||= begin
+      document = seed_document
+      owners = Array(document && document["locations"]) + Array(document && document["characters"])
+
+      owners.flat_map { |owner| Array(owner["items"]) }
+            .filter_map { |item| [ WorldSeed.natural_key(item["name"]), item["name"] ] if item["name"].present? }
+            .to_h
+    end
+  end
+
+  # The doorways the checked-in file gives each `mobile: true` room: the edges
+  # it declares with exactly one mobile end, counted per mobile room, as
+  # `{ room name => count }`. What `WorldMechanic::ShuffleConnections` moves and
+  # what it preserves -- it repoints the far end and keeps the count.
+  def seeded_mobile_arity
+    @seeded_mobile_arity ||= begin
+      document = seed_document
+      mobile = Array(document && document["locations"]).select { |row| row["mobile"] }.map { |row| row["name"] }.to_set
+
+      Array(document && document["connections"]).filter_map do |row|
+        pair = Array(row["between"]).select { |name| mobile.include?(name) }
+        pair.first if pair.one?
+      end.tally
+    end
+  end
+
+  # The unordered endpoint pairs the checked-in file declares, as a set of
+  # sorted name pairs. Read by the arity finding to tell the doorway a re-seed
+  # re-asserted from the one the world's own mechanic moved.
+  def seeded_doorways
+    @seeded_doorways ||= Array(seed_document && seed_document["connections"])
+                         .map { |row| Array(row["between"]).sort }
+                         .to_set
+  end
+
+  # WHETHER ANYBODY HAS EVER BEEN IN THIS ROOM: a scene that happened here, a
+  # party standing here, or a stamped visit. The line between world and
+  # progress, drawn where `WorldSeed::Exporter` draws it, and the one a fold of
+  # two rows that are one room stops at -- `Story::Repair` reads it here rather
+  # than deciding for itself, so the two cannot disagree about which of the pair
+  # has the history.
+  #
+  # An OPENING arrival counts, though it is world data: destroying the row that
+  # holds it would take the story's one opening scene with it.
+  def stood_in?(room)
+    room.last_protagonist_visit.present? ||
+      room.scenes.exists? ||
+      Playthrough.where(current_location: room).exists?
+  end
+
+  # Whether anybody has handled this item: a party carrying it, or a turn log
+  # recording the take or the drop that moved it (`scenes.acted_on`). The item
+  # half of `#stood_in?`, and the line a `safe` fold of a duplicate stops at.
+  def untouched?(item)
+    item.playthrough_id.nil? && !Scene.where(acted_on: item).exists?
+  end
+
+  # EVERY LOCATION OF THE STORY STILL REACHABLE FROM EVERY OTHER WITH THIS ONE
+  # EDGE GONE, checked the same way `WorldMechanic::ShuffleConnections#connected?`
+  # checks its own arrangements: a breadth-first walk over a few dozen nodes.
+  #
+  # It is here rather than in `Story::Repair` because it decides the REMEDY as
+  # well as the repair. A doorway whose far side leads nowhere else cannot be
+  # closed at all -- The Celestial Spire in the captain's own database is a stub
+  # reachable only from the rooftops -- and a finding that promised `safe` and
+  # then refused every time would be worse than one that says what it is.
+  def whole_without?(row)
+    ids = story.locations.order(:id).pluck(:id)
+    return true if ids.size <= 1
+
+    dropped = [ row.location_id, row.connected_location_id ].sort
+    adjacency = Hash.new { |hash, key| hash[key] = [] }
+    LocationConnection.where(location_id: ids).pluck(:location_id, :connected_location_id).each do |pair|
+      next if pair.sort == dropped
+
+      adjacency[pair.first] << pair.last
+    end
+
+    reached = Set.new([ ids.first ])
+    frontier = [ ids.first ]
+    while (id = frontier.pop)
+      adjacency[id].each { |neighbour| frontier << neighbour if reached.add?(neighbour) }
+    end
+
+    reached.size == ids.size
+  end
+
+  # THE ROWS A DUPLICATE FINDING IS ABOUT, recomputed from the natural key.
+  # Read by `Story::Repair`, so the doctor and the repair cannot disagree about
+  # which rows are the pair -- the same reason they share `#taken_items`.
+  def duplicate_location_rows(key)
+    Location.where(story_id: story.id).order(:id).select { |room| WorldSeed.natural_key(room.name) == key }
+  end
+
+  def duplicate_item_rows(key)
+    duplicate_item_candidates(story_items.to_a).select { |item| WorldSeed.natural_key(item.name) == key }
   end
 
   # The fullnames the checked-in file marks `absent: true` -- nowhere on
@@ -208,6 +328,117 @@ class Story::Doctor
               "opens in #{play_location.name.inspect}, but the story's own opening location is the stub " \
               "#{declared.name.inspect} -- which is the one game:export writes as `opening` and Scene::Generator.opening realizes",
               :generate, subject: declared) ]
+  end
+
+  # TWO ROWS THAT ARE ONE ROOM. `WorldSeed::Loader` matches a location on
+  # `WorldSeed.natural_key` -- case, whitespace and a leading article are not
+  # part of the name -- and before it did, editing "Supply Closet" to "The
+  # Supply Closet" in a seed file created a second room beside the first and
+  # gave the office a doorway onto each. The captain's database holds that pair,
+  # which is what this exists to name.
+  #
+  # It is not only a seeding defect: `Playthrough::Classifier` resolves a move
+  # against the names of the rooms that lead out of here, so which of two rooms
+  # answering to one name the player walks into is an ordering accident -- the
+  # same argument `duplicate_items` makes about a take.
+  #
+  # SAFE ONLY WHEN THE FILE SAYS THEY ARE ONE ROOM and only one of the rows has
+  # anybody's history in it. Then the fold is the file's own statement rather
+  # than a judgement: `rake game:repair` moves what is on the empty row -- what
+  # is lying in it, anybody standing in it, its doorways -- onto the row with
+  # the history, and removes what is left. Nothing play created is destroyed.
+  # Two rows both carrying scenes are two histories and nothing can merge those
+  # honestly; a generated world has no file to prove anything. Both `manual`.
+  def duplicate_locations
+    story.locations.order(:id).group_by { |room| WorldSeed.natural_key(room.name) }.filter_map do |key, group|
+      next if group.one? || key.blank?
+
+      seeded = seeded_location_names[key]
+      stood_in = group.select { |room| stood_in?(room) }
+      remedy = seeded.present? && stood_in.size <= 1 ? :safe : :manual
+
+      finding(:duplicate_locations, :warning,
+              "#{group.size} locations are one room to a re-seed " \
+              "(#{group.map { |room| "##{room.id} #{room.name.inspect}" }.join(", ")})" \
+              "#{duplicate_location_verdict(seeded, stood_in)}",
+              remedy, subject: group.first)
+    end
+  end
+
+  # What makes the pair foldable, or what stops it. Split out for the same
+  # reason `#duplicate_item_verdict` is: the answers are different facts.
+  def duplicate_location_verdict(seeded, stood_in)
+    if seeded.blank?
+      ": no checked-in file declares any of them, so which of them is the room is not on record"
+    elsif stood_in.size > 1
+      ": #{seed_basename} declares one, #{seeded.inspect}, but somebody has stood in " \
+        "#{stood_in.size} of them and two histories cannot be folded into one"
+    else
+      ": #{seed_basename} declares one, #{seeded.inspect}, and " \
+        "#{stood_in.any? ? "only ##{stood_in.first.id} has anybody's history in it" : "nobody has stood in any of them"}"
+    end
+  end
+
+  # THE FILE'S OWN DOORWAY, BACK ON RECORD AFTER THE WORLD HAD MOVED IT, which
+  # is the shape a re-seed used to leave on every world that moves.
+  # `WorldMechanic::ShuffleConnections` repoints the far end of each
+  # mobile <-> anchored edge and preserves the count; `WorldSeed::Loader` then
+  # re-wrote the file's own pair, so the lane ended up opening onto both -- and
+  # a later night reported one of them as having moved when a player standing
+  # there saw no such thing. That is the phantom event the captain read, and
+  # his own Mournwell Lane carries it.
+  #
+  # WHAT IS PROVABLE HERE IS THE PAIR, NOT THE COUNT, and that distinction is
+  # the whole check. A mobile room's arity is NOT the file's on a played world:
+  # `Location::Generator#write_exits!` creates a stub neighbour when the room is
+  # realized, so the captain's lane legitimately leads onto two anchored places
+  # the file never mentioned. What the file can prove is that the doorway it
+  # declares is one the mechanic MOVES -- so finding that exact pair on record
+  # after a night has run means something wrote it back, and the only thing that
+  # writes an edge from a file is a re-seed.
+  #
+  # THE LIMIT, STATED. A permutation may legitimately land the file's own
+  # endpoint back on the room, and nothing on record tells that from a re-seed.
+  # It is reported anyway, because the cost of being wrong is one doorway
+  # closing on a world that moves its doorways every night, and it is only ever
+  # reported for a room that leads SEVERAL ways into the fixed city -- a room
+  # with one is left alone, since closing that one would strand it.
+  def re_asserted_doorways
+    return [] if seeded_doorways.empty? || shuffle_has_run.blank?
+
+    anchored = story.locations.where(mobile: false).pluck(:id)
+
+    story.locations.where(mobile: true).order(:id).flat_map do |room|
+      rows = LocationConnection.where(location: room, connected_location_id: anchored)
+                               .includes(:connected_location).order(:id).to_a
+      next [] if rows.size < 2
+
+      wanted = [ seeded_mobile_arity[room.name].to_i, 1 ].max
+
+      rows.select { |row| seeded_doorways.include?([ room.name, row.connected_location.name ].sort) }.map do |row|
+        strands = !whole_without?(row)
+        remedy = rows.size - 1 >= wanted && !strands ? :safe : :manual
+
+        finding(:mobile_doorway_re_asserted, :warning,
+                "#{room.name.inspect} is `mobile` and opens onto #{row.connected_location.name.inspect}, which is the " \
+                "doorway #{seed_basename} declares for it -- and #{shuffle_has_run.name.inspect} has run since " \
+                "(#{shuffle_has_run.last_run_at.utc.iso8601}), which repoints the far end of exactly these. So the " \
+                "file's own pair is on record because a re-seed wrote it back over the arrangement the world had " \
+                "moved to, and the room now leads #{rows.size} ways into the fixed city" \
+                "#{". Closing it would leave part of the world reachable from nowhere, so it stays until somebody decides what #{row.connected_location.name.inspect} should open onto" if strands}",
+                remedy, subject: row)
+      end
+    end
+  end
+
+  # The world's own connection shuffle, if it has ever run. Blank otherwise,
+  # and that is the gate: until a night has passed, the file's own pair being
+  # on record is simply the file, correctly loaded.
+  def shuffle_has_run
+    return @shuffle_has_run if defined?(@shuffle_has_run)
+
+    mechanic = story.world_mechanics.find_by(kind: "shuffle_connections")
+    @shuffle_has_run = mechanic&.last_run_at ? mechanic : nil
   end
 
   # A realized room with no way out is the documented cost of saving the
@@ -731,23 +962,64 @@ class Story::Doctor
   # resolves a typed line against a list of names, so the player types the name
   # and gets whichever the ordering hands over.
   #
+  # GROUPED ON `WorldSeed.natural_key`, the key `WorldSeed::Loader` now matches
+  # an item under, because that is where the pair came from: a seed file whose
+  # item name was edited was, to a loader keyed on the written name, an item
+  # that did not exist, and the captain's database held two
+  # `Ward Office 12 daybook` rows in one pair of hands because of it.
+  #
   # THE STARTING INVENTORY AND ITS COPIES ARE ONE THING. Every playthrough
   # carries its own copy of what the story starts the player with
   # (`Playthrough#take_up_the_starting_inventory`), so a world played four times
   # holds five rows called "Ward Office 12 daybook" and none of them is a
   # collision: no closed set ever offers two, because a party sees only its own.
   # The copies are dropped here and the world's own row speaks for them.
+  #
+  # SAFE ONLY WHEN THE FILE NAMES ONE OF THEM AND NOBODY HAS TOUCHED THE REST.
+  # The file declares one item under that key, and the loader has already
+  # written the file's own description, place and inscription onto the row it
+  # named -- so what is left over is a row nothing refers to, and
+  # `rake game:repair` removes it. A leftover a party is carrying, or one a turn
+  # log records taking, is somebody's and no fold of it is honest: `manual`.
   def duplicate_items(items)
-    starting = story.starting_inventory.pluck(:name).map { |name| name.to_s.downcase }.to_set
-    items = items.reject { |item| item.carried? && starting.include?(item.name.to_s.downcase) }
+    duplicate_item_candidates(items).group_by { |item| WorldSeed.natural_key(item.name) }.filter_map do |key, group|
+      next if group.one? || key.blank?
 
-    items.group_by { |item| item.name.to_s.downcase }.filter_map do |name, group|
-      next if group.one? || name.blank?
+      seeded = seeded_item_names[key]
+      survivor = group.detect { |item| item.name == seeded }
+      leftovers = survivor ? group - [ survivor ] : []
+      remedy = survivor && leftovers.all? { |item| untouched?(item) } ? :safe : :manual
 
       finding(:duplicate_items, :warning,
-              "#{group.size} items are called #{group.first.name.inspect} "               "(#{group.map(&:whereabouts).join("; ")}); the classifier resolves a take or a drop by name, so which one "               "the player gets is an ordering accident",
-              :manual, subject: group.last)
+              "#{group.size} items are one thing to a re-seed " \
+              "(#{group.map { |item| "##{item.id} #{item.name.inspect} #{item.whereabouts}" }.join("; ")}); " \
+              "the classifier resolves a take or a drop by name, so which one the player gets is an ordering " \
+              "accident#{duplicate_item_verdict(seeded, leftovers, remedy)}",
+              remedy, subject: survivor || group.last)
     end
+  end
+
+  # The sentence after the finding: what makes this pair foldable, or what
+  # stops it. Split out because the two answers are different facts and reading
+  # them inside the interpolation was worse than reading them here.
+  def duplicate_item_verdict(seeded, leftovers, remedy)
+    if remedy == :safe
+      ". #{seed_basename} declares one, #{seeded.inspect}, and nothing refers to the " \
+        "#{leftovers.one? ? "other row" : "#{leftovers.size} other rows"}"
+    elsif seeded.present?
+      ". #{seed_basename} declares #{seeded.inspect}, and a player has handled one of the others, so it is theirs"
+    else
+      ". No checked-in file declares any of them, so which one is the world's is not on record"
+    end
+  end
+
+  # Every item of this story that could be half of a collision: the starting
+  # inventory's per-playthrough copies are dropped, because a party sees only
+  # its own and no closed set ever offers two.
+  def duplicate_item_candidates(items)
+    starting = story.starting_inventory.pluck(:name).map { |name| WorldSeed.natural_key(name) }.to_set
+
+    items.reject { |item| item.carried? && starting.include?(WorldSeed.natural_key(item.name)) }
   end
 
   # A room holding more than `Item::Registry` would ever put in one. The

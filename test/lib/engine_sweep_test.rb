@@ -122,6 +122,74 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_match(/plyer/, error.message)
   end
 
+  # --- re-seeding a world the walk is in the middle of playing ---------------
+  #
+  # `reseed:` is the second thing a step can be that is not a line somebody
+  # typed, and it is here because a re-seed is what the captain does daily and
+  # nothing walked it. See `EngineSweep::Script`'s header.
+
+  test "a re-seed step puts back what the file says and creates nothing" do
+    result = walk(<<~SCRIPT)
+      story: The Unrecorded Hour
+      steps:
+      - type: take the ward stamp
+        expect:
+          carrying: [Ward Office 12 daybook, ward stamp]
+      - reseed: true
+        expect:
+          changed: false
+          here: [ward stamp]
+          carrying: [Ward Office 12 daybook]
+          exits: [The Supply Closet (realized), The Long Hallway (stub)]
+    SCRIPT
+
+    assert_predicate result, :passed?, result.report
+  end
+
+  # THE DEFECT: before `WorldSeed.natural_key`, a room the file renamed was a
+  # room that did not exist yet, so this load created a second closet and the
+  # office opened onto both.
+  test "a re-seed that renames a room renames the row rather than adding one" do
+    result = walk(<<~SCRIPT)
+      story: The Unrecorded Hour
+      steps:
+      - reseed:
+          locations: { The Supply Closet: Supply Closet }
+        expect:
+          exits: [Supply Closet (realized), The Long Hallway (stub)]
+          note: 'is "Supply Closet" in the file, so the row was renamed'
+    SCRIPT
+
+    assert_predicate result, :passed?, result.report
+  end
+
+  test "a step that is both a typed line and a re-seed raises" do
+    error = assert_raises(EngineSweep::InvalidScript) do
+      walk(<<~SCRIPT)
+        story: The Unrecorded Hour
+        steps:
+        - type: look
+          reseed: true
+      SCRIPT
+    end
+
+    assert_match(/can only be one/, error.message)
+  end
+
+  test "a misspelt reseed rename key raises rather than reading as a plain re-seed" do
+    error = assert_raises(EngineSweep::InvalidScript) do
+      walk(<<~SCRIPT)
+        story: The Unrecorded Hour
+        steps:
+        - reseed:
+            location: { The Supply Closet: Supply Closet }
+      SCRIPT
+    end
+
+    assert_match(/location/, error.message)
+    assert_match(/locations/, error.message)
+  end
+
   # --- two people playing one world -----------------------------------------
   #
   # THE ONE THING A SINGLE WALK CANNOT SEE. With the inventory on the story's
