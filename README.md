@@ -952,3 +952,7 @@ See **[ROADMAP.md](ROADMAP.md)** for where each of those sits in the queue.
 bin/rails test
 bundle exec rubocop
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
