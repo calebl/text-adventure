@@ -212,11 +212,25 @@ class Eval::Classifier::Bench
     # run and a set loaded off disk -- see `Eval::Classifier::Result::Stored`.
     def rows = readings.map { |reading| reading_h(reading) }
 
+    # THE `also_named` DETECTOR AS FOUR NUMBERS, so a pass can answer for itself
+    # without carrying its rows. `Eval::Classifier::Board` needs exactly these
+    # and the answered count; every other figure it prints is already a number
+    # on the pass. That is what makes a SUMMARY set -- one with `readings: []` --
+    # enough for `rake eval:classifier_board` and `rake eval:classifier_compare`,
+    # which is what the checked-in baseline is. See `Result#summary`.
+    def also_counts
+      { also_tp: scored.count(&:also_true_positive?), also_fp: scored.count(&:also_false_positive?),
+        also_fn: scored.count(&:also_false_negative?),
+        also_omitted: scored.count(&:also_named_omitted?), answered: scored.size,
+        readings_count: readings.size }
+    end
+
     def to_h = { arm:, rep:, accuracy: accuracy.round(4), intent_accuracy: intent_accuracy.round(4),
                  strict_accuracy: strict_accuracy.round(4), refusal_agreement: refusal_agreement.round(4),
                  closed_set_misses:, latency_median: latency_median.round(4),
                  latency_p95: latency_p95.round(4), failures:,
-                 rotations:, failures_by_class: failures_by_class, readings: rows }
+                 rotations:, failures_by_class: failures_by_class,
+                 **also_counts, readings: rows }
 
     def reading_h(reading)
       line = reading.line

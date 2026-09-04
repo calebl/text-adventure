@@ -1,0 +1,107 @@
+{
+  "name": "classifier-gemini-flash-lite",
+  "recorded_at": "2026-09-04T19:27:04Z",
+  "corpus_size": 300,
+  "corpus_digest": "33591b8ff9b42d87",
+  "arms": [
+    "google/gemini-2.5-flash-lite"
+  ],
+  "reps": 4,
+  "answered_by": [
+    "google/gemini-2.5-flash-lite"
+  ],
+  "warmups": [
+    {
+      "arm": "google/gemini-2.5-flash-lite",
+      "seconds": 1.0289,
+      "residency": "not_local",
+      "error": null
+    }
+  ],
+  "passes": [
+    {
+      "arm": "google/gemini-2.5-flash-lite",
+      "rep": 1,
+      "accuracy": 0.9133,
+      "intent_accuracy": 0.95,
+      "strict_accuracy": 0.898,
+      "refusal_agreement": 0.9306,
+      "closed_set_misses": 11,
+      "latency_median": 0.5368,
+      "latency_p95": 0.9021,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "readings": [],
+      "also_tp": 25,
+      "also_fp": 0,
+      "also_fn": 4,
+      "also_omitted": 0,
+      "answered": 300,
+      "readings_count": 300
+    },
+    {
+      "arm": "google/gemini-2.5-flash-lite",
+      "rep": 2,
+      "accuracy": 0.9133,
+      "intent_accuracy": 0.95,
+      "strict_accuracy": 0.898,
+      "refusal_agreement": 0.9306,
+      "closed_set_misses": 11,
+      "latency_median": 0.5289,
+      "latency_p95": 0.6274,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "readings": [],
+      "also_tp": 25,
+      "also_fp": 0,
+      "also_fn": 4,
+      "also_omitted": 0,
+      "answered": 300,
+      "readings_count": 300
+    },
+    {
+      "arm": "google/gemini-2.5-flash-lite",
+      "rep": 3,
+      "accuracy": 0.9133,
+      "intent_accuracy": 0.95,
+      "strict_accuracy": 0.898,
+      "refusal_agreement": 0.9306,
+      "closed_set_misses": 11,
+      "latency_median": 0.5323,
+      "latency_p95": 0.6359,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "readings": [],
+      "also_tp": 25,
+      "also_fp": 0,
+      "also_fn": 4,
+      "also_omitted": 0,
+      "answered": 300,
+      "readings_count": 300
+    },
+    {
+      "arm": "google/gemini-2.5-flash-lite",
+      "rep": 4,
+      "accuracy": 0.9133,
+      "intent_accuracy": 0.95,
+      "strict_accuracy": 0.898,
+      "refusal_agreement": 0.9306,
+      "closed_set_misses": 11,
+      "latency_median": 0.5361,
+      "latency_p95": 0.6507,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "readings": [],
+      "also_tp": 25,
+      "also_fp": 0,
+      "also_fn": 4,
+      "also_omitted": 0,
+      "answered": 300,
+      "readings_count": 300
+    }
+  ]
+}

@@ -87,9 +87,13 @@ The full audit of every planned piece of work against this constraint is in
   reach-that-finds-nothing right and none of the `other` or `examine-nothing`
   lines.
 
-  **The baseline of 2026-09-04**, four hosted models and 4,800 calls:
+  **The baseline of 2026-09-04 is checked in**, under `db/eval/` as three
+  summary sets — 12 KB rendering the same table as the 4.4 MB of runs they came
+  from — so `rake eval:classifier_board` prints it on any machine with no key,
+  no network and no database, and a later run gets a real REAL/NOISE verdict
+  against it. Four hosted models and 4,800 calls:
   `mistralai/mistral-medium-3.1` strict accuracy **0.939..0.951**, **8..11**
-  closed-set misses, 0.61s median / 0.88s p95, **0 failures of 1,200**;
+  closed-set misses (median 9.5), 0.61s median / 0.88s p95, **0 failures of 1,200**;
   `minimax/minimax-m3` **0.905..0.938**, 11..18 misses, the fastest median of the
   four (0.44s) and the second-worst p95 (1.83s), 7 schema failures;
   `google/gemini-2.5-flash-lite` **0.898 flat over all four repetitions**, 11

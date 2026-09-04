@@ -54,7 +54,7 @@ class Eval::Classifier::Result
   attr_reader :corpus_size, :corpus_digest, :arms, :reps, :passes, :warmups, :name, :recorded_at
 
   def initialize(corpus_size:, arms:, reps:, passes:, warmups: [], corpus_digest: nil,
-                 name: nil, recorded_at: nil)
+                 name: nil, recorded_at: nil, answered_by: nil)
     @corpus_size = corpus_size
     @corpus_digest = corpus_digest
     @arms = arms
@@ -65,6 +65,10 @@ class Eval::Classifier::Result
     @warmups = Array(warmups).map { |row| (row.respond_to?(:to_h) ? row.to_h : row).transform_keys(&:to_s) }
     @name = name
     @recorded_at = recorded_at
+    # RECORDED RATHER THAN DERIVED WHEN THE FILE HAS IT, because a summary set
+    # has no rows to derive it from and "which model really answered" is
+    # provenance a kept file must not lose.
+    @recorded_answered_by = Array(answered_by).presence
   end
 
   # WHAT THE FIRST CALL COST THIS ARM, and what the daemon said about keeping a
@@ -82,7 +86,7 @@ class Eval::Classifier::Result
   # THE MODELS THAT REALLY ANSWERED, out of the rows. Normally the same list;
   # different when the rotation answered a line, which is a fact about the set a
   # later reader has to be able to see.
-  def answered_by = rows.map { |row| row["answered_by"] }.compact.uniq.sort
+  def answered_by = @recorded_answered_by || rows.map { |row| row["answered_by"] }.compact.uniq.sort
 
   def self.load(directory)
     dir = Pathname.new(directory)
@@ -96,8 +100,36 @@ class Eval::Classifier::Result
     new(name: document["name"], recorded_at: document["recorded_at"],
         corpus_size: document["corpus_size"], corpus_digest: document["corpus_digest"],
         arms: document.fetch("arms"), reps: document["reps"],
-        warmups: document["warmups"].to_a,
+        warmups: document["warmups"].to_a, answered_by: document["answered_by"],
         passes: document.fetch("passes").map { |row| Stored.new(row) })
+  end
+
+  # THE SAME SET WITH ITS ROWS DROPPED, which is the form that gets checked in.
+  #
+  # A whole set is 1.1 MB a model because it keeps every reading, and that is
+  # right for `tmp/eval`: a rate can be redefined and recomputed without paying
+  # for the calls again. It is wrong for a file in the repo. So a KEPT set holds
+  # every pass's figures plus `#also_counts`, and `Stored` reads those from the
+  # field instead of counting rows -- enough for `rake eval:classifier_board`
+  # and `rake eval:classifier_compare` to run exactly as they do on a whole set.
+  #
+  # WHAT IT GIVES UP, stated rather than discovered later: the MISSED list, the
+  # per-shape and per-intent breakdowns, and any figure not already computed --
+  # everything that needs to know what a particular line came back as. Those
+  # live in the run's own output and in the PR body that quoted it.
+  def summary
+    kept = passes.map do |pass|
+      # The counts are computed BEFORE the rows go, or they could never be
+      # computed again -- which is the one way this conversion could quietly
+      # produce a file that renders a wrong table.
+      row = pass.to_h.transform_keys(&:to_s)
+                .merge(pass.also_counts.transform_keys(&:to_s), "readings" => [])
+      Stored.new(row)
+    end
+
+    self.class.new(name: name, recorded_at: recorded_at, corpus_size: corpus_size,
+                   corpus_digest: corpus_digest, arms: arms, reps: reps, warmups: warmups,
+                   answered_by: answered_by, passes: kept)
   end
 
   def write!(directory, name: nil)
@@ -169,5 +201,21 @@ class Eval::Classifier::Result
     def to_h = row
 
     def by_shape = rows.group_by { |row| row["shape"] }
+
+    # THE DETECTOR COUNTS, FROM THE FIELD IF IT IS THERE AND FROM THE ROWS IF IT
+    # IS NOT. A set written before these were recorded still answers correctly,
+    # by counting -- and a SUMMARY set, whose rows were dropped on purpose to be
+    # checked in, answers from the field. Neither reader has to know which kind
+    # of file it is holding.
+    def also_counts
+      return COUNTS.index_with { |key| row[key.to_s].to_i } if row.key?("also_tp")
+
+      { also_tp: rows.count { |r| r["also_tp"] }, also_fp: rows.count { |r| r["also_fp"] },
+        also_fn: rows.count { |r| r["also_fn"] },
+        also_omitted: rows.count { |r| r["also_omitted"] },
+        answered: rows.count { |r| r["error"].nil? }, readings_count: rows.size }
+    end
+
+    COUNTS = %i[also_tp also_fp also_fn also_omitted answered readings_count].freeze
   end
 end

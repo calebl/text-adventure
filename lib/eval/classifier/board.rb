@@ -38,8 +38,16 @@ class Eval::Classifier::Board
   Column = Data.define(:set, :result, :arm) do
     def local? = Eval::Classifier::Arm.parse(arm).local?
     def label = "`#{arm}`#{" *(local)*" if local?}"
-    def rows = result.for_arm(arm).flat_map { |pass| pass.rows.map { |row| row.transform_keys(&:to_s) } }
-    def calls = rows.size
+    # READ AS COUNTS AND NEVER AS ROWS, so a checked-in SUMMARY set -- which has
+    # no rows on purpose -- prints the same table as the whole run it came from.
+    # `Stored#also_counts` answers from the field when the field is there and by
+    # counting when it is not.
+    def counts
+      result.for_arm(arm).map(&:also_counts)
+            .each_with_object(Hash.new(0)) { |row, all| row.each { |key, value| all[key] += value } }
+    end
+
+    def calls = counts[:readings_count]
     def rotations = result.for_arm(arm).sum(&:rotations)
   end
 
@@ -114,6 +122,14 @@ class Eval::Classifier::Board
       return "not recorded" if values.empty?
 
       spread = column.result.spread(figure, arm: column.arm)
+      # A COUNT KEEPS ITS HALF. See `Eval.count`: the median of four counts is
+      # fractional half the time, and printing 9.5 as 9 understates the figure
+      # `closed_set_misses` exists to state.
+      if Eval::Classifier::Result::COUNTED.include?(figure)
+        return Eval.count(spread.median) if spread.min == spread.max
+
+        return format("%d..%d (%s)", spread.min, spread.max, Eval.count(spread.median))
+      end
       return format(figure_format(figure), spread.median) if spread.min == spread.max
 
       format("#{figure_format(figure)}..#{figure_format(figure)} (#{figure_format(figure)})",
@@ -121,42 +137,35 @@ class Eval::Classifier::Board
     end
 
     def figure_format(figure)
-      return "%d" if Eval::Classifier::Result::COUNTED.include?(figure)
       return "%.2fs" if Eval::Classifier::Result::SECONDS.include?(figure)
 
       "%.3f"
     end
 
-    def detector(column)
-      rows = column.rows
-      { tp: rows.count { |row| row["also_tp"] }, fp: rows.count { |row| row["also_fp"] },
-        fn: rows.count { |row| row["also_fn"] } }
-    end
-
     def precision(column)
-      counts = detector(column)
-      answered = counts[:tp] + counts[:fp]
+      counts = column.counts
+      answered = counts[:also_tp] + counts[:also_fp]
       return "no second name answered" if answered.zero?
 
-      format("%.3f (%d of %d)", counts[:tp].fdiv(answered), counts[:tp], answered)
+      format("%.3f (%d of %d)", counts[:also_tp].fdiv(answered), counts[:also_tp], answered)
     end
 
     def recall(column)
-      counts = detector(column)
-      there = counts[:tp] + counts[:fn]
+      counts = column.counts
+      there = counts[:also_tp] + counts[:also_fn]
       return "--" if there.zero?
 
-      format("%.3f (%d of %d)", counts[:tp].fdiv(there), counts[:tp], there)
+      format("%.3f (%d of %d)", counts[:also_tp].fdiv(there), counts[:also_tp], there)
     end
 
-    # THE FIGURE PR 102's FINDING F4 ASKED FOR, over the calls that answered:
+    # THE FIGURE PR 102's FINDING F4 ASKED FOR, over the calls that ANSWERED:
     # a failed call has no provider JSON to read a missing field out of.
     def omission(column)
-      answered = column.rows.reject { |row| row["error"] }
-      return "no answers" if answered.empty?
+      counts = column.counts
+      return "no answers" if counts[:answered].zero?
 
-      omitted = answered.count { |row| row["also_omitted"] }
-      format("%.3f (%d of %d)", omitted.fdiv(answered.size), omitted, answered.size)
+      format("%.3f (%d of %d)", counts[:also_omitted].fdiv(counts[:answered]),
+             counts[:also_omitted], counts[:answered])
     end
 
     # WHAT A THOUSAND CLASSIFIER CALLS COST ON THIS ARM, which is the figure that

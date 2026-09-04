@@ -144,7 +144,9 @@ class Eval::Classifier::Report
   # A COUNT IS PRINTED AS A COUNT. `closed_set_misses` is a number of lines, not
   # a rate, so formatting it to three decimals would be a lie about what it is.
   def band(metric, spread)
-    return format("%3d..%-3d (median %3d)", spread.min, spread.max, spread.median) if counted?(metric)
+    if counted?(metric)
+      return format("%3d..%-3d (median %s)", spread.min, spread.max, Eval.count(spread.median))
+    end
     return format("%6.2fs..%-6.2fs (median %6.2fs)", spread.min, spread.max, spread.median) if seconds?(metric)
 
     format("%.3f..%.3f (median %.3f)", spread.min, spread.max, spread.median)

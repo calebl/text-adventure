@@ -420,6 +420,19 @@ can carry it.
 
 ### The baseline of 2026-09-04 — four hosted models, 4,800 calls
 
+**These three sets are checked in**, under `db/eval/`, and this table is printed
+from them: `rake eval:classifier_board` with no arguments reads them on any
+machine, with no key, no network and no database. So the table below and the
+files agree by construction, and a later run can be given a real REAL / NOISE
+verdict against today's numbers rather than against a paragraph.
+
+```bash
+rake eval:classifier_board                              # today's baseline, from db/eval
+rake eval:classifier SET=after-a-prompt-change          # your run, into tmp/eval
+rake eval:classifier_compare BEFORE=classifier-remote AFTER=after-a-prompt-change \
+    BEFORE_MODEL=mistralai/mistral-medium-3.1 AFTER_MODEL=mistralai/mistral-medium-3.1
+```
+
 Three sets, printed as one table by `rake eval:classifier_board`. 300 lines × 4
 reps an arm; every rate `min..max (median)` across repetitions, never pooled. A
 single number means the four repetitions agreed exactly.
@@ -431,14 +444,14 @@ single number means the four repetitions agreed exactly.
 | `accuracy` | **0.943..0.953 (0.950)** | 0.906..0.936 (0.918) | 0.857..0.866 (0.861) | 0.913 |
 | `intent_accuracy` | **0.980..0.983 (0.980)** | 0.966..0.977 (0.973) | 0.962..0.973 (0.967) | 0.950 |
 | `refusal_agreement` | **0.951..0.959 (0.955)** | 0.946..0.971 (0.949) | 0.893..0.902 (0.896) | 0.931 |
-| `closed_set_misses` | **8..11 (9)** | 11..18 (17) | 30..32 (30) | 11 |
+| `closed_set_misses` | **8..11 (9.5)** | 11..18 (17) | 30..32 (30.5) | 11 |
 | `also_named` precision | **1.000** | 0.788 | 0.553 | **1.000** |
 | `also_named` recall | 0.888 | 0.897 | **0.948** | 0.862 |
 | omission rate | **0.000** | **0.000** | **0.000** | **0.000** |
 | latency median (warm) | 0.61s | **0.44s** | 0.92s | 0.53s |
 | latency p95 (warm) | 0.88s | 1.83s | 3.23s | **0.64s** |
 | cost per 1,000 calls | $0.19 | $0.14 | **$0.03** | $0.05 |
-| failed calls | **0** | 1..3 (1) | 1..24 (7) | **0** |
+| failed calls | **0** | 1..3 (1.5) | 1..24 (7) | **0** |
 | rotations | 0 of 1200 | 0 of 1200 | 0 of 1200 | 0 of 1200 |
 
 **`also_named` is a precision/recall trade and the four sit all over it.**
@@ -486,7 +499,31 @@ the stored scores alone."*
 Same convention as the prose loop. `SET=<name>`, defaulting to
 `classifier-<timestamp>`; the durable artifact is
 **`tmp/eval/<set>/classifier.json`**, beside the `scores.json` an `eval:run` set
-writes. It is `classifier.json` and not `scores.json` because one set can
+writes.
+
+**Two places a set is read from, in this order:** `tmp/eval/<set>` first, then
+**`db/eval/<set>`** — the checked-in baseline. A run you just paid for therefore
+wins over one the repo ships under the same name, which is the less surprising of
+the two possible surprises; nothing writes to `db/eval` except a person deciding
+to keep a set. `Eval.set_path` is the one place that order lives, and
+`Eval::Classifier::KeptSetsTest` pins it.
+
+**A kept set is a SUMMARY, and that is deliberate.** A whole set is 1.1 MB a
+model because it keeps every reading — right for `tmp/eval`, where a rate can be
+redefined and recomputed without paying for the calls again, and wrong for a file
+in the repo. `Result#summary` drops the rows and keeps every pass's figures plus
+the four `also_named` counts and the answered count, which is exactly what
+`eval:classifier_board` and `eval:classifier_compare` read: **12 KB for the whole
+baseline against 4.4 MB, rendering a byte-identical table.** What it gives up is
+stated rather than discovered later — the MISSED list, the per-shape and
+per-intent breakdowns, and any figure not already computed. Those live in the
+run's own output.
+
+```bash
+# keeping a set, which is a decision and not a side effect of running one
+bin/rails runner 'Eval::Classifier::Result.load(Eval.root.join("my-set")) \
+  .summary.write!(Eval.kept_root.join("my-set"), name: "my-set")'
+``` It is `classifier.json` and not `scores.json` because one set can
 legitimately hold both a prose run and a bench, and two files of one name
 cannot.
 
