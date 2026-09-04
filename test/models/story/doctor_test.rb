@@ -393,6 +393,27 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_includes codes(story), :character_outside_the_story
   end
 
+  # Not broken -- a seed file may hand-author a crowd -- but the registry will
+  # place nobody else there, and the whole cast goes into the classifier's closed
+  # enum on every turn. The exact counterpart of `room_over_item_cap`.
+  test "reports a room holding more people than the engine would ever place in one" do
+    story = healthy_story
+    room = story.locations.find_by(name: "Your Office")
+    (Character::Registry::MAX_PER_ROOM + 1).times { create(:character, story: story, location: room) }
+
+    assert_includes codes(story), :room_over_cast_cap
+    assert_match(/"Your Office" has 4 people standing in it/, finding(story, :room_over_cast_cap).message)
+    assert Story::Doctor.new(story).playable?
+  end
+
+  test "a room at the cast cap exactly is not over it" do
+    story = healthy_story
+    room = story.locations.find_by(name: "Your Office")
+    Character::Registry::MAX_PER_ROOM.times { create(:character, story: story, location: room) }
+
+    assert_not_includes codes(story), :room_over_cast_cap
+  end
+
   # THE PREMISE CHECK. Only asked of a story that IS one of the checked-in
   # worlds, and the answer is on record in the file -- so it is `safe` and
   # `Story::Repair` puts them back.

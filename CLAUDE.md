@@ -216,7 +216,11 @@ The current database includes the following story-related models with proper ass
   is the Tide Post defect written down — arriving there recorded the protagonist
   alone on all three runs checked, in a world whose premise is a man chained to
   that post, because the cast was regenerated from scratch on every arrival. It
-  places and it does not invent; creating people is `ta-narrator-memory`'s
+  places and it does not invent; creating people is `ta-narrator-memory`'s, and
+  `#admit!` is the seam it plugs into. **Nothing in `app/` calls `#admit!`
+  today** and the class header says so: nothing produces a proposed cast yet.
+  `MAX_PER_ROOM` is live — `rake game:doctor` reports a room past it, exactly
+  as it does for `Item::Registry::MAX_PER_ROOM`
 - **Item::Registry** → how items come to *exist*, and the only thing in the app
   that creates one: 0–3 things written as records when a room is realized, out
   of the same call that describes it (`Location::DetailSchema`'s optional

@@ -378,7 +378,7 @@ class Story::Doctor
                 .where(is_companion: [ false, nil ]).order(:id).to_a
 
     [ *characters_nowhere(cast), *characters_in_a_stub(cast), *characters_outside_the_story(cast),
-      *characters_the_seed_placed_elsewhere ]
+      *rooms_over_the_cast_cap, *characters_the_seed_placed_elsewhere ]
   end
 
   # Nobody has said where they are. `rake game:backfill_whereabouts` recovers
@@ -428,6 +428,28 @@ class Story::Doctor
               "##{character.location.story_id} and not this one; the record cannot be saved and no closed set " \
               "in this story will ever offer them",
               :manual, subject: character)
+    end
+  end
+
+  # A ROOM HOLDING MORE PEOPLE THAN THE ENGINE WOULD EVER PLACE IN ONE. The exact
+  # counterpart of `#rooms_over_the_item_cap`, and neither is broken: a seed file
+  # may hand-author a crowd and `Character#move_to!` is an explicit decision.
+  # It is worth saying out loud because `Character::Registry` will place nobody
+  # else there, and because the room's whole cast -- fullname AND nickname
+  # apiece -- goes into `Playthrough::IntentSchema`'s closed enum on every turn.
+  def rooms_over_the_cast_cap
+    counts = story.characters.where.not(location_id: nil).group(:location_id).count
+
+    counts.filter_map do |location_id, count|
+      next if count <= Character::Registry::MAX_PER_ROOM
+
+      room = story.locations.find(location_id)
+      finding(:room_over_cast_cap, :warning,
+              "#{room.name.inspect} has #{count} people standing in it, past the " \
+              "#{Character::Registry::MAX_PER_ROOM} the engine will ever place in one room " \
+              "(Character::Registry::MAX_PER_ROOM); every one of them goes into the classifier's closed enum " \
+              "on every turn",
+              :manual, subject: room)
     end
   end
 

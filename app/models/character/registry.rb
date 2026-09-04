@@ -41,6 +41,19 @@
 # Refusals are DROPPED, never raised, on `Item::Registry`'s rule: a room
 # realized with two of the three people the proposal named is a good room, and
 # a realization that threw away its description over a cast is not.
+#
+# WHAT CALLS `#admit!` TODAY: nothing in `app/`, and that is stated rather than
+# hidden. Nothing in the app produces a proposed cast yet -- the seed file
+# writes its own placements straight, because a hand-authored world IS the
+# decision and re-seeding has to be able to put a played world's cast back
+# (`WorldSeed::Loader#load_characters!`), and `Character#move_to!` is the
+# explicit call for a mechanic that means to move somebody. So this is a seam
+# with its rule written down and tested, in the same way
+# `EngineSweep::Invariants#doors_unchanged` asserts something an offline walk
+# cannot currently break: it is the assertion the DEFECT broke, and it fires
+# the moment anything starts proposing a cast. `MAX_PER_ROOM` is not idle
+# either -- `Story::Doctor` reports a room past it, exactly as it reports a
+# room past `Item::Registry::MAX_PER_ROOM`.
 class Character::Registry
   # HOW MANY PEOPLE THE ENGINE WILL PLACE IN ONE ROOM, in total and not per
   # call -- the same distinction `Item::Registry::MAX_PER_ROOM` documents. It
