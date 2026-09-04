@@ -56,6 +56,8 @@ rake game:backfill_whereabouts      # place characters who have none, from the a
                                     # still on disk. Offline; refuses to guess; DRY_RUN=1
 rake game:backfill_items            # split one shared set of items into the world's own rows and
                                     # each playthrough's copies. Offline; refuses to guess; DRY_RUN=1
+rake game:backfill_stat_blocks      # roll a body for everybody written before characters.level and
+                                    # characters.hit_die existed. Offline, deterministic; DRY_RUN=1
 rake game:score                     # the scoreboard: a rate per check, the movement since the
                                     # baseline, and every flagged turn with what was typed and
                                     # the passage. SAVE=1 to re-baseline; CORPUS=corpus or
@@ -358,6 +360,49 @@ The current database includes the following story-related models with proper ass
   `Scene::TransitionBackfill`'s header before changing it. Read the columns
   through `#recorded_action` / `#acted_on_record`: a `Scene` also comes out of
   an `rake eval:run` database whose table predates them
+- **Character** → `level` and `hit_die`, **THE STAT BLOCK, AND IT IS THE
+  WORLD'S**. Two integers and nothing else: `hit_die` (one of
+  `Character::HIT_DICE`) is how tough the body is, and `level` is **stored and
+  inert** — nothing reads it for behaviour, nothing advances it, and
+  `#advance!` is the explicit call deliberately invoked from nowhere, exactly
+  as `#move_to!` was when it landed. `#max_hp` is DERIVED and never stored:
+  `hit_die + (level - 1) * (hit_die / 2 + 1)`, with **no ability term**, because
+  there are no abilities at all — the captain's ruling of 2026-09-04. Both
+  columns are nullable: a character written before them has no stat block, which
+  `rake game:doctor` REPORTS rather than anything inventing a value, and half a
+  block is refused. Written by a seed file (`characters[].stats`), by
+  `Character::Registry`, by `Character::Generator` and by
+  `rake game:backfill_stat_blocks` — and **by no model, ever**:
+  `Character::StatBlock` rolls it through `Roll`, and nothing in any schema or
+  prompt asks for a number
+- **Roll** → the dice, and the one place a seed is built. Plain integer
+  arithmetic over `(story, playthrough, story clock, sequence)` — **never
+  `String#hash`**, which Ruby salts per process, the trap
+  `WorldMechanic::ShuffleConnections`'s header already names. Determinism is
+  what lets `DRY_RUN=1` print the numbers the real run writes
+- **Playthrough::Vitals** → **HOW MUCH IS LEFT OF ONE BODY IN ONE GAME**, one
+  row per `(playthrough, character)`: the `Item` layer split applied to people.
+  **AN ABSENT ROW MEANS UNHURT**, which is the ordinary state of almost
+  everybody in every world. `Playthrough#vitals_for` is the ONE reader — it
+  answers a `Condition` value and never the record — and
+  `Playthrough::Turn#harm!` / `#mend!` are the ONLY writers: no prose touches a
+  number, and there is no narrator tool for damage. Created lazily at first
+  contact by `Playthrough::Vitals::Snapshot`, called beside `Item::Snapshot`
+  through the one seam `Playthrough::Snapshot`, so a room's things and its
+  people are copied together or not at all. `hp_current` is the whole state and
+  `#dead?` reads it, because two columns saying one thing can disagree
+- **Playthrough** → `ended_at`, **THE GAME IS OVER, AND IT IS OVER FOR EXACTLY
+  ONE REASON**. The captain's ruling of 2026-09-04: *"zero hit points means
+  death. Playthrough is over and you can't do anything else. You have to start a
+  new playthrough."* Written by `Playthrough::Turn#harm!` in the same
+  transaction as the last hit point, on STORY time. `Playthrough::Turn#play` and
+  `Playthrough::Mechanics#run` refuse every line while it is set, **in front of
+  the classifier**, so a line typed into a finished game costs no model call and
+  writes nothing at all; `Playthrough::Refusal.dead` is the refusal and
+  `Playthrough::DeathNotice` the one author of the words the player reads. No
+  death saves, no unconscious state, no scars, no revival, no
+  restore-from-save — every one of those is deferred, and copy that hinted at
+  one would promise a thing the app does not have
 - **Playthrough** → **Playthrough::Drifts**: one row per turn on which a reach
   resolved to nothing. The drift counter; never pruned
 - **Playthrough::Feedback** → the player's verdict on one turn (`good` / `weak`
@@ -570,6 +615,27 @@ The current database includes the following story-related models with proper ass
   failed reach. `take` and `drop` still use `Scene::Narrator#narrate(fact:)` for
   what they DID; only the reach case left that seam.
 
+### When the player is dead
+- **Zero hit points means death and death ends the playthrough.** The captain's
+  ruling of 2026-09-04. `Playthrough::Turn#harm!` writes the last hit point and
+  `playthroughs.ended_at` in one transaction; `Playthrough::Turn#play` and
+  `Playthrough::Mechanics#run` then refuse every typed line **before the world
+  catches up, before the snapshot and before the classifier**, so a line typed
+  into a finished game costs no model call and writes nothing.
+- **The refusal is engine output, never narration.**
+  `Playthrough::Refusal.dead` is the fourth shape and `Playthrough::DeathNotice`
+  is the ONE author of both the refused-line sentence and the standing statement
+  the play page shows where the input used to be. Read its header first.
+- **What is NOT built, and it is deferred rather than missing**: death saves, an
+  unconscious state, scars, revival, restore-from-save, and any level
+  advancement rule. There is also no combat, no attack roll, no AC, no
+  initiative, no rest, no ability score, no skill, no spell, no number on an
+  `Item`, and no `Story::Audit` prose check reading HP against narration.
+- `lib/engine_sweep/scripts/death-ends-a-playthrough.yml` walks it: harm to
+  zero, then every kind of line refused with nothing written.
+  `the-unrecorded-hour-two-bodies.yml` walks the other half — one game ending is
+  one game ending.
+
 ### Sweeping the engine with stored scripts
 - `rake game:sweep` (`EngineSweep`) walks YAML scripts of typed lines through
   `Playthrough::Mechanics` with `model: false` and asserts the records after
@@ -581,6 +647,10 @@ The current database includes the following story-related models with proper ass
   length of a run and raises `EngineSweep::ModelCalled`. Each walk loads its own
   copy of the seeded world under a title of its own inside a rolled-back
   transaction, so it is safe against a database mid-game.
+- `stat_blocks_unmoved` is the same statement about a BODY: no typed line may
+  write `characters.level` or `characters.hit_die`, because a stat block is the
+  world's. What a walk DOES write is `playthrough_vitals`, on the other side of
+  the layer split, so `harm 5` walks the whole engine without this moving.
 - `EngineSweep::Expectation::KEYS` is **closed** — an unknown key raises rather
   than passing quietly. `EngineSweep::Invariants` checks the whole world after
   every walk, because an invented door and an over-full room are things

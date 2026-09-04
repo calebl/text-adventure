@@ -37,6 +37,14 @@ class Playthrough < ApplicationRecord
   # -- the templates these are copies of -- are untouched, which is the whole
   # point of the split: deleting a game cannot empty a room.
   has_many :items, dependent: :destroy
+  # HOW MUCH IS LEFT OF EACH BODY THIS GAME HAS MET, one row per character.
+  # Destroyed with the playthrough on the same reasoning as the chats and the
+  # items: what has happened to somebody is this player's progress, and the
+  # world's own `characters.hit_die` is untouched by it. Read through
+  # `#vitals_for` and never through the association -- one reader, so the prompt,
+  # the read-out and the sweep cannot come to disagree about a number.
+  has_many :vitals, class_name: "Playthrough::Vitals", dependent: :destroy,
+                    inverse_of: :playthrough
 
   # THE WORLD, COPIED INTO THIS GAME AS IT BEGINS: the story's starting
   # inventory into the party's own hands, and the room the player opens in.
@@ -102,6 +110,67 @@ class Playthrough < ApplicationRecord
     return Item.none if character.nil?
 
     Item.of_playthrough(self).for_character(character).order(:id)
+  end
+
+  # HOW MUCH IS LEFT OF SOMEBODY, IN THIS GAME, AND THE ONE READER OF IT.
+  #
+  # `Playthrough::Moment`'s line to the narrator, the `rake game:mechanics`
+  # read-out and `EngineSweep::Expectation`'s `hp:` all come through here, for
+  # the same reason `#carried` is the one reader of the party's hands: a second
+  # copy of the query is a second answer waiting to disagree.
+  #
+  # AN ABSENT ROW MEANS UNHURT, and this is the one place that rule is written.
+  # Almost every person in a world is never touched, so a row per NPC per game
+  # saying "nothing has happened" would be writing the default down -- see
+  # `Playthrough::Vitals`. The answer is a `Condition` rather than the record, so
+  # there is something to say either way and so a reader is handed no `update!`.
+  #
+  # NIL FOR SOMEBODY WITH NO STAT BLOCK, which is the honest nothing: there is
+  # no maximum, so there is no condition to state. `rake game:doctor` reports
+  # the person (`character_without_a_stat_block`) and every consumer here is
+  # written to say nothing rather than to guess.
+  def vitals_for(character)
+    return nil if character.nil? || !character.stat_block?
+
+    Playthrough::Vitals::Condition.for(character, vitals.find_by(character: character))
+  end
+
+  # THE PLAYER'S OWN CONDITION, which is the one the prose and the read-out are
+  # about. Nil for a playthrough with no protagonist -- a world can be seeded
+  # without one -- and then nothing anywhere says anything about a body.
+  def condition = vitals_for(character)
+
+  # WHETHER THIS GAME IS OVER, AND IT IS OVER FOR EXACTLY ONE REASON.
+  #
+  # The captain's ruling of 2026-09-04: *"zero hit points means death.
+  # Playthrough is over and you can't do anything else. You have to start a new
+  # playthrough."* `Playthrough::Turn#play` and `Playthrough::Mechanics#run` ask
+  # this before anything else they do, so a line typed into a finished game
+  # costs no model call and writes nothing at all.
+  #
+  # A COLUMN AND NOT A DERIVATION, though the protagonist's `hp_current` implies
+  # it: the two are asked in different places for different reasons (this on
+  # every turn, before the classifier; the condition when there is something to
+  # say about a body), and a playthrough with no protagonist can still be handed
+  # a `#end!` by a mechanic that has not been written yet. `rake game:doctor`
+  # reports a disagreement rather than either half repairing the other silently.
+  def over? = ended_at.present?
+
+  # THE END, WRITTEN ONCE. `Playthrough::Turn#harm!` is the only caller, and it
+  # calls it in the same statement that takes the last hit point.
+  #
+  # STORY TIME, NOT THE WALL CLOCK (AGENTS.md -> *Story time*): the playthrough
+  # ended at the moment in the fiction the player died, which is where their own
+  # clock stands. `Time.current` here would date a death rehearsed from a backup
+  # to whenever the backup was opened.
+  #
+  # Idempotent: a game that is already over keeps the moment it ended at, so
+  # nothing can quietly re-date a death.
+  def end!(at: story_now)
+    return self if over?
+
+    update!(ended_at: at)
+    self
   end
 
   # WHERE THIS PLAYTHROUGH STANDS ON THE STORY'S CLOCK -- the moment the player
@@ -294,7 +363,7 @@ class Playthrough < ApplicationRecord
   def take_up_the_opening_snapshot
     return if story.nil?
 
-    snapshot = Item::Snapshot.new(self)
+    snapshot = Playthrough::Snapshot.new(self)
     snapshot.of_the_party!
     snapshot.of_the_room!(current_location)
   end

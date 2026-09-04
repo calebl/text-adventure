@@ -369,6 +369,39 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal "shuffle_connections", reloaded.world_mechanics.sole.kind
   end
 
+  # --- the stat block --------------------------------------------------------
+
+  test "exports a character's stat block, so re-seeding gives back the same body" do
+    create(:character, :protagonist, story: @story, level: 2, hit_die: 10)
+
+    stats = WorldSeed::Exporter.new(@story).document["characters"].first["stats"]
+
+    assert_equal({ "level" => 2, "hit_die" => 10 }, stats)
+  end
+
+  # Omitted rather than written null, like `opening`, `mobile`, `absent` and
+  # `readable`: the file says which bodies the world decided and stays quiet
+  # about the ones nobody has.
+  test "a character with no stat block carries no stats key at all" do
+    create(:character, :protagonist, :without_a_stat_block, story: @story)
+
+    assert_not WorldSeed::Exporter.new(@story).document["characters"].first.key?("stats")
+  end
+
+  # Export, load the file back over the world it came from, export again: the
+  # file has to be the same file, which is the whole point of the exporter and
+  # the one way a re-seed can be trusted not to drift a body.
+  test "a stat block survives a round trip" do
+    character = create(:character, :protagonist, story: @story, level: 3, hit_die: 6)
+    first = WorldSeed.dump(WorldSeed::Exporter.new(@story).document)
+
+    character.update!(level: 1, hit_die: 8)
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(first)).load!
+
+    assert_equal [ 3, 6 ], [ reloaded.protagonist.level, reloaded.protagonist.hit_die ]
+    assert_equal first, WorldSeed.dump(WorldSeed::Exporter.new(reloaded).document)
+  end
+
   private
 
   def connect(from, to)

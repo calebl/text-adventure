@@ -83,6 +83,40 @@
 #                        absent from the world.
 #   `Character::Registry` never places one -- the second half of the rule the
 #                        registry exists for.
+#
+# ------------------------------------------------------------------------
+# THE STAT BLOCK: `level` AND `hit_die`, AND THE ENGINE ROLLS BOTH.
+#
+# The captain's ruling of 2026-09-04: *"No abilities for now. Levels are stored
+# but inert in the first PR. A model cannot set an NPC's numbers, the engine
+# rolls them."* So the whole of what a body is, here, is two integers:
+#
+#   `hit_die`   HOW TOUGH THIS BODY IS. One of `HIT_DICE`, chosen by a roll
+#               (`Roll.one_of`) and never by a model. It is the only number that
+#               says anything about anybody, and `#max_hp` is derived from it.
+#   `level`     STORED AND INERT. Nothing reads it for behaviour, nothing
+#               advances it, and `#advance!` is the explicit call that would --
+#               deliberately called from nowhere, exactly as `#move_to!` was
+#               when it landed. Advancement wants a source (the queued
+#               `ta-story-arc`'s quest completion is the obvious one) and this
+#               PR does not invent one.
+#
+# THERE ARE NO ABILITY SCORES, and that is a ruling rather than an omission: no
+# strength, no dexterity, no will, and no `check <ability> <dc>`. `#max_hp` has
+# no ability term in it for the same reason.
+#
+# NULLABLE, on this class's own rule. A character written before the columns
+# existed has no stat block, and that is a real state `rake game:doctor` reports
+# (`character_without_a_stat_block`) rather than one anything invents a value
+# for -- the same rule `location_id` above is nullable under.
+# `rake game:backfill_stat_blocks` rolls one for every such row, offline and
+# deterministically, and it is one of `bin/update`'s steps.
+#
+# WHAT IS *NOT* HERE, and belongs one layer down: how much is left of the body.
+# `characters.hit_die` is who somebody IS, which two people playing one world
+# both meet; what has HAPPENED to them is `Playthrough::Vitals`, one row per
+# game. The same split `Item` makes between the world's own rows and a
+# playthrough's copies, and made for the same reason.
 # ------------------------------------------------------------------------
 class Character < ApplicationRecord
   belongs_to :story
@@ -99,6 +133,14 @@ class Character < ApplicationRecord
   # The durable conversations somebody is having with this character, one per
   # playthrough. See Chat::CHARACTER.
   has_many :chats, dependent: :destroy
+  # HOW MUCH IS LEFT OF THIS BODY, one row per game that has met them. Destroyed
+  # with the character on the same reasoning the chats are: a condition with
+  # nobody to be the condition OF is a row no reader can ever answer from. See
+  # `Playthrough::Vitals`, and read it through `Playthrough#vitals_for` rather
+  # than through this association -- one reader, for the same reason
+  # `Character.present_in` is the one reader of who is in a room.
+  has_many :vitals, class_name: "Playthrough::Vitals", dependent: :destroy,
+                    inverse_of: :character
 
   enum :sex, { male: "male", female: "female", non_binary: "non-binary",
                trans_woman: "trans woman", trans_man: "trans man" }
@@ -139,6 +181,19 @@ class Character < ApplicationRecord
 
   attribute :is_companion, :boolean, default: false
 
+  # THE DICE A BODY CAN BE. Three, and they are the shapes an open-RPG stat
+  # block has always used: a d6 body is frail, a d8 body ordinary, a d10 body
+  # hard to put down. It is a closed list rather than a range because it is what
+  # `Roll.one_of` draws from -- the engine picks one of three, and a number
+  # outside them arrived from somewhere that is not the engine.
+  HIT_DICE = [ 6, 8, 10 ].freeze
+
+  # WHAT A LEVEL MAY BE. Stored and inert (see the header), so this bounds a
+  # column nothing advances -- which is exactly when a bound is cheap and worth
+  # having: the day something does advance it, the ceiling is already written
+  # down.
+  LEVELS = (1..20).freeze
+
   # Two people in one story cannot share a full name -- a player has no other
   # handle on who they are talking to. Case-insensitive, and backed by a unique
   # index on (story_id, LOWER(fullname)) so it holds under concurrency too.
@@ -147,6 +202,13 @@ class Character < ApplicationRecord
   validates :fullname, presence: true,
                        uniqueness: { scope: :story_id, case_sensitive: false }
   validates :age, presence: true, numericality: { greater_than: 0 }
+  # THE STAT BLOCK, VALIDATED ONLY WHEN IT IS THERE. Both columns are nullable
+  # because "nobody has rolled one" is a real state (see the header), and both
+  # are refused a value outside the engine's own tables -- a hit die of 7 or a
+  # level of 0 is a number no roll in this app can produce.
+  validates :level, inclusion: { in: LEVELS }, allow_nil: true
+  validates :hit_die, inclusion: { in: HIT_DICE }, allow_nil: true
+  validate :a_stat_block_is_whole
   validates :sex, presence: true, inclusion: { in: sexes.keys }
   validate :race_belongs_to_story_universe
   validate :single_protagonist_per_story
@@ -295,6 +357,47 @@ class Character < ApplicationRecord
     update!(location: location, deliberately_absent: location ? false : deliberately_absent)
   end
 
+  # WHETHER THE ENGINE HAS A BODY FOR THIS PERSON AT ALL. Both halves, because
+  # `#max_hp` needs both and half a stat block is not one -- `#a_stat_block_is_whole`
+  # refuses to save one, so in practice this is one question asked once.
+  def stat_block? = level.present? && hit_die.present?
+
+  # HOW MUCH THIS BODY CAN HOLD, DERIVED AND NEVER STORED.
+  #
+  #   max_hp = hit_die + (level - 1) * (hit_die / 2 + 1)
+  #
+  # A first level is the whole die -- the toughest a body of that kind starts --
+  # and every level after it adds the die's AVERAGE ROUNDED UP, which is
+  # `hit_die / 2 + 1` in integer arithmetic (a d8 adds 5). It is the arithmetic
+  # an open-RPG stat block has always used with the ability term struck out, and
+  # the term is struck out because there are no abilities: the captain's ruling
+  # of 2026-09-04.
+  #
+  # DERIVED SO THERE IS ONE NUMBER PER BODY AND NOT TWO. A stored maximum is a
+  # second place the same fact lives, and the day a re-seed lowers a hit die the
+  # two would disagree with nothing to say which was right.
+  #
+  # Nil for somebody with no stat block, which is what makes it safe to ask of
+  # anybody: `Playthrough::Vitals` reads nil as "there is no maximum to start
+  # them at" and writes no row.
+  def max_hp
+    return nil unless stat_block?
+
+    hit_die + (level - 1) * (hit_die / 2 + 1)
+  end
+
+  # THE EXPLICIT ENGINE CALL FOR A LEVEL, and it is deliberately called from
+  # nowhere -- exactly as `#move_to!` was when it landed, and for the same
+  # reason. Levels are STORED AND INERT in this PR (the captain's ruling of
+  # 2026-09-04): advancement needs a source, this game has no kills, and
+  # inventing one here would be inventing a rule nobody asked for. When there is
+  # a source -- a quest step completed is the obvious one -- this is the
+  # statement it calls, and `#max_hp` follows from it with nothing else to
+  # change.
+  def advance!(to = level.to_i + 1)
+    update!(level: to)
+  end
+
   # NOWHERE, AND MEANT: the explicit counterpart of `#move_to!` for the state a
   # seed file asserts with `absent: true`. `WorldSeed::Loader` writes it on
   # load and `Story::Repair` writes it for a world seeded before the marker
@@ -350,6 +453,17 @@ class Character < ApplicationRecord
       afraid of, or has done, and you do not invent any of it. Anything more
       you learn from what #{them.fullname} says and does, here, now.
     ADDRESSEE
+  end
+
+  # HALF A STAT BLOCK IS NOT ONE. `#max_hp` needs both columns, so a row with a
+  # hit die and no level is somebody the engine cannot say anything about while
+  # looking as though it can -- worse than the honest nothing, which is what
+  # `rake game:doctor` reports and `rake game:backfill_stat_blocks` fills in.
+  def a_stat_block_is_whole
+    return if level.present? == hit_die.present?
+
+    errors.add(:base, "has half a stat block (#{level.present? ? "a level and no hit die" : "a hit die and no level"}); " \
+                      "the engine rolls both together or neither")
   end
 
   # The player is exactly one person, so a story cannot have two characters

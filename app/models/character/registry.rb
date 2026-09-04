@@ -52,6 +52,13 @@
 # choose what they are. `#slots` is memoized for exactly that reason: the
 # prompt and the row have to agree about the person in slot 1.
 #
+# AND SO IS THEIR BODY, and that one is not even stated. `characters.level` and
+# `characters.hit_die` are rolled by `Character::StatBlock` -- the captain's
+# ruling of 2026-09-04, *"A model cannot set an NPC's numbers, the engine rolls
+# them"* -- and the realization prompt says nothing about them, because a hit
+# die is of no use to a paragraph. There is therefore no field on
+# `Location::DetailSchema`'s `people` for a model to have answered with one.
+#
 # THREE BOUNDS, and each is read back from the records rather than counted down
 # from a budget: `MAX_PER_CALL` on one answer, `MAX_PER_ROOM` on the room, and
 # `MAX_PER_STORY` on the whole world. A room generates for as long as somebody
@@ -245,6 +252,13 @@ class Character::Registry
       race: details[:race],
       age: details[:age],
       sex: details[:sex],
+      # AND THE ENGINE ROLLS THEIR BODY. The captain's ruling of 2026-09-04 --
+      # *"A model cannot set an NPC's numbers, the engine rolls them"* -- and it
+      # is the same rule the race, age and sex above are already under, one
+      # column further: `Location::DetailSchema` has no field for a stat and
+      # nothing in the realization prompt mentions one, so there is nothing here
+      # for a model to have answered. See `Character::StatBlock`.
+      **Character::StatBlock.for_new(story, sequence: slot),
       **SHEET.to_h { |name| [ name, field(attributes, name) ] }
     )
   rescue SanitizesGeneratedText::TruncatedTextError => e

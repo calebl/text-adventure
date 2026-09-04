@@ -322,6 +322,41 @@ namespace :game do
     end
   end
 
+  desc "Roll a body for everybody who has no stat block. Usage: rake game:backfill_stat_blocks, DRY_RUN=1 to see it first"
+  task :backfill_stat_blocks, [ :story_id ] => :environment do |t, args|
+    scope = args[:story_id] ? Story.where(id: Helpers.story!(args[:story_id]).id) : Story.all
+    dry = ENV["DRY_RUN"].present?
+
+    puts "A BODY FOR EVERYBODY WHO WAS WRITTEN BEFORE THERE WERE BODIES."
+    puts "`characters.level` and `characters.hit_die` are written from now on -- by a seed file, by"
+    puts "Character::Registry and by Character::Generator. This rolls one for every character older"
+    puts "than the columns, because the engine is the only author those numbers ever had (the"
+    puts "captain's ruling of 2026-09-04). Deterministic, so this dry run's numbers are the ones a"
+    puts "real run writes. Offline, no model call."
+    puts "DRY RUN: nothing is written." if dry
+    puts
+
+    rolled = 0
+    scope.order(:created_at, :id).each do |story|
+      answers = Character::StatBackfill.new(story).run(dry_run: dry)
+      next if answers.empty?
+
+      rolled += answers.size
+      puts format("  %-40s rolled %3d", story.title.truncate(40), answers.size)
+      answers.each { |answer| puts "      #{answer}" }
+    end
+
+    puts
+    if rolled.zero?
+      puts "Nothing to do: everybody in the database already has a body."
+    else
+      puts "#{rolled} stat block(s) rolled. `Character#max_hp` follows from them, and every"
+      puts "playthrough takes its own copy of a condition at first contact (Playthrough::Vitals)."
+      puts "A seeded world's `characters[].stats` re-asserts itself over these on the next"
+      puts "`bin/rails db:seed`, which is the file being the decision it always is."
+    end
+  end
+
   desc "Score the game against the errors that can be checked. Usage: rake game:score, SAVE=1 to re-baseline, CORPUS=database|corpus|transitions"
   task :score, [ :story_id ] => :environment do |t, args|
     boards =

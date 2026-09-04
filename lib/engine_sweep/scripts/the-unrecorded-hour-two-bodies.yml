@@ -1,0 +1,121 @@
+# TWO PEOPLE PLAYING ONE WORLD HAVE TWO BODIES, and one of them dying does not
+# touch the other.
+#
+# The captain's ruling of 2026-09-04 applied to people. `the-unrecorded-hour-two-players.yml`
+# is this argument for the items -- what one party picks up is gone from ITS
+# floor and nobody else's -- and this is the same statement one table over:
+# `characters.hit_die` is the WORLD's answer to how tough Odile Vance is, and
+# `playthrough_vitals.hp_current` is how much is left of her IN ONE GAME.
+#
+# WHAT ONLY TWO PLAYTHROUGHS CAN SEE. With a condition stored on the character
+# row, both games would read one number and no single-player script could tell
+# the difference. `player:` names whose game a step is typed into; the two here
+# are playthroughs of THE SAME loaded copy of the world.
+#
+# AND THE TERMINAL STATE IS PER GAME TOO, which is the part that would hurt
+# most if it were wrong: `playthroughs.ended_at` is a column on the playthrough,
+# so the first player dying must leave the second one playing. The last four
+# steps are that.
+#
+# The numbers: the file gives Odile Vance `level: 1, hit_die: 6`, so
+# `Character#max_hp` is 6 for both games.
+story: The Unrecorded Hour
+why: a body's condition and a game's ending belong to the playthrough, not to the world's character row
+steps:
+- id: first-starts-unhurt
+  type: look
+  expect:
+    location: Ward Office 12 (realized)
+    hp: 6
+    dead: false
+
+- id: second-starts-unhurt-too
+  type: look
+  player: second
+  why: a second game of one world starts from the world, not from the first game's state
+  expect:
+    location: Ward Office 12 (realized)
+    hp: 6
+    dead: false
+
+- id: first-is-hurt
+  type: harm 4
+  expect:
+    change: Odile Vance unhurt -> badly hurt (2 of 6)
+    hp: 2
+    dead: false
+    changed: true
+
+- id: second-is-not
+  type: vitals
+  player: second
+  why: THE DEFECT THIS SCRIPT EXISTS FOR. With hp on the character row this read 2
+  expect:
+    hp: 6
+    dead: false
+    changed: false
+    refused: false
+
+- id: second-takes-its-own-wound
+  type: harm 1
+  player: second
+  why: two games can each hurt Odile Vance, because there are two conditions to hurt
+  expect:
+    change: Odile Vance unhurt -> hurt (5 of 6)
+    hp: 5
+    dead: false
+    changed: true
+
+- id: first-is-still-where-it-was
+  type: vitals
+  why: the second player's wound did not reach into the first player's game
+  expect:
+    hp: 2
+    dead: false
+    changed: false
+
+- id: first-dies
+  type: harm 2
+  expect:
+    change: Odile Vance badly hurt (2 of 6) -> dead
+    hp: 0
+    dead: true
+    changed: true
+
+- id: first-is-finished
+  type: look
+  expect:
+    hp: 0
+    dead: true
+    refused: true
+
+- id: second-is-still-playing
+  type: look
+  player: second
+  why: ended_at is a column on the PLAYTHROUGH, so one game ending is one game ending
+  expect:
+    location: Ward Office 12 (realized)
+    hp: 5
+    dead: false
+    refused: false
+    changed: false
+
+- id: and-can-still-move
+  type: go to the Supply Closet
+  player: second
+  why: not merely unrefused -- the second game plays on through the branch that moves the player
+  expect:
+    location: The Supply Closet (realized)
+    hp: 5
+    dead: false
+    changed: true
+
+- id: and-can-still-be-mended
+  type: mend 1
+  player: second
+  why: the writers are reachable in the game that is still running, and only in it
+  expect:
+    change: Odile Vance hurt (5 of 6) -> unhurt
+    hp: 6
+    dead: false
+    changed: true

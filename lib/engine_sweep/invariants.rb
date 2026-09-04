@@ -55,6 +55,21 @@
 #                        file catches everything "nobody is nowhere" would --
 #                        somebody who LOST their room during the walk fails it
 #                        -- and does not fail on a world that means it.
+#   stat_blocks_unmoved  every character's `level` and `hit_die` are what the
+#                        world file says they are, and somebody the file gives
+#                        no `stats` still has none. It is `cast_unmoved` for the
+#                        body instead of the whereabouts, and it is the world
+#                        half of the captain's ruling of 2026-09-04: a stat
+#                        block is the WORLD's, so no typed line may write one.
+#                        What a walk does write is `playthrough_vitals` -- how
+#                        much is left of somebody in ONE game -- and that is a
+#                        different table on the other side of the layer split,
+#                        so `harm 5` walks all the way through the engine
+#                        without this moving. Stated as "unmoved" rather than as
+#                        "everybody has one" for the same reason `cast_unmoved`
+#                        is: a file that gives nobody a stat block is a
+#                        legitimate world, and comparing against the file
+#                        catches everything the stronger sentence would.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
@@ -91,7 +106,8 @@ class EngineSweep::Invariants
   end
 
   def check
-    [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, nothing_was_written ].flatten.compact
+    [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, stat_blocks_unmoved,
+      nothing_was_written ].flatten.compact
   end
 
   private
@@ -219,6 +235,31 @@ class EngineSweep::Invariants
     return nil if moved.empty?
 
     broken("cast_unmoved", moved.join("; "))
+  end
+
+  # `{ fullname => [level, hit_die] }` out of the file, with nil for somebody it
+  # gives no `stats` -- so a character who ACQUIRED a body during the walk fails
+  # just as loudly as one who lost it, which is the shape `#cast_in_file` uses
+  # for the same reason.
+  def stats_in_file
+    Array(seed["characters"]).to_h do |row|
+      stats = row["stats"]
+      [ row["fullname"], stats.is_a?(Hash) ? [ stats["level"], stats["hit_die"] ] : nil ]
+    end
+  end
+
+  def stat_blocks_unmoved
+    changed = story.characters.order(:id).filter_map do |character|
+      wanted = stats_in_file[character.fullname]
+      now = character.stat_block? ? [ character.level, character.hit_die ] : nil
+      next if now == wanted
+
+      "#{character.fullname} is #{now ? "level #{now.first}, d#{now.last}" : "without a stat block"} and the file " \
+        "says #{wanted ? "level #{wanted.first}, d#{wanted.last}" : "nothing"}"
+    end
+    return nil if changed.empty?
+
+    broken("stat_blocks_unmoved", changed.join("; "))
   end
 
   def nothing_was_written

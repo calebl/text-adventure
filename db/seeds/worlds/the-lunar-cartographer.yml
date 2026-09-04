@@ -73,6 +73,9 @@ opening_scene:
 characters:
 - fullname: Isbet Marrow
   race: Scorch Nomads
+  stats:
+    level: 1
+    hit_die: 8
   nickname: Iz
   age: 34
   sex: female
@@ -90,6 +93,9 @@ characters:
 - fullname: Grenn Ollivar
   race: Lunar Sovereigns
   location: Grenn's Boarding House, Room 3
+  stats:
+    level: 1
+    hit_die: 6
   nickname: Old Grenn
   age: 61
   sex: male

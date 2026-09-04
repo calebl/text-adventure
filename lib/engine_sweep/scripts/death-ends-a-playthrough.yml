@@ -1,0 +1,168 @@
+# ZERO HIT POINTS MEANS DEATH, AND DEATH IS THE END OF THE GAME.
+#
+# The captain's ruling of 2026-09-04, verbatim: *"zero hit points means death.
+# Playthrough is over and you can't do anything else. You have to start a new
+# playthrough. Eventually, we can add going back to saved previous state."*
+#
+# This is that ruling as a walk. It harms the player down to nothing one command
+# at a time -- through `Playthrough::Turn#harm!`, the engine's own writer, not a
+# second copy of it -- and then types every kind of line the game has at a dead
+# playthrough and asserts that each one is refused and changed nothing.
+#
+# WHAT ONLY A WALK CAN SEE HERE. A unit test can assert that `#harm!` ends the
+# playthrough and that `#play` refuses afterwards. What it cannot assert is that
+# EVERY WAY IN is refused: a move, a take, a drop, a read and a look all reach
+# the engine through different branches of `Playthrough::Mechanics#act`, and the
+# gate has to be in front of all of them. It is -- one statement, the first in
+# `#run` -- and this is what would notice if somebody moved it.
+#
+# AND THAT IT COSTS NOTHING. The refusal is in front of the classifier, so a
+# line typed into a finished game makes no model call at all. `EngineSweep`
+# replaces `BaseAgent.new` with something that raises for the length of a run,
+# so every step below is that assertion too.
+#
+# THE STAT BLOCK IS THE WORLD'S AND THE CONDITION IS THIS GAME'S, which is what
+# `EngineSweep::Invariants#stat_blocks_unmoved` checks after the walk: Odile
+# Vance is still level 1 with a d6 in the world file, however dead she is in
+# this playthrough. The whole ruling in one invariant.
+#
+# The numbers: `the-unrecorded-hour.yml` gives Odile Vance `level: 1,
+# hit_die: 6`, so `Character#max_hp` is `6 + 0 * 4` = 6.
+story: The Unrecorded Hour
+why: zero hit points ends a playthrough, and every line typed after it is refused
+steps:
+- id: she-starts-unhurt
+  type: look
+  why: an absent vitals row means unhurt, so the read-out has a condition before anything wrote one
+  expect:
+    location: Ward Office 12 (realized)
+    hp: 6
+    dead: false
+    changed: false
+    refused: false
+
+- id: vitals-is-a-read-and-changes-nothing
+  type: vitals
+  why: an engine-view command, no model call, no write
+  expect:
+    hp: 6
+    dead: false
+    changed: false
+    refused: false
+
+- id: a-mend-at-full-health-does-nothing-but-is-not-refused
+  type: mend 3
+  why: the ceiling is Character#max_hp, so mending past full is full
+  expect:
+    understood: mend -> 3 hit points
+    hp: 6
+    dead: false
+    changed: true
+
+- id: harm-takes-hit-points-off
+  type: harm 2
+  why: Playthrough::Turn#harm!, the engine's own writer -- this mode holds no copy of it
+  expect:
+    understood: harm -> 2 hit points
+    change: Odile Vance unhurt -> hurt (4 of 6)
+    hp: 4
+    dead: false
+    changed: true
+
+- id: mend-puts-one-back
+  type: mend 1
+  why: the mirror of harm, and it stops at the maximum
+  expect:
+    change: Odile Vance hurt (4 of 6) -> hurt (5 of 6)
+    hp: 5
+    dead: false
+    changed: true
+
+- id: half-gone-reads-as-badly-hurt
+  type: harm 2
+  why: one threshold and not a table of them -- half the maximum or worse
+  expect:
+    change: badly hurt (3 of 6)
+    hp: 3
+    dead: false
+    changed: true
+
+- id: a-harm-that-would-overshoot-stops-at-zero
+  type: harm 99
+  why: how far past dead is a number this game has no use for
+  expect:
+    change: Odile Vance badly hurt (3 of 6) -> dead
+    hp: 0
+    dead: true
+    changed: true
+
+- id: and-the-change-line-says-the-game-is-over
+  type: look
+  why: the read-out carries it, because a dead page with no explanation is worse than none
+  expect:
+    hp: 0
+    dead: true
+    refused: true
+    offers: is dead, and this playthrough is over
+
+- id: a-move-is-refused
+  type: go to the Supply Closet
+  why: the gate is in front of the dispatch, so the branch that moves the player is never reached
+  expect:
+    location: Ward Office 12 (realized)
+    refused: true
+    changed: false
+    offers: Nothing you type can change it
+    drifts: 0
+
+- id: a-take-is-refused-and-the-floor-is-untouched
+  type: take the ward stamp
+  why: the stamp is still lying here, because nothing below the gate ran
+  expect:
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+    refused: true
+    changed: false
+
+- id: a-drop-is-refused-and-the-hands-are-untouched
+  type: drop the daybook
+  why: the other app-owned transfer, refused by the same one statement
+  expect:
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+    refused: true
+    changed: false
+
+- id: a-read-is-refused
+  type: read the daybook
+  why: reading changes nothing and is still refused -- the game is over, not merely write-locked
+  expect:
+    refused: true
+    changed: false
+    offers: Start a new playthrough
+
+- id: a-talk-is-refused-with-the-death-and-not-with-the-prose-note
+  type: talk to Sub-Inspector Rowe
+  why: the death gate is in front of the branch that would have said "talking is prose"
+  expect:
+    refused: true
+    changed: false
+    offers: is dead, and this playthrough is over
+
+- id: a-mend-cannot-raise-the-dead
+  type: mend 6
+  why: death is terminal. The engine-view commands are refused by the gate like anything else
+  expect:
+    hp: 0
+    dead: true
+    refused: true
+    changed: false
+
+- id: even-a-look-is-refused
+  type: look
+  why: EVERY further typed line, which is what the ruling says
+  expect:
+    hp: 0
+    dead: true
+    refused: true
+    changed: false

@@ -59,6 +59,14 @@ module Update
   #                                 take is invisible, every row a player
   #                                 carried off reads as one of the world's own,
   #                                 and the rooms stay empty for everybody.
+  #   stat blocks before repairs    same rule, and it is worth naming because
+  #                                 the step is not a recovery: `Story::Repair`
+  #                                 clears `character_without_a_stat_block` and
+  #                                 `protagonist_without_vitals` one row at a
+  #                                 time, and the backfill clears the first for
+  #                                 a whole story in one pass. Run the other way
+  #                                 round and the repairs do the backfill's work
+  #                                 finding by finding.
   #   backfills before repairs      `Story::Repair`'s safe remedies act on
   #                                 findings the backfills remove
   #                                 (`protagonist_holds_a_taken_item` and
@@ -72,6 +80,7 @@ module Update
     Update::Steps::BackfillTransitions,
     Update::Steps::BackfillWhereabouts,
     Update::Steps::BackfillItems,
+    Update::Steps::BackfillStatBlocks,
     Update::Steps::SafeRepairs,
     Update::Steps::Doctor
   ].freeze

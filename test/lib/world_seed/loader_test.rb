@@ -66,6 +66,62 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal [ "A Daybook" ], character.items.pluck(:name)
   end
 
+  # --- the stat block, which a hand-authored world IS the decision about ------
+
+  test "loads a character's stat block when the file gives one" do
+    world = document
+    world["characters"].first["stats"] = { "level" => 2, "hit_die" => 10 }
+
+    character = WorldSeed::Loader.new(world).load!.protagonist
+
+    assert_equal [ 2, 10 ], [ character.level, character.hit_die ]
+    assert_equal 16, character.max_hp
+  end
+
+  # NOTHING IS ROLLED ON LOAD. A file that says nothing about a body leaves the
+  # columns exactly as they are, so a re-seed cannot quietly rewrite a world
+  # because somebody edited a different part of the file.
+  test "a character the file gives no stats to gets none" do
+    character = WorldSeed::Loader.new(document).load!.protagonist
+
+    assert_not_predicate character, :stat_block?
+  end
+
+  test "re-seeding re-asserts the file's stat block over a played world" do
+    world = document
+    world["characters"].first["stats"] = { "level" => 1, "hit_die" => 10 }
+    story = WorldSeed::Loader.new(world).load!
+    story.protagonist.update!(hit_die: 6)
+
+    WorldSeed::Loader.new(world).load!
+
+    assert_equal 10, story.protagonist.reload.hit_die
+  end
+
+  test "rejects a stat block with only half of itself" do
+    world = document
+    world["characters"].first["stats"] = { "level" => 1 }
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+    assert_match(/both together or neither/, error.message)
+  end
+
+  test "rejects a hit die the engine would never roll" do
+    world = document
+    world["characters"].first["stats"] = { "level" => 1, "hit_die" => 7 }
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+    assert_match(/hit die 7/, error.message)
+  end
+
+  test "rejects a level outside the declared range" do
+    world = document
+    world["characters"].first["stats"] = { "level" => 0, "hit_die" => 8 }
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+    assert_match(/level 0/, error.message)
+  end
+
   # WHAT IS LYING IN A ROOM, which is the closed set `take` resolves against and
   # the only way a world can carry anything takeable at all.
   test "loads an item lying in a location, in the room and in nobody's hands" do

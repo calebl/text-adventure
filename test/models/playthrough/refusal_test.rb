@@ -163,16 +163,45 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
     assert_match(/is not one of/, error.message)
   end
 
-  # The three shapes are the whole of it, so a fourth added without a sentence
-  # would be a refusal with nothing in it.
-  test "every kind the class declares is one .for can produce" do
+  # The four shapes are the whole of it, so a fifth added without a sentence
+  # would be a refusal with nothing in it. `:dead` comes off the second entry
+  # point rather than `.for`: it is a fact about the GAME and there is no
+  # `Intent` behind it, which is exactly why it has a constructor of its own.
+  test "every kind the class declares is one of the two entry points can produce" do
     produced = [
       refuse(intent(:take, item: @index, also_named: @apron)),
       refuse(intent(:take)),
-      refuse(intent(:other, unknown_action: "steal"))
+      refuse(intent(:other, unknown_action: "steal")),
+      Playthrough::Refusal.dead(typed: "look")
     ].map(&:kind)
 
     assert_equal Playthrough::Refusal::KINDS.sort, produced.sort
+  end
+
+  test "a dead refusal states the death, names the player and offers a new playthrough" do
+    refusal = Playthrough::Refusal.dead(typed: "go north", character: @rowe)
+
+    assert_equal :dead, refusal.kind
+    assert_equal "go north", refusal.typed
+    assert_match(/#{Regexp.escape(@rowe.fullname)} is dead/, refusal.text)
+    assert_match(/new playthrough/, refusal.text)
+  end
+
+  # "Nothing has changed" is an invitation to try again, and there is nothing to
+  # try: the game is over. Both readings drop it, and only for this shape.
+  test "a dead refusal does not tell the player nothing has changed" do
+    refusal = Playthrough::Refusal.dead(typed: "look")
+
+    assert_not_includes refusal.text, Playthrough::Refusal::UNCHANGED
+    assert_not_includes refusal.reason, Playthrough::Refusal::UNCHANGED
+    assert refusal.game_over?
+    assert_not refuse(intent(:take)).game_over?
+  end
+
+  test "a dead refusal with no protagonist addresses the player instead of naming one" do
+    refusal = Playthrough::Refusal.dead(typed: "look")
+
+    assert_match(/You are dead/, refusal.text)
   end
 
   private

@@ -82,6 +82,9 @@ opening_scene:
 characters:
 - fullname: Odile Vance
   race: Copyists' Line
+  stats:
+    level: 1
+    hit_die: 6
   nickname: Vance
   age: 41
   sex: female
@@ -110,6 +113,9 @@ characters:
 - fullname: Perrin Lasco
   race: Marginalia
   absent: true
+  stats:
+    level: 1
+    hit_die: 6
   nickname: Perrin
   age: 29
   sex: male
@@ -127,6 +133,9 @@ characters:
 - fullname: Halkett Rowe
   race: Ledger-Kept
   location: Ward Office 12
+  stats:
+    level: 1
+    hit_die: 8
   nickname: Sub-Inspector Rowe
   age: 52
   sex: male

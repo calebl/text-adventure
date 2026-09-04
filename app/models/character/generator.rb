@@ -139,7 +139,15 @@ class Character::Generator
   end
 
   def build_from(content)
-    character = Character.new(story: story, race: race, age: age, sex: sex)
+    # THE BODY IS THE ENGINE'S, exactly as the race, age and sex on this line
+    # already are: `Character::Schema` has no field for a stat and this prompt
+    # asks for none. The captain's ruling of 2026-09-04 -- *"A model cannot set
+    # an NPC's numbers, the engine rolls them"* -- and `Character::StatBlock` is
+    # the roll. `sequence` is how many people this story already has, so two
+    # characters generated for one story at one moment on its clock are two
+    # rolls rather than one number twice.
+    character = Character.new(story: story, race: race, age: age, sex: sex,
+                              **Character::StatBlock.for_new(story, sequence: story.characters.count))
 
     character.fullname = sanitize_string(content["fullname"])
     character.nickname = sanitize_string(content["nickname"])

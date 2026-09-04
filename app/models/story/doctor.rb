@@ -69,7 +69,9 @@ class Story::Doctor
       *whereabouts,
       *scene_rows,
       *playthrough_rows,
-      *item_rows
+      *item_rows,
+      *stat_blocks,
+      *vitals_rows
     ]
   end
 
@@ -1128,6 +1130,154 @@ class Story::Doctor
               "the item #{item.name.inspect} (#{item.whereabouts}) shares its name with the #{kind} #{matched.inspect}, "               "so the classifier's closed sets answer to one word twice and which one a typed line resolves to is not "               "the player's choice",
               :manual, subject: item)
     end
+  end
+
+  # ------------------------------------------------------------------------
+  # THE BODIES, and the ways a stat block goes wrong.
+  #
+  # `characters.level` and `characters.hit_die` are the world's answer to how
+  # tough somebody is, and `Character#max_hp` is derived from the pair. A
+  # character with neither is somebody `Playthrough::Vitals` can write no row
+  # for, so nothing in the game can ever say anything about their body -- and
+  # every character in a database older than the columns is one of them.
+  #
+  # THE REMEDY IS `:safe` AND IT IS THE ONE PLACE IN THIS FILE THAT STRETCHES
+  # THE WORD, so it is stated rather than left to be discovered. Everywhere else
+  # `safe` means "the right value is already on record somewhere else". Nothing
+  # on record implies a hit die. It is `safe` because the ENGINE is the sole
+  # author of that number by the captain's ruling of 2026-09-04 -- *"A model
+  # cannot set an NPC's numbers, the engine rolls them"* -- so writing one is
+  # not inventing world data to make a validation pass, it is the engine doing
+  # the only thing that was ever going to decide it. The roll is deterministic
+  # (`Character::StatBlock.for_existing`), so a rehearsal and the repair agree,
+  # and `rake game:backfill_stat_blocks` does the same thing for a whole story
+  # at once. See `Story::Repair`'s header, which carries the same note.
+  def stat_blocks
+    story.characters.order(:id).filter_map do |character|
+      next if character.stat_block?
+
+      finding(:character_without_a_stat_block, :warning,
+              "#{character.fullname} has #{character.level.present? || character.hit_die.present? ? "half a stat block" : "no stat block"} " \
+              "(level #{character.level.inspect}, hit die #{character.hit_die.inspect}), so the engine has no maximum " \
+              "for their body and no playthrough can record anything happening to them",
+              :safe, subject: character)
+    end
+  end
+
+  # ------------------------------------------------------------------------
+  # THE CONDITION ROWS, and the three shapes that are wrong.
+  #
+  # `playthrough_vitals` is one row per (playthrough, character): the captain's
+  # ruling of 2026-09-04 applied to people, the same split `items.playthrough_id`
+  # makes. An ABSENT row means unhurt, so nothing here reports a missing row for
+  # an NPC -- that is the ordinary state of almost everybody in every world.
+  def vitals_rows
+    rows = Playthrough::Vitals.where(playthrough: story.playthroughs)
+                              .includes(:character, :playthrough).order(:id).to_a
+
+    [ *vitals_without_a_template(rows), *hp_above_maximum(rows), *vitals_for_an_unmet_character(rows),
+      *protagonists_without_vitals ]
+  end
+
+  # A CONDITION FOR A BODY THE WORLD NO LONGER HAS. `Character has_many :vitals,
+  # dependent: :destroy` takes these with the person, so a surviving one arrived
+  # through raw SQL or a schema older than that association -- and there is
+  # nothing to say about it, because `Character#max_hp` is what a condition is
+  # measured against. The item layer's exact analogue
+  # (`instance_without_a_template`), and `manual` for the same reason: a row
+  # nothing says the meaning of cannot be re-linked, and guessing by name is the
+  # one thing every backfill in this app refuses to do.
+  def vitals_without_a_template(rows)
+    orphans = rows.select { |row| row.character.nil? }
+    return [] if orphans.empty?
+
+    [ finding(:vitals_without_a_template, :warning,
+              "#{orphans.size} condition row#{"s" unless orphans.one?} (##{orphans.first(5).map(&:id).join(", #")}" \
+              "#{", ..." if orphans.size > 5}) belong#{"s" if orphans.one?} to a character this world no longer has, " \
+              "so there is no maximum to read #{orphans.one? ? "it" : "them"} against",
+              :manual, subject: orphans.first) ]
+  end
+
+  # A BODY HOLDING MORE THAN IT CAN. `Playthrough::Vitals#hp_within_the_stat_block`
+  # refuses to save one, so the way this arrives is a re-seed LOWERING somebody's
+  # hit die under a game already in progress -- which is a legitimate file edit,
+  # and this is the row it leaves behind.
+  #
+  # `safe`: the answer is on record, on the template. `rake game:repair` clamps
+  # to `Character#max_hp` and nothing else about the game changes.
+  def hp_above_maximum(rows)
+    rows.filter_map do |row|
+      ceiling = row.character&.max_hp
+      next if ceiling.nil? || row.hp_current <= ceiling
+
+      finding(:hp_above_maximum, :warning,
+              "playthrough ##{row.playthrough_id} records #{row.character.fullname} at #{row.hp_current} hit points, " \
+              "past the #{ceiling} their stat block allows (level #{row.character.level}, d#{row.character.hit_die}); " \
+              "a re-seed that lowers a hit die under a game in progress leaves exactly this",
+              :safe, subject: row)
+    end
+  end
+
+  # A CONDITION FOR SOMEBODY THAT GAME HAS NEVER STOOD IN A ROOM WITH.
+  # `Playthrough::Vitals::Snapshot` writes a row at first contact and nowhere
+  # else, so a row for a stranger is one nothing in the app can have written --
+  # and it is a row that says something happened to somebody two people never
+  # met.
+  #
+  # `safe` because deleting it loses nothing: an absent row means unhurt, which
+  # is what an unmet person is by definition. The PARTY is never one of these --
+  # the protagonist and any companion are wherever the playthrough is rather
+  # than in a room, so they are excluded the way `cast_unmoved` excludes them.
+  def vitals_for_an_unmet_character(rows)
+    rows.filter_map do |row|
+      character = row.character
+      next if character.nil? || character.is_protagonist? || character.is_companion?
+      next if character.location_id && rooms_walked(row.playthrough).include?(character.location_id)
+
+      finding(:vitals_for_an_unmet_character, :warning,
+              "playthrough ##{row.playthrough_id} holds a condition for #{character.fullname}, who is " \
+              "#{character.whereabouts} -- a room that game has never stood in, so nothing in the app can have " \
+              "written it",
+              :safe, subject: row)
+    end
+  end
+
+  # THE ONE BODY WHOSE ZERO ENDS A GAME, with no row saying where it stands.
+  # An absent row means unhurt, which is a perfectly good answer for an NPC and
+  # a gap for the player: `Playthrough::Vitals::Snapshot#of_the_party!` writes
+  # one when the playthrough is created, so a game without one predates the
+  # table.
+  #
+  # `safe` -- the row is derived from a stat block that already exists, which is
+  # `playthrough_missing_a_copy`'s argument one table over. A playthrough whose
+  # protagonist has NO stat block is not reported here: that is
+  # `character_without_a_stat_block`, said once about the person rather than
+  # once per game of them.
+  def protagonists_without_vitals
+    protagonist = story.protagonist
+    return [] if protagonist.nil? || !protagonist.stat_block?
+
+    with_rows = Playthrough::Vitals.where(playthrough: story.playthroughs, character: protagonist)
+                                   .pluck(:playthrough_id).to_set
+
+    story.playthroughs.where(character: protagonist).order(:id).filter_map do |playthrough|
+      next if with_rows.include?(playthrough.id)
+
+      finding(:protagonist_without_vitals, :warning,
+              "playthrough ##{playthrough.id} has no condition row for #{protagonist.fullname}, so nothing records " \
+              "how much is left of the one body whose zero ends that game",
+              :safe, subject: playthrough)
+    end
+  end
+
+  # EVERY ROOM ONE GAME HAS STOOD IN, by id: where it is now, and where every
+  # turn in its chain happened. Memoized per playthrough because
+  # `#vitals_for_an_unmet_character` asks it once per row and a game has one
+  # answer.
+  def rooms_walked(playthrough)
+    @rooms_walked ||= {}
+    @rooms_walked[playthrough.id] ||=
+      ([ playthrough.current_location_id ] + playthrough.scene_chain.map(&:location_id)).compact.to_set
   end
 
   # Every row in this story, both layers, on whichever of the three legs it sits

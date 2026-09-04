@@ -396,6 +396,73 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_includes circle.exits.reload.pluck(:name), "Larkspur Quarter rooftops", "the world is still whole"
   end
 
+  # --- the bodies, and the conditions --------------------------------------
+
+  # THE ONE `safe` REPAIR THAT WRITES A NUMBER NOTHING ELSE ON RECORD IMPLIES,
+  # and it is safe because the engine is that number's sole author -- the
+  # captain's ruling of 2026-09-04. The roll is deterministic, which is what
+  # these two assert together: the same body comes back a second time.
+  test "rolls a body for somebody who has none" do
+    story = create(:story)
+    nobody = create(:character, :without_a_stat_block, story: story)
+    repair = Story::Repair.new(story)
+
+    assert_includes repair.plan.map(&:code), :character_without_a_stat_block
+    assert repair.apply!.all?(&:repaired?)
+    assert_predicate nobody.reload, :stat_block?
+    assert_includes Character::HIT_DICE, nobody.hit_die
+  end
+
+  test "the body it rolls is the one Character::StatBlock would roll again" do
+    story = create(:story)
+    nobody = create(:character, :without_a_stat_block, story: story)
+    wanted = Character::StatBlock.for_existing(nobody)
+
+    Story::Repair.new(story).apply!
+
+    assert_equal [ wanted[:level], wanted[:hit_die] ], [ nobody.reload.level, nobody.hit_die ]
+  end
+
+  test "brings a condition back down to what its stat block allows" do
+    story = create(:story)
+    room = create(:location, story: story)
+    rowe = create(:character, story: story, location: room, level: 1, hit_die: 10)
+    game = create(:playthrough, story: story, character: create(:character, :protagonist, story: story),
+                                current_location: room)
+    row = Playthrough::Vitals.instantiate!(game, rowe)
+    rowe.update!(hit_die: 6)
+
+    Story::Repair.new(story).apply!
+
+    assert_equal 6, row.reload.hp_current
+  end
+
+  test "drops a condition for somebody that game never met" do
+    story = create(:story)
+    room = create(:location, story: story)
+    stranger = create(:character, story: story, location: create(:location, story: story),
+                                  level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: create(:character, :protagonist, story: story),
+                                current_location: room)
+    row = Playthrough::Vitals.create!(playthrough: game, character: stranger, hp_current: 8)
+
+    Story::Repair.new(story).apply!
+
+    assert_not Playthrough::Vitals.exists?(row.id)
+  end
+
+  test "gives a game its own protagonist's condition back" do
+    story = create(:story)
+    room = create(:location, story: story)
+    vance = create(:character, :protagonist, story: story, level: 1, hit_die: 6)
+    game = create(:playthrough, story: story, character: vance, current_location: room)
+    game.vitals.destroy_all
+
+    Story::Repair.new(story).apply!
+
+    assert_equal 6, game.reload.vitals_for(vance).hp
+  end
+
   private
 
   # Both directions of one doorway, the way every writer in the app makes one.

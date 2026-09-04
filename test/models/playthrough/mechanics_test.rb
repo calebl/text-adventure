@@ -883,4 +883,90 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_predicate report, :changed?
     assert_not_predicate report, :refused?
   end
+
+  # --- the body, and the engine-view commands ------------------------------
+  #
+  # `vitals`, `harm <n>` and `mend <n>` are the engine's own instruments rather
+  # than things a player does in the fiction, so they are read by the fixed
+  # grammar IN BOTH MODES and make no model call at all. The walk of the ruling
+  # itself is `lib/engine_sweep/scripts/death-ends-a-playthrough.yml`; these pin
+  # the two things a script cannot see -- that the classifier is never reached,
+  # and what the read-out says.
+
+  test "the read-out carries the player's condition" do
+    assert_includes play("look").state.to_s, "condition   unhurt"
+  end
+
+  test "harm goes through the engine's own writer and says what it did" do
+    report = play("harm 3")
+
+    assert_predicate report, :changed?
+    assert_equal "harm -> 3 hit points", report.understood
+    assert_includes report.change, "Odile Vance unhurt -> "
+    assert_equal @vance.max_hp - 3, @playthrough.vitals_for(@vance).hp
+  end
+
+  test "mend is the mirror and stops at the maximum" do
+    play("harm 2")
+    report = play("mend 99")
+
+    assert_predicate report, :changed?
+    assert_equal @vance.max_hp, @playthrough.vitals_for(@vance).hp
+    assert_includes report.change, "-> unhurt"
+  end
+
+  test "harm without a number is refused with the shape it wanted" do
+    report = play("harm")
+
+    assert_predicate report, :refused?
+    assert_match(/takes a whole number/, report.refusal)
+  end
+
+  test "harm of something that is not a number is refused rather than read as zero" do
+    report = play("harm a lot")
+
+    assert_predicate report, :refused?
+    assert_not_predicate report, :changed?
+  end
+
+  test "harm of zero is refused rather than quietly doing nothing" do
+    assert_predicate play("harm 0"), :refused?
+  end
+
+  # WITH A MODEL AVAILABLE THEY STILL MAKE NO CALL. `Playthrough::IntentSchema`
+  # has no word for any of them, so classifying one could only ever come back
+  # `other` -- and it would cost a model call to be told so. `#interpret` with
+  # NO allowed responses is what asserts it: `FakeAgent` runs out if anything
+  # asks.
+  test "the engine-view commands are not classified even when a model is there" do
+    report, agent = interpret("harm 2")
+
+    assert_predicate report, :changed?
+    assert_equal @vance.max_hp - 2, @playthrough.vitals_for(@vance).hp
+    assert_empty agent.prompts
+  end
+
+  test "vitals reads and changes nothing, in either mode" do
+    report, agent = interpret("vitals")
+
+    assert_not_predicate report, :changed?
+    assert_not_predicate report, :refused?
+    assert_empty agent.prompts
+  end
+
+  # `help` was always read here rather than sent to a model, and the classifier
+  # mode has its own help. Adding three verbs beside it must not have changed
+  # which one either mode prints.
+  test "help still prints the mode's own list" do
+    assert_includes play("help").note, Playthrough::Mechanics::GRAMMAR.first
+    assert_includes interpret("help").first.note, Playthrough::Mechanics::CLASSIFIER_HELP.first
+  end
+
+  test "there is nothing to harm on a protagonist with no stat block" do
+    @vance.update!(level: nil, hit_die: nil)
+    report = play("harm 2")
+
+    assert_predicate report, :refused?
+    assert_match(/no stat block/, report.refusal)
+  end
 end

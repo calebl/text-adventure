@@ -19,6 +19,15 @@
 # command in prose. They are told apart so the classification is honest and so
 # the branches that need to exist have somewhere to land.
 #
+# AND A GAME THAT IS OVER, WHICH IS NOT A TURN EITHER: once the player is dead
+# `#play` refuses every line in front of everything else it does -- before the
+# world catches up, before the snapshot, before the classifier -- so a line
+# typed into a finished game costs no model call and writes nothing at all. The
+# captain's ruling of 2026-09-04: *"zero hit points means death. Playthrough is
+# over and you can't do anything else. You have to start a new playthrough."*
+# See `Playthrough::DeathNotice` for the words and `#harm!` for the one
+# statement that ends a game.
+#
 # AND A LAST OUTCOME THAT IS NOT A TURN AT ALL, SINCE 2026-09-04: a line the
 # engine will not play. Two acts on one line, a reach that resolved to nothing,
 # or a classifier answer the app cannot read are REFUSED whole -- no write, no
@@ -49,6 +58,13 @@ class Playthrough::Turn
   # the app's own rather than anything a model wrote. `NarrationJob` shows it
   # where `Playthrough::SafetyNotice` goes and for the same reason.
   def play(command, &block)
+    # THE GAME BEING OVER COMES BEFORE EVERYTHING, and it is first for a reason
+    # rather than for tidiness: everything below this line costs something. The
+    # world catching up writes rows, the snapshot writes rows, and the
+    # classifier is a MODEL CALL. A dead playthrough is a playthrough nothing
+    # will ever change again, so the honest cost of typing into one is nothing.
+    return Playthrough::Refusal.dead(typed: command, character: playthrough.character) if playthrough.over?
+
     # THE WORLD MOVES FIRST, and it moves whether or not anybody was watching.
     # Every boundary the story's clock has passed since the last turn is applied
     # here, in Ruby, before the player's command is even read -- so the exits
@@ -65,7 +81,7 @@ class Playthrough::Turn
     # first in a room -- and it is here rather than only on arrival because a
     # room can gain a template, or a person carrying one, long after the party
     # walked in. See `Item::Snapshot`.
-    Item::Snapshot.new(playthrough).of_the_room!(playthrough.current_location)
+    Playthrough::Snapshot.new(playthrough).of_the_room!(playthrough.current_location)
 
     intent = classifier.classify(command)
 
@@ -182,12 +198,14 @@ class Playthrough::Turn
 
     # REALIZED, THEN COPIED, THEN NARRATED, and the order is the point.
     # `Item::Registry` writes the room's furniture into the WORLD layer as part
-    # of realizing it; this party's own copies have to exist before
+    # of realizing it and `Character::Registry` writes its people; this party's
+    # own copies of both -- what is lying here, and how much is left of whoever
+    # is standing here -- have to exist before
     # `Scene::Generator` builds the moment, or the arrival narration would be
     # written about a room the records say is empty for this game. A room that
     # was already realized copies whatever this playthrough has not seen yet,
     # which is how a second player walks into the office as it was generated.
-    Item::Snapshot.new(playthrough).of_the_room!(destination)
+    Playthrough::Snapshot.new(playthrough).of_the_room!(destination)
 
     scene = Scene::Generator.new(
       destination, previous_scene: playthrough.current_scene, playthrough: playthrough
@@ -395,6 +413,59 @@ class Playthrough::Turn
   # exercised it is `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml`.
   def put_down!(item)
     item.update!(playthrough: playthrough, character: nil, location: playthrough.current_location)
+  end
+
+  # TAKING HIT POINTS OFF A BODY, AND THE ONE PLACE A PLAYTHROUGH ENDS.
+  #
+  # The damage half of `#carry!`, and closed for the same reason: `Playthrough`
+  # has one reader of a condition and this class has the only two writers of one.
+  # NO PROSE EVER REACHES THIS -- there is no narrator tool for damage and there
+  # is not going to be one (AGENTS.md -> *The standing constraint*). What calls
+  # it today is `rake game:mechanics`'s `harm <n>`, which is an engine-view
+  # command; what will call it is whatever mechanic the captain rules on next.
+  #
+  # THE FLOOR IS ZERO AND ZERO IS DEATH. `amount` is clamped rather than allowed
+  # to go negative, because "how far past dead" is a number this game has no use
+  # for -- the ruling is that zero ends it, with no death saves, no unconscious
+  # state and no scars.
+  #
+  # AND IF THE BODY IS THE PLAYER'S, THE GAME ENDS IN THE SAME STATEMENT. That
+  # is the whole of the terminal state: one transaction writes the last hit
+  # point and `playthroughs.ended_at` together, so there is no moment in which
+  # the records say a player is dead and the game is still running.
+  #
+  # Returns the `Playthrough::Vitals::Condition` afterwards -- what the caller
+  # wants is what is left, and handing back the record would hand back a second
+  # writer. Nil for somebody with no stat block: there is no body to hurt, and
+  # inventing one to hurt it is what `characters.hit_die` is nullable to avoid.
+  def harm!(character, amount)
+    row = Playthrough::Vitals.instantiate!(playthrough, character)
+    return nil if row.nil?
+
+    Playthrough::Vitals.transaction do
+      row.update!(hp_current: [ row.hp_current - amount.to_i, 0 ].max)
+      playthrough.end! if row.dead? && character == playthrough.character
+    end
+
+    row.condition
+  end
+
+  # PUTTING THEM BACK, and the mirror of `#harm!` in every respect but one: IT
+  # NEVER RAISES THE DEAD. A body at zero stays at zero, because death is
+  # terminal -- the captain's ruling of 2026-09-04 -- and a mend that revived
+  # somebody would be building the restore-from-save he deferred, one row at a
+  # time and by accident.
+  #
+  # The ceiling is `Character#max_hp`, so a mend past full is full: a body
+  # cannot hold more than the template says it can, which is the same statement
+  # `Playthrough::Vitals` refuses to save a row against.
+  def mend!(character, amount)
+    row = Playthrough::Vitals.instantiate!(playthrough, character)
+    return nil if row.nil?
+    return row.condition if row.dead?
+
+    row.update!(hp_current: [ row.hp_current + amount.to_i, character.max_hp ].min)
+    row.condition
   end
 
   # What the narrator is told, in the app's own words. Stated as done, because

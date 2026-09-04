@@ -38,7 +38,7 @@ One file is one universe and one story. Keys are written in this order:
 | `universe`      | the nine prompt fields, plus `races` (name and description)             |
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
-| `characters`    | one entry each, `race` by name, optional `location` (or `absent`) and `items` |
+| `characters`    | one entry each, `race` by name, optional `location` (or `absent`), optional `stats`, and `items` |
 | `locations`     | every location, realized or stub; one marked `opening: true`; `items`   |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair              |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
@@ -340,6 +340,51 @@ nowhere, never moves somebody who is not, and never places somebody who is
 absent on purpose), `Character#move_to!`, `Character#absent!` and
 `rake game:backfill_whereabouts` ever writes it. **No narration moves anybody.**
 
+### `characters[].stats`, and the body the engine works from
+
+```yaml
+characters:
+- fullname: Halkett Rowe
+  race: Ledger-Kept
+  location: Ward Office 12
+  stats:
+    level: 1
+    hit_die: 8
+```
+
+`level` and `hit_die` are the whole of a stat block: how tough this body is, and
+a level that is **stored and inert** — nothing in the app reads it for behaviour
+and nothing advances it. `Character#max_hp` is derived from the pair, with no
+ability term in it, because there are no abilities:
+
+```
+max_hp = hit_die + (level - 1) * (hit_die / 2 + 1)
+```
+
+A hand-authored world **is** the decision, which is why the key exists at all.
+Everywhere else the engine rolls it — `Character::StatBlock`, seeded through
+`Roll` — because a model may not set anybody's numbers (the captain's ruling of
+2026-09-04). Nothing in any schema or prompt asks for one.
+
+- **The key is optional, and leaving it out means no stat block.** Nothing is
+  rolled on load: a file that says nothing about a body leaves the columns
+  exactly as they are, so a re-seed cannot quietly rewrite a world because
+  somebody edited a different part of the file. `rake game:doctor` reports the
+  gap (`character_without_a_stat_block`) and `rake game:backfill_stat_blocks`
+  rolls one.
+- **Both keys or neither.** `Character#max_hp` needs the pair, so `validate!`
+  refuses half a block; `level` is 1..20 and `hit_die` is one of 6, 8, 10 — the
+  three the engine itself rolls from.
+- **Re-seeding re-asserts it**, like every other placement. Lowering somebody's
+  hit die under a game in progress is legitimate and leaves that game's
+  condition row above its new maximum, which the doctor reports
+  (`hp_above_maximum`) with a safe repair.
+- **What is NOT in the file is how much is left of anybody.** That is
+  `playthrough_vitals`, one row per (playthrough, character) — the captain's
+  ruling that the world owns the template and each playthrough owns the
+  instance, the same split the items are under. A seed file describes a world;
+  what has happened to somebody in one game is that player's progress.
+
 ### Rules the loader enforces
 
 - Exactly one location is `opening: true`, and it must be `realized` — a story
@@ -357,6 +402,9 @@ absent on purpose), `Character#move_to!`, `Character#absent!` and
   room's closed set they are in and the other says nobody may be offered them.
 - A character's `location`, when the file gives one, names a location the file
   declares. Absent is legal and means nowhere; wrong is refused.
+- A character's `stats`, when the file gives one, carries exactly `level` and
+  `hit_die`, in `Character::LEVELS` and `Character::HIT_DICE`. Absent is legal
+  and means no stat block; half a block is refused.
 - `distance` and `travel_method` come from `LocationConnection::DISTANCES` and
   `::TRAVEL_METHODS`. `time_to_travel` is derived from those two and is
   deliberately absent from the file.

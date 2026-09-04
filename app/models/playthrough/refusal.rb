@@ -13,7 +13,8 @@
 # is this -- the app's own words, built out of records it is already holding,
 # for no model call beyond the classifier that had already run.
 #
-# THREE SHAPES, TOLD APART BECAUSE THEY ARE DIFFERENT FACTS ABOUT THE LINE:
+# FOUR SHAPES, TOLD APART BECAUSE THEY ARE DIFFERENT FACTS -- three about the
+# LINE, and one about the game it was typed into:
 #
 #   :named_more_than_one  it named two things the records really have, and a
 #                         turn is one act. Nothing named is missing; the limit
@@ -30,6 +31,16 @@
 #                         still named a record. Nothing counts it, because it is
 #                         a defect on our side rather than a reach on the
 #                         player's; it goes to the log.
+#   :dead                 THE PLAYER IS DEAD AND THE GAME IS OVER -- the
+#                         captain's ruling of 2026-09-04. It is not a reading of
+#                         a line at all: it is refused BEFORE the classifier
+#                         runs, so it costs no model call and no line is ever
+#                         read again in this playthrough. It is the one shape
+#                         here that is a fact about the GAME rather than about
+#                         the line, which is why it is built from
+#                         `Playthrough::DeathNotice` and not from an `Intent`,
+#                         and why `.for` never returns one. Counted by nothing:
+#                         a dead player reaching for nothing is not drift.
 #
 # THE COUNTERS ARE UNTOUCHED BY THE RULING, and that is deliberate: it changes
 # what a turn DOES, not what is measured. `Playthrough::Classifier#classify`
@@ -67,7 +78,7 @@
 # (`fact`, `offer`, `UNCHANGED`) so that both orders read as English rather than
 # as one string with another bolted onto the end.
 class Playthrough::Refusal
-  KINDS = %i[named_more_than_one unresolved unreadable].freeze
+  KINDS = %i[named_more_than_one unresolved unreadable dead].freeze
 
   # ONE ACT, PHRASED AS THE PLAYER WOULD HAVE TYPED IT, so a refusal that says
   # "pick one" is naming two things somebody can actually pick between.
@@ -148,6 +159,22 @@ class Playthrough::Refusal
     nil
   end
 
+  # THE LINE NOBODY WILL EVER PLAY AGAIN, and the second public entry point.
+  #
+  # It is separate from `.for` because it is not a reading of the line: there is
+  # no `Intent` and there never will be one, since a dead playthrough is refused
+  # in front of the classifier so that a turn after death costs nothing at all.
+  # Both modes call it from the same place -- the first statement of
+  # `Playthrough::Turn#play` and of `Playthrough::Mechanics#run` -- so the
+  # browser and `rake game:mechanics` cannot come to disagree about whether a
+  # game is over.
+  #
+  # The words are `Playthrough::DeathNotice`'s, which is the one author of what
+  # a dead player is told; read its header before changing any of them.
+  def self.dead(typed:, character: nil)
+    new(kind: :dead, typed: typed, fact: Playthrough::DeathNotice.sentence(character))
+  end
+
   # TWO ACTS ON ONE LINE. Both halves are named, in the same verb, because they
   # came out of the same closed set through the same matcher -- see
   # `Playthrough::Classifier#also_record`.
@@ -209,13 +236,20 @@ class Playthrough::Refusal
     @offer = offer
   end
 
+  # WHETHER THIS IS A LINE THE ENGINE WOULD NOT PLAY, or a GAME that is over.
+  # The three reading shapes leave the player standing where they were with
+  # another line to type; `:dead` does not, so neither answer ends with
+  # `UNCHANGED` -- "nothing has changed" is an invitation to try again, and
+  # there is nothing to try.
+  def game_over? = kind == :dead
+
   # FOR THE CONSUMER THAT PRINTS THE RECORDS UNDERNEATH: the fact and nothing
   # else, so the lists are said once.
-  def reason = "#{fact} #{UNCHANGED}"
+  def reason = game_over? ? fact : "#{fact} #{UNCHANGED}"
 
   # AND FOR THE ONE THAT DOES NOT: what would have worked, in the middle, where
   # it reads as part of the answer rather than as an appendix to it.
-  def text = [ fact, offer, UNCHANGED ].compact_blank.join(" ")
+  def text = [ fact, offer, (UNCHANGED unless game_over?) ].compact_blank.join(" ")
 
   def to_s = text
 end
