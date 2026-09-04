@@ -156,6 +156,9 @@ namespace :eval do
     #
     #   MODELS=mistralai/mistral-medium-3.1
     #   MODELS=ollama:qwen3:4b,ollama:gemma3:12b
+    #   MODELS=ollama:qwen3:4b+nothink            asks a thinking model to stop
+    #                                             thinking -- 2.1s a call against
+    #                                             100.2s. See Arm::NO_THINKING.
     #
     # `TA_LOCAL_MODELS` is NOT read and not needed: it gates the app's own
     # rotation, and an arm replaces the rotation rather than joining it. The

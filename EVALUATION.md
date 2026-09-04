@@ -296,6 +296,10 @@ in `app/` changes: `REMOTE_MODEL_IDS` is untouched, `OPENROUTER_MODEL` is not
 read, and `TA_LOCAL_MODELS` still defaults to off — it gates the *app's*
 rotation, and an arm **replaces** the rotation rather than joining it.
 
+A local spec may carry a **`+nothink`** suffix, which is the one thing an arm
+changes about the request itself and the reason it is spelled out in the label:
+see *A local model, and the reasoning block in front of the answer* below.
+
 **The rotation being off is the point, not a side effect.** `BaseAgent#ask`
 retries only while `attempts < @model_options.count`, so an arm of one never
 retries. Three things follow, all of them wanted in a measurement:
@@ -343,6 +347,59 @@ when another is loaded. So:
 
 So **every latency on the board is a warm-cache figure**, and the board says so
 in its own header.
+
+### A local model, and the reasoning block in front of the answer
+
+The captain asked for the bench to be run against the ollama models on his own
+machine. Two things had to be measured before that was a measurement of the
+classifier at all.
+
+**The machine is CPU-only.** `/api/ps` reports `size_vram: 0` for every loaded
+model, so every figure below is a CPU figure and none of them transfers to a
+box with a working GPU driver.
+
+**And a thinking model thinks before it answers, even under a schema.** RubyLLM
+reaches ollama through its **OpenAI-compatible** endpoint —
+`config.ollama_api_base` ends in `/v1` — which returns the reasoning in a field
+of its own beside the answer. The schema constrains the *content*; the thinking
+happens in front of it. Warm `qwen3:4b`, the app's own prompt and schema, one
+call each:
+
+| request says | wall clock | |
+| --- | --- | --- |
+| nothing | 100.2s | a `reasoning` field comes back beside 23 tokens of answer |
+| `think: false` | 100.7s | **ignored** — an ollama-native field, and `/v1` is not it |
+| `chat_template_kwargs: {enable_thinking: false}` | 100.0s | **ignored** |
+| `reasoning_effort: "low"` | 100.2s | honoured, and low is not none |
+| `reasoning_effort: "none"` | **2.1s** | no reasoning field, same correct answer |
+
+So it is **`reasoning_effort`, a standard OpenAI field**, and not ollama's own
+`think`. A 48-fold difference on the one call a player waits for, and the same
+23 tokens of answer either way. (For the record, the native `/api/chat` endpoint
+with `format:` and `think: false` answers the same call in 1.95s. The app does
+not speak it, so neither does the bench — an instrument reaching past the app's
+own client would be measuring a different client.)
+
+**How the bench asks.** A spec may carry a `+nothink` suffix —
+`MODELS=ollama:qwen3:4b+nothink` — and that arm, and only that arm, gets
+`reasoning_effort: "none"`. It reaches the call through
+`BaseAgent.default_provider_params`, **a seam that is empty in every shipped
+path** and pinned empty by `BaseAgent::ProviderParamsTest`: an ordinary agent's
+chat is never handed `with_params` at all. `Arm#pinned` replaces it for the
+length of one pass and restores it in an `ensure`, exactly as it does the model
+options. It is refused for a hosted arm.
+
+**It is never inferred, and the app as shipped would run qwen3 with thinking
+ON.** An arm that does not ask measures the model the way this app would really
+use it, which is the 100-second figure — and *that is the finding*, not a
+footnote to it. Making the app fast on ollama is a change to the app, to be
+decided on its own evidence; the seam is a measurement asking a question. Two
+arms of one model with the thinking on and off are two rows on the board.
+
+**`gemma3:12b` is unmeasurable on this machine** and is reported as such rather
+than as a bad score: a single schema-constrained classifier call hit a **600s
+cap with no answer at all**, cold and warm alike. It has no thinking mode to
+turn off, so there is nothing to try next. Not run.
 
 ### The baseline of 2026-09-04
 

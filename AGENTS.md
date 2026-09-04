@@ -1057,6 +1057,17 @@ What belongs here is the part that changes how you work:
   never interleaved. Read `latency_median` with `failures` beside it — a slow arm
   and a flaky arm are different problems, and an arm that failed a third of its
   calls has a median over the two thirds that answered.
+- **A local thinking model spends the whole call thinking, and the schema does
+  not stop it.** RubyLLM speaks ollama's OpenAI-compatible `/v1`, which returns
+  the reasoning in a field of its own beside the answer, so the schema
+  constrains the content and the thinking happens in front of it: `qwen3:4b`
+  warm, 100.2s asked nothing, **2.1s** asked `reasoning_effort: "none"`, same 23
+  tokens of answer. Ollama's own `think: false` is **ignored** on `/v1`; so is
+  `enable_thinking`. `MODELS=ollama:qwen3:4b+nothink` is how an arm asks, and it
+  reaches the call through `BaseAgent.default_provider_params` — **empty in every
+  shipped path, pinned empty by `BaseAgent::ProviderParamsTest`**, refused for a
+  hosted arm, and not a feature. The app as shipped would run qwen3 with thinking
+  ON; changing that is a change to the app, on its own evidence.
 - **No prompt change belongs in the same commit as a bench change.** The
   instrument and the thing it measures move separately, and
   `Eval::MEASUREMENT_FILES` now lists the bench.

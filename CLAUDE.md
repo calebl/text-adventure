@@ -46,6 +46,7 @@ rake eval:compare BEFORE=a AFTER=b  # REAL / NOISE / INCONCLUSIVE, per check
 # recall, refusal agreement AND latency, per model, each with its band.
 rake eval:classifier                       # ~$0.39 at the defaults; prints an estimate first
 rake eval:classifier MODELS=ollama:qwen3:8b SET=local-qwen8b   # a local model: free, and slow
+rake eval:classifier MODELS=ollama:qwen3:4b+nothink            # ...and 48x faster with the reasoning off
 rake eval:classifier_offline               # the same corpus with no model at all -- free, in CI
 rake eval:classifier_omission              # the also_named omission rate alone
 rake eval:classifier_compare BEFORE=a AFTER=b   # including two DIFFERENT models
