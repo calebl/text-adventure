@@ -1,0 +1,194 @@
+# RE-SEEDING A WORLD SOMEBODY IS IN THE MIDDLE OF PLAYING.
+#
+# WHY IT EXISTS. The captain re-seeds his long-lived development database to
+# pick up a seed-file change and then keeps playing the same stories for days,
+# and until `WorldSeed::Loader` learned to reconcile, that could leave the world
+# with two of something: two supply closets with the office opening onto both, a
+# lane with a second doorway into the fixed city, two of one item in one pair of
+# hands. Nothing walked it, because a re-seed is not a line somebody types.
+#
+# So `reseed: true` is a step, and this script is the walk: pick a thing up,
+# carry it somewhere, drop it, then load the world file over the top and read
+# the records back. Every expectation after a `reseed:` step is a statement
+# about what the load did and did not disturb.
+#
+# THE TWO THINGS TO KNOW ABOUT WHAT A RE-SEED DOES HERE, because both look like
+# defects until you know they are the rule:
+#
+#   THE FILE RE-ASSERTS ITSELF over a played world. An item the file puts on a
+#   shelf goes back on the shelf, out of whoever's hands it was in -- see
+#   `WorldSeed::Loader#load_items!`. That is deliberate and long-standing, and
+#   it is what makes a seed file the authority on the world rather than a
+#   suggestion. What is asserted below is that it happens ONCE: one row moves
+#   back, and no second row appears anywhere.
+#
+#   THE PARTY'S OWN COPY OF THE STARTING INVENTORY IS NOT THE FILE'S ROW.
+#   `Playthrough#take_up_the_starting_inventory` copies the protagonist's
+#   seeded kit into each new playthrough, and `#find_item` searches the world's
+#   own rows before a party's, so a re-seed re-asserts the file onto the
+#   protagonist's row and leaves the daybook in the player's hands. That is the
+#   one thing a one-player script cannot tell from luck, so the second player
+#   below reads it back too.
+#
+# WHAT THIS SCRIPT CANNOT SEE, in the sweep's usual habit of writing it down:
+# THE SHUFFLED DOORWAY, which is the other half of the defect. It needs
+# `WorldMechanic::ShuffleConnections` to have run, and a mechanic runs on
+# `Story#clock` -- which is `MAX(scenes.story_timestamp)` and never advances in
+# no-model mode, because no Scene is written. So nothing offline can make a
+# night come due. Pinned instead by `WorldSeed::LoaderTest`, which runs the
+# night and then re-seeds.
+story: The Unrecorded Hour
+why: what a re-seed does to a world somebody is in the middle of playing
+steps:
+- id: the-records-as-seeded
+  type: look
+  why: the starting state, so a failure after the re-seed has a known beginning
+  expect:
+    location: Ward Office 12 (realized)
+    exits: [The Supply Closet (realized), The Long Hallway (stub)]
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+    present: [Halkett Rowe]
+    changed: false
+    refused: false
+
+- id: the-second-player-starts-where-the-world-says
+  type: look
+  player: second
+  why: two parties in one world, so the re-seed below is read from both games
+  expect:
+    location: Ward Office 12 (realized)
+    carrying: [Ward Office 12 daybook]
+    here: [ward stamp]
+
+- id: take-the-stamp
+  type: take the ward stamp
+  expect:
+    changed: true
+    understood: take -> ward stamp
+    here: []
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: carry-it-into-the-closet
+  type: go to the supply closet
+  expect:
+    changed: true
+    location: The Supply Closet (realized)
+    here: [Perrin's private index, copy-room apron]
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: drop-it-there
+  type: drop the ward stamp
+  why: the stamp is now lying somewhere the file does not put it
+  expect:
+    changed: true
+    location: The Supply Closet (realized)
+    here: [Perrin's private index, copy-room apron, ward stamp]
+    carrying: [Ward Office 12 daybook]
+
+- id: re-seed-the-world-mid-game
+  reseed: true
+  why: |-
+    THE WHOLE POINT OF THE SCRIPT. The file is loaded over the copy this walk
+    has been playing. The player does not move, the closet does not become two
+    closets, and the stamp goes back to the room the file puts it in -- once.
+  expect:
+    changed: false
+    refused: false
+    location: The Supply Closet (realized)
+    exits: [Ward Office 12 (realized)]
+    # The stamp is gone from here because the file says it lies in Ward Office
+    # 12. What matters is that the closet's OWN two items are still its own two
+    # items -- not four, and not two of one name.
+    here: [Perrin's private index, copy-room apron]
+    carrying: [Ward Office 12 daybook]
+    present: []
+    note: re-seeded from the-unrecorded-hour.yml
+
+- id: the-office-still-has-one-closet
+  type: go to ward office 12
+  why: |-
+    THE SHAPE OF THE DEFECT, read off the exits. Two supply closets is what the
+    captain's own database holds, and it shows up here as an office with three
+    ways out where the file gives it two. `exits` is the whole set, so a second
+    closet fails this step whatever it is called.
+  expect:
+    changed: true
+    location: Ward Office 12 (realized)
+    exits: [The Supply Closet (realized), The Long Hallway (stub)]
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+    present: [Halkett Rowe]
+
+- id: the-second-player-still-holds-its-own-daybook
+  type: look
+  player: second
+  why: |-
+    The re-seed re-asserted the file onto the protagonist's row -- the story's
+    starting inventory -- and not onto this party's copy of it. One daybook in
+    these hands, and it is still here.
+  expect:
+    location: Ward Office 12 (realized)
+    carrying: [Ward Office 12 daybook]
+    here: [ward stamp]
+    present: [Halkett Rowe]
+
+- id: and-a-second-re-seed-changes-nothing-at-all
+  reseed: true
+  why: idempotence, from the played world rather than from a fresh one
+  expect:
+    changed: false
+    location: Ward Office 12 (realized)
+    exits: [The Supply Closet (realized), The Long Hallway (stub)]
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+    present: [Halkett Rowe]
+
+- id: the-file-renames-the-closet
+  reseed:
+    locations: { The Supply Closet: Supply Closet }
+    items: { ward stamp: Ward Stamp }
+  why: |-
+    THE DEFECT, WALKED. This is the second version of the file: the same world
+    with the closet's leading article dropped and the stamp's case changed --
+    the two shapes the captain's own database actually holds. Before
+    `WorldSeed.natural_key`, both were rows that did not exist yet, so this
+    load created a second closet with the office opening onto both and a second
+    stamp lying beside the first. `exits` and `here` are whole sets, so either
+    of those fails this step; the `note` pins that the loader RECOGNIZED them
+    rather than got lucky.
+  expect:
+    changed: false
+    location: Ward Office 12 (realized)
+    exits: [Supply Closet (realized), The Long Hallway (stub)]
+    here: [Ward Stamp]
+    carrying: [Ward Office 12 daybook]
+    present: [Halkett Rowe]
+    note: 'is "Supply Closet" in the file, so the row was renamed'
+
+- id: and-the-closet-is-still-the-closet-that-was-played-in
+  type: go to supply closet
+  why: |-
+    The renamed row is the SAME row: it kept its description, its one doorway
+    back into the office and the two things lying in it. A second closet would
+    be a stub with the file's items in it and the first one emptied, which is
+    what the captain's database looks like.
+  expect:
+    changed: true
+    location: Supply Closet (realized)
+    exits: [Ward Office 12 (realized)]
+    here: [Perrin's private index, copy-room apron]
+    carrying: [Ward Office 12 daybook]
+
+- id: and-renaming-it-back-renames-the-same-row-again
+  reseed: true
+  why: |-
+    The original file, loaded over a world whose closet is now called something
+    else. The rename runs the other way and the player does not move: they are
+    standing in the row, whatever it is spelled.
+  expect:
+    changed: false
+    location: The Supply Closet (realized)
+    exits: [Ward Office 12 (realized)]
+    here: [Perrin's private index, copy-room apron]
+    note: 'is "The Supply Closet" in the file, so the row was renamed'

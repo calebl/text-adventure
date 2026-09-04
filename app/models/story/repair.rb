@@ -12,6 +12,19 @@
 #             start_time; a playthrough's location, which its own current scene
 #             names. No model, no key, no judgement.
 #
+#             A FOLD IS A SAFE REPAIR TOO, and it is the only kind that removes
+#             a row. Re-seeding a played world used to leave two rows where the
+#             file declares one thing -- two supply closets, two daybooks, a
+#             lane opening twice onto the fixed city -- and the file is what
+#             proves they are one. So the fold moves everything off the row a
+#             re-seed created (what is lying in it, anybody standing in it, its
+#             doorways) onto the row with the history and removes what is left.
+#             NOTHING PLAY CREATED IS DESTROYED: `Story::Doctor` raises these
+#             `safe` only where exactly one of the rows carries anybody's
+#             history and nothing refers to the rest, and every handler
+#             re-checks that before it touches a row. See
+#             `#repair_duplicate_locations`.
+#
 #   GENERATE  asks a model to write something the world genuinely does not
 #             contain yet -- a room, its exits, the opening arrival. That is a
 #             legitimate repair and it is how the world was built in the first
@@ -43,6 +56,9 @@ class Story::Repair
     character_absent_in_the_seed: { calls: 0, handler: :repair_seeded_absence },
     character_absent_but_somewhere: { calls: 0, handler: :repair_deliberate_absence },
     protagonist_holds_a_taken_item: { calls: 0, handler: :repair_shared_inventory },
+    duplicate_locations: { calls: 0, handler: :repair_duplicate_locations },
+    duplicate_items: { calls: 0, handler: :repair_duplicate_items },
+    mobile_doorway_re_asserted: { calls: 0, handler: :repair_re_asserted_doorway },
     no_realized_location: { calls: 2, handler: :repair_no_realized_location },
     opening_location_is_a_stub: { calls: 2, handler: :repair_opening_location_stub },
     opening_has_no_exits: { calls: 1, handler: :repair_missing_exits },
@@ -241,6 +257,126 @@ class Story::Repair
     raise ArgumentError, "no turn records taking #{item.name.inspect} any more, so there is nobody to attribute it to" unless answer&.attributed?
 
     "gave #{item.name} to playthrough ##{answer.playthrough.id}, whose turn log records taking it"
+  end
+
+  # TWO ROWS THAT ARE ONE ROOM, FOLDED ONTO THE ONE WITH THE HISTORY -- and the
+  # only repair in this class that removes a row, so the rule it is under is
+  # worth stating twice: NOTHING PLAY CREATED IS DESTROYED. `Story::Doctor`
+  # raises this `safe` only where a checked-in file declares one room under the
+  # pair's natural key and only one of the rows has anybody's history in it, so
+  # the row that goes is the one a re-seed created; and what is on it -- what is
+  # lying in it, anybody standing in it, its doorways, any child location -- is
+  # MOVED to the survivor first rather than dropped with it.
+  #
+  # Safe by the same argument the seeded whereabouts are: the answer is on
+  # record in a checked-in file. The file says there is one such room, so the
+  # two rows are one room, and the survivor takes the file's spelling -- which
+  # is exactly what re-seeding does now that `WorldSeed::Loader` recognizes a
+  # rename.
+  def repair_duplicate_locations(finding)
+    key = WorldSeed.natural_key(finding.subject.name)
+    group = doctor.duplicate_location_rows(key)
+    name = doctor.seeded_location_names[key]
+
+    raise ArgumentError, "#{seed_file} declares no room matching #{finding.subject.name.inspect} any more" if name.blank?
+    raise ArgumentError, "there is only one #{name.inspect} now, so there is nothing to fold" unless group.size > 1
+
+    stood_in = group.select { |room| doctor.stood_in?(room) }
+    raise ArgumentError, "somebody has stood in #{stood_in.size} of these rooms, and two histories cannot be folded into one" if stood_in.size > 1
+
+    survivor = stood_in.first || group.min_by(&:id)
+    ghosts = group - [ survivor ]
+    moved = ghosts.sum { |ghost| fold_location_into(ghost, survivor) }
+    survivor.update!(name: name)
+
+    "folded #{ghosts.map { |ghost| "##{ghost.id} #{ghost.name.inspect}" }.join(", ")} into ##{survivor.id}, now " \
+      "#{name.inspect} as #{seed_file} spells it (#{moved} row(s) moved over)"
+  end
+
+  # Everything hanging off the row that is going, then the row. `Location` has
+  # `dependent: :destroy` on its items and scenes, which is why they are moved
+  # rather than left to it: the caller has already refused a ghost with any
+  # scene, and moving the items is the difference between folding two rooms and
+  # losing what was in one of them.
+  def fold_location_into(ghost, survivor)
+    moved = Item.where(location: ghost).update_all(location_id: survivor.id)
+    moved += Character.where(location: ghost).update_all(location_id: survivor.id)
+    moved += Location.where(parent_location: ghost).update_all(parent_location_id: survivor.id)
+    moved += fold_doorways(ghost, survivor)
+    ghost.destroy!
+    moved
+  end
+
+  # The ghost's doorways, re-pointed at the survivor. A row that would become a
+  # loop (the two rooms lead to each other) or a doorway the survivor already
+  # has is dropped instead: both rows describe the same edge, and
+  # `location_connections` has a unique index on the pair.
+  def fold_doorways(ghost, survivor)
+    rows = LocationConnection.where(location: ghost).or(LocationConnection.where(connected_location: ghost)).to_a
+
+    rows.count do |row|
+      from = row.location_id == ghost.id ? survivor.id : row.location_id
+      to = row.connected_location_id == ghost.id ? survivor.id : row.connected_location_id
+
+      if from == to || LocationConnection.where(location_id: from, connected_location_id: to).where.not(id: row.id).exists?
+        row.destroy!
+        false
+      else
+        row.update!(location_id: from, connected_location_id: to)
+        true
+      end
+    end
+  end
+
+  # THE LEFTOVER OF A RENAMED ITEM. `Story::Doctor` raises this `safe` only
+  # where a checked-in file declares one item under the pair's natural key, the
+  # row it names exists, and nothing refers to the others -- no party carrying
+  # one, no turn log recording a take of one. The loader has already written
+  # the file's description, place and inscription onto the row the file names,
+  # so what is left is a row nothing in the world points at.
+  def repair_duplicate_items(finding)
+    survivor = finding.subject
+    key = WorldSeed.natural_key(survivor.name)
+    name = doctor.seeded_item_names[key]
+
+    raise ArgumentError, "#{seed_file} declares no item matching #{survivor.name.inspect}" if name.blank?
+    raise ArgumentError, "#{survivor.name.inspect} is not the name #{seed_file} gives it (#{name.inspect})" unless survivor.name == name
+
+    leftovers = doctor.duplicate_item_rows(key) - [ survivor ]
+    raise ArgumentError, "there is only one #{name.inspect} now, so there is nothing to fold" if leftovers.empty?
+
+    handled = leftovers.reject { |item| doctor.untouched?(item) }
+    raise ArgumentError, "#{handled.map(&:name).join(", ")} #{handled.one? ? "has" : "have"} been handled by a player, so #{handled.one? ? "it is" : "they are"} theirs" if handled.any?
+
+    removed = leftovers.map { |item| "##{item.id} #{item.name.inspect} (#{item.whereabouts})" }
+    leftovers.each(&:destroy!)
+
+    "removed #{removed.join(", ")}, which #{seed_file} calls #{name.inspect} and ##{survivor.id} already is"
+  end
+
+  # THE DOORWAY A RE-SEED WROTE BACK OVER THE ARRANGEMENT THE WORLD HAD MOVED
+  # TO. Closed both ways, because a connection is two rows and one of them
+  # alone is `one_way_connection`.
+  #
+  # Safe because the file says which doorway it declares and
+  # `WorldMechanic::ShuffleConnections` says it moves the far end of exactly
+  # that kind of edge -- so the pair being on record after a night has run is a
+  # re-seed's doing. IT REFUSES TO STRAND ANYTHING: the world has to still be
+  # whole afterwards, checked the same way the mechanic checks its own
+  # arrangements, because a repair that split a world in two would be worse
+  # than the extra doorway.
+  def repair_re_asserted_doorway(finding)
+    row = finding.subject
+    from = row.location
+    to = row.connected_location
+    raise ArgumentError, "the world would fall into two halves without #{from.name} <-> #{to.name}" unless doctor.whole_without?(row)
+
+    LocationConnection.where(location: from, connected_location: to)
+                      .or(LocationConnection.where(location: to, connected_location: from))
+                      .destroy_all
+
+    "closed #{from.name} <-> #{to.name}, the doorway #{seed_file} declares and a re-seed wrote back over the " \
+      "arrangement #{from.name} had moved to"
   end
 
   # Two model calls: the room's description and lore, then its exits.

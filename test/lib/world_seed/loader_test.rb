@@ -177,7 +177,8 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
 
     error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(twice).load! }
 
-    assert_match(/duplicate item names: a daybook/, error.message)
+    assert_match(/one name to a re-seed/, error.message)
+    assert_match(/A Daybook/, error.message)
   end
 
   test "rejects a file it does not understand" do
@@ -414,6 +415,184 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
         "description" => "Nocturna floods the ward at midnight and the rooms come back in another order." }
     ]
     edited
+  end
+
+  # --- re-seeding a world somebody has played --------------------------------
+  #
+  # THE DEFECT THESE PIN. `WorldSeed::Loader` adds and never reconciled, so
+  # re-seeding a played world could leave it with two of something: two rooms
+  # because the file's name for one had been edited, two items for the same
+  # reason, and a second doorway off every mobile room because the world's own
+  # nightly shuffle had moved the first one. See the class header.
+
+  test "a room the file renamed is the same room, renamed" do
+    story = WorldSeed::Loader.new(document).load!
+    closet = story.locations.find_by(name: "The Closet")
+    closet.update!(last_protagonist_visit: story.start_time)
+
+    renamed = document
+    renamed["locations"].detect { |row| row["name"] == "The Closet" }["name"] = "Closet"
+    renamed["connections"].each { |row| row["between"] = row["between"].map { |name| name == "The Closet" ? "Closet" : name } }
+    renamed["characters"].each { |row| row["location"] = "Closet" if row["location"] == "The Closet" }
+    loader = WorldSeed::Loader.new(renamed)
+
+    assert_no_difference [ "Location.count", "LocationConnection.count" ] do
+      loader.load!
+    end
+
+    assert_equal "Closet", closet.reload.name
+    assert_equal story.start_time, closet.last_protagonist_visit, "the row kept everything hanging off it"
+    assert_equal [ "The Office" ], closet.exits.pluck(:name)
+    assert_match(/renamed rather than a second location created beside it/, loader.reconciled.join("\n"))
+  end
+
+  test "an item the file renamed is the same item, renamed" do
+    story = WorldSeed::Loader.new(document).load!
+    index = Item.in_story(story).find_by(name: "A Private Index")
+
+    renamed = document
+    renamed["locations"].detect { |row| row["name"] == "The Closet" }["items"].first["name"] = "a PRIVATE index"
+    loader = WorldSeed::Loader.new(renamed)
+
+    assert_no_difference -> { Item.count } do
+      loader.load!
+    end
+
+    assert_equal "a PRIVATE index", index.reload.name
+    assert_equal story.locations.find_by(name: "The Closet"), index.location
+    assert_match(/renamed rather than a second item created beside it/, loader.reconciled.join("\n"))
+  end
+
+  # A rename `WorldSeed.natural_key` cannot see is, to any loader, a row that
+  # does not exist yet -- so it is created, and SAID OUT LOUD rather than
+  # resolved: nothing in the file says which room it replaced.
+  test "a rename nothing can recognize is created and warned about" do
+    story = WorldSeed::Loader.new(document).load!
+    create(:playthrough, story: story, current_location: story.opening_location)
+
+    renamed = document
+    renamed["locations"].detect { |row| row["name"] == "The Closet" }["name"] = "The Broom Cupboard"
+    renamed["connections"].each { |row| row["between"] = row["between"].map { |name| name == "The Closet" ? "The Broom Cupboard" : name } }
+    renamed["characters"].each { |row| row["location"] = "The Broom Cupboard" if row["location"] == "The Closet" }
+    loader = WorldSeed::Loader.new(renamed)
+
+    assert_difference -> { Location.count }, 1 do
+      loader.load!
+    end
+
+    assert_match(/created location "The Broom Cupboard"/, loader.warnings.join("\n"))
+    assert_match(/rake game:doctor/, loader.warnings.join("\n"))
+  end
+
+  test "a first seed warns about nothing at all" do
+    loader = WorldSeed::Loader.new(document)
+    loader.load!
+
+    assert_empty loader.warnings
+    assert_empty loader.reconciled
+  end
+
+  test "a world nobody has played is not warned about" do
+    WorldSeed::Loader.new(document).load!
+
+    renamed = document
+    renamed["locations"] << { "name" => "The Yard", "detail_level" => "stub", "teaser" => "Rain off the levee." }
+    renamed["connections"] << { "between" => [ "The Office", "The Yard" ], "distance" => "adjacent", "travel_method" => "walking" }
+    loader = WorldSeed::Loader.new(renamed)
+    loader.load!
+
+    assert_empty loader.warnings, "a world with no playthroughs and no turns can be dropped and rebuilt"
+  end
+
+  # THE PHANTOM DOORWAY. `WorldMechanic::ShuffleConnections` repoints the far
+  # end of a mobile room's doorway and preserves the count, so re-asserting the
+  # file's own pair gives the room a second one -- which a later night then
+  # reports as having moved when a player standing there sees no such thing.
+  test "a doorway the world's own mechanic moved is not re-asserted as a second one" do
+    story = WorldSeed::Loader.new(with_shuffle).load!
+    mechanic = story.world_mechanics.sole
+    at = mechanic.next_boundary_after(story.start_time)
+
+    assert mechanic.operation.run!(at), "the world did not move, so there is nothing to re-assert over"
+    mechanic.update!(last_run_at: at)
+    moved = doorways(story)
+
+    loader = WorldSeed::Loader.new(with_shuffle)
+    assert_no_difference -> { LocationConnection.count } do
+      loader.load!
+    end
+
+    assert_equal moved, doorways(story), "the file was re-asserted over the arrangement the world had moved to"
+    assert_match(/left .* opening where the world put it/, loader.reconciled.join("\n"))
+  end
+
+  test "a doorway that is genuinely missing is still written" do
+    story = WorldSeed::Loader.new(with_shuffle).load!
+    mechanic = story.world_mechanics.sole
+    mechanic.update!(last_run_at: story.start_time + 1.day)
+    closet = story.locations.find_by(name: "The Closet")
+    yard = story.locations.find_by(name: "The Yard")
+    LocationConnection.where(location: closet, connected_location: yard)
+                      .or(LocationConnection.where(location: yard, connected_location: closet)).destroy_all
+
+    assert_difference -> { LocationConnection.count }, 2 do
+      WorldSeed::Loader.new(with_shuffle).load!
+    end
+  end
+
+  # --- what the file's own shape has to be -----------------------------------
+
+  test "rejects a file whose rooms are one room to a re-seed" do
+    twice = document
+    twice["locations"].detect { |row| row["name"] == "The Closet" }["name"] = "Closet"
+    twice["connections"].each { |row| row["between"] = row["between"].map { |name| name == "The Closet" ? "Closet" : name } }
+    twice["characters"].each { |row| row["location"] = "Closet" if row["location"] == "The Closet" }
+    twice["locations"] << { "name" => "The Closet", "detail_level" => "stub", "teaser" => "The other one." }
+    twice["connections"] << { "between" => [ "The Office", "The Closet" ], "distance" => "adjacent", "travel_method" => "walking" }
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(twice).load! }
+    assert_match(/one name to a re-seed/, error.message)
+    assert_match(/Closet \/ The Closet|The Closet \/ Closet/, error.message)
+  end
+
+  # PR 85's documented authoring rule, made a rule the loader keeps: two
+  # shufflable edges off ONE mobile room are permuted among themselves, which
+  # leaves the room opening onto the same places, which the mechanic refuses as
+  # a no-op. Such a world loads, validates, plays, and never moves.
+  test "rejects a shuffle whose edges all hang off one mobile location" do
+    broken = document
+    broken["locations"].detect { |row| row["name"] == "The Office" }["mobile"] = true
+    broken["mechanics"] = [ { "name" => "The nightly rearrangement", "kind" => "shuffle_connections",
+                              "cadence" => "nightly", "description" => "The ward comes back in another order." } ]
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/hangs off the same `mobile: true` location/, error.message)
+    assert_match(/at least two mobile locations/, error.message)
+  end
+
+  # The world the shuffle can actually move: two mobile rooms with one doorway
+  # each into two DIFFERENT anchored places, so there is an arrangement that
+  # changes which places end up joined.
+  def with_shuffle
+    edited = document
+    edited["locations"].detect { |row| row["name"] == "The Office" }["mobile"] = true
+    edited["locations"].detect { |row| row["name"] == "The Closet" }["mobile"] = true
+    edited["locations"] << { "name" => "The Yard", "detail_level" => "stub", "teaser" => "Rain off the levee." }
+    edited["connections"] << { "between" => [ "The Closet", "The Yard" ], "distance" => "adjacent", "travel_method" => "walking" }
+    edited["mechanics"] = [
+      { "name" => "The nightly rearrangement", "kind" => "shuffle_connections", "cadence" => "nightly",
+        "description" => "Nocturna floods the ward at midnight and the rooms come back in another order." }
+    ]
+    edited
+  end
+
+  # Every doorway in the story as unordered name pairs, so the two rows a
+  # connection is stored as read as the one door they are.
+  def doorways(story)
+    LocationConnection.joins(:location).where(locations: { story_id: story.id })
+                      .includes(:location, :connected_location)
+                      .map { |row| [ row.location.name, row.connected_location.name ].sort }
+                      .uniq.sort
   end
 
   # --- where the file puts people -------------------------------------------

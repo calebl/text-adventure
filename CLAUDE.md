@@ -362,6 +362,25 @@ The current database includes the following story-related models with proper ass
   clock. `kind` and `cadence` are keys into fixed tables in code, so a seeded or
   generated world supplies parameters (`locations.mobile`, the cadence) and
   never behaviour
+- **WorldSeed::Loader** → **RE-SEEDING A WORLD SOMEBODY HAS PLAYED**, which is
+  what the loader's rules are about: it is how a file change reaches the
+  database the captain plays. It *reconciles what the file can prove, says out
+  loud what it cannot, and deletes nothing*. A room or an item the file renamed
+  is the same row renamed, on `WorldSeed.natural_key` (case, whitespace and a
+  leading article are not part of a name — and nothing wider, because folding
+  two different rooms into one would destroy play); a doorway
+  `WorldMechanic::ShuffleConnections` has moved is left where the world put it
+  rather than written back as a second one; a rename no normalized name
+  recognizes is created and named in `#warnings`. `#validate!` refuses a file
+  whose own rooms or items are one name to a re-seed, and a
+  `shuffle_connections` whose edges all hang off ONE mobile room (PR 85's
+  authoring note, made a rule). `rake game:doctor` names the shapes an older
+  database already carries — `duplicate_locations`, `duplicate_items`,
+  `mobile_doorway_re_asserted` — each with a `safe` fold in `Story::Repair`,
+  the only repairs there that remove a row: what is on the row a re-seed
+  created is moved onto the row with the history first, and a row anybody has
+  touched is refused. `lib/engine_sweep/scripts/reseed-a-played-world.yml`
+  walks it offline
 
 - All interactions with AI LLMs should use a structured output with RubyLLM::Schema
 
@@ -549,6 +568,13 @@ The current database includes the following story-related models with proper ass
   statement about people: nothing a player types may write a whereabouts, and it
   is stated as *unmoved* rather than *nobody is nowhere* because nowhere is a
   state two of the three checked-in worlds deliberately hold.
+- A step may be a **`reseed:`** rather than a typed line: it re-loads the world
+  file over the copy the walk is playing, so every expectation under it says
+  what a re-seed did and did not disturb. It may name what that load renames
+  (`locations:` / `items:`), which is the only way a walk reaches a rename — a
+  rename is what the SECOND version of a file says.
+  `reseed-a-played-world.yml` is that script, and the invariants after it read
+  the file **as last loaded**.
 - A step may carry `player:`, and **a distinct name is a second `Playthrough` of
   the same loaded copy of the world**. It is the one thing a single walk cannot
   see: with the inventory on the story's protagonist row both games read the

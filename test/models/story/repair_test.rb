@@ -311,4 +311,85 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_equal story.protagonist, daybook.reload.character
     assert_empty played.carried.by_name(daybook.name), "no copy was handed out by a one-item repair"
   end
+
+  # --- folding what re-seeding a played world left behind --------------------
+  #
+  # THE ONLY REPAIRS IN THIS CLASS THAT REMOVE A ROW, and the rule they are
+  # under is that nothing play created is destroyed: what is on the row a
+  # re-seed made is moved onto the row with the history first, and a row
+  # anybody has touched is refused.
+
+  test "folds two rooms that are one room onto the one with the history" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    closet = story.locations.find_by(name: "The Supply Closet")
+    closet.update!(last_protagonist_visit: story.start_time)
+    ghost = create(:location, story: story, name: "Supply Closet", detail_level: "stub", teaser: "The second one.")
+    join(story.opening_location, ghost)
+    apron = Item.in_story(story).find_by(name: "copy-room apron")
+    apron.update!(location: ghost)
+    repair = Story::Repair.new(story)
+
+    assert_equal [ :duplicate_locations ], repair.plan.map(&:code)
+    assert_equal 0, repair.model_calls
+
+    result = BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) { repair.apply!.sole }
+
+    assert_predicate result, :repaired?
+    assert_nil Location.find_by(id: ghost.id)
+    assert_equal "The Supply Closet", closet.reload.name
+    assert_equal closet, apron.reload.location, "what was on the row a re-seed made moved rather than went with it"
+    assert_equal [ "The Supply Closet", "The Long Hallway" ], story.opening_location.exits.reload.pluck(:name)
+    assert_predicate Story::Doctor.new(story.reload), :healthy?
+  end
+
+  test "refuses to fold two rooms both of which have been stood in" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    story.locations.find_by(name: "The Supply Closet").update!(last_protagonist_visit: story.start_time)
+    create(:location, story: story, name: "Supply Closet", detail_level: "stub",
+                      teaser: "The second one.", last_protagonist_visit: story.start_time)
+    repair = Story::Repair.new(story)
+
+    assert_empty repair.plan
+    assert_equal [ :duplicate_locations ], repair.manual.map(&:code)
+  end
+
+  test "removes the leftover of a renamed item" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    stamp = Item.in_story(story).find_by(name: "ward stamp")
+    leftover = create(:item, name: "Ward Stamp", description: "The second one.", character: nil, location: stamp.location)
+    repair = Story::Repair.new(story)
+
+    assert_equal [ :duplicate_items ], repair.plan.map(&:code)
+
+    assert_predicate repair.apply!.sole, :repaired?
+    assert_nil Item.find_by(id: leftover.id)
+    assert_equal "ward stamp", stamp.reload.name
+    assert_predicate Story::Doctor.new(story), :healthy?
+  end
+
+  test "closes the doorway a re-seed wrote back over the arrangement the world had moved to" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-lunar-cartographer.yml"))
+    story.world_mechanics.sole.update!(last_run_at: story.start_time + 1.day)
+    lane = story.locations.find_by(name: "Mournwell Lane")
+    circle = story.locations.find_by(name: "Sovereign's Circle")
+    join(lane, create(:location, story: story, name: "The Long Quay", detail_level: "stub", teaser: "Barges."))
+    join(story.locations.find_by(name: "Larkspur Quarter rooftops"), circle)
+    repair = Story::Repair.new(story)
+
+    assert_equal [ :mobile_doorway_re_asserted ], repair.plan.map(&:code)
+
+    assert_predicate repair.apply!.sole, :repaired?
+    assert_not_includes lane.exits.reload.pluck(:name), "Sovereign's Circle"
+    assert_includes circle.exits.reload.pluck(:name), "Larkspur Quarter rooftops", "the world is still whole"
+  end
+
+  private
+
+  # Both directions of one doorway, the way every writer in the app makes one.
+  def join(from, to)
+    [ [ from, to ], [ to, from ] ].each do |origin, destination|
+      create(:location_connection, location: origin, connected_location: destination,
+                                   distance: "adjacent", travel_method: "walking")
+    end
+  end
 end

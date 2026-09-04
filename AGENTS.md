@@ -428,6 +428,25 @@ send again: one system instruction, one schema, one model.
 - **Seeded worlds are not a substitute for generating one.**
   `test/lib/seeded_worlds_test.rb` is the only test that reads them; generator
   tests keep running against `FakeAgent`.
+- **RE-SEEDING A WORLD SOMEBODY HAS PLAYED IS THE CASE THE LOADER IS ABOUT.**
+  It is how the captain picks up a file change on the database he plays, so it
+  runs against worlds in progress, and for a long time it *added and never
+  reconciled*: an edited room name made a second room with the office opening
+  onto both, an edited item name made a second item, and a world whose nights
+  had run got a second doorway off every mobile room. The rule now is
+  **reconcile what the file can prove, say out loud what it cannot, delete
+  nothing.** A renamed row is the same row (`WorldSeed.natural_key` — case,
+  whitespace and a leading article are not part of a name, and nothing wider);
+  a doorway `WorldMechanic::ShuffleConnections` has moved is left where the
+  world put it; a rename no normalized name recognizes is created and reported
+  in `Loader#warnings`. Read the class header before changing any of it, and
+  `db/seeds/worlds/README.md` → *Re-seeding a world somebody has played* for
+  what the operator sees. `rake game:doctor` names the shapes an older database
+  already carries — `duplicate_locations`, `duplicate_items`,
+  `mobile_doorway_re_asserted` — each with a `safe` fold in `Story::Repair`,
+  **the only repairs in that class that remove a row**: what is on the row a
+  re-seed created is moved onto the row with the history first, and a row
+  anybody has touched is refused.
 
 ### Story time, and a world that moves on its own
 
@@ -690,6 +709,15 @@ expectations asserted against the records after every typed line. It runs in
   replaces `BaseAgent.new` for the length of a run. Never weaken that to make a
   script "work"; a sweep that made a model call would be a different instrument
   with the same name.
+- **A step may be a `reseed:` rather than a typed line**, which re-loads the
+  world file over the copy the walk has been playing — so every expectation
+  under it is a statement about what a re-seed did and did not disturb. It may
+  name what that load renames (`locations:` / `items:` mappings), which is how a
+  walk reaches a rename at all: a rename is what the SECOND version of a file
+  says, and a script loads one file.
+  `lib/engine_sweep/scripts/reseed-a-played-world.yml` is that script. The
+  invariants are then checked against the file **as last loaded**, or a
+  deliberate rename would read as an invented doorway.
 - **A step may name a `player:`, and a distinct name is a second `Playthrough`
   of the same loaded copy of the world.** It is the one thing a single walk
   cannot see: with the party's inventory on the story's protagonist row both

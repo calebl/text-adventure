@@ -33,6 +33,33 @@ module WorldSeed
     title.to_s.downcase.gsub(/[^a-z0-9]+/, "-").delete_prefix("-").delete_suffix("-")
   end
 
+  # A leading article is not part of a name. Kept as a constant so the one
+  # widening this makes over a plain downcase is visible in one place.
+  LEADING_ARTICLE = /\A(?:the|a|an)\s+/
+
+  # THE SAME THING UNDER A DIFFERENT WRITTEN NAME.
+  #
+  # A seed file's rows have no id -- the name IS the identity -- so a name that
+  # is edited in the file is, to a loader matching on it, a row that does not
+  # exist yet. `WorldSeed::Loader` then creates a second one and leaves the
+  # first behind, which is how the captain's database came to hold both
+  # "The Supply Closet" and "Supply Closet", with the office opening onto the
+  # closet twice.
+  #
+  # So identity is asked one step wider than the written name: case, runs of
+  # whitespace and a leading article are not part of it. Deliberately NOT wider
+  # than that -- punctuation, possessives and plurals stay significant, because
+  # every further step buys fewer real renames and risks folding two genuinely
+  # different rooms into one, and a loader that merged two rooms would destroy
+  # play rather than duplicate it. The two shapes actually observed are a case
+  # change and a leading "The".
+  #
+  # Read by `WorldSeed::Loader` to recognize a renamed row and by
+  # `Story::Doctor` to name a pair of rows that are one thing.
+  def self.natural_key(name)
+    name.to_s.downcase.gsub(/[[:space:]]+/, " ").strip.sub(LEADING_ARTICLE, "").strip
+  end
+
   # THE CHECKED-IN FILE FOR ONE STORY, matched on title the way
   # `WorldSeed::Loader` matches everything else, or nil for a story that is not
   # one of them -- which is every generated world and every engine-sweep copy.
