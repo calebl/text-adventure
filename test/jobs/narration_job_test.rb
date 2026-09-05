@@ -359,4 +359,86 @@ class NarrationJobTest < ActiveJob::TestCase
     assert_operator refusal, :>, html.index('class="log"')
     assert_operator refusal, :<, html.index("what do you do?")
   end
+
+  # A ROUND OF A FIGHT, END TO END, THROUGH THE BROWSER'S OWN PATH AND FOR NO
+  # MODEL CALL.
+  #
+  # `BaseAgent.new` is replaced by something that RAISES for the length of the
+  # turn -- the guard `EngineSweep` uses -- so this is not "we did not notice a
+  # call", it is "a call would have failed the test". The line the panel's
+  # button posts is slashed, so `Playthrough::Grammar` reads it and the
+  # classifier is never reached; `Playthrough::Turn#strike_at` writes a
+  # `Playthrough::Blow` and calls no narrator; the riposte answers in the same
+  # turn. NOTHING IS STREAMED -- there is no prose to stream -- and the panel
+  # arrives on the ordinary end-of-turn `#turn_log` replace, which is the whole
+  # of the Turbo story here.
+  test "a button's line plays a whole round with no model call, and the panel comes back with it" do
+    playthrough = fighting_playthrough
+    opening = playthrough.current_scene
+    exploded = ->(*) { raise "a round of a fight must make no model call" }
+
+    streams = capture_turbo_stream_broadcasts(playthrough) do
+      BaseAgent.stub(:new, exploded) do
+        NarrationJob.perform_now(playthrough.id, "/attack Marek Sollen")
+      end
+    end
+
+    assert_empty appends(streams), "an engine-only round streams no prose"
+
+    replace = streams.last.to_html
+
+    assert_match "A fight. The Bell of Saint Aravel. Round 2.", replace
+    assert_match(/Hero Protagonist hit Marek Sollen for \d+ \(round 1\)/, replace)
+    assert_match(/Marek Sollen hit Hero Protagonist for \d+ \(round 1\)/, replace)
+    assert_match "/attack Marek Sollen", replace, "and the button is back for the next round"
+    # TWO BLOWS: the player's own and the one live foe's answer. A round is the
+    # turn -- the captain's call C5.
+    assert_equal 2, playthrough.blows.count
+    assert_equal opening, playthrough.reload.current_scene,
+                 "an attack writes no Scene of its own -- the blow rows are the record"
+  end
+
+  # AND THE PANEL GOES WHEN THE FIGHT DOES, on the same replace: the last foe
+  # falls, `Playthrough::Fight#close!` writes the one Scene that says so, and
+  # the ordinary log has it. The panel and the log agree because neither is
+  # holding any state the other could contradict.
+  test "the closing scene lands in the log and the panel is gone with it" do
+    playthrough = fighting_playthrough
+    monster = playthrough.story.characters.find_by(fullname: "Marek Sollen")
+    # Down to one hit point, so the next blow of any die ends it whatever the
+    # face -- `Roll`'s seed is built out of row ids and no fixture may depend on
+    # one.
+    Playthrough::Turn.new(playthrough).harm!(monster, monster.max_hp - 1)
+    exploded = ->(*) { raise "closing a fight must make no model call" }
+
+    streams = capture_turbo_stream_broadcasts(playthrough) do
+      BaseAgent.stub(:new, exploded) do
+        NarrationJob.perform_now(playthrough.id, "/attack Marek Sollen")
+      end
+    end
+
+    replace = streams.last.to_html
+
+    assert_no_match(/A fight\. The Bell of Saint Aravel/, replace)
+    assert_match "The fight in The Bell of Saint Aravel is over", replace
+    assert_match "Marek Sollen is dead.", replace
+    assert_match "what do you do?", replace, "and the ordinary loop resumes"
+    assert_predicate playthrough.reload.current_scene, :engine_authored?
+  end
+
+  private
+
+  # A GAME STANDING IN FRONT OF A MONSTER. Level 3 with a d8 on both sides,
+  # which is 18 hit points (the captain's call C1) and is fixed here for
+  # `Playthrough::Fight`'s stated reason: a fixture must never depend on which
+  # face came up.
+  def fighting_playthrough
+    story = create(:story)
+    room = create(:location, story: story, name: "The Bell of Saint Aravel")
+    hero = create(:character, :protagonist, story: story, level: 3, hit_die: 8)
+    create(:character, :monster, story: story, location: room, fullname: "Marek Sollen",
+                                 level: 3, hit_die: 8)
+    create(:playthrough, story: story, character: hero, current_location: room,
+                         current_scene: create(:scene, story: story, location: room))
+  end
 end

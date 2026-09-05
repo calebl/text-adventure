@@ -848,6 +848,26 @@ The current database includes the following story-related models with proper ass
   instruments; `a-fight-the-player-wins.yml` and
   `a-fight-that-kills-the-player.yml` walk both outcomes and each says in its
   header why its ending is fixed whatever the dice say
+- **Playthrough::Battle** → **THE FIGHT IN THE BROWSER, AND IT IS THE RECORDS
+  RENDERED.** The captain's call C9 of 2026-09-05 — *"go with buttons for now"* —
+  which is the combat scout's §12 shape (a): a `.sheet.battle` panel inside
+  `#turn_log` (`playthroughs/_battle`), rendered when
+  `Playthrough#foes_in(current_location)` answers with somebody. **DERIVED, WITH
+  NO BATTLE FLAG ANYWHERE**: it arrives the turn a foe is in front of the party
+  and is gone the turn the last one dies or they walk out, and there is nothing
+  to reconcile either way because the fight wrote through the records the prose
+  loop writes through. This class is the ONE author of what the panel says, for
+  `Playthrough::Refusal`'s reason, and it WRITES NOTHING and calls no model.
+  **ONE UI**: every button is `turns#create` with a fixed command string, and the
+  string is SLASHED (`/attack Marek Sollen`), so `Playthrough::Grammar` reads it
+  and the classifier never runs — **a round costs zero model calls**, measured in
+  the browser (three chats for two `/go` moves, none for two rounds). The
+  free-text box stays under the panel: this is a shortcut into the one loop and
+  not a mode. **Condition lines and never bars** (`9 of 18`), because the reading
+  experience is `ta-api-iface`'s stage — scout §15.6. `#throws` is the slice 5
+  seam and answers `[]` until `throw` reaches `Playthrough::Grammar::RESOLVING`;
+  its comment says what fills it. No prose per round: that is shape (b) and it
+  needs `ta-prompt-bench`
 
 ### Sweeping the engine with stored scripts
 - `rake game:sweep` (`EngineSweep`) walks YAML scripts of typed lines through

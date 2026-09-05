@@ -560,6 +560,106 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_select "div.notice", 0
   end
 
+  # THE BATTLE PANEL, AND IT IS DERIVED. The captain's call C9 of 2026-09-05 --
+  # ***"go with buttons for now"*** -- shape (a) of the combat scout's §12: a
+  # panel of records inside `#turn_log`, rendered when `Playthrough#foes_in`
+  # answers with somebody and gone when it does not. There is no battle flag to
+  # set and none to clear.
+  test "a room with somebody hostile in it shows the battle panel" do
+    playthrough = fighting_playthrough
+
+    get playthrough_path(playthrough)
+
+    assert_response :success
+    assert_select "#turn_log div.sheet.battle" do
+      assert_select "h2", text: /A fight\. The Bell of Saint Aravel\. Round 1\./
+      # NUMBERS AND NOT BARS. The condition line is `18 of 18`, in the house
+      # grey -- the reading experience is `ta-api-iface`'s stage.
+      assert_select "p.sheet-line span.state", text: "18 of 18", count: 2
+      assert_select "p.sheet-line span.mark", text: "hostile"
+    end
+  end
+
+  # ONE UI. A button is `turns#create` with a fixed command string -- the same
+  # route the text box posts to -- and the string is SLASHED, so
+  # `Playthrough::Grammar` reads it and the classifier is never called. That is
+  # the whole of "a round costs zero model calls".
+  test "the panel's buttons post fixed commands to the same turn route" do
+    playthrough = fighting_playthrough
+
+    get playthrough_path(playthrough)
+
+    assert_select "div.sheet-actions form[action=?]", playthrough_turns_path(playthrough) do
+      assert_select "input[name=?][value=?]", "command", "/attack Marek Sollen"
+    end
+    # THE WAY OUT IS ALWAYS THERE -- the captain's call C1, a fight is always
+    # escapable by leaving the room.
+    assert_select "div.sheet-actions input[name=?][value=?]", "command", "/go The Stair"
+  end
+
+  # AND THE BOX IS STILL UNDER IT. The panel is a shortcut into the one loop and
+  # not a mode: a player who would rather type `/attack Marek Sollen`, or say
+  # something the buttons have no word for, still can.
+  test "the free-text box stays under the panel" do
+    playthrough = fighting_playthrough
+
+    get playthrough_path(playthrough)
+
+    assert_select "div.sheet.battle", 1
+    assert_select "input[name=command][type=text]", 1
+  end
+
+  test "a room with nobody hostile in it shows no panel" do
+    playthrough = fighting_playthrough
+    playthrough.update!(current_location: playthrough.story.locations.find_by(name: "The Stair"))
+
+    get playthrough_path(playthrough)
+
+    assert_select "div.sheet.battle", 0
+    assert_select "input[name=command][type=text]", 1
+  end
+
+  # THE LAST KILL TAKES THE PANEL AWAY and the ordinary loop resumes with
+  # nothing to reconcile -- the fight wrote through the same records the prose
+  # loop writes through, so there is no battle state to hand back.
+  test "killing the last foe takes the panel away" do
+    playthrough = fighting_playthrough
+    monster = playthrough.story.characters.find_by(fullname: "Marek Sollen")
+    Playthrough::Turn.new(playthrough).harm!(monster, 99)
+
+    get playthrough_path(playthrough)
+
+    assert_select "div.sheet.battle", 0
+  end
+
+  # A DEAD PLAYER IS NOT IN A FIGHT, whatever is standing over them: the death
+  # notice has the screen and the input is gone, exactly as before this panel
+  # existed.
+  test "a dead playthrough shows the death notice and no panel" do
+    playthrough = fighting_playthrough
+    Playthrough::Turn.new(playthrough).harm!(playthrough.character, 99)
+
+    get playthrough_path(playthrough)
+
+    assert_select "div.sheet.battle", 0
+    assert_select "input[name=command][type=text]", 0
+    assert_select "div.notice", text: /#{Regexp.escape(Playthrough::DeathNotice::HEADING)}/
+  end
+
+  # THE LAST EXCHANGE, in the engine's own sentence about its own dice --
+  # `Playthrough::Blow#to_s`, reused verbatim so the browser and
+  # `rake game:mechanics` cannot describe one blow two ways.
+  test "the panel prints the blows of the round just fought" do
+    playthrough = fighting_playthrough
+    monster = playthrough.story.characters.find_by(fullname: "Marek Sollen")
+    Playthrough::Turn.new(playthrough).strike!(playthrough.character, monster, round: 1)
+
+    get playthrough_path(playthrough)
+
+    assert_select "div.sheet.battle h2", text: /Round 2\./
+    assert_select "p.sheet-note", text: /Hero Protagonist hit Marek Sollen for \d+ \(round 1\)/
+  end
+
   private
 
   # A game the player has died in, through the engine's own writer rather than
@@ -574,5 +674,23 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
                                        current_scene: create(:scene, story: story, location: room))
     Playthrough::Turn.new(playthrough).harm!(hero, 99)
     playthrough
+  end
+
+  # A GAME STANDING IN FRONT OF SOMEBODY THE WORLD SAYS IS HOSTILE, which is the
+  # whole of what puts the panel on the page -- there is no flag to set. Level 3
+  # with a d8 on both sides, which is 18 hit points (the captain's call C1) and
+  # is fixed here for `Playthrough::Fight`'s stated reason: `Roll`'s seed is
+  # built out of row ids, so no fixture may depend on a face coming up.
+  def fighting_playthrough
+    story = create(:story)
+    room = create(:location, story: story, name: "The Bell of Saint Aravel")
+    stair = create(:location, story: story, name: "The Stair")
+    create(:location_connection, location: room, connected_location: stair)
+    create(:location_connection, location: stair, connected_location: room)
+    hero = create(:character, :protagonist, story: story, level: 3, hit_die: 8)
+    create(:character, :monster, story: story, location: room, fullname: "Marek Sollen",
+                                 level: 3, hit_die: 8)
+    create(:playthrough, story: story, character: hero, current_location: room,
+                         current_scene: create(:scene, story: story, location: room))
   end
 end

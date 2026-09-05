@@ -1660,6 +1660,22 @@ Views are ERB with an inline `<style>` in the layout. Restyling is
   page load `turbo:load` fires before Stimulus attaches and never arrives, and on
   a Turbo Drive visit `connect()` runs before Turbo applies the scroll. Each
   covers the case the other gets wrong.
+- **A fight has a panel and it is not a mode.** `Playthrough::Battle` +
+  `playthroughs/_battle` render inside `#turn_log`'s idle branch whenever
+  `Playthrough#foes_in(current_location)` answers with somebody -- derived, no
+  flag, gone the turn the last foe dies or the party leaves. The captain's call
+  C9 of 2026-09-05: *"go with buttons for now."* **Every button is
+  `turns#create` with a fixed command string**, and the string carries a `/`, so
+  `Playthrough::Grammar` reads it, the classifier never runs and **a round costs
+  zero model calls**. The free-text box stays underneath: this is a shortcut
+  into the one loop, not a second input surface, and if you find yourself adding
+  a controller, a route or a payload for it you have left the shape. **Condition
+  lines and never bars** (`9 of 18`) -- restyling is still `ta-api-iface`. The
+  panel rides the ordinary end-of-turn `#turn_log` replace and no prose is
+  streamed on a round, because `Playthrough::Turn#strike_at` calls no narrator.
+  `.sheet` is the frame and `.battle` the one thing built on it, kept apart so
+  the d3 scout's room sheet can reuse the frame; do not build the room sheet
+  until it is ruled on.
 
 ### The debug view
 
