@@ -55,6 +55,40 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **The battle view in the browser** (`ta-combat-battle-view`, slice 7 of the
+  combat build order). The captain's call C9, 2026-09-05: *"go with buttons for
+  now."* He can now fight in a browser, and **this is the last slice that
+  changes no prompt**.
+
+  **What he sees.** A panel inside `#turn_log` — the room and the round, one
+  condition line per body in the fight (`9 of 18`, marked `you` / `hostile` /
+  `provoked`), the blows of the round just fought in the engine's own sentence,
+  and a button per act: strike each live foe, leave by each exit. Condition
+  lines and **not bars**: restyling is still `ta-api-iface`'s stage, and a
+  hit-point bar would be that stage arriving early and unplanned.
+
+  **A fight is entered and left by DERIVATION.** The panel is rendered when
+  `Playthrough#foes_in(current_location)` answers with somebody — no battle
+  flag, no mode, nothing to go stale. It is gone the turn the last foe dies or
+  the party walks out, and the ordinary prose loop resumes with **nothing to
+  reconcile**, because the fight wrote through the same records the prose loop
+  writes through. A dead player has the death notice instead, exactly as before.
+
+  **ONE UI, and this is the argument.** A battle button *is* `turns#create` with
+  a fixed command string — the same route, the same `NarrationJob`, the same
+  `Playthrough::Turn#play` the text box reaches, and the box stays under the
+  panel. The strings carry a `/`, so `Playthrough::Grammar` reads them and the
+  classifier never runs: **a round costs zero model calls**, measured in a real
+  browser (three model conversations for the two `/go` moves that walked to the
+  fight, and none at all for the two rounds fought).
+
+  **Not built, and deferred rather than missing**: prose per round (shape (b),
+  blocked on `ta-prompt-bench`), the seventh classifier intent (slice 8), throw
+  buttons (`Playthrough::Battle#throws` is a marked seam answering `[]` until
+  slice 5 puts `throw` in the grammar), hit-point bars, and the d3 scout's room
+  sheet — `.sheet` is factored so that sheet can reuse the frame when it is
+  ruled on.
+
 - **A fight resolves and can kill** (`ta-combat-fight`, slice 4 of the combat
   build order). The captain's word, 2026-09-05: *"continue through all of the
   combat slices."* **This is the slice the whole direction asked for**: he can

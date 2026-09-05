@@ -141,6 +141,26 @@
         token, and during a move, which cannot stream at all. %>
     <div class="turn cursor" id="stream"></div>
   <% else %>
+    <%# A FIGHT, WHEN THE RECORDS SAY THERE IS ONE. Derived and never stored:
+        `Playthrough::Battle#on?` is `Playthrough#foes_in` over the room the
+        party is standing in, so the panel arrives the turn somebody hostile is
+        in front of them and is gone the turn the last one dies or they walk
+        out -- with nothing to reconcile either way, because the fight wrote
+        through the same records the prose loop writes through.
+
+        Built here rather than in the partial so a game that is not in a fight
+        pays one `#foes_in` and no render at all, and inside the `else` on
+        purpose: a turn in flight has no form and a game that is over has a
+        death notice where all of this would be.
+
+        The buttons post to the same `turns#create` the box below does. See
+        `Playthrough::Battle` for the one-UI argument and for what a round
+        costs. %>
+    <% battle = Playthrough::Battle.new(playthrough) %>
+    <% if battle.on? %>
+      <%= render "playthroughs/battle", battle: battle, playthrough: playthrough %>
+    <% end %>
+
     <%# Where the player is and what leads out of it. Not decoration: the exits
         are the move targets Playthrough::Classifier will accept, so a player
         who cannot read them is guessing at the one command that matters. %>

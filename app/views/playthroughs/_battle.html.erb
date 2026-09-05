@@ -1,0 +1,60 @@
+<%# locals: (battle:, playthrough:) %>
+<%# A FIGHT, AS THE RECORDS HAVE IT. The captain's call C9 of 2026-09-05 --
+    ***"go with buttons for now."***
+
+    NOTHING HERE IS GENERATED. Every name, every number and every button label
+    is a record read back by `Playthrough::Battle`, which is the one author of
+    what this says. No narrator wrote a word of it and no model was asked
+    anything: a round of a fight costs zero model calls, which is the whole
+    argument for shipping the panel before `ta-prompt-bench` exists.
+
+    IT IS NOT A SECOND UI. Each button is a `form_with` posting a fixed command
+    string to `playthrough_turns_path` -- the same route, the same job and the
+    same `Playthrough::Turn#play` the text box below reaches. The strings carry
+    a leading `/`, so `Playthrough::Grammar` reads them and the classifier is
+    never called; a player who would rather type `/attack Marek Sollen` gets the
+    identical turn, and the box is still there for them.
+
+    `.sheet` IS THE SHELL AND `.battle` IS THIS ONE. The d3 rooms scout's call 5
+    asks that a battle panel and a future ROOM SHEET share their frame; the
+    captain has not ruled on the room sheet, so it is not built here -- but the
+    frame, the condition rows and the button row are `.sheet` classes with
+    nothing combat-specific in them, so the sheet that wants them can have them
+    without a restyle. %>
+<div class="sheet battle">
+  <h2>A fight. <%= battle.room.name %>. Round <%= battle.round %>.</h2>
+
+  <%# ONE LINE PER BODY IN THE FIGHT: the party, then the foes. Numbers and not
+      bars -- `2 of 6` -- because the reading experience is `ta-api-iface`'s
+      stage and a hit-point bar is a visual vocabulary this file has no mandate
+      to invent (the combat scout's §12.2 and §15.6). %>
+  <% battle.bodies.each do |body| %>
+    <p class="sheet-line">
+      <span class="who"><%= body.name %></span>
+      <span class="state"><%= body.state %></span>
+      <span class="mark <%= body.mark %>"><%= body.mark %></span>
+    </p>
+  <% end %>
+
+  <%# WHAT JUST HAPPENED, in the engine's own sentence about its own dice.
+      `Playthrough::Blow#to_s` is that sentence and it is reused verbatim rather
+      than re-phrased here, so the browser and `rake game:mechanics` cannot come
+      to describe one blow two ways. Absent before the first swing. %>
+  <% battle.last_exchange.each do |blow| %>
+    <p class="sheet-note"><%= blow.to_s %></p>
+  <% end %>
+
+  <%# THE ACTS. A strike at each live foe, then the ways out -- and the ways out
+      are always offered, because a fight is always escapable by leaving the
+      room (the captain's call C1). Leaving is the one button here that costs a
+      model call, for the ordinary reason a move does: the room is realized and
+      arriving is narrated. %>
+  <div class="sheet-actions">
+    <% (battle.strikes + battle.throws + battle.ways_out).each do |action| %>
+      <%= form_with url: playthrough_turns_path(playthrough) do |form| %>
+        <%= form.hidden_field :command, value: action.command %>
+        <%= form.submit action.label %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

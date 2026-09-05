@@ -89,6 +89,45 @@
       .slash-option[aria-selected="true"] { background: #262b31; color: #e6e9ec; }
       .slash-hint { color: #6b737b; font-size: 12px; }
 
+      /* A SHEET: THE ENGINE'S OWN RECORDS, RENDERED RATHER THAN NARRATED.
+
+         `.sheet` is the frame, `.battle` is the one thing built on it today
+         (`playthroughs/_battle`). Split that way on the d3 rooms scout's call
+         5, which asks that the battle panel and a future ROOM SHEET share a
+         partial and a stylesheet: the room sheet is not built here and the
+         captain has not ruled on it, but nothing in these five rules is about
+         a fight, so it can be had without a restyle.
+
+         Built out of what is already in this file -- `.story`'s border, `h1`'s
+         uppercase heading, the log's dim grey for anything secondary -- so a
+         panel reads as part of the page and not as a widget bolted to it. NO
+         BARS AND NO NEW COLOURS: the condition is `2 of 6` in the notice grey,
+         because the reading experience is `ta-api-iface`'s stage and inventing
+         a visual vocabulary in a battle panel is that stage arriving early
+         (`data/ta-combat-scout` §15.6). */
+      .sheet { border: 1px solid #262b31; padding: .6rem .85rem; margin: 0 0 1rem; }
+      .sheet h2 {
+        font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+        color: #8ba0b4; margin: 0 0 .5rem;
+      }
+      .sheet-line {
+        display: flex; gap: .75rem; align-items: baseline; justify-content: space-between;
+        margin: .1rem 0;
+      }
+      .sheet-line .who { color: #cfd3d8; }
+      .sheet-line .state { color: #9aa3ac; margin-left: auto; }
+      .sheet-line .mark { color: #6b737b; font-size: 12px; min-width: 5rem; text-align: right; }
+      .sheet-note { color: #8b939b; margin: .5rem 0 0; }
+      /* `form` is flex and full-width in the rule above, which would put every
+         button on a line of its own. The same fix `.verdict` makes. */
+      .sheet-actions { display: flex; flex-wrap: wrap; gap: .4rem; margin: .7rem 0 0; }
+      .sheet-actions form { display: inline-flex; margin: 0; }
+      .sheet-actions input[type=submit] { font-size: 13px; padding: .3rem .7rem; }
+
+      /* The one colour a fight adds, and it is the alert colour already here:
+         which of the bodies on the panel means the party harm. */
+      .battle .mark.hostile, .battle .mark.provoked { color: #d88f7f; }
+
       /* THE VERDICT ON A TURN -- the evaluation instrument, and the least
          styling that makes it usable without competing with the prose. The
          reading experience is still `ta-api-iface`'s job; this is not the

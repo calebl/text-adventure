@@ -62,4 +62,35 @@ class TurnsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to playthrough_path(playthrough, anchor: "bottom")
   end
+  # A BATTLE BUTTON IS THIS ROUTE WITH A FIXED COMMAND STRING, and that is the
+  # whole of the one-UI argument for the panel: no second controller, no second
+  # action, no payload but the line. The captain's call C9 of 2026-09-05 --
+  # ***"go with buttons for now"***.
+  #
+  # The line is SLASHED, so `Playthrough::Grammar` reads it downstream and the
+  # classifier is never called. Nothing here knows that; the string travels as
+  # any typed line does, which is the point.
+  test "a battle button's fixed command is an ordinary turn on the ordinary route" do
+    playthrough = create(:playthrough)
+
+    assert_enqueued_with job: NarrationJob, args: [ playthrough.id, "/attack Marek Sollen" ] do
+      post playthrough_turns_path(playthrough),
+           params: { command: "/attack Marek Sollen" }, as: :turbo_stream
+    end
+
+    assert_response :success
+    assert_match 'target="turn_log"', response.body
+  end
+
+  # AND A TURN IN FLIGHT HAS NO PANEL, for the reason it has no form: the
+  # streaming half of the page is the echoed line and `#stream`, and the panel
+  # comes back with the log on the replace that ends the turn.
+  test "the streaming half of the page carries no panel" do
+    playthrough = create(:playthrough, :in_scene)
+
+    post playthrough_turns_path(playthrough),
+         params: { command: "/attack Marek Sollen" }, as: :turbo_stream
+
+    assert_no_match(/sheet battle/, response.body)
+  end
 end
