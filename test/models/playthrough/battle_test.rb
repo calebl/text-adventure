@@ -86,8 +86,21 @@ class Playthrough::BattleTest < ActiveSupport::TestCase
   # TWO WAYS TO BE A FOE AND THEY ARE DIFFERENT RECORDS: `characters.hostile` is
   # the WORLD's and a seed file wrote it; `playthrough_vitals.provoked_at` is
   # THIS GAME's and the party wrote it by swinging first.
+  #
+  # THE LANDLORD IS LEVEL 3 FOR `setup`'s STATED REASON, and it is a real bug
+  # this test carried from the day it was written: the factory's body is level 1
+  # with a d8, which is EIGHT hit points, and the blow below is one die of the
+  # party's own d8. On a roll of 8 the landlord dies in the blow that provokes
+  # him, `Playthrough#cast_in` subtracts this game's dead, and `#foes_in`
+  # answers with nobody -- so the panel is correctly off and the assertion
+  # correctly fails. `Roll`'s seed is built out of row ids and the story clock,
+  # so which face comes up moves with how many rows the run wrote before it:
+  # it passed on `main`, and it came up 8 in CI once this file grew. A fixture
+  # may not depend on a face (`setup`), so the body is given one a single d8
+  # cannot empty rather than the assertion being loosened.
   test "somebody this game provoked is on the panel, marked as this game's own" do
-    landlord = create(:character, story: @story, location: @room, fullname: "Grenn Ollivar")
+    landlord = create(:character, story: @story, location: @room, fullname: "Grenn Ollivar",
+                                  level: 3, hit_die: 8)
     @monster.update!(hostile: false)
 
     assert_not_predicate battle, :on?
