@@ -565,6 +565,94 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_match(/The Supply Closet is deadly and the file says safe/, broken.to_s)
   end
 
+  # --- a world that hurts you for walking around it -------------------------
+  #
+  # A HAZARD IS THE WORLD'S, on exactly the terms hostility and a hit die are:
+  # a seed file writes it and no typed line may. `hazards_unmoved` is its own
+  # check rather than three more lines under `hostility_unmoved`, because one of
+  # the two columns is not on a `Location` at all and an invariant reporting a
+  # moved DOORWAY under the heading "hostility" would send a reader to the wrong
+  # table.
+
+  test "a hazards expectation counts what the place took and never what a foe took" do
+    result = walk(<<~YAML)
+      story: The Salt Assizes
+      steps:
+      - type: look
+        expect:
+          hazards: 0
+          blows: 0
+      - type: go to the Vestry Hulk
+        expect:
+          hazards: 1
+          blows: 0
+      - type: go to the Causeway Court
+        expect:
+          hazards: 0
+    YAML
+
+    assert_predicate result, :passed?, result.report
+  end
+
+  test "a hazards expectation that does not hold names both sides" do
+    result = walk(<<~YAML)
+      story: The Salt Assizes
+      steps:
+      - type: look
+        expect:
+          hazards: 2
+    YAML
+
+    assert_not result.passed?
+    assert_match(/expected hazards: 2/, result.report)
+  end
+
+  test "a room that became hazardous during an offline walk is caught after it" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    story.locations.find_by(name: "The Supply Closet").update!(hazard: "airless", hazard_die: 4)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "hazards_unmoved", broken.invariant
+    assert_match(/The Supply Closet has hazard "airless" and the file says nil/, broken.to_s)
+  end
+
+  test "a hazard the file wrote that a walk took off is caught too" do
+    seed, story = seeded_copy("the-salt-assizes")
+    story.locations.find_by(name: "The Tide Post").update!(hazard: nil, hazard_die: nil)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "hazards_unmoved", broken.invariant
+    assert_match(/The Tide Post has hazard nil and the file says "flooded"/, broken.to_s)
+  end
+
+  # THE DIRECTED HALF: the file's answer is about ONE of the two rows, so a
+  # hazard that turned round during a walk is two complaints -- the row that
+  # lost it and the row that gained it.
+  test "a doorway hazard that turned round during a walk is caught after it" do
+    seed, story = seeded_copy("the-salt-assizes")
+    court = story.locations.find_by(name: "The Causeway Court")
+    hulk = story.locations.find_by(name: "The Vestry Hulk")
+    LocationConnection.walked(court, hulk).update!(hazard: nil, hazard_die: nil)
+    LocationConnection.walked(hulk, court).update!(hazard: "drop", hazard_die: 4)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "hazards_unmoved", broken.invariant
+    assert_match(/from The Causeway Court into The Vestry Hulk has hazard nil/, broken.to_s)
+    assert_match(/from The Vestry Hulk into The Causeway Court has hazard "drop"/, broken.to_s)
+  end
+
+  # A WORLD THAT MEANS IT IS NOT A BROKEN INVARIANT: the Salt Assizes really is
+  # hazardous and walking it must not read as a defect.
+  test "the world the file makes hazardous is not a broken invariant" do
+    seed, story = seeded_copy("the-salt-assizes")
+
+    assert_equal "flooded", story.locations.find_by(name: "The Tide Post").hazard
+    assert_equal [], EngineSweep::Invariants.new(story, seed: seed).check
+  end
+
   # A WORLD THAT MEANS IT IS NOT A BROKEN INVARIANT, which is why this is stated
   # as "unmoved" against the file rather than as "no world has monsters".
   test "the world the file arms is not a broken invariant" do

@@ -184,12 +184,41 @@ class Playthrough::Turn
     scene&.update!(typed: typed, characters: cast_of(scene), resolved_by: resolved_by,
                    **resolution_for(intent))
 
+    # AND WHAT THE WORLD ITSELF TOOK IS FILED UNDER THE TURN THAT TOLD THE
+    # PLAYER ABOUT IT. `Playthrough::Moment` states the UNTOLD tolls to the
+    # prose as facts, so one of them has to stop being untold once a paragraph
+    # has carried it or every later turn would be told again. Here rather than
+    # in `Playthrough::Hazards`, and for the reason `typed` is written here: this
+    # is the one place with the turn's Scene on every branch. A turn that wrote
+    # no Scene at all -- an attack -- claims nothing, and the toll waits for the
+    # next paragraph, which is the honest answer rather than a fact quietly
+    # dropped.
+    #
+    # THE TWO SOURCES ARE CLAIMED ON DIFFERENT TURNS AND THAT IS RIGHT. An
+    # ARRIVAL's toll is written inside `#move_to` before `Scene::Generator`
+    # runs, so the arrival paragraph is told about it and this line claims it a
+    # moment later. An `every_turn` toll is written in step 7, AFTER this, so it
+    # is told by the NEXT turn's paragraph and claimed by the next turn's
+    # scene -- which is exactly the shape `Playthrough::Riposte`'s blows already
+    # have, because step 7 is after the prose in both cases.
+    claim_tolls!(scene)
+
     # AND THEN THE WORLD ANSWERS: every live foe in the room the turn began in
     # strikes once, in `id` order. It runs on EVERY line the engine played and
     # not only on an attack -- that is what makes a fight a fight, and it is the
     # captain's call C5 (a round is the turn). A refused line never reaches
     # here, because a refused line writes nothing.
     Playthrough::Riposte.new(playthrough, turn: self).run!(location: from, round: round)
+
+    # AND THE PLACE ITSELF GETS ITS TURN, beside the foes and after them, on the
+    # same room the turn began in and on the same terms: every line the engine
+    # PLAYED and no line it refused. A room whose hazard is `every_turn` costs
+    # you for staying in it, so arriving is free and the next line is not --
+    # which is the shape the riposte above already has. AFTER the riposte and
+    # not before, so the fight's order is untouched by this: a blow that took
+    # the last hit point ends the game, and `Playthrough::Hazards` writes
+    # nothing into a game that is over.
+    Playthrough::Hazards.new(playthrough, turn: self).every_turn!(location: from)
 
     # AND A FIGHT THAT HAS ENDED IS CLOSED, with one `Scene` carrying what the
     # exchange cost in story time. Nil on every turn of every game that is not
@@ -348,6 +377,19 @@ class Playthrough::Turn
     # was already realized copies whatever this playthrough has not seen yet,
     # which is how a second player walks into the office as it was generated.
     Playthrough::Snapshot.new(playthrough).of_the_room!(destination)
+
+    # AND THE WALK IS PAID FOR: the one DIRECTED doorway row that was actually
+    # walked, and then the room's own `on_arrival` hazard. Here -- after the
+    # room is realized and after the snapshot, and BEFORE the arrival is
+    # narrated -- for three reasons, all of them the order being the point:
+    # the room has to exist before it can cost anything, this game has to have
+    # its copy of it, and the arrival prose is the one paragraph that should be
+    # able to say the water took your legs on the way in. `playthrough` is still
+    # standing in the room it LEFT at this line, which is what names the
+    # direction. See `Playthrough::Hazards` -- and note that a hazard reaches
+    # hit points through `#harm!` like everything else, so one that takes the
+    # last one ends the game here, on arrival, exactly as a blow does.
+    Playthrough::Hazards.new(playthrough, turn: self).on_arrival!(destination, from: playthrough.current_location)
 
     scene = Scene::Generator.new(
       destination, previous_scene: playthrough.current_scene, playthrough: playthrough
@@ -761,6 +803,16 @@ class Playthrough::Turn
                          at: playthrough.story.clock.to_i, sequence: sequence)
 
     character.check(ability, penalty: penalty, rng: rng)
+  end
+
+  # THE TOLLS THIS TURN'S PROSE HAS NOW CARRIED, stamped with the Scene that
+  # carried them. `Playthrough::Blow` is stamped by `Playthrough::Fight#close!`
+  # for the same reason and with the same one statement: nil means "not said
+  # yet", and something has to stop saying it.
+  def claim_tolls!(scene)
+    return if scene.nil?
+
+    playthrough.tolls.untold.update_all(scene_id: scene.id, updated_at: Time.current)
   end
 
   # What the narrator is told, in the app's own words. Stated as done, because

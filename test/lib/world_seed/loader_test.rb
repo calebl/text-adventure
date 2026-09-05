@@ -925,6 +925,127 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_match(/Corbel Ashe.*placed in "The Boiler Room"/, error.message)
   end
 
+  # ------------------------------------------------------------------------
+  # A WORLD THAT HURTS YOU FOR WALKING AROUND IT. Both columns on both tables
+  # are the world's, so a file is the only thing that writes one -- which makes
+  # the file the only place the mistakes can be made and this the place to name
+  # them.
+
+  test "a room's hazard loads onto the room" do
+    hazardous = document
+    hazardous["locations"].last.merge!("hazard" => "unlit", "hazard_die" => 6)
+
+    WorldSeed::Loader.new(hazardous).load!
+
+    room = Story.find_by(title: "A Seeded World").locations.find_by(name: "The Hallway")
+    assert_equal "unlit", room.hazard
+    assert_equal 6, room.hazard_die
+  end
+
+  # WRITTEN IN BOTH DIRECTIONS ON EVERY LOAD, which is `danger`'s rule one key
+  # over and is here for its reason: a stale hazard the file no longer declares
+  # would go on costing players hit points with no way to undo it from the file.
+  test "re-seeding without the key takes a hazard back off" do
+    hazardous = document
+    hazardous["locations"].last.merge!("hazard" => "unlit", "hazard_die" => 6)
+    WorldSeed::Loader.new(hazardous).load!
+
+    WorldSeed::Loader.new(document).load!
+
+    room = Story.find_by(title: "A Seeded World").locations.find_by(name: "The Hallway")
+    assert_nil room.hazard
+    assert_nil room.hazard_die
+  end
+
+  # THE ONE PIECE OF NEW SEED-FORMAT SHAPE THE WHOLE DESIGN NEEDS. `between:` is
+  # an unordered pair, so `hazard_from:` is the only way a file can say which of
+  # the two directions costs something -- and the loader puts it on that ONE row.
+  test "a doorway's hazard lands on the one direction the file names" do
+    hazardous = document
+    hazardous["connections"].first.merge!("hazard" => "drop", "hazard_die" => 4,
+                                          "hazard_from" => "The Office")
+
+    WorldSeed::Loader.new(hazardous).load!
+
+    story = Story.find_by(title: "A Seeded World")
+    office = story.locations.find_by(name: "The Office")
+    closet = story.locations.find_by(name: "The Closet")
+
+    assert_equal "drop", LocationConnection.walked(office, closet).hazard
+    assert_nil LocationConnection.walked(closet, office).hazard
+    assert_includes closet.exits, office, "a one-way hazard is not a one-way exit"
+  end
+
+  test "re-seeding the other way round moves the hazard rather than adding a second" do
+    hazardous = document
+    hazardous["connections"].first.merge!("hazard" => "drop", "hazard_die" => 4,
+                                          "hazard_from" => "The Office")
+    WorldSeed::Loader.new(hazardous).load!
+
+    turned = document
+    turned["connections"].first.merge!("hazard" => "drop", "hazard_die" => 4,
+                                        "hazard_from" => "The Closet")
+    WorldSeed::Loader.new(turned).load!
+
+    story = Story.find_by(title: "A Seeded World")
+    office = story.locations.find_by(name: "The Office")
+    closet = story.locations.find_by(name: "The Closet")
+
+    assert_nil LocationConnection.walked(office, closet).hazard
+    assert_equal "drop", LocationConnection.walked(closet, office).hazard
+  end
+
+  test "a room hazard the catalogue has no entry for is refused by name" do
+    broken = document
+    broken["locations"].last.merge!("hazard" => "haunted", "hazard_die" => 4)
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/The Hallway.*hazard: "haunted"/, error.message)
+  end
+
+  test "a doorway hazard the catalogue has no entry for is refused by name" do
+    broken = document
+    broken["connections"].first.merge!("hazard" => "flooded", "hazard_die" => 4,
+                                        "hazard_from" => "The Office")
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/The Office <-> The Closet.*hazard: "flooded"/, error.message)
+  end
+
+  # HALF A HAZARD IS THE SILENT MISTAKE: the file looks as though it said
+  # something and the room is simply not hazardous.
+  test "a hazard with no die is refused by name" do
+    broken = document
+    broken["locations"].last["hazard"] = "unlit"
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/hazard_die: nil/, error.message)
+  end
+
+  test "a die the engine does not throw is refused" do
+    broken = document
+    broken["locations"].last.merge!("hazard" => "unlit", "hazard_die" => 7)
+
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+  end
+
+  test "a doorway hazard with no direction is refused" do
+    broken = document
+    broken["connections"].first.merge!("hazard" => "drop", "hazard_die" => 4)
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/no `hazard_from`/, error.message)
+  end
+
+  test "a hazard_from naming a room that is not one of the edge's own ends is refused" do
+    broken = document
+    broken["connections"].first.merge!("hazard" => "drop", "hazard_die" => 4,
+                                        "hazard_from" => "The Hallway")
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(broken).load! }
+    assert_match(/not one of its own/, error.message)
+  end
+
   # Built fresh on every call so a test can edit it without touching another's.
   def document
     WorldSeed.parse(WorldSeed.dump(

@@ -224,6 +224,11 @@ class Character < ApplicationRecord
                          dependent: :destroy, inverse_of: :target
   has_many :vitals, class_name: "Playthrough::Vitals", dependent: :destroy,
                     inverse_of: :character
+  # WHAT THE WORLD ITSELF TOOK OFF THIS BODY. Destroyed with it for the blows'
+  # reason: `playthrough_tolls.character_id` is NOT NULL, and there is no honest
+  # nullified state for a toll nobody paid.
+  has_many :tolls, class_name: "Playthrough::Toll", dependent: :destroy,
+                   inverse_of: :character
 
   enum :sex, { male: "male", female: "female", non_binary: "non-binary",
                trans_woman: "trans woman", trans_man: "trans man" }

@@ -235,9 +235,16 @@ class WorldSeed::Loader
       # its author had made safe, and there would be no way to undo it from the
       # file. An absent key is `Location::SAFE`, which is the column's default
       # and what every room already written is.
+      # AND WHAT THE PLACE DOES TO SOMEBODY STANDING IN IT, written in both
+      # directions on every load for `danger`'s reason one key over: a stale
+      # `flooded` left on a row the file no longer marks would go on costing
+      # players hit points in a room its author had made safe, with no way to
+      # undo it from the file. An absent key is NO HAZARD, which is what every
+      # room already written is and what the nullable column says.
       location.assign_attributes(
         attributes.except("opening", "items")
-                  .merge("name" => name, "danger" => attributes["danger"].presence || Location::SAFE)
+                  .merge("name" => name, "danger" => attributes["danger"].presence || Location::SAFE,
+                         "hazard" => attributes["hazard"].presence, "hazard_die" => attributes["hazard_die"])
       )
       location.save!
       load_items!(story, attributes["items"], character: nil, location: location)
@@ -287,12 +294,31 @@ class WorldSeed::Loader
     end
   end
 
+  # BOTH ROWS, AND THE HAZARD ON EXACTLY ONE OF THEM.
+  #
+  # `hazard_from:` names the room you are LEAVING when the hazard is paid, and
+  # it is the one piece of new seed-format shape the whole hazard design needs:
+  # `between:` is an unordered pair (see `WorldSeed::Exporter`), so there is
+  # otherwise no way for a file to say which of the two directions costs
+  # something. The row whose `location` is that room carries the key and the
+  # die; the other row is written with NEITHER -- explicitly nil rather than
+  # left alone, so a re-seed that moves a hazard to the other direction takes it
+  # off the first, exactly as `#load_locations!` clears a room's.
+  #
+  # A ONE-WAY HAZARD IS NOT A ONE-WAY EXIT: both rows are still written and both
+  # still lead both ways. See `LocationConnection::HAZARDS`.
   def write_edge!(edge)
-    values = edge.fetch(:attributes).slice("distance", "travel_method")
+    attributes = edge.fetch(:attributes)
+    values = attributes.slice("distance", "travel_method")
+    hazard_from = attributes["hazard_from"].presence
 
     [ [ edge[:from], edge[:to] ], [ edge[:to], edge[:from] ] ].each do |(origin, destination)|
       connection = LocationConnection.find_or_initialize_by(location: origin, connected_location: destination)
-      connection.assign_attributes(values)
+      hazardous = hazard_from.present? && WorldSeed.natural_key(origin.name) == WorldSeed.natural_key(hazard_from)
+      connection.assign_attributes(
+        values.merge("hazard" => hazardous ? attributes["hazard"] : nil,
+                     "hazard_die" => hazardous ? attributes["hazard_die"] : nil)
+      )
       connection.save!
     end
   end
@@ -639,6 +665,7 @@ class WorldSeed::Loader
 
     validate_inscriptions!
     validate_dangers!
+    validate_hazards!
 
     connection_documents.each do |attributes|
       pair = Array(attributes["between"])
@@ -764,6 +791,59 @@ class WorldSeed::Loader
       raise InvalidWorld, "#{where}: location #{attributes.fetch("name").inspect} has `danger: #{danger.inspect}`; " \
                           "there is: #{Location::DANGERS.keys.join(", ")}"
     end
+  end
+
+  # A HAZARD THE ENGINE HAS NO TABLE FOR, OR HALF OF ONE, on either a room or a
+  # doorway. `Location::HAZARDS` and `LocationConnection::HAZARDS` are the two
+  # closed catalogues -- the labels are what an author reads and the numbers are
+  # what the engine rolls -- so a word outside them is a typo, and it is named
+  # here with the file and the room rather than surfacing as a validation error
+  # on a column. Same reason the dangers and the inscriptions are checked here.
+  #
+  # HALF A HAZARD IS THE OTHER MISTAKE and it is the silent one: a `hazard:`
+  # with no `hazard_die:` reads as though the file said something and the room
+  # is simply not hazardous. `Location` and `LocationConnection` both refuse the
+  # pair too, so a file with the fault never loads either way; this names it.
+  #
+  # AND `hazard_from:` MUST NAME ONE OF THE EDGE'S OWN TWO ENDS. It is the whole
+  # of how a file says which direction costs something, so a name outside the
+  # pair -- a typo, or the room next door -- would load an edge with no hazard
+  # on it at all and no complaint.
+  def validate_hazards!
+    location_documents.each do |attributes|
+      validate_one_hazard!(Location::HAZARDS, attributes, "location #{attributes.fetch("name").inspect}")
+    end
+
+    connection_documents.each do |attributes|
+      pair = Array(attributes["between"])
+      where_it_is = "connection #{pair.join(" <-> ")}"
+      validate_one_hazard!(LocationConnection::HAZARDS, attributes, where_it_is)
+
+      from = attributes["hazard_from"]
+      if attributes["hazard"].present? && from.blank?
+        raise InvalidWorld, "#{where}: #{where_it_is} has a `hazard` and no `hazard_from` -- a doorway's hazard is " \
+                            "one-way, so the file has to say which of the two rooms you are leaving when it is paid"
+      end
+      next if from.blank? || pair.any? { |name| WorldSeed.natural_key(name) == WorldSeed.natural_key(from) }
+
+      raise InvalidWorld, "#{where}: #{where_it_is} has `hazard_from: #{from.inspect}`, which is not one of its own " \
+                          "two ends (#{pair.join(", ")})"
+    end
+  end
+
+  def validate_one_hazard!(catalogue, attributes, where_it_is)
+    hazard = attributes["hazard"]
+    die = attributes["hazard_die"]
+    return if hazard.blank? && die.blank?
+
+    unless catalogue.key?(hazard)
+      raise InvalidWorld, "#{where}: #{where_it_is} has `hazard: #{hazard.inspect}`; there is: #{catalogue.keys.join(", ")}"
+    end
+
+    return if Location::HAZARD_DICE.include?(die)
+
+    raise InvalidWorld, "#{where}: #{where_it_is} has `hazard_die: #{die.inspect}`; a hazard is a key AND a die, " \
+                        "and the dice are: #{Location::HAZARD_DICE.join(", ")}"
   end
 
   # WORDS ON A THING WITH NOTHING WRITTEN ON IT, caught here rather than three

@@ -221,4 +221,84 @@ class LocationTest < ActiveSupport::TestCase
 
     assert_equal @location, child_location.parent_location
   end
+
+  # ------------------------------------------------------------------------
+  # WHAT A PLACE DOES TO SOMEBODY STANDING IN IT. `Location::HAZARDS` is the
+  # closed catalogue and the two columns are the world's -- written by a seed
+  # file and by no model and no typed line. The readers are what
+  # `Playthrough::Hazards` branches on, so each of them is asserted here rather
+  # than through the engine.
+
+  test "a room has no hazard by default and almost no room has one" do
+    room = create(:location)
+
+    assert_nil room.hazard
+    assert_not room.hazardous?
+    assert_nil room.hazard_entry
+    assert_not room.hazard_at?(:on_arrival)
+    assert_not room.hazard_at?(:every_turn)
+  end
+
+  test "a hazard has to be one of the catalogue's keys" do
+    room = build(:location, hazard: "haunted", hazard_die: 4)
+
+    assert_not room.valid?
+    assert_includes room.errors[:hazard].join, "is not included"
+  end
+
+  test "a hazard die has to be one the engine throws" do
+    assert_not build(:location, hazard: "flooded", hazard_die: 7).valid?
+  end
+
+  # HALF A HAZARD IS A COLUMN THAT LOOKS AS THOUGH IT SAID SOMETHING AND DID
+  # NOT: the key says what happens and the die says how much.
+  test "half a hazard is refused, either half" do
+    assert_not build(:location, hazard: "flooded").valid?
+    assert_not build(:location, hazard_die: 4).valid?
+  end
+
+  # THE TWO `when:` VALUES ARE TWO BRANCHES, and a room answers for exactly one.
+  test "hazard_at? answers only for the moment the catalogue names" do
+    room = create(:location, :flooded)
+
+    assert room.hazard_at?(:on_arrival)
+    assert_not room.hazard_at?(:every_turn)
+  end
+
+  test "an every_turn room answers the other one" do
+    room = create(:location, :airless)
+
+    assert room.hazard_at?(:every_turn)
+    assert_not room.hazard_at?(:on_arrival)
+  end
+
+  # A KEY THE TABLE DOES NOT HAVE reads as no hazard at all, so nothing rolls
+  # off it and `rake game:doctor` reports the row
+  # (`location_with_an_unknown_hazard`) rather than anything guessing.
+  test "a key the catalogue does not have is not a hazard" do
+    room = create(:location)
+    room.update_columns(hazard: "haunted", hazard_die: 4)
+
+    assert_nil room.reload.hazard_entry
+    assert_not room.hazardous?
+  end
+
+  test "the hazardous scope is the rooms that do something" do
+    hazardous = create(:location, :flooded)
+    create(:location)
+
+    assert_equal [ hazardous ], Location.hazardous.to_a
+  end
+
+  # EVERY ENTRY IS WELL FORMED, which is what lets `Playthrough::Hazards` fetch
+  # `:when` without a default and `Playthrough::Moment` fetch `:words`.
+  test "every catalogue entry names a moment, a save and its words" do
+    Location::HAZARDS.each do |key, entry|
+      assert_includes Location::HAZARD_MOMENTS, entry[:when], "#{key} has an unroutable `when:`"
+      assert entry.key?(:save), "#{key} has no `save:` -- nil is a value and an omission is not"
+      assert entry[:save].nil? || Character::ABILITIES.include?(entry[:save]),
+             "#{key} saves on something that is not one of Character::ABILITIES"
+      assert entry[:words].present?, "#{key} has nothing to tell the prose"
+    end
+  end
 end

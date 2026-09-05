@@ -1333,4 +1333,113 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_predicate report, :refused?
     assert_match(/there is no person here called/, report.refusal)
   end
+
+  # --- what the place itself does -------------------------------------------
+  #
+  # THE READ-OUT SHOWS THE WORLD'S OWN ROWS: what standing here costs and what
+  # leaving each way costs. The second one is the visible half of the directed
+  # edge -- a doorway's hazard is on ONE of the two rows, so the line says what
+  # leaving THIS way costs and nothing about coming back.
+
+  test "the read-out says a safe room is safe and its ways out are free" do
+    state = play("look").state.to_s
+
+    assert_match(/hazard\s+nothing here hurts you/, state)
+    assert_match(/hazards out\s+every way out of here is free/, state)
+  end
+
+  test "the read-out prints the whole of a room's hazard entry" do
+    @office.update!(hazard: "flooded", hazard_die: 4)
+
+    assert_match(/hazard\s+flooded d4, strength save, on arrival -- the water takes your legs/,
+                 play("look").state.to_s)
+  end
+
+  test "a hazard with no save says so rather than naming one" do
+    @office.update!(hazard: "airless", hazard_die: 6)
+
+    assert_match(/hazard\s+airless d6, no save, every turn/, play("look").state.to_s)
+  end
+
+  test "the read-out names the way out that costs something and not the way back" do
+    LocationConnection.walked(@office, @closet).update!(hazard: "drop", hazard_die: 4)
+
+    assert_match(/hazards out\s+The Supply Closet: drop d4, dexterity save/, play("look").state.to_s)
+
+    play("go to the supply closet")
+    assert_match(/hazards out\s+every way out of here is free/, play("look").state.to_s,
+                 "the return row carries no hazard, so leaving the closet is free")
+  end
+
+  # THE ROUTING, IN THE MODE THE SWEEP WALKS. A move pays the doorway and the
+  # room; standing still pays only an `every_turn` room; a refused line pays
+  # nothing at all.
+
+  test "a move pays the doorway that was walked and the room it arrived in" do
+    LocationConnection.walked(@office, @closet).update!(hazard: "drop", hazard_die: 4)
+    @closet.update!(hazard: "flooded", hazard_die: 4)
+
+    assert_difference("Playthrough::Toll.count", 2) { play("go to the supply closet") }
+    assert_equal %w[drop flooded], @playthrough.tolls.chronological.pluck(:hazard)
+  end
+
+  test "the report says what the world took" do
+    @office.update!(hazard: "airless", hazard_die: 4)
+
+    report = play("talk to Halkett Rowe")
+
+    assert report.note.any? { |line| line.start_with?("the world: airless on Ward Office 12 cost") }
+  end
+
+  test "standing in an every_turn room costs a toll a turn" do
+    @office.update!(hazard: "airless", hazard_die: 4)
+
+    assert_difference("Playthrough::Toll.count", 1) { play("talk to Halkett Rowe") }
+    assert_difference("Playthrough::Toll.count", 1) { play("talk to Halkett Rowe") }
+  end
+
+  # AN `on_arrival` ROOM IS PAID ONCE BY WHOEVER WALKS IN and not again for
+  # staying, which is the whole of what the two `when:` values are for.
+  test "an on_arrival room charges the arrival and not the staying" do
+    @closet.update!(hazard: "flooded", hazard_die: 4)
+
+    assert_difference("Playthrough::Toll.count", 1) { play("go to the supply closet") }
+    assert_no_difference("Playthrough::Toll.count") { play("take the index") }
+  end
+
+  # A READ-OUT IS NOT A TURN IN THE FICTION. `look` produces no `Intent` at all
+  # -- it is one of `Playthrough::Grammar::VERBS`' `:look` words -- so neither
+  # the riposte nor the place gets a turn out of it, which is the line the
+  # fight already draws and is drawn here in the same place for the same reason.
+  test "a read-out pays no toll" do
+    @office.update!(hazard: "airless", hazard_die: 4)
+
+    assert_no_difference("Playthrough::Toll.count") { play("look") }
+  end
+
+  # *"A refused line writes nothing"* -- the captain's ruling of 2026-09-04 --
+  # and a toll is something. The same rule the riposte is under.
+  test "a refused line pays no toll" do
+    @office.update!(hazard: "airless", hazard_die: 4)
+
+    assert_no_difference("Playthrough::Toll.count") { play("take the mayor's chain") }
+  end
+
+  # AN ENGINE INSTRUMENT IS NOT A TURN IN THE FICTION, so the place does not get
+  # a turn out of one -- the same line `stats` and the riposte already draw.
+  test "an engine-view line pays no toll" do
+    @office.update!(hazard: "airless", hazard_die: 4)
+
+    assert_no_difference("Playthrough::Toll.count") { play("stats") }
+  end
+
+  # A HAZARD IS NEVER A BLOW. `Playthrough::Fight#open_blows` is "the fight that
+  # is still on", so a toll must not open one.
+  test "a hazard opens no fight" do
+    @office.update!(hazard: "airless", hazard_die: 4)
+    play("talk to Halkett Rowe")
+
+    assert_equal 0, @playthrough.blows.count
+    assert_not Playthrough::Fight.new(@playthrough).on?
+  end
 end

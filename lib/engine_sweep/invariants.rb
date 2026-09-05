@@ -137,7 +137,7 @@ class EngineSweep::Invariants
 
   def check
     [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, stat_blocks_unmoved,
-      hostility_unmoved, nothing_was_written ].flatten.compact
+      hostility_unmoved, hazards_unmoved, nothing_was_written ].flatten.compact
   end
 
   private
@@ -357,6 +357,59 @@ class EngineSweep::Invariants
       next if room.danger == wanted.fetch(room.name, Location::SAFE)
 
       "#{room.name} is #{room.danger} and the file says #{wanted.fetch(room.name, Location::SAFE)}"
+    end
+  end
+
+  # NO TYPED LINE MAY CHANGE WHAT A PLACE DOES TO YOU. `hostility_unmoved`'s
+  # statement for the other two columns on the world's side of the split, and
+  # its own check for that check's own reason: one of the two is not on a
+  # `Location` at all, and an invariant reporting a moved DOORWAY under the
+  # heading "hostility" would send a reader to the wrong table.
+  #
+  # What a walk DOES write is `playthrough_tolls` -- how much a hazard took off
+  # one body in one game -- which is on the other side of the split entirely, so
+  # walking through the water all afternoon leaves this untouched.
+  #
+  # Read against the file both ways, like `#danger_of_the_rooms`: a room or a
+  # doorway that ACQUIRED a hazard during a walk fails exactly as loudly as one
+  # that lost it.
+  def hazards_unmoved
+    moved = [ *hazards_of_the_rooms, *hazards_of_the_doorways ]
+    return nil if moved.empty?
+
+    broken("hazards_unmoved", moved.join("; "))
+  end
+
+  def hazards_of_the_rooms
+    wanted = Array(seed["locations"]).to_h { |row| [ row["name"], row["hazard"].presence ] }
+
+    story.locations.order(:id).filter_map do |room|
+      next if room.hazard == wanted.fetch(room.name, nil)
+
+      "#{room.name} has hazard #{room.hazard.inspect} and the file says #{wanted.fetch(room.name, nil).inspect}"
+    end
+  end
+
+  # KEYED ON THE DIRECTED PAIR, because that is the whole content of an edge's
+  # hazard: `hazard_from` names the room you are leaving, so the file's answer
+  # is about ONE of the two rows and the other one's answer is nil.
+  def hazards_of_the_doorways
+    wanted = Hash.new(nil)
+    Array(seed["connections"]).each do |row|
+      from = row["hazard_from"]
+      next if from.blank? || row["hazard"].blank?
+
+      other = Array(row["between"]).find { |name| name != from }
+      wanted[[ from, other ]] = row["hazard"]
+    end
+
+    LocationConnection.joins(:location).where(locations: { story_id: story.id })
+                      .includes(:location, :connected_location).order(:id).filter_map do |edge|
+      pair = [ edge.location.name, edge.connected_location.name ]
+      next if edge.hazard == wanted[pair]
+
+      "the way from #{pair.first} into #{pair.last} has hazard #{edge.hazard.inspect} and the file says " \
+        "#{wanted[pair].inspect}"
     end
   end
 

@@ -1041,10 +1041,89 @@ of `Playthrough::Mechanics#run`.
   outcomes; each is arranged so the ending is fixed whatever the dice say, and
   each says in its header how.
 - **What is still NOT built**, and it is deferred rather than missing: thrown
-  items, hazards on a room or an edge, the browser battle panel, the seventh
-  classifier intent, weapons (`items.damage_die`), armour, initiative, healing
-  over time, death saves, revival, restore-from-save, and any level advancement
-  rule. `#advance!` is still called from nowhere.
+  items, the seventh classifier intent, weapons (`items.damage_die`), armour,
+  initiative, healing over time, death saves, revival, restore-from-save, and
+  any level advancement rule. `#advance!` is still called from nowhere. Two
+  things this list used to name have since landed and have sections of their own
+  below: **the browser battle panel** (`Playthrough::Battle`, slice 7) and
+  **hazards on a room or an edge** (`Playthrough::Hazards`, slice 6).
+
+### A place that hurts you, and a doorway that hurts one way
+
+The captain's request, second half: *"certain terrain or actions should also
+cause damage."* A room can cost hit points and so can a doorway, and every one of
+them goes through the SAME writer a blow does — `Playthrough::Turn#harm!`. That
+is the whole design: **one writer, several named sources**
+(`data/ta-combat-scout/report.md` §8.1), and the generality lives in the writer
+being one rather than in the sources being data.
+
+- **Two branches in Ruby and no rule engine.** `Playthrough::Hazards#on_arrival!`
+  pays the doorway that was walked and then the room, from
+  `Playthrough::Turn#move_to` after the room is realized and after the snapshot
+  — so the room exists, this game has its copy of it, and the ARRIVAL PARAGRAPH
+  is the one that gets to say the water took your legs. `#every_turn!` pays the
+  room the turn BEGAN in, from step 7 beside `Playthrough::Riposte`.
+  `data/ta-direction/report.md` §12 rules out a predicate DSL and §8.4 rules out
+  a general "action carries a consequence" table by name; neither is built, and
+  a catalogue entry with a new `when:` needs a BRANCH written for it.
+- **The catalogue is the parameters and the file supplies a key and a die.**
+  `Location::HAZARDS` and `LocationConnection::HAZARDS`, `locations.danger`'s
+  shape and `WorldMechanic`'s doctrine: a world supplies parameters and never
+  behaviour. `save:` is one of the three abilities through `Character#check` —
+  the one kernel — or **nil**, which is a real hazard and not an omission.
+- **A doorway's hazard is one-way BY CONSTRUCTION**, and this is the first
+  mechanic that wants the directed edge (the ruling of 2026-09-03): two rows per
+  door, the hazard on one of them, nothing to enforce. **A one-way HAZARD is not
+  a one-way EXIT** — both rows are still written, the door still leads both ways,
+  only the cost differs — so it does not reopen one-way exits, which stay
+  unsupported and deferred. A seed file says which direction with
+  `hazard_from: <room name>`.
+- **A toll is not a blow, and the fight-end rule must not treat a hazard as a
+  foe.** `playthrough_blows.attacker_id` is NOT NULL and the tide has no hit die;
+  and `Playthrough::Fight#open_blows` is *the fight that is still on*, so a
+  hazard written there would open a fight nobody was in and close it on the same
+  turn with a `Scene` saying one had ended. `Playthrough::Toll` is the record,
+  and its `sequence` counts DOWN so the tolls own the negative half of `Roll`'s
+  space and a hazard and a blow at one story moment can never be one die.
+- **A refused line pays nothing**, an engine instrument pays nothing, and a bare
+  `look` pays nothing because it produces no `Intent` at all — the same three
+  rules the riposte is under, in the same places.
+- **The prose is told once.** `Playthrough::Moment#toll_fact` states the untold
+  tolls beside `#struck_fact` and never folded into it (somebody hit you and the
+  world did are two different facts), a SAVE is stated too so the prose does not
+  invent a wound, and `Playthrough::Turn#play` claims them with the turn's Scene.
+- **A sweep asserts `hazards:` and never a hit point**, for `blows:`' reason:
+  `Roll`'s seed is built out of row ids.
+  `lib/engine_sweep/scripts/a-one-way-hazard-on-a-door.yml` walks the same door
+  both ways, and `EngineSweep::Invariants#hazards_unmoved` proves no typed line
+  wrote one.
+- **`the-salt-assizes.yml` carries the only hazards in any seeded world**, and
+  its header says why: the fiction is built out of them, and it is the one world
+  with no `mechanics:` block — `WorldMechanic::ShuffleConnections` rewrites an
+  edge from `distance` and `travel_method` alone and in both directions, so a
+  directed hazard on a shufflable edge would be destroyed the first night. That
+  world is `Eval::HELD_OUT`, which is a rule about PROSE (no check tuned on its
+  passages, nothing in a fixture drawn from it) and is not broken by this — but
+  it does change what the world DOES, so a `rake eval:compare` spanning this
+  change is comparing two different worlds on the Salt Assizes board.
+- **The battle panel does not name a toll, and today that cannot bite.**
+  `Playthrough::Battle#last_exchange` reads `Playthrough::Blow` — a fight is
+  blows, and a hazard is deliberately not one — while `#bodies` reads
+  `Playthrough#vitals_for` live, so the numbers on the panel are always right
+  and only the *reason* one moved could be missing. It would show as hit points
+  falling with nothing on screen accounting for them, because an attack turn
+  writes no `Scene` and `Playthrough::Moment#toll_fact` therefore has no
+  paragraph to ride out on. It is unreachable in every shipped world: it needs a
+  fight in a room whose hazard is `every_turn`, and no seeded world has an
+  `every_turn` hazard at all (The Salt Assizes' two are `on_arrival` and a
+  doorway, both paid on a move, both narrated by the arrival). A world that
+  wants one should add a toll line to the panel in the same change.
+- **What is NOT built here**: `items.hazard` on a take (§8.4's third row), a
+  provoking `talk` (captain call C7 — it needs a model's answer to be
+  authoritative about state, which is the standing constraint's whole
+  prohibition), and generated hazards. Nothing rolls a `hazard` the way
+  `Location::Danger` rolls a `danger`, and whether a generated world should get
+  one is a later question.
 
 ### Sweeping the engine with stored scripts
 

@@ -1233,4 +1233,59 @@ class Story::DoctorTest < ActiveSupport::TestCase
       assert_not_includes codes(story), :location_with_an_unknown_danger, danger
     end
   end
+
+  # ------------------------------------------------------------------------
+  # A WORLD THAT HURTS YOU FOR STANDING IN IT. Both models refuse a key outside
+  # their catalogue and `WorldSeed::Loader#validate_hazards!` refuses a file
+  # that carries one, so a row here arrived through raw SQL or a schema older
+  # than the validation -- exactly the state the doctor exists to name.
+
+  test "a healthy story has no hazard findings at all" do
+    story = healthy_story
+
+    assert_not_includes codes(story), :location_with_an_unknown_hazard
+    assert_not_includes codes(story), :connection_with_an_unknown_hazard
+  end
+
+  test "a room with a hazard the engine has no table for is reported and cannot be repaired" do
+    story = healthy_story
+    room = story.locations.realized.first
+    room.update_columns(hazard: "haunted", hazard_die: 4)
+
+    assert_includes codes(story), :location_with_an_unknown_hazard
+    assert_equal :manual, finding(story, :location_with_an_unknown_hazard).remedy
+    assert_match(/haunted/, finding(story, :location_with_an_unknown_hazard).message)
+  end
+
+  test "every room hazard the table has is quiet" do
+    Location::HAZARDS.each_key do |hazard|
+      story = healthy_story
+      story.locations.realized.first.update!(hazard: hazard, hazard_die: 4)
+
+      assert_not_includes codes(story), :location_with_an_unknown_hazard, hazard
+    end
+  end
+
+  # ITS OWN FINDING AND NOT A SECOND SUBJECT ON THE ONE ABOVE: the two read
+  # different tables, and a reader sent to `locations` for a row in
+  # `location_connections` is a reader sent to the wrong place.
+  test "a doorway with a hazard the engine has no table for is reported and cannot be repaired" do
+    story = healthy_story
+    edge = LocationConnection.joins(:location).where(locations: { story_id: story.id }).first
+    edge.update_columns(hazard: "flooded", hazard_die: 4)
+
+    assert_includes codes(story), :connection_with_an_unknown_hazard
+    assert_equal :manual, finding(story, :connection_with_an_unknown_hazard).remedy
+    assert_match(/flooded/, finding(story, :connection_with_an_unknown_hazard).message)
+  end
+
+  test "every doorway hazard the table has is quiet" do
+    LocationConnection::HAZARDS.each_key do |hazard|
+      story = healthy_story
+      edge = LocationConnection.joins(:location).where(locations: { story_id: story.id }).first
+      edge.update!(hazard: hazard, hazard_die: 4)
+
+      assert_not_includes codes(story), :connection_with_an_unknown_hazard, hazard
+    end
+  end
 end

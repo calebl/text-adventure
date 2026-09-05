@@ -433,6 +433,54 @@ The current database includes the following story-related models with proper ass
   `location_with_an_unknown_danger` (both **no repair**, stated).
   `lib/engine_sweep/scripts/a-monster-in-a-room.yml` walks it. There is no
   per-playthrough mark about hostility and no wandering; both are later slices
+- **Location** → `hazard` / `hazard_die`, and **LocationConnection** → the same
+  pair: **A PLACE CAN COST YOU HIT POINTS, AND SO CAN THE WAY YOU GOT THERE.**
+  The captain's request, second half — *"certain terrain or actions should also
+  cause damage"* — answered with a key into a closed catalogue
+  (`Location::HAZARDS`, `LocationConnection::HAZARDS`) and a die, which is
+  `locations.danger`'s shape and `WorldMechanic`'s doctrine: a world supplies
+  PARAMETERS and never behaviour. The catalogue says which ability saves
+  (`save: nil` is a real hazard, not an omission) and, for a room, WHEN it is
+  paid — `on_arrival` once by whoever walks in, `every_turn` for staying. An
+  edge has no `when:` because it has exactly one moment. Written by a seed file
+  and **by no model and by no typed line, ever**
+  (`EngineSweep::Invariants#hazards_unmoved`); nothing GENERATES one and whether
+  a generated world should get one is a later question. All four columns are
+  nullable and **there is no backfill**, which is a different answer from
+  `danger`'s and the right one: a danger is a share of a die every room has, a
+  hazard is a thing almost no room does, and NULL says exactly that.
+  `rake game:doctor` reports `location_with_an_unknown_hazard` and
+  `connection_with_an_unknown_hazard` (both **manual, no repair**, stated:
+  clearing the column is the answer that makes safe a room somebody meant to
+  cost hit points)
+- **LocationConnection** → **A ONE-WAY HAZARD IS NOT A ONE-WAY EXIT.** Directed
+  edges (the ruling of 2026-09-03) are two rows per door, so a hazard on one row
+  is one-way BY CONSTRUCTION and nothing enforces it — the drop into the hulk
+  hurts and the climb out does not. Both rows are still written, the door still
+  leads both ways and `Location#exits` is unchanged; only the COST differs, so
+  this does not reopen one-way exits, which stay unsupported and deferred. A
+  seed file says which direction with **`hazard_from: <room name>`** on a
+  `connections[]` entry — the one new piece of seed-format shape the design
+  needs, because `between:` is an unordered pair — and `WorldSeed::Loader`
+  writes it onto exactly that row and clears the other
+- **Playthrough::Hazards** → **THE WORLD'S OTHER HALF OF A ROUND**, and
+  **Playthrough::Toll** → what it took. Two named branches in Ruby and **no rule
+  engine**: `#on_arrival!` (the doorway walked, then the room) from
+  `Playthrough::Turn#move_to` after the room is realized and after the snapshot,
+  and `#every_turn!` from step 7 beside `Playthrough::Riposte`, on the room the
+  turn BEGAN in. `data/ta-direction/report.md` §12's prohibition holds and §8.4's
+  general consequence table is deliberately NOT built. Hit points come off
+  through `Playthrough::Turn#harm!` and nothing else, so a hazard can take the
+  last one and end the game exactly as a blow does. **A refused line pays
+  nothing**, an engine instrument pays nothing, and a read-out is not a turn —
+  the three rules the riposte is already under. **A TOLL IS NOT A BLOW**:
+  `playthrough_blows.attacker_id` is NOT NULL and a hazard has no attacker, and
+  `Playthrough::Fight#open_blows` is *the fight that is still on*, so a hazard in
+  that table would open a fight nobody was in and close it on the same turn with
+  a `Scene` saying so. The save is `Character#check` — the one kernel — off this
+  toll's own `Roll.generator`, and `Playthrough::Toll.next_sequence` counts DOWN
+  so the tolls have the negative half of the sequence space and a hazard and a
+  blow at one story moment can never be one die
 - **Character** → `level` and `hit_die`, **THE STAT BLOCK, AND IT IS THE
   WORLD'S**. `hit_die` (one of `Character::HIT_DICE`) is how tough the body is,
   and `level` is **stored and inert** — nothing reads it for behaviour, nothing
@@ -869,18 +917,54 @@ The current database includes the following story-related models with proper ass
   its comment says what fills it. No prose per round: that is shape (b) and it
   needs `ta-prompt-bench`
 
+### When the place itself hurts you
+- **A room can cost you hit points and so can a doorway**, and both go through
+  the one writer: `Playthrough::Turn#harm!`. `Playthrough::Hazards` is the two
+  named branches, `Playthrough::Toll` the record, `Location::HAZARDS` and
+  `LocationConnection::HAZARDS` the two closed catalogues. Read the models'
+  headers before adding an entry — a `when:` outside `Location::HAZARD_MOMENTS`
+  needs a BRANCH written for it, not just a line in the table.
+- **A refused line pays no toll**, on the ruling of 2026-09-04 and for the
+  riposte's reason; nor does an engine-view instrument, nor a bare `look`, which
+  produces no `Intent` at all.
+- **Told to the prose once.** `Playthrough::Moment#toll_fact` states the UNTOLD
+  tolls (`Playthrough::Toll.untold`) beside `#struck_fact` and never folded into
+  it, and `Playthrough::Turn#play` claims them with the turn's own Scene. An
+  ARRIVAL's toll is written before `Scene::Generator` runs, so the arrival
+  paragraph carries it; an `every_turn` toll is written in step 7, after the
+  prose, so the NEXT paragraph carries it — which is exactly the shape the
+  riposte's blows already have.
+- **A sweep asserts `hazards:` and never a hit point.** `Roll`'s seed is built
+  out of row ids, so what a toll COST is not reproducible between two databases
+  and whether one was PAID is.
+  `lib/engine_sweep/scripts/a-one-way-hazard-on-a-door.yml` walks the same door
+  both ways.
+- **`the-salt-assizes.yml` is the only seeded world with hazards**, and its
+  header says why: its fiction is built out of them, and it is the one world with
+  no `mechanics:` block — `WorldMechanic::ShuffleConnections` rewrites an edge
+  from `distance` and `travel_method` alone and in both directions, so a directed
+  hazard on a shufflable edge would be destroyed the first night.
+- **What is NOT built, and deferred rather than missing**: `items.hazard` on a
+  take (§8.4's third row), a provoking `talk` (captain call C7), and generated
+  hazards — nothing rolls one the way `Location::Danger` rolls a `danger`.
+
 ### Sweeping the engine with stored scripts
 - `rake game:sweep` (`EngineSweep`) walks YAML scripts of typed lines through
   `Playthrough::Mechanics` with `model: false` and asserts the records after
   each one: location, exits (with detail level), what is lying here, what is
   carried, **who is standing here** (`present:`), **which of them is a foe**
-  (`foes:`), refusals and their offered
+  (`foes:`), **what the place took** (`hazards:`, counting
+  `Playthrough::Toll` rows and never a die), refusals and their offered
   alternatives. **Offline, deterministic, free, and run by `bin/rails test`** — the engine half of the game, which
   `rake eval:run` cannot see and which nobody was testing without a keyboard.
 - **No model is a guard, not an intention:** `BaseAgent.new` is replaced for the
   length of a run and raises `EngineSweep::ModelCalled`. Each walk loads its own
   copy of the seeded world under a title of its own inside a rolled-back
   transaction, so it is safe against a database mid-game.
+- `hazards_unmoved` is the same statement about a HAZARD: no typed line may
+  write `locations.hazard` or `location_connections.hazard`, and the doorway
+  half is keyed on the DIRECTED pair because that is the whole content of a
+  one-way hazard. Its own check, for `hostility_unmoved`'s reason one table over.
 - `hostility_unmoved` is the same statement about an ENEMY: no typed line may
   write `characters.hostile`, `races.monstrous` or `locations.danger`. Its own
   check rather than three more keys on the one below, because two of the three

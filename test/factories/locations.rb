@@ -43,6 +43,23 @@ FactoryBot.define do
       danger { "deadly" }
     end
 
+    # A ROOM THAT COSTS YOU HIT POINTS FOR WALKING INTO IT. `hazard` is nullable
+    # and NIL IS THE DEFAULT for the reason the column is nullable: almost no
+    # room in any world does anything to anybody, and a factory that gave every
+    # location a hazard would make every move in every test cost a die.
+    #
+    # The two traits are the two `when:` values in `Location::HAZARDS`, because
+    # they reach two different branches of `Playthrough::Hazards`.
+    trait :flooded do
+      hazard { "flooded" }
+      hazard_die { 4 }
+    end
+
+    trait :airless do
+      hazard { "airless" }
+      hazard_die { 4 }
+    end
+
     trait :indoor do
       name { "Ancient Hall" }
       description { "A grand indoor space with high ceilings and echoing footsteps" }

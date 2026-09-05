@@ -73,6 +73,12 @@ class Scene < ApplicationRecord
   # truth about it -- nothing has closed it. See `Playthrough::Fight`.
   has_many :blows, class_name: "Playthrough::Blow", dependent: :nullify,
                    inverse_of: :scene
+  # THE HAZARDS THIS SCENE'S PROSE CARRIED. NULLIFIED, on the blows' reasoning
+  # one line up: the toll is what the dice did and this Scene is only the
+  # paragraph that mentioned it. A toll with no scene reads as UNTOLD, which
+  # after the paragraph is gone is the truth about it -- nothing has said it.
+  has_many :tolls, class_name: "Playthrough::Toll", dependent: :nullify,
+                   inverse_of: :scene
   # Judgements the player recorded on this turn. DESTROYED rather than nullified,
   # which is the opposite of the drift above it and for a reason: a drift is the
   # measurement and the scene is only the suspect, whereas a verdict is a

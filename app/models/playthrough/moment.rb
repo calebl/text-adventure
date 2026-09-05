@@ -85,6 +85,11 @@ class Playthrough::Moment
     # AND WHAT THE LAST EXCHANGE DID, out of `playthrough_blows` -- the numbers
     # the engine's own dice produced, stated as done.
     parts << struck_fact if struck_fact
+    # AND WHAT THE PLACE ITSELF DID, out of `playthrough_tolls` -- the water on
+    # the causeway, the drop through the hatch. Beside the blows and never
+    # folded into them, because they are two different facts and the prose has
+    # to be able to say which: somebody hit you, or the world did.
+    parts << toll_fact if toll_fact
     parts << "Lying here, and takeable: #{floor_names.presence || "nothing"}."
     parts << "The player is carrying: #{carried_names.presence || "nothing"}."
 
@@ -235,6 +240,49 @@ class Playthrough::Moment
       blows.map { |blow| one_blow(blow) }.join(" ") +
       " Those are the numbers and they do not change. Do not decide who lives, " \
       "who dies, or how much anything hurt."
+  end
+
+  # WHAT THE WORLD ITSELF TOOK, AND WHETHER THE BODY GOT CLEAR OF IT.
+  #
+  # `#struck_fact`'s counterpart for the other source of damage, written to the
+  # same rule and for the same reason: the numbers are the engine's, they are
+  # stated as done, and the paragraph is asked to decide nothing. A hazard is
+  # the one thing that hurts a player with nobody in the room, so without this
+  # the prose would be handed a body that had lost hit points between two turns
+  # with no account of how -- which is exactly the contradiction *inform the
+  # prose* exists to prevent.
+  #
+  # A SAVE IS A FACT TOO, and it is stated. "She got clear of it" is a sentence
+  # the narrator can use and a turn where the water did nothing is a turn the
+  # prose should not invent a wound for; silence about it is an invitation to
+  # decide.
+  #
+  # ONLY THE TOLLS NO PARAGRAPH HAS CARRIED YET (`Playthrough::Toll.untold`),
+  # which is `#struck_fact`'s rule stated with the right word for this table:
+  # `Playthrough::Turn#play` stamps them with the Scene that told the player,
+  # so one toll reaches the prose once. Bounded at two a turn by the branches
+  # that write them -- a doorway and a room on an arrival, or a room on a stay.
+  def toll_fact
+    return @toll_fact if defined?(@toll_fact)
+
+    tolls = playthrough.tolls.untold.chronological.includes(:character, :location, :location_connection).to_a
+    return @toll_fact = nil if tolls.empty?
+
+    @toll_fact =
+      "The place itself, recorded by the game: " +
+      tolls.map { |toll| one_toll(toll) }.join(" ") +
+      " Those are the numbers and they do not change. Do not decide how much " \
+      "anything hurt, and do not write a wound the game did not record."
+  end
+
+  # One toll, and the facts about it a paragraph must not contradict.
+  def one_toll(toll)
+    where = toll.where_it_was
+    return "#{toll.character.fullname} got clear of #{where} and lost nothing." if toll.saved?
+
+    "#{where} cost #{toll.character.fullname} #{toll.damage} hit point#{"s" unless toll.damage == 1} " \
+      "-- #{toll.words}. #{toll.character.fullname} is " \
+      "#{toll.killed? ? "dead: that was what killed them" : "alive"}."
   end
 
   # One blow, and the two facts about it that a paragraph must not contradict.

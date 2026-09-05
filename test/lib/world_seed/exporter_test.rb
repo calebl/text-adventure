@@ -486,6 +486,63 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
 
   private
 
+  # ------------------------------------------------------------------------
+  # WHAT A PLACE DOES TO SOMEBODY STANDING IN IT, AND WHAT WALKING A DOORWAY
+  # COSTS. Both are world data, so both belong in a seed file -- and the round
+  # trip is the real assertion, because a file that exports a hazard and loads
+  # back without one is worse than one that never had it.
+
+  test "exports a room's hazard, and stays quiet about the rooms with none" do
+    @stub.update!(hazard: "unlit", hazard_die: 6)
+
+    document = WorldSeed::Exporter.new(@story).document
+
+    hazardous = document["locations"].find { |row| row["name"] == "Somewhere Else" }
+    assert_equal "unlit", hazardous["hazard"]
+    assert_equal 6, hazardous["hazard_die"]
+    assert_not document["locations"].find { |row| row["name"] == "The Opening Room" }.key?("hazard")
+  end
+
+  # THE ROUND TRIP: `hazard_from` names the room you are leaving, so the one
+  # directed row that carried the hazard has to be the one that carries it
+  # again -- and the other one still has none.
+  test "a round trip keeps a doorway's hazard on the same one direction" do
+    LocationConnection.walked(@opening, @stub).update!(hazard: "drop", hazard_die: 4)
+
+    document = WorldSeed::Exporter.new(@story).document
+    edge = document["connections"].first
+    assert_equal "drop", edge["hazard"]
+    assert_equal 4, edge["hazard_die"]
+    assert_equal "The Opening Room", edge["hazard_from"]
+
+    @story.update!(title: "A World Re-Seeded")
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load!
+    opening = reloaded.locations.find_by(name: "The Opening Room")
+    elsewhere = reloaded.locations.find_by(name: "Somewhere Else")
+
+    assert_equal "drop", LocationConnection.walked(opening, elsewhere).hazard
+    assert_nil LocationConnection.walked(elsewhere, opening).hazard
+  end
+
+  test "an ordinary doorway exports no hazard keys at all" do
+    edge = WorldSeed::Exporter.new(@story).document["connections"].first
+
+    assert_equal %w[between distance travel_method], edge.keys
+  end
+
+  # BOTH DIRECTIONS HAZARDOUS IS NOT EXPORTABLE -- a file has one
+  # `hazard_from` -- so it is warned about rather than halved, which is the rule
+  # a disagreeing pair is already under.
+  test "warns when both directions carry a hazard" do
+    LocationConnection.walked(@opening, @stub).update!(hazard: "drop", hazard_die: 4)
+    LocationConnection.walked(@stub, @opening).update!(hazard: "undertow", hazard_die: 4)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    exporter.document
+
+    assert exporter.warnings.any? { |line| line.include?("both directions carry a hazard") }
+  end
+
   def connect(from, to)
     create(:location_connection, :short_distance, location: from, connected_location: to)
   end
