@@ -111,6 +111,16 @@ steps:
     resolved_by: grammar
     note: 'reads: Perrin''s private index'
 
+- id: a-slashed-inspect-is-the-same-verb
+  type: /inspect Perrin's private index
+  why: the menu offers `inspect` since 2026-09-05 and it is the word `read` always was
+  expect:
+    refused: false
+    changed: false
+    understood: examine -> Perrin's private index
+    resolved_by: grammar
+    note: 'reads: Perrin''s private index'
+
 - id: a-slashed-line-that-resolves-nothing
   type: /take the tide-slate
   why: >-

@@ -22,7 +22,7 @@ class Playthrough::SlashMenuTest < ActiveSupport::TestCase
   def menu = Playthrough::SlashMenu.new(@playthrough).to_h
 
   test "it offers the six verbs that resolve a record and no others" do
-    assert_equal %w[go talk take drop read attack], menu[:verbs].map { |verb| verb[:word] }
+    assert_equal %w[go talk take drop inspect attack], menu[:verbs].map { |verb| verb[:word] }
     assert(menu[:verbs].all? { |verb| verb[:hint].present? })
   end
 
@@ -45,7 +45,7 @@ class Playthrough::SlashMenuTest < ActiveSupport::TestCase
     assert_equal [ "Halkett Rowe" ], menu[:targets]["talk"]
     assert_equal [ "ward stamp" ], menu[:targets]["take"]
     assert_equal [ "Ward Office 12 daybook" ], menu[:targets]["drop"]
-    assert_equal [ "ward stamp", "Ward Office 12 daybook" ], menu[:targets]["read"]
+    assert_equal [ "ward stamp", "Ward Office 12 daybook" ], menu[:targets]["inspect"]
     # ANYBODY STANDING HERE, and it is the same set `talk` offers: the captain's
     # sixth ruling of 2026-09-05, *"anyone can be attacked"*.
     assert_equal [ "Halkett Rowe" ], menu[:targets]["attack"]
@@ -102,7 +102,7 @@ class Playthrough::SlashMenuTest < ActiveSupport::TestCase
   test "it serializes to the JSON the form carries" do
     parsed = JSON.parse(Playthrough::SlashMenu.new(@playthrough).to_json)
 
-    assert_equal %w[go talk take drop read attack], parsed["verbs"].map { |verb| verb["word"] }
+    assert_equal %w[go talk take drop inspect attack], parsed["verbs"].map { |verb| verb["word"] }
     assert_equal [ "ward stamp" ], parsed["targets"]["take"]
   end
 end

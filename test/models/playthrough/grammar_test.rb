@@ -103,7 +103,20 @@ class Playthrough::GrammarTest < ActiveSupport::TestCase
     assert_equal @rowe, read("/talk to Rowe").intent.speaker
     assert_equal @stamp, read("/take the ward stamp").intent.item
     assert_equal @daybook, read("/drop the daybook").intent.item
-    assert_equal @stamp, read("/read the ward stamp").intent.item
+    assert_equal @stamp, read("/inspect the ward stamp").intent.item
+  end
+
+  # THE MENU'S WORD CHANGED AND THE VERB DID NOT. `inspect` is what the box
+  # offers after a `/` since the captain's ruling of 2026-09-05; `read` and
+  # every other synonym still resolve exactly the same intent on the same row.
+  test "inspect and read are one verb" do
+    inspected = read("/inspect the ward stamp")
+    was_read = read("/read the ward stamp")
+
+    assert_equal :examine, inspected.intent.action
+    assert_equal was_read.intent.action, inspected.intent.action
+    assert_equal @stamp, inspected.intent.item
+    assert_equal was_read.intent.item, inspected.intent.item
   end
 
   # THE SLASH IS STRIPPED BEFORE THE LINE IS READ, so what the grammar answers
@@ -422,7 +435,7 @@ class Playthrough::GrammarTest < ActiveSupport::TestCase
   # The menu offers six words, and every one of them is a word the grammar
   # reads -- so the box cannot complete to something the engine will not answer.
   test "the six offered verbs are all in the grammar's own table" do
-    assert_equal %w[go talk take drop read attack], Playthrough::Grammar::RESOLVING.keys
+    assert_equal %w[go talk take drop inspect attack], Playthrough::Grammar::RESOLVING.keys
 
     Playthrough::Grammar::RESOLVING.each do |word, action|
       assert_includes Playthrough::Grammar::VERBS.keys, word
