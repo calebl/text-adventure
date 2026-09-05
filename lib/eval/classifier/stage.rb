@@ -39,7 +39,21 @@ class Eval::Classifier::Stage
   # be putting it on the floor of every other position in that world. Ten seed
   # loads is the price of ten independent starting states, paid once per bench
   # run and offline.
-  def self.title_for(position) = "#{position.story} (classifier bench: #{position.id})"
+  #
+  # THE LABEL IS A PARAMETER AND THE TITLE IS PUT BACK WHEN A CALLER ASKS, both
+  # for one reason: A NARRATOR IS TOLD THE STORY'S TITLE. `Playthrough::Moment`
+  # opens with `Story: <title>`, so a prose bench staged on
+  # `The Unrecorded Hour (classifier bench: office)` would be measuring prompts
+  # no player ever gets -- and might read the label back out in the prose. So
+  # `Eval::Prompt` stages with `retitle: true`: the copy is LOADED under a title
+  # of its own, which is what keeps it a separate copy from anything already in
+  # the database, and then RENAMED to the world's own title, which is what makes
+  # the prompt the app's prompt. Both happen inside the rolled-back transaction.
+  # The classifier's own prompt carries no title, so its stages keep the label
+  # and nothing about them changes.
+  LABEL = "classifier bench".freeze
+
+  def self.title_for(position, label: LABEL) = "#{position.story} (#{label}: #{position.id})"
 
   class Unstageable < StandardError; end
 
@@ -99,16 +113,20 @@ class Eval::Classifier::Stage
   # `rollback_transaction` on the connection directly. A real exception
   # therefore still travels out of here, and the transaction is still rolled
   # back on its way. `Eval::Classifier::StageTest` pins both halves.
-  def self.open(positions, &block)
+  def self.open(positions, label: LABEL, retitle: false, &block)
     Eval::Concurrency.rolled_back do
-      block.call(positions.to_h { |position| [ position.id, new(position).stand! ] })
+      block.call(positions.to_h { |position|
+        [ position.id, new(position, label: label, retitle: retitle).stand! ]
+      })
     end
   end
 
   attr_reader :position
 
-  def initialize(position)
+  def initialize(position, label: LABEL, retitle: false)
     @position = position
+    @label = label
+    @retitle = retitle
   end
 
   def stand!
@@ -179,8 +197,14 @@ class Eval::Classifier::Stage
     raise Unstageable, "#{position.id}: there is no seeded world #{position.story.inspect} (#{file})" unless File.exist?(file)
 
     document = WorldSeed.parse(File.read(file))
-    document["story"]["title"] = self.class.title_for(position)
-    WorldSeed::Loader.new(document, source: file.to_s).load!
+    document["story"]["title"] = self.class.title_for(position, label: @label)
+    story = WorldSeed::Loader.new(document, source: file.to_s).load!
+    # THE COPY IS FOUND BY ITS OWN TITLE AND THEN CARRIES THE WORLD'S, which is
+    # the whole of `retitle:` -- see the note on `LABEL`. It is a rename inside
+    # a transaction that is rolled back, so nothing outside this run ever sees
+    # either title.
+    story.update!(title: position.story) if @retitle
+    story
   end
 
   # Where a player starts, the same two the browser hands a new playthrough --

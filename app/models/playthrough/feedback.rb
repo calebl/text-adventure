@@ -26,9 +26,12 @@
 # WHAT IS FROZEN, AND WHAT IS NOT:
 #
 #   frozen      `prose_model`, `prose_models`, `prose_purpose`,
-#               `answering_models`, `input_tokens`, `output_tokens` -- all of it
-#               read out of `chats` / `messages`, all of it destroyed by the
-#               pruner.
+#               `prose_prompt_digest`, `answering_models`, `input_tokens`,
+#               `output_tokens` -- all of it read out of `chats` / `messages`,
+#               all of it destroyed by the pruner. The digest is WHICH VERSION
+#               OF THE INSTRUCTIONS wrote the turn, so a verdict groups by
+#               prompt as well as by model; see `Playthrough::PromptVersion`
+#               for exactly what it covers and the two things it does not.
 #   referenced  the `Scene`: its `description` (the prose being judged), its
 #               `typed` (the player's own words, a column since
 #               `Playthrough::Turn#play` started writing it), its
@@ -132,6 +135,14 @@ class Playthrough::Feedback < ApplicationRecord
     {
       prose_model: kept&.model&.model_id,
       prose_purpose: kept&.chat&.purpose,
+      # AND WHICH VERSION OF THE INSTRUCTIONS IT WROTE UNDER, beside which model
+      # wrote it, so his verdicts group by prompt as well as by model -- the
+      # ROADMAP's `ta-prompt-bench` ask. Frozen with everything else here and
+      # for the same reason: it is read off the conversation, and the pruner can
+      # be asked to destroy that. Nil for a turn with no prose call and for
+      # `interaction-narration`, which sends no instructions at all; see
+      # `Playthrough::PromptVersion`.
+      prose_prompt_digest: Playthrough::PromptVersion.for_chat(kept&.chat),
       prose_models: model_ids(prose),
       answering_models: model_ids(answered),
       input_tokens: messages.sum { |message| message.input_tokens.to_i },

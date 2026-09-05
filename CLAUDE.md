@@ -53,6 +53,14 @@ rake eval:classifier_compare BEFORE=a AFTER=b   # including two DIFFERENT models
 rake eval:classifier_board                 # the checked-in 2026-09-04 baseline as one table;
                                            # no key, no network, no database. SETS=a,b for others
 
+# The narrator's own bench: 90 single-turn cases with fixed facts, one prose call
+# each, scored by the deterministic checks -- per model AND per prompt version.
+# The first gate a prompt-shaped change passes; eval:run confirms it.
+rake eval:prompt                    # ~$0.20 at the defaults; prints an estimate first
+rake eval:prompt_score SET=prompt-2026-09-05   # score a stored set again -- offline, free
+rake eval:prompt_compare BEFORE=a AFTER=b      # REAL / NOISE per check, off the files alone
+rake eval:prompt_board              # every stored set as one table; no key, no database
+
 # Bring a checkout up to date after a pull: fast-forward, bundle, migrate, then
 # everything the new code needs done to the database you already have. Offline,
 # idempotent, no model call. lib/update.rb is the list of steps.
@@ -468,7 +476,11 @@ The current database includes the following story-related models with proper ass
 - **Playthrough::Feedback** → the player's verdict on one turn (`good` / `weak`
   / `bad`, one per playthrough per **Scene**, amendable), with an optional note
   and the turn's **provenance frozen onto the row** — which model wrote the
-  prose, the prose attempt chain, every model that answered, the token counts.
+  prose, **which version of the prose instructions it wrote under**
+  (`prose_prompt_digest`, out of `Playthrough::PromptVersion` — the ROADMAP's
+  `ta-prompt-bench` ask, and the same digest `rake eval:prompt` records so a set
+  and a verdict group by one version), the prose attempt chain, every model that
+  answered, the token counts.
   Frozen rather than referenced because `Playthrough#prune_conversations!`
   destroys the receipts wherever `TA_CHAT_KEEP_TURNS` opts into a cap (the
   default keeps them, so this is belt and braces); the `Scene` itself stays a
@@ -783,6 +795,28 @@ The current database includes the following story-related models with proper ass
   prose that says less cannot contradict the records, so it is the check on the
   checks.
 - `The Salt Assizes` is the held-out world. Tune on the other two.
+
+### The prompt bench: one turn, fixed facts, per prompt version
+- `rake eval:prompt` is the narrator's own instrument and the FIRST GATE a
+  prompt-shaped change passes; `rake eval:run` confirms it. 90 hand-verified
+  single-turn cases (`test/fixtures/files/prompt_corpus.yml`) played through the
+  real `Playthrough::Turn#play` with **the classifier stood in for** — so the
+  branch, the row that moves and the fact sentence are the app's — and ONE prose
+  call a case.
+- **Eight of `Story::Scoreboard`'s twelve checks are scored and the other four
+  are UNAVAILABLE, never clean**: `Eval::Prompt::UNAVAILABLE_TO_A_CASE` states
+  the reason for each. Beside them and never folded in: `Eval::Richness`,
+  refusals, omitted schema fields, cap hits, tokens, warm latency and spend.
+- **Two prompt digests, covering different amounts.**
+  `Playthrough::PromptVersion` is the instruction block — the same digest
+  `Playthrough::Feedback` freezes as `prose_prompt_digest`, so his verdicts
+  group by prompt version as well as by model. `Eval::Prompt::Version`'s
+  `prompt_digest` is the whole prompt of one designated case per shape, so it
+  also covers `Playthrough::Turn#taken_fact` and everything
+  `Playthrough::Moment` builds.
+- `rake eval:prompt_compare` gives REAL/NOISE per check on `Eval::Noise` and
+  says whether the MODEL or the PROMPT moved — refusing to be read when both
+  did. A `talk` is deliberately not measured; see EVALUATION.md.
 
 ### The evaluation loop
 - `Story::Scoreboard` (`rake game:score`) is the one command: a rate per check,

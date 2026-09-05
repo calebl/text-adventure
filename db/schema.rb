@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_05_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_05_110000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -207,6 +207,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_100001) do
     t.integer "playthrough_id", null: false
     t.string "prose_model"
     t.text "prose_models"
+    t.string "prose_prompt_digest"
     t.string "prose_purpose"
     t.integer "scene_id", null: false
     t.datetime "updated_at", null: false
@@ -214,6 +215,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_100001) do
     t.index ["playthrough_id", "scene_id"], name: "index_playthrough_feedbacks_on_playthrough_id_and_scene_id", unique: true
     t.index ["playthrough_id"], name: "index_playthrough_feedbacks_on_playthrough_id"
     t.index ["prose_model"], name: "index_playthrough_feedbacks_on_prose_model"
+    t.index ["prose_prompt_digest"], name: "index_playthrough_feedbacks_on_prose_prompt_digest"
     t.index ["scene_id"], name: "index_playthrough_feedbacks_on_scene_id"
     t.index ["verdict"], name: "index_playthrough_feedbacks_on_verdict"
   end

@@ -813,18 +813,205 @@ sets alone.
 
 ---
 
+## The prompt bench
+
+The classifier bench measures the call the engine ACTS on. This measures the
+call the player READS, and it is the instrument the standing rule was waiting
+for: **no narration or prompt change lands until there is a testing method he
+trusts.**
+
+**The captain's words, 2026-09-04:** *"could we not build a small set of prompts
+and responses? ... a more targeted set of test cases where we are feeding the
+narrator facts and seeing how it handles them that would not require multiple
+turns."*
+
+Until now the only way to judge a prompt-shaped change was `rake eval:run` —
+twenty-turn scripted runs across three worlds, dollars a comparison, four runs a
+side before `Eval::Noise` will say anything, and every figure entangled with
+which rooms the script happened to walk through. This asks for **one turn at a
+time against fixed facts**, so a difference between two sets is a difference in
+the prose and nothing else.
+
+```bash
+rake eval:prompt                        # 90 cases x 4 reps x 1 model, ~$0.20
+rake eval:prompt_score SET=name         # score a stored set again -- offline, free, no key
+rake eval:prompt_compare BEFORE=a AFTER=b
+rake eval:prompt_board                  # every stored set as one table
+```
+
+| knob | what it does |
+| --- | --- |
+| `REPS=4` | repetitions. **Four is the default because four is `Eval::Noise::MIN_RUNS`** — a run taken at the default can actually be judged later |
+| `MODELS=a,b` | **the arm selector**, `Eval::Classifier::Arm` and not a second one. Defaults to ONE model — `BaseAgent::REMOTE_MODEL_IDS.first`, which is what a player's turn is written by — because a prompt change is judged on the model that ships |
+| `SET=name` | where the numbers land (`tmp/eval/<set>/prompt.json`). Defaults to a timestamp |
+| `SAMPLE=12` | how many flagged cases the board prints in full |
+| `YES=1` | spend past the $1.00 ceiling |
+
+### How a case works
+
+A case is **a position and one turn**. The position is a seeded world, a room,
+and the typed lines that walk to the state the case is written against; the turn
+is what was typed and the action the classifier would have resolved it to.
+
+**Everything else is the app's.** `Playthrough::Turn#play` runs whole with ONE
+thing replaced — the classifier — so the branch, the row that moves, the fact
+sentence (`#taken_fact` and its siblings) and the moment
+(`Playthrough::Moment#narration_context`) are the ones a player gets. The
+classifier is the thing replaced because it is the only call in a turn that is
+not being measured: leaving it in would put a second model between the case and
+the passage.
+
+**One model call a case, and the corpus validator is what keeps it that way.** A
+stub destination would call `Location::Generator`, a readable thing with no words
+yet would call `Item::Inscriber` on the first repetition only, and a `talk` costs
+two calls. All three are refused at validation; `calls` counts what really
+happened and the board says so if it was ever more than one.
+
+**Its own copy of the world per case**, through `Eval::Classifier::Stage.open` —
+the classifier bench's staging seam, called rather than copied, so there is one
+place to fix when it changes. A case moves rows, so two cases sharing one staged
+position would not be two cases. It is also the shortest write transaction
+either bench takes: one call, against a database somebody may be mid-game in.
+
+### The corpus
+
+`test/fixtures/files/prompt_corpus.yml` — **90 hand-verified cases across 10
+positions in two seeded worlds**, and the typed lines are real: the 76 typed
+turns in the captain's own database, the 119 take and drop turns of
+`transition_corpus.json`, and the `rake eval:run` scripts.
+
+`The Lunar Cartographer` is **excluded** and the reason is mechanical:
+`WorldMechanic::ShuffleConnections` repoints its doorways on the story's clock,
+so the exits in its prompts would depend on when the case was played. Its rooms
+are all stubs besides.
+
+| shape | cases | what it is for |
+| --- | --- | --- |
+| `take` | 18 | `take_denied` — the defect this bench was built for |
+| `drop` | 18 | `pickup_invented` |
+| `read` | 14 | `inscription_misquoted`, on the three items whose words are on record |
+| `examine` | 10 | a look at a thing with nothing written on it — the control for `read` |
+| `other` | 18 | the loosest prompt in the game, and the one most likely to invent |
+| `move` | 12 | the ARRIVAL pass (`Scene::Generator`), which is schema'd and has its own instructions |
+
+**How the cases are verified.** `Eval::Prompt::Corpus#problems` stages every
+position and checks each case against the closed set its action really reads
+(`Playthrough::Classifier#offered_for`), exactly as the classifier corpus is
+checked, and `Eval::Prompt::CorpusTest` fails the build on a case that does not
+fit, that the engine would refuse rather than narrate, or that would buy a second
+model call. What it cannot check is whether a case is worth measuring — that is
+the hand-verification, and every case carries a `why`.
+
+### What it measures
+
+Eight of the twelve `Story::Scoreboard` checks run, over the passage that came
+back and the facts the case supplied. **The other four are UNAVAILABLE and are
+never scored as clean** — a zero for any of them would be the most dangerous
+number this instrument could print:
+
+| check | why one turn cannot answer it |
+| --- | --- |
+| `unreachable_transition` | a case is one turn, and the one turn that moves walks an edge the records have |
+| `reached_for_nothing` | a drift row needs the turn AFTER the narration |
+| `named_more_than_one` | a case types a fixed line, so what it named measures the corpus |
+| `still_run` | four turns of nothing needs four turns |
+
+Beside the rates, and never folded into them: **richness** (`Eval::Richness`,
+read out of the same stored facts) and **what a stored passage cannot show** —
+refusals (`BaseAgent::RefusalError`, which with an arm of one is a failed call
+and not prose), failures by error class, required schema fields that came back
+absent, fields that arrived at their `maxLength`, prompt and completion tokens,
+latency median and p95 **warm** with the first call excluded, and spend.
+
+**Tuning and held out are printed apart and labelled**, exactly as `Eval::Board`
+prints them, and it matters more here than anywhere: this bench exists so a
+prompt can be tuned against a measurement, and a prompt tuned against every case
+in the file is a prompt fitted to the file. Tune on `The Unrecorded Hour`, read
+the result on `The Salt Assizes`.
+
+### The prompt version, and what a matching digest means
+
+A prose prompt is instructions and facts interleaved, so there are **two
+digests** and they cover different amounts:
+
+- **`instructions_digest`** — the system message: `Scene::Narrator::INSTRUCTIONS`
+  for a narrated turn, `Scene::Generator#system_prompt` for an arrival. This is
+  the same digest `Playthrough::Feedback` now freezes on every verdict
+  (`Playthrough::PromptVersion`), which is what lets a bench set and the
+  captain's own verdicts be grouped by the same version.
+- **`prompt_digest`** — **the whole prompt, byte for byte, for one designated
+  case per shape** (the lowest case id of that shape). It covers everything the
+  first one misses: `Scene::Narrator#prompt_for`'s framing of a fact,
+  `Playthrough::Turn#taken_fact`, the `DOING` line, and every fact
+  `Playthrough::Moment` builds. It is only meaningful because the corpus is
+  fixed, which is what `corpus_digest` says.
+- **`prompt_stable`** is the check on that claim: every repetition sends the
+  designated case's prompt again and they are compared. A run in which one case
+  sent two different prompts is a run whose facts moved, and the board says so.
+
+**A talk turn has no instruction digest**, and that is why `talk` is not a shape
+here: `InteractionAgent`'s narrator pass sends no system message — its prose
+rules are interpolated into the per-turn user prompt with the character's name
+and pronouns inside them, so a digest of it would be a digest of the cast.
+`interaction-narration` prose stays measured by `rake eval:run` and
+`rake game:score`, exactly as before.
+
+### Comparing two sets
+
+`rake eval:prompt_compare` is `Eval::Noise` again — the same exact rank test,
+the same four repetitions a side. What it adds is the thing that decides whether
+a verdict means anything, off the stored files alone:
+
+- **two prompt versions on one model** — the ordinary before/after, and what
+  `ta-take-drop-narration` will be judged with;
+- **two models on one prompt version** — the model comparison;
+- **both at once** — nothing can be attributed to either, and it says so loudly
+  above the verdicts rather than leaving it to be worked out;
+- **a different `corpus_digest`** — not comparable at all, and warned about the
+  same way the classifier bench warns.
+
+`commitments` is printed with **no arrow on it**. A fall in every defect rate
+beside a fall in richness is prose that says less, which is the one way to
+improve these numbers without improving the game.
+
+**Two places a set is read from, in the same order as everywhere else:**
+`tmp/eval/<set>` first, then `db/eval/<set>` — the checked-in baseline.
+`Eval.set_path` is the one place that order lives. A kept set is a SUMMARY: the
+rows are dropped and every pass's figures kept, so it is kilobytes rather than
+megabytes and renders a byte-identical table.
+
+```bash
+# keeping a set, which is a decision and not a side effect of running one
+bin/rails runner 'Eval::Prompt::Result.load(Eval.root.join("my-set")) \
+  .summary.write!(Eval.kept_root.join("my-set"), name: "my-set")'
+```
+
+### The baseline of 2026-09-05
+
+BASELINE_TABLE_PLACEHOLDER
+
+### What it is not
+
+**It does not tune a prompt**, and it is **not a substitute for
+`rake eval:run`.** A single turn cannot show pacing, a world that moved, a check
+that reads two consecutive turns, or the drift a player suffers three turns after
+a narration invented a door. The protocol is: judge a prompt-shaped change here
+first, confirm it there.
+
+---
+
 ## The instrument this is not: `rake game:sweep`
 
 Everything above measures **narration**, costs money and is noisy enough to need
 a rank test. The engine sweep is the other half and shares none of those
 properties:
 
-| | `rake eval:run` | `rake game:sweep` | `rake eval:classifier` |
-| --- | --- | --- | --- |
-| what it reads | prose, against the records | the records, after a typed line | the classifier's answer, against a label |
-| what it needs | a key, the network, minutes, dollars | nothing | a key, minutes, cents |
-| what it answers | a rate with a noise floor | pass or fail | a rate with a noise floor |
-| in CI | never | every `bin/rails test` | its offline floor and its corpus validator, yes; the calls, never |
+| | `rake eval:run` | `rake game:sweep` | `rake eval:classifier` | `rake eval:prompt` |
+| --- | --- | --- | --- | --- |
+| what it reads | prose, against the records | the records, after a typed line | the classifier's answer, against a label | one turn of prose, against fixed facts |
+| what it needs | a key, the network, minutes, dollars | nothing | a key, minutes, cents | a key, minutes, cents |
+| what it answers | a rate with a noise floor | pass or fail | a rate with a noise floor | a rate with a noise floor |
+| in CI | never | every `bin/rails test` | its offline floor and its corpus validator, yes; the calls, never | its corpus validator and its scorer, yes; the calls, never |
 
 It plays stored scripts through `Playthrough::Mechanics` with **no model at all**
 — the classifier off, `Playthrough::Grammar` in front of the engine, and
