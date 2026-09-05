@@ -82,6 +82,7 @@ module Eval
     lib/eval/classifier/result.rb
     lib/eval/classifier/stage.rb
     lib/eval/comparison.rb
+    lib/eval/concurrency.rb
     lib/eval/cost.rb
     lib/eval/noise.rb
     lib/eval/richness.rb
@@ -195,6 +196,35 @@ module Eval
     return kept if !local.exist? && kept.exist?
 
     local
+  end
+
+  # THE PROVIDER'S OWN RETRIES, OFF, FOR THE LENGTH OF A MEASUREMENT.
+  #
+  # `RubyLLM::Connection#setup_retry` installs `faraday-retry` with
+  # `RubyLLM::RateLimitError` among its retriable exceptions, and this app
+  # leaves the defaults in place: three retries at roughly 0.1s, 0.2s and 0.4s
+  # with jitter. That is right for a PLAYER -- a turn that quietly survives a
+  # 429 is a turn nobody had to retype -- and wrong for an INSTRUMENT, because
+  # every one of those retries happens inside `BaseAgent#ask`, which is inside
+  # the `CLOCK_MONOTONIC` window a bench measures. So a rate-limited call was
+  # reported as a SLOW SUCCESS: not in the failure count, not in
+  # `failures_by_class`, and silently inflating the latency median it was
+  # measuring.
+  #
+  # With them off, a 429 is a failed call carrying `RubyLLM::RateLimitError`,
+  # the latency covers only calls that answered first time -- which is what "how
+  # fast is this model" means -- and the failure column becomes the pacing
+  # signal for how many calls a bench should have in flight.
+  #
+  # RESTORED IN AN `ensure`, and read at CHAT-BUILD time by RubyLLM (a provider
+  # instance builds its Faraday stack in its constructor), so this has to be
+  # around the calls and not merely around the process.
+  def self.without_provider_retries
+    was = RubyLLM.config.max_retries
+    RubyLLM.config.max_retries = 0
+    yield
+  ensure
+    RubyLLM.config.max_retries = was
   end
 
   # A COUNT, AND A MEDIAN OF COUNTS IS NOT ALWAYS ONE. Four repetitions of

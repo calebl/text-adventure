@@ -203,7 +203,12 @@ namespace :eval do
               "Re-run with YES=1, or lower REPS."
       end
 
-      puts "Replaying #{corpus.size} lines on #{arms.map(&:id).join(", ")}."
+      threads = Eval::Concurrency.requested
+      advice = Eval::Concurrency.advice(threads)
+      puts "Replaying #{corpus.size} lines on #{arms.map(&:id).join(", ")}, " \
+           "#{threads} call#{"s" unless threads == 1} in flight (CONCURRENCY=)."
+      puts "A local arm always runs one at a time; see EVALUATION.md -> Concurrency." if arms.any?(&:local?)
+      puts "WARNING: #{advice}" if advice
       puts
       result = Eval::Classifier::Bench.new(corpus: corpus, arms: arms, reps: reps).run
 

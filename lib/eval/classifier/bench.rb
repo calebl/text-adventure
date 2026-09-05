@@ -54,6 +54,28 @@
 # out of band, so the app's calls stay ordinary calls. Whether that took is
 # reported.
 #
+# AND THE LINES OF ONE PASS RUN AT THE SAME TIME, N OF THEM, DEFAULT EIGHT.
+# 98% of a pass is the model round trip, so the pass is network-bound and the
+# speedup is very nearly N -- measured 7.2x at N=8, with the answers identical
+# to the serial ones and the transaction still rolling back clean. Two things
+# make it a measurement rather than a race, and both are load-bearing:
+# `Eval::Concurrency.rolled_back` (one pinned connection, every statement
+# serialised through a `ThreadMonitor`, the round trip outside it) and the
+# INDEXED writeback in `#play`. A THIRD thing is what it must never do: two arms
+# at once in one process, which `.exclusive` refuses -- see `ConcurrentArms`.
+# The number is recorded on the `Result` because it moves the latency columns
+# and nothing else; `EVALUATION.md` carries the curve.
+#
+# AND THE PROVIDER'S OWN RETRIES ARE OFF FOR THE LENGTH OF A RUN
+# (`Eval.without_provider_retries`), which is a correctness fix rather than a
+# concurrency one. RubyLLM's Faraday stack retries `RubyLLM::RateLimitError`
+# three times with backoff INSIDE the `CLOCK_MONOTONIC` window `#read` measures,
+# so a rate-limited call was being reported as a slow success and was invisible
+# to `Pass#failures`. That contradicted `Arm`'s own rule -- flakiness is a
+# failure count, not a retry count. With the retries off a 429 is a failed call
+# with `RubyLLM::RateLimitError` in `#failures_by_class`, which is also the
+# pacing signal: a run whose failures rise with N is a run whose N is too high.
+#
 # ONE MODEL CALL PER LINE AND NOT ONE MORE. The positions are staged offline
 # (`Eval::Classifier::Stage`), the whole run is inside a rolled-back
 # transaction, and nothing here narrates, generates a room or writes a Scene.
@@ -248,18 +270,67 @@ class Eval::Classifier::Bench
     end
   end
 
-  attr_reader :corpus, :arms, :reps, :io
+  # TWO ARMS IN ONE PROCESS AT THE SAME TIME, WHICH IS THE ONE THING THIS MUST
+  # NOT DO. `Arm#pinned` rewrites `BaseAgent.default_model_options` as a
+  # SINGLETON METHOD ON THE CLASS -- process-global, by design, because
+  # `BaseAgent` is the one gate every model call goes through. Two arms pinned
+  # at once therefore clobber each other, and the scout demonstrated worse than
+  # a swap: each arm answered as the other's model and one thread answered as
+  # `minimax/minimax-m3`, which neither had named. The `rotations` guard cannot
+  # catch it, because it reads `BaseAgent#current_model`, which is corrupted by
+  # the same write. So a second bench in this process is refused rather than
+  # measured. Arms in parallel means one PROCESS per arm; that is not built.
+  class ConcurrentArms < StandardError; end
+
+  MONITOR = Mutex.new
+  @owner = nil
+
+  class << self
+    # Claims the process's `BaseAgent` for the length of the block.
+    def exclusive(label)
+      MONITOR.synchronize do
+        raise ConcurrentArms, refusal(label) if @owner
+        @owner = label
+      end
+
+      begin
+        yield
+      ensure
+        MONITOR.synchronize { @owner = nil }
+      end
+    end
+
+    def refusal(label)
+      "#{label} cannot run while #{@owner} is running in this process: `Arm#pinned` rewrites " \
+        "BaseAgent's singleton methods, so two arms at once answer as each other's model and the " \
+        "rotation guard cannot see it. Run one arm per process."
+    end
+  end
+
+  attr_reader :corpus, :arms, :reps, :io, :concurrency
 
   # `reps` defaults to `Eval::Noise::MIN_RUNS` and not to a number of its own,
   # for the reason the rake task states: a run taken at the default has to be a
   # run a later comparison can give a verdict against. Two defaults that
   # disagreed would put an unjudgeable set on disk.
-  def initialize(corpus: Eval::Classifier.corpus, arms: nil, reps: Eval::Noise::MIN_RUNS, io: $stdout)
+  #
+  # `concurrency` is how many of ONE arm's lines are in flight at once, and it
+  # defaults to the measured honest ceiling (`Eval::Concurrency::DEFAULT`). It
+  # is never how many ARMS run at once, which is one, for ever, in this process.
+  def initialize(corpus: Eval::Classifier.corpus, arms: nil, reps: Eval::Noise::MIN_RUNS, io: $stdout,
+                 concurrency: Eval::Concurrency.requested)
     @corpus = corpus
     @arms = Eval::Classifier::Arm.all(arms.presence || BaseAgent::REMOTE_MODEL_IDS)
     @reps = reps
     @io = io
+    @concurrency = [ concurrency.to_i, 1 ].max
   end
+
+  # HOW MANY CALLS THIS ARM MAY HAVE IN FLIGHT. A LOCAL ARM IS ALWAYS ONE: it is
+  # one CPU-only ollama daemon answering one call at a time, so concurrency
+  # there does not overlap anything -- it queues, and reports the queueing as
+  # the model's latency, which is the one figure a local arm exists to produce.
+  def concurrency_for(arm) = arm.local? ? 1 : concurrency
 
   # Returns an `Eval::Classifier::Result`. A line whose call failed after the
   # rotation is recorded as a failure and the pass keeps going, because a
@@ -280,17 +351,25 @@ class Eval::Classifier::Bench
     passes = []
     warmups = []
 
-    arms.each do |arm|
-      arm.pinned do
-        warmups << warm(arm)
-        (1..reps).each do |rep|
-          Eval::Classifier::Stage.open(corpus.positions) { |stages| passes << play(arm, rep, stages) }
+    advice = Eval::Concurrency.advice(concurrency)
+    io&.puts "WARNING: #{advice}" if advice
+
+    self.class.exclusive(arms.map(&:id).join(", ")) do
+      Eval.without_provider_retries do
+        arms.each do |arm|
+          arm.pinned do
+            warmups << warm(arm)
+            (1..reps).each do |rep|
+              Eval::Classifier::Stage.open(corpus.positions) { |stages| passes << play(arm, rep, stages) }
+            end
+          end
         end
       end
     end
 
     Eval::Classifier::Result.new(corpus_size: corpus.size, corpus_digest: Eval::Classifier.digest(corpus),
-                                 arms: arms.map(&:id), reps: reps, passes: passes, warmups: warmups)
+                                 arms: arms.map(&:id), reps: reps, passes: passes, warmups: warmups,
+                                 concurrency: concurrency)
   end
 
   private
@@ -322,9 +401,17 @@ class Eval::Classifier::Bench
     warmup
   end
 
+  # THE LINES GO OUT ACROSS THE THREADS AND COME BACK BY INDEX, which is the
+  # whole of what makes a concurrent pass a measurement rather than a shuffle:
+  # a reading appended as it arrives would land against whichever line finished
+  # in that slot, and the corpus would be scored against the wrong labels with
+  # no error anywhere. Measured identical at N=1 and N=8 on the same lines.
   def play(arm, rep, stages)
+    threads = concurrency_for(arm)
     io&.print format("  %-22s rep %d ", arm.id, rep)
-    readings = corpus.lines.map { |line| read(line, stages.fetch(line.position), arm, rep) }
+    readings = Eval::Concurrency.fan(corpus.lines, threads: threads) do |line|
+      read(line, stages.fetch(line.position), arm, rep)
+    end
     pass = Pass.new(arm: arm.id, rep: rep, readings: readings)
     io&.puts format("%3d/%-3d right (%.3f), %2d misses, %.2fs median / %.2fs p95%s%s",
                     pass.scored.count(&:right?), pass.scored.size, pass.accuracy, pass.closed_set_misses,
@@ -338,7 +425,10 @@ class Eval::Classifier::Bench
   # memoizes is one conversation and the classifier is stateless by design --
   # "there is nothing in last turn's exchange worth replaying".
   def read(line, standing, arm, rep)
-    classifier = Playthrough::Classifier.new(standing.playthrough)
+    # A FRESH `Playthrough` PER CALL, AND NOT THE STAGED ONE. An AR object's
+    # association cache is not thread-safe, and the staged object is shared by
+    # every worker on that position. One indexed read against a 0.6s call.
+    classifier = Playthrough::Classifier.new(Playthrough.find(standing.playthrough.id))
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
     begin
