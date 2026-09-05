@@ -53,6 +53,14 @@ class Playthrough < ApplicationRecord
   has_many :blows, class_name: "Playthrough::Blow", dependent: :destroy,
                    inverse_of: :playthrough
 
+  # WHAT THE WORLD ITSELF TOOK OFF THIS GAME'S BODY: one row per hazard paid,
+  # and the `Playthrough::Blow` of a place. A separate table from the blows and
+  # deliberately -- a hazard has no attacker and must never open a fight; see
+  # `Playthrough::Toll`'s header. Read through `Playthrough::Moment` (which
+  # states the untold ones to the prose) and by `rake game:mechanics`.
+  has_many :tolls, class_name: "Playthrough::Toll", dependent: :destroy,
+                   inverse_of: :playthrough
+
   # THE WORLD, COPIED INTO THIS GAME AS IT BEGINS: the story's starting
   # inventory into the party's own hands, and the room the player opens in.
   #

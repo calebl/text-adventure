@@ -39,8 +39,8 @@ One file is one universe and one story. Keys are written in this order:
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
 | `characters`    | one entry each, `race` by name, optional `location` (or `absent`), optional `hostile`, optional `stats`, and `items` |
-| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; `items` |
-| `connections`   | one entry per edge, as an unordered `between: [a, b]` pair              |
+| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `hazard` + `hazard_die`; `items` |
+| `connections`   | one entry per edge, as an unordered `between: [a, b]` pair; optional `hazard` + `hazard_die` + `hazard_from` |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
 
 Prose is stored in a `|-` block scalar: one paragraph is one physical line, so
@@ -478,6 +478,80 @@ locations:
   monster is world data, and there is no record of which of the four words a
   fifth one meant.
 
+### Hazards: `locations[].hazard` and a doorway's one-way `hazard_from`
+
+**A place can cost you hit points, and so can the way you got there.** Two keys
+on a room and three on a doorway, and every one of them is world data: a seed
+file writes a hazard and no model and no typed line ever does.
+
+```yaml
+locations:
+- name: The Tide Post
+  detail_level: realized
+  hazard: flooded
+  hazard_die: 4
+
+connections:
+- between: [The Causeway Court, The Vestry Hulk]
+  distance: adjacent
+  travel_method: walking
+  hazard: drop
+  hazard_die: 4
+  hazard_from: The Causeway Court
+```
+
+- **`hazard` on a room is a key into `Location::HAZARDS`** — `flooded`, `unlit`,
+  `silent`, `airless` — and the table, not the file, says which ability saves
+  against it and *when* it is paid. `flooded` and `unlit` are paid **on
+  arrival**, once, by whoever walks in; `silent` and `airless` are paid **every
+  turn**, on the room the turn began in, in the same step of the loop a foe
+  strikes back in. So a room can charge you for coming in or for staying, and
+  which of the two is a property of the hazard rather than of the room.
+- **`hazard` on a connection is a key into `LocationConnection::HAZARDS`** —
+  `drop`, `undertow` — and it is paid when that doorway is walked.
+- **`hazard_die` is the parameter**: one of `Location::HAZARD_DICE` (4, 6, 8,
+  10), thrown when the save is missed. A hazard is a key **and** a die, or it is
+  neither; half of one is refused by the file and by the record.
+- **`save` is one of the three abilities, or nothing.** `d20 <= the ability`
+  through the same kernel `check strength` uses (`Character#check`). `airless`
+  names no ability at all, which is a real hazard and not an omission: there is
+  no dexterity against having nothing to breathe.
+- **`hazard_from` is the one new shape in the whole design, and it is what makes
+  a doorway's hazard one-way.** `location_connections` is two rows per door, so
+  a hazard written on one of them costs in one direction only — the drop into
+  the hulk hurts and the climb back out does not. `between:` is an unordered
+  pair, so the file has to name the room you are **leaving** when it is paid,
+  and the loader puts the key and the die on exactly that row and clears the
+  other.
+
+  **A one-way hazard is not a one-way exit.** Both rows are still written, the
+  door still leads both ways, and `Location#exits` is unchanged; only the cost
+  differs. One-way exits stay unsupported and deliberately deferred.
+- Both are **omitted rather than written out** on export, like `opening`,
+  `mobile` and `danger`, and both are **re-asserted in both directions** on
+  load: deleting `hazard:` from a file and re-seeding takes it back off, so a
+  room its author made safe stops costing anybody anything.
+- **What a hazard took is not world data** and is never in a file:
+  `playthrough_tolls` is one row per hazard paid, per game, exactly as
+  `playthrough_vitals` is how much is left of one body in one game.
+- `rake game:doctor` reports **a room hazard the engine has no table for**
+  (`location_with_an_unknown_hazard`) and **a doorway one**
+  (`connection_with_an_unknown_hazard`). Neither can be repaired: there are only
+  a few words it could have been, nothing on record says which, and clearing the
+  column is not a neutral guess — it is the answer that makes safe a room
+  somebody meant to cost hit points.
+- **`the-salt-assizes.yml` is the only world that carries any**, and its own
+  header says why at length: its fiction is built out of exactly this (the stain
+  band on the tide post, three men dead at it in the court's records), and it is
+  the one seeded world with no `mechanics:` block — which matters for the
+  DOORWAY half specifically, because `WorldMechanic::ShuffleConnections` rewrites
+  an edge from `distance` and `travel_method` alone and in both directions, so a
+  directed hazard on a shufflable edge would be destroyed the first night.
+- **Whether a GENERATED world gets hazards is not settled and nothing writes
+  one.** Hazards are seeded only. `Location::Danger` rolls a room's `danger`
+  when it is born; there is no counterpart for `hazard`, deliberately, and
+  adding one is a later question.
+
 ### Rules the loader enforces
 
 - Exactly one location is `opening: true`, and it must be `realized` — a story
@@ -518,6 +592,14 @@ locations:
   neither be hurt nor hurt back.
 - A location's `danger`, when the file gives one, is one of `safe`, `uneasy`,
   `dangerous`, `deadly` — `Location::DANGERS`, and an absent key means `safe`.
+- A `hazard`, on a room or on a connection, is a key into that table's own
+  catalogue (`Location::HAZARDS` / `LocationConnection::HAZARDS`) and comes with
+  a `hazard_die` in `Location::HAZARD_DICE`. Half a hazard is refused: a key
+  with no die is a file that looks as though it said something and did not.
+- A connection with a `hazard` carries a `hazard_from`, and that name is one of
+  the edge's **own two ends**. Without it there is no way to say which direction
+  costs something; with the wrong name the edge would load with no hazard at all
+  and no complaint.
 - `sex` is a `Character.sexes` key: `male`, `female`, `non_binary`,
   `trans_woman`, `trans_man`. Not checked by `validate!` -- it is `Character`'s
   own `inclusion` validation that rejects a bad one, inside the same
@@ -654,6 +736,12 @@ and asserts the records after each one.
 were added to format 2 for the same reason, on the same rule: all three are
 optional, all three default to a world with no monsters in it, and every file
 written before they existed still loads and still means exactly what it meant.
+
+`locations[].hazard` / `hazard_die` and `connections[].hazard` / `hazard_die` /
+`hazard_from` were added to format 2 on that same rule: every one of them is
+optional, all of them default to a world that does nothing to anybody for
+walking around it, and the columns are nullable so no existing database needs a
+backfill either.
 
 The optional `mechanics` key and `locations[].mobile` were added to format 2
 rather than bumping it to 3, which is the rule `WorldSeed::FORMAT` states:

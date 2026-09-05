@@ -1,0 +1,183 @@
+# TERRAIN AND EDGES HURT, AND THE DOORWAY'S HAZARD IS ONE-WAY BY CONSTRUCTION.
+#
+# The captain's request, second half: *"certain terrain or actions should also
+# cause damage."* This is that as a walk, over `The Salt Assizes` -- the one
+# seeded world that hurts you for walking around it, and the world file says at
+# length why it is that one.
+#
+# WHAT ONLY A WALK CAN SEE HERE, and it is three things:
+#
+#   THAT ONE DIRECTION COSTS AND THE OTHER DOES NOT. `location_connections` is
+#   two rows per door (the ruling of 2026-09-03) and the hazard is on exactly
+#   one of them, so the drop into the hulk is paid and the climb back onto the
+#   rock is free. A unit test can assert that `LocationConnection.walked` reads
+#   one row. What it cannot assert is that the ENGINE a player types into
+#   charges for the crossing one way and not the other, turn after turn, over
+#   the same doorway -- steps 2, 3 and 4 are that assertion, and step 4 is the
+#   whole point: walking IN a second time costs again, so it is the direction
+#   and not the novelty.
+#
+#   THAT A ONE-WAY HAZARD IS NOT A ONE-WAY EXIT. Every step below asserts the
+#   exits as well as the toll: the hulk still leads back to the court, the court
+#   still leads into the hulk, and `Location#exits` never changed. One-way exits
+#   stay unsupported and deliberately deferred; this does not reopen them.
+#
+#   THAT A HAZARD COSTS NO MODEL CALL. `EngineSweep` replaces `BaseAgent.new`
+#   with something that raises for the length of a run, and every save, every
+#   die and every `playthrough_tolls` row below is arithmetic over records.
+#
+# WHY IT ASSERTS `hazards:` AND NEVER A HIT POINT. `Roll`'s seed is built out of
+# row ids, so what a toll COST is not reproducible across two databases and
+# whether one was PAID is -- the same line `a-fight-the-player-wins.yml` draws
+# for `blows:` and `a-check-against-an-ability.yml` draws for the d20. The save
+# is a real d20 under a real ability (`Coraith Vell` is dexterity 10 for the
+# hatch and strength 13 for the water), so a step that asserted damage would
+# fail about half the time by design. `hazards:` counts the row, which is
+# written whether the save was made or missed, so nothing here depends on a die.
+#
+# AND `hazards:` IS NEVER `blows:`. A `Playthrough::Toll` is not a
+# `Playthrough::Blow` -- a hazard has no attacker, cannot be swung back at, and
+# must never open a fight `Playthrough::Fight` would then close with a `Scene`
+# about a fight nobody was in. Every step asserts both numbers, and the point of
+# asserting both is that the place hurting you never reads as somebody fighting
+# you.
+#
+# WHAT THIS SCRIPT CANNOT WALK, said out loud: an `every_turn` room hazard.
+# `Location::HAZARDS` carries two of them (`silent`, `airless`) and
+# `Playthrough::Hazards#every_turn!` is routed from step 7 of both modes, but no
+# seeded world has one -- a walk plays a seeded world and nothing else -- so
+# that branch is covered by `Playthrough::HazardsTest` and not from a keyboard.
+# A world whose fiction wants one is what would bring it here.
+story: The Salt Assizes
+why: a room hazard on arrival, and a doorway hazard that is paid one way and not the other
+steps:
+- id: the-court-is-free-and-says-what-leaving-it-costs
+  type: look
+  why: the opening room does nothing to anybody, and the read-out already shows which way out is not free
+  expect:
+    location: The Causeway Court (realized)
+    exits:
+    - The Tide Post (realized)
+    - The Vestry Hulk (stub)
+    hp: 18
+    hazards: 0
+    blows: 0
+    changed: false
+    refused: false
+
+- id: down-through-the-hatch
+  type: go to the Vestry Hulk
+  why: THE WHOLE SLICE -- the doorway from the court into the hulk carries `drop`, and walking it pays it
+  expect:
+    changed: true
+    location: The Vestry Hulk (stub)
+    # ONE TOLL AND NO MORE: the doorway's. The hulk itself has no hazard, so
+    # the arrival pays for the crossing and not for standing there.
+    hazards: 1
+    # AND NOBODY HIT ANYBODY. A place is not a foe.
+    blows: 0
+    dead: false
+    # The door still leads both ways. A one-way HAZARD is not a one-way EXIT.
+    exits: [The Causeway Court (realized)]
+
+- id: and-climbing-back-out-is-free
+  type: go to the Causeway Court
+  why: THE OTHER HALF -- the return row carries no hazard, so the same door costs nothing this way
+  expect:
+    changed: true
+    location: The Causeway Court (realized)
+    hazards: 0
+    blows: 0
+    dead: false
+
+- id: and-in-again-costs-again
+  type: go into the Vestry Hulk
+  why: it is the DIRECTION and not the novelty -- a second crossing the same way is paid the same way
+  expect:
+    changed: true
+    location: The Vestry Hulk (stub)
+    hazards: 1
+    blows: 0
+
+- id: standing-in-it-costs-nothing
+  type: look
+  why: '`drop` is a doorway''s hazard and the hulk has none of its own, so staying is free'
+  expect:
+    location: The Vestry Hulk (stub)
+    hazards: 0
+    blows: 0
+    # A READ-OUT IS NOT A TURN IN THE FICTION, and this step is free for TWO
+    # reasons rather than one: `look` produces no `Intent` at all (it is one of
+    # `Playthrough::Grammar::VERBS`' `:look` words), so neither the riposte nor
+    # the place gets a turn out of it. Step 9 is the honest version of the same
+    # assertion -- a line the engine really played, in a room that really has a
+    # hazard.
+
+- id: back-onto-the-rock
+  type: go to the Causeway Court
+  why: free again, and the party is put back where the last two steps start from
+  expect:
+    changed: true
+    location: The Causeway Court (realized)
+    hazards: 0
+
+- id: patched-up-before-the-water
+  type: mend 20
+  why: an engine instrument, so no arrival and no crossing -- and the tolls so far cannot reach the steps below
+  expect:
+    hp: 18
+    hazards: 0
+    blows: 0
+    dead: false
+
+- id: out-across-the-wet-side-of-the-rock
+  type: go to the Tide Post
+  why: THE ROOM'S OWN HAZARD -- `flooded`, paid on arrival, over a doorway that carries none
+  expect:
+    changed: true
+    location: The Tide Post (realized)
+    # ONE TOLL: the room's. The way out here is an ordinary doorway, so this
+    # is the room and nothing else.
+    hazards: 1
+    # Neb Halloran is chained to the post and is nobody's enemy: a room that
+    # hurts you is not a person who does.
+    present: [Neb Halloran]
+    foes: []
+    blows: 0
+    dead: false
+
+- id: and-standing-at-the-post-is-free
+  type: talk to Neb Halloran
+  why: '`flooded` is `on_arrival`, so it is paid once by whoever walks in and not again for staying'
+  expect:
+    # A LINE THE ENGINE PLAYED, and that is the point of using a `talk` here
+    # rather than a read-out: this mode REFUSES to write the prose, but the
+    # ENGINE played the line (`Playthrough::Classifier::Intent#refused?` is
+    # false -- Neb resolved out of the room's cast), so step 7 ran in full and
+    # charged nothing. A `look` would have been free for the wrong reason.
+    refused: true
+    offers: [Neb Halloran]
+    location: The Tide Post (realized)
+    hazards: 0
+    blows: 0
+    drifts: 0
+    dead: false
+
+- id: a-refused-line-pays-nothing
+  type: take the mayor's chain
+  why: '*"a refused line writes nothing"*, and a toll is something -- the same rule the riposte is under'
+  expect:
+    refused: true
+    changed: false
+    hazards: 0
+    blows: 0
+    drifts: 0
+
+- id: and-back-in-is-paid-again
+  type: go to the Causeway Court
+  why: leaving the post is free, and it is the arrival that is charged rather than the room
+  expect:
+    changed: true
+    location: The Causeway Court (realized)
+    hazards: 0
+    blows: 0

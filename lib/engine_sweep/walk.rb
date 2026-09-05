@@ -86,11 +86,17 @@ class EngineSweep::Walk
   def walk(mechanics, step)
     before = Playthrough::Drift.count
     struck = Playthrough::Blow.count
+    # WHAT THE PLACE TOOK, counted the way the blows are and never with them:
+    # a `Playthrough::Toll` is not a `Playthrough::Blow` (a hazard has no
+    # attacker and must never open a fight), so the two are two numbers a script
+    # asserts separately.
+    paid = Playthrough::Toll.count
     report = mechanics.run(step.typed)
     drifts = Playthrough::Drift.count - before
     blows = Playthrough::Blow.count - struck
+    hazards = Playthrough::Toll.count - paid
 
-    failures(step, report, drifts: drifts, blows: blows)
+    failures(step, report, drifts: drifts, blows: blows, hazards: hazards)
   end
 
   # THE RECORDS AFTER A RE-SEED, WITH NOTHING ELSE HAVING HAPPENED.
@@ -102,8 +108,8 @@ class EngineSweep::Walk
     failures(step, mechanics.read(note: note), drifts: 0)
   end
 
-  def failures(step, report, drifts:, blows: 0)
-    step.expectation.check(report, drifts: drifts, blows: blows).map do |unmet|
+  def failures(step, report, drifts:, blows: 0, hazards: 0)
+    step.expectation.check(report, drifts: drifts, blows: blows, hazards: hazards).map do |unmet|
       EngineSweep::Result::Failure.new(script: script, step: step, unmet: unmet, state: report.state.to_s)
     end
   end
@@ -165,7 +171,14 @@ class EngineSweep::Walk
     name = ->(value) { locations.fetch(value, value) }
 
     Array(document["locations"]).each { |row| row["name"] = name.call(row["name"]) }
-    Array(document["connections"]).each { |row| row["between"] = Array(row["between"]).map { |value| name.call(value) } }
+    Array(document["connections"]).each do |row|
+      row["between"] = Array(row["between"]).map { |value| name.call(value) }
+      # `hazard_from` is a location name too, and a version of the file that
+      # renamed the room a doorway's hazard is paid leaving would otherwise be a
+      # file `WorldSeed::Loader#validate_hazards!` refuses -- so the script would
+      # be testing the validation rather than the re-seed.
+      row["hazard_from"] = name.call(row["hazard_from"]) if row["hazard_from"].present?
+    end
     document["opening_scene"]["location"] = name.call(document["opening_scene"]["location"]) if document["opening_scene"]
     Array(document["characters"]).each { |row| row["location"] = name.call(row["location"]) if row["location"].present? }
 

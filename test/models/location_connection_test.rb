@@ -120,4 +120,55 @@ class LocationConnectionTest < ActiveSupport::TestCase
     assert_includes LocationConnection.to_location(@there), row
     assert_empty LocationConnection.from_location(@there)
   end
+
+  # ------------------------------------------------------------------------
+  # WHAT WALKING THIS WAY COSTS, and the first mechanic that WANTS the directed
+  # edge: a door is two rows, so a hazard on one of them is one-way by
+  # construction and nothing has to enforce it.
+
+  test "a doorway has no hazard by default" do
+    edge = create(:location_connection)
+
+    assert_nil edge.hazard
+    assert_not edge.hazardous?
+    assert_nil edge.hazard_entry
+  end
+
+  test "a hazard has to be one of the catalogue's keys and one of the engine's dice" do
+    assert_not build(:location_connection, hazard: "haunted", hazard_die: 4).valid?
+    assert_not build(:location_connection, hazard: "drop", hazard_die: 7).valid?
+  end
+
+  test "half a hazard is refused, either half" do
+    assert_not build(:location_connection, hazard: "drop").valid?
+    assert_not build(:location_connection, hazard_die: 4).valid?
+  end
+
+  # THE WHOLE POINT: `.walked` reads ONE row, so the cost is on the direction
+  # and the door still leads both ways.
+  test "the hazard is on the direction that was walked and not on the door" do
+    court = create(:location, name: "The Causeway Court")
+    hulk = create(:location, story: court.story, name: "The Vestry Hulk")
+    create(:location_connection, :hazardous, location: court, connected_location: hulk)
+    create(:location_connection, location: hulk, connected_location: court)
+
+    assert LocationConnection.walked(court, hulk).hazardous?
+    assert_not LocationConnection.walked(hulk, court).hazardous?
+    assert_includes court.exits, hulk, "a one-way hazard is not a one-way exit"
+    assert_includes hulk.exits, court
+  end
+
+  test "walked answers nothing for a pair with no doorway" do
+    assert_nil LocationConnection.walked(create(:location), create(:location))
+    assert_nil LocationConnection.walked(nil, create(:location))
+  end
+
+  test "every catalogue entry names a save and its words" do
+    LocationConnection::HAZARDS.each do |key, entry|
+      assert entry.key?(:save), "#{key} has no `save:` -- nil is a value and an omission is not"
+      assert entry[:save].nil? || Character::ABILITIES.include?(entry[:save]),
+             "#{key} saves on something that is not one of Character::ABILITIES"
+      assert entry[:words].present?, "#{key} has nothing to tell the prose"
+    end
+  end
 end

@@ -303,6 +303,16 @@ class WorldSeed::Exporter
       # rather than written out" rule the flags above follow, said for a key
       # with four values instead of two.
       document["danger"] = location.danger unless location.danger == Location::SAFE
+      # WHAT THE PLACE DOES TO SOMEBODY STANDING IN IT. Omitted rather than
+      # written null when there is none, which is the rule every key above it
+      # follows -- and here it is also what the loader reads back as "this room
+      # does nothing to you", so the round trip is exact. The die goes with the
+      # key and only with it: both models refuse the pair the other way round,
+      # so a file carrying one alone would not load.
+      if location.hazard.present?
+        document["hazard"] = location.hazard
+        document["hazard_die"] = location.hazard_die
+      end
       document["teaser"] = text(location.teaser)
       if location.realized?
         document["description"] = text(location.description)
@@ -386,7 +396,31 @@ class WorldSeed::Exporter
 
     warn_about(row, rows, names)
 
-    { "between" => names, "distance" => row.distance, "travel_method" => row.travel_method }
+    document = { "between" => names, "distance" => row.distance, "travel_method" => row.travel_method }
+    document.merge(hazard_document(rows))
+  end
+
+  # THE ONE DIRECTED ROW THAT CARRIES A HAZARD, written back as the three keys
+  # the loader reads. `hazard_from` is that row's OWN location -- the room you
+  # are leaving -- which is the whole of what `between:`'s unordered pair cannot
+  # say. Empty for the ordinary doorway, which is every doorway in every world
+  # but one, so `#document`'s shape is unchanged for a world with no hazards.
+  #
+  # BOTH DIRECTIONS HAZARDOUS IS NOT EXPORTABLE and is warned about rather than
+  # halved: the file has one `hazard_from`, so a database whose two rows both
+  # carry one is a shape only raw SQL can make and a person has to decide what
+  # it meant. This is `#warn_about`'s own rule for a disagreeing pair.
+  def hazard_document(rows)
+    hazardous = rows.select { |row| row.hazard.present? }
+    return {} if hazardous.empty?
+
+    row = hazardous.first
+    if hazardous.size > 1
+      @warnings << "#{rows.map { |candidate| candidate.location.name }.join(" <-> ")}: both directions carry a " \
+                   "hazard and a file can only say one; exported #{row.location.name}'s. Fix it by hand before loading."
+    end
+
+    { "hazard" => row.hazard, "hazard_die" => row.hazard_die, "hazard_from" => row.location.name }
   end
 
   def warn_about(row, rows, names)

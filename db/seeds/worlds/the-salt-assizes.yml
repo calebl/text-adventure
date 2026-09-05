@@ -23,6 +23,28 @@
 # The opening scene puts a judge, a bell and a rising tide in one room, so turn
 # one has somebody to talk to and something with a deadline.
 #
+# AND IT IS THE ONE SEEDED WORLD THAT HURTS YOU FOR WALKING AROUND IT, which is
+# here rather than in the other two for three reasons. Its fiction is built out
+# of exactly this -- the stain band on the tide post, the surf working at the
+# low side of the rock, three men dead at the post in the court's own records --
+# so a room that costs hit points is the world's premise and not an addition to
+# it. It is the ONE seeded world with no `mechanics:` block, and that matters
+# for the DOORWAY hazard specifically:
+# `WorldMechanic::ShuffleConnections#write_edge` carries only `distance` and
+# `travel_method` and writes both directions symmetrically, so a directed hazard
+# on a shufflable edge would be destroyed the first night -- which rules out
+# `The Lunar Cartographer` for it. And `The Unrecorded Hour` is a dry Registry
+# office two floors up whose own universe says violence is rarely the instrument
+# of choice; there is nothing in it a terrain hazard could honestly be.
+#
+# THE HELD-OUT RULE IS NOT BROKEN BY THIS AND IT IS WORTH SAYING WHY. `Eval::HELD_OUT`
+# and point 1 above are about PROSE: no `Story::Audit` check was measured
+# against this world's passages and nothing in a fixture is drawn from it. A
+# hazard adds no passage and tunes no pattern. What it DOES do is change what
+# the world does, so a `rake eval:compare` spanning the commit that added it is
+# comparing two different worlds on the Salt Assizes board, and the PR that
+# added it says so.
+#
 # AND THE CAST IS PLACED. `characters[].location` is where each of them stands
 # (`Character.present_in`, the closed set `talk` resolves against), which is what
 # makes Neb Halloran reachable at all: this world's entire premise is that he is
@@ -174,6 +196,15 @@ locations:
     The tide-slate is the one object here with a rule about it. Only the Bell-Keeper may erase the day's figure, which in four hundred years has been broken twice, both times in the same case, and the case is not in the records because the record was the thing that was altered.
 - name: The Tide Post
   detail_level: realized
+  # THE ROOM'S OWN HAZARD, and this world's whole premise is that it has one:
+  # the description already says "the surf is working at the low side of the
+  # rock in a way it was not doing an hour ago", and the lore says three men
+  # have died at this post. `flooded` is paid ON ARRIVAL (Location::HAZARDS),
+  # which is the honest moment for it -- the wet low side of the rock is what
+  # you cross to get out here, and standing on the high part once you have made
+  # it is not what killed them.
+  hazard: flooded
+  hazard_die: 4
   teaser: A chain, a man, and about five feet of dry rock.
   description: |-
     The seaward end of Gallows Rock is a shelf of granite about twelve feet across, sloping, worn smooth, with the post set into it: an iron column the thickness of a mast, sunk four hundred years and stained to the colour of the rock in a band that tells you exactly where the water gets to. Neb Halloran is chained to it by the left wrist with about six feet of play, standing where the shelf is highest, and he has arranged himself so as not to be sitting when you arrive.
@@ -193,3 +224,15 @@ connections:
 - between: [The Causeway Court, The Vestry Hulk]
   distance: adjacent
   travel_method: walking
+  # THE DIRECTED EDGE, AND THE FIRST MECHANIC THAT WANTS IT. The hulk lies
+  # "canted across the northern side of the court with its hatch propped open on
+  # a boat hook": going IN is a drop through a hatch into a wreck lying over,
+  # and coming back OUT is a climb up onto the rock. `hazard_from` says which of
+  # the two the cost is on, and the loader writes it onto that ONE row -- so the
+  # asymmetry is in the records rather than in a rule.
+  #
+  # THIS IS NOT A ONE-WAY EXIT. Both rows are still written, the door still
+  # leads both ways, and `Location#exits` is unchanged; only the cost differs.
+  hazard: drop
+  hazard_die: 4
+  hazard_from: The Causeway Court

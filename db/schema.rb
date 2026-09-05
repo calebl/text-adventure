@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_05_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_05_140000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -110,6 +110,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_130000) do
     t.integer "connected_location_id", null: false
     t.datetime "created_at", null: false
     t.text "distance"
+    t.string "hazard"
+    t.integer "hazard_die"
     t.integer "location_id", null: false
     t.text "time_to_travel"
     t.text "travel_method"
@@ -124,6 +126,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_130000) do
     t.string "danger", default: "safe", null: false
     t.text "description"
     t.string "detail_level", default: "stub", null: false
+    t.string "hazard"
+    t.integer "hazard_die"
     t.datetime "last_protagonist_visit"
     t.text "lore"
     t.boolean "mobile", default: false, null: false
@@ -260,6 +264,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_130000) do
     t.index ["playthrough_id", "story_timestamp"], name: "idx_on_playthrough_id_story_timestamp_b54cd36315"
     t.index ["playthrough_id"], name: "index_playthrough_overreaches_on_playthrough_id"
     t.index ["scene_id"], name: "index_playthrough_overreaches_on_scene_id"
+  end
+
+  create_table "playthrough_tolls", force: :cascade do |t|
+    t.integer "character_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "damage", null: false
+    t.string "hazard", null: false
+    t.integer "hp_after", null: false
+    t.integer "location_connection_id"
+    t.integer "location_id", null: false
+    t.integer "playthrough_id", null: false
+    t.boolean "saved", default: false, null: false
+    t.integer "scene_id"
+    t.integer "sequence", null: false
+    t.datetime "story_timestamp", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id"], name: "index_playthrough_tolls_on_character_id"
+    t.index ["location_connection_id"], name: "index_playthrough_tolls_on_location_connection_id"
+    t.index ["location_id"], name: "index_playthrough_tolls_on_location_id"
+    t.index ["playthrough_id", "scene_id", "id"], name: "index_playthrough_tolls_on_playthrough_and_scene"
+    t.index ["playthrough_id"], name: "index_playthrough_tolls_on_playthrough_id"
+    t.index ["scene_id"], name: "index_playthrough_tolls_on_scene_id"
   end
 
   create_table "playthrough_vitals", force: :cascade do |t|
@@ -421,6 +447,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_130000) do
   add_foreign_key "playthrough_overreaches", "locations"
   add_foreign_key "playthrough_overreaches", "playthroughs"
   add_foreign_key "playthrough_overreaches", "scenes"
+  add_foreign_key "playthrough_tolls", "characters"
+  add_foreign_key "playthrough_tolls", "location_connections"
+  add_foreign_key "playthrough_tolls", "locations"
+  add_foreign_key "playthrough_tolls", "playthroughs"
+  add_foreign_key "playthrough_tolls", "scenes"
   add_foreign_key "playthrough_vitals", "characters"
   add_foreign_key "playthrough_vitals", "playthroughs"
   add_foreign_key "playthroughs", "characters"

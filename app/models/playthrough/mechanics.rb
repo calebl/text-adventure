@@ -95,7 +95,7 @@ class Playthrough::Mechanics
   # the write, so the read-out is what the database says and not what this class
   # believed it had done.
   State = Data.define(:location, :exits, :items_here, :carried, :present, :foes, :provoked, :conditions,
-                      :condition, :character, :over) do
+                      :condition, :character, :over, :hazard, :hazards_out) do
     # THE WORLD'S OWN NUMBERS FOR THE PLAYER, one line's worth. Read straight off
     # the character, because that is where they live: a stat block and three
     # abilities are the STORY's (`Character`'s header), and printing them beside
@@ -170,7 +170,20 @@ class Playthrough::Mechanics
         # which is the layer split read out in two adjacent lines -- and
         # `EngineSweep::Invariants#stat_blocks_unmoved` is the assertion that no
         # typed line moves the top one.
-        [ "sheet", sheet, "no stat block" ]
+        [ "sheet", sheet, "no stat block" ],
+        # WHAT THIS PLACE DOES TO SOMEBODY STANDING IN IT, off `locations.hazard`
+        # -- the WORLD's, like the sheet above it and unlike the condition. The
+        # whole entry is printed rather than the bare key, because the key alone
+        # does not say which ability saves or when it is paid, and those are the
+        # two things somebody walking a hazardous room needs.
+        [ "hazard", [ hazard ].compact, "nothing here hurts you" ],
+        # AND THE WAYS OUT THAT COST SOMETHING, which is the whole visible half
+        # of the directed edge: a doorway's hazard is on ONE of the two rows, so
+        # this lists what leaving THIS WAY costs and says nothing about coming
+        # back. An exit that hurts both ways would appear on both rooms' lines
+        # and one that hurts one way appears on one, which is the record read
+        # straight out.
+        [ "hazards out", hazards_out, "every way out of here is free" ]
       ].map { |label, values, empty| format("  %-11s %s", label, values.presence&.join(", ") || empty) }
     end
   end
@@ -260,6 +273,15 @@ class Playthrough::Mechanics
     @fight = Playthrough::Fight.new(playthrough)
     @round = @fight.next_round
 
+    # AND WHERE THIS GAME'S TOLLS STOOD BEFORE THE LINE RAN, so the ones this
+    # line caused can be read back off the rows afterwards. A high-water mark
+    # rather than a return value, because a hazard is paid in two places -- the
+    # arrival, deep inside `Playthrough::Turn#move_to`, and step 7 -- and
+    # threading a list back out of the first would put a second copy of the
+    # engine's own bookkeeping in this mode. `EngineSweep::Walk` counts the same
+    # rows the same way.
+    @tolls_before = playthrough.tolls.maximum(:id).to_i
+
     report =
       if reading.refusal
         refuse(reading.refusal, note: reading.note, understood: reading.understood)
@@ -302,10 +324,23 @@ class Playthrough::Mechanics
     return report if intent.nil? || intent.refused?
 
     blows = Playthrough::Riposte.new(playthrough, turn: turn).run!(location: from, round: round)
+
+    # AND THE PLACE ITSELF GETS ITS TURN, beside the foes and after them, on the
+    # room the turn began in -- the same call `Playthrough::Turn#play` makes in
+    # the same place, so a hazard in this mode and a hazard in the browser
+    # cannot come apart. A REFUSED line never reaches here, which is the same
+    # ruling the riposte above is under.
+    Playthrough::Hazards.new(playthrough, turn: turn).every_turn!(location: from)
+
     closing = @fight.close!
-    return report if blows.empty? && closing.nil?
+    # EVERY TOLL THIS LINE CAUSED, read off the rows: the arrival's -- which was
+    # paid inside `Playthrough::Turn#move_to`, before this method existed for
+    # the turn -- and step 7's, together and in the order they were written.
+    taken = playthrough.tolls.where("id > ?", @tolls_before).chronological.to_a
+    return report if blows.empty? && closing.nil? && taken.empty?
 
     notes = blows.map { |blow| "answered: #{blow}" }
+    notes.concat(taken.map { |toll| "the world: #{toll}" })
     notes << "the fight is over: #{closing.description}" if closing
 
     report.with(note: [ *report.note, *notes ], state: state)
@@ -356,8 +391,40 @@ class Playthrough::Mechanics
       # from the condition beside it: a playthrough with no protagonist has no
       # condition and could still, one day, be ended by a mechanic nobody has
       # written. It is what `EngineSweep::Expectation`'s `dead:` reads.
-      over: playthrough.over?
+      over: playthrough.over?,
+      # WHAT THE PLACE ITSELF DOES, and what leaving it costs. Both off the
+      # WORLD's rows through the one reader each model owns
+      # (`Location#hazard_entry`, `LocationConnection#hazard_entry`), so the
+      # read-out and `Playthrough::Hazards` cannot come to disagree about which
+      # ability saves.
+      hazard: hazard_of(playthrough.current_location),
+      hazards_out: hazards_out_of(playthrough.current_location)
     )
+  end
+
+  # `flooded d4, strength save, on arrival -- the water takes your legs`, or nil
+  # for a room that does nothing to anybody. Every number is off the row.
+  def hazard_of(room)
+    return nil unless room&.hazardous?
+
+    entry = room.hazard_entry
+    "#{room.hazard} d#{room.hazard_die}, #{entry[:save] ? "#{entry[:save]} save" : "no save"}, " \
+      "#{entry.fetch(:when).to_s.tr("_", " ")} -- #{entry.fetch(:words)}"
+  end
+
+  # ONE LINE PER WAY OUT THAT COSTS SOMETHING, in `Location#exits`' order. The
+  # row read is the one that would actually be WALKED -- `from here to there` --
+  # which is what makes this the one-way answer rather than the door's.
+  def hazards_out_of(room)
+    return [] if room.nil?
+
+    room.exits.filter_map do |exit|
+      edge = LocationConnection.walked(room, exit)
+      next unless edge&.hazardous?
+
+      "#{exit.name}: #{edge.hazard} d#{edge.hazard_die}, " \
+        "#{edge.hazard_entry[:save] ? "#{edge.hazard_entry[:save]} save" : "no save"}"
+    end
   end
 
   # The classifier, and in the no-model mode still the classifier -- for its
@@ -574,12 +641,18 @@ class Playthrough::Mechanics
   # unwritten. Said out loud, because a stub is the one thing the offline mode
   # reads differently from the real loop.
   def stand_in(from, destination, understood)
-    turn.stand_in!(destination)
     # `Playthrough::Turn#move_to` snapshots after realizing; this is the offline
     # half of the same statement, and it is here rather than left to the next
     # turn because the read-out printed under THIS move is what a sweep script
     # asserts `here:` against.
     Playthrough::Snapshot.new(playthrough).of_the_room!(destination)
+    # AND THE WALK IS PAID FOR -- after the snapshot and BEFORE the player is
+    # stood in the room, which is `Playthrough::Turn#move_to`'s own order for
+    # its own reasons: this game has to have its copy of the room before
+    # anything can cost anybody anything, and the room the party is still
+    # standing in is what names the direction the doorway was walked in.
+    Playthrough::Hazards.new(playthrough, turn: turn).on_arrival!(destination, from: from)
+    turn.stand_in!(destination)
 
     change("moved: #{label(from) || "nowhere"} -> #{destination.name}" \
            "#{" (a stub -- nobody has written this room, and no-model mode cannot)" if destination.stub?}",

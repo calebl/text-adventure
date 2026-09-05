@@ -44,5 +44,14 @@ FactoryBot.define do
       distance { "a long journey" }
       travel_method { "crawling" }
     end
+
+    # A DOORWAY THAT COSTS SOMETHING TO WALK. On THIS row and therefore in THIS
+    # direction only -- a door is two rows, so the return row is an ordinary
+    # doorway unless a test builds it hazardous too. `LocationConnection::HAZARDS`
+    # has the catalogue and says why a one-way hazard is not a one-way exit.
+    trait :hazardous do
+      hazard { "drop" }
+      hazard_die { 4 }
+    end
   end
 end

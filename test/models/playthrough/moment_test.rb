@@ -118,6 +118,80 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     assert_no_match(/Blows landed/, moment.narration_context)
   end
 
+  # --- what the prose is told about the place itself -------------------------
+  #
+  # `#struck_fact`'s counterpart for the OTHER source of damage, and beside it
+  # rather than folded into it: somebody hit you and the world did are two
+  # different facts and the prose has to be able to say which. Without this the
+  # narrator would be handed a body that had lost hit points between two turns
+  # with no account of how.
+
+  test "nothing is said about a place that has done nothing" do
+    assert_no_match(/The place itself/, moment.narration_context)
+  end
+
+  test "the narrator is told what the place took and that the numbers do not change" do
+    create(:playthrough_toll, playthrough: @playthrough, character: @protagonist, location: @here,
+                              hazard: "flooded", damage: 3, hp_after: 5)
+
+    context = moment.narration_context
+
+    assert_match(/The place itself, recorded by the game:/, context)
+    assert_match(/Ashgate Market cost Iri Calder 3 hit points -- the water takes your legs/, context)
+    assert_match(/Iri Calder is alive\./, context)
+    assert_match(/do not write a wound the game did not record/, context)
+  end
+
+  # A SAVE IS A FACT TOO. A turn where the water did nothing is a turn the prose
+  # should not invent a wound for, and silence about it is an invitation to.
+  test "a save is stated rather than left silent" do
+    create(:playthrough_toll, :saved, playthrough: @playthrough, character: @protagonist, location: @here)
+
+    assert_match(/Iri Calder got clear of Ashgate Market and lost nothing\./, moment.narration_context)
+  end
+
+  test "a killing toll says so outright" do
+    create(:playthrough_toll, :killing, playthrough: @playthrough, character: @protagonist,
+                                        location: @here, damage: 4)
+
+    assert_match(/Iri Calder is dead: that was what killed them\./, moment.narration_context)
+  end
+
+  # A DOORWAY'S TOLL NAMES THE DIRECTION, because that is a one-way hazard's
+  # whole content -- and it is what stops the prose putting the drop in the
+  # wrong room.
+  test "a doorway's toll names both ends and which way it was walked" do
+    hulk = create(:location, story: @story, name: "The Vestry Hulk")
+    edge = create(:location_connection, :hazardous, location: @here, connected_location: hulk)
+    create(:playthrough_toll, playthrough: @playthrough, character: @protagonist, location: hulk,
+                              location_connection: edge, hazard: "drop", damage: 2, hp_after: 6)
+
+    assert_match(/the way from Ashgate Market into The Vestry Hulk cost Iri Calder 2 hit points/,
+                 moment.narration_context)
+  end
+
+  # ONLY THE TOLLS NO PARAGRAPH HAS CARRIED YET -- `Playthrough::Turn#play`
+  # stamps them with the Scene that told the player, so one toll reaches the
+  # prose once.
+  test "a toll a paragraph has already carried is not told again" do
+    create(:playthrough_toll, :told, playthrough: @playthrough, character: @protagonist, location: @here)
+
+    assert_no_match(/The place itself/, moment.narration_context)
+  end
+
+  # TWO FACTS AND NEVER ONE: a blow and a toll in the same turn are two
+  # sentences, so the prose can say who did which.
+  test "a blow and a toll are told apart" do
+    neb = create(:character, story: @story, location: @here, fullname: "Neb Halloran", level: 3, hit_die: 8)
+    Playthrough::Turn.new(@playthrough).strike!(@protagonist, neb, round: 1)
+    create(:playthrough_toll, playthrough: @playthrough, character: @protagonist, location: @here)
+
+    context = moment.narration_context
+
+    assert_match(/Blows landed, recorded by the game:/, context)
+    assert_match(/The place itself, recorded by the game:/, context)
+  end
+
   # SILENCE IS THE HONEST ANSWER for somebody with no stat block: "unhurt" would
   # be an assertion about a body the engine does not have.
   test "the narrator is told nothing about a player with no stat block" do

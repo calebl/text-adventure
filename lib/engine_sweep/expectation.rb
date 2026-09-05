@@ -74,6 +74,16 @@
 #                   two databases and what a turn DID is. That is the same line
 #                   `a-check-against-an-ability.yml` draws -- it pins the target
 #                   and never the d20
+#   hazards         `Playthrough::Toll` rows this line wrote -- what the PLACE
+#                   took, which is never what a foe took (`blows:` counts those
+#                   and the two are never added together, for
+#                   `Playthrough::Toll`'s stated reason). An arrival over a
+#                   hazardous doorway into a hazardous room is 2, walking the
+#                   same door the other way is 0, and a REFUSED line is 0
+#                   whatever the room does. It is `blows:`' argument exactly: the
+#                   save and the damage are dice and a script may not assert a
+#                   die, so what a walk pins is that the toll was PAID and which
+#                   direction paid it
 #
 # `KEYS` IS CLOSED AND UNKNOWN KEYS RAISE. A misspelt expectation that was
 # quietly ignored would read as a passing step, which is the one failure mode a
@@ -81,7 +91,7 @@
 class EngineSweep::Expectation
   KEYS = %w[
     location exits exits_include exits_exclude here carrying present foes inscription
-    hp hp_of abilities dead changed change refused offers understood resolved_by note drifts blows
+    hp hp_of abilities dead changed change refused offers understood resolved_by note drifts blows hazards
   ].freeze
 
   # "The Vestry Hulk (stub)" -> the name and the detail level it has to be in.
@@ -118,7 +128,7 @@ class EngineSweep::Expectation
   # EVERY UNMET EXPECTATION, not the first: a step that moved to the wrong room
   # is usually holding the wrong things too, and seeing both is how the cause
   # gets found in one pass instead of three.
-  def check(report, drifts:, blows: 0)
+  def check(report, drifts:, blows: 0, hazards: 0)
     state = report.state
 
     [
@@ -141,7 +151,8 @@ class EngineSweep::Expectation
       check_equals("resolved_by", report.resolved_by),
       check_contains("note", Array(report.note).join("\n")),
       check_equals("drifts", drifts),
-      check_equals("blows", blows)
+      check_equals("blows", blows),
+      check_equals("hazards", hazards)
     ].flatten.compact
   end
 

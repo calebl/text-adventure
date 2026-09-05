@@ -89,6 +89,76 @@ The full audit of every planned piece of work against this constraint is in
   sheet — `.sheet` is factored so that sheet can reuse the frame when it is
   ruled on.
 
+- **Terrain and edges hurt** (`ta-combat-hazards`, slice 6 of the combat build
+  order). The captain's request, second half: *"certain terrain or actions
+  should also cause damage."* A room can cost you hit points for walking into it
+  or for staying in it, and **a doorway can cost you in one direction and not
+  the other** — the first mechanic that uses the directed edge for what it was
+  kept for.
+
+  **One writer, four sources, and no rule engine.** Every hit point in the app
+  still comes off through `Playthrough::Turn#harm!`; what changed is that a
+  fourth thing calls it. `Playthrough::Hazards` is two named branches in Ruby —
+  `#on_arrival!` (the doorway that was walked, then the room), called from
+  `Playthrough::Turn#move_to` after the room is realized and after the snapshot,
+  and `#every_turn!`, called from step 7 beside `Playthrough::Riposte` on the
+  room the turn BEGAN in. `data/ta-direction/report.md` §12's prohibition holds:
+  the catalogues (`Location::HAZARDS`, `LocationConnection::HAZARDS`) are the
+  branches' PARAMETERS, and §8.4's general "action carries a consequence" table
+  is deliberately not built. A refused line pays nothing, an engine instrument
+  pays nothing, and a game that is over pays nothing — the same three rules the
+  riposte is under.
+
+  **The save is the three abilities earning their keep**: `d20 <= the ability`
+  through `Character#check`, the one kernel. `save: nil` is a real hazard and not
+  an omission — there is no dexterity against having nothing to breathe — and a
+  body with no abilities on record does not get one either.
+
+  **Directed edges (the ruling of 2026-09-03) make it one-way by construction.**
+  `location_connections` is two rows per door, so the hazard lives on one of
+  them and nothing has to enforce the asymmetry. **A one-way HAZARD is not a
+  one-way EXIT**: both rows are still written, the door still leads both ways,
+  and only the cost differs; one-way exits stay unsupported and deliberately
+  deferred. `hazard_from: <room name>` is the one new piece of seed-format shape
+  the whole design needs, because `between:` is an unordered pair.
+
+  **What it took is a record of its own and never a `Playthrough::Blow`.**
+  `playthrough_tolls` — one row per hazard paid, per game — because a hazard has
+  no attacker (`playthrough_blows.attacker_id` is NOT NULL) and because
+  `Playthrough::Fight#open_blows` is *the fight that is still on*: a hazard in
+  that table would open a fight nobody was in and close it on the same turn with
+  a `Scene` saying so. `Playthrough::Moment` states the untold ones to the prose
+  beside `#struck_fact` and never folded into it — somebody hit you and the world
+  did are two different facts — and a SAVE is stated too, so the prose does not
+  invent a wound for a turn the water missed.
+
+  **All four columns are nullable and there is no `bin/update` step**, which is a
+  different answer from `locations.danger`'s and the right one for a different
+  question: a danger is a share of a die every room has, and a hazard is a thing
+  almost no room does. NULL says exactly that, and there is nothing about an
+  existing database that is wrong.
+
+  **The instruments**: a `hazards:` sweep expectation (counting rows, never a
+  die), `hazard` and `hazards out` lines in the mechanics read-out,
+  `EngineSweep::Invariants#hazards_unmoved` (no typed line writes one), two
+  doctor findings — `location_with_an_unknown_hazard` and
+  `connection_with_an_unknown_hazard`, both manual and both stated — and
+  `lib/engine_sweep/scripts/a-one-way-hazard-on-a-door.yml`, which walks the same
+  door both ways.
+
+  **`the-salt-assizes.yml` gains both**, and the file says why at length: its
+  fiction is built out of exactly this, and it is the one seeded world with no
+  `mechanics:` block — `WorldMechanic::ShuffleConnections` rewrites an edge from
+  `distance` and `travel_method` alone and in both directions, so a directed
+  hazard on a shufflable edge would be destroyed the first night.
+
+  **Not built, and deferred rather than missing**: `items.hazard` (§8.4's third
+  row — a `take` of something the world marks harmful), a provoking `talk`
+  (captain call C7, which needs a model's answer to be authoritative about
+  state), and **generated hazards** — nothing rolls a `hazard` the way
+  `Location::Danger` rolls a `danger`, and whether a generated world should get
+  one is a later question.
+
 - **A fight resolves and can kill** (`ta-combat-fight`, slice 4 of the combat
   build order). The captain's word, 2026-09-05: *"continue through all of the
   combat slices."* **This is the slice the whole direction asked for**: he can
@@ -1640,6 +1710,19 @@ Steps 1 and 2 of that plan have landed (see **Done**). The rest, in order:
    `WorldMechanic` applies. This is why the mechanics engine is load-bearing
    rather than merely elegant: the same engine that moves buildings bills for
    violations. Blocked by (2).
+
+   **Sequencing note, from `data/ta-combat-scout/report.md` §8.4.** That task
+   body says the consequence is *"a scheduled consequence `WorldMechanic`
+   applies"*, and a `WorldMechanic` **cannot cost a player hit points** — it
+   runs on the story's clock for the whole world and knows about no
+   playthrough (§3.1). So either this task's consequences are world-shaped (a
+   door closes, a person moves, a `WorldEvent` is written — all of which a
+   mechanic can do) **or** it needs the per-turn, per-playthrough seam combat
+   built: step 7 of `Playthrough::Turn#play`, where `Playthrough::Riposte` and
+   `Playthrough::Hazards` already run, with `Playthrough::Turn#harm!` as the one
+   writer underneath. That seam exists now. Whoever picks this up should decide
+   which of the two shapes the consequence is before designing it, because they
+   are different tables.
 6. **The forward flag** (`ta-forward-flag`) — ~20 tokens per violation, to stop
    drift compounding between turns while (5) is being designed. A cheap holding
    measure, and named as one.

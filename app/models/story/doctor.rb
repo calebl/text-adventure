@@ -73,6 +73,7 @@ class Story::Doctor
       *stat_blocks,
       *abilities,
       *hostility,
+      *hazards,
       *vitals_rows
     ]
   end
@@ -1315,6 +1316,56 @@ class Story::Doctor
   # model and no typed line writes.
   def hostility
     [ *hostile_without_a_stat_block, *monstrous_races_with_no_monsters, *rooms_with_an_unknown_danger ]
+  end
+
+  # ------------------------------------------------------------------------
+  # A WORLD THAT HURTS YOU FOR STANDING IN IT, and the two shapes that are
+  # wrong. Both are WORLD data -- `locations.hazard` and
+  # `location_connections.hazard` -- which is the layer `hit_die` and `danger`
+  # are on and the layer no model and no typed line writes.
+  def hazards
+    [ *rooms_with_an_unknown_hazard, *doorways_with_an_unknown_hazard ]
+  end
+
+  # A HAZARD THE ENGINE HAS NO TABLE FOR. `Location::HAZARDS` is the closed set
+  # of what a room may DO to somebody; `Location` refuses a value outside it and
+  # `WorldSeed::Loader#validate_hazards!` refuses a file that carries one, so a
+  # row here arrived through raw SQL or a schema older than the validation. It
+  # reads as no hazard at all in the meantime (`Location#hazard_entry` answers
+  # nil for a key it does not have, and `#hazard_at?` is false), so nothing is
+  # broken -- it is a room whose author meant something the engine cannot hear.
+  #
+  # NO REPAIR, deliberately, and it is the same argument
+  # `location_with_an_unknown_danger` makes: there are four words it could have
+  # been and nothing on record says which, and clearing the column is not a
+  # neutral guess -- it is the answer that makes safe a room somebody meant to
+  # cost hit points. A person edits the world file and re-seeds.
+  def rooms_with_an_unknown_hazard
+    story.locations.hazardous.order(:id).filter_map do |room|
+      next if Location::HAZARDS.key?(room.hazard)
+
+      finding(:location_with_an_unknown_hazard, :warning,
+              "#{room.name} has hazard #{room.hazard.inspect}, which is not one of " \
+              "#{Location::HAZARDS.keys.join(", ")}, so standing in it costs nothing and its author meant it to",
+              :manual, subject: room)
+    end
+  end
+
+  # THE SAME THING ON A DOORWAY, and it is its own finding rather than a second
+  # subject on the one above because the two read different tables and a reader
+  # sent to `locations` for a row in `location_connections` is a reader sent to
+  # the wrong place. NO REPAIR, for the reason above.
+  def doorways_with_an_unknown_hazard
+    LocationConnection.joins(:location).where(locations: { story_id: story.id })
+                      .hazardous.includes(:location, :connected_location).order(:id).filter_map do |edge|
+      next if LocationConnection::HAZARDS.key?(edge.hazard)
+
+      finding(:connection_with_an_unknown_hazard, :warning,
+              "the way from #{edge.location.name} into #{edge.connected_location.name} has hazard " \
+              "#{edge.hazard.inspect}, which is not one of #{LocationConnection::HAZARDS.keys.join(", ")}, " \
+              "so walking it costs nothing and its author meant it to",
+              :manual)
+    end
   end
 
   # A FOE NOTHING CAN FIGHT. `characters.hostile` says this person attacks the
