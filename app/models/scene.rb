@@ -8,6 +8,21 @@ class Scene < ApplicationRecord
   # may hold, and what a turn can honestly say.
   TURN_READERS = (Playthrough::Grammar::PATHS - [ "engine_view" ]).freeze
 
+  # WHAT A TURN CAN HAVE DONE, and it is deliberately WIDER than what a player
+  # can have asked for. `Playthrough::IntentSchema::INTENTS` is the closed enum
+  # on a MODEL CALL; this is the closed list of things the ENGINE does to the
+  # world. They were one list while every act was a player intent, and a fight
+  # is the first act the engine takes that no typed word names -- so the record
+  # grows here and the prompt does not.
+  #
+  # `attack`, `hazard` and `throw` are in the list before anything writes one:
+  # the column is what says a fight is recordable, and decoupling it from the
+  # classifier's enum is the change that has to land before any of that can be
+  # written down. Nothing here widens `INTENTS`, and nothing here reaches a
+  # prompt. `#engine_authored?` is the difference between the two lists, asked
+  # as a question.
+  ACTIONS = (Playthrough::IntentSchema::INTENTS + %w[attack hazard throw]).freeze
+
   # How much STORY time a turn costs when it is not a journey. A fixed table in
   # code, for exactly the reason `LocationConnection::DISTANCES` is one: how
   # long something takes in the fiction is the app's to decide, so it is a
@@ -119,10 +134,12 @@ class Scene < ApplicationRecord
   # `Playthrough::Turn#play`.
   validates :description, presence: true
   validates :story_timestamp, presence: true
-  # The same fixed table the classifier answers out of, and the reason the
-  # column is not an `enum`: `Scene.take` is already an ActiveRecord finder, so
-  # an enum named for one of these intents would quietly redefine it.
-  validates :resolved_action, inclusion: { in: Playthrough::IntentSchema::INTENTS }, allow_nil: true
+  # `Scene::ACTIONS` and NOT `Playthrough::IntentSchema::INTENTS`: what the
+  # engine may record is wider than what the classifier may be offered -- see
+  # the constant's note. Not an `enum` because `Scene.take` is already an
+  # ActiveRecord finder, so an enum named for one of these actions would
+  # quietly redefine it.
+  validates :resolved_action, inclusion: { in: ACTIONS }, allow_nil: true
   # WHICH READER ANSWERED THE LINE, out of the class that owns the two readers.
   # A string and not an enum for the same reason above, and `allow_nil` for a
   # different one: see `#resolved_by`'s note below.
@@ -154,6 +171,17 @@ class Scene < ApplicationRecord
   def dropped? = recorded_action == "drop" && acted_on_record.is_a?(Item)
 
   def moved_to? = recorded_action == "move" && acted_on_record.is_a?(Location)
+
+  # WHETHER THE ENGINE, RATHER THAN THE PLAYER, NAMED THIS ACT: an action the
+  # record allows that the classifier's closed enum does not contain. False for
+  # every intent a player can type and false for a turn with no action on
+  # record at all -- an opening arrival is not an act the engine chose.
+  def engine_authored?
+    action = recorded_action
+    return false if action.blank?
+
+    ACTIONS.include?(action) && !Playthrough::IntentSchema::INTENTS.include?(action)
+  end
 
   # THE TWO COLUMNS, READ SAFELY, AND THE READERS EVERYTHING ELSE HERE USES.
   #
