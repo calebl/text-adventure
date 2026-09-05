@@ -83,6 +83,15 @@ module Eval
     lib/eval/classifier/stage.rb
     lib/eval/comparison.rb
     lib/eval/concurrency.rb
+    lib/eval/prompt.rb
+    lib/eval/prompt/bench.rb
+    lib/eval/prompt/board.rb
+    lib/eval/prompt/comparison.rb
+    lib/eval/prompt/corpus.rb
+    lib/eval/prompt/report.rb
+    lib/eval/prompt/result.rb
+    lib/eval/prompt/scorer.rb
+    lib/eval/prompt/version.rb
     lib/eval/cost.rb
     lib/eval/noise.rb
     lib/eval/richness.rb
@@ -98,9 +107,11 @@ module Eval
     test/fixtures/files/whole_run_corpus.json
     test/fixtures/files/transition_corpus.json
     test/fixtures/files/classifier_corpus.yml
+    test/fixtures/files/prompt_corpus.yml
     db/eval/classifier-remote/classifier.json
     db/eval/classifier-mistral-small/classifier.json
     db/eval/classifier-gemini-flash-lite/classifier.json
+    db/eval/prompt-2026-09-05/prompt.json
   ].freeze
 
   # CHECKS A SCRIPTED RUN CANNOT ANSWER, AND WHY -- reported unavailable rather

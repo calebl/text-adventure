@@ -1163,6 +1163,58 @@ What belongs here is the part that changes how you work:
   instrument and the thing it measures move separately, and
   `Eval::MEASUREMENT_FILES` now lists the bench.
 
+### Measuring the narrator, which is the call the player reads
+
+`rake eval:prompt` (`ta-prompt-bench`). The classifier bench measures the call
+the engine acts on; this measures the call the player reads, **one turn at a
+time against fixed facts.**
+**[EVALUATION.md](EVALUATION.md) → *The prompt bench* is the protocol.** What
+belongs here is the part that changes how you work:
+
+- **A prompt-shaped change is judged HERE FIRST and confirmed by
+  `rake eval:run`.** That is the standing rule made cheap: cents and minutes
+  against dollars and half an hour, and with the facts fixed a difference
+  between two sets is a difference in the prose rather than in where the script
+  walked. A single turn still cannot show pacing, a world that moved, or a check
+  that reads two consecutive turns — so it is a first gate and never a
+  substitute.
+- **The bench replaces exactly one thing: the classifier.**
+  `Playthrough::Turn#play` runs whole, so the branch, the row that moves and the
+  fact sentence are the app's. If you add a branch to the turn loop, the bench
+  follows it for nothing; if you add a MODEL CALL to one, the bench's
+  one-call-a-case guard (`Reading#calls`) says so.
+- **Four checks are UNAVAILABLE to a single turn and are never scored as
+  clean.** `unreachable_transition`, `reached_for_nothing`, `named_more_than_one`
+  and `still_run`, each with its reason on
+  `Eval::Prompt::UNAVAILABLE_TO_A_CASE`. A zero for one of those would be the
+  most dangerous number this instrument could print, which is the same rule
+  `Story::Scoreboard::Corpus` follows.
+- **There are two prompt digests and they cover different amounts.**
+  `instructions_digest` is the system message — the same digest
+  `Playthrough::Feedback` now freezes on every verdict
+  (`Playthrough::PromptVersion`), so a bench set and the captain's own labels
+  group by one version. `prompt_digest` is the WHOLE prompt of one designated
+  case per shape, so it also covers `Playthrough::Turn#taken_fact` and
+  everything `Playthrough::Moment` builds — and it is only meaningful because
+  the corpus is fixed, which is what `corpus_digest` says.
+- **`rake eval:prompt_compare` says whether the MODEL or the PROMPT moved**, off
+  the stored files alone, and refuses to be read when both did. Read
+  `commitments` beside the rates: a fall in every defect rate with a fall in
+  richness is prose that says less, which is the one way to improve these
+  numbers without improving the game.
+- **A `talk` is not measured and the reason is structural.**
+  `InteractionAgent`'s narrator pass sends no system message — its prose rules
+  are interpolated into the per-turn user prompt with the character's name and
+  pronouns inside them — so there is no instruction text to version. Giving that
+  pass its own instructions is a PROMPT change and belongs in its own PR.
+- **Both benches share one staging seam.**
+  `Eval::Classifier::Stage.open` loads a position's world offline and rolls it
+  back; the prompt bench calls it once per case (`retitle: true`, so the
+  narrator is told the world's own title) and opens no transaction of its own.
+  If you change how a position is staged, there is one place to change it.
+- **No prompt change belongs in the same commit as a bench change**, exactly as
+  above. `Eval::MEASUREMENT_FILES` lists this bench too.
+
 ### When a world outlives the schema
 
 A story is written once and then sits in the database while features land

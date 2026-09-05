@@ -14,6 +14,14 @@
 #   rake eval:classifier_omission   the `also_named` omission rate alone (PR 102 finding F4)
 #   rake eval:classifier_compare    two bench runs, with a verdict per figure
 #
+# AND THE NARRATOR'S, which feeds fixed facts to one turn and scores the passage
+# that comes back with the checks `rake game:score` already runs:
+#
+#   rake eval:prompt          one prose call per case, scored, per model and prompt version
+#   rake eval:prompt_score    score a stored set again -- offline, free, no key
+#   rake eval:prompt_board    every stored set as one table
+#   rake eval:prompt_compare  two sets, with a verdict per check
+#
 # GENERATION SPENDS MONEY AND MUST NEVER RUN IN CI. It needs `OPENROUTER_API_KEY`
 # and refuses to start without one; scoring needs nothing at all. `EVALUATION.md`
 # is the protocol.
@@ -129,6 +137,128 @@ namespace :eval do
                                      after_model: ENV["AFTER_MODEL"].presence).print
   rescue Eval::Classifier::Comparison::Unpairable => error
     abort error.message
+  end
+
+  desc "Feed fixed facts to one turn and score the prose. REPS=4 MODELS=a,b SET=<name> SAMPLE=12 YES=1"
+  task prompt: :environment do
+    PromptTasks.run!
+  end
+
+  desc "Score a stored prompt bench set again -- offline, no model call, no key. Usage: rake eval:prompt_score SET=<name>"
+  task prompt_score: :environment do
+    set = ENV["SET"].presence or abort "SET=<name> is the prompt bench set to score. #{PromptTasks.available_sets}"
+
+    puts "Scoring #{Eval.set_path(set)} -- no model call, no API key, no network."
+    puts
+    Eval::Prompt::Report.new(Eval::Prompt::Result.load(Eval.set_path(set)))
+                        .print(sample: (ENV["SAMPLE"].presence || Eval::Prompt::Report::DEFAULT_SAMPLE).to_i)
+  rescue ArgumentError => error
+    abort error.message
+  end
+
+  desc "Every prompt bench set on disk as one table. Usage: rake eval:prompt_board SETS=a,b"
+  task prompt_board: :environment do
+    Eval::Prompt::Board.for_sets(ENV["SETS"].presence&.split(",")&.map(&:strip)).print
+  rescue ArgumentError => error
+    abort error.message
+  end
+
+  desc "Two prompt bench runs, with a verdict per check -- two prompt versions on one model, or two models " \
+       "on one prompt version. Usage: rake eval:prompt_compare BEFORE=<set> AFTER=<set> [BEFORE_MODEL=] [AFTER_MODEL=]"
+  task prompt_compare: :environment do
+    before = ENV["BEFORE"].presence or abort "BEFORE=<set> is the run to compare against. #{PromptTasks.available_sets}"
+    after = ENV["AFTER"].presence or abort "AFTER=<set> is the run to judge. #{PromptTasks.available_sets}"
+
+    Eval::Prompt::Comparison.new(Eval::Prompt::Result.load(Eval.set_path(before)),
+                                 Eval::Prompt::Result.load(Eval.set_path(after)),
+                                 before_model: ENV["BEFORE_MODEL"].presence,
+                                 after_model: ENV["AFTER_MODEL"].presence).print
+  rescue Eval::Prompt::Comparison::Unpairable, ArgumentError => error
+    abort error.message
+  end
+
+  # THE PROMPT BENCH'S HALF OF THIS FILE. Separate from `EvalTasks` for the same
+  # reason `ClassifierTasks` is -- no run databases, no spawned processes, a
+  # spend two orders of magnitude smaller -- and separate from `ClassifierTasks`
+  # because the two measure different calls over different corpora and share
+  # only the arm selector, which is `Eval::Classifier::Arm` in both.
+  module PromptTasks
+    extend self
+
+    # FOUR, BECAUSE FOUR IS `Eval::Noise::MIN_RUNS`: a run taken at the default
+    # is a run `rake eval:prompt_compare` can actually give a verdict against.
+    def default_reps = Eval::Noise::MIN_RUNS
+
+    # A prompt bench run is cents -- about $0.40 at the defaults -- so the
+    # ceiling is low and the estimate is printed first anyway: the captain's
+    # rule for `eval:run` applies to anything that spends.
+    SPEND_CEILING = 1.00
+
+    def reps = (ENV["REPS"].presence || default_reps).to_i
+
+    # THE ARM SELECTOR, `Eval::Classifier::Arm` and not a second one. The
+    # default is ONE model -- the first of `BaseAgent::REMOTE_MODEL_IDS`, which
+    # is what a player's turn is actually written by -- rather than the whole
+    # rotation, because a prompt change is judged on the model that ships and a
+    # second arm doubles the spend for a comparison nobody asked for. Name more
+    # with MODELS=.
+    def arms
+      named = ENV["MODELS"].presence&.split(",")&.map(&:strip)
+
+      Eval::Classifier::Arm.all(named.presence || [ BaseAgent::REMOTE_MODEL_IDS.first ])
+    end
+
+    def set_name = ENV["SET"].presence || Time.current.utc.strftime("prompt-%Y%m%d-%H%M%S")
+
+    def available_sets
+      found = (Dir.glob(Eval.root.join("*", Eval::Prompt::RESULTS)) +
+               Dir.glob(Eval.kept_root.join("*", Eval::Prompt::RESULTS)))
+              .map { |path| File.basename(File.dirname(path)) }.uniq.sort
+      found.any? ? "Prompt bench sets: #{found.join(", ")}." :
+                   "There are no prompt bench runs yet -- run `rake eval:prompt` first."
+    end
+
+    def run!
+      corpus = Eval::Prompt.corpus
+      problems = corpus.problems
+      abort "The corpus does not validate, so nothing measured against it would mean anything:\n  " \
+            "#{problems.join("\n  ")}" if problems.any?
+
+      priced = Eval::Prompt.estimate(cases: corpus.cases, reps: reps, models: arms)
+      calls = corpus.size * reps * arms.size
+      puts format("ESTIMATE: %d calls (%d cases x %d reps x %d model%s), about $%.3f. Measured at " \
+                  "%d in / %d out a narration and %d in / %d out an arrival.",
+                  calls, corpus.size, reps, arms.size, arms.one? ? "" : "s", priced,
+                  Eval::Prompt::PER_CALL["narration"][:input], Eval::Prompt::PER_CALL["narration"][:output],
+                  Eval::Prompt::PER_CALL["arrival"][:input], Eval::Prompt::PER_CALL["arrival"][:output])
+      abort_without_a_key(arms)
+      if priced > SPEND_CEILING && ENV["YES"] != "1"
+        abort "That is over the $#{format("%.2f", SPEND_CEILING)} this task will spend unattended. " \
+              "Re-run with YES=1, or lower REPS."
+      end
+
+      puts "Playing #{corpus.size} cases on #{arms.map(&:id).join(", ")}."
+      puts
+      result = Eval::Prompt::Bench.new(corpus: corpus, arms: arms, reps: reps).run
+
+      written = result.write!(Eval.set_path(set_name), name: set_name)
+      puts
+      puts "Wrote #{written}."
+      puts
+
+      Eval::Prompt::Report.new(result)
+                          .print(sample: (ENV["SAMPLE"].presence || Eval::Prompt::Report::DEFAULT_SAMPLE).to_i)
+      result
+    end
+
+    def abort_without_a_key(arms)
+      if arms.any? { |arm| !arm.local? } && ENV["OPENROUTER_API_KEY"].blank?
+        abort "OPENROUTER_API_KEY is not set and #{arms.reject(&:local?).map(&:id).join(", ")} " \
+              "#{arms.reject(&:local?).one? ? "is" : "are"} hosted. Score a stored set instead, " \
+              "which needs nothing: `rake eval:prompt_score SET=<name>`."
+      end
+      abort "The bench must not run in the test environment." if Rails.env.test?
+    end
   end
 
   # THE CLASSIFIER BENCH'S HALF OF THIS FILE. Separate from `EvalTasks` because

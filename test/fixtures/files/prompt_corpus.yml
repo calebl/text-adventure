@@ -1,0 +1,1034 @@
+# THE PROMPT BENCH CORPUS: single-turn cases, with the facts the narrator is
+# told coming out of the records rather than out of this file.
+#
+# WHAT IT IS FOR, in the captain's words (2026-09-04): *"could we not build a
+# small set of prompts and responses? ... a more targeted set of test cases
+# where we are feeding the narrator facts and seeing how it handles them that
+# would not require multiple turns."* `Eval::Prompt` is the instrument and this
+# is its corpus.
+#
+# HOW A CASE IS BUILT, and why almost nothing is written down here. A case names
+# a POSITION -- a seeded world, a room, and the typed lines that walk to the
+# state it is written against -- and then one turn: what was typed, and the
+# action the classifier would have resolved it to. Everything the prompt
+# carries after that is the app's: the room's own description, the ways out, who
+# the records place there, what is lying on the floor, what is in the party's
+# hands, and the sentence `Playthrough::Turn` hands the narrator about what has
+# already happened. A corpus that hand-wrote those would be measuring prompts
+# the app does not build.
+#
+# WHERE THE TYPED LINES CAME FROM. Three sources, none of them invented whole:
+#
+#   * the 76 typed turns in the captain's own database -- "pickup the stamp",
+#     "close the daybook and put it down", "what is on my desk?", "read the note
+#     again", "go to the closet". What a person really types.
+#   * `test/fixtures/files/transition_corpus.json` -- the 119 real take and drop
+#     turns of the 2026-09-03 baseline, which is where the defect this bench was
+#     built for was found ("pick up the Assize tide-slate", "put the Ward Office
+#     12 daybook down on the desk").
+#   * the `rake eval:run` and `rake game:sweep` scripts, which are the lines two
+#     other instruments already play.
+#
+# A line is played against the position whose closed sets match the ones it was
+# really typed against; where none does, `why` says what was changed.
+#
+# HOW A CASE IS VERIFIED. `Eval::Prompt::Corpus#problems` stages every position
+# and checks each case against the closed set the action really reads
+# (`Playthrough::Classifier#offered_for`), and `Eval::Prompt::CorpusTest` fails
+# the build if one does not fit. It also refuses the four shapes that would
+# quietly buy a second model call or produce no prose at all -- a target the
+# engine would refuse, a stub destination, a readable thing with no words yet,
+# and a `talk`. What it cannot check is whether a case is worth measuring, which
+# is what `why` is for.
+#
+# WHAT IS DELIBERATELY NOT IN HERE:
+#
+#   * `The Lunar Cartographer`. Its doorways move on the story's clock
+#     (`WorldMechanic::ShuffleConnections`), so the facts in its prompts would
+#     depend on when the case was played. See `Eval::Prompt::STORIES`.
+#   * `talk`. `Eval::Prompt::UNSUPPORTED_ACTS` states why: the interaction
+#     narrator sends no instructions, so there is no prompt version to measure
+#     it under.
+#   * a line the engine would refuse. A refused line writes nothing and calls no
+#     narrator, so there would be no passage to score. `Playthrough::Refusal`
+#     is measured by `rake game:sweep` and `rake eval:classifier`.
+#
+# EDITING THIS FILE: add a case under the shape it belongs to, give it a `why`,
+# and run `bin/rails test test/lib/eval/prompt/corpus_test.rb`. If the state you
+# need is not reachable from any position here, ADD A POSITION rather than
+# stretching an existing case -- a position is a seed load and costs nothing.
+---
+positions:
+- id: office
+  story: The Unrecorded Hour
+  room: Ward Office 12
+  why: >-
+    The opening room exactly as seeded, and the position most of this corpus is
+    written against: two ways out, Halkett Rowe standing in it, the ward stamp
+    on the floor and the daybook in the party's hands.
+
+- id: office-empty-handed
+  story: The Unrecorded Hour
+  room: Ward Office 12
+  setup: [drop the Ward Office 12 daybook]
+  why: >-
+    THE SAME ROOM WITH THE DAYBOOK ON THE FLOOR and nothing carried. Two things
+    to pick up, nothing to put down -- which is what a `take` of the daybook
+    needs, and the daybook is the readable thing the captain's own complaint was
+    about.
+
+- id: office-carrying-three
+  story: The Unrecorded Hour
+  room: Ward Office 12
+  setup: [go to the Supply Closet, take the private index, take the apron, go to Ward Office 12]
+  why: >-
+    THREE THINGS IN ONE PAIR OF HANDS, which no seeded world starts with and
+    which is what a `drop` of something other than the starting kit needs. It is
+    also the position with the longest inventory line in the prompt, so a
+    passage that loses track of what is carried has the most to lose track of.
+
+- id: office-alone
+  story: The Unrecorded Hour
+  room: Ward Office 12
+  cast:
+    Halkett Rowe: The Supply Closet
+  why: >-
+    THE ROOM WITH NOBODY IN IT. `Playthrough::Moment` states "Nobody else is
+    here" as a fact, and prose that then puts somebody in the doorway is
+    contradicting a stated fact rather than filling a silence. It also puts
+    Halkett somewhere the arrival case below can find him.
+
+- id: closet
+  story: The Unrecorded Hour
+  room: The Supply Closet
+  why: >-
+    A DEAD END WITH NOBODY IN IT, one way out, and two things on the floor --
+    the position an `item_not_held` case reads against, because whatever is not
+    picked up here is somewhere the player is standing next to rather than
+    somewhere else entirely.
+
+- id: closet-swept-clean
+  story: The Unrecorded Hour
+  room: The Supply Closet
+  setup: [go to the Supply Closet, take the private index, take the apron]
+  why: >-
+    THE FLOOR EMPTY AND THE HANDS FULL. "Lying here, and takeable: nothing" is
+    the fact a narrator is most likely to write over, and this is the only
+    position where it is true with three things in reach.
+
+- id: court
+  story: The Salt Assizes
+  room: The Causeway Court
+  why: >-
+    The HELD-OUT world's opening room: two ways out, Ammon Brace present,
+    nothing on the floor and the readable tide-slate carried. Half this corpus
+    is here so a prompt change can be read on a world it was not tuned against.
+
+- id: court-slate-down
+  story: The Salt Assizes
+  room: The Causeway Court
+  setup: [drop the tide-slate]
+  why: >-
+    THE SAME ROOM WITH THE SLATE ON THE FLOOR -- one item, one room, and the
+    `take` and `drop` sets swapped, which is what makes "pick it up" and "put it
+    down" two cases against one set of facts.
+
+- id: tide-post
+  story: The Salt Assizes
+  room: The Tide Post
+  why: >-
+    One way out, Neb Halloran chained to the post, nothing on the floor, the
+    slate carried. The position for a `move` back into a room the player has
+    already stood in, and for prose about somebody who cannot leave.
+
+- id: tide-post-slate-down
+  story: The Salt Assizes
+  room: The Tide Post
+  setup: [go to the Tide Post, drop the tide-slate]
+  why: >-
+    THE SLATE LYING SOMEWHERE IT DOES NOT BELONG. A `take` in the held-out
+    world's second room, and the one position where the thing on the floor is
+    the thing the whole story is about.
+
+cases:
+# ===========================================================================
+# TAKE -- the turn the whole bench was built for.
+#
+# `Playthrough::Turn#take_item` moves the row BEFORE any prose exists and hands
+# the narrator `#taken_fact` -- "Odile Vance has picked up the ward stamp and is
+# now carrying it". On the 480-turn baseline of 2026-09-03 the prose denied that
+# pickup on 28 of 32 take turns. `take_denied` is the check, and these are the
+# cases it is judged on.
+# ===========================================================================
+- id: take-stamp-plain
+  position: office
+  typed: pickup the stamp
+  act: take
+  target: ward stamp
+  shape: take
+  why: The captain's own line, verbatim, in the room he typed it in.
+
+- id: take-stamp-formal
+  position: office
+  typed: pick up the ward stamp
+  act: take
+  target: ward stamp
+  shape: take
+  why: The transition corpus's phrasing -- the item named in full, which is how a script types it.
+
+- id: take-stamp-from-desk
+  position: office
+  typed: take the ward stamp off the desk
+  act: take
+  target: ward stamp
+  shape: take
+  why: >-
+    The line names where the thing is coming FROM, which is the shape
+    `invented_pickup_claims` reads on a drop -- here it is correct, and prose
+    that echoes it is correct too.
+
+- id: take-stamp-alone
+  position: office-alone
+  typed: pick up the ward stamp
+  act: take
+  target: ward stamp
+  shape: take
+  why: The same take with nobody in the room, so a passage cannot lean on Halkett to fill the paragraph.
+
+- id: take-daybook-plain
+  position: office-empty-handed
+  typed: pick up your daybook
+  act: take
+  target: Ward Office 12 daybook
+  shape: take
+  why: >-
+    The captain's own line. The daybook is the protagonist's own and READABLE,
+    so `#taken_fact` quotes the inscription too -- the longest fact the narrator
+    is ever handed on a take, and the one most likely to be written over.
+
+- id: take-daybook-full-name
+  position: office-empty-handed
+  typed: pick up the Ward Office 12 daybook
+  act: take
+  target: Ward Office 12 daybook
+  shape: take
+  why: The transition corpus's phrasing for the same turn, which is the one the baseline defect was measured on.
+
+- id: take-daybook-and-ask
+  position: office-empty-handed
+  typed: pickup the daybook. what does it say?
+  act: take
+  target: Ward Office 12 daybook
+  shape: take
+  why: >-
+    THE TURN THAT PRODUCED THE WHOLE INSCRIPTION MECHANIC -- the captain typed
+    it of a note and read back words nothing kept. One line, one act, and the
+    act is the take; `inscription_misquoted` is judgeable here because the words
+    are on record.
+
+- id: take-index-plain
+  position: closet
+  typed: pick up the index
+  act: take
+  target: Perrin's private index
+  shape: take
+  why: The captain's own line. The apron is left on the floor beside it, which is what `item_not_held` reads.
+
+- id: take-index-full-name
+  position: closet
+  typed: take Perrin's private index
+  act: take
+  target: Perrin's private index
+  shape: take
+  why: The same take under the recorded name, which is a possessive -- prose writes "the index" and the alias rule has to hold.
+
+- id: take-apron-plain
+  position: closet
+  typed: pick up the apron
+  act: take
+  target: copy-room apron
+  shape: take
+  why: >-
+    The captain's own line, and the one take in this corpus of a thing with
+    NOTHING WRITTEN ON IT -- so `#taken_fact` is the short form and
+    `inscription_misquoted` is not judgeable.
+
+- id: take-apron-wearing
+  position: closet
+  typed: take the copy-room apron and put it on
+  act: take
+  target: copy-room apron
+  shape: take
+  why: >-
+    A line that asks for more than the app models. The turn takes it; whether
+    the prose then invents a state the records do not have is exactly what a
+    narrator bench is for.
+
+- id: take-slate-plain
+  position: court-slate-down
+  typed: pick up the Assize tide-slate
+  act: take
+  target: Assize tide-slate
+  shape: take
+  why: The transition corpus's own line, in the held-out world, which is where 30 of its 59 takes came from.
+
+- id: take-slate-short
+  position: court-slate-down
+  typed: pick the slate back up
+  act: take
+  target: Assize tide-slate
+  shape: take
+  why: >-
+    "back up" says the player had it a moment ago -- which is TRUE here, and is
+    the sentence a narrator most easily turns into "you already have it". The
+    hardest honest case for `take_denied`.
+
+- id: take-slate-from-bench
+  position: court-slate-down
+  typed: take the slate off the justicar's bench
+  act: take
+  target: Assize tide-slate
+  shape: take
+  why: A source named in the line, in the room where the drop corpus put the slate on that very bench.
+
+- id: take-slate-at-the-post
+  position: tide-post-slate-down
+  typed: pick up the tide-slate
+  act: take
+  target: Assize tide-slate
+  shape: take
+  why: The same take in the world's second room, with Neb Halloran watching -- a witness the prose can put a reaction on.
+
+- id: take-anything-here
+  position: office-empty-handed
+  typed: is there anything I can pickup?
+  act: take
+  target: ward stamp
+  shape: take
+  why: >-
+    The captain typed this and the classifier resolved it to a take. Two things
+    are lying here and the turn does one -- so the prose has every opportunity
+    to hand the player both, which is what `item_not_held` reads.
+
+- id: take-second-of-two
+  position: office-empty-handed
+  typed: pick up the ward stamp
+  act: take
+  target: ward stamp
+  shape: take
+  why: >-
+    A take with the OTHER thing still on the floor and the hands empty, which is
+    the state a passage most often summarises wrongly ("you gather them up").
+
+- id: take-index-hands-full
+  position: closet
+  typed: take the private index as well
+  act: take
+  target: Perrin's private index
+  shape: take
+  why: "\"as well\" invites the prose to narrate a second pickup the turn did not make."
+
+# ===========================================================================
+# DROP -- `take` from the other end.
+#
+# `Playthrough::Turn#drop_item` moves the row out of the party's hands first and
+# hands the narrator `#dropped_fact`. `pickup_invented` reads prose that lifts
+# the thing off a floor before putting it down: 4 of 32 recorded drops on the
+# baseline.
+# ===========================================================================
+- id: drop-daybook-plain
+  position: office
+  typed: close the daybook and put it down
+  act: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: The captain's own line, verbatim, in the room he typed it in.
+
+- id: drop-daybook-on-desk
+  position: office
+  typed: put the Ward Office 12 daybook down on the desk
+  act: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: >-
+    The transition corpus's own line -- 30 of its 60 drops. The line names a
+    surface the records do not have, which is the invitation the check reads.
+
+- id: drop-daybook-alone
+  position: office-alone
+  typed: put the daybook down
+  act: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: The same drop with the room empty, so nothing in the prompt gives the prose somebody to hand it to.
+
+- id: drop-daybook-in-closet
+  position: closet
+  typed: leave the daybook here
+  act: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: >-
+    "leave" rather than "put down", in a room with two other things already on
+    the floor -- so a passage that describes the floor has three things to keep
+    straight.
+
+- id: drop-index-plain
+  position: office-carrying-three
+  typed: put the index down
+  act: drop
+  target: Perrin's private index
+  shape: drop
+  why: A drop with two other things still carried, which is where prose loses track of the inventory.
+
+- id: drop-index-give
+  position: office-carrying-three
+  typed: give him the index
+  act: drop
+  target: Perrin's private index
+  shape: drop
+  why: >-
+    THE CAPTAIN'S OWN LINE, and the app has no giving: the classifier resolves
+    it to a `drop` and the row lands on the floor. Whether the prose then puts
+    it in Halkett's hands is a contradiction the records can prove.
+
+- id: drop-daybook-give
+  position: office
+  typed: give him your daybook
+  act: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: The captain's other giving line, on the readable item, so the fact handed over is the long one.
+
+- id: drop-apron-plain
+  position: office-carrying-three
+  typed: drop the copy-room apron
+  act: drop
+  target: copy-room apron
+  shape: drop
+  why: The plainest possible drop of a thing with nothing written on it -- the control for every other drop here.
+
+- id: drop-apron-in-closet
+  position: closet-swept-clean
+  typed: put the apron back on the shelf
+  act: drop
+  target: copy-room apron
+  shape: drop
+  why: >-
+    "back on the shelf" names a place the room's description really has, and the
+    records say only "lying in The Supply Closet". Prose that agrees with the
+    line rather than the record is not wrong -- which is why this case exists.
+
+- id: drop-index-in-closet
+  position: closet-swept-clean
+  typed: put the index back where you found it
+  act: drop
+  target: Perrin's private index
+  shape: drop
+  why: A drop whose line refers to an earlier turn the narrator was never told about.
+
+- id: drop-slate-plain
+  position: court
+  typed: put the Assize tide-slate down on the bench
+  act: drop
+  target: Assize tide-slate
+  shape: drop
+  why: The transition corpus's own line in the held-out world -- 30 of its 60 drops, and the exact wording.
+
+- id: drop-slate-short
+  position: court
+  typed: set the slate down
+  act: drop
+  target: Assize tide-slate
+  shape: drop
+  why: >-
+    "set down" is on none of `PICKUP_VERBS`, deliberately: this is the line the
+    check must NOT fire on, and a corpus of nothing but bait would measure the
+    check rather than the prose.
+
+- id: drop-slate-at-the-post
+  position: tide-post
+  typed: leave the tide-slate at the post
+  act: drop
+  target: Assize tide-slate
+  shape: drop
+  why: A drop in front of the man the slate condemns, which is the most loaded moment either world has.
+
+- id: drop-slate-show-neb
+  position: tide-post
+  typed: show Neb the slate and put it down where he can see it
+  act: drop
+  target: Assize tide-slate
+  shape: drop
+  why: >-
+    SHOWING IS NOT AN ACT THE APP OWNS -- there is no record of it and no closed
+    set it resolves against (`Playthrough::Moment#last_reading` says so). The
+    turn does the drop; what the prose does with the showing is the measurement.
+
+- id: drop-daybook-hands-full
+  position: office-carrying-three
+  typed: put your daybook down and keep the rest
+  act: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: The line states what the turn did to the other two things, which is exactly what the fact does not say.
+
+- id: drop-slate-abandon
+  position: court
+  typed: drop it and walk away from the bench
+  act: drop
+  target: Assize tide-slate
+  shape: drop
+  why: >-
+    A drop whose line asks for a departure the turn does NOT make -- which is
+    what `unrecorded_departure` reads, and one of the few cases in this corpus
+    that can put a real door in the prose.
+
+- id: drop-stamp-after-take
+  position: office
+  typed: put the daybook on the floor
+  act: drop
+  target: Ward Office 12 daybook
+  shape: drop
+  why: "\"on the floor\" is what the records actually say a dropped thing does, so the prose has no excuse."
+
+- id: drop-index-refuse
+  position: office-carrying-three
+  typed: I don't want the index any more
+  act: drop
+  target: Perrin's private index
+  shape: drop
+  why: A drop stated as a feeling rather than an action -- the loosest line in the corpus that still resolved.
+
+# ===========================================================================
+# READ -- an `examine` of a thing whose words the records hold.
+#
+# `Playthrough::Turn#read_fact` hands the narrator the inscription VERBATIM and
+# says it does not change between readings. `inscription_misquoted` reads prose
+# that quotes it and quotes it differently. Its recall on well-behaved prose is
+# LOW and stated (`Story::Audit#check_inscription`); this is the corpus that
+# could improve it.
+# ===========================================================================
+- id: read-daybook-plain
+  position: office
+  typed: examine your daybook, try to remember anything you can about the gap
+  act: examine
+  target: Ward Office 12 daybook
+  shape: read
+  why: The captain's own line, verbatim -- and the gap he is asking about is literally the two blank hours in the inscription.
+
+- id: read-daybook-what-does-it-say
+  position: office
+  typed: what does the daybook say?
+  act: examine
+  target: Ward Office 12 daybook
+  shape: read
+  why: The shortest possible invitation to quote, on a record that holds four lines of text.
+
+- id: read-daybook-again
+  position: office
+  typed: read the daybook again
+  act: examine
+  target: Ward Office 12 daybook
+  shape: read
+  why: >-
+    The captain's own "read the note again". TWO READINGS OF ONE NOTE AGREEING
+    is the whole reason `items.inscription` exists, and this is the line that
+    tests it.
+
+- id: read-daybook-four-oclock
+  position: office
+  typed: look at the four o'clock entry
+  act: examine
+  target: Ward Office 12 daybook
+  shape: read
+  why: >-
+    A line asking about ONE LINE of the inscription, which is where a paraphrase
+    is most tempting -- the record says "4.00 —" and nothing after it.
+
+- id: read-index-plain
+  position: closet
+  typed: read the private index
+  act: examine
+  target: Perrin's private index
+  shape: read
+  why: The other readable thing in this world, lying on a floor rather than carried -- so the fact reaches the prompt by a different route.
+
+- id: read-index-what-does-it-say
+  position: closet
+  typed: what does the index say?
+  act: examine
+  target: Perrin's private index
+  shape: read
+  why: The same invitation to quote against a record of four dated lines with a name at the end of one.
+
+- id: read-index-carried
+  position: office-carrying-three
+  typed: read the index again
+  act: examine
+  target: Perrin's private index
+  shape: read
+  why: >-
+    THE SAME ITEM READ FROM THE HANDS RATHER THAN FROM THE FLOOR -- the words
+    are the same record either way, which is the layer split's promise, and this
+    is where a passage would have to break it.
+
+- id: read-slate-plain
+  position: court
+  typed: read the tide-slate
+  act: examine
+  target: Assize tide-slate
+  shape: read
+  why: The held-out world's readable thing, whose inscription is the false figure the entire story turns on.
+
+- id: read-slate-high-water
+  position: court
+  typed: what time does the slate say high water is?
+  act: examine
+  target: Assize tide-slate
+  shape: read
+  why: >-
+    A question whose answer is IN the inscription word for word -- "three hours
+    and forty minutes after noon". A passage that answers "seven" has invented
+    the thing the whole world is about.
+
+- id: read-slate-on-the-floor
+  position: court-slate-down
+  typed: look at what is chalked on the slate
+  act: examine
+  target: Assize tide-slate
+  shape: read
+  why: The same reading with the slate on the floor, so the fact arrives with the thing not in the player's hands.
+
+- id: read-slate-at-the-post
+  position: tide-post
+  typed: read the slate to Neb
+  act: examine
+  target: Assize tide-slate
+  shape: read
+  why: >-
+    Reading ALOUD to somebody, which is not a record either -- and the person
+    listening is the man the figure kills. If the words drift here they drift in
+    dialogue, which is where the check is weakest.
+
+- id: read-daybook-empty-room
+  position: office-alone
+  typed: read your daybook
+  act: examine
+  target: Ward Office 12 daybook
+  shape: read
+  why: A reading with nobody in the room, so the passage has only the record to write about.
+
+- id: read-daybook-dropped
+  position: office-empty-handed
+  typed: look at the daybook on the desk
+  act: examine
+  target: Ward Office 12 daybook
+  shape: read
+  why: >-
+    The daybook read while it is LYING HERE and not carried -- so a passage that
+    says "your daybook" is describing ownership rather than custody, which is the
+    distinction `item_not_held`'s `custody_only` guard was measured into.
+
+- id: read-index-quote-it
+  position: closet
+  typed: read out the last line of the index
+  act: examine
+  target: Perrin's private index
+  shape: read
+  why: >-
+    An explicit request to QUOTE, which is the only shape `inscription_quotes`
+    reliably detects. The last line of the record names Perrin by his initials.
+
+# ===========================================================================
+# EXAMINE -- a look at something with NOTHING written on it.
+#
+# `Playthrough::Turn#read_item` sends these to the plain narrator with no fact
+# at all: `Item#readable?` is the whole gate, and no text is generated for a
+# ward stamp, ever. What is measured here is what a narrator does with a record
+# it has been given nothing but a name and a description for.
+# ===========================================================================
+- id: examine-stamp-plain
+  position: office
+  typed: look at the ward stamp
+  act: examine
+  target: ward stamp
+  shape: examine
+  why: The plainest look at a thing with nothing written on it -- the control for the read cases above.
+
+- id: examine-stamp-ink
+  position: office
+  typed: is the ink still wet on the stamp?
+  act: examine
+  target: ward stamp
+  shape: examine
+  why: >-
+    The answer is in the item's own DESCRIPTION -- "the ink on the pad is still
+    wet" -- which reaches the narrator only through the take fact, not through an
+    examine. So this is a question the prompt cannot answer, and what the prose
+    does about that is the measurement.
+
+- id: examine-stamp-alone
+  position: office-alone
+  typed: examine the rest of your desk
+  act: examine
+  target: ward stamp
+  shape: examine
+  why: >-
+    The captain's own line, resolved to the one thing on that desk the records
+    have. The desk itself is not a record, so this is the commonest real shape:
+    a look at a room through the one object in it.
+
+- id: examine-apron-plain
+  position: closet
+  typed: look at the copy-room apron
+  act: examine
+  target: copy-room apron
+  shape: examine
+  why: The other unwritten thing, in a room with a readable thing beside it -- so the prose could quote the wrong one.
+
+- id: examine-apron-carried
+  position: office-carrying-three
+  typed: look at the apron you are carrying
+  act: examine
+  target: copy-room apron
+  shape: examine
+  why: An examine of a carried thing, which is the half of the `examine` set that reads the inventory rather than the floor.
+
+- id: examine-stamp-in-hand
+  position: office-empty-handed
+  typed: what is on my desk?
+  act: examine
+  target: ward stamp
+  shape: examine
+  why: >-
+    The captain's own line, with TWO things on that floor and one resolved. A
+    passage that lists both is not wrong; one that hands the player either is.
+
+- id: examine-apron-fold
+  position: closet
+  typed: unfold the apron and see what is inside it
+  act: examine
+  target: copy-room apron
+  shape: examine
+  why: >-
+    The room's description says the index was folded INSIDE the apron. The
+    records have them as two separate things, so this line asks the prose to
+    move one, and nothing in the turn does.
+
+- id: examine-stamp-court
+  position: court-slate-down
+  typed: look at the slate on the ground
+  act: examine
+  target: Assize tide-slate
+  shape: examine
+  why: >-
+    A readable thing examined in the HELD-OUT world -- filed under examine
+    rather than read because the line asks about the object rather than the
+    writing, and the fact handed over is the same either way.
+
+- id: examine-index-object
+  position: closet
+  typed: how thick is the index?
+  act: examine
+  target: Perrin's private index
+  shape: examine
+  why: A question about the physical thing rather than the words, on a thing whose words are on record and are not the answer.
+
+- id: examine-daybook-binding
+  position: office
+  typed: look at the binding of the daybook
+  act: examine
+  target: Ward Office 12 daybook
+  shape: examine
+  why: >-
+    The item description says "quarter-bound", and the narrator is handed the
+    INSCRIPTION rather than the description on a read. So the answer is in the
+    records and not in the prompt, which is a gap worth measuring.
+
+# ===========================================================================
+# OTHER -- the turn that resolves no record at all.
+#
+# `Playthrough::Turn#narrate` with the bare command and the moment. NOT REFUSED
+# and deliberately so (`Playthrough::Refusal`): an ordinary remark reaches for
+# nothing, so there is nothing to miss. It is also the shape with the fewest
+# facts holding the prose down, which is why `unrecorded_arrival`,
+# `unrecorded_departure` and `item_not_held` are most likely to fire here.
+# ===========================================================================
+- id: other-wait
+  position: office
+  typed: wait
+  act: other
+  shape: other
+  why: The captain's own line, and the emptiest prompt in the corpus -- one word, and every fact in the moment.
+
+- id: other-wait-for-him
+  position: office
+  typed: wait for him to leave
+  act: other
+  shape: other
+  why: >-
+    The captain's own line. It asks the world to move; nothing in the turn moves
+    it, and `still_run` -- the check that would count this -- needs four turns
+    and is unavailable here.
+
+- id: other-tap-foot
+  position: office
+  typed: tap your foot impatiently
+  act: other
+  shape: other
+  why: "The captain's own line: a physical act on nothing, which is what `other` is for."
+
+- id: other-check-time
+  position: office
+  typed: check what time it is
+  act: other
+  shape: other
+  why: >-
+    The captain's own line. Story time is in the character prompt and NOT in
+    `#narration_context`, so the narrator is being asked for a fact it was not
+    given -- which is the invention this whole loop is about.
+
+- id: other-look-around
+  position: office
+  typed: look around
+  act: other
+  shape: other
+  why: >-
+    The captain's own line, and the one most likely to produce a tour of the
+    room -- every exit, every person, everything on the floor, and whatever else
+    the prose decides is here.
+
+- id: other-consider
+  position: office
+  typed: consider what will happen if you present your daybook with a gap
+  act: other
+  shape: other
+  why: "The captain's own line: a turn entirely inside the protagonist's head, on a record in her hands."
+
+- id: other-stand-up
+  position: office
+  typed: get up and close your door
+  act: other
+  shape: other
+  why: >-
+    The captain's own line. A door is a way out, and the ways out are a stated
+    closed set -- so a passage that opens a second one has contradicted the
+    prompt, which is what `unrecorded_arrival` and `unrecorded_departure` read.
+
+- id: other-listen-hallway
+  position: office
+  typed: listen at the door to the long hallway
+  act: other
+  shape: other
+  why: >-
+    The hallway is a real exit and a STUB -- the records have a name and a
+    teaser and nothing else. Prose that describes what is through it is
+    describing a room that does not exist yet.
+
+- id: other-empty-room
+  position: office-alone
+  typed: is anyone else in here?
+  act: other
+  shape: other
+  why: >-
+    "Nobody else is here" is a stated fact in the prompt. This is the line that
+    asks the narrator to repeat it, and the one place a passage that invents a
+    person is unambiguous.
+
+- id: other-ask-about-perrin
+  position: office-alone
+  typed: think about where Perrin has gone
+  act: other
+  shape: other
+  why: >-
+    Perrin Lasco is a character the records place NOWHERE. Naming somebody in
+    memory is not a claim they are here -- finding 2 of `Story::Audit` -- so this
+    is the case that must NOT flag, and there is no person check to flag it.
+
+- id: other-closet-dead-end
+  position: closet
+  typed: is there another way out of here?
+  act: other
+  shape: other
+  why: >-
+    The room's own description says there is not, twice, and the exits list has
+    one entry. The strongest possible negative case for an invented door.
+
+- id: other-closet-search
+  position: closet-swept-clean
+  typed: search the shelves for anything else
+  act: other
+  shape: other
+  why: "\"Lying here, and takeable: nothing\" is the stated fact; this line asks for something to be found anyway."
+
+- id: other-court-bell
+  position: court
+  typed: how long until the bell?
+  act: other
+  shape: other
+  why: The held-out world's own deadline, which is in the premise and the opening scene and not in any record the turn reads.
+
+- id: other-court-water
+  position: court
+  typed: look out at the water
+  act: other
+  shape: other
+  why: A look at something that is not a record at all, in a world whose whole physics is the tide.
+
+- id: other-court-leave
+  position: court
+  typed: I have seen enough here
+  act: other
+  shape: other
+  why: A line that sounds like a departure and is not one -- which is exactly what `unrecorded_departure` reads.
+
+- id: other-post-neb
+  position: tide-post
+  typed: how long has he been chained there?
+  act: other
+  shape: other
+  why: >-
+    A question about the person in the room, asked of the NARRATOR rather than
+    of him -- so nothing in the turn opens a conversation, and the answer is in
+    a backstory the narrator was never given.
+
+- id: other-post-chain
+  position: tide-post
+  typed: look at the chain
+  act: other
+  shape: other
+  why: >-
+    The chain is in the room's description and is NOT an `Item` -- so it is a
+    look at something real that the closed sets do not hold, which is the
+    commonest honest `examine` a player types.
+
+- id: other-post-shout
+  position: tide-post-slate-down
+  typed: shout back towards the court
+  act: other
+  shape: other
+  why: >-
+    A turn aimed at a room the player is not in, with that room on the exits
+    list -- the shape most likely to walk the prose through the door.
+
+# ===========================================================================
+# MOVE -- the arrival, which is the other prose pass.
+#
+# `Scene::Generator`, not `Scene::Narrator`: schema'd, two fields, its own
+# instructions. Every destination here is ALREADY REALIZED, so the turn is one
+# call and the arrival is written about a room the seed file wrote rather than
+# one the run invented. `unrecorded_arrival` and `unrecorded_departure` are both
+# judgeable, and they read differently on this shape than on any other.
+# ===========================================================================
+- id: move-to-closet
+  position: office
+  typed: go to the supply closet
+  act: move
+  target: The Supply Closet
+  shape: move
+  why: The captain's own line, and the most-walked door in either world.
+
+- id: move-to-closet-short
+  position: office
+  typed: go to the closet
+  act: move
+  target: The Supply Closet
+  shape: move
+  why: The captain's own shorter line for the same door -- the arrival prose should not care which.
+
+- id: move-to-closet-alone
+  position: office-alone
+  typed: go into the supply closet
+  act: move
+  target: The Supply Closet
+  shape: move
+  why: >-
+    THE SAME ARRIVAL WITH SOMEBODY IN THE DESTINATION -- Halkett Rowe is in the
+    closet in this position, and the arrival prompt lists him as already present.
+    An arrival that has him walk in behind the player is contradicting the list.
+
+- id: move-back-to-office
+  position: closet
+  typed: go back into the office
+  act: move
+  target: Ward Office 12
+  shape: move
+  why: >-
+    The captain's own line. `Location#last_protagonist_visit` decides whether
+    this is narrated as finding or as coming back, and the office has been
+    visited -- so this is the RETURN branch of `#arrival_instructions`.
+
+- id: move-back-to-office-plain
+  position: closet
+  typed: go to the office
+  act: move
+  target: Ward Office 12
+  shape: move
+  why: The captain's own plainer line for the same return, into a room with Halkett in it.
+
+- id: move-office-carrying-three
+  position: office-carrying-three
+  typed: go to the supply closet
+  act: move
+  target: The Supply Closet
+  shape: move
+  why: >-
+    An arrival with three things in the party's hands. The arrival prompt does
+    NOT list the inventory -- `Scene::Generator` builds its own prompt and not
+    `#narration_context` -- so prose that names what is carried is naming
+    something it was not told.
+
+- id: move-closet-swept-clean
+  position: closet-swept-clean
+  typed: go back to the office
+  act: move
+  target: Ward Office 12
+  shape: move
+  why: A return with the closet emptied behind the player, which nothing in the arrival prompt says.
+
+- id: move-to-tide-post
+  position: court
+  typed: go out to the tide post
+  act: move
+  target: The Tide Post
+  shape: move
+  why: >-
+    The held-out world's own walk, out along the causeway to the man in the
+    chain. Neb Halloran is on the arrival's cast list, which is the fact
+    `ta-character-whereabouts` was built to put there.
+
+- id: move-to-tide-post-short
+  position: court
+  typed: walk out to the post
+  act: move
+  target: The Tide Post
+  shape: move
+  why: The same door named the way the world's own prose names it.
+
+- id: move-back-to-court
+  position: tide-post
+  typed: go back to the court
+  act: move
+  target: The Causeway Court
+  shape: move
+  why: The held-out world's return leg, into a room with the Justicar standing in it and nothing on the floor.
+
+- id: move-back-to-court-full
+  position: tide-post
+  typed: go to The Causeway Court
+  act: move
+  target: The Causeway Court
+  shape: move
+  why: The same return under the recorded name, which is how a script types it.
+
+- id: move-to-court-slate-down
+  position: tide-post-slate-down
+  typed: go back to the court
+  act: move
+  target: The Causeway Court
+  shape: move
+  why: >-
+    A return leaving the slate on the ground behind the player. The arrival
+    prompt says nothing about either, so a passage that mentions the slate has
+    invented the one fact this world turns on.

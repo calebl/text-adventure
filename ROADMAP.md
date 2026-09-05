@@ -1478,7 +1478,11 @@ reading one held-out run the board scored at zero flags.
   is left is the prose fix**, which is now judgeable: the checks are fully
   available to a scripted sweep, so done means a REAL verdict from
   `rake eval:compare` at four runs a side reproducing on `The Salt Assizes`, with
-  richness not falling. Fold in PR-98's **F3** (the floor list into
+  richness not falling. **`rake eval:prompt` is now the first gate and the
+  cheaper one** (`ta-prompt-bench`, landed): 18 take cases and 18 drop cases
+  against fixed facts, cents a run, with the defect reproduced at
+  **take_denied 0.72 of 18** on the checked-in baseline. Judge the change there
+  first and confirm it with `rake eval:compare`. Fold in PR-98's **F3** (the floor list into
   `Moment#narration_context`) and **F1** (a rule about *removing* a possession):
   both are the diagnosed cause and both are already measured.
 - ~~**`ta-character-whereabouts`**~~ — **landed.** `characters.location_id`, the
@@ -1488,17 +1492,21 @@ reading one held-out run the board scored at zero flags.
 
 ### Alongside those, the older queued work
 
-- **`ta-prompt-bench`** — the other half of the evaluation loop. `Story::Scoreboard`
-  (`rake game:score`, landed) scores prose that already exists; this drives a
-  fixed case list (the six `narration_corpus.json` commands and a talk set)
-  through the live turn loop under a prompt *variant*, on a named model, and
-  hands the result to the scoreboard — plus what the scoreboard cannot see
-  from stored prose: drift, cap hits, omitted fields, refusals, tokens and
-  latency per arm. Every prompt-shaped change should land as a measured PR;
-  today the checks exist and the A/B driver does not. Freeze a digest of the
-  prose instructions alongside `prose_model` on `Playthrough::Feedback`, so
-  verdicts group by prompt version and not only by model. The compliance sweep
-  (8) sits on top of this.
+- ~~**`ta-prompt-bench`**~~ — **landed.** `rake eval:prompt` plays 90 hand-verified
+  single-turn cases through the real turn loop with the classifier stood in for,
+  makes ONE prose call a case against fixed facts, and scores the passage with
+  eight of `Story::Scoreboard`'s twelve checks — the other four reported
+  UNAVAILABLE, never as clean. Beside them: richness, refusals, omitted schema
+  fields, cap hits, tokens, warm latency and spend, per model and **per prompt
+  version**. `rake eval:prompt_compare` gives REAL/NOISE per check off the
+  stored files, and says out loud whether the model or the prompt moved.
+  `Playthrough::Feedback` freezes `prose_prompt_digest` beside `prose_model`, so
+  verdicts group by prompt version too. Baseline of 2026-09-05 checked in under
+  `db/eval/prompt-2026-09-05`. **`ta-take-drop-narration` is its first
+  consumer**, and the bench already reproduces the defect it was built for. See
+  EVALUATION.md → *The prompt bench*. What it deliberately does NOT measure: a
+  `talk` turn, because `InteractionAgent`'s narrator pass sends no instructions
+  to version. The compliance sweep (8) still sits on top of this.
 - **`ta-scene-facts-prose`** — split `Scene::Generator` and `Scene::Narrator` by
   facts versus prose. Promoted by the standing constraint from "worth doing" to
   the structural expression of it: if the generator establishes facts and the
