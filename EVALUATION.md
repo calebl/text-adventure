@@ -988,7 +988,54 @@ bin/rails runner 'Eval::Prompt::Result.load(Eval.root.join("my-set")) \
 
 ### The baseline of 2026-09-05
 
-BASELINE_TABLE_PLACEHOLDER
+**One arm, `mistralai/mistral-medium-3.1`** — `BaseAgent::REMOTE_MODEL_IDS.first`,
+which is what a player's turn is actually written by — 4 repetitions, 90 cases,
+**360 calls for $0.19**, checked in at `db/eval/prompt-2026-09-05`. Corpus
+`dfd1756a8f1f91b8`, prompt `0ffc0228b538ac73`.
+
+| figure | `mistralai/mistral-medium-3.1` |
+| --- | --- |
+| `unrecorded_departure` | 0.000..0.011 (0.000) (0..1 of 90) |
+| `unrecorded_arrival` | 0.000 (0..0 of 90) |
+| `item_not_held` | 0.046..0.077 (0.062) (3..5 of 65) |
+| `take_denied` | **0.778..0.833 (0.778)** (14..15 of 18) |
+| `pickup_invented` | 0.111 (2..2 of 18) |
+| `inscription_misquoted` | 0.000 (0..0 of 43) |
+| `truncated_prose` | 0.000 (0..0 of 90) |
+| `third_person_protagonist` | 0.000 (0..0 of 90) |
+| `words` (richness) | 92..95 (94) |
+| `commitments` (richness) | 3.056..3.244 (3.111) |
+| refusals / failed calls | 0 / 0 |
+| omitted fields / cut at the cap | 0 / 0..1 |
+| latency median / p95 (warm) | 1.41s..1.47s (1.44s) / 1.84s..2.06s (1.95s) |
+| first call (cold, excluded) | 1.9s |
+| cost per 1,000 narrations | $1.18 |
+| rotations | 0 of 360 |
+
+**`take_denied` at 0.778 is the defect `ta-take-drop-narration` exists to fix**,
+reproduced here for a fifth of a dollar where it previously took a 480-turn
+sweep and a person reading for twenty minutes to find. It reads on the held-out
+world too — 14 of 16 there, 43 of 56 in the tuning world — so a fix that only
+works on the world it was tuned against will show.
+
+The passages are not subtle:
+
+```
+take-daybook-plain    "pick up your daybook"
+                      -> "You already hold the daybook, its weight familiar in your hands."
+take-slate-plain      "pick up the Assize tide-slate"          [HELD OUT]
+                      -> "You already hold the Assize tide-slate, its weight familiar in your palm."
+drop-slate-plain      "put the Assize tide-slate down on the bench"   [HELD OUT]
+                      -> "You lift the Assize tide-slate from where it leans against the wall
+                          and carry it to the Justicar's bench."
+```
+
+**Everything else is at or near zero**, which is worth stating rather than
+celebrating: on a single turn with the facts in front of it this model does not
+truncate, does not write the player in the third person, does not walk them into
+another room and does not misquote an inscription. `item_not_held` at 0.062 is
+the only other live rate, and every flag is a passage lifting something off a
+floor the player is standing on.
 
 ### What it is not
 

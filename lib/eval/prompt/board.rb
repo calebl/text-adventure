@@ -66,14 +66,23 @@ class Eval::Prompt::Board
   # versions are comparable and are the whole point, so that one is stated
   # rather than warned about.
   def warnings
-    digests = columns.map { |column| column.result.corpus_digest }.uniq
     found = []
+    digests = columns.map { |column| column.result.corpus_digest }.uniq
 
     if digests.size > 1
       found += [ "", "**READ WITH CARE: these sets did not score the same cases** (corpus digests " \
                      "#{digests.map { |digest| "`#{digest}`" }.join(", ")}), so a difference between " \
                      "columns may be a difference in the corpus." ]
     end
+
+    # THE FOUR CHECKS A SINGLE TURN CANNOT ANSWER ARE NOT ROWS, and a table that
+    # left them out silently would read as eight checks passing where twelve
+    # were asked. Named under it instead, with their reasons, on the same rule
+    # `Story::Scoreboard` follows: unavailable, never zero.
+    found << ""
+    found << "Not in this table, because one turn cannot answer them, and they are **unavailable rather " \
+             "than clean**:"
+    Eval::Prompt::UNAVAILABLE_TO_A_CASE.each { |code, reason| found << "- `#{code}` — #{reason}" }
 
     unstable = columns.reject { |column| column.result.prompt_stable }
     if unstable.any?

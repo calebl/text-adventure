@@ -1,0 +1,262 @@
+{
+  "name": "prompt-2026-09-05",
+  "recorded_at": "2026-09-05T02:42:15Z",
+  "corpus_size": 90,
+  "corpus_digest": "dfd1756a8f1f91b8",
+  "prompt_digest": "0ffc0228b538ac73",
+  "prompt_shapes": {
+    "drop": "a04103b0824101cc",
+    "examine": "50516836162c81e3",
+    "move": "52972f096745f84f",
+    "other": "4169d1a64cc39f02",
+    "read": "f1089f56a7789ea3",
+    "take": "1e06d9803127a246"
+  },
+  "prompt_stable": true,
+  "instructions_digest": "be4e1bf387f97e80",
+  "instruction_passes": {
+    "arrival": "b98b293aefc9331b",
+    "narration": "c5f18981f77aa01f"
+  },
+  "arms": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "reps": 4,
+  "answered_by": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "warmups": [
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "seconds": 1.8822,
+      "residency": "not_local",
+      "error": null
+    }
+  ],
+  "passes": [
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 1,
+      "scanned": 90,
+      "cases": 90,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 0,
+      "input_tokens": 66626,
+      "output_tokens": 12284,
+      "latency_median": 1.4708,
+      "latency_p95": 1.8366,
+      "words": 95,
+      "commitments": 3.111,
+      "coverage": 0.5697,
+      "chars": 539,
+      "rates": {
+        "unrecorded_departure": 0.0,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.0769,
+        "take_denied": 0.8333,
+        "pickup_invented": 0.1111,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 0,
+        "unrecorded_arrival": 0,
+        "item_not_held": 5,
+        "take_denied": 15,
+        "pickup_invented": 2,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 90,
+        "unrecorded_arrival": 90,
+        "item_not_held": 65,
+        "take_denied": 18,
+        "pickup_invented": 18,
+        "inscription_misquoted": 43,
+        "truncated_prose": 90,
+        "third_person_protagonist": 90
+      },
+      "by_story": {
+        "The Unrecorded Hour": 65,
+        "The Salt Assizes": 25
+      },
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 2,
+      "scanned": 90,
+      "cases": 90,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 0,
+      "input_tokens": 58801,
+      "output_tokens": 12199,
+      "latency_median": 1.4555,
+      "latency_p95": 1.8614,
+      "words": 94,
+      "commitments": 3.056,
+      "coverage": 0.5598,
+      "chars": 530,
+      "rates": {
+        "unrecorded_departure": 0.0,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.0615,
+        "take_denied": 0.7778,
+        "pickup_invented": 0.1111,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 0,
+        "unrecorded_arrival": 0,
+        "item_not_held": 4,
+        "take_denied": 14,
+        "pickup_invented": 2,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 90,
+        "unrecorded_arrival": 90,
+        "item_not_held": 65,
+        "take_denied": 18,
+        "pickup_invented": 18,
+        "inscription_misquoted": 43,
+        "truncated_prose": 90,
+        "third_person_protagonist": 90
+      },
+      "by_story": {
+        "The Unrecorded Hour": 65,
+        "The Salt Assizes": 25
+      },
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 3,
+      "scanned": 90,
+      "cases": 90,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 0,
+      "input_tokens": 55985,
+      "output_tokens": 12374,
+      "latency_median": 1.41135,
+      "latency_p95": 2.0392,
+      "words": 94,
+      "commitments": 3.244,
+      "coverage": 0.5964,
+      "chars": 544,
+      "rates": {
+        "unrecorded_departure": 0.0111,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.0462,
+        "take_denied": 0.7778,
+        "pickup_invented": 0.1111,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 1,
+        "unrecorded_arrival": 0,
+        "item_not_held": 3,
+        "take_denied": 14,
+        "pickup_invented": 2,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 90,
+        "unrecorded_arrival": 90,
+        "item_not_held": 65,
+        "take_denied": 18,
+        "pickup_invented": 18,
+        "inscription_misquoted": 43,
+        "truncated_prose": 90,
+        "third_person_protagonist": 90
+      },
+      "by_story": {
+        "The Unrecorded Hour": 65,
+        "The Salt Assizes": 25
+      },
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 4,
+      "scanned": 90,
+      "cases": 90,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 1,
+      "input_tokens": 58912,
+      "output_tokens": 12166,
+      "latency_median": 1.419,
+      "latency_p95": 2.0572,
+      "words": 92,
+      "commitments": 3.111,
+      "coverage": 0.5711,
+      "chars": 529,
+      "rates": {
+        "unrecorded_departure": 0.0,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.0615,
+        "take_denied": 0.7778,
+        "pickup_invented": 0.1111,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 0,
+        "unrecorded_arrival": 0,
+        "item_not_held": 4,
+        "take_denied": 14,
+        "pickup_invented": 2,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 90,
+        "unrecorded_arrival": 90,
+        "item_not_held": 65,
+        "take_denied": 18,
+        "pickup_invented": 18,
+        "inscription_misquoted": 43,
+        "truncated_prose": 90,
+        "third_person_protagonist": 90
+      },
+      "by_story": {
+        "The Unrecorded Hour": 65,
+        "The Salt Assizes": 25
+      },
+      "readings": []
+    }
+  ]
+}

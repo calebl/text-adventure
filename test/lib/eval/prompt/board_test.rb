@@ -32,6 +32,16 @@ class Eval::Prompt::BoardTest < ActiveSupport::TestCase
     assert_includes warnings, "did not score the same cases"
   end
 
+  # THE CHECKS THAT ARE NOT ROWS ARE NAMED UNDER THE TABLE. A markdown table of
+  # eight checks, pasted into a PR body with no note, reads as twelve checks
+  # passing -- which is exactly what "unavailable, never zero" exists to stop.
+  test "the four checks a single turn cannot answer are named under the table" do
+    footer = board(set("one")).warnings.join("\n")
+
+    assert_includes footer, "unavailable rather than clean"
+    Eval::Prompt::UNAVAILABLE_TO_A_CASE.each_key { |code| assert_includes footer, "`#{code}`" }
+  end
+
   test "a set whose prompt was not stable is called out under the table" do
     warnings = board(set("one", stable: false)).warnings.join("\n")
 
@@ -43,7 +53,7 @@ class Eval::Prompt::BoardTest < ActiveSupport::TestCase
   test "two prompt versions are tabulated without complaint" do
     board = board(set("one", prompt: "aaaa"), set("two", prompt: "bbbb"))
 
-    assert_empty board.warnings
+    refute_includes board.warnings.join("\n"), "READ WITH CARE"
     assert_includes board.lines.join("\n"), "`aaaa`"
     assert_includes board.lines.join("\n"), "`bbbb`"
   end

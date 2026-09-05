@@ -61,12 +61,14 @@ class Eval::Prompt::KeptSetTest < ActiveSupport::TestCase
     result = kept
 
     assert_empty result.rows, "a kept set holds no readings, on purpose"
-    board = Eval::Prompt::Board.new([ [ BASELINE, result ] ]).lines.join("\n")
+    board = Eval::Prompt::Board.new([ [ BASELINE, result ] ])
+    table = board.lines.join("\n")
 
-    assert_includes board, "`#{ARM}`"
-    assert_includes board, "`take_denied`"
-    assert_includes board, "unavailable", "the four checks a single turn cannot answer stay unavailable"
-    refute_includes board, "not recorded", "every figure the board prints was recorded"
+    assert_includes table, "`#{ARM}`"
+    assert_includes table, "`take_denied`"
+    refute_includes table, "not recorded", "every figure the board prints was recorded"
+    assert_includes board.warnings.join("\n"), "unavailable rather than clean",
+                    "the four checks a single turn cannot answer are named under the table"
   end
 
   test "the baseline is small enough to belong in a repository" do
