@@ -155,8 +155,8 @@ class SceneTest < ActiveSupport::TestCase
 
   # --- what the turn did ----------------------------------------------------
 
-  test "the resolved action is one of the classifier's own intents, or nothing" do
-    Playthrough::IntentSchema::INTENTS.each do |action|
+  test "the resolved action is one of the engine's own actions, or nothing" do
+    Scene::ACTIONS.each do |action|
       assert build(:scene, story: @story, location: @location, resolved_action: action).valid?
     end
 
@@ -165,6 +165,35 @@ class SceneTest < ActiveSupport::TestCase
     invented = build(:scene, story: @story, location: @location, resolved_action: "steal")
     assert_not invented.valid?
     assert_includes invented.errors[:resolved_action], "is not included in the list"
+  end
+
+  # THE RECORD IS WIDER THAN THE PROMPT, and this is the pair of assertions that
+  # says so: a fight is an act the engine takes and no typed word names, so
+  # `attack` is recordable without `Playthrough::IntentSchema::INTENTS` -- the
+  # closed enum on a model call -- growing by a word.
+  test "a scene may record an action the classifier has no word for" do
+    scene = build(:scene, story: @story, location: @location, resolved_action: "attack")
+
+    assert scene.valid?
+    assert_not_includes Playthrough::IntentSchema::INTENTS, "attack"
+  end
+
+  test "engine_authored? is true for an action outside the classifier's intents" do
+    %w[attack hazard throw].each do |action|
+      scene = build(:scene, story: @story, location: @location, resolved_action: action)
+
+      assert_predicate scene, :engine_authored?
+    end
+  end
+
+  test "engine_authored? is false for every classifier intent, and for no action at all" do
+    Playthrough::IntentSchema::INTENTS.each do |action|
+      scene = build(:scene, story: @story, location: @location, resolved_action: action)
+
+      assert_not_predicate scene, :engine_authored?
+    end
+
+    assert_not_predicate build(:scene, story: @story, location: @location, resolved_action: nil), :engine_authored?
   end
 
   # WHICH READER ANSWERED, and it is a wider list than what a turn can honestly
