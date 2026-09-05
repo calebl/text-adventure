@@ -498,6 +498,57 @@ before changing the loop; the rules below are what it does not fit.
 - The block is yielded **text**, not RubyLLM chunk objects. `Scene::Narrator`
   and `InteractionAgent` both unwrap before yielding; a schema'd branch yields
   its finished paragraph in one piece because it cannot stream at all.
+- **A SLASHED LINE IS READ BY THE GRAMMAR FIRST AND BY THE MODEL SECOND, AND
+  THE SLASH IS THE WHOLE OF THE CLAIM.** The captain's ruling of 2026-09-04,
+  evening — *"support a slash prefix autocomplete in the text box, and resolve
+  those and verb-prefixed lines offline then fallback to the model"* — narrowed
+  by his ruling of **2026-09-05**: ***"I think we should only auto accept the
+  slash commands."*** `Playthrough::Grammar#reading_first` is the decision and
+  `Playthrough::Turn#read_line` is where it is taken. A line carrying a `/` is
+  read by the fixed grammar — which resolves a name against **the same closed
+  set the classifier would have been offered**, through
+  `Playthrough::Classifier#offered_for`, so there is one list and not two. Only
+  a reading that RESOLVED A RECORD is taken as an answer: a noun the grammar
+  could not place is exactly what the model is bought for, so it falls through
+  and the turn costs what it always did.
+- **A LEADING VERB CLAIMS NOTHING, and do not put that back.** `VERBS` is a
+  COMMAND vocabulary — `move` is a synonym for `go` in it, `leave` for `drop` —
+  which is right for a mode where the player has read `help` and there is no
+  model behind it, and wrong as a claim on a line typed at the fiction.
+  `Playthrough::Grammar::MEANS_SOMETHING_ELSE` carries the four measured wrong
+  answers: `move the supply closet shelf aside` and `walk the supply closet
+  perimeter` **walked the player** into a room they were describing, `leave the
+  ward office` **put down** what they were carrying, and `take a look at the
+  brass lamp` **took** what they meant to read. None of the four is exotic
+  English. `Playthrough::GrammarTest` and `Playthrough::TurnRoutingTest` pin all
+  four as the classifier's.
+- **The slash is input syntax and is stripped before the line is read.**
+  `Playthrough::Grammar.unslashed` is the one place, so `/take slate` and `take
+  slate` are one line by the time anything acts, and `Scene#typed` — which
+  `Story::Audit`, `Eval::Richness` and both frozen corpora read — goes on holding
+  ordinary English. Do not give the slash a second meaning.
+- **`scenes.resolved_by` is which reader answered**, one of
+  `Playthrough::Grammar::PATHS`. It exists because a grammar-resolved turn calls
+  no classifier, so it writes no `Playthrough::Drift` and no
+  `Playthrough::Overreach` row and is invisible to the classifier bench — and a
+  miss attributed to "the classifier" that the classifier never saw would aim the
+  next prompt change at the wrong thing. `Scene::TURN_READERS` is the narrower
+  list a TURN can honestly carry; `rake game:doctor` names a row outside it.
+- **ONE LINE ONE ACT SURVIVES THE SHORTCUT, and it is a measured guard rather
+  than a second copy of the rule.** The grammar has no `also_named` — nothing in
+  a fixed verb table produces one — so a line naming two things out of one closed
+  set would resolve the first and PLAY it. `Playthrough::Grammar::JOINING_WORDS`
+  is what stops that: a resolved reading whose line still carries `and`, `then`
+  or a comma once the matched name is cut out of it is NOT taken, and goes to the
+  classifier, which sees the second name, refuses the line and writes the
+  counter. Measured on `Eval::Classifier`'s 300 labelled lines: without it, 6
+  wrong answers,
+  all six that shape; with it, **59 of 300 resolve offline in slash form and
+  none of them wrongly** (and 0 of 300 without a slash, which is the ruling of
+  2026-09-05), at a cost of 4 lines that were right and now cost one call. The
+  guard is on `#reading_first` and NOT on `#parse`, because `model: false` has
+  nothing to defer to — which is also what keeps the offline floor
+  byte-identical.
 - **`Playthrough::Classifier` resolves names back to records itself**, next to
   the candidate list it is the inverse of. It offers the model a closed enum of
   the room's exits, its cast, what is lying in it and what the player is
@@ -692,6 +743,14 @@ variables at the same time"* — and the rules it lives under are short:
   and a move is `Playthrough::Turn#move_to` whole — the stub is realized, the
   arrival is written, the visit is stamped. So the default path costs one model
   call a command and needs a key. Do not "simplify" it back to a grammar.
+- **BUT IT READS A LINE THE WAY THE BROWSER READS IT, GRAMMAR FIRST**, since the
+  captain's ruling of 2026-09-04 (evening). A slashed or verb-first line whose
+  noun `Playthrough::Grammar` can place is answered offline in this mode too, and
+  `read by:` under the reading says which reader answered. That is not the mode
+  losing its instrument: it is the mode agreeing with the thing it instruments,
+  and a mode that made a call the browser would not make would be measuring a
+  path nobody plays. `Playthrough::Mechanics::Report#resolved_by` is what a
+  `rake game:sweep` script asserts and what `scenes.resolved_by` records.
 - **`Scene::Narrator` and `InteractionAgent` are the only things dropped.**
   `talk` and `examine` are refused with a line saying they are prose. If a
   branch needs prose, refuse it and say so; do not half-play it.
@@ -848,6 +907,15 @@ expectations asserted against the records after every typed line. It runs in
 - **Every walk gets its own copy of the world**, loaded under
   `EngineSweep::Walk::TITLE_SUFFIX` inside a rolled-back transaction. A sweep
   must stay safe to run against a database somebody is playing in.
+- **`resolved_by:` is the key that says WHICH READER ANSWERED**, and it is
+  assertable offline precisely because `model` is unreachable in a walk: what a
+  script can pin is `grammar` (the fixed grammar answered) and `engine_view` (the
+  engine answered itself). `lib/engine_sweep/scripts/a-slash-in-front-of-the-line.yml`
+  is the walk, and its claim is an EQUIVALENCE — a slashed line and its plain
+  twin leave the same records, because the slash is stripped before the line is
+  read. What it cannot see is the FALLBACK, since there is no classifier in a
+  walk to fall back to; `Playthrough::TurnRoutingTest` pins that half with a
+  FakeAgent counting the calls.
 - **A script is a fixture, not a language.** `EngineSweep::Expectation::KEYS` is
   closed and an unknown key raises. Add a key only when the fact it asserts is a
   fact off the records; a sweep that started reading prose would be a worse copy
@@ -1298,8 +1366,14 @@ Views are ERB with an inline `<style>` in the layout. Restyling is
   is the `#stream` div outside the log, and `:last-of-type` is the marker with
   no class per entry. `PlaythroughsControllerTest`, `TurnsControllerTest` and
   `NarrationJobTest` all assert against those selectors.
-- The only JavaScript is **one Stimulus controller**,
-  `app/javascript/controllers/play_controller.js`: follow the narration down
+- There are **two Stimulus controllers and no third**, and their scopes are
+  opposites on purpose. `slash_controller.js` is INSIDE `#turn_log`, because the
+  closed sets it completes against are *this turn's* and it must be renewed by
+  the end-of-turn replace; `play_controller.js` is OUTSIDE it, because it hooks
+  that replace and must survive it. Neither fetches anything: the slash menu
+  arrives as a data attribute rendered by `Playthrough::SlashMenu`, and with no
+  JavaScript at all the box is a plain text field in a plain form.
+- `app/javascript/controllers/play_controller.js`: follow the narration down
   while the player is at the bottom, and put focus back in the input when a turn
   lands. Its scope is the wrapper on `playthroughs/show` and **not `#turn_log`**,
   which a Turbo Stream replaces at the end of every turn -- a controller there

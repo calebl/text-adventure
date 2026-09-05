@@ -150,6 +150,46 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_match "The Sunken Stair", response.body
   end
 
+  # THE SLASH MENU IS RENDERED INTO THE FORM AND FETCHED FROM NOWHERE. The whole
+  # point of `Playthrough::SlashMenu` is that the box needs no request and no
+  # model: the closed sets arrive with the turn, and `#turn_log` is replaced at
+  # the end of every turn, so they rebuild themselves.
+  test "show renders this turn's closed sets into the play form" do
+    playthrough = create(:playthrough, :started)
+    story = playthrough.story
+    here = playthrough.current_location
+    create(:location_connection, location: here,
+                                 connected_location: create(:location, story: story, name: "The Sunken Stair"))
+    create(:character, story: story, fullname: "Halkett Rowe", location: here)
+    create(:item, :lying, playthrough: playthrough, location: here, name: "ward stamp")
+    create(:item, :carried, playthrough: playthrough, name: "brass compass")
+
+    get playthrough_path(playthrough)
+
+    assert_select "[data-controller=slash][data-slash-menu-value]" do |elements|
+      menu = JSON.parse(elements.first["data-slash-menu-value"])
+
+      assert_equal %w[go talk take drop read], menu["verbs"].map { |verb| verb["word"] }
+      assert_equal [ "The Sunken Stair" ], menu["targets"]["go"]
+      assert_equal [ "Halkett Rowe" ], menu["targets"]["talk"]
+      assert_equal [ "ward stamp" ], menu["targets"]["take"]
+      assert_equal [ "brass compass" ], menu["targets"]["drop"]
+      assert_equal [ "ward stamp", "brass compass" ], menu["targets"]["read"]
+    end
+  end
+
+  # IT DEGRADES TO A PLAIN TEXT BOX. Everything the menu adds is data attributes
+  # and one empty list; with no JavaScript the field is an ordinary input in an
+  # ordinary form and every line the menu could have written can be typed.
+  test "the play form is a plain text field with the menu empty and hidden" do
+    playthrough = create(:playthrough, :started)
+
+    get playthrough_path(playthrough)
+
+    assert_select "form input[type=text][name=command][role=combobox][aria-expanded=false]"
+    assert_select "ul.slash-menu[role=listbox][hidden]", ""
+  end
+
   # The opening room is the first thing the player reads, and it used to be
   # rendered above the log only while the log was empty. The first turn is the
   # first thing to put a Scene in that log, so it made the text the player had

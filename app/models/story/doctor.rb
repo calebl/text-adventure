@@ -843,10 +843,39 @@ class Story::Doctor
   # one is invisible to `Story#clock`; only the opening arrival has a derivable
   # answer, because an opening happens at the story's start_time by definition.
   def scene_rows
-    story.scenes.where(story_timestamp: nil).where(is_opening: false).order(:id).map do |scene|
+    without_timestamp = story.scenes.where(story_timestamp: nil).where(is_opening: false).order(:id).map do |scene|
       finding(:scene_without_timestamp, :warning,
               "scene ##{scene.id} has no story_timestamp, so the story's clock cannot see it; when in the fiction it " \
               "happened is not on record anywhere",
+              :manual, subject: scene)
+    end
+
+    without_timestamp + unknown_readers
+  end
+
+  # A `scenes.resolved_by` outside `Playthrough::Grammar::PATHS`. It is checked
+  # for the reason every check in this class is: a world here outlives the code
+  # that made it, and `Scene`'s inclusion validation only binds a row this app
+  # saves -- a row written by hand, by an `update_all`, or by an earlier build is
+  # under no rule at all.
+  #
+  # NIL IS NOT A FINDING and must not become one. The column is nullable by
+  # history: an opening arrival was read by nobody and keeps nil for ever, and
+  # every turn played before 2026-09-05 is stamped `model` by
+  # `Update::Steps::StampResolvedBy` rather than reported one at a time here.
+  #
+  # `engine_view` IS a finding on a scene even though it is in the list, and that
+  # is the one thing worth saying out loud: no engine-view command writes a
+  # `Scene` at all -- `harm`, `check` and the read-outs are
+  # `Playthrough::Mechanics`'s own instruments -- so a turn claiming one was read
+  # by a path that writes no turns. `manual`, because which reader really
+  # answered a turn is not derivable from anything left on the row.
+  def unknown_readers
+    story.scenes.where.not(resolved_by: [ nil, *Scene::TURN_READERS ]).order(:id).map do |scene|
+      finding(:scene_with_an_unknown_reader, :warning,
+              "scene ##{scene.id} says it was resolved by #{scene.resolved_by.inspect}, which is not one of the " \
+              "readers that write a turn (#{Scene::TURN_READERS.join(", ")}); nothing can attribute that turn's " \
+              "reading to a path, so `rake game:score` and the classifier bench both have to leave it out",
               :manual, subject: scene)
     end
   end

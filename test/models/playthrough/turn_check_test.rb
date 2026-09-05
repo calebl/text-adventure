@@ -53,11 +53,20 @@ class Playthrough::TurnCheckTest < ActiveSupport::TestCase
     assert_equal 10, harder.target
   end
 
+  # THE WHOLE STREAM AND NOT ONE FACE, and the difference is the test not being
+  # a coin flip. `playthrough` is in the seed, so two games of one world throw
+  # two different SEQUENCES -- but two different sequences agree on any single
+  # d20 about one time in twenty, and asserting one face made this fail ~6.7% of
+  # the time on adjacent playthrough ids (measured over 60 pairs; CI caught it
+  # on ids that both came up 17). Comparing all three abilities asserts the same
+  # property -- the seeds differ -- and the two triples can only agree by
+  # accident once in 8,000 runs.
   test "two games of one world do not share a check" do
     other = create(:playthrough, story: @story, character: @vance, current_location: @room)
+    ours = Character::ABILITIES.map { |ability| @turn.check(@vance, ability).die }
+    theirs = Character::ABILITIES.map { |ability| Playthrough::Turn.new(other).check(@vance, ability).die }
 
-    assert_not_equal @turn.check(@vance, :will).die,
-                     Playthrough::Turn.new(other).check(@vance, :will).die
+    assert_not_equal ours, theirs
   end
 
   # IT WRITES NOTHING. No condition row, no scene, no clock movement -- which is

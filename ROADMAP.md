@@ -55,6 +55,59 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **A slash in front of the line, and the grammar reads it first**
+  (`ta-slash-input`). The captain's ruling of 2026-09-04, evening, verbatim:
+
+  > *"support a slash prefix autocomplete in the text box, and resolve those and
+  > verb-prefixed lines offline then fallback to the model."*
+
+  **No prompt changed.** `Playthrough::Classifier::INSTRUCTIONS` and
+  `Playthrough::IntentSchema` are byte-identical.
+
+  **The slash is the whole of the claim**, which is his ruling of the following
+  day. He objected first — *"i'm not sure that a line beginning with `move`
+  should always go to the move action… a player might type: `move the lamp off
+  the desk`"* — and then ruled:
+
+  > *"I think we should only auto accept the slash commands."*
+
+  He was right and it was worse than the example. Measured against a room with a
+  `The Supply Closet` exit and a daybook in hand, four ordinary English lines
+  were answered on a real record: `move the supply closet shelf aside` and `walk
+  the supply closet perimeter` **walked the player in**, `leave the ward office`
+  **put down the daybook**, and `take a look at the brass lamp` **took it**.
+  `VERBS` is a command vocabulary, not English, and a leading verb is a
+  coincidence. `Playthrough::Grammar::MEANS_SOMETHING_ELSE` keeps the four so the
+  verb-prefixed claim cannot come back quietly.
+
+  **One grammar, two readers, one vocabulary.** The fixed verb table that was
+  `Playthrough::Mechanics`'s private half is `Playthrough::Grammar` now, and both
+  the browser and the mechanics mode read a SLASHED line with it before spending
+  a classifier call. It is matched against **the same closed set the model would
+  have been offered** (`Playthrough::Classifier#offered_for`); only a reading
+  that RESOLVED a record is taken, so a noun the grammar cannot place falls
+  through and the turn costs exactly what it did before. The slash is input
+  syntax and is stripped before the line is read, so `Scene#typed` and every
+  corpus that reads it go on holding ordinary English. **Offline
+  (`model: false`) nothing changed at all**: `#parse` has no slash rule, because
+  there is no classifier behind it to defer to.
+
+  **`scenes.resolved_by` is which reader answered**, because a grammar-resolved
+  turn calls no classifier and therefore writes no `Playthrough::Drift` or
+  `Playthrough::Overreach` row — and a miss attributed to a classifier that never
+  saw the line would aim the next prompt change at the wrong thing.
+
+  **One line, one act survived, and it took a measured guard.** A fixed grammar
+  has no `also_named`, so a line naming two things out of one closed set would
+  have resolved the first and PLAYED it. `Playthrough::Grammar::JOINING_WORDS`
+  hands such a line to the classifier instead — which sees the second name,
+  refuses the line and writes the counter. On the classifier bench's 300
+  labelled lines:
+  without the guard 6 wrong answers, all six that shape; with it **59 of 300
+  resolve offline in slash form and none of them wrongly**, at a cost of 4 lines
+  that were right and now cost one call each. Without a slash: **0 of 300**, and
+  the other 300 cost exactly what they cost today.
+
 - **The classifier bench** (`ta-classifier-bench`). The classifier had no
   instrument of its own. `Playthrough::Drift` and `Playthrough::Overreach` count
   its misses indirectly and **neither knows whether the answer was right** — a

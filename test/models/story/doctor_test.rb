@@ -27,6 +27,47 @@ class Story::DoctorTest < ActiveSupport::TestCase
     Story::Doctor.new(story).findings.map(&:code)
   end
 
+  # --- which reader answered a turn -----------------------------------------
+
+  # NIL IS NOT A FINDING and must not become one. The column is nullable by
+  # history: an opening arrival was read by nobody and every turn played before
+  # `scenes.resolved_by` existed is stamped by `Update::Steps::StampResolvedBy`,
+  # not reported one at a time here.
+  test "a turn with no reader on record is not a finding" do
+    story = healthy_story
+    create(:scene, story: story, location: story.locations.first, story_timestamp: story.start_time,
+                   typed: "take the stamp", resolved_action: "take", resolved_by: nil)
+
+    assert_not_includes codes(story), :scene_with_an_unknown_reader
+  end
+
+  test "both readers that write a turn are accepted" do
+    story = healthy_story
+    Scene::TURN_READERS.each do |reader|
+      create(:scene, story: story, location: story.locations.first, story_timestamp: story.start_time,
+                     typed: "take the stamp", resolved_action: "take", resolved_by: reader)
+    end
+
+    assert_not_includes codes(story), :scene_with_an_unknown_reader
+  end
+
+  # A world here outlives the code that made it, so the check is about a row
+  # this app did not save: `Scene`'s own validation refuses one on the way in.
+  # `engine_view` is the reachable case -- it is in the column's closed list and
+  # no engine-view command writes a `Scene` at all.
+  test "a turn claiming a reader that writes no turns is named" do
+    story = healthy_story
+    scene = create(:scene, story: story, location: story.locations.first, story_timestamp: story.start_time,
+                           typed: "harm 5", resolved_action: "other")
+    scene.update_column(:resolved_by, "engine_view")
+
+    assert_includes codes(story), :scene_with_an_unknown_reader
+    finding = Story::Doctor.new(story).findings.find { |row| row.code == :scene_with_an_unknown_reader }
+
+    assert_equal :manual, finding.remedy
+    assert_includes finding.message, "engine_view"
+  end
+
   # THE SHAPE OF AN OLD DATABASE: an item on the story's one protagonist row
   # that one playthrough's turn log records taking. Returns the pair.
   def a_shared_inventory(story)

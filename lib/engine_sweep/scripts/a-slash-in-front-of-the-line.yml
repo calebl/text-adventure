@@ -1,0 +1,159 @@
+# THE SLASH, AS A WALK -- and the claim it makes is an EQUIVALENCE.
+#
+# The captain's ruling of 2026-09-04, evening: *"support a slash prefix
+# autocomplete in the text box, and resolve those and verb-prefixed lines offline
+# then fallback to the model."* The slash is INPUT SYNTAX and nothing else:
+# `Playthrough::Grammar.unslashed` takes it off the front before the line is
+# read, so `/take the ward stamp` and `take the ward stamp` are one line by the
+# time anything acts. This script types both halves of that pair, in a room, and
+# asserts the records after each -- so a slash that ever started meaning
+# something of its own would fail here rather than in a browser.
+#
+# `resolved_by:` IS WHAT THIS SCRIPT ADDS TO THE OTHERS. A walk runs
+# `model: false`, so `model` is unreachable in a script by construction and the
+# two values that ARE reachable are the interesting ones: `grammar` for a line
+# the fixed grammar answered, and `engine_view` for one the engine answered
+# itself. Asserting them is how a walk pins that a slashed line cost no model
+# call -- the sweep's `EngineSweep::ModelCalled` guard says none was made, and
+# this says which reader made the answer instead.
+#
+# WHAT AN OFFLINE WALK CANNOT SEE OF THE RULING, stated rather than left to be
+# found, and it is now TWO things:
+#
+#   THE FALLBACK. A claimed line the grammar cannot resolve goes to
+#   `Playthrough::Classifier`, and there is no classifier here -- so every
+#   unresolved line below simply refuses, exactly as it always has offline.
+#
+#   THE SLASH BEING THE WHOLE CLAIM. The captain's ruling of 2026-09-05,
+#   *"I think we should only auto accept the slash commands"*, is a rule about
+#   which lines are handed to a MODEL, and `model: false` has none: offline,
+#   `Playthrough::Mechanics` reaches `Playthrough::Grammar#parse` directly and
+#   every line is read by the grammar, slashed or not. That is why
+#   `the-same-line-without-a-slash` below still resolves here and would NOT
+#   resolve in the browser.
+#
+# `Playthrough::TurnRoutingTest` pins both halves, with a FakeAgent counting the
+# calls.
+story: The Unrecorded Hour
+why: the slash is input syntax -- a slashed line and its plain twin are the same line
+steps:
+- id: the-office-as-seeded
+  type: look
+  why: the starting state, so a failure later has a known beginning
+  expect:
+    location: Ward Office 12 (realized)
+    exits: [The Supply Closet (realized), The Long Hallway (stub)]
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+    present: [Halkett Rowe]
+    changed: false
+    refused: false
+    resolved_by: grammar
+
+- id: a-slashed-take
+  type: /take the ward stamp
+  why: THE SLASH COMES OFF AND THE GRAMMAR READS THE REST -- one act, one row moved, no model
+  expect:
+    changed: true
+    refused: false
+    understood: take -> ward stamp
+    resolved_by: grammar
+    here: []
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: a-slashed-drop-puts-it-back
+  type: /drop the ward stamp
+  why: the mirror, so the next step starts where the first one did
+  expect:
+    changed: true
+    refused: false
+    understood: drop -> ward stamp
+    resolved_by: grammar
+    here: [ward stamp]
+    carrying: [Ward Office 12 daybook]
+
+- id: the-same-line-without-a-slash
+  type: take the ward stamp
+  why: >-
+    THE EQUIVALENCE ITSELF, and it is an equivalence about the PARSER and not
+    about the router. The same records, the same reading and the same reader as
+    `a-slashed-take` above -- which is what makes the slash syntax rather than a
+    second way in. In the BROWSER this line is not claimed at all and goes to
+    the classifier (the captain's ruling of 2026-09-05); offline there is no
+    classifier, so the grammar answers it here.
+  expect:
+    changed: true
+    refused: false
+    understood: take -> ward stamp
+    resolved_by: grammar
+    here: []
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: a-slashed-move
+  type: /go to the Supply Closet
+  why: a move is the branch that generates the world, and it reads the same through a slash
+  expect:
+    changed: true
+    refused: false
+    understood: move -> The Supply Closet
+    resolved_by: grammar
+    location: The Supply Closet (realized)
+    here: [Perrin's private index, copy-room apron]
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: a-slashed-read-recites-the-record
+  type: /read Perrin's private index
+  why: reading is a record, so a slash reaches the same column and generates nothing
+  expect:
+    refused: false
+    changed: false
+    understood: examine -> Perrin's private index
+    resolved_by: grammar
+    note: 'reads: Perrin''s private index'
+
+- id: a-slashed-line-that-resolves-nothing
+  type: /take the tide-slate
+  why: >-
+    THE FALLBACK CASE, AS FAR AS AN OFFLINE WALK CAN SEE IT. The verb is the
+    grammar's own and the noun belongs to a different world, so nothing resolves.
+    In the browser this line goes on to `Playthrough::Classifier`; here there is
+    no classifier, so it refuses with what IS on the floor. Nothing moved either
+    way, which is the half a walk can assert.
+  expect:
+    refused: true
+    changed: false
+    drifts: 0
+    offers: [there is no thing lying here called, Perrin's private index, copy-room apron]
+    here: [Perrin's private index, copy-room apron]
+    carrying: [Ward Office 12 daybook, ward stamp]
+
+- id: a-slash-in-front-of-a-word-the-grammar-does-not-have
+  type: /ponder the apron
+  why: a slash is not a promise that the line parses -- it is refused with the whole grammar, offline
+  expect:
+    refused: true
+    changed: false
+    note: 'take <item>      pick up something lying here'
+    here: [Perrin's private index, copy-room apron]
+
+- id: an-engine-view-verb-says-so
+  type: stats
+  why: >-
+    THE OTHER READER. `stats` is the engine's own instrument, not a fiction verb
+    -- in the browser it is not claimed at all and reaches the classifier, and
+    here it is answered by the engine. `resolved_by` is what tells the two apart
+    on the record.
+  expect:
+    refused: false
+    changed: false
+    resolved_by: engine_view
+
+- id: a-slashed-engine-view-verb-is-still-the-engine-s
+  type: /check strength 2
+  why: the slash comes off before the verb table is read, so an engine-view verb stays one
+  expect:
+    changed: false
+    refused: false
+    understood: check -> strength (penalty 2)
+    resolved_by: engine_view
+    note: 'check strength'

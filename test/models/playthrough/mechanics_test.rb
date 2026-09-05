@@ -954,11 +954,69 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_empty agent.prompts
   end
 
+  # --- which reader answered ------------------------------------------------
+
+  # THE MODE AND THE BROWSER READ A LINE THE SAME WAY, which is the whole reason
+  # `Playthrough::Grammar` is a class and not this file's private half. The
+  # captain's ruling of 2026-09-05: *"I think we should only auto accept the
+  # slash commands."* So a SLASHED line is answered offline in this mode too.
+  test "a slashed line the grammar resolves costs this mode no model call" do
+    report, agent = interpret("/take the ward stamp")
+
+    assert_equal "take -> ward stamp", report.understood
+    assert_equal "grammar", report.resolved_by
+    assert_includes report.change, "took: ward stamp"
+    assert_empty agent.prompts
+  end
+
+  # AND AN UNSLASHED LINE IS UNTOUCHED, whatever it begins with. This is the
+  # captain's objection of 2026-09-05 as a test -- `take` is one of the grammar's
+  # own verbs and the line still costs a classifier call, because a leading verb
+  # is a coincidence of English and not a player asking for the command language.
+  test "the same line without a slash still goes to the classifier" do
+    report, agent = interpret("take the ward stamp", CLASSIFY.call("take", "ward stamp"))
+
+    assert_equal "model", report.resolved_by
+    assert_equal 1, agent.prompts.count
+    assert_includes report.change, "took: ward stamp"
+  end
+
+  test "an engine-view verb is answered by the engine and named as such" do
+    report, agent = interpret("stats")
+
+    assert_equal "engine_view", report.resolved_by
+    assert_empty agent.prompts
+  end
+
+  # The read-out prints which reader answered, under the reading itself, because
+  # "it did not understand me" and "the wrong reader read it" are different bugs.
+  test "the read-out says which reader answered" do
+    report, = interpret("/take the ward stamp")
+
+    assert_includes report.to_s, "read by:    grammar"
+  end
+
+  # A move is the one branch this mode writes a `Scene` from, so it is the one
+  # place `scenes.resolved_by` can be checked from here at all.
+  test "a move stamps the scene with the reader that resolved it" do
+    report, agent = interpret("/go to The Long Hallway", DETAIL, { "exits" => [] }, ARRIVAL)
+    scene = @playthrough.reload.current_scene
+
+    assert_equal "grammar", report.resolved_by
+    assert_equal "grammar", scene.resolved_by
+    assert_equal "move", scene.resolved_action
+    # The slash comes off before the line is recorded, here exactly as it does
+    # in the browser: `Scene#typed` is what the engine read, and every corpus
+    # that reads it goes on seeing ordinary English.
+    assert_equal "go to The Long Hallway", scene.typed
+    assert_equal 3, agent.prompts.count, "two realization calls and the arrival, and no classification"
+  end
+
   # `help` was always read here rather than sent to a model, and the classifier
   # mode has its own help. Adding three verbs beside it must not have changed
   # which one either mode prints.
   test "help still prints the mode's own list" do
-    assert_includes play("help").note, Playthrough::Mechanics::GRAMMAR.first
+    assert_includes play("help").note, Playthrough::Grammar::HELP.first
     assert_includes interpret("help").first.note, Playthrough::Mechanics::CLASSIFIER_HELP.first
   end
 

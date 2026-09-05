@@ -1,13 +1,22 @@
 # THE SAME CORPUS WITH NO MODEL AT ALL, WHICH IS WHAT A CLASSIFIER CALL IS
 # BOUGHT AGAINST.
 #
-# `Playthrough::Mechanics` has a fixed grammar for `model: false` -- a verb
-# table, `LEADING_WORDS` stripped off the front of a name, an exact match then
-# an unambiguous prefix then an unambiguous fragment read both ways round, and
-# an ambiguity rule that refuses. Its own header says why each of those exists:
-# a real line was refused. So the honest question about the classifier is not
-# "how accurate is it" but "how much more does it get right than the free thing
-# underneath it", and this is the number that answers it.
+# `Playthrough::Grammar` is the fixed grammar `Playthrough::Mechanics` uses for
+# `model: false` -- a verb table, `LEADING_WORDS` stripped off the front of a
+# name, an exact match then an unambiguous prefix then an unambiguous fragment
+# read both ways round, and an ambiguity rule that refuses. Its own header says
+# why each of those exists: a real line was refused. So the honest question about
+# the classifier is not "how accurate is it" but "how much more does it get right
+# than the free thing underneath it", and this is the number that answers it.
+#
+# AND SINCE `ta-slash-input` THAT FREE THING IS NOT ONLY A FALLBACK: the browser
+# reads a slashed or verb-first line with the same grammar before it spends a
+# call. THIS FLOOR IS UNAFFECTED BY THAT, deliberately -- it reaches `#parse`,
+# and the guard that makes the browser DEFER a line it could answer
+# (`Playthrough::Grammar::JOINING_WORDS`) lives one level up on
+# `#reading_first`. So this stays the measure of what the grammar CAN do, and
+# `Playthrough::Turn#read_line` is where what it is ALLOWED to do is decided.
+# Measured across that change: byte-identical, 127 of 300, same five counts.
 #
 # FIVE OUTCOMES, TOLD APART BECAUSE THEY ARE DIFFERENT FACTS about what the free
 # floor can do:

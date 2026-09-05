@@ -316,6 +316,22 @@ principle here: *nothing depends on the narrator complying.* A model that
 answers badly must not be able to move the player, so every branch below is
 taken on a record the app is holding, never on a label a model wrote.
 
+**A slashed line is read by the grammar first and by the model second.** The
+captain's ruling of 2026-09-04, evening: *"support a slash prefix autocomplete in
+the text box, and resolve those and verb-prefixed lines offline then fallback to
+the model"* — narrowed the next day, after he objected that *"a line beginning
+with `move`"* might be *"move the lamp off the desk"*, to
+***"I think we should only auto accept the slash commands."*** So **the `/` is
+the whole of the claim**: a line carrying one goes to `Playthrough::Grammar` — a
+closed verb table and a name matched against **the same closed set the
+classifier would have been offered** — and reaches `Playthrough::Classifier` only
+when that could not place the noun; **a line without one is not claimed at all,
+whatever it begins with**, and costs exactly what it always did.
+`scenes.resolved_by` records which of the two answered. The slash is input syntax
+and is stripped before the line is read, so `Scene#typed` and every instrument
+that reads it go on seeing ordinary English; the browser's box writes it
+(`Playthrough::SlashMenu`), which makes the shortcut opt-in and visible.
+
 ```mermaid
 flowchart TD
     IN["Player types a command<br/>TurnsController enqueues NarrationJob and answers at once<br/>with the command echoed back and an empty #stream"]
@@ -325,13 +341,21 @@ flowchart TD
     W0["Story#catch_up_world!<br/>every story-time boundary the clock has passed<br/>is applied in Ruby before the command is read<br/>0 tokens, one SELECT MAX, ~90 us"]
     SSE --> W0
 
-    subgraph CL["Playthrough::Classifier#classify"]
+    G0{"Playthrough::Grammar#reading_first<br/>does the line begin with a slash?<br/>nothing else claims a line"}
+    W0 --> G0
+    G0 -->|"no slash: anything a player types"| C1
+    G0 -->|"yes"| G1
+    G1["Read it with the FIXED GRAMMAR, no model call<br/>the verb off a closed table, the noun off the SAME<br/>closed set the classifier would have been offered"]
+    G1 --> G2{"did it resolve a record,<br/>and does the line join nothing else on?"}
+    G2 -->|"no: a noun it could not place,<br/>or two things on one line"| C1
+    G2 -->|"yes: resolved_by = grammar"| R
+
+    subgraph CL["Playthrough::Classifier#classify -- resolved_by = model"]
         C1["Build the candidates FROM RECORDS<br/>the room's exits, who is standing in it,<br/>what is lying here, what the player carries"]
         C2["MODEL CALL, schema'd<br/>Playthrough::IntentSchema<br/>intent: move / talk / examine / take / drop / other<br/>target: an enum of ONLY those names"]
         C3["Resolve the answer back to a RECORD<br/>an unresolvable target leaves it nil<br/>AND writes a Playthrough::Drift row"]
         C1 --> C2 --> C3
     end
-    W0 --> C1
 
     C3 --> R{"Will the engine play this line at all?<br/>two acts on one line, a reach that found nothing,<br/>or an answer the app cannot read"}
     R -->|"no"| X1
@@ -394,9 +418,9 @@ flowchart TD
     classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
 
     class C2,M3,M4,M6,T1,T2,I2,N2 llm
-    class W0,C1,C3,M1,M3B,M5,M7,M8,T5,T6,T7,I1,I3,N3,X1 rec
+    class W0,C1,C3,G1,M1,M3B,M5,M7,M8,T5,T6,T7,I1,I3,N3,X1 rec
     class N1,T4 gap
-    class IN,SSE,OUT,OUT2,D,R,T3 io
+    class IN,SSE,OUT,OUT2,D,R,G0,G2,T3 io
 ```
 
 The two orange boxes are the honest ones. The narration box is where the
