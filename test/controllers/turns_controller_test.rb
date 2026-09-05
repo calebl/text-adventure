@@ -27,7 +27,7 @@ class TurnsControllerTest < ActionDispatch::IntegrationTest
     assert_match 'id="stream"', response.body
   end
 
-  # The dimming rule is `.log:not(.streaming) > .turn:last-of-type`, so while a
+  # The dimming rule is `.log:not(.streaming) > .entry:last-of-type .turn`, so while a
   # turn is in flight the log has to say it is not the newest thing on the page
   # -- the #stream div below it is.
   test "create marks the log as streaming and takes the input away" do

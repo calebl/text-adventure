@@ -1,20 +1,74 @@
 <%# locals: (turn:, playthrough: nil, verdicts: {}) %>
-<%# A talk turn keeps an Interaction alongside the Scene, so the log can say
-    who the player was speaking to. Narrated and arrival turns have none. %>
-<% speakers = turn.interactions.map(&:character_name).uniq %>
-<% if speakers.any? %>
-  <p class="speaking">talking to <%= speakers.to_sentence %></p>
-<% end %>
-<div class="turn"><%= turn.description %></div>
-<%# THE VERDICT ON THIS TURN, and the whole of the instrument's mark on the
-    game. Gated on `Playthrough::Debug.enabled?` -- the same flag as the debug
-    link, local by default -- so someone handed a playthrough link to read a
-    story is never shown it. See FeedbacksController for why the two share a
-    gate.
+<%# ONE TURN OF THE LOG, IN ONE WRAPPER.
 
-    `verdicts` is one query for the whole log (`Playthrough#feedback_by_scene`),
-    not a lookup per entry: the log is the entire playthrough. %>
-<% if playthrough && Playthrough::Debug.enabled? %>
-  <%= render "feedbacks/verdict", playthrough: playthrough, scene: turn,
-                                  feedback: local_assigns.fetch(:verdicts, {})[turn.id] %>
-<% end %>
+    `.entry` exists so a turn's prose and the machinery panel beside it are one
+    thing the stylesheet can lay out in two columns on a wide viewport -- the
+    captain's ask of 2026-09-05, *"I can't compare the two side by side"*. It is
+    also what the dimming rule now counts: `.log:not(.streaming) > .entry:last-of-type
+    .turn`, which is the same behaviour the old `.log > .turn:last-of-type` had
+    and is no longer sensitive to what tag anything under a turn happens to use.
+    Four tests assert that selector directly. %>
+<div class="entry">
+  <div class="said">
+    <%# A talk turn keeps an Interaction alongside the Scene, so the log can say
+        who the player was speaking to. Narrated and arrival turns have none. %>
+    <% speakers = turn.interactions.map(&:character_name).uniq %>
+    <% if speakers.any? %>
+      <p class="speaking">talking to <%= speakers.to_sentence %></p>
+    <% end %>
+    <div class="turn"><%= turn.description %></div>
+    <%# THE VERDICT ON THIS TURN, and half of the instrument's mark on the game.
+        Gated on `Playthrough::Debug.enabled?` -- the same flag as the debug link
+        and the machinery panel below, local by default -- so someone handed a
+        playthrough link to read a story is never shown it. See
+        FeedbacksController for why they share a gate.
+
+        `verdicts` is one query for the whole log (`Playthrough#feedback_by_scene`),
+        not a lookup per entry: the log is the entire playthrough. %>
+    <% if playthrough && Playthrough::Debug.enabled? %>
+      <%= render "feedbacks/verdict", playthrough: playthrough, scene: turn,
+                                      feedback: local_assigns.fetch(:verdicts, {})[turn.id] %>
+    <% end %>
+  </div>
+
+  <%# THE MACHINERY BEHIND THIS TURN: the state it was played in and the prompt
+      it was written from, beside the prose rather than a page away.
+
+      CALLED "machinery" AND NOT "inspect", deliberately: `/inspect` is a verb in
+      the game since the slash menu gained it, and a control sharing that word
+      would leave a player unable to tell inspecting the ward stamp from
+      inspecting the turn that described it.
+
+      GATED, AND NOT RENDERED AT ALL WHEN THE FLAG IS OFF. The endpoint is gated
+      too (`MachineryController`) -- this app has no auth, and what it answers
+      with is the prompt text.
+
+      LAZY, ONE TURN AT A TIME. The frame carries `loading="lazy"` inside a
+      CLOSED `<details>`: a frame that is not visible does not fetch, so a log of
+      forty turns costs forty bytes of markup and no requests until one is
+      opened. That matters because `#turn_log` is replaced by a Turbo Stream at
+      the end of every turn and the log is the whole playthrough.
+
+      IT CLOSES WHEN A TURN LANDS, and that is the accepted cost of holding no
+      state anywhere: the replace re-renders every entry out of the records, so a
+      panel that was open comes back closed. Nothing is lost but the click, and
+      the alternative is either draft state in JavaScript or narrowing what the
+      broadcast replaces -- and `play_controller`'s scroll and `preventScroll`
+      refocus were found in a browser and are not worth risking for it.
+
+      WITH NO JAVASCRIPT the frame never fetches, and the placeholder inside it
+      is an ordinary link to the same action, which renders the panel under the
+      game's own layout. %>
+  <% if playthrough && Playthrough::Debug.enabled? %>
+    <details class="machinery">
+      <summary>machinery</summary>
+      <turbo-frame id="<%= dom_id(turn, :machinery) %>" loading="lazy"
+                   src="<%= playthrough_machinery_path(playthrough, turn) %>">
+        <p class="sheet-note">
+          <%= link_to "read the records for this turn",
+                      playthrough_machinery_path(playthrough, turn) %>
+        </p>
+      </turbo-frame>
+    </details>
+  <% end %>
+</div>

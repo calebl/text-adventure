@@ -443,8 +443,12 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # Once the log is long enough to scroll, every turn in the same colour runs
   # into the one before it and the player cannot find where their turn's answer
   # starts. Past turns drop to the preface's colour; the newest keeps full
-  # body colour. The stylesheet does that off `.log > .turn:last-of-type`, so
-  # these assert that exact selector rather than a class of their own.
+  # body colour. The stylesheet does that off
+  # `.log:not(.streaming) > .entry:last-of-type .turn`, so these assert that
+  # exact selector rather than a class of their own. `.entry` is the wrapper one
+  # turn's prose, verdict and machinery panel share (`turns/_turn`); the rule
+  # used to hang off `.turn:last-of-type` and so depended on nothing under a
+  # turn ever being a `<div>`.
   test "show marks the newest turn in the log and not the ones before it" do
     playthrough = create(:playthrough, :in_scene)
     first = create(:scene, story: playthrough.story, location: playthrough.current_location,
@@ -456,9 +460,10 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
 
     get playthrough_path(playthrough)
 
-    assert_select ".log:not(.streaming) > .turn", count: 2
-    assert_select ".log:not(.streaming) > .turn:last-of-type", text: "Rain starts falling."
-    assert_select ".log:not(.streaming) > .turn:last-of-type", text: "The door swings open.", count: 0
+    assert_select ".log:not(.streaming) > .entry .turn", count: 2
+    assert_select ".log:not(.streaming) > .entry:last-of-type .turn", text: "Rain starts falling."
+    assert_select ".log:not(.streaming) > .entry:last-of-type .turn",
+                  text: "The door swings open.", count: 0
   end
 
   # A brand new playthrough has exactly one entry -- the opening room -- and it
@@ -471,7 +476,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     post playthroughs_path, params: { story_id: story.id }
     get playthrough_path(story.playthroughs.last)
 
-    assert_select ".log:not(.streaming) > .turn:last-of-type",
+    assert_select ".log:not(.streaming) > .entry:last-of-type .turn",
                   text: "Stalls stand under wet canvas."
   end
 
