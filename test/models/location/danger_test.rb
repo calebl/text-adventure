@@ -31,8 +31,16 @@ class Location::DangerTest < ActiveSupport::TestCase
     assert_equal first, Location::Danger.for_a_new_room(@story)
   end
 
+  # THIRTY-TWO ROOMS AND NOT EIGHT, and the number is the whole point of the
+  # comment. `ROLLED` IS WEIGHTED -- five of its eight entries are `safe` -- so
+  # eight rooms coming out the same way is not evidence that nothing is being
+  # rolled: it is `(5/8) ** 8`, about one run in forty, which is what this case
+  # was failing at. A fixture must never depend on which face came up (the same
+  # rule `Playthrough::FightTest` states one table over), and the honest way to
+  # keep the assertion this test is FOR is to draw until the weighting cannot
+  # produce a run of one by chance: `(5/8) ** 32` is about one in seven million.
   test "one more room in the story is a different roll" do
-    rolls = 8.times.map do |n|
+    rolls = 32.times.map do |n|
       create(:location, :stub, story: @story, name: "Room #{n}")
       Location::Danger.for_a_new_room(@story)
     end
