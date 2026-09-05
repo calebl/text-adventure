@@ -51,14 +51,30 @@ class Eval::Classifier::Result
   COUNTED = %i[closed_set_misses failures].freeze
   SECONDS = %i[latency_median latency_p95].freeze
 
-  attr_reader :corpus_size, :corpus_digest, :arms, :reps, :passes, :warmups, :name, :recorded_at
+  # HOW MANY CALLS OF ONE ARM WERE IN FLIGHT WHEN THIS SET WAS TAKEN, and the
+  # figure a set written before concurrency existed reads as. A serial set is 1
+  # and every checked-in baseline under `db/eval` is one of those -- taken
+  # before `Eval::Concurrency`, and deliberately not regenerated.
+  #
+  # IT IS RECORDED BECAUSE IT MOVES TWO OF THE EIGHT `METRICS` AND NOTHING ELSE.
+  # `latency_median` and `latency_p95` are wall clocks, and past the provider's
+  # own ceiling a wall clock is queueing time: +4% at eight in flight, +20% at
+  # sixteen, +169% at thirty-two. The accuracies, the closed-set misses and the
+  # refusal agreement are unaffected -- measured identical, sequential against
+  # N=8, on the same lines and positions. So a comparison across two different
+  # concurrencies is a real comparison of six figures and a manufactured one of
+  # two, and `Eval::Classifier::Comparison` suppresses exactly those two.
+  SERIAL = 1
+
+  attr_reader :corpus_size, :corpus_digest, :arms, :reps, :passes, :warmups, :name, :recorded_at, :concurrency
 
   def initialize(corpus_size:, arms:, reps:, passes:, warmups: [], corpus_digest: nil,
-                 name: nil, recorded_at: nil, answered_by: nil)
+                 name: nil, recorded_at: nil, answered_by: nil, concurrency: SERIAL)
     @corpus_size = corpus_size
     @corpus_digest = corpus_digest
     @arms = arms
     @reps = reps
+    @concurrency = (concurrency || SERIAL).to_i
     @passes = passes
     # NORMALIZED TO STRING KEYS ON THE WAY IN, so one lookup serves a live run
     # and a set loaded off disk -- the same rule `#rows` follows.
@@ -100,6 +116,7 @@ class Eval::Classifier::Result
     new(name: document["name"], recorded_at: document["recorded_at"],
         corpus_size: document["corpus_size"], corpus_digest: document["corpus_digest"],
         arms: document.fetch("arms"), reps: document["reps"],
+        concurrency: document["concurrency"] || SERIAL,
         warmups: document["warmups"].to_a, answered_by: document["answered_by"],
         passes: document.fetch("passes").map { |row| Stored.new(row) })
   end
@@ -129,7 +146,7 @@ class Eval::Classifier::Result
 
     self.class.new(name: name, recorded_at: recorded_at, corpus_size: corpus_size,
                    corpus_digest: corpus_digest, arms: arms, reps: reps, warmups: warmups,
-                   answered_by: answered_by, passes: kept)
+                   answered_by: answered_by, concurrency: concurrency, passes: kept)
   end
 
   def write!(directory, name: nil)
@@ -172,7 +189,8 @@ class Eval::Classifier::Result
   def to_h
     { name: name, recorded_at: recorded_at || Time.current.utc.iso8601,
       corpus_size: corpus_size, corpus_digest: corpus_digest, arms: arms, reps: reps,
-      answered_by: answered_by, warmups: warmups, passes: passes.map(&:to_h) }
+      concurrency: concurrency, answered_by: answered_by, warmups: warmups,
+      passes: passes.map(&:to_h) }
   end
 
   # A PASS READ BACK OFF DISK. It answers the same questions a live

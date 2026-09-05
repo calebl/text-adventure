@@ -39,6 +39,14 @@
 # corpora are not comparable and the difference between them is a difference
 # between two files -- so a mismatch is printed as a warning above the verdicts
 # rather than left for somebody to work out.
+#
+# AND SO IS THE CONCURRENCY, with a sharper consequence. A set taken with eight
+# calls in flight and one taken serially are fully comparable on six of the
+# eight figures and NOT comparable on the two latencies, because a wall clock
+# measured against a queueing provider is partly the queue. So a mismatch is a
+# banner AND the two latency verdicts are dropped entirely -- see
+# `SUPPRESSED_BY_CONCURRENCY`. The checked-in baselines under `db/eval` were all
+# taken serially, which is exactly the comparison this guard exists for.
 class Eval::Classifier::Comparison
   Row = Data.define(:arm, :metric, :verdict) do
     # WHICH WAY IS BETTER. `Eval::Noise::Verdict#improved?` reads a negative
@@ -89,8 +97,29 @@ class Eval::Classifier::Comparison
     before.corpus_digest.nil? || after.corpus_digest.nil? || before.corpus_digest == after.corpus_digest
   end
 
+  # TWO SETS TAKEN WITH DIFFERENT NUMBERS OF CALLS IN FLIGHT. Not a reason to
+  # refuse the comparison -- six of the eight figures are unaffected, measured --
+  # but the whole reason for the two that are.
+  def comparable_latency? = before.concurrency == after.concurrency
+
+  # THE TWO FIGURES CONCURRENCY CAN MOVE, AND THE ONLY TWO. A latency is a wall
+  # clock, and past the provider's own ceiling a wall clock is queueing time
+  # rather than model speed: +4% at eight calls in flight and +169% at
+  # thirty-two, on the same model on the same day. So a serial BEFORE against a
+  # concurrent AFTER would hand back a REAL verdict on `latency_median` that is
+  # a fact about the harness and nothing about the classifier -- which is the
+  # one thing this class exists to prevent. Suppressed rather than flagged,
+  # because a printed number with a caveat above it gets quoted without the
+  # caveat.
+  SUPPRESSED_BY_CONCURRENCY = %i[latency_median latency_p95].freeze
+
+  def judged_metrics
+    keys = Eval::Classifier::Result::METRICS.keys
+    comparable_latency? ? keys : keys - SUPPRESSED_BY_CONCURRENCY
+  end
+
   def verdicts(arm, against: arm)
-    Eval::Classifier::Result::METRICS.keys.map do |metric|
+    judged_metrics.map do |metric|
       Row.new(arm: arm, metric: metric,
               verdict: Eval::Noise.compare(metric, before.values(metric, arm: against),
                                            after.values(metric, arm: arm)))
@@ -104,7 +133,19 @@ class Eval::Classifier::Comparison
     say Eval::Classifier::Report::RULE
     say "#{before.name} measured #{before.arms.join(", ")}#{" on corpus #{before.corpus_digest}" if before.corpus_digest}"
     say "#{after.name} measured #{after.arms.join(", ")}#{" on corpus #{after.corpus_digest}" if after.corpus_digest}"
-    say "Latencies are WARM-CACHE figures -- each arm's first call is timed apart and excluded."
+    say "Latencies are WARM-CACHE figures -- each arm's first call is timed apart and excluded -- " \
+        "at #{before.concurrency} and #{after.concurrency} calls in flight respectively."
+
+    unless comparable_latency?
+      say
+      say "WARNING: THE TWO SETS WERE TAKEN AT DIFFERENT CONCURRENCIES " \
+          "(#{before.concurrency} vs #{after.concurrency} calls in flight)."
+      say "#{SUPPRESSED_BY_CONCURRENCY.join(" and ")} ARE NOT REPORTED BELOW: a latency taken with more"
+      say "calls in flight is partly the provider's queue, so a verdict on it would be a fact about"
+      say "the harness. Everything else below is unaffected -- the answers themselves were measured"
+      say "identical serial against eight in flight. Re-run one side at the other's concurrency to"
+      say "compare speed. See EVALUATION.md -> Concurrency."
+    end
 
     unless comparable_corpus?
       say

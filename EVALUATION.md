@@ -348,6 +348,100 @@ when another is loaded. So:
 So **every latency on the board is a warm-cache figure**, and the board says so
 in its own header.
 
+### Concurrency, and what it does to the latency figures
+
+**A pass runs `CONCURRENCY=` of its lines at once, eight by default.** 98% of a
+pass is the model round trip — 185 of the 192 seconds of a 300-line pass, with
+the seed loads, the `Chat` and `Message` writes and the closed-set queries
+together under seven — so the pass is network-bound and the speedup is very
+nearly N. Measured on `mistralai/mistral-medium-3.1`:
+
+| in flight | throughput | speedup | median latency | p95 | failures |
+|---|---|---|---|---|---|
+| 1 (serial) | 103.6 calls/min | 1.00× | 0.541s | 0.831s | 0 |
+| 2 | 206.1 | 1.99× | 0.563s | 0.724s | 0 |
+| 4 | 418.1 | **4.04×** | 0.538s | 0.767s | 0 |
+| 8 | 745.4 | **7.20×** | 0.565s (+4%) | 0.870s | 0 |
+| 16 | 1095.0 | 10.57× | 0.651s (+20%) | 1.286s | 0 |
+| 32 | 981.0 | 9.47× | **1.453s (+169%)** | 3.020s | 0 |
+
+**Past about sixteen the provider stops answering faster and starts queueing**:
+throughput falls and the measured latency becomes queueing time rather than
+model speed. OpenRouter returns no `x-ratelimit-*` and no `retry-after` on a
+completion and, at 32 in flight, returned **zero 429s** — it simply answered
+more slowly. So queueing time cannot be separated from service time by this
+client, and the only honest instrument is **the recorded concurrency plus this
+table**. Eight is the last point where the latency columns still say what they
+mean; that is `Eval::Concurrency::ADVISED_MAX`, and above it the run prints a
+warning rather than refusing.
+
+**What concurrency does NOT move: the answers.** Sequential against eight in
+flight, on the same lines and the same positions, 40 of 40 answers were
+identical. So the accuracies, the closed-set misses, the `also_named` figures
+and the refusal agreement are comparable across concurrencies and **only
+`latency_median` and `latency_p95` are not.** That is exactly what the set
+records and what a comparison enforces:
+
+- `Result#concurrency` is written into every set; a set written before it —
+  including **every baseline checked in under `db/eval`, all of them taken
+  serially** — reads as `1`.
+- `rake eval:classifier_board` prints it as its own row, beside the two latency
+  rows it qualifies.
+- `rake eval:classifier_compare` warns loudly on a mismatch **and drops the two
+  latency verdicts entirely**. A serial before against a concurrent after would
+  otherwise hand back REAL and BETTER on `latency_median` for a change that is
+  a fact about the harness. To compare speed, re-run one side at the other's
+  concurrency.
+
+**A local arm is always serial**, whatever `CONCURRENCY=` says. It is one
+CPU-only ollama daemon answering one call at a time, so concurrency there does
+not overlap anything — it queues, and reports the queueing as the model's
+latency, which is the one figure a local arm exists to produce.
+
+**Two arms never run at once in one process**, and the bench refuses rather
+than measures if asked. `Arm#pinned` rewrites `BaseAgent.default_model_options`
+as a singleton method on the class — process-global by design, because
+`BaseAgent` is the one gate every call goes through — and two arms pinned at
+once answer as each other's model. The `rotations` guard cannot catch it,
+because it reads the same corrupted `BaseAgent`. Arms in parallel would mean one
+process and one SQLite file per arm, the way `eval:run` already spawns its
+prose runs; that is not built.
+
+**Mechanically, the safety is one pinned connection.**
+`Eval::Concurrency.rolled_back` uses
+`ActiveRecord::Base.connection_pool.pin_connection!(true)` with
+`unpin_connection!` in an `ensure`. Pinning installs an
+`ActiveSupport::Concurrency::ThreadMonitor`, so every statement and every
+savepoint runs under one mutex — the database work is serialised, which is what
+one SQLite handle and one shared transaction stack need and which costs nothing
+at 3.6% of the pass — while the HTTP round trip runs outside it. It **replaces**
+`ActiveRecord::Base.transaction` and is never nested inside one:
+`within_new_transaction` holds the connection lock for the whole duration of its
+block, so a worker inside one deadlocks on its first statement, reproducibly and
+immediately.
+
+### A 429 is a failure, not a slow success
+
+**`RubyLLM.config.max_retries` is set to 0 for the length of a bench run**, and
+restored afterwards. This is a correctness fix to the existing latency and
+failure columns and is worth having whether or not a pass ever runs concurrently.
+
+`RubyLLM::Connection#setup_retry` installs `faraday-retry` with
+`RubyLLM::RateLimitError` among its retriable exceptions, and this app leaves
+the defaults in place: three retries at roughly 0.1s, 0.2s and 0.4s with jitter.
+That is right for a **player** — a turn that quietly survives a 429 is a turn
+nobody had to retype — and wrong for an **instrument**, because every one of
+those retries happens inside `BaseAgent#ask`, which is inside the
+`CLOCK_MONOTONIC` window the bench measures. A rate-limited call was therefore
+reported as a *slow success*: not in `failures`, not in `failures_by_class`, and
+silently inflating the median it was measuring. It also contradicted `Arm`'s own
+rule — *flakiness is a failure count, not a retry count.*
+
+With the retries off: a 429 is a failed call carrying `RubyLLM::RateLimitError`,
+the latency covers only calls that answered first time, and **the failure column
+becomes the pacing signal** — a run whose failures rise with N is a run whose N
+is too high.
+
 ### A local model, and the reasoning block in front of the answer
 
 **There is no local bench set, on the captain's direction of 2026-09-04: this

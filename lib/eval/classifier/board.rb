@@ -95,7 +95,12 @@ class Eval::Classifier::Board
   private
     def body
       rows = { "set" => ->(column) { "`#{column.set}`" },
-               "reps × lines" => ->(column) { "#{column.result.reps} × #{column.result.corpus_size}" } }
+               "reps × lines" => ->(column) { "#{column.result.reps} × #{column.result.corpus_size}" },
+               # PRINTED BESIDE THE LATENCY COLUMNS BECAUSE IT IS THE ONLY THING
+               # ON THE BOARD THAT MOVES THEM. A serial set reads 1; two columns
+               # with different numbers here have latencies that are not
+               # comparable and accuracies that are.
+               "concurrency" => ->(column) { column.result.concurrency.to_s } }
 
       FIGURES.each { |figure| rows["`#{figure}`"] = ->(column) { band(column, figure) } }
 

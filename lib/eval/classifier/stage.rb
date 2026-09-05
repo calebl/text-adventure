@@ -79,27 +79,30 @@ class Eval::Classifier::Stage
   # ONE rolled-back transaction. All at once because a position is expensive to
   # build (a seed load) and free to hold, and because the alternative -- staging
   # per line -- would reload a world three hundred times.
-  # RETURNS WHAT THE BLOCK RETURNED, and it has to be captured on the way out
-  # rather than taken from the transaction: `ActiveRecord::Base.transaction`
-  # answers nil when `ActiveRecord::Rollback` is raised inside it, so a caller
-  # reading the return value would get nothing at all.
+  # RETURNS WHAT THE BLOCK RETURNED.
   #
-  # THE ROLLBACK IS THE LAST STATEMENT OF THE BLOCK AND NOT AN `ensure`, which
-  # is `EngineSweep::Walk`'s shape and matters for the same reason: an `ensure`
-  # that raises `ActiveRecord::Rollback` REPLACES an exception already in
+  # THE TRANSACTION IS `Eval::Concurrency.rolled_back` AND NOT
+  # `ActiveRecord::Base.transaction`, and the difference is the whole reason a
+  # bench pass can run its calls at the same time.
+  # `TransactionManager#within_new_transaction` holds the connection lock for
+  # the entire duration of its block, so a worker thread inside one blocks on
+  # its first statement and never wakes -- reproducibly, on the first try.
+  # `pin_connection!(true)` begins the same transaction, holds nothing, and
+  # serialises the workers' statements through a `ThreadMonitor` instead. Read
+  # that module's header before changing this line.
+  #
+  # THE ROLLBACK IS AN `ensure` OVER THERE, AND THE OLD WARNING AGAINST THAT NO
+  # LONGER APPLIES. It said -- correctly, of the shape this replaced -- that an
+  # `ensure` raising `ActiveRecord::Rollback` REPLACES an exception already in
   # flight, so a bench that failed inside the block would come back as a silent
-  # nil instead of an error. A real exception still rolls the transaction back
-  # on its own way out.
-  def self.open(positions)
-    answer = nil
-
-    ActiveRecord::Base.transaction(requires_new: true) do
-      stages = positions.to_h { |position| [ position.id, new(position).stand! ] }
-      answer = yield stages
-      raise ActiveRecord::Rollback
+  # nil. `unpin_connection!` raises nothing at all: it calls
+  # `rollback_transaction` on the connection directly. A real exception
+  # therefore still travels out of here, and the transaction is still rolled
+  # back on its way. `Eval::Classifier::StageTest` pins both halves.
+  def self.open(positions, &block)
+    Eval::Concurrency.rolled_back do
+      block.call(positions.to_h { |position| [ position.id, new(position).stand! ] })
     end
-
-    answer
   end
 
   attr_reader :position

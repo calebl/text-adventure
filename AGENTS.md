@@ -1146,6 +1146,19 @@ What belongs here is the part that changes how you work:
   this machine cannot carry them (19 GB of RAM, `size_vram: 0`, swapping with one
   6 GB model resident), so those are SPOT single-call figures and the arm is one
   command away on hardware that can.
+- **A pass runs eight of its lines at once, and that is a fact about the
+  latency columns only.** `CONCURRENCY=` sets it, a local arm is forced serial,
+  and `Result#concurrency` is on every set so a board can print it and
+  `rake eval:classifier_compare` can drop the two latency verdicts across a
+  mismatch. The accuracies were measured identical serial against N=8.
+  **EVALUATION.md → *Concurrency* has the curve, and the number above eight is
+  a lie in the latency and not in the accuracy.**
+- **Anything in `lib/eval` that opens a transaction around concurrent work uses
+  `Eval::Concurrency.rolled_back` and never `ActiveRecord::Base.transaction`.**
+  `within_new_transaction` holds the connection lock for the whole duration of
+  its block, so a worker thread inside one deadlocks on its first statement,
+  reproducibly. Read that module's header before changing the shape back; it
+  says why the rollback belongs in an `ensure` there and did not before.
 - **No prompt change belongs in the same commit as a bench change.** The
   instrument and the thing it measures move separately, and
   `Eval::MEASUREMENT_FILES` now lists the bench.

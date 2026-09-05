@@ -110,6 +110,9 @@ class Eval::Classifier::Report
     say "difference smaller than that band is not a difference -- see EVALUATION.md."
     say "THE LATENCIES ARE WARM-CACHE FIGURES: every arm's first call is timed separately"
     say "and excluded, because on a local model it is mostly the model being loaded."
+    say "AND THEY ARE AT #{result.concurrency} CALL#{"S" unless result.concurrency == 1} IN FLIGHT: past about " \
+        "eight the provider queues and a"
+    say "latency becomes queueing time. The other figures are unaffected -- EVALUATION.md."
     say RULE
   end
 

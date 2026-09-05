@@ -124,6 +124,40 @@ class Eval::Classifier::ComparisonTest < ActiveSupport::TestCase
     assert_match(/only one side and therefore not compared: b/, out.string)
   end
 
+  # --- concurrency, which moves two of the eight figures and no others -------
+
+  # A REAL VERDICT ON A LATENCY MANUFACTURED OUT OF A HARNESS CHANGE is exactly
+  # what this suppression exists to prevent: the numbers below separate cleanly
+  # and would read REAL and BETTER, and the whole of the difference is that one
+  # side had eight calls in flight.
+  test "the two latency verdicts are dropped when the sets were taken at different concurrencies" do
+    figures = { strict_accuracy: [ 0.93, 0.94, 0.92, 0.93 ], latency_median: [ 0.55, 0.54, 0.56, 0.55 ] }
+    before = result({ "m" => figures }, concurrency: 1)
+    after = result({ "m" => figures.merge(latency_median: [ 0.09, 0.08, 0.10, 0.09 ]) }, concurrency: 8)
+    comparison = Eval::Classifier::Comparison.new(before, after)
+
+    assert_not_predicate comparison, :comparable_latency?
+    judged = comparison.verdicts("m").map(&:metric)
+    assert_not_includes judged, :latency_median
+    assert_not_includes judged, :latency_p95
+    assert_includes judged, :strict_accuracy, "the answers themselves are unaffected and stay judged"
+    assert_includes judged, :failures
+
+    out = StringIO.new
+    Eval::Classifier::Comparison.new(before, after, io: out).print
+    assert_match(/DIFFERENT CONCURRENCIES \(1 vs 8 calls in flight\)/, out.string)
+    assert_no_match(/latency_median\s+0\.55s/, out.string)
+  end
+
+  test "two sets at the same concurrency judge every figure" do
+    before = result({ "m" => { latency_median: [ 0.55, 0.54, 0.56, 0.55 ] } }, concurrency: 8)
+    after = result({ "m" => { latency_median: [ 0.51, 0.52, 0.50, 0.51 ] } }, concurrency: 8)
+    comparison = Eval::Classifier::Comparison.new(before, after)
+
+    assert_predicate comparison, :comparable_latency?
+    assert_equal Eval::Classifier::Result::METRICS.keys, comparison.verdicts("m").map(&:metric)
+  end
+
   private
 
   def compare(figures)
@@ -136,7 +170,7 @@ class Eval::Classifier::ComparisonTest < ActiveSupport::TestCase
   # A `Result` built out of nothing but the numbers. `Stored` reads a persisted
   # row, and a persisted row is what a comparison always has -- so a fixture
   # made of rows is the honest fixture here.
-  def result(arms, digest: nil)
+  def result(arms, digest: nil, concurrency: Eval::Classifier::Result::SERIAL)
     passes = arms.flat_map do |arm, figures|
       length = figures.values.map(&:size).max
       (0...length).map do |index|
@@ -149,6 +183,7 @@ class Eval::Classifier::ComparisonTest < ActiveSupport::TestCase
     end
 
     Eval::Classifier::Result.new(name: "fixture", corpus_size: 300, corpus_digest: digest,
-                                 arms: arms.keys, reps: passes.size / arms.size, passes: passes)
+                                 arms: arms.keys, reps: passes.size / arms.size, passes: passes,
+                                 concurrency: concurrency)
   end
 end
