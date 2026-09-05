@@ -58,6 +58,29 @@ class Item::TemplateRefreshTest < ActiveSupport::TestCase
     assert_equal %w[description], refresh.lags.sole.columns
   end
 
+  # A BULK THE FILE DECIDED SINCE THE COPY WAS MADE IS A LAG, and it is here for
+  # the reason the three above it are: what a thing WEIGHS is the world's, and a
+  # copy carrying the column's default is carrying the absence of a decision.
+  # It is also why `items.bulk` needs no `bin/update` step -- the default covers
+  # every existing row and this covers every existing copy.
+  test "a bulk the world decided since the copy was made is a lag" do
+    _template, copy = lagging_pair(bulk: "heavy")
+
+    lag = refresh.lags.sole
+
+    assert_equal %w[bulk], lag.columns
+    assert_equal Item::HANDY, copy.bulk
+    refresh.refresh!
+
+    assert_equal "heavy", copy.reload.bulk
+  end
+
+  # THE TWO LISTS ARE EACH OTHER'S COMPLEMENT: where a thing is is the player's
+  # (`Item::NOT_COPIED`) and what it is is the world's (this).
+  test "nothing is in both this list and the one a copy leaves behind" do
+    assert_empty Item::TemplateRefresh::FROM_THE_TEMPLATE & Item::NOT_COPIED
+  end
+
   # WHERE A THING IS AND WHOSE HANDS IT IS IN ARE THE PLAYER'S. `Item::Snapshot`
   # draws that line with `Item::NOT_COPIED`; this draws the same one from the
   # other side, so a party carrying a thing the world still calls "lying in the

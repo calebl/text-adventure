@@ -1442,4 +1442,104 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_equal 0, @playthrough.blows.count
     assert_not Playthrough::Fight.new(@playthrough).on?
   end
+
+  # --- a thing thrown, with the prose taken out -------------------------------
+  #
+  # `Roll`'s seed is built out of ROW IDS, so nothing here pins a face. What is
+  # pinned is the split this mode makes: THE ACT AND THE ROLL IN THE NOTE on
+  # every outcome, and a `changed:` only when a row really moved.
+  # `Playthrough::TurnThrowTest` hands `#throw_item!` its own rng and pins the
+  # four outcomes exactly.
+
+  test "a throw prints the act and the target the d20 was thrown at, whatever it came up" do
+    @vance.update!(strength: 9)
+    report = play("/throw the daybook at Halkett Rowe")
+
+    assert_equal "throw -> Ward Office 12 daybook at Halkett Rowe", report.understood
+    assert_equal "grammar", report.resolved_by
+    assert_not_predicate report, :refused?
+    assert_match(/threw: Ward Office 12 daybook at Halkett Rowe/, report.note.join("\n"))
+    assert_match(/strength -> d20\(\d+\) <= 7 (PASS|FAIL)/, report.note.join("\n"))
+  end
+
+  # A FAILED LIFT IS NEITHER A CHANGE NOR A REFUSAL, which is `check`'s shape:
+  # the turn was played and no row moved.
+  test "a throw is a change only when a row moved" do
+    @vance.update!(strength: 9)
+    report = play("/throw the daybook at Halkett Rowe")
+
+    if report.changed?
+      assert_match(/it hit Halkett Rowe for \d+/, report.change)
+      assert_not_predicate @daybook.reload, :carried?
+    else
+      assert_match(/the lift failed/, report.note.join("\n"))
+      assert_predicate @daybook.reload, :carried?
+    end
+  end
+
+  # THE ONE OUTCOME THAT NEEDS NO DIE, and the only one that is a refusal:
+  # `Item::BULK` has no penalty for it, so nothing is rolled and nothing moves.
+  test "an immovable thing is refused and the read-out proves nothing moved" do
+    press = lying_here(@playthrough, @office, name: "filing press", bulk: "immovable")
+    report = play("/throw the filing press at Halkett Rowe")
+
+    assert_equal "throw -> filing press at Halkett Rowe", report.understood
+    assert_predicate report, :refused?
+    assert_match(/filing press is immovable and does not move for anybody/, report.refusal)
+    assert_match(/no die was thrown/, report.refusal)
+    assert_not_predicate report, :changed?
+    assert_equal @office, press.reload.location
+    assert_equal 0, @playthrough.blows.count
+  end
+
+  # A REFUSED LINE WRITES NOTHING, so a foe standing there gets no round out of
+  # it -- the same rule the refused `take` above walks.
+  test "an immovable throw buys a foe no round" do
+    tough!(@vance, @rowe)
+    lying_here(@playthrough, @office, name: "filing press", bulk: "immovable")
+    play("/attack Halkett Rowe")
+
+    assert_difference "Playthrough::Blow.count", 0 do
+      assert_predicate play("/throw the filing press at Halkett Rowe"), :refused?
+    end
+  end
+
+  # AND A THROW THE ENGINE PLAYED DOES BUY ONE, whichever way the die went: a
+  # fumble is a spent turn.
+  test "a throw the engine played is answered by every live foe" do
+    tough!(@vance, @rowe)
+    play("/attack Halkett Rowe")
+
+    report = play("/throw the daybook at Halkett Rowe")
+
+    assert_match(/answered: Halkett Rowe hit Odile Vance for/, report.note.join("\n"))
+  end
+
+  test "the thing can come off the floor, and the aim can be a way out" do
+    @vance.update!(strength: 9)
+    report = play("/throw the ward stamp at the supply closet")
+
+    assert_equal "throw -> ward stamp at The Supply Closet", report.understood
+    assert_not_predicate report, :refused?
+    assert_includes [ @office, @closet ], @stamp.reload.location
+  end
+
+  test "a throw with no protagonist has nobody to throw anything" do
+    @playthrough.update!(character: nil)
+
+    assert_match(/nobody to throw anything/, play("/throw the daybook at Halkett Rowe").refusal)
+  end
+
+  test "a throw by a body with no abilities says which backfill rolls them" do
+    @vance.update!(strength: nil, dexterity: nil, will: nil)
+    report = play("/throw the daybook at Halkett Rowe")
+
+    assert_predicate report, :refused?
+    assert_match(/no strength to throw with/, report.refusal)
+    assert_match(/backfill_stat_blocks/, report.refusal)
+  end
+
+  test "the offline help says what a throw is" do
+    assert_match(/throw <thing> at <name\|exit>/, play("help").note.join("\n"))
+  end
 end

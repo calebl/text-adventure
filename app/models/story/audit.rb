@@ -304,12 +304,17 @@ class Story::Audit
   # Oldest first, so a report reads in the order the story was played.
   #
   # WITHOUT THE TURNS THE ENGINE WROTE ITSELF. `Scene#engine_authored?` is true
-  # of a row whose `resolved_action` is one the classifier's closed enum does
-  # not contain -- today that is the one `Scene` that closes a fight
-  # (`Playthrough::Fight`), whose description is the engine's own sentence about
-  # its own dice and not prose anybody wrote. Every check here reads
-  # `description` as NARRATION, so auditing engine copy would count the app's
-  # own words against the app.
+  # of a row whose `resolved_action` is one of `Scene::ENGINE_AUTHORED` -- today
+  # that is the one `Scene` that closes a fight (`Playthrough::Fight`), whose
+  # description is the engine's own sentence about its own dice and not prose
+  # anybody wrote. Every check here reads `description` as NARRATION, so auditing
+  # engine copy would count the app's own words against the app.
+  #
+  # A THROW IS NOT ONE OF THEM and is audited like any other turn: its Scene is
+  # streamed by `Scene::Narrator` off `Playthrough::Turn#thrown_fact`, so it is
+  # real prose about a real fact and exactly the kind of row these checks exist
+  # to read. See `Scene::ENGINE_AUTHORED` for why the list is named rather than
+  # derived from the gap between `ACTIONS` and `INTENTS`.
   #
   # IT IS A SMALLER DENOMINATOR AND NEVER A LOWER RATE: `#judgeable_for` counts
   # off this list, and `#excluded` is what `rake game:score` prints so the

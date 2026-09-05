@@ -173,9 +173,15 @@ locations:
 
     The office is also, on paper, four clerks. The two empty desks have been carried on the establishment for nineteen years, filled and vacated a handful of times, and no query about them has ever come back answered. Vance keeps the ledgers for all four positions out of habit. It is the kind of small, unexamined inaccuracy the Registry runs on -- and the reason a person could be removed from this room without anything in the record needing to change.
   items:
+  - name: filing press
+    description: |-
+      The ward's copying press: a cast-iron screw press on a plinth bolted through the floorboards between the coat rail and the closet door, with a stack of damp linen sheets on the shelf beneath it. It has stood in this corner since the works of 1846 and it weighs what a small horse weighs.
+    bulk: immovable
+    properties: '{"registered": true, "ward": 12}'
   - name: ward stamp
     description: |-
       Her own ward stamp, lying beside the open daybook where she set it down. The ink on the pad is still wet, which is the only thing in this room that agrees with her about what time it is.
+    bulk: light
     properties: '{"registered": true, "ward": 12}'
 - name: The Supply Closet
   detail_level: realized
@@ -202,6 +208,7 @@ locations:
   - name: copy-room apron
     description: |-
       A copy-room apron folded to the size of a book and pushed to the back of the lowest shelf, behind a stack of blank ward forms squared up too neatly to be accidental. It has been folded and refolded by somebody who did it in the dark.
+    bulk: light
     properties: '{"registered": false}'
 - name: The Long Hallway
   detail_level: stub

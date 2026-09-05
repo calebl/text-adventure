@@ -6,7 +6,7 @@ require "test_helper"
 # any restart, for ever -- the property `WorldMechanic::ShuffleConnections`
 # already depends on and the one `rake game:backfill_stat_blocks` promises when
 # it prints a dry run. So these tests are mostly about the SEED: that it is
-# built from four integers, that each of the four moves it, and that nothing in
+# built from five integers, that each of the five moves it, and that nothing in
 # it reaches for anything Ruby salts per process.
 class RollTest < ActiveSupport::TestCase
   test "the same four inputs give the same seed" do
@@ -19,7 +19,7 @@ class RollTest < ActiveSupport::TestCase
   # one number twice -- which is exactly what `sequence` exists to stop for two
   # people born out of one room realization.
   test "every input moves the seed on its own" do
-    base = { story: 3, playthrough: 7, at: 100, sequence: 2 }
+    base = { story: 3, playthrough: 7, at: 100, sequence: 2, kind: 0 }
 
     seeds = base.keys.map { |key| Roll.seed(**base.merge(key => base[key] + 1)) }
 
@@ -37,8 +37,42 @@ class RollTest < ActiveSupport::TestCase
     assert_equal expected, Roll.seed(story: 3, playthrough: 7, at: 100, sequence: 2)
   end
 
-  test "a playthrough, a moment and a sequence all default to zero" do
+  test "a playthrough, a moment, a sequence and a kind all default to zero" do
     assert_equal 5 * Roll::STORY, Roll.seed(story: 5)
+  end
+
+  # `kind` DEFAULTING TO ZERO IS A COMPATIBILITY PROMISE, not a convenience:
+  # every die this app threw before the axis existed was seeded without one, and
+  # a default that moved would re-roll every stat block
+  # `rake game:backfill_stat_blocks` and `Story::Repair` can re-derive. This is
+  # that promise as an equality between the four-argument call and the five.
+  test "a kindless seed is exactly what it was before the kind axis existed" do
+    parts = { story: 3, playthrough: 7, at: 100, sequence: 2 }
+    by_hand = 3 * Roll::STORY + 7 * Roll::PLAYTHROUGH + 100 * Roll::AT + 2 * Roll::SEQUENCE
+
+    assert_equal by_hand, Roll.seed(**parts)
+    assert_equal Roll.seed(**parts), Roll.seed(**parts, kind: 0)
+  end
+
+  # AND THE PROPERTY THE AXIS EXISTS FOR: a kind cannot be reached by counting
+  # on any other axis, in either direction, however far anything counts. That is
+  # what `sequence` could not promise once three sources were carving it up
+  # between them -- see `Roll`'s header for the collision that made this
+  # necessary.
+  test "a kind cannot be cancelled out by any amount of counting elsewhere" do
+    thrown = Roll.seed(story: 3, playthrough: 7, at: 100, sequence: 2, kind: Roll::THROW)
+
+    counted = (-500..500).map do |n|
+      [ Roll.seed(story: 3, playthrough: 7, at: 100, sequence: n),
+        Roll.seed(story: 3, playthrough: 7, at: 100 + n, sequence: 2) ]
+    end.flatten
+
+    assert_not_includes counted, thrown
+  end
+
+  test "the throw kind is a real, positive kind and not a placeholder" do
+    assert_operator Roll::THROW, :>, 0
+    assert_not_equal Roll.seed(story: 1, kind: Roll::THROW), Roll.seed(story: 1)
   end
 
   test "two generators from one seed roll the same sequence of dice" do

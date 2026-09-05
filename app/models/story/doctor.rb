@@ -943,6 +943,7 @@ class Story::Doctor
     findings.concat(duplicate_items(templates))
     findings.concat(rooms_over_the_item_cap)
     findings.concat(items_colliding_with_a_name(templates))
+    findings.concat(items_with_an_unknown_bulk(items))
 
     if names > Item::Registry::MAX_PER_STORY
       findings << finding(:story_over_item_cap, :warning,
@@ -951,6 +952,34 @@ class Story::Doctor
     end
 
     findings
+  end
+
+  # A THING THE ENGINE HAS NO BULK TABLE FOR. `Item::BULK` is the closed set of
+  # what a thing may weigh -- the labels are what somebody writing a world reads
+  # and the numbers are what the engine subtracts from a thrower's strength -- so
+  # a fifth word is a typo, and `Item` refuses to save one. It can only arrive
+  # through raw SQL or a schema older than the column.
+  #
+  # WHAT IT COSTS UNTIL IT IS FIXED: `Item#bulk_penalty` answers nil for an
+  # unknown key, which reads as immovable -- so the thing cannot be thrown, and
+  # the refusal a player gets names a bulk that is not one of the four.
+  #
+  # `safe`, and it is the one repair here that writes a value nothing else on
+  # record implies. It is safe for `HANDY`'s own reason: handy IS the column's
+  # default and what every row already written is, so clamping to it puts the row
+  # back where the schema would have put it rather than guessing at an intention
+  # nobody expressed. BOTH LAYERS, because an instance carries the column too and
+  # a copy of a corrupt row is corrupt in the same way.
+  def items_with_an_unknown_bulk(items)
+    items.filter_map do |item|
+      next if Item::BULK.key?(item.bulk)
+
+      finding(:item_with_an_unknown_bulk, :warning,
+              "#{item.name.inspect} -- #{item.whereabouts} -- has bulk #{item.bulk.inspect}, which is not one of " \
+              "#{Item::BULK.keys.join(", ")}, so nothing can be thrown with it and the engine reads it as " \
+              "immovable",
+              :safe, subject: item)
+    end
   end
 
   # ONE OF THE WORLD'S OWN ROWS IN NEITHER OF ITS TWO PLACES.

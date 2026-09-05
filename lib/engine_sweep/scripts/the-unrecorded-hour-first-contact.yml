@@ -29,7 +29,7 @@ steps:
   why: a playthrough takes its opening room's snapshot when it is created, not on its first turn
   expect:
     location: Ward Office 12 (realized)
-    here: [ward stamp]
+    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     changed: false
     refused: false
@@ -40,7 +40,7 @@ steps:
   expect:
     changed: true
     understood: take -> ward stamp
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: the-office-stays-empty-on-the-next-turn
@@ -49,7 +49,7 @@ steps:
   expect:
     changed: false
     refused: false
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: the-closet-is-copied-when-the-party-walks-in
@@ -76,7 +76,7 @@ steps:
   expect:
     changed: true
     location: Ward Office 12 (realized)
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook]
 
 - id: and-the-closet-still-holds-what-was-left-there

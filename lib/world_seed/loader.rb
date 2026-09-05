@@ -32,7 +32,10 @@
 #                                        daybook; keying on the story finds the
 #                                        one that exists and puts it back. On
 #                                        WorldSeed.natural_key after that, for
-#                                        the same reason a location is.
+#                                        the same reason a location is. `bulk`
+#                                        is written on every load, in both
+#                                        directions, and an absent key is
+#                                        Item::HANDY
 #   Scene      (story, is_opening)       the story's one opening arrival, which
 #                                        is the only Scene that is world rather
 #                                        than progress -- see WorldSeed::Exporter
@@ -526,7 +529,16 @@ class WorldSeed::Loader
       item = find_item(story, name) || Item.new(name: name)
       note_rename("item", item, name)
       note_creation("item", name) unless item.persisted?
-      item.assign_attributes(attributes.merge("name" => name, playthrough: nil, template: nil, **place))
+      # HOW HARD THE FILE SAYS THIS THING IS TO SHIFT, written in both
+      # directions on every load -- `locations.danger`'s shape one table over
+      # and for its argument: a stale `immovable` left on a row the file no
+      # longer marks would keep the thing unthrowable for ever with no way to
+      # undo it from the file. An absent key is `Item::HANDY`, which is the
+      # column's default and what almost everything is.
+      item.assign_attributes(
+        attributes.merge("name" => name, "bulk" => attributes["bulk"].presence || Item::HANDY,
+                         playthrough: nil, template: nil, **place)
+      )
       item.save!
     end
   end
@@ -664,6 +676,7 @@ class WorldSeed::Loader
     end
 
     validate_inscriptions!
+    validate_bulks!
     validate_dangers!
     validate_hazards!
 
@@ -859,6 +872,25 @@ class WorldSeed::Loader
         raise InvalidWorld,
               "#{where}: item #{item.fetch("name").inspect} has an `inscription` and is not `readable: true` -- " \
               "an inscription is the words on a thing that has writing on it, so the two go together"
+      end
+    end
+  end
+
+  # A BULK THE ENGINE HAS NO TABLE FOR. `Item::BULK` is the closed set of what a
+  # thing may weigh -- the labels are what an author reads and the numbers are
+  # what the engine subtracts from a thrower's strength -- so a fifth word is a
+  # typo. `Item` validates the same key inside the transaction, so a file with
+  # the fault never loads either way; the record's error names a column and this
+  # one names the FILE and the ITEM, which is what somebody editing YAML needs.
+  # Same reason the inscriptions, the stats and the dangers are checked here.
+  def validate_bulks!
+    (character_documents + location_documents).each do |owner|
+      Array(owner["items"]).each do |item|
+        bulk = item["bulk"]
+        next if bulk.blank? || Item::BULK.key?(bulk)
+
+        raise InvalidWorld, "#{where}: item #{item.fetch("name").inspect} has `bulk: #{bulk.inspect}`; " \
+                            "there is: #{Item::BULK.keys.join(", ")}"
       end
     end
   end

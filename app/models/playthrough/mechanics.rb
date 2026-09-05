@@ -53,9 +53,9 @@
 #
 # WHAT IT WRITES is `playthroughs.current_location_id` and `items.playthrough_id`
 # / `items.location_id`, through `Playthrough::Turn#move_to`, `#stand_in!`,
-# `#carry!` and `#put_down!` -- the same statements the narrated loop moves the
-# world with. A mechanics mode with its own copy of the line that moves the
-# player would be testing itself.
+# `#carry!`, `#put_down!` and `#throw_item!` -- the same statements the narrated
+# loop moves the world with. A mechanics mode with its own copy of the line that
+# moves the player would be testing itself.
 #
 # WHAT IT IS NOT is `rake game:play`, which is still ruled out. It renders no
 # prose and duplicates no part of the loop; the moment it grew a narrator it
@@ -81,10 +81,10 @@ class Playthrough::Mechanics
     "against the exits, the cast, what is lying here and what you are carrying,",
     "and the line above each read-out says what it resolved to.",
     "",
-    "move, take and drop change the world and are shown as a diff. examine of a",
-    "thing with writing on it prints what is written, out of the records. talk,",
-    "and a look at anything else, are prose -- this mode says so and changes",
-    "nothing.",
+    "move, take, drop and throw change the world and are shown as a diff.",
+    "examine of a thing with writing on it prints what is written, out of the",
+    "records. talk, and a look at anything else, are prose -- this mode says so",
+    "and changes nothing.",
     "",
     "Walking into a room nobody has written generates it, exactly as the browser",
     "does. `quit` to stop."
@@ -578,13 +578,62 @@ class Playthrough::Mechanics
     change("struck: #{blow}", understood)
   end
 
-  # THE THREE THINGS A LINE CAN DO TO ONE THING, dispatched on the action the way
+  # THE FOUR THINGS A LINE CAN DO TO ONE THING, dispatched on the action the way
   # `Playthrough::Turn#play` dispatches them, and reading is first because it is
   # the one that moves nothing.
   def item_branch(intent, understood)
     return recite(intent.item, understood) if intent.examine?
+    return throw_it(intent, understood) if intent.throw?
 
     intent.drop? ? drop(intent.item, understood) : take(intent.item, understood)
+  end
+
+  # THROWING SOMETHING, THROUGH THE ENGINE'S OWN WRITER. It calls
+  # `Playthrough::Turn#throw_item!` and holds no copy of it, which is the rule
+  # `#take`, `#drop`, `#strike`, `#wound` and `#attempt` are already under: a
+  # mechanics mode with its own version of the statement that moves the world
+  # would be testing itself. So a throw that kills somebody kills them here
+  # exactly as it does in the browser -- the last hit point, the body letting go
+  # of what it held, and the game ending if the body was the player's.
+  #
+  # `throw_it` AND NOT `throw`, because `throw` is `Kernel#throw` and a private
+  # method here that shadowed it would be a trap for the next reader.
+  #
+  # THE FOES' ANSWER IS NOT HERE, exactly as it is not in `#strike`: every live
+  # foe in the room answers in the same turn, and that happens in `#run` for
+  # every line this mode PLAYED. A throw is a played line whichever way the die
+  # went -- including a failed lift, which is a spent turn and not a refusal.
+  def throw_it(intent, understood)
+    who = playthrough.character
+    return refuse("this playthrough has no protagonist, so there is nobody to throw anything", understood: understood) if who.nil?
+
+    outcome = turn.throw_item!(intent.item, at: intent.at, round: round)
+    if outcome.nil?
+      return refuse("#{who.fullname} has no abilities, so there is no strength to throw with. " \
+                    "`rake game:backfill_stat_blocks` rolls them, offline",
+                    understood: understood)
+    end
+
+    # THE ACT GOES IN THE NOTE AND THE OUTCOME IN THE DIFF, and the split is not
+    # cosmetic. `changed:` in this mode means A ROW MOVED, and on a failed lift
+    # none did -- a fumble is a turn the engine PLAYED (the whole distinction
+    # `Playthrough::Refusal`'s header draws) and it is not a change and not a
+    # refusal, exactly as `check` is neither. So the line naming what was thrown
+    # at what, and the target the d20 was thrown at, is printed on EVERY outcome,
+    # and only a throw that moved something also carries a `changed:`.
+    #
+    # That is also the one thing `rake game:sweep` can honestly assert about a
+    # throw: `Roll`'s seed is built out of row ids, so the FACE is not
+    # re-derivable across two databases and the act is.
+    #
+    # A THROW THAT MOVED NOTHING STILL SAYS WHAT HAPPENED -- the outcome joins
+    # the note where there is no diff to carry it, so a failed lift is never
+    # reported as a line with no answer.
+    Report.new(command: nil, understood: understood,
+               change: (outcome.outcome_in_words if outcome.landed?),
+               refusal: nil,
+               note: [ outcome.attempt_in_words, (outcome.outcome_in_words unless outcome.landed?) ].compact,
+               state: state)
   end
 
   # THE LINE THIS MODE WILL NOT PLAY EITHER, and it is the same rule read out of

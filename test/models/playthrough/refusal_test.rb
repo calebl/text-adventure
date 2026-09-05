@@ -16,6 +16,7 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
     @lasco = create(:character, story: @story, fullname: "Perrin Lasco")
     @index = create(:item, :lying, location: @here, name: "Perrin's private index")
     @apron = create(:item, :lying, location: @here, name: "copy-room apron")
+    @press = create(:item, :lying, :immovable, location: @here, name: "filing press")
   end
 
   def intent(action, **resolved)
@@ -36,6 +37,28 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
   # not undeterminable -- the classifier placed it, it reaches for no record,
   # and refusing it would refuse everything that is not move / talk / take /
   # drop.
+  # --- a thing that does not move -------------------------------------------
+  #
+  # THE ONE SHAPE THAT IS A FACT ABOUT A RECORD rather than about the reading.
+  # Both names resolved and one act was asked for, so it is neither drift nor
+  # overreach; what refuses it is `Item::BULK`.
+  test "a throw of something immovable is refused, and names the thing and its bulk" do
+    refusal = Playthrough::Refusal.for(intent(:throw, item: @press, at: @rowe), typed: "throw the press at Rowe")
+
+    assert_equal :immovable, refusal.kind
+    assert_match(/filing press/, refusal.text)
+    assert_match(/immovable/, refusal.text)
+    assert_match(/no die was thrown/, refusal.text)
+    assert_match(/Nothing has changed/, refusal.text)
+  end
+
+  test "a throw of something that does move earns no refusal at all" do
+    handy = create(:item, name: "Ward Office 12 daybook", location: @here, character: nil)
+
+    assert_nil Playthrough::Refusal.for(intent(:throw, item: handy, at: @rowe), typed: "throw the daybook at Rowe")
+    assert_nil Playthrough::Refusal.for(intent(:throw, item: @index, at: @there), typed: "throw the index at the closet")
+  end
+
   test "a coherent line that reaches for no record is not refused" do
     assert_nil Playthrough::Refusal.for(intent(:other), typed: "look at the sky")
     assert_nil Playthrough::Refusal.for(intent(:examine), typed: "wait")
@@ -172,6 +195,7 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
       refuse(intent(:take, item: @index, also_named: @apron)),
       refuse(intent(:take)),
       refuse(intent(:other, unknown_action: "steal")),
+      refuse(intent(:throw, item: @press, at: @rowe)),
       Playthrough::Refusal.dead(typed: "look")
     ].map(&:kind)
 

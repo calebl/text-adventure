@@ -481,6 +481,22 @@ class Story::RepairTest < ActiveSupport::TestCase
                  Character::ABILITIES.index_with { |ability| somebody[ability] }
   end
 
+  # A BULK THE ENGINE HAS NO TABLE FOR, CLAMPED TO THE COLUMN'S OWN DEFAULT.
+  # `Item::HANDY` is what the schema would have written and what every row
+  # already written is, so this puts a value back rather than inventing one.
+  test "puts an unknown bulk back to the column's default" do
+    story = create(:story)
+    room = create(:location, story: story)
+    item = create(:item, :lying, location: room, name: "the ward stamp")
+    item.update_column(:bulk, "featherweight")
+    repair = Story::Repair.new(story)
+
+    assert_includes repair.plan.map(&:code), :item_with_an_unknown_bulk
+    assert repair.apply!.all?(&:repaired?)
+    assert_equal Item::HANDY, item.reload.bulk
+    assert_predicate item, :throwable?
+  end
+
   test "brings a condition back down to what its stat block allows" do
     story = create(:story)
     room = create(:location, story: story)

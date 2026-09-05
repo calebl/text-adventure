@@ -246,12 +246,15 @@ The current database includes the following story-related models with proper ass
 - **Playthrough::Refusal** → **THE ONE AUTHOR OF WHAT THE ENGINE SAYS WHEN IT
   WILL NOT PLAY A LINE**, read by `Playthrough::Turn` and
   `Playthrough::Mechanics` alike so the two modes cannot disagree about a line.
-  Three kinds, told apart because they are different facts:
+  Four kinds of LINE, told apart because they are different facts:
   `named_more_than_one` (two things the records both have — counted by
   `Playthrough::Overreach`), `unresolved` (a reach the closed sets cannot answer
-  — counted by `Playthrough::Drift`) and `unreadable` (an intent outside
+  — counted by `Playthrough::Drift`), `unreadable` (an intent outside
   `Playthrough::IntentSchema::INTENTS` that still named a record — counted by
-  nothing, because it is a defect on our side, and logged). `#reason` for the
+  nothing, because it is a defect on our side, and logged) and `immovable` (a
+  `throw` of something `Item::BULK` gives no penalty: the one shape that is a
+  fact about a RECORD rather than about the reading, and counted by nothing
+  because the reach resolved twice and one act was asked for). `#reason` for the
   consumer that prints the records underneath, `#text` for the one that does
   not. **A refusal is not a `Scene`** and must not become one: `#description` is
   read as narration by `Story::Audit`, `Eval::Richness` and both frozen corpora,
@@ -272,7 +275,9 @@ The current database includes the following story-related models with proper ass
   ruling's refusals come from `Playthrough::Refusal` and not from a second copy
   here — the mode's old `also named:` note is gone with the half-played turn it
   reported. `stats` prints the world's five numbers beside the game's condition
-  (the layer split on the screen) and `check <ability> [penalty]` throws one d20
+  (the layer split on the screen), `throw <thing> at <somebody|way out>` is the
+  one line that resolves two records and the only source of damage the PLAYER
+  chooses, and `check <ability> [penalty]` throws one d20
   through `Playthrough::Turn#check` and **writes nothing at all** — the one verb
   in `ENGINE_VIEW` a player might plausibly mean in the fiction, so with a model
   available `check` is the engine's own only when the next word is one of the
@@ -358,6 +363,23 @@ The current database includes the following story-related models with proper ass
   an item or a place already has, and **a sheet the provider cut off**: a
   truncated field is a failed call everywhere else, and here it must not be,
   because the call it would fail is the room's description, already saved
+- **Item** → `bulk`, **HOW HARD A THING IS TO SHIFT**, a closed key into
+  `Item::BULK` whose value is the PENALTY a thrower's strength pays (light 0,
+  handy 2, heavy 5) and `nil` for `immovable`, which is not a hard throw but the
+  absence of one. `Item::THROWN_DAMAGE` is a SECOND TABLE ON THE SAME KEY and
+  never a second column: light d4, handy d6, heavy d8. It is `locations.danger`'s
+  shape for `LocationConnection::DISTANCES`' reason — the labels are what an
+  author reads and the numbers are what the engine uses. `default: "handy",
+  null: false`, which is `items.readable`'s shape and why **no `bin/update` step
+  exists**: every row already written is handy. A copy inherits it for free
+  (`Item::NOT_COPIED` is an exception list) and a FILE that decides otherwise
+  reaches a game in progress through `Item::TemplateRefresh::FROM_THE_TEMPLATE`,
+  which is `NOT_COPIED`'s complement. Written by a seed file and by
+  `rake game:doctor`'s repair, and **by no model, ever** — no schema field asks
+  for one, so a generated thing is handy. `rake game:doctor` reports
+  `item_with_an_unknown_bulk` (safe, clamped back to `Item::HANDY`), and
+  `Item#bulk_penalty` reads an unknown key as immovable, which is the honest
+  nothing `Location#danger_share` gives an unknown danger
 - **Item** → `readable` and `inscription`, **what is written on a thing that has
   writing on it**. A note, a letter, a sign, a label: the words are a record the
   engine owns, so what a note says cannot drift between two readings. It is
@@ -833,13 +855,14 @@ The current database includes the following story-related models with proper ass
 - **What is NOT built, and it is deferred rather than missing**: death saves, an
   unconscious state, scars, revival, restore-from-save, and any level
   advancement rule. There is also no attack ROLL, no AC, no initiative, no rest,
-  no skill, no spell, no number on an `Item`, and no `Story::Audit` prose check
+  no skill, no spell, no weapon die on an `Item`, and no `Story::Audit` prose check
   reading HP against narration. There ARE three ability scores since the evening
   of 2026-09-04 (see `Character`), and nothing connects a wound to a check: a
   hurt body rolls against the same number. **A FIGHT DOES RESOLVE** since
   2026-09-05 (`Playthrough::Riposte`, `Playthrough::Fight`, `attack <name>`), and
-  a blow can take the last hit point — which is what makes this section reachable
-  from play rather than only from `harm 5`.
+  a blow can take the last hit point — as can A THROWN THING since the same day
+  (`throw <thing> at <name>`, `Playthrough::Turn#throw_item!`), which is what
+  makes this section reachable from play rather than only from `harm 5`.
 - `lib/engine_sweep/scripts/death-ends-a-playthrough.yml` walks it: harm to
   zero, then every kind of line refused with nothing written.
   `the-unrecorded-hour-two-bodies.yml` walks the other half — one game ending is
@@ -913,9 +936,11 @@ The current database includes the following story-related models with proper ass
   free-text box stays under the panel: this is a shortcut into the one loop and
   not a mode. **Condition lines and never bars** (`9 of 18`), because the reading
   experience is `ta-api-iface`'s stage — scout §15.6. `#throws` is the slice 5
-  seam and answers `[]` until `throw` reaches `Playthrough::Grammar::RESOLVING`;
-  its comment says what fills it. No prose per round: that is shape (b) and it
-  needs `ta-prompt-bench`
+  seam and still answers `[]` — but the verb HAS landed, and it is deliberately
+  NOT in `Playthrough::Grammar::RESOLVING` (a throw names two records, and that
+  list maps one word to ONE closed set), so what the seam waits for is a PANEL
+  change and not a grammar one; its comment says what fills it. No prose per
+  round: that is shape (b) and it needs `ta-prompt-bench`
 
 ### When the place itself hurts you
 - **A room can cost you hit points and so can a doorway**, and both go through
@@ -947,6 +972,59 @@ The current database includes the following story-related models with proper ass
 - **What is NOT built, and deferred rather than missing**: `items.hazard` on a
   take (§8.4's third row), a provoking `talk` (captain call C7), and generated
   hazards — nothing rolls one the way `Location::Danger` rolls a `danger`.
+
+### When something is thrown
+- **ONE ROLL, NOT TWO.** The captain's request of 2026-09-05 — *"I want players
+  to be able to pick up items and throw them based on a strength check"* — and
+  `data/ta-combat-scout` §13 is the design. A d20 under `strength` less what the
+  thing weighs, through the ONE check kernel (`Character#check`), and NO second
+  roll to see whether it hit: the lift IS the throw, so if it leaves your hands
+  it goes where you aimed it. `Playthrough::Turn#throw_item!` is the whole of it
+  and it needs no new writer — `#put_down!` (which gained `into:`) and `#harm!`
+  in one transaction.
+- **FOUR OUTCOMES AND ONLY ONE IS A REFUSAL.** A **fumble** is a turn the engine
+  PLAYED: it costs story time, writes a `Scene` and is narrated as a fact
+  (`#thrown_fact`), and nothing moved. **Immovable** is
+  `Playthrough::Refusal`'s FIFTH shape (`:immovable`) — no die, no row, no clock
+  — and it is the one refusal shape that is a fact about a RECORD rather than
+  about the reading. A **hit** lands the thing at their feet and is a BLOW like
+  any other, through `#strike!`'s new `damage:`, so the riposte answers a thrown
+  chair and `Playthrough::Fight` ends on one. A throw **through a doorway**
+  leaves the thing lying in the next room, realized or not
+- **`throw <thing> at <somebody|way out>` names TWO records**, the only line in
+  the game that does. `Playthrough::Grammar#read_throw` splits on a standalone
+  `at`; the THING resolves out of what is carried PLUS what is lying here (the
+  lift is part of the throw, so no `take` first), the AIM out of who is standing
+  here and then the ways out. `Playthrough::Classifier::Intent#at` is the
+  indirect object and `#subject` stays the thing THROWN. It is in
+  `Grammar::VERBS` and `ENGINE_VIEW` (guarded by `#in_the_fiction?`, so *"throw
+  the switch"* still reaches the classifier) and deliberately NOT in `RESOLVING`
+  — that list maps one word to ONE closed set for `Playthrough::SlashMenu`.
+  `Playthrough::IntentSchema::INTENTS`, `Drift::ACTIONS` and
+  `Overreach::ACTIONS` are untouched: the classifier intent is slice 8, the
+  captain's call C6
+- **Scene** → `ENGINE_AUTHORED` is a NAMED LIST and no longer the gap between
+  `ACTIONS` and `INTENTS`. A throw is in that gap and is NOT engine copy — its
+  `Scene` is the narrator's, off `#thrown_fact` — so the derived definition
+  would have taken real prose out of `Story::Audit`'s reach and shrunk
+  `Eval::Richness`'s denominator. `attack` and `hazard` keep the answer they had
+- **C8, SAID OUT LOUD:** light d4 / handy d6 / heavy d8, so a thrown heavy thing
+  kills an unhurt level-1 d6 body **37.3%** of the time, in either direction. It
+  is the most lethal act in the game
+- **THE ITEM IS WHICH ROLL OF THE MOMENT IT IS**, and it rolls on `Roll::THROW`
+  — an axis of its own, added by this slice. Three sources already carved
+  `sequence` up by convention and between them took the whole integer line: a
+  check is 1..3, a blow counts UP from `SEQUENCE_OFFSET`, a toll counts DOWN
+  from -1. A throw's identity is WHICH THING left your hands rather than a count
+  of anything, so it had nowhere left to stand — it took the negative space, and
+  a game that had paid two tolls throwing item #3 seeded the lift and the
+  hazard's save identically. `Roll.seed`'s fifth integer fixes it and **defaults
+  to 0, so no die thrown before it existed moves**; read `Roll`'s header for why
+  carving an existing axis finer would only hit the same wall.
+  `lib/engine_sweep/scripts/a-thing-can-be-thrown.yml` walks the act and says in
+  its header why no script can pin a throw's outcome;
+  `Playthrough::TurnThrowTest` pins all four with its own `rng:`, and the
+  collision above is a named regression there
 
 ### Sweeping the engine with stored scripts
 - `rake game:sweep` (`EngineSweep`) walks YAML scripts of typed lines through

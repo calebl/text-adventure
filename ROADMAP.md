@@ -84,8 +84,9 @@ The full audit of every planned piece of work against this constraint is in
 
   **Not built, and deferred rather than missing**: prose per round (shape (b),
   blocked on `ta-prompt-bench`), the seventh classifier intent (slice 8), throw
-  buttons (`Playthrough::Battle#throws` is a marked seam answering `[]` until
-  slice 5 puts `throw` in the grammar), hit-point bars, and the d3 scout's room
+  buttons (`Playthrough::Battle#throws` is a marked seam answering `[]`; slice 5
+  has since landed the verb, so what is left there is the button and not the
+  grammar), hit-point bars, and the d3 scout's room
   sheet — `.sheet` is factored so that sheet can reuse the frame when it is
   ruled on.
 
@@ -158,6 +159,55 @@ The full audit of every planned piece of work against this constraint is in
   state), and **generated hazards** — nothing rolls a `hazard` the way
   `Location::Danger` rolls a `danger`, and whether a generated world should get
   one is a later question.
+
+- **A thing can be thrown** (`ta-combat-throw`, slice 5 of the combat build
+  order). The captain's request, answered: *"I want players to be able to pick up
+  items and throw them based on a strength check."*
+
+  **ONE ROLL, NOT TWO.** A d20 under the thrower's `strength` less what the thing
+  weighs, through the one check kernel (`Character#check`) — and no second roll to
+  see whether it hit. The lift IS the throw: if it leaves your hands it goes where
+  you aimed it, which is *a blow always connects* said one act over.
+  `Playthrough::Turn#throw_item!` is the whole of it and needs no new writer —
+  `#put_down!` (which gained one keyword, `into:`) and `#harm!` in one
+  transaction, and a hit is a `Playthrough::Blow` through `#strike!`'s new
+  `damage:`, so the riposte answers a thrown chair and the fight-end rule sees it.
+
+  **`items.bulk` is a closed key and never a number on the row.** `Item::BULK`
+  maps it to the penalty — light 0, handy 2, heavy 5 — and `immovable` to nil,
+  which is not a hard throw but the absence of one; `Item::THROWN_DAMAGE` is a
+  second table on the same key: light d4, handy d6, heavy d8. `default: "handy",
+  null: false`, so **no `bin/update` step exists and none is needed**: every row
+  already written is handy, and a file that decides otherwise reaches a game in
+  progress through `Item::TemplateRefresh`, whose list is now `bulk`'s home too.
+
+  **C8, said out loud:** a thrown heavy thing kills an unhurt level-1 d6 body
+  **37.3%** of the time, in either direction. It is the most lethal act in the
+  game, survivable only because C1 put the seeded protagonists at 18 hit points.
+
+  **Four outcomes and only one is a refusal.** A **fumble** is a turn the engine
+  played — it costs story time, writes a `Scene` and is narrated as a fact, and
+  nothing moved. **Immovable** is `Playthrough::Refusal`'s fifth shape: no die, no
+  row, no clock. A **hit** lands the thing at their feet; a throw **through a
+  doorway** leaves it lying in the next room.
+
+  **`throw <thing> at <somebody|way out>` names TWO records**, the only line in
+  the game that does — the thing out of what is carried PLUS what is lying here,
+  the aim out of who is standing here and then the ways out. It is an engine-view
+  verb in the fixed grammar (call C6), so it makes no model call in either mode
+  and a slashed `/throw ...` resolves offline in the browser;
+  `Playthrough::IntentSchema::INTENTS`, `Drift::ACTIONS` and `Overreach::ACTIONS`
+  are untouched, because the classifier intent is slice 8.
+
+  **The instruments**: `a-thing-can-be-thrown.yml` walks all four outcomes and
+  says in its header why no script can pin one — `Roll`'s seed is built out of row
+  ids and no bulk makes a pass certain (the best case is strength 18 against a
+  light thing, `d20 <= 18`) — so it pins the refusals, the act, the target the d20
+  was thrown at, and one throw whose records are the same either way.
+  `Playthrough::TurnThrowTest` hands `#throw_item!` its own `rng:` and pins all
+  four exactly. `Scene::ENGINE_AUTHORED` is a named list now rather than the gap
+  between `ACTIONS` and `INTENTS`, because a throw's Scene is the narrator's prose
+  and the derived definition would have hidden it from `Story::Audit`.
 
 - **A fight resolves and can kill** (`ta-combat-fight`, slice 4 of the combat
   build order). The captain's word, 2026-09-05: *"continue through all of the
@@ -498,9 +548,10 @@ The full audit of every planned piece of work against this constraint is in
   **Not built in THAT slice, and deferred rather than missing**: combat,
   monsters, hostility, throwing, terrain damage, a battle view, any prose check
   reading an ability, any classifier or prompt change, and any ability beyond
-  the three. Monsters landed in `ta-combat-monsters` and the fight in
-  `ta-combat-fight`; nothing connects a wound to a check even now — a hurt body
-  rolls against the same number.
+  the three. Monsters landed in `ta-combat-monsters`, the fight in
+  `ta-combat-fight` and throwing in `ta-combat-throw` (the check kernel's first
+  real caller); nothing connects a wound to a check even now — a hurt body rolls
+  against the same number.
 
 - **Hit points, death, and inert levels** (`ta-character-stats`). The captain's
   rulings of 2026-09-04, verbatim:

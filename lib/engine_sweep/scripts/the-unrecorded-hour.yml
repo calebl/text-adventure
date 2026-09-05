@@ -30,7 +30,7 @@ steps:
   expect:
     location: Ward Office 12 (realized)
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
-    here: [ward stamp]
+    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     # Rowe is in this room because `characters[].location` says so, not because
     # a scene once recorded him -- an offline walk writes no scenes at all.
@@ -46,7 +46,7 @@ steps:
   expect:
     changed: true
     understood: take -> ward stamp
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook, ward stamp]
     drifts: 0
 
@@ -152,7 +152,7 @@ steps:
   expect:
     changed: true
     location: Ward Office 12 (realized)
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook, copy-room apron]
 
 - id: take-what-is-not-here
@@ -187,7 +187,7 @@ steps:
   why: the apron ends the walk in a room it did not start in, which is the state that persists
   expect:
     changed: true
-    here: [copy-room apron]
+    here: [copy-room apron, filing press]
     carrying: [Ward Office 12 daybook]
 
 - id: walk-into-the-unwritten-room

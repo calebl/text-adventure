@@ -387,6 +387,48 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_match(/readable: true/, error.message)
   end
 
+  # HOW HARD THE FILE SAYS A THING IS TO SHIFT. Absent means `handy`, which is
+  # the column's default and what almost everything is.
+  test "loads an item's bulk and defaults the rest to handy" do
+    world = document
+    world["locations"].find { |place| place["name"] == "The Closet" }["items"].first["bulk"] = "heavy"
+
+    story = WorldSeed::Loader.new(world).load!
+
+    assert_equal "heavy", Item.in_story(story).templates.find_by(name: "A Private Index").bulk
+    assert_equal Item::HANDY, Item.in_story(story).templates.find_by(name: "A Daybook").bulk
+  end
+
+  # THE SAME BOTH-DIRECTIONS RULE the danger and the inscription already keep: a
+  # stale `heavy` would go on costing a thrower five points after the file had
+  # said the thing was light.
+  test "re-seeding puts an item's bulk back when the file drops it" do
+    heavy = document
+    heavy["locations"].find { |place| place["name"] == "The Closet" }["items"].first["bulk"] = "immovable"
+    WorldSeed::Loader.new(heavy).load!
+
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_equal Item::HANDY, Item.in_story(story).templates.find_by(name: "A Private Index").bulk
+  end
+
+  test "rejects a bulk the engine has no table for" do
+    bad = document
+    bad["locations"].find { |place| place["name"] == "The Closet" }["items"].first["bulk"] = "featherweight"
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(bad).load! }
+
+    assert_match(/A Private Index/, error.message)
+    assert_match(/there is: light, handy, heavy, immovable/, error.message)
+  end
+
+  test "rejects a bulk on a thing in somebody's hands too" do
+    bad = document
+    bad["characters"].first["items"].first["bulk"] = "weightless"
+
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(bad).load! }
+  end
+
   test "rejects a file with the same item name twice" do
     twice = document
     twice["locations"].last["items"] = [ { "name" => "A Daybook", "description" => "The wrong one.", "properties" => "{}" } ]

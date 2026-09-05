@@ -162,6 +162,7 @@ characters:
   - name: bell-rope tally
     description: |-
       A strip of hardwood the length of a forearm, notched once for every hour rung, worn smooth in the middle where a hand has held it for twenty-nine years. The notches stop about two thirds of the way along, and after that the wood is scored across in one continuous line that does not count anything.
+    bulk: light
     readable: true
     inscription: |-
       XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.

@@ -174,7 +174,8 @@ NO_MODEL=1 rake 'game:mechanics[2]'
 A fixed grammar replaces the classifier and nothing is generated: `go <exit>`,
 `take <item>`, `drop <item>`, `talk <person>` (also `speak`, `ask`),
 `read <item>` (also `examine`, `x`, `look at`), `attack <person>` (also `hit`,
-`strike`), `look` (also `where`, `inventory`, `exits`, `items`, `who`), `help`,
+`strike`), `throw <item> at <person|exit>` (also `hurl`, `toss`),
+`look` (also `where`, `inventory`, `exits`, `items`, `who`), `help`,
 `quit`. Talking is prose and this
 mode still writes none, so `talk` names whoever it resolved and stops — but
 **whether** it resolves is an engine question, and since presence became a
@@ -238,12 +239,55 @@ you can leave a fight and it costs you one more exchange. What a body was
 carrying lands on the floor when it dies, and the whole exchange is written down
 in `playthrough_blows` with **one** `Scene` closing the fight when it ends.
 
+### Throwing something
+
+`throw <item> at <person|exit>` is the only line in the game that names **two**
+records — the thing, out of what you are carrying *plus what is lying here*, and
+the aim, out of who is standing here and then the ways out. Picking it up is part
+of the throw and not a turn of its own.
+
+**One roll, and no second roll to see whether it hit.** A d20 under your
+strength, less what the thing weighs — `light` 0, `handy` 2, `heavy` 5 — and if
+it leaves your hands it goes where you aimed it. A hit deals one die by bulk
+(light d4, handy d6, heavy d8), lands the thing at their feet, and is a **blow**
+like any other: they are your enemy from that moment and they answer in the same
+turn.
+
+```
+> throw the filing press at Halkett Rowe
+  understood: throw -> filing press at Halkett Rowe
+  read by:    grammar
+  refused:    The filing press is immovable and does not move for anybody: it cannot
+              be picked up and thrown at all, so no die was thrown for it. Nothing has changed.
+
+> throw the ward stamp at Halkett Rowe
+  understood: throw -> ward stamp at Halkett Rowe
+  changed:    it hit Halkett Rowe for 3 and is lying at their feet; Halkett Rowe is hurt (5 of 8)
+  threw: ward stamp at Halkett Rowe -- strength -> d20(5) <= 9 PASS
+  answered: Halkett Rowe hit Odile Vance for 2 (round 1); Odile Vance is hurt (16 of 18)
+
+> throw the daybook at the supply closet
+  understood: throw -> Ward Office 12 daybook at The Supply Closet
+  threw: Ward Office 12 daybook at The Supply Closet -- strength -> d20(14) <= 7 FAIL
+  the lift failed: nothing was thrown and no row moved
+```
+
+Four outcomes, and only one of them is a refusal. **A failed lift is a turn you
+spent**: it costs story time, it is narrated, and the thing stays exactly where
+it was. **Something immovable is refused** — no die, no row, no clock, because
+nothing happened. A throw through a doorway leaves the thing lying in the next
+room, waiting for whoever walks in.
+
+**A thrown heavy thing kills an unhurt level-1 body 37% of the time**, in either
+direction. It is the most lethal act in the game, which is why the seeded
+protagonists carry 18 hit points.
+
 ### What it writes, and what it never does
 
 Both modes write `playthroughs.current_location_id`, `items.playthrough_id` /
 `items.location_id` and, in a fight, `playthrough_vitals` and
 `playthrough_blows` — through `Playthrough::Turn#move_to`, `#stand_in!`,
-`#carry!`, `#put_down!`, `#harm!` and `#strike!`, **the same statements the
+`#carry!`, `#put_down!`, `#harm!`, `#strike!` and `#throw_item!`, **the same statements the
 narrated loop moves the world with**, and the closed sets come from `Playthrough::Classifier`'s own readers. A
 mechanics mode with its own copy of the line that moves the player would be
 testing itself.
@@ -481,10 +525,13 @@ act* — the captain's ruling of 2026-09-04:
 > trying to do, then we should refuse and ask for clarification. This can all be
 > in the mechanics and doesn't need to go through narration."*
 
-So three shapes stop in front of the dispatch and no model is asked to write
+So four shapes stop in front of the dispatch and no model is asked to write
 them: a line naming two things the records both have, a reach the closed sets
-cannot answer, and a classifier answer outside the intent table that still named
-a record. A *look* is in the first of those and never the second — since a look
+cannot answer, a classifier answer outside the intent table that still named
+a record, and a `throw` of something the world says is **immovable** — the one
+shape that is a fact about a record rather than about the reading, and the only
+one that has nothing to do with the classifier. A *look* is in the first of those
+and never the second — since a look
 resolves a record it can name two things, and it was never reaching for one it
 could miss, so "read the note and the index" is refused and "look at the sky"
 is narrated. `Playthrough::Refusal` is the one author of what the player reads, and

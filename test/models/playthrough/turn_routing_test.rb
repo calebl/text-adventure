@@ -314,6 +314,71 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
     assert_equal 0, @playthrough.blows.count
   end
 
+  # --- a thing thrown, in the browser ---------------------------------------
+  #
+  # `throw` is in the fixed grammar and NOT in `Playthrough::IntentSchema::INTENTS`
+  # either, so a slashed throw resolves two records offline and the only call it
+  # makes is the narration -- exactly what a `take` costs.
+
+  test "a slashed throw resolves two records offline and narrates once" do
+    scene, agent = play("/throw the daybook at Halkett Rowe", "The daybook goes past his ear.")
+
+    assert_equal 1, agent.prompts.count, "the only call a resolved throw may make is the narration"
+    assert_equal "throw", scene.resolved_action
+    assert_equal @daybook, scene.acted_on, "the record that moves is the thing thrown"
+    assert_equal "grammar", scene.resolved_by
+    assert_equal "throw the daybook at Halkett Rowe", scene.typed
+    assert_not_predicate scene, :engine_authored?, "the narrator wrote it"
+  end
+
+  # WHICHEVER WAY THE DIE WENT IT IS A TURN. A fumble writes the same Scene and
+  # costs the same story time; what differs is whether a row moved.
+  test "a throw is one turn and one Scene whatever the die did" do
+    before = @story.clock
+
+    assert_difference "Scene.count", 1 do
+      play("/throw the daybook at The Supply Closet", "It sails through the doorway.")
+    end
+
+    assert_operator @story.reload.clock, :>, before
+    assert_includes [ @office, @closet, nil ], @daybook.reload.location
+  end
+
+  # THE NARRATOR IS TOLD WHAT ALREADY HAPPENED, in the app's own words -- the
+  # prompt carries the fact, and the fact says whether the thing left the hands.
+  test "the narrator is handed the throw as a fact" do
+    _, agent = play("/throw the daybook at Halkett Rowe", "The daybook goes past his ear.")
+
+    assert_match(/Odile Vance/, agent.prompts.first)
+    assert_match(/Ward Office 12 daybook/, agent.prompts.first)
+    assert_match(/NOTHING WAS THROWN|NO LONGER\s+CARRIED/, agent.prompts.first)
+  end
+
+  # AN IMMOVABLE THING IS REFUSED IN FRONT OF THE DISPATCH: no narration, no
+  # Scene, no story time, and the counters are untouched because the classifier
+  # never ran.
+  test "a throw of something immovable is refused and calls nothing" do
+    create(:item, :lying, :immovable, playthrough: @playthrough, location: @office, name: "filing press")
+    before = @story.clock
+
+    outcome, agent = play("/throw the filing press at Halkett Rowe")
+
+    assert_instance_of Playthrough::Refusal, outcome
+    assert_equal :immovable, outcome.kind
+    assert_empty agent.prompts, "nothing was narrated, because nothing happened"
+    assert_equal before, @story.reload.clock
+    assert_equal 0, @playthrough.drifts.count
+    assert_equal 0, @playthrough.overreaches.count
+  end
+
+  test "an unslashed throw goes to the classifier like any other line" do
+    _, agent = play("throw the daybook at Halkett Rowe",
+                    CLASSIFY.call("other", "nothing"), "You weigh it in your hand and stop.")
+
+    assert_equal 2, agent.prompts.count
+    assert_predicate @daybook.reload, :carried?
+  end
+
   test "a dead playthrough is refused in front of both readers" do
     @vance.update!(level: 1, hit_die: 6, strength: 10, dexterity: 10, will: 10)
     @playthrough.update!(ended_at: @story.clock)

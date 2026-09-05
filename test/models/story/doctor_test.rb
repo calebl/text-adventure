@@ -1288,4 +1288,45 @@ class Story::DoctorTest < ActiveSupport::TestCase
       assert_not_includes codes(story), :connection_with_an_unknown_hazard, hazard
     end
   end
+
+  # --- a thing the engine has no bulk table for -----------------------------
+  #
+  # `Item` refuses a key outside `BULK`, so this row arrived through raw SQL or
+  # a schema older than the column. It is `safe` because `Item::HANDY` is the
+  # column's own default and what every row already written is -- putting it
+  # back is not guessing at a weight, it is putting back the one the schema
+  # would have written.
+
+  test "an item with a bulk the engine has no table for is reported and repaired" do
+    story = healthy_story
+    item = create(:item, :lying, location: story.locations.realized.first, name: "the ward stamp")
+    item.update_column(:bulk, "featherweight")
+
+    assert_includes codes(story), :item_with_an_unknown_bulk
+    assert_equal :safe, finding(story, :item_with_an_unknown_bulk).remedy
+    assert_match(/featherweight/, finding(story, :item_with_an_unknown_bulk).message)
+    assert_match(/immovable/, finding(story, :item_with_an_unknown_bulk).message)
+  end
+
+  # BOTH LAYERS, because an instance carries the column too and a copy of a
+  # corrupt row is corrupt in the same way.
+  test "a playthrough's own copy with an unknown bulk is reported too" do
+    story = healthy_story
+    game = create(:playthrough, story: story, character: story.protagonist,
+                                current_location: story.locations.realized.first)
+    copy = create(:item, name: "daybook", character: nil, playthrough: game)
+    copy.update_column(:bulk, "")
+
+    assert_includes codes(story), :item_with_an_unknown_bulk
+    assert_match(/playthrough ##{game.id}/, finding(story, :item_with_an_unknown_bulk).message)
+  end
+
+  test "every bulk the table has is quiet" do
+    Item::BULK.each_key do |bulk|
+      story = healthy_story
+      create(:item, :lying, location: story.locations.realized.first, name: "a thing", bulk: bulk)
+
+      assert_not_includes codes(story), :item_with_an_unknown_bulk, bulk
+    end
+  end
 end
