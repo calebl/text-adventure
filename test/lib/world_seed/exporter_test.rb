@@ -251,6 +251,60 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal true, locations.last["mobile"]
   end
 
+  # --- a world that contains an enemy ---------------------------------------
+  #
+  # All three keys follow the "omitted rather than written out" rule `opening`,
+  # `mobile`, `absent` and `readable` already follow: a file says which races
+  # are monsters, who attacks the party and which rooms are dangerous, and stays
+  # quiet about everything that is the ordinary case.
+
+  test "exports which races are monsters, and stays quiet about the peoples" do
+    create(:race, :monstrous, universe: @universe, name: "Nocturna-Blighted")
+
+    races = WorldSeed::Exporter.new(@story).document.dig("universe", "races")
+    blighted = races.find { |race| race["name"] == "Nocturna-Blighted" }
+
+    assert_equal true, blighted["monstrous"]
+    assert races.reject { |race| race["name"] == "Nocturna-Blighted" }.none? { |race| race.key?("monstrous") },
+           "a people should not have to say it is not a monster"
+  end
+
+  test "exports who attacks the party, and stays quiet about everybody else" do
+    create(:character, :protagonist, story: @story, fullname: "Isbet Marrow")
+    create(:character, :monster, story: @story, fullname: "Marek Sollen")
+
+    characters = WorldSeed::Exporter.new(@story).document["characters"]
+
+    assert_not characters.first.key?("hostile"), "somebody who attacks nobody should not say so"
+    assert_equal true, characters.last["hostile"]
+  end
+
+  test "exports how dangerous a room is, and stays quiet about a safe one" do
+    @stub.update!(danger: "dangerous")
+
+    locations = WorldSeed::Exporter.new(@story).document["locations"]
+
+    assert_not locations.first.key?("danger"), "a safe room should not have to say so"
+    assert_equal "dangerous", locations.last["danger"]
+  end
+
+  # A round trip is the only thing that proves the two halves agree, and it is
+  # what `SeededWorldsTest` asserts over the checked-in files.
+  test "a world with a monster in it round-trips" do
+    race = create(:race, :monstrous, universe: @universe, name: "Nocturna-Blighted")
+    create(:character, :protagonist, story: @story, fullname: "Isbet Marrow")
+    create(:character, story: @story, race: race, hostile: true, location: @opening,
+                       fullname: "Marek Sollen", hit_die: 10)
+    @opening.update!(danger: "deadly")
+
+    document = WorldSeed::Exporter.new(@story).document
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load!
+
+    assert_predicate reloaded.universe.races.find_by(name: "Nocturna-Blighted"), :monstrous?
+    assert_predicate reloaded.characters.find_by(fullname: "Marek Sollen"), :hostile?
+    assert_equal "deadly", reloaded.locations.find_by(name: "The Opening Room").danger
+  end
+
   test "warns about the world events it does not export" do
     mechanic = create(:world_mechanic, story: @story)
     create(:world_event, world_mechanic: mechanic, story: @story)

@@ -388,8 +388,21 @@ class Location::Generator
     story.locations.where("LOWER(name) = ?", name.downcase).first
   end
 
+  # A ROOM COMING INTO EXISTENCE, and the moment its danger is decided. The
+  # captain's seventh ruling of 2026-09-04 evening: monster placement is a
+  # rolled per-room parameter, *engine-rolled when the room is born*. A stub IS
+  # a room being born -- it is created the moment a neighbour names it as an
+  # exit, long before anybody walks in -- so the roll belongs here rather than
+  # at realization, where it would depend on which order a player explored in.
+  #
+  # `Location::Danger.for_a_new_room` is the roll and it is seeded, so a world
+  # regenerated from the same story at the same moment comes out the same way.
+  # A SEEDED room is never rolled: `WorldSeed::Loader` writes what the file says
+  # and an absent key is `Location::SAFE`, which is the rule every other seeded
+  # parameter is under.
   def create_stub!(name, teaser)
-    story.locations.create!(name: name, teaser: teaser, detail_level: :stub)
+    story.locations.create!(name: name, teaser: teaser, detail_level: :stub,
+                            danger: Location::Danger.for_a_new_room(story))
   end
 
   # Whether the player can already get between here and there, either way

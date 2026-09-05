@@ -19,6 +19,14 @@
 #   present         the whole set of people standing here, by full name -- the
 #                   closed set `talk` resolves against (`Character.present_in`),
 #                   minus the player themselves
+#   foes            the whole set of people standing here who MEAN THE PARTY
+#                   HARM, by full name -- `Playthrough#foes_in`, which is the
+#                   world's `characters.hostile` narrowed by this game's dead.
+#                   A subset of `present` and asserted separately from it,
+#                   because "somebody is here" and "somebody here is a foe" are
+#                   two facts: a script that pins both is saying the room's cast
+#                   is unchanged AND that hostility is what the world file said
+#                   it was
 #   hp              the player's current hit points, exactly -- read through
 #                   `Playthrough#vitals_for`, never off the printed read-out
 #   abilities       the player's three abilities, as a mapping of
@@ -56,7 +64,7 @@
 # test fixture must not have.
 class EngineSweep::Expectation
   KEYS = %w[
-    location exits exits_include exits_exclude here carrying present inscription
+    location exits exits_include exits_exclude here carrying present foes inscription
     hp abilities dead changed change refused offers understood resolved_by note drifts
   ].freeze
 
@@ -103,6 +111,7 @@ class EngineSweep::Expectation
       check_items("here", state.items_here),
       check_items("carrying", state.carried),
       check_people("present", state.present),
+      check_people("foes", state.foes),
       check_inscriptions(state),
       check_equals("hp", state.condition&.hp),
       check_abilities(report),

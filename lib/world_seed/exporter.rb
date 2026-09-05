@@ -170,7 +170,17 @@ class WorldSeed::Exporter
 
     UNIVERSE_FIELDS.index_with { |field| text(universe.public_send(field)) }.stringify_keys.merge(
       "races" => universe.races.order(:name).map do |race|
-        { "name" => race.name, "description" => text(race.description) }
+        document = { "name" => race.name }
+        # THE MONSTROUS HALF OF THE WORLD'S OWN RACE LIST, omitted rather than
+        # written false -- the same rule `opening`, `mobile`, `absent` and
+        # `readable` follow. A file says which races are monsters and stays
+        # quiet about the peoples. Written between the name and the description
+        # because the description is a block scalar several lines long, and a
+        # one-word fact about a race belongs where a reader can see it beside
+        # the name it is about.
+        document["monstrous"] = true if race.monstrous?
+        document["description"] = text(race.description)
+        document
       end
     )
   end
@@ -229,6 +239,14 @@ class WorldSeed::Exporter
       # an exporter that silently dropped half of a contradiction would hide
       # the thing the file's reader needs to fix.
       document["absent"] = true if character.deliberately_absent?
+      # WHETHER THIS PERSON ATTACKS THE PARTY, omitted rather than written
+      # false, like every other flag here. It is exported beside `stats` and
+      # not derived from the race on the way out: `Character.hostile_by_default?`
+      # is the answer for somebody the ENGINE writes, and a file may hold a tame
+      # beast of a monstrous race -- so the column is what gets written down.
+      # `WorldSeed::Loader#validate_hostility!` refuses a `hostile: true` with
+      # no `stats`, which is why the two keys are worth reading together.
+      document["hostile"] = true if character.hostile?
       # WHAT THE ENGINE ROLLED FOR THIS BODY, so re-seeding a world gives back
       # the same people rather than re-rolling them. Omitted rather than written
       # null when the sheet is not whole -- the same "omitted rather than
@@ -279,6 +297,12 @@ class WorldSeed::Exporter
       # Omitted rather than written false, like `opening`: the file should say
       # which places move and stay quiet about the ones that do not.
       document["mobile"] = true if location.mobile?
+      # HOW LIKELY THIS ROOM IS TO BE BORN WITH THE WORLD'S MONSTERS IN IT.
+      # Omitted when it is `Location::SAFE`, which is what every room already
+      # written is and what an absent key loads back as -- the same "omitted
+      # rather than written out" rule the flags above follow, said for a key
+      # with four values instead of two.
+      document["danger"] = location.danger unless location.danger == Location::SAFE
       document["teaser"] = text(location.teaser)
       if location.realized?
         document["description"] = text(location.description)

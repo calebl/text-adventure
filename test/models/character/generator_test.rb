@@ -71,6 +71,38 @@ class Character::GeneratorTest < ActiveSupport::TestCase
     assert_includes @story.universe.races, character.race
   end
 
+  # THE PROTAGONIST IS ONE OF THE WORLD'S PEOPLE AND NOT ONE OF ITS MONSTERS.
+  # `rake game:new` builds the protagonist through this class, and a race drawn
+  # out of the bestiary would make a player character hostile to their own party
+  # by the derivation below. Where a monster comes from is a room's own `danger`
+  # at realization (`Character::Registry`), which is the only place in the app
+  # that draws from the other pool.
+  test "draws a race from the world's peoples and never from its bestiary" do
+    create(:race, :monstrous, universe: @story.universe)
+
+    10.times do
+      generator = Character::Generator.new(@story.reload)
+      assert_not_predicate generator.race, :monstrous?
+    end
+  end
+
+  test "a generated person is not hostile" do
+    create(:race, :monstrous, universe: @story.universe)
+
+    assert_not_predicate generate_with(FakeAgent.new(SHEET)), :hostile?
+  end
+
+  # A UNIVERSE WITH NOTHING BUT MONSTERS IN IT still gets a protagonist, and
+  # they come out consistent: the derivation is written rather than assumed, so
+  # the race and the flag agree even in the world nobody meant to build.
+  test "a universe with only monstrous races still writes somebody, consistently" do
+    @story.universe.races.each { |race| race.update!(monstrous: true) }
+    character = generate_with(FakeAgent.new(SHEET))
+
+    assert_predicate character.race, :monstrous?
+    assert_predicate character, :hostile?
+  end
+
   test "generates a valid character" do
     assert generate_with(FakeAgent.new(SHEET)).valid?
   end

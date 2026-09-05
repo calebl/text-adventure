@@ -59,11 +59,68 @@ class Location < ApplicationRecord
   scope :mobile, -> { where(mobile: true) }
   scope :anchored, -> { where(mobile: false) }
 
+  # HOW LIKELY THIS PLACE IS TO BE BORN WITH THE WORLD'S MONSTERS IN IT, and it
+  # is a key into this table rather than a number on the row --
+  # `LocationConnection::DISTANCES`' shape, chosen for that shape's reason: the
+  # labels are what a person writing a world reads, the numbers are what the
+  # engine rolls, and a free number is a field something outside the engine
+  # could fill in wrongly. Nothing in any schema or prompt asks for one.
+  #
+  # THE VALUE IS FACES OF A d6. When a room is realized, each person the
+  # realization may write is drawn either from the universe's `peoples` or from
+  # its `monstrous_races`, and this many faces of `DANGER_DIE` send that draw to
+  # the bestiary (`Location::Danger`). So "uneasy" is one person in six and
+  # "dangerous" is one in two.
+  #
+  # `deadly` IS A SEED FILE'S WORD AND THE ENGINE NEVER ROLLS IT --
+  # `Location::Danger::ROLLED` is what a room born in a generated world may come
+  # out as. A room where every inhabitant is a monster is a decision somebody
+  # made about a world, not an accident of a die.
+  #
+  # THE CAPTAIN'S SEVENTH RULING, 2026-09-04 evening: *"go with your rule for
+  # now. eventually I want the universe generator to provide more input into
+  # this."* That standing intent -- which races are monstrous, how dangerous a
+  # region is, where the lairs are -- is a later slice and deliberately not
+  # here. So is monsters wandering on the story clock, which is the
+  # `WorldMechanic` layer's.
+  # WHAT EVERY ROOM ALREADY WRITTEN IS, and the column's default. Named rather
+  # than spelt out at each reader for the reason every other key in this app is:
+  # one string, one place.
+  SAFE = "safe"
+
+  DANGERS = {
+    SAFE => 0,
+    "uneasy" => 1,
+    "dangerous" => 3,
+    "deadly" => 6
+  }.freeze
+
+  # THE DIE THE ROOM'S DANGER IS THROWN AGAINST. One die, one table, one
+  # comparison -- `Character::CHECK_DIE`'s shape one column over.
+  DANGER_DIE = 6
+
+  scope :dangerous, -> { where.not(danger: SAFE) }
+
+  # A key outside `DANGERS` cannot be written by anything in the app: the four
+  # labels are the whole of what a danger is, and a fifth arrived from somewhere
+  # that is not the engine. `rake game:doctor` reports the row a database
+  # already carries (`location_with_an_unknown_danger`) rather than this
+  # guessing which of the four was meant.
+  validates :danger, presence: true, inclusion: { in: DANGERS.keys }
+
   validates :name, presence: true
   # A stub has neither yet -- that is the point of a stub. A realized location
   # without them is still broken, so the requirement holds where it matters.
   validates :description, presence: true, if: :realized?
   validates :lore, presence: true, if: :realized?
+
+  # HOW MANY FACES OF `DANGER_DIE` SEND A NEW INHABITANT TO THE BESTIARY. Zero
+  # for a room with a key `DANGERS` does not have -- the honest nothing, and the
+  # reason nothing rolls off an unknown key while `rake game:doctor` reports it.
+  def danger_share = DANGERS.fetch(danger, 0)
+
+  # Whether anything born here can be one of the world's monsters at all.
+  def dangerous? = danger_share.positive?
 
   # The places you can walk to from here. Connections are stored directionally
   # but written in both directions when a location is realized, so this one

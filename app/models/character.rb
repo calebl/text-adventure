@@ -141,6 +141,55 @@
 # both meet; what has HAPPENED to them is `Playthrough::Vitals`, one row per
 # game. The same split `Item` makes between the world's own rows and a
 # playthrough's copies, and made for the same reason.
+#
+# ------------------------------------------------------------------------
+# HOSTILE: `characters.hostile`, AND A MONSTER IS AN ORDINARY PERSON WITH IT SET.
+#
+# The captain's ruling of 2026-09-04: *"a universe should be able to have
+# monsters as well as characters."* It is answered here rather than with an STI
+# subtype or a `monsters` table, because every seam a fight needs already exists
+# on this class and on nothing else -- a body, a whereabouts, hands
+# (`items.character_id`), a place in a room's cast, a per-playthrough condition,
+# a seed entry, a doctor finding, a name in the closed sets. It is
+# `locations.mobile`'s argument said one table over: *"a mobile location is an
+# ordinary location in every other respect"*, and what differs about a monster
+# is whether it attacks.
+#
+# NOT NULL, DEFAULT FALSE -- `items.readable`'s shape, and the reason no
+# `bin/update` step was needed for it: an existing world has no monsters and the
+# default says so. The five columns above are nullable because "nobody has
+# rolled one" is a real state; there is no such state here.
+#
+#   a seed file          `characters[].hostile: true`, assigned straight through
+#                        by `WorldSeed::Loader` and written back by
+#                        `WorldSeed::Exporter`. The file IS the decision, so it
+#                        can also put a tame beast of a monstrous race in a room.
+#   DERIVED at creation  `.hostile_by_default?` -- a generated character whose
+#                        race is monstrous is hostile. The captain's seventh
+#                        ruling of 2026-09-04 evening, one line, read by the
+#                        only two things that write a character outside a seed
+#                        file (`Character::Registry`, `Character::Generator`).
+#   NO MODEL, EVER       no schema has a field for it, no prompt mentions it,
+#                        and nothing scans prose for one.
+#                        `EngineSweep::Invariants#hostility_unmoved` is the
+#                        assertion that no typed line moves it -- the same
+#                        statement `stat_blocks_unmoved` makes about a body, and
+#                        it covers `races.monstrous` and `locations.danger` too
+#                        because those are not columns on a character.
+#
+# THE NINE FIELDS ARE NOT RELAXED FOR A MONSTER. `race`, `age`, `sex` and the
+# six sheet fields are all `presence: true` and stay that way: every one of them
+# is interpolated into `#interaction_instructions`, so a monster you can talk to
+# -- a hound that growls, a bailiff who threatens before he swings -- comes free,
+# and it is a feature of this game rather than an accident. An age and a sex on
+# a swarm are the honest oddity and are left as they are. Something genuinely
+# impersonal (a flood, a collapsing floor) is not a `Character` at all; it is a
+# hazard, and that is a later slice.
+#
+# WHO IS FIGHTING A PARTY IS *NOT* THIS COLUMN ON ITS OWN. `Playthrough#foes_in`
+# is the one reader: the world says who is hostile, a GAME says which of them is
+# still standing. Nothing per-playthrough about hostility exists yet -- no
+# provoked mark, no engaged-at -- and that is a later slice by ruling.
 # ------------------------------------------------------------------------
 class Character < ApplicationRecord
   belongs_to :story
@@ -400,6 +449,24 @@ class Character < ApplicationRecord
   # the same reason a game's own floor is ordered where it is read.
   scope :present_in, ->(location) { where(location: location).order(:id) }
 
+  # WHO ATTACKS THE PARTY, AND IT IS THE WORLD THAT SAYS SO.
+  #
+  # `characters.hostile` is on `hit_die`'s side of the layer split: rolled or
+  # derived by the engine, written by a seed file, and written by NO MODEL EVER
+  # -- there is no field for it on any schema, no prompt mentions it, and
+  # `EngineSweep::Invariants#hostility_unmoved` is the assertion that no typed
+  # line moves it. It is a flag on the record rather than a subclass or a second
+  # table, which is `locations.mobile`'s own argument said one table over: a
+  # monster is an ordinary person in every respect but one, and every seam a
+  # fight needs -- a body, a whereabouts, hands, a place in a room's cast, a
+  # per-playthrough condition, a seed entry, a doctor finding -- already exists
+  # here and on nothing else.
+  #
+  # READ IT THROUGH `Playthrough#foes_in`, not through this scope: the world
+  # says who is hostile and a GAME says which of them is still standing, and a
+  # caller that asked only this one would offer a corpse a fight.
+  scope :hostile, -> { where(hostile: true) }
+
   # Nobody has said where they are. Honest, and reported rather than repaired:
   # see the header, and `Story::Doctor`.
   scope :nowhere, -> { where(location_id: nil) }
@@ -452,6 +519,19 @@ class Character < ApplicationRecord
   def move_to!(location)
     update!(location: location, deliberately_absent: location ? false : deliberately_absent)
   end
+
+  # HOSTILE BY DEFAULT IF THE RACE IS MONSTROUS -- the captain's seventh ruling
+  # of 2026-09-04 evening, and it is ONE DERIVED LINE living in one place with
+  # two callers (`Character::Registry` and `Character::Generator`, the only two
+  # things in the app that write a character outside a seed file). No model
+  # input reaches it: the race is the engine's own choice, drawn from the pool
+  # the room's `danger` decides, and this reads a column off it.
+  #
+  # BY DEFAULT, WHICH MEANS A FILE MAY OVERRIDE IT. `WorldSeed::Loader` assigns
+  # `characters[].hostile` straight through, so a hand-authored world can put a
+  # tame beast or a monstrous race that keeps to itself into a room. This is the
+  # answer for everybody the ENGINE writes, where there is nobody to ask.
+  def self.hostile_by_default?(race) = race.present? && race.monstrous?
 
   # WHETHER THE ENGINE HAS A BODY FOR THIS PERSON AT ALL. Both halves, because
   # `#max_hp` needs both and half a stat block is not one -- `#a_stat_block_is_whole`

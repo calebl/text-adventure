@@ -73,6 +73,12 @@ class Story::Repair
     playthrough_missing_a_copy: { calls: 0, handler: :repair_missing_copies },
     copy_lags_its_template: { calls: 0, handler: :repair_lagging_copies },
     character_without_a_stat_block: { calls: 0, handler: :repair_missing_stat_block },
+    # THE SAME NIL AND THE SAME ROLL. `Story::Doctor` reports a hostile row with
+    # no body under its own code because it is a louder fact -- a monster
+    # nothing can fight -- but what is missing is a stat block and what fixes it
+    # is `Character::StatBlock`, so the two codes share one handler rather than
+    # keeping two copies of one repair.
+    hostile_without_a_stat_block: { calls: 0, handler: :repair_missing_stat_block },
     character_without_abilities: { calls: 0, handler: :repair_missing_abilities },
     ability_out_of_range: { calls: 0, handler: :repair_ability_out_of_range },
     hp_above_maximum: { calls: 0, handler: :repair_hp_above_maximum },

@@ -52,6 +52,16 @@
 # choose what they are. `#slots` is memoized for exactly that reason: the
 # prompt and the row have to agree about the person in slot 1.
 #
+# AND WHETHER THEY ARE A MONSTER, which is the room's own doing. The captain's
+# seventh ruling of 2026-09-04 evening: *a dangerous room draws its inhabitants
+# from the universe's monstrous races instead of its peoples*, and *a generated
+# character whose race is monstrous is hostile by default*. So `#slots` throws
+# one `Location::Danger` die per slot against `locations.danger`, picks the race
+# out of `Race.monstrous` or `Race.peoples` accordingly, and `#create_one`
+# derives `characters.hostile` from the race in one line. There is no field for
+# hostility on `Location::DetailSchema` and nothing in the realization prompt
+# mentions one -- the same standing rule the stat block below is under.
+#
 # AND SO IS THEIR BODY, and that one is not even stated. `characters.level` and
 # `characters.hit_die` are rolled by `Character::StatBlock` -- the captain's
 # ruling of 2026-09-04, *"A model cannot set an NPC's numbers, the engine rolls
@@ -180,12 +190,25 @@ class Character::Registry
   # row that came out Shorefolk of 19 would be a person the description is
   # wrong about.
   #
-  # Race comes from the universe's own generated list, exactly as
-  # `Character::Generator` picks one, so a generated person always belongs to
-  # one of the world's peoples.
+  # WHICH POOL A RACE COMES OUT OF IS THE ROOM'S OWN `danger`, and that is the
+  # captain's seventh ruling of 2026-09-04 evening: *a dangerous room draws its
+  # inhabitants from the universe's monstrous races instead of its peoples*. One
+  # `Location::Danger` roll per slot, out of ONE generator for the whole call --
+  # `Roll`'s standing rule, so the people this realization writes are decided
+  # together and re-derivably. A safe room throws no die at all and draws from
+  # the peoples every time, which is what every room already written is.
+  #
+  # AND THE POOL DECIDES HOSTILITY, one line below in `#create_one`. Nothing
+  # here asks a model anything: the race is the engine's own choice and the flag
+  # is read off it.
   def slots
-    @slots ||= Array.new(MAX_PER_CALL) do
-      { race: story.universe.races.sample, age: rand(18..80), sex: Character.sexes.values.sample }
+    @slots ||= begin
+      rng = Location::Danger.generator_for(location)
+
+      Array.new(MAX_PER_CALL) do
+        { race: race_from(Location::Danger.monstrous?(location, rng: rng)),
+          age: rand(18..80), sex: Character.sexes.values.sample }
+      end
     end
   end
 
@@ -215,6 +238,37 @@ class Character::Registry
   end
 
   private
+
+  # ONE OF THE TWO POOLS, and a pool that is empty falls back to the whole race
+  # list rather than to nobody. Writing NOBODY would mean a room quietly losing
+  # the person its description was about, which is the failure every refusal in
+  # this class is written to avoid.
+  #
+  # THE TWO FALLBACKS ARE NOT SYMMETRICAL, and the asymmetry is worth stating
+  # because one of them is louder than it looks:
+  #
+  #   no monstrous races  a dangerous room gets an ordinary person, and the
+  #                       room's danger simply does not bite. This is the world
+  #                       every GENERATED universe is in today --
+  #                       `Universe::Generator` marks no race `monstrous` (see
+  #                       `Location::Danger`'s header) -- so it is the ordinary
+  #                       case rather than the corner.
+  #   no peoples          a SAFE room gets somebody of a monstrous race, and the
+  #                       line below then derives them hostile. Said plainly: in
+  #                       a universe whose every race is a monster there is
+  #                       nobody else to be, so every room is dangerous whatever
+  #                       its `danger` says. That is a true statement about such
+  #                       a world rather than a hole in the parameter -- the
+  #                       alternative is a room described around a person it does
+  #                       not have. No checked-in world is in this state and
+  #                       nothing in the app can put one there;
+  #                       `Character::GeneratorTest` pins the same fallback for a
+  #                       protagonist.
+  def race_from(monstrous)
+    pool = monstrous ? story.universe.monstrous_races : story.universe.peoples
+
+    (pool.presence || story.universe.races).sample
+  end
 
   def admit_one(candidate, slot)
     character = resolve(candidate)
@@ -252,6 +306,14 @@ class Character::Registry
       race: details[:race],
       age: details[:age],
       sex: details[:sex],
+      # AND WHETHER THEY ATTACK YOU IS DERIVED FROM THE RACE, in one line. The
+      # captain's seventh ruling of 2026-09-04 evening: a generated character
+      # whose race is monstrous is hostile by default. The race came out of the
+      # pool this room's `danger` chose (`#slots`), so nothing a model answered
+      # reaches this -- `Location::DetailSchema` has no field for hostility and
+      # the realization prompt does not mention it, exactly as it does not
+      # mention a hit die.
+      hostile: Character.hostile_by_default?(details[:race]),
       # AND THE ENGINE ROLLS THEIR BODY. The captain's ruling of 2026-09-04 --
       # *"A model cannot set an NPC's numbers, the engine rolls them"* -- and it
       # is the same rule the race, age and sex above are already under, one

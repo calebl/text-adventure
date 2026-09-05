@@ -186,6 +186,38 @@ class UniverseTest < ActiveSupport::TestCase
     assert (dialogue - place).any?, "a conversation should get something a room does not"
   end
 
+  # ------------------------------------------------------------------------
+  # CAPTAIN CALL C4, 2026-09-04: *"monstrous races should reach the prompts."*
+  # His explicit word, overriding the combat scout's recommendation that they be
+  # filtered out of `:dialogue` and given `:place` a separate bestiary field.
+  # This is the only model-facing piece of the monsters slice and it changed no
+  # prompt template -- only what the existing list contains once a world marks a
+  # race monstrous. These tests are the ruling written down, so a later filter
+  # cannot land quietly.
+
+  test "a monstrous race is one of the race names both prompt audiences are given" do
+    universe = create(:universe)
+    universe.races.destroy_all
+    create(:race, universe: universe, name: "Ledger-Kept")
+    create(:race, :monstrous, universe: universe, name: "Chime-Rot")
+
+    %i[place dialogue].each do |audience|
+      assert_includes universe.reload.prompt_details(audience), "Chime-Rot",
+                      "the #{audience} prompt no longer names the world's monsters"
+    end
+  end
+
+  test "the two pools are readers over the same list the prompts are given" do
+    universe = create(:universe)
+    universe.races.destroy_all
+    people = create(:race, universe: universe, name: "Ledger-Kept")
+    monster = create(:race, :monstrous, universe: universe, name: "Chime-Rot")
+
+    assert_equal [ people ], universe.peoples.to_a
+    assert_equal [ monster ], universe.monstrous_races.to_a
+    assert_equal "Chime-Rot, Ledger-Kept", universe.reload.race_names.split(", ").sort.join(", ")
+  end
+
   test "every audience is a subset of the full field list, bar race_names" do
     full = Universe::AUDIENCE_FIELDS.fetch(:full)
 

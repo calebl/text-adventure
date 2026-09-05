@@ -48,6 +48,25 @@ class RaceTest < ActiveSupport::TestCase
     assert build(:race, universe: create(:universe), name: "Tidewalker").valid?
   end
 
+  # ------------------------------------------------------------------------
+  # THE MONSTROUS HALF OF A UNIVERSE'S OWN RACE LIST.
+
+  test "a race is a people unless a world says otherwise" do
+    assert_not build(:race).monstrous?
+    assert_predicate build(:race, :monstrous), :monstrous?
+  end
+
+  test "the two pools are the whole race list and never overlap" do
+    universe = create(:universe)
+    universe.races.destroy_all
+    people = create(:race, universe: universe, name: "Ledger-Kept")
+    monster = create(:race, :monstrous, universe: universe, name: "Chime-Rot")
+
+    assert_equal [ monster ], universe.races.monstrous.to_a
+    assert_equal [ people ], universe.races.peoples.to_a
+    assert_equal universe.races.order(:id).to_a, (universe.races.peoples + universe.races.monstrous).sort_by(&:id)
+  end
+
   test "should have many characters" do
     assert_respond_to @race, :characters
   end

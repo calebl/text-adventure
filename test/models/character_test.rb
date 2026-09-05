@@ -726,4 +726,66 @@ class CharacterTest < ActiveSupport::TestCase
       def rand(_range) = @face
     end.new(face)
   end
+  # ------------------------------------------------------------------------
+  # HOSTILE: A MONSTER IS AN ORDINARY PERSON WITH ONE COLUMN SET.
+  #
+  # The captain's ruling of 2026-09-04 -- *"a universe should be able to have
+  # monsters as well as characters"* -- answered with a flag on this class
+  # rather than an STI subtype or a second table, on `locations.mobile`'s own
+  # argument. Nothing here fights: what is asserted is that the column exists on
+  # the WORLD's side of the layer split and that the derivation has exactly one
+  # rule in it.
+
+  test "nobody is hostile unless a world says so" do
+    assert_not_predicate build(:character), :hostile?
+    assert_predicate build(:character, :monster), :hostile?
+  end
+
+  test "a monster is valid on exactly the nine fields anybody else is" do
+    monster = build(:character, :monster)
+
+    assert_predicate monster, :valid?
+    assert_predicate monster.race, :monstrous?
+
+    monster.backstory = nil
+    assert_not monster.valid?, "the nine fields are not relaxed for a monster"
+  end
+
+  test "a monster has a body on the same terms anybody else does" do
+    monster = create(:character, :monster, hit_die: 10, level: 1)
+
+    assert_predicate monster, :stat_block?
+    assert_equal 10, monster.max_hp
+    assert_predicate monster.check(:strength, rng: Random.new(1)), :rolled?
+  end
+
+  test "the hostile scope is the closed set a fight would read" do
+    story = create(:story)
+    room = create(:location, story: story)
+    monster = create(:character, :monster, story: story, location: room)
+    create(:character, story: story, location: room)
+
+    assert_equal [ monster ], Character.present_in(room).hostile.to_a
+    assert_equal 2, Character.present_in(room).count, "hostility narrows presence, it does not replace it"
+  end
+
+  # THE DERIVED RULE, and it is one line with two callers. A generated character
+  # of a monstrous race is hostile; everybody else is not.
+  test "hostility is derived from a monstrous race and from nothing else" do
+    universe = create(:universe)
+
+    assert Character.hostile_by_default?(create(:race, :monstrous, universe: universe))
+    assert_not Character.hostile_by_default?(create(:race, universe: universe))
+    assert_not Character.hostile_by_default?(nil)
+  end
+
+  # THE COLUMN IS THE RECORD AND THE DERIVATION IS ONLY A DEFAULT. A seed file
+  # is the decision, so it may author a tame beast of a monstrous race -- which
+  # is why nothing recomputes hostility from the race on save.
+  test "a monstrous race with hostility turned off stays turned off" do
+    tame = create(:character, :monster, hostile: false)
+
+    assert_predicate tame.race, :monstrous?
+    assert_not_predicate tame.reload, :hostile?
+  end
 end

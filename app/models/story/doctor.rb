@@ -72,6 +72,7 @@ class Story::Doctor
       *item_rows,
       *stat_blocks,
       *abilities,
+      *hostility,
       *vitals_rows
     ]
   end
@@ -1235,6 +1236,13 @@ class Story::Doctor
   def stat_blocks
     story.characters.order(:id).filter_map do |character|
       next if character.stat_block?
+      # A FOE WITH NO BODY IS REPORTED AS A FOE WITH NO BODY, once. It is the
+      # same missing sheet, but it is a louder fact -- a monster nothing can
+      # hurt is a world that cannot resolve a fight -- so
+      # `#hostile_without_a_stat_block` below says it instead, with the same
+      # `:safe` repair behind it. One row, one finding: two findings about the
+      # same nil would be the noise `rake game:doctor` exists to cut.
+      next if character.hostile?
 
       finding(:character_without_a_stat_block, :warning,
               "#{character.fullname} has #{character.level.present? || character.hit_die.present? ? "half a stat block" : "no stat block"} " \
@@ -1297,6 +1305,81 @@ class Story::Doctor
               "#{Character::ABILITY_RANGE.first}..#{Character::ABILITY_RANGE.last} that 3d6 rolls, so it came " \
               "from somewhere that is not the engine",
               :safe, subject: character)
+    end
+  end
+
+  # ------------------------------------------------------------------------
+  # A WORLD THAT CONTAINS AN ENEMY, and the three shapes that are wrong. All
+  # three are about WORLD data -- `characters.hostile`, `races.monstrous` and
+  # `locations.danger` -- which is the layer `hit_die` is on and the layer no
+  # model and no typed line writes.
+  def hostility
+    [ *hostile_without_a_stat_block, *monstrous_races_with_no_monsters, *rooms_with_an_unknown_danger ]
+  end
+
+  # A FOE NOTHING CAN FIGHT. `characters.hostile` says this person attacks the
+  # party and a fight is arithmetic over `Character#max_hp`, so a hostile row
+  # with no stat block is a monster that can neither be hurt nor recorded as
+  # hurting anybody -- `Playthrough#vitals_for` answers nil for them and every
+  # consumer says nothing.
+  #
+  # `:safe`, and the same repair `character_without_a_stat_block` gets: the
+  # ENGINE is the sole author of those numbers by the captain's ruling of
+  # 2026-09-04, so rolling one is not inventing world data to make a validation
+  # pass. `WorldSeed::Loader#validate_hostility!` refuses a FILE that does this,
+  # so a row here came from a database older than the columns or from raw SQL.
+  def hostile_without_a_stat_block
+    story.characters.hostile.order(:id).filter_map do |character|
+      next if character.stat_block?
+
+      finding(:hostile_without_a_stat_block, :warning,
+              "#{character.fullname} is hostile #{character.whereabouts} and has no stat block, so there is no "               "maximum for their body and nothing in this world can fight them",
+              :safe, subject: character)
+    end
+  end
+
+  # A BESTIARY WITH NOTHING IN IT. `races.monstrous` is what a dangerous room
+  # draws its inhabitants from (`Character::Registry#slots`), so a world that
+  # marks a race monstrous and holds nobody of it has a bestiary that can only
+  # ever be filled by rooms nobody has walked into yet -- which is legitimate
+  # for a world still being explored and worth saying out loud for one that is
+  # not.
+  #
+  # NO REPAIR, and that is stated rather than left as an omission: writing a
+  # monster is writing a character, which is world data nothing on record
+  # implies -- a name, a sheet, a room, a body. `Story::Repair` has no handler
+  # for it, so `rake game:repair` lists it under what nothing can honestly do
+  # anything about, and a person adds one to the seed file or plays far enough
+  # for a dangerous room to be born with one.
+  def monstrous_races_with_no_monsters
+    story.universe.races.monstrous.order(:name).filter_map do |race|
+      next if story.characters.where(race: race).exists?
+
+      finding(:monstrous_race_with_no_monsters, :warning,
+              "the universe calls #{race.name.inspect} a monstrous race and this world has nobody of it, so its "               "bestiary is empty until a dangerous room is born with one",
+              :manual)
+    end
+  end
+
+  # A DANGER THE ENGINE HAS NO TABLE FOR. `Location::DANGERS` is the closed set
+  # of what a room may be; `Location` refuses a value outside it and
+  # `WorldSeed::Loader#validate_dangers!` refuses a file that carries one, so a
+  # row here arrived through raw SQL or a schema older than the validation. It
+  # reads as `Location::SAFE` in the meantime (`Location#danger_share` answers
+  # zero for a key it does not have), so nothing is broken -- it is a room whose
+  # author meant something the engine cannot hear.
+  #
+  # NO REPAIR, deliberately. There are four words it could have been and nothing
+  # on record says which, and "safe" is not a neutral guess: it is the answer
+  # that empties the room of the monsters somebody meant to put in it. A person
+  # edits the world file and re-seeds.
+  def rooms_with_an_unknown_danger
+    story.locations.order(:id).filter_map do |room|
+      next if Location::DANGERS.key?(room.danger)
+
+      finding(:location_with_an_unknown_danger, :warning,
+              "#{room.name} has danger #{room.danger.inspect}, which is not one of "               "#{Location::DANGERS.keys.join(", ")}, so nothing born in it can be one of this world's monsters",
+              :manual, subject: room)
     end
   end
 

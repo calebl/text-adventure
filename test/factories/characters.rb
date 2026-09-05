@@ -85,6 +85,32 @@ FactoryBot.define do
       without_abilities
     end
 
+    # A MONSTER, and it is an ordinary character with one column set -- which is
+    # the whole argument for the flag over a subclass, said as a factory trait.
+    # The race comes with it, because hostility is DERIVED from a monstrous race
+    # for everybody the engine writes and a hostile person of one of the world's
+    # peoples would be a fixture that quietly disagreed with
+    # `Character.hostile_by_default?`. Use `hostile { true }` on its own for the
+    # one case a seed file can also author: a hostile person of a people.
+    #
+    # THE NINE FIELDS ARE NOT RELAXED, and this trait fills none of them in
+    # differently: a monster has a backstory and a sheet and something it is
+    # afraid of, because every one of those is interpolated into
+    # `#interaction_instructions` and a monster you can talk to is a feature.
+    trait :monster do
+      race { story.universe.races.monstrous.first || association(:race, :monstrous, universe: story.universe) }
+      hostile { true }
+    end
+
+    # A FOE WITH NO BODY -- what a database older than the stat block columns
+    # holds and what `rake game:doctor` reports as `hostile_without_a_stat_block`.
+    # `WorldSeed::Loader#validate_hostility!` refuses a FILE that says this, so
+    # the state only exists in an old database or a fixture like this one.
+    trait :monster_without_a_stat_block do
+      monster
+      without_a_stat_block
+    end
+
     # NOWHERE ON PURPOSE: what a seed file asserts with `absent: true`. Not the
     # same as the default nowhere above -- that one is the state nobody has
     # decided, and `rake game:doctor` reports it.

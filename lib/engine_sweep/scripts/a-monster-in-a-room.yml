@@ -1,0 +1,142 @@
+# A WORLD CAN CONTAIN AN ENEMY, AND NOTHING FIGHTS YET.
+#
+# The captain's ruling of 2026-09-04: *"a universe should be able to have
+# monsters as well as characters."* This is that ruling as a walk. Marek Sollen
+# is `hostile: true` in `the-lunar-cartographer.yml`, of the `monstrous: true`
+# race `Nocturna-Blighted`, standing in the one room of that world the file
+# marks `danger: dangerous`. The player walks two rooms to him and the records
+# say what he is at every step.
+#
+# WHAT ONLY A WALK CAN SEE HERE, and it is three things:
+#
+#   THAT `foes:` AND `present:` ARE TWO DIFFERENT ANSWERS. Grenn Ollivar is
+#   standing in the opening room and is nobody's enemy; Marek Sollen is standing
+#   in the bell chamber and is. A unit test can assert `Playthrough#foes_in`
+#   over a fixture. What it cannot assert is that the two closed sets stay apart
+#   turn after turn through the same engine a player types into -- that the room
+#   with a monster in it still offers him to `talk`, and that the room with a
+#   landlord in it offers nobody to fight.
+#
+#   THAT NO TYPED LINE MAKES ANYBODY HOSTILE.
+#   `EngineSweep::Invariants#hostility_unmoved` reads `characters.hostile`,
+#   `races.monstrous` and `locations.danger` off the file after this walk, so
+#   every step below is that assertion too -- a move, a look, a take, a talk and
+#   a stats read each. Hostility is the world's, on exactly the terms a hit die
+#   is, and `stat_blocks_unmoved` is the same sentence one column over.
+#
+#   THAT MEETING A MONSTER COSTS NO MODEL CALL. `EngineSweep` replaces
+#   `BaseAgent.new` with something that raises for the length of a run. Walking
+#   into a dangerous room, copying its people into this game
+#   (`Playthrough::Snapshot`) and reading the whole engine view back is
+#   arithmetic over records from end to end.
+#
+# WHAT IT DELIBERATELY DOES NOT WALK, because none of it is built: an attack, a
+# blow, a wound taken from anybody but `harm`, a fight that can be fled, or any
+# per-playthrough mark about whether a foe has noticed the party. Those are
+# later slices. What is here is that a world can hold an enemy and the engine
+# can say so.
+#
+# THE ROOM'S OWN DANGER IS SEEDED RATHER THAN ROLLED HERE. `locations.danger`
+# decides which pool a person BORN in a room is drawn from
+# (`Character::Registry#slots`), and an offline walk realizes no rooms, so
+# nothing in this script can produce a monster. That is the right side of the
+# line: the file is the decision for a hand-authored world, `Location::Danger`
+# rolls one for a generated one, and neither of them is a typed line.
+story: The Lunar Cartographer
+why: a world can contain an enemy, the engine shows it standing there, and nothing fights
+steps:
+- id: nobody-here-means-you-harm
+  type: look
+  why: the room the game opens in has a person in it and no foes -- the two sets are not the same set
+  expect:
+    location: Grenn's Boarding House, Room 3 (realized)
+    present: [Grenn Ollivar]
+    foes: []
+    exits:
+    - Mournwell Lane (stub)
+    - Grenn's Boarding House hallway (stub)
+    - Larkspur Quarter rooftops (stub)
+    changed: false
+    refused: false
+
+- id: up-the-stairs
+  type: go to the hallway
+  why: a stub between here and the tower, and still nobody hostile in it
+  expect:
+    changed: true
+    location: Grenn's Boarding House hallway (stub)
+    present: []
+    foes: []
+    exits:
+    - "Grenn's Boarding House, Room 3 (realized)"
+    - The Bell of Saint Aravel (realized)
+
+- id: into-the-bell-chamber
+  type: go to The Bell of Saint Aravel
+  why: THE WHOLE SLICE -- a room the world file marks dangerous, with one of its monsters standing in it
+  expect:
+    changed: true
+    location: The Bell of Saint Aravel (realized)
+    # He is in the room's cast, because a monster is an ordinary person in
+    # every respect but one -- `Character.present_in` is the same closed set it
+    # was, and `talk` still resolves against it.
+    present: [Marek Sollen]
+    # AND HE IS A FOE, which is the other answer and the new one:
+    # `Playthrough#foes_in` is the world's `characters.hostile` narrowed by this
+    # game's dead, and nothing here has killed anybody.
+    foes: [Marek Sollen]
+    # A dead end, and the only way down is the stair you came up.
+    exits: [Grenn's Boarding House hallway (stub)]
+    here: []
+    carrying: []
+
+- id: a-monster-is-still-somebody-you-can-address
+  type: talk to Marek Sollen
+  why: he resolves out of the room's cast like anybody else; this mode has no prose, so it is refused as prose and not as a stranger
+  expect:
+    refused: true
+    changed: false
+    offers: [Marek Sollen]
+    location: The Bell of Saint Aravel (realized)
+    foes: [Marek Sollen]
+    drifts: 0
+
+- id: the-sheet-the-file-gave-him-is-the-players-own-sheet-unmoved
+  type: stats
+  why: a stats read is about the party, not about the room -- meeting a foe moves nothing on the protagonist
+  expect:
+    abilities:
+      strength: 11
+      dexterity: 14
+      will: 13
+    hp: 8
+    foes: [Marek Sollen]
+    changed: false
+    refused: false
+
+- id: nothing-to-pick-up-off-his-floor
+  type: take the rope
+  why: the bell chamber is furnished in prose and not in records, and the refusal says so rather than inventing one
+  expect:
+    refused: true
+    changed: false
+    offers: [there is no thing lying here]
+    foes: [Marek Sollen]
+    drifts: 0
+
+- id: back-down-the-stair
+  type: go to the hallway
+  why: a fight cannot yet stop you leaving, and this is the walk that says so out loud
+  expect:
+    changed: true
+    location: Grenn's Boarding House hallway (stub)
+    foes: []
+
+- id: and-the-tower-still-has-him-in-it
+  type: go to the bell
+  why: a fragment of the name, and the room's cast and its foes are where they were
+  expect:
+    changed: true
+    location: The Bell of Saint Aravel (realized)
+    present: [Marek Sollen]
+    foes: [Marek Sollen]

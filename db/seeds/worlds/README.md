@@ -35,11 +35,11 @@ One file is one universe and one story. Keys are written in this order:
 | key             | what it holds                                                          |
 | --------------- | ---------------------------------------------------------------------- |
 | `format`        | bumped when the format changes; the loader refuses one it cannot read   |
-| `universe`      | the nine prompt fields, plus `races` (name and description)             |
+| `universe`      | the nine prompt fields, plus `races` (name, description, optional `monstrous`) |
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
-| `characters`    | one entry each, `race` by name, optional `location` (or `absent`), optional `stats`, and `items` |
-| `locations`     | every location, realized or stub; one marked `opening: true`; `items`   |
+| `characters`    | one entry each, `race` by name, optional `location` (or `absent`), optional `hostile`, optional `stats`, and `items` |
+| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; `items` |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair              |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
 
@@ -408,6 +408,76 @@ Everywhere else the engine rolls it — `Character::StatBlock`, seeded through
   instance, the same split the items are under. A seed file describes a world;
   what has happened to somebody in one game is that player's progress.
 
+### Monsters: `races[].monstrous`, `characters[].hostile` and `locations[].danger`
+
+The captain's ruling of 2026-09-04: *"a universe should be able to have monsters
+as well as characters."* Three keys, and all three are on the **world's** side of
+the layer split — `hit_die`'s side. No model sets any of them, no schema has a
+field for one, and `EngineSweep::Invariants#hostility_unmoved` asserts that no
+typed line moves one.
+
+```yaml
+universe:
+  races:
+  - name: Nocturna-Blighted
+    monstrous: true
+    description: |-
+      What is left when somebody stands too long under Nocturna's glow.
+
+characters:
+- fullname: Marek Sollen
+  race: Nocturna-Blighted
+  location: The Bell of Saint Aravel
+  hostile: true
+  stats: { level: 1, hit_die: 10, strength: 14, dexterity: 8, will: 3 }
+  # ... and the same nine fields everybody else has
+
+locations:
+- name: The Bell of Saint Aravel
+  detail_level: realized
+  danger: dangerous
+```
+
+- **`monstrous` makes a race one of the world's monsters** rather than one of its
+  peoples. A universe's bestiary is the monstrous half of its own race list —
+  there is no second catalogue — and `Race.monstrous` / `Race.peoples` are the
+  two pools a GENERATED person is drawn from.
+- **Monstrous races still reach the prompts.** Captain call C4, 2026-09-04, his
+  explicit word: they are in `Universe#race_names` for room realization and for
+  every turn of every conversation, so a room can be described knowing what
+  lives out past the levee and a person in it can warn you about one.
+- **`hostile` says this person attacks the party.** A monster is an ordinary
+  character with this one column set, and **none of the nine required fields is
+  relaxed for one**: a monster has a backstory, a personality and something it is
+  afraid of, because a monster you can talk to is a feature. The file is the
+  decision, so it may also hold a *tame* beast of a monstrous race, or a hostile
+  person of a people.
+- **A hostile character needs `stats`.** The loader refuses one without: a fight
+  is arithmetic over `Character#max_hp`, and a foe with no body can be neither
+  hurt nor hurt back. `rake game:doctor` reports one an older database carries
+  (`hostile_without_a_stat_block`) with a safe repair.
+- **`danger` is how likely a room is to be BORN with the world's monsters in
+  it** — one of `safe`, `uneasy`, `dangerous`, `deadly` (`Location::DANGERS`),
+  the shape `distance` and `travel_method` have. The value is faces of a d6, so
+  `uneasy` is one inhabitant in six and `dangerous` is one in two. It affects
+  people the ENGINE writes when a room is realized; a character the file places
+  is placed exactly as the file says, whatever the room's danger is.
+- **`deadly` is a file's word and the engine never rolls it.** A generated
+  world's rooms are rolled at birth out of `Location::Danger::ROLLED`, which is
+  `safe`/`uneasy`/`dangerous` only.
+- **A generated character of a monstrous race is hostile by default** — the
+  captain's seventh ruling, one derived line. The `hostile` key is what a file
+  says instead.
+- All three are **omitted rather than written out** on export, like `opening`,
+  `mobile`, `absent` and `readable`, and all three are **re-asserted in both
+  directions** on load: deleting `hostile: true` from a file and re-seeding
+  disarms the monster.
+- `rake game:doctor` also reports **a monstrous race this world has nobody of**
+  (`monstrous_race_with_no_monsters`) and **a danger key the engine has no table
+  for** (`location_with_an_unknown_danger`). Neither can be repaired: writing a
+  monster is world data, and there is no record of which of the four words a
+  fifth one meant.
+
 ### Rules the loader enforces
 
 - Exactly one location is `opening: true`, and it must be `realized` — a story
@@ -444,6 +514,10 @@ Everywhere else the engine rolls it — `Character::StatBlock`, seeded through
   every night and nothing can move, which loads and plays and silently never
   happens. Both counted from the file, so a hand edit is caught before it
   reaches the database.
+- A `hostile: true` character carries a `stats` mapping. A foe with no body can
+  neither be hurt nor hurt back.
+- A location's `danger`, when the file gives one, is one of `safe`, `uneasy`,
+  `dangerous`, `deadly` — `Location::DANGERS`, and an absent key means `safe`.
 - `sex` is a `Character.sexes` key: `male`, `female`, `non_binary`,
   `trans_woman`, `trans_man`. Not checked by `validate!` -- it is `Character`'s
   own `inclusion` validation that rejects a bad one, inside the same
@@ -576,6 +650,11 @@ and asserts the records after each one.
 - **2** — a world carries its own `opening_scene`. A format 1 file has none.
 - **1** — the original.
 
+`universe.races[].monstrous`, `characters[].hostile` and `locations[].danger`
+were added to format 2 for the same reason, on the same rule: all three are
+optional, all three default to a world with no monsters in it, and every file
+written before they existed still loads and still means exactly what it meant.
+
 The optional `mechanics` key and `locations[].mobile` were added to format 2
 rather than bumping it to 3, which is the rule `WorldSeed::FORMAT` states:
 the number moves when a loader **cannot absorb** an older file. Both keys are
@@ -600,6 +679,17 @@ characters at all, because `Story::Generator` does not make any and
 Its `opening_scene` is hand-written — this world predates `rake game:new`
 narrating one — and its cast is the point: Grenn is in the doorway from the
 first line, so the player has somebody to talk to on turn one.
+
+**It is the one seeded world with a monster in it**, and it is here rather than
+in the other two on purpose. `The Salt Assizes` is the held-out world for
+`rake eval:run`; `The Unrecorded Hour`'s own universe says physical violence is
+rarely the instrument of choice. This world's physics have claimed since it was
+generated that prolonged exposure to Nocturna causes disorientation and memory
+loss, so `Nocturna-Blighted` is that claim followed to its end and marked
+`monstrous: true`, and Marek Sollen — `hostile: true`, in the `dangerous` bell
+chamber — is one of them. The Bell of Saint Aravel is realized for the reason the
+supply closet in `The Unrecorded Hour` is: a stub has nothing in it to walk into.
+`lib/engine_sweep/scripts/a-monster-in-a-room.yml` walks up to him offline.
 
 **It is also the world that moves.** Its universe has claimed since it was
 generated that Nocturnis rearranges itself every night; the hand-written

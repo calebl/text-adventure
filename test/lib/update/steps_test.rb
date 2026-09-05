@@ -174,6 +174,37 @@ class Update::StepsTest < ActiveSupport::TestCase
     assert_predicate Update::Steps::SafeRepairs.new.call, :nothing_to_do?
   end
 
+  # THE MONSTERS SLICE ADDED NO STEP, and this is that stated as a test rather
+  # than as a sentence in a PR body. `races.monstrous`, `characters.hostile` and
+  # `locations.danger` are all NOT NULL with a default, so every row already in
+  # a database is already right -- there is nothing to backfill. What the
+  # existing repair step DOES pick up for free is the one finding the columns
+  # made possible: a foe with no body, which is the same roll
+  # `character_without_a_stat_block` already had behind it.
+  test "the repair step rolls a body for a foe who has none, with no new step to run it" do
+    story = create(:story)
+    create(:character, :protagonist, story: story)
+    monster = create(:character, :monster_without_a_stat_block, story: story, fullname: "Marek Sollen")
+
+    report = Update::Steps::SafeRepairs.new.call
+
+    assert_predicate report, :changed?
+    assert_match(/rolled Marek Sollen a body/, report.lines.join("\n"))
+    assert_predicate monster.reload, :stat_block?
+    assert_predicate monster, :hostile?
+  end
+
+  test "an existing database needs nothing backfilled for the monsters columns" do
+    story = create(:story)
+    create(:character, :protagonist, story: story)
+    room = create(:location, story: story)
+
+    assert_not_predicate story.characters.first, :hostile?
+    assert_not_predicate story.universe.races.first, :monstrous?
+    assert_equal Location::SAFE, room.danger
+    assert_equal [], Update::REGISTRY.map(&:key).grep(/hostil|monstrous|danger/)
+  end
+
   test "the repair step writes nothing in a dry run, and says what it would fix" do
     story = create(:story)
     create(:character, :protagonist, story: story)

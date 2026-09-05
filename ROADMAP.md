@@ -55,6 +55,92 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **A monster can exist in a room and be seen** (`ta-combat-monsters`, slice 2 of
+  the combat build order). The captain's ruling of 2026-09-04, verbatim:
+
+  > *"a universe should be able to have monsters as well as characters."*
+
+  And his seventh ruling the same evening, which is where they come from:
+
+  > *"go with your rule for now. eventually I want the universe generator to
+  > provide more input into this."*
+
+  **Nothing fights.** What ships is that a world can CONTAIN an enemy, that
+  `rake game:mechanics` shows it standing there, that `rake game:doctor` can
+  vouch for it and that `rake game:sweep` asserts it offline.
+
+  **Three columns, all on the WORLD's side of the layer split** — `hit_die`'s
+  side. `races.monstrous` makes a race one of a universe's monsters rather than
+  one of its peoples, so a bestiary is the monstrous half of the race list that
+  already exists and there is no second catalogue. `characters.hostile` says
+  this person attacks the party — a flag on the record rather than an STI
+  subtype or a `monsters` table, which is `locations.mobile`'s own argument said
+  one table over: every seam a fight needs (a body, a whereabouts, hands, a place
+  in a room's cast, a per-playthrough condition, a seed entry, a doctor finding)
+  already exists on `Character` and on nothing else. `locations.danger` is how
+  likely a room is to be BORN with the world's monsters in it. All three are NOT
+  NULL with a default, which is `items.readable`'s shape and why **no
+  `bin/update` step was needed**: an existing world has no monsters and the
+  defaults say so.
+
+  **Hostility is DERIVED for everybody the engine writes**, in one line:
+  `Character.hostile_by_default?` is true when the race is monstrous, read by
+  `Character::Registry` and `Character::Generator` — the only two things in the
+  app that create a character outside a seed file. No model input reaches it:
+  no schema gained a field, no prompt mentions one, and nothing scans prose.
+  A seed file may say `hostile:` outright, which is how a world holds a tame
+  beast of a monstrous race.
+
+  **Where monsters come from is a rolled per-room `danger`**, in the shape of
+  `locations.mobile` and `location_connections.distance`: a closed-set key into
+  `Location::DANGERS` (`safe` / `uneasy` / `dangerous` / `deadly`) whose value is
+  faces of a d6. `Location::Danger.for_a_new_room` rolls it through the seeded
+  `Roll` kernel when a room is BORN — `Location::Generator#create_stub!`, which
+  is where a generated world's rooms come into existence — and
+  `Character::Registry#slots` throws one die per slot at realization to decide
+  whether that person is drawn from `Race.monstrous` or `Race.peoples`. `deadly`
+  is a seed file's word and the engine never rolls it. **The opening room of a
+  generated world is never rolled** and is therefore safe. Wandering on the story
+  clock and universe-generator input to placement are later slices, by ruling.
+
+  **`Playthrough#foes_in(location)` is the one reader**: the world says who is
+  hostile, a GAME says who is still standing. It is `#items_lying_in`'s shape one
+  table over and it is there for that method's reason — `Character.hostile`
+  alone would offer a corpse a fight. There is no per-playthrough mark about
+  hostility and that is deliberate: whether a foe has noticed you, whether you
+  talked it down, whether it is still angry after you fled are all slice 4's.
+
+  **Captain call C4, and it is the only model-facing piece.** His explicit word,
+  overriding the combat scout's recommendation: *"monstrous races should reach
+  the prompts."* So a monstrous race is in `Universe#race_names` for BOTH the
+  `:place` and `:dialogue` audiences. **No prompt template changed** — only what
+  the existing list contains once a world marks a race monstrous.
+
+  **The instruments**: a `hostile` line in the mechanics engine-view read-out
+  beside `present`, a `foes:` sweep expectation,
+  `EngineSweep::Invariants#hostility_unmoved` (all three columns against the
+  world file — the statement `stat_blocks_unmoved` makes about a body, and its
+  own check because two of the three are not columns on a character), and three
+  doctor findings: `hostile_without_a_stat_block` (safe, and the same roll
+  `character_without_a_stat_block` already had),
+  `monstrous_race_with_no_monsters` and `location_with_an_unknown_danger` (both
+  explicitly **no repair** — writing a monster is world data, and nothing on
+  record says which of the four words a fifth one meant).
+
+  **One seeded world gained a monster.** `The Lunar Cartographer` — not the
+  held-out `The Salt Assizes`, and not `The Unrecorded Hour`, whose own universe
+  says physical violence is rarely the instrument of choice. Its physics have
+  claimed since it was generated that prolonged exposure to Nocturna causes
+  memory loss, so `Nocturna-Blighted` is that claim followed to its end, and
+  Marek Sollen stands `hostile: true` in the `dangerous` bell chamber.
+  `lib/engine_sweep/scripts/a-monster-in-a-room.yml` walks up to him with no
+  model at all.
+
+  **One pre-existing bug fell out of it**: `WorldSeed::Loader` never wrote a
+  CHANGED race back. `has_many` without `autosave:` saves the new records in a
+  collection and leaves the changed ones alone, so editing a race's description
+  in a seed file and re-seeding did nothing. Races were the one table outside the
+  loader's own "the file re-asserts itself over a played world" rule.
 - **A pull re-applies a changed world file, and the doctor notices a copy that
   lags it** (`ta-update-reseeds`). A world outlives its seed FILE the way it
   outlives its schema: The Salt Assizes was seeded on the evening of 2026-09-03

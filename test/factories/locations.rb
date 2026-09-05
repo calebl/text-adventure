@@ -12,6 +12,12 @@ FactoryBot.define do
     parent_location { nil }
     # Places stay put unless a world says otherwise -- see WorldMechanic.
     mobile { false }
+    # And a place is safe unless a world says otherwise -- the column's own
+    # default, and what every room already written is. `danger` decides which
+    # pool the people BORN here are drawn from (`Character::Registry#slots`), so
+    # defaulting it to anything else would put monsters in rooms nobody asked
+    # for.
+    danger { Location::SAFE }
 
     # Named by a neighbour and nothing more -- no description, no lore. This is
     # what an unexplored exit looks like until the player walks through it.
@@ -23,6 +29,18 @@ FactoryBot.define do
 
     trait :realized do
       detail_level { "realized" }
+    end
+
+    # A ROOM THAT DRAWS ITS PEOPLE FROM THE WORLD'S BESTIARY. Half the faces of
+    # `Location::DANGER_DIE`, which is what `Location::DANGERS` says
+    # "dangerous" is; `:deadly` is the one a seed file may say and the engine
+    # never rolls.
+    trait :dangerous do
+      danger { "dangerous" }
+    end
+
+    trait :deadly do
+      danger { "deadly" }
     end
 
     trait :indoor do

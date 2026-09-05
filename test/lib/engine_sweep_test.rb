@@ -399,6 +399,97 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_match(/the records say:      Ammon Brace/, result.report)
   end
 
+  # --- a world that contains an enemy ----------------------------------------
+  #
+  # HOSTILITY IS THE WORLD'S, on exactly the terms a hit die is. The seed file,
+  # the derivation at creation and the roll a room is born with are the writers;
+  # no typed line is on that list, and `hostility_unmoved` is the assertion.
+
+  test "a foes expectation reads who in this room means the party harm" do
+    result = walk(<<~YAML)
+      story: The Lunar Cartographer
+      steps:
+      - type: look
+        expect:
+          present: [Grenn Ollivar]
+          foes: []
+      - type: go to the hallway
+        expect:
+          foes: []
+      - type: go to The Bell of Saint Aravel
+        expect:
+          present: [Marek Sollen]
+          foes: [Marek Sollen]
+    YAML
+
+    assert_predicate result, :passed?, result.report
+  end
+
+  test "a foes expectation that does not hold names both sides" do
+    result = walk(<<~YAML)
+      story: The Lunar Cartographer
+      steps:
+      - type: look
+        expect:
+          foes: [Grenn Ollivar]
+    YAML
+
+    assert_not result.passed?
+    assert_match(/expected foes: Grenn Ollivar/, result.report)
+    assert_match(/the records say:\s+nothing/, result.report)
+  end
+
+  test "somebody who became hostile during an offline walk is caught after it" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    story.characters.find_by(fullname: "Halkett Rowe").update!(hostile: true)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "hostility_unmoved", broken.invariant
+    assert_match(/Halkett Rowe is hostile and the file says not hostile/, broken.to_s)
+  end
+
+  test "a foe the file arms who was disarmed during a walk is caught too" do
+    seed, story = seeded_copy("the-lunar-cartographer")
+    story.characters.find_by(fullname: "Marek Sollen").update!(hostile: false)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "hostility_unmoved", broken.invariant
+    assert_match(/Marek Sollen is not hostile and the file says hostile/, broken.to_s)
+  end
+
+  test "a race that changed sides during an offline walk is caught after it" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    story.universe.races.find_by(name: "Marginalia").update!(monstrous: true)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "hostility_unmoved", broken.invariant
+    assert_match(/"Marginalia" is monstrous and the file says a people/, broken.to_s)
+  end
+
+  test "a room that became dangerous during an offline walk is caught after it" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    story.locations.find_by(name: "The Supply Closet").update!(danger: "deadly")
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "hostility_unmoved", broken.invariant
+    assert_match(/The Supply Closet is deadly and the file says safe/, broken.to_s)
+  end
+
+  # A WORLD THAT MEANS IT IS NOT A BROKEN INVARIANT, which is why this is stated
+  # as "unmoved" against the file rather than as "no world has monsters".
+  test "the world the file arms is not a broken invariant" do
+    seed, story = seeded_copy("the-lunar-cartographer")
+
+    assert_predicate story.characters.find_by(fullname: "Marek Sollen"), :hostile?
+    assert_predicate story.universe.races.find_by(name: "Nocturna-Blighted"), :monstrous?
+    assert_equal "dangerous", story.locations.find_by(name: "The Bell of Saint Aravel").danger
+    assert_empty EngineSweep::Invariants.new(story, seed: seed).check
+  end
+
   test "a room that got written during an offline walk is caught after it" do
     seed, story = seeded_copy("the-unrecorded-hour")
     story.locations.find_by(name: "The Long Hallway")

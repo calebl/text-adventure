@@ -112,6 +112,33 @@ class Playthrough < ApplicationRecord
     Item.of_playthrough(self).for_character(character).order(:id)
   end
 
+  # WHO IS FIGHTING THIS PARTY, HERE, IN THIS GAME -- and the ONE reader of it.
+  # The world says who is hostile; this game says who is still standing.
+  #
+  # It is the shape `#items_lying_in` has, one table over, and it is here for
+  # that method's reason: `Character.hostile` is the WORLD's answer, and since a
+  # playthrough can take somebody's last hit point the world's answer is no
+  # longer this game's. A caller reading the scope alone would offer a corpse a
+  # fight.
+  #
+  # `id`-ORDERED, because `Character.present_in` is -- *"so two people in one
+  # room are offered in a stable order"* -- and a fight has to be able to say
+  # who acts when without inventing a second ordering.
+  #
+  # WHAT IT DOES NOT READ, and this is deliberate: any per-playthrough mark
+  # about hostility. There is none. Whether a foe has noticed you, whether you
+  # talked it down, whether it is still angry after you fled -- all three are
+  # things nobody has asked for, and when one is asked for it goes on the
+  # `playthrough_vitals` row that already exists rather than in a new table.
+  #
+  # An Array rather than a relation, because `#vitals_for` is a per-row question
+  # and there is no SQL for it -- the same honest cost `#vitals_for` itself has.
+  def foes_in(location)
+    return [] if location.nil?
+
+    Character.present_in(location).hostile.reject { |who| vitals_for(who)&.dead? }
+  end
+
   # HOW MUCH IS LEFT OF SOMEBODY, IN THIS GAME, AND THE ONE READER OF IT.
   #
   # `Playthrough::Moment`'s line to the narrator, the `rake game:mechanics`

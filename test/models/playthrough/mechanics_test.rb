@@ -780,7 +780,77 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     # records and wrong on the screen.
     (state.items_here + state.carried).each { |item| assert_includes report.to_s, item.name, where }
     state.exits.each { |exit| assert_includes report.to_s, exit.name, where }
+
+    # WHO IS HERE AND WHICH OF THEM MEANS THE PARTY HARM, and they are two
+    # answers: the read-out prints both rows, so a foe that stopped being in the
+    # cast or a bystander that started being a foe fails here.
+    #
+    # NOWHERE IS AN EMPTY SET on both, and it is asserted rather than derived --
+    # `Character.present_in(nil)` is "everybody whose whereabouts is nobody's
+    # business", which is the unguarded scope's answer and not this room's.
+    assert_equal here ? Character.present_in(here).to_a : [], state.present, where
+    assert_equal here ? @playthrough.foes_in(here) : [], state.foes, where
+    assert_equal [], state.foes - state.present, where
   end
+  # --- a world that contains an enemy ----------------------------------------
+  #
+  # Nothing fights. What the read-out has to do is SHOW one standing there, and
+  # show it as a different answer from "somebody is here" -- the layer split on
+  # the screen the way `condition` and `sheet` already are.
+
+  test "the read-out says nobody is hostile in an ordinary room" do
+    report = play("look")
+
+    assert_equal [ @rowe ], report.state.present
+    assert_equal [], report.state.foes
+    assert_includes report.to_s, "nobody hostile"
+  end
+
+  test "the read-out names a foe standing here, beside the cast it is part of" do
+    marek = create(:character, :monster, story: @story, location: @office, fullname: "Marek Sollen")
+
+    report = play("look")
+
+    assert_equal [ @rowe, marek ], report.state.present
+    assert_equal [ marek ], report.state.foes
+    assert_match(/hostile\s+Marek Sollen/, report.to_s)
+    assert_match(/present\s+Halkett Rowe, Marek Sollen/, report.to_s)
+  end
+
+  test "a foe in the next room is not a foe in this one" do
+    create(:character, :monster, story: @story, location: @closet, fullname: "Marek Sollen")
+
+    assert_equal [], play("look").state.foes
+    assert_equal [ "Marek Sollen" ], play("go closet").state.foes.map(&:fullname)
+  end
+
+  # A MONSTER IS AN ORDINARY PERSON IN EVERY RESPECT BUT ONE, and that respect
+  # is not the closed set `talk` resolves against.
+  test "a foe is still somebody the grammar resolves for talk" do
+    create(:character, :monster, story: @story, location: @office, fullname: "Marek Sollen")
+
+    report = play("talk to Marek Sollen")
+
+    assert_predicate report, :refused?
+    assert_includes report.refusal, "Marek Sollen"
+    assert_includes report.refusal, "talking is prose"
+  end
+
+  # HOSTILITY IS THE WORLD'S, on exactly the terms a hit die is. Nothing a
+  # player types may write it -- which is what `hostility_unmoved` asserts over
+  # a whole walk and what this asserts one line at a time.
+  test "no typed line makes anybody hostile" do
+    marek = create(:character, :monster, story: @story, location: @office, fullname: "Marek Sollen")
+
+    [ "look", "take stamp", "talk to Halkett Rowe", "go closet", "stats", "check strength" ].each do |command|
+      play(command)
+
+      assert_not_predicate @rowe.reload, :hostile?, command
+      assert_predicate marek.reload, :hostile?, command
+      assert_equal Location::SAFE, @office.reload.danger, command
+    end
+  end
+
   # --- a line that named more than one thing ---------------------------------
 
   # ONE LINE IS ONE ACT, and this mode used to DO the first of the two and add a

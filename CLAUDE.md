@@ -403,6 +403,36 @@ The current database includes the following story-related models with proper ass
   `Scene::TransitionBackfill`'s header before changing it. Read the columns
   through `#recorded_action` / `#acted_on_record`: a `Scene` also comes out of
   an `rake eval:run` database whose table predates them
+- **Character** → `hostile`, and **Race** → `monstrous`, and **Location** →
+  `danger`: **A WORLD CAN CONTAIN AN ENEMY, AND NOTHING FIGHTS YET.** The
+  captain's ruling of 2026-09-04 — *"a universe should be able to have monsters
+  as well as characters"* — answered with three columns on `hit_die`'s side of
+  the layer split: rolled or derived by the engine, written by the seed loader,
+  and **by no model, ever** (no schema field, no prompt, no prose scan). A
+  monster is an ordinary `Character` with `hostile` set — `locations.mobile`'s
+  argument one table over — and **the nine required fields are NOT relaxed for
+  one**, because a monster you can talk to is a feature. `races.monstrous` makes
+  a universe's bestiary the monstrous half of its own race list; `Race.monstrous`
+  and `Race.peoples` are the two pools a GENERATED person is drawn from, and
+  which one is a room's own `danger` (`Location::DANGERS`, a closed-set key whose
+  value is faces of `DANGER_DIE` — the `DISTANCES` shape). `Location::Danger`
+  rolls a room's danger when it is BORN (`Location::Generator#create_stub!`,
+  never the opening room) and rolls one die per slot at realization
+  (`Character::Registry#slots`); `deadly` is a seed file's word the engine never
+  rolls. **Hostility is DERIVED in one line** for everybody the engine writes —
+  `Character.hostile_by_default?`, the captain's seventh ruling — and a seed file
+  says `hostile:` outright. `Playthrough#foes_in(location)` is the ONE reader:
+  hostile, present, and alive **in this playthrough**, `id`-ordered like
+  `Character.present_in`. **Captain call C4, his explicit word:** monstrous races
+  DO reach `Universe#race_names` in both the `:place` and `:dialogue` audiences —
+  no prompt template changed, only what the list contains.
+  `EngineSweep::Invariants#hostility_unmoved` is `stat_blocks_unmoved`'s
+  statement for all three columns (its own check, because two of them are not on
+  a character), and `rake game:doctor` reports
+  `hostile_without_a_stat_block` (safe), `monstrous_race_with_no_monsters` and
+  `location_with_an_unknown_danger` (both **no repair**, stated).
+  `lib/engine_sweep/scripts/a-monster-in-a-room.yml` walks it. There is no
+  per-playthrough mark about hostility and no wandering; both are later slices
 - **Character** → `level` and `hit_die`, **THE STAT BLOCK, AND IT IS THE
   WORLD'S**. `hit_die` (one of `Character::HIT_DICE`) is how tough the body is,
   and `level` is **stored and inert** — nothing reads it for behaviour, nothing
@@ -708,7 +738,8 @@ The current database includes the following story-related models with proper ass
 - **`character_not_present` was measured and NOT shipped**, and `Story::Audit`'s
   finding 5 has the numbers. The whereabouts record made the check conceivable —
   the records are authoritative about presence now — and the corpora still
-  cannot support it: 36 of 248 passages are judgeable, exactly one names
+  cannot support it: 104 of 248 passages are judgeable (36 before one seeded
+  world gained a monster, and the numerator did not move), exactly one names
   somebody recorded elsewhere, and moving one seeded character one door makes
   real, correct prose ("Grenn's voice rises from somewhere below") read as a
   violation. The gap stays covered by the engine instead: a player cannot SPEAK
@@ -757,7 +788,10 @@ The current database includes the following story-related models with proper ass
   initiative, no rest, no skill, no spell, no number on an `Item`, and no
   `Story::Audit` prose check reading HP against narration. There ARE three
   ability scores since the evening of 2026-09-04 (see `Character`), and nothing
-  connects a wound to a check: a hurt body rolls against the same number.
+  connects a wound to a check: a hurt body rolls against the same number. A world
+  can CONTAIN an enemy since the same day (`characters.hostile`), and nothing
+  resolves a fight: there is no attack verb, no blow, no riposte and no
+  per-playthrough mark about who has noticed whom.
 - `lib/engine_sweep/scripts/death-ends-a-playthrough.yml` walks it: harm to
   zero, then every kind of line refused with nothing written.
   `the-unrecorded-hour-two-bodies.yml` walks the other half — one game ending is
@@ -767,13 +801,19 @@ The current database includes the following story-related models with proper ass
 - `rake game:sweep` (`EngineSweep`) walks YAML scripts of typed lines through
   `Playthrough::Mechanics` with `model: false` and asserts the records after
   each one: location, exits (with detail level), what is lying here, what is
-  carried, **who is standing here** (`present:`), refusals and their offered
+  carried, **who is standing here** (`present:`), **which of them is a foe**
+  (`foes:`), refusals and their offered
   alternatives. **Offline, deterministic, free, and run by `bin/rails test`** — the engine half of the game, which
   `rake eval:run` cannot see and which nobody was testing without a keyboard.
 - **No model is a guard, not an intention:** `BaseAgent.new` is replaced for the
   length of a run and raises `EngineSweep::ModelCalled`. Each walk loads its own
   copy of the seeded world under a title of its own inside a rolled-back
   transaction, so it is safe against a database mid-game.
+- `hostility_unmoved` is the same statement about an ENEMY: no typed line may
+  write `characters.hostile`, `races.monstrous` or `locations.danger`. Its own
+  check rather than three more keys on the one below, because two of the three
+  are not columns on a character and an invariant reporting a moved race under
+  the heading "stat blocks" would send a reader to the wrong table.
 - `stat_blocks_unmoved` is the same statement about a BODY: no typed line may
   write `characters.level`, `characters.hit_die` or any of the three abilities,
   because a sheet is the world's — `check strength` throws a die and writes

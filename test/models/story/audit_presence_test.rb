@@ -3,6 +3,11 @@ require "test_helper"
 # WHY THERE IS NO `character_not_present` CHECK, pinned rather than asserted in
 # a commit message.
 #
+# THE JUDGEABLE COUNT MOVED ONCE, 2026-09-04, and the record of it is in the
+# denominator test below: one seeded monster in `The Lunar Cartographer` took it
+# from 36 of 248 to 104 of 248. The NUMERATOR did not move, which is why the
+# decision did not either.
+#
 # `ta-character-whereabouts` landed the record that was supposed to make the
 # check possible: `characters.location_id`, so "where is Ammon Brace" has an
 # answer and the objection in `Story::Audit`'s finding 2a -- that a narrated
@@ -86,11 +91,24 @@ class Story::AuditPresenceTest < ActiveSupport::TestCase
 
   # THE DENOMINATOR, and it is the first half of why the check cannot ship: a
   # check can only be judged on a passage where somebody is demonstrably
-  # elsewhere, and that is 36 of 248.
-  test "only 36 of the 248 frozen passages can judge a presence check at all" do
+  # elsewhere.
+  #
+  # IT WAS 36 OF 248 WHEN FINDING 5 WAS WRITTEN AND IT IS 104 NOW, and the
+  # difference is one seeded monster. `The Lunar Cartographer` placed exactly
+  # one non-protagonist -- Grenn Ollivar, in Room 3 -- so its passages outside
+  # Room 3 had nobody demonstrably elsewhere and were unjudgeable; Marek Sollen
+  # standing in The Bell of Saint Aravel makes almost all of them judgeable.
+  # This test firing IS the guard working: a change to the world files moved the
+  # measurement, so the decision gets re-read rather than inherited.
+  #
+  # IT DOES NOT REOPEN THE DECISION, and the reason is the numerator below --
+  # which did NOT move. Four times as many passages can be judged and exactly
+  # one still names somebody the records place elsewhere, so the false-positive
+  # measurement is still n = 1 and `Story::Audit`'s finding 5 stands as written.
+  test "only 104 of the 248 frozen passages can judge a presence check at all" do
     judgeable = passages.count { |passage| elsewhere_in(passage).any? }
 
-    assert_equal 36, judgeable,
+    assert_equal 104, judgeable,
                  "the judgeable set changed -- re-read Story::Audit finding 5 before shipping a presence check"
   end
 

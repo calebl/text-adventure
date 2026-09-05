@@ -6,14 +6,20 @@
 #
 #   Story      title                     (the file's identity; keep them unique)
 #   Universe   the story's universe      (the table has no natural key of its own)
-#   Race       (universe, name)          unique index
+#   Race       (universe, name)          unique index; `monstrous` is written on
+#                                        every load, in both directions
 #   Character  (story, fullname)         unique index; `stats` is the file's own
 #                                        answer for a body, re-asserted like a
-#                                        placement and left alone when absent
+#                                        placement and left alone when absent.
+#                                        `hostile` is written on every load, in
+#                                        both directions, like `absent`
 #   Location   (story, name)             case-insensitively first, matching
 #                                        Location::Generator#find_location, and
 #                                        then on WorldSeed.natural_key, which is
-#                                        what recognizes a room the file renamed
+#                                        what recognizes a room the file renamed.
+#                                        `danger` is written on every load, in
+#                                        both directions, and an absent key is
+#                                        Location::SAFE
 #   Connection (location, connected)     unique index, written both ways -- and
 #                                        a mobile room's doorway is matched on
 #                                        ARITY as well, because the world's own
@@ -168,13 +174,32 @@ class WorldSeed::Loader
     universe = existing_story&.universe || Universe.new
     universe.assign_attributes(universe_document.except("races"))
 
-    universe_document.fetch("races").each do |attributes|
+    races = universe_document.fetch("races").map do |attributes|
       race = universe.races.detect { |candidate| candidate.name == attributes.fetch("name") } ||
              universe.races.build(name: attributes.fetch("name"))
       race.description = attributes.fetch("description")
+      # A UNIVERSE'S BESTIARY IS THE MONSTROUS HALF OF ITS OWN RACE LIST, and
+      # `monstrous: true` is the file saying which half. Written in BOTH
+      # DIRECTIONS on every load -- the shape `absent` has on a character rather
+      # than the shape `mobile` has on a room -- so deleting the key from a file
+      # and re-seeding takes the flag off the record. It has to run that way
+      # round: leaving a stale `monstrous` on a race the file no longer marks
+      # would keep a dangerous room drawing its people out of a pool the world
+      # no longer has.
+      race.monstrous = attributes["monstrous"] == true
+      race
     end
 
     universe.save!
+    # A RACE THAT ALREADY EXISTED AND CHANGED IS SAVED EXPLICITLY, and this line
+    # is a fix rather than a flourish. `has_many` without `autosave: true` saves
+    # the NEW records in a collection when the parent is saved and leaves the
+    # changed ones exactly as they were on disk -- so before this, editing a
+    # race's description in a seed file and re-seeding did nothing at all, and
+    # `monstrous` would have inherited the same silence. It is the same "the
+    # file re-asserts itself over a played world" rule every other loader here
+    # keeps; races were the one table quietly outside it.
+    races.each { |race| race.save! if race.changed? }
     universe
   end
 
@@ -201,7 +226,19 @@ class WorldSeed::Loader
       location = find_location(story, name) || story.locations.new(name: name)
       note_rename("location", location, name)
       note_creation("location", name) unless location.persisted?
-      location.assign_attributes(attributes.except("opening", "items").merge("name" => name))
+      # HOW DANGEROUS THE FILE SAYS THIS PLACE IS, written in both directions on
+      # every load -- the shape `absent` and `hostile` have on a character
+      # rather than the pass-through `mobile` has one key over, and the
+      # difference is worth stating. A room's danger decides which pool the
+      # people born in it are drawn from; a stale "dangerous" left on a row the
+      # file no longer marks would keep the world writing monsters into a room
+      # its author had made safe, and there would be no way to undo it from the
+      # file. An absent key is `Location::SAFE`, which is the column's default
+      # and what every room already written is.
+      location.assign_attributes(
+        attributes.except("opening", "items")
+                  .merge("name" => name, "danger" => attributes["danger"].presence || Location::SAFE)
+      )
       location.save!
       load_items!(story, attributes["items"], character: nil, location: location)
 
@@ -362,8 +399,22 @@ class WorldSeed::Loader
       where = attributes["location"].presence && find_location(story, attributes["location"])
 
       character.assign_attributes(
-        attributes.except("race", "items", "location", "absent", "stats")
+        attributes.except("race", "items", "location", "absent", "stats", "hostile")
                   .merge(race: race, location: where, deliberately_absent: attributes["absent"] == true,
+                         # WHETHER THIS PERSON ATTACKS THE PARTY, and the file
+                         # is the decision -- so a hand-authored world can hold
+                         # a tame beast of a monstrous race as easily as a
+                         # hostile one of a people. Written in both directions
+                         # on every load, like `absent` above and for the same
+                         # reason: deleting `hostile: true` from a file and
+                         # re-seeding disarms the monster, and a flag that only
+                         # ever went one way would make that impossible.
+                         #
+                         # THE DERIVED RULE IS NOT APPLIED HERE.
+                         # `Character.hostile_by_default?` is the answer for
+                         # somebody the ENGINE writes, where there is nobody to
+                         # ask; a file has already been asked.
+                         hostile: attributes["hostile"] == true,
                          **stat_block(attributes))
       )
       character.save!
@@ -587,6 +638,7 @@ class WorldSeed::Loader
     end
 
     validate_inscriptions!
+    validate_dangers!
 
     connection_documents.each do |attributes|
       pair = Array(attributes["between"])
@@ -619,6 +671,7 @@ class WorldSeed::Loader
       end
 
       validate_stats!(attributes)
+      validate_hostility!(attributes)
 
       next if standing.blank? || names.any? { |name| name.casecmp?(standing) }
 
@@ -678,6 +731,38 @@ class WorldSeed::Loader
 
       raise InvalidWorld, "#{where}: character #{who} has #{ability} #{score.inspect}; an ability is " \
                           "#{Character::ABILITY_RANGE.first}..#{Character::ABILITY_RANGE.last}, which is what 3d6 rolls"
+    end
+  end
+
+  # A FOE WITH NO BODY, caught here rather than the first time somebody swings
+  # at it. `characters.hostile` says this person attacks the party, and a fight
+  # is arithmetic over `Character#max_hp` -- so a hostile character with no
+  # `stats` is a monster nothing can hurt and that can never be hurt back. The
+  # record allows it (both stat columns are nullable, because a database older
+  # than them is a real state), and `rake game:doctor` reports one it finds
+  # (`hostile_without_a_stat_block`); a FILE is held to the stronger rule,
+  # because a hand-authored world is the decision and this one is an editing
+  # slip. Same reasoning as `#validate_stats!`, one key over.
+  def validate_hostility!(attributes)
+    return unless attributes["hostile"] == true
+    return if attributes["stats"].is_a?(Hash)
+
+    raise InvalidWorld, "#{where}: character #{attributes.fetch("fullname").inspect} is `hostile: true` with no " \
+                        "`stats` -- a foe needs a body, because a fight is arithmetic over its hit points"
+  end
+
+  # A DANGER THE ENGINE HAS NO TABLE FOR. `Location::DANGERS` is the closed set
+  # of what a room may be -- the labels are what an author reads and the numbers
+  # are what the engine rolls -- so a fifth word is a typo, and it is named here
+  # with the file and the room rather than surfacing as a validation error on a
+  # column. Same reason the stats and the inscriptions are checked here.
+  def validate_dangers!
+    location_documents.each do |attributes|
+      danger = attributes["danger"]
+      next if danger.blank? || Location::DANGERS.key?(danger)
+
+      raise InvalidWorld, "#{where}: location #{attributes.fetch("name").inspect} has `danger: #{danger.inspect}`; " \
+                          "there is: #{Location::DANGERS.keys.join(", ")}"
     end
   end
 
