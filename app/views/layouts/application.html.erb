@@ -118,6 +118,18 @@
       .sheet-line .state { color: #9aa3ac; margin-left: auto; }
       .sheet-line .mark { color: #6b737b; font-size: 12px; min-width: 5rem; text-align: right; }
       .sheet-note { color: #8b939b; margin: .5rem 0 0; }
+      /* WHAT JUST HAPPENED, AND WHAT YOU DO NOW -- the two ends of a round, and
+         the panel is read between them. `.sheet-lead` is the engine's line
+         about the round that is DONE, in the body colour because it is the
+         first thing to read; `.sheet-prompt` names the round the buttons under
+         it land on, in the heading's own small-caps so a row of buttons cannot
+         read as a mode that was entered. No new colours: both are already in
+         this file. */
+      .sheet-lead { color: #cfd3d8; margin: 0 0 .6rem; }
+      .sheet-prompt {
+        font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+        color: #8ba0b4; margin: .9rem 0 0;
+      }
       /* `form` is flex and full-width in the rule above, which would put every
          button on a line of its own. The same fix `.verdict` makes. */
       .sheet-actions { display: flex; flex-wrap: wrap; gap: .4rem; margin: .7rem 0 0; }

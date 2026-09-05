@@ -78,13 +78,72 @@ class Playthrough::Battle
   # THE BLOWS OF THE LAST ROUND FOUGHT, and only that round: the panel says what
   # just happened, and the whole exchange is in the log once the fight closes
   # (`Playthrough::Fight#sentence`). Empty before the first swing.
+  #
+  # THE PARTY'S OWN BLOW IS NAMED FIRST, which is the captain's reading of
+  # 2026-09-05 answered where it is read: he typed `/attack Grenn Ollivar`
+  # expecting to ENTER a fight, and it was round 1 -- his blow, then the answer.
+  # A round is the turn (call C5), so the player acted first in every round the
+  # player opened, and the exchange reads in that order rather than in whatever
+  # order `id` happened to give it. Chronological within each side, so two foes
+  # still answer in the order they swung.
   def last_exchange
     blows = fight.open_blows
     return [] if blows.empty?
 
     latest = blows.map(&:round).max
-    blows.select { |blow| blow.round == latest }
+    round = blows.select { |blow| blow.round == latest }
+
+    round.select { |blow| ours?(blow) } + round.reject { |blow| ours?(blow) }
   end
+
+  # THE ROUND THE PANEL IS REPORTING, which is the one BEFORE `#round` and nil
+  # before anybody has swung. Off the rows like everything else here.
+  def last_round = last_exchange.first&.round
+
+  # WHETHER THE PARTY OPENED THIS FIGHT, out of the first blow nothing has
+  # closed. `/attack <name>` IS round 1 -- the captain's ruling of 2026-09-05,
+  # option 1 of the three he was offered: *"keep attack as a blow"* -- so when
+  # this is true the panel is on the screen BECAUSE the player struck, and
+  # `#lead` says so in as many words.
+  def opened_by_the_party? = ours?(fight.open_blows.first)
+
+  # THE HEADING: where the fight is, and nothing about what to do. The round
+  # belongs on `#call_to_act`, over the buttons, because the round is what the
+  # NEXT line lands on and a heading over the condition lines would read as the
+  # round they describe.
+  def heading = "A fight in #{room.name}."
+
+  # WHAT JUST HAPPENED, IN THE ENGINE'S OWN LINE, AND EVERY CLAUSE IS A ROW.
+  #
+  # This is the sentence the captain did not have: he struck, the foe answered,
+  # and the panel appeared reading `Round 2` with no statement anywhere that
+  # round 1 had been fought and that he had fought it. So the boundary is said
+  # out loud -- the round that is DONE, who struck whom in it, and, on the first
+  # appearance of a fight the party opened, that the fight is on because they
+  # struck.
+  #
+  # THE SECOND SENTENCE IS THE FIRST APPEARANCE ONLY -- round 1 fought, round 2
+  # next -- because that is the moment that misread: the panel arrives on the
+  # screen for the first time in a fight that exists because the player typed
+  # one line. By round 3 the boundary is the only thing left to say and the
+  # cause is behind them.
+  #
+  # Nothing here is invented per render: the names are `Character#fullname`, the
+  # round is `Playthrough::Blow#round`, and which side a blow is on is
+  # `#ours?` -- the same party `#bodies` is built from.
+  def lead
+    exchange = last_exchange
+    return "No blow has landed yet." if exchange.empty?
+
+    opening = exchange.first.round == 1 && opened_by_the_party?
+
+    [ "Round #{exchange.first.round} is done: #{what_happened(exchange)}.",
+      ("The fight is on because you struck." if opening) ].compact.join(" ")
+  end
+
+  # WHAT THE BUTTONS UNDER IT ARE: the round the next line lands on, asked as a
+  # question, so the row of buttons cannot read as a mode that was entered.
+  def call_to_act = "Round #{round}: what do you do?"
 
   # ONE CONDITION LINE PER BODY IN THE FIGHT: the party first, then the foes.
   #
@@ -100,7 +159,7 @@ class Playthrough::Battle
   end
 
   def party
-    playthrough.cast_in(room).select { |who| who.is_protagonist? || who.is_companion? }
+    @party ||= playthrough.cast_in(room).select { |who| who.is_protagonist? || who.is_companion? }
   end
 
   # A BLOW AT EACH LIVE FOE. The dead are already out of `#foes_in` -- it reads
@@ -115,8 +174,24 @@ class Playthrough::Battle
   # will play it. What a button does is offer the act the panel is about, and
   # putting a bystander on a row of strike buttons would be the app suggesting
   # it.
+  # THE LABEL SAYS IT IS A BLOW, AND SAYS WHAT DIE. *strike* rather than
+  # *attack* because the word on the button is what the player thinks they are
+  # about to do, and `d8` because a blow always connects for one die of the
+  # attacker's `hit_die` (the captain's call C2) -- so the die IS the whole of
+  # what pressing this does. It is `#swing_die` and not a new query: the party's
+  # `hit_die` is already on the panel, under every condition line
+  # (`Character#max_hp` is derived from it). A body with no stat block gets no
+  # parenthesis rather than an invented one, exactly as `Body#state` does.
   def strikes
-    foes.map { |who| Action.new(label: "strike #{who.fullname}", command: "/attack #{who.fullname}") }
+    foes.map { |who| Action.new(label: strike_label(who), command: "/attack #{who.fullname}") }
+  end
+
+  # ONE DIE OF THE PARTY'S OWN `hit_die`, which is what a blow deals
+  # (`Playthrough::Turn#damage_for`). Nil for a body written before the stat
+  # block columns.
+  def swing_die
+    die = playthrough.character&.hit_die
+    "d#{die}" if die
   end
 
   # THE WAY OUT, WHICH IS ALWAYS THERE -- the captain's call C1: a fight is
@@ -159,6 +234,33 @@ class Playthrough::Battle
   def throws = []
 
   private
+
+  def strike_label(who) = [ "strike #{who.fullname}", ("(#{swing_die})" if swing_die) ].compact.join(" ")
+
+  # WHOSE BLOW IT IS, against the same party `#bodies` is built from -- the
+  # protagonist and their companions, who are wherever the PLAYTHROUGH is.
+  def ours?(blow) = blow.present? && party.map(&:id).include?(blow.attacker_id)
+
+  # THE ROUND IN A CLAUSE, and the two sides are told apart because they are
+  # different facts: the party ACTED (they typed the line) and the foes
+  # ANSWERED (`Playthrough::Riposte` ran on the room the turn began in). When
+  # only the foes swung, nobody answered anybody and it is said plainly.
+  def what_happened(exchange)
+    ours, theirs = exchange.partition { |blow| ours?(blow) }
+    return theirs.map { |blow| phrase(blow) }.uniq.to_sentence if ours.empty?
+
+    answer = theirs.any? ? "#{theirs.map { |blow| blow.attacker.fullname }.uniq.to_sentence} answered" : "nobody answered"
+
+    "#{ours.map { |blow| phrase(blow) }.uniq.to_sentence}, and #{answer}"
+  end
+
+  def phrase(blow) = "#{name_of(blow.attacker)} struck #{name_of(blow.target)}"
+
+  # THE PROTAGONIST IS *you*, everywhere on this panel -- `Body#mark` already
+  # says it of the condition line, and a lead that named the player in the third
+  # person would be the `third_person_protagonist` defect `Story::Audit` counts,
+  # written by the engine this time.
+  def name_of(who) = who.is_protagonist? ? "you" : who.fullname
 
   # WHY THIS BODY IS ON THE PANEL, in one word, and each word is a different
   # record. `hostile` is the WORLD's -- a seed file wrote it and no typed line

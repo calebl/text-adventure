@@ -935,7 +935,13 @@ The current database includes the following story-related models with proper ass
   the browser (three chats for two `/go` moves, none for two rounds). The
   free-text box stays under the panel: this is a shortcut into the one loop and
   not a mode. **Condition lines and never bars** (`9 of 18`), because the reading
-  experience is `ta-api-iface`'s stage — scout §15.6. `#throws` is the slice 5
+  experience is `ta-api-iface`'s stage — scout §15.6. **AND IT READS AS A ROUND
+  BOUNDARY, NEVER AS A MODE THAT WAS ENTERED**: `#heading` is where the fight
+  is, `#lead` is the round that is DONE and who fought it, `#call_to_act` puts
+  the round the NEXT line lands on over the buttons, and `#last_exchange` names
+  the party's own blow first — the captain's reading of 2026-09-05, that
+  `/attack <name>` IS round 1, answered by keeping it a blow and changing the
+  words. `#throws` is the slice 5
   seam and still answers `[]` — but the verb HAS landed, and it is deliberately
   NOT in `Playthrough::Grammar::RESOLVING` (a throw names two records, and that
   list maps one word to ONE closed set), so what the seam waits for is a PANEL

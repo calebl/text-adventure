@@ -387,7 +387,15 @@ class NarrationJobTest < ActiveJob::TestCase
 
     replace = streams.last.to_html
 
-    assert_match "A fight. The Bell of Saint Aravel. Round 2.", replace
+    # THE PANEL COMES BACK AS A ROUND BOUNDARY: the round just fought, who
+    # fought it, and the round the next line lands on. `/attack Marek Sollen`
+    # IS round 1 -- the captain's ruling of 2026-09-05, *keep attack as a
+    # blow* -- so this one turn produced both halves of the exchange and the
+    # panel says so rather than appearing at `Round 2` unexplained.
+    assert_match "A fight in The Bell of Saint Aravel.", replace
+    assert_match "Round 1 is done: you struck Marek Sollen, and Marek Sollen answered. " \
+                 "The fight is on because you struck.", replace
+    assert_match "Round 2: what do you do?", replace
     assert_match(/Hero Protagonist hit Marek Sollen for \d+ \(round 1\)/, replace)
     assert_match(/Marek Sollen hit Hero Protagonist for \d+ \(round 1\)/, replace)
     assert_match "/attack Marek Sollen", replace, "and the button is back for the next round"

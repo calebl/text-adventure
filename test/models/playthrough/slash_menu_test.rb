@@ -26,6 +26,20 @@ class Playthrough::SlashMenuTest < ActiveSupport::TestCase
     assert(menu[:verbs].all? { |verb| verb[:hint].present? })
   end
 
+  # THE HINT SETS THE EXPECTATION BEFORE THE LINE IS SENT. The captain picked
+  # `/attack <name>` off this menu on 2026-09-05 expecting it to ENTER a fight,
+  # and it was round 1: his blow landed and the foe answered on the same turn.
+  # His ruling was to keep attack as a blow, so the hint is where the fix goes.
+  test "the attack hint says the blow lands now and is answered this turn" do
+    hint = menu[:verbs].find { |verb| verb[:word] == "attack" }[:hint]
+
+    assert_equal "strike somebody standing here -- your first blow lands now, and they answer",
+                 hint
+    # `talk`'s hint is untouched: choosing a name there is not an act against
+    # anybody and never was.
+    assert_equal "somebody standing here", menu[:verbs].find { |verb| verb[:word] == "talk" }[:hint]
+  end
+
   test "each verb carries the closed set its action reads against, this turn" do
     assert_equal [ "The Supply Closet" ], menu[:targets]["go"]
     assert_equal [ "Halkett Rowe" ], menu[:targets]["talk"]

@@ -55,12 +55,41 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **Attack reads as a blow** (`ta-attack-reads-as-blow`). The captain played his
+  first fight and reported: *"When I used the slash attack command I thought
+  that would enter the battle only but it actually struck the first blow. Then
+  in battle mode, I clicked the button to attack and then the fight was done."*
+  Offered three options, he ruled **keep attack as a blow** — `/attack <name>`
+  IS round 1, it is what marks a peaceful person provoked, and the asymmetry
+  stays (a hostile monster shows the panel before anything happens; a fight the
+  player starts begins with the player's blow). So **nothing about the engine
+  changed and the words did**: no new step, no squaring-up record, no
+  confirmation, no schema.
+
+  **Four surfaces, all engine-authored, all read off the rows.** The slash menu
+  hint says the blow lands now and is answered this turn; a strike button says
+  `strike Marek Sollen (d8)` — the verb because a blow always connects, the die
+  because that is what it deals, and it is the party's own `hit_die`, already on
+  the panel under every condition line. The panel's heading is where the fight
+  is, `Playthrough::Battle#lead` is the round that is DONE (*"Round 1 is done:
+  you struck Marek Sollen, and Marek Sollen answered. The fight is on because
+  you struck."*), and `#call_to_act` puts the round the NEXT line lands on over
+  the buttons. The party's own blow is named first in the exchange, because in a
+  round the party opened it is the one that happened first.
+
+  **The cause is stated once.** *"The fight is on because you struck"* is the
+  first panel of a fight the party opened and nothing after it: by round 3 the
+  boundary is all there is left to say. `Playthrough::Fight#sentence` was read
+  and left alone — it already names the attacker and the round of every blow it
+  lists, so a one-blow kill already closes with the player's own round 1.
+
 - **The battle view in the browser** (`ta-combat-battle-view`, slice 7 of the
   combat build order). The captain's call C9, 2026-09-05: *"go with buttons for
   now."* He can now fight in a browser, and **this is the last slice that
   changes no prompt**.
 
-  **What he sees.** A panel inside `#turn_log` — the room and the round, one
+  **What he sees.** A panel inside `#turn_log` — the room, the round just
+  fought and the round to come (`ta-attack-reads-as-blow` above), one
   condition line per body in the fight (`9 of 18`, marked `you` / `hostile` /
   `provoked`), the blows of the round just fought in the engine's own sentence,
   and a button per act: strike each live foe, leave by each exit. Condition

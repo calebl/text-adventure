@@ -22,7 +22,18 @@
     nothing combat-specific in them, so the sheet that wants them can have them
     without a restyle. %>
 <div class="sheet battle">
-  <h2>A fight. <%= battle.room.name %>. Round <%= battle.round %>.</h2>
+  <%# THE HEADING IS WHERE, THE LEAD IS WHAT JUST HAPPENED, AND THE ROUND IS
+      OVER THE BUTTONS. The captain's reading of 2026-09-05: he typed
+      `/attack Grenn Ollivar` expecting to ENTER a fight, and it was round 1 --
+      his blow landed, the foe answered, and the panel arrived saying
+      `Round 2` with nothing anywhere saying a round had been fought or who
+      fought it. His ruling was to keep attack as a blow, so the words are what
+      change: the round the panel names now sits on the prompt over the buttons,
+      where it is the round the NEXT line lands on, and `Playthrough::Battle#lead`
+      says the one behind it is done. Both are read off the blows. %>
+  <h2><%= battle.heading %></h2>
+
+  <p class="sheet-lead"><%= battle.lead %></p>
 
   <%# ONE LINE PER BODY IN THE FIGHT: the party, then the foes. Numbers and not
       bars -- `2 of 6` -- because the reading experience is `ta-api-iface`'s
@@ -36,19 +47,24 @@
     </p>
   <% end %>
 
-  <%# WHAT JUST HAPPENED, in the engine's own sentence about its own dice.
-      `Playthrough::Blow#to_s` is that sentence and it is reused verbatim rather
-      than re-phrased here, so the browser and `rake game:mechanics` cannot come
-      to describe one blow two ways. Absent before the first swing. %>
+  <%# AND THE SAME ROUND BLOW BY BLOW, in the engine's own sentence about its
+      own dice. `Playthrough::Blow#to_s` is that sentence and it is reused
+      verbatim rather than re-phrased here, so the browser and
+      `rake game:mechanics` cannot come to describe one blow two ways. The
+      party's own blow is first (`Playthrough::Battle#last_exchange` orders it
+      so), because in a round the party opened it is the one that happened
+      first. Absent before the first swing. %>
   <% battle.last_exchange.each do |blow| %>
     <p class="sheet-note"><%= blow.to_s %></p>
   <% end %>
 
-  <%# THE ACTS. A strike at each live foe, then the ways out -- and the ways out
-      are always offered, because a fight is always escapable by leaving the
-      room (the captain's call C1). Leaving is the one button here that costs a
+  <%# THE ACTS, UNDER THE ROUND THEY LAND ON. A strike at each live foe, then
+      the ways out -- and the ways out are always offered, because a fight is
+      always escapable by leaving the room (the captain's call C1). Leaving is the one button here that costs a
       model call, for the ordinary reason a move does: the room is realized and
       arriving is narrated. %>
+  <h3 class="sheet-prompt"><%= battle.call_to_act %></h3>
+
   <div class="sheet-actions">
     <% (battle.strikes + battle.throws + battle.ways_out).each do |action| %>
       <%= form_with url: playthrough_turns_path(playthrough) do |form| %>
