@@ -12,7 +12,7 @@
 # classes is how they stop agreeing.
 #
 # THIS CLASS HAS AN INSTRUMENT NOW, and it is the only place to read what it
-# gets right: `rake eval:classifier` replays 300 hand-labelled typed lines
+# gets right: `rake eval:classifier` replays 339 hand-labelled typed lines
 # through it against fixed seeded positions and reports an accuracy per intent,
 # the closed-set misses, `also_named` precision and recall and refusal-kind
 # agreement, each with its band across repetitions. `rake eval:classifier_offline`
@@ -49,8 +49,9 @@ class Playthrough::Classifier
   # opposite of a second target: it is the name a turn is NOT acting on). See
   # `data/ta-combat-scout` §13.4, and note that this field is on the intent the
   # FIXED GRAMMAR builds and NOT on `Playthrough::IntentSchema`: the model-facing
-  # schema stays three fields and the closed enum stays six, which is the
-  # captain's call C6. `Playthrough::Grammar#read_throw` is the only writer.
+  # schema stays THREE FIELDS, which is the captain's call C6, and it is why
+  # widening the closed enum by `attack` in slice 8 did not widen it by `throw`
+  # too. `Playthrough::Grammar#read_throw` is the only writer.
   Intent = Data.define(:action, :destination, :speaker, :item, :at, :also_named, :unknown_action) do
     # Defaulted so a caller naming only what it resolved reads the way it
     # means -- `Intent.new(action: :other)` is a turn that reached for nothing.
@@ -62,20 +63,28 @@ class Playthrough::Classifier
     def drop? = action == :drop
     def examine? = action == :examine
 
-    # THE ONE ACTION NO MODEL EVER ANSWERS WITH, and that is the whole of what
-    # makes it safe here. `attack` is NOT in `Playthrough::IntentSchema::INTENTS`
-    # -- the closed enum on the commonest model call in the app -- so this is
-    # only ever true of an `Intent` the FIXED GRAMMAR built, behind a slash or
-    # in `rake game:mechanics`. Adding the seventh intent is its own measured
-    # slice with the classifier bench in its body; until then the record grows
-    # (`Scene::ACTIONS`) and the prompt does not.
+    # THE SEVENTH INTENT, AND SINCE COMBAT SLICE 8 A MODEL CAN ANSWER WITH IT.
+    # `attack` is in `Playthrough::IntentSchema::INTENTS` now, so this is true of
+    # an `Intent` the FIXED GRAMMAR built (behind a slash, or in
+    # `rake game:mechanics`) AND of one the classifier read out of a free line --
+    # "hit him", "go for the Ringer". Both resolve against the same closed set,
+    # `#offered_for(:attack)`, which is everybody standing here: the captain's
+    # ruling of 2026-09-05, *"anyone can be attacked"*.
+    #
+    # THE ENUM WIDENING IS WHAT THE INSTRUMENTS HAVE TO BE RE-READ AFTER. It put
+    # `attack` in `Playthrough::Drift::ACTIONS` and through it in
+    # `Playthrough::Overreach::ACTIONS`, so both counters can now be written by a
+    # line neither could produce before; a baseline taken before slice 8 and one
+    # taken after are not the same denominator. See those two classes' headers.
     def attack? = action == :attack
 
-    # THE SEVENTH ACTION NO MODEL EVER ANSWERS WITH EITHER, and it is here on
-    # `attack`'s terms and for `attack`'s reason: `throw` is not in
-    # `Playthrough::IntentSchema::INTENTS`, so this is only ever true of an
-    # `Intent` the FIXED GRAMMAR built -- behind a slash, or in
-    # `rake game:mechanics`. The classifier intent is slice 8's measured PR.
+    # AND THE ONE ACTION NO MODEL EVER ANSWERS WITH, which is what `attack` used
+    # to be. `throw` is NOT in `Playthrough::IntentSchema::INTENTS` and it is not
+    # next in line either: it names TWO records -- the thing and what it is aimed
+    # at -- and that schema holds one `target` by construction. So this is only
+    # ever true of an `Intent` the FIXED GRAMMAR built, behind a slash or in
+    # `rake game:mechanics`, and `#at` below is the field that says why no model
+    # can answer it. The captain's call C6 kept the two objects offline first.
     def throw? = action == :throw
 
     # The record the loop acts on, whichever kind it turned out to be. There is
@@ -142,17 +151,27 @@ class Playthrough::Classifier
       examine - they are looking at something more closely
       take    - they are picking something up
       drop    - they are putting down, leaving or giving up something they carry
+      attack  - they are trying to hurt someone who is here
       other   - anything else
 
     Then pick what they aimed it at from the lists you are given, copied
-    exactly: a way out for `move`, a person for `talk`, a thing lying here for
-    `take`, a thing they are carrying for `drop`, and for `examine` a thing on
-    either of those two lists -- looking at something works whether it is in
-    their hands or on the floor in front of them. If the intent is none of
-    those, or they named a place, a person or a thing that is not on those
-    lists, answer `nothing`. Do not answer with a place they cannot reach from
-    here, a person who is not here, something that is not lying in this room, or
-    something they are not carrying.
+    exactly: a way out for `move`, a person for `talk` or `attack`, a thing
+    lying here for `take`, a thing they are carrying for `drop`, and for
+    `examine` a thing on either of those two lists -- looking at something works
+    whether it is in their hands or on the floor in front of them. If the intent
+    is none of those, or they named a place, a person or a thing that is not on
+    those lists, answer `nothing`. Do not answer with a place they cannot reach
+    from here, a person who is not here, something that is not lying in this
+    room, or something they are not carrying.
+
+    `talk` and `attack` read the SAME list of people, so what tells them apart
+    is only what the player is doing to that person. Hitting, punching, kicking,
+    swinging or lunging at somebody, grabbing them to hurt them, drawing on them
+    or setting about them is `attack`. Anything they SAY to somebody is `talk`,
+    however angry it is -- and a THREAT IS SAID: "tell me or I break your arm",
+    "I am warning you", "back off" are `talk`, because the player has not
+    touched anybody yet. Looking somebody over is `examine`, and `examine` never
+    resolves to a person, so it answers `nothing`.
 
     A word that means ALL of them -- "everything", "all", "the lot", "both" --
     is naming what is on the list rather than something missing from it, so it
@@ -379,6 +398,10 @@ class Playthrough::Classifier
     when :take then [ items, :find_item, :item ]
     when :drop then [ carried, :find_item, :item ]
     when :examine then [ items + carried, :find_item, :item ]
+    # THE SAME SET AS A `talk` AND THE SAME SLOT, which is what makes the loop's
+    # dispatch one branch on a resolved person rather than two
+    # (`Playthrough::Turn#play`). What the line does TO them is the action.
+    when :attack then [ cast, :find_character, :speaker ]
     else return Intent.new(action: action)
     end
 
@@ -491,6 +514,7 @@ class Playthrough::Classifier
     when :talk then cast_names(cast)
     when :take then item_names(items)
     when :drop then item_names(carried)
+    when :attack then cast_names(cast)
     else []
     end
 

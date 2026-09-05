@@ -199,7 +199,7 @@ not there or the model failed to see a door that is.
 and a wrong `also_named` refuses a line that should have played. So:
 
 ```bash
-rake eval:classifier                    # 300 labelled lines x 4 reps x 2 models, ~$0.39
+rake eval:classifier                    # 339 labelled lines x 4 reps x 2 models, ~$0.44
 rake eval:classifier_offline            # the same corpus with NO model -- free, and in CI
 rake eval:classifier_omission           # the also_named omission rate alone (~30 lines)
 rake eval:classifier_compare BEFORE=a AFTER=b
@@ -239,10 +239,14 @@ expected and what came back — the same rule `rake game:score` follows.
 
 ### The corpus
 
-`test/fixtures/files/classifier_corpus.yml` — **300 hand-labelled lines across
-11 positions in the three seeded worlds.** YAML rather than JSON like its four
+`test/fixtures/files/classifier_corpus.yml` — **339 hand-labelled lines across
+12 positions in the three seeded worlds.** YAML rather than JSON like its four
 siblings, because every line carries a `why` and three hundred of those in JSON
-is a file nobody audits.
+is a file nobody audits. It grew by 39 in combat slice 8, when `attack` became
+the seventh classifier intent — **a corpus that grows is a denominator that
+moved**, and `rake eval:classifier_compare` prints its own warning when the two
+sets it is given scored different digests. Compare the shared lines, or say out
+loud that you did not.
 
 A line names a **position** — a seeded world, a room, and the typed lines that
 get to the state the label was written against — because a classifier answer is
@@ -264,7 +268,7 @@ resolves to a record in the supply closet and to nothing in the office.
    and compares. Two readings of one line have to agree.
 4. **What neither can check** is whether the label is the right reading of the
    English. That is the hand-verification, line by line, and `why` states it.
-   **55 of the 300 lines carry `also_accept`** — a second answer the bench
+   **56 of the 339 lines carry `also_accept`** — a second answer the bench
    counts as correct — because their English really does admit two readings, and
    the headline rate excludes them.
 
@@ -448,7 +452,7 @@ is too high.
 machine is not powerful enough to run one.** What is below is a handful of spot
 single-call measurements and the machinery that makes the run possible later on
 hardware that can carry it. Read every figure here as one call, not as a bench
-result — a bench result is four repetitions of 300 lines with a band, and none
+result — a bench result is four repetitions of the whole corpus with a band, and none
 was taken.
 
 Two things had to be measured before a local arm would have been a measurement
@@ -527,7 +531,10 @@ rake eval:classifier_compare BEFORE=classifier-remote AFTER=after-a-prompt-chang
     BEFORE_MODEL=mistralai/mistral-medium-3.1 AFTER_MODEL=mistralai/mistral-medium-3.1
 ```
 
-Three sets, printed as one table by `rake eval:classifier_board`. 300 lines × 4
+Three sets, printed as one table by `rake eval:classifier_board`. **They
+measured the 300-line corpus of 2026-09-04**, which combat slice 8 then grew to
+339 — so a compare against one of them prints the different-digest warning, and
+what moved may be the labelled lines rather than the classifier. 300 lines × 4
 reps an arm; every rate `min..max (median)` across repetitions, never pooled. A
 single number means the four repetitions agreed exactly.
 
@@ -679,7 +686,7 @@ with `database is locked`.** Run one at a time.
 
 ### The offline floor
 
-`rake eval:classifier_offline` runs the same 300 lines through
+`rake eval:classifier_offline` runs the same 339 lines through
 `Playthrough::Grammar`, the fixed grammar `Playthrough::Mechanics` uses with
 `model: false` — no key, no network, no spend, and it runs in `bin/rails test`.
 **It is what a classifier call is bought against**, and the answer is a number
@@ -690,8 +697,9 @@ wrong reason — the grammar has no refusal *kinds*), `wrong` (an answer the lab
 does not accept, produced silently), `over_refused` (a line it refused that
 should have played) and `unparsed`.
 
-**Measured 2026-09-04: 127 of 300 right (0.423), and 156 of the 173 failures are
-over-refusals.** It gets every reach-that-finds-nothing right and *none* of the
+**Measured 2026-09-05: 140 of 339 right (0.413), and 178 of the 199 failures are
+over-refusals** (127 of 300, 0.423, on the pre-slice-8 corpus). It gets every
+reach-that-finds-nothing right — including an attack that finds nobody — and *none* of the
 `other` or `examine-nothing` lines — a fixed grammar has no word for an ordinary
 remark, so it refuses every one.
 
@@ -707,15 +715,15 @@ loop actually takes of it.
 
 | through `#reading_first`, every line in slash form | n |
 | --- | --- |
-| resolves offline, and the label accepts it | **59 of 300 (19.7%)** |
+| resolves offline, and the label accepts it | **65 of 339 (19.2%)** |
 | resolves offline, and the label does not | **0** |
-| falls back to `Playthrough::Classifier` | 241 of 300 (80.3%) |
+| falls back to `Playthrough::Classifier` | 274 of 339 (80.8%) |
 
-**Typed as they stand, with no slash: 0 of 300** — the captain's ruling of
+**Typed as they stand, with no slash: 0 of 339** — the captain's ruling of
 2026-09-05, *"I think we should only auto accept the slash commands"*, as a
 number. Nothing changes for a player who never types one. By shape the slashed
-form answers `move` 20/41,
-`take` 13/23, `articles-and-pronouns` 10/27, `talk` 7/46, `examine` 5/17 and
+form answers `move` 20/42,
+`take` 13/23, `articles-and-pronouns` 10/27, `talk` 7/54, `attack` 6/16, `examine` 5/17 and
 `drop` 4/18 — and **nothing at all** of `other`, `examine-nothing`, `two-sets`,
 `two-names-one-set` or any `unresolved-*`, every one of which is a line the model
 is bought for. Re-take it with `Playthrough::Grammar#reading_first` over
@@ -741,7 +749,7 @@ rotation or a failure and never as a quiet nil.
 ### What it is not
 
 **It does not tune a prompt.** A prompt fitted against the run that measured it
-is a prompt fitted to 300 lines. The bench is the instrument;
+is a prompt fitted to the corpus. The bench is the instrument;
 `rake eval:classifier_compare` is how the next change is judged, and four
 repetitions a side is the same arithmetic floor as everywhere else in this file.
 
@@ -764,10 +772,11 @@ per-playthrough, position staging stopped snapshotting, and the validator
 failed the build** rather than the bench quietly measuring empty floors.
 
 **Re-run the paid hosted arms before merging** when any of these change. A pass
-is 300 lines × `REPS=4` = 1,200 calls an arm, at 372 tokens in and 20 out
+is 339 lines × `REPS=4` = 1,356 calls an arm, at 372 tokens in and 20 out
 (`Eval::Classifier::PER_CALL`): **$0.19 per 1,000 calls on
 `mistral-medium-3.1`, $0.14 on `minimax-m3`, so both shipped models at the
-default is about $0.40** — the checked-in `classifier-remote` set cost $0.389.
+default is about $0.44** — the 300-line `classifier-remote` set cost $0.389 and
+the 339-line slice 8 pair cost $0.389 and $0.440.
 
 1. **The prompt.** `Playthrough::Classifier::INSTRUCTIONS` or
    `Playthrough::IntentSchema` — any wording, the `also_named` paragraph, a new
@@ -1218,7 +1227,7 @@ script/eval_run.rb                   the harness
 db/eval_baseline.json                the line the next run moves against
 test/fixtures/files/*_corpus.json    the passages the checks were measured on
 lib/eval/classifier*                 the classifier bench
-test/fixtures/files/classifier_corpus.yml   the 300 labelled lines
+test/fixtures/files/classifier_corpus.yml   the 339 labelled lines
 ```
 
 Snapshot the digests before a change and again after: nothing in the list may

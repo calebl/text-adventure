@@ -162,6 +162,20 @@ positions:
     two-name `move` can be labelled -- and the only one with no items at all in
     reach, which is where an `examine` has nothing to land on.
 
+- id: bell
+  story: The Lunar Cartographer
+  room: The Bell of Saint Aravel
+  setup: [go to Grenn's Boarding House hallway, go to The Bell of Saint Aravel]
+  why: >-
+    THE ONE ROOM IN THE THREE SEEDED WORLDS WITH A MONSTER STANDING IN IT.
+    Marek Sollen is `hostile: true` in the seed file and his race is
+    `monstrous`, so this is the position an `attack` is at home in -- and it is
+    also the position most likely to pull a `talk` or an `other` onto `attack`,
+    because the room itself says a fight is coming. One person, one way out,
+    nothing on the floor and nothing in the hands, so the cast is the only
+    closed set with anything in it. Reached by walking two realized rooms, which
+    costs no model call and no generation.
+
 lines:
 # ===========================================================================
 # ONE ACT: A MOVE THAT RESOLVES
@@ -3418,3 +3432,461 @@ lines:
   also_accept:
   - intent: examine
     target:
+
+# ===========================================================================
+# ONE ACT: AN ATTACK THAT RESOLVES
+#
+# COMBAT SLICE 8, and the seventh word in `Playthrough::IntentSchema::INTENTS`.
+# `attack` reads the SAME closed set a `talk` does -- everybody standing here,
+# the captain's ruling of 2026-09-05, *"anyone can be attacked"* -- and
+# `Playthrough::Turn#play` dispatches the two off one branch on a resolved
+# person. So the whole of what these lines measure is whether the model can tell
+# what the player is DOING to somebody it can already find.
+#
+# THE RISK THIS SHAPE CARRIES IS NOT ITS OWN ACCURACY. A `talk` read as an
+# `attack` takes hit points off a record and marks the victim provoked for the
+# rest of the playthrough (`playthrough_vitals.provoked_at`), and nothing
+# removes that mark. So the lines below are the easy half; the section headed
+# NOT AN ATTACK is the half that pays for them.
+# ===========================================================================
+- id: attack-ringer-plain
+  position: bell
+  typed: attack the Ringer
+  intent: attack
+  target: Marek Sollen
+  shape: attack
+  why: >-
+    THE FLOOR CASE, by nickname, on the one seeded character the worlds mark
+    hostile. It is the same string `Playthrough::Battle`'s buttons already send
+    behind a slash (`/attack Marek Sollen`), typed free -- so this line is the
+    classifier being asked for what the grammar answers for nothing
+
+- id: attack-ringer-fullname
+  position: bell
+  typed: attack Marek Sollen
+  intent: attack
+  target: Marek Sollen
+  shape: attack
+  why: the same line by full name, as the control for the nickname above
+
+- id: attack-ringer-pronoun
+  position: bell
+  typed: hit him
+  intent: attack
+  target: Marek Sollen
+  shape: attack
+  why: >-
+    A PRONOUN AND THE SHORTEST VERB THERE IS, with exactly one person in the
+    room for it to land on. The commonest thing a player types in a fight
+
+- id: attack-ringer-swing
+  position: bell
+  typed: swing at the Ringer with everything I have
+  intent: attack
+  target: Marek Sollen
+  shape: attack
+  why: >-
+    "swing at" -- an attack with no word from the verb table in it, and a clause
+    about how hard hanging off the end. Nothing in the line is a second record
+
+- id: attack-ringer-go-for
+  position: bell
+  typed: go for him before he can reach the rope
+  intent: attack
+  target: Marek Sollen
+  shape: attack
+  why: >-
+    "GO FOR", which begins with the move verb and is not one -- the pair for
+    `move-go-for-the-hallway` below, where the same two words are followed by a
+    place instead of a person. The reading has to follow what was NAMED
+
+- id: attack-ringer-kick
+  position: bell
+  typed: kick him while he is turned away
+  intent: attack
+  target: Marek Sollen
+  shape: attack
+  why: >-
+    a blow that is not a punch, described by where it lands rather than named --
+    and the engine has no called shots, so the whole of it is one `attack`
+
+- id: attack-ringer-set-about
+  position: bell
+  typed: set about the Ringer
+  intent: attack
+  target: Marek Sollen
+  shape: attack
+  why: an idiom for a beating, with no verb from the table in it at all
+
+- id: attack-rowe-full
+  position: office
+  typed: attack Halkett Rowe
+  intent: attack
+  target: Halkett Rowe
+  shape: attack
+  why: >-
+    THE FIRST ATTACK ON SOMEBODY WHO IS NOT A MONSTER, and it is here because it
+    is the captain's ruling of 2026-09-05 written as a corpus line: *"anyone can
+    be attacked"*. `Playthrough::Classifier#offered_for(:attack)` is the whole
+    cast and there is no narrower list of people the app will let you hit
+
+- id: attack-rowe-nickname
+  position: office
+  typed: hit Rowe
+  intent: attack
+  target: Halkett Rowe
+  shape: attack
+  why: >-
+    THE SURNAME ALONE, which is neither of the two strings the enum holds for
+    him ("Halkett Rowe", "Sub-Inspector Rowe") -- so the model has to pick one,
+    and both resolve to the one record. The `talk` half of this is
+    `grammar-misspelling`
+
+- id: attack-rowe-punch
+  position: office
+  typed: punch him in the mouth
+  intent: attack
+  target: Halkett Rowe
+  shape: attack
+  why: >-
+    a plain blow at an ordinary colleague in an office, with a thing on the
+    floor and a thing in the hands to distract the resolution. It must land on
+    the person and not on either item
+
+- id: attack-brace-strike
+  position: court
+  typed: strike the Justicar
+  intent: attack
+  target: Ammon Brace
+  shape: attack
+  why: >-
+    A TITLE THAT IS HALF A NICKNAME. The enum holds "Justicar Brace"; the line
+    says only the rank, which is `grammar-titles-only`'s reading applied to the
+    other verb
+
+- id: attack-brace-lunge
+  position: court
+  typed: lunge at Ammon Brace across the bench
+  intent: attack
+  target: Ammon Brace
+  shape: attack
+  why: the full name in the held-out world, with a clause about the furniture that names no record
+
+- id: attack-neb-post
+  position: tide-post
+  typed: hit Neb with my fist
+  intent: attack
+  target: Neb Halloran
+  shape: attack
+  why: >-
+    A NAMED WEAPON THAT IS NOT A RECORD. Nothing carried here is a fist and the
+    engine has no weapon die on an `Item` -- a blow is one die of the attacker's
+    `hit_die` -- so "with my fist" must not become an `also_named` or a `drop`
+
+- id: attack-grenn-grab
+  position: room-3
+  typed: grab Grenn by the collar and hit him
+  intent: attack
+  target: Grenn Ollivar
+  shape: attack
+  why: >-
+    THE WORD `and` IN A LINE THAT IS STILL ONE ACT, which is the shape
+    `move-closet-script` pins for a move. A grapple that ends in a blow is a
+    blow, both halves are aimed at the same person, and `also_named` must come
+    back `nothing` -- otherwise a perfectly ordinary fighting line is refused
+
+- id: attack-neb-court-both
+  position: court-with-both
+  typed: go for Neb
+  intent: attack
+  target: Neb Halloran
+  shape: attack
+  why: >-
+    ONE NAME IN A ROOM WITH TWO PEOPLE IN IT. The resolution has to pick, and it
+    must not overreach onto the Justicar -- the `attack` counterpart of
+    `grammar-yell-name`
+
+- id: attack-perrin-swing
+  position: office-with-perrin
+  typed: take a swing at Perrin
+  intent: attack
+  target: Perrin Lasco
+  shape: attack
+  why: >-
+    A LINE THAT BEGINS WITH `take`, in a room with two things on the floor. "take
+    a swing at" is an attack and "take the stamp" is not, and this is the only
+    place in the corpus where the two verbs collide on one word
+
+# ===========================================================================
+# REFUSED: `:unresolved` -- AN ATTACK THAT FOUND NOBODY
+#
+# `Playthrough::Drift::ACTIONS` gained `attack` in this slice, so an attack that
+# resolves to nobody is a reach that found nothing exactly as a `talk` is: one
+# `Playthrough::Drift` row, and the line refused whole with nothing written.
+# **THE LABEL IS `attack` AND NOT `other`**, and that is the point of the
+# section: reading "hit the hound" as `other` when there is no hound would
+# narrate a swing at something the records do not have, which is the invention
+# the closed sets exist to stop.
+# ===========================================================================
+- id: unresolved-attack-perrin
+  position: office
+  typed: attack Perrin Lasco
+  intent: attack
+  refusal: unresolved
+  shape: unresolved-attack
+  why: >-
+    PERRIN LASCO IS DELIBERATELY NOWHERE in this world (`absent: true`). The
+    attack half of `unresolved-talk-perrin`, against the same empty answer
+
+- id: unresolved-attack-hound
+  position: room-3
+  typed: hit the hound
+  intent: attack
+  refusal: unresolved
+  shape: unresolved-attack
+  why: >-
+    A CREATURE NO WORLD HERE HAS. The line reads as an attack and nothing else,
+    so the intent is not in doubt; what it names is not on the list, and the
+    honest answer is `attack` -> nothing rather than a coerced `other`
+
+- id: unresolved-attack-empty-room
+  position: closet
+  typed: hit whoever swept this floor
+  intent: attack
+  refusal: unresolved
+  shape: unresolved-attack
+  why: >-
+    THE EMPTY CAST, which `Playthrough::Refusal::EMPTY[:attack]` answers with
+    "There is nobody here to fight" -- a different sentence from the MISSED one,
+    and this is the position that earns it. The mirror of
+    `unresolved-talk-nobody-here`
+
+- id: unresolved-attack-neb-in-court
+  position: court
+  typed: swing at Neb
+  intent: attack
+  refusal: unresolved
+  shape: unresolved-attack
+  why: >-
+    A PERSON WHO IS ONE ROOM AWAY IN THIS WORLD -- Neb Halloran is at The Tide
+    Post -- which is the closest a reach can get to resolving and still have to
+    fail. `attack-neb-court-both` is the same name in the room he IS in
+
+- id: unresolved-attack-grenn-in-court
+  position: court
+  typed: hit Old Grenn
+  intent: attack
+  refusal: unresolved
+  shape: unresolved-attack
+  why: a real person from another world, by nickname, with a real person standing right here
+
+- id: unresolved-attack-inspectorate
+  position: office
+  typed: take a swing at the rest of the Inspectorate
+  intent: attack
+  refusal: unresolved
+  shape: unresolved-attack
+  why: >-
+    A BODY THE LORE HAS AND THE RECORDS DO NOT, with one real person present --
+    the counterpart of `unresolved-talk-inspectorate`, and it also carries the
+    `take a swing` collision that `attack-perrin-swing` resolves the other way
+
+# ===========================================================================
+# REFUSED: `:named_more_than_one` -- TWO PEOPLE HIT ON ONE LINE
+#
+# `Playthrough::Overreach::ACTIONS` gained `attack` in this slice too (it is
+# `Drift::ACTIONS` plus `examine`), so a line naming two people out of the one
+# closed set an attack reads is refused whole and counted, exactly like a
+# two-name `talk`. Order is not scored; the pair is.
+# ===========================================================================
+- id: two-names-attack-court
+  position: court-with-both
+  typed: hit Neb and then the Justicar
+  intent: attack
+  target: Ammon Brace
+  also_named: Neb Halloran
+  shape: two-names-one-set
+  refusal: named_more_than_one
+  why: >-
+    TWO PEOPLE, ONE BY NICKNAME AND ONE BY TITLE, which is the pair
+    `Playthrough::Classifier#also_record` compares as RECORDS rather than as
+    strings. "and then" is a player saying out loud that it is two acts
+
+- id: two-names-attack-office
+  position: office-with-perrin
+  typed: attack Perrin and Rowe both
+  intent: attack
+  target: Perrin Lasco
+  also_named: Halkett Rowe
+  shape: two-names-one-set
+  refusal: named_more_than_one
+  why: both names as fragments, in the other two-person room, with "both" on the end of it
+
+- id: two-names-attack-both
+  position: court-with-both
+  typed: swing at both of them
+  intent: attack
+  target: Ammon Brace
+  also_named: Neb Halloran
+  shape: two-names-one-set
+  refusal: named_more_than_one
+  why: >-
+    "BOTH" AGAINST THE CAST, which the instruction's rule about words meaning
+    all of them had never been read against before this slice. The line to hold
+    it next to is `other-both-of-them`, where "both" is in a sentence that acts
+    on nobody and must stay `other`
+
+# ===========================================================================
+# NOT AN ATTACK, and this is the half of the slice that carries the risk.
+#
+# The four intents these lines must keep -- `talk`, `examine`, `other`, `move`
+# -- are the ones a new word can steal from, and stealing from `talk` is the
+# expensive direction: `Playthrough::Turn#strike_at` takes hit points off a
+# record and marks the victim provoked for the whole playthrough
+# (`playthrough_vitals.provoked_at`), and nothing in the app removes that mark.
+#
+# THE RULING ON THREATS IS `talk`, and it is stated here rather than left to be
+# inferred, because it is the one judgement call this section makes. A threat is
+# SAID: the player has not touched anybody, and the wrong reading is only wrong
+# in one direction -- a player who meant a blow types one on the next line and
+# loses a turn, where a player who meant a threat has hit somebody and cannot
+# take it back. `Playthrough::Classifier::INSTRUCTIONS` says it in as many words.
+# ===========================================================================
+- id: talk-not-attack-threat-arm
+  position: office
+  typed: tell me who signed it or I will break your arm
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: >-
+    THE LINE THE WHOLE BOUNDARY IS DECIDED ON. It is a threat of violence with
+    the violence still in the future, addressed to the one person here, and it
+    is `talk` on the ruling above -- nothing has been touched yet
+
+- id: talk-not-attack-threaten
+  position: court
+  typed: threaten him
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: >-
+    THE BARE VERB WITH NO WORDS ATTACHED, which is the hardest form of the
+    threat rule and the one most likely to read as a blow. Still `talk`: a
+    threat is a thing you say, and the player who meant a blow can type one
+
+- id: talk-not-attack-warning
+  position: tide-post
+  typed: I am warning you, Neb
+  intent: talk
+  target: Neb Halloran
+  shape: talk
+  why: a threat with no verb in it at all, by nickname, in the held-out world
+
+- id: talk-not-attack-back-off
+  position: bell
+  typed: tell him to back off
+  intent: talk
+  target: Marek Sollen
+  shape: talk
+  why: >-
+    AN ORDER SHOUTED AT THE ONE HOSTILE PERSON IN THE SEEDED WORLDS, in the room
+    whose own description says a fight is coming. The position most likely to
+    pull an answer onto `attack`, and the line is still speech
+
+- id: talk-not-attack-shout
+  position: room-3
+  typed: shout at Grenn about the rent
+  intent: talk
+  target: Grenn Ollivar
+  shape: talk
+  why: anger is not a blow, and "shout at" is the phrasing nearest to "swing at"
+
+- id: talk-not-attack-accuse
+  position: office
+  typed: accuse Rowe of signing it himself
+  intent: talk
+  target: Halkett Rowe
+  shape: talk
+  why: an attack in the figurative sense only, which is the whole of what `#in_the_fiction?` guards offline
+
+- id: talk-not-attack-demand
+  position: court
+  typed: demand that the Justicar stand down
+  intent: talk
+  target: Ammon Brace
+  shape: talk
+  why: a hostile demand by title, in the held-out world -- the control for `attack-brace-strike`
+
+- id: talk-not-attack-addressed
+  position: bell
+  typed: what are you doing up here?
+  intent: talk
+  target: Marek Sollen
+  shape: talk
+  why: >-
+    ADDRESSED SPEECH WITH NO NAME IN IT, in the room where the only person is a
+    monster. An answer of `attack` here would be the model reading the ROOM
+    instead of the line
+
+- id: examine-not-attack-look-over
+  position: bell
+  typed: look him over before I decide
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    "LOOK HIM OVER", which is a look and not a swing -- and `examine` resolves
+    against the two ITEM sets only, so the whole answer is `examine` -> nothing
+    and it must NOT be refused (`Playthrough::Refusal`'s header). Two ways to
+    get this line wrong and both of them cost the player something
+
+- id: examine-not-attack-size-up
+  position: court-with-both
+  typed: size up Neb's reach before anything happens
+  intent: examine
+  shape: examine-nothing
+  why: >-
+    measuring somebody for a fight, with two people in the room. Sizing up is
+    still looking, and looking at a person lands on no record
+
+- id: other-not-attack-fists
+  position: room-3
+  typed: clench my fists
+  intent: other
+  shape: other
+  why: >-
+    A VIOLENT IMPULSE AIMED AT NOBODY, with somebody standing in the room. No
+    name, no record, and it must not attach itself to the nearest person
+
+- id: other-not-attack-brace-myself
+  position: bell
+  typed: brace myself for what he does next
+  intent: other
+  shape: other
+  why: preparing for violence is not violence, in the one room that expects some
+
+- id: other-not-attack-punch-wall
+  position: office
+  typed: punch the wall
+  intent: other
+  shape: other
+  why: >-
+    A REAL BLOW AIMED AT SOMETHING THAT IS NOT ON ANY LIST. The wall is not a
+    record, so there is nothing for an `attack` to resolve to -- and the two
+    readings differ in what the player gets: `other` narrates the line and
+    `attack` -> nothing refuses it. Genuinely arguable, so both are accepted and
+    the line is out of the strict rate
+  also_accept:
+  - intent: attack
+    target:
+
+- id: move-go-for-the-hallway
+  position: office
+  typed: go for the hallway
+  intent: move
+  target: The Long Hallway
+  shape: move
+  why: >-
+    THE SAME TWO WORDS AS `attack-ringer-go-for` FOLLOWED BY A PLACE. The pair
+    is what pins that the reading follows what was NAMED and not the verb, which
+    is the captain's own objection of 2026-09-05 about `move the lamp off the
+    desk` applied to the new word

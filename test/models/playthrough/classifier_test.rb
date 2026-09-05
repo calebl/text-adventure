@@ -112,6 +112,81 @@ class Playthrough::ClassifierTest < ActiveSupport::TestCase
     assert_nil intent.speaker
   end
 
+  # --- resolving an attack --------------------------------------------------
+  #
+  # COMBAT SLICE 8: `attack` is the seventh word in
+  # `Playthrough::IntentSchema::INTENTS`, and it reads the SAME closed set a
+  # `talk` does -- the captain's ruling of 2026-09-05, *"anyone can be
+  # attacked"*. So these are the `talk` tests above with one word changed, and
+  # that is the assertion: the two differ in the action and in nothing else.
+
+  test "an attack resolves to the character standing here, in the speaker slot" do
+    maren = stands_here("Maren Vosk", nickname: "Maren")
+
+    intent, = classify({ "intent" => "attack", "target" => "Maren Vosk" })
+
+    assert_predicate intent, :attack?
+    assert_not_predicate intent, :talk?
+    assert_equal maren, intent.speaker
+    assert_nil intent.destination
+    assert_nil intent.item
+  end
+
+  test "an attack resolves by nickname too" do
+    maren = stands_here("Maren Vosk", nickname: "Maren")
+
+    intent, = classify({ "intent" => "attack", "target" => "Maren" })
+
+    assert_equal maren, intent.speaker
+  end
+
+  # AND IT IS THE WHOLE CAST AND NOT THE HOSTILE HALF OF IT. A narrower "people
+  # you may hit" list would be the app deciding who is a legitimate target,
+  # which is a different game.
+  test "an attack resolves against anybody present, hostile or not" do
+    landlord = stands_here("Grenn Ollivar", nickname: "Old Grenn")
+
+    intent, = classify({ "intent" => "attack", "target" => "Old Grenn" })
+
+    assert_equal landlord, intent.speaker
+    assert_not_predicate landlord, :hostile?
+    assert_equal [ landlord ], Playthrough::Classifier.new(@playthrough).offered_for(:attack)
+  end
+
+  # A REACH THAT FOUND NOBODY, which since this slice is a `Playthrough::Drift`
+  # row and a refusal rather than a narrated swing at thin air.
+  test "an attack that found nobody is a reach that found nothing" do
+    intent, = classify({ "intent" => "attack", "target" => "nothing" })
+
+    assert_predicate intent, :attack?
+    assert_nil intent.speaker
+    assert_predicate intent, :reached_for_nothing?
+    assert_predicate intent, :refused?
+  end
+
+  test "an attack that named two people is refused whole" do
+    stands_here("Maren Vosk", nickname: "Maren")
+    stands_here("Grenn Ollivar", nickname: "Old Grenn")
+
+    intent, = classify({ "intent" => "attack", "target" => "Maren Vosk", "also_named" => "Old Grenn" })
+
+    assert_predicate intent, :named_more_than_one?
+    assert_predicate intent, :refused?
+  end
+
+  test "an attack that resolved to nobody is counted, offering the cast that was here" do
+    stands_here("Maren Vosk")
+
+    assert_difference "Playthrough::Drift.count", 1 do
+      classify({ "intent" => "attack", "target" => "nothing" }, command: "hit the hound")
+    end
+
+    drift = Playthrough::Drift.last
+
+    assert_equal "attack", drift.action
+    assert_includes drift.offered_names, "Maren Vosk"
+  end
+
   # --- the other three -----------------------------------------------------
 
   test "an action never resolves against a set that is not its own" do

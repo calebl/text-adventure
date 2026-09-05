@@ -17,9 +17,12 @@
 # AND `attack` IS THE SIXTH, and the only one of them that produces no prose at
 # all: it writes a `Playthrough::Blow`, the world's live foes answer it in the
 # same turn (`Playthrough::Riposte`, step 7 below), and ONE `Scene` closes the
-# fight when it ends (`Playthrough::Fight`). It is not one of
-# `Playthrough::IntentSchema::INTENTS` -- no model ever answers with it -- so it
-# reaches this loop only through `Playthrough::Grammar`, behind a slash.
+# fight when it ends (`Playthrough::Fight`). SINCE COMBAT SLICE 8 IT REACHES
+# THIS LOOP BOTH WAYS: `Playthrough::Grammar` behind a slash, for no model call
+# at all, and `Playthrough::Classifier` off a free line -- it is the seventh
+# word in `Playthrough::IntentSchema::INTENTS` now, resolved against the same
+# closed set a `talk` is. The dispatch is one branch on a resolved person and
+# the action says which of the two it was; see `#play`.
 #
 # AND `throw` IS THE SEVENTH, the only act in the game that names TWO records:
 # `throw <thing> at <somebody or a way out>`. One d20 under strength less what
@@ -28,8 +31,9 @@
 # aimed it, exactly as a blow that lands lands. It writes through the two
 # statements this class already owns, `#put_down!` and `#harm!`, in one
 # transaction, and a hit at a person is a BLOW like any other, so the riposte
-# and the fight-end rule see it without knowing what threw it. Like `attack` it
-# is not one of `Playthrough::IntentSchema::INTENTS` and reaches this loop only
+# and the fight-end rule see it without knowing what threw it. Unlike `attack`
+# it is NOT one of `Playthrough::IntentSchema::INTENTS` and is not going to be
+# -- two records will not fit in one `target` -- so it reaches this loop only
 # through `Playthrough::Grammar`. See `#throw_item!`.
 #
 # Everything else -- a look at something with nothing written on it, and anything
@@ -314,7 +318,7 @@ class Playthrough::Turn
   #
   # EVERYTHING ELSE GOES TO THE CLASSIFIER, EXACTLY AS BEFORE -- which since the
   # slash became the whole claim is every line a player types without one,
-  # measured at 300 of 300 on `Eval::Classifier`'s corpus. And a SLASHED line the
+  # measured at 339 of 339 on `Eval::Classifier`'s corpus. And a SLASHED line the
   # grammar could not RESOLVE falls through too -- a name it could not place, a
   # name that matched two records, a verb it does not have. That is deliberate
   # and it is the whole reason the model is still here: every one of those
@@ -329,7 +333,7 @@ class Playthrough::Turn
   # resolve the first and PLAY it. `Playthrough::Grammar::JOINING_WORDS` is what
   # stops that: such a line is handed on, the classifier sees both names, and the
   # refusal and the `Playthrough::Overreach` row happen exactly where they always
-  # did. Measured on `Eval::Classifier`'s 300 lines; the constant has the figures.
+  # did. Measured on `Eval::Classifier`'s corpus; the constant has the figures.
   #
   # WHAT THIS COSTS, STATED. A grammar-resolved turn writes no
   # `Playthrough::Drift` and no `Playthrough::Overreach` row -- both are taken
