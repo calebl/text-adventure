@@ -21,6 +21,12 @@ class Location < ApplicationRecord
   # `rake game:doctor` reports.
   has_many :characters, dependent: :nullify
   has_many :playthroughs, foreign_key: :current_location_id, dependent: :nullify, inverse_of: :current_location
+  # EVERY BLOW THROWN IN THIS ROOM. Destroyed with it, because
+  # `playthrough_blows.location_id` is NOT NULL -- a fight happened SOMEWHERE
+  # and there is no honest nullified state for a blow whose room is gone. It is
+  # the same answer `has_many :scenes` gives one line up and for the same
+  # reason: a room's own history goes with the room.
+  has_many :blows, class_name: "Playthrough::Blow", dependent: :destroy, inverse_of: :location
   has_and_belongs_to_many :connected_locations,
                           class_name: "Location",
                           join_table: "location_connections",

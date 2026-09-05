@@ -212,6 +212,16 @@ class Character < ApplicationRecord
   # `Playthrough::Vitals`, and read it through `Playthrough#vitals_for` rather
   # than through this association -- one reader, for the same reason
   # `Character.present_in` is the one reader of who is in a room.
+  # EVERY BLOW THIS BODY THREW AND EVERY ONE IT TOOK. Destroyed with the person
+  # on the same reasoning as the conditions below: a blow names two characters
+  # and a room, and a row naming somebody the world no longer has is a record of
+  # a fight nobody can read. Two associations because a blow has two ends, and
+  # `dependent: :destroy` on both because the columns are NOT NULL -- there is
+  # no honest nullified state for either.
+  has_many :blows_landed, class_name: "Playthrough::Blow", foreign_key: :attacker_id,
+                          dependent: :destroy, inverse_of: :attacker
+  has_many :blows_taken, class_name: "Playthrough::Blow", foreign_key: :target_id,
+                         dependent: :destroy, inverse_of: :target
   has_many :vitals, class_name: "Playthrough::Vitals", dependent: :destroy,
                     inverse_of: :character
 

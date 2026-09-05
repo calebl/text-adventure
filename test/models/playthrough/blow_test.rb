@@ -94,4 +94,56 @@ class Playthrough::BlowTest < ActiveSupport::TestCase
       @game.destroy!
     end
   end
+
+  # --- and with everything a blow names ---------------------------------------
+  #
+  # A blow points at a playthrough, two characters, a room and (once the fight
+  # is closed) a Scene, and four of those five are NOT NULL. `rake game:delete`
+  # tears a story down in association order -- characters, then locations, then
+  # scenes, then playthroughs -- so a row left pointing at any of them raises a
+  # foreign key error halfway through and leaves the story half-deleted. These
+  # are the four statements that stop that, and they are tests rather than
+  # assumptions because it is the shape a `dependent:` nobody wrote fails in.
+
+  test "a whole story with a fight in it can be deleted" do
+    @turn = Playthrough::Turn.new(@game)
+    @turn.strike!(@protagonist, @monster, round: 1)
+    @turn.harm!(@monster, @monster.max_hp)
+    Playthrough::Fight.new(@game).close!
+
+    @story.destroy!
+
+    assert_equal 0, Playthrough::Blow.count
+  end
+
+  test "destroying the person who threw a blow takes the blow with them" do
+    create(:playthrough_blow, playthrough: @game, attacker: @monster, target: @protagonist)
+
+    assert_difference "Playthrough::Blow.count", -1 do
+      @monster.destroy!
+    end
+  end
+
+  test "destroying the room a fight happened in takes its blows with it" do
+    create(:playthrough_blow, playthrough: @game, location: @room)
+
+    assert_difference "Playthrough::Blow.count", -1 do
+      @room.destroy!
+    end
+  end
+
+  # NULLIFIED AND NOT DESTROYED, on the drift's own reasoning: the blow is the
+  # durable record of the round and the Scene is only the sentence about it, so
+  # losing the sentence must not lose what the dice did. It reads as an OPEN
+  # fight afterwards, which is the truth -- nothing has closed it.
+  test "destroying the scene that closed a fight keeps the blows" do
+    blow = create(:playthrough_blow, :closed, playthrough: @game)
+
+    assert_difference "Playthrough::Blow.count", 0 do
+      blow.scene.destroy!
+    end
+
+    assert_nil blow.reload.scene_id
+    assert_includes @game.blows.open, blow
+  end
 end

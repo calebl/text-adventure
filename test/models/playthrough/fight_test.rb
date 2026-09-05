@@ -19,7 +19,12 @@ class Playthrough::FightTest < ActiveSupport::TestCase
     # seeded off ROW IDS (`Roll.seed`), so a fixture must never depend on which
     # face came up.
     @protagonist = create(:character, :protagonist, story: @story, level: 3, hit_die: 8)
-    @monster = create(:character, :monster, story: @story, location: @room, fullname: "Marek Sollen")
+    # AND SO IS THE MONSTER, for the same reason: a d8 cannot take 18 in one
+    # blow, so no test in this file that is not about a body going down can end
+    # with one. Every test here that DOES want him down puts him down with
+    # `#harm!`, which is exact.
+    @monster = create(:character, :monster, story: @story, location: @room, fullname: "Marek Sollen",
+                                            level: 3, hit_die: 8)
     @game = create(:playthrough, story: @story, character: @protagonist, current_location: @room)
     @turn = Playthrough::Turn.new(@game)
   end
@@ -135,9 +140,7 @@ class Playthrough::FightTest < ActiveSupport::TestCase
   # A level-3 body holds 18, and the player's d8 cannot take that in one round
   # -- so this says "nobody was killed" whatever the die came up.
   test "a fight the party walked out of says nobody was killed" do
-    tough = create(:character, :monster, story: @story, location: @room, fullname: "Ada Threnn",
-                                         level: 3, hit_die: 8)
-    @turn.strike!(@protagonist, tough, round: 1)
+    @turn.strike!(@protagonist, @monster, round: 1)
     @turn.stand_in!(@elsewhere)
 
     assert_includes fight.close!.description, "Nobody was killed"
