@@ -362,4 +362,60 @@ class ItemTest < ActiveSupport::TestCase
       room.destroy!
     end
   end
+
+  # ------------------------------------------------------------------------
+  # HOW HARD IT IS TO SHIFT, which is `bulk` -- a closed key whose value is the
+  # penalty a thrower's strength pays, and a second table on the same key for
+  # what a hit costs.
+
+  test "every row is handy unless the world says otherwise" do
+    assert_equal Item::HANDY, create(:item).bulk
+    assert_equal 2, create(:item).bulk_penalty
+    assert_predicate create(:item), :throwable?
+  end
+
+  test "a bulk outside the closed table is refused" do
+    item = build(:item, bulk: "featherweight")
+
+    assert_not_predicate item, :valid?
+    assert_includes item.errors[:bulk], "is not included in the list"
+  end
+
+  test "a blank bulk is refused, because handy is a decision and nil is not" do
+    assert_not_predicate build(:item, bulk: nil), :valid?
+    assert_not_predicate build(:item, bulk: ""), :valid?
+  end
+
+  # NIL IS NOT A BIG NUMBER, IT IS THE ABSENCE OF A THROW. `Playthrough::Turn`
+  # rolls nothing for one and `Playthrough::Refusal` says so.
+  test "an immovable thing has no penalty, no die and cannot be thrown" do
+    press = create(:item, :immovable)
+
+    assert_nil press.bulk_penalty
+    assert_nil press.thrown_die
+    assert_not_predicate press, :throwable?
+  end
+
+  # THE SAME HONEST NOTHING `Location#danger_share` GIVES AN UNKNOWN DANGER: a
+  # word that came from somewhere other than the engine reads as "does not
+  # move", and `rake game:doctor` names the row.
+  test "a bulk the engine has no table for reads as immovable" do
+    item = create(:item)
+    item.update_column(:bulk, "featherweight")
+
+    assert_nil item.bulk_penalty
+    assert_not_predicate item, :throwable?
+  end
+
+  test "the two tables are keyed the same way, and only immovable is missing a die" do
+    assert_equal Item::BULK.keys, Item::THROWN_DAMAGE.keys + [ "immovable" ]
+    assert_equal [ 4, 6, 8 ], Item::THROWN_DAMAGE.values_at("light", Item::HANDY, "heavy")
+    assert_equal [ 0, 2, 5 ], Item::BULK.values_at("light", Item::HANDY, "heavy")
+  end
+
+  # A COPY OF A THING IS THAT THING, and `Item::NOT_COPIED` is an exception list
+  # -- so the column came along without anybody naming it.
+  test "bulk is not one of the columns a copy leaves behind" do
+    assert_not_includes Item::NOT_COPIED, "bulk"
+  end
 end

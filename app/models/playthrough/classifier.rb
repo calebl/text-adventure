@@ -41,10 +41,20 @@ class Playthrough::Classifier
   # `unknown_action` is the word the model answered when it answered outside
   # `Playthrough::IntentSchema::INTENTS` and still named a record -- nil every
   # other time, which with a compliant provider is always. See `#unreadable?`.
-  Intent = Data.define(:action, :destination, :speaker, :item, :also_named, :unknown_action) do
+  # `at` is THE ONE THING A LINE IS DIRECTED AT while it acts on something else,
+  # and it is set by exactly one action: a `throw`. A throw is one act with an
+  # object and an indirect object -- `throw the slate at Neb Halloran` -- which
+  # is the first act in the game that legitimately names two records, and
+  # neither `#subject` nor `#also_named` means that (`also_named` is the
+  # opposite of a second target: it is the name a turn is NOT acting on). See
+  # `data/ta-combat-scout` §13.4, and note that this field is on the intent the
+  # FIXED GRAMMAR builds and NOT on `Playthrough::IntentSchema`: the model-facing
+  # schema stays three fields and the closed enum stays six, which is the
+  # captain's call C6. `Playthrough::Grammar#read_throw` is the only writer.
+  Intent = Data.define(:action, :destination, :speaker, :item, :at, :also_named, :unknown_action) do
     # Defaulted so a caller naming only what it resolved reads the way it
     # means -- `Intent.new(action: :other)` is a turn that reached for nothing.
-    def initialize(destination: nil, speaker: nil, item: nil, also_named: nil, unknown_action: nil, **rest) = super
+    def initialize(destination: nil, speaker: nil, item: nil, at: nil, also_named: nil, unknown_action: nil, **rest) = super
 
     def move? = action == :move
     def talk? = action == :talk
@@ -61,8 +71,18 @@ class Playthrough::Classifier
     # (`Scene::ACTIONS`) and the prompt does not.
     def attack? = action == :attack
 
+    # THE SEVENTH ACTION NO MODEL EVER ANSWERS WITH EITHER, and it is here on
+    # `attack`'s terms and for `attack`'s reason: `throw` is not in
+    # `Playthrough::IntentSchema::INTENTS`, so this is only ever true of an
+    # `Intent` the FIXED GRAMMAR built -- behind a slash, or in
+    # `rake game:mechanics`. The classifier intent is slice 8's measured PR.
+    def throw? = action == :throw
+
     # The record the loop acts on, whichever kind it turned out to be. There is
-    # at most one, by construction.
+    # at most one, by construction -- and on a throw it is the THING THROWN and
+    # not what it was aimed at, because the thing is the record that moves (the
+    # shape `take` and `drop` already have). What it was aimed at is `#at`, and
+    # what the throw COST is a `Playthrough::Blow` row.
     def subject = destination || speaker || item
 
     # THE OVERREACH CASE. The line named two things the closed sets both know,
@@ -95,7 +115,20 @@ class Playthrough::Classifier
     # by `Playthrough::Refusal` -- the app's own words, no narrator, no model
     # call. Read that class's header for the shapes and for what is deliberately
     # NOT refused.
-    def refused? = named_more_than_one? || reached_for_nothing? || unreadable?
+    # THE LINE THAT NAMED A THING THAT DOES NOT MOVE. A throw of something whose
+    # `Item::BULK` has no penalty in it is not a hard throw, it is not a throw:
+    # no die is rolled, no row moves and no story time is spent, which is
+    # exactly the shape of a line the engine will not play. It is a fact about
+    # the OBJECT rather than about the reading, which is why it is its own
+    # predicate and its own `Playthrough::Refusal` shape.
+    #
+    # An unknown bulk lands here too, because `Item#bulk_penalty` answers nil
+    # for a key the engine has no table for -- the safe reading of a word that
+    # came from somewhere other than the engine is that the thing does not move.
+    # `rake game:doctor` names the row (`item_with_an_unknown_bulk`).
+    def throws_the_immovable? = throw? && !item.nil? && !item.throwable?
+
+    def refused? = named_more_than_one? || reached_for_nothing? || unreadable? || throws_the_immovable?
   end
 
   INSTRUCTIONS = <<~PROMPT.freeze

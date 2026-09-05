@@ -1,0 +1,192 @@
+# A THING CAN BE PICKED UP AND THROWN, AND THE ENGINE DECIDES WHETHER IT GOES.
+#
+# The captain's request, answered in `data/ta-combat-scout` §13: *"I want
+# players to be able to pick up items and throw them based on a strength
+# check."* This is that request as a walk, on the world whose file hand-authors
+# a bulk for every item in the opening room -- a `light` ward stamp lying on the
+# desk, a `handy` daybook in Odile Vance's hands, and the ward's `immovable`
+# filing press bolted through the floorboards beside the closet door.
+#
+# WHAT ONLY A WALK CAN SEE HERE, and it is four things:
+#
+#   THAT THE VERB READS TWO NAMES OUT OF THREE CLOSED SETS. `throw <thing> at
+#   <somebody or a way out>` is the only line in the game that resolves two
+#   records: the thing out of what the party carries PLUS what is lying here
+#   (the lift is part of the throw), and the aim out of who is standing here and
+#   then the ways out. A unit test can assert each resolver. What it cannot
+#   assert is that the three sets stay apart turn after turn through the same
+#   engine a player types into -- that a person's name is not read as a way out,
+#   and that a thing on the floor is throwable without a `take` first.
+#
+#   THAT AN IMMOVABLE THING IS REFUSED AND COSTS NOTHING. The one outcome that
+#   needs no die: `Item::BULK` has no penalty for `immovable`, so the engine
+#   says so, throws nothing, moves no row and spends no story time. It is a
+#   `Playthrough::Refusal` and not a fumble, which is the distinction that
+#   class's header draws -- and it is asserted here with the whole read-out
+#   under it, so "nothing changed" is a claim about the records and not about a
+#   sentence.
+#
+#   THAT A THROW WRITES THROUGH THE ENGINE'S OWN WRITERS AND COSTS NO MODEL
+#   CALL. `EngineSweep` replaces `BaseAgent.new` with something that raises for
+#   the length of a run, and `throw` is in `Playthrough::Grammar::ENGINE_VIEW`,
+#   so every step below is that assertion too.
+#
+#   THAT `EngineSweep::Invariants` STILL HOLDS AFTERWARDS. Nothing a throw does
+#   may move `characters.hostile`, a race's `monstrous`, a room's `danger`, a
+#   sheet's five columns, a whereabouts, or one of the WORLD'S OWN item rows --
+#   a throw moves a playthrough's copy, which is the layer split, and
+#   `world_items_unmoved` reads the file back after the walk.
+#
+# WHAT THIS SCRIPT DELIBERATELY DOES NOT PIN: THE FACE OF THE DIE, and it
+# cannot, for `a-check-against-an-ability.yml`'s reason. `Roll`'s seed is built
+# from the story and the playthrough ids among other things and a walk loads its
+# own copy of the world, so whether a given throw PASSES is re-derivable inside
+# one process and not across two databases. Nor can a bulk be chosen that makes
+# a pass certain: the best case in the app is strength 18 against a `light`
+# thing, which is `d20 <= 18` -- 0.9, not 1.0 -- so there is no
+# `check strength 9` equivalent on the passing side. `Playthrough::TurnThrowTest`
+# hands `#throw_item!` its own `rng:` and pins all four outcomes exactly; what
+# is pinned HERE is what a script can honestly hold:
+#
+#   * the refusals, which need no die at all;
+#   * the ACT and the TARGET the d20 was thrown at, off the file's own numbers,
+#     which is why `Playthrough::Turn::Throw` prints those two apart from the
+#     outcome (`#attempt_in_words`) and why they arrive as a `note:` on every
+#     outcome while only a throw that MOVED something also carries a `changed:`;
+#   * and one throw whose RECORDS ARE THE SAME EITHER WAY. Step 8 throws the
+#     ward stamp, which is lying in this room, at somebody standing in this
+#     room: on a pass it lands at his feet, on a fumble it never left the floor,
+#     and either way it is lying in Ward Office 12 and the party is carrying
+#     exactly what it was. That is a real assertion about a real throw and it
+#     does not know what the die did.
+#
+# The numbers: `the-unrecorded-hour.yml` gives Odile Vance `strength: 9`, so a
+# `light` thing (penalty 0) is thrown at a target of 9 and a `handy` one
+# (penalty 2) at 7. Halkett Rowe is level 1 on a `hit_die: 8`, so he holds 8 hit
+# points and a `light` thing's d4 cannot kill him -- which is what lets `present:`
+# be asserted after step 8. He IS provoked by a throw that lands, and he answers
+# from that same turn (`Playthrough::Riposte`), which is why step 8 is next to
+# last and no step after it asserts a hit point.
+story: The Unrecorded Hour
+why: a thing can be picked up and thrown, an immovable thing cannot, and a failed lift is a spent turn
+steps:
+- id: the-room-as-seeded
+  type: look
+  why: three bulks in one room -- what is carried, what is lying here, and what does not move
+  expect:
+    location: Ward Office 12 (realized)
+    here: [ward stamp, filing press]
+    carrying: [Ward Office 12 daybook]
+    present: [Halkett Rowe]
+    foes: []
+    hp: 18
+    changed: false
+    refused: false
+
+- id: throw-with-no-argument-names-what-there-is-to-throw
+  type: throw
+  why: the closed sets are the answer to "throw what", and a refusal prints them
+  expect:
+    refused: true
+    offers:
+    - throw what at what?
+    - Ward Office 12 daybook
+    - ward stamp
+    changed: false
+    here: [ward stamp, filing press]
+    carrying: [Ward Office 12 daybook]
+
+- id: a-throw-with-no-aim-names-both-aim-sets
+  type: throw the daybook
+  why: two closed sets can be aimed at, and they are said as two because they are two different mistakes
+  expect:
+    refused: true
+    offers:
+    - at what?
+    - 'Here with you: Halkett Rowe'
+    - 'The ways out are: The Supply Closet, The Long Hallway'
+    changed: false
+    carrying: [Ward Office 12 daybook]
+
+- id: an-aim-that-lands-on-nothing-is-refused
+  type: throw the daybook at the moon
+  why: a name that is neither somebody here nor a way out is a reach the closed sets cannot answer
+  expect:
+    refused: true
+    offers:
+    - nothing called "the moon"
+    - Halkett Rowe
+    changed: false
+    carrying: [Ward Office 12 daybook]
+
+- id: a-thing-not-here-and-not-carried-is-refused
+  type: throw the private index at Halkett Rowe
+  why: the thing comes out of two item sets and Perrin's index is in neither -- it is in the closet
+  expect:
+    refused: true
+    offers:
+    - no thing in your hands or lying here called "the private index"
+    changed: false
+
+- id: the-immovable-thing-is-refused-and-no-die-is-thrown
+  type: throw the filing press at Halkett Rowe
+  why: THE ONE OUTCOME THAT NEEDS NO DIE -- `Item::BULK` has no penalty for it, so nothing is rolled and nothing moves
+  expect:
+    understood: throw -> filing press at Halkett Rowe
+    refused: true
+    offers:
+    - filing press is immovable and does not move for anybody
+    - no die was thrown for it
+    changed: false
+    here: [ward stamp, filing press]
+    carrying: [Ward Office 12 daybook]
+    present: [Halkett Rowe]
+    hp: 18
+    blows: 0
+
+- id: and-it-is-the-thing-and-not-the-aim-that-refuses-it
+  type: throw the press at the long hallway
+  why: the same refusal through a doorway, so the reader knows which half of the line earned it
+  expect:
+    refused: true
+    offers: does not move for anybody
+    changed: false
+    here: [ward stamp, filing press]
+    hp: 18
+    blows: 0
+
+- id: a-throw-at-somebody-standing-here
+  type: throw the ward stamp at Halkett Rowe
+  why: >-
+    A REAL THROW WHOSE RECORDS ARE THE SAME EITHER WAY. The stamp is lying in
+    this room and Rowe is standing in it, so a pass lands it at his feet and a
+    fumble leaves it on the desk -- and both of those are "lying in Ward Office
+    12". The act and the target the d20 was thrown at are pinned; the face is
+    not, and cannot be.
+  expect:
+    understood: throw -> ward stamp at Halkett Rowe
+    resolved_by: grammar
+    refused: false
+    note:
+    - 'threw: ward stamp at Halkett Rowe'
+    - 'strength -> d20('
+    - '<= 9 '
+    here: [ward stamp, filing press]
+    carrying: [Ward Office 12 daybook]
+    present: [Halkett Rowe]
+
+- id: and-one-through-a-doorway
+  type: throw the daybook at the supply closet
+  why: >-
+    The other aim set, and the penalty a `handy` thing carries -- 9 less 2 is 7.
+    Where the daybook ends up depends on the die (this room, or the closet), so
+    nothing here asserts it; `Playthrough::TurnThrowTest` does, with its own rng.
+  expect:
+    understood: throw -> Ward Office 12 daybook at The Supply Closet
+    resolved_by: grammar
+    refused: false
+    note:
+    - 'threw: Ward Office 12 daybook at The Supply Closet'
+    - 'strength -> d20('
+    - '<= 7 '
+    present: [Halkett Rowe]

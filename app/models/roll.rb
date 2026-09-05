@@ -17,7 +17,7 @@
 # rule `ShuffleConnections#seed_for` already keeps and the one thing about this
 # file that must not be "simplified".
 #
-# WHAT A SEED IS MADE OF -- four integers, each of which answers a different
+# WHAT A SEED IS MADE OF -- five integers, each of which answers a different
 # "which roll is this":
 #
 #   story        which world. Two worlds do not share a die.
@@ -31,8 +31,24 @@
 #   sequence     which roll within that moment. Two people born out of one room
 #                realization are two rolls, and without this they would be one
 #                number twice.
+#   kind         WHICH SORT OF ROLL IT IS, and the fifth integer -- `0` unless a
+#                caller says otherwise, so every die thrown before this existed
+#                is unchanged.
 #
-# THE PRIMES are odd and pairwise distinct so that the four inputs cannot cancel
+# WHY `kind` EXISTS, and it is a defect written down rather than a nicety. Three
+# sources carved `sequence` up between them by CONVENTION: `Playthrough::Turn#check`
+# took 1..`Character::ABILITIES.size`, `Playthrough::Blow.next_sequence` counted
+# UP from `SEQUENCE_OFFSET`, and `Playthrough::Toll.next_sequence` counted DOWN
+# from -1 -- each unbounded, and between them the whole integer line. So the
+# fourth source (a throw, whose identity is WHICH THING left your hands rather
+# than a count of anything) had nowhere left to stand: it took the negative
+# space too, and a game that had paid two tolls throwing item #3 seeded the
+# lift and the hazard's save identically. Carving one axis finer would have hit
+# the same wall again. An axis of its own cannot: two rolls of DIFFERENT kinds
+# are different dice whatever either one counts, and a kind needs no agreement
+# with anybody about bounds.
+#
+# THE PRIMES are odd and pairwise distinct so that the five inputs cannot cancel
 # each other out: incrementing `sequence` by one and `at` by one must not land
 # on the seed some other pair would.
 module Roll
@@ -40,12 +56,27 @@ module Roll
   PLAYTHROUGH = 100_003
   AT = 10_007
   SEQUENCE = 1_009
+  # Larger than the four above and distinct from them, so a kind cannot be
+  # cancelled out by any combination of the others -- which is the whole
+  # property that makes it a space of its own rather than a fifth convention.
+  KIND = 100_000_007
 
-  # THE SEED, FROM FOUR INTEGERS AND NOTHING ELSE. Public because it is the part
-  # worth asserting on its own: `RollTest` pins that the same four inputs give
-  # the same seed and that nudging any one of them changes it.
-  def self.seed(story:, playthrough: 0, at: 0, sequence: 0)
-    story.to_i * STORY + playthrough.to_i * PLAYTHROUGH + at.to_i * AT + sequence.to_i * SEQUENCE
+  # THE KINDS OF ROLL THERE ARE, and `0` is *everything that carves `sequence`
+  # up between itself* -- a check, a blow, a toll, a stat block, a shuffle. A
+  # named kind is for a roll whose identity is NOT a count and so cannot take a
+  # band on that axis; see the header. One entry, so far.
+  THROW = 1
+
+  # THE SEED, FROM FIVE INTEGERS AND NOTHING ELSE. Public because it is the part
+  # worth asserting on its own: `RollTest` pins that the same inputs give the
+  # same seed and that nudging any one of them changes it.
+  #
+  # `kind` DEFAULTS TO ZERO AND MUST GO ON DOING SO: every die this app has ever
+  # thrown was seeded without one, and a default that moved would re-roll every
+  # stat block `rake game:doctor` can re-derive.
+  def self.seed(story:, playthrough: 0, at: 0, sequence: 0, kind: 0)
+    story.to_i * STORY + playthrough.to_i * PLAYTHROUGH + at.to_i * AT +
+      sequence.to_i * SEQUENCE + kind.to_i * KIND
   end
 
   # A generator for one roll. Handed around rather than kept, so a caller

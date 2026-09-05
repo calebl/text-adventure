@@ -36,7 +36,7 @@ steps:
   why: the story's starting inventory, which is `characters[].items` in the world file
   expect:
     location: Ward Office 12 (realized)
-    here: [ward stamp]
+    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     changed: false
     refused: false
@@ -47,7 +47,7 @@ steps:
   why: a second game of one world starts from the same world, not from the first game's state
   expect:
     location: Ward Office 12 (realized)
-    here: [ward stamp]
+    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     changed: false
     refused: false
@@ -58,7 +58,7 @@ steps:
   expect:
     changed: true
     understood: take -> ward stamp
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: second-is-not-holding-it
@@ -78,7 +78,7 @@ steps:
     changed: false
     refused: false
     location: Ward Office 12 (realized)
-    here: [ward stamp]
+    here: [ward stamp, filing press]
 
 - id: second-takes-its-own-stamp
   type: take the ward stamp
@@ -87,7 +87,7 @@ steps:
   expect:
     changed: true
     understood: take -> ward stamp
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: first-still-holds-the-one-it-took
@@ -105,7 +105,7 @@ steps:
   expect:
     changed: true
     change: now lying in Ward Office 12
-    here: [Ward Office 12 daybook]
+    here: [Ward Office 12 daybook, filing press]
     carrying: [ward stamp]
 
 - id: first-does-not-see-the-other-players-daybook
@@ -114,7 +114,7 @@ steps:
   expect:
     changed: false
     refused: false
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: first-walks-off-with-the-stamp

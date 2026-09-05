@@ -278,6 +278,147 @@ class Playthrough::GrammarTest < ActiveSupport::TestCase
     assert_equal %w[grammar model], Scene::TURN_READERS
   end
 
+  # --- a throw, which is the one line that names two records ----------------
+
+  test "a slashed throw resolves the thing and the aim out of two closed sets" do
+    reading = read("/throw the daybook at Halkett Rowe")
+
+    assert_predicate reading, :resolved?
+    assert_equal :throw, reading.intent.action
+    assert_equal @daybook, reading.intent.item
+    assert_equal @rowe, reading.intent.at
+    assert_equal "throw -> Ward Office 12 daybook at Halkett Rowe", reading.understood
+    assert_equal "grammar", reading.resolved_by
+  end
+
+  # THE THING COMES OUT OF BOTH ITEM SETS, which is the captain's own words --
+  # *"pick up items and throw them"* -- and `data/ta-combat-scout` §13.3's *"the
+  # lift IS the throw"*. A thing on the floor needs no `take` first.
+  test "a throw reads a thing off the floor as readily as one in your hands" do
+    reading = read("/throw the ward stamp at Rowe")
+
+    assert_predicate reading, :resolved?
+    assert_equal @stamp, reading.intent.item
+    assert_equal @rowe, reading.intent.at
+  end
+
+  test "a throw can be aimed through one of the ways out" do
+    reading = read("/throw the daybook at the supply closet")
+
+    assert_equal @closet, reading.intent.at
+    assert_equal @daybook, reading.intent.item
+  end
+
+  test "hurl and toss are the same verb" do
+    %w[hurl toss].each do |word|
+      assert_equal :throw, read("/#{word} the daybook at Rowe").intent.action
+    end
+  end
+
+  # THE FIRST STANDALONE `at` SPLITS THE LINE, and word boundaries keep a hat
+  # and a tally out of it.
+  test "at is matched on word boundaries and the first one splits the line" do
+    hat = create(:item, :lying, playthrough: @playthrough, location: @office, name: "flat hat")
+
+    assert_equal hat, read("/throw the flat hat at Rowe").intent.item
+    assert_equal @rowe, read("/throw the flat hat at Rowe").intent.at
+  end
+
+  test "a throw with no argument names what there is to throw" do
+    reading = read("/throw")
+
+    assert_not_predicate reading, :resolved?
+    assert_match(/throw what at what\?/, reading.refusal)
+    assert_match(/ward stamp/, reading.refusal)
+    assert_match(/Ward Office 12 daybook/, reading.refusal)
+  end
+
+  test "a throw with no aim names both aim sets, because they are two mistakes" do
+    reading = read("/throw the daybook")
+
+    assert_not_predicate reading, :resolved?
+    assert_match(/at what\?/, reading.refusal)
+    assert_match(/Here with you: Halkett Rowe/, reading.refusal)
+    assert_match(/The ways out are: The Supply Closet/, reading.refusal)
+  end
+
+  test "a thing that is neither carried nor lying here is refused" do
+    reading = read("/throw the tide-slate at Rowe")
+
+    assert_not_predicate reading, :resolved?
+    assert_match(/no thing in your hands or lying here/, reading.refusal)
+  end
+
+  # AMBIGUITY AND ABSENCE ARE TOLD APART, which is this grammar's rule
+  # everywhere else too: one is a name that was too short, the other a name for
+  # something that is not there.
+  test "an aim that lands on two things is refused as ambiguous" do
+    create(:location_connection, location: @office,
+                                 connected_location: create(:location, story: @story, name: "The Supply Room"),
+                                 distance: "adjacent", travel_method: "walking")
+
+    reading = read("/throw the daybook at the supply")
+
+    assert_not_predicate reading, :resolved?
+    assert_match(/matches more than one thing to throw it at/, reading.refusal)
+    assert_match(/The Supply Closet/, reading.refusal)
+  end
+
+  test "an aim that is neither somebody here nor a way out is refused" do
+    reading = read("/throw the daybook at the moon")
+
+    assert_not_predicate reading, :resolved?
+    assert_match(/nothing called "the moon" to throw it at/, reading.refusal)
+  end
+
+  # BOTH OF A THROW'S NAMES COME OUT BEFORE `JOINING_WORDS` IS LOOKED FOR, or a
+  # room called "The Bell and Anchor" would read as a second act.
+  test "a room whose own name joins two words is not a second act" do
+    bell = create(:location, story: @story, name: "The Bell and Anchor")
+    create(:location_connection, location: @office, connected_location: bell,
+                                 distance: "adjacent", travel_method: "walking")
+
+    reading = read("/throw the daybook at the bell and anchor")
+
+    assert_predicate reading, :resolved?
+    assert_equal bell, reading.intent.at
+  end
+
+  test "a throw that really joins two acts is handed to the model" do
+    reading = read("/throw the daybook at Rowe and take the stamp")
+
+    assert_not_predicate reading, :resolved?
+    assert_equal Playthrough::Grammar::MORE_THAN_ONE_ACT, reading.refusal
+  end
+
+  # `throw` IS ORDINARY ENGLISH, so with a model available it is the engine's
+  # own only when BOTH halves land -- *"throw the switch"* and *"throw a party"*
+  # reach the classifier exactly as they always did.
+  test "throw is the engine's own only when the line names two records" do
+    EngineSweep.without_a_model do
+      assert_not_nil grammar.engine_view_reading("throw the daybook at Halkett Rowe", model: true)
+      assert_nil grammar.engine_view_reading("throw the switch", model: true)
+      assert_nil grammar.engine_view_reading("throw a party", model: true)
+      # With no model there is nothing to hand it to, so the grammar answers.
+      assert_not_nil grammar.engine_view_reading("throw the switch", model: false)
+    end
+  end
+
+  test "an unslashed throw is not claimed at all" do
+    assert_nil read("throw the daybook at Halkett Rowe")
+  end
+
+  # A THROW IS DELIBERATELY NOT IN `RESOLVING`, and that is a statement about
+  # the list's SHAPE: it maps one word to ONE action so `Playthrough::SlashMenu`
+  # can put one closed set under it, and a throw names two records out of two
+  # sets. The verb still works behind a slash, which is what the cases above
+  # walk.
+  test "throw is not offered as a slash completion, and still reads behind one" do
+    assert_not_includes Playthrough::Grammar::RESOLVING.keys, "throw"
+    assert_includes Playthrough::Grammar::VERBS.keys, "throw"
+    assert_predicate read("/throw the daybook at Rowe"), :resolved?
+  end
+
   # The menu offers six words, and every one of them is a word the grammar
   # reads -- so the box cannot complete to something the engine will not answer.
   test "the six offered verbs are all in the grammar's own table" do

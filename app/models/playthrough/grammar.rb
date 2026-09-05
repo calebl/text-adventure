@@ -92,6 +92,16 @@ class Playthrough::Grammar
     # come back `other`; reading it here costs nothing and makes a whole fight
     # walkable with no key at all.
     "attack" => :attack, "hit" => :attack, "strike" => :attack,
+    # THE ONE VERB IN THIS TABLE THAT NAMES TWO RECORDS, and the only one that
+    # does: `throw <thing> at <somebody or a way out>` is one act with an object
+    # and an indirect object (the captain's request of 2026-09-05, and the
+    # scout's §13.4). It is split on ` at `, both halves go through the same
+    # `#resolve` matcher against the same closed sets the model would have been
+    # offered, and `Playthrough::IntentSchema` is untouched -- it holds ONE
+    # target by design and `also_named` means the opposite of a second one, so
+    # the closed enum cannot express a throw and the engine reads it here
+    # instead (the captain's call C6).
+    "throw" => :throw, "hurl" => :throw, "toss" => :throw,
     "help" => :help
   }.freeze
 
@@ -109,8 +119,8 @@ class Playthrough::Grammar
   # nothing there claims an unslashed line at all, so a player who types `stats`
   # at the fiction reaches the classifier exactly as they always did.
   #
-  # `attack` IS THE ONE ON THIS LIST THAT IS AN ACT IN THE FICTION rather than an
-  # instrument, and it is here for the list's own reason and not for a new one:
+  # `attack` IS THE FIRST ON THIS LIST THAT IS AN ACT IN THE FICTION rather than
+  # an instrument, and it is here for the list's own reason and not for a new one:
   # there is no intent in the closed enum for it, so a model call could only
   # come back `other`. Two things follow, and both are deliberate. It is guarded
   # by `#in_the_fiction?` exactly as `check` is -- with a model available it is
@@ -119,8 +129,16 @@ class Playthrough::Grammar
   # `grammar` and never `engine_view` on `scenes.resolved_by` (see `#parse`),
   # because `engine_view` means "no Scene comes of this" and a fight ends in
   # one.
+  #
+  # `throw` IS THE SECOND ACT IN THE FICTION ON THIS LIST, and it is here for
+  # `attack`'s reason exactly: the closed enum has no word for it, so a model
+  # call could only ever come back `other`. It is guarded by `#in_the_fiction?`
+  # too -- *"throw the switch"*, *"throw a party"* -- and with a model available
+  # it is the engine's own only when the line names a thing in your hands AND
+  # something to aim it at. Its reading is `grammar` and never `engine_view`,
+  # because a throw is a turn and a turn ends in a `Scene`.
   ENGINE_VIEW = %w[vitals hp condition stats abilities check attack hit strike
-                   harm hurt damage mend heal help].freeze
+                   throw hurl toss harm hurt damage mend heal help].freeze
 
   # THE SIX VERBS THAT RESOLVE A RECORD, in the word this grammar's own help
   # calls each of them by, mapped to the action it produces.
@@ -133,6 +151,19 @@ class Playthrough::Grammar
   # closed set to complete.
   RESOLVING = { "go" => :move, "talk" => :talk, "take" => :take, "drop" => :drop, "read" => :examine,
                 "attack" => :attack }.freeze
+
+  # AND `throw` IS DELIBERATELY NOT IN `RESOLVING`, which is a statement about
+  # that list's SHAPE and not about the verb. It maps one word to ONE action so
+  # `Playthrough::SlashMenu` can put one closed set under it; a throw names two
+  # records out of two different sets, so there is no single list for the box to
+  # complete on. The verb still works behind a slash -- `#reading_first` claims a
+  # slashed line whatever its verb -- it simply is not offered as a completion
+  # until the battle panel has somewhere to put two lists (slice 7).
+
+  # THE WORD THAT SEPARATES A THROW'S TWO NAMES. On word boundaries, so a hat
+  # and a tally are not split in half, and the FIRST one splits the line -- see
+  # `#split_on_at`.
+  THROW_AT = /(?<![[:alnum:]])at(?![[:alnum:]])/i
 
   # WHY A VERB ALONE DOES NOT CLAIM A LINE, and it is the captain's ruling of
   # 2026-09-05. He objected first:
@@ -239,6 +270,16 @@ class Playthrough::Grammar
     "                 live foe in the room answers in the same turn. Anybody",
     "                 can be attacked, and being attacked makes them a foe for",
     "                 this playthrough",
+    "throw <thing> at <name|exit>",
+    "                 throw something in your hands, or lying here, at somebody",
+    "                 standing here or through one of the ways out (also: hurl,",
+    "                 toss). Picking it up is part of the throw, not a turn of",
+    "                 its own. One d20 under strength less what it weighs, and no",
+    "                 second roll: if it leaves your hands it goes where you",
+    "                 aimed it. A hit deals one die by bulk -- light d4, handy",
+    "                 d6, heavy d8 -- and lands the thing at their feet. A",
+    "                 failed lift is a spent turn and the thing stays in your",
+    "                 hands. Something immovable is refused and costs nothing",
     "check <ability> [penalty]",
     "                 throw one d20 against strength, dexterity or will and",
     "                 print what it came up: d20-under the score, with the",
@@ -345,6 +386,10 @@ class Playthrough::Grammar
   # nothing offline changes.
   def self.describe(intent)
     reading = "#{intent.action} -> #{label(intent.subject) || "nothing"}"
+    # WHAT IT WAS AIMED AT IS PART OF THE READING, on the one action that has an
+    # indirect object: `throw -> ward stamp at Halkett Rowe` printed without the
+    # second half would read as a drop.
+    reading += " at #{label(intent.at)}" if intent.at
     reading += " (and #{label(intent.also_named)})" if intent.named_more_than_one?
 
     reading
@@ -382,18 +427,25 @@ class Playthrough::Grammar
 
     reading = parse(command)
     return reading unless reading.resolved?
-    return reading.with(intent: nil, understood: nil, refusal: MORE_THAN_ONE_ACT) if joins_two_acts?(command, reading.intent.subject)
+    return reading.with(intent: nil, understood: nil, refusal: MORE_THAN_ONE_ACT) if joins_two_acts?(command, reading.intent)
 
     reading
   end
 
-  # WHETHER THE LINE STILL JOINS SOMETHING ON, once the name it resolved to is
+  # WHETHER THE LINE STILL JOINS SOMETHING ON, once the names it resolved to are
   # taken out of it. See `JOINING_WORDS` for why this exists and what it was
-  # measured at. Every name the record answers to is removed, because the player
+  # measured at. Every name each record answers to is removed, because the player
   # may have typed either one.
-  def joins_two_acts?(command, subject)
+  #
+  # BOTH OF A THROW'S NAMES COME OUT, which is what `intent` rather than one
+  # record is here for: `throw the tally at the Bell and Anchor` names one thing
+  # and one place and joins nothing, and cutting only the tally would read the
+  # room's own name as a second act.
+  def joins_two_acts?(command, intent)
     rest = normalize(self.class.unslashed(command))
-    names_of(subject).each { |name| rest = rest.gsub(normalize(name), " ") }
+    [ intent.subject, intent.at ].compact.each do |record|
+      names_of(record).each { |name| rest = rest.gsub(normalize(name), " ") }
+    end
 
     rest.match?(JOINING_WORDS)
   end
@@ -442,6 +494,7 @@ class Playthrough::Grammar
     when :mend then read_wound(argument, :mend)
     when :check then read_check(argument)
     when :attack then read_attack(argument)
+    when :throw then read_throw(argument)
     else resolve(classifier.exits_here, text).found? ? read_move(text) : unknown(text)
     end
 
@@ -498,6 +551,11 @@ class Playthrough::Grammar
     case VERBS.fetch(verb)
     when :check then resolve_ability(argument.split(/\s+/).first).nil?
     when :attack then !resolve(classifier.characters_here, argument).found?
+    # BOTH HALVES HAVE TO LAND, because a line with one name in it is not a
+    # throw: *"throw the switch"* resolves no switch and *"throw a party"* aims
+    # at nobody, and either of those swallowed here would cost the fiction a
+    # verb the way swallowing *"check the ledger"* would.
+    when :throw then !read_throw(argument).resolved?
     else false
     end
   end
@@ -587,6 +645,92 @@ class Playthrough::Grammar
     return Reading.new(refusal: cannot_find("person here", argument, match, cast)) unless match.found?
 
     intent(:attack, speaker: match.record)
+  end
+
+  # THROWING SOMETHING AT SOMETHING, and it is the one reading here that
+  # resolves TWO records.
+  #
+  # THE LINE IS SPLIT ON A STANDALONE `at` and each half goes through the same
+  # `#resolve` matcher the other verbs use, against the closed sets those halves
+  # read.
+  #
+  # THE THING COMES OUT OF BOTH ITEM SETS -- what the party is CARRYING and what
+  # is LYING HERE -- which is `examine`'s two-set shape and is here for the
+  # captain's own words: *"I want players to be able to PICK UP items and throw
+  # them based on a strength check."* The scout's §13.3 makes that one act and
+  # not two -- *"the lift IS the throw: if you can get it off the ground and
+  # moving, it goes where you aimed it"* -- so a thing on the floor is throwable
+  # in one line and the one check covers getting it up. Hands first, because a
+  # thing already in them is the one somebody typing its name meant.
+  #
+  # THE AIM COMES OUT OF WHO IS STANDING HERE and then out of BOTH sets
+  # together. People first, because a throw at somebody is the act with a
+  # consequence; the union second so that a name landing on two things is
+  # reported as ambiguous rather than as missing.
+  #
+  # `at` IS MATCHED ON WORD BOUNDARIES, so a hat and a tally are not split in
+  # half, and the FIRST one splits the line -- `throw the note at the man at the
+  # desk` aims at "the man at the desk" and throws the note.
+  #
+  # WHAT IT DOES NOT DECIDE IS WHETHER THE THING WILL BUDGE. `Item::BULK` says
+  # that and `Playthrough::Refusal` says it out loud, out of
+  # `Playthrough::Classifier::Intent#throws_the_immovable?` -- the same one
+  # decision both modes read, in front of the dispatch. This resolves records;
+  # the engine rules on them.
+  def read_throw(argument)
+    throwable = classifier.items_carried + classifier.items_here
+    if argument.blank?
+      return Reading.new(refusal: "throw what at what? `throw <thing> at <somebody, or a way out>`, and " \
+                                  "there is: #{names(throwable)}")
+    end
+
+    thrown, aimed = split_on_at(argument)
+    if aimed.blank?
+      return Reading.new(refusal: "throw #{thrown.inspect} at what? #{aim_offer}")
+    end
+
+    match = resolve(throwable, thrown)
+    return Reading.new(refusal: cannot_find("thing in your hands or lying here", thrown, match, throwable)) unless match.found?
+
+    # PEOPLE FIRST, then the union -- so a name that is a person is that person,
+    # and a name that lands on two things is AMBIGUOUS rather than absent. The
+    # two are told apart because they are different mistakes, which is the rule
+    # `#cannot_find` is written under one method over.
+    aims = classifier.characters_here + classifier.exits_here
+    aim = resolve(classifier.characters_here, aimed)
+    aim = resolve(aims, aimed) unless aim.found?
+    unless aim.found?
+      return Reading.new(refusal: cannot_aim(aimed, aim))
+    end
+
+    intent(:throw, item: match.record, at: aim.record)
+  end
+
+  # THE LINE IN TWO HALVES, ON THE FIRST STANDALONE `at`. Both halves come back
+  # stripped, and a line with no `at` in it comes back with an empty aim -- which
+  # is a refusal that names what could have been aimed at rather than a guess
+  # that the whole line was a thing.
+  def split_on_at(argument)
+    thrown, separator, aimed = argument.to_s.partition(THROW_AT)
+    return [ argument.to_s.strip, "" ] if separator.empty?
+
+    [ thrown.strip, aimed.strip ]
+  end
+
+  # WHY THE AIM RESOLVED TO NOTHING, and the two answers are told apart because
+  # they are different mistakes -- `#cannot_find`'s rule, said for a set that is
+  # really two sets.
+  def cannot_aim(aimed, aim)
+    return "#{aimed.inspect} matches more than one thing to throw it at: #{names(aim.candidates)}" if aim.ambiguous?
+
+    "there is nothing called #{aimed.inspect} to throw it at. #{aim_offer}"
+  end
+
+  # WHAT THERE IS TO THROW SOMETHING AT, which is two closed sets and is said as
+  # two, because "here with you" and "the ways out" are different answers to
+  # different mistakes.
+  def aim_offer
+    "Here with you: #{names(classifier.characters_here)}. The ways out are: #{names(classifier.exits_here)}."
   end
 
   # READING SOMETHING, against BOTH item sets at once -- what is lying here and

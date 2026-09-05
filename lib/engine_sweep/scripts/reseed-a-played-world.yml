@@ -51,7 +51,7 @@ steps:
   expect:
     location: Ward Office 12 (realized)
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
-    here: [ward stamp]
+    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     present: [Halkett Rowe]
     changed: false
@@ -64,14 +64,14 @@ steps:
   expect:
     location: Ward Office 12 (realized)
     carrying: [Ward Office 12 daybook]
-    here: [ward stamp]
+    here: [ward stamp, filing press]
 
 - id: take-the-stamp
   type: take the ward stamp
   expect:
     changed: true
     understood: take -> ward stamp
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook, ward stamp]
 
 - id: carry-it-into-the-closet
@@ -127,7 +127,7 @@ steps:
     # EMPTY FOR THIS PLAYER, because their copy of the stamp is in the closet
     # where they left it. The world's own stamp is lying here again -- the
     # second player reads it back in the next step.
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook]
     present: [Halkett Rowe]
 
@@ -143,7 +143,7 @@ steps:
   expect:
     location: Ward Office 12 (realized)
     carrying: [Ward Office 12 daybook]
-    here: [ward stamp]
+    here: [ward stamp, filing press]
     present: [Halkett Rowe]
 
 - id: and-a-second-re-seed-changes-nothing-at-all
@@ -153,7 +153,7 @@ steps:
     changed: false
     location: Ward Office 12 (realized)
     exits: [The Supply Closet (realized), The Long Hallway (stub)]
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook]
     present: [Halkett Rowe]
 
@@ -178,7 +178,7 @@ steps:
     changed: false
     location: Ward Office 12 (realized)
     exits: [Supply Closet (realized), The Long Hallway (stub)]
-    here: []
+    here: [filing press]
     carrying: [Ward Office 12 daybook]
     present: [Halkett Rowe]
     note: 'is "Supply Closet" in the file, so the row was renamed'

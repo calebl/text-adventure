@@ -78,6 +78,14 @@
 # `Item::Inscriber` writes them once for a readable thing that arrived without
 # any, onto the instance AND back onto its template, so the second player's copy
 # of the note is born with the same words instead of paying for different ones.
+#
+# AND HOW HARD IT IS TO SHIFT, which is `bulk` -- the captain's request of
+# 2026-09-05, *"I want players to be able to pick up items and throw them based
+# on a strength check"*, and the half of that arithmetic that lives on the
+# thing. It is orthogonal to WHERE the thing is and to WHICH LAYER it is in for
+# exactly `readable`'s reason: how heavy a slate is is a fact about the slate.
+# `BULK` is the closed table, `THROWN_DAMAGE` the second table on the same key,
+# and `Playthrough::Turn#throw_item!` the one writer that reads them.
 class Item < ApplicationRecord
   # HOW MANY CHARACTERS A THING CAN HAVE WRITTEN ON IT. What a player reads off
   # an object in one turn -- a note, a docket line, a sign, a page of an index --
@@ -86,6 +94,48 @@ class Item < ApplicationRecord
   # generated inscription arriving AT it is a truncated answer
   # (`SanitizesGeneratedText`) rather than a row that quietly will not save.
   INSCRIPTION_LIMIT = 400
+
+  # WHAT EVERY ROW ALREADY WRITTEN IS, and the column's default. Named rather
+  # than spelt out at each reader for the reason every other key in this app is:
+  # one string, one place.
+  HANDY = "handy"
+
+  # HOW HARD A THING IS TO PICK UP AND THROW, and it is a key into this table
+  # rather than a number on the row -- `locations.danger`'s shape and
+  # `LocationConnection::DISTANCES`' before it, for `DISTANCES`' reason: the
+  # labels are what a person writing a world reads and the numbers are what the
+  # engine uses, and a free-text or free-number field is a field something
+  # outside the engine can fill in wrongly.
+  #
+  # The value is the PENALTY subtracted from a thrower's strength
+  # (`Playthrough::Turn#throw_item!`, through the one check kernel
+  # `Character#check`). `nil` IS NOT A HARD THROW, IT IS NOT A THROW: the engine
+  # says so and rolls nothing -- a filing press does not move for anybody, and
+  # that is the one refusal shape a throw has.
+  BULK = {
+    "light" => 0,       # a note, a stamp, a key
+    HANDY => 2,         # a daybook, a lamp, a bottle
+    "heavy" => 5,       # a chair, a strongbox, a tide-slate
+    "immovable" => nil  # a filing press. It does not move for anybody
+  }.freeze
+
+  # WHAT A THROWN THING COSTS THE BODY IT HITS: one die, by bulk, and there is
+  # no second roll to see whether it lands (`data/ta-combat-scout` §13.3 -- a
+  # throw that leaves your hands goes where you aimed it, exactly as a blow that
+  # lands lands).
+  #
+  # A SECOND TABLE ON THE SAME KEY rather than a second column, which is the
+  # whole reason `bulk` is a key: the row carries what kind of thing it is and
+  # the engine carries what that means.
+  #
+  # THE CAPTAIN'S CALL C8, AS MEASURED AND SAID OUT LOUD: a heavy thing is a d8,
+  # which kills an unhurt level-1 d6 body 37.3% of the time in one typed line.
+  # Throwing furniture is the most lethal act in the game, in either direction --
+  # an NPC throwing a chair at the player ends the playthrough that often too.
+  # It is survivable because the seeded protagonists are level 3 on a d8 (call
+  # C1, 18 hit points); a GENERATED person is level 1 and it is not.
+  # `immovable` is deliberately absent: nothing is thrown, so nothing is dealt.
+  THROWN_DAMAGE = { "light" => 4, HANDY => 6, "heavy" => 8 }.freeze
 
   belongs_to :character, optional: true
   belongs_to :location, optional: true
@@ -105,6 +155,12 @@ class Item < ApplicationRecord
   validates :name, presence: true
   validates :description, presence: true
   validates :inscription, length: { maximum: INSCRIPTION_LIMIT }
+  # A key outside `BULK` cannot be written by anything in the app: the four
+  # labels are the whole of what a bulk is, and a fifth arrived from somewhere
+  # that is not the engine. `rake game:doctor` reports the row a database
+  # already carries (`item_with_an_unknown_bulk`, clamped back to `HANDY`)
+  # rather than this guessing which of the four was meant.
+  validates :bulk, presence: true, inclusion: { in: BULK.keys }
   validate :in_exactly_one_place
   validate :a_template_is_a_template
   validate :inscription_requires_readable
@@ -191,6 +247,25 @@ class Item < ApplicationRecord
   # the party is the ABSENCE of a room and a holder inside a game -- which is
   # exactly why a template can never be carried and this returns false for one.
   def carried? = instance? && !held? && !occupies?(:location_id)
+
+  # WHAT THROWING THIS COSTS THE THROWER'S STRENGTH, out of `BULK`. NIL IS NOT
+  # A BIG NUMBER, it is the absence of a throw: `Playthrough::Turn#throw_item!`
+  # refuses the line and throws no die at all.
+  #
+  # Nil for a key `BULK` does not have, which is the same honest nothing
+  # `Location#danger_share` gives an unknown danger and for the same reason: a
+  # word that is not one of the four came from somewhere that is not the engine,
+  # and the safe reading of it is that the thing does not move. `rake
+  # game:doctor` names the row.
+  def bulk_penalty = BULK[bulk]
+
+  # Whether this thing can leave a pair of hands at all.
+  def throwable? = !bulk_penalty.nil?
+
+  # THE DIE A HIT WITH THIS DEALS, out of `THROWN_DAMAGE`. Nil exactly where
+  # `#bulk_penalty` is nil, because nothing that cannot be thrown can hit
+  # anybody.
+  def thrown_die = THROWN_DAMAGE[bulk]
 
   # There is something written on this AND the records hold it. The two halves
   # are separate on purpose: `readable?` is what the world says about the thing,

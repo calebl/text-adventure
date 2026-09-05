@@ -178,12 +178,26 @@ class SceneTest < ActiveSupport::TestCase
     assert_not_includes Playthrough::IntentSchema::INTENTS, "attack"
   end
 
-  test "engine_authored? is true for an action outside the classifier's intents" do
-    %w[attack hazard throw].each do |action|
+  test "engine_authored? is true for every action the engine writes the words of" do
+    Scene::ENGINE_AUTHORED.each do |action|
       scene = build(:scene, story: @story, location: @location, resolved_action: action)
 
       assert_predicate scene, :engine_authored?
     end
+  end
+
+  # A THROW IS THE ONE ACTION IN THE GAP THAT IS NOT ENGINE COPY, and it is the
+  # reason `ENGINE_AUTHORED` is a named list rather than the difference between
+  # `ACTIONS` and `INTENTS`. Its `Scene` is streamed by `Scene::Narrator` off
+  # `Playthrough::Turn#thrown_fact`, so skipping it would take real prose out of
+  # `Story::Audit`'s reach and shrink `Eval::Richness`'s denominator for nothing.
+  test "engine_authored? is false for a throw, which the narrator wrote" do
+    scene = build(:scene, story: @story, location: @location, resolved_action: "throw")
+
+    assert scene.valid?
+    assert_includes Scene::ACTIONS, "throw"
+    assert_not_includes Playthrough::IntentSchema::INTENTS, "throw"
+    assert_not_predicate scene, :engine_authored?
   end
 
   test "engine_authored? is false for every classifier intent, and for no action at all" do

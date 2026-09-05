@@ -13,8 +13,9 @@
 # is this -- the app's own words, built out of records it is already holding,
 # for no model call beyond the classifier that had already run.
 #
-# FOUR SHAPES, TOLD APART BECAUSE THEY ARE DIFFERENT FACTS -- three about the
-# LINE, and one about the game it was typed into:
+# FIVE SHAPES, TOLD APART BECAUSE THEY ARE DIFFERENT FACTS -- three about the
+# LINE, one about a THING the line named, and one about the game it was typed
+# into:
 #
 #   :named_more_than_one  it named two things the records really have, and a
 #                         turn is one act. Nothing named is missing; the limit
@@ -26,6 +27,17 @@
 #                         missed, which is why `Playthrough::Drift::ACTIONS`
 #                         does not carry it and `Playthrough::Overreach::ACTIONS`
 #                         does.
+#   :immovable            IT NAMED A THING THAT DOES NOT MOVE. The one refusal
+#                         shape that is a fact about a record rather than about
+#                         the reading: a `throw` of something whose
+#                         `Item::BULK` carries no penalty. No die is thrown,
+#                         nothing happens and no story time is spent, which is
+#                         what makes it a refusal instead of the FUMBLE a failed
+#                         lift is -- a fumble is a turn the engine PLAYED and
+#                         this is a turn it would not. Counted by nothing: it is
+#                         neither drift (the reach resolved, twice) nor
+#                         overreach (one act was asked for). See
+#                         `data/ta-combat-scout` §13.3.
 #   :unreadable           the classifier's own answer was unusable -- an intent
 #                         outside `Playthrough::IntentSchema::INTENTS` that
 #                         still named a record. Nothing counts it, because it is
@@ -78,7 +90,7 @@
 # (`fact`, `offer`, `UNCHANGED`) so that both orders read as English rather than
 # as one string with another bolted onto the end.
 class Playthrough::Refusal
-  KINDS = %i[named_more_than_one unresolved unreadable dead].freeze
+  KINDS = %i[named_more_than_one unresolved immovable unreadable dead].freeze
 
   # ONE ACT, PHRASED AS THE PLAYER WOULD HAVE TYPED IT, so a refusal that says
   # "pick one" is naming two things somebody can actually pick between.
@@ -96,7 +108,14 @@ class Playthrough::Refusal
     talk: "talk to %s",
     take: "take %s",
     drop: "drop %s",
-    examine: "read %s"
+    examine: "read %s",
+    # WHAT A THROW ASKS FOR, in the word a player types. Unreachable TODAY and
+    # here anyway: only `:named_more_than_one` reads this table, and a throw's
+    # `also_named` is always nil because the fixed grammar produces none. It is
+    # the entry the seventh classifier intent will need (slice 8), and a table
+    # missing a row for an action `Scene::ACTIONS` already has would fall back to
+    # a bare `%s`.
+    throw: "throw %s"
   }.freeze
 
   # WHY THE REACH RESOLVED TO NOTHING, and it is two different facts told apart:
@@ -155,6 +174,7 @@ class Playthrough::Refusal
     return named_more_than_one(intent, typed: typed) if intent.named_more_than_one?
     return unresolved(intent, typed: typed, offered: offered) if intent.reached_for_nothing?
     return unreadable(typed: typed) if intent.unreadable?
+    return immovable(intent, typed: typed) if intent.throws_the_immovable?
 
     nil
   end
@@ -183,6 +203,22 @@ class Playthrough::Refusal
         fact: "You asked for two things at once: #{asked(intent.action, intent.subject)}, " \
               "and #{asked(intent.action, intent.also_named)}. One line is one act -- " \
               "pick one and type it on its own.")
+  end
+
+  # A THING THAT DOES NOT MOVE FOR ANYBODY. The item is named and so is what
+  # made it unliftable, because the answer a player needs is which of the things
+  # in their hands they CAN throw -- and `Item::BULK`'s labels are the whole of
+  # that vocabulary.
+  #
+  # No `offer`: what else is being carried is not the answer, and the closed set
+  # for a throw is two sets rather than one. The engine says why this thing
+  # stayed put and stops.
+  def self.immovable(intent, typed:)
+    item = intent.item
+
+    new(kind: :immovable, typed: typed,
+        fact: "The #{item.name} is #{item.bulk} and does not move for anybody: it cannot be picked up " \
+              "and thrown at all, so no die was thrown for it.")
   end
 
   def self.unresolved(intent, typed:, offered: [])
@@ -225,7 +261,7 @@ class Playthrough::Refusal
     format(template, records.map { |record| Playthrough::Classifier.label_for(record) }.join(", "))
   end
 
-  private_class_method :named_more_than_one, :unresolved, :unreadable, :asked, :missed, :offer
+  private_class_method :named_more_than_one, :unresolved, :immovable, :unreadable, :asked, :missed, :offer
 
   def initialize(kind:, typed:, fact:, offer: nil)
     raise ArgumentError, "#{kind.inspect} is not one of #{KINDS.inspect}" unless KINDS.include?(kind)

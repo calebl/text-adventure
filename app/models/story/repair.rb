@@ -72,6 +72,7 @@ class Story::Repair
     protagonist_holds_a_taken_item: { calls: 0, handler: :repair_shared_inventory },
     playthrough_missing_a_copy: { calls: 0, handler: :repair_missing_copies },
     copy_lags_its_template: { calls: 0, handler: :repair_lagging_copies },
+    item_with_an_unknown_bulk: { calls: 0, handler: :repair_unknown_bulk },
     character_without_a_stat_block: { calls: 0, handler: :repair_missing_stat_block },
     # THE SAME NIL AND THE SAME ROLL. `Story::Doctor` reports a hostile row with
     # no body under its own code because it is a louder fact -- a monster
@@ -309,7 +310,7 @@ class Story::Repair
 
   # A COPY BROUGHT FORWARD TO WHAT THE WORLD NOW SAYS. `safe` because every
   # value it writes is already on the template, one row over in the same table,
-  # and `Item::TemplateRefresh::TEXT` is the whole of what moves -- where the
+  # and `Item::TemplateRefresh::FROM_THE_TEMPLATE` is the whole of what moves -- where the
   # thing is and whose hands it is in are the player's and are never touched.
   # Only copies NO turn has acted on; the rest are reported
   # (`touched_copy_lags_its_template`) and left alone.
@@ -325,6 +326,20 @@ class Story::Repair
   # `safe` repair in this class that writes a number nothing else on record
   # implies. The header says why that is still safe; `Character::StatBackfill`
   # is the same act for a whole story at once, and `bin/update` runs it first.
+  # A BULK THE ENGINE HAS NO TABLE FOR, clamped to the column's own default.
+  # `Item::HANDY` is what every row already written is and what the schema would
+  # have written, so this is not inventing a weight -- it is putting back the one
+  # the row was supposed to carry. There is no record of what the intended word
+  # was, which is why the default rather than a guess is the honest answer.
+  def repair_unknown_bulk(finding)
+    item = finding.subject
+    was = item.bulk
+    item.update!(bulk: Item::HANDY)
+
+    "put #{item.name.inspect} back to bulk #{Item::HANDY.inspect} from #{was.inspect}, which is not one of " \
+      "#{Item::BULK.keys.join(", ")}"
+  end
+
   def repair_missing_stat_block(finding)
     character = finding.subject
     rolled = Character::StatBlock.for_existing(character)

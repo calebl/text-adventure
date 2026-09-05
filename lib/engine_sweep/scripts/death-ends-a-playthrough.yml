@@ -120,7 +120,7 @@ steps:
   type: take the ward stamp
   why: the stamp is still lying here, because nothing below the gate ran
   expect:
-    here: [ward stamp]
+    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     refused: true
     changed: false
@@ -129,7 +129,7 @@ steps:
   type: drop the daybook
   why: the other app-owned transfer, refused by the same one statement
   expect:
-    here: [ward stamp]
+    here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     refused: true
     changed: false

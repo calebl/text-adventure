@@ -144,7 +144,7 @@ class EngineSweepTest < ActiveSupport::TestCase
       - reseed: true
         expect:
           changed: false
-          here: []
+          here: [filing press]
           carrying: [Ward Office 12 daybook, ward stamp]
           exits: [The Supply Closet (realized), The Long Hallway (stub)]
     SCRIPT
@@ -164,11 +164,11 @@ class EngineSweepTest < ActiveSupport::TestCase
           carrying: [Ward Office 12 daybook, ward stamp]
       - reseed: true
         expect:
-          here: []
+          here: [filing press]
       - type: look
         player: second
         expect:
-          here: [ward stamp]
+          here: [ward stamp, filing press]
           carrying: [Ward Office 12 daybook]
     SCRIPT
 

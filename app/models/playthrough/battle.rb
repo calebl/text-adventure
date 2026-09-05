@@ -31,7 +31,8 @@
 # (`ta-api-iface`) and a new visual vocabulary invented in a battle panel is
 # that stage arriving early (the scout's §12.2 cost 3, §15.6). No prose per
 # round: that is shape (b), it needs `ta-prompt-bench`, and the bench does not
-# exist yet. No throw buttons: see `#throws`.
+# exist yet. No throw buttons -- the verb exists now and the button does not:
+# see `#throws`.
 class Playthrough::Battle
   # ONE LINE ABOUT ONE BODY, and every one of them is a record read back.
   #
@@ -131,20 +132,30 @@ class Playthrough::Battle
     playthrough.exits.map { |exit| Action.new(label: "go to #{exit.name}", command: "/go #{exit.name}") }
   end
 
-  # THE SLICE 5 SEAM, AND IT IS EMPTY UNTIL SLICE 5 LANDS.
+  # THE SLICE 5 SEAM, AND IT IS STILL EMPTY -- BUT NO LONGER FOR ITS ORIGINAL
+  # REASON.
   #
-  # `throw <item> at <name>` is the scout's §13 and the captain's call C6, and
-  # none of it is on `main` yet: there is no `throw` in
-  # `Playthrough::Grammar::VERBS`, no `Item::BULK`, no `#throw_item!`, and so no
-  # line this panel could post that the engine would read. A button that posted
-  # one would be refused as an unknown verb, which is worse than no button.
+  # The verb HAS landed (`ta-combat-throw`): `throw` is in
+  # `Playthrough::Grammar::VERBS` and `ENGINE_VIEW`, `Item::BULK` exists, and
+  # `Playthrough::Turn#throw_item!` is the writer. So a button here would post a
+  # line the engine reads, which is what this seam was waiting for. What it is
+  # waiting for NOW is somebody's decision to render it: a throw button is a
+  # PANEL change, and the slice that shipped the verb deliberately did not make
+  # one (its brief put the panel out of scope, and this file is the panel's).
   #
-  # WHAT TO DO WHEN IT LANDS, so this is a seam rather than a hole: give each
-  # carried thing (`Playthrough#carried`) one button per live foe, labelled
-  # `throw the ward stamp at Marek Sollen`, posting whatever shape slice 5
-  # settled on -- shape (a) of §13.4 is `/throw <item>` with the target derived
-  # from the room, so the command may well name only the item. Render them
-  # between `#strikes` and `#ways_out`; `_battle.html.erb` already has the row.
+  # WHAT TO DO, and the shape is settled rather than guessed at now: give each
+  # thing the party is carrying (`Playthrough#carried`) one button per live foe,
+  # labelled `throw the ward stamp at Marek Sollen` and posting exactly that
+  # behind a slash -- `/throw <thing> at <name>`, because the verb reads TWO
+  # names out of two closed sets and `Playthrough::IntentSchema` was left alone
+  # (the captain's call C6). The command may also name a thing LYING here, since
+  # the lift is part of the throw. Render them between `#strikes` and
+  # `#ways_out`; `_battle.html.erb` already has the row.
+  #
+  # ONE THING THE BUTTONS WILL HAVE TO SAY that a strike does not: an
+  # `immovable` thing cannot be thrown at all and the engine refuses the line
+  # (`Playthrough::Refusal`'s `:immovable`), so either the offer is narrowed to
+  # `Item#throwable?` or the player gets a button that always refuses.
   def throws = []
 
   private

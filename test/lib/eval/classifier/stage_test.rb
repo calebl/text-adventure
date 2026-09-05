@@ -31,7 +31,7 @@ class Eval::Classifier::StageTest < ActiveSupport::TestCase
 
       assert_equal [ "Ward Office 12 daybook" ], untouched.carried.map(&:name)
       assert_empty emptied.carried, "its setup dropped the daybook"
-      assert_equal [ "ward stamp" ], untouched.here.map(&:name),
+      assert_equal [ "filing press", "ward stamp" ], untouched.here.map(&:name).sort,
                    "and the drop must not have landed on the other position's floor"
       assert_not_equal untouched.playthrough.story_id, emptied.playthrough.story_id,
                        "one copy of the world per position is what keeps those apart"

@@ -12,10 +12,10 @@
 # never reaches into a game in progress. So a player whose game predates the
 # edit goes on reading a slate with nothing written on it.
 #
-# WHAT LAGS AND WHAT MERELY DIFFERS. Only `TEXT` -- what the world wrote on the
-# thing. Where a thing is and whose hands it is in are the player's business and
-# a re-seed must never touch them; `Item::NOT_COPIED` draws that line for the
-# snapshot and this draws the same one from the other side.
+# WHAT LAGS AND WHAT MERELY DIFFERS. Only `FROM_THE_TEMPLATE` -- what the world
+# says the thing IS. Where a thing is and whose hands it is in are the player's
+# business and a re-seed must never touch them; `Item::NOT_COPIED` draws that
+# line for the snapshot and this draws the same one from the other side.
 #
 # UNTOUCHED, DEFINED CONSERVATIVELY FROM WHAT THE RECORDS CAN PROVE. Nothing on
 # an `items` row says what its template said the day it was copied, so "the
@@ -30,14 +30,22 @@
 # Offline, deterministic, free: every value it writes is already on a row in the
 # same table. No model call, no network.
 class Item::TemplateRefresh
-  # THE COLUMNS A COPY TAKES FROM ITS TEMPLATE. What the world wrote on the
-  # thing and nothing else -- `readable` and `inscription` are one fact read
-  # from two sides (`Item#inscription_requires_readable`) so they move together
-  # or the record refuses them, and `description` is the sentence the room's
-  # realization wrote. Deliberately NOT `name`: a rename is what
-  # `WorldSeed::Loader` reconciles in the world layer, and following it here
-  # would rename a thing in somebody's hands mid-game.
-  TEXT = %w[readable inscription description].freeze
+  # THE COLUMNS A COPY TAKES FROM ITS TEMPLATE. What the world says the thing IS
+  # and nothing else -- `readable` and `inscription` are one fact read from two
+  # sides (`Item#inscription_requires_readable`) so they move together or the
+  # record refuses them, `description` is the sentence the room's realization
+  # wrote, and `bulk` is how hard the world says it is to shift. Deliberately
+  # NOT `name`: a rename is what `WorldSeed::Loader` reconciles in the world
+  # layer, and following it here would rename a thing in somebody's hands
+  # mid-game.
+  #
+  # `bulk` IS HERE FOR THE REASON THE OTHER THREE ARE, and it is why the column
+  # needs no backfill step of its own: a file that gives the tide-slate
+  # `bulk: heavy` is the world deciding what the slate weighs, and a copy made
+  # before that edit is carrying the default rather than the decision. It is
+  # NOT one of `Item::NOT_COPIED` -- where a thing is is the player's, what it
+  # weighs is the world's -- so the two lists stay each other's complement.
+  FROM_THE_TEMPLATE = %w[readable inscription description bulk].freeze
 
   # One copy that lags, and by which columns. `touched` is what makes it a
   # report rather than a repair.
@@ -67,7 +75,7 @@ class Item::TemplateRefresh
         template = templates[copy.template_id]
         next if template.nil?
 
-        columns = TEXT.select { |column| copy[column] != template[column] }
+        columns = FROM_THE_TEMPLATE.select { |column| copy[column] != template[column] }
         next if columns.empty?
 
         Lag.new(copy: copy, template: template, columns: columns, touched: acted_on.include?(copy.id))

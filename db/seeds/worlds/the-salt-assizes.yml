@@ -131,6 +131,7 @@ characters:
   - name: Assize tide-slate
     description: |-
       A ruled board of black slate, three hands wide, on which the day's high water is chalked. Nobody but the Bell-Keeper may erase it. Today's figure is in a hand that has her slant and none of her pressure.
+    bulk: heavy
     readable: true
     inscription: |-
       HIGH WATER, THIS DAY — three hours and forty minutes after noon. Court rises on the bell. Sworn: the Bell-Keeper of the Causeway.

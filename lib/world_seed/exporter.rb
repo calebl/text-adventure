@@ -352,6 +352,11 @@ class WorldSeed::Exporter
   def items_document(owner)
     owner.items.templates.order(:name).map do |item|
       document = { "name" => item.name, "description" => text(item.description) }
+      # HOW HARD THE WORLD SAYS IT IS TO SHIFT. Omitted when it is `Item::HANDY`,
+      # which is what every row already written is and what an absent key loads
+      # back as -- the same "omitted rather than written out" rule
+      # `locations.danger` and the flags above it follow.
+      document["bulk"] = item.bulk unless item.bulk == Item::HANDY
       if item.readable?
         document["readable"] = true
         document["inscription"] = text(item.inscription) if item.inscription.present?

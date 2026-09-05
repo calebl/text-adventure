@@ -33,6 +33,23 @@ FactoryBot.define do
       inscription { "Midnight. The Bell. They know about the maps." }
     end
 
+    # HOW HARD THE WORLD SAYS IT IS TO SHIFT. `handy` is the column's default and
+    # what almost everything is, so the factory carries no `bulk` at all and
+    # these three traits are the departures from it. `immovable` is the one that
+    # changes behaviour rather than a number: it cannot be thrown, and
+    # `Playthrough::Refusal` says so instead of a die being rolled.
+    trait :light do
+      bulk { "light" }
+    end
+
+    trait :heavy do
+      bulk { "heavy" }
+    end
+
+    trait :immovable do
+      bulk { "immovable" }
+    end
+
     # Readable and nobody has read it yet -- a seeded note whose file did not
     # spell the words out, or a row older than the columns. `Item::Inscriber`
     # writes them on the first read, once.

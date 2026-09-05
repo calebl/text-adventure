@@ -23,6 +23,26 @@ class Scene < ApplicationRecord
   # as a question.
   ACTIONS = (Playthrough::IntentSchema::INTENTS + %w[attack hazard throw]).freeze
 
+  # AND WHICH OF THOSE THE ENGINE WROTE THE WORDS OF, which is a DIFFERENT
+  # question from which of them a player can type -- and it used to be answered
+  # as though it were the same one.
+  #
+  # `#engine_authored?` was the difference between `ACTIONS` and `INTENTS`, and
+  # that was exactly right while every act outside the closed enum also carried
+  # the engine's own sentence: `Playthrough::Fight#close!` writes a fight's
+  # description itself and a hazard will write its own. A THROW DOES NOT. It is
+  # an act no typed word in the enum names, so it lives in `ACTIONS` -- and its
+  # `Scene` is ordinary NARRATION, streamed by `Scene::Narrator` off
+  # `Playthrough::Turn#thrown_fact` exactly as a `take`'s is. Left in the
+  # difference it would have been skipped by `Story::Audit` and
+  # `Eval::Richness` and counted in `Story::Scoreboard#excluded`, which is real
+  # prose going unchecked and a denominator quietly shrinking.
+  #
+  # So the list is POSITIVE now: what the engine authored is named here rather
+  # than inferred from what a prompt may ask for. `attack` and `hazard` keep
+  # exactly the answer they had.
+  ENGINE_AUTHORED = %w[attack hazard].freeze
+
   # How much STORY time a turn costs when it is not a journey. A fixed table in
   # code, for exactly the reason `LocationConnection::DISTANCES` is one: how
   # long something takes in the fiction is the app's to decide, so it is a
@@ -186,15 +206,13 @@ class Scene < ApplicationRecord
 
   def moved_to? = recorded_action == "move" && acted_on_record.is_a?(Location)
 
-  # WHETHER THE ENGINE, RATHER THAN THE PLAYER, NAMED THIS ACT: an action the
-  # record allows that the classifier's closed enum does not contain. False for
-  # every intent a player can type and false for a turn with no action on
-  # record at all -- an opening arrival is not an act the engine chose.
+  # WHETHER THE ENGINE, RATHER THAN A NARRATOR, WROTE THIS ROW'S DESCRIPTION.
+  # One of `ENGINE_AUTHORED`, and read off that list rather than derived from
+  # the gap between `ACTIONS` and `INTENTS` -- see the constant for why a throw
+  # is in the gap and is not engine copy. False for a turn with no action on
+  # record at all: an opening arrival is prose somebody generated.
   def engine_authored?
-    action = recorded_action
-    return false if action.blank?
-
-    ACTIONS.include?(action) && !Playthrough::IntentSchema::INTENTS.include?(action)
+    ENGINE_AUTHORED.include?(recorded_action.to_s)
   end
 
   # THE TWO COLUMNS, READ SAFELY, AND THE READERS EVERYTHING ELSE HERE USES.

@@ -21,6 +21,17 @@
 # `Playthrough::IntentSchema::INTENTS` -- no model ever answers with it -- so it
 # reaches this loop only through `Playthrough::Grammar`, behind a slash.
 #
+# AND `throw` IS THE SEVENTH, the only act in the game that names TWO records:
+# `throw <thing> at <somebody or a way out>`. One d20 under strength less what
+# the thing weighs (`Item::BULK`, through the one check kernel), and no second
+# roll to see whether it hit -- a throw that leaves your hands goes where you
+# aimed it, exactly as a blow that lands lands. It writes through the two
+# statements this class already owns, `#put_down!` and `#harm!`, in one
+# transaction, and a hit at a person is a BLOW like any other, so the riposte
+# and the fight-end rule see it without knowing what threw it. Like `attack` it
+# is not one of `Playthrough::IntentSchema::INTENTS` and reaches this loop only
+# through `Playthrough::Grammar`. See `#throw_item!`.
+#
 # Everything else -- a look at something with nothing written on it, and anything
 # unclassifiable -- falls through to `Scene::Narrator`, which answers the raw
 # command in prose. They are told apart so the classification is honest and so
@@ -150,7 +161,17 @@ class Playthrough::Turn
       #
       # Reading is first because it is the one that changes nothing about where
       # the item is: `take` and `drop` move a row and this only reads one.
-      intent.examine? ? read_item(intent.item, typed, &block) : move_item(intent, typed, &block)
+      #
+      # A THROW IS THE FOURTH and it is on this branch rather than on its own,
+      # because `intent.item` is what makes it reachable: the thing thrown is
+      # the record that moves, and what it was aimed at is the indirect object
+      # (`intent.at`). The order matters -- a throw is asked about before the
+      # two that only move an item between a floor and a pair of hands.
+      if intent.throw?
+        throw_at(intent, typed, round: round, &block)
+      else
+        intent.examine? ? read_item(intent.item, typed, &block) : move_item(intent, typed, &block)
+      end
     else
       narrate(typed, intent: intent, &block)
     end
@@ -553,6 +574,37 @@ class Playthrough::Turn
     scene
   end
 
+  # THROWING SOMETHING, AND THE PROSE IS TOLD AFTERWARDS.
+  #
+  # THE ORDER IS `#take_item`'S ORDER for `#take_item`'s reason: the row moves
+  # first and the sentence is written about what already happened, so a
+  # narration that forgets where the slate went cannot change where it is. Every
+  # outcome is a turn the engine PLAYED -- including the failed lift, which is
+  # the whole distinction `Playthrough::Refusal`'s header draws: a fumble read
+  # the command, resolved two records and rolled a die, and the answer was
+  # failure. That is a turn, it costs story time, and it narrates. Only
+  # `immovable` is refused, and it is refused before the dispatch ever gets
+  # here (`Playthrough::Classifier::Intent#throws_the_immovable?`).
+  #
+  # A HIT AT A PERSON IS A BLOW AND STILL WRITES THIS SCENE, which is not the
+  # double-write `Playthrough::Fight` exists to avoid: a throw is ONE typed
+  # line, so it writes one Scene, exactly as a `look` or a `take` typed mid-fight
+  # does. What would be wrong is a Scene per ROUND, and the rounds are still
+  # `playthrough_blows`.
+  #
+  # A THROW THE ENGINE COULD NOT MAKE NARRATES THE ATTEMPT, which is
+  # `#take_item`'s answer to the same shape: a playthrough with no protagonist
+  # has nobody to throw anything and a body with no abilities has no strength to
+  # check, and `#throw_item!` answers nil for both. Nothing in the app produces
+  # either, and both are shapes a hand-made playthrough really has.
+  def throw_at(intent, command, round:, &block)
+    thrower = playthrough.character
+    outcome = throw_item!(intent.item, at: intent.at, round: round)
+    return narrate(command, &block) if outcome.nil?
+
+    Scene::Narrator.new(playthrough).narrate(command, fact: thrown_fact(outcome, thrower), &block)
+  end
+
   # THE THREE WRITES THAT MOVE THE WORLD, each one named rather than left inline
   # in the branch above it.
   #
@@ -595,8 +647,15 @@ class Playthrough::Turn
   # the world's own rows and put it on every other player's floor. It used to
   # be written nil here, when the column meant "carried"; the drop that
   # exercised it is `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml`.
-  def put_down!(item)
-    item.update!(playthrough: playthrough, character: nil, location: playthrough.current_location)
+  #
+  # `into:` IS WHICH FLOOR, and it defaults to the one the party is standing on
+  # because that is where all but one of these land. The exception is a throw
+  # through a doorway (`#throw_item!`): the thing goes into the next room and
+  # stays there until somebody walks in and picks it up. One keyword, the same
+  # statement, and the rule above holds unchanged -- what room a copy is lying
+  # in is the player's business either way.
+  def put_down!(item, into: playthrough.current_location)
+    item.update!(playthrough: playthrough, character: nil, location: into)
   end
 
   # TAKING HIT POINTS OFF A BODY, AND THE ONE PLACE A PLAYTHROUGH ENDS.
@@ -716,13 +775,24 @@ class Playthrough::Turn
   # by then `playthrough.current_location` is the room you arrived in. The blow
   # belongs to the room it was thrown in, and `Playthrough::Fight` reads that
   # column to know which room the fight is in.
-  def strike!(attacker, target, round:, room: playthrough.current_location)
+  #
+  # `damage:` IS FOR THE ONE BLOW THAT IS NOT A SWING, and it is a parameter
+  # rather than a second writer: a THROWN thing deals one die of its own bulk
+  # (`Item::THROWN_DAMAGE`) and not one of the thrower's `hit_die`, and it is a
+  # blow in every other respect -- it hurts, it provokes, the riposte answers it
+  # and the fight-end rule sees it. Nil is the ordinary blow, which draws
+  # `#damage_for` off this row's own seed exactly as it always did; a caller that
+  # supplies one has already thrown its die, so no die is drawn here and the
+  # sequence this blow records is still its own.
+  def strike!(attacker, target, round:, room: playthrough.current_location, damage: nil)
     return nil if attacker.nil? || target.nil? || !attacker.stat_block? || room.nil?
 
     sequence = SEQUENCE_OFFSET + Playthrough::Blow.next_sequence(playthrough)
-    rng = Roll.generator(story: playthrough.story_id, playthrough: playthrough.id,
-                         at: playthrough.story_now.to_i, sequence: sequence)
-    damage = damage_for(attacker, rng: rng)
+    damage ||= damage_for(
+      attacker,
+      rng: Roll.generator(story: playthrough.story_id, playthrough: playthrough.id,
+                          at: playthrough.story_now.to_i, sequence: sequence)
+    )
 
     Playthrough::Blow.transaction do
       # NO EARLY RETURN OUT OF THIS BLOCK: since Rails 6.1 a `return` inside a
@@ -815,6 +885,163 @@ class Playthrough::Turn
     playthrough.tolls.untold.update_all(scene_id: scene.id, updated_at: Time.current)
   end
 
+  # WHAT A THROW CAME TO, and it is a value because every consumer only reads --
+  # `Playthrough::Vitals::Condition` and `Character::Check`'s shape.
+  #
+  # FOUR OUTCOMES, TOLD APART BECAUSE THEY ARE FOUR DIFFERENT FACTS about what
+  # the world now says:
+  #
+  #   :immovable  nothing happened and no die was thrown. It is here for a caller
+  #               that reaches `#throw_item!` directly; a typed line never gets
+  #               this far, because `Playthrough::Refusal` has already answered
+  #               it in front of the dispatch.
+  #   :fumbled    the lift failed. The thing is still in the party's hands, no
+  #               row moved, and the TURN WAS SPENT -- which is what makes this
+  #               an outcome and not a refusal.
+  #   :struck     it left your hands, hit somebody, and is now lying at their
+  #               feet. `blow` is the `Playthrough::Blow` row, or nil for a body
+  #               the records have no stat block for -- the thing still landed.
+  #   :thrown     it went through a doorway and is lying in the next room.
+  #
+  # `check` is the `Character::Check` the outcome turned on, and nil only on
+  # `:immovable`: it prints as `strength -> d20(7) <= 7 PASS`, which is what
+  # `rake game:mechanics` shows and the one record of what the engine decided.
+  Throw = Data.define(:kind, :item, :target, :check, :blow) do
+    def initialize(check: nil, blow: nil, **rest) = super
+
+    def self.immovable(item, target) = new(kind: :immovable, item: item, target: target)
+    def self.fumbled(item, target, check) = new(kind: :fumbled, item: item, target: target, check: check)
+    def self.struck(item, target, check, blow:) = new(kind: :struck, item: item, target: target, check: check, blow: blow)
+    def self.thrown(item, target, check) = new(kind: :thrown, item: item, target: target, check: check)
+
+    def immovable? = kind == :immovable
+    def fumbled? = kind == :fumbled
+    def struck? = kind == :struck
+    def thrown? = kind == :thrown
+
+    # Whether anything moved. False on the two outcomes that changed no row.
+    def landed? = struck? || thrown?
+
+    def damage = blow&.damage
+
+    # THE ACT AND THE ROLL, and this half is deliberately the half that does NOT
+    # depend on which face came up: what was thrown, at what, and the target the
+    # d20 was thrown at. It is what `rake game:sweep` can honestly pin (`note:`)
+    # -- `Roll`'s seed is built out of row ids, so a script that asserted the
+    # outcome would be asserting a die. See
+    # `lib/engine_sweep/scripts/a-thing-can-be-thrown.yml`.
+    def attempt_in_words
+      "threw: #{item.name} at #{Playthrough::Classifier.label_for(target)}#{" -- #{check}" if check}"
+    end
+
+    # AND WHAT CAME OF IT, which is the half a die decided.
+    def outcome_in_words
+      case kind
+      when :immovable then "it does not move for anybody, so no die was thrown"
+      when :fumbled then "the lift failed: nothing was thrown and no row moved"
+      when :struck
+        if blow
+          "it hit #{blow.target.fullname} for #{blow.damage} and is lying at their feet; " \
+            "#{blow.target.fullname} is #{blow.condition.in_words}"
+        else
+          "it hit #{target.fullname} and is lying at their feet; there is no stat block to hurt"
+        end
+      else "it went through and is lying in #{target.name}"
+      end
+    end
+
+    def to_s = "#{attempt_in_words}; #{outcome_in_words}"
+  end
+
+  # THROWING SOMETHING, AND THE ENGINE DECIDES WHETHER IT GOES.
+  #
+  # THE CAPTAIN'S REQUEST OF 2026-09-05: *"I want players to be able to pick up
+  # items and throw them based on a strength check."* `data/ta-combat-scout` §13
+  # is the design and this is it: ONE CHECK -- d20 under strength, less what the
+  # thing weighs -- and NO SECOND ROLL to see whether it hit. The lift IS the
+  # throw: if you can get it moving it goes where you aimed it, which is §7's
+  # *a blow always connects* said one act over.
+  #
+  # IT NEEDS NO NEW WRITER. The thing leaves the party's hands through
+  # `#put_down!` and the body loses hit points through `#harm!` -- the two
+  # statements this class already owns -- in one transaction, and the blow is
+  # `#strike!`'s row with `damage:` supplied. So the riposte answers a throw and
+  # `Playthrough::Fight` ends on one without either of them knowing what was
+  # thrown.
+  #
+  # THE CHECK IS THE ONE KERNEL. `Character#check` is `d20 <= score - penalty`
+  # and the penalty comes off the TARGET, so `Item::BULK` is a parameter on the
+  # thing being thrown rather than a second table of numbers -- which is why
+  # `bulk` is a closed key. At a target of zero or less NO DIE IS THROWN
+  # (`Character::Check#impossible?`) and the throw fumbles, because the pass rate
+  # there is zero for ever.
+  #
+  # WHAT IT COSTS, C8, MEASURED AND STATED: a hit deals one die of the thing's
+  # own bulk -- light d4, handy d6, heavy d8 -- so a thrown heavy thing kills an
+  # unhurt level-1 d6 body 37.3% of the time, in either direction. See
+  # `Item::THROWN_DAMAGE`.
+  #
+  # `rng:` IS THE SEED, AND THE DEFAULT IS THE ENGINE'S OWN. Both dice come out
+  # of ONE generator in one order -- the d20 first, the damage second -- which is
+  # `Roll.generator`'s whole contract: a caller throwing several dice for one
+  # decision throws them from one seed. A caller may hand its own, which is what
+  # pins an outcome in a test where a sweep script honestly cannot.
+  #
+  # Nil for a throw there is nobody to make or nothing to aim at, and for a body
+  # with no abilities -- `Character#check`'s own answer and the same honest
+  # nothing `#harm!` gives a body with no stat block.
+  def throw_item!(item, at:, round:, rng: nil)
+    thrower = playthrough.character
+    return nil if thrower.nil? || item.nil? || at.nil?
+    return Throw.immovable(item, at) unless item.throwable?
+
+    rng ||= throw_generator(item)
+    attempt = thrower.check(:strength, penalty: item.bulk_penalty, rng: rng)
+    return nil if attempt.nil?
+    return Throw.fumbled(item, at, attempt) unless attempt.passed?
+
+    Item.transaction do
+      # NO EARLY RETURN OUT OF THIS BLOCK, which is `#strike!`'s rule and its
+      # reason: a `return` inside a transaction commits it.
+      if at.is_a?(Character)
+        # AT THEIR FEET, IN THIS GAME. The thing lands in the room the party is
+        # standing in -- which is the room they are standing in too, because a
+        # throw resolves against who is HERE.
+        put_down!(item)
+        Throw.struck(item, at, attempt,
+                     blow: strike!(thrower, at, round: round, damage: Roll.die(item.thrown_die, rng: rng)))
+      else
+        # AND THROUGH THE DOORWAY, into a room nobody may have written yet. That
+        # is legitimate and deliberate: a `Location` row is a place whether or
+        # not it has been realized, and nothing here generates one -- the thing
+        # is simply there when somebody walks in.
+        put_down!(item, into: at)
+        Throw.thrown(item, at, attempt)
+      end
+    end
+  end
+
+  # THE SEED A THROW IS ROLLED FROM, and WHICH THING LEFT YOUR HANDS is which
+  # roll of the moment it is.
+  #
+  # `Roll::THROW` IS THE WHOLE OF WHAT KEEPS IT APART FROM EVERY OTHER DIE, and
+  # it is a KIND rather than a band on `sequence` because the other three
+  # sources had already taken that axis between them -- a check 1..3, a blow
+  # counting up off `Playthrough::Blow.next_sequence`, a toll counting down off
+  # `Playthrough::Toll.next_sequence`, each unbounded. A throw's identity is not
+  # a count of anything, so there was nowhere on that line for it to stand; see
+  # `Roll`'s header for the collision that says so in numbers.
+  #
+  # THE ITEM IS THE SEQUENCE, and it is the honest identity of a throw: two
+  # throws of ONE thing at one story moment are one roll, which is exactly the
+  # property `#check` is documented under and what makes a throw re-derivable a
+  # year from now. Two DIFFERENT things thrown at one moment are two rolls.
+  def throw_generator(item)
+    Roll.generator(story: playthrough.story_id, playthrough: playthrough.id,
+                   at: playthrough.story_now.to_i, sequence: item.id.to_i,
+                   kind: Roll::THROW)
+  end
+
   # What the narrator is told, in the app's own words. Stated as done, because
   # it is: the row is already written by the time this is read.
   # AND WHAT IS WRITTEN ON IT, WHEN THE RECORDS ALREADY HOLD THE WORDS. The turn
@@ -834,6 +1061,44 @@ class Playthrough::Turn
   def dropped_fact(item, here)
     "The #{item.name} is no longer carried: it is now lying in #{here.name}, " \
       "where it stays until somebody picks it up."
+  end
+
+  # WHAT THE THROW DID, in the app's own words, and stated as done because it is.
+  #
+  # FOUR SENTENCES FOR FOUR OUTCOMES, and each of them says the two things the
+  # prose must not contradict: WHETHER THE THING LEFT THE HANDS, and WHERE IT IS
+  # NOW. The numbers are deliberately NOT restated here on a hit --
+  # `Playthrough::Moment#struck_fact` reads the blow out of `playthrough_blows`
+  # and already tells the narrator the damage, whether the body lived, and that
+  # the figures do not change. Saying it twice in one prompt would be two facts
+  # about one die.
+  #
+  # A FUMBLE IS THE ONE THAT MOST NEEDS SAYING. Nothing moved, so there is no
+  # record for anything else to read and the narrator would otherwise be handed
+  # a line about throwing something with no indication that it stayed put. It is
+  # `#taken_fact`'s shape exactly: the row (or the absence of one) first, the
+  # sentence second.
+  def thrown_fact(outcome, thrower)
+    who = thrower&.fullname || "The party"
+    thing = outcome.item.name
+
+    case outcome.kind
+    when :fumbled
+      "#{who} tried to pick up and throw the #{thing} and could not get it moving: it is #{outcome.item.bulk} " \
+        "and the attempt failed. NOTHING WAS THROWN and nothing was hit -- the #{thing} " \
+        "#{outcome.item.carried? ? "is still in the party's hands" : "is still lying exactly where it was"}. " \
+        "The turn was spent on the attempt."
+    when :struck
+      "#{who} threw the #{thing} at #{outcome.target.fullname} and it hit them. The #{thing} is NO LONGER " \
+        "CARRIED: it is lying on the floor at #{outcome.target.fullname}'s feet, where it stays until " \
+        "somebody picks it up."
+    when :thrown
+      "#{who} threw the #{thing} through the way out into #{outcome.target.name}. The #{thing} is NO LONGER " \
+        "CARRIED and is no longer in this room at all: it is lying in #{outcome.target.name}, where it stays " \
+        "until somebody picks it up."
+    else
+      "#{who} could not throw the #{thing} at all: it is #{outcome.item.bulk} and does not move. Nothing happened."
+    end
   end
 
   # WHAT IS WRITTEN ON IT, QUOTED, and this is the one fact in the app that is
@@ -936,9 +1201,18 @@ class Playthrough::Turn
     playthrough.cast_in(here)
   end
 
+  # A THROW RECORDS THE THING THROWN, on every outcome, and that is the honest
+  # answer to *which record did this turn act on*: the act was a throw OF that
+  # thing, and whether it left the hands is on the item's own row and in
+  # `playthrough_blows` rather than in this column. The third leg is
+  # `#take_item`'s guard one act over -- a playthrough with no protagonist has
+  # nobody to throw anything, so `#throw_at` narrated the attempt and no row
+  # moved.
   def resolution_for(intent)
     acted_on =
-      if (intent.take? && playthrough.character.nil?) || (intent.drop? && playthrough.current_location.nil?)
+      if (intent.take? && playthrough.character.nil?) ||
+         (intent.drop? && playthrough.current_location.nil?) ||
+         (intent.throw? && playthrough.character.nil?)
         nil
       else
         intent.subject
