@@ -71,6 +71,16 @@ module Eval
     app/models/story/scoreboard/transitions.rb
     lib/eval.rb
     lib/eval/board.rb
+    lib/eval/classifier.rb
+    lib/eval/classifier/arm.rb
+    lib/eval/classifier/board.rb
+    lib/eval/classifier/bench.rb
+    lib/eval/classifier/comparison.rb
+    lib/eval/classifier/corpus.rb
+    lib/eval/classifier/offline.rb
+    lib/eval/classifier/report.rb
+    lib/eval/classifier/result.rb
+    lib/eval/classifier/stage.rb
     lib/eval/comparison.rb
     lib/eval/cost.rb
     lib/eval/noise.rb
@@ -86,6 +96,10 @@ module Eval
     test/fixtures/files/narration_corpus.json
     test/fixtures/files/whole_run_corpus.json
     test/fixtures/files/transition_corpus.json
+    test/fixtures/files/classifier_corpus.yml
+    db/eval/classifier-remote/classifier.json
+    db/eval/classifier-mistral-small/classifier.json
+    db/eval/classifier-gemini-flash-lite/classifier.json
   ].freeze
 
   # CHECKS A SCRIPTED RUN CANNOT ANSWER, AND WHY -- reported unavailable rather
@@ -152,7 +166,47 @@ module Eval
 
   def self.root = Rails.root.join(ROOT)
 
-  def self.set_path(name) = root.join(name)
+  # AND WHERE A SET THAT IS KEPT LANDS. `tmp/eval` is a working directory and
+  # gets cleaned; a baseline a later run is judged against has to survive that,
+  # survive a fresh clone, and be readable on a machine that has never paid for
+  # a call. So the classifier bench's kept sets are checked in here, beside
+  # `db/eval_baseline.json` -- which is the same idea for the prose scoreboard,
+  # and the reason this is `db/` rather than `test/fixtures/files/`: the frozen
+  # CORPORA there are inputs to a measurement, and these are its results.
+  #
+  # SUMMARIES, NOT WHOLE RUNS. A kept set holds every pass's figures and the
+  # detector counts and NO per-line rows -- 4 KB against 4.4 MB, which is what
+  # makes checking it in reasonable at all. See `Result#summary` for what that
+  # costs (the MISSED list) and what it keeps (every figure the board and the
+  # comparison read).
+  KEPT = "db/eval".freeze
+
+  def self.kept_root = Rails.root.join(KEPT)
+
+  # WHERE A SET IS READ FROM, IN ORDER: a run you just paid for, then the one
+  # checked in. `tmp/eval` wins so that re-running a set locally under a name
+  # the repo also ships measures YOUR run and not the baseline -- silently
+  # reading the checked-in file over the one just written would be the worse
+  # surprise of the two. Nothing writes to `db/eval` except a person deciding
+  # to keep a set.
+  def self.set_path(name)
+    local = root.join(name)
+    kept = kept_root.join(name)
+    return kept if !local.exist? && kept.exist?
+
+    local
+  end
+
+  # A COUNT, AND A MEDIAN OF COUNTS IS NOT ALWAYS ONE. Four repetitions of
+  # 8, 9, 10 and 11 closed-set misses have a median of 9.5, and `%d` prints that
+  # as `9` -- truncated, in the direction that flatters the arm, on the figure
+  # this whole bench exists to make honest. So: an integer when it is one, one
+  # decimal when it is not, and never a rounded-away half.
+  def self.count(value)
+    return value.to_i.to_s if value.to_f == value.to_i
+
+    format("%.1f", value)
+  end
 
   # The two summary statistics every part of this module reaches for, in one
   # place so a rate and its spread are never averaged two different ways.

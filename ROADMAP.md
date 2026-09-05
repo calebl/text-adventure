@@ -55,6 +55,74 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **The classifier bench** (`ta-classifier-bench`). The classifier had no
+  instrument of its own. `Playthrough::Drift` and `Playthrough::Overreach` count
+  its misses indirectly and **neither knows whether the answer was right** — a
+  drift row is written whether the player reached for a door that is not there
+  or the model failed to see a door that is. Since the ruling of 2026-09-04 that
+  gap costs the player something they read, so it is worth measuring.
+
+  **What it is.** `test/fixtures/files/classifier_corpus.yml` — 300 hand-labelled
+  typed lines across 11 positions in the three seeded worlds, each with the
+  expected intent, target, `also_named` and refusal kind — replayed through the
+  real `Playthrough::Classifier` by `rake eval:classifier`. The board reports
+  accuracy per intent, a confusion matrix, closed-set misses (right branch,
+  wrong record), `also_named` precision and recall, refusal-kind agreement, and
+  every figure as a band across repetitions, per model, on `EVALUATION.md`'s own
+  noise discipline. `rake eval:classifier_compare` judges a later prompt change
+  with the same exact rank test the prose loop uses.
+
+  **The labels are verified mechanically, not asserted.**
+  `Eval::Classifier::CorpusTest` runs offline in CI: every `target` and
+  `also_named` is checked back against the closed set the action really reads at
+  its position, and a stated `refusal:` is re-derived from the label and
+  compared — two readings of one line have to agree. 55 of the 300 lines carry
+  `also_accept` because their English admits two readings, and the headline rate
+  excludes them.
+
+  **The offline floor is the number that says what a call is buying.**
+  `rake eval:classifier_offline` runs the same 300 lines through the fixed
+  grammar with no model at all: **127 of 300 (0.423)**, and 156 of the 173
+  failures are lines it refused that should have played. It gets every
+  reach-that-finds-nothing right and none of the `other` or `examine-nothing`
+  lines.
+
+  **The baseline of 2026-09-04 is checked in**, under `db/eval/` as three
+  summary sets — 12 KB rendering the same table as the 4.4 MB of runs they came
+  from — so `rake eval:classifier_board` prints it on any machine with no key,
+  no network and no database, and a later run gets a real REAL/NOISE verdict
+  against it. Four hosted models and 4,800 calls:
+  `mistralai/mistral-medium-3.1` strict accuracy **0.939..0.951**, **8..11**
+  closed-set misses (median 9.5), 0.61s median / 0.88s p95, **0 failures of 1,200**;
+  `minimax/minimax-m3` **0.905..0.938**, 11..18 misses, the fastest median of the
+  four (0.44s) and the second-worst p95 (1.83s), 7 schema failures;
+  `google/gemini-2.5-flash-lite` **0.898 flat over all four repetitions**, 11
+  misses, the only arm whose p95 stays inside a second, 0 failures, $0.05 per
+  1,000 calls; `mistralai/mistral-small-3.2-24b-instruct` **0.872..0.877** and
+  **30 closed-set misses** — the cheapest arm at $0.03 per 1,000 and three times
+  the wrong records. `also_named` is a precision/recall trade the four sit all
+  over: 1.000/0.888, 0.788/0.897, 1.000/0.862 and **0.553**/0.948. The shipped
+  first model gets the safe direction. The two cheaper models are **bench arms
+  only** — `REMOTE_MODEL_IDS` is untouched.
+
+  **Speed is one of the measured figures**, because the classifier runs in front
+  of the turn and its latency is dead time on every line typed. Median and p95
+  per arm, warm-cache with each arm's first call timed apart and excluded, and a
+  failed call carries no latency at all. **The local models were not measured**:
+  the captain stopped those runs on 2026-09-04 because the machine cannot carry
+  them (19 GB, `size_vram: 0`, swapping with one 6 GB model resident). The arm
+  selector and the default-off provider-params seam are in and green, so
+  `MODELS=ollama:qwen3:4b+nothink REPS=4` is one command away on capable
+  hardware.
+
+  **PR 102's finding F4 is answered: the omission rate is 0.000.** Over 4,754
+  answers on four models the required `also_named` field never came back absent
+  or null. It is read off the provider's own JSON (`messages.content_raw`, kept
+  since PR 97) rather than inferred from the resolved `Intent`, which cannot
+  tell an omitted field from an answer of `nothing`.
+
+  **No prompt changed.** The findings are in the PR body for the captain. See
+  [EVALUATION.md](EVALUATION.md) → *The classifier bench*.
 - **Three abilities, and a seeded check kernel** (`ta-ability-scores`). The
   captain's ruling of 2026-09-04, evening, verbatim:
 

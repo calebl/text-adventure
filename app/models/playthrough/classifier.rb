@@ -10,6 +10,18 @@
 # next to the candidate list it is the inverse of. The two have to agree about
 # what counts as an exit and who counts as present; splitting them across two
 # classes is how they stop agreeing.
+#
+# THIS CLASS HAS AN INSTRUMENT NOW, and it is the only place to read what it
+# gets right: `rake eval:classifier` replays 300 hand-labelled typed lines
+# through it against fixed seeded positions and reports an accuracy per intent,
+# the closed-set misses, `also_named` precision and recall and refusal-kind
+# agreement, each with its band across repetitions. `rake eval:classifier_offline`
+# is the same corpus with no model at all -- what a call here is bought against.
+# `Playthrough::Drift` and `Playthrough::Overreach` count this class's misses
+# and NEITHER KNOWS WHETHER THE ANSWER WAS RIGHT; the bench is what does. See
+# `Eval::Classifier` and EVALUATION.md -> The classifier bench. Anything that
+# changes `INSTRUCTIONS` below is a change to judge with
+# `rake eval:classifier_compare`, not by reading one turn.
 class Playthrough::Classifier
   # What one line of player input turned out to be.
   #

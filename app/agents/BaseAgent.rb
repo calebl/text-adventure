@@ -192,6 +192,33 @@ class BaseAgent
 
   attr_reader :instructions, :schema, :model_options, :purpose
 
+  # PROVIDER-SPECIFIC REQUEST PARAMETERS, AND THERE ARE NONE.
+  #
+  # EMPTY BY DEFAULT AND EMPTY IN EVERY SHIPPED PATH: nothing in `app/` ever
+  # replaces this, so no call the player's turn makes carries a provider
+  # parameter and no remote request changes shape. `BaseAgent::ProviderParamsTest`
+  # pins that -- an empty answer here and no `with_params` on the built chat --
+  # because a default that quietly grew a parameter would change every call in
+  # the app at once.
+  #
+  # WHY THE SEAM EXISTS AT ALL, on the captain's ruling of 2026-09-04. A local
+  # thinking model answers the classifier in 2.1 seconds when the request says
+  # `reasoning_effort: "none"` and 100.2 when it says nothing -- same prompt,
+  # same schema, same 23 tokens of answer, measured warm on qwen3:4b. What the
+  # 98 seconds buy is a reasoning block in front of an answer the schema had
+  # already constrained. `Eval::Classifier::Arm::NO_THINKING` has the table, and
+  # `Eval::Classifier::Arm#pinned` replaces this for the length of one bench
+  # pass so a local arm can be measured at the speed the model is capable of,
+  # with the thinking-on figure printed beside it: the board then shows BOTH
+  # what the model can do and what this app would get today. The instrument
+  # reaching in HERE is the alternative to the instrument reaching through
+  # `#chat` to reconfigure a live conversation.
+  #
+  # IT IS NOT A FEATURE AND MUST NOT BECOME ONE. Making the app fast on ollama
+  # is a change to the app, decided on its own evidence; this is a measurement
+  # asking a question.
+  def self.default_provider_params = {}
+
   # THE LOCAL HALF OF THE ROTATION, which is empty unless somebody asked for
   # it. See the note on LOCAL_MODEL_OPTIONS for why the default changed.
   def self.local_model_options
@@ -408,6 +435,9 @@ class BaseAgent
     conversation.with_instructions(@instructions) if @instructions
     conversation.with_schema(@schema) if @schema
     conversation.with_temperature(@temperature) unless @temperature.nil?
+    # LAST, AND EMPTY IN EVERY SHIPPED PATH. See `.default_provider_params`.
+    params = self.class.default_provider_params
+    conversation.with_params(**params) if params.present?
     conversation
   end
 

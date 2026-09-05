@@ -41,6 +41,18 @@ rake eval:run                       # ~$0.22 at the defaults; prints an estimate
 rake eval:score SET=main            # offline, no key, no network
 rake eval:compare BEFORE=a AFTER=b  # REAL / NOISE / INCONCLUSIVE, per check
 
+# The classifier's own bench: 300 hand-labelled typed lines replayed through
+# Playthrough::Classifier. Accuracy, closed-set misses, also_named precision and
+# recall, refusal agreement AND latency, per model, each with its band.
+rake eval:classifier                       # ~$0.39 at the defaults; prints an estimate first
+rake eval:classifier MODELS=ollama:qwen3:8b SET=local-qwen8b   # a local model: free, and slow
+rake eval:classifier MODELS=ollama:qwen3:4b+nothink            # ...and 48x faster with the reasoning off
+rake eval:classifier_offline               # the same corpus with no model at all -- free, in CI
+rake eval:classifier_omission              # the also_named omission rate alone
+rake eval:classifier_compare BEFORE=a AFTER=b   # including two DIFFERENT models
+rake eval:classifier_board                 # the checked-in 2026-09-04 baseline as one table;
+                                           # no key, no network, no database. SETS=a,b for others
+
 # Bring a checkout up to date after a pull: fast-forward, bundle, migrate, then
 # everything the new code needs done to the database you already have. Offline,
 # idempotent, no model call. lib/update.rb is the list of steps.

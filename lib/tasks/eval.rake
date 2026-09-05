@@ -6,6 +6,14 @@
 #   rake eval:estimate   what a sweep of this shape would cost, before it runs
 #   rake eval:manifest   the files that constitute the measurement, and a digest of each
 #
+# AND THE CLASSIFIER'S OWN BENCH, which reads an answer against a hand-written
+# label rather than prose against the records:
+#
+#   rake eval:classifier            replay the labelled corpus through the real classifier
+#   rake eval:classifier_offline    the same corpus with no model at all -- free, and in CI
+#   rake eval:classifier_omission   the `also_named` omission rate alone (PR 102 finding F4)
+#   rake eval:classifier_compare    two bench runs, with a verdict per figure
+#
 # GENERATION SPENDS MONEY AND MUST NEVER RUN IN CI. It needs `OPENROUTER_API_KEY`
 # and refuses to start without one; scoring needs nothing at all. `EVALUATION.md`
 # is the protocol.
@@ -81,6 +89,179 @@ namespace :eval do
     puts "Snapshot this before a change and again after: nothing in it may have moved."
   end
 
+  desc "Replay the labelled classifier corpus through the real classifier. REPS=4 MODELS=a,b SET=<name> SAMPLE=20 YES=1"
+  task classifier: :environment do
+    ClassifierTasks.run!
+  end
+
+  desc "The classifier corpus through the fixed grammar with NO MODEL -- free, offline, the floor a call is bought against"
+  task classifier_offline: :environment do
+    corpus = Eval::Classifier.corpus
+    puts "#{corpus.size} labelled lines, #{corpus.positions.size} positions, no model call and no key."
+    puts
+    Eval::Classifier::Report.new(
+      Eval::Classifier::Result.new(corpus_size: corpus.size, arms: [], reps: 0, passes: []),
+      floor: Eval::Classifier::Offline.new(corpus: corpus).summary
+    ).offline_floor
+  end
+
+  desc "The `also_named` omission rate on its own -- the two-noun lines only. Usage: rake eval:classifier_omission REPS=1"
+  task classifier_omission: :environment do
+    ClassifierTasks.omission!
+  end
+
+  desc "Every classifier bench set on disk as one cross-model table. Usage: rake eval:classifier_board SETS=a,b"
+  task classifier_board: :environment do
+    Eval::Classifier::Board.for_sets(ENV["SETS"].presence&.split(",")&.map(&:strip)).print
+  rescue ArgumentError => error
+    abort error.message
+  end
+
+  desc "Two classifier bench runs, with a verdict per figure -- including two DIFFERENT models. " \
+       "Usage: rake eval:classifier_compare BEFORE=<set> AFTER=<set> [BEFORE_MODEL=] [AFTER_MODEL=]"
+  task classifier_compare: :environment do
+    before = ENV["BEFORE"].presence or abort "BEFORE=<set> is the bench run to compare against. #{ClassifierTasks.available_sets}"
+    after = ENV["AFTER"].presence or abort "AFTER=<set> is the bench run to judge. #{ClassifierTasks.available_sets}"
+
+    Eval::Classifier::Comparison.new(Eval::Classifier::Result.load(Eval.set_path(before)),
+                                     Eval::Classifier::Result.load(Eval.set_path(after)),
+                                     before_model: ENV["BEFORE_MODEL"].presence,
+                                     after_model: ENV["AFTER_MODEL"].presence).print
+  rescue Eval::Classifier::Comparison::Unpairable => error
+    abort error.message
+  end
+
+  # THE CLASSIFIER BENCH'S HALF OF THIS FILE. Separate from `EvalTasks` because
+  # it shares none of it: no run databases, no spawned processes, no per-world
+  # concurrency, and a spend two orders of magnitude smaller.
+  module ClassifierTasks
+    extend self
+
+    # FOUR, BECAUSE FOUR IS `Eval::Noise::MIN_RUNS`. The prose loop's default is
+    # five runs and its floor is four; here the two coincide, so a bench run
+    # taken at the default is a run a later `rake eval:classifier_compare` can
+    # actually give a verdict against. A three-rep run is cheaper and cannot be
+    # judged, which is a bad default.
+    #
+    # A METHOD AND NOT A CONSTANT, because a rake file is loaded before the app
+    # is: an app constant in a module body raises `uninitialized constant` at
+    # load time, which is why `EvalTasks` above reads `Eval::RunSet::SCORES`
+    # inside a method too.
+    def default_reps = Eval::Noise::MIN_RUNS
+
+    # A bench run is cents, not dollars -- 300 lines x 4 reps x 2 models is about
+    # $0.39 -- so the ceiling is low and the estimate is still printed first: the
+    # captain's rule for `eval:run` applies to anything that spends.
+    SPEND_CEILING = 0.50
+
+    def reps = (ENV["REPS"].presence || default_reps).to_i
+
+    # THE EXPLICIT ARM SELECTOR, on the captain's instruction of 2026-09-04:
+    # `MODELS=` names exactly which models a run measures and the app's rotation
+    # is not consulted at all. A bare id is OpenRouter; `ollama:qwen3:8b` names
+    # the provider, because an ollama tag has a colon in it.
+    #
+    #   MODELS=mistralai/mistral-medium-3.1
+    #   MODELS=ollama:qwen3:4b,ollama:gemma3:12b
+    #   MODELS=ollama:qwen3:4b+nothink            asks a thinking model to stop
+    #                                             thinking -- 2.1s a call against
+    #                                             100.2s. See Arm::NO_THINKING.
+    #
+    # `TA_LOCAL_MODELS` is NOT read and not needed: it gates the app's own
+    # rotation, and an arm replaces the rotation rather than joining it. The
+    # default is still `BaseAgent::REMOTE_MODEL_IDS`, which is what a player
+    # gets.
+    def arms
+      named = ENV["MODELS"].presence&.split(",")&.map(&:strip)
+
+      Eval::Classifier::Arm.all(named.presence || BaseAgent::REMOTE_MODEL_IDS)
+    end
+
+    def set_name = ENV["SET"].presence || Time.current.utc.strftime("classifier-%Y%m%d-%H%M%S")
+
+    def available_sets
+      found = Dir.glob(Eval.root.join("*", Eval::Classifier::RESULTS)).map { |path| File.basename(File.dirname(path)) }.sort
+      found.any? ? "Bench runs: #{found.join(", ")}." : "There are no classifier bench runs yet -- run `rake eval:classifier` first."
+    end
+
+    def run!
+      corpus = Eval::Classifier.corpus
+      problems = corpus.problems
+      abort "The corpus does not validate, so nothing measured against it would mean anything:\n  " \
+            "#{problems.join("\n  ")}" if problems.any?
+
+      priced = Eval::Classifier.estimate(lines: corpus.size, reps: reps, models: arms)
+      calls = corpus.size * reps * arms.size
+      puts format("ESTIMATE: %d calls (%d lines x %d reps x %d model%s), about $%.3f. Measured at %d in / %d out a call.",
+                  calls, corpus.size, reps, arms.size, arms.one? ? "" : "s", priced,
+                  Eval::Classifier::PER_CALL[:input], Eval::Classifier::PER_CALL[:output])
+      puts "Local arms (#{arms.select(&:local?).map(&:id).join(", ")}) cost nothing and are not in that figure; " \
+           "they are slow instead." if arms.any?(&:local?)
+      abort_without_a_key(arms)
+      if priced > SPEND_CEILING && ENV["YES"] != "1"
+        abort "That is over the $#{format("%.2f", SPEND_CEILING)} this task will spend unattended. " \
+              "Re-run with YES=1, or lower REPS."
+      end
+
+      puts "Replaying #{corpus.size} lines on #{arms.map(&:id).join(", ")}."
+      puts
+      result = Eval::Classifier::Bench.new(corpus: corpus, arms: arms, reps: reps).run
+
+      directory = Eval.set_path(set_name)
+      written = result.write!(directory, name: set_name)
+      puts
+      puts "Wrote #{written}."
+      puts
+
+      Eval::Classifier::Report.new(result, floor: Eval::Classifier::Offline.new(corpus: corpus).summary)
+                              .print(sample: (ENV["SAMPLE"].presence || Eval::Classifier::Report::DEFAULT_SAMPLE).to_i)
+      result
+    end
+
+    # THE TARGETED PROBE. The two-noun lines alone, which is the whole of what
+    # finding F4 is about, at a twentieth of the corpus and a twentieth of the
+    # spend. The full bench reports the same figure over every line it already
+    # paid for; this is for re-checking it on its own.
+    def omission!
+      corpus = Eval::Classifier.corpus.two_noun_lines
+      puts "#{corpus.size} two-noun lines x #{reps} rep#{"s" unless reps == 1} x #{arms.size} model#{"s" unless arms.one?} " \
+           "= #{corpus.size * reps * arms.size} calls, about " \
+           "$#{format("%.3f", Eval::Classifier.estimate(lines: corpus.size, reps: reps, models: arms))}."
+      abort_without_a_key(arms)
+      puts
+
+      result = Eval::Classifier::Bench.new(corpus: corpus, arms: arms, reps: reps).run
+      puts
+      arms.map(&:id).each do |arm|
+        rows = result.for_arm(arm).flat_map { |pass| pass.rows.map { |row| row.transform_keys(&:to_s) } }
+        answered = rows.reject { |row| row["error"] }
+        omitted = answered.count { |row| row["also_omitted"] }
+        found = answered.count { |row| row["also_answered"] }
+        puts format("  %-28s %d answers, %d with also_named absent or null (%.3f), %d naming a second thing (%.3f)",
+                    arm, answered.size, omitted, answered.empty? ? 0 : omitted.fdiv(answered.size),
+                    found, answered.empty? ? 0 : found.fdiv(answered.size))
+      end
+      puts
+      puts "A truly ABSENT field is a failed call -- `BaseAgent#missing_schema_keys` rotates on it -- so"
+      puts "an omission shows up as a rotation or a failure and not as a quiet nil. That is the claim"
+      puts "this probe checks rather than assumes."
+      result
+    end
+
+    # A KEY IS ONLY NEEDED FOR A HOSTED ARM. A run of nothing but local models
+    # asks the captain's own daemon and needs no key at all, so demanding one
+    # would refuse a free measurement.
+    def abort_without_a_key(arms)
+      if arms.any? { |arm| !arm.local? } && ENV["OPENROUTER_API_KEY"].blank?
+        abort "OPENROUTER_API_KEY is not set and #{arms.reject(&:local?).map(&:id).join(", ")} " \
+              "#{arms.reject(&:local?).one? ? "is" : "are"} hosted. Name local arms instead " \
+              "(MODELS=ollama:qwen3:4b), or run the offline floor, which needs nothing: " \
+              "`rake eval:classifier_offline`."
+      end
+      abort "The bench must not run in the test environment." if Rails.env.test?
+    end
+  end
+
   # Namespaced under a module rather than defined at rake top level, where the
   # methods would land on Object. The same reason `game.rake` has `Helpers`.
   module EvalTasks
@@ -105,7 +286,7 @@ namespace :eval do
       File.basename(File.dirname(newest))
     end
 
-    def reps = (ENV["REPS"].presence || DEFAULT_REPS).to_i
+    def reps = (ENV["REPS"].presence || default_reps).to_i
 
     def turns = ENV["TURNS"].presence&.then { |value| value == "all" ? nil : value.to_i }
 
