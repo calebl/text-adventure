@@ -1,0 +1,113 @@
+<%# locals: (machinery:) %>
+<%# THE MACHINERY BEHIND ONE TURN: the state it was played in, and the prompt it
+    was written from. Read beside that turn's prose -- the captain's ask of
+    2026-09-05 -- so it is built out of what the play page already has (`.sheet`,
+    `.sheet-line`, `.sheet-note`) rather than out of the debug page's own
+    vocabulary. The reading experience is `ta-api-iface`'s stage and inventing a
+    second visual language in an inspector is that stage arriving early.
+
+    The prompt half renders through `debug/_conversation`, the same partial the
+    debug page renders, so the two cannot come to disagree about what was sent.
+
+    `.machinery-panel` is the styling scope rather than the `<details>` the play
+    page wraps this in, because this same partial is what a browser with scripts
+    blocked gets as a page of its own (`MachineryController`) -- there is no
+    `<details>` around it there. %>
+<div class="machinery-panel">
+
+<%# ---------------------------------------------------------------------------
+    THE STATE, AND IT IS FIVE ROWS. The captain's scope: the story time, who was
+    in the room, what was lying in it, what he was carrying, and what each
+    person present was carrying. Nothing else -- the branch, the evidence, the
+    closed sets, the exits and the cost figures are the debug page's, and a
+    panel that sits beside the prose has to be readable at a glance.
+
+    EVERY ROW SAYS WHICH KIND OF FACT IT IS. Two of the five are columns written
+    when the turn was played and are therefore AS OF THAT TURN; the other three
+    are `Item` rows, and an item row says where a thing is NOW. Nothing in the
+    app records what was lying on a floor at a past story moment, so a panel
+    claiming to would be inventing one. See `Playthrough::Machinery`.
+    --------------------------------------------------------------------------- %>
+<div class="sheet">
+  <h2>the state this turn was played in</h2>
+
+  <div class="sheet-line">
+    <span class="who">story time</span>
+    <span class="state"><%= debug_time(machinery.story_time, absent: "not recorded") %><span class="mark">this turn</span></span>
+  </div>
+
+  <div class="sheet-line">
+    <span class="who">in the room</span>
+    <span class="state"><%= debug_value(machinery.cast.map(&:fullname).to_sentence.presence,
+                                        absent: "nobody recorded — a turn played before Playthrough::Turn#play snapshotted a cast") %><span class="mark">this turn</span></span>
+  </div>
+
+  <div class="sheet-line">
+    <span class="who">on the floor</span>
+    <span class="state"><%= debug_value(machinery.lying_here.map(&:name).to_sentence.presence,
+                                        absent: "nothing to pick up") %><span class="mark">now</span></span>
+  </div>
+
+  <div class="sheet-line">
+    <span class="who">you carry</span>
+    <span class="state"><%= debug_value(machinery.carried.map(&:name).to_sentence.presence,
+                                        absent: "carrying nothing") %><span class="mark">now</span></span>
+  </div>
+
+  <%# WHAT EACH PERSON IN THE ROOM IS CARRYING, and it is ONE row rather than one
+      per person: five short rows is the whole shape of this half, and a row that
+      multiplies with the cast would push the prompt half off the screen in a
+      crowded room. The protagonist is not in it -- the party's own hands are the
+      row above, and a party's copies are in neither a room nor anybody's hands
+      (`Item`). %>
+  <div class="sheet-line">
+    <span class="who">they carry</span>
+    <span class="state"><%= debug_value(machinery.held.map { |holding|
+                                          "#{holding.character.fullname}: " +
+                                            (holding.items.map(&:name).to_sentence.presence || "nothing")
+                                        }.to_sentence.presence,
+                                        absent: "nobody else was in the room") %><span class="mark">now</span></span>
+  </div>
+
+  <p class="sheet-note">
+    The story time and the cast are columns written when the turn was played, so
+    they are as of this turn. The three item rows are read as they stand now:
+    nothing records what was lying in <%= machinery.location&.name || "a room" %>,
+    or in whose hands, at a past story moment.
+  </p>
+</div>
+
+<%# ---------------------------------------------------------------------------
+    THE PROMPT, AND WHAT CAME BACK. The prose call first and the classifier
+    second, which is the opposite of the order the loop made them in and the
+    right order to READ them in: the passage above is being compared against the
+    prompt that produced it, and how the line was classified is context for that
+    rather than the thing being compared.
+    --------------------------------------------------------------------------- %>
+<div class="sheet">
+  <h2>what the narrator was given</h2>
+
+  <% if machinery.prose_conversations.any? %>
+    <%= render partial: "debug/conversation", collection: machinery.prose_conversations, as: :exchange %>
+  <% else %>
+    <p class="sheet-note">
+      <%= debug_value(nil, absent: machinery.opening? ?
+            "nothing — the opening arrival was generated when the world was built, not on a turn anybody played" :
+            no_receipts_reason) %>
+    </p>
+  <% end %>
+
+  <%# PART OF WHAT THE MODEL WAS GIVEN, and its own heading. A turn the grammar
+      resolved (`scenes.resolved_by`) made no classifier call at all, which is
+      the point of the slash menu and is worth reading as an absence rather than
+      as a gap. %>
+  <h2>what the classifier was given</h2>
+  <% if machinery.classifier_conversations.any? %>
+    <%= render partial: "debug/conversation", collection: machinery.classifier_conversations, as: :exchange %>
+  <% else %>
+    <p class="sheet-note">
+      <%= debug_value(nil, absent: "no classifier call on this turn — Playthrough::Grammar read the line, or nothing did") %>
+    </p>
+  <% end %>
+</div>
+</div>

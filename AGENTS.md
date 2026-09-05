@@ -1884,6 +1884,46 @@ the room the player is standing in, and says so and links to `rake game:doctor`.
 If you add a check to one and the same records are visible on the other, add it
 to both or the project has two answers.
 
+### The machinery behind one turn, on the play page
+
+`/playthroughs/:id/machinery/:scene_id` — the state a turn was played in and the
+prompt it was written from, opened in place beside that turn's prose
+(`Playthrough::Machinery`, `MachineryController`, `app/views/machinery/`). The
+captain's ask of 2026-09-05: *"having to switch over to debug mode is too slow
+and I can't compare the two side by side."* It is under all three of the debug
+view's rules above — read-never-write, gated in the controller on
+`Playthrough::Debug.enabled?`, and no CSS shared with the debug page — plus
+three of its own:
+
+- **It is `Playthrough::Debug`, narrowed, and never a second reading of the same
+  rows.** `#turn_for(scene)` builds one turn through the same `#build_turn` the
+  whole log goes through, and the exchanges render through `debug/_conversation`.
+  If you change what a stored conversation shows, change it there and both pages
+  move together. A second assembler here would be exactly the drift the debug
+  view exists to catch.
+- **The state half is five rows, and each says whether it is historical.** The
+  captain scoped it: story time, who was in the room, what is on the floor, what
+  the party carries, what each person present carries — and nothing else, because
+  a panel beside the prose has to be readable at a glance. Two of the five are
+  columns written when the turn was played (`scenes.story_timestamp`, the cast on
+  `characters_scenes`) and are as of the turn; the other three are `Item` rows,
+  which say where a thing is NOW. **Nothing records what was lying in a room at a
+  past story moment**, so a row implying one would be inventing it. If you add a
+  row, say which kind it is.
+- **It fetches a turn at a time and holds no state.** A Turbo Frame with
+  `loading="lazy"` inside a CLOSED `<details>` makes no request until it is
+  opened, which matters because `#turn_log` is the whole playthrough and is
+  replaced at the end of every turn. That replace also closes an open panel, and
+  that is the accepted price: the alternative is draft state in JavaScript or a
+  narrower broadcast, and `play_controller`'s follow-scroll and `preventScroll`
+  refocus were found in a browser and are not worth risking for it. **No
+  JavaScript is added by any of this** — the frame's placeholder is a plain link
+  to the same action, which renders the panel under the game's own layout.
+
+The control says **"machinery"** and must not say *inspect*: `/inspect` is a verb
+in the game, and a player could not tell inspecting the ward stamp from
+inspecting the turn that described it.
+
 ### The captain's verdict on a turn
 
 `Playthrough::Feedback` — three buttons under every turn in the log, one click
@@ -1912,11 +1952,14 @@ as that page.
 - **The `Scene` stays a reference.** Its `description`, `typed` and
   `story_timestamp` are never pruned, and a copy would be a second answer that
   could disagree with the prose the player actually read.
-- **The footer under a turn is a `<footer>`, and that is load-bearing.** The log's
-  dimming rule is `.log:not(.streaming) > .turn:last-of-type`, and
-  `:last-of-type` counts elements of the same tag among their siblings — a
-  `<div>` there silently becomes the last div and the newest turn stops reading
-  at full strength. Four tests assert that selector.
+- **The log's dimming rule counts `.entry`.** It is
+  `.log:not(.streaming) > .entry:last-of-type .turn`, and four tests assert that
+  selector directly. It used to be `.log > .turn:last-of-type`, where
+  `:last-of-type` counts elements of the same tag among their siblings — so a
+  `<div>` under a turn silently became the last div in the log and the newest
+  turn stopped reading at full strength. `.entry` (the wrapper one turn's prose,
+  verdict and machinery panel share) took that trap away; the footer stays a
+  `<footer>` because it reads as one, not because the stylesheet needs it to.
 - Recording answers with a Turbo Stream replacing **one** footer, so it cannot
   fight `NarrationJob`: neither side holds state, and the broadcast that ends a
   turn re-renders every footer out of the records.

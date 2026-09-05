@@ -21,6 +21,14 @@ Rails.application.routes.draw do
     # controller, so the path helper exists in every environment and the page
     # exists in none but the ones `Playthrough::Debug.enabled?` allows.
     get "debug", to: "debug#show"
+
+    # THE MACHINERY BEHIND ONE TURN, fetched a turn at a time by the panel on
+    # the play page. Addressed by the turn rather than by an id of its own, like
+    # the verdict above and for the same reason: there is exactly one of these
+    # per (playthrough, scene) and it is resolved against
+    # `Playthrough#scene_chain` rather than found. Drawn unconditionally and
+    # gated on the same flag as the two above.
+    get "machinery/:scene_id", to: "machinery#show", as: :machinery
   end
 
   root "playthroughs#index"
