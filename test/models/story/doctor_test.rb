@@ -355,6 +355,55 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_match(/emptier than the world's/, finding(story, :playthrough_missing_a_copy).message)
   end
 
+  # --- a copy that lags the world's own row ---------------------------------
+
+  # A SEED FILE EDITED AFTER SOMEBODY PLAYED. A re-seed puts the words on the
+  # world's own row and, correctly, stops there -- so the copy made before the
+  # edit goes on reading blank. See `Item::TemplateRefresh`.
+  def lagging_story
+    story = healthy_story
+    room = story.locations.first
+    played = create(:playthrough, story: story, character: story.protagonist, current_location: room)
+    template = create(:item, :lying, location: room, name: "assize tide-slate")
+    copy = create(:item, :lying, location: room, playthrough: played, template: template,
+                                 name: template.name, description: template.description)
+    template.update!(readable: true, inscription: "Three hours forty after noon.")
+
+    [ story, played, copy.reload ]
+  end
+
+  test "reports a playthrough's untouched copy carrying what the world used to say" do
+    story, played, = lagging_story
+
+    assert_includes codes(story), :copy_lags_its_template
+    assert_equal played, finding(story, :copy_lags_its_template).subject
+    assert_equal :safe, finding(story, :copy_lags_its_template).remedy
+    assert_match(/what the world used to say/, finding(story, :copy_lags_its_template).message)
+  end
+
+  # A copy some turn took or put down is that player's, and nothing on record
+  # says whether its text is stale or is what they have. Reported, not repaired.
+  test "a lagging copy a turn has acted on is reported and never called safe" do
+    story, _played, copy = lagging_story
+    create(:scene, story: story, location: copy.location, resolved_action: "take", acted_on: copy)
+
+    assert_not_includes codes(story), :copy_lags_its_template
+    assert_includes codes(story), :touched_copy_lags_its_template
+    assert_equal :manual, finding(story, :touched_copy_lags_its_template).remedy
+  end
+
+  test "a copy that says what its template says is silent" do
+    story = healthy_story
+    room = story.locations.first
+    played = create(:playthrough, story: story, character: story.protagonist, current_location: room)
+    template = create(:item, :lying, :readable, location: room)
+    create(:item, :lying, location: room, playthrough: played, template: template, name: template.name,
+                          description: template.description, readable: true, inscription: template.inscription)
+
+    assert_not_includes codes(story), :copy_lags_its_template
+    assert_not_includes codes(story), :touched_copy_lags_its_template
+  end
+
   test "reports an item that is neither held nor carried nor lying anywhere" do
     story = healthy_story
     item = create(:item, :lying, location: story.locations.first)

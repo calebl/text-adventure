@@ -9,17 +9,30 @@
 # database still needed. `lib/update.rb` is that list, in the repo, in
 # dependency order; this is the command that runs it.
 #
-#   bin/update              pull, install, migrate, apply, report
+#   bin/update              pull, install, migrate, apply, reseed, report
 #   bin/update --dry-run    fetch and say what WOULD happen. Writes nothing --
 #                           not the pull, not the migration, not a row.
 #   bin/update --skip-pull  "I already pulled, just apply."
+#   bin/update --seed       re-assert the checked-in world files whatever the
+#                           range says. `--skip-pull` has no range, so this is
+#                           how a re-seed is asked for there.
+#
+# AND IT RE-SEEDS WHEN A WORLD FILE MOVED. A world outlives its seed FILE the
+# way it outlives its schema: The Salt Assizes was seeded one evening and the
+# file was edited the next morning, and nothing here ever looked at it again --
+# so the world's own tide-slate stayed blank for days. `db/seeds/worlds` is now
+# asked the same range question as `Gemfile.lock` and the loader is run when the
+# answer is yes. See `Update::SeedFiles`. A re-seed RE-ASSERTS THE FILE'S VALUES
+# OVER THE WORLD'S OWN ROWS, seeded stats included; it adds and updates, deletes
+# nothing, and writes the world layer only, so no game in progress is touched.
 #
 # WHAT IT NEVER DOES, and this is the promise the refusals at the top exist to
 # keep: it never stashes, resets, checks out, merges, rebases or forces
 # anything, it never makes a model call (`Update::Step.model_calls?` is the gate
-# and no step asks for it), and it never touches a running process. A dev server
-# caches the schema it started with, so it TELLS you to restart yours and leaves
-# it alone.
+# and no step asks for it -- and `WorldSeed::Loader` is offline too, so the
+# re-seed does not spend the promise), and it never touches a running process.
+# A dev server caches the schema it started with, so it TELLS you to restart
+# yours and leaves it alone.
 #
 # RUBY RATHER THAN SHELL, following `bin/setup` -- which is the script this most
 # resembles, an idempotent bring-your-environment-up-to-date runner. It also
@@ -31,18 +44,31 @@ require "open3"
 APP_ROOT = File.expand_path("..", __dir__)
 Dir.chdir APP_ROOT
 
+# The one decision in here that is worth asserting without a checkout, a network
+# or a database. Plain Ruby, no Rails -- see its header.
+require_relative "../lib/update/seed_files"
+
 # So an `abort` (stderr) cannot print above the stdout it is about.
 $stdout.sync = true
 
 DRY_RUN = ARGV.delete("--dry-run") || ARGV.delete("-n")
 SKIP_PULL = ARGV.delete("--skip-pull")
+FORCE_SEED = ARGV.delete("--seed")
 HELP = ARGV.delete("--help") || ARGV.delete("-h")
 
 USAGE = <<~TEXT
-  Usage: bin/update [--dry-run] [--skip-pull]
+  Usage: bin/update [--dry-run] [--skip-pull] [--seed]
 
     --dry-run, -n   fetch, then say what would happen. Writes nothing at all.
     --skip-pull     apply to the tree as it stands; do not fetch or pull.
+    --seed          re-assert the checked-in world files (db/seeds/worlds) over
+                    this database whatever the pulled range says. It happens on
+                    its own when one of those files moved in the range; this is
+                    for --skip-pull, which has no range to read.
+
+  A re-seed re-asserts the FILE's values over the world's own rows -- a seeded
+  character's stats included. It adds and updates, it deletes nothing, and it
+  writes the world layer only, so nobody's game in progress is touched.
 
   It refuses to pull unless you are on the default branch with a clean tree,
   and it never stashes, resets or checks out anything.
@@ -260,6 +286,43 @@ else
 end
 
 # ----------------------------------------------------------------------------
+# The checked-in worlds. AFTER the migrations and the steps, because a seed file
+# may reference a column a migration in this same range adds -- and because a
+# step reading a half-re-seeded world would be reading a world mid-edit.
+#
+# The same range mechanism the lockfile uses, one directory over. Silent when no
+# world file moved; `--seed` is the way to ask for it where there is no range.
+# ----------------------------------------------------------------------------
+
+section "THE CHECKED-IN WORLDS"
+
+seed_decision =
+  if SKIP_PULL || OLD == TARGET
+    Update::SeedFiles.decide(forced: FORCE_SEED, range: false)
+  else
+    diff, = git("diff", "--name-only", OLD, TARGET, "--", Update::SeedFiles::DIRECTORY)
+    Update::SeedFiles.decide(changed: Update::SeedFiles.changed_paths(diff), forced: FORCE_SEED)
+  end
+
+reseeded = false
+
+say seed_decision.reason
+seed_decision.files.each { |file| say "  #{file}" }
+
+if seed_decision.reseed?
+  if DRY_RUN
+    # `WorldSeed::Loader` has no dry mode and one is not invented here: a
+    # half-load is worse than no answer. The files are named instead.
+    say seed_decision.dry_line
+  else
+    say "a re-seed re-asserts the file's values over the world's own rows -- seeded stats included."
+    say "It adds and updates, deletes nothing, and touches no game in progress."
+    abort "\nbin/update: `bin/rails game:reseed` failed. The database is otherwise up to date." unless loud("bin/rails", "game:reseed")
+    reseeded = true
+  end
+end
+
+# ----------------------------------------------------------------------------
 # What happened.
 # ----------------------------------------------------------------------------
 
@@ -280,6 +343,12 @@ else
 end)
 say migrated ? "the schema was migrated." : "the schema was already current."
 say steps_ran ? "the post-update steps ran; what each one did, or had nothing to do, is above." : "no post-update steps ran."
+say(if reseeded
+  "the checked-in world files were re-asserted over the world's own rows -- seeded stats included. " \
+    "Nothing was deleted and no game in progress was touched."
+else
+  "no world file was re-seeded (`bin/update --seed` forces it)."
+end)
 
 if migrated || moved
   port = ENV["PORT"] || "3000"
