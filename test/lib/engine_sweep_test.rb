@@ -385,6 +385,92 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_predicate result, :passed?, result.report
   end
 
+  # --- a fight, asserted without asserting a die ------------------------------
+  #
+  # `Roll`'s seed is built out of ROW IDS (`Roll.seed`), so what a blow COST is
+  # not reproducible between the captain's database and a fresh one, and what a
+  # turn DID is. `blows:` is the second, and it is the whole of how a script
+  # walks a fight. Same line `a-check-against-an-ability.yml` draws for the d20.
+
+  test "a blows expectation counts the rows a line wrote" do
+    result = walk(<<~YAML)
+      story: The Lunar Cartographer
+      steps:
+      - type: go to the hallway
+        expect:
+          blows: 0
+      - type: go to The Bell of Saint Aravel
+        expect:
+          # Arriving is free: the riposte runs in the room the turn BEGAN in.
+          blows: 0
+          foes: [Marek Sollen]
+      - type: /attack Marek Sollen
+        expect:
+          # The player's own, and the one live foe's answer, in one round.
+          blows: 2
+    YAML
+
+    assert_predicate result, :passed?, result.report
+  end
+
+  test "a refused line writes no blow, and the expectation says so" do
+    result = walk(<<~YAML)
+      story: The Lunar Cartographer
+      steps:
+      - type: go to the hallway
+      - type: go to The Bell of Saint Aravel
+      - type: /attack Marek Sollen
+      - type: take the rope
+        expect:
+          refused: true
+          blows: 0
+    YAML
+
+    assert_predicate result, :passed?, result.report
+  end
+
+  test "an hp_of expectation reads a person's hit points off the records" do
+    result = walk(<<~YAML)
+      story: The Lunar Cartographer
+      steps:
+      - type: go to the hallway
+      - type: go to The Bell of Saint Aravel
+        expect:
+          hp_of:
+            Marek Sollen: 10
+    YAML
+
+    assert_predicate result, :passed?, result.report
+  end
+
+  test "an hp_of for somebody who is not standing here is unmet rather than skipped" do
+    result = walk(<<~YAML)
+      story: The Lunar Cartographer
+      steps:
+      - type: look
+        expect:
+          hp_of:
+            Marek Sollen: 10
+    YAML
+
+    assert_not result.passed?
+    assert_match(/Marek Sollen is not standing here/, result.report)
+  end
+
+  test "an hp_of that is not a mapping of names to whole numbers raises" do
+    error = assert_raises(EngineSweep::InvalidScript) do
+      walk(<<~YAML)
+        story: The Unrecorded Hour
+        steps:
+        - type: look
+          expect:
+            hp_of: [Halkett Rowe]
+      YAML
+    end
+
+    assert_match(/hp_of/, error.message)
+  end
+
   test "a present expectation that does not hold names both sides" do
     result = walk(<<~YAML)
       story: The Salt Assizes

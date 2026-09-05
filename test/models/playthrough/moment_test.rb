@@ -30,6 +30,94 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     assert_match(/Iri Calder is hurt \(5 of 8\)\./, moment.narration_context)
   end
 
+  # --- what the prose is told about everybody ELSE'S body --------------------
+  #
+  # AT MOST THREE LINES (`Character::Registry::MAX_PER_ROOM`), and `unhurt` is
+  # left unsaid for an NPC: an absent row means unhurt, that is the honest
+  # default for almost everybody in every world, and saying it three times a
+  # turn is paying for the default in tokens.
+
+  test "an unhurt bystander gets no line at all" do
+    create(:character, story: @story, location: @here, fullname: "Neb Halloran")
+
+    context = moment.narration_context
+
+    assert_match(/Also here: Neb Halloran/, context)
+    assert_no_match(/Neb Halloran is unhurt/, context)
+  end
+
+  test "a hurt bystander is stated with the numbers" do
+    neb = create(:character, story: @story, location: @here, fullname: "Neb Halloran")
+    Playthrough::Turn.new(@playthrough).harm!(neb, 3)
+
+    assert_match(/Neb Halloran is hurt \(5 of 8\)\./, moment.narration_context)
+  end
+
+  test "a foe is named as fighting the player even when nothing has touched them" do
+    create(:character, :monster, story: @story, location: @here, fullname: "Marek Sollen")
+
+    assert_match(/Marek Sollen is unhurt and is fighting you\./, moment.narration_context)
+  end
+
+  test "somebody with no stat block gets no line, because there is no body to describe" do
+    create(:character, :without_a_stat_block, story: @story, location: @here, fullname: "The Sump")
+
+    assert_no_match(/The Sump is/, moment.narration_context)
+  end
+
+  test "a body this game has killed is not in the room the narrator is told about" do
+    neb = create(:character, story: @story, location: @here, fullname: "Neb Halloran")
+    Playthrough::Turn.new(@playthrough).harm!(neb, neb.max_hp)
+
+    assert_no_match(/Neb Halloran/, moment.narration_context)
+  end
+
+  # --- what the prose is told about the blows ---------------------------------
+  #
+  # THE SAME SHAPE `Playthrough::Turn#taken_fact` HAS: the rows moved first and
+  # this is only the sentence about them. It names the DAMAGE, states ALIVE OR
+  # DEAD outright -- the one thing the narrator must not decide -- and says the
+  # numbers are fixed.
+
+  test "nothing is said about a fight nobody has had" do
+    assert_no_match(/Blows landed/, moment.narration_context)
+  end
+
+  test "the narrator is told the damage, who is alive, and that the numbers do not change" do
+    neb = create(:character, story: @story, location: @here, fullname: "Neb Halloran", level: 3, hit_die: 8)
+    Playthrough::Turn.new(@playthrough).strike!(@protagonist, neb, round: 1)
+
+    context = moment.narration_context
+
+    assert_match(/Blows landed, recorded by the game:/, context)
+    assert_match(/Iri Calder struck Neb Halloran for \d+ hit point/, context)
+    assert_match(/Neb Halloran is alive\./, context)
+    assert_match(/Those are the numbers and they do not change/, context)
+    assert_match(/Do not decide who lives, who dies/, context)
+  end
+
+  test "a killing blow says so outright" do
+    neb = create(:character, story: @story, location: @here, fullname: "Neb Halloran")
+    turn = Playthrough::Turn.new(@playthrough)
+    turn.harm!(neb, neb.max_hp - 1)
+    turn.strike!(@protagonist, neb, round: 1)
+
+    assert_match(/Neb Halloran is dead: that was the blow that killed them\./, moment.narration_context)
+  end
+
+  # ONLY THE ROUNDS THE PLAYER HAS NOT READ ABOUT YET. A fight the engine has
+  # closed has a `Scene` of its own in the log, and repeating it here would have
+  # the narrator write the same exchange twice.
+  test "a closed fight is not told to the narrator a second time" do
+    neb = create(:character, story: @story, location: @here, fullname: "Neb Halloran", level: 3, hit_die: 8)
+    turn = Playthrough::Turn.new(@playthrough)
+    turn.strike!(@protagonist, neb, round: 1)
+    turn.stand_in!(create(:location, story: @story, name: "The Stair"))
+    Playthrough::Fight.new(@playthrough).close!
+
+    assert_no_match(/Blows landed/, moment.narration_context)
+  end
+
   # SILENCE IS THE HONEST ANSWER for somebody with no stat block: "unhurt" would
   # be an assertion about a body the engine does not have.
   test "the narrator is told nothing about a player with no stat block" do

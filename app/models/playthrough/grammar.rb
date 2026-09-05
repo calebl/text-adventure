@@ -84,6 +84,14 @@ class Playthrough::Grammar
     # of it is that the roll it prints is the roll the engine would make.
     "stats" => :look, "abilities" => :look,
     "check" => :check,
+    # THE ONE VERB IN THIS TABLE THAT HURTS SOMEBODY, and it takes a NAME out of
+    # a closed set where `harm` takes a number -- so it is the first entry here
+    # that is both one of the engine's own instruments and a real act in the
+    # fiction. `Playthrough::IntentSchema::INTENTS` has no word for it (that is
+    # a later, measured slice), so sending it to the classifier could only ever
+    # come back `other`; reading it here costs nothing and makes a whole fight
+    # walkable with no key at all.
+    "attack" => :attack, "hit" => :attack, "strike" => :attack,
     "help" => :help
   }.freeze
 
@@ -100,9 +108,21 @@ class Playthrough::Grammar
   # THEY ARE `Playthrough::Mechanics`'S ALONE. The browser has no engine view --
   # nothing there claims an unslashed line at all, so a player who types `stats`
   # at the fiction reaches the classifier exactly as they always did.
-  ENGINE_VIEW = %w[vitals hp condition stats abilities check harm hurt damage mend heal help].freeze
+  #
+  # `attack` IS THE ONE ON THIS LIST THAT IS AN ACT IN THE FICTION rather than an
+  # instrument, and it is here for the list's own reason and not for a new one:
+  # there is no intent in the closed enum for it, so a model call could only
+  # come back `other`. Two things follow, and both are deliberate. It is guarded
+  # by `#in_the_fiction?` exactly as `check` is -- with a model available it is
+  # the engine's own only when the name after it is somebody standing here, so
+  # *"attack the problem"* still reaches the classifier. And a reading of it is
+  # `grammar` and never `engine_view` on `scenes.resolved_by` (see `#parse`),
+  # because `engine_view` means "no Scene comes of this" and a fight ends in
+  # one.
+  ENGINE_VIEW = %w[vitals hp condition stats abilities check attack hit strike
+                   harm hurt damage mend heal help].freeze
 
-  # THE FIVE VERBS THAT RESOLVE A RECORD, in the word this grammar's own help
+  # THE SIX VERBS THAT RESOLVE A RECORD, in the word this grammar's own help
   # calls each of them by, mapped to the action it produces.
   #
   # It is the list `Playthrough::SlashMenu` offers the player after a `/`, so the
@@ -111,7 +131,8 @@ class Playthrough::Grammar
   # the whole of that, and every synonym in `VERBS` works behind one. `other` is
   # not here and never will be: it carries no record, so there is nothing for a
   # closed set to complete.
-  RESOLVING = { "go" => :move, "talk" => :talk, "take" => :take, "drop" => :drop, "read" => :examine }.freeze
+  RESOLVING = { "go" => :move, "talk" => :talk, "take" => :take, "drop" => :drop, "read" => :examine,
+                "attack" => :attack }.freeze
 
   # WHY A VERB ALONE DOES NOT CLAIM A LINE, and it is the captain's ruling of
   # 2026-09-05. He objected first:
@@ -213,6 +234,11 @@ class Playthrough::Grammar
     "                 inventory, exits, items, who, state, vitals)",
     "stats            the player's level, hit die and three abilities, out of",
     "                 the world's own records (also: abilities)",
+    "attack <person>  swing at somebody standing here (also: hit, strike). One",
+    "                 blow of your own hit die, it always connects, and every",
+    "                 live foe in the room answers in the same turn. Anybody",
+    "                 can be attacked, and being attacked makes them a foe for",
+    "                 this playthrough",
     "check <ability> [penalty]",
     "                 throw one d20 against strength, dexterity or will and",
     "                 print what it came up: d20-under the score, with the",
@@ -403,7 +429,6 @@ class Playthrough::Grammar
 
     verb = verb_for(text)
     argument = verb ? text[verb.length..].to_s.strip : text
-    path = verb && ENGINE_VIEW.include?(verb) ? "engine_view" : "grammar"
 
     reading = case verb && VERBS.fetch(verb)
     when :look then Reading.new
@@ -416,10 +441,26 @@ class Playthrough::Grammar
     when :harm then read_wound(argument, :harm)
     when :mend then read_wound(argument, :mend)
     when :check then read_check(argument)
+    when :attack then read_attack(argument)
     else resolve(classifier.exits_here, text).found? ? read_move(text) : unknown(text)
     end
 
-    reading.with(resolved_by: path)
+    reading.with(resolved_by: path_for(verb, reading))
+  end
+
+  # WHICH READER ANSWERED, and the rule is about what the reading DID rather
+  # than about which table the verb was in.
+  #
+  # `engine_view` means the engine answered out of its own instruments and NO
+  # `Scene` comes of it -- which is why `Scene::TURN_READERS` leaves it out and
+  # `rake game:doctor` names a row that carries it. Every word in `ENGINE_VIEW`
+  # is one of those except `attack`, which resolves a record, hurts somebody and
+  # ends in a `Scene` (`Playthrough::Fight`). So a reading that produced an
+  # `Intent` is the GRAMMAR's answer whichever table its verb came out of.
+  def path_for(verb, reading)
+    return "grammar" unless verb && ENGINE_VIEW.include?(verb)
+
+    reading.intent.nil? ? "engine_view" : "grammar"
   end
 
   # ONE OF THE ENGINE-VIEW COMMANDS, READ BY THIS GRAMMAR whichever mode is
@@ -441,10 +482,24 @@ class Playthrough::Grammar
   # only when the next word is one of the three abilities -- otherwise the line
   # goes to `Playthrough::Classifier` like any other. With no model there is
   # nothing to hand it to, so this grammar answers and refuses.
+  #
+  # `attack` IS THE SECOND, and the same rule catches it: *"attack the problem"*
+  # and *"hit the road"* are ordinary English, and swallowing them here would
+  # cost the mode a verb the way swallowing *"check the ledger"* would. So with
+  # a model available `attack` is the engine's own only when what follows it
+  # resolves to somebody standing here -- a closed set of at most three people,
+  # so the test is cheap and exact. With no model there is nothing to hand it
+  # to, and the refusal names who IS here.
   def in_the_fiction?(verb, text, model:)
-    return false unless model && VERBS.fetch(verb) == :check
+    return false unless model
 
-    resolve_ability(text[verb.length..].to_s.strip.split(/\s+/).first).nil?
+    argument = text[verb.length..].to_s.strip
+
+    case VERBS.fetch(verb)
+    when :check then resolve_ability(argument.split(/\s+/).first).nil?
+    when :attack then !resolve(classifier.characters_here, argument).found?
+    else false
+    end
   end
 
   def verb_for(text)
@@ -508,6 +563,30 @@ class Playthrough::Grammar
     return Reading.new(refusal: cannot_find("person here", argument, match, cast)) unless match.found?
 
     intent(:talk, speaker: match.record)
+  end
+
+  # SWINGING AT SOMEBODY, and it resolves out of the SAME closed set a `talk`
+  # does -- the captain's sixth ruling of 2026-09-05: *"anyone can be
+  # attacked"*. There is no narrower "people you may hit" list, because a list
+  # like that would be the app deciding who is a legitimate target, and being
+  # able to take a swing at the landlord is the whole of what the ruling asks
+  # for. What it costs is on record afterwards: the blow marks them provoked in
+  # THIS playthrough (`Playthrough::Vitals#provoked?`), and they answer from the
+  # next turn.
+  #
+  # A NAME THAT LANDS ON NOBODY IS REFUSED WITH THE CAST THAT IS HERE, exactly
+  # as a `talk` is, and a dead body is not in it: `Playthrough#cast_in`
+  # subtracts this game's dead, so a corpse cannot be hit twice.
+  def read_attack(argument)
+    cast = classifier.characters_here
+    if argument.blank?
+      return Reading.new(refusal: cast.any? ? "attack whom? Here: #{names(cast)}" : "attack whom? There is nobody here.")
+    end
+
+    match = resolve(cast, argument)
+    return Reading.new(refusal: cannot_find("person here", argument, match, cast)) unless match.found?
+
+    intent(:attack, speaker: match.record)
   end
 
   # READING SOMETHING, against BOTH item sets at once -- what is lying here and

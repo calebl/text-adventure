@@ -29,6 +29,13 @@
 #                   it was
 #   hp              the player's current hit points, exactly -- read through
 #                   `Playthrough#vitals_for`, never off the printed read-out
+#   hp_of           EVERYBODY ELSE'S, as a mapping of full name to the exact
+#                   number, read through the same one reader. It is `hp`'s
+#                   counterpart for the room the way `present:` is the whole
+#                   cast to `hp`'s one body, and it is what lets a script walk a
+#                   fight: the foe's hit points after each round are the whole
+#                   of what a blow did. A name nobody here answers to is unmet
+#                   rather than skipped, so a typo cannot read as a pass
 #   abilities       the player's three abilities, as a mapping of
 #                   strength/dexterity/will to the exact score -- read off the
 #                   `Character` columns, never off the printed read-out, and a
@@ -58,6 +65,15 @@
 #                   offline and cost nothing at all
 #   note            text the note has to contain
 #   drifts          `Playthrough::Drift` rows this line wrote
+#   blows           `Playthrough::Blow` rows this line wrote -- the player's own
+#                   and every live foe's answer, so an attack in a room with one
+#                   foe in it is 2 and a REFUSED line is 0 whatever is standing
+#                   there. It is the round structure of a fight asserted without
+#                   asserting a die: `Roll`'s seed is built out of row ids
+#                   (`Roll.seed`), so what a blow COST is not reproducible across
+#                   two databases and what a turn DID is. That is the same line
+#                   `a-check-against-an-ability.yml` draws -- it pins the target
+#                   and never the d20
 #
 # `KEYS` IS CLOSED AND UNKNOWN KEYS RAISE. A misspelt expectation that was
 # quietly ignored would read as a passing step, which is the one failure mode a
@@ -65,7 +81,7 @@
 class EngineSweep::Expectation
   KEYS = %w[
     location exits exits_include exits_exclude here carrying present foes inscription
-    hp abilities dead changed change refused offers understood resolved_by note drifts
+    hp hp_of abilities dead changed change refused offers understood resolved_by note drifts blows
   ].freeze
 
   # "The Vestry Hulk (stub)" -> the name and the detail level it has to be in.
@@ -102,7 +118,7 @@ class EngineSweep::Expectation
   # EVERY UNMET EXPECTATION, not the first: a step that moved to the wrong room
   # is usually holding the wrong things too, and seeing both is how the cause
   # gets found in one pass instead of three.
-  def check(report, drifts:)
+  def check(report, drifts:, blows: 0)
     state = report.state
 
     [
@@ -114,6 +130,7 @@ class EngineSweep::Expectation
       check_people("foes", state.foes),
       check_inscriptions(state),
       check_equals("hp", state.condition&.hp),
+      check_hit_points(state),
       check_abilities(report),
       check_flag("dead", state.over),
       check_flag("changed", report.changed?),
@@ -123,7 +140,8 @@ class EngineSweep::Expectation
       check_equals("understood", report.understood),
       check_equals("resolved_by", report.resolved_by),
       check_contains("note", Array(report.note).join("\n")),
-      check_equals("drifts", drifts)
+      check_equals("drifts", drifts),
+      check_equals("blows", blows)
     ].flatten.compact
   end
 
@@ -132,6 +150,7 @@ class EngineSweep::Expectation
   attr_reader :where
 
   def validate!
+    validate_hit_points!
     validate_abilities!
     validate_inscriptions!
     Array(document["exits"]).each { |entry| named(entry) }
@@ -164,6 +183,25 @@ class EngineSweep::Expectation
       next if score.is_a?(Integer)
 
       raise EngineSweep::InvalidScript, "#{where}: an \"abilities\" entry is a whole score, got #{score.inspect}"
+    end
+  end
+
+  # A mapping of full name to a whole number, and nothing else -- `inscription:`'s
+  # shape, and closed for `KEYS`' reason: a list of names here would look like an
+  # expectation and assert nothing at all.
+  def validate_hit_points!
+    return unless document.key?("hp_of")
+
+    wanted = document["hp_of"]
+    unless wanted.is_a?(Hash)
+      raise EngineSweep::InvalidScript,
+            "#{where}: \"hp_of\" is a mapping of a person's full name to their hit points, got #{wanted.inspect}"
+    end
+
+    wanted.each_value do |points|
+      next if points.is_a?(Integer)
+
+      raise EngineSweep::InvalidScript, "#{where}: an \"hp_of\" entry is a whole number of hit points, got #{points.inspect}"
     end
   end
 
@@ -351,6 +389,30 @@ class EngineSweep::Expectation
       next if actual == expected
 
       unmet("abilities", "#{ability}: #{expected}", "#{ability}: #{actual.nil? ? "none" : actual}")
+    end
+  end
+
+  # HOW MUCH IS LEFT OF EVERYBODY ELSE STANDING HERE, off `Playthrough#vitals_for`
+  # and never off the printed line -- the same rule `#check_inscriptions` and
+  # `#check_abilities` are under, and for their reason: a script asserting the
+  # read-out would be asserting that the read-out is wired up, and what must not
+  # drift is what the ENGINE holds.
+  #
+  # A name that matches nobody present is unmet rather than skipped, exactly as a
+  # missing inscription is: a dead foe drops out of `Playthrough#cast_in`, so a
+  # script that goes on asking for their hit points is asking a question the
+  # records no longer answer, and saying so is the point.
+  def check_hit_points(state)
+    return nil unless document.key?("hp_of")
+
+    document["hp_of"].filter_map do |name, expected|
+      person = state.present.find { |record| record.fullname == name }
+      next unmet("hp_of", "#{name}: #{expected}", "#{name} is not standing here") if person.nil?
+
+      actual = state.conditions[person.id]&.hp
+      next if actual == expected
+
+      unmet("hp_of", "#{name}: #{expected}", "#{name}: #{actual.nil? ? "no stat block" : actual}")
     end
   end
 

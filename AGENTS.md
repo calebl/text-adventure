@@ -890,10 +890,9 @@ And the seventh ruling the same evening, which is where they come from:
 > *"go with your rule for now. eventually I want the universe generator to
 > provide more input into this."*
 
-**Nothing fights.** A world can contain an enemy, the engine can say so, and
-that is the whole of it — no attack verb, no blow, no riposte, no per-playthrough
-mark about who has noticed whom. Those are later slices of the combat build
-order.
+**A fight resolves since 2026-09-05** — see *A fight, and what one round is*
+below. What this section states is the WORLD half: who a world's enemies are and
+where they come from, which is the layer no typed line and no model touches.
 
 - **A monster is an ordinary `Character` with `hostile` set**, and that is the
   argument `locations.mobile` already made one table over: *"a mobile location
@@ -924,7 +923,8 @@ order.
   block is under. A seed file says `hostile:` outright, which is how a world
   holds a tame beast of a monstrous race.
 - **`Playthrough#foes_in(location)` is the ONE reader.** The world says who is
-  hostile; this GAME says who is still standing. Reading `Character.hostile`
+  hostile; this GAME says who is still standing — and, since the captain's sixth
+  ruling of 2026-09-05, who this game has PROVOKED. Reading `Character.hostile`
   alone would offer a corpse a fight, which is `#items_lying_in`'s own reason for
   existing one table over.
 - **Monstrous races reach the prompts**, and that is captain call C4 answered in
@@ -948,6 +948,103 @@ order.
 - **No `bin/update` step was needed**, and that is a property of the columns
   rather than an omission: all three are NOT NULL with a default, so every row
   already in a database is already right.
+
+### A fight, and what one round is
+
+`rake game:mechanics` walks a whole fight with no key at all. The captain's
+word, 2026-09-05: *"continue through all of the combat slices."*
+
+**THE RULE, IN ONE PARAGRAPH.** A blow always connects and deals one die of the
+attacker's `hit_die` — no to-hit, no armour, no critical, no initiative and no
+ability term (the captain's call C2, measured in `data/ta-combat-scout` §7.2:
+with death terminal, a to-hit roll makes the *underdog* more likely to win, which
+is the opposite of what levels are for). **A round IS the turn** (call C5): the
+player acts by typing, and then every live foe in the room acts, in `id` order.
+`Playthrough::Turn#strike!` is the ONE writer of a blow; `Playthrough::Riposte`
+is the world's half of the round, run as step 7 of `Playthrough::Turn#play` and
+of `Playthrough::Mechanics#run`.
+
+- **It runs on a turn the player spent doing something else.** That is what makes
+  a fight a fight: you can look at the ceiling and the hound still bites. Two
+  consequences, both deliberate. A **refused** line means the foes do not act —
+  *"a refused line writes nothing"* is a ruling and a blow would be something —
+  and an engine-view instrument (`stats`, `vitals`, `harm 5`) is not a turn in
+  the fiction either. And on a MOVE, **the foes in the room you LEFT act before
+  you go**: you turned your back. The fight is over the moment you are somewhere
+  else, which is the captain's call C1 — *a fight is always escapable by leaving
+  the room* — with a price on it.
+- **`attack <name>` resolves against the FULL present-people set.** The captain's
+  sixth ruling: ***"anyone can be attacked"***. It reads the same closed set a
+  `talk` does, because a narrower list of who may be hit would be the app
+  deciding who is a legitimate target. Being attacked marks the victim
+  **provoked for this playthrough** (`playthrough_vitals.provoked_at`, written by
+  `Playthrough::Turn#provoke!` in the transaction that writes the first blow),
+  and a provoked person strikes back from the next turn. `characters.hostile` is
+  the WORLD's and never moves — another game of the same world meets the same
+  courteous Sub-Inspector.
+- **`attack` is an engine-view verb and NOT a classifier intent.** It is in
+  `Playthrough::Grammar::VERBS`, `ENGINE_VIEW` and `RESOLVING`, so a slashed
+  `/attack Rowe` resolves offline in the browser and `rake game:mechanics` reads
+  it with no model at all. `Playthrough::IntentSchema::INTENTS`,
+  `Playthrough::Drift::ACTIONS` and `Overreach::ACTIONS` are untouched: the
+  seventh intent is a measured, single-purpose slice of its own with the
+  classifier bench in its body. It is guarded by `#in_the_fiction?` exactly as
+  `check` is — with a model available it is the engine's own only when the name
+  after it is somebody standing here, so *"attack the problem"* still reaches the
+  classifier.
+- **`playthrough_blows` is the exchange and ONE `Scene` closes the fight.**
+  `Story#clock` is `MAX(scenes.story_timestamp)` and `Scene` requires a
+  description, so a Scene per round would put a paragraph of engine copy in the
+  column `Story::Audit` and `Eval::Richness` read as narration, once per round.
+  So the rounds are durable rows and `Playthrough::Fight#close!` writes one Scene
+  when the fight ends, `resolved_action: "attack"`, `story_timestamp` advanced by
+  `Scene::TURN_MINUTES["action"]` per round, with the ENGINE's own sentence in
+  `description` — no model call, in either mode.
+- **A fight ends for exactly three reasons**, and `Playthrough::Fight#over?` is
+  the one place they are written: no live foe is standing in the room it happened
+  in, the party is no longer standing in that room, or the player is dead. The
+  open fight is a RECORD and not a flag — the blows with no closing Scene — so
+  there is nothing to go stale and a process that died mid-fight leaves a
+  database that reads correctly.
+- **`Scene#engine_authored?` is what keeps the audit honest.**
+  `Story::Audit#scenes` and, through it, `Eval::Richness` skip those rows, and
+  `rake game:score` prints `Story::Scoreboard#excluded` so the exclusion cannot
+  hide behind a rate that improved. **No combat prose check ships**, and that is
+  measured rather than deferred: `data/ta-combat-scout` §11.2 ran a word list over
+  all 367 real passages in the four frozen corpora and matched 25 sentences, every
+  one of them metaphor. There is no corpus of narrated fights to build one on yet.
+- **Death of an NPC is this game's death.** `Playthrough#cast_in(location)` is the
+  playthrough-level reader that subtracts this game's dead, and the four readers
+  come through it (`Classifier#characters_here`, `Moment#others`,
+  `Turn#cast_of`, and the mechanics `present` line through the classifier);
+  `Character.present_in` stays the WORLD's answer, which `Character::Registry`,
+  `EngineSweep::Invariants#cast_unmoved`, `Playthrough::Vitals::Snapshot` and the
+  doctor all legitimately want. `Playthrough::Turn#spill!` puts a dead body's own
+  copies on the floor of the room it is standing in, in the same transaction as
+  the last hit point — the world's rows stay in its hands, which
+  `world_items_unmoved` proves after every walk. `#harm!` still ends the GAME only
+  for the protagonist.
+- **The player's body starts at level 3 with a d8 — 18 hit points** — in the three
+  seeded worlds (call C1). `Character::StatBlock::STARTING_LEVEL` stays 1 for
+  everybody the engine generates. The change reaches an existing database through
+  `bin/update`'s re-seed (`Update::SeedFiles`) and deliberately does NOT touch
+  `playthrough_vitals`: a game in progress keeps the hit points it had, now read
+  against a larger maximum, which is `Item::TemplateRefresh`'s shape one table
+  over.
+- **A SCRIPT MAY NOT ASSERT A DIE.** `Roll`'s seed is built out of ROW IDS
+  (`Roll.seed`), so what a blow COST is not reproducible between the captain's
+  database and a fresh one — and what a turn DID is. `EngineSweep::Expectation`'s
+  `blows:` (how many rows a line wrote) and `hp_of:` (a person's hit points, for
+  somebody nothing has hit) are the die-independent instruments, and
+  `a-check-against-an-ability.yml` drew that line first for the d20.
+  `a-fight-the-player-wins.yml` and `a-fight-that-kills-the-player.yml` walk both
+  outcomes; each is arranged so the ending is fixed whatever the dice say, and
+  each says in its header how.
+- **What is still NOT built**, and it is deferred rather than missing: thrown
+  items, hazards on a room or an edge, the browser battle panel, the seventh
+  classifier intent, weapons (`items.damage_die`), armour, initiative, healing
+  over time, death saves, revival, restore-from-save, and any level advancement
+  rule. `#advance!` is still called from nowhere.
 
 ### Sweeping the engine with stored scripts
 

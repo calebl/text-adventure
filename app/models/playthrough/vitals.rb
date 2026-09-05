@@ -103,6 +103,29 @@ class Playthrough::Vitals < ApplicationRecord
 
   def condition = Condition.for(character, self)
 
+  # WHETHER THIS GAME HAS PICKED A FIGHT WITH THIS BODY. The captain's sixth
+  # ruling of 2026-09-05: *"anyone can be attacked"*, and being attacked makes
+  # somebody a foe FOR THIS PLAYTHROUGH ONLY -- so the mark is here, on the row
+  # that is already this game's copy of a person, and not on
+  # `characters.hostile`, which is the world's and which no typed line may write
+  # (`EngineSweep::Invariants#hostility_unmoved`).
+  #
+  # A MOMENT AND NOT A BOOLEAN, for `playthroughs.ended_at`'s reason: when a
+  # fight started is worth as much as that it did, and it is STORY time rather
+  # than the wall clock (AGENTS.md -> *Story time*).
+  def provoked? = provoked_at.present?
+
+  # THE ONE WRITER OF THE MARK, and it is called from exactly one place --
+  # `Playthrough::Turn#provoke!`, inside the transaction that writes the first
+  # blow. Idempotent: the moment a fight started does not move because a second
+  # blow landed, which is `Playthrough#end!`'s rule one table over.
+  def provoke!(at)
+    return self if provoked?
+
+    update!(provoked_at: at)
+    self
+  end
+
   def max = character&.max_hp
 
   def dead? = hp_current.to_i <= 0

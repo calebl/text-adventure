@@ -52,6 +52,15 @@ class Playthrough::Classifier
     def drop? = action == :drop
     def examine? = action == :examine
 
+    # THE ONE ACTION NO MODEL EVER ANSWERS WITH, and that is the whole of what
+    # makes it safe here. `attack` is NOT in `Playthrough::IntentSchema::INTENTS`
+    # -- the closed enum on the commonest model call in the app -- so this is
+    # only ever true of an `Intent` the FIXED GRAMMAR built, behind a slash or
+    # in `rake game:mechanics`. Adding the seventh intent is its own measured
+    # slice with the classifier bench in its body; until then the record grows
+    # (`Scene::ACTIONS`) and the prompt does not.
+    def attack? = action == :attack
+
     # The record the loop acts on, whichever kind it turned out to be. There is
     # at most one, by construction.
     def subject = destination || speaker || item
@@ -169,11 +178,17 @@ class Playthrough::Classifier
   # read back. It used to be reconstructed from the last scene in this room
   # that had recorded a cast, which meant a room nobody had walked into had
   # nobody in it to talk to. See `Character`'s header.
+  #
+  # AND IT IS THIS GAME'S ANSWER, through `Playthrough#cast_in`: the world says
+  # who is standing here and this playthrough says which of them can still
+  # answer. Before that reader existed, `talk to Rowe` on a body this game had
+  # killed resolved, reached `InteractionAgent`, and the corpse replied -- the
+  # exact gap `Item.lying_in` had before the item layers split.
   def characters_here
     location = playthrough.current_location
     return [] if location.nil?
 
-    Scene::Generator.characters_present(location) - [ playthrough.story.protagonist ].compact
+    playthrough.cast_in(location) - [ playthrough.story.protagonist ].compact
   end
 
   # WHAT THE PLAYER CAN PICK UP: the items the records say are lying in this
@@ -228,6 +243,13 @@ class Playthrough::Classifier
     # BOTH ITEM SETS, in the order `#build_intent` resolves an examine against.
     # Looking at a thing does not move it, so neither set is the wrong one.
     when :examine then items_here + items_carried
+    # ANYBODY STANDING HERE, AND NOT ONLY THE HOSTILE ONES. The captain's sixth
+    # ruling of 2026-09-05: *"anyone can be attacked"* -- so an attack reads the
+    # same closed set a `talk` does, and swinging at the landlord is a thing the
+    # engine lets you do and then remembers (`Playthrough::Vitals#provoked?`).
+    # A separate, narrower set of "people you may hit" would be the app deciding
+    # who is a legitimate target, which is a different game.
+    when :attack then characters_here
     else []
     end
   end

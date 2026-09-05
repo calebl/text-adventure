@@ -803,7 +803,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
 
     assert_equal [ @rowe ], report.state.present
     assert_equal [], report.state.foes
-    assert_includes report.to_s, "nobody hostile"
+    assert_includes report.to_s, "nobody is fighting you"
   end
 
   test "the read-out names a foe standing here, beside the cast it is part of" do
@@ -813,7 +813,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
 
     assert_equal [ @rowe, marek ], report.state.present
     assert_equal [ marek ], report.state.foes
-    assert_match(/hostile\s+Marek Sollen/, report.to_s)
+    assert_match(/foes\s+Marek Sollen/, report.to_s)
     assert_match(/present\s+Halkett Rowe, Marek Sollen/, report.to_s)
   end
 
@@ -1215,5 +1215,122 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
 
     assert_predicate report, :refused?
     assert_match(/not one of the three abilities/, report.refusal)
+  end
+
+
+  # A BODY BIG ENOUGH THAT ONE d8 CANNOT END IT, AND THE CONDITION ROWS REBUILT
+  # WITH IT. `Playthrough::Vitals` is written at first contact against the
+  # maximum the body had THEN, so raising a level under a game already in
+  # progress leaves a row below the new ceiling -- a real thing a re-seed does
+  # (`hp_above_maximum` is the doctor's finding for the other direction) and the
+  # wrong starting state for a test about a fight. Dropping the rows lets the
+  # snapshot write them again at the new maximum.
+  #
+  # It is here because the dice are seeded off ROW IDS (`Roll.seed`), so a test
+  # that is not about dying must not be able to end in a death.
+  def tough!(*people)
+    people.each { |person| person.update!(level: 3) }
+    @playthrough.vitals.destroy_all
+    Playthrough::Snapshot.new(@playthrough).of_the_room!(@playthrough.current_location)
+  end
+
+  # --- a fight, with the prose taken out --------------------------------------
+  #
+  # The whole of a fight is reachable from this mode with no key at all, which
+  # is what makes `rake game:sweep` able to walk one. Every number below is a
+  # SHAPE rather than a value: `Roll`'s seed is built out of row ids, so a
+  # fixture that pinned a die would be pinning the test database.
+
+  # BOTH BODIES AT LEVEL 3, WHICH IS 18 HIT POINTS. The player's is the captain's
+  # call C1; Rowe's is here so that one d8 cannot end a fight these tests are
+  # not about ending -- the dice are seeded off ROW IDS (`Roll.seed`), so a
+  # fixture must never depend on which face came up.
+  test "a blow is a change this mode makes, through the engine's own writer" do
+    tough!(@vance, @rowe)
+    report = play("/attack Halkett Rowe")
+
+    assert_equal "attack -> Halkett Rowe", report.understood
+    assert_predicate report, :changed?
+    assert_match(/struck: Odile Vance hit Halkett Rowe for \d+ \(round 1\)/, report.change)
+    assert_equal 1, @playthrough.blows.where(attacker: @vance).count
+  end
+
+  # A ROUND IS THE TURN -- the captain's call C5. The player swings, then every
+  # live foe answers, in the same report.
+  test "a provoked person answers in the same turn and on every turn after it" do
+    tough!(@vance, @rowe)
+    struck = play("/attack Halkett Rowe")
+
+    assert_match(/answered: Halkett Rowe hit Odile Vance for/, struck.note.join("\n"))
+    assert_equal [ @rowe ], @playthrough.foes_in(@office)
+
+    # A turn spent doing something else, and he swings anyway.
+    looked = play("/read the ward stamp")
+
+    assert_match(/answered: Halkett Rowe hit Odile Vance for/, looked.note.join("\n"))
+    assert_not_predicate @rowe.reload, :hostile?, "the world never learned about it"
+  end
+
+  # *"A refused line writes nothing"* -- the captain's ruling of 2026-09-04 --
+  # and a blow would be something.
+  test "a refused line buys a foe no round" do
+    tough!(@vance, @rowe)
+    play("/attack Halkett Rowe")
+
+    assert_difference "Playthrough::Blow.count", 0 do
+      report = play("/take the mayor's chain")
+      assert_predicate report, :refused?
+    end
+  end
+
+  # An engine instrument is not a turn in the fiction.
+  test "a read-out buys a foe no round either" do
+    tough!(@vance, @rowe)
+    play("/attack Halkett Rowe")
+
+    assert_difference "Playthrough::Blow.count", 0 do
+      play("vitals")
+    end
+  end
+
+  test "the read-out tells a provoked foe apart from a hostile one" do
+    tough!(@vance, @rowe)
+    play("/attack Halkett Rowe")
+
+    assert_match(/foes\s+Halkett Rowe/, play("look").to_s)
+    assert_match(/provoked\s+Halkett Rowe/, play("look").to_s)
+  end
+
+  test "the read-out says how much is left of everybody standing here" do
+    tough!(@vance, @rowe)
+    play("/attack Halkett Rowe")
+
+    assert_match(/others\s+Halkett Rowe (hurt|badly hurt|dead)/, play("look").to_s)
+  end
+
+  # ONE `Scene` WHEN THE FIGHT ENDS, and its description is the engine's own
+  # sentence -- so this mode closes a fight exactly as the browser does and
+  # makes no call doing it.
+  test "leaving the room ends the fight and writes one scene" do
+    tough!(@vance, @rowe)
+    play("/attack Halkett Rowe")
+
+    assert_difference "Scene.count", 1 do
+      report = play("/go to the Supply Closet")
+      assert_match(/the fight is over: The fight in Ward Office 12 is over after/, report.note.join("\n"))
+    end
+
+    assert_predicate @playthrough.reload.current_scene, :engine_authored?
+    assert_empty @playthrough.blows.open
+  end
+
+  test "a body this game killed cannot be attacked again" do
+    @vance.update!(level: 3)
+    Playthrough::Turn.new(@playthrough).harm!(@rowe, @rowe.max_hp)
+
+    report = play("/attack Halkett Rowe")
+
+    assert_predicate report, :refused?
+    assert_match(/there is no person here called/, report.refusal)
   end
 end

@@ -85,10 +85,12 @@ class EngineSweep::Walk
 
   def walk(mechanics, step)
     before = Playthrough::Drift.count
+    struck = Playthrough::Blow.count
     report = mechanics.run(step.typed)
     drifts = Playthrough::Drift.count - before
+    blows = Playthrough::Blow.count - struck
 
-    failures(step, report, drifts: drifts)
+    failures(step, report, drifts: drifts, blows: blows)
   end
 
   # THE RECORDS AFTER A RE-SEED, WITH NOTHING ELSE HAVING HAPPENED.
@@ -100,8 +102,8 @@ class EngineSweep::Walk
     failures(step, mechanics.read(note: note), drifts: 0)
   end
 
-  def failures(step, report, drifts:)
-    step.expectation.check(report, drifts: drifts).map do |unmet|
+  def failures(step, report, drifts:, blows: 0)
+    step.expectation.check(report, drifts: drifts, blows: blows).map do |unmet|
       EngineSweep::Result::Failure.new(script: script, step: step, unmet: unmet, state: report.state.to_s)
     end
   end

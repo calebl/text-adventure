@@ -228,6 +228,92 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
     assert_equal @office, apron.reload.location
   end
 
+
+  # A BODY BIG ENOUGH THAT ONE d8 CANNOT END IT, AND THE CONDITION ROWS REBUILT
+  # WITH IT. `Playthrough::Vitals` is written at first contact against the
+  # maximum the body had THEN, so raising a level under a game already in
+  # progress leaves a row below the new ceiling -- a real thing a re-seed does
+  # (`hp_above_maximum` is the doctor's finding for the other direction) and the
+  # wrong starting state for a test about a fight. Dropping the rows lets the
+  # snapshot write them again at the new maximum.
+  #
+  # It is here because the dice are seeded off ROW IDS (`Roll.seed`), so a test
+  # that is not about dying must not be able to end in a death.
+  def tough!(*people)
+    people.each { |person| person.update!(level: 3) }
+    @playthrough.vitals.destroy_all
+    Playthrough::Snapshot.new(@playthrough).of_the_room!(@playthrough.current_location)
+  end
+
+  # --- a fight in the browser -------------------------------------------------
+  #
+  # `attack` is in the fixed grammar and NOT in `Playthrough::IntentSchema::INTENTS`
+  # (that is a later, measured slice), so a slashed attack resolves offline for
+  # no call at all and an unslashed one reaches the classifier like any other
+  # line.
+
+  test "a slashed attack resolves offline, strikes, and calls nothing" do
+    tough!(@vance, @rowe)
+
+    scene, agent = play("/attack Halkett Rowe")
+
+    assert_empty agent.prompts, "a fight is arithmetic over records"
+    assert_nil scene, "an attack writes no Scene of its own -- one closes the fight when it ends"
+    assert_equal 1, @playthrough.blows.where(attacker: @vance).count
+    assert_equal 1, @playthrough.blows.where(attacker: @rowe).count, "and the foe answered in the same turn"
+  end
+
+  # A ROUND IS THE TURN -- the captain's call C5 -- so the world answers a line
+  # the player spent doing something else.
+  test "a foe answers a turn the player spent reading" do
+    tough!(@vance, @rowe)
+    @stamp.update!(readable: true, inscription: "WARD 12")
+    play("/attack Halkett Rowe")
+
+    assert_difference "Playthrough::Blow.where(attacker: @rowe).count", 1 do
+      play("/read the ward stamp", "You read it.")
+    end
+  end
+
+  # *"A refused line writes nothing"* -- the captain's ruling of 2026-09-04 --
+  # and a blow would be something.
+  test "a refused line buys the foe no round" do
+    tough!(@vance, @rowe)
+    play("/attack Halkett Rowe")
+
+    assert_difference "Playthrough::Blow.count", 0 do
+      # The grammar cannot place the name, so the line falls through to the
+      # classifier -- which resolves it to nothing, and a `take` that resolved
+      # to nothing is refused.
+      outcome, = play("/take the mayor's chain", CLASSIFY.call("take", "nothing"))
+      assert_instance_of Playthrough::Refusal, outcome
+    end
+  end
+
+  # ONE `Scene` WHEN THE FIGHT ENDS, and it is what `#play` hands back on the
+  # turn it ended -- the browser's per-round view is the battle panel, a later
+  # slice.
+  test "leaving the room ends the fight and the turn answers with the closing scene" do
+    tough!(@vance, @rowe)
+    play("/attack Halkett Rowe")
+
+    scene, = play("/go to The Supply Closet",
+                  { "description" => "You push in among the shelves.", "summary" => "Arrived." })
+
+    assert_equal "attack", @playthrough.reload.current_scene.resolved_action
+    assert_predicate @playthrough.current_scene, :engine_authored?
+    assert_empty @playthrough.blows.open
+    assert_equal @office, @playthrough.current_scene.location, "the fight happened in the room she left"
+    assert_not_nil scene
+  end
+
+  test "an unslashed attack goes to the classifier like any other line" do
+    _, agent = play("attack Halkett Rowe", CLASSIFY.call("other", "nothing"), "You raise your hand and stop.")
+
+    assert_equal 2, agent.prompts.count
+    assert_equal 0, @playthrough.blows.count
+  end
+
   test "a dead playthrough is refused in front of both readers" do
     @vance.update!(level: 1, hit_die: 6, strength: 10, dexterity: 10, will: 10)
     @playthrough.update!(ended_at: @story.clock)

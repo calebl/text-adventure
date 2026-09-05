@@ -302,8 +302,29 @@ class Story::Audit
   end
 
   # Oldest first, so a report reads in the order the story was played.
+  #
+  # WITHOUT THE TURNS THE ENGINE WROTE ITSELF. `Scene#engine_authored?` is true
+  # of a row whose `resolved_action` is one the classifier's closed enum does
+  # not contain -- today that is the one `Scene` that closes a fight
+  # (`Playthrough::Fight`), whose description is the engine's own sentence about
+  # its own dice and not prose anybody wrote. Every check here reads
+  # `description` as NARRATION, so auditing engine copy would count the app's
+  # own words against the app.
+  #
+  # IT IS A SMALLER DENOMINATOR AND NEVER A LOWER RATE: `#judgeable_for` counts
+  # off this list, and `#excluded` is what `rake game:score` prints so the
+  # exclusion cannot hide behind a number that improved.
   def scenes
-    @scenes ||= (@scene_scope || story.scenes)
+    @scenes ||= all_scenes.reject(&:engine_authored?)
+  end
+
+  # HOW MANY TURNS THIS AUDIT LEFT OUT because the engine wrote them. Printed by
+  # `Story::Scoreboard`; zero for every story that has never been in a fight,
+  # which is every story in every frozen corpus.
+  def excluded = all_scenes.count(&:engine_authored?)
+
+  def all_scenes
+    @all_scenes ||= (@scene_scope || story.scenes)
                      .includes(:location, :characters, :interactions, previous_scene: :location)
                      .order(:story_timestamp, :id)
                      .to_a

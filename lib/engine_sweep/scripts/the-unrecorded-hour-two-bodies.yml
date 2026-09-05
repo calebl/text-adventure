@@ -17,8 +17,9 @@
 # so the first player dying must leave the second one playing. The last four
 # steps are that.
 #
-# The numbers: the file gives Odile Vance `level: 1, hit_die: 6`, so
-# `Character#max_hp` is 6 for both games.
+# The numbers: the file gives Odile Vance `level: 3, hit_die: 8` (the captain's
+# call C1 -- the player's body starts at level 3), so `Character#max_hp` is
+# `8 + 2 * 5` = 18 for both games.
 story: The Unrecorded Hour
 why: a body's condition and a game's ending belong to the playthrough, not to the world's character row
 steps:
@@ -26,7 +27,7 @@ steps:
   type: look
   expect:
     location: Ward Office 12 (realized)
-    hp: 6
+    hp: 18
     dead: false
 
 - id: second-starts-unhurt-too
@@ -35,23 +36,23 @@ steps:
   why: a second game of one world starts from the world, not from the first game's state
   expect:
     location: Ward Office 12 (realized)
-    hp: 6
+    hp: 18
     dead: false
 
 - id: first-is-hurt
-  type: harm 4
+  type: harm 14
   expect:
-    change: Odile Vance unhurt -> badly hurt (2 of 6)
-    hp: 2
+    change: Odile Vance unhurt -> badly hurt (4 of 18)
+    hp: 4
     dead: false
     changed: true
 
 - id: second-is-not
   type: vitals
   player: second
-  why: THE DEFECT THIS SCRIPT EXISTS FOR. With hp on the character row this read 2
+  why: THE DEFECT THIS SCRIPT EXISTS FOR. With hp on the character row this read 4
   expect:
-    hp: 6
+    hp: 18
     dead: false
     changed: false
     refused: false
@@ -61,8 +62,8 @@ steps:
   player: second
   why: two games can each hurt Odile Vance, because there are two conditions to hurt
   expect:
-    change: Odile Vance unhurt -> hurt (5 of 6)
-    hp: 5
+    change: Odile Vance unhurt -> hurt (17 of 18)
+    hp: 17
     dead: false
     changed: true
 
@@ -70,14 +71,14 @@ steps:
   type: vitals
   why: the second player's wound did not reach into the first player's game
   expect:
-    hp: 2
+    hp: 4
     dead: false
     changed: false
 
 - id: first-dies
-  type: harm 2
+  type: harm 4
   expect:
-    change: Odile Vance badly hurt (2 of 6) -> dead
+    change: Odile Vance badly hurt (4 of 18) -> dead
     hp: 0
     dead: true
     changed: true
@@ -95,7 +96,7 @@ steps:
   why: ended_at is a column on the PLAYTHROUGH, so one game ending is one game ending
   expect:
     location: Ward Office 12 (realized)
-    hp: 5
+    hp: 17
     dead: false
     refused: false
     changed: false
@@ -106,7 +107,7 @@ steps:
   why: not merely unrefused -- the second game plays on through the branch that moves the player
   expect:
     location: The Supply Closet (realized)
-    hp: 5
+    hp: 17
     dead: false
     changed: true
 
@@ -115,7 +116,7 @@ steps:
   player: second
   why: the writers are reachable in the game that is still running, and only in it
   expect:
-    change: Odile Vance hurt (5 of 6) -> unhurt
-    hp: 6
+    change: Odile Vance hurt (17 of 18) -> unhurt
+    hp: 18
     dead: false
     changed: true

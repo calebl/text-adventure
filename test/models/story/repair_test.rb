@@ -588,4 +588,65 @@ class Story::RepairTest < ActiveSupport::TestCase
 
     assert_not_includes Story::Repair.new(story).plan.map(&:code), :copy_lags_its_template
   end
+
+  # --- what a fight can leave behind -----------------------------------------
+
+  # THE REPAIR IS `Playthrough::Turn#spill!` ITSELF -- the same statement
+  # `#harm!` makes in the transaction that takes the last hit point -- so it
+  # writes nothing the engine would not have written, and every value it uses is
+  # already on record.
+  test "a dead body holding things is emptied onto the floor of the room it is in" do
+    story = create(:story)
+    room = create(:location, story: story)
+    rowe = create(:character, story: story, location: room, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: create(:character, :protagonist, story: story),
+                                current_location: room)
+    Playthrough::Vitals.instantiate!(game, rowe).update!(hp_current: 0)
+    template = create(:item, character: rowe, name: "bell-rope tally")
+    copy = create(:item, playthrough: game, character: rowe, name: "bell-rope tally", template: template)
+
+    results = Story::Repair.new(story).apply!
+
+    assert_includes results.map(&:code), :dead_body_holding_things
+    assert_equal room, copy.reload.location
+    assert_nil copy.character
+    assert_equal rowe, template.reload.character, "the world's own row never moved"
+    assert_empty Story::Doctor.new(story).findings.select { |f| f.code == :dead_body_holding_things }
+  end
+
+  # THE ANSWER IS ON RECORD: zero hit points ends a playthrough (the captain's
+  # ruling of 2026-09-04), and `Playthrough#end!` dates it at that game's own
+  # story clock.
+  test "a player at zero in a game that is not over ends the game" do
+    story = create(:story)
+    room = create(:location, story: story)
+    vance = create(:character, :protagonist, story: story, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: vance, current_location: room)
+    Playthrough::Vitals.instantiate!(game, vance).update!(hp_current: 0)
+
+    results = Story::Repair.new(story).apply!
+
+    assert_includes results.map(&:code), :playthrough_dead_but_not_ended
+    assert_predicate game.reload, :over?
+    assert_equal game.story_now, game.ended_at
+  end
+
+  # NO REPAIR, AND IT IS STATED: deleting the row would erase a fight the
+  # records say happened, and clearing the mark alone would tell a live foe to
+  # stop fighting.
+  test "a fight with somebody never met is left for a person to look at" do
+    story = create(:story)
+    room = create(:location, story: story)
+    elsewhere = create(:location, story: story)
+    stranger = create(:character, story: story, location: elsewhere, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: create(:character, :protagonist, story: story),
+                                current_location: room)
+    Playthrough::Vitals.create!(playthrough: game, character: stranger, hp_current: 8,
+                               provoked_at: game.story_now)
+
+    repair = Story::Repair.new(story)
+
+    assert_includes repair.manual.map(&:code), :provoked_without_a_meeting
+    assert_not_includes repair.plan.map(&:code), :provoked_without_a_meeting
+  end
 end

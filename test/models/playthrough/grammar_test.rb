@@ -216,15 +216,72 @@ class Playthrough::GrammarTest < ActiveSupport::TestCase
     assert_equal "engine_view", grammar.parse("help").resolved_by
   end
 
+  # --- attack ---------------------------------------------------------------
+
+  # THE CAPTAIN'S SIXTH RULING OF 2026-09-05: *"anyone can be attacked"*. The
+  # verb resolves against the FULL present-people set -- the same one `talk`
+  # reads -- because a narrower list of who may be hit would be the app deciding
+  # who is a legitimate target.
+  test "a slashed attack resolves anybody standing here, hostile or not" do
+    reading = read("/attack Halkett Rowe")
+
+    assert_predicate reading, :resolved?
+    assert_equal :attack, reading.intent.action
+    assert_equal @rowe, reading.intent.speaker
+    assert_predicate reading.intent, :attack?
+    assert_not_predicate @rowe, :hostile?
+  end
+
+  test "it matches a nickname and a fragment like every other name in this grammar" do
+    assert_equal @rowe, read("/attack Rowe").intent.speaker
+    assert_equal @rowe, read("/hit halkett").intent.speaker
+    assert_equal @rowe, read("/strike Rowe").intent.speaker
+  end
+
+  test "a name nobody here answers to is refused with the cast that is here" do
+    reading = read("/attack the bell")
+
+    assert_not_predicate reading, :resolved?
+    assert_includes reading.refusal, "Halkett Rowe"
+  end
+
+  test "attacking nobody in particular names who is here" do
+    assert_includes read("/attack").refusal, "attack whom?"
+  end
+
+  # `engine_view` ON `scenes.resolved_by` MEANS NO SCENE COMES OF IT
+  # (`Scene::TURN_READERS`), and a fight ends in one -- so a resolved attack is
+  # the GRAMMAR's answer even though `attack` is in `ENGINE_VIEW`.
+  test "a resolved attack is read by the grammar and not by the engine view" do
+    assert_equal "grammar", read("/attack Halkett Rowe").resolved_by
+    assert_equal "engine_view", EngineSweep.without_a_model { grammar.parse("stats") }.resolved_by
+  end
+
+  # THE SAME GUARD `check` HAS, for the same reason: *"attack the problem"* is
+  # ordinary English, and swallowing it here would cost the mode a verb.
+  test "with a model available, attack is the engine's own only when the name is somebody here" do
+    EngineSweep.without_a_model do
+      assert_not_nil grammar.engine_view_reading("attack Halkett Rowe", model: true)
+      assert_nil grammar.engine_view_reading("attack the problem", model: true)
+      # With no model there is nothing to hand it to, so the grammar answers and
+      # refuses.
+      assert_not_nil grammar.engine_view_reading("attack the problem", model: false)
+    end
+  end
+
+  test "an unslashed attack is not claimed at all, whatever it begins with" do
+    assert_nil read("attack Halkett Rowe")
+  end
+
   test "the closed list of readers is the one every consumer reads" do
     assert_equal %w[grammar model engine_view], Playthrough::Grammar::PATHS
     assert_equal %w[grammar model], Scene::TURN_READERS
   end
 
-  # The menu offers five words, and every one of them is a word the grammar
+  # The menu offers six words, and every one of them is a word the grammar
   # reads -- so the box cannot complete to something the engine will not answer.
-  test "the five offered verbs are all in the grammar's own table" do
-    assert_equal %w[go talk take drop read], Playthrough::Grammar::RESOLVING.keys
+  test "the six offered verbs are all in the grammar's own table" do
+    assert_equal %w[go talk take drop read attack], Playthrough::Grammar::RESOLVING.keys
 
     Playthrough::Grammar::RESOLVING.each do |word, action|
       assert_includes Playthrough::Grammar::VERBS.keys, word

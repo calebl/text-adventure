@@ -45,6 +45,13 @@ class Playthrough < ApplicationRecord
   # the read-out and the sweep cannot come to disagree about a number.
   has_many :vitals, class_name: "Playthrough::Vitals", dependent: :destroy,
                     inverse_of: :playthrough
+  # EVERY BLOW STRUCK IN THIS GAME, one row per round per attacker. Destroyed
+  # with the playthrough on the same reasoning as the vitals: who swung at whom
+  # is this player's progress, and `characters.hostile` -- the world's answer --
+  # is untouched by it. Read through `Playthrough::Fight`, which is the one
+  # thing that asks whether a fight is still on.
+  has_many :blows, class_name: "Playthrough::Blow", dependent: :destroy,
+                   inverse_of: :playthrough
 
   # THE WORLD, COPIED INTO THIS GAME AS IT BEGINS: the story's starting
   # inventory into the party's own hands, and the room the player opens in.
@@ -112,8 +119,44 @@ class Playthrough < ApplicationRecord
     Item.of_playthrough(self).for_character(character).order(:id)
   end
 
+  # WHO THIS PARTY CAN SPEAK TO, TAKE A SWING AT, OR BE TOLD ABOUT, HERE, IN
+  # THIS GAME -- and the ONE reader of it. The world says who is standing in the
+  # room; this game says which of them can still answer.
+  #
+  # THE EXACT COUNTERPART OF `#items_lying_in`, and it is here for that method's
+  # reason: `Character.present_in` is the WORLD's answer, and since a
+  # playthrough can take somebody's last hit point the world's answer is no
+  # longer this game's. Before this, `talk to Rowe` on a corpse resolved,
+  # reached `InteractionAgent`, and the corpse answered -- which is the gap
+  # `Item.lying_in` had before the item layers split, one table over.
+  #
+  # THE FOUR READERS COME THROUGH HERE: `Playthrough::Classifier#characters_here`
+  # (so the closed set the model is offered holds nobody this game has killed),
+  # `Playthrough::Moment#others` (so the prose is never told about somebody the
+  # player then cannot speak to), `Playthrough::Turn#cast_of` (so a turn records
+  # who was standing there in THIS game) and `Playthrough::Mechanics`'s `present`
+  # line, through the classifier. `Character.present_in` stays exactly as it is
+  # -- it is still the world's answer, and `Character::Registry`,
+  # `EngineSweep::Invariants#cast_unmoved`, `Playthrough::Vitals::Snapshot` and
+  # `rake game:doctor` all legitimately want it.
+  #
+  # A DEAD BODY IS STILL IN THE ROOM, in the world and on the record: nothing is
+  # moved and `characters.location_id` is untouched. What changes is what the
+  # closed sets OFFER this game.
+  def cast_in(location)
+    return [] if location.nil?
+
+    Scene::Generator.characters_present(location).reject { |who| vitals_for(who)&.dead? }
+  end
+
   # WHO IS FIGHTING THIS PARTY, HERE, IN THIS GAME -- and the ONE reader of it.
-  # The world says who is hostile; this game says who is still standing.
+  #
+  # TWO WAYS TO BE A FOE, AND THE SECOND IS THIS GAME'S OWN. The world says who
+  # is hostile (`characters.hostile`, written by a seed file and by no model
+  # ever); this game says who it has PROVOKED -- the captain's sixth ruling of
+  # 2026-09-05, *"anyone can be attacked"*. Swing at the landlord and the
+  # landlord fights back, in this playthrough and in no other, which is the
+  # layer split doing exactly the work it was built for.
   #
   # It is the shape `#items_lying_in` has, one table over, and it is here for
   # that method's reason: `Character.hostile` is the WORLD's answer, and since a
@@ -121,22 +164,43 @@ class Playthrough < ApplicationRecord
   # longer this game's. A caller reading the scope alone would offer a corpse a
   # fight.
   #
-  # `id`-ORDERED, because `Character.present_in` is -- *"so two people in one
-  # room are offered in a stable order"* -- and a fight has to be able to say
-  # who acts when without inventing a second ordering.
+  # `id`-ORDERED, because `#cast_in` is -- *"so two people in one room are
+  # offered in a stable order"* -- and a fight has to be able to say who acts
+  # when without inventing a second ordering (the captain's call C5: a round is
+  # a turn, and the foes act in `id` order).
   #
-  # WHAT IT DOES NOT READ, and this is deliberate: any per-playthrough mark
-  # about hostility. There is none. Whether a foe has noticed you, whether you
-  # talked it down, whether it is still angry after you fled -- all three are
-  # things nobody has asked for, and when one is asked for it goes on the
-  # `playthrough_vitals` row that already exists rather than in a new table.
+  # THE PARTY IS NEVER IN IT, and it is excluded here rather than left to the
+  # records to exclude. `#cast_in` reads `Scene::Generator.characters_present`,
+  # which ADDS the protagonist and any companion to the room's own cast --
+  # because the party is wherever the playthrough is and carries no whereabouts
+  # at all -- and being struck marks a body provoked whoever struck it. Without
+  # this line, one blow from a hound would put the player on the list of people
+  # the hounds have to fight.
   #
   # An Array rather than a relation, because `#vitals_for` is a per-row question
   # and there is no SQL for it -- the same honest cost `#vitals_for` itself has.
   def foes_in(location)
-    return [] if location.nil?
+    cast = cast_in(location)
+    return [] if cast.empty?
 
-    Character.present_in(location).hostile.reject { |who| vitals_for(who)&.dead? }
+    cast = cast.reject { |who| who.is_protagonist? || who.is_companion? }
+    return [] if cast.empty?
+
+    marks = vitals.where(character: cast).index_by(&:character_id)
+
+    cast.select { |who| who.hostile? || marks[who.id]&.provoked? }
+  end
+
+  # WHETHER THIS GAME HAS PICKED A FIGHT WITH SOMEBODY, asked of one person.
+  # `#foes_in` reads the same mark in one query for a whole room; this is for a
+  # caller that has one name and wants one answer (`rake game:doctor`, the
+  # mechanics read-out). Absent row means never provoked, which is the ordinary
+  # state of everybody in every world -- the rule `Playthrough::Vitals` is
+  # written under.
+  def provoked?(character)
+    return false if character.nil?
+
+    vitals.find_by(character: character)&.provoked? || false
   end
 
   # HOW MUCH IS LEFT OF SOMEBODY, IN THIS GAME, AND THE ONE READER OF IT.

@@ -55,6 +55,66 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **A fight resolves and can kill** (`ta-combat-fight`, slice 4 of the combat
+  build order). The captain's word, 2026-09-05: *"continue through all of the
+  combat slices."* **This is the slice the whole direction asked for**: he can
+  walk a whole fight with `NO_MODEL=1 rake game:mechanics`, win one, die in one,
+  and CI regression-tests both.
+
+  **The rule, in one paragraph.** A blow always connects and deals one die of the
+  attacker's `hit_die` — no to-hit, no armour, no critical, no initiative and no
+  ability term (call C2, measured: with death terminal, a to-hit roll makes the
+  *underdog* more likely to win). **A round IS the turn** (call C5): the player
+  acts by typing, then every live foe in the room acts in `id` order
+  (`Playthrough::Riposte`, step 7 of `Playthrough::Turn#play` and of
+  `Playthrough::Mechanics#run`). It runs on every line the engine PLAYED and on
+  no line it refused. On a move, the foes in the room you LEFT act before you go,
+  and then the fight is over — call C1, *a fight is always escapable by leaving
+  the room*, with a price on it.
+
+  **`attack <name>` reads the FULL present-people set** — the captain's sixth
+  ruling, ***"anyone can be attacked"***. It is an engine-view verb in the fixed
+  grammar, so it makes no model call in either mode and a slashed `/attack Rowe`
+  resolves offline in the browser too; `Playthrough::IntentSchema::INTENTS`,
+  `Drift::ACTIONS` and `Overreach::ACTIONS` are untouched, because the seventh
+  intent is a measured slice of its own (slice 8). Being attacked marks the
+  victim **provoked for this playthrough** (`playthrough_vitals.provoked_at`),
+  and a provoked person strikes back from the next turn. `characters.hostile` is
+  the world's and never moves.
+
+  **`playthrough_blows` is the exchange and ONE `Scene` closes the fight.** A
+  Scene per round would put engine copy in the column `Story::Audit` and
+  `Eval::Richness` read as narration once per round; none at all would stop
+  `Story#clock` through a fight. `Playthrough::Fight` writes the closing Scene —
+  `resolved_action: "attack"`, `Scene::TURN_MINUTES["action"]` per round, the
+  ENGINE's own sentence in `description`, no model call — and `#over?` is the one
+  place the fight-end rule lives: no live foe present, the party left the room,
+  or the player is dead. `Scene#engine_authored?` keeps the audit honest and
+  `rake game:score` prints the count it excluded.
+
+  **Death of an NPC is this game's death.** `Playthrough#cast_in` subtracts this
+  game's dead and the four readers come through it, so a corpse cannot be talked
+  to or hit twice; `Character.present_in` stays the world's answer.
+  `Playthrough::Turn#spill!` puts a dead body's own copies on the floor in the
+  same transaction as the last hit point — loot — and the world's rows never
+  move. Three doctor findings: `dead_body_holding_things` and
+  `playthrough_dead_but_not_ended` (both safe, both repaired) and
+  `provoked_without_a_meeting` (manual, stated: deleting the row would erase a
+  fight).
+
+  **The instruments**: `blows:` and `hp_of:` sweep expectations, a `foes` and a
+  `provoked` line in the mechanics read-out, and two sweep scripts —
+  `a-fight-the-player-wins.yml` and `a-fight-that-kills-the-player.yml`. **A
+  script may not assert a die**: `Roll`'s seed is built out of row ids, so what a
+  blow COST is not reproducible between two databases and what a turn DID is.
+  Each script is arranged so its ending is fixed whatever the dice say, verified
+  over 16 different row-id offsets.
+
+  **The player's body starts at level 3 with a d8 — 18 hit points** — in the
+  three seeded worlds (call C1); `STARTING_LEVEL` stays 1 for generated people.
+  It reaches an existing database through `bin/update`'s re-seed and deliberately
+  does not touch `playthrough_vitals`.
+
 - **A monster can exist in a room and be seen** (`ta-combat-monsters`, slice 2 of
   the combat build order). The captain's ruling of 2026-09-04, verbatim:
 
@@ -331,9 +391,12 @@ The full audit of every planned piece of work against this constraint is in
   `check strength -> d20(7) <= 12 PASS`) and
   `lib/engine_sweep/scripts/a-check-against-an-ability.yml` sweeps it offline.
 
-  **Not built, and deferred rather than missing**: combat, monsters, hostility,
-  throwing, terrain damage, a battle view, any prose check reading an ability,
-  any classifier or prompt change, and any ability beyond the three.
+  **Not built in THAT slice, and deferred rather than missing**: combat,
+  monsters, hostility, throwing, terrain damage, a battle view, any prose check
+  reading an ability, any classifier or prompt change, and any ability beyond
+  the three. Monsters landed in `ta-combat-monsters` and the fight in
+  `ta-combat-fight`; nothing connects a wound to a check even now — a hurt body
+  rolls against the same number.
 
 - **Hit points, death, and inert levels** (`ta-character-stats`). The captain's
   rulings of 2026-09-04, verbatim:

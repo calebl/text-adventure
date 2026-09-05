@@ -23,11 +23,12 @@
 #
 # THE STAT BLOCK IS THE WORLD'S AND THE CONDITION IS THIS GAME'S, which is what
 # `EngineSweep::Invariants#stat_blocks_unmoved` checks after the walk: Odile
-# Vance is still level 1 with a d6 in the world file, however dead she is in
+# Vance is still level 3 with a d8 in the world file, however dead she is in
 # this playthrough. The whole ruling in one invariant.
 #
-# The numbers: `the-unrecorded-hour.yml` gives Odile Vance `level: 1,
-# hit_die: 6`, so `Character#max_hp` is `6 + 0 * 4` = 6.
+# The numbers: `the-unrecorded-hour.yml` gives Odile Vance `level: 3,
+# hit_die: 8` -- the captain's call C1, the player's body starts at level 3 --
+# so `Character#max_hp` is `8 + 2 * 5` = 18.
 story: The Unrecorded Hour
 why: zero hit points ends a playthrough, and every line typed after it is refused
 steps:
@@ -36,7 +37,7 @@ steps:
   why: an absent vitals row means unhurt, so the read-out has a condition before anything wrote one
   expect:
     location: Ward Office 12 (realized)
-    hp: 6
+    hp: 18
     dead: false
     changed: false
     refused: false
@@ -45,7 +46,7 @@ steps:
   type: vitals
   why: an engine-view command, no model call, no write
   expect:
-    hp: 6
+    hp: 18
     dead: false
     changed: false
     refused: false
@@ -55,7 +56,7 @@ steps:
   why: the ceiling is Character#max_hp, so mending past full is full
   expect:
     understood: mend -> 3 hit points
-    hp: 6
+    hp: 18
     dead: false
     changed: true
 
@@ -64,8 +65,8 @@ steps:
   why: Playthrough::Turn#harm!, the engine's own writer -- this mode holds no copy of it
   expect:
     understood: harm -> 2 hit points
-    change: Odile Vance unhurt -> hurt (4 of 6)
-    hp: 4
+    change: Odile Vance unhurt -> hurt (16 of 18)
+    hp: 16
     dead: false
     changed: true
 
@@ -73,17 +74,17 @@ steps:
   type: mend 1
   why: the mirror of harm, and it stops at the maximum
   expect:
-    change: Odile Vance hurt (4 of 6) -> hurt (5 of 6)
-    hp: 5
+    change: Odile Vance hurt (16 of 18) -> hurt (17 of 18)
+    hp: 17
     dead: false
     changed: true
 
 - id: half-gone-reads-as-badly-hurt
-  type: harm 2
+  type: harm 8
   why: one threshold and not a table of them -- half the maximum or worse
   expect:
-    change: badly hurt (3 of 6)
-    hp: 3
+    change: badly hurt (9 of 18)
+    hp: 9
     dead: false
     changed: true
 
@@ -91,7 +92,7 @@ steps:
   type: harm 99
   why: how far past dead is a number this game has no use for
   expect:
-    change: Odile Vance badly hurt (3 of 6) -> dead
+    change: Odile Vance badly hurt (9 of 18) -> dead
     hp: 0
     dead: true
     changed: true

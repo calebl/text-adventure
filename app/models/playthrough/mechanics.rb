@@ -94,7 +94,8 @@ class Playthrough::Mechanics
   # Every field is a fresh read rather than anything carried along from before
   # the write, so the read-out is what the database says and not what this class
   # believed it had done.
-  State = Data.define(:location, :exits, :items_here, :carried, :present, :foes, :condition, :character, :over) do
+  State = Data.define(:location, :exits, :items_here, :carried, :present, :foes, :provoked, :conditions,
+                      :condition, :character, :over) do
     # THE WORLD'S OWN NUMBERS FOR THE PLAYER, one line's worth. Read straight off
     # the character, because that is where they live: a stat block and three
     # abilities are the STORY's (`Character`'s header), and printing them beside
@@ -110,6 +111,13 @@ class Playthrough::Mechanics
         ("level #{character.level}, d#{character.hit_die}" if character.stat_block?),
         (Character::ABILITIES.map { |ability| "#{ability} #{character[ability]}" }.join(" ") if character.abilities?)
       ].compact
+    end
+
+    # `Name is unhurt` per person present, in `#present`'s order. Empty for a
+    # room with nobody in it and for anybody with no stat block, which is the
+    # same honest nothing `#sheet` gives.
+    def others_condition
+      present.filter_map { |person| "#{person.fullname} #{conditions[person.id]&.in_words}" if conditions[person.id] }
     end
 
     def to_s
@@ -135,16 +143,28 @@ class Playthrough::Mechanics
         # "somebody is standing here" and "somebody here is a foe" are two facts
         # and the sweep asserts them as two (`present:` and `foes:`).
         #
-        # Nothing fights yet. This is the read-out saying what the records hold,
-        # which is the whole of what this slice is: a world can contain an enemy
-        # and `rake game:mechanics` shows it standing there.
-        [ "hostile", foes.map(&:fullname), "nobody hostile" ],
+        # TWO WAYS ONTO THIS LINE since the captain's sixth ruling of 2026-09-05:
+        # the world says somebody is hostile, or THIS GAME provoked them by
+        # swinging at them. The row below says which of the two, because
+        # "the file made him a monster" and "I hit the landlord" are different
+        # facts about the same name.
+        [ "foes", foes.map(&:fullname), "nobody is fighting you" ],
+        # WHO THIS GAME PICKED THE FIGHT WITH -- `playthrough_vitals.provoked_at`,
+        # which is per-playthrough and never touches `characters.hostile`. A
+        # subset of the line above it, and empty in every game nobody swung in.
+        [ "provoked", provoked.map(&:fullname), "nobody provoked" ],
         # HOW MUCH IS LEFT OF THE PLAYER, out of `Playthrough#vitals_for` -- the
         # same one reader `Playthrough::Moment` states it to the narrator from,
         # so the prose and the read-out cannot disagree about a number. Empty
         # for a playthrough whose protagonist has no stat block, which is the
         # honest nothing rather than an invented "unhurt".
         [ "condition", [ condition&.in_words, ("THIS PLAYTHROUGH IS OVER" if over) ].compact, "no stat block" ],
+        # HOW MUCH IS LEFT OF EVERYBODY ELSE STANDING HERE, out of the same one
+        # reader (`Playthrough#vitals_for`). `unhurt` is said here where the
+        # narrator is not told it (`Playthrough::Moment`), because this is a
+        # read-out and a blank line reads as a missing number rather than as a
+        # whole body. Bounded by `Character::Registry::MAX_PER_ROOM`.
+        [ "others", others_condition, "nobody else" ],
         # WHAT THE WORLD SAYS THIS BODY IS, beside how much is left of it. The
         # five columns are the story's and the condition above is this game's,
         # which is the layer split read out in two adjacent lines -- and
@@ -226,6 +246,20 @@ class Playthrough::Mechanics
 
     reading = model? ? classify(command) : parse(command)
 
+    # WHERE THE TURN BEGAN, read before anything acts, because a move puts the
+    # party somewhere else and the foes in the room they LEFT answer before they
+    # go. `Playthrough::Turn#play` reads it in the same place for the same
+    # reason.
+    from = playthrough.current_location
+
+    # WHICH TURN OF A FIGHT THIS IS, read ONCE and off a record -- the captain's
+    # call C5: a round is a turn, so the player's blow and every one of the
+    # answers carry the same number. `Playthrough::Fight` is built here rather
+    # than in the branch because the same object is asked to close the fight
+    # after the answers have landed.
+    @fight = Playthrough::Fight.new(playthrough)
+    @round = @fight.next_round
+
     report =
       if reading.refusal
         refuse(reading.refusal, note: reading.note, understood: reading.understood)
@@ -239,11 +273,42 @@ class Playthrough::Mechanics
         act(reading.intent, command, reading.understood, reading.resolved_by)
       end
 
+    report = answered_by_the_world(report, reading, from: from)
+
     # WHICH READER ANSWERED THE LINE, carried onto the report from the reading
     # rather than worked out again here. `rake game:sweep` asserts it
     # (`resolved_by:`), and it is the same value `Playthrough::Turn` writes to
     # `scenes.resolved_by` -- one vocabulary, `Playthrough::Grammar::PATHS`.
     report.with(command: command, resolved_by: reading.resolved_by)
+  end
+
+  # AND THEN THE WORLD ANSWERS, in exactly the place and on exactly the terms
+  # `Playthrough::Turn#play` lets it: every live foe in the room the turn began
+  # in strikes once (`Playthrough::Riposte`), and a fight that has ended is
+  # closed with one `Scene` (`Playthrough::Fight`).
+  #
+  # ON EVERY LINE THE ENGINE PLAYED, and not only on an attack -- that is what
+  # makes a fight a fight, and it is why a walk can assert that looking at the
+  # ceiling costs hit points. A REFUSED LINE IS NOT ONE: *"a refused line writes
+  # nothing"* is the captain's ruling of 2026-09-04, and a foe acting would
+  # write something. It reads `Playthrough::Classifier::Intent#refused?` -- the
+  # ENGINE's ruling -- rather than this mode's own report, because `talk` is
+  # refused here as prose and a hound does not care that this mode writes none.
+  #
+  # The report is rebuilt on fresh state, because the read-out printed under a
+  # line has to be the records after everything that line caused.
+  def answered_by_the_world(report, reading, from:)
+    intent = reading.intent
+    return report if intent.nil? || intent.refused?
+
+    blows = Playthrough::Riposte.new(playthrough, turn: turn).run!(location: from, round: round)
+    closing = @fight.close!
+    return report if blows.empty? && closing.nil?
+
+    notes = blows.map { |blow| "answered: #{blow}" }
+    notes << "the fight is over: #{closing.description}" if closing
+
+    report.with(note: [ *report.note, *notes ], state: state)
   end
 
   # The read-out with nothing changed. What the console prints before the first
@@ -271,6 +336,15 @@ class Playthrough::Mechanics
       # -- and `#foes_in` is where the world's flag and this game's condition
       # are asked together.
       foes: playthrough.foes_in(playthrough.current_location),
+      # WHO THIS GAME PROVOKED, out of `playthrough_vitals.provoked_at`. Read
+      # off the same rows `#foes_in` reads and printed apart from them, because
+      # a name that is on the foes line because the FILE says so and a name that
+      # is there because the player swung at them are two different facts.
+      provoked: classifier.characters_here.select { |who| playthrough.provoked?(who) },
+      # HOW MUCH IS LEFT OF EVERYBODY PRESENT, keyed by character id, through the
+      # one reader. It is what `EngineSweep::Expectation`'s `hp_of:` asserts,
+      # off the records rather than off the printed line.
+      conditions: classifier.characters_here.to_h { |who| [ who.id, playthrough.vitals_for(who) ] }.compact,
       condition: playthrough.condition,
       # WHO THE PLAYER IS, so the read-out and `EngineSweep::Expectation` can
       # both reach the five columns the WORLD holds about this body -- `#sheet`
@@ -386,12 +460,55 @@ class Playthrough::Mechanics
     if intent.destination
       move(intent.destination, command, understood, resolved_by)
     elsif intent.speaker
-      talk(intent.speaker, understood)
+      person_branch(intent, understood)
     elsif intent.item
       item_branch(intent, understood)
     else
       nothing(intent, understood)
     end
+  end
+
+  # THE TWO THINGS A LINE CAN DO TO ONE PERSON, dispatched on the action the way
+  # `Playthrough::Turn#play` dispatches them and the way `#item_branch` below
+  # dispatches its three. Talking is prose and this mode writes none; a blow is
+  # arithmetic over records, so this mode does the whole of it.
+  def person_branch(intent, understood)
+    return strike(intent.speaker, understood) if intent.attack?
+
+    talk(intent.speaker, understood)
+  end
+
+  # SWINGING AT SOMEBODY, THROUGH THE ENGINE'S OWN WRITER. It calls
+  # `Playthrough::Turn#strike!` and holds no copy of it, which is the rule
+  # `#take`, `#drop`, `#wound` and `#attempt` are already under: a mechanics
+  # mode with its own version of the statement that hurts somebody would be
+  # testing itself. So a kill here happens exactly as it happens in the browser
+  # -- the last hit point, the body letting go of what it held, and
+  # `playthroughs.ended_at` if the body was the player's, all in one
+  # transaction.
+  #
+  # THE FOES' ANSWER IS NOT HERE. Every live foe in the room strikes back in the
+  # same turn, and that happens in `#run` for every line this mode PLAYS rather
+  # than in this branch -- because a fight answers a look and a move too, which
+  # is what makes it a fight.
+  def strike(target, understood)
+    who = playthrough.character
+    return refuse("this playthrough has no protagonist, so there is nobody to swing", understood: understood) if who.nil?
+
+    unless who.stat_block?
+      return refuse("#{who.fullname} has no stat block, so there is no hit die to hit with. " \
+                    "`rake game:backfill_stat_blocks` rolls one, offline",
+                    understood: understood)
+    end
+
+    blow = turn.strike!(who, target, round: round)
+    if blow.nil?
+      return refuse("#{target.fullname} has no stat block, so there is no body to hurt. " \
+                    "`rake game:backfill_stat_blocks` rolls one, offline",
+                    understood: understood)
+    end
+
+    change("struck: #{blow}", understood)
   end
 
   # THE THREE THINGS A LINE CAN DO TO ONE THING, dispatched on the action the way
@@ -627,6 +744,12 @@ class Playthrough::Mechanics
   def refuse(reason, note: nil, understood: nil)
     Report.new(command: nil, understood: understood, change: nil, refusal: reason, note: note, state: state)
   end
+
+  # WHICH TURN OF A FIGHT THIS ONE IS, set at the top of every `#run` off
+  # `Playthrough::Fight#next_round` -- a record, never a counter that survives
+  # between commands. Nil before the first line, which no branch that strikes
+  # can be reached before.
+  attr_reader :round
 
   # The loop that owns the writes. Built once; it holds nothing but the
   # playthrough, and no model call is made by building it.

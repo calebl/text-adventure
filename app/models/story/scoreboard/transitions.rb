@@ -89,6 +89,11 @@ class Story::Scoreboard::Transitions
   def scenes = passages
   def scanned = passages.size
   def unjudged = []
+  # A FROZEN CORPUS CARRIES NO FIGHT, so nothing in it is engine-authored and
+  # nothing is excluded. It is stated rather than omitted because
+  # `Story::Scoreboard` prints the figure for every corpus, and a missing reader
+  # would read as a corpus that had not been asked.
+  def excluded = 0
   def verdicts = {}
 
   def available_checks = %i[take_denied pickup_invented]

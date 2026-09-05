@@ -92,7 +92,7 @@ characters:
 - fullname: Isbet Marrow
   race: Scorch Nomads
   stats:
-    level: 1
+    level: 3
     hit_die: 8
     strength: 11
     dexterity: 14
@@ -158,6 +158,15 @@ characters:
   likes: The hour. The rope. The weight coming back up the line
   dislikes: Anything that says a name out loud in his tower
   fears: Nothing at all, and that is the whole of what is wrong with him
+  items:
+  - name: bell-rope tally
+    description: |-
+      A strip of hardwood the length of a forearm, notched once for every hour rung, worn smooth in the middle where a hand has held it for twenty-nine years. The notches stop about two thirds of the way along, and after that the wood is scored across in one continuous line that does not count anything.
+    readable: true
+    inscription: |-
+      XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI. XI.
+      ————————————————————————————————
+    properties: '{"notches": 29, "counted": false}'
 locations:
 - name: Grenn's Boarding House, Room 3
   detail_level: realized

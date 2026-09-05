@@ -32,7 +32,8 @@
 # win.
 #
 # The numbers: `the-unrecorded-hour.yml` gives Odile Vance `strength: 9`,
-# `dexterity: 11`, `will: 15` on a `hit_die: 6`, so `Character#max_hp` is 6 --
+# `dexterity: 11`, `will: 15` at `level: 3` on a `hit_die: 8`, so
+# `Character#max_hp` is 18 --
 # unchanged by any of the three, because there is no ability term in it.
 story: The Unrecorded Hour
 why: the three abilities are the world's, and a check against one writes nothing
@@ -48,7 +49,7 @@ steps:
       will: 15
     # THE MAXIMUM HAS NO ABILITY TERM IN IT: a d6 at level 1 holds 6, whatever
     # the will says. The captain's ruling, as one line of a fixture.
-    hp: 6
+    hp: 18
     changed: false
     refused: false
 
@@ -66,7 +67,7 @@ steps:
     refused: false
     abilities:
       strength: 9
-    hp: 6
+    hp: 18
 
 - id: the-penalty-comes-off-the-target
   type: check will 5
@@ -174,7 +175,7 @@ steps:
   type: harm 2
   why: THE LAYER SPLIT IN ONE STEP -- `playthrough_vitals` is this game's, the five columns are the world's
   expect:
-    hp: 4
+    hp: 16
     changed: true
     abilities:
       strength: 9
@@ -186,7 +187,7 @@ steps:
   why: a wound is not a penalty; nothing in this app connects the two yet
   expect:
     note: '<= 15 '
-    hp: 4
+    hp: 16
     changed: false
     refused: false
     abilities:
@@ -196,7 +197,7 @@ steps:
   type: mend 2
   why: the last write in the engine, and the last chance for one to move a column
   expect:
-    hp: 6
+    hp: 18
     changed: true
     abilities:
       strength: 9

@@ -678,6 +678,15 @@ namespace :game do
       puts "  #{board.note}" if board.note
       puts "  #{board.scanned} turn#{"s" unless board.scanned == 1} across #{board.audits.size} " \
            "#{board.name == "database" ? "stor#{board.audits.one? ? "y" : "ies"}" : "file"}"
+      # THE EXCLUSION, SAID OUT LOUD AND NEVER FOLDED INTO A RATE. A turn the
+      # ENGINE wrote -- today the one Scene that closes a fight -- is not
+      # narration, so `Story::Audit` does not read it as narration; and an
+      # exclusion that shrank a denominator without saying so is a board that
+      # improved for a reason nobody can see. See `Scene#engine_authored?`.
+      if board.excluded.positive?
+        puts "  #{board.excluded} engine-authored turn#{"s" unless board.excluded == 1} excluded " \
+             "(Scene#engine_authored? -- a fight's own closing scene is the engine's words, not a narrator's)"
+      end
       puts
 
       print_score_table(board)

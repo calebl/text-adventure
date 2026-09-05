@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_05_130000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -184,6 +184,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
     t.index ["provider"], name: "index_models_on_provider"
   end
 
+  create_table "playthrough_blows", force: :cascade do |t|
+    t.integer "attacker_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "damage", null: false
+    t.integer "hp_after", null: false
+    t.integer "location_id", null: false
+    t.integer "playthrough_id", null: false
+    t.integer "round", null: false
+    t.integer "scene_id"
+    t.integer "sequence", null: false
+    t.datetime "story_timestamp", null: false
+    t.integer "target_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["attacker_id"], name: "index_playthrough_blows_on_attacker_id"
+    t.index ["location_id"], name: "index_playthrough_blows_on_location_id"
+    t.index ["playthrough_id", "scene_id", "id"], name: "index_playthrough_blows_on_playthrough_and_scene"
+    t.index ["playthrough_id"], name: "index_playthrough_blows_on_playthrough_id"
+    t.index ["scene_id"], name: "index_playthrough_blows_on_scene_id"
+    t.index ["target_id"], name: "index_playthrough_blows_on_target_id"
+  end
+
   create_table "playthrough_drifts", force: :cascade do |t|
     t.string "action", null: false
     t.text "command", null: false
@@ -246,6 +267,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
     t.datetime "created_at", null: false
     t.integer "hp_current", null: false
     t.integer "playthrough_id", null: false
+    t.datetime "provoked_at"
     t.datetime "updated_at", null: false
     t.index ["character_id"], name: "index_playthrough_vitals_on_character_id"
     t.index ["playthrough_id", "character_id"], name: "index_playthrough_vitals_on_playthrough_and_character", unique: true
@@ -386,6 +408,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "scenes"
+  add_foreign_key "playthrough_blows", "characters", column: "attacker_id"
+  add_foreign_key "playthrough_blows", "characters", column: "target_id"
+  add_foreign_key "playthrough_blows", "locations"
+  add_foreign_key "playthrough_blows", "playthroughs"
+  add_foreign_key "playthrough_blows", "scenes"
   add_foreign_key "playthrough_drifts", "locations"
   add_foreign_key "playthrough_drifts", "playthroughs"
   add_foreign_key "playthrough_drifts", "scenes"

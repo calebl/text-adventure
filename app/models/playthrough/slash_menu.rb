@@ -2,7 +2,7 @@
 #
 # THE CAPTAIN'S RULING OF 2026-09-04, EVENING: *"support a slash prefix
 # autocomplete in the text box, and resolve those and verb-prefixed lines offline
-# then fallback to the model."* This is the first half of it -- the five verbs a
+# then fallback to the model."* This is the first half of it -- the six verbs a
 # `/` offers, and after a verb the closed set that verb resolves against -- and
 # since his ruling of 2026-09-05, *"I think we should only auto accept the slash
 # commands"*, it is the whole surface of the offline path: what the box completes
@@ -40,7 +40,12 @@ class Playthrough::SlashMenu
     "talk" => "somebody standing here",
     "take" => "something lying here",
     "drop" => "something you are carrying",
-    "read" => "something here or in your hands"
+    "read" => "something here or in your hands",
+    # ANYBODY STANDING HERE, and not a narrower list of who may be hit: the
+    # captain's sixth ruling of 2026-09-05, *"anyone can be attacked"*. The box
+    # offers the same names `talk` offers, because the closed set is the same
+    # one (`Playthrough::Classifier#offered_for`).
+    "attack" => "somebody standing here -- one blow, and they answer"
   }.freeze
 
   attr_reader :playthrough

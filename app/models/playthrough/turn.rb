@@ -14,6 +14,13 @@
 # writes a record too, on the one turn where there is not one yet -- see
 # `#read_item`.
 #
+# AND `attack` IS THE SIXTH, and the only one of them that produces no prose at
+# all: it writes a `Playthrough::Blow`, the world's live foes answer it in the
+# same turn (`Playthrough::Riposte`, step 7 below), and ONE `Scene` closes the
+# fight when it ends (`Playthrough::Fight`). It is not one of
+# `Playthrough::IntentSchema::INTENTS` -- no model ever answers with it -- so it
+# reaches this loop only through `Playthrough::Grammar`, behind a slash.
+#
 # Everything else -- a look at something with nothing written on it, and anything
 # unclassifiable -- falls through to `Scene::Narrator`, which answers the raw
 # command in prose. They are told apart so the classification is honest and so
@@ -110,10 +117,31 @@ class Playthrough::Turn
     # shapes, the wording, and what is deliberately NOT refused.
     return refuse(intent, typed) if intent.refused?
 
+    # WHERE THE TURN BEGAN, and it is read before the dispatch for one reason:
+    # a move puts the party somewhere else, and the foes in the room they LEFT
+    # act before they go (`Playthrough::Riposte`). You turned your back.
+    from = playthrough.current_location
+
+    # WHICH TURN OF A FIGHT THIS IS, read ONCE per turn and off a record. A
+    # round is a turn (the captain's call C5), so the player's own blow and
+    # every one of the riposte's carry the same number, and `Playthrough::Fight`
+    # counts distinct rounds to work out what the fight cost in story time.
+    fight = Playthrough::Fight.new(playthrough)
+    round = fight.next_round
+
     scene = if intent.destination
       move_to(intent.destination, &block)
     elsif intent.speaker
-      talk_to(intent.speaker, typed, &block)
+      # TWO THINGS A LINE CAN DO TO ONE PERSON, dispatched on the action the way
+      # the item branch below dispatches its three. The person is the resolved
+      # record either way; the action says whether it is a conversation or a
+      # blow.
+      #
+      # AN ATTACK WRITES NO `Scene` OF ITS OWN, which is why this branch answers
+      # nil: the exchange is `playthrough_blows` and ONE Scene closes the fight
+      # (`Playthrough::Fight`). See that class for why a Scene per round is the
+      # wrong shape.
+      intent.attack? ? strike_at(intent.speaker, round: round) : talk_to(intent.speaker, typed, &block)
     elsif intent.item
       # THREE THINGS A LINE CAN DO TO ONE THING. The item is the resolved record
       # in every case; the action says which. Dispatching on the action here
@@ -156,6 +184,18 @@ class Playthrough::Turn
     scene&.update!(typed: typed, characters: cast_of(scene), resolved_by: resolved_by,
                    **resolution_for(intent))
 
+    # AND THEN THE WORLD ANSWERS: every live foe in the room the turn began in
+    # strikes once, in `id` order. It runs on EVERY line the engine played and
+    # not only on an attack -- that is what makes a fight a fight, and it is the
+    # captain's call C5 (a round is the turn). A refused line never reaches
+    # here, because a refused line writes nothing.
+    Playthrough::Riposte.new(playthrough, turn: self).run!(location: from, round: round)
+
+    # AND A FIGHT THAT HAS ENDED IS CLOSED, with one `Scene` carrying what the
+    # exchange cost in story time. Nil on every turn of every game that is not
+    # in a fight, which is almost all of them.
+    closing = fight.close!
+
     # THE CONVERSATIONS THIS TURN HAD, filed under the turn.
     #
     # The classifier is stamped here rather than in its own class because it
@@ -174,7 +214,31 @@ class Playthrough::Turn
     # See Playthrough#prune_conversations!.
     playthrough.prune_conversations!
 
-    scene
+    # THE CLOSING SCENE IS THE TURN'S ANSWER WHEN THE TURN ITSELF WROTE NONE,
+    # which is every attack: `#strike_at` returns nil, so what the consumer is
+    # handed is the one Scene that closed the fight, on the turn it ended, and
+    # nil on the rounds before it. See `Playthrough::Fight` -- the browser's
+    # per-round view is the battle panel, which is a later slice.
+    scene || closing
+  end
+
+  # THE PLAYER'S OWN BLOW. The record moves first and there is no prose at all:
+  # an attack turn writes `playthrough_blows` and nothing else, and the one
+  # `Scene` a fight produces is written by `Playthrough::Fight` when it ends.
+  #
+  # It answers nil deliberately -- there is no Scene for `#play` to stamp with
+  # `typed` and `resolved_action`, because the blow row IS the record of what
+  # this turn did, and a second one would put engine copy in the column
+  # `Story::Audit` reads as narration once per round rather than once per fight.
+  #
+  # A playthrough with no protagonist has nobody to swing, which nothing in the
+  # app produces and `Playthrough#character` is optional enough to allow.
+  def strike_at(target, round:)
+    striker = playthrough.character
+    return nil if striker.nil?
+
+    strike!(striker, target, round: round)
+    nil
   end
 
   # WHICH READER ANSWERS THE LINE, AND THE GRAMMAR GETS FIRST REFUSAL.
@@ -522,10 +586,128 @@ class Playthrough::Turn
 
     Playthrough::Vitals.transaction do
       row.update!(hp_current: [ row.hp_current - amount.to_i, 0 ].max)
-      playthrough.end! if row.dead? && character == playthrough.character
+
+      if row.dead?
+        # WHAT A BODY LETS GO OF, in the same transaction as the last hit point,
+        # so there is no moment in which the records say somebody is dead and
+        # still holding things.
+        spill!(character)
+        playthrough.end! if character == playthrough.character
+      end
     end
 
     row.condition
+  end
+
+  # WHAT A BODY LETS GO OF, IN THIS GAME ONLY.
+  #
+  # The instances in a dead person's hands land on the floor of the room they
+  # are standing in, so what they were carrying becomes something the party can
+  # pick up -- and THE WORLD'S OWN ROWS STAY EXACTLY WHERE THE FILE PUT THEM,
+  # which is the whole of the captain's ruling of 2026-09-04.
+  # `Playthrough#items_held_by` reads the playthrough layer and nothing else, so
+  # this cannot reach a template, and `EngineSweep::Invariants#world_items_unmoved`
+  # proves it after every walk.
+  #
+  # THE PARTY IS A NO-OP AND HAS TO BE. The protagonist carries nothing through
+  # `items_held_by` -- the party's hands are an instance with no room and no
+  # holder (`Playthrough#carried`) -- and they stand in no room to drop anything
+  # into, so a player dying leaves the game's inventory exactly as it was. There
+  # is no restore-from-save and no revival to hand it back to; loot is what a
+  # fight the party WON leaves on the floor.
+  #
+  # It is in the house of `#carry!` and `#put_down!` because it is the same
+  # statement they are: the row moves, and nothing else does.
+  def spill!(character)
+    room = character&.location
+    return [] if room.nil?
+
+    playthrough.items_held_by(character).to_a.each do |item|
+      item.update!(playthrough: playthrough, character: nil, location: room)
+    end
+  end
+
+  # ONE BLOW, AND IT ALWAYS CONNECTS.
+  #
+  # THE CAPTAIN'S CALL C2, measured rather than chosen: damage is one die of the
+  # attacker's `hit_die` and there is no roll to see whether it lands. No
+  # to-hit, no armour, no critical, no initiative. `data/ta-combat-scout` §7.2
+  # has the four candidate rules at 100,000 fights a cell, and the figure that
+  # decided it is the last column: with death terminal, a to-hit roll makes the
+  # UNDERDOG more likely to win (a level-1 rat kills a level-3 player 14% of the
+  # time under an opposed roll and 0.0% under this one), which is the opposite
+  # of what levels are for.
+  def damage_for(attacker, rng:) = Roll.die(attacker.hit_die, rng: rng)
+
+  # ONE BLOW, WRITTEN DOWN. The damage half of `#carry!`, and the ONE writer of
+  # `playthrough_blows`.
+  #
+  # THE SEED IS THE ROLL'S IDENTITY, which is `Roll`'s whole doctrine, and the
+  # one part of it a fight had to be careful about: a fight does not advance the
+  # story's clock until it ends (`Playthrough::Fight`), so every blow of one is
+  # thrown at the same moment and only `sequence` tells them apart. IT COMES OFF
+  # A RECORD -- `Playthrough::Blow.next_sequence`, the count of this game's
+  # blows -- and never off a counter in memory, or a fight replayed in a second
+  # process would throw different dice and `rake game:sweep` could not assert
+  # one. `#play`'s per-turn `round` is a record for the same reason.
+  #
+  # THE OFFSET IS SO A CHECK AND A BLOW AT ONE MOMENT ARE TWO ROLLS.
+  # `Playthrough::Turn#check` seeds on the ability's index in
+  # `Character::ABILITIES`, and without this a first blow and a `check strength`
+  # at one story moment would be the same die.
+  #
+  # IT MARKS THE TARGET PROVOKED, in the same transaction, which is the captain's
+  # sixth ruling of 2026-09-05: *"anyone can be attacked"*, and being attacked
+  # makes somebody this game's foe from the next turn. It is marked whoever
+  # struck them -- a mark on the party is inert by construction, because
+  # `Playthrough#foes_in` reads `Character.present_in` and the party carries no
+  # whereabouts at all.
+  #
+  # Nil for a body with no stat block, which is `#harm!`'s answer and the same
+  # honest nothing: there is no maximum, so there is nothing to take off it.
+  # `rake game:doctor` reports the person (`hostile_without_a_stat_block`).
+  SEQUENCE_OFFSET = Character::ABILITIES.size + 1
+
+  # `room:` is WHERE THE BLOW LANDED, and it defaults to where the party is
+  # standing because that is where all but one of them land. The exception is
+  # the riposte on a move: the foes in the room you LEFT act before you go, and
+  # by then `playthrough.current_location` is the room you arrived in. The blow
+  # belongs to the room it was thrown in, and `Playthrough::Fight` reads that
+  # column to know which room the fight is in.
+  def strike!(attacker, target, round:, room: playthrough.current_location)
+    return nil if attacker.nil? || target.nil? || !attacker.stat_block? || room.nil?
+
+    sequence = SEQUENCE_OFFSET + Playthrough::Blow.next_sequence(playthrough)
+    rng = Roll.generator(story: playthrough.story_id, playthrough: playthrough.id,
+                         at: playthrough.story_now.to_i, sequence: sequence)
+    damage = damage_for(attacker, rng: rng)
+
+    Playthrough::Blow.transaction do
+      # NO EARLY RETURN OUT OF THIS BLOCK: since Rails 6.1 a `return` inside a
+      # transaction COMMITS it, so a guard written that way would leave the mark
+      # behind for a blow that never landed.
+      after = harm!(target, damage)
+      next nil if after.nil?
+
+      provoke!(target)
+      Playthrough::Blow.create!(
+        playthrough: playthrough, attacker: attacker, target: target, location: room,
+        damage: damage, hp_after: after.hp, round: round, sequence: sequence,
+        story_timestamp: playthrough.story_now
+      )
+    end
+  end
+
+  # THIS GAME HAS PICKED A FIGHT WITH SOMEBODY, and it is one writer in one
+  # place: `#strike!`, inside the transaction that writes the first blow. The
+  # mark is on the per-playthrough row, never on `characters.hostile` -- the
+  # world's hostility is the world's, and playthrough A swinging at the landlord
+  # must not make him an enemy in playthrough B.
+  #
+  # Nobody with no stat block is marked: `Playthrough::Vitals.instantiate!`
+  # writes no row for them, and there is nothing for a fight to read.
+  def provoke!(character)
+    Playthrough::Vitals.instantiate!(playthrough, character)&.provoke!(playthrough.story_now)
   end
 
   # PUTTING THEM BACK, and the mirror of `#harm!` in every respect but one: IT
@@ -673,8 +855,9 @@ class Playthrough::Turn
   # classifier resolved the record, so the turn was a look at THAT stamp.
   # WHO WAS IN THE ROOM WHEN THIS TURN HAPPENED, snapshotted onto the turn.
   #
-  # A SNAPSHOT AND NOT THE RECORD. `Character.present_in` is where somebody is
-  # NOW; this is where they were then, and the two are different questions that
+  # A SNAPSHOT AND NOT THE RECORD. `Playthrough#cast_in` is who is standing
+  # there NOW in this game; this is who was there then, and the two are
+  # different questions that
   # a single column cannot answer. `Eval::Richness` asks whether a narration
   # named the person who was standing there, `Story::Audit#check_stillness`
   # asks whether anybody was in the room on a run of turns that changed
@@ -684,6 +867,13 @@ class Playthrough::Turn
   # changed: it is written from the records rather than being the only place
   # the records ever lived.
   #
+  # AND IT IS THIS GAME'S CAST, not the world's: `Playthrough#cast_in` subtracts
+  # whoever this playthrough has killed. Playthrough A recording that it stood
+  # in a room with a body it had already put down would be recording a person
+  # this game could no longer speak to, while playthrough B goes on meeting them
+  # alive -- which is the layer split, and the reason the four readers all come
+  # through that one method.
+  #
   # Read off `scene.location` rather than `playthrough.current_location`,
   # because on a move the two are the same room only after `#stand_in!` has
   # run, and the cast belongs to the room the scene is in either way.
@@ -691,7 +881,7 @@ class Playthrough::Turn
     here = scene.location || playthrough.current_location
     return [] if here.nil?
 
-    Scene::Generator.characters_present(here)
+    playthrough.cast_in(here)
   end
 
   def resolution_for(intent)

@@ -1,0 +1,198 @@
+# ANYBODY CAN BE ATTACKED, THEY FIGHT BACK FROM THE NEXT TURN, AND ZERO HIT
+# POINTS ENDS THE GAME.
+#
+# The captain's sixth ruling of 2026-09-05: ***"anyone can be attacked"***. Not
+# only the world's monsters -- `attack <name>` resolves against the SAME closed
+# set a `talk` does (`Playthrough#cast_in`), because a narrower list of who may
+# be hit would be the app deciding who is a legitimate target. Neb Halloran is
+# an ordinary man chained to a post in `the-salt-assizes.yml` and stays one for
+# ever: swinging at him marks him PROVOKED in THIS playthrough, on the row that
+# is already this game's copy of him (`playthrough_vitals.provoked_at`), and
+# `EngineSweep::Invariants#hostility_unmoved` asserts after the walk that
+# `characters.hostile` never moved. Another game of this world meets the same
+# man.
+#
+# WHAT ONLY A WALK CAN SEE HERE, and it is four things:
+#
+#   A PROVOKED PERSON ANSWERS A TURN THE PLAYER SPENT DOING SOMETHING ELSE.
+#   The killing turn is a `read`, and he swings on it -- that is what makes a
+#   fight a fight, and it is the captain's call C5: a round IS the turn.
+#
+#   AND HE DOES NOT ANSWER A LINE THE ENGINE REFUSED, or one of the engine's own
+#   instruments. *"A refused line writes nothing"* is the ruling of 2026-09-04
+#   and a blow would be something; `vitals` is a read-out and not a turn in the
+#   fiction. `blows: 0` on both is those two decisions written down.
+#
+#   THE DEATH IS THE FIGHT'S AND THE GATE IS THE ONE THAT WAS ALREADY THERE.
+#   `Playthrough::Turn#harm!` writes the last hit point and
+#   `playthroughs.ended_at` in one transaction whether the damage came from
+#   `harm 5` or from a blow, so every line after it is refused by the statement
+#   `death-ends-a-playthrough.yml` already walks -- a move, a take, a read, a
+#   look and an attack, each through a different branch.
+#
+#   AND IT IS DETERMINISTIC WITHOUT ASSERTING A DIE. `Roll`'s seed is built out
+#   of ROW IDS (`Roll.seed`), so what a blow COST is not reproducible between
+#   two databases. Two things make the outcome fixed anyway, and they are the
+#   whole reason this world was chosen: Neb Halloran holds TEN hit points, which
+#   is more than the player's d8 can take in one blow, so he is certainly alive
+#   to answer; and the walk puts the player on ONE hit point with `harm 17`
+#   before the killing round, so any blow at all is enough. `blows:` pins the
+#   round structure without pinning a number, which is the line
+#   `a-check-against-an-ability.yml` already draws for the d20.
+#
+# The numbers that are NOT a die's: the file gives Coraith Vell `level: 3,
+# hit_die: 8`, so `Character#max_hp` is `8 + 2 * 5` = 18 (the captain's call
+# C1); Neb Halloran is `level: 1, hit_die: 10`, so his is 10.
+story: The Salt Assizes
+why: anyone can be attacked, being attacked makes them this game's foe, and a fight can kill the player
+steps:
+- id: the-court-has-a-justicar-in-it-and-no-foes
+  type: look
+  why: the file makes nobody in this world hostile, so present and foes are different sets
+  expect:
+    location: The Causeway Court (realized)
+    present: [Ammon Brace]
+    foes: []
+    hp: 18
+    dead: false
+    blows: 0
+
+- id: out-to-the-post
+  type: go to the Tide Post
+  why: arriving is free -- the riposte runs in the room the turn BEGAN in
+  expect:
+    changed: true
+    location: The Tide Post (realized)
+    present: [Neb Halloran]
+    foes: []
+    blows: 0
+    hp_of:
+      Neb Halloran: 10
+
+- id: and-he-is-somebody-the-grammar-offers-to-attack
+  type: attack Neb Halloran
+  why: THE SIXTH RULING -- attack reads the same closed set talk does, so anyone standing here can be hit
+  expect:
+    understood: attack -> Neb Halloran
+    resolved_by: grammar
+    changed: true
+    change: 'struck: Coraith Vell hit Neb Halloran for'
+    note: 'answered: Neb Halloran hit Coraith Vell for'
+    # TWO BLOWS: hers, and his answer in the same round. He is certainly alive
+    # to throw it -- ten hit points against a d8.
+    blows: 2
+    # AND HE IS THIS GAME'S FOE FROM HERE, on the strength of a mark that is
+    # per-playthrough. `characters.hostile` is untouched, which
+    # `hostility_unmoved` asserts after the walk.
+    foes: [Neb Halloran]
+    present: [Neb Halloran]
+    dead: false
+
+- id: a-refused-line-buys-him-no-round
+  type: take the mayor's chain
+  why: the reach resolves to nothing, the engine refuses the line, and a refused line writes nothing
+  expect:
+    refused: true
+    changed: false
+    blows: 0
+    drifts: 0
+    foes: [Neb Halloran]
+
+- id: nor-does-an-engine-instrument
+  type: vitals
+  why: a read-out is not a turn in the fiction, so nobody answers it
+  expect:
+    refused: false
+    changed: false
+    blows: 0
+    foes: [Neb Halloran]
+
+- id: back-to-a-known-number
+  type: mend 20
+  why: he has already hit her once for a number no fixture may assume, so the walk puts her back at the file's maximum
+  expect:
+    hp: 18
+    blows: 0
+    dead: false
+
+- id: down-to-one-hit-point
+  type: harm 17
+  why: the one number in this walk that is not a die's -- it is what makes the death below certain
+  expect:
+    change: 'Coraith Vell unhurt -> badly hurt (1 of 18)'
+    hp: 1
+    dead: false
+    blows: 0
+    changed: true
+
+- id: reading-a-slate-is-a-turn-and-he-takes-it
+  type: read the tide-slate
+  why: A ROUND IS THE TURN. The player spent it reading; the fight happened anyway, and one blow is enough
+  expect:
+    understood: examine -> Assize tide-slate
+    blows: 1
+    hp: 0
+    dead: true
+    # ONE `Scene` CLOSES THE FIGHT, because the player is dead and nothing will
+    # ever change again. Its description is the engine's own sentence about the
+    # engine's own dice -- `Scene#engine_authored?` is true of it, so
+    # `Story::Audit` and `Eval::Richness` skip it and `rake game:score` prints
+    # that they did.
+    note: 'the fight is over: The fight in The Tide Post is over after'
+
+- id: and-every-line-after-it-is-refused
+  type: look
+  why: the gate is Playthrough::Refusal.dead, in front of everything, exactly as it was before a fight could reach it
+  expect:
+    refused: true
+    changed: false
+    blows: 0
+    hp: 0
+    dead: true
+    offers: is dead, and this playthrough is over
+
+- id: including-another-attack
+  type: attack Neb Halloran
+  why: the death gate is in front of the branch that would have swung
+  expect:
+    refused: true
+    changed: false
+    blows: 0
+    offers: is dead, and this playthrough is over
+
+- id: and-a-move
+  type: go to the Causeway Court
+  why: the room the body is in does not change, because nothing below the gate ran
+  expect:
+    location: The Tide Post (realized)
+    refused: true
+    changed: false
+    blows: 0
+    drifts: 0
+
+- id: and-a-drop
+  type: drop the tide-slate
+  why: the hands are untouched, because nothing below the gate ran
+  expect:
+    carrying: [Assize tide-slate]
+    refused: true
+    changed: false
+    blows: 0
+
+- id: and-a-mend-cannot-raise-the-dead
+  type: mend 18
+  why: death is terminal -- the captain's ruling of 2026-09-04, and no fight changed it
+  expect:
+    hp: 0
+    dead: true
+    refused: true
+    changed: false
+    blows: 0
+
+- id: the-man-who-killed-her-is-still-standing-and-still-not-hostile
+  type: look
+  why: he is hurt in THIS game and unmarked in the world -- the layer split, after a death
+  expect:
+    present: [Neb Halloran]
+    foes: [Neb Halloran]
+    refused: true

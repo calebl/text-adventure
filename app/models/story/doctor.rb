@@ -1395,7 +1395,86 @@ class Story::Doctor
                               .includes(:character, :playthrough).order(:id).to_a
 
     [ *vitals_without_a_template(rows), *hp_above_maximum(rows), *vitals_for_an_unmet_character(rows),
-      *protagonists_without_vitals ]
+      *protagonists_without_vitals, *provoked_without_a_meeting(rows), *dead_bodies_holding_things(rows),
+      *playthroughs_dead_but_not_ended ]
+  end
+
+  # A FIGHT WITH SOMEBODY THAT GAME HAS NEVER STOOD IN A ROOM WITH.
+  #
+  # `playthrough_vitals.provoked_at` is written in one place --
+  # `Playthrough::Turn#provoke!`, inside the transaction that writes the first
+  # blow -- and a blow needs the party and the body in one room, so a provoked
+  # row for a stranger is a row nothing in the app can have written. It is the
+  # loud half of `#vitals_for_an_unmet_character` (which skips provoked rows for
+  # exactly this reason): an unmet row says nothing happened, and a provoked one
+  # says a FIGHT did.
+  #
+  # NO REPAIR, and that is the difference. The unmet finding is `safe` because
+  # deleting the row loses nothing -- an absent row means unhurt. Deleting this
+  # one would erase a fight the records say happened, and clearing the mark
+  # alone would tell a live foe to stop fighting. A person looks at it.
+  def provoked_without_a_meeting(rows)
+    rows.filter_map do |row|
+      character = row.character
+      next unless row.provoked?
+      next if character.nil? || character.is_protagonist? || character.is_companion?
+      next if character.location_id && rooms_walked(row.playthrough).include?(character.location_id)
+
+      finding(:provoked_without_a_meeting, :warning,
+              "playthrough ##{row.playthrough_id} records a fight with #{character.fullname}, who is " \
+              "#{character.whereabouts} -- a room that game has never stood in, so no blow in the app can " \
+              "have been thrown at them",
+              :manual, subject: row)
+    end
+  end
+
+  # A BODY AT ZERO STILL HOLDING THINGS. `Playthrough::Turn#spill!` puts a dead
+  # person's copies on the floor of the room they are standing in, in the same
+  # transaction as the last hit point, so a row here is a game that was killed
+  # in before that statement existed -- or a copy that arrived afterwards
+  # (`Item::Snapshot` copies a room's people's hands on every visit, and a
+  # template added to a corpse's hands by a re-seed would land there).
+  #
+  # `safe`: the repair is `#spill!` itself, and every value it writes is already
+  # on record -- the room is `characters.location_id` and the layer is the row's
+  # own. It touches this game's copies only; the world's rows stay in the dead
+  # person's hands, where the file put them.
+  def dead_bodies_holding_things(rows)
+    rows.filter_map do |row|
+      character = row.character
+      next unless row.dead? && character&.location_id
+      held = row.playthrough.items_held_by(character).to_a
+      next if held.empty?
+
+      finding(:dead_body_holding_things, :warning,
+              "playthrough ##{row.playthrough_id} has #{character.fullname} dead in #{character.location.name} " \
+              "and still holding #{held.map(&:name).join(", ")}; a body lets go of what it held",
+              :safe, subject: row)
+    end
+  end
+
+  # THE PLAYER AT ZERO WITH THE GAME STILL RUNNING. `Playthrough::Turn#harm!`
+  # writes the last hit point and `playthroughs.ended_at` in one transaction, so
+  # the two cannot come apart in play -- and `Playthrough#over?`'s own comment
+  # has been promising this finding since the column landed: *"`rake game:doctor`
+  # reports a disagreement rather than either half repairing the other
+  # silently."* This is that report.
+  #
+  # `safe`: the answer is on record. The game ended when the body reached zero,
+  # and the moment it happened is the playthrough's own story clock.
+  def playthroughs_dead_but_not_ended
+    story.playthroughs.includes(:character).order(:id).filter_map do |playthrough|
+      protagonist = playthrough.character
+      next if protagonist.nil? || playthrough.over?
+
+      row = Playthrough::Vitals.find_by(playthrough: playthrough, character: protagonist)
+      next unless row&.dead?
+
+      finding(:playthrough_dead_but_not_ended, :warning,
+              "playthrough ##{playthrough.id} records #{protagonist.fullname} at zero hit points and is not " \
+              "marked ended, so a dead player can still type into it",
+              :safe, subject: playthrough)
+    end
   end
 
   # A CONDITION FOR A BODY THE WORLD NO LONGER HAS. `Character has_many :vitals,
@@ -1451,6 +1530,10 @@ class Story::Doctor
     rows.filter_map do |row|
       character = row.character
       next if character.nil? || character.is_protagonist? || character.is_companion?
+      # A PROVOKED ROW IS THE LOUDER FINDING AND HAS ITS OWN CODE. This one is
+      # `safe` because deleting the row loses nothing; deleting a row that
+      # records a fight would lose the fight. See `#provoked_without_a_meeting`.
+      next if row.provoked?
       next if character.location_id && rooms_walked(row.playthrough).include?(character.location_id)
 
       finding(:vitals_for_an_unmet_character, :warning,

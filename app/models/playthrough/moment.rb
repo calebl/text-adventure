@@ -67,6 +67,24 @@ class Playthrough::Moment
     # be an assertion about a body the engine does not have.
     parts << condition.to_s if condition
     parts << (others.any? ? "Also here: #{name_list(others)}. Nobody else is present." : "Nobody else is here.")
+    # HOW MUCH IS LEFT OF EVERYBODY ELSE IN THE ROOM, and whether any of them is
+    # fighting the party. Until a fight could happen this was the one closed set
+    # the narrator was told the names of and never the state of, which was
+    # correct while nothing could hurt an NPC and is a contradiction waiting to
+    # be written the moment something can.
+    #
+    # AT MOST THREE LINES: `Character::Registry::MAX_PER_ROOM` bounds a room's
+    # cast, so this cannot grow with the world.
+    #
+    # `unhurt` IS LEFT UNSAID FOR AN NPC, deliberately, and it is the same rule
+    # `Playthrough::Vitals` is written under: an absent row means unhurt, that
+    # is the honest default for almost everybody in every world, and saying it
+    # three times a turn is paying for the default in tokens. The PLAYER's line
+    # above says it, because the player's body is the one the game ends on.
+    parts.concat(conditions_of_others)
+    # AND WHAT THE LAST EXCHANGE DID, out of `playthrough_blows` -- the numbers
+    # the engine's own dice produced, stated as done.
+    parts << struck_fact if struck_fact
     parts << "Lying here, and takeable: #{floor_names.presence || "nothing"}."
     parts << "The player is carrying: #{carried_names.presence || "nothing"}."
 
@@ -160,7 +178,70 @@ class Playthrough::Moment
   def others
     return [] if location.nil?
 
-    @others ||= Scene::Generator.characters_present(location) - [ protagonist ].compact
+    @others ||= playthrough.cast_in(location) - [ protagonist ].compact
+  end
+
+  # ONE LINE PER PERSON IN THE ROOM WHOSE BODY THE RECORDS HAVE SOMETHING TO SAY
+  # ABOUT, and nothing at all for the ones they do not.
+  #
+  #   The wharf-rat swarm is hurt (3 of 6) and is fighting you.
+  #
+  # Three rules, each of them the same one the rest of this class keeps. It is a
+  # RECORD read out (`Playthrough#vitals_for`, the one reader, and
+  # `Playthrough#foes_in`, the one reader of who is fighting), never a judgement.
+  # It says a NUMBER, because "badly" is a mood and "3 of 6" is a fact -- the
+  # reasoning `Playthrough::Vitals::Condition#in_words` is written under. And it
+  # says nothing about somebody who is unhurt and nobody's enemy, because that
+  # is the default and the default is what silence already means.
+  #
+  # Nobody with no stat block gets a line: `#vitals_for` answers nil for them
+  # and there is no body to describe.
+  def conditions_of_others
+    fighting = playthrough.foes_in(location).to_set
+
+    others.filter_map do |person|
+      state = playthrough.vitals_for(person)
+      next if state.nil?
+      next if state.unhurt? && !fighting.include?(person)
+
+      "#{person.fullname} is #{state.in_words}#{" and is fighting you" if fighting.include?(person)}."
+    end
+  end
+
+  # WHAT THE LAST EXCHANGE DID, IN THE APP'S OWN WORDS, and it is the same shape
+  # `Playthrough::Turn#taken_fact` has: the rows moved first and this is only
+  # the sentence about them.
+  #
+  # THREE PROPERTIES, EACH DELIBERATE. It names the DAMAGE, because a number is
+  # a fact where "badly" is a mood. It states ALIVE OR DEAD OUTRIGHT, because
+  # the one thing the narrator must not do is kill or spare somebody the engine
+  # did not. And it says the numbers are fixed -- which is not a rule the prose
+  # has to obey for the mechanic to hold (the record is the record whatever the
+  # paragraph does with it) but is the cheap half of *inform the prose*, exactly
+  # as `Playthrough::Turn#written_words_fact` is for an inscription.
+  #
+  # ONLY THE ROUNDS THE PLAYER HAS NOT READ ABOUT YET: the blows of the fight
+  # that is still open (`Playthrough::Blow.open`). A fight the engine has
+  # already closed has a `Scene` of its own in the log, and repeating it here
+  # would have the narrator write the same exchange twice.
+  def struck_fact
+    return @struck_fact if defined?(@struck_fact)
+
+    blows = playthrough.blows.open.chronological.includes(:attacker, :target).to_a
+    return @struck_fact = nil if blows.empty?
+
+    @struck_fact =
+      "Blows landed, recorded by the game: " +
+      blows.map { |blow| one_blow(blow) }.join(" ") +
+      " Those are the numbers and they do not change. Do not decide who lives, " \
+      "who dies, or how much anything hurt."
+  end
+
+  # One blow, and the two facts about it that a paragraph must not contradict.
+  def one_blow(blow)
+    "#{blow.attacker.fullname} struck #{blow.target.fullname} for " \
+      "#{blow.damage} hit point#{"s" unless blow.damage == 1}. " \
+      "#{blow.target.fullname} is #{blow.killed? ? "dead: that was the blow that killed them" : "alive"}."
   end
 
   private

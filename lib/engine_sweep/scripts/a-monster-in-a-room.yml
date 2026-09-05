@@ -1,4 +1,4 @@
-# A WORLD CAN CONTAIN AN ENEMY, AND NOTHING FIGHTS YET.
+# A WORLD CAN CONTAIN AN ENEMY, AND STANDING IN FRONT OF IT COSTS HIT POINTS.
 #
 # The captain's ruling of 2026-09-04: *"a universe should be able to have
 # monsters as well as characters."* This is that ruling as a walk. Marek Sollen
@@ -30,11 +30,17 @@
 #   (`Playthrough::Snapshot`) and reading the whole engine view back is
 #   arithmetic over records from end to end.
 #
-# WHAT IT DELIBERATELY DOES NOT WALK, because none of it is built: an attack, a
-# blow, a wound taken from anybody but `harm`, a fight that can be fled, or any
-# per-playthrough mark about whether a foe has noticed the party. Those are
-# later slices. What is here is that a world can hold an enemy and the engine
-# can say so.
+# WHAT CHANGED UNDER IT when a fight learned to resolve, and it is the one thing
+# this script has to say twice: A ROUND IS THE TURN. Marek Sollen is hostile and
+# alive, so he answers EVERY line the engine plays while the party is standing in
+# his tower -- a talk, a look at the ceiling, a walk back down the stair. He does
+# not answer a line the engine REFUSED (*"a refused line writes nothing"*), and he
+# does not answer one of the engine's own instruments (`stats` is not a turn in
+# the fiction). Both are asserted below, because both are decisions.
+#
+# AND A FIGHT IS ESCAPABLE BY LEAVING THE ROOM -- the captain's call C1 -- with a
+# price: the foes in the room you LEFT act before you go. Step 7 is that price,
+# and the fight closes with one `Scene` the moment the party is somewhere else.
 #
 # THE ROOM'S OWN DANGER IS SEEDED RATHER THAN ROLLED HERE. `locations.danger`
 # decides which pool a person BORN in a room is drawn from
@@ -81,10 +87,15 @@ steps:
     # every respect but one -- `Character.present_in` is the same closed set it
     # was, and `talk` still resolves against it.
     present: [Marek Sollen]
-    # AND HE IS A FOE, which is the other answer and the new one:
+    # AND HE IS A FOE, which is the other answer:
     # `Playthrough#foes_in` is the world's `characters.hostile` narrowed by this
     # game's dead, and nothing here has killed anybody.
     foes: [Marek Sollen]
+    # ARRIVING IS FREE. The riposte runs in the room the turn BEGAN in, which
+    # was the empty stair -- so walking into a monster's room costs nothing and
+    # the next line typed in it costs a round.
+    blows: 0
+    hp: 18
     # A dead end, and the only way down is the stair you came up.
     exits: [Grenn's Boarding House hallway (stub)]
     here: []
@@ -100,37 +111,73 @@ steps:
     location: The Bell of Saint Aravel (realized)
     foes: [Marek Sollen]
     drifts: 0
+    # AND THE WORLD ANSWERED ANYWAY. The MODE refused to write prose; the
+    # ENGINE played the line (`Playthrough::Classifier::Intent#refused?` is
+    # false -- he resolved), so the round happened and he swung. That is the
+    # difference the riposte reads, and it is why a fight in the browser and a
+    # fight here cannot come apart.
+    note: 'answered: Marek Sollen hit Isbet Marrow for'
+    # ONE BLOW AND NO MORE: one live foe in the room is one answer a turn.
+    # `blows:` is the round structure asserted without asserting a die --
+    # `Roll`'s seed is built out of row ids, so what a blow COST is not
+    # reproducible across two databases and what a turn DID is.
+    blows: 1
+    dead: false
 
 - id: the-sheet-the-file-gave-him-is-the-players-own-sheet-unmoved
   type: stats
-  why: a stats read is about the party, not about the room -- meeting a foe moves nothing on the protagonist
+  why: an engine instrument is not a turn in the fiction, so nobody answers it and the sheet is untouched
   expect:
     abilities:
       strength: 11
       dexterity: 14
       will: 13
-    hp: 8
+    # NOBODY ANSWERED IT: `stats` is one of `Playthrough::Grammar::ENGINE_VIEW`
+    # and produces no `Intent`, so the world does not answer it. A round is a
+    # turn in the FICTION, and a read-out is not one.
+    blows: 0
     foes: [Marek Sollen]
     changed: false
     refused: false
 
 - id: nothing-to-pick-up-off-his-floor
   type: take the rope
-  why: the bell chamber is furnished in prose and not in records, and the refusal says so rather than inventing one
+  why: a REFUSED line writes nothing, and that includes the blow a foe would have thrown
   expect:
     refused: true
     changed: false
     offers: [there is no thing lying here]
     foes: [Marek Sollen]
     drifts: 0
+    # AND NOBODY ANSWERED IT EITHER. The reach resolved to nothing, the engine
+    # refused the line, and *"a refused line writes nothing"* -- so Marek did
+    # not get a round out of it. The captain's ruling of 2026-09-04, read from
+    # the other side.
+    blows: 0
+
+- id: patched-up-before-turning-her-back
+  type: mend 20
+  why: his d10 cannot take 18 in one round, so the step below cannot end in a death the script did not mean
+  expect:
+    hp: 18
+    blows: 0
+    dead: false
 
 - id: back-down-the-stair
   type: go to the hallway
-  why: a fight cannot yet stop you leaving, and this is the walk that says so out loud
+  why: THE CAPTAIN'S CALL C1 -- a fight is escapable by leaving, and the foes in the room you LEFT act before you go
   expect:
     changed: true
     location: Grenn's Boarding House hallway (stub)
     foes: []
+    # He got his blow in as she turned her back, and then the fight ended --
+    # one `Scene`, `resolved_action: attack`, `Scene#engine_authored?` true, so
+    # `Story::Audit` and `Eval::Richness` skip it and `rake game:score` prints
+    # that it did.
+    note: 'the fight is over'
+    # HE GOT HIS BLOW IN AS SHE TURNED HER BACK, and then it was over.
+    blows: 1
+    dead: false
 
 - id: and-the-tower-still-has-him-in-it
   type: go to the bell
@@ -140,3 +187,12 @@ steps:
     location: The Bell of Saint Aravel (realized)
     present: [Marek Sollen]
     foes: [Marek Sollen]
+    # ARRIVING IS FREE, so nobody answered this line either.
+    blows: 0
+    dead: false
+    # AND HE IS UNTOUCHED: nothing in this walk swung back at him, so his hit
+    # points are the file's arithmetic and not a die's. `hp_of:` is `hp:`'s
+    # counterpart for the room, off `Playthrough#vitals_for` and never off the
+    # printed line.
+    hp_of:
+      Marek Sollen: 10
