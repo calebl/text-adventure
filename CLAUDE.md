@@ -56,8 +56,12 @@ rake eval:classifier_board                 # the checked-in 2026-09-04 baseline 
 # Bring a checkout up to date after a pull: fast-forward, bundle, migrate, then
 # everything the new code needs done to the database you already have. Offline,
 # idempotent, no model call. lib/update.rb is the list of steps.
+# It also re-seeds when a file under db/seeds/worlds moved in the range it
+# pulled -- a world outlives its seed FILE the way it outlives its schema.
 bin/update                          # --dry-run writes nothing at all; --skip-pull to only apply
+bin/update --seed                   # force the re-seed (--skip-pull has no range to read)
 rake game:update                    # the steps alone; DRY_RUN=1, ONLY=<step>, VERBOSE=1
+rake game:reseed                    # re-assert the checked-in world files alone. Offline
 
 # Check the stories in the database, fix what can be fixed, delete what cannot
 rake game:doctor                    # or rake 'game:doctor[3]' for one story
@@ -539,6 +543,24 @@ The current database includes the following story-related models with proper ass
   field
 
 - All interactions with AI LLMs should use a structured output with RubyLLM::Schema
+
+### When a world outlives its seed file
+- A world here outlives its seed FILE as well as its schema: The Salt Assizes
+  was seeded one evening and the file gave the tide-slate its words the next
+  morning, and nothing the captain ran after pulling looked at seed files.
+  **`bin/update` re-seeds when a file under `db/seeds/worlds` moved in the range
+  it pulled** — `Update::SeedFiles` is the decision, `rake game:reseed` the act,
+  `--seed` forces it where there is no range. A re-seed **re-asserts the file's
+  values over the world's own rows, seeded stats included**; it adds and
+  updates, deletes nothing, and writes the world layer only.
+- **Item::TemplateRefresh** → the other half, because a re-seed must not reach
+  into a game in progress: a playthrough's copy made before the edit still
+  carries what the world used to say. `rake game:doctor` reports
+  `copy_lags_its_template` for a copy **no turn has acted on** (`safe`; the
+  repair takes the text off the template) and `touched_copy_lags_its_template`
+  for one a take or a drop has handled (`manual`, left alone). `TEXT` is the
+  whole of what moves — where a thing is and whose hands it is in are the
+  player's, which is `Item::NOT_COPIED`'s line drawn from the other side
 
 ### Applying a change to a database that already exists
 - **`bin/update` is the one command after a pull**, and `Update::REGISTRY`

@@ -87,6 +87,21 @@ namespace :game do
     end
   end
 
+  # RE-ASSERTING THE CHECKED-IN WORLDS OVER THE DATABASE YOU ALREADY HAVE, which
+  # is the half of `bin/rails db:seed` that is not the RubyLLM registry. A world
+  # here outlives its seed FILE exactly as it outlives its schema: the captain
+  # seeded The Salt Assizes one evening and a PR edited the file the next
+  # morning, and nothing he ran after pulling ever looked at it again.
+  #
+  # `WorldSeed::Loader` is what runs, whole -- it adds and updates and deletes
+  # nothing, and it writes the world layer only, so a re-seed cannot reach into
+  # a game in progress. `bin/update` calls this when a file under
+  # db/seeds/worlds moved in the range it pulled. Offline: no model call.
+  desc "Re-assert the checked-in world files over this database. Usage: rake game:reseed"
+  task reseed: :environment do
+    WorldSeed::Loader.load_all
+  end
+
   desc "Report on the health of every story, or one. Usage: rake game:doctor or rake 'game:doctor[3]'"
   task :doctor, [ :story_id ] => :environment do |t, args|
     doctors = args[:story_id] ? [ Story::Doctor.new(Helpers.story!(args[:story_id])) ] : Story::Doctor.all

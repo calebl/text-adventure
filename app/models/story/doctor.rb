@@ -936,6 +936,8 @@ class Story::Doctor
     findings.concat(shared_inventory(templates))
     findings.concat(copies_without_a_template(items))
     findings.concat(missing_copies)
+    findings.concat(copies_lagging_their_template)
+    findings.concat(touched_copies_lagging)
     findings.concat(duplicate_items(templates))
     findings.concat(rooms_over_the_item_cap)
     findings.concat(items_colliding_with_a_name(templates))
@@ -1039,6 +1041,54 @@ class Story::Doctor
               "rows that no longer exists, so nothing says what #{orphans.one? ? "it is" : "they are"} a copy of. " \
               "Nobody loses anything by it: the row is still in that player's game",
               :manual, subject: orphans.first) ]
+  end
+
+  # A COPY OF WHAT THE WORLD USED TO SAY. A seed file is edited after somebody
+  # has played -- the tide-slate is given `readable: true` and an inscription --
+  # and a re-seed writes that onto the world's own row and, correctly, stops
+  # there: the layer split exists so re-asserting a file cannot reach into a
+  # game in progress. The copies made before the edit therefore go on carrying
+  # what the file used to say, and the player reads a blank slate for ever.
+  #
+  # `safe` for a copy NO TURN HAS ACTED ON: the value is on the template, in the
+  # same table, and `Item::TemplateRefresh` writes only the text columns. One
+  # finding per playthrough, because that is the unit the repair acts on.
+  #
+  # A COPY SOMEBODY HAS HANDLED IS NOT THIS -- see `#touched_copies_lagging`.
+  def copies_lagging_their_template
+    template_refresh.untouched.group_by(&:playthrough_id).filter_map do |playthrough_id, lags|
+      playthrough = story.playthroughs.find_by(id: playthrough_id)
+      next if playthrough.nil?
+
+      finding(:copy_lags_its_template, :warning,
+              "playthrough ##{playthrough.id} holds #{lags.size} cop#{lags.one? ? "y" : "ies"} of one of the " \
+              "world's own rows carrying what the world used to say " \
+              "(#{lags.first(5).map(&:to_s).join("; ")}#{"; ..." if lags.size > 5}); the world's row was edited " \
+              "after that game copied it -- by a seed file, most likely -- and no turn has touched the copy",
+              :safe, subject: playthrough)
+    end
+  end
+
+  # THE SAME LAG ON A ROW SOMEBODY HAS HANDLED. `manual`, and it is the whole
+  # reason the finding above can be `safe`: a copy some turn took or put down is
+  # that player's, and nothing on record says whether its text is stale or
+  # deliberate. It is reported and left exactly where it stands.
+  def touched_copies_lagging
+    lags = template_refresh.touched
+    return [] if lags.empty?
+
+    [ finding(:touched_copy_lags_its_template, :warning,
+              "#{lags.size} cop#{lags.one? ? "y" : "ies"} of the world's own rows " \
+              "(#{lags.first(5).map(&:to_s).join("; ")}#{"; ..." if lags.size > 5}) carr#{lags.one? ? "ies" : "y"} " \
+              "text the world's row no longer has, and a turn has acted on #{lags.one? ? "it" : "them"} -- so " \
+              "nothing can say whether the copy is stale or is what that player has. Left alone",
+              :manual, subject: lags.first.copy) ]
+  end
+
+  # One instance for the whole doctor, so the two findings and `Story::Repair`
+  # read one answer.
+  def template_refresh
+    @template_refresh ||= Item::TemplateRefresh.new(story)
   end
 
   # A ROOM A PLAYER HAS BEEN IN AND HAS NO COPY OF. Every game holds its own

@@ -1208,6 +1208,36 @@ path, and answers in sentences.
   that and says restart; see the ROADMAP's *Known issues* for why it reports
   rather than repairs.
 
+### When a world outlives its seed file
+
+The same problem one directory over, and it went unnoticed for days. The
+captain seeded The Salt Assizes one evening; the next morning a PR gave the
+protagonist's tide-slate `readable: true` and an inscription in
+`db/seeds/worlds/the-salt-assizes.yml`. Nothing he ran after pulling looked at a
+seed file — `bin/update` ran migrations and the registry steps — so the world's
+own row stayed blank and `read slate` was correctly refused for days.
+
+- **`bin/update` re-seeds when a file under `db/seeds/worlds` moved in the range
+  it pulled**, on the same range mechanism it already uses for `Gemfile.lock`,
+  and after the migrations and the steps because a seed file may reference a
+  column the same range adds. `Update::SeedFiles` is the decision (pure, and
+  asserted without a checkout), `rake game:reseed` is the act,
+  `WorldSeed::Loader` is what that runs. `--seed` forces it where there is no
+  range to read.
+- **A re-seed re-asserts the file's values over the world's own rows, seeded
+  stats included** — which is worth saying out loud, because lowering a hit die
+  in a file leaves every game in progress over its own maximum
+  (`hp_above_maximum`, already a safe repair). It adds and updates, deletes
+  nothing, and writes the world layer only.
+- **It cannot fix the copies, and it must not try.** `Item::Snapshot` copied the
+  old row into every game before the file changed, and the layer split exists so
+  re-asserting a file never reaches into a game in progress. So
+  `Item::TemplateRefresh` is the other half: `rake game:doctor` reports
+  `copy_lags_its_template` for a copy **no turn has acted on** (`safe` — the
+  value is on the template) and `touched_copy_lags_its_template` for one a take
+  or a drop has handled (`manual`, left exactly as it stands). Only the text
+  moves; where a thing is and whose hands it is in are the player's.
+
 ### A PR that needs a post-update action adds a step, not a sentence
 
 **`bin/update` is the one command the captain runs after a pull**, and

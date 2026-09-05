@@ -514,4 +514,62 @@ class Story::RepairTest < ActiveSupport::TestCase
                                    distance: "adjacent", travel_method: "walking")
     end
   end
+
+  # --- a copy that lags the world's own row ---------------------------------
+
+  # THE SLATE. A seed file gave the tide-slate its words the morning after the
+  # world was seeded; a re-seed writes them onto the world's own row and stops
+  # there, because re-asserting a file must never reach into a game in progress.
+  # This is what carries them into the copies nobody has handled.
+  def story_with_a_lagging_copy
+    story = create(:story)
+    room = create(:location, story: story, name: "Your Office")
+    street = create(:location, :stub, story: story, name: "The Street")
+    [ [ room, street ], [ street, room ] ].each do |from, to|
+      create(:location_connection, location: from, connected_location: to,
+                                   distance: "a short walk", travel_method: "walking")
+    end
+    create(:character, :protagonist, story: story)
+    create(:scene, :opening, story: story, location: room, story_timestamp: story.start_time)
+    played = create(:playthrough, story: story, character: story.protagonist, current_location: room)
+    template = create(:item, :lying, location: room, name: "assize tide-slate")
+    copy = create(:item, :lying, location: room, playthrough: played, template: template,
+                                 name: template.name, description: template.description)
+    template.update!(readable: true, inscription: "Three hours forty after noon.")
+
+    [ story, played, copy.reload ]
+  end
+
+  test "brings an untouched copy forward to what the world now says" do
+    story, _played, copy = story_with_a_lagging_copy
+
+    results = Story::Repair.new(story).apply!
+
+    assert_includes results.map(&:code), :copy_lags_its_template
+    assert results.select { |result| result.code == :copy_lags_its_template }.all?(&:repaired?)
+
+    copy.reload
+    assert_predicate copy, :readable?
+    assert_equal "Three hours forty after noon.", copy.inscription
+    assert_equal "Your Office", copy.location.name, "a repair moved a thing in somebody's game"
+  end
+
+  test "a copy a turn has acted on is left exactly as it stands" do
+    story, _played, copy = story_with_a_lagging_copy
+    create(:scene, story: story, location: copy.location, resolved_action: "take", acted_on: copy)
+
+    results = Story::Repair.new(story).apply!
+
+    assert_not_includes results.map(&:code), :copy_lags_its_template
+    assert_not_predicate copy.reload, :readable?
+    assert_nil copy.inscription
+    assert_includes Story::Repair.new(story).manual.map(&:code), :touched_copy_lags_its_template
+  end
+
+  test "a second run has nothing left to bring forward" do
+    story, = story_with_a_lagging_copy
+    Story::Repair.new(story).apply!
+
+    assert_not_includes Story::Repair.new(story).plan.map(&:code), :copy_lags_its_template
+  end
 end

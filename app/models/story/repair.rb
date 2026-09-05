@@ -71,6 +71,7 @@ class Story::Repair
     character_absent_but_somewhere: { calls: 0, handler: :repair_deliberate_absence },
     protagonist_holds_a_taken_item: { calls: 0, handler: :repair_shared_inventory },
     playthrough_missing_a_copy: { calls: 0, handler: :repair_missing_copies },
+    copy_lags_its_template: { calls: 0, handler: :repair_lagging_copies },
     character_without_a_stat_block: { calls: 0, handler: :repair_missing_stat_block },
     character_without_abilities: { calls: 0, handler: :repair_missing_abilities },
     ability_out_of_range: { calls: 0, handler: :repair_ability_out_of_range },
@@ -296,6 +297,20 @@ class Story::Repair
     made = result.snapshots.find { |snapshot| snapshot.playthrough.id == playthrough.id }&.copies || []
 
     "gave playthrough ##{playthrough.id} its own copy of #{made.size} thing(s) it had walked past"
+  end
+
+  # A COPY BROUGHT FORWARD TO WHAT THE WORLD NOW SAYS. `safe` because every
+  # value it writes is already on the template, one row over in the same table,
+  # and `Item::TemplateRefresh::TEXT` is the whole of what moves -- where the
+  # thing is and whose hands it is in are the player's and are never touched.
+  # Only copies NO turn has acted on; the rest are reported
+  # (`touched_copy_lags_its_template`) and left alone.
+  def repair_lagging_copies(finding)
+    playthrough = finding.subject
+    refreshed = Item::TemplateRefresh.new(story).refresh!(only: playthrough)
+
+    "brought #{refreshed.size} of playthrough ##{playthrough.id}'s cop(ies) forward to what the world now " \
+      "says: #{refreshed.map(&:to_s).join("; ")}"
   end
 
   # A BODY FOR SOMEBODY WHO HAD NONE, rolled rather than recovered -- the one

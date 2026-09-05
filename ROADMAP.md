@@ -55,6 +55,31 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **A pull re-applies a changed world file, and the doctor notices a copy that
+  lags it** (`ta-update-reseeds`). A world outlives its seed FILE the way it
+  outlives its schema: The Salt Assizes was seeded on the evening of 2026-09-03
+  and the next morning's PR gave the protagonist's `Assize tide-slate`
+  `readable: true` and an inscription — and nothing `bin/update` did looked at a
+  seed file, so the world's own row stayed blank, every playthrough had already
+  copied the blank row, and `read slate` was correctly refused for days.
+
+  `bin/update` now asks `db/seeds/worlds` the same range question it already
+  asks `Gemfile.lock`, after the migrations and the steps, and runs
+  `rake game:reseed` (which is `WorldSeed::Loader`, whole) when a file moved.
+  `Update::SeedFiles` is the decision, extracted so it can be asserted with no
+  checkout and no network; `--seed` forces it where `--skip-pull` leaves no
+  range to read. A re-seed **re-asserts the file's values over the world's own
+  rows, seeded stats included** — the script says so — and, correctly, stops at
+  the world layer.
+
+  Which leaves the copies, so `Item::TemplateRefresh` is the other half:
+  `rake game:doctor` reports `copy_lags_its_template` (`safe`) for a copy **no
+  turn has acted on** and `touched_copy_lags_its_template` (`manual`) for one a
+  take or a drop has handled. Only the text moves. Rehearsed on a copy of the
+  captain's own database: the re-seed wrote the slate's words, the doctor named
+  both lagging copies and three `hp_above_maximum` rows the seeded stats had
+  just created, and `rake 'game:repair[6]'` cleared all five.
+
 - **A slash in front of the line, and the grammar reads it first**
   (`ta-slash-input`). The captain's ruling of 2026-09-04, evening, verbatim:
 
