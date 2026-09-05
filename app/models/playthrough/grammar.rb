@@ -68,7 +68,8 @@ class Playthrough::Grammar
     # regression-test presence. In the browser the same resolution goes straight
     # to `InteractionAgent`, and the prose is written as it always was.
     "talk" => :talk, "speak" => :talk, "ask" => :talk,
-    "read" => :read, "examine" => :read, "x" => :read, "look at" => :read,
+    "inspect" => :read, "read" => :read, "examine" => :read, "x" => :read,
+    "look at" => :read,
     # THE ENGINE-VIEW COMMANDS FOR A BODY. `vitals` only reads, so it goes to
     # `:look` with everything else that does; `harm` and `mend` are the two
     # writers `Playthrough::Turn` owns, reached from here the way `go` reaches
@@ -149,7 +150,7 @@ class Playthrough::Grammar
   # the whole of that, and every synonym in `VERBS` works behind one. `other` is
   # not here and never will be: it carries no record, so there is nothing for a
   # closed set to complete.
-  RESOLVING = { "go" => :move, "talk" => :talk, "take" => :take, "drop" => :drop, "read" => :examine,
+  RESOLVING = { "go" => :move, "talk" => :talk, "take" => :take, "drop" => :drop, "inspect" => :examine,
                 "attack" => :attack }.freeze
 
   # AND `throw` IS DELIBERATELY NOT IN `RESOLVING`, which is a statement about
@@ -258,8 +259,8 @@ class Playthrough::Grammar
     "drop <item>      put down something you are carrying (also: put down, leave)",
     "talk <person>    resolve somebody standing here (also: speak, ask). The",
     "                 talking itself is prose, so this mode names them and stops",
-    "read <item>      what is written on something, out of the records (also:",
-    "                 examine, x, look at). Only a thing marked readable has",
+    "inspect <item>   what is written on something, out of the records (also:",
+    "                 read, examine, x, look at). Only a thing marked readable has",
     "                 words; this mode prints them and never writes them",
     "look             the engine's whole view of where you are (also: where,",
     "                 inventory, exits, items, who, state, vitals)",

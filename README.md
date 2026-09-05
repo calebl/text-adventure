@@ -173,7 +173,7 @@ NO_MODEL=1 rake 'game:mechanics[2]'
 
 A fixed grammar replaces the classifier and nothing is generated: `go <exit>`,
 `take <item>`, `drop <item>`, `talk <person>` (also `speak`, `ask`),
-`read <item>` (also `examine`, `x`, `look at`), `attack <person>` (also `hit`,
+`inspect <item>` (also `read`, `examine`, `x`, `look at`), `attack <person>` (also `hit`,
 `strike`), `throw <item> at <person|exit>` (also `hurl`, `toss`),
 `look` (also `where`, `inventory`, `exits`, `items`, `who`), `help`,
 `quit`. Talking is prose and this
