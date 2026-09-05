@@ -34,11 +34,18 @@ class Eval::PipelineTest < ActiveSupport::TestCase
     end
   end
 
-  test "the two worlds with items put one down and pick it up again" do
+  # THE STARTING INVENTORY AND NOT EVERY ITEM ANYBODY HOLDS. `Story#starting_inventory`
+  # is what the party opens the game holding, so it is the only set a script can
+  # reach with a `drop` on its first turn -- an item in an NPC's hands is not
+  # takeable at all (taking something off a person is a different act with
+  # somebody on the other side of it, and no record says how that goes), and
+  # since `the-lunar-cartographer.yml` gave Marek Sollen his bell-rope tally
+  # there is one of those in the seeds.
+  test "the two worlds with a starting inventory put one down and pick it up again" do
     stories = WorldSeed::Loader.load_all(io: nil).index_by(&:title)
 
     Eval::STORIES.each do |title|
-      next if Item.where(character: stories.fetch(title).characters).none?
+      next if stories.fetch(title).starting_inventory.none?
 
       expectations = Eval::Script.for(title).turns.map(&:expect)
 
@@ -55,7 +62,7 @@ class Eval::PipelineTest < ActiveSupport::TestCase
     stories = WorldSeed::Loader.load_all(io: nil).index_by(&:title)
 
     Eval::Script.all.each do |script|
-      names = Item.where(character: stories.fetch(script.story).characters).pluck(:name)
+      names = stories.fetch(script.story).starting_inventory.pluck(:name)
       next if names.empty?
 
       script.turns.select { |turn| %w[take drop].include?(turn.expect) }.each do |turn|

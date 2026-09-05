@@ -973,6 +973,92 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_includes codes(story), :character_without_a_stat_block
   end
 
+  # --- what a fight can leave behind -----------------------------------------
+
+  # THE LOUD HALF OF `vitals_for_an_unmet_character`. An unmet row says nothing
+  # happened; a PROVOKED one says a fight did, and `Playthrough::Turn#provoke!`
+  # needs the party and the body in one room -- so this is a row nothing in the
+  # app can have written.
+  test "a fight with somebody that game has never met is reported and left alone" do
+    story = create(:story)
+    room = create(:location, story: story)
+    elsewhere = create(:location, story: story)
+    stranger = create(:character, story: story, location: elsewhere, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: create(:character, :protagonist, story: story),
+                                current_location: room)
+    row = Playthrough::Vitals.create!(playthrough: game, character: stranger, hp_current: 8,
+                                      provoked_at: game.story_now)
+
+    finding = Story::Doctor.new(story).findings.find { |candidate| candidate.code == :provoked_without_a_meeting }
+
+    assert_not_nil finding
+    assert_equal :manual, finding.remedy
+    assert_equal row, finding.subject
+    assert_not_includes codes(story), :vitals_for_an_unmet_character,
+                        "the safe finding would have deleted the fight"
+  end
+
+  # `Playthrough::Turn#spill!` runs in the same transaction as the last hit
+  # point, so a body still holding things is a game killed in before that
+  # statement existed -- or a copy that arrived afterwards.
+  test "a dead body still holding this game's copies is reported and repairable" do
+    story = create(:story)
+    room = create(:location, story: story)
+    rowe = create(:character, story: story, location: room, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: create(:character, :protagonist, story: story),
+                                current_location: room)
+    row = Playthrough::Vitals.instantiate!(game, rowe)
+    row.update!(hp_current: 0)
+    create(:item, playthrough: game, character: rowe, name: "bell-rope tally")
+
+    finding = Story::Doctor.new(story).findings.find { |candidate| candidate.code == :dead_body_holding_things }
+
+    assert_not_nil finding
+    assert_equal :safe, finding.remedy
+    assert_equal row, finding.subject
+    assert_includes finding.message, "bell-rope tally"
+  end
+
+  test "a live body holding things is nobody's problem" do
+    story = create(:story)
+    room = create(:location, story: story)
+    rowe = create(:character, story: story, location: room, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: create(:character, :protagonist, story: story),
+                                current_location: room)
+    Playthrough::Vitals.instantiate!(game, rowe)
+    create(:item, playthrough: game, character: rowe, name: "bell-rope tally")
+
+    assert_not_includes codes(story), :dead_body_holding_things
+  end
+
+  # `Playthrough#over?`'s own comment has been promising this finding since the
+  # column landed: *"`rake game:doctor` reports a disagreement rather than
+  # either half repairing the other silently."*
+  test "a player at zero hit points in a game that is not over is reported and repairable" do
+    story = create(:story)
+    room = create(:location, story: story)
+    vance = create(:character, :protagonist, story: story, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: vance, current_location: room)
+    Playthrough::Vitals.instantiate!(game, vance).update!(hp_current: 0)
+
+    finding = Story::Doctor.new(story).findings.find { |row| row.code == :playthrough_dead_but_not_ended }
+
+    assert_not_nil finding
+    assert_equal :safe, finding.remedy
+    assert_equal game, finding.subject
+  end
+
+  test "a game that ended when the body did is nobody's problem" do
+    story = create(:story)
+    room = create(:location, story: story)
+    vance = create(:character, :protagonist, story: story, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: vance, current_location: room)
+    Playthrough::Turn.new(game).harm!(vance, vance.max_hp)
+
+    assert_predicate game.reload, :over?
+    assert_not_includes codes(story), :playthrough_dead_but_not_ended
+  end
+
   test "the checked-in worlds give everybody a body" do
     WorldSeed::Loader.load_all(io: nil).each do |story|
       assert_not_includes codes(story), :character_without_a_stat_block, story.title

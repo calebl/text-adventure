@@ -173,8 +173,9 @@ NO_MODEL=1 rake 'game:mechanics[2]'
 
 A fixed grammar replaces the classifier and nothing is generated: `go <exit>`,
 `take <item>`, `drop <item>`, `talk <person>` (also `speak`, `ask`),
-`read <item>` (also `examine`, `x`, `look at`), `look` (also `where`,
-`inventory`, `exits`, `items`, `who`), `help`, `quit`. Talking is prose and this
+`read <item>` (also `examine`, `x`, `look at`), `attack <person>` (also `hit`,
+`strike`), `look` (also `where`, `inventory`, `exits`, `items`, `who`), `help`,
+`quit`. Talking is prose and this
 mode still writes none, so `talk` names whoever it resolved and stops — but
 **whether** it resolves is an engine question, and since presence became a
 record it is one that can be answered with no model at all. `read` is the same
@@ -196,12 +197,54 @@ This is the fallback for a machine with no key, and the mode the engine-direct
 tests run in. It is not the default: a mode that cannot read what you typed is
 testing a smaller thing than the one that can.
 
+### Walking a whole fight
+
+`attack <person>` is the engine's own verb — like `harm`, `mend` and `check` it
+never goes to the classifier, so a whole fight is reachable with no key at all.
+**Anyone can be attacked**, not only the world's monsters, and swinging at
+somebody makes them your enemy for this playthrough and no other.
+
+```
+> attack Marek Sollen
+  understood: attack -> Marek Sollen
+  read by:    grammar
+  changed:    struck: Isbet Marrow hit Marek Sollen for 7 (round 1); Marek Sollen is badly hurt (3 of 10)
+  answered: Marek Sollen hit Isbet Marrow for 9 (round 1); Isbet Marrow is badly hurt (9 of 18)
+The Bell of Saint Aravel [#20, realized]
+  exits       Grenn's Boarding House hallway [stub]
+  lying here  nothing to pick up
+  carrying    nothing
+  present     Marek Sollen
+  foes        Marek Sollen
+  provoked    Marek Sollen
+  condition   badly hurt (9 of 18)
+  others      Marek Sollen badly hurt (3 of 10)
+  sheet       level 3, d8, strength 11 dexterity 14 will 13
+
+> attack Marek
+  understood: attack -> Marek Sollen
+  changed:    struck: Isbet Marrow hit Marek Sollen for 5 (round 2); Marek Sollen is dead
+  the fight is over: The fight in The Bell of Saint Aravel is over after 2 rounds. Marek Sollen is dead. ...
+The Bell of Saint Aravel [#20, realized]
+  lying here  bell-rope tally [#7]
+  present     nobody else
+  foes        nobody hostile
+```
+
+**A blow always connects** and deals one die of the attacker's hit die. **A
+round is the turn**: you act by typing, and then every live foe in the room acts
+— on any line the engine played, including a look or a walk out of the door, so
+you can leave a fight and it costs you one more exchange. What a body was
+carrying lands on the floor when it dies, and the whole exchange is written down
+in `playthrough_blows` with **one** `Scene` closing the fight when it ends.
+
 ### What it writes, and what it never does
 
-Both modes write `playthroughs.current_location_id` and `items.playthrough_id` /
-`items.location_id` through `Playthrough::Turn#move_to`, `#stand_in!`, `#carry!`
-and `#put_down!` — **the same statements the narrated loop moves the world
-with**, and the closed sets come from `Playthrough::Classifier`'s own readers. A
+Both modes write `playthroughs.current_location_id`, `items.playthrough_id` /
+`items.location_id` and, in a fight, `playthrough_vitals` and
+`playthrough_blows` — through `Playthrough::Turn#move_to`, `#stand_in!`,
+`#carry!`, `#put_down!`, `#harm!` and `#strike!`, **the same statements the
+narrated loop moves the world with**, and the closed sets come from `Playthrough::Classifier`'s own readers. A
 mechanics mode with its own copy of the line that moves the player would be
 testing itself.
 

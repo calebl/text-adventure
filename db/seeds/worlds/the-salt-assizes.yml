@@ -86,7 +86,7 @@ characters:
 - fullname: Coraith Vell
   race: Bell-Keepers
   stats:
-    level: 1
+    level: 3
     hit_die: 8
     strength: 13
     dexterity: 10

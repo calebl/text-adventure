@@ -1,0 +1,261 @@
+# A FIGHT RESOLVES, THE PLAYER WINS IT, AND WHAT THE BODY WAS CARRYING IS ON THE
+# FLOOR AFTERWARDS.
+#
+# This is the whole of the slice as one walk, offline, with no key: the captain
+# types these lines into `NO_MODEL=1 rake game:mechanics` and watches the same
+# fight happen.
+#
+# THE RULE, in one paragraph. A blow always connects and deals one die of the
+# attacker's `hit_die` -- no to-hit, no armour, no critical (the captain's call
+# C2, measured in `data/ta-combat-scout` §7.2). A round IS the turn (C5): the
+# player acts by typing and then every live foe in the room acts, in `id` order.
+# The player's body starts at level 3 with a d8, which is 18 hit points (C1);
+# Marek Sollen is level 1 with a d10, which is 10.
+#
+# WHAT ONLY A WALK CAN SEE HERE, and it is four things:
+#
+#   THE ROUND STRUCTURE, WITHOUT A DIE. `blows:` is how many
+#   `Playthrough::Blow` rows a step wrote -- 2 for an attack answered by one
+#   foe, 0 for a line the engine refused -- and it is what this script asserts
+#   instead of damage. `Roll`'s seed is built out of ROW IDS (`Roll.seed`), so
+#   what a blow COST is not reproducible between the captain's database and a
+#   fresh one, and what a turn DID is. That is exactly the line
+#   `a-check-against-an-ability.yml` already draws: it pins the target and never
+#   the d20.
+#
+#   A BLOW AND ITS ANSWER ARE ONE TURN. `changed:` is what the player did and
+#   `note:` is what the world did back, in the same report, because they
+#   happened in the same round.
+#
+#   THE PLAYER CANNOT LOSE THIS ONE, and that is why the fight is fought a blow
+#   at a time with a `mend` between: `mend` is an engine instrument
+#   (`Playthrough::Grammar::ENGINE_VIEW`), so it produces no `Intent`, so nobody
+#   answers it -- the party goes back to 18 for free. Marek's d10 cannot take
+#   more than 10 off 18 in one round, and ten blows of at least 1 cannot leave
+#   his 10 hit points standing, so the walk ends the same way whatever the dice
+#   say. A fixture that is right nine times in ten is worse than none.
+#
+#   THE DEAD LEAVE THE CLOSED SETS. Marek is in `present:` while he is alive and
+#   out of it the moment he is not -- `Playthrough#cast_in` is this game's
+#   answer, so a corpse cannot be talked to or hit twice, and the world's
+#   `characters.location_id` is untouched (he is alive in every other
+#   playthrough of this world, which is what the layer split is for).
+#
+#   THE LOOT IS THIS GAME'S COPY AND NOT THE WORLD'S ROW.
+#   `Playthrough::Turn#spill!` puts what a dead body was holding on the floor of
+#   the room, in the same transaction as the last hit point, and
+#   `EngineSweep::Invariants#world_items_unmoved` proves after the walk that the
+#   world's own bell-rope tally is still in Marek's hands where the file put it.
+#
+# AND IT COSTS NO MODEL CALL. `EngineSweep` replaces `BaseAgent.new` with
+# something that raises for the length of a run, so a whole fight -- the
+# classifier's work done by `Playthrough::Grammar`, the dice by `Roll`, the
+# closing scene by `Playthrough::Fight` -- is arithmetic over records end to end.
+story: The Lunar Cartographer
+why: a fight resolves offline, the player wins it, and the body drops what it was holding
+steps:
+- id: nobody-to-fight-in-the-room-the-game-opens-in
+  type: look
+  why: the landlord is present and is nobody's enemy -- present and foes are two different sets
+  expect:
+    location: Grenn's Boarding House, Room 3 (realized)
+    present: [Grenn Ollivar]
+    foes: []
+    hp: 18
+    dead: false
+
+- id: up-the-stairs
+  type: go to the hallway
+  expect:
+    changed: true
+    location: Grenn's Boarding House hallway (stub)
+    foes: []
+    hp: 18
+
+- id: into-the-tower
+  type: go to the bell
+  why: ARRIVING IS FREE -- the riposte runs in the room the turn BEGAN in, which was the empty stair
+  expect:
+    changed: true
+    location: The Bell of Saint Aravel (realized)
+    present: [Marek Sollen]
+    foes: [Marek Sollen]
+    hp: 18
+    hp_of:
+      Marek Sollen: 10
+    here: []
+
+- id: the-first-round
+  type: attack Marek Sollen
+  why: THE WHOLE SLICE -- one blow of the player's d8, and every live foe answers in the same turn
+  expect:
+    understood: attack -> Marek Sollen
+    # `grammar` AND NOT `engine_view`, though `attack` is on that list: the word
+    # resolved a record and a fight ends in a `Scene`, and `engine_view` on
+    # `scenes.resolved_by` means no Scene comes of it (`Scene::TURN_READERS`).
+    resolved_by: grammar
+    changed: true
+    change: 'struck: Isbet Marrow hit Marek Sollen for'
+    note: 'answered: Marek Sollen hit Isbet Marrow for'
+    # TWO BLOWS: the player's own and the one live foe's answer. A round is the
+    # turn (the captain's call C5).
+    blows: 2
+    foes: [Marek Sollen]
+    present: [Marek Sollen]
+    dead: false
+
+- id: patched-up-1
+  type: mend 20
+  why: an engine instrument is not a turn in the fiction, so nobody answers it and the party goes back to full
+  expect:
+    hp: 18
+    blows: 0
+    dead: false
+
+- id: round-2
+  type: attack Marek Sollen
+  why: from here the number of rounds is the dice's business -- he may already be down, and then the line is refused
+  expect:
+    dead: false
+
+- id: patched-up-2
+  type: mend 20
+  expect:
+    hp: 18
+    blows: 0
+
+- id: round-3
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-3
+  type: mend 20
+  expect:
+    hp: 18
+    dead: false
+
+- id: round-4
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-4
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-5
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-5
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-6
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-6
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-7
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-7
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-8
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-8
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-9
+  type: attack Marek Sollen
+  expect:
+    dead: false
+
+- id: patched-up-9
+  type: mend 20
+  expect:
+    hp: 18
+
+- id: round-10-is-the-last-one-the-arithmetic-allows
+  type: attack Marek Sollen
+  why: ten blows of at least one cannot leave ten hit points standing, so he is dead by here whatever the dice said
+  expect:
+    dead: false
+
+- id: the-fight-is-over-and-the-body-let-go-of-what-it-held
+  type: look
+  why: THE END STATE, AND IT IS THE SAME END STATE WHATEVER THE DICE SAID
+  expect:
+    # HE IS OUT OF THIS GAME'S CAST and the room's own cast is untouched:
+    # `characters.location_id` still says he is here, which is what the next
+    # playthrough of this world will read, and `cast_unmoved` asserts it after
+    # the walk.
+    present: []
+    foes: []
+    # AND WHAT HE WAS HOLDING IS ON THE FLOOR -- this game's copy.
+    # `Playthrough::Turn#spill!` put it there in the same transaction as the
+    # last hit point, and `world_items_unmoved` asserts after the walk that the
+    # world's own bell-rope tally is still in his hands where the file put it.
+    here: [bell-rope tally]
+    carrying: []
+    dead: false
+    changed: false
+    blows: 0
+
+- id: and-it-can-be-picked-up
+  type: take the tally
+  why: loot is an ordinary item in an ordinary closed set the moment it is lying on the floor
+  expect:
+    changed: true
+    here: []
+    carrying: [bell-rope tally]
+    blows: 0
+
+- id: what-is-written-on-it-came-with-the-copy
+  type: read the tally
+  why: Item::NOT_COPIED is an exception list, so the words rode along into this game's copy
+  expect:
+    note: XI. XI.
+    inscription:
+      bell-rope tally: 'XI. XI.'
+    changed: false
+    blows: 0
+
+- id: a-corpse-cannot-be-hit-again
+  type: attack Marek Sollen
+  why: he is out of `Playthrough#cast_in`, so the name resolves to nobody and the line is refused
+  expect:
+    refused: true
+    changed: false
+    offers: there is no person here called
+    drifts: 0
+    blows: 0
+
+- id: and-cannot-be-talked-to-either
+  type: talk to Marek Sollen
+  why: ONE reader behind both closed sets -- a body this game killed is gone from `talk` too
+  expect:
+    refused: true
+    changed: false
+    offers: there is no person here called
+    drifts: 0
+    blows: 0

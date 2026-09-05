@@ -146,6 +146,16 @@ class Story::Scoreboard
 
   def scanned = scenes.size
 
+  # HOW MANY TURNS THE AUDITS LEFT OUT because the engine wrote them rather than
+  # a narrator -- `Scene#engine_authored?`, which today is the one `Scene` that
+  # closes a fight (`Playthrough::Fight`).
+  #
+  # IT IS PRINTED BESIDE THE TABLE AND NEVER FOLDED INTO IT, for the reason
+  # `Eval::Richness` is printed beside the defect counts: an exclusion that
+  # shrinks a denominator without saying so is a rate that improved for a reason
+  # nobody can see. Zero for both frozen corpora, which carry no fights.
+  def excluded = @excluded ||= audits.sum { |audit| audit.respond_to?(:excluded) ? audit.excluded : 0 }
+
   def flags = @flags ||= audits.flat_map(&:flags)
 
   def unjudged = @unjudged ||= audits.flat_map(&:unjudged)

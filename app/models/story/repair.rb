@@ -84,6 +84,8 @@ class Story::Repair
     hp_above_maximum: { calls: 0, handler: :repair_hp_above_maximum },
     vitals_for_an_unmet_character: { calls: 0, handler: :repair_unmet_vitals },
     protagonist_without_vitals: { calls: 0, handler: :repair_missing_vitals },
+    dead_body_holding_things: { calls: 0, handler: :repair_spilled_body },
+    playthrough_dead_but_not_ended: { calls: 0, handler: :repair_unended_playthrough },
     duplicate_locations: { calls: 0, handler: :repair_duplicate_locations },
     duplicate_items: { calls: 0, handler: :repair_duplicate_items },
     mobile_doorway_re_asserted: { calls: 0, handler: :repair_re_asserted_doorway },
@@ -406,6 +408,35 @@ class Story::Repair
 
     "gave playthrough ##{playthrough.id} a condition for #{playthrough.character.fullname}, " \
       "at the #{row.hp_current} their stat block starts them on"
+  end
+
+  # WHAT A BODY LETS GO OF, DONE LATE. `Playthrough::Turn#spill!` is the whole
+  # repair -- the same statement `#harm!` makes in the transaction that takes
+  # the last hit point -- so this writes nothing the engine would not have
+  # written itself, and every value it uses is already on record: the room is
+  # `characters.location_id` and the layer is the copy's own. THE WORLD'S ROWS
+  # ARE NOT TOUCHED, because `Playthrough#items_held_by` reads the playthrough
+  # layer and nothing else.
+  def repair_spilled_body(finding)
+    row = finding.subject
+    who = row.character
+    spilled = Playthrough::Turn.new(row.playthrough).spill!(who)
+
+    "put #{spilled.map(&:name).join(", ")} on the floor of #{who.location.name}, " \
+      "where playthrough ##{row.playthrough_id} left #{who.fullname}'s body"
+  end
+
+  # THE GAME MARKED OVER, FROM THE BODY THAT ENDED IT. Derived and not chosen:
+  # the captain's ruling of 2026-09-04 is that zero hit points ends a
+  # playthrough, `Playthrough#over?`'s comment has been promising this repair
+  # since the column landed, and `Playthrough#end!` is idempotent and dates the
+  # end at the playthrough's own story clock.
+  def repair_unended_playthrough(finding)
+    playthrough = finding.subject
+    playthrough.end!
+
+    "marked playthrough ##{playthrough.id} ended at #{playthrough.ended_at.utc.iso8601}: " \
+      "#{playthrough.character.fullname} is at zero hit points, and zero is death"
   end
 
   # TWO ROWS THAT ARE ONE ROOM, FOLDED ONTO THE ONE WITH THE HISTORY -- and the

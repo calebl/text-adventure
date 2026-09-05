@@ -83,8 +83,8 @@ characters:
 - fullname: Odile Vance
   race: Copyists' Line
   stats:
-    level: 1
-    hit_die: 6
+    level: 3
+    hit_die: 8
     strength: 9
     dexterity: 11
     will: 15

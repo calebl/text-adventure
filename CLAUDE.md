@@ -784,18 +784,70 @@ The current database includes the following story-related models with proper ass
   the play page shows where the input used to be. Read its header first.
 - **What is NOT built, and it is deferred rather than missing**: death saves, an
   unconscious state, scars, revival, restore-from-save, and any level
-  advancement rule. There is also no combat, no attack roll, no AC, no
-  initiative, no rest, no skill, no spell, no number on an `Item`, and no
-  `Story::Audit` prose check reading HP against narration. There ARE three
-  ability scores since the evening of 2026-09-04 (see `Character`), and nothing
-  connects a wound to a check: a hurt body rolls against the same number. A world
-  can CONTAIN an enemy since the same day (`characters.hostile`), and nothing
-  resolves a fight: there is no attack verb, no blow, no riposte and no
-  per-playthrough mark about who has noticed whom.
+  advancement rule. There is also no attack ROLL, no AC, no initiative, no rest,
+  no skill, no spell, no number on an `Item`, and no `Story::Audit` prose check
+  reading HP against narration. There ARE three ability scores since the evening
+  of 2026-09-04 (see `Character`), and nothing connects a wound to a check: a
+  hurt body rolls against the same number. **A FIGHT DOES RESOLVE** since
+  2026-09-05 (`Playthrough::Riposte`, `Playthrough::Fight`, `attack <name>`), and
+  a blow can take the last hit point — which is what makes this section reachable
+  from play rather than only from `harm 5`.
 - `lib/engine_sweep/scripts/death-ends-a-playthrough.yml` walks it: harm to
   zero, then every kind of line refused with nothing written.
   `the-unrecorded-hour-two-bodies.yml` walks the other half — one game ending is
   one game ending.
+
+### When a fight resolves
+- **A blow always connects and deals one die of the attacker's `hit_die`** — the
+  captain's call C2, measured in `data/ta-combat-scout` §7.2. No to-hit, no
+  armour, no critical, no initiative and no ability term.
+  `Playthrough::Turn#damage_for` is the rule and `#strike!` is the ONE writer of
+  `playthrough_blows`.
+- **A ROUND IS THE TURN** (call C5). `Playthrough::Riposte#run!` is step 7 of
+  `Playthrough::Turn#play` and of `Playthrough::Mechanics#run`: every live foe in
+  the room the turn BEGAN in acts, in `id` order. It runs on every line the
+  engine PLAYED — a look, a read, a move — and on no line it refused, because *a
+  refused line writes nothing*. On a move, the foes in the room you LEFT act
+  before you go; the fight is over the moment you are somewhere else, which is
+  call C1 (*a fight is always escapable by leaving the room*) with a price on it.
+- **`attack <name>` resolves against the FULL present-people set** — the
+  captain's sixth ruling of 2026-09-05, *"anyone can be attacked"*. It is in
+  `Playthrough::Grammar::VERBS`, `ENGINE_VIEW` and `RESOLVING`, so it makes no
+  model call in either mode, and it is NOT in
+  `Playthrough::IntentSchema::INTENTS`, `Drift::ACTIONS` or `Overreach::ACTIONS`
+  — the seventh intent is a measured slice of its own. Being attacked marks the
+  victim **provoked for this playthrough** (`playthrough_vitals.provoked_at`,
+  one writer: `Playthrough::Turn#provoke!`), and a provoked person strikes back
+  from the next turn. `characters.hostile` is the world's and never moves.
+- **Playthrough::Blow** → the exchange, one durable row per blow, and
+  **Playthrough::Fight** → ONE `Scene` when the fight ENDS. A Scene per round
+  would put engine copy in the column `Story::Audit` and `Eval::Richness` read as
+  narration once per round; writing none at all would stop `Story#clock`. So the
+  rounds are rows and the closing Scene carries `resolved_action: "attack"`, the
+  foe in `acted_on`, `Scene::TURN_MINUTES["action"]` per round of story time, and
+  the ENGINE's own sentence in `description` — no model call, in either mode. A
+  fight ends for exactly three reasons and `Fight#over?` is where they are
+  written: no live foe present, the party left the room, or the player is dead.
+- **`Scene#engine_authored?` keeps the audit honest.** `Story::Audit#scenes` and
+  `Eval::Richness` skip those rows and `rake game:score` prints
+  `Story::Scoreboard#excluded`, so a smaller denominator can never read as a
+  better rate. **No combat prose check ships**; the corpora cannot answer one
+  (`data/ta-combat-scout` §11.2 measured it).
+- **Playthrough#cast_in** → WHO THIS GAME CAN SPEAK TO OR SWING AT, the
+  playthrough-level reader that subtracts this game's dead, with the four readers
+  repointed at it. `Character.present_in` stays the world's answer.
+  `Playthrough::Turn#spill!` puts a dead body's own copies on the floor of the
+  room it stands in, in the same transaction as the last hit point; the world's
+  rows never move. `#harm!` ends the GAME only for the protagonist.
+- **The player's body is level 3 with a d8 (18 hit points) in the seeded worlds**
+  — call C1. `Character::StatBlock::STARTING_LEVEL` stays 1 for a generated
+  person. It reaches an existing database through `bin/update`'s re-seed and
+  does not touch `playthrough_vitals`.
+- **A sweep script may not assert a die.** `Roll`'s seed is built out of row ids,
+  so `EngineSweep::Expectation`'s `blows:` and `hp_of:` are the die-independent
+  instruments; `a-fight-the-player-wins.yml` and
+  `a-fight-that-kills-the-player.yml` walk both outcomes and each says in its
+  header why its ending is fixed whatever the dice say
 
 ### Sweeping the engine with stored scripts
 - `rake game:sweep` (`EngineSweep`) walks YAML scripts of typed lines through

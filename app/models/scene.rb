@@ -65,6 +65,14 @@ class Scene < ApplicationRecord
   # lose the count. See Playthrough::Drift.
   has_many :drifts, class_name: "Playthrough::Drift", dependent: :nullify,
                     inverse_of: :scene
+  # THE BLOWS THIS SCENE CLOSED A FIGHT OVER. NULLIFIED rather than destroyed,
+  # on exactly the drift's reasoning one line up: the blow is the durable record
+  # of the round and this Scene is only the sentence about it, so losing the
+  # sentence must not lose what the dice did. A blow with no scene reads as an
+  # OPEN fight (`Playthrough::Blow.open`), which after the scene is gone is the
+  # truth about it -- nothing has closed it. See `Playthrough::Fight`.
+  has_many :blows, class_name: "Playthrough::Blow", dependent: :nullify,
+                   inverse_of: :scene
   # Judgements the player recorded on this turn. DESTROYED rather than nullified,
   # which is the opposite of the drift above it and for a reason: a drift is the
   # measurement and the scene is only the suspect, whereas a verdict is a

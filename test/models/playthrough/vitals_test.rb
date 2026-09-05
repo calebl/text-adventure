@@ -155,4 +155,40 @@ class Playthrough::VitalsTest < ActiveSupport::TestCase
 
     assert_equal [ 1, 8 ], [ @rowe.reload.level, @rowe.hit_die ]
   end
+
+  # --- the mark this game leaves on a body it picked a fight with -------------
+  #
+  # The captain's sixth ruling of 2026-09-05: *"anyone can be attacked"*, and
+  # being attacked makes somebody a foe FOR THIS PLAYTHROUGH ONLY. It is on this
+  # row rather than on `characters.hostile` because the world's hostility is the
+  # world's.
+
+  test "an unmarked row has never been provoked" do
+    row = create(:playthrough_vitals)
+
+    assert_not_predicate row, :provoked?
+    assert_nil row.provoked_at
+  end
+
+  test "provoking marks the moment on the story's clock" do
+    row = create(:playthrough_vitals)
+    at = row.playthrough.story_now
+
+    row.provoke!(at)
+
+    assert_predicate row.reload, :provoked?
+    assert_equal at, row.provoked_at
+  end
+
+  # THE MOMENT A FIGHT STARTED DOES NOT MOVE BECAUSE A SECOND BLOW LANDED --
+  # `Playthrough#end!`'s rule one table over.
+  test "provoking twice keeps the first moment" do
+    row = create(:playthrough_vitals)
+    first = row.playthrough.story_now
+    row.provoke!(first)
+
+    row.provoke!(first + 1.hour)
+
+    assert_equal first, row.reload.provoked_at
+  end
 end
