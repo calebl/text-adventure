@@ -75,6 +75,31 @@
 #                        is: a file that gives nobody a stat block is a
 #                        legitimate world, and comparing against the file
 #                        catches everything the stronger sentence would.
+#                        WHAT IS NOT IN IT is `characters.hostile`, and the
+#                        reason is in `hostility_unmoved` below: that is the
+#                        same sentence about the same layer, and it has to cover
+#                        `races.monstrous` and `locations.danger` too, neither
+#                        of which is a column on a character.
+#   hostility_unmoved    the WORLD's three combat columns are what the world
+#                        file says they are: `characters.hostile` for every
+#                        person, `races.monstrous` for every race, and
+#                        `locations.danger` for every room. It is
+#                        `stat_blocks_unmoved`'s statement one column over --
+#                        no typed line may make somebody hostile, mark a race
+#                        monstrous or make a room dangerous -- and it is a
+#                        SEPARATE check rather than three more keys on that one
+#                        because two of the three are not columns on a character
+#                        at all, and an invariant that reported a moved race
+#                        under the heading "stat blocks" would send a reader to
+#                        the wrong table. The writers are the seed file, the
+#                        derivation at creation (`Character.hostile_by_default?`,
+#                        which an offline walk cannot reach because it realizes
+#                        no rooms) and the roll a room is born with
+#                        (`Location::Danger`). No model and no player is on that
+#                        list. Stated as "unmoved" against the file, for
+#                        `cast_unmoved`'s reason: a world with no monsters at
+#                        all is the ordinary world and comparing against the
+#                        file catches everything a stronger sentence would.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
@@ -112,7 +137,7 @@ class EngineSweep::Invariants
 
   def check
     [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, stat_blocks_unmoved,
-      nothing_was_written ].flatten.compact
+      hostility_unmoved, nothing_was_written ].flatten.compact
   end
 
   private
@@ -288,6 +313,51 @@ class EngineSweep::Invariants
 
     "level #{stats["level"]}, d#{stats["hit_die"]}, " \
       "#{Character::ABILITIES.map { |ability| "#{ability} #{stats[ability.to_s]}" }.join(" ")}"
+  end
+
+  # WHO THE FILE SAYS ATTACKS THE PARTY, WHICH RACES IT CALLS MONSTERS, AND HOW
+  # DANGEROUS IT SAYS EACH ROOM IS -- all three read the file's key with the
+  # column's own default for an absent one, so a row that ACQUIRED hostility
+  # during a walk fails exactly as loudly as one that lost it. That is
+  # `#cast_in_file`'s shape and it is here for its reason.
+  #
+  # Three statements in one check because they are one fact: a world can contain
+  # an enemy, and no typed line may change what that enemy is.
+  def hostility_unmoved
+    moved = [ *hostility_of_the_cast, *monstrousness_of_the_races, *danger_of_the_rooms ]
+    return nil if moved.empty?
+
+    broken("hostility_unmoved", moved.join("; "))
+  end
+
+  def hostility_of_the_cast
+    wanted = Array(seed["characters"]).to_h { |row| [ row["fullname"], row["hostile"] == true ] }
+
+    story.characters.order(:id).filter_map do |character|
+      next if character.hostile? == wanted[character.fullname]
+
+      "#{character.fullname} is #{character.hostile? ? "hostile" : "not hostile"} and the file says "         "#{wanted[character.fullname] ? "hostile" : "not hostile"}"
+    end
+  end
+
+  def monstrousness_of_the_races
+    wanted = Array(seed.dig("universe", "races")).to_h { |row| [ row["name"], row["monstrous"] == true ] }
+
+    story.universe.races.order(:name).filter_map do |race|
+      next if race.monstrous? == wanted[race.name]
+
+      "the race #{race.name.inspect} is #{race.monstrous? ? "monstrous" : "a people"} and the file says "         "#{wanted[race.name] ? "monstrous" : "a people"}"
+    end
+  end
+
+  def danger_of_the_rooms
+    wanted = Array(seed["locations"]).to_h { |row| [ row["name"], row["danger"].presence || Location::SAFE ] }
+
+    story.locations.order(:id).filter_map do |room|
+      next if room.danger == wanted.fetch(room.name, Location::SAFE)
+
+      "#{room.name} is #{room.danger} and the file says #{wanted.fetch(room.name, Location::SAFE)}"
+    end
   end
 
   def nothing_was_written

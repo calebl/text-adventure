@@ -877,6 +877,78 @@ number.
   24-narration corpus (see *Auditing the difference*), and the instrument comes
   after there are flagged turns to measure it on.
 
+### A world that contains an enemy
+
+`races.monstrous`, `characters.hostile` and `locations.danger` are the second
+half of the stat system, and they are on the **world's** side of exactly the line
+`hit_die` is on. The captain's ruling of 2026-09-04:
+
+> *"a universe should be able to have monsters as well as characters."*
+
+And the seventh ruling the same evening, which is where they come from:
+
+> *"go with your rule for now. eventually I want the universe generator to
+> provide more input into this."*
+
+**Nothing fights.** A world can contain an enemy, the engine can say so, and
+that is the whole of it — no attack verb, no blow, no riposte, no per-playthrough
+mark about who has noticed whom. Those are later slices of the combat build
+order.
+
+- **A monster is an ordinary `Character` with `hostile` set**, and that is the
+  argument `locations.mobile` already made one table over: *"a mobile location
+  is an ordinary location in every other respect."* Every seam a fight will need
+  — a body, a whereabouts, hands, a place in a room's cast, a per-playthrough
+  condition, a seed entry, a doctor finding, a name in the closed sets — already
+  exists on `Character` and on nothing else. **The nine required fields are NOT
+  relaxed for one**: a monster has a backstory and something it is afraid of,
+  because a monster you can talk to is a feature of this game rather than an
+  accident. Something genuinely impersonal is a hazard rather than a character,
+  and that is a later slice.
+- **A universe's bestiary is the monstrous half of its own race list.**
+  `Race.monstrous` and `Race.peoples` are the two pools a GENERATED person is
+  drawn from, and there is no second catalogue.
+- **Where monsters come from is a rolled per-room `danger`**, in the shape
+  `locations.mobile` and `location_connections.distance` have: a closed-set key
+  into `Location::DANGERS` whose value is faces of `DANGER_DIE`, never a free
+  number a model could fill in. `Location::Danger.for_a_new_room` rolls it
+  through the seeded `Roll` kernel when a room is BORN — a stub, at
+  `Location::Generator#create_stub!` — and `Character::Registry#slots` throws one
+  die per slot at realization to pick the pool. `deadly` is a seed file's word
+  and the engine never rolls it; the opening room of a generated world is never
+  rolled at all.
+- **Hostility is DERIVED in one line and no model sets it.**
+  `Character.hostile_by_default?` is true when the race is monstrous, read by
+  `Character::Registry` and `Character::Generator`. No schema gained a field, no
+  prompt mentions one, and nothing scans prose — the same standing rule the stat
+  block is under. A seed file says `hostile:` outright, which is how a world
+  holds a tame beast of a monstrous race.
+- **`Playthrough#foes_in(location)` is the ONE reader.** The world says who is
+  hostile; this GAME says who is still standing. Reading `Character.hostile`
+  alone would offer a corpse a fight, which is `#items_lying_in`'s own reason for
+  existing one table over.
+- **Monstrous races reach the prompts**, and that is captain call C4 answered in
+  his own words: *"monstrous races should reach the prompts."* They are in
+  `Universe#race_names` for both the `:place` and the `:dialogue` audience. It
+  changed no prompt template — only what the existing list contains.
+- **No typed line may make anybody hostile.**
+  `EngineSweep::Invariants#hostility_unmoved` says it over all three columns, the
+  way `stat_blocks_unmoved` says it about a body. It is its own check rather than
+  three more keys on that one, because two of the three are not columns on a
+  character and an invariant reporting a moved race under the heading "stat
+  blocks" would send a reader to the wrong table.
+  `lib/engine_sweep/scripts/a-monster-in-a-room.yml` walks it offline.
+- **`rake game:doctor` reports three shapes**, and two of them say **no repair**
+  out loud: `hostile_without_a_stat_block` is `:safe` and shares
+  `character_without_a_stat_block`'s roll (and that finding steps aside for it,
+  so one row is one finding); `monstrous_race_with_no_monsters` and
+  `location_with_an_unknown_danger` are `:manual`, because writing a monster is
+  world data nothing on record implies and nothing says which of the four words a
+  fifth one meant.
+- **No `bin/update` step was needed**, and that is a property of the columns
+  rather than an omission: all three are NOT NULL with a default, so every row
+  already in a database is already right.
+
 ### Sweeping the engine with stored scripts
 
 `rake game:sweep` (`EngineSweep`, README → *Sweep the engine*) is the same
@@ -932,6 +1004,11 @@ expectations asserted against the records after every typed line. It runs in
   here by construction and the only place to observe it was a generated run
   costing money. It is a column now, so
   `lib/engine_sweep/scripts/the-salt-assizes-presence.yml` walks it for free.
+- **`foes:` is the other half of the same room and a separate key.** Who is
+  standing here and which of them means the party harm are two facts, so a
+  script that pins both is saying the cast is unchanged AND that hostility is
+  what the world file said it was.
+  `lib/engine_sweep/scripts/a-monster-in-a-room.yml` walks it.
 - **Say what the sweep cannot see.** With the classifier off, a defect in how a
   model read a line is out of reach and belongs to `Playthrough::ClassifierTest`.
   `lib/engine_sweep/scripts/regressions-2026-09-03.yml` is the worked example:
@@ -991,10 +1068,12 @@ The debug view shows the same four tables for one playthrough.
 - **A whereabouts record did not revive the person check, and that was measured
   too.** `characters.location_id` made the records authoritative about presence,
   which was the stated blocker — and the corpora still cannot support
-  `character_not_present`: 36 of 248 frozen passages are judgeable, exactly ONE
-  names somebody recorded elsewhere, and moving one seeded character one door
+  `character_not_present`: **104** of 248 frozen passages are judgeable, exactly
+  ONE names somebody recorded elsewhere, and moving one seeded character one door
   turns real, correct prose (*"From somewhere below, Grenn's voice rises"*) into
-  a violation. `Story::Audit`'s finding 5 has the numbers and
+  a violation. The denominator was 36 until `The Lunar Cartographer` gained a
+  monster standing in a room; the NUMERATOR did not move, which is why the
+  decision did not either. `Story::Audit`'s finding 5 has the numbers and
   `Story::AuditPresenceTest` pins them, so the decision gets re-read rather than
   inherited. The gap is covered by the engine instead: `Character.present_in` is
   the closed set `talk` resolves against, so a player cannot SPEAK to somebody

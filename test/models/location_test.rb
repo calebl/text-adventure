@@ -162,6 +162,55 @@ class LocationTest < ActiveSupport::TestCase
     assert_includes @location.reload.exits, neighbour
   end
 
+  # ------------------------------------------------------------------------
+  # DANGER: HOW LIKELY THIS PLACE IS TO BE BORN WITH THE WORLD'S MONSTERS IN IT.
+  # A closed-set key into `Location::DANGERS`, the shape
+  # `LocationConnection::DISTANCES` has -- the labels are what an author reads,
+  # the numbers are what the engine rolls.
+
+  test "a room is safe unless a world says otherwise" do
+    assert_equal Location::SAFE, build(:location).danger
+    assert_not_predicate build(:location), :dangerous?
+    assert_equal 0, build(:location).danger_share
+  end
+
+  test "should refuse a danger the engine has no table for" do
+    @location.danger = "a bit worrying"
+
+    assert_not @location.valid?
+    assert_includes @location.errors[:danger], "is not included in the list"
+  end
+
+  test "should refuse a blank danger" do
+    @location.danger = nil
+
+    assert_not @location.valid?
+  end
+
+  test "the share is faces of the danger die, and safe throws none" do
+    assert_equal 0, Location::DANGERS.fetch(Location::SAFE)
+    assert_equal Location::DANGER_DIE, Location::DANGERS.fetch("deadly")
+    Location::DANGERS.each_value { |share| assert_includes 0..Location::DANGER_DIE, share }
+  end
+
+  test "an unknown danger reads as no share at all rather than raising" do
+    room = build(:location)
+    room.danger = "unheard-of"
+
+    assert_equal 0, room.danger_share
+    assert_not_predicate room, :dangerous?
+  end
+
+  test "the dangerous scope is every room that is not safe" do
+    @location.save!
+    dangerous = create(:location, :dangerous, story: @story, name: "The Bell Chamber")
+    create(:location, :deadly, story: @story, name: "The Sump")
+
+    assert_equal 2, @story.locations.dangerous.count
+    assert_includes @story.locations.dangerous, dangerous
+    assert_not_includes @story.locations.dangerous, @location
+  end
+
   test "should have parent location relationship" do
     @location.save!
     child_location = create(:location,

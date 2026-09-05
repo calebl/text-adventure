@@ -24,7 +24,17 @@ class Character::Generator
     # its peoples; age and sex are rolled so repeated runs diverge. All three
     # are stated in the prompt, and none of them is in the schema -- asking for
     # a value the prompt just supplied is a decision bought twice.
-    @race = story.universe.races.sample
+    #
+    # `Universe#peoples` RATHER THAN THE WHOLE LIST since a universe may have a
+    # bestiary in it (`races.monstrous`). This call writes the story's own
+    # people -- `rake game:new` builds the protagonist with it -- and a
+    # protagonist drawn out of the bestiary would be a player character who is
+    # hostile to the party by the derivation below. Where a MONSTER comes from
+    # is a room's own `danger` at realization (`Character::Registry`), which is
+    # the only place in the app that draws from the other pool. A universe whose
+    # every race is monstrous falls back to the whole list, because a generator
+    # with nobody to write is worse than an odd protagonist.
+    @race = (story.universe.peoples.presence || story.universe.races).sample
     @age = rand(18..120)
     @sex = Character.sexes.values.sample
     @character_generation_prompt = generation_prompt(story)
@@ -146,7 +156,16 @@ class Character::Generator
     # the roll. `sequence` is how many people this story already has, so two
     # characters generated for one story at one moment on its clock are two
     # rolls rather than one number twice.
+    #
+    # AND SO IS HOSTILITY, derived from the race in the one line
+    # `Character.hostile_by_default?` is -- the captain's seventh ruling of
+    # 2026-09-04 evening. `Character::Schema` has no field for it and this
+    # prompt asks for none. In practice it is always false here, because the
+    # race above is drawn from `Universe#peoples`; it is written rather than
+    # assumed so that the derivation lives in one place with two callers and
+    # a universe with nothing but monstrous races still comes out consistent.
     character = Character.new(story: story, race: race, age: age, sex: sex,
+                              hostile: Character.hostile_by_default?(race),
                               **Character::StatBlock.for_new(story, sequence: story.characters.count))
 
     character.fullname = sanitize_string(content["fullname"])

@@ -94,7 +94,7 @@ class Playthrough::Mechanics
   # Every field is a fresh read rather than anything carried along from before
   # the write, so the read-out is what the database says and not what this class
   # believed it had done.
-  State = Data.define(:location, :exits, :items_here, :carried, :present, :condition, :character, :over) do
+  State = Data.define(:location, :exits, :items_here, :carried, :present, :foes, :condition, :character, :over) do
     # THE WORLD'S OWN NUMBERS FOR THE PLAYER, one line's worth. Read straight off
     # the character, because that is where they live: a stat block and three
     # abilities are the STORY's (`Character`'s header), and printing them beside
@@ -128,6 +128,17 @@ class Playthrough::Mechanics
         [ "lying here", items_here.map { |item| "#{item.name} [##{item.id}]" }, "nothing to pick up" ],
         [ "carrying", carried.map { |item| "#{item.name} [##{item.id}]" }, "nothing" ],
         [ "present", present.map(&:fullname), "nobody else" ],
+        # WHO OF THEM MEANS THE PARTY HARM, out of `Playthrough#foes_in` -- the
+        # one reader, so the world's hostility and this game's dead are asked
+        # together and never separately. It is a SUBSET of the line above it and
+        # printed as its own row rather than as a mark on a name, because
+        # "somebody is standing here" and "somebody here is a foe" are two facts
+        # and the sweep asserts them as two (`present:` and `foes:`).
+        #
+        # Nothing fights yet. This is the read-out saying what the records hold,
+        # which is the whole of what this slice is: a world can contain an enemy
+        # and `rake game:mechanics` shows it standing there.
+        [ "hostile", foes.map(&:fullname), "nobody hostile" ],
         # HOW MUCH IS LEFT OF THE PLAYER, out of `Playthrough#vitals_for` -- the
         # same one reader `Playthrough::Moment` states it to the narrator from,
         # so the prose and the read-out cannot disagree about a number. Empty
@@ -254,6 +265,12 @@ class Playthrough::Mechanics
       items_here: classifier.items_here,
       carried: classifier.items_carried,
       present: classifier.characters_here,
+      # WHO IS FIGHTING THIS PARTY HERE, through the one reader. Read off the
+      # playthrough rather than off the classifier: hostility is not one of the
+      # closed sets a typed line resolves against -- there is no verb for it yet
+      # -- and `#foes_in` is where the world's flag and this game's condition
+      # are asked together.
+      foes: playthrough.foes_in(playthrough.current_location),
       condition: playthrough.condition,
       # WHO THE PLAYER IS, so the read-out and `EngineSweep::Expectation` can
       # both reach the five columns the WORLD holds about this body -- `#sheet`

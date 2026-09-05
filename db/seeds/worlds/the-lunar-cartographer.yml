@@ -18,6 +18,20 @@
 # connections out of the quarter that reach them. This world's physics have
 # claimed since it was generated that Nocturnis rearranges itself every night;
 # the mechanic is that claim made true in the records rather than in prose.
+# THE ONE SEEDED WORLD WITH A MONSTER IN IT, and it is here rather than in the
+# other two on purpose. `The Salt Assizes` is the held-out world for
+# `rake eval:run` and nothing tunes against it; `The Unrecorded Hour`'s own
+# universe says physical violence is rarely the instrument of choice, and a
+# bureaucratic mystery is the wrong world to put a thing with hands in. This
+# one's physics have claimed since it was generated that prolonged exposure to
+# Nocturna causes disorientation and memory loss, so `Nocturna-Blighted` is that
+# claim followed to its end and made a `monstrous: true` race, and Marek Sollen
+# in the bell chamber is one of them. The Bell of Saint Aravel is realized for
+# the same reason the supply closet in `The Unrecorded Hour` is: a stub has
+# nothing in it to walk into, and there has to be somewhere to meet him.
+# Nothing fights yet -- see `lib/engine_sweep/scripts/a-monster-in-a-room.yml`,
+# which walks up to him and asserts that the records say what he is.
+#
 # See db/seeds/worlds/README.md for the format and the rules the loader checks.
 #
 # Loaded offline by db/seeds.rb. No model call, no API key, no network.
@@ -49,6 +63,10 @@ universe:
   - name: Lunar Sovereigns
     description: |-
       The Lunar Sovereigns are humans who have adapted to harness Nocturna, granting them enhanced abilities such as night vision and heightened reflexes during nighttime. They are the ruling class of Nocturnis, often possessing pale, almost translucent skin and silver hair due to prolonged exposure to Nocturna. Their society is hierarchical and secretive, with power concentrated among a few families who control access to moonstones and advanced technology.
+  - name: Nocturna-Blighted
+    monstrous: true
+    description: |-
+      What is left when somebody stands too long under Nocturna's glow and the disorientation and the memory loss run all the way to the end. A Blighted keeps the shape of a person and the habits of one -- it will still climb a stair it has no reason to climb, still turn a key in a door it does not need opened -- and it keeps nothing else. It cannot be reasoned with, because there is nobody in there to reason with, and it will not be reasoned at: a Blighted goes for anybody still carrying a name. The Sovereigns keep them out of the ledgers and out of the guidebooks and have never once said the word in public, which is why every district has a story about one and no district has a record of one.
   - name: Scorch Nomads
     description: |-
       The Scorch Nomads are a hardy people who have adapted to survive in the harsh landscape of the Scorch. They are a mix of humans and other races who were exiled or fled Nocturnis after the Great War. They possess dark, weathered skin and are known for their resilience and resourcefulness. Their society is tribal and egalitarian, with a deep distrust of technology and the Lunar Sovereigns.
@@ -116,6 +134,30 @@ characters:
   likes: His own foundations, being right about the plaster, a settled ledger
   dislikes: The Sovereign's Circle, tenants who talk to the walls
   fears: That the house will crack after all, and that his family was right
+- fullname: Marek Sollen
+  race: Nocturna-Blighted
+  location: The Bell of Saint Aravel
+  hostile: true
+  stats:
+    level: 1
+    hit_die: 10
+    strength: 14
+    dexterity: 8
+    will: 3
+  nickname: the Ringer
+  age: 44
+  sex: male
+  is_protagonist: false
+  is_companion: false
+  backstory: |-
+    He rang the eleven o'clock for twenty-nine years, which meant twenty-nine years of standing in the one tower the city cannot move while the rest of it went past underneath him. Nobody told him what that does. The parish stopped seeing him some while before it stopped hearing him, and by then he had already forgotten his sister's name, then his own, then what the rope was for -- though he still pulls it, on the hour, more or less.
+  personality: |-
+    Nothing decides anything up there any more. What is left is habit and a terrible steadiness: he climbs, he waits, he pulls, and anything in the chamber that still answers to a name is something he goes for without hurrying and without stopping.
+  appearance: |-
+    A big man gone grey all the way through, skin and coat and eyes the same lamp-lit nothing, standing straighter than a living man stands. His hands are still a ringer's hands. He does not blink and he does not look away.
+  likes: The hour. The rope. The weight coming back up the line
+  dislikes: Anything that says a name out loud in his tower
+  fears: Nothing at all, and that is the whole of what is wrong with him
 locations:
 - name: Grenn's Boarding House, Room 3
   detail_level: realized
@@ -155,9 +197,18 @@ locations:
   teaser: |-
     The one tower the city cannot move, and the only bearing worth trusting.
 - name: The Bell of Saint Aravel
-  detail_level: stub
+  detail_level: realized
+  danger: dangerous
   teaser: |-
     Follow the eleven o'clock chime back to the tower that rang it.
+  description: |-
+    The stair comes out into the bell chamber and stops being a stair, and the whole city is suddenly below you and going quietly sideways. Saint Aravel's bell hangs on a headstock older than the Great War, green-black, big enough to stand inside, and the rope comes down through a hole in the boards and lies coiled on the floor as neatly as anything you have seen in Nocturnis. There is no lamp up here. There does not need to be: the louvres are open on four sides and the Larkspur Quarter is putting out enough silver to read a bearing by.
+
+    The Ringer is standing by the rope with his back to the louvres, and he was standing there before you came up. He is grey the way a photograph is grey, all of him the same shade, and he is far too still for a man waiting for the hour. Nothing in the chamber moves except the bell, very slightly, in the wind off the roofs. The only way down is the stair behind you, and the boards on it creak on the way down exactly as loudly as they creaked on the way up.
+  lore: |-
+    Saint Aravel's is one of the three fixed points in Nocturnis. The Sovereigns will tell you the tower does not move because it was built on pre-war footings; the Crystal Dwarves will tell you it does not move because there is a seam of unworked moonstone under it and Nocturna will not cross its own supply. Either way, a bearing taken from the bell is the only bearing in this city that means the same thing tomorrow, which is why every cartographer in the quarter eventually climbs it and why the parish gave up charging for the privilege.
+
+    What the parish does not put in the guidebook is what standing in a fixed point does to a person over twenty-nine years, while everything they can see goes past them every night. Marek Sollen rang the hour here from the age of fifteen. The register has him retiring at forty-four, which is the year the entries stop rather than the year anything happened, and it does not say where he went. The bell is still rung on the hour, more or less, and nobody in the Larkspur Quarter has gone up to ask who is ringing it.
 connections:
 - between: ['Grenn''s Boarding House, Room 3', Mournwell Lane]
   distance: adjacent

@@ -174,6 +174,106 @@ class Character::RegistryTest < ActiveSupport::TestCase
     assert_predicate created, :valid?
   end
 
+  # --- where monsters come from ---------------------------------------------
+  #
+  # THE CAPTAIN'S SEVENTH RULING, 2026-09-04 evening: a dangerous room draws its
+  # inhabitants from the universe's monstrous races instead of its peoples, and
+  # a generated character whose race is monstrous is hostile by default. Nothing
+  # a model answers reaches either half -- `Location::DetailSchema` has no field
+  # for a race or for hostility, and the realization prompt states the race this
+  # class has already rolled.
+
+  test "a safe room draws every slot from the world's peoples" do
+    create(:race, :monstrous, universe: @story.universe)
+
+    registry.slots.each { |slot| assert_not_predicate slot[:race], :monstrous? }
+  end
+
+  test "a deadly room draws every slot from the world's monsters" do
+    create(:race, :monstrous, universe: @story.universe)
+    lair = create(:location, :deadly, story: @story, name: "The Sump")
+
+    registry(lair).slots.each { |slot| assert_predicate slot[:race], :monstrous? }
+  end
+
+  test "a dangerous room draws from both pools" do
+    create(:race, :monstrous, universe: @story.universe)
+    rooms = 12.times.map { |n| create(:location, :dangerous, story: @story, name: "Chamber #{n}") }
+    drawn = rooms.flat_map { |room| Character::Registry.new(room).slots.map { |slot| slot[:race].monstrous? } }
+
+    assert_includes drawn, true
+    assert_includes drawn, false
+  end
+
+  # THE MIRROR CASE, and it is the louder of the two fallbacks: in a universe
+  # whose every race is a monster there is nobody else to be, so a safe room's
+  # inhabitant comes out of the bestiary and the derivation then makes them
+  # hostile. That is a true statement about such a world rather than a hole in
+  # `danger` -- the alternative is a room described around a person it does not
+  # have. No checked-in world is in this state and nothing in the app can put
+  # one there; this pins the behaviour so the header's claim is measured.
+  test "a safe room in a world with nothing but monsters writes one, and it is hostile" do
+    @story.universe.races.each { |race| race.update!(monstrous: true) }
+
+    created = registry.admit!([ sheet(fullname: "Marek Sollen") ]).sole
+
+    assert_equal [], @story.universe.peoples.to_a
+    assert_equal Location::SAFE, @here.danger
+    assert_predicate created.race, :monstrous?
+    assert_predicate created, :hostile?
+  end
+
+  test "a dangerous room in a world with no monsters writes ordinary people" do
+    lair = create(:location, :deadly, story: @story, name: "The Sump")
+
+    assert_equal [], @story.universe.monstrous_races.to_a
+    registry(lair).slots.each { |slot| assert_not_nil slot[:race] }
+  end
+
+  test "somebody born in a dangerous room of a monstrous race is hostile" do
+    create(:race, :monstrous, universe: @story.universe)
+    lair = create(:location, :deadly, story: @story, name: "The Sump")
+
+    created = Character::Registry.new(lair).admit!([ sheet(fullname: "Marek Sollen") ]).sole
+
+    assert_predicate created.race, :monstrous?
+    assert_predicate created, :hostile?
+  end
+
+  test "somebody born in a safe room is not hostile" do
+    create(:race, :monstrous, universe: @story.universe)
+    created = registry.admit!([ sheet(fullname: "Grenn Ollivar") ]).sole
+
+    assert_not_predicate created.race, :monstrous?
+    assert_not_predicate created, :hostile?
+  end
+
+  # A MONSTER IS AN ORDINARY PERSON IN EVERY RESPECT BUT ONE, and the nine
+  # fields say so: the registry refuses a half-written monster exactly as it
+  # refuses a half-written landlord.
+  test "a monster is written with the whole sheet a conversation reads" do
+    create(:race, :monstrous, universe: @story.universe)
+    lair = create(:location, :deadly, story: @story, name: "The Sump")
+
+    created = Character::Registry.new(lair).admit!([ sheet(fullname: "Marek Sollen") ]).sole
+
+    Character::Registry::SHEET.each { |field| assert_predicate created.public_send(field), :present? }
+    assert_predicate created, :stat_block?
+    assert_predicate created, :abilities?
+  end
+
+  # The same room asked twice picks the same people, which is what makes a room
+  # re-derivable and `DRY_RUN=1` worth anything one layer up.
+  test "one room's slots are the same slots in any process" do
+    create(:race, :monstrous, universe: @story.universe)
+    lair = create(:location, :dangerous, story: @story, name: "The Sump")
+
+    first = Character::Registry.new(lair).slots.map { |slot| slot[:race].monstrous? }
+    second = Character::Registry.new(lair).slots.map { |slot| slot[:race].monstrous? }
+
+    assert_equal first, second
+  end
+
   # WHO THEY ARE IS THE ENGINE'S, on `Character::Generator`'s rule. The rolls
   # are made before the prompt is built and the row has to match what the prompt
   # said, or the room was described around one person and written around

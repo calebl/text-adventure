@@ -167,6 +167,118 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
 
   # WHAT IS LYING IN A ROOM, which is the closed set `take` resolves against and
   # the only way a world can carry anything takeable at all.
+  # --- a world that contains an enemy ---------------------------------------
+
+  test "loads a monstrous race and a hostile character straight through" do
+    world = document
+    world["universe"]["races"] << { "name" => "Nocturna-Blighted", "monstrous" => true,
+                                    "description" => "What is left when somebody stands too long under the glow." }
+    world["characters"] << monster
+
+    story = WorldSeed::Loader.new(world).load!
+    marek = story.characters.find_by(fullname: "Marek Sollen")
+
+    assert_predicate story.universe.races.find_by(name: "Nocturna-Blighted"), :monstrous?
+    assert_predicate marek, :hostile?
+    assert_equal [ marek ], story.playthroughs.new.foes_in(story.locations.find_by(name: "The Closet"))
+  end
+
+  test "a race the file says nothing about is a people, and a character it says nothing about is not hostile" do
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_equal [], story.universe.monstrous_races.to_a
+    assert_equal [], story.characters.hostile.to_a
+  end
+
+  # A RACE THAT ALREADY EXISTS AND CHANGED IS WRITTEN BACK. It was not, before
+  # the monstrous flag needed it to be: `has_many` saves the new records in a
+  # collection and leaves the changed ones alone, so editing a race's
+  # description in a seed file and re-seeding did nothing at all.
+  test "re-seeding writes an edited race description back" do
+    WorldSeed::Loader.new(document).load!
+
+    edited = document
+    edited["universe"]["races"].first["description"] = "Delta-born, and done being unimpressed."
+    story = WorldSeed::Loader.new(edited).load!
+
+    assert_equal "Delta-born, and done being unimpressed.",
+                 story.universe.races.find_by(name: "Riverkin").description
+  end
+
+  # THE FILE IS THE DECISION AND IT RE-ASSERTS ITSELF, in both directions. A
+  # world that disarms its monster and is re-seeded has a disarmed monster --
+  # which a flag only ever written one way could never do.
+  test "re-seeding takes hostility and monstrousness off when the file drops them" do
+    armed = document
+    armed["universe"]["races"] << { "name" => "Nocturna-Blighted", "monstrous" => true,
+                                    "description" => "What is left when somebody stands too long under the glow." }
+    armed["characters"] << monster
+    WorldSeed::Loader.new(armed).load!
+
+    disarmed = document
+    disarmed["universe"]["races"] << { "name" => "Nocturna-Blighted", "monstrous" => false,
+                                       "description" => "What is left when somebody stands too long under the glow." }
+    disarmed["characters"] << monster.merge("hostile" => false)
+    story = WorldSeed::Loader.new(disarmed).load!
+
+    assert_not_predicate story.characters.find_by(fullname: "Marek Sollen"), :hostile?
+    assert_not_predicate story.universe.races.find_by(name: "Nocturna-Blighted"), :monstrous?
+  end
+
+  test "rejects a hostile character with no body" do
+    world = document
+    world["universe"]["races"] << { "name" => "Nocturna-Blighted", "monstrous" => true,
+                                    "description" => "What is left when somebody stands too long under the glow." }
+    world["characters"] << monster.except("stats")
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+    assert_match(/a foe needs a body/, error.message)
+  end
+
+  test "loads a room's danger and defaults the rest to safe" do
+    world = document
+    world["locations"].find { |room| room["name"] == "The Closet" }["danger"] = "dangerous"
+
+    story = WorldSeed::Loader.new(world).load!
+
+    assert_equal "dangerous", story.locations.find_by(name: "The Closet").danger
+    assert_equal Location::SAFE, story.locations.find_by(name: "The Office").danger
+    assert_predicate story.locations.find_by(name: "The Closet"), :dangerous?
+  end
+
+  # THE SAME BOTH-DIRECTIONS RULE, one table over: a stale "dangerous" would
+  # keep a world writing monsters into a room its author had made safe.
+  test "re-seeding takes a room's danger off when the file drops it" do
+    dangerous = document
+    dangerous["locations"].find { |room| room["name"] == "The Closet" }["danger"] = "deadly"
+    WorldSeed::Loader.new(dangerous).load!
+
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_equal Location::SAFE, story.locations.find_by(name: "The Closet").danger
+  end
+
+  test "rejects a danger the engine has no table for" do
+    world = document
+    world["locations"].first["danger"] = "a bit worrying"
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+    assert_match(/there is: safe, uneasy, dangerous, deadly/, error.message)
+  end
+
+  def monster
+    {
+      "fullname" => "Marek Sollen", "race" => "Nocturna-Blighted", "location" => "The Closet",
+      "hostile" => true, "stats" => sheet(hit_die: 10, strength: 14, dexterity: 8, will: 3),
+      "nickname" => "the Ringer", "age" => 44, "sex" => "male",
+      "is_protagonist" => false, "is_companion" => false,
+      "backstory" => "He rang the hour for twenty-nine years.", "personality" => "Habit, and a terrible steadiness.",
+      "appearance" => "Grey all the way through, and far too still.",
+      "likes" => "The hour", "dislikes" => "A name said out loud",
+      "fears" => "Nothing at all"
+    }
+  end
+
   test "loads an item lying in a location, in the room and in nobody's hands" do
     story = WorldSeed::Loader.new(document).load!
     closet = story.locations.find_by(name: "The Closet")

@@ -1062,4 +1062,89 @@ class Story::DoctorTest < ActiveSupport::TestCase
     connect(lane, create(:location, story: story, name: "The Long Quay", detail_level: "stub", teaser: "Barges."))
     story
   end
+
+  # --- a world that contains an enemy ---------------------------------------
+  #
+  # Three shapes, and all three are about WORLD data: `characters.hostile`,
+  # `races.monstrous` and `locations.danger` are on `hit_die`'s side of the
+  # layer split, so a wrong one is a world somebody has to edit rather than a
+  # game that has gone astray.
+
+  test "a world with a healthy monster in it is healthy" do
+    story = healthy_story
+    room = story.locations.realized.first
+    create(:character, :monster, story: story, location: room, fullname: "Marek Sollen")
+
+    doctor = Story::Doctor.new(story)
+
+    assert_predicate doctor, :healthy?, doctor.findings.map(&:message).join("\n")
+  end
+
+  test "a foe with no body is reported as a foe with no body" do
+    story = healthy_story
+    room = story.locations.realized.first
+    create(:character, :monster_without_a_stat_block, story: story, location: room, fullname: "The Sump")
+
+    assert_includes codes(story), :hostile_without_a_stat_block
+    assert_equal :safe, finding(story, :hostile_without_a_stat_block).remedy
+    assert_match(/nothing in this world can fight them/, finding(story, :hostile_without_a_stat_block).message)
+  end
+
+  # ONE ROW, ONE FINDING. `character_without_a_stat_block` steps aside for the
+  # louder statement rather than reporting the same nil twice.
+  test "a foe with no body is not also reported as a person with no body" do
+    story = healthy_story
+    room = story.locations.realized.first
+    create(:character, :monster_without_a_stat_block, story: story, location: room, fullname: "The Sump")
+
+    assert_not_includes codes(story), :character_without_a_stat_block
+  end
+
+  test "an ordinary person with no body is still reported the ordinary way" do
+    story = healthy_story
+    create(:character, :without_a_stat_block, story: story, fullname: "Grenn Ollivar")
+
+    assert_includes codes(story), :character_without_a_stat_block
+    assert_not_includes codes(story), :hostile_without_a_stat_block
+  end
+
+  test "a monstrous race this world has nobody of is reported and cannot be repaired" do
+    story = healthy_story
+    create(:race, :monstrous, universe: story.universe, name: "Nocturna-Blighted")
+
+    assert_includes codes(story), :monstrous_race_with_no_monsters
+    assert_equal :manual, finding(story, :monstrous_race_with_no_monsters).remedy
+    assert_not_includes Story::Repair.new(story, generate: true).plan.map(&:code), :monstrous_race_with_no_monsters
+  end
+
+  test "a monstrous race with a monster of it is quiet" do
+    story = healthy_story
+    race = create(:race, :monstrous, universe: story.universe, name: "Nocturna-Blighted")
+    create(:character, story: story, race: race, hostile: true, location: story.locations.realized.first,
+                       fullname: "Marek Sollen")
+
+    assert_not_includes codes(story), :monstrous_race_with_no_monsters
+  end
+
+  # `Location` refuses a key outside `DANGERS`, so this row arrived through raw
+  # SQL or a schema older than the validation -- which is exactly the state the
+  # doctor exists to name.
+  test "a room with a danger the engine has no table for is reported and cannot be repaired" do
+    story = healthy_story
+    room = story.locations.realized.first
+    room.update_column(:danger, "a bit worrying")
+
+    assert_includes codes(story), :location_with_an_unknown_danger
+    assert_equal :manual, finding(story, :location_with_an_unknown_danger).remedy
+    assert_match(/a bit worrying/, finding(story, :location_with_an_unknown_danger).message)
+  end
+
+  test "every danger the table has is quiet" do
+    Location::DANGERS.each_key do |danger|
+      story = healthy_story
+      story.locations.realized.first.update!(danger: danger)
+
+      assert_not_includes codes(story), :location_with_an_unknown_danger, danger
+    end
+  end
 end

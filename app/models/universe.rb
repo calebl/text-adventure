@@ -69,9 +69,33 @@ class Universe < ApplicationRecord
 
   # Just the names. A room needs to know who lives in this world; it does not
   # need three sentences on each people's temperament to describe a doorway.
+  #
+  # MONSTROUS RACES ARE IN IT, and that is a ruling rather than an oversight.
+  # The captain, 2026-09-04, answering the combat scout's call C4: *"monstrous
+  # races should reach the prompts"* -- both audiences that read this list, the
+  # `:place` one on every room realization and the `:dialogue` one on every turn
+  # of every conversation. The scout recommended filtering them out of
+  # `:dialogue` and giving `:place` a separate bestiary field; his word
+  # overrides it, and the cost is stated rather than hidden: an NPC's prompt
+  # lists the thing in the belfry among the peoples of the world. What it buys
+  # is that a room can be described knowing what lives out past the levee and a
+  # person in it can warn you about one. No prompt template changed to do this
+  # -- only what this list contains once a world marks a race `monstrous`.
+  #
+  # `Race.peoples` and `Race.monstrous` are the two pools a GENERATED person is
+  # drawn from (`Character::Registry`), and that split is about who gets written
+  # rather than about what a prompt is told.
   def race_names
     races.map(&:name).join(", ")
   end
+
+  # THE KINDS OF PERSON THIS WORLD IS MADE OF, and the kinds of monster in it.
+  # Two readers, one for each pool, so nothing outside `Race` has to know the
+  # flag's name -- and so a caller cannot accidentally offer a swarm as one of
+  # the peoples somebody could be born into.
+  def peoples = races.peoples
+
+  def monstrous_races = races.monstrous
 
   # The universe as prompt context, for the audience asking. A field added to
   # AUDIENCE_FIELDS reaches every prompt that audience covers at once.

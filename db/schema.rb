@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_05_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_05_120000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -22,6 +22,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_110000) do
     t.text "fears"
     t.string "fullname"
     t.integer "hit_die"
+    t.boolean "hostile", default: false, null: false
     t.boolean "is_companion"
     t.boolean "is_protagonist", default: false, null: false
     t.integer "level"
@@ -36,6 +37,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_110000) do
     t.datetime "updated_at", null: false
     t.integer "will"
     t.index "story_id, LOWER(fullname)", name: "index_characters_on_story_id_and_lower_fullname", unique: true
+    t.index ["location_id", "hostile"], name: "index_characters_on_location_id_and_hostile"
     t.index ["location_id", "id"], name: "index_characters_on_location_id_and_id"
     t.index ["location_id"], name: "index_characters_on_location_id"
     t.index ["race_id"], name: "index_characters_on_race_id"
@@ -119,6 +121,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_110000) do
 
   create_table "locations", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "danger", default: "safe", null: false
     t.text "description"
     t.string "detail_level", default: "stub", null: false
     t.datetime "last_protagonist_visit"
@@ -268,6 +271,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_110000) do
   create_table "races", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description", null: false
+    t.boolean "monstrous", default: false, null: false
     t.string "name", null: false
     t.integer "universe_id", null: false
     t.datetime "updated_at", null: false

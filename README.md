@@ -265,7 +265,9 @@ steps:
 ```
 
 `present:` is who the records place in the room — the closed set `talk` resolves
-against. It could not be swept until `characters.location_id` existed: who was
+against — and `foes:` is which of them means the party harm
+(`Playthrough#foes_in`, the world's `characters.hostile` narrowed by this game's
+dead). They are asserted separately because they are two facts. It could not be swept until `characters.location_id` existed: who was
 in a room was reconstructed from the last scene there that recorded a cast, and
 an offline walk writes no scenes at all, so presence was invisible here by
 construction and the only place to observe it was a generated run costing money.
@@ -274,8 +276,9 @@ construction and the only place to observe it was a generated run costing money.
 `EngineSweep::Expectation::KEYS` is the whole vocabulary — where the player
 stands and whether that room is written, what leads out of here (`exits`,
 `exits_include`, `exits_exclude`, each with the detail level), what is lying
-here, what is carried, what the records say is written on a named thing
-(`inscription`), whether the line `changed` anything or was `refused`, what the
+here, what is carried, who is standing here (`present`) and which of them is a
+foe (`foes`), what the records say is written on a named thing (`inscription`),
+whether the line `changed` anything or was `refused`, what the
 refusal `offers` as an alternative, how the engine `understood` the line, and
 how many `drifts` rows it wrote. **A key outside that list raises**, so
 a fixture typo cannot become an expectation that silently holds.

@@ -423,6 +423,22 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_equal [ wanted[:level], wanted[:hit_die] ], [ nobody.reload.level, nobody.hit_die ]
   end
 
+  # A FOE WITH NO BODY, and the same roll behind a louder finding. `Story::Doctor`
+  # reports it under its own code because "a monster nothing can fight" is worth
+  # saying; what is missing is still a stat block, so the two codes share one
+  # handler rather than keeping two copies of one repair.
+  test "rolls a body for a foe who has none" do
+    story = create(:story)
+    monster = create(:character, :monster_without_a_stat_block, story: story)
+    repair = Story::Repair.new(story)
+
+    assert_includes repair.plan.map(&:code), :hostile_without_a_stat_block
+    assert repair.apply!.all?(&:repaired?)
+    assert_predicate monster.reload, :stat_block?
+    assert_predicate monster, :hostile?, "repairing a body does not disarm the monster"
+    assert_equal Character::StatBlock.for_existing(monster)[:hit_die], monster.hit_die
+  end
+
   # THE ABILITY HALF, and the mirror of the two above. `:safe` on exactly the same
   # argument: nothing on record implies a strength, and the ENGINE is that
   # number's sole author by the captain's ruling of 2026-09-04.
