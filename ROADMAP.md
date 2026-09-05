@@ -55,6 +55,44 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **The classifier reads a blow** (`ta-combat-intent`, slice 8 of the combat
+  build order, and the FIRST model-facing combat slice). `attack` is the seventh
+  word in `Playthrough::IntentSchema::INTENTS`, so *"hit him"*, *"go for the
+  Ringer"* and *"take a swing at Perrin"* resolve to a blow off a free line
+  instead of coming back `other`. It reads the SAME closed set a `talk` does —
+  the captain's ruling of 2026-09-05, *"anyone can be attacked"* — and
+  `Playthrough::Turn#play` dispatches the two off one branch on a resolved
+  person, which was already written.
+
+  **`throw` was deliberately NOT added and is not next.** It names two records
+  and the schema holds one `target` by construction; the fixed grammar reads it
+  offline, which is the captain's call C6. That exclusion is the one design
+  decision in the slice.
+
+  **The measurement is the point of it.** `rake eval:classifier` at the defaults
+  both sides — 2 arms × 4 reps — on the corpus before and after, plus **39 new
+  hand-labelled lines** (16 attacks, 6 that find nobody, 3 that name two people,
+  and 14 near-misses that must stay `talk`, `examine`, `other` or `move`). Over
+  the **300 lines both corpora share**: `talk` **BETTER** on both arms (REAL on
+  `minimax-m3`, 0.900 → 0.929), `other` **WORSE by 3 readings and NOISE** on
+  both — and the three `other` lines that moved drifted to `take` and `drop`,
+  not to `attack`. **Not one of 624 `talk` readings came back as an `attack`.**
+  `mistral-medium-3.1` `strict_accuracy` 0.926 → 0.942, REAL. Total bench spend
+  **$0.83**.
+
+  **The ruling this slice had to make:** a threat is `talk`. The asymmetry is
+  the argument — a blow takes hit points and marks the victim provoked for the
+  whole playthrough with nothing to undo it, where a mistaken conversation costs
+  one turn.
+
+  **Two instruments moved their own denominators.** `Playthrough::Drift::ACTIONS`
+  gained `attack` and `Overreach::ACTIONS` gained it with them, so a line neither
+  could produce before now writes a row. **Both baselines have to be re-read
+  across this slice**; nothing about how either is written changed.
+
+  **Not built, and deferred rather than missing**: a classifier intent for
+  `throw` (above), and prose per round (still blocked on `ta-prompt-bench`).
+
 - **Attack reads as a blow** (`ta-attack-reads-as-blow`). The captain played his
   first fight and reported: *"When I used the slash attack command I thought
   that would enter the battle only but it actually struck the first blow. Then
@@ -112,7 +150,7 @@ The full audit of every planned piece of work against this constraint is in
   fight, and none at all for the two rounds fought).
 
   **Not built, and deferred rather than missing**: prose per round (shape (b),
-  blocked on `ta-prompt-bench`), the seventh classifier intent (slice 8), throw
+  blocked on `ta-prompt-bench`), throw
   buttons (`Playthrough::Battle#throws` is a marked seam answering `[]`; slice 5
   has since landed the verb, so what is left there is the button and not the
   grammar), hit-point bars, and the d3 scout's room
@@ -226,7 +264,8 @@ The full audit of every planned piece of work against this constraint is in
   verb in the fixed grammar (call C6), so it makes no model call in either mode
   and a slashed `/throw ...` resolves offline in the browser;
   `Playthrough::IntentSchema::INTENTS`, `Drift::ACTIONS` and `Overreach::ACTIONS`
-  are untouched, because the classifier intent is slice 8.
+  are untouched and stay that way — slice 8 gave the enum `attack` and
+  deliberately not `throw`.
 
   **The instruments**: `a-thing-can-be-thrown.yml` walks all four outcomes and
   says in its header why no script can pin one — `Roll`'s seed is built out of row
@@ -258,9 +297,9 @@ The full audit of every planned piece of work against this constraint is in
   **`attack <name>` reads the FULL present-people set** — the captain's sixth
   ruling, ***"anyone can be attacked"***. It is an engine-view verb in the fixed
   grammar, so it makes no model call in either mode and a slashed `/attack Rowe`
-  resolves offline in the browser too; `Playthrough::IntentSchema::INTENTS`,
-  `Drift::ACTIONS` and `Overreach::ACTIONS` are untouched, because the seventh
-  intent is a measured slice of its own (slice 8). Being attacked marks the
+  resolves offline in the browser too. `Playthrough::IntentSchema::INTENTS`,
+  `Drift::ACTIONS` and `Overreach::ACTIONS` were untouched here; slice 8 gave
+  all three the word, measured on the classifier bench. Being attacked marks the
   victim **provoked for this playthrough** (`playthrough_vitals.provoked_at`),
   and a provoked person strikes back from the next turn. `characters.hostile` is
   the world's and never moves.

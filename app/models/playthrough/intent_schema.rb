@@ -13,8 +13,8 @@
 # and there is no third answer.
 #
 # `intent` is a fixed table for the same reason every enum here is
-# (`LocationConnection::DISTANCES`, `Character.sexes`): five words in, five
-# words out, no prose to parse.
+# (`LocationConnection::DISTANCES`, `Character.sexes`): a fixed set of words
+# in, the same set out, no prose to parse.
 class Playthrough::IntentSchema
   # What a player can be trying to do. `move`, `talk`, `take` and `drop` are the
   # four the game loop acts on -- each resolves to a record and each writes one.
@@ -29,7 +29,29 @@ class Playthrough::IntentSchema
   # `Playthrough::Classifier#build_intent` -- and looking at anything else
   # narrates exactly as it always did. `other` is still the one intent that
   # carries no record and never will.
-  INTENTS = %w[move talk examine take drop other].freeze
+  #
+  # `attack` IS THE SEVENTH AND IT IS THE FIRST WORD HERE THAT HURTS SOMEBODY.
+  # It landed in combat slice 8, measured on the classifier bench, and it reads
+  # the SAME closed set `talk` does -- the captain's ruling of 2026-09-05,
+  # *"anyone can be attacked"*, so there is no narrower list of people the app
+  # will let you hit. `Playthrough::Turn#play` dispatches it off
+  # `Playthrough::Classifier::Intent#attack?` on the branch a `talk` already
+  # took, so nothing about the loop changed except which of the two a resolved
+  # person goes to.
+  #
+  # IT IS APPENDED RATHER THAN GROUPED NEXT TO `talk`, and that is a decision
+  # about the MEASUREMENT and not about the reading. Every other word keeps the
+  # index it had, so a movement in the `talk` or `other` rows of
+  # `rake eval:classifier_compare`'s confusion matrix is the new word and not a
+  # reshuffled enum. `other` stays last because it is the answer of last resort.
+  #
+  # `throw` IS NOT HERE AND IS NOT NEXT. It names TWO records -- the thing and
+  # what it is aimed at -- and this schema holds ONE `target` by construction
+  # (see `also_named` below, which is the opposite of a second target). The
+  # fixed grammar reads it offline (`Playthrough::Grammar#read_throw`), which is
+  # the captain's call C6, and a schema that could express it is its own design
+  # question rather than a seventh word.
+  INTENTS = %w[move talk examine take drop attack other].freeze
 
   # The answer for "the player did not name anything on either list". Needed
   # because `strict` schemas make every property required, so `target` has to
@@ -71,7 +93,7 @@ class Playthrough::IntentSchema
              description: "What the player is trying to do. Pick the closest.",
              enum: INTENTS
       string :target,
-             description: "What they aimed it at, copied exactly from the lists you were given: a way out for `move`, a person for `talk`, a thing lying here for `take`, a thing they are carrying for `drop`, and for `examine` a thing on either of those two lists. Answer `#{NOTHING}` for anything else, or when they named something that is not on those lists.",
+             description: "What they aimed it at, copied exactly from the lists you were given: a way out for `move`, a person for `talk` or `attack`, a thing lying here for `take`, a thing they are carrying for `drop`, and for `examine` a thing on either of those two lists. Answer `#{NOTHING}` for anything else, or when they named something that is not on those lists.",
              enum: choices
       string :also_named,
              description: "One more thing on those lists that the player named in the SAME line and that `target` is not already pointing at, copied exactly -- as in \"take the index and the apron\". One line does one thing, so nothing here is acted on; naming it is only how the game says what it is leaving undone. Answer `#{NOTHING}` when they named one thing or none, which is usual.",

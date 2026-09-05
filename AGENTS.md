@@ -541,11 +541,10 @@ before changing the loop; the rules below are what it does not fit.
   is what stops that: a resolved reading whose line still carries `and`, `then`
   or a comma once the matched name is cut out of it is NOT taken, and goes to the
   classifier, which sees the second name, refuses the line and writes the
-  counter. Measured on `Eval::Classifier`'s 300 labelled lines: without it, 6
-  wrong answers,
-  all six that shape; with it, **59 of 300 resolve offline in slash form and
-  none of them wrongly** (and 0 of 300 without a slash, which is the ruling of
-  2026-09-05), at a cost of 4 lines that were right and now cost one call. The
+  counter. Measured on `Eval::Classifier`'s corpus, 339 labelled lines since
+  combat slice 8: without the guard, 8 wrong answers, all eight that shape; with
+  it, **65 of 339 resolve offline in slash form and none of them wrongly** (and
+  0 of 339 without a slash, which is the ruling of 2026-09-05). The
   guard is on `#reading_first` and NOT on `#parse`, because `model: false` has
   nothing to defer to — which is also what keeps the offline floor
   byte-identical.
@@ -985,16 +984,34 @@ of `Playthrough::Mechanics#run`.
   and a provoked person strikes back from the next turn. `characters.hostile` is
   the WORLD's and never moves — another game of the same world meets the same
   courteous Sub-Inspector.
-- **`attack` is an engine-view verb and NOT a classifier intent.** It is in
-  `Playthrough::Grammar::VERBS`, `ENGINE_VIEW` and `RESOLVING`, so a slashed
-  `/attack Rowe` resolves offline in the browser and `rake game:mechanics` reads
-  it with no model at all. `Playthrough::IntentSchema::INTENTS`,
-  `Playthrough::Drift::ACTIONS` and `Overreach::ACTIONS` are untouched: the
-  seventh intent is a measured, single-purpose slice of its own with the
-  classifier bench in its body. It is guarded by `#in_the_fiction?` exactly as
-  `check` is — with a model available it is the engine's own only when the name
-  after it is somebody standing here, so *"attack the problem"* still reaches the
-  classifier.
+- **`attack` is an engine-view verb AND, since combat slice 8, a classifier
+  intent.** It is in `Playthrough::Grammar::VERBS`, `ENGINE_VIEW` and
+  `RESOLVING`, so a slashed `/attack Rowe` resolves offline in the browser — for
+  no model call, which is what every `Playthrough::Battle` button sends — and
+  `rake game:mechanics` reads it with no model at all. It is ALSO the seventh
+  word in `Playthrough::IntentSchema::INTENTS`, resolved against the same closed
+  set a `talk` is (`#offered_for(:attack)`), so a free line reaches it too. It is
+  still guarded by `#in_the_fiction?` exactly as `check` is — with a model
+  available it is the grammar's own only when the name after it is somebody
+  standing here, so *"attack the problem"* still reaches the classifier, which
+  can now read it as `other` rather than having no word for an attack at all.
+- **The enum widening moved two instruments' denominators, and their baselines
+  have to be re-read across it.** `Playthrough::Drift::ACTIONS` gained `attack`
+  and `Overreach::ACTIONS` gained it with them (it is `Drift`'s list plus
+  `examine`), so a line neither counter could produce before now writes a row:
+  an attack that resolved to nobody is drift, and two people hit on one line is
+  overreach. Nothing about how either is written changed. Judge the classifier
+  side of a change like this with `rake eval:classifier_compare` on a corpus
+  whose digest matches, or say out loud that it does not — the corpus grew by 39
+  lines in slice 8, and the compare prints that warning itself.
+- **The line between a threat and a blow is `talk`, and it is a ruling rather
+  than a reading.** *"tell me or I break your arm"* is `talk`;
+  *"grab him and hit him"* is `attack`. The asymmetry is the argument:
+  `Playthrough::Turn#strike_at` takes hit points off a record and marks the
+  victim provoked for the whole playthrough, and nothing removes that mark,
+  where a player who meant a blow and got a conversation loses one turn.
+  `Playthrough::Classifier::INSTRUCTIONS` says it in as many words and
+  `test/fixtures/files/classifier_corpus.yml` measures it.
 - **`playthrough_blows` is the exchange and ONE `Scene` closes the fight.**
   `Story#clock` is `MAX(scenes.story_timestamp)` and `Scene` requires a
   description, so a Scene per round would put a paragraph of engine copy in the
@@ -1043,8 +1060,11 @@ of `Playthrough::Mechanics#run`.
   `a-fight-the-player-wins.yml` and `a-fight-that-kills-the-player.yml` walk both
   outcomes; each is arranged so the ending is fixed whatever the dice say, and
   each says in its header how.
-- **What is still NOT built**, and it is deferred rather than missing: the
-  seventh classifier intent, weapons (`items.damage_die`), armour, initiative,
+- **What is still NOT built**, and it is deferred rather than missing: a
+  classifier intent for `throw` (it names two records and
+  `Playthrough::IntentSchema` holds one `target` — the captain's call C6, and
+  the fixed grammar reads it offline), weapons (`items.damage_die`), armour,
+  initiative,
   healing over time, death saves, revival, restore-from-save, and any level
   advancement rule. `#advance!` is still called from nowhere. THREE things this
   list used to name have since landed and have sections of their own below:
@@ -1435,14 +1455,14 @@ What belongs here is the part that changes how you work:
   those apart, and the captain's own database has a stored example of the second
   — `tell Halkett what you think of him` answered `talk` / `nothing` with
   Halkett Rowe standing in the room.
-- **The corpus is 300 hand-labelled lines and the labels are checked
+- **The corpus is 339 hand-labelled lines and the labels are checked
   mechanically.** `Eval::Classifier::CorpusTest` runs offline on every
   `bin/rails test`: every `target` and `also_named` is checked back against the
   closed set the action really reads at that position, and a stated `refusal:`
   is re-derived from the label and compared. Add a line under its shape with a
   `why`; add a position rather than stretching a label.
 - **A line whose English admits two readings carries `also_accept`**, and the
-  headline rate is taken over the lines that do not. 55 of 300 do. A bench that
+  headline rate is taken over the lines that do not. 56 of 339 do. A bench that
   marked a defensible answer wrong would be measuring its own labelling.
 - **Every rate comes with its band, per model, never pooled.** The classifier
   runs at `TEMPERATURE = 0.0` and a provider is still not deterministic; four
@@ -1452,9 +1472,15 @@ What belongs here is the part that changes how you work:
   the closed enum was built to prevent, and it is the one a headline accuracy
   hides.
 - **`rake eval:classifier_offline` is free and says what a call is buying.** The
-  same corpus through the fixed grammar: 127 of 300 (0.423) on 2026-09-04, with
-  156 of the failures being lines it refused that should have played. Quote it
+  same corpus through the fixed grammar: 140 of 339 (0.413) on 2026-09-05, with
+  178 of the failures being lines it refused that should have played. Quote it
   next to the model figure or the model figure means nothing.
+- **A CORPUS THAT GREW IS A DENOMINATOR THAT MOVED.** `rake eval:classifier_compare`
+  fingerprints the lines each set scored and WARNS when two sets scored
+  different ones — combat slice 8 added 39 lines, so a compare across it prints
+  that warning and the headline rates are over different denominators. Compare
+  the shared line ids and say so, or re-run one side. The checked-in `db/eval`
+  sets all measured the 300-line corpus of 2026-09-04.
 - **Know when it has to be paid for again.** A change to the classifier's
   prompt or schema, to what the model is shown, to the model or its settings,
   or to the corpus is re-measured on the hosted arms BEFORE it merges, with a

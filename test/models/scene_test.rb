@@ -168,14 +168,24 @@ class SceneTest < ActiveSupport::TestCase
   end
 
   # THE RECORD IS WIDER THAN THE PROMPT, and this is the pair of assertions that
-  # says so: a fight is an act the engine takes and no typed word names, so
-  # `attack` is recordable without `Playthrough::IntentSchema::INTENTS` -- the
-  # closed enum on a model call -- growing by a word.
+  # says so. It used to be written with `attack`, which combat slice 8 then made
+  # the seventh word in `Playthrough::IntentSchema::INTENTS` -- so the example
+  # moved to `hazard`, which is the standing proof of the point: a room that
+  # costs hit points writes a `Scene` and nobody will ever type it.
   test "a scene may record an action the classifier has no word for" do
-    scene = build(:scene, story: @story, location: @location, resolved_action: "attack")
+    scene = build(:scene, story: @story, location: @location, resolved_action: "hazard")
 
     assert scene.valid?
-    assert_not_includes Playthrough::IntentSchema::INTENTS, "attack"
+    assert_not_includes Playthrough::IntentSchema::INTENTS, "hazard"
+  end
+
+  # AND THE TWO LISTS OVERLAP BY ONE NOW, which is what a word arriving from the
+  # ENGINE's side and then from the PROMPT's side looks like. `Scene::ACTIONS`
+  # is `uniq`ed for exactly this, and `attack` has to appear in it once.
+  test "attack is in both lists and in ACTIONS exactly once" do
+    assert_includes Playthrough::IntentSchema::INTENTS, "attack"
+    assert_equal 1, Scene::ACTIONS.count("attack")
+    assert_equal Scene::ACTIONS, Scene::ACTIONS.uniq
   end
 
   test "engine_authored? is true for every action the engine writes the words of" do
@@ -200,13 +210,21 @@ class SceneTest < ActiveSupport::TestCase
     assert_not_predicate scene, :engine_authored?
   end
 
-  test "engine_authored? is false for every classifier intent, and for no action at all" do
-    Playthrough::IntentSchema::INTENTS.each do |action|
+  # EVERY CLASSIFIER INTENT EXCEPT `attack`, and the exception is the whole
+  # reason `ENGINE_AUTHORED` is a named list. A player can type an attack since
+  # combat slice 8, but the `Scene` it eventually produces is still
+  # `Playthrough::Fight#close!`'s own sentence and not a narrator's -- who ASKED
+  # for a turn and who WROTE the row are different questions, and only the
+  # second one decides whether `Story::Audit` and `Eval::Richness` read it.
+  test "engine_authored? is false for every classifier intent but attack, and for no action at all" do
+    (Playthrough::IntentSchema::INTENTS - Scene::ENGINE_AUTHORED).each do |action|
       scene = build(:scene, story: @story, location: @location, resolved_action: action)
 
       assert_not_predicate scene, :engine_authored?
     end
 
+    assert_predicate build(:scene, story: @story, location: @location, resolved_action: "attack"),
+                     :engine_authored?, "a typed attack still ends in a Scene the engine wrote"
     assert_not_predicate build(:scene, story: @story, location: @location, resolved_action: nil), :engine_authored?
   end
 

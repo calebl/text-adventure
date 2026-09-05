@@ -41,7 +41,7 @@ rake eval:run                       # ~$0.22 at the defaults; prints an estimate
 rake eval:score SET=main            # offline, no key, no network
 rake eval:compare BEFORE=a AFTER=b  # REAL / NOISE / INCONCLUSIVE, per check
 
-# The classifier's own bench: 300 hand-labelled typed lines replayed through
+# The classifier's own bench: 339 hand-labelled typed lines replayed through
 # Playthrough::Classifier. Accuracy, closed-set misses, also_named precision and
 # recall, refusal agreement AND latency, per model, each with its band.
 rake eval:classifier                       # ~$0.39 at the defaults; prints an estimate first
@@ -636,8 +636,8 @@ The current database includes the following story-related models with proper ass
   a resolved line still carrying `and`, `then` or a comma once the matched name
   is cut out of it goes to the classifier instead, because a fixed grammar has
   no `also_named` and playing half a line would break the one-line-one-act
-  ruling. Measured on the classifier bench's 300 labelled lines: 59 of 300
-  resolve offline in slash form, none of them wrongly — and **0 of 300 without a
+  ruling. Measured on the classifier bench's 339 labelled lines: 65 of 339
+  resolve offline in slash form, none of them wrongly — and **0 of 339 without a
   slash**, which is the ruling of 2026-09-05 stated as a number
 - **Scene** → `resolved_by`, **WHICH READER ANSWERED THE LINE**, one of
   `Playthrough::Grammar::PATHS`. Nullable by history and stamped `model` on older
@@ -883,10 +883,15 @@ The current database includes the following story-related models with proper ass
   call C1 (*a fight is always escapable by leaving the room*) with a price on it.
 - **`attack <name>` resolves against the FULL present-people set** — the
   captain's sixth ruling of 2026-09-05, *"anyone can be attacked"*. It is in
-  `Playthrough::Grammar::VERBS`, `ENGINE_VIEW` and `RESOLVING`, so it makes no
-  model call in either mode, and it is NOT in
-  `Playthrough::IntentSchema::INTENTS`, `Drift::ACTIONS` or `Overreach::ACTIONS`
-  — the seventh intent is a measured slice of its own. Being attacked marks the
+  `Playthrough::Grammar::VERBS`, `ENGINE_VIEW` and `RESOLVING`, so a SLASHED
+  attack makes no model call in either mode; and since combat slice 8 it is
+  ALSO the seventh word in `Playthrough::IntentSchema::INTENTS`, so a free line
+  — *"hit him"*, *"go for the Ringer"* — reaches it through the classifier
+  against the same closed set. `Drift::ACTIONS` gained it and
+  `Overreach::ACTIONS` with it, so **both counters''' baselines have to be
+  re-read across that slice**: a shape of line neither could produce now can.
+  `throw` is deliberately NOT next — it names two records and the schema holds
+  one `target`. Being attacked marks the
   victim **provoked for this playthrough** (`playthrough_vitals.provoked_at`,
   one writer: `Playthrough::Turn#provoke!`), and a provoked person strikes back
   from the next turn. `characters.hostile` is the world's and never moves.
@@ -1007,8 +1012,9 @@ The current database includes the following story-related models with proper ass
   the switch"* still reaches the classifier) and deliberately NOT in `RESOLVING`
   — that list maps one word to ONE closed set for `Playthrough::SlashMenu`.
   `Playthrough::IntentSchema::INTENTS`, `Drift::ACTIONS` and
-  `Overreach::ACTIONS` are untouched: the classifier intent is slice 8, the
-  captain's call C6
+  `Overreach::ACTIONS` are untouched by the throw and stay that way: slice 8
+  gave the enum `attack` and deliberately not `throw`, because two records will
+  not fit in one `target` — the captain's call C6
 - **Scene** → `ENGINE_AUTHORED` is a NAMED LIST and no longer the gap between
   `ACTIONS` and `INTENTS`. A throw is in that gap and is NOT engine copy — its
   `Scene` is the narrator's, off `#thrown_fact` — so the derived definition

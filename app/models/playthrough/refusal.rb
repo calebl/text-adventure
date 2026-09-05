@@ -109,12 +109,17 @@ class Playthrough::Refusal
     take: "take %s",
     drop: "drop %s",
     examine: "read %s",
+    # AND `attack` SINCE COMBAT SLICE 8, when it became the seventh word in
+    # `Playthrough::IntentSchema::INTENTS`. "hit Neb and Grenn" names two people
+    # out of the one closed set an attack reads, so it is refused like any other
+    # two-name line and the pair has to be sayable.
+    attack: "attack %s",
     # WHAT A THROW ASKS FOR, in the word a player types. Unreachable TODAY and
     # here anyway: only `:named_more_than_one` reads this table, and a throw's
-    # `also_named` is always nil because the fixed grammar produces none. It is
-    # the entry the seventh classifier intent will need (slice 8), and a table
-    # missing a row for an action `Scene::ACTIONS` already has would fall back to
-    # a bare `%s`.
+    # `also_named` is always nil because the fixed grammar produces none -- no
+    # model answers `throw`, which is the one thing slice 8 did NOT change. A
+    # table missing a row for an action `Scene::ACTIONS` already has would fall
+    # back to a bare `%s`.
     throw: "throw %s"
   }.freeze
 
@@ -132,14 +137,19 @@ class Playthrough::Refusal
     move: "That did not resolve to one of the ways out of here.",
     talk: "That did not resolve to anybody who is here.",
     take: "That did not resolve to anything lying here.",
-    drop: "That did not resolve to anything you are carrying."
+    drop: "That did not resolve to anything you are carrying.",
+    # ITS OWN SENTENCE AND NOT `talk`'S, though the closed set is the same one.
+    # The player swung at somebody; being told the line "did not resolve to
+    # anybody who is here" reads as an answer to a different line.
+    attack: "That did not resolve to anybody here to swing at."
   }.freeze
 
   EMPTY = {
     move: "There is no way out of here at all.",
     talk: "There is nobody here to talk to.",
     take: "There is nothing lying here to pick up.",
-    drop: "You are carrying nothing, so there is nothing to put down."
+    drop: "You are carrying nothing, so there is nothing to put down.",
+    attack: "There is nobody here to fight."
   }.freeze
 
   NOTHING_MATCHED = "That resolved to nothing.".freeze
@@ -151,7 +161,11 @@ class Playthrough::Refusal
     move: "The ways out are: %s.",
     talk: "Here with you: %s.",
     take: "Lying here: %s.",
-    drop: "You are carrying: %s."
+    drop: "You are carrying: %s.",
+    # THE SAME SENTENCE AS A `talk`'S, because it is the same list read back and
+    # the app does not keep a narrower one of people you may hit -- the captain's
+    # ruling of 2026-09-05, *"anyone can be attacked"*.
+    attack: "Here with you: %s."
   }.freeze
 
   # Said on every shape, because on every shape it is the thing the player most
