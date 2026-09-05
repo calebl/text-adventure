@@ -1043,6 +1043,12 @@ What belongs here is the part that changes how you work:
   same corpus through the fixed grammar: 127 of 300 (0.423) on 2026-09-04, with
   156 of the failures being lines it refused that should have played. Quote it
   next to the model figure or the model figure means nothing.
+- **Know when it has to be paid for again.** A change to the classifier's
+  prompt or schema, to what the model is shown, to the model or its settings,
+  or to the corpus is re-measured on the hosted arms BEFORE it merges, with a
+  `rake eval:classifier_compare` verdict in the PR body; everything else rides
+  on the free validator and offline floor that already run in `bin/rails test`.
+  [EVALUATION.md](EVALUATION.md) → *When to re-run the bench* is the list.
 - **`MODELS=` is an arm selector, and an arm is ONE model with nothing behind
   it.** `MODELS=ollama:qwen3:8b` measures a local model; a bare id is
   OpenRouter. It replaces `BaseAgent.default_model_options` for the length of a

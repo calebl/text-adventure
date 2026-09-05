@@ -629,6 +629,58 @@ rather than an oversight: holding `The Salt Assizes` out is about not tuning
 narration checks on prose nobody has read, and a labelled line is not prose
 anybody tuned a check on. All three worlds are in the corpus.
 
+### When to re-run the bench
+
+**Free and automatic, on every `bin/rails test`**: the corpus validator
+(`Eval::Classifier::Corpus#problems`, `Eval::Classifier::CorpusTest`) and the
+offline grammar floor (`rake eval:classifier_offline`, asserted in
+`Eval::Classifier::OfflineTest` between a floor and a ceiling rather than at a
+number). Neither makes a model call, and between them they catch a change to
+the fixed grammar, to the seeded worlds, or to the item and character layers —
+the labels are checked back against the closed sets the actions really read.
+That is not theoretical: **the PR 117 item-layer rebase made items
+per-playthrough, position staging stopped snapshotting, and the validator
+failed the build** rather than the bench quietly measuring empty floors.
+
+**Re-run the paid hosted arms before merging** when any of these change. A pass
+is 300 lines × `REPS=4` = 1,200 calls an arm, at 372 tokens in and 20 out
+(`Eval::Classifier::PER_CALL`): **$0.19 per 1,000 calls on
+`mistral-medium-3.1`, $0.14 on `minimax-m3`, so both shipped models at the
+default is about $0.40** — the checked-in `classifier-remote` set cost $0.389.
+
+1. **The prompt.** `Playthrough::Classifier::INSTRUCTIONS` or
+   `Playthrough::IntentSchema` — any wording, the `also_named` paragraph, a new
+   intent. This is the reason the bench exists, and a prompt-shaped change
+   lands with a BEFORE/AFTER `rake eval:classifier_compare` verdict in its PR
+   body.
+2. **What the model is shown.** `Playthrough::Classifier#offered_for`,
+   `#command_prompt`, the exit, people, item or nickname listing, anything
+   passed beside the line. A change in *which* lines reach the model — a
+   grammar-first router, say — does not change the prompt but does change the
+   population the model still answers, and earns one measurement after it
+   lands.
+3. **The model or its settings.** `BaseAgent::REMOTE_MODEL_IDS` or its order,
+   `TEMPERATURE`, provider params, any RubyLLM/OpenRouter plumbing in
+   `BaseAgent` that touches the call.
+4. **The corpus.** A new verb or input shape should add cases; `corpus_digest`
+   then changes, older sets stop being comparable (the comparison warns above
+   its verdicts), and a new committed baseline under `db/eval/` is taken.
+
+**On a schedule — monthly, and before any release — as a vendor-drift canary.**
+A hosted model changes under the same name with no notice, and nothing in this
+repo would say so. `gemini-2.5-flash-lite` is the arm to watch: it returned
+274 of 300 on **all four repetitions**, a band of zero, so any movement at all
+is movement.
+
+**And when real play says so.** A rise in refusals, drift or overreach in the
+database or in `Playthrough::Feedback` verdicts is a symptom with several
+possible causes; the bench is the only thing that says whether the classifier
+is one of them.
+
+**No re-run is needed** for a narrator prompt change (a different call, and the
+prose loop's job), for UI work, or for engine mechanics that leave the closed
+sets alone.
+
 ---
 
 ## The instrument this is not: `rake game:sweep`
