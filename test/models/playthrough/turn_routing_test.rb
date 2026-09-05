@@ -247,10 +247,11 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
 
   # --- a fight in the browser -------------------------------------------------
   #
-  # `attack` is in the fixed grammar and NOT in `Playthrough::IntentSchema::INTENTS`
-  # (that is a later, measured slice), so a slashed attack resolves offline for
-  # no call at all and an unslashed one reaches the classifier like any other
-  # line.
+  # `attack` is in the fixed grammar AND, since combat slice 8, in
+  # `Playthrough::IntentSchema::INTENTS`. So a SLASHED attack resolves offline
+  # for no call at all -- which is what every button on `Playthrough::Battle`
+  # sends -- and an unslashed one reaches the classifier like any other line and
+  # can now come back as a blow rather than as `other`.
 
   test "a slashed attack resolves offline, strikes, and calls nothing" do
     tough!(@vance, @rowe)
@@ -312,6 +313,54 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
 
     assert_equal 2, agent.prompts.count
     assert_equal 0, @playthrough.blows.count
+  end
+
+  # AND WHAT THE CLASSIFIER ANSWERS IS ACTED ON. The branch has been in `#play`
+  # since the fight landed -- `intent.attack? ? strike_at(...) : talk_to(...)` --
+  # and combat slice 8 is what made a model able to reach it. One classifier call
+  # and no narration call: a blow is arithmetic over records, exactly as the
+  # slashed path's is.
+  test "a classifier-resolved attack strikes rather than talking" do
+    tough!(@vance, @rowe)
+
+    scene, agent = play("go for him", CLASSIFY.call("attack", "Halkett Rowe"))
+
+    assert_equal 1, agent.prompts.count, "the classifier answered and nothing else was asked"
+    assert_nil scene, "an attack writes no Scene of its own"
+    assert_equal 1, @playthrough.blows.where(attacker: @vance, target: @rowe).count
+    assert_equal 1, @playthrough.blows.where(attacker: @rowe).count, "and he answered in the same turn"
+    assert_empty Interaction.where(character: @rowe), "a blow is not a conversation"
+  end
+
+  # THE SAME LINE READ AS A `talk` GOES THE OTHER WAY, which is the pair that
+  # says the dispatch is on the ACTION and not on the resolved person.
+  test "the same resolved person read as a talk holds a conversation instead" do
+    tough!(@vance, @rowe)
+    reaction = { "pre_thought" => "Who is that.", "pre_feeling" => "wary",
+                 "action" => "He sets down the pen.", "post_feeling" => "steadier",
+                 "post_thought" => "Say something." }
+
+    scene, = play("say something to him", CLASSIFY.call("talk", "Halkett Rowe"), reaction, "\"You again,\" he says.")
+
+    assert_equal "talk", scene.resolved_action
+    assert_equal @rowe, scene.acted_on
+    assert_equal 0, @playthrough.blows.count
+  end
+
+  # A REACH THAT FOUND NOBODY, which since slice 8 is a refusal and a
+  # `Playthrough::Drift` row rather than a narrated swing at thin air.
+  test "an attack the classifier could not place is refused and writes nothing" do
+    assert_difference "Playthrough::Drift.count", 1 do
+      outcome, agent = play("hit the hound", CLASSIFY.call("attack", "nothing"))
+
+      assert_instance_of Playthrough::Refusal, outcome
+      assert_equal :unresolved, outcome.kind
+      assert_equal 1, agent.prompts.count, "a refused line calls no narrator"
+    end
+
+    assert_equal "attack", Playthrough::Drift.last.action
+    assert_equal 0, @playthrough.blows.count
+    assert_nil @playthrough.reload.current_scene
   end
 
   # --- a thing thrown, in the browser ---------------------------------------

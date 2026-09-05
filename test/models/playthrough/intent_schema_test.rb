@@ -11,9 +11,23 @@ class Playthrough::IntentSchemaTest < ActiveSupport::TestCase
     json_schema_body(Playthrough::IntentSchema.for(targets))["properties"]
   end
 
-  test "the intent is one of the six the loop knows about" do
-    assert_equal %w[move talk examine take drop other], properties([])["intent"]["enum"]
+  test "the intent is one of the seven the loop knows about" do
+    assert_equal %w[move talk examine take drop attack other], properties([])["intent"]["enum"]
     assert_equal Playthrough::IntentSchema::INTENTS, properties([])["intent"]["enum"]
+  end
+
+  # THE SEVENTH WORD, AND THE ONE THAT IS NOT NEXT. `attack` landed in combat
+  # slice 8 and was APPENDED rather than grouped beside `talk`, so every other
+  # word keeps the index it had and a movement in the classifier bench's
+  # confusion matrix across that slice is the new word and not a reshuffled
+  # enum. `throw` is deliberately absent and stays absent: it names two records
+  # and this schema holds one `target`.
+  test "attack is the last act before other, and throw is not in the enum at all" do
+    enum = properties([])["intent"]["enum"]
+
+    assert_equal %w[attack other], enum.last(2)
+    assert_not_includes enum, "throw"
+    assert_equal Playthrough::IntentSchema::INTENTS.size, enum.size
   end
 
   test "the target is closed over the candidates plus a way to say none of them" do

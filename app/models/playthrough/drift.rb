@@ -30,7 +30,23 @@ class Playthrough::Drift < ApplicationRecord
   # The intents that resolve against a closed set, and so the only ones that
   # can come back empty. `examine` and `other` carry no target at all -- they
   # are not reaching for a record, so they cannot miss one.
-  ACTIONS = %w[move talk take drop].freeze
+  #
+  # `attack` JOINED THEM IN COMBAT SLICE 8, when it became the seventh word in
+  # `Playthrough::IntentSchema::INTENTS`. It resolves against the people
+  # standing here -- the same closed set a `talk` reads -- so "hit the ferryman"
+  # in a room he is not in is a reach that found nothing, exactly as
+  # "talk to the ferryman" is, and it is refused for the same reason
+  # (`Playthrough::Refusal`). Before that slice the word reached this class only
+  # through the fixed grammar, which refuses an unresolved attack in its own
+  # words and builds no `Intent` at all, so no row could ever be written for it.
+  #
+  # **A BASELINE TAKEN BEFORE SLICE 8 AND ONE TAKEN AFTER ARE NOT THE SAME
+  # DENOMINATOR**, and that is the thing to know before reading a movement in
+  # this counter or in `Playthrough::Overreach` across it. A shape of line that
+  # could not produce a row now can. Re-read both instruments' baselines rather
+  # than comparing across the change: `rake game:score` and `Story::Audit`'s
+  # `reached_for_nothing` / `named_more_than_one` rates both count these rows.
+  ACTIONS = %w[move talk take drop attack].freeze
 
   belongs_to :playthrough
   belongs_to :scene, optional: true

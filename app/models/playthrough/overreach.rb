@@ -52,6 +52,17 @@ class Playthrough::Overreach < ApplicationRecord
   # it: an `examine` that landed on nothing is not reaching for a record it can
   # miss -- "look at the sky" is a look at the sky -- and it stays narrated. See
   # `Playthrough::Refusal` for the boundary written out.
+  #
+  # `attack` ARRIVED HERE FOR FREE IN COMBAT SLICE 8, because it arrived in
+  # `Playthrough::Drift::ACTIONS` and this list is that one plus `examine`. That
+  # is the right answer and not an accident of the derivation: "hit Neb and then
+  # Grenn" names two people out of one closed set and asks for two acts, which is
+  # the shape this table exists to count, and a value missing here would have
+  # failed the row's own validation and logged the refusal away uncounted -- the
+  # exact failure `examine` was added to fix.
+  #
+  # **RE-READ THE BASELINE ACROSS SLICE 8.** A shape of line that could not
+  # produce a row before this counter can now; see `Playthrough::Drift::ACTIONS`.
   ACTIONS = (Playthrough::Drift::ACTIONS + %w[examine]).freeze
 
   belongs_to :playthrough

@@ -88,10 +88,10 @@ class Playthrough::Grammar
     # THE ONE VERB IN THIS TABLE THAT HURTS SOMEBODY, and it takes a NAME out of
     # a closed set where `harm` takes a number -- so it is the first entry here
     # that is both one of the engine's own instruments and a real act in the
-    # fiction. `Playthrough::IntentSchema::INTENTS` has no word for it (that is
-    # a later, measured slice), so sending it to the classifier could only ever
-    # come back `other`; reading it here costs nothing and makes a whole fight
-    # walkable with no key at all.
+    # fiction. `Playthrough::IntentSchema::INTENTS` GAINED THE WORD in combat
+    # slice 8, so the classifier can read a free line as an attack now; reading
+    # a SLASHED one here still costs nothing and still makes a whole fight
+    # walkable with no key at all, which is what `model: false` needs.
     "attack" => :attack, "hit" => :attack, "strike" => :attack,
     # THE ONE VERB IN THIS TABLE THAT NAMES TWO RECORDS, and the only one that
     # does: `throw <thing> at <somebody or a way out>` is one act with an object
@@ -113,26 +113,32 @@ class Playthrough::Grammar
   # `Playthrough::Classifier`. These do not, because they are not things a
   # player does in the fiction: they are the engine's own instruments,
   # `Playthrough::IntentSchema::INTENTS` has no word for any of them, and
-  # sending `harm 5` or `check strength` to a closed enum of six intents would
-  # spend a model call to be told it was `other`.
+  # sending `harm 5` or `check strength` to that closed enum would spend a model
+  # call to be told it was `other`.
   #
   # THEY ARE `Playthrough::Mechanics`'S ALONE. The browser has no engine view --
   # nothing there claims an unslashed line at all, so a player who types `stats`
   # at the fiction reaches the classifier exactly as they always did.
   #
   # `attack` IS THE FIRST ON THIS LIST THAT IS AN ACT IN THE FICTION rather than
-  # an instrument, and it is here for the list's own reason and not for a new one:
-  # there is no intent in the closed enum for it, so a model call could only
-  # come back `other`. Two things follow, and both are deliberate. It is guarded
-  # by `#in_the_fiction?` exactly as `check` is -- with a model available it is
-  # the engine's own only when the name after it is somebody standing here, so
-  # *"attack the problem"* still reaches the classifier. And a reading of it is
-  # `grammar` and never `engine_view` on `scenes.resolved_by` (see `#parse`),
-  # because `engine_view` means "no Scene comes of this" and a fight ends in
-  # one.
+  # an instrument, and it landed here when the closed enum had no word for it,
+  # so a model call could only come back `other`. COMBAT SLICE 8 GAVE THE ENUM
+  # THE WORD, and this entry is unchanged by that on purpose: what it buys now
+  # is not the only reading of an attack but the FREE one. A slashed `/attack
+  # Marek Sollen` -- which is every button on `Playthrough::Battle` -- resolves
+  # here for no call at all, and `model: false` has no classifier to fall back
+  # on. Two things follow, and both are deliberate. It is guarded by
+  # `#in_the_fiction?` exactly as `check` is -- with a model available it is the
+  # engine's own only when the name after it is somebody standing here, so
+  # *"attack the problem"* still reaches the classifier, WHICH CAN NOW ANSWER IT
+  # PROPERLY. And a reading of it is `grammar` and never `engine_view` on
+  # `scenes.resolved_by` (see `#parse`), because `engine_view` means "no Scene
+  # comes of this" and a fight ends in one.
   #
-  # `throw` IS THE SECOND ACT IN THE FICTION ON THIS LIST, and it is here for
-  # `attack`'s reason exactly: the closed enum has no word for it, so a model
+  # `throw` IS THE SECOND ACT IN THE FICTION ON THIS LIST, and it is here for the
+  # reason `attack` USED to be: the closed enum has no word for it and is not
+  # getting one, because a throw names TWO records and
+  # `Playthrough::IntentSchema` holds one `target` by construction. So a model
   # call could only ever come back `other`. It is guarded by `#in_the_fiction?`
   # too -- *"throw the switch"*, *"throw a party"* -- and with a model available
   # it is the engine's own only when the line names a thing in your hands AND
@@ -225,8 +231,9 @@ class Playthrough::Grammar
   # naming two things out of one closed set resolves the FIRST and plays it,
   # where `Playthrough::Classifier` sees both and the line is REFUSED (the
   # captain's ruling of 2026-09-04: one line, one act). On `Eval::Classifier`'s
-  # 300 labelled lines that was the whole cost of reading offline first: 6 lines
-  # answered wrongly, and ALL SIX were the two-names-in-one-set shape.
+  # corpus that was the whole cost of reading offline first: 8 lines answered
+  # wrongly, and ALL EIGHT were the two-names-in-one-set shape (6 of them before
+  # combat slice 8 added two more two-name lines, both of them attacks).
   #
   # So a resolved reading whose line still carries a joining word once the
   # matched name is taken out of it is NOT taken as an answer. It goes to the
@@ -234,7 +241,7 @@ class Playthrough::Grammar
   # line and writes the `Playthrough::Overreach` row -- so the ruling and the
   # counter both survive, and neither had to be reproduced here.
   #
-  # MEASURED BOTH WAYS: it catches 6 of 6 wrong answers and costs 4 of 63 right
+  # MEASURED BOTH WAYS: it catches 8 of 8 wrong answers and costs 4 of 69 right
   # ones, which then cost one classifier call each and come back the same. The
   # name itself is cut out first, so a room really called "The Bell and Anchor"
   # is not a second act.
@@ -544,6 +551,13 @@ class Playthrough::Grammar
   # resolves to somebody standing here -- a closed set of at most three people,
   # so the test is cheap and exact. With no model there is nothing to hand it
   # to, and the refusal names who IS here.
+  #
+  # SINCE COMBAT SLICE 8 WHAT IT IS HANDED TO CAN ANSWER `attack` ITSELF, which
+  # makes this line better rather than redundant: *"attack the problem"* now
+  # reaches a classifier that reads it as `other` instead of one that had no word
+  # for an attack at all, and *"hit the ferryman"* in a room he is not in comes
+  # back `attack -> nothing` and is refused as a reach that found nothing rather
+  # than narrated. Nothing about which lines this method claims changed.
   def in_the_fiction?(verb, text, model:)
     return false unless model
 

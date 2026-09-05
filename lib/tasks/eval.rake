@@ -279,8 +279,8 @@ namespace :eval do
     # inside a method too.
     def default_reps = Eval::Noise::MIN_RUNS
 
-    # A bench run is cents, not dollars -- 300 lines x 4 reps x 2 models is about
-    # $0.39 -- so the ceiling is low and the estimate is still printed first: the
+    # A bench run is cents, not dollars -- 339 lines x 4 reps x 2 models is about
+    # $0.44 -- so the ceiling is low and the estimate is still printed first: the
     # captain's rule for `eval:run` applies to anything that spends.
     SPEND_CEILING = 0.50
 

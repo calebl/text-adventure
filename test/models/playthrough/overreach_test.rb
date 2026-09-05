@@ -60,9 +60,13 @@ class Playthrough::OverreachTest < ActiveSupport::TestCase
     assert_nil record(action: "sing")
     assert_nil record(action: "other"), "other resolves to no record at all"
 
-    assert_equal %w[move talk take drop examine], Playthrough::Overreach::ACTIONS
+    assert_not_nil record(action: "attack"), "two people hit on one line is two acts like any other"
+
+    assert_equal %w[move talk take drop attack examine], Playthrough::Overreach::ACTIONS
     assert_equal Playthrough::Drift::ACTIONS + %w[examine], Playthrough::Overreach::ACTIONS
     assert_not_includes Playthrough::Drift::ACTIONS, "examine"
+    assert_includes Playthrough::Drift::ACTIONS, "attack",
+                    "an attack reaches a closed set, so it can miss one as well as name two of it"
   end
 
   test "a row with nothing on either side of the line is not a measurement" do
