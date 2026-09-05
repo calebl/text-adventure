@@ -53,6 +53,18 @@
 # wants the rotation off. `#rotated?` survives here as a guard, exactly as it
 # does there.
 #
+# SERIAL, ON PURPOSE AND FOR NOW. `Eval::Concurrency` landed beside this
+# (PR 124) and its header names this bench as the second caller, and the seam is
+# already here: `Stage.open` runs inside a pinned connection, so the machinery
+# is under every case. What is NOT here is a second call in flight, and the
+# reason is a real design question rather than an oversight -- this bench stages
+# ONE COPY OF THE WORLD PER CASE, so two cases in flight are two stagings in
+# flight, and the isolation that buys is exactly what a `take` and a `drop`
+# against one position need. Batching them means staging per POSITION and
+# isolating the cases some other way, which is a decision about what a case is.
+# The figures below are therefore serial figures: a latency here is what one
+# player waits, with nothing queued behind it.
+#
 # AND THE FIRST CALL IS ITS OWN FIGURE. Every arm gets one warm call before its
 # first pass, timed, reported as `first call` and excluded from the latencies --
 # so the figures the board prints are WARM-CACHE FIGURES and say so.

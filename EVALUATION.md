@@ -1037,6 +1037,19 @@ another room and does not misquote an inscription. `item_not_held` at 0.062 is
 the only other live rate, and every flag is a passage lifting something off a
 floor the player is standing on.
 
+### Serial, for now
+
+`Eval::Concurrency` names this bench as its second caller and the seam is
+already under every case — `Stage.open` runs inside a pinned connection. What is
+not here is a second call in flight, and the reason is a design question rather
+than an oversight: this bench stages **one copy of the world per case**, so two
+cases in flight are two stagings in flight, and that isolation is exactly what a
+`take` and a `drop` against one position need. Batching them means staging per
+position and isolating the cases some other way, which is a decision about what
+a case is. **So a latency on this board is a serial figure**: what one player
+waits, with nothing queued behind it. A 90-case run at REPS=4 is about twenty
+minutes.
+
 ### What it is not
 
 **It does not tune a prompt**, and it is **not a substitute for
