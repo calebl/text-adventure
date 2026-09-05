@@ -572,7 +572,13 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "#turn_log div.sheet.battle" do
-      assert_select "h2", text: /A fight\. The Bell of Saint Aravel\. Round 1\./
+      # THE HEADING IS WHERE, THE LEAD IS WHAT JUST HAPPENED, AND THE ROUND SITS
+      # OVER THE BUTTONS -- the captain's reading of 2026-09-05, that a panel
+      # saying `Round 2` with nothing about round 1 reads as a mode that was
+      # entered. All three are `Playthrough::Battle`'s own words, off the rows.
+      assert_select "h2", text: "A fight in The Bell of Saint Aravel."
+      assert_select "p.sheet-lead", text: "No blow has landed yet."
+      assert_select "h3.sheet-prompt", text: "Round 1: what do you do?"
       # NUMBERS AND NOT BARS. The condition line is `18 of 18`, in the house
       # grey -- the reading experience is `ta-api-iface`'s stage.
       assert_select "p.sheet-line span.state", text: "18 of 18", count: 2
@@ -591,6 +597,9 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "div.sheet-actions form[action=?]", playthrough_turns_path(playthrough) do
       assert_select "input[name=?][value=?]", "command", "/attack Marek Sollen"
+      # THE LABEL SAYS IT IS A BLOW AND SAYS THE DIE, and the die is the party's
+      # own `hit_die` -- already on the panel under every condition line.
+      assert_select "input[type=submit][value=?]", "strike Marek Sollen (d8)"
     end
     # THE WAY OUT IS ALWAYS THERE -- the captain's call C1, a fight is always
     # escapable by leaving the room.
@@ -656,7 +665,12 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
 
     get playthrough_path(playthrough)
 
-    assert_select "div.sheet.battle h2", text: /Round 2\./
+    # ROUND 1 IS DONE AND ROUND 2 IS NEXT, and the panel says both: the boundary
+    # is the whole of what the captain was missing when he took his first turn
+    # of a fight and read `Round 2` off a panel he had never seen before.
+    assert_select "div.sheet.battle p.sheet-lead",
+                  text: /\ARound 1 is done: you struck Marek Sollen, .*The fight is on because you struck\.\z/
+    assert_select "div.sheet.battle h3.sheet-prompt", text: "Round 2: what do you do?"
     assert_select "p.sheet-note", text: /Hero Protagonist hit Marek Sollen for \d+ \(round 1\)/
   end
 

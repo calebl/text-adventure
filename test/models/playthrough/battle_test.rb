@@ -74,6 +74,15 @@ class Playthrough::BattleTest < ActiveSupport::TestCase
     assert_equal "no stat block", battle.bodies.last.state
   end
 
+  # AND A PARTY WITH NO STAT BLOCK GETS NO DIE ON THE BUTTON rather than an
+  # invented one -- the same answer `Body#state` gives one line above.
+  test "a strike button names no die when the party has no stat block" do
+    @protagonist.update_columns(level: nil, hit_die: nil)
+
+    assert_nil battle.swing_die
+    assert_equal [ "strike Marek Sollen" ], battle.strikes.map(&:label)
+  end
+
   # TWO WAYS TO BE A FOE AND THEY ARE DIFFERENT RECORDS: `characters.hostile` is
   # the WORLD's and a seed file wrote it; `playthrough_vitals.provoked_at` is
   # THIS GAME's and the party wrote it by swinging first.
@@ -120,11 +129,83 @@ class Playthrough::BattleTest < ActiveSupport::TestCase
     assert_match(/Hero Protagonist hit Marek Sollen for \d+ \(round 2\)/, exchange.first.to_s)
   end
 
+  # THE PANEL READS AS A BOUNDARY BETWEEN ROUNDS, which is the whole of this
+  # task: the captain typed `/attack Grenn Ollivar` off the slash menu
+  # expecting it to ENTER a fight, and it was round 1 -- his blow landed, the
+  # foe answered, and the panel arrived saying `Round 2` with nothing anywhere
+  # saying a round had been fought or who had fought it. His ruling was
+  # ***keep attack as a blow***, so what changes is what the panel SAYS.
+  #
+  # Every assertion below is on a record read back: the round is
+  # `Playthrough::Blow#round`, the names are `Character#fullname`, and which
+  # side a blow is on is the party `#bodies` is built from.
+  test "before anybody has swung the panel says no blow has landed" do
+    assert_equal "A fight in The Bell of Saint Aravel.", battle.heading
+    assert_equal "No blow has landed yet.", battle.lead
+    assert_equal "Round 1: what do you do?", battle.call_to_act
+    assert_nil battle.last_round
+  end
+
+  # THE MOMENT THAT CONFUSED HIM, and it is the one this file exists to pin:
+  # the party opened the fight, round 1 is behind them, round 2 is next, and
+  # the panel says both -- naming the player's own blow first and saying the
+  # fight is on because they struck.
+  test "the first panel of a fight the party opened says they struck and the foe answered" do
+    @turn.strike!(@protagonist, @monster, round: 1)
+    @turn.strike!(@monster, @protagonist, round: 1)
+
+    assert_predicate battle, :opened_by_the_party?
+    assert_equal 1, battle.last_round
+    assert_equal "Round 1 is done: you struck Marek Sollen, and Marek Sollen answered. " \
+                 "The fight is on because you struck.", battle.lead
+    assert_equal "Round 2: what do you do?", battle.call_to_act
+    # THE PLAYER'S OWN BLOW IS NAMED FIRST, because in a round the player
+    # opened it is the one that happened first.
+    assert_equal [ @protagonist, @monster ], battle.last_exchange.map(&:attacker)
+  end
+
+  # A ROUND NOBODY ANSWERED still reads as a round that is done -- the foe died,
+  # or there was only ever one blow in it.
+  test "a round the foe did not answer says so" do
+    @turn.strike!(@protagonist, @monster, round: 1)
+
+    assert_equal "Round 1 is done: you struck Marek Sollen, and nobody answered. " \
+                 "The fight is on because you struck.", battle.lead
+  end
+
+  # AND THE CAUSE IS SAID ONCE. By round 2 the boundary is the only thing left
+  # to say: the player knows why they are in a fight they opened two turns ago.
+  test "the reason the fight is on is stated on the first panel and not after" do
+    @turn.strike!(@protagonist, @monster, round: 1)
+    @turn.strike!(@monster, @protagonist, round: 1)
+    @turn.strike!(@protagonist, @monster, round: 2)
+    @turn.strike!(@monster, @protagonist, round: 2)
+
+    assert_equal "Round 2 is done: you struck Marek Sollen, and Marek Sollen answered.", battle.lead
+    assert_equal "Round 3: what do you do?", battle.call_to_act
+  end
+
+  # A FIGHT THE WORLD OPENED reads the other way round, and the panel does not
+  # claim the player started it: `characters.hostile` is the world's, and a
+  # monster that swings first is the asymmetry the captain's ruling keeps.
+  test "a fight the foe opened is not attributed to the party" do
+    @turn.strike!(@monster, @protagonist, round: 1)
+
+    assert_not_predicate battle, :opened_by_the_party?
+    assert_equal "Round 1 is done: Marek Sollen struck you.", battle.lead
+  end
+
   # THE BUTTONS ARE SLASHED LINES, which is the whole of why a round costs
   # nothing: `Playthrough::Grammar` claims a line beginning with `/` and the
   # classifier is never called (the captain's ruling of 2026-09-05).
+  #
+  # THE LABEL SAYS *strike* AND SAYS THE DIE. Both are records: the verb is what
+  # the fixed command does (a blow always connects for one die -- call C2), and
+  # the die is the party's own `hit_die`, already under every condition line on
+  # the panel through `Character#max_hp`.
   test "a strike button posts a slashed line the fixed grammar reads" do
-    assert_equal [ "strike Marek Sollen" ], battle.strikes.map(&:label)
+    assert_equal "d8", battle.swing_die
+    assert_equal [ "strike Marek Sollen (d8)" ], battle.strikes.map(&:label)
     assert_equal [ "/attack Marek Sollen" ], battle.strikes.map(&:command)
 
     reading = Playthrough::Grammar.new(@game).reading_first("/attack Marek Sollen")

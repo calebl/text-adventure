@@ -45,7 +45,14 @@ class Playthrough::SlashMenu
     # captain's sixth ruling of 2026-09-05, *"anyone can be attacked"*. The box
     # offers the same names `talk` offers, because the closed set is the same
     # one (`Playthrough::Classifier#offered_for`).
-    "attack" => "somebody standing here -- one blow, and they answer"
+    #
+    # AND THE HINT SAYS IT IS A BLOW AND NOT A DOOR INTO A FIGHT. The captain
+    # picked `/attack Grenn Ollivar` off this menu on 2026-09-05 expecting it to
+    # ENTER a battle, and it was round 1: his blow landed and Grenn answered in
+    # the same turn. His ruling was to keep attack as a blow, so this line is
+    # where the expectation is set -- *now* and *this turn*, in the words of the
+    # menu, before the line is ever sent.
+    "attack" => "strike somebody standing here -- your first blow lands now, and they answer"
   }.freeze
 
   attr_reader :playthrough
