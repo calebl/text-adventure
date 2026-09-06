@@ -148,6 +148,7 @@ Read the header of the file named, not a summary of it.
 | A fight, a round, and who strikes back | `app/models/playthrough/fight.rb`, `riposte.rb`, `blow.rb` |
 | A place or a doorway that costs hit points | `app/models/playthrough/hazards.rb`, `toll.rb` |
 | Where a room is, how big it is, and what a storey is | `app/models/location/box.rb` |
+| What the world graph looks like drawn, and its insides | `app/models/story/map.rb` |
 | A thing thrown | `Playthrough::Turn#throw_item!`, `app/models/roll.rb` |
 | The dice, and the one place a seed is built | `app/models/roll.rb` |
 | The two item layers, and who may write each | `app/models/item.rb`, `item/snapshot.rb` |

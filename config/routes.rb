@@ -29,7 +29,18 @@ Rails.application.routes.draw do
     # `Playthrough#scene_chain` rather than found. Drawn unconditionally and
     # gated on the same flag as the two above.
     get "machinery/:scene_id", to: "machinery#show", as: :machinery
+
+    # THE PICTURE OF THE WORLD, with the party on it. Same gate and same layout
+    # as `debug` above; see `MapController` for why there are two ways in.
+    get "map", to: "map#show"
   end
+
+  # THE SAME PICTURE WITHOUT A GAME ON IT -- the durable world alone, which is
+  # what there is to look at after `rake game:new` and before anybody has
+  # played. Not `resources :stories`: the browser interface does not have a
+  # story resource and this is not the beginning of one, it is the debug
+  # surface's second door.
+  get "stories/:story_id/map", to: "map#show", as: :story_map
 
   root "playthroughs#index"
 end

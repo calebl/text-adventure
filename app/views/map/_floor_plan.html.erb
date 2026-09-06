@@ -1,0 +1,85 @@
+<%# ONE PLACE'S INSIDE, TO SCALE. `Story::Map::PACE` pixels to the pace, and
+    every rectangle on it came off a `Location::Box` -- no geometry is worked
+    out here.
+
+    ONE PLAN PER STOREY, HIGHEST FIRST, which is ruling 3 of 2026-09-06 drawn:
+    each floor is its own plane, so there is nothing vertical to picture and a
+    stair is a mark rather than a shape. Every storey of one place is drawn in
+    the SAME viewport, because floors are kept aligned -- a stairwell at (x, y)
+    on one storey is at (x, y) on the next, and two plans of one building are
+    meant to be read one against the other.
+
+    Y GROWS DOWNWARD on the page, as it does in every SVG. The parent's plane
+    has no compass on it, so this is a choice about drawing and not a claim
+    about the world. %>
+<div class="interior">
+  <h3><%= interior.name %> &mdash; the inside</h3>
+  <p class="note">
+    <% if interior.footprint? %>
+      a footprint of <%= interior.footprint.first %> by <%= interior.footprint.last %> paces,
+      with rooms on <%= pluralize(interior.storeys.size, "storey") %>.
+    <% else %>
+      <span class="warn">no footprint recorded</span> &mdash; the rooms below have positions
+      with no plane to read them in, which <code>rake game:doctor</code> reports.
+    <% end %>
+    One pace is <%= Location::Box::METRES_PER_PACE %> m.
+  </p>
+
+  <% if interior.storeys.empty? %>
+    <p class="absent">(nothing has been placed inside it yet)</p>
+  <% end %>
+
+  <% interior.storeys.each do |storey| %>
+    <p class="note">storey <%= storey.z %> &mdash; <%= storey.rooms.size %> <%= "room".pluralize(storey.rooms.size) %></p>
+    <div class="scroll">
+      <svg class="map-plan" viewBox="<%= -Story::Map::MARGIN %> <%= -Story::Map::MARGIN %> <%= (interior.plan_width * Story::Map::PACE) + (2 * Story::Map::MARGIN) %> <%= (interior.plan_height * Story::Map::PACE) + (2 * Story::Map::MARGIN) %>"
+           width="<%= (interior.plan_width * Story::Map::PACE) + (2 * Story::Map::MARGIN) %>"
+           height="<%= (interior.plan_height * Story::Map::PACE) + (2 * Story::Map::MARGIN) %>"
+           role="img" aria-label="floor plan of <%= interior.name %>, storey <%= storey.z %>"
+           xmlns="http://www.w3.org/2000/svg">
+
+        <%# THE PLANE THE ROOMS ARE READ IN. Drawn only when the place actually
+            carries a footprint: a dashed rectangle nobody stands in. %>
+        <% if interior.footprint? %>
+          <rect class="footprint" x="<%= -interior.origin_x * Story::Map::PACE %>" y="<%= -interior.origin_y * Story::Map::PACE %>"
+                width="<%= interior.footprint.first * Story::Map::PACE %>" height="<%= interior.footprint.last * Story::Map::PACE %>">
+            <title><%= interior.name %>: <%= interior.footprint.first %> by <%= interior.footprint.last %> paces</title>
+          </rect>
+        <% end %>
+
+        <% storey.rooms.each do |room| %>
+          <rect class="room<%= " stub" if room.node.stub? %><%= " here" if room.node.here %>"
+                x="<%= room.x %>" y="<%= room.y %>" width="<%= room.width %>" height="<%= room.height %>">
+            <title><%= room.name %>: <%= room.box %></title>
+          </rect>
+          <text class="label" x="<%= room.x + (room.width / 2.0) %>" y="<%= room.y + (room.height / 2.0) %>" text-anchor="middle">
+            <%= room.node.here ? "> " : "" %><%= truncate(room.name, length: 18) %>
+          </text>
+          <text class="measure" x="<%= room.x + (room.width / 2.0) %>" y="<%= room.y + (room.height / 2.0) + 13 %>" text-anchor="middle">
+            <%= room.box.width %>&times;<%= room.box.depth %>
+          </text>
+        <% end %>
+
+        <%# A DOOR IS DRAWN WHERE TWO CONNECTED ROOMS SHARE A WALL. Two rooms
+            the table connects that do NOT touch get no door here, and the edge
+            on the graph above is where that shows up. %>
+        <% storey.doorways.each do |door| %>
+          <line class="door" x1="<%= door.x1 %>" y1="<%= door.y1 %>" x2="<%= door.x2 %>" y2="<%= door.y2 %>">
+            <title><%= door.reading %></title>
+          </line>
+        <% end %>
+
+        <% storey.stairs.each do |stair| %>
+          <text class="stair" x="<%= stair.x %>" y="<%= stair.y - 12 %>" text-anchor="middle">
+            <%# The arrow is the CHARACTER and not the entity. It is printed
+                rather than written into the markup, and a printed entity is
+                escaped and drawn as its own source -- which is what this line
+                did until somebody looked at it in a browser. %>
+            <%= stair.up ? "↑" : "↓" %>&#8801;
+            <title><%= stair.reading %></title>
+          </text>
+        <% end %>
+      </svg>
+    </div>
+  <% end %>
+</div>

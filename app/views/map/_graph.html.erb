@@ -1,0 +1,56 @@
+<%# THE WORLD GRAPH AS PLAIN SVG. Every coordinate on it was computed by
+    `Story::Map`; this partial emits markup and does no arithmetic of its own,
+    which is what keeps the drawing and the numbers behind it from disagreeing.
+
+    NO SCRIPT, NO LIBRARY, NO BUILD STEP. The captain shelved d3 on 2026-09-05
+    and the repo's zero-build-step rule stands over the whole app, so hovering a
+    doorway is an SVG `<title>` -- which browsers draw as a tooltip on their own
+    -- and there is nothing here to bundle.
+
+    THE STYLES ARE IN `map/_styles`, RENDERED ONCE BY THE PAGE, because a page
+    with several plans on it would otherwise carry the same rules once per
+    drawing. Every colour in them is already in `layouts/debug.html.erb` -- no
+    new colours. %>
+<div class="scroll">
+  <svg class="map-graph" viewBox="0 0 <%= map.width %> <%= map.height %>"
+       width="<%= map.width %>" height="<%= map.height %>"
+       role="img" aria-label="the world graph"
+       xmlns="http://www.w3.org/2000/svg">
+
+    <%# EDGES FIRST, so a line never lies across a name. The nodes are opaque
+        and are drawn over them. %>
+    <g class="edges">
+      <% map.edges.each do |edge| %>
+        <line class="edge<%= " frontier" if edge.frontier? %><%= " hazardous" if edge.hazardous? %><%= " suspect" if edge.one_sided? || edge.directions_disagree? %>"
+              x1="<%= edge.x1 %>" y1="<%= edge.y1 %>" x2="<%= edge.x2 %>" y2="<%= edge.y2 %>">
+          <title><%= edge.reading %></title>
+        </line>
+        <% if edge.stairs? %>
+          <%# A stair between two PLACES rather than inside one. Ruling 3: a
+              stair is an edge, so this is a mark on the line and not a shape. %>
+          <text class="stairs" x="<%= edge.mid_x %>" y="<%= edge.mid_y - 3 %>" text-anchor="middle">&#8801;</text>
+        <% end %>
+      <% end %>
+    </g>
+
+    <g class="nodes">
+      <% map.nodes.each do |node| %>
+        <g class="place">
+          <rect class="node<%= " stub" if node.stub? %><%= " here" if node.here %>"
+                x="<%= node.x %>" y="<%= node.y %>"
+                width="<%= Story::Map::NODE_WIDTH %>" height="<%= Story::Map::NODE_HEIGHT %>">
+            <title><%= map_node_reading(node) %></title>
+          </rect>
+          <text class="<%= node.here ? "here-name" : (node.stub? ? "stub-name" : "name") %>"
+                x="<%= node.cx %>" y="<%= node.cy - 4 %>" text-anchor="middle">
+            <%= node.here ? "> " : "" %><%= truncate(node.name, length: 30) %>
+          </text>
+          <text class="count<%= " warn" if node.dangerous? || node.hazardous? %>"
+                x="<%= node.cx %>" y="<%= node.cy + 12 %>" text-anchor="middle">
+            <%= map_node_marks(node) %>
+          </text>
+        </g>
+      <% end %>
+    </g>
+  </svg>
+</div>
