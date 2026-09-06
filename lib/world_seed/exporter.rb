@@ -117,6 +117,22 @@ class WorldSeed::Exporter
                    "is their progress through the world rather than the world."
     end
 
+    # A PLACE THAT IS HALF LAID OUT. `Location::Box` has three whole answers --
+    # nothing, a footprint, a box -- and `Location#a_box_is_whole` refuses
+    # anything else, so a row here came through raw SQL or a database older than
+    # that validation. It is written out AS IT STANDS rather than tidied,
+    # because which two numbers are missing is not derivable and inventing them
+    # would be inventing a floor plan; the loader will refuse the file, which is
+    # what makes this warning the place the person editing it finds out.
+    story.locations.order(:id).each do |location|
+      next unless Location::Box.partial?(location)
+
+      @warnings << "#{location.name} carries #{Location::Box::COLUMNS.select { |column| location[column] }.join(", ")}, " \
+                   "which is neither a footprint nor a box: the file is written as the records stand and will not " \
+                   "load until somebody says what shape that place is. `rake game:doctor` reports it as " \
+                   "`location_with_a_partial_box`."
+    end
+
     # A ROW THAT SAYS BOTH THINGS. `deliberately_absent` with a whereabouts is
     # a contradiction no code path in the app writes -- `Character#move_to!`
     # clears the marker -- so it arrives through raw SQL or a hand-edited file
@@ -312,6 +328,29 @@ class WorldSeed::Exporter
       if location.hazard.present?
         document["hazard"] = location.hazard
         document["hazard_die"] = location.hazard_die
+      end
+      # WHAT IS INSIDE WHAT, and WHERE IN IT. Both omitted rather than written
+      # null when there is none, which is the rule every key above follows -- and
+      # here it is also what the loader reads back as "this place has no
+      # interior", so the round trip is exact for the three checked-in worlds,
+      # which have none and are left flat on purpose (the captain's fourth ruling
+      # of 2026-09-06).
+      #
+      # THE PARENT IS WRITTEN AS A NAME, like every other cross reference in the
+      # format: ids do not survive a re-seed and `WorldSeed::Loader` matches
+      # rooms on `WorldSeed.natural_key`. It goes out even for a place with no
+      # box of its own, because containment is a fact about the world whether or
+      # not anybody has laid the inside of it out.
+      #
+      # WHAT IS WRITTEN IS WHAT THE ROW HAS, which is not "all five or none":
+      # `Location::Box` has TWO whole shapes, and the outermost place of an
+      # interior carries an extent with no position on purpose. Writing a
+      # position it does not have would put it in a frame that does not exist.
+      # A row in neither shape is a partial box, which the loader refuses; it is
+      # reported by `#warnings` rather than quietly repaired here.
+      document["parent"] = location.parent_location.name if location.parent_location
+      Location::Box::COLUMNS.each do |column|
+        document[column] = location[column] unless location[column].nil?
       end
       document["teaser"] = text(location.teaser)
       if location.realized?

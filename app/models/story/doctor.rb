@@ -74,6 +74,7 @@ class Story::Doctor
       *abilities,
       *hostility,
       *hazards,
+      *geometry,
       *vitals_rows
     ]
   end
@@ -1366,6 +1367,127 @@ class Story::Doctor
   # are on and the layer no model and no typed line writes.
   def hazards
     [ *rooms_with_an_unknown_hazard, *doorways_with_an_unknown_hazard ]
+  end
+
+  # --- the shape of a place, since the rulings of 2026-09-06 ----------------
+  #
+  # FOUR WAYS A LAYOUT CAN BE WRONG, and every one of them is a WARNING with a
+  # MANUAL remedy. Both halves are choices and both are worth saying out loud.
+  #
+  # WARNING RATHER THAN FATAL, because `fatal` in this file means one thing --
+  # `PlaythroughsController` refuses the story, or the first turn raises -- and
+  # nothing in the play path reads a coordinate yet. A story with two rooms on
+  # top of each other opens and plays exactly as it did before; what is wrong
+  # with it is its map, and a map nobody has drawn breaks nobody's game. When
+  # slice 3 puts dimensions in front of the narrator, the room whose box is
+  # wrong will read wrong, and that is still not a room that cannot be entered.
+  #
+  # MANUAL RATHER THAN SAFE, which is `rooms_with_an_unknown_danger`'s argument
+  # applied to five columns instead of one: THERE IS NO DERIVABLE ANSWER and
+  # clearing a column is not a neutral act. Moving one of two overlapping rooms
+  # means deciding which of them its author put in the wrong place -- nothing on
+  # record says. Clearing a box to resolve an orphan deletes a floor plan
+  # somebody laid out; giving its parent a footprint invents one. Filling in the
+  # two numbers a partial box is missing invents a room's size. Every one of
+  # those is exactly what this tool's own rule forbids: backfilling world data to
+  # make a check pass. A person edits the world file and re-seeds.
+  #
+  # WHAT IS DELIBERATELY NOT CHECKED HERE is whether a child's box lies INSIDE
+  # its parent's footprint. It is a real fault and it will want a finding, but
+  # nothing lays out an interior yet (slice 2, `ta-interior-layout`), so a rule
+  # about how a layout fits together would be a rule with no author to hold to
+  # it. Whoever writes the layout generator adds it alongside the generator.
+  def geometry
+    [ *rooms_with_a_partial_box, *boxes_with_no_parent, *boxes_with_no_parent_footprint,
+      *overlapping_sibling_rooms ]
+  end
+
+  # HALF A LAYOUT: neither a footprint, nor a box, nor nothing at all, which are
+  # the three whole answers `Location::Box.shape` allows. `Location` refuses a
+  # partial one (`#a_box_is_whole`) and `WorldSeed::Loader#validate_boxes!`
+  # refuses a file that writes one, so a row here arrived through raw SQL or a
+  # database older than the validation. It reads as no inside at all in the
+  # meantime, so nothing is broken -- it is a place whose author started laying
+  # it out and the record kept only part of the answer.
+  def rooms_with_a_partial_box
+    story.locations.order(:id).filter_map do |room|
+      next unless Location::Box.partial?(room)
+
+      present = Location::Box::COLUMNS.select { |column| room[column].present? }
+      finding(:location_with_a_partial_box, :warning,
+              "#{room.name} carries #{present.join(", ")}, which is neither a footprint " \
+              "(#{Location::Box::EXTENT.join(", ")}) nor a box (all of #{Location::Box::COLUMNS.join(", ")}), " \
+              "so it reads as a place with no inside at all and its author was laying one out",
+              :manual, subject: room)
+    end
+  end
+
+  # A POSITION IN NO FRAME AT ALL. Coordinates are LOCAL TO A PARENT -- there is
+  # no global space, which is the decision that makes the non-planar world graph
+  # and the interior plane coexist (`Location::Box`) -- so an `x`, a `y` and a
+  # `z` on a row with no `parent_location` are three numbers read against
+  # nothing. They are not wrong, they are unreadable: no other row shares their
+  # origin, so nothing can ever say where this place is.
+  #
+  # A FOOTPRINT WITH NO PARENT IS NOT THIS and is not reported: an extent with
+  # no position is exactly what the outermost place of an interior carries, and
+  # it is the plane its children are read in. That is the whole reason there are
+  # two whole shapes -- see `Location::Box`.
+  def boxes_with_no_parent
+    story.locations.with_a_box.where(parent_location_id: nil).order(:id).map do |room|
+      finding(:location_with_a_box_and_no_parent, :warning,
+              "#{room.name} is #{room.box} and is inside nothing, and a box is read in its parent's own plane -- " \
+              "so there is nothing for those numbers to be measured against",
+              :manual, subject: room)
+    end
+  end
+
+  # AN ORPHAN BOX: the parent is there and has no footprint of its own. Nearly
+  # the same fault as the one above and reported separately because the fix is
+  # somewhere else -- there the room needs a parent, here the PARENT needs a
+  # box, and a person sent to the child would edit the wrong row. A place with
+  # no width and no depth is a place with no plane, so its children's
+  # coordinates have an origin and nothing to be bounded by.
+  def boxes_with_no_parent_footprint
+    story.locations.with_a_box.where.not(parent_location_id: nil)
+         .includes(:parent_location).order(:id).filter_map do |room|
+      parent = room.parent_location
+      next if parent.nil? || parent.interior?
+
+      finding(:location_with_a_box_outside_a_footprint, :warning,
+              "#{room.name} is #{room.box} inside #{parent.name}, which has no footprint of its own -- so the " \
+              "plane those numbers are read in does not exist",
+              :manual, subject: room)
+    end
+  end
+
+  # TWO ROOMS IN THE SAME PLACE AT ONCE: siblings under one parent, on one
+  # storey, whose boxes intersect. It is the one geometric fact that is exactly
+  # decidable, which is why the arithmetic is integer and the intervals are
+  # half-open -- two rooms SHARING A WALL are touching and are not reported
+  # (`Location::Box#overlaps?`).
+  #
+  # ACROSS STOREYS IT IS NOT A FAULT and is not looked for: 2.5D means each
+  # floor is its own plane, so a room directly above another shares nothing with
+  # it. That is the captain's third ruling, and a check that flagged it would be
+  # reporting a building for having two floors.
+  #
+  # NO SUBJECT, which is a deliberate omission rather than one. `Finding#subject`
+  # is the record a repair acts on, and naming either of the two rooms would be
+  # this tool asserting which of them is in the wrong place -- the very judgement
+  # its `:manual` remedy says nothing on record supports.
+  def overlapping_sibling_rooms
+    story.locations.with_a_box.where.not(parent_location_id: nil).order(:id).to_a
+         .group_by { |room| [ room.parent_location_id, room.z ] }
+         .flat_map { |_, siblings| siblings.combination(2).to_a }
+         .filter_map do |(one, other)|
+      next unless one.overlaps?(other)
+
+      finding(:overlapping_sibling_locations, :warning,
+              "#{one.name} (#{one.box}) and #{other.name} (#{other.box}) are both inside " \
+              "#{one.parent_location.name} and are in the same place at once",
+              :manual)
+    end
   end
 
   # A HAZARD THE ENGINE HAS NO TABLE FOR. `Location::HAZARDS` is the closed set

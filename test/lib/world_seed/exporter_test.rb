@@ -546,4 +546,74 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
   def connect(from, to)
     create(:location_connection, :short_distance, location: from, connected_location: to)
   end
+  # --- an interior, since the rulings of 2026-09-06 --------------------------
+  #
+  # A ROUND TRIP IS THE ONLY THING THAT PROVES THE TWO HALVES AGREE, which is
+  # what every other geometry-free key in this file is held to as well.
+
+  test "a place with a footprint exports its extent and no position" do
+    @opening.update!(width: 12, depth: 8)
+    document = WorldSeed::Exporter.new(@story).document
+    place = document["locations"].detect { |row| row["name"] == "The Opening Room" }
+
+    assert_equal 12, place["width"]
+    assert_equal 8, place["depth"]
+    Location::Box::POSITION.each { |column| assert_not place.key?(column), "exported a #{column} it does not have" }
+  end
+
+  # OMITTED RATHER THAN WRITTEN NULL, which is the rule every key in this format
+  # follows -- and it is what keeps the three checked-in worlds byte-identical
+  # through an export, since they are left flat on purpose.
+  test "a flat world exports no geometry keys at all" do
+    document = WorldSeed::Exporter.new(@story).document
+
+    document["locations"].each do |row|
+      (Location::Box::COLUMNS + [ "parent" ]).each do |key|
+        assert_not row.key?(key), "#{row["name"]} exported a #{key} it does not have"
+      end
+    end
+  end
+
+  test "a two-room interior round-trips through export, load and export unchanged" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Back Room",
+                      x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    once = WorldSeed::Exporter.new(@story).document
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(once))).load!
+    twice = WorldSeed::Exporter.new(reloaded).document
+
+    assert_equal once, twice
+  end
+
+  # THE PARENT GOES OUT AS A NAME, like every other cross reference in the
+  # format: ids do not survive a re-seed.
+  test "containment exports as the parent's name, and loads back onto the same rows" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+
+    document = WorldSeed::Exporter.new(@story).document
+    taproom = document["locations"].detect { |row| row["name"] == "The Taproom" }
+
+    assert_equal "The Rusted Anchor", taproom["parent"]
+
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load!
+    assert_equal "The Rusted Anchor", reloaded.locations.find_by(name: "The Taproom").parent_location.name
+  end
+
+  # A ROW THAT GOT PAST THE APP. `Location#a_box_is_whole` refuses to save this,
+  # so the file is written as the records stand and the warning is where the
+  # person editing it finds out -- rather than the exporter quietly inventing
+  # the two numbers that are missing.
+  test "a place carrying part of a box is exported as it stands, with a warning" do
+    @stub.update_columns(x: 3, y: 4)
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_equal 3, document["locations"].detect { |row| row["name"] == "Somewhere Else" }["x"]
+    assert_match(/neither a footprint nor a box/, exporter.warnings.join)
+  end
 end

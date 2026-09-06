@@ -301,4 +301,137 @@ class LocationTest < ActiveSupport::TestCase
       assert entry[:words].present?, "#{key} has nothing to tell the prose"
     end
   end
+  # --- the shape of a place, since the rulings of 2026-09-06 -----------------
+
+  # NULL ON ALL FIVE IS THE ORDINARY STATE and must stay it: it is every row in
+  # every database and all three checked-in worlds, which the captain's fourth
+  # ruling leaves flat on purpose.
+  test "a place has no inside by default, and that is not a defect" do
+    room = create(:location)
+
+    assert_nil room.box
+    assert_not room.interior?
+    assert_not room.placed?
+    assert_predicate room, :valid?
+  end
+
+  test "an extent with no position is a footprint, and it is what an outermost place carries" do
+    place = create(:location, :with_a_footprint)
+
+    assert_predicate place, :interior?
+    assert_not place.placed?
+    assert_nil place.box
+  end
+
+  test "all five columns is a placed room, and the box reads them back" do
+    room = create(:location, :placed)
+
+    assert_predicate room, :interior?
+    assert_predicate room, :placed?
+    assert_equal Location::Box.new(x: 0, y: 0, z: 0, width: 7, depth: 8), room.box
+  end
+
+  # HALF A LAYOUT IS REFUSED AS ONE THING, for the reason half a hazard is:
+  # a row carrying part of an answer looks as though it said something and did
+  # not. `rake game:doctor` reports one a database already carries.
+  test "a place carrying part of a box is refused" do
+    room = build(:location, x: 1, y: 2)
+
+    assert_not room.valid?
+    assert_match(/neither a footprint/, room.errors.full_messages.join)
+  end
+
+  test "a position with no extent is refused too" do
+    assert_not build(:location, x: 1, y: 2, z: 0).valid?
+  end
+
+  # A ROOM NOTHING CAN STAND IN. Zero paces across is not a small room.
+  test "a room has to be at least one pace across" do
+    assert_not build(:location, :with_a_footprint, width: 0).valid?
+    assert_not build(:location, :with_a_footprint, depth: -1).valid?
+  end
+
+  # SIGNED ON PURPOSE: a room west of its parent's origin, or a basement below
+  # it, are both ordinary.
+  test "a position may be negative" do
+    place = create(:location, :with_a_footprint)
+    room = build(:location, story: place.story, parent_location: place,
+                            x: -4, y: -2, z: -1, width: 3, depth: 3)
+
+    assert_predicate room, :valid?
+  end
+
+  test "two sibling rooms in the same place at once overlap" do
+    place = create(:location, :with_a_footprint)
+    one = create(:location, story: place.story, parent_location: place, x: 0, y: 0, z: 0, width: 5, depth: 5)
+    other = create(:location, story: place.story, parent_location: place, x: 4, y: 4, z: 0, width: 5, depth: 5)
+
+    assert one.overlaps?(other)
+    assert other.overlaps?(one)
+  end
+
+  test "two sibling rooms sharing a wall do not overlap" do
+    place = create(:location, :with_a_footprint)
+    one = create(:location, story: place.story, parent_location: place, x: 0, y: 0, z: 0, width: 7, depth: 8)
+    other = create(:location, story: place.story, parent_location: place, x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    assert_not one.overlaps?(other)
+  end
+
+  # COORDINATES ARE LOCAL TO A PARENT AND THERE IS NO GLOBAL SPACE, so the same
+  # five numbers under two different parents are read in two different planes
+  # and the comparison is meaningless. False rather than raised -- see
+  # `Location#overlaps?`.
+  test "the same box under two different parents does not overlap" do
+    story = create(:story)
+    here = create(:location, :with_a_footprint, story: story)
+    there = create(:location, :with_a_footprint, story: story)
+    one = create(:location, story: story, parent_location: here, x: 0, y: 0, z: 0, width: 5, depth: 5)
+    other = create(:location, story: story, parent_location: there, x: 0, y: 0, z: 0, width: 5, depth: 5)
+
+    assert_not one.overlaps?(other)
+  end
+
+  test "two rooms with no parent at all do not overlap" do
+    story = create(:story)
+    one = create(:location, story: story, width: 5, depth: 5)
+    other = create(:location, story: story, width: 5, depth: 5)
+
+    assert_not one.overlaps?(other)
+  end
+
+  # 2.5D, THE CAPTAIN'S THIRD RULING: each floor is its own plane.
+  test "the same rectangle on two storeys of one place does not overlap" do
+    place = create(:location, :with_a_footprint)
+    ground = create(:location, story: place.story, parent_location: place, x: 0, y: 0, z: 0, width: 5, depth: 5)
+    above = create(:location, story: place.story, parent_location: place, x: 0, y: 0, z: 1, width: 5, depth: 5)
+
+    assert_not ground.overlaps?(above)
+  end
+
+  test "a room does not overlap itself" do
+    room = create(:location, :placed)
+
+    assert_not room.overlaps?(room)
+  end
+
+  test "an unplaced room overlaps nothing, including a placed sibling" do
+    place = create(:location, :with_a_footprint)
+    placed = create(:location, story: place.story, parent_location: place, x: 0, y: 0, z: 0, width: 5, depth: 5)
+    unplaced = create(:location, story: place.story, parent_location: place)
+
+    assert_not unplaced.overlaps?(placed)
+    assert_not placed.overlaps?(unplaced)
+  end
+
+  test "the scopes are places with an inside and rooms that have been placed" do
+    story = create(:story)
+    create(:location, story: story)
+    footprint = create(:location, :with_a_footprint, story: story)
+    placed = create(:location, :placed, story: story)
+
+    assert_equal [ footprint, placed.parent_location, placed ].map(&:id).sort,
+                 story.locations.with_a_footprint.pluck(:id).sort
+    assert_equal [ placed ], story.locations.with_a_box.to_a
+  end
 end

@@ -1,11 +1,20 @@
 class Location < ApplicationRecord
   belongs_to :story
-  # Containment. NOTHING SETS THIS YET: Location::Generator creates every stub
-  # from an exit, which says where you can walk, not what is inside what. The
-  # generator used to put "contained within: X" into the detail prompt on a
-  # branch that could never be taken; that branch is gone. The association
-  # stays because the column and the design do, but a caller has to write it
-  # before any prompt can read it.
+  # Containment, and since the captain's second ruling of 2026-09-06 this is
+  # what a PLACE is: a `Location` with children, whose children are its rooms,
+  # and the party always stands in a child. A parent is a container the player
+  # never occupies, which is what leaves every downstream reader untouched --
+  # `Character.present_in`, `Item.lying_in` and `Scene#location` all still read
+  # a room.
+  #
+  # WHO WRITES IT. A SEED FILE MAY, as of this slice: `WorldSeed::Loader` reads
+  # a location's `parent` key and wires it after every room exists, so a
+  # hand-authored world can declare an interior. `Location::Generator` still
+  # does not -- it creates every stub from an exit, which says where you can
+  # walk and not what is inside what -- and the interior layout generator that
+  # will is slice 2 (`ta-interior-layout`). It is also the frame every number in
+  # `Location::Box` is read in, so nothing may re-parent a room during a walk:
+  # `EngineSweep::Invariants#geometry_unmoved` asserts that.
   belongs_to :parent_location, class_name: "Location", optional: true
   has_many :child_locations, class_name: "Location", foreign_key: "parent_location_id"
   has_many :scenes, dependent: :destroy
@@ -200,6 +209,83 @@ class Location < ApplicationRecord
   # `Playthrough::Hazards` each ask one question and neither has a nil check.
   def hazard_at?(moment) = hazardous? && hazard_entry.fetch(:when) == moment
 
+  # --- the shape of the place -----------------------------------------------
+  #
+  # `Location::Box` owns the design in full -- the four rulings of 2026-09-06,
+  # why coordinates are local to a parent, why a storey is an index, why the
+  # arithmetic is integer, and why there are TWO whole shapes rather than one.
+  # What is here is only what needs a record.
+
+  # Places with an inside: a plane their children's positions are read in. This
+  # is the extent alone, so it holds for the outermost place of an interior as
+  # well as for a room within one.
+  scope :with_a_footprint, -> { where.not(width: nil, depth: nil) }
+
+  # Rooms that have been PLACED -- all five columns, so they sit somewhere on a
+  # storey of their parent. Almost no row in any database is one, which is the
+  # point of the columns being nullable.
+  scope :with_a_box, -> { with_a_footprint.where.not(x: nil, y: nil, z: nil) }
+
+  # HALF A LAYOUT IS REFUSED, as one thing, for the reason `#a_hazard_is_whole`
+  # refuses half a hazard and `Character#a_stat_block_is_whole` refuses half a
+  # sheet: a row carrying two of the three position columns, or a position with
+  # no extent, is a column set that looks as though it said something and did
+  # not, and every reader of it would have to guess at the rest.
+  # `rake game:doctor` reports a row a database already carries
+  # (`location_with_a_partial_box`), which is what makes a database older than
+  # this validation diagnosable rather than unloadable.
+  #
+  # WHAT IS NOT VALIDATED HERE is everything that reads a SECOND row -- that a
+  # placed room has a parent, that the parent has a footprint of its own, that
+  # two siblings do not overlap. All three are real faults, all three are
+  # reported by `Story::Doctor` and refused in a file by `WorldSeed::Loader`;
+  # they are not validations because a validation that queries another row runs
+  # on every save of every location in the app, to catch a fault only two
+  # writers can commit.
+  validate :a_box_is_whole
+  # A ROOM WITH NO FLOOR. Zero paces across is not a small room, it is a room
+  # nothing can stand in and no door can open onto -- so it is refused here
+  # rather than left for slice 2's layout to divide by. `x`, `y` and `z` carry
+  # no such rule on purpose: an origin and a storey index are signed, and a room
+  # west of its parent's origin or a basement below it are both ordinary.
+  validates :width, :depth, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :x, :y, :z, numericality: { only_integer: true }, allow_nil: true
+
+  # This room's own five numbers as a value, or NIL for a place that is not
+  # PLACED -- which includes a place carrying a footprint alone, because a
+  # footprint has nowhere to be. See `Location::Box.of`.
+  def box = Location::Box.of(self)
+
+  # Whether this place has an inside at all: an extent, which is the plane its
+  # children's positions are read in. TRUE FOR A FOOTPRINT AS WELL AS A BOX,
+  # which is what makes it the question `Story::Doctor` asks of a parent.
+  def interior? = !width.nil? && !depth.nil?
+
+  # Whether this room sits somewhere -- all five columns. `#interior?` says the
+  # place has a plane; this says it has been put on one.
+  def placed? = !box.nil?
+
+  # WHETHER THESE TWO ROOMS ARE IN THE SAME PLACE AT ONCE, and it is here rather
+  # than on `Location::Box` because it is the half of the question that needs
+  # records: coordinates are local to a parent, so two boxes under DIFFERENT
+  # parents are read in different planes and comparing them is meaningless. It
+  # answers false rather than raising, because "these two do not overlap" is the
+  # honest answer for two rooms in two different buildings -- and a caller
+  # sweeping every pair in a story (`Story::Doctor`) would otherwise have to
+  # group them itself before it could ask.
+  #
+  # False for a room that has not been placed, for the same reason: a room with
+  # no position is nowhere, and nowhere overlaps nothing.
+  def overlaps?(other)
+    return false if parent_location_id.nil? || parent_location_id != other.parent_location_id
+    return false if id == other.id
+
+    mine, theirs = box, other.box
+    return false if mine.nil? || theirs.nil?
+
+    mine.overlaps?(theirs)
+  end
+
   # The places you can walk to from here. Connections are stored directionally
   # but written in both directions when a location is realized, so this one
   # association is the whole exit list.
@@ -235,6 +321,18 @@ class Location < ApplicationRecord
   end
 
   private
+
+  # See `validate :a_box_is_whole` above for why this is one rule over five
+  # columns rather than five rules, and `Location::Box.shape` for the three
+  # whole answers it is holding this row to.
+  def a_box_is_whole
+    return unless Location::Box.partial?(self)
+
+    written = Location::Box::COLUMNS.select { |column| self[column].present? }
+    errors.add(:base, "carries #{written.join(", ")}, which is neither a footprint " \
+                      "(#{Location::Box::EXTENT.join(", ")}), nor a box (all of " \
+                      "#{Location::Box::COLUMNS.join(", ")}), nor nothing at all")
+  end
 
   # HALF A HAZARD IS REFUSED, and it is refused as ONE thing for the reason
   # `Character#a_stat_block_is_whole` refuses half a sheet: the key says what

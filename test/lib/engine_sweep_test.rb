@@ -698,6 +698,77 @@ class EngineSweepTest < ActiveSupport::TestCase
   # A seeded world loaded the way a walk loads it -- under its own title, so
   # nothing here touches a world anybody is playing -- with the file it came
   # from, which is what the invariants compare against.
+  # --- the shape of a place, which no typed line may touch -------------------
+  #
+  # THE STANDING CONSTRAINT APPLIED TO GEOMETRY. A box is the WORLD's on exactly
+  # the terms a hit die and a hazard already are: the engine owns every one of
+  # those numbers, and no model and no player prose writes one. Nothing in the
+  # play path so much as reads a coordinate today, which is precisely why the
+  # invariant is worth having now -- it fires the moment anything in a walk
+  # starts writing one, which is the change that would need watching.
+
+  # THE THREE CHECKED-IN WORLDS ARE FLAT (the captain's fourth ruling of
+  # 2026-09-06), so a real walk over one of them has to leave this quiet. This
+  # is the assertion that the invariant does not fire on the ordinary world.
+  test "a walk over a seeded world leaves its geometry unmoved" do
+    result = walk(<<~YAML)
+      story: The Unrecorded Hour
+      steps:
+      - type: look
+      - type: go to The Supply Closet
+      - type: go to Ward Office 12
+    YAML
+
+    assert_predicate result, :passed?, result.report
+  end
+
+  test "a room that acquired a box during an offline walk is caught after it" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    place = story.locations.find_by(name: "Ward Office 12")
+    place.update!(width: 12, depth: 8)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "geometry_unmoved", broken.invariant
+    assert_match(/Ward Office 12 is 12x8 paces inside nothing and the file says unlaid out/, broken.to_s)
+  end
+
+  # BOTH WAYS, like `#danger_of_the_rooms`: a room that LOST its box during a
+  # walk fails exactly as loudly as one that gained one.
+  test "a room that lost the box the file gives it is caught too" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    seed["locations"].detect { |row| row["name"] == "The Supply Closet" }.merge!("width" => 3, "depth" => 2)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "geometry_unmoved", broken.invariant
+    assert_match(/The Supply Closet is unlaid out/, broken.to_s)
+  end
+
+  # SIX FACTS PER ROOM AND NOT FIVE. The parent is the frame every one of the
+  # five numbers is read in, so a walk that re-parented a room would move it
+  # without changing a single number -- and an invariant over the columns alone
+  # would not notice.
+  test "a room that was re-parented during a walk is caught even with its numbers untouched" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    closet, hallway = story.locations.where(name: [ "The Supply Closet", "The Long Hallway" ]).order(:id).to_a
+    closet.update!(parent_location: hallway)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "geometry_unmoved", broken.invariant
+    assert_match(/inside The Long Hallway and the file says unlaid out, inside nothing/, broken.to_s)
+  end
+
+  # A WORLD THAT DOES HAVE AN INTERIOR still has to walk clean, or the invariant
+  # would only ever hold on worlds with no geometry to move.
+  test "a world with an interior the file declares walks with the invariant quiet" do
+    seed = WorldSeed.parse(File.read(Rails.root.join("test/fixtures/files/a-world-with-an-interior.yml")))
+    story = WorldSeed::Loader.new(seed.deep_dup).load!
+
+    assert_empty EngineSweep::Invariants.new(story, seed: seed).check
+  end
+
   def seeded_copy(slug)
     seed = WorldSeed.parse(File.read(WorldSeed::DIRECTORY.join("#{slug}.yml")))
     document = seed.deep_dup

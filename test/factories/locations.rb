@@ -86,6 +86,28 @@ FactoryBot.define do
       parent_location { association :location, strategy: :build }
     end
 
+    # A PLACE WITH AN INSIDE: an extent and no position, which is what the
+    # outermost place of an interior carries (`Location::Box`). Fixed numbers,
+    # never rolled -- a factory that threw dice for a box would land an overlap
+    # on whoever ran the suite next.
+    trait :with_a_footprint do
+      width { 12 }
+      depth { 8 }
+    end
+
+    # A ROOM PLACED IN A PARENT'S PLANE: all five columns and a parent that has
+    # a footprint of its own, which is the only whole way to have a position.
+    # It is the west half of `:with_a_footprint`'s 12 x 8, so a second placed
+    # room at x = 7 is beside it and not on top of it.
+    trait :placed do
+      parent_location { association :location, :with_a_footprint, story: instance.story }
+      x { 0 }
+      y { 0 }
+      z { 0 }
+      width { 7 }
+      depth { 8 }
+    end
+
     # Specific location examples
     trait :rivendell do
       name { "Rivendell" }

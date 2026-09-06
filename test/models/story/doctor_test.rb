@@ -1329,4 +1329,149 @@ class Story::DoctorTest < ActiveSupport::TestCase
       assert_not_includes codes(story), :item_with_an_unknown_bulk, bulk
     end
   end
+  # --- the shape of a place, since the rulings of 2026-09-06 -----------------
+  #
+  # EVERY ONE OF THESE IS A WARNING WITH A MANUAL REMEDY, and both halves are
+  # asserted rather than assumed: nothing in the play path reads a coordinate,
+  # so a broken map breaks nobody's game; and there is no derivable right
+  # answer, so nothing here may be repaired. See `Story::Doctor#geometry`.
+
+  # THE ORDINARY WORLD, and it is the one that has to stay quiet: all three
+  # checked-in worlds are flat, by the captain's fourth ruling.
+  test "a story with no interiors at all has no geometry findings" do
+    story = healthy_story
+
+    assert_empty codes(story) & %i[location_with_a_partial_box location_with_a_box_and_no_parent
+                                   location_with_a_box_outside_a_footprint overlapping_sibling_locations]
+  end
+
+  # A WELL FORMED INTERIOR: a place with a footprint, two rooms inside it
+  # sharing a wall. Nothing about it is a finding, and if this ever starts
+  # reporting one, slice 2 cannot lay out a building.
+  def a_place_with_two_rooms(story)
+    place = create(:location, :stub, :with_a_footprint, story: story, name: "The Rusted Anchor")
+    taproom = create(:location, story: story, parent_location: place, name: "The Taproom",
+                                x: 0, y: 0, z: 0, width: 7, depth: 8)
+    back = create(:location, story: story, parent_location: place, name: "The Back Room",
+                             x: 7, y: 0, z: 0, width: 5, depth: 8)
+    [ place, taproom, back ]
+  end
+
+  test "a place with two rooms laid out inside it is healthy" do
+    story = healthy_story
+    a_place_with_two_rooms(story)
+
+    assert_empty codes(story) & %i[location_with_a_partial_box location_with_a_box_and_no_parent
+                                   location_with_a_box_outside_a_footprint overlapping_sibling_locations]
+  end
+
+  # STRAIGHT TO THE COLUMNS, because `Location#a_box_is_whole` refuses to save
+  # this -- which is the point: the finding is about a row that got past the
+  # app, out of raw SQL or a database older than the validation. Same shape as
+  # the unknown-hazard tests above.
+  test "a place carrying part of a box is reported and cannot be repaired" do
+    story = healthy_story
+    room = story.locations.realized.first
+    room.update_columns(x: 3, y: 4)
+
+    assert_includes codes(story), :location_with_a_partial_box
+    assert_equal :warning, finding(story, :location_with_a_partial_box).severity
+    assert_equal :manual, finding(story, :location_with_a_partial_box).remedy
+    assert_match(/neither a footprint/, finding(story, :location_with_a_partial_box).message)
+  end
+
+  test "a partial box names the room it acts on, so a reader is sent to the right row" do
+    story = healthy_story
+    room = story.locations.realized.first
+    room.update_columns(width: 6)
+
+    assert_equal room, finding(story, :location_with_a_partial_box).subject
+  end
+
+  # A POSITION READ AGAINST NOTHING. There is no global space, so five numbers
+  # on a row inside nothing are unreadable rather than wrong.
+  test "a placed room inside nothing is reported and cannot be repaired" do
+    story = healthy_story
+    room = story.locations.realized.first
+    room.update!(parent_location: nil, x: 0, y: 0, z: 0, width: 4, depth: 4)
+
+    assert_includes codes(story), :location_with_a_box_and_no_parent
+    assert_equal :warning, finding(story, :location_with_a_box_and_no_parent).severity
+    assert_equal :manual, finding(story, :location_with_a_box_and_no_parent).remedy
+    assert_match(/4x4 paces at 0,0 on storey 0/, finding(story, :location_with_a_box_and_no_parent).message)
+  end
+
+  # THE ONE THAT MUST NOT FIRE, and it is why there are two whole shapes: an
+  # extent with no position inside nothing is the outermost place of an
+  # interior, not an orphan. If this reports, no interior can ever be healthy.
+  test "a footprint inside nothing is the outermost place of an interior and is not a finding" do
+    story = healthy_story
+    create(:location, :stub, :with_a_footprint, story: story, name: "The Rusted Anchor")
+
+    assert_not_includes codes(story), :location_with_a_box_and_no_parent
+  end
+
+  # AN ORPHAN BOX, and it is its own finding rather than a second subject on the
+  # one above because the fix is on the OTHER row -- there the room needs a
+  # parent, here the parent needs a footprint.
+  test "a room placed inside a place with no footprint is reported and cannot be repaired" do
+    story = healthy_story
+    place = create(:location, :stub, story: story, name: "The Rusted Anchor")
+    create(:location, story: story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+
+    assert_includes codes(story), :location_with_a_box_outside_a_footprint
+    assert_equal :warning, finding(story, :location_with_a_box_outside_a_footprint).severity
+    assert_equal :manual, finding(story, :location_with_a_box_outside_a_footprint).remedy
+    assert_match(/The Rusted Anchor, which has no footprint of its own/,
+                 finding(story, :location_with_a_box_outside_a_footprint).message)
+  end
+
+  test "two sibling rooms in the same place at once are reported and cannot be repaired" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    create(:location, story: story, parent_location: place, name: "The Cellar Stair",
+                      x: 5, y: 0, z: 0, width: 4, depth: 4)
+
+    assert_includes codes(story), :overlapping_sibling_locations
+    assert_equal :warning, finding(story, :overlapping_sibling_locations).severity
+    assert_equal :manual, finding(story, :overlapping_sibling_locations).remedy
+    assert_match(/#{taproom.name}/, finding(story, :overlapping_sibling_locations).message)
+    assert_match(/The Cellar Stair/, finding(story, :overlapping_sibling_locations).message)
+  end
+
+  # NO SUBJECT, DELIBERATELY: naming either room would be this tool asserting
+  # which of the two its author put in the wrong place, which is the judgement
+  # its own `:manual` remedy says nothing on record supports.
+  test "an overlap names neither room as the record to act on" do
+    story = healthy_story
+    place, = a_place_with_two_rooms(story)
+    create(:location, story: story, parent_location: place, name: "The Cellar Stair",
+                      x: 5, y: 0, z: 0, width: 4, depth: 4)
+
+    assert_nil finding(story, :overlapping_sibling_locations).subject
+  end
+
+  # 2.5D: each floor is its own plane, so a check that reported this would be
+  # reporting a building for having two storeys.
+  test "the same rectangle on two storeys of one place is not an overlap" do
+    story = healthy_story
+    place, = a_place_with_two_rooms(story)
+    create(:location, story: story, parent_location: place, name: "The Upstairs Room",
+                      x: 0, y: 0, z: 1, width: 7, depth: 8)
+
+    assert_not_includes codes(story), :overlapping_sibling_locations
+  end
+
+  # COORDINATES ARE LOCAL TO A PARENT: two buildings sharing an origin share
+  # nothing, so a sweep over every pair in a story must not report them.
+  test "two rooms with the same box under different parents are not an overlap" do
+    story = healthy_story
+    a_place_with_two_rooms(story)
+    other = create(:location, :stub, :with_a_footprint, story: story, name: "The Custom House")
+    create(:location, story: story, parent_location: other, name: "The Long Counter",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+
+    assert_not_includes codes(story), :overlapping_sibling_locations
+  end
 end
