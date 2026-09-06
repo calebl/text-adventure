@@ -17,6 +17,23 @@ class Scene::Narrator
   # PROMPT now (`Playthrough::Moment`), so the rule about exits can point at
   # them instead of at "what the player has been told" -- a thing the narrator
   # had no way to know.
+  #
+  # AND THE RULE ABOUT A CHANGE OF POSSESSION IS DELIBERATELY NOT HERE, which is
+  # a measurement and not an oversight. PR 98's review finding F1 is real -- this
+  # block forbids inventing a possession and says nothing about a possession that
+  # arrived THIS TURN -- and the obvious answer was a paragraph here saying so.
+  # It was written, and measured on the prompt bench: it took `take_denied` from
+  # 0.833 to 0.056 with the two per-turn changes below it, and it took
+  # `item_not_held` from 0.054 to 0.123, REAL at p=0.0286 (take-fix-1, 2026-09-05).
+  # The rise was in the shapes the rule is not about -- read turns went from 1
+  # flag to 9 over four repetitions, prose that had started retrieving things
+  # from other things to read them -- because a sentence about hands in the
+  # SYSTEM message is on every turn in the game, and most turns move nothing.
+  #
+  # So the rule went where the change is: `Playthrough::Turn#taken_fact` and
+  # `#dropped_fact` say it, on the turns that moved a row, and
+  # `Playthrough::Moment::Handled` marks the row in the standing lists beside
+  # them. Same rule, and it is read only by a turn it is true of.
   INSTRUCTIONS = <<~PROMPT.freeze
     You are the narrator of a text adventure. Write in the second person,
     present tense, addressing the player as "you". Describe what happens in
@@ -60,6 +77,14 @@ class Scene::Narrator
   # say in whether it is true. If the prose contradicts it the record still
   # stands, which is the point; `Story::Audit` is what notices.
   #
+  # `handled` IS THE ROW THAT MOVED, and it is the other half of the same
+  # sentence: the fact says what the turn DID and this says which line of the
+  # standing state it did it to, so `Playthrough::Moment` can mark the daybook
+  # on the carried list as the one picked up this turn rather than leaving it
+  # indistinguishable from a daybook the player walked in holding. Read
+  # `Playthrough::Moment::Handled` for the defect that is; a caller with no row
+  # to name passes nothing and the lists read exactly as they always did.
+  #
   # A RESPONSE THE GAME WILL NOT KEEP IS NOT PERSISTED, which is the other half
   # of `BaseAgent`'s refusal check. The `ensure` below saves whatever arrived,
   # and that is right for a call that died mid-sentence and wrong for a model
@@ -76,12 +101,12 @@ class Scene::Narrator
   # is what the model that actually answered wrote. (The player may still have
   # watched the first attempt arrive; the end-of-turn `#turn_log` replace is
   # what takes it off the page, since the log renders the persisted scene.)
-  def narrate(command, fact: nil, intent: nil, &block)
+  def narrate(command, fact: nil, intent: nil, handled: nil, &block)
     streamed = +""
     keep = nil
 
     begin
-      keep = agent.ask(prompt_for(command, fact, intent)) do |chunk|
+      keep = agent.ask(prompt_for(command, fact, intent, handled)) do |chunk|
         part = chunk.content.to_s
         next if part.empty?
 
@@ -112,9 +137,9 @@ class Scene::Narrator
     @agent ||= BaseAgent.new(INSTRUCTIONS, purpose: "narration", playthrough: playthrough)
   end
 
-  def prompt_for(command, fact = nil, intent = nil)
+  def prompt_for(command, fact = nil, intent = nil, handled = nil)
     <<~PROMPT
-      #{context}
+      #{context(handled)}
       #{"\nWhat has ALREADY happened, recorded by the game: #{fact}\nNarrate it as done. Do not contradict it and do not undo it.\n" if fact.present?}
       #{"\n#{DOING[intent]}\n" if DOING.key?(intent)}
       The player types: #{command}
@@ -127,8 +152,8 @@ class Scene::Narrator
   # the player carries, what just happened and what came before. One builder
   # shared with `InteractionAgent`'s narrator pass, so the two prose passes the
   # player reads interleaved cannot disagree about where they are standing.
-  def context
-    Playthrough::Moment.new(playthrough).narration_context
+  def context(handled = nil)
+    Playthrough::Moment.new(playthrough, handled: handled).narration_context
   end
 
   # Blank narration is not worth a record -- that is a failed turn, and saving

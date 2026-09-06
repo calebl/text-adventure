@@ -55,6 +55,49 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **The narrator is told what CHANGED, not only what IS** (`ta-take-drop-narration`).
+  The prose denied the pickup the app had just made -- *"You reach for the
+  daybook, but it is already in your hands"* -- on **19 of 20 judgeable take
+  turns** of the 2026-09-05 multi-turn re-baseline, both worlds, every run, and
+  on **14..17 of 18** take cases of the prompt bench. The mechanism was two
+  true sentences in one prompt: `Playthrough::Turn#taken_fact` said the row had
+  moved, and `Playthrough::Moment` listed the same row under *"The player is
+  carrying"*, because by then it truly was. Nothing in the prompt said which of
+  the two was the turn.
+
+  **Three lines of prompt and no new record.** `#taken_fact` and `#dropped_fact`
+  now state the change -- when (this turn and not before it), where the row was
+  until then, what to narrate, and that nothing else moved --
+  and `Playthrough::Moment::Handled` marks that one row in the standing list it
+  moved to (`the daybook (picked up just now, on this turn)`). `Scene::Narrator`
+  passes it through; no record, no classifier, no grammar, no engine item move
+  and no arrival prompt changed.
+
+  **PR 98's finding F1 was tried in `Scene::Narrator::INSTRUCTIONS` and
+  measured, and it is NOT there.** A rule about hands in the SYSTEM message is
+  read on every turn in the game, and most turns move nothing: it took
+  `take_denied` to 0.056 and `item_not_held` to 0.123, **REAL at p=0.0286**,
+  with the rise on the shapes the rule is not about -- read turns went 1 flag to
+  9 as prose started retrieving things from other things in order to read them.
+  The rule went into the per-turn fact instead, where it is read only by a turn
+  it is true of.
+
+  **Judged bench-first, confirmed multi-turn.** Bench: `take_denied`
+  **0.833 -> 0.142, REAL (p=0.0286)**, `pickup_invented` 0.111 -> 0.000,
+  everything else NOISE, richness up. Multi-turn at REPS=5 a side:
+  `take_denied` **1.000 -> 0.000, REAL (p=0.0079) on the tuning corpus AND on
+  held-out `The Salt Assizes`** -- 20 of 20 judgeable takes clean --
+  `pickup_invented` 0.000 both, `Eval::Richness` +0.05 / +0.00 (NOISE, did not
+  fall), every other check NOISE at a floor of zero, 300 of 300 turns on their
+  scripted branch. Total spend **$0.92**.
+
+  **`Playthrough::PromptVersion` does NOT move across this**, which is a stated
+  consequence rather than an omission: it digests the instruction block, and the
+  per-turn fact scaffold is explicitly outside it (read its header). So
+  `Playthrough::Feedback` verdicts on take turns before and after this merge
+  group under one digest. `Eval::Prompt::Version`'s `prompt_digest` is the one
+  that moved, `0ffc0228b538ac73 -> e05adeafd329542e`.
+
 - **The classifier reads a blow** (`ta-combat-intent`, slice 8 of the combat
   build order, and the FIRST model-facing combat slice). `attack` is the seventh
   word in `Playthrough::IntentSchema::INTENTS`, so *"hit him"*, *"go for the
@@ -1921,7 +1964,15 @@ reading one held-out run the board scored at zero flags.
   does not fall REAL alongside it — the cheapest way to stop writing the player
   in third person is to stop naming anybody. Then re-baseline, and the existing
   check guards it from there.
-- **`ta-take-drop-narration`** — the prose denies the take and invents a pickup
+- ~~**`ta-take-drop-narration`**~~ — **landed**, see **Done**. `#taken_fact` and
+  `#dropped_fact` state the change rather than the state and
+  `Playthrough::Moment::Handled` marks the row that moved; `take_denied` fell
+  **1.000 → 0.000, REAL (p=0.0079) on both corpora, held-out included**. PR 98's
+  **F1** was tried in `Scene::Narrator::INSTRUCTIONS`, measured, and rejected
+  there — it cost `item_not_held` REAL on read turns — and lives in the per-turn
+  fact instead. **F3** landed earlier with the floor list. The original entry,
+  kept because the numbers in it are what the fix was judged against: the prose
+  denies the take and invents a pickup
   on the drop. **The instrument half has landed** (`ta-narrator-invents-exit`,
   2026-09-03): `Scene#resolved_action` and `Scene#acted_on` record what each turn
   DID, and `take_denied` / `pickup_invented` read a narration against the state

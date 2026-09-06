@@ -85,8 +85,10 @@ class Eval::Prompt::BenchTest < ActiveSupport::TestCase
     assert_includes take, "The player is in Ward Office 12"
     assert_includes take, "Ways out of here: The Supply Closet, The Long Hallway"
     assert_includes take, "Also here: Halkett Rowe"
-    assert_includes take, "has picked up the ward stamp and is now carrying it",
+    assert_includes take, "ON THIS TURN, and not before it, Odile Vance picked the ward stamp up",
                     "the fact the app writes, not one this bench composes"
+    assert_includes take, "ward stamp (picked up just now, on this turn)",
+                    "and the standing list the app marks, so the two agree which row moved"
     assert_includes agents.filter_map(&:instructions).join("\n"),
                     "You are the narrator of a text adventure"
   end

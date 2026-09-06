@@ -1567,6 +1567,25 @@ belongs here is the part that changes how you work:
   case per shape, so it also covers `Playthrough::Turn#taken_fact` and
   everything `Playthrough::Moment` builds — and it is only meaningful because
   the corpus is fixed, which is what `corpus_digest` says.
+- **A RULE THAT IS TRUE OF ONE KIND OF TURN GOES IN THAT TURN'S FACT, NOT IN
+  `Scene::Narrator::INSTRUCTIONS`**, and this was measured rather than
+  reasoned. The instruction block is the system message of every narrated turn
+  in the game, and most turns move nothing: `ta-take-drop-narration` put a
+  paragraph about what did and did not change hands there, and it took
+  `item_not_held` from 0.054 to 0.123 — **REAL at p=0.0286** — on the shapes
+  the paragraph was not about (read turns, 1 flag to 9, prose that had started
+  retrieving things from other things in order to read them). The same rule in
+  `Playthrough::Turn#taken_fact` and `#dropped_fact` kept the whole
+  `take_denied` win with `item_not_held` back inside its noise. Before writing
+  into the block, ask which turns the sentence is FALSE of.
+- **A prompt change to the per-turn scaffold does NOT move
+  `Playthrough::PromptVersion`.** It digests the instruction block only, by
+  design (read its header) — so a change to `#taken_fact`,
+  `#dropped_fact` or `Playthrough::Moment` leaves every
+  `Playthrough::Feedback` verdict before and after it grouped under one digest.
+  `Eval::Prompt::Version`'s `prompt_digest` is the one that covers it, and only
+  because the bench corpus is fixed. Say so in the PR rather than letting a
+  reader infer the verdicts are separable.
 - **`rake eval:prompt_compare` says whether the MODEL or the PROMPT moved**, off
   the stored files alone, and refuses to be read when both did. Read
   `commitments` beside the rates: a fall in every defect rate with a fall in

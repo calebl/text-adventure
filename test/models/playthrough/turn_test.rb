@@ -464,9 +464,40 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     narration_prompt = agent.prompts.last
 
     assert_match(/ALREADY happened/, narration_prompt)
-    assert_match(/has picked up the Brass Key/, narration_prompt)
+    assert_match(/ON THIS TURN, and not before it, Iri Calder picked the Brass Key up/, narration_prompt)
     assert_match(/bell-shaped bow/, narration_prompt)
     assert_match(/Do not contradict it/, narration_prompt)
+  end
+
+  # AND IT IS TOLD IT AS A CHANGE, NOT AS A STATE, on both sides of the prompt:
+  # the fact says where the row was until this turn, and the carried list marks
+  # the same row as the one that moved. Two lines that used to agree only that
+  # the thing was the player's -- which is what the narrator wrote back
+  # (`take_denied`, 19 of 20 judgeable takes on 2026-09-05).
+  test "the standing inventory marks the row this turn moved" do
+    lying_here(@playthrough, @here, name: "Brass Key")
+
+    _scene, _chunks, agent = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"),
+                                  "You lift the key.")
+    narration_prompt = agent.prompts.last
+
+    assert_match(/carrying: Brass Key \(picked up just now, on this turn\)/, narration_prompt)
+    assert_match(/Until this turn it was NOT in their hands at all: it was lying in Ashgate Market/,
+                 narration_prompt)
+  end
+
+  # The mirror, and it is marked on the floor rather than in the hands: a drop
+  # puts the row where a narrator otherwise reads it as something to be found.
+  test "the floor marks the row a drop just put on it" do
+    create(:item, :carried, playthrough: @playthrough, name: "Brass Key")
+
+    _scene, _chunks, agent = play("put down the brass key", CLASSIFY.call("drop", "Brass Key"),
+                                  "You set the key down.")
+    narration_prompt = agent.prompts.last
+
+    assert_match(/takeable: Brass Key \(put down just now, on this turn\)/, narration_prompt)
+    assert_match(/ON THIS TURN, and not before it, Iri Calder put the Brass Key down/, narration_prompt)
+    assert_match(/Do not write them picking it up or finding it/, narration_prompt)
   end
 
   # THE TEST THIS WHOLE BRANCH EXISTS FOR. The narrator says the player pocketed
@@ -1069,7 +1100,7 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
                                   CLASSIFY.call("take", "folded note"),
                                   "You unfold it as you lift it.")
 
-    assert_includes agent.prompts.last, "has picked up the folded note"
+    assert_includes agent.prompts.last, "Iri Calder picked the folded note up"
     assert_includes agent.prompts.last, %(word for word: "#{note.inscription}")
   end
 
