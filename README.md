@@ -69,7 +69,7 @@ rake game:list
 
 The premise is optional; without one the model picks its own.
 
-`rake game:list` prints each world's id, genre and counts.
+`rake game:list` prints each world's id, title, genre and counts.
 
 ## Play it
 

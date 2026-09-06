@@ -20,7 +20,8 @@
 #                  after `rake game:new`, before anybody has played. Linked
 #                  from the playthroughs index, one per listed story, gated
 #                  there on the same flag this controller gates on; and from a
-#                  playthrough's debug page, beside the playthrough map.
+#                  playthrough's debug page, beside the playthrough map, drawn
+#                  unconditionally because that page is already behind the flag.
 #   PER PLAYTHROUGH  the same graph with the party on it: the column count is
 #                  hops from where they are standing, and the things lying
 #                  around are that game's own copies rather than the world's
