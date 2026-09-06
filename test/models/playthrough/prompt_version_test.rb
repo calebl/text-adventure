@@ -159,6 +159,41 @@ class Playthrough::PromptVersionTest < ActiveSupport::TestCase
     assert_includes text, "does not move. Nothing happened."
   end
 
+  # THE ONE THING THIS CLASS DUPLICATES, AND THE TEST THAT KEEPS IT HONEST.
+  # `Playthrough::PromptVersion::Scaffold` holds no prompt WORDING -- it
+  # subclasses the two classes that own it and calls their real builders -- but
+  # it does hold the LIST of which builders exist. A signature change breaks the
+  # render loudly; a SIXTH fact sentence added and not rendered would not, and
+  # the digest would quietly stop covering a sentence every turn of that shape
+  # sends. So the list is asserted against the class itself.
+  test "every fact sentence Playthrough::Turn can write is rendered into the scaffold" do
+    assert_equal Playthrough::Turn.instance_methods(false).grep(/_fact\z/).sort,
+                 Playthrough::PromptVersion::Scaffold.rendered_facts.sort,
+                 "a fact builder that is not rendered is a sentence the prompt version cannot see"
+  end
+
+  # AND THE SHARPER CASE, because `#thrown_fact` is one method with a sentence
+  # per outcome: a fifth `Throw` kind is a whole new paragraph of wording inside
+  # a builder that is already rendered, so the method-name check above would
+  # pass and the digest would still miss it. `Data.define`'s own boilerplate is
+  # subtracted by asking a bare `Data` class what it has, rather than by naming
+  # `[]`, `new`, `inspect` and `members` in a list that would go stale.
+  test "every outcome a throw can have is rendered into the scaffold" do
+    kinds = Playthrough::Turn::Throw.singleton_methods(false) - Data.define.singleton_methods(false)
+
+    assert_equal kinds.sort, Playthrough::PromptVersion::Scaffold.rendered_throw_kinds.sort,
+                 "a Throw outcome with no rendered sentence is a branch of #thrown_fact the version sleeps through"
+  end
+
+  # THE THIRD CLOSED SET, and this one needs no guard because the render
+  # ITERATES it -- the assertion is that it still does.
+  test "every DOING line is rendered into the scaffold" do
+    text = Playthrough::PromptVersion::Scaffold.text
+
+    refute_empty Scene::Narrator::DOING
+    Scene::Narrator::DOING.each_value { |line| assert_includes text, line }
+  end
+
   # AND IT IS NOT A DIGEST OF SOURCE, which is the constraint that keeps it
   # readable: the instruction block is in the narration digest verbatim, so the
   # wider digest is over text and never over the methods that built it.
@@ -172,16 +207,15 @@ class Playthrough::PromptVersionTest < ActiveSupport::TestCase
   private
 
   # ONE OF `Playthrough::Turn`'S FACT SENTENCES, SAYING SOMETHING ELSE FOR THE
-  # LENGTH OF A BLOCK, and put back exactly as it was -- visibility included,
-  # since these are private and a test that left one public would be a test that
-  # changed the app.
+  # LENGTH OF A BLOCK, and put back exactly as it was. `#define_method` restores
+  # the body AND the visibility the original `UnboundMethod` carried, so nothing
+  # here has to assert what that visibility is -- a test that decided for itself
+  # would be a test that changed the app for every test after it.
   def with_fact_sentence(name, text)
     original = Playthrough::Turn.instance_method(name)
     Playthrough::Turn.define_method(name) { |*| text }
-    Playthrough::Turn.send(:private, name)
     yield
   ensure
     Playthrough::Turn.define_method(name, original)
-    Playthrough::Turn.send(:private, name)
   end
 end

@@ -109,6 +109,16 @@ The full audit of every planned piece of work against this constraint is in
   either side of it would have grouped as evidence about one narrator. That is
   the record the digest exists to protect.
 
+  **It holds no prompt wording.** It subclasses `Scene::Narrator` and
+  `Playthrough::Turn` and calls their real builders, so editing a sentence
+  changes the rendered text with nothing to keep in step. What it does hold is
+  the LIST of which builders exist, and `Playthrough::PromptVersionTest` asserts
+  that list against the classes themselves -- every `/_fact\z/` method on
+  `Playthrough::Turn`, and every constructor on `Playthrough::Turn::Throw`,
+  since a fifth outcome is a new paragraph inside a builder that is already
+  rendered. A signature change already breaks the render loudly; those two turn
+  the silent drift into a failing test.
+
   `Playthrough::PromptVersion::Scaffold` renders every branch of the scaffold --
   `Scene::Narrator#prompt_for`'s framing and `DOING` line,
   `Playthrough::Turn#taken_fact` / `#dropped_fact` / `#thrown_fact` /

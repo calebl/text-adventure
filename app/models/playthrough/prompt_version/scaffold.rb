@@ -79,11 +79,44 @@ class Playthrough::PromptVersion::Scaffold
   # them is.
   JOINER = Playthrough::PromptVersion::JOINER
 
+  # EVERY OUTCOME A THROW CAN HAVE, and two fumbles because the sentence says
+  # something different depending on whether the thing was ever in the party's
+  # hands. A constant rather than a local, so the test can read the KINDS back
+  # against `Playthrough::Turn::Throw`'s own constructors: a fifth outcome is a
+  # whole new sentence in `#thrown_fact`, and it must not be able to arrive
+  # unrendered.
+  THROWS = [
+    Playthrough::Turn::Throw.new(kind: :fumbled, item: PLAIN, target: SOMEBODY),
+    Playthrough::Turn::Throw.new(kind: :fumbled, item: DESCRIBED, target: SOMEBODY),
+    Playthrough::Turn::Throw.new(kind: :struck, item: PLAIN, target: SOMEBODY),
+    Playthrough::Turn::Throw.new(kind: :thrown, item: PLAIN, target: SOMEWHERE),
+    Playthrough::Turn::Throw.new(kind: :immovable, item: DESCRIBED, target: SOMEBODY)
+  ].freeze
+
+  # THE TWO WAYS A ROW CAN MOVE, which is `Playthrough::Moment::Handled`'s
+  # closed set.
+  DIRECTIONS = %i[taken dropped].freeze
+
   def self.text = new.text
 
-  def text = (framings + facts).join(JOINER)
+  # THE BUILDERS THE RENDER CALLED, once it has run. Read by the test that keeps
+  # this class honest; see `Facts#say`.
+  def self.rendered_facts = new.tap(&:text).said
+
+  # THE OUTCOMES IT RENDERED, off the constant rather than off a run, because
+  # they are the same list either way.
+  def self.rendered_throw_kinds = THROWS.map(&:kind).uniq
+
+  def text = @text ||= (framings + facts).join(JOINER)
+
+  # WHICH FACT BUILDERS THIS RENDER CALLED, once `#text` has run.
+  def said = turn.said.uniq
 
   private
+
+  # ONE `Facts` PER RENDER, so `#said` is that render's list and not a total
+  # across every caller in the process.
+  def turn = @turn ||= Facts.new
 
   # `Scene::Narrator#prompt_for` WITH THE FACTS STOOD OUT. Every shape of user
   # message the narrator is ever handed: with a fact and without one, and one per
@@ -100,14 +133,12 @@ class Playthrough::PromptVersion::Scaffold
   # gained with `ta-take-drop-narration`, since where a thing came from and who
   # put it down are two more clauses of wording.
   def facts
-    turn = Facts.new
-
-    [ turn.taken(PLAIN, SOMEBODY, nil),
-      turn.taken(DESCRIBED, SOMEBODY, SOMEWHERE),
-      turn.dropped(PLAIN, SOMEWHERE, nil),
-      turn.dropped(DESCRIBED, SOMEWHERE, SOMEBODY),
-      turn.read(PLAIN, WORDS),
-      turn.written_words(PLAIN, WORDS) ] + thrown(turn) + handled_notes
+    [ turn.say(:taken_fact, PLAIN, SOMEBODY, nil),
+      turn.say(:taken_fact, DESCRIBED, SOMEBODY, SOMEWHERE),
+      turn.say(:dropped_fact, PLAIN, SOMEWHERE, nil),
+      turn.say(:dropped_fact, DESCRIBED, SOMEWHERE, SOMEBODY),
+      turn.say(:read_fact, PLAIN, WORDS),
+      turn.say(:written_words_fact, PLAIN, WORDS) ] + thrown + handled_notes
   end
 
   # AND THE MARK THE MOVED ROW CARRIES IN THE STANDING LISTS
@@ -115,23 +146,18 @@ class Playthrough::PromptVersion::Scaffold
   # sentence: the fact says what the turn did and this says which line of the
   # list it did it to. It is wording, it is fixed, and it renders with no
   # record, so it is here rather than left to the bench.
+  #
+  # TWO DIRECTIONS AND THERE CANNOT BE A THIRD: one line is one act (the
+  # captain's ruling of 2026-09-04), so a turn moves one row one way.
   def handled_notes
-    %i[taken dropped].map { |direction| Playthrough::Moment::Handled.new(item: PLAIN, direction: direction).note }
+    DIRECTIONS.map { |direction| Playthrough::Moment::Handled.new(item: PLAIN, direction: direction).note }
   end
 
   # ONE PER OUTCOME, AND TWO FOR A FUMBLE, which says something different about
   # where the thing ended up depending on whether it was ever in your hands.
-  def thrown(turn)
-    outcomes = [
-      Playthrough::Turn::Throw.new(kind: :fumbled, item: PLAIN, target: SOMEBODY),
-      Playthrough::Turn::Throw.new(kind: :fumbled, item: DESCRIBED, target: SOMEBODY),
-      Playthrough::Turn::Throw.new(kind: :struck, item: PLAIN, target: SOMEBODY),
-      Playthrough::Turn::Throw.new(kind: :thrown, item: PLAIN, target: SOMEWHERE),
-      Playthrough::Turn::Throw.new(kind: :immovable, item: DESCRIBED, target: SOMEBODY)
-    ]
-
-    outcomes.map { |outcome| turn.thrown(outcome, SOMEBODY) } +
-      [ turn.thrown(outcomes.first, nil) ]
+  def thrown
+    THROWS.map { |outcome| turn.say(:thrown_fact, outcome, SOMEBODY) } +
+      [ turn.say(:thrown_fact, THROWS.first, nil) ]
   end
 
   # THE TWO SEAMS INTO THE CLASSES THAT OWN THE WORDING, and they are subclasses
@@ -155,12 +181,21 @@ class Playthrough::PromptVersion::Scaffold
   end
 
   class Facts < Playthrough::Turn
-    def initialize = nil
+    def initialize = @said = []
 
-    def taken(item, taker, from) = send(:taken_fact, item, taker, from)
-    def dropped(item, here, dropper) = send(:dropped_fact, item, here, dropper)
-    def thrown(outcome, thrower) = send(:thrown_fact, outcome, thrower)
-    def read(item, words) = send(:read_fact, item, words)
-    def written_words(item, words) = send(:written_words_fact, item, words)
+    # WHICH BUILDERS THE RENDER ACTUALLY CALLED, in the order it called them.
+    attr_reader :said
+
+    # EVERY FACT SENTENCE GOES THROUGH ONE DOOR, and the door writes down what
+    # went through it. That list is EVIDENCE and not a declaration, which is the
+    # whole point: `Playthrough::PromptVersionTest` reads it back against the
+    # `_fact` builders `Playthrough::Turn` actually has, so a SIXTH one added
+    # later and not rendered here is a failing test rather than a sentence the
+    # digest sleeps through. A separate constant listing the names would be the
+    # second copy this class exists to avoid.
+    def say(name, *arguments)
+      @said << name
+      public_send(name, *arguments)
+    end
   end
 end
