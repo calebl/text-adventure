@@ -522,7 +522,9 @@ class Playthrough::Mechanics
   # the same `Intent`. What differs is only the two ends: nothing streams, and
   # the branches that exist to produce prose say so instead.
   def act(intent, command, understood, resolved_by)
-    return refuse_line(intent, command, understood) if intent.refused?
+    if (refusal = refusal_for(intent, command))
+      return refuse_line(refusal, understood)
+    end
 
     if intent.destination
       move(intent.destination, command, understood, resolved_by)
@@ -603,10 +605,11 @@ class Playthrough::Mechanics
   # foe in the room answers in the same turn, and that happens in `#run` for
   # every line this mode PLAYED. A throw is a played line whichever way the die
   # went -- including a failed lift, which is a spent turn and not a refusal.
+  # A GAME WITH NO PROTAGONIST NEVER REACHES HERE; see `#take`. A BODY WITH NO
+  # ABILITIES STILL DOES -- that is a row to repair rather than a game that
+  # cannot be played, so it keeps this mode's own sentence and its own remedy.
   def throw_it(intent, understood)
     who = playthrough.character
-    return refuse("this playthrough has no protagonist, so there is nobody to throw anything", understood: understood) if who.nil?
-
     outcome = turn.throw_item!(intent.item, at: intent.at, round: round)
     if outcome.nil?
       return refuse("#{who.fullname} has no abilities, so there is no strength to throw with. " \
@@ -637,9 +640,9 @@ class Playthrough::Mechanics
   end
 
   # THE LINE THIS MODE WILL NOT PLAY EITHER, and it is the same rule read out of
-  # the same place: `Playthrough::Classifier::Intent#refused?` decides and
-  # `Playthrough::Refusal` says it, so the two modes cannot come to disagree
-  # about a line. The captain's ruling of 2026-09-04.
+  # the same place: `#refusal_for` decides and `Playthrough::Refusal` says it, so
+  # the two modes cannot come to disagree about a line. The captain's ruling of
+  # 2026-09-04.
   #
   # WHAT THIS REPLACED. Two acts on one line used to do the FIRST and add a note
   # -- `also named: copy-room apron -- one line is one act, so this turn did not
@@ -649,10 +652,24 @@ class Playthrough::Mechanics
   # `#reason` and never `#text`: the read-out is printed under every report in
   # this mode, so a refusal that also listed what is here would say it twice.
   # The browser, which has no read-out, reads `#text`.
-  def refuse_line(intent, command, understood)
-    refusal = Playthrough::Refusal.for(intent, typed: command, offered: classifier.offered_for(intent.action))
-
+  def refuse_line(refusal, understood)
     refuse([ refusal.reason, ROW_WRITTEN[refusal.kind] ].compact.join(" "), understood: understood)
+  end
+
+  # THE REFUSAL THIS LINE EARNS HERE, and it is `Playthrough::Turn#refusal_for`
+  # word for word, on purpose: the reading first, the game second. This mode
+  # used to compose its own sentences for the acts a game with no protagonist
+  # and no room cannot perform -- `#take`, `#drop` and `#throw_it`
+  # each carried one -- so `rake game:mechanics` correctly refused a `take` that
+  # the browser answered with invented prose. One author of what the engine says
+  # is the rule (`Playthrough::Refusal`'s header), and the two modes disagreeing
+  # about a line is exactly what it exists to prevent.
+  def refusal_for(intent, command)
+    if intent.refused?
+      return Playthrough::Refusal.for(intent, typed: command, offered: classifier.offered_for(intent.action))
+    end
+
+    Playthrough::Refusal.unplayable(intent, playthrough: playthrough, typed: command)
   end
 
   # MOVING, and with a model in the loop this is `Playthrough::Turn#move_to`
@@ -708,22 +725,19 @@ class Playthrough::Mechanics
            understood)
   end
 
-  # The guard is `Playthrough::Turn#take_item`'s and it is about the SENTENCE,
-  # not about the record: the row goes onto `items.playthrough_id`, which needs
-  # no character at all, but the fact the narrator is handed names whoever
-  # picked the thing up. Nothing in the app makes a playthrough without one.
+  # A GAME WITH NO PROTAGONIST NEVER REACHES HERE, and the guard that used to say
+  # so in this mode's own words is gone: `#refusal_for` asks
+  # `Playthrough::Refusal.unplayable` in front of the dispatch, so this mode and
+  # the browser refuse the line with one sentence written in one place.
   def take(item, understood)
-    return refuse("this playthrough has no protagonist, so there is nobody to name as carrying anything", understood: understood) if playthrough.character.nil?
-
     was = item.location
     turn.carry!(item)
 
     change("took: #{item.name} (was lying in #{label(was) || "nowhere"}, now carried by #{playthrough.character.fullname})", understood)
   end
 
+  # A GAME STANDING NOWHERE NEVER REACHES HERE EITHER; see `#take` above.
   def drop(item, understood)
-    return refuse("this playthrough is standing nowhere, so there is no room to put anything down in", understood: understood) if playthrough.current_location.nil?
-
     turn.put_down!(item)
 
     change("dropped: #{item.name} (was carried by #{playthrough.character&.fullname || "the party"}, " \

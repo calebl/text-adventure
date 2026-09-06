@@ -715,10 +715,14 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
     assert_equal classifier.characters_here, state.present
   end
 
+  # THE SENTENCE IS `Playthrough::Refusal`'S SINCE 2026-09-05, and not this
+  # mode's own. It refused this line correctly all along while the browser
+  # narrated it -- the captain's playthrough 24 -- which is exactly the
+  # disagreement one author of the engine's words exists to prevent.
   test "a playthrough with no protagonist cannot carry anything, and says so" do
     @playthrough.update!(character: nil)
 
-    assert_refusal play("take stamp"), "no protagonist"
+    assert_refusal play("take stamp"), "no player character yet"
     refute_predicate @stamp.reload, :carried?
   end
 
@@ -1527,7 +1531,7 @@ class Playthrough::MechanicsTest < ActiveSupport::TestCase
   test "a throw with no protagonist has nobody to throw anything" do
     @playthrough.update!(character: nil)
 
-    assert_match(/nobody to throw anything/, play("/throw the daybook at Halkett Rowe").refusal)
+    assert_match(/nobody here to throw anything/, play("/throw the daybook at Halkett Rowe").refusal)
   end
 
   test "a throw by a body with no abilities says which backfill rolls them" do

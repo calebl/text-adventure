@@ -607,23 +607,28 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
   end
 
   # A playthrough standing nowhere has no room to put anything down in, so the
-  # drop does not happen. The turn then fails on the same thing every branch
-  # fails on from nowhere -- a `Scene` needs a location -- and the point of the
-  # test is what it does NOT do to the item on the way there.
+  # line is REFUSED since 2026-09-05 (`Playthrough::Refusal`'s `:unplayable`).
+  # It used to narrate the attempt and then fail on the thing every branch fails
+  # on from nowhere -- a `Scene` needs a location -- which was a raise where the
+  # honest answer is a sentence.
+  #
   # The key is in the ADRIFT playthrough's hands, so the classifier resolves it
-  # out of a closed set that really has it and the turn is not refused -- which
-  # is what puts `#drop_item`'s own guard, the one this test is about, in the
-  # path. A key held by somebody else would be refused one step earlier and the
-  # guard would never run.
-  test "a drop by a playthrough standing nowhere moves nothing" do
+  # out of a closed set that really has it: this is the game being unable to
+  # play the act, not the line being unreadable, and the two are different
+  # refusals. A key held by somebody else would be `:unresolved` one step
+  # earlier.
+  test "a drop by a playthrough standing nowhere is refused and moves nothing" do
     adrift = create(:playthrough, story: @story, character: @protagonist)
     key = create(:item, :carried, playthrough: adrift, name: "Brass Key")
 
     agent = FakeAgent.new(CLASSIFY.call("drop", "Brass Key"), "There is no floor here to set it on.")
-    assert_raises(ActiveRecord::RecordInvalid) do
+    outcome = assert_no_difference "Scene.count" do
       BaseAgent.stub(:new, agent) { Playthrough::Turn.new(adrift).play("put down the key") }
     end
 
+    assert_kind_of Playthrough::Refusal, outcome
+    assert_equal :unplayable, outcome.kind
+    assert_match "standing nowhere", outcome.text
     assert_equal adrift, key.reload.playthrough
     assert_nil key.location_id
   end
@@ -772,19 +777,25 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_equal "go through the cellar door", @playthrough.drifts.sole.command
   end
 
-  # THE ONE PLACE THE RECORD IS NOT THE CLASSIFIER'S ANSWER. A playthrough with
-  # no protagonist resolves the item and then cannot carry it, so the branch
-  # narrates instead and nothing moved. Writing the item down there would say a
-  # row moved that did not, and `Scene#took?` is a seam a check trusts outright.
-  test "a take nobody could make records the take and no item" do
+  # A TAKE NOBODY COULD MAKE IS NOT A TURN AT ALL, and this test used to say the
+  # opposite. A playthrough with no protagonist resolved the item, could not
+  # carry it, NARRATED the attempt and wrote a `Scene` recorded as a `take` of
+  # nothing -- which is the captain's playthrough 24 of 2026-09-05, where the
+  # prose said he had pocketed a signet ring and the records said it was still
+  # on the floor. The line is refused now, so there is no scene and no row to
+  # disagree about. See `test/models/playthrough/turn_no_protagonist_test.rb`.
+  test "a take nobody could make is refused and writes no scene" do
     @playthrough.update!(character: nil)
-    lying_here(@playthrough, @here, name: "Brass Key")
+    key = lying_here(@playthrough, @here, name: "Brass Key")
 
-    scene, = play("pick up the brass key", CLASSIFY.call("take", "Brass Key"), "Nothing here is yours to lift.")
+    agent = FakeAgent.new(CLASSIFY.call("take", "Brass Key"), "Nothing here is yours to lift.")
+    outcome = assert_no_difference "Scene.count" do
+      BaseAgent.stub(:new, agent) { Playthrough::Turn.new(@playthrough).play("pick up the brass key") }
+    end
 
-    assert_equal "take", scene.resolved_action
-    assert_nil scene.acted_on
-    assert_not_predicate scene, :took?
+    assert_kind_of Playthrough::Refusal, outcome
+    assert_equal :unplayable, outcome.kind
+    assert_equal @here, key.reload.location
   end
 
   test "an opening arrival did nothing, and says so" do

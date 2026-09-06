@@ -17,6 +17,13 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
     @index = create(:item, :lying, location: @here, name: "Perrin's private index")
     @apron = create(:item, :lying, location: @here, name: "copy-room apron")
     @press = create(:item, :lying, :immovable, location: @here, name: "filing press")
+
+    # A GAME WITH NOBODY PLAYING IT, and one standing in no room -- the two
+    # shapes `.unplayable` answers. Both are records rather than stubs, because
+    # both are shapes the app really produced: the first is what the Play button
+    # opened on a story whose cast nobody had marked `is_protagonist`.
+    @castless = create(:playthrough, story: @story, character: nil, current_location: @here)
+    @adrift = create(:playthrough, story: @story, character: @rowe, current_location: nil)
   end
 
   def intent(action, **resolved)
@@ -209,20 +216,78 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
     assert_match(/is not one of/, error.message)
   end
 
-  # The four shapes are the whole of it, so a fifth added without a sentence
-  # would be a refusal with nothing in it. `:dead` comes off the second entry
-  # point rather than `.for`: it is a fact about the GAME and there is no
-  # `Intent` behind it, which is exactly why it has a constructor of its own.
-  test "every kind the class declares is one of the two entry points can produce" do
+  # The declared shapes are the whole of it, so one added without a sentence
+  # would be a refusal with nothing in it. `:dead` and `:unplayable` come off
+  # the other two entry points rather than `.for`: both are facts about the GAME
+  # rather than readings of the line, which is exactly why each has a
+  # constructor of its own.
+  test "every kind the class declares is one of the three entry points can produce" do
     produced = [
       refuse(intent(:take, item: @index, also_named: @apron)),
       refuse(intent(:take)),
       refuse(intent(:other, unknown_action: "steal")),
       refuse(intent(:throw, item: @press, at: @rowe)),
+      Playthrough::Refusal.unplayable(intent(:take, item: @index), playthrough: @castless, typed: "take the index"),
       Playthrough::Refusal.dead(typed: "look")
     ].map(&:kind)
 
     assert_equal Playthrough::Refusal::KINDS.sort, produced.sort
+  end
+
+  # --- an act the game itself cannot perform ---------------------------------
+
+  # A STORY WITH NO PLAYER CHARACTER HAS NO HANDS. The captain's playthrough 24
+  # of 2026-09-05 was one: he took a signet ring and an iron key, the narration
+  # was perfect, and both stayed on the floor. The reading was never the
+  # problem, which is why this is its own shape and its own entry point.
+  test "a take by a game with no player character is unplayable" do
+    refusal = Playthrough::Refusal.unplayable(intent(:take, item: @index),
+                                              playthrough: @castless, typed: "take the index")
+
+    assert_equal :unplayable, refusal.kind
+    assert_match(/nobody here to pick anything up/, refusal.text)
+    assert_match(/no player character yet/, refusal.text)
+    assert_match(/Nothing has changed/, refusal.text)
+    assert_not_predicate refusal, :game_over?
+  end
+
+  test "a throw by a game with no player character is unplayable" do
+    refusal = Playthrough::Refusal.unplayable(intent(:throw, item: @index, at: @rowe),
+                                              playthrough: @castless, typed: "throw the index at Rowe")
+
+    assert_equal :unplayable, refusal.kind
+    assert_match(/nobody here to throw anything/, refusal.text)
+  end
+
+  test "a drop by a game standing in no room is unplayable" do
+    refusal = Playthrough::Refusal.unplayable(intent(:drop, item: @index),
+                                              playthrough: @adrift, typed: "drop the index")
+
+    assert_equal :unplayable, refusal.kind
+    assert_match(/standing nowhere/, refusal.text)
+  end
+
+  # AND WHAT IT LEAVES ALONE, which is every act that needs neither a pair of
+  # hands nor a floor. Widening this would refuse a whole game rather than the
+  # lines it cannot play, and a game with no player character can still be
+  # walked around and looked at.
+  test "the acts a game can always perform earn no unplayable refusal" do
+    assert_nil Playthrough::Refusal.unplayable(intent(:move, destination: @there),
+                                               playthrough: @castless, typed: "go to the closet")
+    assert_nil Playthrough::Refusal.unplayable(intent(:examine, item: @index),
+                                               playthrough: @castless, typed: "read the index")
+    assert_nil Playthrough::Refusal.unplayable(intent(:other), playthrough: @castless, typed: "wait")
+    assert_nil Playthrough::Refusal.unplayable(intent(:drop, item: @index),
+                                               playthrough: @castless, typed: "drop the index")
+  end
+
+  test "a game with a player character standing in a room earns none of them" do
+    playable = create(:playthrough, story: @story, character: @rowe, current_location: @here)
+
+    assert_nil Playthrough::Refusal.unplayable(intent(:take, item: @index), playthrough: playable, typed: "take it")
+    assert_nil Playthrough::Refusal.unplayable(intent(:drop, item: @index), playthrough: playable, typed: "drop it")
+    assert_nil Playthrough::Refusal.unplayable(intent(:throw, item: @index, at: @rowe),
+                                               playthrough: playable, typed: "throw it")
   end
 
   test "a dead refusal states the death, names the player and offers a new playthrough" do

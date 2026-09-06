@@ -128,9 +128,22 @@ class Playthrough::Turn
     # untouched, the story's clock does not advance and no narrator is asked for
     # a sentence about a turn that did not happen. Two acts on one line, a reach
     # that found nothing, or a classifier answer the app cannot read: the
-    # captain's ruling of 2026-09-04. `Playthrough::Refusal` has the three
-    # shapes, the wording, and what is deliberately NOT refused.
-    return refuse(intent, typed) if intent.refused?
+    # captain's ruling of 2026-09-04. `Playthrough::Refusal` has the shapes, the
+    # wording, and what is deliberately NOT refused.
+    #
+    # AND THE ACT THIS GAME CANNOT PERFORM AT ALL stops here too, on the same
+    # line and for a stronger reason. It is not a reading of the line -- the
+    # reading was perfect -- it is a game with no player character to hand a
+    # thing to, and the branch that used to answer it NARRATED the attempt: a
+    # `take` on a `rake game:new` world was answered with real prose about
+    # picking the thing up while the row stayed on the floor. Refusing it in
+    # front of the dispatch is what makes that impossible rather than merely
+    # unlikely, and it is why the guards inside `#take_item`, `#drop_item` and
+    # `#throw_at` are gone rather than corrected.
+    if (refusal = refusal_for(intent, typed))
+      playthrough.prune_conversations!
+      return refusal
+    end
 
     # WHERE THE TURN BEGAN, and it is read before the dispatch for one reason:
     # a move puts the party somewhere else, and the foes in the room they LEFT
@@ -285,8 +298,11 @@ class Playthrough::Turn
   # this turn did, and a second one would put engine copy in the column
   # `Story::Audit` reads as narration once per round rather than once per fight.
   #
-  # A playthrough with no protagonist has nobody to swing, which nothing in the
-  # app produces and `Playthrough#character` is optional enough to allow.
+  # A playthrough with no protagonist has nobody to swing. It answers nil rather
+  # than a refusal, because an attack writes no `Scene` either way and the fix
+  # belongs where the game is started: `PlaythroughsController#create` will not
+  # open a playthrough on a story with no player character at all. See
+  # `#take_item` for the defect that made all of this visible.
   def strike_at(target, round:)
     striker = playthrough.character
     return nil if striker.nil?
@@ -353,22 +369,28 @@ class Playthrough::Turn
     [ classifier.classify(typed), "model" ]
   end
 
-  # THE REFUSAL, RETURNED RATHER THAN NARRATED.
+  # THE REFUSAL THIS LINE EARNS, or nil for a line the loop will play.
   #
   # It writes nothing and calls nothing: the whole of a refused turn is the
   # sentence, built out of the closed set the action reads against. The counter
   # row is ALREADY WRITTEN by the time this is reached --
   # `Playthrough::Classifier#classify` takes the `Playthrough::Overreach` or
   # `Playthrough::Drift` measurement before it returns, which is why the ruling
-  # cost the instruments nothing.
+  # cost the instruments nothing. The retention cap is applied by the caller,
+  # for the same reason the played path applies it: the classifier had a
+  # conversation, and `TA_CHAT_KEEP_TURNS` should take effect on every turn
+  # rather than on the ones that landed.
   #
-  # The retention cap is still applied, for the same reason the played path
-  # applies it: the classifier had a conversation, and `TA_CHAT_KEEP_TURNS`
-  # should take effect on every turn rather than on the ones that landed.
-  def refuse(intent, command)
-    playthrough.prune_conversations!
+  # THE READING IS ASKED ABOUT FIRST AND THE GAME SECOND. A line that resolved
+  # to nothing is a reading problem whether or not this game has a protagonist,
+  # and answering "there is nobody here to pick anything up" to `take the sky`
+  # would name the wrong defect.
+  def refusal_for(intent, command)
+    if intent.refused?
+      return Playthrough::Refusal.for(intent, typed: command, offered: classifier.offered_for(intent.action))
+    end
 
-    Playthrough::Refusal.for(intent, typed: command, offered: classifier.offered_for(intent.action))
+    Playthrough::Refusal.unplayable(intent, playthrough: playthrough, typed: command)
   end
 
   # THE LOAD-OR-GENERATE SEAM. Everything the project is about is these four
@@ -505,16 +527,24 @@ class Playthrough::Turn
   # with nothing in it. A taken item with no sentence about it is a record the
   # next turn can still read.
   #
-  # A playthrough with no character has nobody to NAME as having picked the
-  # thing up, so it narrates the attempt instead. Since the inventory moved to
-  # `items.playthrough_id` the record itself no longer needs one -- the guard is
-  # about the sentence handed to the narrator, and it stays because a fact that
-  # says "somebody picked it up" is not a fact. Nothing in the app creates such
-  # a playthrough, but `Playthrough#character` is optional and a world can be
-  # seeded without a protagonist.
+  # A PLAYTHROUGH WITH NO CHARACTER NEVER REACHES HERE, and that is the fix of
+  # 2026-09-05 rather than an assumption. It used to: the guard on this method
+  # answered a protagonist-less game by handing `Scene::Narrator` the bare
+  # command, so the model wrote a perfect paragraph about pocketing the thing
+  # and the row stayed on the floor -- the captain's playthrough 24, where he
+  # picked up a signet ring and a key and the machinery panel showed both still
+  # lying there. The comment above that guard said *"nothing in the app creates
+  # such a playthrough"*, and the Play button did: his story had no character
+  # marked `is_protagonist`, so `story.protagonist` was nil and
+  # `PlaythroughsController#create` opened the game on it anyway.
+  #
+  # So the answer is a REFUSAL in front of the dispatch
+  # (`Playthrough::Refusal`'s `:unplayable`), and the controller will not start
+  # such a game at all. Since the inventory moved to `items.playthrough_id` the
+  # record itself needs no character; what needed one is the FACT handed to the
+  # narrator, and a fact that says "somebody picked it up" is not a fact.
   def take_item(item, command, &block)
     taker = playthrough.character
-    return narrate(command, &block) if taker.nil?
 
     carry!(item)
 
@@ -531,12 +561,13 @@ class Playthrough::Turn
   # That is what makes an inventory a record of the world and not a note the
   # narrator keeps.
   #
-  # A playthrough standing nowhere has no room to put anything down in, so it
-  # narrates the attempt. Nothing in the app produces one; `current_location` is
-  # optional and a hand-made playthrough can.
+  # A PLAYTHROUGH STANDING NOWHERE NEVER REACHES HERE EITHER, for `#take_item`'s
+  # reason and by the same statement: no room is no floor, so the line is
+  # refused in front of the dispatch rather than narrated as an attempt.
+  # `current_location` is optional and a hand-made playthrough really is that
+  # shape.
   def drop_item(item, command, &block)
     here = playthrough.current_location
-    return narrate(command, &block) if here.nil?
 
     put_down!(item)
 
@@ -596,11 +627,14 @@ class Playthrough::Turn
   # does. What would be wrong is a Scene per ROUND, and the rounds are still
   # `playthrough_blows`.
   #
-  # A THROW THE ENGINE COULD NOT MAKE NARRATES THE ATTEMPT, which is
-  # `#take_item`'s answer to the same shape: a playthrough with no protagonist
-  # has nobody to throw anything and a body with no abilities has no strength to
-  # check, and `#throw_item!` answers nil for both. Nothing in the app produces
-  # either, and both are shapes a hand-made playthrough really has.
+  # A THROW BY A BODY WITH NO ABILITIES NARRATES THE ATTEMPT, and it is now the
+  # ONLY shape that reaches this fallback: `#throw_item!` answers nil for a
+  # missing thrower and for a thrower with no strength to check, and the first
+  # of those is refused in front of the dispatch since 2026-09-05
+  # (`#take_item`'s note has the defect it was). A body with no abilities is a
+  # character written before the three columns existed --
+  # `rake game:backfill_stat_blocks` rolls them, offline -- so it is a row to
+  # repair rather than a game that cannot be played, and it stays narrated.
   def throw_at(intent, command, round:, &block)
     thrower = playthrough.character
     outcome = throw_item!(intent.item, at: intent.at, round: round)
@@ -1159,14 +1193,16 @@ class Playthrough::Turn
 
   # WHAT THE TURN DID, in the two columns `Scene` keeps it in.
   #
-  # The classifier's answer, with one correction: the two branches that resolve
-  # a record and then cannot act on it. `take_item` narrates instead when the
-  # playthrough has no protagonist to carry anything, and `drop_item` when it is
-  # standing nowhere to put anything down in -- nothing in the app produces
-  # either, and both are shapes a hand-made playthrough really has. The action
-  # is still what the player was doing; the RECORD is dropped, because writing
-  # one there would say a row moved that did not, and `Scene#took?` is the seam
-  # a check trusts outright.
+  # The classifier's answer, with one correction: the branch that resolves a
+  # THE CLASSIFIER'S ANSWER, AND SINCE 2026-09-05 NOTHING ELSE. It used to carry
+  # three corrections -- a `take` with no protagonist, a `drop` with no room and
+  # a `throw` with no protagonist -- each of which resolved a record, could not
+  # act on it, narrated the attempt and was then recorded as an act on no
+  # record. That is how the captain's playthrough 24 came to hold two `take`
+  # turns whose `acted_on` was nil beside narration saying the things were in
+  # his hands. All three are refused in front of the dispatch now
+  # (`Playthrough::Refusal`'s `:unplayable`), so no `Scene` is written at all
+  # and there is nothing left to correct.
   #
   # Everything else is recorded exactly as it resolved. An action with no record
   # here is `other`, which resolves to none by design -- a reach that found
@@ -1208,21 +1244,13 @@ class Playthrough::Turn
   # A THROW RECORDS THE THING THROWN, on every outcome, and that is the honest
   # answer to *which record did this turn act on*: the act was a throw OF that
   # thing, and whether it left the hands is on the item's own row and in
-  # `playthrough_blows` rather than in this column. The third leg is
-  # `#take_item`'s guard one act over -- a playthrough with no protagonist has
-  # nobody to throw anything, so `#throw_at` narrated the attempt and no row
-  # moved.
+  # `playthrough_blows` rather than in this column. That includes the one throw
+  # this loop still narrates as an attempt -- a body with no abilities has no
+  # strength to check -- because the line was still a throw of that thing and
+  # the repair is `rake game:backfill_stat_blocks` rather than a nil in a
+  # column.
   def resolution_for(intent)
-    acted_on =
-      if (intent.take? && playthrough.character.nil?) ||
-         (intent.drop? && playthrough.current_location.nil?) ||
-         (intent.throw? && playthrough.character.nil?)
-        nil
-      else
-        intent.subject
-      end
-
-    { resolved_action: intent.action.to_s, acted_on: acted_on }
+    { resolved_action: intent.action.to_s, acted_on: intent.subject }
   end
 
   def classifier
