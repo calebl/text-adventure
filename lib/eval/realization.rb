@@ -1,0 +1,196 @@
+# THE ROOM-BUILDER'S OWN INSTRUMENT: ONE STUB, FIXED FACTS, THE DETERMINISTIC
+# CHECKS, PER MODEL AND PER PROMPT VERSION.
+#
+# THE CAPTAIN'S STANDING TESTING RULE, 2026-09-04: *"could we not build a small
+# set of prompts and responses? ... a more targeted set of test cases where we
+# are feeding the narrator facts and seeing how it handles them that would not
+# require multiple turns."* And the rule that stands over every prompt in the
+# repo, 2026-09-06: *"we should always have a baseline for evaluating a prompt
+# before we decide to change it."*
+#
+# WHY IT EXISTS. `Location::Generator` sends the three most expensive prompt
+# blocks in the game -- WHO IS HERE, WHAT IS LYING HERE and THE WAYS OUT -- and
+# until this file none of them had an instrument at all. The narrator has one
+# (`rake eval:prompt`), the classifier has one (`rake eval:classifier`), and
+# realization had judgement: the cast fix shipped on it, the roadmap-era prompt
+# findings could not be measured either way, and the one number anybody has for
+# any of this is a hand count -- 36% of generated exits restating a place the
+# story already had (`data/ta-quest-progress-scout/report.md` D5, confirmed by
+# `data/ta-neohack-scout/report.md` §3.2). A hand count is not a baseline: it
+# cannot be re-run, it has no band, and no prompt change can be judged against
+# it.
+#
+#   eval:run          plays whole runs. Dollars, noisy, the only thing that can
+#                     measure pacing and a world in motion.
+#   game:score        reads stored prose against the records. Free, offline, and
+#                     it can only read what somebody already generated.
+#   game:sweep        reads the RECORDS after a typed line, no model at all.
+#   eval:classifier   reads the classifier's answer against a hand label.
+#   eval:prompt       asks for ONE TURN OF PROSE against fixed facts.
+#   eval:realization  ASKS FOR ONE ROOM against a fixed stub, and scores the
+#                     ANSWER against the records the room was built from.
+#
+# WHAT IT MEASURES, AND WHY EVERY FIGURE IS A RECORD AND NOT A READING OF PROSE.
+# The standing constraint (AGENTS.md) is that nothing may depend on the narrator
+# obeying its prompt, and the corollary for an instrument is that nothing may
+# depend on a checker UNDERSTANDING prose. So every check here is a set
+# comparison the app could have made itself: a name the model wrote against the
+# closed set of names the prompt handed it, a count against the allowance the
+# prompt stated, an exit against the list of places that already exist. What the
+# prompt SAID is measurable because the prompt said a number or a list, and the
+# answer either matched it or did not. `Eval::Realization::Scorer` is the whole
+# of it, and the one keyword check in there is named for what it can actually
+# see (`race_not_named`) rather than for what it would like to mean.
+#
+# WHAT IT DELIBERATELY DOES NOT DO: change a prompt. This is the instrument. The
+# prompt half of `ta-room-people-count`, the exits findings and the bench cases
+# of `ta-narrated-refusal` are its consumers, and each of them is judged with
+# `rake eval:realization_compare` against a baseline bought before the change.
+#
+# AND IT IS NOT A SUBSTITUTE FOR `rake eval:run`. A realization measured on its
+# own cannot show what the room is like to walk into three turns later, whether
+# the exits it wrote led anywhere a player wanted to go, or what the description
+# did to the narration that followed it. The protocol is the prompt bench's:
+# judge here FIRST, confirm there.
+module Eval::Realization
+  # The cases. YAML for the classifier corpus's reason: every case carries a
+  # `why` saying what it is in the file for, and a hundred of those in JSON is a
+  # file nobody audits.
+  CORPUS = Rails.root.join("test/fixtures/files/realization_corpus.yml")
+
+  # Where a run's numbers land, beside `prompt.json` and `classifier.json`. Its
+  # own file, because a set may legitimately hold any of them.
+  RESULTS = "realization.json".freeze
+
+  # WHERE A CASE'S WORLD IS READ FROM, IN ORDER. The seeded worlds first, so a
+  # case against `The Salt Assizes` measures the file every other instrument in
+  # the repo measures; then the bench's own fixture worlds, which is how a
+  # GENERATED world gets in here at all.
+  #
+  # A generated world cannot be a seeded one. `db/seeds/worlds` is loaded by
+  # `db/seeds.rb` into every development database and into `Eval::Base`'s base
+  # world, so putting `The Iron Gate Descends` there would add a fourth world to
+  # every sweep, every doctor run and every fresh clone -- a change to the game
+  # made as a side effect of building an instrument. It lives under
+  # `test/fixtures/files/worlds/` instead, which is where the frozen inputs to a
+  # measurement already live, and `rake game:export` is how it got there.
+  WORLD_ROOTS = [ "db/seeds/worlds", "test/fixtures/files/worlds" ].freeze
+
+  def self.world_file(story)
+    slug = WorldSeed.slug(story)
+    WORLD_ROOTS.lazy.map { |root| Rails.root.join(root, "#{slug}.yml") }.find(&:exist?)
+  end
+
+  # THE WORLDS THIS BENCH BUILDS ROOMS IN, and one of them is a world the prompt
+  # bench refuses.
+  #
+  # `The Lunar Cartographer` IS PLAYED HERE. `Eval::Prompt::STORIES` leaves it
+  # out because `WorldMechanic::ShuffleConnections` repoints its doorways on the
+  # story's clock and `Playthrough::Turn#play` catches the world up before it
+  # narrates -- so a prompt bench case's exits would depend on when it ran. THIS
+  # BENCH PLAYS NO TURN. It stands a stub up and realizes it; nothing advances a
+  # clock, no `Scene` is written, and `WorldMechanic` is never asked to run. The
+  # doorways are therefore exactly the ones the seed file lists, on the
+  # hundredth repetition as on the first.
+  #
+  # AND IT IS THE ONE WORLD WITH MONSTERS IN IT. `Universe::Generator` marks no
+  # race `monstrous` (see `Location::Danger`'s header), so a generated world's
+  # bestiary is empty and a dangerous room in it draws an ordinary person.
+  # `The Lunar Cartographer` is hand-authored and has the Nocturna-Blighted,
+  # which is what makes the monstrous half of the cast prompt judgeable at all.
+  #
+  # `The Iron Gate Descends` is a GENERATED world, which is the point of it: the
+  # measured exit defect came out of a generated world's rooms, and a corpus of
+  # nothing but hand-authored seeds would be a corpus of worlds a person wrote
+  # the neighbours of.
+  STORIES = [
+    "The Unrecorded Hour", "The Lunar Cartographer", "The Salt Assizes", "The Iron Gate Descends"
+  ].freeze
+
+  # AND THE HELD-OUT WORLD IS STILL HELD OUT, reported apart and never pooled --
+  # `Eval::HELD_OUT`, the convention every board in this repo keeps. Tune on the
+  # rest, read the result on `The Salt Assizes`.
+  def self.held_out?(story) = Eval.held_out?(story)
+
+  # WHAT ONE REALIZATION COSTS, PER CALL, priced the way `Eval::Cost` prices a
+  # sweep -- measured, not modelled. The mean over the real realization calls in
+  # the captain's own database on 2026-09-06: 20 `detail` calls and 12 `exits`
+  # calls, the difference being the rooms that arrived at their exit cap and
+  # were never asked (`Location::Generator#write_exits!`).
+  #
+  # THEY ARE NOT THE SAME NUMBER AND MUST NOT BE AVERAGED. The detail call
+  # inlines the universe and answers with a room, its floor and its cast; the
+  # exits call is asked in the SAME conversation, so its input carries the
+  # detail prompt and the detail answer as well as its own -- which is why the
+  # cheaper call has the larger input.
+  PER_CALL = {
+    "detail" => { input: 1_399, output: 385 },
+    "exits" => { input: 1_848, output: 144 }
+  }.freeze
+
+  # THE TWO CALLS ONE REALIZATION MAKES, in the order `Location::Generator`
+  # makes them. Named because the board groups by them and they cost different
+  # amounts.
+  CALLS = PER_CALL.keys.freeze
+
+  # WHAT THIS BENCH CANNOT ANSWER, AND WHY -- reported unavailable rather than
+  # as a rate, on the rule `Story::Scoreboard::Corpus` and
+  # `Eval::UNAVAILABLE_TO_A_SCRIPT` both follow. A zero here would be a lie, and
+  # a clean-looking one.
+  #
+  # These are the questions a reader of this board will assume it answered,
+  # which is exactly why each is named with its reason instead.
+  UNAVAILABLE_TO_A_REALIZATION = {
+    description_is_good: "there is no deterministic reader of whether a paragraph is worth reading, " \
+                         "and a judge model would be a second model to keep honest -- see Story::Scoreboard",
+    the_exit_led_somewhere_worth_going: "that is a fact about the room on the far side, which does not " \
+                                        "exist until somebody walks through and pays for it",
+    the_room_fits_its_neighbours: "the description is told not to describe its neighbours " \
+                                  "(Location::DetailSchema), so agreement with them is not asked for",
+    the_cast_is_worth_talking_to: "a person's sheet is judged by the conversation it produces, " \
+                                  "which is InteractionAgent's call and not this one"
+  }.freeze
+
+  def self.unavailable_to_a_realization?(code) = UNAVAILABLE_TO_A_REALIZATION.key?(code.to_sym)
+
+  # THE CHECKS THIS BENCH SCORES. Every one of them compares what the model
+  # WROTE against something the PROMPT STATED -- a number, or a closed list of
+  # names -- so each is a set comparison rather than a reading. The order is the
+  # trust ordering the rest of the repo prints in: what the records prove first.
+  def self.checks = Eval::Realization::Scorer::CHECKS.keys
+
+  def self.corpus = Corpus.load
+
+  # A FINGERPRINT OF THE CASES A RUN MEASURED, stored on the set. Two sets are
+  # only comparable if they built the same rooms out of the same worlds, and a
+  # corpus this size is edited between runs -- so the digest is what lets
+  # `rake eval:realization_compare` say "these measured different cases"
+  # instead of quietly reporting the difference between two files as a change in
+  # the prompt. The same field and the same job as `Eval::Prompt.digest`.
+  def self.digest(corpus = self.corpus)
+    Digest::SHA256.hexdigest(
+      corpus.cases.map { |kase|
+        [ kase.id, kase.story, kase.room, kase.reached_from, kase.danger,
+          kase.absent.join("|"), kase.unwritten.join("|") ].join(" ")
+      }.join("\n")
+    ).first(16)
+  end
+
+  # `models` is `Eval::Classifier::Arm`s -- the arm selector is shared rather
+  # than copied, because "one model, named explicitly, with the rotation off" is
+  # the same requirement here as in the other two benches and a second
+  # implementation of it would be a second thing to keep honest.
+  #
+  # PRICED AT TWO CALLS A CASE, which is what a realization costs when the room
+  # has room for another way out. A case whose stub is already at the exit cap
+  # costs one, and the estimate does not model that: an estimate that comes in
+  # under is a nasty surprise and one that comes in over is not
+  # (`Eval::Cost`'s rule).
+  def self.estimate(cases:, reps:, models:)
+    per = CALLS.sum { |call| PER_CALL.fetch(call)[:input] }
+    out = CALLS.sum { |call| PER_CALL.fetch(call)[:output] }
+    tokens = { input: cases.size * reps * per, output: cases.size * reps * out }
+
+    Eval::Classifier::Arm.all(models).sum { |arm| arm.price.of(tokens[:input], tokens[:output]) }
+  end
+end
