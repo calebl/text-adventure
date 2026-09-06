@@ -92,6 +92,57 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     neighbour
   end
 
+  # --- the seam an interior is laid out through -------------------------------
+  #
+  # ON FIRST ENTRY TO A PLACE, which is what realizing a stub IS. See
+  # `Location::Generator#lay_out_interior!` and `Location#place?`.
+
+  test "realizing a stub that carries a footprint lays out its inside" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+
+    rooms = place.reload.child_locations
+    assert_predicate rooms.count, :positive?
+    assert(rooms.all?(&:placed?))
+    assert(rooms.all?(&:stub?))
+  end
+
+  # THE ONE THAT MUST NOT FIRE. Every stub in every generated world carries no
+  # extent, so realizing one has to write exactly what it wrote before this
+  # seam existed.
+  test "realizing an ordinary stub lays out nothing at all" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL, EXITS))
+
+    assert_empty location.reload.child_locations
+    assert(location.exits.none?(&:placed?))
+  end
+
+  # LAID OUT ONCE, EVER, which is `#realize!`'s own guarantee said about
+  # geometry: walking back in gives you the building you left.
+  test "a place that already has rooms is not laid out a second time" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    Location::Interior.lay_out!(place)
+    before = place.child_locations.order(:id).pluck(:id)
+
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+
+    assert_equal before, place.reload.child_locations.order(:id).pluck(:id)
+  end
+
+  # A ROOM IS BORN ONE WAY. `Location::Interior` creates its rooms through this
+  # class method, so an interior's rooms get the danger roll a stub named by a
+  # neighbour gets.
+  test "a stub created through the class method is a stub with a rolled danger" do
+    room = Location::Generator.create_stub!(@story, name: "The Back Room", teaser: "A door that should be locked.")
+
+    assert_predicate room, :stub?
+    assert_equal "The Back Room", room.name
+    assert_includes Location::Danger::ROLLED, room.danger
+  end
+
   test "fills in a stub's description and lore" do
     location = stub_location(name: "The Drowned Ledger")
 

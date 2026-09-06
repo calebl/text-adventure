@@ -162,7 +162,24 @@ class EngineSweep::Script
   # is possible at all.
   def players = steps.map(&:player).uniq
 
-  # The checked-in world file this script walks. Named from the title rather
-  # than from the script's own filename, so several scripts can walk one world.
-  def seed_file = WorldSeed::DIRECTORY.join("#{WorldSeed.slug(story)}.yml")
+  # The world file this script walks. Named from the TITLE rather than from the
+  # script's own filename, so several scripts can walk one world.
+  #
+  # A CHECKED-IN WORLD FIRST, and one of the sweep's own second. Almost every
+  # script walks a world a person can play (`db/seeds/worlds`); a script that
+  # needs a world nobody ships -- a laid-out interior, which none of the three
+  # flat checked-in worlds has -- names one from `EngineSweep::WORLDS` instead
+  # and nothing else about it differs. The checked-in directory wins on a name
+  # in both, so a sweep world can never shadow a world somebody plays.
+  #
+  # THE PATH IS ANSWERED WHETHER OR NOT THE FILE EXISTS: `EngineSweep::Walk`
+  # reports a missing world naming the script and the path it looked for, which
+  # is the message somebody who mistyped a title needs.
+  def seed_file
+    checked_in = WorldSeed::DIRECTORY.join("#{WorldSeed.slug(story)}.yml")
+    return checked_in if File.exist?(checked_in)
+
+    swept = EngineSweep::WORLDS.join("#{WorldSeed.slug(story)}.yml")
+    File.exist?(swept) ? swept : checked_in
+  end
 end

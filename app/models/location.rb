@@ -284,6 +284,29 @@ class Location < ApplicationRecord
   # place has a plane; this says it has been put on one.
   def placed? = !box.nil?
 
+  # WHETHER THIS IS A PLACE TO BE LAID OUT INSIDE -- a row carrying a FOOTPRINT
+  # and no position, which is what the outermost place of an interior carries
+  # (`Location::Box`). It is the ONE question `Location::Generator` asks before
+  # handing a stub to `Location::Interior`, so the whole of "which locations get
+  # an inside" is this line.
+  #
+  # IT IS DELIBERATELY NARROW, and narrowing it is the point rather than a
+  # limitation. Today only a SEED FILE writes a footprint, so today only a
+  # seeded or fixture place answers true and NOTHING in a generated world
+  # changes behaviour: `Location::Generator#create_stub!` writes no extent, so
+  # every stub a generated world has ever had still answers false. WHICH
+  # generated stubs should become places -- a tavern yes, a stretch of road no
+  # -- is a decision about the Iron Gate's scope and is not made here; when it
+  # is made, it is made by whatever writes the footprint, and this predicate
+  # does not move.
+  #
+  # A ROOM IS NOT A PLACE by this predicate, because a room carries all five
+  # columns and `#placed?` is true of it. So an interior does not lay out an
+  # interior inside itself, which is what keeps `Location::Interior`'s guarantee
+  # -- every room reachable from the entry -- a statement about one containment
+  # level rather than a recursion nobody has designed.
+  def place? = interior? && !placed?
+
   # WHETHER THESE TWO ROOMS ARE IN THE SAME PLACE AT ONCE, and it is here rather
   # than on `Location::Box` because it is the half of the question that needs
   # records: coordinates are local to a parent, so two boxes under DIFFERENT

@@ -84,12 +84,13 @@
 # stays on `Location` is only what needs a record: `#interior?`, `#box`, and the
 # containment `#overlaps?` has to know about.
 #
-# NOTHING LAYS ONE OUT YET. The engine is the sole author of every one of these
-# numbers, on exactly the terms `Character::StatBlock`, `items.bulk` and
-# `locations.danger` are already held to -- no model and no typed line writes
-# one, which `EngineSweep::Invariants#geometry_unmoved` asserts over a whole
-# walk. Today the only writer is a seed file; in slice 2 it is the layout
-# generator, rolled through `Roll` so a world's shape is re-derivable for ever.
+# THE ENGINE IS THE SOLE AUTHOR of every one of these numbers, on exactly the
+# terms `Character::StatBlock`, `items.bulk` and `locations.danger` are already
+# held to -- no model and no typed line writes one, which
+# `EngineSweep::Invariants#geometry_unmoved` asserts over a whole walk. There
+# are two writers and there is not meant to be a third: a SEED FILE, and
+# `Location::Interior`, which lays a whole interior out from one seeded `Roll`
+# so a world's shape is re-derivable for ever.
 class Location::Box < Data.define(:x, :y, :z, :width, :depth)
   # HOW BIG A PACE IS, IN METRES, and it is here rather than in a prompt because
   # the engine owns the unit. The floor plan on the map page is the only reader
@@ -97,6 +98,10 @@ class Location::Box < Data.define(:x, :y, :z, :width, :depth)
   # `Playthrough::Moment` gets to say "six paces by four" to a narrator. Written
   # down once so that every reader gets the same answer.
   METRES_PER_PACE = 1.5
+
+  # HOW SHORT A SHARED WALL MAY BE AND STILL HOLD A DOOR. One pace: a doorway is
+  # a person wide, so two rooms meeting only at a corner share no wall at all.
+  MINIMUM_DOORWAY = 1
 
   # WHERE A ROOM SITS IN ITS PARENT'S PLANE. `z` is a storey index and not a
   # height: 2.5D, so there is no vertical extent to measure.
@@ -161,11 +166,88 @@ class Location::Box < Data.define(:x, :y, :z, :width, :depth)
   def overlaps?(other)
     return false unless z == other.z
 
+    shares_ground?(other)
+  end
+
+  # THE SAME QUESTION WITH THE STOREY TAKEN OUT: whether these two rooms would
+  # be in the same place if they were on one floor. It is `#overlaps?` minus its
+  # first line, and it exists because a STAIR is the one edge that is read
+  # across storeys: floors are kept aligned (ruling 3), which means a stairwell
+  # at (x, y) on one storey arrives at (x, y) on the next -- and the whole of
+  # what "aligned" means is that the two rooms a stair joins have a point in
+  # common when the storeys are ignored.
+  #
+  # THERE IS NO STAIRWELL RECORD and there does not need to be one: the
+  # alignment IS the record. Two boxes and this predicate answer it, so nothing
+  # has to keep a point in a column that could disagree with the rooms it
+  # names. `Location::Interior` builds every stair to satisfy this and
+  # `Story::Doctor` reports a pair that does not.
+  def shares_ground?(other)
     x < other.x + other.width && other.x < x + width &&
       y < other.y + other.depth && other.y < y + depth
+  end
+
+  # WHETHER A DOOR COULD OPEN BETWEEN THESE TWO: same storey, touching walls,
+  # and touching along enough of them for a doorway to stand in. Half-open
+  # intervals are what make this expressible at all -- two rooms sharing a wall
+  # do not overlap, so `#overlaps?` is false for exactly the pairs this is true
+  # of (see the header).
+  #
+  # THE SHARED RUN HAS TO BE AT LEAST `MINIMUM_DOORWAY`, because rooms that meet
+  # at a CORNER touch on both axes and share no wall at all: the run between
+  # them is zero paces long and a door there would be a door through a corner.
+  def shares_a_wall?(other)
+    return false unless z == other.z
+
+    (touching?(x, width, other.x, other.width) && run(y, depth, other.y, other.depth) >= MINIMUM_DOORWAY) ||
+      (touching?(y, depth, other.y, other.depth) && run(x, width, other.x, other.width) >= MINIMUM_DOORWAY)
+  end
+
+  # WHETHER THIS ROOM FITS IN THE PLANE IT IS READ IN. A footprint states an
+  # extent and no position (see the header), so its own plane runs from the
+  # origin to `width` by `depth` and a room outside that is a room outside the
+  # building it is a room of. Half-open again: a room ending exactly at the far
+  # wall is inside.
+  def inside_footprint?(footprint_width, footprint_depth)
+    x >= 0 && y >= 0 &&
+      x + width <= footprint_width.to_i && y + depth <= footprint_depth.to_i
+  end
+
+  # HOW FAR APART THESE TWO ARE, IN PACES, measured centre to centre and by the
+  # streets rather than through the wall -- a person walks around the furniture,
+  # not diagonally through it.
+  #
+  # THE STOREY IS NOT IN IT, because a storey index is not a height (see the
+  # header) and there is no number of paces a floor is worth. What a stair costs
+  # is its `travel_method`, which is where the app already keeps the cost of
+  # going up (`LocationConnection::TRAVEL_METHODS`).
+  #
+  # THE ARITHMETIC IS DOUBLED so it stays integer: a room an odd number of paces
+  # across has its centre on a half pace, and the halves are dropped at the end.
+  # They cannot change the answer any caller wants, because a distance is read
+  # as one of `LocationConnection::DISTANCES`' buckets and never as a
+  # measurement.
+  def paces_to(other)
+    (((2 * x + width) - (2 * other.x + other.width)).abs +
+      ((2 * y + depth) - (2 * other.y + other.depth)).abs) / 2
   end
 
   # One phrase, for a doctor finding and a broken invariant -- so the two places
   # that have to describe a box to a person describe it the same way.
   def to_s = "#{width}x#{depth} paces at #{x},#{y} on storey #{z}"
+
+  private
+
+  # Whether two intervals on one axis meet end to end -- one begins exactly
+  # where the other stops. Half-open, so this is "touching" and never
+  # "overlapping".
+  def touching?(start, extent, other_start, other_extent)
+    start + extent == other_start || other_start + other_extent == start
+  end
+
+  # How much of one axis two intervals have in common, in paces, and zero when
+  # they have none.
+  def run(start, extent, other_start, other_extent)
+    [ [ start + extent, other_start + other_extent ].min - [ start, other_start ].max, 0 ].max
+  end
 end

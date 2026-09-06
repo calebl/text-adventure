@@ -47,6 +47,17 @@ class Location::Generator
     new(location).realize!
   end
 
+  # A ROOM BEING BORN, AS A CLASS METHOD, so that everything in the app which
+  # creates one creates it the same way. `Location::Interior` lays out a whole
+  # building of rooms and none of them is named by a model, but every one of
+  # them is still a stub with a danger rolled by `Location::Danger` -- and a
+  # second place that knew what a new room is would be a second place to forget
+  # the roll.
+  def self.create_stub!(story, name:, teaser:)
+    story.locations.create!(name: name, teaser: teaser, detail_level: :stub,
+                            danger: Location::Danger.for_a_new_room(story))
+  end
+
   # Description and lore, then the stub exits leading out -- saved in that
   # order. The description used to be held unsaved until the exits call
   # returned, so an exits failure threw away the more expensive of the two
@@ -61,6 +72,44 @@ class Location::Generator
 
     write_detail!
     write_exits!
+    lay_out_interior!
+
+    location
+  end
+
+  # THE INSIDE OF A PLACE, ON FIRST ENTRY. The captain's first ruling of
+  # 2026-09-06 -- *the whole interior is laid out on first entry, rooms realized
+  # lazily* -- and this is the seam it is triggered through: realizing a stub IS
+  # a player arriving somewhere for the first time, and it is the one moment in
+  # the app that already means that.
+  #
+  # `Location#place?` IS THE WHOLE OF THE DECISION, and it is narrow on purpose.
+  # It is true only of a row that already carries a FOOTPRINT, which today only
+  # a seed file writes -- so no generated world's behaviour changes: every stub
+  # this class creates carries no extent and answers false. WHICH generated
+  # stubs should become places is a decision about the Iron Gate's scope and is
+  # deliberately not made here.
+  #
+  # AFTER THE EXITS AND NOT BEFORE, because the exits call is asked in the
+  # context of the description and reads the story's other locations by name:
+  # laying the interior out first would offer the model a list of the rooms
+  # inside this place as somewhere to open a door to, which is exactly the
+  # "already written" trap `#connect_exit!` exists to refuse.
+  #
+  # THE ROOMS ARE NOT WIRED TO THIS PLACE'S OWN EXITS, so the party still stands
+  # in the place rather than in one of its rooms. Entering a room instead of the
+  # building it is in is slice 4's, and the layout has to exist before anything
+  # can send anybody into it.
+  #
+  # AN ALREADY-REALIZED PLACE IS NEVER LAID OUT, because `#realize!` returns one
+  # untouched -- the "generate once per place" guarantee, which this is downhill
+  # of rather than an exception to. So a world file that ships a place already
+  # written out is a world whose author is laying its inside out themselves, and
+  # `test/fixtures/files/a-world-with-an-interior.yml` is exactly that.
+  def lay_out_interior!
+    return location unless location.place?
+
+    Location::Interior.lay_out!(location)
 
     location
   end
@@ -413,10 +462,7 @@ class Location::Generator
   # A SEEDED room is never rolled: `WorldSeed::Loader` writes what the file says
   # and an absent key is `Location::SAFE`, which is the rule every other seeded
   # parameter is under.
-  def create_stub!(name, teaser)
-    story.locations.create!(name: name, teaser: teaser, detail_level: :stub,
-                            danger: Location::Danger.for_a_new_room(story))
-  end
+  def create_stub!(name, teaser) = self.class.create_stub!(story, name: name, teaser: teaser)
 
   # Whether the player can already get between here and there, either way
   # round. Both rows are written together, so one direction is enough to know

@@ -1371,7 +1371,7 @@ class Story::Doctor
 
   # --- the shape of a place, since the rulings of 2026-09-06 ----------------
   #
-  # SIX WAYS A LAYOUT CAN BE WRONG, and every one of them is a WARNING with a
+  # EVERY WAY A LAYOUT CAN BE WRONG, and every one of them is a WARNING with a
   # MANUAL remedy. Both halves are choices and both are worth saying out loud.
   #
   # WARNING RATHER THAN FATAL, because `fatal` in this file means one thing --
@@ -1395,14 +1395,17 @@ class Story::Doctor
   # other -- which of them its author meant to be the outermost is not on record.
   # A person edits the world file and re-seeds.
   #
-  # WHAT IS DELIBERATELY NOT CHECKED HERE is whether a child's box lies INSIDE
-  # its parent's footprint. It is a real fault and it will want a finding, but
-  # nothing lays out an interior yet (slice 2, `ta-interior-layout`), so a rule
-  # about how a layout fits together would be a rule with no author to hold to
-  # it. Whoever writes the layout generator adds it alongside the generator.
+  # THE LAST THREE ARE ABOUT A LAYOUT AS A WHOLE rather than about one row, and
+  # they arrived with the thing that writes one (`Location::Interior`). Until
+  # something laid an interior out, a rule about how a layout FITS TOGETHER was
+  # a rule with no author to hold to it; now there is one, and these are the
+  # three statements it makes that a database could contradict -- a room outside
+  # the building it is a room of, a room nothing can walk to, and a stair that
+  # does not arrive where it set off from.
   def geometry
     [ *rooms_with_a_partial_box, *rooms_with_an_impossible_extent, *boxes_with_no_parent,
-      *boxes_with_no_parent_footprint, *overlapping_sibling_rooms, *locations_containing_each_other ]
+      *boxes_with_no_parent_footprint, *overlapping_sibling_rooms, *locations_containing_each_other,
+      *rooms_outside_their_footprint, *interiors_with_an_unreachable_room, *misaligned_stairs ]
   end
 
   # HALF A LAYOUT: neither a footprint, nor a box, nor nothing at all, which are
@@ -1542,6 +1545,127 @@ class Story::Doctor
               "outermost place and nothing that reads containment upward has anywhere to stop",
               :manual)
     end
+  end
+
+  # A ROOM OUTSIDE THE BUILDING IT IS A ROOM OF. A footprint states an extent
+  # and no position, so the plane it opens runs from its own origin to its width
+  # and depth (`Location::Box`); a child whose box leaves that rectangle is
+  # placed somewhere its parent does not reach. It is a different fault from
+  # `location_with_a_box_outside_a_footprint` one method up, and the two names
+  # are close enough to be worth separating out loud: there, the PARENT has no
+  # plane at all, and here it has one the child does not fit in.
+  #
+  # `Location::Interior` tiles the footprint exactly, so it cannot write one;
+  # a seed file can (`WorldSeed::Loader` does not refuse it), and so can raw SQL.
+  # Nothing plays differently for it today -- no coordinate is read in the play
+  # path -- which is why it is a warning like everything else in this section.
+  def rooms_outside_their_footprint
+    story.locations.with_a_box.where.not(parent_location_id: nil)
+         .includes(:parent_location).order(:id).filter_map do |room|
+      parent = room.parent_location
+      next if parent.nil? || !parent.interior?
+      next if room.box.inside_footprint?(parent.width, parent.depth)
+
+      finding(:location_outside_its_parents_footprint, :warning,
+              "#{room.name} is #{room.box} inside #{parent.name}, which is #{parent.width}x#{parent.depth} paces -- " \
+              "so part of the room is outside the building it is a room of",
+              :manual, subject: room)
+    end
+  end
+
+  # A ROOM NOTHING CAN WALK TO. The guarantee `Location::Interior` is built to
+  # make: every room of a place is reachable from the entry through the
+  # interior's OWN doors. A room that is only reachable by leaving the building
+  # and coming back in is a room the layout failed to connect, so the walk
+  # below follows sibling edges and no others.
+  #
+  # THE ENTRY IS THE LOWEST-ID ROOM, which is what `Location::Interior.entry_room`
+  # says it is: a place is laid out once and in one order, so the order the rows
+  # were written in IS the answer.
+  #
+  # ONCE PER PLACE AND NOT PER ROOM, because a stranded pair of rooms is one
+  # fault told twice. NO SUBJECT, for `#overlapping_sibling_rooms`' reason: a
+  # repair would have to decide which door somebody meant to leave open, and
+  # nothing on record says.
+  def interiors_with_an_unreachable_room
+    interiors.filter_map do |place, rooms|
+      stranded = rooms - reachable_rooms(rooms)
+      next if stranded.empty?
+
+      finding(:interior_with_an_unreachable_room, :warning,
+              "#{stranded.map(&:name).join(", ")} #{stranded.one? ? "is" : "are"} inside #{place.name} and " \
+              "nothing inside it leads there -- the way in is #{rooms.first.name}",
+              :manual)
+    end
+  end
+
+  # A STAIRCASE THAT DOES NOT ARRIVE WHERE IT SET OFF FROM. The captain's third
+  # ruling: floors are kept aligned, so a stairwell at (x, y) on one storey
+  # comes out at (x, y) on the next -- which means the two rooms a stair joins
+  # are one floor apart and stand over each other
+  # (`Location::Box#shares_ground?`). A pair that does neither is a staircase
+  # that leaves one building and arrives in another part of the sky.
+  #
+  # ONLY BETWEEN TWO PLACED SIBLINGS. `taking stairs` is an ordinary travel
+  # method that the flat worlds use between flat rooms, and there is nothing
+  # misaligned about a flight of steps between two places that have no
+  # coordinates at all -- alignment is a question you can only ask of two boxes
+  # in one plane.
+  #
+  # ONCE PER STAIRCASE. A door is two rows (the ruling of 2026-09-03) and both
+  # of them are the same flight of steps.
+  def misaligned_stairs
+    stair_pairs.filter_map do |one, other|
+      next if (one.z - other.z).abs == 1 && one.box.shares_ground?(other.box)
+
+      finding(:stairs_between_rooms_that_do_not_line_up, :warning,
+              "the stairs between #{one.name} (#{one.box}) and #{other.name} (#{other.box}) inside " \
+              "#{one.parent_location.name} do not line up -- a stairwell arrives on the next floor " \
+              "where it set off from",
+              :manual)
+    end
+  end
+
+  # `{ place => its placed rooms, lowest id first }` for every place in this
+  # story that has an inside somebody laid out. The one query these three
+  # findings share.
+  def interiors
+    @interiors ||= story.locations.with_a_box.where.not(parent_location_id: nil)
+                        .includes(:parent_location).order(:id).group_by(&:parent_location)
+  end
+
+  # Every flight of stairs inside a laid-out place, once, as the two rooms it
+  # joins. Both ends have to be placed rooms of one parent -- see
+  # `#misaligned_stairs` for why.
+  def stair_pairs
+    rooms = interiors.values.flatten.index_by(&:id)
+
+    LocationConnection.where(location: rooms.keys, connected_location: rooms.keys,
+                             travel_method: Location::Interior::STAIRS).order(:id)
+                      .filter_map do |row|
+      one = rooms.fetch(row.location_id)
+      other = rooms.fetch(row.connected_location_id)
+      next unless one.parent_location_id == other.parent_location_id
+      next unless one.id < other.id
+
+      [ one, other ]
+    end
+  end
+
+  # The rooms of one interior that can be walked to from the entry, through the
+  # interior's own doors and no others.
+  def reachable_rooms(rooms)
+    by_id = rooms.index_by(&:id)
+    seen = [ rooms.first ].compact
+
+    seen.each do |room|
+      LocationConnection.from_location(room).pluck(:connected_location_id).each do |id|
+        neighbour = by_id[id]
+        seen << neighbour if neighbour && !seen.include?(neighbour)
+      end
+    end
+
+    seen
   end
 
   # A HAZARD THE ENGINE HAS NO TABLE FOR. `Location::HAZARDS` is the closed set

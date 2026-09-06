@@ -29,8 +29,32 @@ class EngineSweepTest < ActiveSupport::TestCase
   test "the scripts between them walk every seeded world" do
     walked = EngineSweep.scripts.map(&:story).uniq
 
-    assert_equal Eval::STORIES.sort, walked.sort,
+    assert_empty Eval::STORIES - walked,
                  "a seeded world with no sweep script is a world nothing walks offline"
+  end
+
+  # AND EVERY WORLD A SCRIPT NAMES IS A WORLD SOMEBODY CHECKED IN, one way or
+  # the other. A script may walk a world of the sweep's own (`EngineSweep::WORLDS`)
+  # -- The Quay House is one, because a laid-out interior is not something any
+  # world a person plays has -- and a title that is neither is a typo that would
+  # otherwise fail as "there is no seeded world", one script at a time.
+  test "every world a script names is checked in somewhere" do
+    missing = EngineSweep.scripts.reject { |script| File.exist?(script.seed_file) }
+
+    assert_empty missing.map(&:name),
+                 "#{missing.map { |script| "#{script.name} wants #{script.seed_file}" }.join("; ")}"
+  end
+
+  # A SWEEP WORLD IS A WORLD IN EVERY OTHER RESPECT: the same format, the same
+  # loader, the same validations. One that could not be loaded and played would
+  # be a fixture pretending to be a world -- see `EngineSweep::WORLDS`.
+  test "a world of the sweep's own loads and is healthy" do
+    Dir.glob(EngineSweep::WORLDS.join("*.yml")).sort.each do |path|
+      story = WorldSeed::Loader.new(WorldSeed.parse(File.read(path)), source: path).load!
+
+      assert_predicate Story::Doctor.new(story), :healthy?,
+                       "#{File.basename(path)}: #{Story::Doctor.new(story).findings.map(&:message).join("; ")}"
+    end
   end
 
   # THE GUARD, asserted rather than assumed. `BaseAgent.new` is the one gate
