@@ -315,6 +315,23 @@ The current database includes the following story-related models with proper ass
   (`Item::NOT_COPIED`), so the next column added to `items` comes along by
   itself. A template held by the PROTAGONIST is the one stated exception to
   "a copy lands where its template is": it lands in the party's own hands
+- **Story::FirstScreen** → **WHAT `rake game:new` BUILDS BETWEEN SAVING THE
+  WORLD AND PRINTING IT, AND THE ORDER IS THE POINT.** The captain's ruling of
+  2026-09-05: *"the generation task should create the protagonist along with any
+  characters that are in the opening scene."* Three steps — the protagonist
+  (`Story#create_character(protagonist: true)`), the opening room, then the
+  opening arrival LAST, because `Scene::Generator#characters_present` reads
+  `Story#protagonist` and `Character.present_in` and anybody written after it is
+  somebody the first screen does not know about. ONE new model call: the opening
+  room's people ride on the realization call the room already pays for. **A
+  GENERATED PROTAGONIST IS LEVEL 3 ON A d8** (`Character::StatBlock
+  .for_a_protagonist`) — call C1 lifted out of the three seed files, with only
+  `level` and `hit_die` the house's and the abilities still the ordinary roll in
+  the ordinary order. **THE OPENING ROOM MAY BE EMPTY**, on his second ruling of
+  the same day — *"the opening room should not guarantee at least one person.
+  The protagonist can start by themselves"* — so there is no floor, no doctor
+  finding, and the task's closing lines say so out loud. It is the paid path, so
+  `Story::FirstScreenTest` drives the whole sequence with the agent stubbed
 - **Story** → `#starting_inventory`, WHAT THE PLAYER STARTS OUT HOLDING: the
   seed file's `characters[].items` under the protagonist, held by the
   protagonist row **in the world layer** (`.templates` is the whole guard). The

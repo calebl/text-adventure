@@ -14,23 +14,28 @@ namespace :game do
 
     Helpers.persist!(universe, story)
 
-    # The opening location is generated after the story is saved because
-    # realizing it writes stub neighbours and connection rows, which need ids.
-    # A failure here leaves a story you can still open a location in later.
-    location = Helpers.timed("Generating opening location") { Location::Generator.opening(story) }
-
-    # The opening arrival, narrated ONCE, here, where nobody is waiting on it.
-    # Without this a generated world and a seeded one are different shapes: a
-    # seeded world carries its own opening arrival and a generated one would
-    # not, so the first thing a player read would depend on how the world was
-    # made. Costs one Scene::Generator call (~1,302 in / ~200 out) and buys the
-    # player a first screen with no model call behind it at all.
+    # EVERYTHING THAT MAKES IT PLAYABLE FROM THE FIRST SCREEN, in the one order
+    # it works in: the protagonist, then the opening room realized with
+    # whatever cast the realization writes into it, then the opening arrival
+    # narrated LAST so its `## Who Is Here` block carries both.
+    # `Story::FirstScreen` is where that order lives and why -- the captain's
+    # ruling of 2026-09-05, *"the generation task should create the protagonist
+    # along with any characters that are in the opening scene."*
     #
-    # The cast is empty at this point -- `game:new` makes no characters, and
-    # `Character::Generator` never sets `is_protagonist` -- so the arrival is
-    # written with nobody in the room. Add a cast in the exported seed file;
-    # that is what makes the talk branch reachable from turn one.
-    scene = Helpers.timed("Narrating the opening arrival") { Scene::Generator.opening(story) }
+    # WHAT IT SPENDS, on top of the universe and story calls above: FOUR model
+    # calls, of which ONE is new.
+    #   1  Character::Generator for the protagonist  (~2,700 in / ~400 out) NEW
+    #   2  Location::Generator for the opening room  (~1,900 in / ~670 out) --
+    #      the room's PEOPLE ride on the first of the two, so the opening cast
+    #      costs nothing at all
+    #   1  Scene::Generator for the arrival          (~1,302 in / ~200 out)
+    #
+    # The arrival is narrated here rather than at playthrough-start so a
+    # generated world and a seeded one are the same shape and a player pays no
+    # model call for their first screen.
+    first_screen = Story::FirstScreen.new(story, reporter: Helpers.method(:timed)).build!
+    location = first_screen.location
+    scene = first_screen.scene
 
     puts
     puts "=" * 72
@@ -48,7 +53,8 @@ namespace :game do
       puts "  #{exit.name} -- #{exit.teaser} (#{connection&.distance}, #{connection&.time_to_travel} #{connection&.travel_method})"
     end
     puts
-    puts "Add a character with: rails runner \"Story.find(#{story.id}).create_character\""
+    puts Helpers.first_screen_lines(first_screen)
+    puts
     puts "Export it to a hand-editable seed file with: rake 'game:export[#{story.id}]'"
   end
 
@@ -879,6 +885,32 @@ namespace :game do
       puts
       puts "A contradiction is a defect. A drift is evidence, not proof -- see Playthrough::Drift."
       puts "A line that named two things is neither -- see Playthrough::Overreach."
+    end
+
+    # WHO THE WORLD OPENS WITH, said plainly. The task used to close by
+    # advising `create_character`, which was the right advice only because the
+    # task made none; now it made both, so the closing lines report them
+    # instead -- and they report an EMPTY opening room out loud, because a
+    # world whose first screen has nobody in it is a thing the captain should
+    # not have to run the doctor to find out.
+    def self.first_screen_lines(first_screen)
+      lines = []
+      protagonist = first_screen.protagonist
+      lines << "You are #{protagonist.fullname}#{" (#{protagonist.nickname})" if protagonist.nickname.present?}, " \
+               "#{protagonist.age}, #{protagonist.race&.name} -- level #{protagonist.level}, d#{protagonist.hit_die} " \
+               "(#{protagonist.max_hp} hit points), " \
+               "#{Character::ABILITIES.map { |ability| "#{ability} #{protagonist[ability]}" }.join(", ")}"
+
+      cast = first_screen.cast
+      lines << if cast.any?
+        "In the opening room with you: #{cast.map { |person| "#{person.fullname} (#{person.race&.name})" }.join(", ")}"
+      else
+        "NOBODY is in the opening room. You start alone, which the world is allowed to do -- there is just " \
+          "nobody to talk to until you walk somewhere else. Place somebody in the exported seed file's " \
+          "`characters[].location` if that is not what you wanted"
+      end
+
+      lines
     end
 
     def self.timed(label)
