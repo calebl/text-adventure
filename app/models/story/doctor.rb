@@ -1395,19 +1395,19 @@ class Story::Doctor
   # other -- which of them its author meant to be the outermost is not on record.
   # A person edits the world file and re-seeds.
   #
-  # THE LAST FOUR ARE ABOUT A LAYOUT AS A WHOLE rather than about one row, and
+  # THE LAST FIVE ARE ABOUT A LAYOUT AS A WHOLE rather than about one row, and
   # they arrived with the thing that writes one (`Location::Interior`). Until
   # something laid an interior out, a rule about how a layout FITS TOGETHER was
   # a rule with no author to hold to it; now there is one, and these are the
-  # four statements it makes that a database could contradict -- a room outside
-  # the building it is a room of, a room nothing can walk to, a stair that does
-  # not arrive where it set off from, and a place written out in full with
-  # nothing inside it at all.
+  # statements it makes that a database could contradict -- a room outside the
+  # building it is a room of, a room nothing can walk to, a stair that does not
+  # arrive where it set off from, a door standing in no wall, and a place
+  # written out in full with nothing inside it at all.
   def geometry
     [ *rooms_with_a_partial_box, *rooms_with_an_impossible_extent, *boxes_with_no_parent,
       *boxes_with_no_parent_footprint, *overlapping_sibling_rooms, *locations_containing_each_other,
       *rooms_outside_their_footprint, *interiors_with_an_unreachable_room, *misaligned_stairs,
-      *places_with_a_footprint_and_no_rooms ]
+      *doors_between_rooms_that_share_no_wall, *places_with_a_footprint_and_no_rooms ]
   end
 
   # HALF A LAYOUT: neither a footprint, nor a box, nor nothing at all, which are
@@ -1617,7 +1617,7 @@ class Story::Doctor
   # ONCE PER STAIRCASE. A door is two rows (the ruling of 2026-09-03) and both
   # of them are the same flight of steps.
   def misaligned_stairs
-    stair_pairs.filter_map do |one, other|
+    sibling_pairs(Location::Interior::STAIRS).filter_map do |one, other|
       next if (one.z - other.z).abs == 1 && one.box.shares_ground?(other.box)
 
       finding(:stairs_between_rooms_that_do_not_line_up, :warning,
@@ -1628,22 +1628,55 @@ class Story::Doctor
     end
   end
 
+  # A DOOR THROUGH A CORNER. The counterpart of the finding above, and the same
+  # rule read on one storey instead of two: `Location::Interior` opens a door
+  # only between rooms that share a WALL, and two rooms that meet at a corner
+  # share none -- the run between them is zero paces long, which is what
+  # `Location::Box#shares_a_wall?` is false for. A `walking` edge between two
+  # rooms that do not is a doorway standing in no wall, and so is one between
+  # two rooms on different storeys, which is a door through a ceiling.
+  #
+  # WHY IT IS WORTH ITS OWN FINDING rather than being read off the reachability
+  # one: a corner door CONNECTS. Every room stays reachable, every cap holds,
+  # and nothing else in this section notices. The only record of the fault is
+  # the two boxes, which is exactly the case a doctor is for.
+  #
+  # ONLY BETWEEN TWO PLACED SIBLINGS, and only `walking`, for
+  # `#misaligned_stairs`' two reasons: the flat worlds walk between flat rooms
+  # all day, and a stair is the one edge that is read across storeys and is
+  # graded by that finding instead.
+  #
+  # ONCE PER DOORWAY. A door is two rows (the ruling of 2026-09-03) and both of
+  # them are the same doorway.
+  def doors_between_rooms_that_share_no_wall
+    sibling_pairs(Location::Interior::WALKING).filter_map do |one, other|
+      next if one.box.shares_a_wall?(other.box)
+
+      finding(:door_between_rooms_that_share_no_wall, :warning,
+              "the door between #{one.name} (#{one.box}) and #{other.name} (#{other.box}) inside " \
+              "#{one.parent_location.name} stands in no wall -- those two rooms meet at a corner or do not " \
+              "meet at all",
+              :manual)
+    end
+  end
+
   # `{ place => its placed rooms, lowest id first }` for every place in this
-  # story that has an inside somebody laid out. The one query these three
-  # findings share.
+  # story that has an inside somebody laid out. The one query these findings
+  # share.
   def interiors
     @interiors ||= story.locations.with_a_box.where.not(parent_location_id: nil)
                         .includes(:parent_location).order(:id).group_by(&:parent_location)
   end
 
-  # Every flight of stairs inside a laid-out place, once, as the two rooms it
-  # joins. Both ends have to be placed rooms of one parent -- see
-  # `#misaligned_stairs` for why.
-  def stair_pairs
+  # Every edge of one travel method inside a laid-out place, once, as the two
+  # rooms it joins. Both ends have to be placed rooms of ONE parent -- see
+  # `#misaligned_stairs` for why -- and the lower id comes first, which is what
+  # makes "once" true of a doorway written as two rows.
+  def sibling_pairs(travel_method)
     rooms = interiors.values.flatten.index_by(&:id)
 
     LocationConnection.where(location: rooms.keys, connected_location: rooms.keys,
-                             travel_method: Location::Interior::STAIRS).order(:id)
+                             travel_method: travel_method).order(:id)
                       .filter_map do |row|
       one = rooms.fetch(row.location_id)
       other = rooms.fetch(row.connected_location_id)

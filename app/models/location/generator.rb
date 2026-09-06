@@ -203,7 +203,38 @@ class Location::Generator
   # invariant rather than bend a preference. So a room every one of whose named
   # ways out was one of those still ends with none, and that is the state
   # `Story::Doctor` reports and `Story::Repair` finishes by calling this again.
+  #
+  # AN INTERIOR ROOM'S WAYS OUT ARE THE ENGINE'S, AND THE CALL IS NOT MADE.
+  # `Location::Interior` already decided every door and every stair a room has,
+  # from geometry and one seeded roll, under guarantees no prompt can carry:
+  # every room reachable from the entry, no room past
+  # `Location::ExitsSchema::MAX_EXITS`, a door only between two rooms that share
+  # a WALL, a stair only between two rooms that stand over each other, and one
+  # slot kept free on the entry room for the way IN. Every exit a model could
+  # name here breaks one of those. A sibling that meets this room at a corner is
+  # a door through a corner (`Location::Box#shares_a_wall?` is false and
+  # `Story::Doctor`'s `door_between_rooms_that_share_no_wall` reports one). An
+  # invented name is worse: `.create_stub!` writes no `parent_location`, so it
+  # would be a row at the OUTERMOST level wired to a room two doors deep inside
+  # a building -- a shape nothing in the app can produce and nothing downstream
+  # reads. And either one spends the entry room's reserved slot on somebody
+  # else's door.
+  #
+  # SKIPPED RATHER THAN ANSWERED-AND-IGNORED, which is the choice between the
+  # two and the reason this is here rather than a refusal in #connect_exit!: an
+  # answer that would be thrown away whole is an answer that should not be
+  # bought, so this saves the model call and not just the writes. NO PROMPT TEXT
+  # MOVES either way -- the exits prompt is not BUILT for a room, rather than
+  # built differently for one, so nothing a baseline was measured on changes.
+  #
+  # SO A ROOM CAN END WITH NO WAY OUT AT ALL, and the single room of a one-room
+  # interior does until slice 4 wires the way in. `Story::Doctor` reports it as
+  # `location_has_no_exits` and `Story::Repair` calls this and is told nothing
+  # was written, which is the honest answer: the way into a building is not a
+  # thing a model may name.
   def write_exits!
+    return location if interior_room?
+
     # ALREADY FULL, so there is nothing to ask and nothing to spend. A stub can
     # arrive at the cap before anybody walks into it: a world file seeds edges,
     # and every neighbour that named this place on its way to being realized
@@ -219,6 +250,15 @@ class Location::Generator
 
     location
   end
+
+  # WHETHER THIS IS A ROOM INSIDE A LAID-OUT PLACE, which is the one question
+  # #write_exits! asks before deciding whether there is anything to ask a model.
+  # BOTH HALVES ARE REQUIRED: a box read in a parent's own plane. A box with no
+  # parent is three numbers with nothing to measure them against
+  # (`Story::Doctor#boxes_with_no_parent`) and is a room of nothing, and a
+  # parent with no box is ordinary containment -- a district a street is in --
+  # which no interior laid out and whose exits are still the model's to name.
+  def interior_room? = location.placed? && location.parent_location_id.present?
 
   # HOW MANY MORE WAYS OUT THIS ROOM MAY HAVE. Read from the records on every
   # check rather than counted once, because `#connect_exit!` writes as it goes
@@ -451,6 +491,13 @@ class Location::Generator
   # baseline in `db/eval/` was measured on, every location in the story is at
   # the outermost level and this filter selects all of them. It RESTORES the
   # text those baselines were measured against rather than moving it.
+  #
+  # IT IS WRITTEN AS "THIS LOCATION'S OWN LEVEL" RATHER THAN "THE OUTERMOST
+  # LEVEL", and the two are the same list today: #write_exits! does not build
+  # this prompt for a room inside a laid-out place, so `parent_location_id` is
+  # nil every time this runs. Said the general way it stays true if a later
+  # slice ever asks a room for a way out, where the outermost level would be
+  # exactly the wrong list to offer.
   def known_location_names
     story.locations.where(parent_location_id: location.parent_location_id).where.not(id: location.id)
          .order(:id).map { |place| known_location_line(place) }.join("\n")
@@ -479,18 +526,29 @@ class Location::Generator
   # edge that did not exist before is refused. `into_written:` is the floor in
   # #write_exits! asking for that refusal to be lifted.
   #
-  # A DOOR NEVER CROSSES THE WALL OF A BUILDING. A neighbour has to sit at this
-  # location's own containment level, so a name that resolves to a room inside
-  # some place is refused outright and on every pass. Three things go wrong at
-  # once without it, and only the first is cosmetic: the party walks off a
-  # street straight into somebody's back room, which is slice 4's decision to
-  # make and not a model's; the entry room's spare exit -- the slot
-  # `Location::Interior` keeps free for the way IN -- is spent on a door
-  # somewhere else; and a room already carrying its full `Location::ExitsSchema::MAX_EXITS`
-  # takes one more, which `EngineSweep::Invariants#exit_cap` fails a walk for.
-  # THE NAME IS DROPPED WHOLE and no stub is created under it: a second
-  # location called what a room is already called is the duplicate #find_location
-  # exists to prevent.
+  # A DOOR NEVER CROSSES THE WALL OF A BUILDING, and it takes BOTH this method
+  # and #write_exits! to mean that -- neither half is the whole rule, and a
+  # reader who trusts one of them alone will be wrong.
+  #
+  # THIS HALF IS THE WAY IN: a name that RESOLVES is refused unless it sits at
+  # this location's own containment level, so an exterior exit never lands on a
+  # room inside some place. Three things go wrong at once without it, and only
+  # the first is cosmetic: the party walks off a street straight into somebody's
+  # back room, which is slice 4's decision to make and not a model's; the entry
+  # room's spare exit -- the slot `Location::Interior` keeps free for the way IN
+  # -- is spent on a door somewhere else; and a room already carrying its full
+  # `Location::ExitsSchema::MAX_EXITS` takes one more, which
+  # `EngineSweep::Invariants#exit_cap` fails a walk for. THE NAME IS DROPPED
+  # WHOLE and no stub is created under it: a second location called what a room
+  # is already called is the duplicate #find_location exists to prevent.
+  #
+  # THE OTHER HALF IS THE WAY OUT, AND THIS CHECK CANNOT MAKE IT. A name that
+  # does NOT resolve becomes a stub, and `.create_stub!` writes no
+  # `parent_location` at all -- every invented neighbour is born at the
+  # outermost level, so nothing here could tell a door out of a room from a door
+  # between two streets. What holds instead is that #write_exits! never runs for
+  # a room inside a laid-out place, so `location` here is never one and its
+  # parent is always the outermost nothing an invented stub is born into.
   #
   # BOTH ENDS HAVE THE BUDGET, checked here rather than in #connect! because A
   # DOOR IS TWO ROWS and a per-direction check would write one of them -- the

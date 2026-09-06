@@ -171,6 +171,51 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_empty room.reload.exits.where(parent_location_id: nil)
   end
 
+  # AN INTERIOR ROOM'S WAYS OUT ARE THE ENGINE'S. `Location::Interior` wrote
+  # every door and every stair the room has, under guarantees a model cannot be
+  # held to, so realizing the room writes its prose and does not ask for exits
+  # at all -- neither a sibling's name nor an invented one is honoured, and the
+  # entry room's reserved slot is left where it is.
+  test "realizing a room inside a place honours no exit a model names" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+    rooms = place.reload.child_locations.order(:id).to_a
+    room = rooms.first
+    named = { "exits" => [
+      { "name" => rooms.last.name, "teaser" => "The next room along.",
+        "distance" => "adjacent", "travel_method" => "walking" },
+      { "name" => "The Strongroom", "teaser" => "A door that should have been locked.",
+        "distance" => "adjacent", "travel_method" => "walking" }
+    ] }
+    edges = LocationConnection.count
+    locations = @story.locations.count
+    agent = FakeAgent.new(DETAIL, named)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+
+    assert_predicate room.reload, :realized?
+    assert_equal edges, LocationConnection.count
+    assert_equal locations, @story.locations.count
+    assert_nil @story.locations.find_by(name: "The Strongroom")
+    assert_not_includes agent.schemas, Location::ExitsSchema
+  end
+
+  # AND `Story::Repair` GETS THE SAME ANSWER, because #write_exits! is where the
+  # rule lives rather than #realize!: the way into a building is not something a
+  # recovery may invent either.
+  test "write_exits! writes nothing for a room inside a place" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+    room = place.reload.child_locations.order(:id).first
+    edges = LocationConnection.count
+    agent = FakeAgent.new(EXITS)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).write_exits! }
+
+    assert_equal edges, LocationConnection.count
+    assert_empty agent.schemas
+  end
+
   # BOTH ENDS OF A DOOR HAVE THE BUDGET FOR IT, and the far side is a record
   # this room's own allowance says nothing about.
   test "an exit into a neighbour already at its cap is refused, and not half written" do

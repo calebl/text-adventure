@@ -282,7 +282,8 @@ class Location::InteriorTest < ActiveSupport::TestCase
                       overlapping_sibling_locations locations_containing_each_other
                       location_outside_its_parents_footprint interior_with_an_unreachable_room
                       stairs_between_rooms_that_do_not_line_up
-                      place_with_a_footprint_and_no_rooms].freeze
+                      place_with_a_footprint_and_no_rooms
+                      door_between_rooms_that_share_no_wall].freeze
 
   # --- the two travel-time rules --------------------------------------------
 

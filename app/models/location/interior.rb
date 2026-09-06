@@ -124,8 +124,13 @@
 # tidied. Every number is drawn from a `Roll.generator` seeded with plain
 # integer arithmetic (`Roll`, and read its header for why `String#hash` is not
 # one of them), so the same place lays out the same way in any process, after
-# any restart, for ever: `DRY_RUN=1` prints the walls the real run writes and an
-# offline sweep re-derives them.
+# any restart, for ever: an offline sweep re-derives the walls a real run wrote
+# and plays a building nobody kept (`lib/engine_sweep/scripts/a-building-with-two-floors.yml`).
+# THERE IS NO REHEARSAL COMMAND for a layout, and the `DRY_RUN=1` that
+# `Character::StatBlock` names is not one -- it belongs to `rake game:update`,
+# and it prints what a step of `Update::REGISTRY` would write. Nothing here is
+# an update step; whatever backfills the interiors of a world laid out before
+# this file existed would be, and re-derivability is what it would rest on.
 #
 # KEYED ON THE PLACE'S ID AND NOT ON THE CLOCK, which is `Location::Danger.generator_for`'s
 # choice and its reason: a place is laid out ONCE and its id is the durable
