@@ -77,10 +77,21 @@
 # saying how big the inn is; it is not saying how the inn is divided up, because
 # that is behaviour and behaviour is in Ruby where it can be read.
 #
-# A PLACE WITH NO FOOTPRINT GETS ONE ROLLED, from `FOOTPRINT_SIDES`. That is the
-# honest answer for a place nobody sized: the alternative is refusing to lay it
-# out, which would make "which stubs become places" a question about whether
-# somebody remembered a width.
+# A PLACE WITH NO FOOTPRINT GETS ONE ROLLED, from `FOOTPRINT_SIDES` -- and that
+# is the policy for a caller that does not exist yet. It is for whatever decides
+# that a GENERATED stub becomes a place: such a stub carries no extent at the
+# moment that decision is made (`Location::Generator.create_stub!` writes none),
+# so the branch has to be here before its caller is, or the decision would come
+# down to whether somebody remembered a width.
+#
+# AND REFUSING IS THE POLICY FOR THE ONLY CALLER THERE IS TODAY, which is the
+# other half and is stated here so the paragraph above is not read as describing
+# what the app does. The one in-app path is `Location::Generator#lay_out_interior!`
+# behind `Location#place?`, which is true only of a row that ALREADY carries a
+# footprint -- so a stub without one is not laid out at all, and the roll is
+# reached only by calling `.lay_out!` directly, which the tests do. That is
+# deliberate: WHICH generated stubs become places is a scoping decision being
+# settled separately, and this slice does not make it.
 #
 # THERE IS NO `interior:` KEY AND NO COLUMN FOR ONE. A world that wanted to say
 # *sprawling* rather than *twelve by eight* would be naming a key into a table

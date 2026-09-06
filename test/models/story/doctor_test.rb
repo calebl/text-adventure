@@ -1704,6 +1704,38 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_nil finding(story, :door_between_rooms_that_share_no_wall).subject
   end
 
+  # A HALF-WRITTEN DOOR IS STILL A DOOR STANDING IN NO WALL, and the row may be
+  # the one from the HIGHER-id room -- which is the ordering a dedupe that kept
+  # only "lower id first" would have thrown away, taking the geometry fault with
+  # it. `one_way_connection` says the pair is half written; that it also stands
+  # in no wall is this section's to say.
+  test "a one-row door standing in no wall is reported whichever end wrote it" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    cellar = create(:location, story: story, parent_location: place, name: "The Cellar",
+                               x: 7, y: 8, z: 0, width: 5, depth: 4)
+    create(:location_connection, location: cellar, connected_location: taproom,
+                                 distance: "adjacent", travel_method: "walking")
+
+    assert_operator cellar.id, :>, taproom.id
+    assert_includes codes(story), :door_between_rooms_that_share_no_wall
+    assert_equal 1, codes(story).count(:door_between_rooms_that_share_no_wall)
+  end
+
+  # THE SAME FOR A HALF-WRITTEN STAIRCASE, since both findings read the same
+  # pairs.
+  test "a one-row staircase that does not line up is reported whichever end wrote it" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    loft = create(:location, story: story, parent_location: place, name: "The Loft",
+                             x: 7, y: 0, z: 1, width: 5, depth: 8)
+    create(:location_connection, location: loft, connected_location: taproom,
+                                 distance: "adjacent", travel_method: Location::Interior::STAIRS)
+
+    assert_operator loft.id, :>, taproom.id
+    assert_includes codes(story), :stairs_between_rooms_that_do_not_line_up
+  end
+
   # A STAIR IS GRADED BY ALIGNMENT AND NOT BY WALLS, which is the whole reason
   # the two findings are separate: no stairwell shares a wall with the room it
   # arrives in.

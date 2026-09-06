@@ -1670,8 +1670,22 @@ class Story::Doctor
 
   # Every edge of one travel method inside a laid-out place, once, as the two
   # rooms it joins. Both ends have to be placed rooms of ONE parent -- see
-  # `#misaligned_stairs` for why -- and the lower id comes first, which is what
-  # makes "once" true of a doorway written as two rows.
+  # `#misaligned_stairs` for why.
+  #
+  # ONCE PER EDGE, BY NORMALIZING THE PAIR AND NOT BY DISCARDING THE REVERSED
+  # ROW. A door is two rows (the ruling of 2026-09-03), so both orderings say
+  # one thing and only one of them should be reported -- but keeping the pair
+  # whose lower id comes first and dropping the other DROPS a HALF-WRITTEN edge
+  # outright when its single row was written from the higher-id room, and this
+  # section's whole premise is that a database can carry a shape this code did
+  # not write. Sorting each row's two ends and deduplicating reports exactly the
+  # same edges for a properly two-rowed door and reports the one-row case too.
+  # The half-written edge is `#connection_rows`' own `one_way_connection`; that
+  # it is also a door standing in no wall is this section's to say.
+  #
+  # A ROW FROM A ROOM TO ITSELF IS NOT AN EDGE and is skipped rather than
+  # reported as a wall-less door: geometry has nothing to say about it, and
+  # every question this asks of two boxes is meaningless asked of one.
   def sibling_pairs(travel_method)
     rooms = interiors.values.flatten.index_by(&:id)
 
@@ -1681,10 +1695,10 @@ class Story::Doctor
       one = rooms.fetch(row.location_id)
       other = rooms.fetch(row.connected_location_id)
       next unless one.parent_location_id == other.parent_location_id
-      next unless one.id < other.id
+      next if one.id == other.id
 
-      [ one, other ]
-    end
+      [ one, other ].minmax_by(&:id)
+    end.uniq
   end
 
   # A BUILDING WRITTEN OUT IN FULL WITH NOTHING INSIDE IT. A place is laid out
