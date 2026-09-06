@@ -3,6 +3,13 @@
   <%= link_to "&larr; back to the game".html_safe, playthrough_path(@playthrough) %>
   &nbsp;&middot;&nbsp; playthrough #<%= @playthrough.id %>
   &nbsp;&middot;&nbsp; <%= link_to "the map, drawn", playthrough_map_path(@playthrough) %>
+  <%# The same picture without this game on it: the durable world alone, which
+      is what there is to look at after `rake game:new`. Unconditional, like the
+      playthrough map beside it -- this whole page is already behind
+      `Playthrough::Debug.enabled?`, the flag `MapController` gates on, so the
+      link cannot be drawn to a page that would 404. The playthroughs index,
+      which is not behind that flag, gates its own. %>
+  &nbsp;&middot;&nbsp; <%= link_to "the world alone", story_map_path(@debug.story) %>
   &nbsp;&middot;&nbsp; <%= @debug.turns.size %> turns
   &nbsp;&middot;&nbsp; a snapshot: reload after a turn to see the next one
   &mdash; the game page no longer needs one

@@ -69,15 +69,7 @@ rake game:list
 
 The premise is optional; without one the model picks its own.
 
-`rake game:list` prints each world's id, and `/stories/<id>/map` draws that
-world: a column is one hop out from the opening location, a written place is
-solid and a stub is dashed, and the exits nobody has taken are picked out in
-amber and listed underneath — a world with none of those left is a dead end
-whether or not it meant to be. Below that comes a to-scale floor plan of every
-place that has an inside. The map is part of the debug surface, so it is on in
-development and needs `TA_DEBUG_VIEW` anywhere else, and the same picture with a
-party standing on it is linked from a playthrough's debug page.
-[`app/models/story/map.rb`](app/models/story/map.rb) is what it reads.
+`rake game:list` prints each world's id, genre and counts.
 
 ## Play it
 
