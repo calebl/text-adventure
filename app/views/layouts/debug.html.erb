@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>debug &mdash; <%= @playthrough&.story&.title %></title>
+    <title>debug &mdash; <%= (@story || @playthrough&.story)&.title %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%# ITS OWN STYLESHEET, and that is the point of it being a separate layout.

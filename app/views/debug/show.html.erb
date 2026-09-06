@@ -2,6 +2,7 @@
 <p class="nav">
   <%= link_to "&larr; back to the game".html_safe, playthrough_path(@playthrough) %>
   &nbsp;&middot;&nbsp; playthrough #<%= @playthrough.id %>
+  &nbsp;&middot;&nbsp; <%= link_to "the map, drawn", playthrough_map_path(@playthrough) %>
   &nbsp;&middot;&nbsp; <%= @debug.turns.size %> turns
   &nbsp;&middot;&nbsp; a snapshot: reload after a turn to see the next one
   &mdash; the game page no longer needs one

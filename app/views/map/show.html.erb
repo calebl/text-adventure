@@ -1,0 +1,118 @@
+<%# THE MAP: the world graph, its frontier, and every inside it has.
+    `Story::Map` owns everything here; this page arranges it. %>
+<%= render "map/styles" %>
+
+<h1>the map &mdash; <%= @map.story.title %></h1>
+<p class="nav">
+  <% if @playthrough %>
+    <%= link_to "&larr; back to the game".html_safe, playthrough_path(@playthrough) %>
+    &nbsp;&middot;&nbsp; <%= link_to "the machine", playthrough_debug_path(@playthrough) %>
+    &nbsp;&middot;&nbsp; playthrough #<%= @playthrough.id %>
+  <% else %>
+    story #<%= @map.story.id %> &mdash; nobody is playing this one, so there is no party on it
+  <% end %>
+  &nbsp;&middot;&nbsp; a snapshot: reload after a turn to see the next one
+</p>
+
+<p class="nav">
+  <%= pluralize(@map.nodes.size, "place") %>:
+  <%= @map.realized_count %> realized, <%= @map.stub_count %> stubs
+  &nbsp;&middot;&nbsp; <%= pluralize(@map.edges.size, "doorway") %>
+  &nbsp;&middot;&nbsp; <%= pluralize(@map.frontier_edges.size, "exit") %> nobody has taken
+  &nbsp;&middot;&nbsp; <%= pluralize(@map.interiors.size, "place") %> with an inside
+</p>
+
+<%# THE COLUMN IS THE THING TO READ FIRST. A world that has run out of anywhere
+    to go has nothing to the right of the party, which is the shape the scout
+    said would have made The Iron Gate Descends' dead end obvious at a glance. %>
+<h2 id="graph">the world graph</h2>
+<p class="note">
+  A column is one hop out from <%= @map.root&.name || "nowhere" %><%= " (where the party is standing)" if @map.standing %>.
+  Solid is a place that has been written; dashed is a stub &mdash; a name and a
+  teaser a neighbour invented, which walking into is what realizes.
+  A dashed amber line is an exit nobody has taken.
+  Marks under a name: <code>p</code> people the record says are standing there,
+  <code>i</code> things lying on the floor, <code>r</code> rooms inside it.
+  Hover anything for what the records say about it.
+</p>
+
+<% if @map.nodes.empty? %>
+  <p class="absent">(this world has no places yet)</p>
+<% else %>
+  <%= render "map/graph", map: @map %>
+<% end %>
+
+<%# THE FRONTIER, AS A LIST AND NOT ONLY AS A COLOUR. This is the page's
+    reason for existing: an exit nobody has taken is somewhere the world is
+    still willing to grow, and a world with none of them is finished whether or
+    not it meant to be. `locations.last_protagonist_visit` is a column on the
+    WORLD, so "nobody" means nobody in any playthrough of this story. %>
+<h2 id="frontier">the frontier &mdash; exits nobody has taken</h2>
+<% if @map.frontier_edges.empty? %>
+  <p class="absent">
+    (none &mdash; every place this world has named has been walked into. Nothing
+    leads anywhere new, which is what a dead end looks like from here.)
+  </p>
+<% else %>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>from</th><th>to</th><th>state</th><th>how far</th><th>how</th><th>hops out</th></tr></thead>
+      <tbody>
+        <% @map.frontier_edges.each do |edge| %>
+          <%# THE NEAR END IS THE ONE FEWER HOPS OUT, which is the honest reading
+              when NEITHER end has been walked into -- a whole unexplored arm of
+              a world is reported outward from the party rather than in
+              whatever order the ids fell. %>
+          <% near, far = edge.from.column <= edge.to.column ? [ edge.from, edge.to ] : [ edge.to, edge.from ] %>
+          <tr>
+            <td><%= near.name %></td>
+            <td><%= far.name %></td>
+            <td><span class="tag <%= far.location.detail_level %>"><%= far.location.detail_level %></span></td>
+            <td><%= debug_value(edge.out.distance) %></td>
+            <td><%= debug_value(edge.out.travel_method) %></td>
+            <td><%= far.column %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<%# WHAT THE PICTURE IS REPORTING AS WRONG. Each of these is a real fault in the
+    records rather than a stylistic complaint, and each is drawn on the graph in
+    a colour of its own. %>
+<h2 id="faults">what the graph is complaining about</h2>
+<% if @map.dead_ends.empty? && @map.one_sided_edges.empty? %>
+  <p class="absent">(nothing &mdash; every place leads somewhere and every doorway is two rows)</p>
+<% else %>
+  <ul class="evidence">
+    <% @map.dead_ends.each do |node| %>
+      <li class="warn">
+        <%= node.name %> has nothing leading out of it &mdash; a place the party can
+        stand in and never leave.
+      </li>
+    <% end %>
+    <% @map.one_sided_edges.each do |edge| %>
+      <li class="warn">
+        <%= edge.from.name %> &rarr; <%= edge.to.name %> is one row and not two.
+        A doorway is written in both directions; one-way exits are unsupported
+        and deliberately deferred, so this is an asymmetry in the records.
+      </li>
+    <% end %>
+  </ul>
+<% end %>
+
+<%# EVERY PLACE THAT HAS AN INSIDE, drawn to scale. Slice 1 put the numbers on
+    the rows; this is what they look like. %>
+<h2 id="insides">the insides</h2>
+<% if @map.interiors.empty? %>
+  <p class="absent">
+    (nothing in this world has an inside &mdash; which is what the three seeded
+    worlds are, by the captain's fourth ruling of 2026-09-06, and what every
+    world generated before the layout generator will be)
+  </p>
+<% else %>
+  <% @map.interiors.each do |interior| %>
+    <%= render "map/floor_plan", interior: interior %>
+  <% end %>
+<% end %>

@@ -1,0 +1,38 @@
+<%# EVERY RULE THE TWO DRAWINGS USE, ONCE. A `<style>` inside each `<svg>`
+    would be the tidier place for it -- the drawing would carry its own look --
+    but a world with several insides puts several plans on one page and the
+    rules would be repeated once per plan. So they are here, rendered once, and
+    every selector is prefixed with the drawing it belongs to because a
+    `<style>` in an HTML document is global however deeply it is nested.
+
+    NO NEW COLOURS. Every value below is already in `layouts/debug.html.erb`,
+    which is the stylesheet this page is rendered inside, and it means there what
+    it means here: teal for something the app has written, amber for the thing
+    to look at, dusty brown for a stub, red for a warning, violet for a fault in
+    the records. %>
+<style>
+  .map-graph { font: 11px ui-monospace, "DejaVu Sans Mono", monospace; }
+  .map-graph .edge { stroke: #33393f; stroke-width: 1; fill: none; }
+  .map-graph .edge.frontier { stroke: #d8c07f; stroke-dasharray: 4 3; }
+  .map-graph .edge.hazardous { stroke: #d88f7f; stroke-width: 2; }
+  .map-graph .edge.suspect { stroke: #b79ad8; stroke-width: 2; }
+  .map-graph .stairs { fill: #b79ad8; }
+  .map-graph .node { fill: #12151a; stroke: #2f5a50; stroke-width: 1; }
+  .map-graph .node.stub { fill: #0d0f12; stroke: #4a3f2e; stroke-dasharray: 4 3; }
+  .map-graph .node.here { stroke: #d8c07f; stroke-width: 2; }
+  .map-graph .name { fill: #cfd3d8; }
+  .map-graph .stub-name { fill: #7a6a52; }
+  .map-graph .here-name { fill: #d8c07f; }
+  .map-graph .count { fill: #6b737b; }
+  .map-graph .warn { fill: #d88f7f; }
+
+  .map-plan { font: 11px ui-monospace, "DejaVu Sans Mono", monospace; }
+  .map-plan .footprint { fill: #08090b; stroke: #33393f; stroke-dasharray: 3 3; }
+  .map-plan .room { fill: #12151a; stroke: #2f5a50; }
+  .map-plan .room.stub { fill: #0d0f12; stroke: #4a3f2e; stroke-dasharray: 4 3; }
+  .map-plan .room.here { stroke: #d8c07f; stroke-width: 2; }
+  .map-plan .door { stroke: #d8c07f; stroke-width: 3; }
+  .map-plan .stair { fill: #b79ad8; }
+  .map-plan .label { fill: #cfd3d8; }
+  .map-plan .measure { fill: #6b737b; }
+</style>

@@ -127,8 +127,8 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
 - **A world supplies parameters, never behaviour.** A seed file may say which
   key and which die; what that key *does* is a table in code.
 - **Restyling is `ta-api-iface`, a stage of its own** — do not do it in passing.
-- **The rake tasks build worlds; the browser only plays them.** There is no
-  `rake game:play` and there is not meant to be — the loop lives in
+- **The rake tasks build worlds; the browser plays them and never builds one.**
+  There is no `rake game:play` and there is not meant to be — the loop lives in
   `Playthrough::Turn`, so a rake front end would be a second UI for no new
   capability. `README.md` carries the command surface in full.
 
@@ -148,6 +148,7 @@ Read the header of the file named, not a summary of it.
 | A fight, a round, and who strikes back | `app/models/playthrough/fight.rb`, `riposte.rb`, `blow.rb` |
 | A place or a doorway that costs hit points | `app/models/playthrough/hazards.rb`, `toll.rb` |
 | Where a room is, how big it is, and what a storey is | `app/models/location/box.rb` |
+| What the world graph looks like drawn, and its insides | `app/models/story/map.rb` |
 | A thing thrown | `Playthrough::Turn#throw_item!`, `app/models/roll.rb` |
 | The dice, and the one place a seed is built | `app/models/roll.rb` |
 | The two item layers, and who may write each | `app/models/item.rb`, `item/snapshot.rb` |
