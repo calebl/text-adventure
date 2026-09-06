@@ -631,11 +631,13 @@ The current database includes the following story-related models with proper ass
 - **Playthrough::Feedback** → the player's verdict on one turn (`good` / `weak`
   / `bad`, one per playthrough per **Scene**, amendable), with an optional note
   and the turn's **provenance frozen onto the row** — which model wrote the
-  prose, **which version of the prose instructions it wrote under**
+  prose, **which version of the prose PROMPT it wrote under** — the instruction
+  block AND the per-turn scaffold around the facts
   (`prose_prompt_digest`, out of `Playthrough::PromptVersion` — the ROADMAP's
-  `ta-prompt-bench` ask, and the same digest `rake eval:prompt` records so a set
-  and a verdict group by one version), the prose attempt chain, every model that
-  answered, the token counts.
+  `ta-prompt-bench` ask; `rake eval:prompt` records the instruction half of it
+  per pass, so a set and a verdict group by one version as far as the
+  instructions go), the prose attempt chain, every model that answered, the
+  token counts.
   Frozen rather than referenced because `Playthrough#prune_conversations!`
   destroys the receipts wherever `TA_CHAT_KEEP_TURNS` opts into a cap (the
   default keeps them, so this is belt and braces); the `Scene` itself stays a
@@ -1176,12 +1178,17 @@ The current database includes the following story-related models with proper ass
   are UNAVAILABLE, never clean**: `Eval::Prompt::UNAVAILABLE_TO_A_CASE` states
   the reason for each. Beside them and never folded in: `Eval::Richness`,
   refusals, omitted schema fields, cap hits, tokens, warm latency and spend.
-- **Two prompt digests, covering different amounts.**
-  `Playthrough::PromptVersion` is the instruction block — the same digest
+- **Three prompt digests, covering different amounts.**
+  `Playthrough::PromptVersion.narration_instructions` is the instruction block
+  alone, and it is what `Eval::Prompt::Version` records per pass.
+  `Playthrough::PromptVersion.narration` is that PLUS the per-turn scaffold —
+  `Scene::Narrator#prompt_for`'s framing and `Playthrough::Turn#taken_fact` and
+  its siblings, rendered against fixed placeholders by
+  `Playthrough::PromptVersion::Scaffold` — and it is what
   `Playthrough::Feedback` freezes as `prose_prompt_digest`, so his verdicts
-  group by prompt version as well as by model. `Eval::Prompt::Version`'s
-  `prompt_digest` is the whole prompt of one designated case per shape, so it
-  also covers `Playthrough::Turn#taken_fact` and everything
+  group by prompt version as well as by model and a scaffold-only change moves
+  it. `Eval::Prompt::Version`'s `prompt_digest` is the whole prompt of one
+  designated case per shape, so it also covers everything
   `Playthrough::Moment` builds.
 - `rake eval:prompt_compare` gives REAL/NOISE per check on `Eval::Noise` and
   says whether the MODEL or the PROMPT moved — refusing to be read when both

@@ -1580,14 +1580,16 @@ belongs here is the part that changes how you work:
   `Eval::Prompt::UNAVAILABLE_TO_A_CASE`. A zero for one of those would be the
   most dangerous number this instrument could print, which is the same rule
   `Story::Scoreboard::Corpus` follows.
-- **There are two prompt digests and they cover different amounts.**
-  `instructions_digest` is the system message — the same digest
-  `Playthrough::Feedback` now freezes on every verdict
-  (`Playthrough::PromptVersion`), so a bench set and the captain's own labels
-  group by one version. `prompt_digest` is the WHOLE prompt of one designated
-  case per shape, so it also covers `Playthrough::Turn#taken_fact` and
-  everything `Playthrough::Moment` builds — and it is only meaningful because
-  the corpus is fixed, which is what `corpus_digest` says.
+- **There are three prompt digests and they cover different amounts.**
+  `instructions_digest` is the system message alone
+  (`Playthrough::PromptVersion.narration_instructions`).
+  `Playthrough::PromptVersion.narration` is that PLUS the per-turn scaffold, and
+  it is what `Playthrough::Feedback` freezes on every verdict.
+  `prompt_digest` is the WHOLE prompt of one designated case per shape, so it
+  also covers everything `Playthrough::Moment` builds — and it is only
+  meaningful because the corpus is fixed, which is what `corpus_digest` says.
+  So a bench set and the captain's own labels group by one version as far as
+  the instruction block goes, and no further.
 - **A RULE THAT IS TRUE OF ONE KIND OF TURN GOES IN THAT TURN'S FACT, NOT IN
   `Scene::Narrator::INSTRUCTIONS`**, and this was measured rather than
   reasoned. The instruction block is the system message of every narrated turn
@@ -1599,14 +1601,17 @@ belongs here is the part that changes how you work:
   `Playthrough::Turn#taken_fact` and `#dropped_fact` kept the whole
   `take_denied` win with `item_not_held` back inside its noise. Before writing
   into the block, ask which turns the sentence is FALSE of.
-- **A prompt change to the per-turn scaffold does NOT move
-  `Playthrough::PromptVersion`.** It digests the instruction block only, by
-  design (read its header) — so a change to `#taken_fact`,
-  `#dropped_fact` or `Playthrough::Moment` leaves every
-  `Playthrough::Feedback` verdict before and after it grouped under one digest.
-  `Eval::Prompt::Version`'s `prompt_digest` is the one that covers it, and only
-  because the bench corpus is fixed. Say so in the PR rather than letting a
-  reader infer the verdicts are separable.
+- **A prompt change to the per-turn scaffold DOES move
+  `Playthrough::PromptVersion.narration`**, since `ta-promptversion-scaffold`.
+  It used not to — the digest was the instruction block alone, so a change to
+  `#taken_fact` or `#dropped_fact` left every `Playthrough::Feedback` verdict
+  either side of it grouped under one value. `Playthrough::PromptVersion::
+  Scaffold` renders the scaffold against fixed placeholders and the digest
+  covers the rendered TEXT, so **if you edit one of those sentences, edit the
+  wording and not the placeholders**, and expect the fingerprint to move.
+  `Playthrough::Moment`'s own framing is still outside it, and
+  `Eval::Prompt::Version`'s `prompt_digest` is still the one that covers
+  everything — only because the bench corpus is fixed.
 - **`rake eval:prompt_compare` says whether the MODEL or the PROMPT moved**, off
   the stored files alone, and refuses to be read when both did. Read
   `commitments` beside the rates: a fall in every defect rate with a fall in

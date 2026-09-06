@@ -944,10 +944,13 @@ A prose prompt is instructions and facts interleaved, so there are **two
 digests** and they cover different amounts:
 
 - **`instructions_digest`** — the system message: `Scene::Narrator::INSTRUCTIONS`
-  for a narrated turn, `Scene::Generator#system_prompt` for an arrival. This is
-  the same digest `Playthrough::Feedback` now freezes on every verdict
-  (`Playthrough::PromptVersion`), which is what lets a bench set and the
-  captain's own verdicts be grouped by the same version.
+  for a narrated turn, `Scene::Generator#system_prompt` for an arrival. It is
+  `Playthrough::PromptVersion.narration_instructions`, and it covers the
+  instruction block and nothing else. What `Playthrough::Feedback` freezes on a
+  verdict is the WIDER `Playthrough::PromptVersion.narration` — the instruction
+  block plus the per-turn scaffold — so a bench set and the captain's own
+  verdicts group by the same version as far as the instructions go, and
+  `prompt_digest` is what answers the rest.
 - **`prompt_digest`** — **the whole prompt, byte for byte, for one designated
   case per shape** (the lowest case id of that shape). It covers everything the
   first one misses: `Scene::Narrator#prompt_for`'s framing of a fact,
