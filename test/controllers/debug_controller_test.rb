@@ -1,6 +1,17 @@
 require "test_helper"
 
 class DebugControllerTest < ActionDispatch::IntegrationTest
+  # THE OTHER WAY IN TO THE STORY MAP, beside the one that has the party on it.
+  # No off-case here: this page 404s unless `Playthrough::Debug.enabled?`, so
+  # the link cannot render while the map endpoint would refuse it.
+  test "show links the map of the world with nobody on it" do
+    playthrough = played_playthrough
+
+    get playthrough_debug_path(playthrough)
+
+    assert_select "a[href=?]", story_map_path(playthrough.story), text: "the world alone"
+  end
+
   # THE PAGE RENDERS FOR A REAL PLAYTHROUGH, which is most of what a view test
   # can honestly claim. Every section is asserted by something only that section
   # can produce, so a section that silently stops rendering fails here.

@@ -40,6 +40,14 @@ Rails.application.routes.draw do
   # played. Not `resources :stories`: the browser interface does not have a
   # story resource and this is not the beginning of one, it is the debug
   # surface's second door.
+  #
+  # This is where a browser debug surface is documented rather than the README,
+  # and it is documented by pointing: `Story::Map`'s header says what the page
+  # draws, `MapController`'s says who links here and which of those links
+  # carries a gate of its own. Nothing is reachable any way in unless
+  # `Playthrough::Debug.enabled?`, the flag `MapController` gates this endpoint
+  # on: on in development, `TA_DEBUG_VIEW` anywhere else. Take a world's id from
+  # `rake game:list` to type the URL directly.
   get "stories/:story_id/map", to: "map#show", as: :story_map
 
   root "playthroughs#index"

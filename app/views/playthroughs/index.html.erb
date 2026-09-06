@@ -17,6 +17,14 @@
     <div class="story">
       <h2><%= story.title %></h2>
       <p><%= story.genre %> &mdash; <%= truncate(story.summary, length: 200) %></p>
+      <%# THE PICTURE OF THIS WORLD, with nobody standing on it -- the view to
+          look at right after `rake game:new`, and until now reachable only by
+          typing its URL. Gated on `Playthrough::Debug.enabled?`, the flag
+          `MapController` gates the endpoint on, so a player handed this page is
+          not shown a link that would 404 on them. %>
+      <% if Playthrough::Debug.enabled? %>
+        <p><%= link_to "the map", story_map_path(story) %></p>
+      <% end %>
       <%# A story generated before `game:new` made opening locations has
           nowhere to start, and a story with no player character has nobody to
           start as. Both are listed but not offered, and each says which it is:

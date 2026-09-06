@@ -10,6 +10,32 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_match story.title, response.body
   end
 
+  # THE WAY IN TO THE STORY MAP. Until this link existed the view to look at
+  # right after `rake game:new` was reachable only by typing its URL. It is
+  # gated on the same flag `MapController` gates the endpoint on, and this index
+  # -- unlike the debug page -- is not itself behind that flag, so both
+  # directions are asserted.
+  test "index links each story's map when the debug view is on" do
+    story = create(:story)
+
+    Playthrough::Debug.stub(:enabled?, true) do
+      get root_path
+    end
+
+    assert_select "a[href=?]", story_map_path(story)
+  end
+
+  test "index draws no map link when the debug view is off" do
+    story = create(:story)
+
+    Playthrough::Debug.stub(:enabled?, false) do
+      get root_path
+    end
+
+    assert_response :success
+    assert_select "a[href=?]", story_map_path(story), count: 0
+  end
+
   test "index says how to generate a story when there are none" do
     get root_path
 

@@ -17,7 +17,11 @@
 #   PER STORY      the durable world and its template items. Nobody is standing
 #                  anywhere, so there is no "you are here" and the walk starts
 #                  from `Story#opening_location`. This is the one to look at
-#                  after `rake game:new`, before anybody has played.
+#                  after `rake game:new`, before anybody has played. Linked
+#                  from the playthroughs index, one per listed story, gated
+#                  there on the same flag this controller gates on; and from a
+#                  playthrough's debug page, beside the playthrough map, drawn
+#                  unconditionally because that page is already behind the flag.
 #   PER PLAYTHROUGH  the same graph with the party on it: the column count is
 #                  hops from where they are standing, and the things lying
 #                  around are that game's own copies rather than the world's
