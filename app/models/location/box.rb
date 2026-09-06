@@ -92,9 +92,10 @@
 # generator, rolled through `Roll` so a world's shape is re-derivable for ever.
 class Location::Box < Data.define(:x, :y, :z, :width, :depth)
   # HOW BIG A PACE IS, IN METRES, and it is here rather than in a prompt because
-  # the engine owns the unit. Nothing reads it yet -- slice 3 is where
-  # `Playthrough::Moment` gets to say "six paces by four" to a narrator -- and it
-  # is written down once now so that when something does, there is one answer.
+  # the engine owns the unit. The floor plan on the map page is the only reader
+  # so far, and it only prints it; no model is told it yet -- slice 3 is where
+  # `Playthrough::Moment` gets to say "six paces by four" to a narrator. Written
+  # down once so that every reader gets the same answer.
   METRES_PER_PACE = 1.5
 
   # WHERE A ROOM SITS IN ITS PARENT'S PLANE. `z` is a storey index and not a

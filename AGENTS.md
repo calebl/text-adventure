@@ -127,8 +127,8 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
 - **A world supplies parameters, never behaviour.** A seed file may say which
   key and which die; what that key *does* is a table in code.
 - **Restyling is `ta-api-iface`, a stage of its own** — do not do it in passing.
-- **The rake tasks build worlds; the browser only plays them.** There is no
-  `rake game:play` and there is not meant to be — the loop lives in
+- **The rake tasks build worlds; the browser plays them and never builds one.**
+  There is no `rake game:play` and there is not meant to be — the loop lives in
   `Playthrough::Turn`, so a rake front end would be a second UI for no new
   capability. `README.md` carries the command surface in full.
 
