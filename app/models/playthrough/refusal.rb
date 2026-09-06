@@ -13,8 +13,8 @@
 # is this -- the app's own words, built out of records it is already holding,
 # for no model call beyond the classifier that had already run.
 #
-# FIVE SHAPES, TOLD APART BECAUSE THEY ARE DIFFERENT FACTS -- three about the
-# LINE, one about a THING the line named, and one about the game it was typed
+# SIX SHAPES, TOLD APART BECAUSE THEY ARE DIFFERENT FACTS -- three about the
+# LINE, one about a THING the line named, and two about the game it was typed
 # into:
 #
 #   :named_more_than_one  it named two things the records really have, and a
@@ -43,6 +43,26 @@
 #                         still named a record. Nothing counts it, because it is
 #                         a defect on our side rather than a reach on the
 #                         player's; it goes to the log.
+#   :unplayable           THE GAME CANNOT PERFORM THE ACT AT ALL, whatever the
+#                         line said. It is `:dead`'s neighbour rather than
+#                         `:unresolved`'s -- a fact about the GAME and not about
+#                         the reading -- and the reading was perfect: the
+#                         classifier or the grammar resolved a real record out of
+#                         a real closed set, and then there was nobody to put it
+#                         in the hands of. A story with nobody marked
+#                         `is_protagonist` (`Story::Doctor`'s `:no_protagonist`)
+#                         gives a playthrough a nil `character`, so a `take` or a
+#                         `throw` has no hands; a playthrough standing nowhere has
+#                         no floor to `drop` onto. Both used to NARRATE the
+#                         attempt, which is how the captain's playthrough 24 of
+#                         2026-09-05 read him a perfect paragraph about pocketing
+#                         a signet ring that never left the floor -- the
+#                         narration lied and the records were honest. Counted by
+#                         nothing: the reach resolved, one act was asked for, and
+#                         it is a defect in the WORLD rather than in the line.
+#                         The player is told what is wrong;
+#                         `PlaythroughsController` refuses to start such a game
+#                         in the first place.
 #   :dead                 THE PLAYER IS DEAD AND THE GAME IS OVER -- the
 #                         captain's ruling of 2026-09-04. It is not a reading of
 #                         a line at all: it is refused BEFORE the classifier
@@ -90,7 +110,7 @@
 # (`fact`, `offer`, `UNCHANGED`) so that both orders read as English rather than
 # as one string with another bolted onto the end.
 class Playthrough::Refusal
-  KINDS = %i[named_more_than_one unresolved immovable unreadable dead].freeze
+  KINDS = %i[named_more_than_one unresolved immovable unreadable unplayable dead].freeze
 
   # ONE ACT, PHRASED AS THE PLAYER WOULD HAVE TYPED IT, so a refusal that says
   # "pick one" is naming two things somebody can actually pick between.
@@ -154,6 +174,37 @@ class Playthrough::Refusal
 
   NOTHING_MATCHED = "That resolved to nothing.".freeze
 
+  # WHAT THE GAME ITSELF CANNOT DO, keyed by the act that asked for it.
+  #
+  # TWO TABLES BECAUSE THEY ARE TWO MISSING RECORDS, not two wordings of one.
+  # `NO_PROTAGONIST` is a story with nobody marked `is_protagonist`, so this
+  # game has no hands: a `take` has nowhere to put the thing and a `throw` has
+  # nobody to throw it. `NOWHERE` is a playthrough standing in no room, so a
+  # `drop` has no floor. An act absent from both tables is one the game can
+  # always perform, which is every other act there is.
+  #
+  # THE FIRST SENTENCE IS THE PLAYER'S AND THE SECOND IS THE OPERATOR'S, and
+  # both are said because in this app they are the same person: the words are
+  # `Story::Doctor`'s `:no_protagonist` finding said to somebody standing in the
+  # room rather than reading a report. What is deliberately NOT here is the
+  # `rails runner` remedy -- that lives in the doctor and on the index, which
+  # are the operator-facing surfaces, and a refusal is what the player reads
+  # mid-turn.
+  NO_PROTAGONIST = {
+    take: "There is nobody here to pick anything up",
+    throw: "There is nobody here to throw anything"
+  }.freeze
+
+  NOWHERE = {
+    drop: "You are standing nowhere, so there is no floor to put anything down on"
+  }.freeze
+
+  NO_PROTAGONIST_FACT = "this story has no player character yet, so there is nobody for anything to " \
+                        "belong to. `rake game:doctor` reports it as `no_protagonist` and says how to " \
+                        "give the story one.".freeze
+
+  NOWHERE_FACT = "this playthrough is not standing in any room.".freeze
+
   # WHAT IS ACTUALLY HERE, for the consumer that has no read-out under it. Only
   # ever printed when the set has something in it: `EMPTY` has already said the
   # set is empty, and "Lying here: nothing" says it twice and worse.
@@ -207,6 +258,39 @@ class Playthrough::Refusal
   # a dead player is told; read its header before changing any of them.
   def self.dead(typed:, character: nil)
     new(kind: :dead, typed: typed, fact: Playthrough::DeathNotice.sentence(character))
+  end
+
+  # THE ACT THIS GAME CANNOT PERFORM, or nil when it can -- and the THIRD public
+  # entry point, beside `.for` (a reading of the line) and `.dead` (a game that
+  # is over).
+  #
+  # It is its own entry point because it is not a property of the `Intent`:
+  # `Playthrough::Classifier::Intent#refused?` answers off the line alone, and
+  # this is a question about the PLAYTHROUGH the line was typed into. Both modes
+  # ask it from the same place -- in front of the dispatch, beside `.for` -- so
+  # `Playthrough::Turn` and `Playthrough::Mechanics` cannot come to disagree
+  # about a game the browser plays and `rake game:mechanics` refuses.
+  #
+  # WHAT THIS REPLACED, and it is the whole reason the shape exists.
+  # `Playthrough::Turn#take_item` used to answer a protagonist-less game by
+  # calling `Scene::Narrator` with the bare command -- so the model was asked to
+  # narrate "take iron key" with no fact under it, wrote a perfect paragraph
+  # about pocketing the key, and the key stayed on the floor. That is the
+  # captain's playthrough 24 of 2026-09-05. Each of those branches carried a
+  # comment saying *"nothing in the app creates such a playthrough"*, and
+  # `rake game:new` followed by the Play button is exactly what does.
+  def self.unplayable(intent, playthrough:, typed:)
+    action = intent.action.to_sym
+
+    if playthrough.character.nil? && (missing = NO_PROTAGONIST[action])
+      return new(kind: :unplayable, typed: typed, fact: "#{missing}: #{NO_PROTAGONIST_FACT}")
+    end
+
+    if playthrough.current_location.nil? && (missing = NOWHERE[action])
+      return new(kind: :unplayable, typed: typed, fact: "#{missing}: #{NOWHERE_FACT}")
+    end
+
+    nil
   end
 
   # TWO ACTS ON ONE LINE. Both halves are named, in the same verb, because they

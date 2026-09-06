@@ -246,7 +246,8 @@ The current database includes the following story-related models with proper ass
 - **Playthrough::Refusal** → **THE ONE AUTHOR OF WHAT THE ENGINE SAYS WHEN IT
   WILL NOT PLAY A LINE**, read by `Playthrough::Turn` and
   `Playthrough::Mechanics` alike so the two modes cannot disagree about a line.
-  Four kinds of LINE, told apart because they are different facts:
+  Four kinds of LINE, told apart because they are different facts (and two about
+  the GAME the line was typed into — `dead`, and `unplayable` below):
   `named_more_than_one` (two things the records both have — counted by
   `Playthrough::Overreach`), `unresolved` (a reach the closed sets cannot answer
   — counted by `Playthrough::Drift`), `unreadable` (an intent outside
@@ -264,7 +265,19 @@ The current database includes the following story-related models with proper ass
   there — a coherent `other` and an `examine` that landed on nothing are
   deliberately NOT refused, and an `examine` that named TWO things is (a
   readable thing named alongside another thing is one line asking for two acts,
-  like any other)
+  like any other). **And a sixth shape that is a fact about the GAME rather than
+  about the line**: `unplayable`, the ONE act this game cannot perform at all —
+  a `take` or a `throw` by a playthrough whose story has nobody marked
+  `is_protagonist`, and a `drop` by one standing in no room. `.unplayable` is
+  its own entry point beside `.for` and `.dead`, because it is a question about
+  the PLAYTHROUGH and `Intent#refused?` reads only the line, and both modes ask
+  it in front of the dispatch. It replaced NARRATING the attempt — the captain's
+  playthrough 24 of 2026-09-05 took a signet ring and an iron key, read a
+  perfect paragraph about pocketing both, and left them on the floor —
+  and `PlaythroughsController#create` now refuses to START a playthrough on a
+  story with no player character, with `Story::Doctor`'s `:no_protagonist`
+  remedy in the alert and beside that story on the index. No character is
+  created there: that is a model call, and a separate decision
 - **Playthrough::Mechanics** → the game with the prose taken out, and nothing
   else taken out with it (`rake game:mechanics`). The classifier still reads the
   command and prints what it resolved to; the world still generates itself, so a

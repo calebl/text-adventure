@@ -586,7 +586,9 @@ class Story::Doctor
 
       findings << finding(:no_protagonist, :warning,
                           "has no character marked `is_protagonist`, so the player is nobody: the arrival cast never includes " \
-                          "them and the narrator cannot name them. #{remedy_note}",
+                          "them, the narrator cannot name them, and it cannot be played at all -- " \
+                          "`PlaythroughsController#create` refuses to start a game with nobody to carry anything, and the " \
+                          "engine refuses a `take` or a `throw` in one. #{remedy_note}",
                           :manual)
     elsif protagonists.size > 1
       findings << finding(:several_protagonists, :warning,

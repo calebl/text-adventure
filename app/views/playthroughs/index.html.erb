@@ -18,14 +18,36 @@
       <h2><%= story.title %></h2>
       <p><%= story.genre %> &mdash; <%= truncate(story.summary, length: 200) %></p>
       <%# A story generated before `game:new` made opening locations has
-          nowhere to start, so it is listed but not offered. %>
-      <% if story.locations.any?(&:realized?) %>
+          nowhere to start, and a story with no player character has nobody to
+          start as. Both are listed but not offered, and each says which it is:
+          a Play button that redirects straight back with an alert is a button
+          that lies about what it does. The two conditions are exactly the two
+          `PlaythroughsController#create` refuses on, and the remedy for the
+          second is `Story::Doctor`'s own `:no_protagonist` advice -- split the
+          same way, because telling somebody to mark a character that does not
+          exist is worse than useless. %>
+      <% if !story.locations.any?(&:realized?) %>
+        <p class="empty">No opening location -- generate a new story to play.</p>
+      <% elsif story.protagonist.nil? %>
+        <p class="empty">
+          No player character yet -- this story cannot be played until one of its
+          characters is marked <code>is_protagonist</code>, because there would be
+          nobody to carry anything.<br>
+          <% if story.characters.none? %>
+            It has no characters at all. Make one with
+            <code>rails runner "Story.find(<%= story.id %>).create_character"</code>,
+            then mark them the player with
+            <code>rails runner "Story.find(<%= story.id %>).characters.first.update!(is_protagonist: true)"</code>.
+          <% else %>
+            Mark one with
+            <code>rails runner "Story.find(<%= story.id %>).characters.first.update!(is_protagonist: true)"</code>.
+          <% end %>
+        </p>
+      <% else %>
         <%= form_with url: playthroughs_path do |form| %>
           <%= form.hidden_field :story_id, value: story.id %>
           <%= form.submit "Play" %>
         <% end %>
-      <% else %>
-        <p class="empty">No opening location -- generate a new story to play.</p>
       <% end %>
     </div>
   <% end %>

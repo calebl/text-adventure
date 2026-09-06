@@ -1,6 +1,6 @@
 class PlaythroughsController < ApplicationController
   def index
-    @stories = Story.includes(:universe, :locations).order(:created_at)
+    @stories = Story.includes(:universe, :locations, :characters, :protagonist).order(:created_at)
     @playthrough = current_playthrough
   end
 
@@ -9,7 +9,31 @@ class PlaythroughsController < ApplicationController
     location = opening_location(story)
 
     if location.nil?
-      redirect_to root_path, alert: unplayable_message(story)
+      redirect_to root_path, alert: no_opening_location_message(story)
+      return
+    end
+
+    # AND A STORY WITH NO PLAYER CHARACTER IS NOT PLAYABLE EITHER, which is the
+    # fix of 2026-09-05. A story whose cast nobody has marked `is_protagonist`
+    # answers nil to `#protagonist` (`Story::Doctor`'s `:no_protagonist` has been
+    # reporting it all along), and this line used to hand that nil straight to
+    # `Playthrough.create!`, which accepts it, because `Playthrough#character` is
+    # optional.
+    #
+    # The game that came out could be walked around and talked in and could not
+    # PICK ANYTHING UP: the captain's playthrough 24 took a signet ring and a
+    # key, read a perfect paragraph about pocketing both, and left them lying on
+    # the floor. The engine refuses those lines now
+    # (`Playthrough::Refusal`'s `:unplayable`), and this refuses the game.
+    #
+    # NO CHARACTER IS CREATED HERE, deliberately. `Story#create_character` is a
+    # model call -- it invents a person, a name and a body -- and quietly
+    # spending tokens inside a Play button is not a thing a button should do.
+    # Where a story GETS its player character is a separate question and a
+    # separate change; this only refuses to start a game without one, and says
+    # the doctor's remedy for the worlds that already exist.
+    if story.protagonist.nil?
+      redirect_to root_path, alert: no_protagonist_message(story)
       return
     end
 
@@ -111,9 +135,30 @@ class PlaythroughsController < ApplicationController
     )
   end
 
-  def unplayable_message(story)
+  def no_opening_location_message(story)
     "#{story.title} has no realized opening location -- either it predates " \
       "`rake game:new` generating them, or its opening room is still a stub. " \
       "Generate a new story to play."
+  end
+
+  # THE DOCTOR'S REMEDY, IN THE OPERATOR'S OWN TERMINAL. It is the same advice
+  # `Story::Doctor`'s `:no_protagonist` finding gives and it is split the same
+  # way, because telling somebody to mark a character that does not exist is
+  # worse than useless: a `rake game:new` world has no characters at all and
+  # needs one made first, while a world that has people needs one of them
+  # promoted.
+  def no_protagonist_message(story)
+    remedy =
+      if story.characters.none?
+        "It has no characters at all -- make one with " \
+          "`rails runner \"Story.find(#{story.id}).create_character\"`, then mark them the player with " \
+          "`rails runner \"Story.find(#{story.id}).characters.first.update!(is_protagonist: true)\"`."
+      else
+        "Mark one of its characters the player with " \
+          "`rails runner \"Story.find(#{story.id}).characters.first.update!(is_protagonist: true)\"`."
+      end
+
+    "#{story.title} has no player character yet, so there would be nobody to play: " \
+      "nothing could be picked up or carried in it. #{remedy}"
   end
 end

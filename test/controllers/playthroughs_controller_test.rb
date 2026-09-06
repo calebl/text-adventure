@@ -38,6 +38,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
 
   test "create starts a playthrough and binds it to the session" do
     story = create(:story)
+    create(:character, story: story, is_protagonist: true)
     create(:location, story: story)
 
     assert_difference -> { story.playthroughs.count }, 1 do
@@ -66,12 +67,88 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # to read. Starting there would drop the player into an unwritten room.
   test "create skips stub locations when choosing where to start" do
     story = create(:story)
+    create(:character, story: story, is_protagonist: true)
     create(:location, :stub, story: story)
     opening = create(:location, story: story)
 
     post playthroughs_path, params: { story_id: story.id }
 
     assert_equal opening, story.playthroughs.last.current_location
+  end
+
+  # A STORY WITH NOBODY TO PLAY AS IS NOT PLAYABLE, and it is refused here
+  # rather than answered with a game that cannot pick anything up. The captain's
+  # playthrough 24 of 2026-09-05 was exactly that game: he took a signet ring
+  # and an iron key, read a perfect paragraph about pocketing both, and the
+  # machinery panel showed them still lying on the floor.
+  test "create refuses a story with no player character" do
+    story = create(:story)
+    create(:location, story: story)
+
+    assert_no_difference -> { story.playthroughs.count } do
+      post playthroughs_path, params: { story_id: story.id }
+    end
+
+    assert_redirected_to root_path
+    assert_match "no player character yet", flash[:alert]
+    assert_nil session[:playthrough_token]
+  end
+
+  # THE REMEDY IS `Story::Doctor`'S, AND IT IS SPLIT THE SAME WAY: telling
+  # somebody to mark a character that does not exist is worse than useless.
+  test "create names the remedy for a story with no characters at all" do
+    story = create(:story)
+    create(:location, story: story)
+
+    post playthroughs_path, params: { story_id: story.id }
+
+    assert_match "create_character", flash[:alert]
+  end
+
+  test "create names the remedy for a story whose characters are all bystanders" do
+    story = create(:story)
+    create(:location, story: story)
+    create(:character, story: story)
+
+    post playthroughs_path, params: { story_id: story.id }
+
+    assert_match "is_protagonist: true", flash[:alert]
+    assert_no_match(/create_character/, flash[:alert])
+  end
+
+  # AND A STORY WITH ONE STILL STARTS EXACTLY AS IT DID. The guard is about the
+  # absence and nothing else.
+  test "create still starts a playthrough on a story that has a protagonist" do
+    story = create(:story)
+    protagonist = create(:character, story: story, is_protagonist: true)
+    opening = create(:location, story: story)
+
+    assert_difference -> { story.playthroughs.count }, 1 do
+      post playthroughs_path, params: { story_id: story.id }
+    end
+
+    playthrough = story.playthroughs.last
+    assert_equal protagonist, playthrough.character
+    assert_equal opening, playthrough.current_location
+    assert_redirected_to playthrough
+  end
+
+  # THE INDEX AND THE CONTROLLER AGREE, which is the whole point of saying it on
+  # the index: a Play button that redirects straight back with an alert is a
+  # button that lies about what it does.
+  test "index does not offer to play a story with no player character" do
+    playable = create(:story, title: "A Recent World")
+    create(:character, story: playable, is_protagonist: true)
+    create(:location, story: playable)
+    castless = create(:story, title: "A World Nobody Lives In")
+    create(:location, story: castless)
+
+    get root_path
+
+    assert_match castless.title, response.body
+    assert_match "No player character yet", response.body
+    assert_match "create_character", response.body
+    assert_select "form input[type=submit]", count: 1
   end
 
   test "create refuses a story that has no realized location to start in" do
@@ -88,6 +165,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
 
   test "index does not offer to play a story with no realized location" do
     playable = create(:story, title: "A Recent World")
+    create(:character, story: playable, is_protagonist: true)
     create(:location, story: playable)
     unplayable = create(:story, title: "An Older World")
 
@@ -117,6 +195,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   test "create takes the session over from an earlier playthrough" do
     first = create(:playthrough, :started)
     story = create(:story)
+    create(:character, story: story, is_protagonist: true)
     create(:location, story: story)
 
     post playthroughs_path, params: { story_id: first.story_id }
@@ -234,6 +313,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # opening arrival happens by definition. Never the wall clock.
   test "create marks the opening location as visited when the opening scene is written" do
     story = create(:story)
+    create(:character, story: story, is_protagonist: true)
     opening = create(:location, story: story, last_protagonist_visit: nil)
 
     post playthroughs_path, params: { story_id: story.id }
@@ -252,6 +332,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # makes no model call at all.
   test "create opens the turn log with the world's own opening arrival" do
     story = create(:story)
+    create(:character, story: story, is_protagonist: true)
     opening = create(:location, story: story, description: "Ash drifts past the shutters.")
     arrival = create(:scene, :opening, story: story, location: opening,
                                        description: "You come up the last step and the shutters are already open.")
@@ -275,6 +356,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # their own turns and neither reads the other's.
   test "two playthroughs share one opening arrival and keep separate logs" do
     story = create(:story)
+    create(:character, story: story, is_protagonist: true)
     opening = create(:location, story: story)
     arrival = create(:scene, :opening, story: story, location: opening, description: "The story opens here.")
 
@@ -364,6 +446,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # clock between building the world and playing it changes nothing here.
   test "create stamps the visit when the player arrives, not when the world was built" do
     story = create(:story)
+    create(:character, story: story, is_protagonist: true)
     opening = create(:location, story: story, last_protagonist_visit: nil)
     scene = create(:scene, :opening, story: story, location: opening, story_timestamp: story.start_time)
 
@@ -383,6 +466,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # in for an arrival nobody narrated.
   test "create opens the turn log with the room the player starts in" do
     story = create(:story)
+    create(:character, story: story, is_protagonist: true)
     opening = create(:location, story: story, description: "Ash drifts past the shutters.")
 
     assert_difference -> { story.scenes.count }, 1 do
@@ -398,6 +482,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # And it is per-playthrough progress, not world -- so it is not an opening.
   test "the fallback opening scene is not marked as the world's opening" do
     story = create(:story)
+    create(:character, story: story, is_protagonist: true)
     create(:location, story: story)
 
     post playthroughs_path, params: { story_id: story.id }
@@ -411,6 +496,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # which was false by then -- the story opened one room back.
   test "the opening scene carries a summary for the first move to read" do
     story = create(:story)
+    create(:character, story: story, is_protagonist: true)
     create(:location, story: story, name: "The Salt Chapel")
 
     post playthroughs_path, params: { story_id: story.id }
@@ -471,6 +557,7 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # than as an already-past turn.
   test "show marks the opening scene as the newest turn on a fresh playthrough" do
     story = create(:story)
+    create(:character, story: story, is_protagonist: true)
     create(:location, story: story, description: "Stalls stand under wet canvas.")
 
     post playthroughs_path, params: { story_id: story.id }
