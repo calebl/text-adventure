@@ -41,21 +41,13 @@ Rails.application.routes.draw do
   # story resource and this is not the beginning of one, it is the debug
   # surface's second door.
   #
-  # WHAT IT DRAWS, since this is where a browser debug surface is documented
-  # rather than the README: a column is one hop out from the opening location, a
-  # written place is solid and a stub is dashed, and the exits nobody has taken
-  # are picked out in amber and listed underneath -- a world with none of those
-  # left is a dead end whether or not it meant to be. Below that comes a
-  # to-scale floor plan of every place that has an inside. `Story::Map` is what
-  # it reads.
-  #
-  # LINKED FROM the playthroughs index, one per listed story, and from a
-  # playthrough's debug page beside the map that has the party on it -- see
-  # `MapController` for which of the two carries a gate of its own. Nothing is
-  # reachable either way unless `Playthrough::Debug.enabled?`, the flag
-  # `MapController` gates this endpoint on: on in development, `TA_DEBUG_VIEW`
-  # anywhere else. Take a world's id from `rake game:list` to type the URL
-  # directly.
+  # This is where a browser debug surface is documented rather than the README,
+  # and it is documented by pointing: `Story::Map`'s header says what the page
+  # draws, `MapController`'s says who links here and which of those links
+  # carries a gate of its own. Nothing is reachable any way in unless
+  # `Playthrough::Debug.enabled?`, the flag `MapController` gates this endpoint
+  # on: on in development, `TA_DEBUG_VIEW` anywhere else. Take a world's id from
+  # `rake game:list` to type the URL directly.
   get "stories/:story_id/map", to: "map#show", as: :story_map
 
   root "playthroughs#index"
