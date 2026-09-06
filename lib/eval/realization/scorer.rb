@@ -146,6 +146,14 @@ class Eval::Realization::Scorer
     def admitted_people = Array(after["people"])
     def admitted_items = Array(after["items"])
 
+    # WHO WAS ALREADY STANDING IN THE STUB BEFORE THIS CALL. A seed file puts
+    # people in a room and `Eval::Realization::Stage` deliberately leaves them
+    # there, so `after["people"]` is not a list of who this call wrote -- it is
+    # everybody in the room afterwards, the occupants included. Absent on a set
+    # stored before this was recorded, which reads as nobody and scores such a
+    # set exactly as it scored then.
+    def already_present = Array(facts["present"])
+
     # THE PLACES THAT CAME INTO EXISTENCE, off the records `Bench#after` wrote
     # rather than off the answer. Not the same list as the new names the answer
     # carried: `Location::Generator#write_exits!` stops connecting at the
@@ -355,20 +363,35 @@ class Eval::Realization::Scorer
   # `Item::Registry` and `Character::Registry` drop a proposal.
   #
   # COUNTED PER NAME AND NOT BY MEMBERSHIP, which is the difference between this
-  # figure and a reading of the answer. An answer that names one person twice
-  # gets ONE row: `Character::Registry#admit_one` resolves the second proposal
-  # to the character the first one just created, `#refusal` returns nothing
-  # because that character is already in this room, and the `update!` is a
-  # no-op. Asking only whether the name appears in the records would call both
-  # proposals admitted and report a room that lost somebody as clean. So each
-  # admitted row seats ONE proposal, in the order the answer made them, and a
-  # SELF-COLLISION is a refusal of the SECOND occurrence -- the denominator
-  # stays every proposal the answer made, so a room that named one person twice
-  # and got one reads one of two.
+  # figure and a reading of the answer. A proposal off `Location::DetailSchema`
+  # is a HASH, and `Character::Registry#resolve` matches a non-`Character`
+  # candidate on `candidate.to_s` -- so a proposal never resolves to an existing
+  # person by name. It goes to `#create_one` instead, where `#creation_refusal`
+  # asks `#person_named?` and refuses it outright: *a person in this story is
+  # already called that*. An answer that names one person twice therefore gets
+  # ONE row and loses the other, and an answer naming somebody the story already
+  # has gets none. Asking only whether the name appears in the records would
+  # call every one of those admitted and report a room that lost somebody as
+  # clean.
+  #
+  # SO EACH ROW SEATS ONE PROPOSAL, in the order the answer made them, and what
+  # is left standing is what the room lost. A SELF-COLLISION is a refusal of the
+  # SECOND occurrence; the denominator stays every proposal the answer made, so
+  # a room that named one person twice and got one reads one of two.
+  #
+  # AND A SEAT IS A ROW THIS CALL PRODUCED, which is why the people already in
+  # the stub are taken out of the tally first. `Eval::Realization::Stage` leaves
+  # a seeded room's cast standing on purpose -- Neb Halloran is in the tide post
+  # before anything is written -- so `after["people"]` holds the occupants as
+  # well as the new arrivals. Seating a refused proposal against the very
+  # occupant whose name refused it would report the room that lost somebody as
+  # the room that kept them. ITEMS NEED NO SUCH SUBTRACTION: `Stage#wind_back!`
+  # destroys what is lying in the room, so every thing in the records afterwards
+  # is one this call put there.
   def judge_proposal_refused
     flag_each(:proposal_refused, ->(r) { r.people.size + r.items.size }) do |reading|
       unseated(reading.people.map { |person| person["fullname"] },
-               reading.admitted_people, "an unnamed person") +
+               reading.admitted_people, "an unnamed person", already: reading.already_present) +
         unseated(reading.items.map { |item| item["name"] }, reading.admitted_items, "an unnamed thing")
     end
   end
@@ -378,8 +401,9 @@ class Eval::Realization::Scorer
   # room lost. A proposal with no name at all never takes a seat -- the
   # registries refuse it (`Character::Registry#create_one`), and matching it
   # against a blank would be matching two different absences.
-  def unseated(proposed, admitted, unnamed)
+  def unseated(proposed, admitted, unnamed, already: [])
     seats = admitted.each_with_object(Hash.new(0)) { |name, tally| tally[key_for(name)] += 1 }
+    already.each { |name| seats[key_for(name)] -= 1 }
 
     proposed.filter_map do |name|
       seat = key_for(name)

@@ -150,12 +150,13 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     assert_includes scorer.flagged_for(:proposal_refused).first.evidence, "Vessa Kirn"
   end
 
-  # A ROOM THAT NAMED ONE PERSON TWICE GOT ONE PERSON.
-  # `Character::Registry#admit_one` resolves the second proposal to the row the
-  # first one just created and the `update!` is a no-op, so asking only whether
-  # the NAME is in the records would call both admitted and report a room that
-  # lost somebody as clean. Each record seats one proposal; the second is the
-  # one refused.
+  # A ROOM THAT NAMED ONE PERSON TWICE GOT ONE PERSON. A proposal is a Hash, so
+  # `Character::Registry#resolve` -- which matches a non-`Character` on
+  # `candidate.to_s` -- never finds the row the first occurrence just wrote; the
+  # second goes to `#create_one` and `#creation_refusal` refuses it because a
+  # person in this story is already called that. Asking only whether the NAME is
+  # in the records would call both admitted and report a room that lost somebody
+  # as clean. Each record seats one proposal; the second is the one refused.
   test "a name the answer proposed twice against one record is one refusal, not none" do
     scorer = scored(people: [ person("Vessa Kirn"), person("Vessa Kirn") ],
                     after: { "people" => [ "Vessa Kirn" ], "items" => [], "exits" => [], "new_places" => [] })
@@ -180,6 +181,45 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
 
     assert_empty scorer.flagged_for(:proposal_refused)
     assert_equal 2, scorer.judgeable_for(:proposal_refused)
+  end
+
+  # SOMEBODY ALREADY STANDING IN THE STUB IS NOT A SEAT THIS CALL WON. The tide
+  # post is seeded with Neb Halloran in it and the staging leaves him there, so
+  # an answer that names him is refused by `Character::Registry#creation_refusal`
+  # and the room keeps the man it had -- while the records afterwards still
+  # carry his name. Counting that as an admission would report the room that
+  # lost the person the answer wrote as clean.
+  test "a proposal naming somebody already in the room is refused, not seated by the occupant" do
+    facts = FACTS.merge("present" => [ "Neb Halloran" ])
+    scorer = scored(facts: facts, people: [ person("Neb Halloran") ],
+                    after: { "people" => [ "Neb Halloran" ], "items" => [],
+                             "exits" => [], "new_places" => [] })
+
+    assert_equal 1, scorer.flagged_for(:proposal_refused).size
+    assert_equal 1, scorer.judgeable_for(:proposal_refused)
+    assert_includes scorer.flagged_for(:proposal_refused).first.evidence, "Neb Halloran"
+  end
+
+  test "an occupant takes one seat and no more, so a person this call really wrote is clean" do
+    facts = FACTS.merge("present" => [ "Neb Halloran" ])
+    scorer = scored(facts: facts, people: [ person("Vessa Kirn") ],
+                    after: { "people" => [ "Neb Halloran", "Vessa Kirn" ], "items" => [],
+                             "exits" => [], "new_places" => [] })
+
+    assert_empty scorer.flagged_for(:proposal_refused)
+    assert_equal 1, scorer.judgeable_for(:proposal_refused)
+  end
+
+  # A SET STORED BEFORE `present` WAS RECORDED SCORES AS IT SCORED THEN. The key
+  # is absent from those rows, and a missing one is nobody already there.
+  test "a stored row with no `present` at all is scored exactly as before" do
+    facts = FACTS.except("present")
+    scorer = scored(facts: facts, people: [ person("Vessa Kirn") ],
+                    after: { "people" => [ "Vessa Kirn" ], "items" => [],
+                             "exits" => [], "new_places" => [] })
+
+    assert_empty scorer.flagged_for(:proposal_refused)
+    assert_equal 1, scorer.judgeable_for(:proposal_refused)
   end
 
   test "a readable thing with nothing written on it is flagged, and judged only on readable things" do
