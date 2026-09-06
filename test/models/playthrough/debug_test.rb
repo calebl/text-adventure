@@ -552,10 +552,13 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
   # Every public method, so a future addition that writes is caught by the test
   # that is already here rather than by one somebody remembers to add.
   def read_everything(debug)
-    (Playthrough::Debug.public_instance_methods(false) - [ :classifier_prompt ]).each do |name|
+    taking_arguments = [ :classifier_prompt, :turn_for ]
+
+    (Playthrough::Debug.public_instance_methods(false) - taking_arguments).each do |name|
       debug.public_send(name)
     end
     debug.classifier_prompt
+    debug.turns.each { |turn| debug.turn_for(turn.scene) }
   end
 
   # Row counts and the newest `updated_at` per table: a count catches an insert

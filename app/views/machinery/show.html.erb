@@ -1,0 +1,10 @@
+<%# THE FRAME THE PANEL ON THE PLAY PAGE FETCHES INTO, and the whole of this
+    response when Turbo asked for it.
+
+    The id is the one `turns/_turn` draws, so Turbo matches the frame it asked
+    for; with scripts blocked this same action renders under the game's layout
+    instead (see `MachineryController`) and the frame element is an ordinary
+    wrapper the browser draws right through. %>
+<turbo-frame id="<%= dom_id(@scene, :machinery) %>">
+  <%= render "machinery/panel", machinery: @machinery %>
+</turbo-frame>

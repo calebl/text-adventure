@@ -6,6 +6,14 @@
   <summary>
     <span class="tag purpose"><%= exchange.purpose %></span>
     <% if exchange.durable? %><span class="tag durable">picked up, not started</span><% end %>
+    <%# WHICH VERSION OF THE INSTRUCTIONS THIS CALL WAS UNDER -- the same short
+        digest `Playthrough::Feedback` freezes and `rake eval:prompt` records, so
+        two turns can be compared honestly rather than by eye over two prompts.
+        Absent on a chat with no system message (`interaction-narration`), which
+        is a real shape and not a missing one. %>
+    <% if exchange.prompt_version %>
+      <span class="tag version">prompt <%= exchange.prompt_version %></span>
+    <% end %>
     <%= debug_value(exchange.models.to_sentence.presence, absent: "no model recorded on the answer") %>
     <span class="note">
       &middot; <%= exchange.input_tokens %> in / <%= exchange.output_tokens %> out

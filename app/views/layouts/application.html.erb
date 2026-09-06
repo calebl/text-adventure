@@ -30,9 +30,13 @@
          playthrough the opening scene is the only turn and so the newest one.
          While a turn is streaming the newest turn is the #stream div *below*
          the log, so the log carries `streaming` and nothing in it brightens.
-         PlaythroughsControllerTest asserts these two selectors directly. */
+         `.entry` is the wrapper one turn's prose, verdict and machinery panel
+         share (`turns/_turn`), and it is what `:last-of-type` counts now: it
+         used to be `.log > .turn:last-of-type`, which quietly depended on
+         nothing under a turn ever being a `<div>`. Four tests assert this
+         selector directly. */
       .log .turn { color: #9aa3ac; }
-      .log:not(.streaming) > .turn:last-of-type { color: #cfd3d8; }
+      .log:not(.streaming) > .entry:last-of-type .turn { color: #cfd3d8; }
       .command { color: #d8c07f; margin: 0 0 .35rem; }
       .speaking { color: #8b939b; margin: 0 0 .35rem; }
       .place { color: #8b939b; margin: 0 0 .75rem; }
@@ -139,6 +143,105 @@
       /* The one colour a fight adds, and it is the alert colour already here:
          which of the bodies on the panel means the party harm. */
       .battle .mark.hostile, .battle .mark.provoked { color: #d88f7f; }
+
+      /* THE MACHINERY BEHIND ONE TURN, and it is the play page's own vocabulary
+         rather than the debug page's.
+
+         The captain's ask of 2026-09-05: *"I want to be able to select any given
+         turn and see the current game state as well as the exact prompt that was
+         given to the narrator ... I can't compare the two side by side."* So on
+         a wide viewport the panel sits in the right-hand gutter beside the turn
+         it belongs to, and on a narrow one it stacks under it. The debug page
+         has its own layout and stylesheet BY DESIGN -- it is allowed to be as
+         dense as it likes precisely because the two share no CSS -- so nothing
+         here is imported from it; these are the play page's colours, `.sheet`'s
+         frame and the log's dim grey, spelled out again at a smaller size.
+
+         The control is barely visible until the entry is hovered, for the same
+         reason the verdict is: there is one under every turn and the log is what
+         the player is reading. An open panel stays lit. */
+      .machinery { margin: -1rem 0 1.5rem; }
+      .machinery > summary {
+        color: #4f565d; cursor: pointer; font-size: 12px; padding: .1rem 0;
+        transition: color .12s;
+      }
+      .entry:hover .machinery > summary, .machinery > summary:focus { color: #8b939b; }
+      .machinery[open] > summary { color: #cfd3d8; }
+
+      /* The panel itself, and `.machinery-panel` rather than `.machinery` is the
+         scope on purpose: with scripts blocked the same partial is served as a
+         page of its own and there is no `<details>` around it there. */
+      .machinery-panel { font-size: 13px; }
+      .machinery-panel .sheet { margin: .4rem 0 .6rem; }
+      /* A LABEL COLUMN AND A VALUE COLUMN, and the provenance mark rides with
+         the value rather than in a column of its own. `.sheet-line` is flex with
+         the mark pushed right, which is correct across the width of the page and
+         wrong in a panel a third of it: at the narrow end of the breakpoint
+         below the mark wrapped onto a line by itself and the five rows stopped
+         reading as five rows. Same three spans, same vocabulary, laid out for
+         the width it actually gets. */
+      .machinery-panel .sheet-line {
+        display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+        gap: 0 .8rem; margin: .15rem 0;
+      }
+      .machinery-panel .sheet-line .who { color: #6b737b; }
+      .machinery-panel .sheet-line .state { margin-left: 0; overflow-wrap: anywhere; }
+      .machinery-panel .sheet-line .mark {
+        min-width: 0; text-align: left; margin-left: .35rem; white-space: nowrap;
+      }
+      .machinery-panel .sheet-line .mark::before { content: "\00b7\00a0"; }
+      .machinery-panel .absent { color: #7a6a52; font-style: italic; }
+      .machinery-panel .note { color: #6b737b; }
+      .machinery-panel h3 {
+        font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+        color: #6b737b; font-weight: normal; margin: .7rem 0 .1rem;
+      }
+      /* One stored conversation, collapsed -- `debug/_conversation`, rendered
+         here so the play page and the debug page cannot come to disagree about
+         what was sent. A turn has three or four of these and an arrival prompt
+         inlines the whole universe, so open the one you want. */
+      .machinery-panel .exchange { margin: 0 0 .2rem; }
+      .machinery-panel .exchange > summary { color: #8b939b; cursor: pointer; font-size: 12px; }
+      .machinery-panel .exchange > summary:hover { color: #cfd3d8; }
+      .machinery-panel .body {
+        padding: .3rem 0 .6rem .7rem; border-left: 1px solid #21262c; margin-left: .25rem;
+      }
+      .machinery-panel .tag { color: #8b939b; border: 1px solid #33393f; padding: 0 .3rem; font-size: 11px; }
+      .machinery-panel .tag.purpose { color: #7fb2d8; border-color: #2f4a5c; }
+      .machinery-panel .tag.durable { color: #7fd8c0; border-color: #2f5a50; }
+      .machinery-panel .tag.version { color: #b79ad8; border-color: #4a3d5c; }
+      /* Wide content scrolls inside its own box; the page body never does. */
+      .machinery-panel pre {
+        background: #0e1013; border: 1px solid #21262c; color: #9aa3ac;
+        padding: .4rem .5rem; margin: .2rem 0 0; font: inherit; font-size: 12px;
+        max-height: 24rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere;
+      }
+
+      /* SIDE BY SIDE, WHEN THERE IS ROOM FOR IT -- and stacked when there is
+         not, which is the whole of the responsive story here.
+
+         The reading column stays exactly where it is: `main` is 44rem and
+         centred, and the panel is pushed into the right-hand gutter with a
+         negative margin on the entry, so the prose does not move a pixel when a
+         panel opens. `--panel` is what fits in that gutter, capped at 34rem, and
+         the breakpoint is where it stops being worth having: at 88rem of
+         viewport the gutter gives 20rem. Below that everything falls back to the
+         block layout above and the panel stacks under the turn.
+
+         `:has()` is the guard, and it is load-bearing rather than decorative: an
+         entry with no panel (the flag is off) must not be widened, or the prose
+         would reflow to the width of a column that is not there. A browser
+         without `:has()` drops the whole block and gets the stacked layout,
+         which is the correct fallback. */
+      @media (min-width: 88rem) {
+        .log .entry:has(> .machinery) {
+          --panel: min(34rem, calc((100vw - 44rem) / 2 - 2rem));
+          display: flex; gap: 1rem; align-items: flex-start;
+          margin-right: calc(-1 * (var(--panel) + 1rem));
+        }
+        .log .entry > .said { flex: 1 1 auto; min-width: 0; max-width: 44rem; }
+        .log .entry > .machinery { flex: 0 0 var(--panel); margin-top: 0; }
+      }
 
       /* THE VERDICT ON A TURN -- the evaluation instrument, and the least
          styling that makes it usable without competing with the prose. The

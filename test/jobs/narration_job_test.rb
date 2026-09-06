@@ -88,7 +88,7 @@ class NarrationJobTest < ActiveJob::TestCase
     assert_match %(id="verdict_scene_#{playthrough.reload.current_scene.id}"), replace.to_html
   end
 
-  # The dimming rule is `.log:not(.streaming) > .turn:last-of-type`, so the
+  # The dimming rule is `.log:not(.streaming) > .entry:last-of-type .turn`, so the
   # finished log must not still claim to be streaming -- otherwise the turn the
   # player just took stays dim.
   test "the finished log is no longer marked as streaming" do

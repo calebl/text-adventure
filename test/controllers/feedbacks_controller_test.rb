@@ -151,16 +151,19 @@ class FeedbacksControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  # THE DIMMING RULE, and why the footer is a `<footer>`. The stylesheet finds
-  # the newest turn with `.log:not(.streaming) > .turn:last-of-type`, and
-  # `:last-of-type` counts elements of the same tag among their siblings -- so a
-  # `<div>` here would quietly become the last div in the log and the newest
-  # turn would stop reading at full strength.
+  # THE DIMMING RULE. The stylesheet finds the newest turn with
+  # `.log:not(.streaming) > .entry:last-of-type .turn` -- `.entry` being the
+  # wrapper one turn's prose, verdict and machinery panel share (`turns/_turn`).
+  # It used to hang off `.turn:last-of-type`, and `:last-of-type` counts elements
+  # of the same tag among their siblings, so a `<div>` under a turn would quietly
+  # become the last div in the log and the newest turn would stop reading at full
+  # strength. The wrapper is what took that trap away; the footer stays a
+  # `<footer>` because it reads as one.
   test "the footer does not take the newest turn's place in the log" do
     get playthrough_path(@playthrough)
 
-    assert_select ".log:not(.streaming) > .turn", count: 2
-    assert_select ".log:not(.streaming) > .turn:last-of-type", text: "Rain starts falling."
+    assert_select ".log:not(.streaming) > .entry .turn", count: 2
+    assert_select ".log:not(.streaming) > .entry:last-of-type .turn", text: "Rain starts falling."
   end
 
   private

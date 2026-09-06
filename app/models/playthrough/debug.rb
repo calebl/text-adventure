@@ -89,6 +89,18 @@ class Playthrough::Debug
     # once and replayed -- so it is read from the conversation rather than from
     # this turn's messages.
     def instructions = chat.messages.find { |message| message.role.to_s == "system" }
+
+    # WHICH VERSION OF THE INSTRUCTIONS THIS CALL WAS UNDER, as the same short
+    # digest `Playthrough::Feedback` freezes and `rake eval:prompt` records --
+    # so a verdict, a bench set and a conversation on a page all group by one
+    # value. Read off the message above rather than through
+    # `Playthrough::PromptVersion.for_chat`, which would issue a second query
+    # for a row already in memory; both digest `content`, so they cannot
+    # disagree.
+    #
+    # Nil for a chat with no system message, which is `interaction-narration`
+    # and is a real shape rather than a missing one -- see that class's header.
+    def prompt_version = Playthrough::PromptVersion.of(instructions&.content)
   end
 
   # One way out of where the player is standing, in both directions.
@@ -184,6 +196,21 @@ class Playthrough::Debug
       preload(scenes)
       scenes.map { |scene| build_turn(scene) }
     end
+  end
+
+  # ONE TURN OF THE LOG, ON ITS OWN. The per-turn inspector on the play page
+  # (`Playthrough::Machinery`) asks for exactly one and must not pay for the
+  # whole chain to get it -- the log is the entire playthrough, and the panel is
+  # fetched a turn at a time precisely so that nothing precomputes forty of
+  # them.
+  #
+  # Built through the same `#build_turn` `#turns` uses, so a turn read on the
+  # play page and the same turn read on the debug page are one answer.
+  def turn_for(scene)
+    return nil if scene.nil?
+
+    preload([ scene ])
+    build_turn(scene)
   end
 
   # The turn he just took: what this whole view is organised around.

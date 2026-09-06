@@ -577,6 +577,27 @@ The current database includes the following story-related models with proper ass
   one would promise a thing the app does not have
 - **Playthrough** → **Playthrough::Drifts**: one row per turn on which a reach
   resolved to nothing. The drift counter; never pruned
+- **Playthrough::Machinery** → **THE MACHINERY BEHIND ONE TURN, BESIDE THAT
+  TURN'S PROSE** — the captain's ask of 2026-09-05, *"having to switch over to
+  debug mode is too slow and I can't compare the two side by side."* Two halves,
+  read-only, on the play page: the exact prompt the narrator was given (with the
+  answer, the model and the `Playthrough::PromptVersion` digest, and the
+  classifier's exchange under a second heading) and FIVE ROWS of state — the
+  story time, who was in the room, what is on the floor, what the party carries,
+  what each person present carries. **It is `Playthrough::Debug` narrowed to one
+  turn and never a second reading of the same rows**: `Debug#turn_for(scene)`
+  builds it through the same `#build_turn` the whole log goes through, and the
+  exchanges render through the same `debug/_conversation` partial. **Two of the
+  five rows are historical and three are NOT, and the panel says which** —
+  `scenes.story_timestamp` and the cast are columns written when the turn was
+  played; an `Item` row says where a thing is now, and nothing records what was
+  lying in a room at a past story moment. `MachineryController` is gated on
+  `Playthrough::Debug.enabled?` like the debug page and the verdict buttons, and
+  the control (labelled **machinery**, never *inspect* — `/inspect` is a verb in
+  the game) does not render at all when the flag is off. Fetched a turn at a time
+  by a Turbo Frame that is lazy inside a CLOSED `<details>`, so a forty-turn log
+  costs no request until one is opened; see `AGENTS.md` → *The machinery behind
+  one turn, on the play page*
 - **Playthrough::Feedback** → the player's verdict on one turn (`good` / `weak`
   / `bad`, one per playthrough per **Scene**, amendable), with an optional note
   and the turn's **provenance frozen onto the row** — which model wrote the

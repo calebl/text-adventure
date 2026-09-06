@@ -55,6 +55,48 @@ The full audit of every planned piece of work against this constraint is in
 
 ### Done
 
+- **The machinery behind one turn, on the play page** (`ta-turn-inspector`). The
+  captain, 2026-09-05: *"while in the regular game mode, I want to be able to
+  select any given turn and see the current game state as well as the exact
+  prompt that was given to the narrator. Having to switch over to debug mode is
+  too slow and I can't compare the two side by side."* Every logged turn now
+  carries one control — **"machinery"**, and not *inspect*, because `/inspect` is
+  a verb in the game — which opens the two halves beside that turn's prose.
+
+  **The prompt half is `Playthrough::Debug`, narrowed to one turn.**
+  `#turn_for(scene)` builds one `Turn` through the same `#build_turn` the debug
+  page's whole log goes through, and the exchanges render through the same
+  `debug/_conversation` partial, so the two pages cannot come to disagree about
+  what was sent. The prose call reads first and the classifier second, which is
+  the opposite of the order the loop made them in and the right order to compare
+  in. `Playthrough::Debug::Exchange#prompt_version` is new and appears on both
+  pages: the same digest `Playthrough::Feedback` freezes and `rake eval:prompt`
+  records, so two turns group by one value.
+
+  **The state half is FIVE ROWS and the captain scoped it to five**: the story
+  time, who was in the room, what is on the floor, what the party carries, and
+  what each person present carries. **Two of the five are historical and three
+  are not, and the panel says which**: `scenes.story_timestamp` and the turn's
+  recorded cast are columns written when the turn was played; an `Item` row says
+  where a thing is NOW and nothing records what was lying in a room at a past
+  story moment.
+
+  **Read-only, lazy, and gated.** `Playthrough::Machinery` writes nothing and
+  calls no model (`Playthrough::MachineryTest` makes `Playthrough::DebugTest`'s
+  table-wide before/after assertion); the panel is a Turbo Frame with
+  `loading="lazy"` inside a CLOSED `<details>`, so a log of forty turns makes no
+  request until one is opened, and it closes when a turn lands because it holds
+  no state anywhere; `MachineryController` is gated on `Playthrough::Debug.enabled?`
+  like the debug page and the verdict buttons, and the control does not render at
+  all when the flag is off.
+
+  **`.entry` is new in the turn log** — the wrapper one turn's prose, verdict and
+  panel share — and the dimming rule moved onto it:
+  `.log:not(.streaming) > .entry:last-of-type .turn`. Side by side above 88rem of
+  viewport, with the panel in the right-hand gutter and the reading column not
+  moving a pixel; stacked under the turn below that. Verified in a browser at
+  700, 1408, 1440, 1920 and 2560 with no horizontal overflow at any of them.
+
 - **Attack reads as a blow** (`ta-attack-reads-as-blow`). The captain played his
   first fight and reported: *"When I used the slash attack command I thought
   that would enter the battle only but it actually struck the first blow. Then
@@ -2195,7 +2237,15 @@ What it still owes, roughly in order:
       the control is dim until hovered, absent when the instrument is off, and
       carries the least styling that makes one click usable. It is also why the
       footer under a turn is a `<footer>` and not a `<div>` — the dimming rule
-      is `.log:not(.streaming) > .turn:last-of-type`.
+      used to be `.log:not(.streaming) > .turn:last-of-type`. It counts `.entry`
+      now (`ta-turn-inspector`), so the tag under a turn no longer matters.
+- [x] **The machinery behind one turn, beside its prose** (`ta-turn-inspector`)
+      — see **Done**. The second thing to land on the play page ahead of the
+      visual style below, and, like the verdict, deliberately not an exception to
+      it: the control is dim until the turn is hovered, absent when the
+      instrument is off, and the panel is built out of `.sheet` and the page's
+      own palette. The debug page keeps its own layout and the two still share no
+      CSS; what they share is `Playthrough::Debug` and `debug/_conversation`.
 - [ ] Re-join a turn already in flight. Reopen the page mid-narration and the
       log is what was persisted; the prose written so far lives in the job's
       buffer and nowhere else. The finished turn still arrives over the cable
