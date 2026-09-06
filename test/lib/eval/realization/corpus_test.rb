@@ -59,6 +59,34 @@ class Eval::Realization::CorpusTest < ActiveSupport::TestCase
     end
   end
 
+  # THE OTHER SHAPE WHOSE `why` IS A CLAIM ABOUT THE STAGING. `written-neighbour`
+  # exists so `exit_into_a_written_room` meets a place that is written and out of
+  # reach, and the thing a reader gets wrong about it is which place that is:
+  # `Location::Generator#known_location_line` marks a place only when it is
+  # realized AND unreachable, so the way back -- connected by construction -- is
+  # never marked however written it is. Asserted against the prompt the case
+  # really sends, so a `why` that drifts from the staging has something to fail.
+  test "a `written-neighbour` case stages a marked place, and never marks the way back" do
+    cases = Eval::Realization.corpus.for_shape("written-neighbour").cases
+
+    assert_predicate cases, :any?
+    Eval::Realization::Stage.open(cases) do |stages|
+      cases.each do |kase|
+        standing = stages.fetch(kase.id)
+        marked = standing.places.select { |place| place["realized"] && !place["connected"] }
+        prompt = standing.generator.exits_prompt
+
+        assert_predicate marked, :any?,
+                         "#{kase.id}: nothing is written and out of reach, so the shape reaches no defect"
+        marked.each do |place|
+          assert_includes prompt, "#{place["name"]} (already written -- do not open a new way into it)"
+        end
+        assert_not_includes prompt, "#{kase.reached_from} (already written",
+                            "#{kase.id}: the way back is connected, so it is listed and never marked"
+      end
+    end
+  end
+
   test "a case naming an `also_reaches` the room is not joined to is refused" do
     assert_problem "could not already reach it", <<~YML
       cases:

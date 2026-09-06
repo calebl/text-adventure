@@ -62,11 +62,15 @@ cases:
   expects_new_ground: true
   shape: written-neighbour
   why: >-
-    The hallway is reached from the office, and the office AND the supply closet
-    are both already written -- so the two places this world has are both marked
-    "already written -- do not open a new way into it" and naming either costs
-    the hallway a way out. A corridor with doors closing one after another is
-    exactly the stub a model wants to answer with the rooms it can see.
+    The hallway is reached from the office, and both of this world's other rooms
+    are already written. THE SUPPLY CLOSET is the one marked "already written --
+    do not open a new way into it": it is written and the hallway cannot reach
+    it, which is what Location::Generator#known_location_line marks. Ward Office
+    12 is written too and is NOT marked, because it is the way back and the way
+    back is connected by construction -- it is simply listed, and naming it is a
+    no-op the engine drops rather than a lost exit. A corridor with doors closing
+    one after another is exactly the stub a model wants to answer with the rooms
+    it can see, and the closet is the one that costs it a way out.
 
 - id: hour-long-hallway-early
   story: The Unrecorded Hour
@@ -106,7 +110,9 @@ cases:
   shape: written-neighbour
   why: >-
     A revenue cutter aground since 1836, reached from the court, with the court
-    and the tide post both already written. The held-out world's version of
+    and the tide post both already written. THE TIDE POST is the marked one --
+    written, and out of the hulk's reach. The Causeway Court is the way back, so
+    it is listed unmarked however written it is. The held-out world's version of
     hour-long-hallway, and the one whose rate is worth acting on.
 
 - id: assizes-vestry-hulk-early
@@ -263,9 +269,13 @@ cases:
   shape: written-neighbour
   why: >-
     The way back to the world above, realized after the caves below it were
-    written -- so the chamber, the maw AND Blackfang are all already written and
-    all three are marked. The generated world's version of hour-long-hallway,
-    and the room that really did open onto somewhere new.
+    written -- so the chamber, the maw AND Blackfang are all already written.
+    TWO of the three are marked: the obsidian maw and Blackfang Tunnel, neither
+    of which this stub can reach once its own edges are wound back. Iron Gate
+    Chamber is the way back and is listed unmarked. The generated world's
+    version of hour-long-hallway, with more written neighbours to restate than
+    any other case here, and the room that really did open onto somewhere new --
+    `surface` is absent, so opening onto it means inventing it.
 
 - id: iron-gate-surface
   story: The Iron Gate Descends

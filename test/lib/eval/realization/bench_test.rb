@@ -159,6 +159,28 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
     assert_equal [ "detail.people[0].appearance" ], row(cut.passes.sole, "a-hallway")["cap_hits"]
   end
 
+  # THE PINNING FAILING IS THE ONE THING A STORED SET MUST NOT BE SILENT ABOUT.
+  # `Result.rotated?` is asked about a ROW, so a row that does not carry its arm
+  # cannot be judged and the counter reads zero on exactly the run it exists to
+  # catch. Both directions are pinned: a set whose rows were answered by the arm
+  # counts none, and one answered by anything else counts them.
+  test "a reading answered by another model is counted as a rotation in the stored set" do
+    pass = bench(answered_by: "someone/else").passes.sole
+
+    assert_equal "fake/model", row(pass, "a-hallway")["arm"], "the row says which arm it belongs to"
+    assert_equal 1, row(pass, "a-hallway")["rep"]
+    assert_equal "someone/else", row(pass, "a-hallway")["answered_by"]
+    assert_equal pass.rows.size, pass.figures["rotations"],
+                 "every row was answered by a model this arm was not pinned to"
+  end
+
+  test "a reading answered by its own arm is not a rotation" do
+    pass = bench.passes.sole
+
+    assert_equal "fake/model", row(pass, "a-hallway")["answered_by"]
+    assert_equal 0, pass.figures["rotations"]
+  end
+
   test "the digests describe what was measured" do
     result = bench
 
@@ -178,12 +200,13 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
   # and `messages` rows the generator wrote, exactly as
   # `Playthrough::Feedback` does. A double that wrote none would leave every one
   # of those figures nil and prove nothing about them.
-  def bench(answer = nil, &block)
+  def bench(answer = nil, answered_by: "fake/model", &block)
     agents = []
     block&.call(agents)
 
     stub = lambda do |*args, **options|
-      Endless.new(answer, purpose: options[:purpose], instructions: args.first).tap { |agent| agents << agent }
+      Endless.new(answer, purpose: options[:purpose], instructions: args.first,
+                  answered_by: answered_by).tap { |agent| agents << agent }
     end
 
     BaseAgent.stub(:new, stub) do
@@ -232,11 +255,12 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
 
     attr_reader :purpose
 
-    def initialize(answer = nil, purpose: nil, instructions: nil)
+    def initialize(answer = nil, purpose: nil, instructions: nil, answered_by: "fake/model")
       super()
       @answer = answer
       @purpose = purpose
       @instructions = instructions
+      @answered_by = answered_by
       @written = []
     end
 
@@ -269,9 +293,14 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
                                          content_raw: content, input_tokens: 900, output_tokens: 250)
     end
 
+    # THE MODEL ROW THE MESSAGES ARE WRITTEN AGAINST, which is where the bench
+    # reads `answered_by` from. A run where the pinning failed writes a row
+    # naming the model that really answered, so a test of the rotation guard has
+    # to be able to stand one up.
     def registry
-      @registry ||= Model.find_by(model_id: "fake/model") ||
-                    FactoryBot.create(:model, model_id: "fake/model", name: "fake", provider: "openrouter")
+      @registry ||= Model.find_by(model_id: @answered_by) ||
+                    FactoryBot.create(:model, model_id: @answered_by, name: @answered_by,
+                                              provider: "openrouter")
     end
   end
 

@@ -91,6 +91,24 @@ class Eval::Realization::Bench
       answered_by != Eval::Classifier::Arm.parse(arm).model
     end
 
+    # AND THE ARM IS ON THE ROW AS WELL AS ON THE PASS, which looks like
+    # duplication and is the thing that makes the guard above survive being
+    # written to a file. `Eval::Realization::Result.rotated?` is asked about a
+    # ROW -- by `figures_of`, which is the one place a figure is computed, and
+    # by every reader of a set loaded off disk -- and it has to short-circuit
+    # false on a row that does not say which arm it belongs to, or a set with no
+    # arms anywhere would report every reading rotated. An arm carried only
+    # beside the rows is therefore an arm the row cannot be judged against, and
+    # `rotations` would read zero on a run where the pinning really failed:
+    # silence, in the one figure whose whole job is to say the column is not the
+    # model it is labelled with. `rep` goes with it for the same reason -- a row
+    # lifted out of its pass has to say which repetition it was.
+    #
+    # THE SAME SHAPE MAY EXIST IN THE OTHER TWO BENCHES. They are other
+    # instruments' measurement files and are not this task's to edit; this note
+    # is here so whoever looks knows what to look for.
+    def stored_arm = { arm: arm, rep: rep }
+
     # ONE REALIZATION, TWO CALLS, AND NOT ONE MORE. A third would mean something
     # else was bought -- and the corpus validator refuses the one case shape
     # that could buy fewer (a stub already at its exit cap makes only one).
@@ -98,7 +116,7 @@ class Eval::Realization::Bench
 
     def to_h
       { id:, shape:, story:, held_out: held_out?, room: kase.room,
-        facts:, answers:, after:,
+        **stored_arm, facts:, answers:, after:,
         seconds: seconds&.round(4), input_tokens:, output_tokens:, calls:,
         answered_by:, instructions_digest: Playthrough::PromptVersion.of(instructions),
         prompts:, missing_fields:, cap_hits:, error: }
