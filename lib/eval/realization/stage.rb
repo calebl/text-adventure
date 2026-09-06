@@ -39,14 +39,27 @@
 # timestamp, and a room's `created_at` says when the row appeared and not what
 # the world looked like around it. An earlier draft of this class tried to infer
 # it from id order and produced a state that never existed. So the case says it,
-# in four keys the corpus validator checks against the file:
+# in the keys below, each one checked against the file by
+# `Eval::Realization::Corpus`:
 #
 #   `room`          the stub to build. Wound back to a stub: no description, no
 #                   lore, nothing lying in it.
 #   `reached_from`  the ONE neighbour whose own realization created this stub,
-#                   which is the way back. Every other edge of the room is
-#                   removed, because a room realized by being walked into has
-#                   exactly one. Absent for an opening room, which has none.
+#                   which is the way back. Absent for an opening room, which has
+#                   none.
+#   `also_reaches`  the other neighbours this stub could ALREADY reach, and the
+#                   default is none. A room realized by being walked into has
+#                   exactly one edge, so an ordinary case declares nothing here
+#                   and every edge but the way back is removed. A SEEDED stub
+#                   can legitimately have more -- a lane laid down with the
+#                   circle at the end of it -- and those cases are the only
+#                   place `exit_already_reachable` and `exit_over_the_allowance`
+#                   meet a room with more than one way out and an allowance
+#                   below the cap. Declared rather than kept-by-default for the
+#                   reason the whole of this surgery is declared: which edges a
+#                   stub really had is not recoverable from the records, so a
+#                   case that wants them says so and the validator checks each
+#                   one is really an edge.
 #   `absent`        rooms that did not exist at this moment -- destroyed, so
 #                   they are not in the "places that already exist" list and not
 #                   in the taken names.
@@ -230,7 +243,8 @@ class Eval::Realization::Stage
   end
 
   # THE ROOM ITSELF, WOUND BACK TO THE STUB IT WAS. No description, no lore,
-  # nothing lying in it, and exactly one way out -- the way in.
+  # nothing lying in it, and the way in -- plus whatever else the case declared
+  # this stub could already reach.
   def wind_back!(story)
     room = find_room!(story, kase.room, "room")
 
@@ -240,15 +254,35 @@ class Eval::Realization::Stage
                          "connected in this world, so that is not the way this room was reached"
     end
 
-    drop_edges_except!(room, keep)
+    drop_edges_except!(room, [ keep, *already_reached(story, room) ].compact)
     room.items.destroy_all
     room.update!(description: nil, lore: nil, detail_level: :stub, danger: kase.danger.presence || room.danger)
     room.reload
   end
 
+  # THE NEIGHBOURS A CASE DECLARED THIS STUB ALREADY REACHED, each checked to be
+  # a real edge -- a case that claimed one the world does not have would stage a
+  # room with fewer ways out than its own `why` describes, which is the failure
+  # this key exists to make impossible.
+  def already_reached(story, room)
+    kase.also_reaches.map do |name|
+      other = find_room!(story, name, "also_reaches")
+      if other == room
+        raise Unstageable, "#{kase.id}: #{name.inspect} is the room this case builds, so it cannot " \
+                           "also be somewhere the room already reaches"
+      end
+      unless edge?(room, other)
+        raise Unstageable, "#{kase.id}: #{kase.room.inspect} and #{name.inspect} are not connected in " \
+                           "this world, so this stub could not already reach it"
+      end
+
+      other
+    end
+  end
+
   def drop_edges_except!(room, keep)
     scope = LocationConnection.where(location: room).or(LocationConnection.where(connected_location: room))
-    scope = scope.where.not(location: keep).where.not(connected_location: keep) if keep
+    keep.each { |other| scope = scope.where.not(location: other).where.not(connected_location: other) }
     scope.delete_all
   end
 

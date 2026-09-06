@@ -38,6 +38,20 @@
 # makes it: `readable_without_words` can only be judged on a case that named
 # something readable, and counting every case into it would report a rate the
 # check never earned.
+#
+# ONE FINDING FOR A LATER PROMPT ITEM, RECORDED HERE BECAUSE THIS IS WHERE IT
+# WAS FOUND AND NOT ACTED ON: `Location::Generator`'s exits prompt carries two
+# sentences that contradict each other on a dead end. The instructions say *"if
+# the only way out is back the place the player came from, list that place and
+# nothing else"*, and `#already_reachable_note` says the places this room
+# already leads to *"do not need naming again"* -- so on a room with one edge
+# the prompt asks for the way back and forbids it in the same breath. THIS FILE
+# DOES NOT FIX THAT, because this bench measures those prompts and a bench that
+# edited its own subject would be measuring itself. What it does instead is
+# refuse to score the ambiguity: see `#correct_dead_end?`, which takes a case
+# that named only the way back and declared no new ground OUT OF
+# `exit_already_reachable`'s denominator rather than flagging it. A prompt item
+# that resolves the contradiction should re-baseline and then delete the gate.
 class Eval::Realization::Scorer
   # THE CHECKS, IN TRUST ORDER: the exits the engine itself refuses first,
   # because those have a cost the records can prove; then the allowances, which
@@ -107,6 +121,12 @@ class Eval::Realization::Scorer
     def admitted_people = Array(after["people"])
     def admitted_items = Array(after["items"])
 
+    # THE PLACES THAT CAME INTO EXISTENCE, off the records `Bench#after` wrote
+    # rather than off the answer. Not the same list as the new names the answer
+    # carried: `Location::Generator#write_exits!` stops connecting at the
+    # allowance, so a room that named five and was allowed three opened three.
+    def new_places = Array(after["new_places"])
+
     def same?(left, right) = left.to_s.strip.casecmp?(right.to_s.strip)
     def any_named?(list, name) = Array(list).any? { |entry| same?(entry, name) }
 
@@ -158,7 +178,8 @@ class Eval::Realization::Scorer
       "people_take_up" => share(readings.sum { |r| r.people.size }, readings.sum { |r| r.people_allowance }),
       "items_named" => Eval.mean(readings.map { |r| r.items.size }),
       "exits_named" => Eval.mean(readings.select(&:asked_for_exits?).map { |r| r.exit_names.size }),
-      "new_places_opened" => Eval.mean(readings.select(&:asked_for_exits?).map { |r| new_ground(r).size }),
+      "new_places_opened" => Eval.mean(readings.select(&:asked_for_exits?).map { |r| r.new_places.size }),
+      "new_places_named" => Eval.mean(readings.select(&:asked_for_exits?).map { |r| new_ground(r).size }),
       "exits_restating" => share(readings.sum { |r| restated(r).size },
                                  readings.sum { |r| r.exit_names.size }) }
   end
@@ -195,11 +216,28 @@ class Eval::Realization::Scorer
     end
   end
 
+  # GATED THE WAY `no_new_ground` IS GATED, and for the same reason: a case that
+  # declared the story does NOT point onward and came back with the way back and
+  # nothing else gave the answer the exits prompt asks a dead end for, so it is
+  # UNJUDGEABLE here -- out of the denominator, not merely unflagged, because a
+  # rate this check did not earn is worse than no rate. A room that named the
+  # way back alongside anything else, or that was declared to point onward, is
+  # judged exactly as before. See this class's header for the prompt
+  # contradiction that makes the gate necessary.
   def judge_exit_already_reachable
-    flag_each(:exit_already_reachable, ->(r) { r.exit_names.size }) do |reading|
+    flag_each(:exit_already_reachable, ->(r) { correct_dead_end?(r) ? 0 : r.exit_names.size }) do |reading|
+      next [] if correct_dead_end?(reading)
+
       reading.exit_names.select { |name| reading.any_named?(reading.reachable, name) }
              .map { |name| "named #{name.inspect}, which #{reading.room} already leads to" }
     end
+  end
+
+  # ONE EXIT, AND IT IS ONE THE ROOM COULD ALREADY REACH, in a case that says
+  # the story stops here.
+  def correct_dead_end?(reading)
+    !reading.expects_new_ground? && reading.exit_names.one? &&
+      reading.any_named?(reading.reachable, reading.exit_names.first)
   end
 
   def judge_exit_named_this_room
@@ -224,9 +262,14 @@ class Eval::Realization::Scorer
   # that -- so this is judgeable only where the case has declared that the story
   # points onward from here. `Eval::Realization::Corpus` refuses a case that
   # does not say which it is.
+  # A ROOM THAT NAMED NO WAY OUT AT ALL IS FLAGGED TOO, and that is deliberate:
+  # a story that points onward from here and a room that opened onto nothing is
+  # the descent stopping just as surely as one whose every door led back. The
+  # evidence line says which of the two it was.
   def judge_no_new_ground
     flag_cases(:no_new_ground, ->(r) { r.asked_for_exits? && r.expects_new_ground? }) do |reading|
-      next nil unless reading.exit_names.any? && new_ground(reading).empty?
+      next nil unless new_ground(reading).empty?
+      next "#{reading.room} named no way out at all" if reading.exit_names.empty?
 
       "every way out of #{reading.room} was a place the world already had: " \
         "#{reading.exit_names.join(", ")}"
@@ -343,7 +386,7 @@ class Eval::Realization::Scorer
     sheet = SHEET_FIELDS.map { |field| person[field].to_s }.join(" ").downcase
     stem = race.to_s.downcase.delete_suffix("s")
 
-    sheet.include?(race.to_s.downcase) || (stem.present? && sheet.include?(stem))
+    stem.present? && sheet.include?(stem)
   end
 
   # ---------------------------------------------------------------- plumbing

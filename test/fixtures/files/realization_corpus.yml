@@ -2,17 +2,22 @@
 #
 # Each case names a WORLD and a ROOM IN IT, and `Eval::Realization::Stage` winds
 # that room back to the stub it was -- no description, no lore, nothing lying in
-# it, and one way out, the way in. Everything the model is then told is read out
-# of the records that world really holds, so the prompt a case sends is
-# `Location::Generator`'s and not this file's. `Eval::Realization::Corpus`'s
-# header is the format and the validator; read it before adding a case.
+# it, and the way in (plus whatever else the case declared it already reached).
+# Everything the model is then told is read out of the records that world really
+# holds, so the prompt a case sends is `Location::Generator`'s and not this
+# file's. `Eval::Realization::Corpus`'s header is the format and the validator;
+# read it before adding a case.
 #
-# THE FOUR KEYS THAT DO THE WORK, and each is DECLARED rather than derived
-# because neither of the last two is recoverable from the records:
+# THE KEYS THAT DO THE WORK, and each is DECLARED rather than derived because
+# none of them is recoverable from the records:
 #
 #   reached_from        the ONE neighbour whose own realization created this
-#                       stub. Every other edge of the room is removed. Absent
-#                       for a room nobody walked into.
+#                       stub. Absent for a room nobody walked into.
+#   also_reaches        the other neighbours the stub could ALREADY reach, and
+#                       nothing by default: every edge but the way back is
+#                       removed unless a case names it here. A seeded stub can
+#                       legitimately have more than one, and those cases are the
+#                       only place the allowance in the prompt is below the cap.
 #   absent              rooms that did not exist at this moment -- destroyed.
 #   unwritten           rooms that existed but had not been written -- wound
 #                       back to stubs, so the exits prompt does not mark them
@@ -39,8 +44,10 @@
 #   * A DANGEROUS ROOM IN A WORLD WITH NONE, which is every generated world
 #     today (`Location::Danger`'s header) and the case that shows what the
 #     fallback really writes.
-#   * A ROOM ALREADY AT PART OF ITS ALLOWANCE, so the allowance in the prompt is
-#     a number that had to be read rather than a constant.
+#   * A ROOM ALREADY AT PART OF ITS ALLOWANCE -- the `two-ways-out` shape, whose
+#     cases declare `also_reaches` and therefore stage a stub with two ways out
+#     and two fewer left. That is the only shape where the allowance in the
+#     prompt is a number that had to be read rather than the cap.
 #
 # WORLDS. Three seeded and one generated. `The Salt Assizes` is HELD OUT --
 # `Eval::HELD_OUT`, reported apart and never pooled. Tune on the rest.
@@ -134,24 +141,34 @@ cases:
   story: The Lunar Cartographer
   room: Mournwell Lane
   reached_from: Grenn's Boarding House, Room 3
+  also_reaches:
+  - Sovereign's Circle
   expects_new_ground: true
   shape: two-ways-out
   why: >-
     A seeded stub that already reaches TWO places -- the boarding house behind
     it and Sovereign's Circle ahead -- so the exits prompt states an allowance
     of two rather than four and lists both as already reachable. The commonest
-    way a room ends up over-connected is naming one of them again.
+    way a room ends up over-connected is naming one of them again, which is what
+    `exit_already_reachable` and `exit_over_the_allowance` were written for and
+    what no single-edge case in this file can reach. Both edges are seeded, so
+    `also_reaches` keeps the second rather than inventing it.
 
 - id: lunar-larkspur-rooftops
   story: The Lunar Cartographer
   room: Larkspur Quarter rooftops
   reached_from: Grenn's Boarding House, Room 3
+  also_reaches:
+  - The Celestial Spire
   expects_new_ground: true
   shape: two-ways-out
   why: >-
-    The room Location::ExitsSchema's header is about: seeded with two edges,
-    walked into, and it came back with five -- more connected than anything else
-    in the database, and its own description named none of them.
+    The room Location::ExitsSchema's header is about: seeded with two edges --
+    the boarding house below and the Celestial Spire across the district --
+    walked into, and it came back with five, more connected than anything else
+    in the database, and its own description named none of them. `also_reaches`
+    is what puts the spire edge back, because the defect needs the room to
+    already be at two of its four.
 
 - id: lunar-celestial-spire
   story: The Lunar Cartographer

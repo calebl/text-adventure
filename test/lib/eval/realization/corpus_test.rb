@@ -36,6 +36,44 @@ class Eval::Realization::CorpusTest < ActiveSupport::TestCase
     end
   end
 
+  # A SHAPE IS A CLAIM ABOUT WHAT THE STAGE PRODUCES, not a string. `two-ways-out`
+  # exists so `exit_already_reachable` and `exit_over_the_allowance` meet a stub
+  # that is ALREADY partly connected, and a case whose second edge was dropped in
+  # the staging would stand up as an ordinary one-way-out room, keep its name and
+  # measure nothing. So the shape is asserted against the world it stages.
+  test "a `two-ways-out` case really stands up with more than one way out and less than the full allowance" do
+    cases = Eval::Realization.corpus.for_shape("two-ways-out").cases
+
+    assert_predicate cases, :any?
+    Eval::Realization::Stage.open(cases) do |stages|
+      cases.each do |kase|
+        standing = stages.fetch(kase.id)
+
+        assert_operator standing.reachable.size, :>, 1,
+                        "#{kase.id} says the stub already reaches two places: #{standing.reachable.inspect}"
+        assert_includes standing.reachable, kase.reached_from
+        kase.also_reaches.each { |name| assert_includes standing.reachable, name }
+        assert_equal Location::ExitsSchema::MAX_EXITS - standing.reachable.size, standing.exit_allowance,
+                     "#{kase.id}: the prompt states what is LEFT, so a partly connected stub is below the cap"
+      end
+    end
+  end
+
+  test "a case naming an `also_reaches` the room is not joined to is refused" do
+    assert_problem "could not already reach it", <<~YML
+      cases:
+      - id: not-a-neighbour
+        story: The Unrecorded Hour
+        room: The Long Hallway
+        reached_from: Ward Office 12
+        also_reaches:
+        - The Supply Closet
+        expects_new_ground: true
+        shape: two-ways-out
+        why: nothing joins the hallway to the closet, so this stub never reached it
+    YML
+  end
+
   test "both worlds are represented and the held-out one is in it" do
     stories = Eval::Realization.corpus.stories
 
@@ -50,6 +88,31 @@ class Eval::Realization::CorpusTest < ActiveSupport::TestCase
 
     assert_equal was, Eval::Realization.digest(corpus), "the digest of one corpus is one digest"
     assert_not_equal was, Eval::Realization.digest(corpus.subset { |kase| kase.story == Eval::HELD_OUT })
+
+    reworded = with_cases(corpus) { |kase| kase.with(why: "#{kase.why} And a sentence nobody measures.") }
+    assert_equal was, Eval::Realization.digest(reworded), "rewriting a `why` measures nothing new"
+  end
+
+  # EVERY FIELD THAT CHANGES WHAT WAS MEASURED HAS TO MOVE THE DIGEST, or
+  # `rake eval:realization_compare` reports the movement it causes as a change in
+  # the prompt. `expects_new_ground` decides whether `no_new_ground` is judgeable
+  # and gates `exit_already_reachable`'s dead end; `shape` chooses the designated
+  # case behind `prompt_digest`; `also_reaches` changes the world that is staged.
+  test "editing a field that changes what was measured moves the digest" do
+    corpus = Eval::Realization.corpus
+    was = Eval::Realization.digest(corpus)
+
+    { expects_new_ground: ->(kase) { !kase.expects_new_ground? },
+      shape: ->(_kase) { "a-different-shape" },
+      also_reaches: ->(_kase) { [ "Somewhere Else" ] },
+      danger: ->(_kase) { "dangerous" },
+      room: ->(_kase) { "A Different Room" } }.each do |field, change|
+      edited = with_cases(corpus) { |kase|
+        kase == corpus.cases.first ? kase.with(field => change.call(kase)) : kase
+      }
+
+      assert_not_equal was, Eval::Realization.digest(edited), field
+    end
   end
 
   # THE VALIDATOR'S OWN CHECKS, each against a case written to trip it. A
@@ -145,6 +208,10 @@ class Eval::Realization::CorpusTest < ActiveSupport::TestCase
 
     assert problems.any? { |problem| problem.include?(fragment) },
            "expected a problem mentioning #{fragment.inspect}, got #{problems.inspect}"
+  end
+
+  def with_cases(corpus, &block)
+    Eval::Realization::Corpus.new(path: corpus.path, cases: corpus.cases.map(&block))
   end
 
   def problems_for(body)

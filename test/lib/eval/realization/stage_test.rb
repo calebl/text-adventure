@@ -22,7 +22,7 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
   end
 
   # THE SURGERY, ONE KEY AT A TIME.
-  test "every edge but the way in is removed" do
+  test "every edge but the way in is removed when no other neighbour is declared" do
     # The closet is realized in the seed and reached from the office; wound back,
     # the office is the only place it leads.
     stage(kase(room: "Ward Office 12", reached_from: "The Supply Closet")) do |standing|
@@ -76,6 +76,31 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
     end
   end
 
+  # `also_reaches` IS WHAT MAKES A MULTI-EXIT STUB REACHABLE AT ALL. Without it
+  # every case stages a room with one way out and the allowance is always the
+  # cap less one, so the two checks written for a room that is already partly
+  # connected would never meet one.
+  test "`also_reaches` keeps a seeded edge, so the stub really stands with two ways out" do
+    mournwell = kase(room: "Mournwell Lane", reached_from: "Grenn's Boarding House, Room 3",
+                     story: "The Lunar Cartographer", also_reaches: [ "Sovereign's Circle" ])
+
+    stage(mournwell) do |standing|
+      assert_equal [ "Grenn's Boarding House, Room 3", "Sovereign's Circle" ], standing.reachable.sort
+      assert_equal Location::ExitsSchema::MAX_EXITS - 2, standing.exit_allowance,
+                   "two of the room's four are already spent, and the prompt states what is left"
+      assert_includes standing.generator.exits_prompt, "AT MOST #{standing.exit_allowance}"
+    end
+  end
+
+  test "an `also_reaches` the room is not joined to is refused rather than staged as one way out" do
+    error = assert_raises(Eval::Realization::Stage::Unstageable) do
+      stage(kase(room: "Mournwell Lane", reached_from: "Grenn's Boarding House, Room 3",
+                 story: "The Lunar Cartographer", also_reaches: [ "The Celestial Spire" ])) { |_| }
+    end
+
+    assert_includes error.message, "this stub could not already reach it"
+  end
+
   # THE ROLLED CAST IS RECORDED, NOT PINNED -- `Eval::Realization::Version`'s
   # header says why at length. What has to be true is that the slots the FACTS
   # record are the slots the PROMPT was built from, which is the one thing a
@@ -115,10 +140,12 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
 
   private
 
-  def kase(room:, reached_from: nil, story: "The Unrecorded Hour", absent: [], unwritten: [], danger: nil)
+  def kase(room:, reached_from: nil, story: "The Unrecorded Hour", also_reaches: [], absent: [],
+           unwritten: [], danger: nil)
     Eval::Realization::Corpus::Case.new(
-      id: "a-case", story: story, room: room, reached_from: reached_from, absent: absent,
-      unwritten: unwritten, danger: danger, expects_new_ground: true, shape: "corridor", why: "a test"
+      id: "a-case", story: story, room: room, reached_from: reached_from, also_reaches: also_reaches,
+      absent: absent, unwritten: unwritten, danger: danger, expects_new_ground: true,
+      shape: "corridor", why: "a test"
     )
   end
 

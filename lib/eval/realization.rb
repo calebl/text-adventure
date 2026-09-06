@@ -167,10 +167,21 @@ module Eval::Realization
   # `rake eval:realization_compare` say "these measured different cases"
   # instead of quietly reporting the difference between two files as a change in
   # the prompt. The same field and the same job as `Eval::Prompt.digest`.
+  #
+  # EVERY FIELD THAT CHANGES WHAT WAS MEASURED IS IN IT, and the two that are
+  # easiest to leave out are the two that do not stage anything:
+  # `expects_new_ground` decides whether `no_new_ground` is judgeable at all and
+  # gates `exit_already_reachable`'s dead-end case, and `shape` chooses the
+  # designated case behind `prompt_digest` (`Eval::Realization::Version`). Flip
+  # either and the rates move; leave either out and the comparison would credit
+  # the movement to the prompt. `Eval::Classifier.digest` carries its own label
+  # fields for the same reason. `why` is NOT in it -- rewriting the sentence
+  # that says why a case is here measures nothing new.
   def self.digest(corpus = self.corpus)
     Digest::SHA256.hexdigest(
       corpus.cases.map { |kase|
-        [ kase.id, kase.story, kase.room, kase.reached_from, kase.danger,
+        [ kase.id, kase.story, kase.room, kase.reached_from, kase.danger, kase.shape,
+          kase.expects_new_ground.inspect, kase.also_reaches.join("|"),
           kase.absent.join("|"), kase.unwritten.join("|") ].join(" ")
       }.join("\n")
     ).first(16)

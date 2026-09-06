@@ -1138,14 +1138,14 @@ stood in for.** The prompt bench has to replace the classifier because a second
 model between the case and the passage would change the branch; a realization
 has no such seam and needs none.
 
-The four keys that do the work are **declared and not derived**, because neither
-of the last two is recoverable from the records — connections carry no timestamp,
-and `created_at` says when a row appeared, not what the world looked like around
-it:
+The keys that do the work are **declared and not derived**, because none of them
+is recoverable from the records — connections carry no timestamp, and
+`created_at` says when a row appeared, not what the world looked like around it:
 
 | key | what it says |
 | --- | --- |
-| `reached_from` | the ONE neighbour whose realization created this stub — the way back. Every other edge is removed |
+| `reached_from` | the ONE neighbour whose realization created this stub — the way back |
+| `also_reaches` | the other neighbours this stub could ALREADY reach, and nothing by default: every edge but the way back is removed unless a case names it here. The `two-ways-out` cases declare it, and they are the only ones that stage a stub already partly connected — which is the only state where the allowance in the prompt is below the cap |
 | `absent` | rooms that did not exist yet — destroyed |
 | `unwritten` | rooms that existed but had not been written — wound back to stubs, so the prompt does not mark them *already written* |
 | `expects_new_ground` | whether the story points onward from here. **A dead end that names only the way back is the RIGHT answer** — the prompt asks for exactly that — so `no_new_ground` is judged only where this is true |
@@ -1166,10 +1166,10 @@ owns the table; the checks are:
 | check | what it catches |
 | --- | --- |
 | `exit_into_a_written_room` | an exit into a place already written that this room cannot reach. The prompt marks those; the engine drops the edge, so the room loses a way out |
-| `exit_already_reachable` | an exit the room already had, which the prompt lists and says does not need naming again |
+| `exit_already_reachable` | an exit the room already had, which the prompt lists and says does not need naming again. **Gated the way `no_new_ground` is**: a case that declared no new ground and answered with the way back and nothing else gave the answer the exits prompt asks a dead end for, so it is out of the denominator rather than flagged — see `Eval::Realization::Scorer`'s header for the two prompt sentences that contradict each other there |
 | `exit_named_this_room` | an exit that names the room it leads out of |
 | `exit_over_the_allowance` | more ways out than the prompt said were left |
-| `no_new_ground` | a room the story points into whose every exit was a place the world already had. **This is the Blackfang Tunnel defect** |
+| `no_new_ground` | a room the story points into whose every exit was a place the world already had — or that named no way out at all. **This is the Blackfang Tunnel defect** |
 | `person_over_the_allowance` / `item_over_the_allowance` | more people or things than the prompt allowed |
 | `name_already_spoken_for` | a name the world had already given to somebody, somewhere or something |
 | `proposal_refused` | what the registries would not admit — read off the records, and the superset of every reason above |
@@ -1191,9 +1191,16 @@ mean.
 way to clear every rate above is to write one exit and nobody: a room that names
 only the way back cannot restate a place it should not have, cannot open a door
 into a written room and cannot exceed its allowance. So `exits_named`,
-`new_places_opened`, `people_named`, `items_named` and `people_take_up` have no
-better direction and are reported next to the defects. This is `Eval::Richness`'s
-argument applied to rooms.
+`new_places_opened`, `new_places_named`, `people_named`, `items_named` and
+`people_take_up` have no better direction and are reported next to the defects.
+This is `Eval::Richness`'s argument applied to rooms.
+
+**`new_places_opened` and `new_places_named` are two different figures.** The
+first is read off the records `Eval::Realization::Bench#after` wrote — what the
+room really brought into existence. The second is a reading of the answer, and
+`Location::Generator#write_exits!` stops connecting when the allowance runs out,
+so a room that named more places than it had room for opened fewer than it
+named.
 
 `exits_restating` — the scout's 36% — is **reported and not scored**, because
 the prompt asks for reuse when an exit leads somewhere already known. The three

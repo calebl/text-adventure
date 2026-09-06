@@ -18,11 +18,15 @@
 #
 #   * A world this bench has no file for, or one it does not play
 #     (`Eval::Realization::STORIES`).
-#   * A `room`, `reached_from`, `absent` or `unwritten` name the world does not
-#     have -- the commonest way to write a case that measures nothing, because
-#     the staging would raise and the case would be a hole in the run.
-#   * A `reached_from` that is not actually connected to the room, which would
-#     be claiming a way back that never existed.
+#   * A `room`, `reached_from`, `also_reaches`, `absent` or `unwritten` name the
+#     world does not have -- the commonest way to write a case that measures
+#     nothing, because the staging would raise and the case would be a hole in
+#     the run.
+#   * A `reached_from` or an `also_reaches` that is not actually connected to the
+#     room, which would be claiming a way back -- or a neighbour this stub could
+#     already reach -- that never existed. The second one is what stops a case
+#     whose `why` describes a multi-exit stub from quietly staging a room with
+#     one way out.
 #   * A stub with no room left for a way out, which would skip the exits call
 #     entirely (`Location::Generator#write_exits!`) and quietly halve the case.
 #   * A missing `expects_new_ground`, because `no_new_ground` is only judgeable
@@ -43,13 +47,13 @@ class Eval::Realization::Corpus
   # ONE CASE: one stub, about to be written, in one world wound back to the
   # moment before it was.
   #
-  # `absent` and `unwritten` are DECLARED rather than derived, and
-  # `Eval::Realization::Stage`'s header says why at length: neither is
+  # `also_reaches`, `absent` and `unwritten` are DECLARED rather than derived,
+  # and `Eval::Realization::Stage`'s header says why at length: none of them is
   # recoverable from the records, and an earlier draft that inferred them from
   # id order produced a world state that never existed.
-  Case = Data.define(:id, :story, :room, :reached_from, :absent, :unwritten, :danger,
+  Case = Data.define(:id, :story, :room, :reached_from, :also_reaches, :absent, :unwritten, :danger,
                      :expects_new_ground, :shape, :why) do
-    def initialize(reached_from: nil, absent: [], unwritten: [], danger: nil,
+    def initialize(reached_from: nil, also_reaches: [], absent: [], unwritten: [], danger: nil,
                    expects_new_ground: nil, shape: nil, why: nil, **rest)
       super
     end
@@ -72,7 +76,8 @@ class Eval::Realization::Corpus
     raise Invalid, "#{path}: case #{row.inspect} is missing #{missing.join(", ")}" if missing.any?
 
     Case.new(id: row["id"], story: row["story"], room: row["room"],
-             reached_from: row["reached_from"], absent: Array(row["absent"]),
+             reached_from: row["reached_from"], also_reaches: Array(row["also_reaches"]),
+             absent: Array(row["absent"]),
              unwritten: Array(row["unwritten"]), danger: row["danger"],
              expects_new_ground: row["expects_new_ground"], shape: row["shape"], why: row["why"])
   end

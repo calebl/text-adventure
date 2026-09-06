@@ -30,7 +30,11 @@ class Eval::Realization::Result
     people_take_up: "people written over slots offered",
     items_named: "mean things one realization put on the floor",
     exits_named: "mean ways out one realization named",
-    new_places_opened: "mean places that did not exist before this room was written",
+    new_places_opened: "mean places this realization brought into existence -- read off the RECORDS " \
+                       "afterwards, so it is what the room really opened",
+    new_places_named: "mean names the ANSWER gave that the world did not have -- not the same figure as " \
+                      "the one above it: write_exits! stops connecting at the allowance, so a room that " \
+                      "named five and was allowed three opened three",
     exits_restating: "exits that named a place the story already had -- the scout's figure, and " \
                      "NOT a defect on its own: the prompt asks for reuse when an exit leads somewhere known"
   }.freeze
@@ -65,7 +69,7 @@ class Eval::Realization::Result
 
   # THE FIGURES PRINTED AS A PLAIN MEAN rather than as a rate -- counts of
   # things a room contains, which have no denominator and are not defects.
-  MEANS = %i[people_named people_offered items_named exits_named new_places_opened].freeze
+  MEANS = %i[people_named people_offered items_named exits_named new_places_opened new_places_named].freeze
 
   # EVERY FIGURE OF ONE PASS, FROM ITS ROWS -- the one place a figure is
   # computed, so a live run and a set loaded off disk cannot disagree about what

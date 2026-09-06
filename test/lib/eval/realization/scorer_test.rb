@@ -51,6 +51,32 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
                  "the office is written AND reachable, which is the way back and not a new door"
   end
 
+  # THE DEAD END THE EXITS PROMPT ASKS FOR. `Location::Generator`'s instructions
+  # tell a room whose only way out is the way back to list that place and nothing
+  # else, so scoring that answer as a defect would report a rate this check never
+  # earned -- it is out of the DENOMINATOR, not merely unflagged.
+  test "a dead end that named only the way back is unjudgeable, not clean and not flagged" do
+    dead_end = scored(exits: [ "Ward Office 12" ], facts: FACTS.merge("expects_new_ground" => false))
+
+    assert_empty dead_end.flagged_for(:exit_already_reachable)
+    assert_equal 0, dead_end.judgeable_for(:exit_already_reachable)
+  end
+
+  test "the dead-end gate does not cover a room that named the way back alongside anything else" do
+    pair = scored(exits: [ "Ward Office 12", "The Cellar Stair" ],
+                  facts: FACTS.merge("expects_new_ground" => false))
+
+    assert_equal 1, pair.flagged_for(:exit_already_reachable).size
+    assert_equal 2, pair.judgeable_for(:exit_already_reachable)
+  end
+
+  test "a room the story points onward from is judged on the way back like any other exit" do
+    onward = scored(exits: [ "Ward Office 12" ])
+
+    assert_equal 1, onward.flagged_for(:exit_already_reachable).size
+    assert_equal 1, onward.judgeable_for(:exit_already_reachable)
+  end
+
   test "an exit that names the room it leads out of is flagged" do
     scorer = scored(exits: [ "the long hallway" ])
 
@@ -80,6 +106,16 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
 
   test "a room that opened onto somewhere new is not flagged" do
     assert_empty scored(exits: [ "Ward Office 12", "The Boiler Landing" ]).flagged_for(:no_new_ground)
+  end
+
+  # A ROOM THAT NAMED NOTHING AT ALL IS THE SAME DEFECT, and it must not read as
+  # clean: the story points onward and the room opened onto nowhere.
+  test "a room the story points into that named no way out at all is flagged" do
+    scorer = scored(exits: [])
+
+    assert_equal 1, scorer.flagged_for(:no_new_ground).size
+    assert_equal 1, scorer.judgeable_for(:no_new_ground)
+    assert_includes scorer.flagged_for(:no_new_ground).first.evidence, "named no way out at all"
   end
 
   test "more people or things than the prompt allowed is flagged per case" do
@@ -153,7 +189,9 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
   test "the reported counts are what the room actually held" do
     scorer = scored(exits: [ "Ward Office 12", "The Boiler Landing" ],
                     people: [ person("Vessa Kirn") ],
-                    items: [ { "name" => "a folder" } ])
+                    items: [ { "name" => "a folder" } ],
+                    after: { "people" => [ "Vessa Kirn" ], "items" => [ "a folder" ],
+                             "exits" => [], "new_places" => [ "The Boiler Landing" ] })
 
     assert_equal 1.0, scorer.reported["people_named"]
     assert_equal 2.0, scorer.reported["people_offered"]
@@ -161,7 +199,22 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     assert_equal 1.0, scorer.reported["items_named"]
     assert_equal 2.0, scorer.reported["exits_named"]
     assert_equal 1.0, scorer.reported["new_places_opened"]
+    assert_equal 1.0, scorer.reported["new_places_named"]
     assert_in_delta 0.5, scorer.reported["exits_restating"], 0.001
+  end
+
+  # THE TWO NEW-PLACE FIGURES ARE NOT THE SAME FIGURE, and this is the case that
+  # separates them: `Location::Generator#write_exits!` stops connecting when the
+  # allowance runs out, so a room that named more places than it had room for
+  # OPENED fewer than it NAMED. `new_places_opened` is the record; the other is
+  # a reading of the answer, and the board says which is which.
+  test "places opened is read off the records and does not follow the answer over the allowance" do
+    scorer = scored(exits: [ "A Cistern", "A Boiler Landing", "A Stair Head", "A Coal Chute" ],
+                    after: { "people" => [], "items" => [], "exits" => [],
+                             "new_places" => [ "A Cistern", "A Boiler Landing", "A Stair Head" ] })
+
+    assert_equal 3.0, scorer.reported["new_places_opened"], "the allowance was three, so three stubs exist"
+    assert_equal 4.0, scorer.reported["new_places_named"], "and the answer named four"
   end
 
   # A FAILED CALL IS NOT A CLEAN ONE. It is out of every denominator, which is
