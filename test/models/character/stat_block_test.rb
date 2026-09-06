@@ -81,4 +81,44 @@ class Character::StatBlockTest < ActiveSupport::TestCase
 
     assert_not_equal Character::StatBlock.for_existing(one), Character::StatBlock.for_existing(other)
   end
+  # ------------------------------------------------------------------------
+  # THE PLAYER'S OWN BODY. Call C1, and the one body that is not the roll's.
+  # ------------------------------------------------------------------------
+
+  # The figure all three checked-in worlds hand-write into their protagonist's
+  # `characters[].stats`, now available to a world the task generated.
+  test "a protagonist opens at level 3 on a d8" do
+    story = create(:story)
+    body = Character::StatBlock.for_a_protagonist(story)
+
+    assert_equal 3, body[:level]
+    assert_equal 8, body[:hit_die]
+    assert_includes Character::HIT_DICE, body[:hit_die]
+  end
+
+  # 8 + (3 - 1) * (8 / 2 + 1) = 18. Asserted through the record rather than
+  # arithmetic here, because `Character#max_hp` is the formula's one reader.
+  test "a protagonist's body is worth 18 hit points" do
+    story = create(:story)
+    character = create(:character, story: story, **Character::StatBlock.for_a_protagonist(story))
+
+    assert_equal 18, character.max_hp
+  end
+
+  # THE DRAWS ARE STILL THE DRAWS: only `level` and `hit_die` are the house's,
+  # so the three abilities are the three this story at this moment gives
+  # anybody, and `Character::ABILITIES`' order stays load-bearing.
+  test "a protagonist's abilities are the ordinary roll's" do
+    story = create(:story)
+    ordinary = Character::StatBlock.for_new(story, sequence: 2)
+    house = Character::StatBlock.for_a_protagonist(story, sequence: 2)
+
+    assert_equal ordinary.values_at(*Character::ABILITIES), house.values_at(*Character::ABILITIES)
+  end
+
+  test "every other body still starts at STARTING_LEVEL" do
+    story = create(:story)
+
+    assert_equal Character::StatBlock::STARTING_LEVEL, Character::StatBlock.for_new(story)[:level]
+  end
 end

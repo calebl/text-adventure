@@ -27,6 +27,12 @@ class Location::Generator
   # Realizes the story's opening location. Story::Generator already created it
   # as a stub from the same call that wrote the preface, so there is nothing to
   # name here -- only to write out in full.
+  #
+  # THE OPENING ROOM IS REALIZED LIKE EVERY OTHER ROOM, cast included. The
+  # captain's ruling of 2026-09-05: *"the opening room should not guarantee at
+  # least one person. The protagonist can start by themselves."* So there is no
+  # floor here and no second sentence in the prompt -- a world may legitimately
+  # open on an empty room, and `rake game:new` says out loud when it did.
   def self.opening(story)
     location = story.opening_location
     raise ArgumentError, "story ##{story.id} has no opening location to realize" if location.nil?

@@ -98,6 +98,37 @@ The full audit of every planned piece of work against this constraint is in
   group under one digest. `Eval::Prompt::Version`'s `prompt_digest` is the one
   that moved, `0ffc0228b538ac73 -> e05adeafd329542e`.
 
+- **A generated world is played by somebody** (`ta-generated-world-cast`).
+  `rake game:new` made no characters at all — not one, and nothing anywhere set
+  `is_protagonist` — so a generated world's opening arrival was narrated with an
+  empty cast and its playthrough opened with `character_id` nil. The captain's
+  ruling of 2026-09-05: *"the generation task should create the protagonist
+  along with any characters that are in the opening scene."*
+
+  `Story::FirstScreen` is the three steps and the order they have to happen in —
+  the protagonist, the opening room, the opening arrival LAST so its
+  `## Who Is Here` block carries both. It costs ONE new model call
+  (`Character::Generator` for the protagonist); the opening room's people were
+  always free, riding on the realization call the room already paid for.
+
+  **Why story 7 opened with nobody in the room, measured:** the ROLL was fine
+  and the registry refused nothing — the realization prompt offered two slots
+  with race, age and sex already decided, and the MODEL answered `"people": []`.
+  Four of the six realization answers on record did the same, which is the
+  prompt's own *"NOBODY is the right answer for most rooms"* being taken at its
+  word.
+
+  **The opening room keeps that ordinary answer.** The captain's second ruling
+  of 2026-09-05: *"the opening room should not guarantee at least one person.
+  The protagonist can start by themselves."* So there is no floor, no doctor
+  finding and no extra call — `rake game:new`'s closing lines say plainly when
+  the room it just made is empty.
+
+  **A generated protagonist is level 3 on a d8**
+  (`Character::StatBlock.for_a_protagonist`), which is call C1 taken out of the
+  three seed files and put in the engine. Only `level` and `hit_die` are the
+  house's; the abilities are still the ordinary roll, in the ordinary order.
+
 - **The classifier reads a blow** (`ta-combat-intent`, slice 8 of the combat
   build order, and the FIRST model-facing combat slice). `attack` is the seventh
   word in `Playthrough::IntentSchema::INTENTS`, so *"hit him"*, *"go for the

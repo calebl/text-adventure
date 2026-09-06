@@ -243,4 +243,40 @@ class Character::GeneratorTest < ActiveSupport::TestCase
 
     assert_raises(RubyLLM::Error) { generate_with(failing) }
   end
+  # ------------------------------------------------------------------------
+  # THE PLAYER. `protagonist: true` is what `rake game:new` passes.
+  # ------------------------------------------------------------------------
+
+  test "marks the player character and nobody else" do
+    ordinary = generate_with(FakeAgent.new(SHEET))
+    assert_not ordinary.is_protagonist?
+
+    player = BaseAgent.stub(:new, FakeAgent.new(SHEET)) do
+      Character::Generator.new(@story, protagonist: true).generate
+    end
+    assert player.is_protagonist?
+  end
+
+  # Call C1's body, and only for the player: a generated protagonist is level 3
+  # on a d8 exactly as the three seeded ones are, and everybody else keeps the
+  # ordinary roll.
+  test "gives the player the house's body and everybody else the rolled one" do
+    player = BaseAgent.stub(:new, FakeAgent.new(SHEET)) do
+      Character::Generator.new(@story, protagonist: true).generate
+    end
+
+    assert_equal Character::StatBlock::PROTAGONIST_LEVEL, player.level
+    assert_equal Character::StatBlock::PROTAGONIST_HIT_DIE, player.hit_die
+    assert_equal Character::StatBlock::STARTING_LEVEL, generate_with(FakeAgent.new(SHEET)).level
+  end
+
+  # The preface and the summary are already ABOUT the player, so the prompt has
+  # to say so or the model writes a bystander who happens to be standing there.
+  test "tells the prompt when it is writing the player character" do
+    player = Character::Generator.new(@story, protagonist: true)
+    ordinary = Character::Generator.new(@story)
+
+    assert_includes player.character_generation_prompt, "This is the PLAYER CHARACTER"
+    assert_not_includes ordinary.character_generation_prompt, "PLAYER CHARACTER"
+  end
 end

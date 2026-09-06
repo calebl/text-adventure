@@ -90,8 +90,12 @@ class Story < ApplicationRecord
     WorldMechanic.catch_up_story!(self)
   end
 
-  def create_character
-    character = Character::Generator.new(self).generate
+  # `protagonist: true` writes THE PLAYER, and `Character` already refuses a
+  # second one (`#single_protagonist_per_story`), so this cannot quietly give a
+  # world two. `Story::FirstScreen` is the caller that means it; the doctor's
+  # `:no_protagonist` remedy is the caller that says so by hand.
+  def create_character(protagonist: false)
+    character = Character::Generator.new(self, protagonist: protagonist).generate
     if !character.save
       raise "Failed to save character: #{character.errors.full_messages.join(", ")}"
     end

@@ -364,6 +364,27 @@ send again: one system instruction, one schema, one model.
   at world-building time, and marks it `is_opening`. `rake game:new` calls it so
   a generated world and a seeded one are the same shape; without it the first
   thing a player reads would depend on how the world was made.
+- **`Story::FirstScreen` is the order `rake game:new` builds a playable world
+  in, and the order is the load-bearing part**: the protagonist
+  (`Story#create_character(protagonist: true)`), then the opening room, then the
+  opening arrival LAST — because `Scene::Generator#characters_present` reads
+  `Story#protagonist` and `Character.present_in`, so anybody written after the
+  arrival is somebody the first screen does not know about. Add a step there,
+  not to the rake task body: the task is a paid path nothing in CI may run, and
+  `Story::FirstScreenTest` is what holds the sequence, with the agent stubbed.
+- **A GENERATED PROTAGONIST IS LEVEL 3 ON A d8**, which is call C1 lifted out of
+  the three seed files and into `Character::StatBlock.for_a_protagonist`. Only
+  `level` and `hit_die` are the house's — the three abilities are the ordinary
+  roll in the ordinary order, so the block stays re-derivable. Everybody else,
+  generated or realized into a room, still starts at `STARTING_LEVEL`.
+- **The opening room of a generated world may legitimately be empty.** The
+  captain's ruling of 2026-09-05: *"the opening room should not guarantee at
+  least one person. The protagonist can start by themselves."* So the opening
+  realization is asked exactly what every other realization is asked, there is
+  no floor and no `Story::Doctor` finding, and `rake game:new` says so in its
+  closing lines. Measured before that ruling: four of six realization answers on
+  record named nobody, in rooms whose prompt had offered two slots — the roll
+  and the registry were not the reason, the model's answer was.
 - The description is saved BEFORE the exits are asked for, so a failed exits
   call does not throw away the more expensive of the two. The cost is that a
   room can end up realized with no way out, and `realize!` will not finish it;

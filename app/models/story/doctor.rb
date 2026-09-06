@@ -321,6 +321,16 @@ class Story::Doctor
   # that is the one `Scene::Generator.opening` and `WorldSeed::Exporter` mean by
   # "the opening". The two can disagree, and when they do the story plays from
   # somewhere the rest of the code does not think it opens in.
+  #
+  # WHO IS STANDING IN IT IS NOT ONE OF THE PARTS, and that is a decision rather
+  # than a gap. The captain's ruling of 2026-09-05: *"the opening room should
+  # not guarantee at least one person. The protagonist can start by
+  # themselves."* So a world that opens on an empty room is a world working as
+  # written, and the rule about those is `#characters_nowhere`'s -- there is no
+  # level below `warning`, and a warning about a world working as written is how
+  # a person learns to stop reading warnings. `rake game:new` says out loud in
+  # its closing lines when the room it just made is empty, which is where that
+  # fact belongs.
   def opening_location
     if story.locations.none?
       return [ finding(:no_locations, :fatal,

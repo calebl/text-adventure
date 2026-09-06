@@ -362,9 +362,12 @@ class Story::Audit
   # WHICH CHECKS THIS STORY CAN ACTUALLY ANSWER, which `Story::Scoreboard`
   # prints so an absent flag is never mistaken for a clean one. Every check
   # runs against a real story except one: a world whose protagonist was never
-  # marked has no name for `third_person_protagonist` to look for, and
-  # `Character::Generator` still never sets `is_protagonist` (see the ROADMAP),
-  # so that is a real shape a database holds rather than a hypothetical.
+  # marked has no name for `third_person_protagonist` to look for, and that is
+  # a real shape a database holds rather than a hypothetical. `rake game:new`
+  # marks one since `Story::FirstScreen`, but three shapes still reach here
+  # without one -- every world generated before it, a seed file that declares
+  # no `is_protagonist`, and a generation that failed after the story was
+  # saved and before the protagonist was written.
   def available_checks
     all = CONTRADICTIONS + DEFECTS + DRIFTS + LIMITS + PACING
 
@@ -782,9 +785,10 @@ class Story::Audit
   # than from the prose.
   #
   # A STORY WITH NO PROTAGONIST CANNOT BE CHECKED, and says so rather than
-  # passing. `Character::Generator` still never sets `is_protagonist` (see the
-  # ROADMAP), so a generated world reaches this with nobody to look for, and a
-  # silent pass would read as a clean result.
+  # passing. `rake game:new` marks one since `Story::FirstScreen`, but a world
+  # generated before it, a seed file that declares none, and a generation that
+  # died between saving the story and writing the protagonist all reach this
+  # with nobody to look for -- and a silent pass would read as a clean result.
   # ------------------------------------------------------------------------
   def check_third_person(scene)
     text = scene.description.to_s

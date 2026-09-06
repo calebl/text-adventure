@@ -47,6 +47,13 @@ module Character::StatBlock
   # WHERE A BODY STARTS. One, and it is not a roll: see the header.
   STARTING_LEVEL = 1
 
+  # WHERE THE PLAYER'S BODY STARTS, and it is the one place a body is not
+  # `STARTING_LEVEL`. The captain's call C1 -- level 3 on a d8, 18 hit points --
+  # written out of the three checked-in seed files and into the engine so a
+  # GENERATED protagonist gets it too. See `.for_a_protagonist`.
+  PROTAGONIST_LEVEL = 3
+  PROTAGONIST_HIT_DIE = 8
+
   # 3d6 PER ABILITY, which is the roll an ability score has always been and the
   # roll `Character::ABILITY_RANGE` (3..18) is the bounds of.
   ABILITY_DICE = 3
@@ -61,6 +68,33 @@ module Character::StatBlock
 
   def self.for_new(story, sequence: 0)
     roll(story: story.id, at: story.clock.to_i, sequence: sequence)
+  end
+
+  # THE PLAYER'S OWN BODY, AND IT IS NOT THE BODY OF EVERYBODY ELSE. The
+  # captain's call C1: *the player is level 3 with a d8*, which is 18 hit
+  # points -- the figure every one of the three checked-in worlds writes into
+  # its protagonist's `characters[].stats` by hand, and the figure
+  # `Item::THROWN_DAMAGE`'s note is measured against ("it is survivable because
+  # the seeded protagonists are level 3 on a d8").
+  #
+  # A GENERATED WORLD DID NOT GET IT, and that is the whole reason this method
+  # exists. `rake game:new` builds the protagonist through
+  # `Character::Generator`, which rolls `.for_new` like anybody else, so a
+  # generated player opened the game as a level-1 body -- and one thrown heavy
+  # thing kills one of those 37.3% of the time. A house rule that holds for a
+  # world somebody authored and not for a world the task generated is a house
+  # rule with a hole in it.
+  #
+  # THE DRAWS ARE STILL THE DRAWS. The two house numbers are merged OVER a
+  # `.for_new` roll rather than replacing it, so the hit die is still drawn in
+  # its stated place and the three abilities that follow it are the three
+  # abilities this story at this moment would have given anybody -- which is
+  # what keeps `Character::ABILITIES`' order load-bearing and the whole block
+  # re-derivable. Only `level` and `hit_die` are the house's, and they are not
+  # rolled at all: a house rule is a decision, not a die.
+  def self.for_a_protagonist(story, sequence: 0)
+    for_new(story, sequence: sequence)
+      .merge(level: PROTAGONIST_LEVEL, hit_die: PROTAGONIST_HIT_DIE)
   end
 
   # ONE GENERATOR, AND THE DRAWS IN THE ORDER THE HEADER STATES. `Character::ABILITIES`
