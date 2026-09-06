@@ -17,8 +17,19 @@ class Character::Generator
 
   attr_reader :race, :age, :sex
 
-  def initialize(story)
+  # `protagonist:` is THE PLAYER, and it changes three things and nothing else:
+  # the row is marked `is_protagonist`, the body is the house's rather than a
+  # generated person's (`Character::StatBlock.for_a_protagonist` -- call C1's
+  # level 3 on a d8), and the prompt says who this person is meant to be. The
+  # captain's ruling of 2026-09-05: *"the generation task should create the
+  # protagonist along with any characters that are in the opening scene."*
+  #
+  # Everything else about them is generated exactly as anybody else is,
+  # including the race -- drawn from `Universe#peoples` below, which is the
+  # line that was already written for this caller.
+  def initialize(story, protagonist: false)
     @story = story
+    @protagonist = protagonist
     # Race, age and sex are decided here rather than by the model. Race comes
     # from the universe's generated list so every character belongs to one of
     # its peoples; age and sex are rolled so repeated runs diverge. All three
@@ -39,6 +50,10 @@ class Character::Generator
     @sex = Character.sexes.values.sample
     @character_generation_prompt = generation_prompt(story)
   end
+
+  # Whether this call is writing the player character. Read by the prompt and
+  # by the body it assigns.
+  def protagonist? = @protagonist
 
   # Raises if generation fails. Returning a half-built character instead just
   # pushes the failure downstream, where it looks like a bad model response.
@@ -106,7 +121,7 @@ class Character::Generator
       Do not reuse any of these names, and do not write this person again.
       #{existing_cast}
 
-      ## Predetermined Character Details for the new character
+      #{protagonist_section}## Predetermined Character Details for the new character
       sex: #{sex}
       age: #{age}
       attractiveness: #{ATTRACTIVENESS_VALUES.sample}
@@ -128,6 +143,34 @@ class Character::Generator
 
       You are a character generator for the above fictional story.
       Generate all of the character details for a new character that will be added to the story.
+
+    PROMPT
+  end
+
+  # WHO THIS PERSON IS MEANT TO BE, when they are the player. The preface and
+  # the summary above are ALREADY about them -- `Story::Generator` writes the
+  # opening moment in the second person, so "A Durnish knight, clad in heavy
+  # blackened plate, stands at the threshold" is a description of the character
+  # this call is about to write. Without this block the model reads those two
+  # fields as scenery and writes a bystander, and the world opens with an
+  # arrival about a knight and a record about somebody else.
+  #
+  # It says nothing about race, age or sex: those three are the engine's,
+  # stated below, and this block is deliberately placed above them so the
+  # predetermined details still read as the last word.
+  def protagonist_section
+    return "" unless protagonist?
+
+    <<~PROMPT
+
+      ## Who This Character Is
+      This is the PLAYER CHARACTER: the person the preface and the summary
+      above are written about, and the person whose hands the player will be
+      looking out of. Write that person, not somebody who happens to be nearby.
+      - Do not write them as a narrator, a guide or a companion to the player.
+        They ARE the player
+      - The backstory is the life that brought them to the moment the preface
+        describes
 
     PROMPT
   end
@@ -164,9 +207,17 @@ class Character::Generator
     # race above is drawn from `Universe#peoples`; it is written rather than
     # assumed so that the derivation lives in one place with two callers and
     # a universe with nothing but monstrous races still comes out consistent.
+    #
+    # THE PLAYER'S BODY IS THE HOUSE'S, and only the player's: call C1 is level
+    # 3 on a d8, which is what all three checked-in worlds hand-write into
+    # their protagonist's `stats` and what a generated protagonist had no way
+    # of getting. `Character::StatBlock.for_a_protagonist` is the same roll
+    # with the house's two numbers merged over it, so nothing about who decides
+    # a body moved -- see its header.
     character = Character.new(story: story, race: race, age: age, sex: sex,
+                              is_protagonist: protagonist?,
                               hostile: Character.hostile_by_default?(race),
-                              **Character::StatBlock.for_new(story, sequence: story.characters.count))
+                              **body_for(story))
 
     character.fullname = sanitize_string(content["fullname"])
     character.nickname = sanitize_string(content["nickname"])
@@ -178,6 +229,14 @@ class Character::Generator
     character.backstory = sanitize_string(content["backstory"])
 
     character
+  end
+
+  def body_for(story)
+    sequence = story.characters.count
+
+    return Character::StatBlock.for_a_protagonist(story, sequence: sequence) if protagonist?
+
+    Character::StatBlock.for_new(story, sequence: sequence)
   end
 
   # Asked of the database rather than the in-memory association, so an unsaved
