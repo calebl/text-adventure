@@ -133,6 +133,8 @@ class WorldSeed::Exporter
                    "`location_with_a_partial_box`."
     end
 
+    report_unloadable_geometry
+
     # A ROW THAT SAYS BOTH THINGS. `deliberately_absent` with a whereabouts is
     # a contradiction no code path in the app writes -- `Character#move_to!`
     # clears the marker -- so it arrives through raw SQL or a hand-edited file
@@ -151,6 +153,60 @@ class WorldSeed::Exporter
     end
 
     report_partial_stats
+  end
+
+  # THE REST OF WHAT `WorldSeed::Loader#validate_boxes!` REFUSES, and it is here
+  # for the partial box's reason one block up: `#warnings` is everything a human
+  # has to fix before the file will load, and every one of these can stand in the
+  # records. An orphan box is not hypothetical -- destroying a place leaves its
+  # rooms placed and inside nothing, which is what
+  # `Location has_many :child_locations, dependent: :nullify` means.
+  #
+  # READ OFF THE SAME PREDICATES `Story::Doctor#geometry` READS -- `#placed?`,
+  # `#interior?` and `#overlaps?` -- rather than re-derived here, so the
+  # exporter, the doctor and the loader cannot drift apart about what a fault is.
+  # Each warning names the matching `rake game:doctor` code for the same reason.
+  #
+  # NOTHING IS TIDIED ON THE WAY OUT. The file is written as the records stand,
+  # which is the rule the partial box already states: moving one of two
+  # overlapping rooms would be this exporter deciding which of them its author
+  # put in the wrong place.
+  def report_unloadable_geometry
+    story.locations.order(:id).each do |location|
+      wrong = Location::Box::EXTENT.select { |column| location[column].present? && location[column].to_i < 1 }
+      next if wrong.empty?
+
+      @warnings << "#{location.name} has #{wrong.map { |column| "#{column}: #{location[column]}" }.join(" and ")}: " \
+                   "a place is at least one pace across, and the file will not load until somebody says how big " \
+                   "that place really is. `rake game:doctor` reports it as `location_with_an_impossible_extent`."
+    end
+
+    placed = story.locations.includes(:parent_location).order(:id).select(&:placed?)
+
+    placed.each do |room|
+      parent = room.parent_location
+
+      if parent.nil?
+        @warnings << "#{room.name} is #{room.box} and is inside nothing: a position is read in the parent's own " \
+                     "plane, so the file will not load until this room is put inside somewhere or the position " \
+                     "goes. `rake game:doctor` reports it as `location_with_a_box_and_no_parent`."
+      elsif !parent.interior?
+        @warnings << "#{room.name} is #{room.box} inside #{parent.name}, which has no footprint of its own: the " \
+                     "plane those numbers are read in does not exist, so the file will not load until " \
+                     "#{parent.name} carries a width and a depth. `rake game:doctor` reports it as " \
+                     "`location_with_a_box_outside_a_footprint`."
+      end
+    end
+
+    placed.group_by { |room| [ room.parent_location_id, room.z ] }.each_value do |siblings|
+      siblings.combination(2).each do |one, other|
+        next unless one.overlaps?(other)
+
+        @warnings << "#{one.name} (#{one.box}) and #{other.name} (#{other.box}) are both inside " \
+                     "#{one.parent_location.name} and are in the same place at once: the file will not load until " \
+                     "one of them moves. `rake game:doctor` reports it as `overlapping_sibling_locations`."
+      end
+    end
   end
 
   # Re-exporting overwrites the file, which would throw away a header somebody

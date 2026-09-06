@@ -616,4 +616,80 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal 3, document["locations"].detect { |row| row["name"] == "Somewhere Else" }["x"]
     assert_match(/neither a footprint nor a box/, exporter.warnings.join)
   end
+
+  # THE OTHER THREE SHAPES THE LOADER REFUSES. Each of these exported silently
+  # before, so `rake game:export` produced a file `rake game:seed` rejected with
+  # nothing said -- and the round trip below is what proves the warning is about
+  # a real refusal rather than a guess at one.
+
+  # WHAT DESTROYING A PLACE LEAVES BEHIND: `dependent: :nullify` on
+  # `child_locations` keeps the rooms and takes their parent away, so a story
+  # can genuinely be in this state without anybody touching SQL.
+  test "a room left placed inside nothing is exported as it stands, with a warning" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+    place.destroy!
+
+    exporter = WorldSeed::Exporter.new(@story.reload)
+    document = exporter.document
+
+    assert_equal 0, document["locations"].detect { |row| row["name"] == "The Taproom" }["x"]
+    assert_match(/location_with_a_box_and_no_parent/, exporter.warnings.join)
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  test "a room placed inside a place with no footprint is exported as it stands, with a warning" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor")
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_match(/location_with_a_box_outside_a_footprint/, exporter.warnings.join)
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  test "two rooms in the same place at once are exported as they stand, with a warning" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Back Room",
+                      x: 6, y: 0, z: 0, width: 5, depth: 8)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_match(/overlapping_sibling_locations/, exporter.warnings.join)
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  # `Location::Box.shape` calls this a whole footprint, so nothing else in the
+  # export notices it -- and the loader refuses the file anyway.
+  test "a place zero paces across is exported as it stands, with a warning" do
+    @stub.update_columns(width: 0, depth: 8)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_equal 0, document["locations"].detect { |row| row["name"] == "Somewhere Else" }["width"]
+    assert_match(/location_with_an_impossible_extent/, exporter.warnings.join)
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  # THE ONE THAT MUST STAY QUIET: a well formed interior, and the shape every
+  # generated world gets from slice 2 on.
+  test "a well formed interior exports with no geometry warning at all" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Back Room",
+                      x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    exporter.document
+
+    assert_empty exporter.warnings.grep(/location_with_|overlapping_sibling_locations|pace across/)
+  end
 end

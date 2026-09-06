@@ -100,6 +100,27 @@ class Location::BoxTest < ActiveSupport::TestCase
     assert_not_equal box(x: 1), box(x: 2)
   end
 
+  # WHAT THE HEADER CLAIMS OF A VALUE OBJECT, asserted rather than assumed: a box
+  # is handed around between the loader, the doctor, the exporter and the sweep
+  # invariant, and none of them may be able to change one under another.
+  test "a box is frozen, and asking for a different one leaves the original alone" do
+    box = Location::Box.new(x: 0, y: 0, z: 0, width: 5, depth: 5)
+    wider = box.with(width: 9)
+
+    assert_predicate box, :frozen?
+    assert_equal 5, box.width
+    assert_equal 9, wider.width
+    assert_equal [ 0, 0, 0, 5 ], [ wider.x, wider.y, wider.z, wider.depth ]
+  end
+
+  test "two boxes with the same five numbers are one key in a hash" do
+    one = Location::Box.new(x: 1, y: 2, z: 0, width: 5, depth: 5)
+    other = Location::Box.new(x: 1, y: 2, z: 0, width: 5, depth: 5)
+
+    assert_equal 1, { one => "here", other => "here" }.size
+    assert_equal one.hash, other.hash
+  end
+
   test "a box describes itself in one phrase, in paces" do
     assert_equal "6x4 paces at 2,3 on storey 1", box(x: 2, y: 3, z: 1, width: 6, depth: 4).to_s
   end

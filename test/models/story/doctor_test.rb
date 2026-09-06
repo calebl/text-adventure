@@ -1341,7 +1341,8 @@ class Story::DoctorTest < ActiveSupport::TestCase
   test "a story with no interiors at all has no geometry findings" do
     story = healthy_story
 
-    assert_empty codes(story) & %i[location_with_a_partial_box location_with_a_box_and_no_parent
+    assert_empty codes(story) & %i[location_with_a_partial_box location_with_an_impossible_extent
+                                   location_with_a_box_and_no_parent
                                    location_with_a_box_outside_a_footprint overlapping_sibling_locations]
   end
 
@@ -1361,7 +1362,8 @@ class Story::DoctorTest < ActiveSupport::TestCase
     story = healthy_story
     a_place_with_two_rooms(story)
 
-    assert_empty codes(story) & %i[location_with_a_partial_box location_with_a_box_and_no_parent
+    assert_empty codes(story) & %i[location_with_a_partial_box location_with_an_impossible_extent
+                                   location_with_a_box_and_no_parent
                                    location_with_a_box_outside_a_footprint overlapping_sibling_locations]
   end
 
@@ -1386,6 +1388,30 @@ class Story::DoctorTest < ActiveSupport::TestCase
     room.update_columns(width: 6)
 
     assert_equal room, finding(story, :location_with_a_partial_box).subject
+  end
+
+  # A PLANE WITH NO AREA, and the one no other geometry check can see:
+  # `0.present?` is true, so `Location::Box.shape` calls this a whole footprint
+  # and `Location#interior?` calls it a plane. Written straight to the column
+  # because the numericality rule refuses to save it.
+  test "a place zero paces across is reported and cannot be repaired" do
+    story = healthy_story
+    room = story.locations.realized.first
+    room.update_columns(width: 0, depth: 8)
+
+    assert_includes codes(story), :location_with_an_impossible_extent
+    assert_equal :warning, finding(story, :location_with_an_impossible_extent).severity
+    assert_equal :manual, finding(story, :location_with_an_impossible_extent).remedy
+    assert_equal room, finding(story, :location_with_an_impossible_extent).subject
+    assert_match(/at least one pace across/, finding(story, :location_with_an_impossible_extent).message)
+  end
+
+  test "a negative extent is reported the same way, and both columns are named" do
+    story = healthy_story
+    room = story.locations.realized.first
+    room.update_columns(width: -2, depth: 0)
+
+    assert_match(/width -2 and depth 0/, finding(story, :location_with_an_impossible_extent).message)
   end
 
   # A POSITION READ AGAINST NOTHING. There is no global space, so five numbers

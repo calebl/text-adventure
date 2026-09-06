@@ -612,12 +612,15 @@ locations:
   box with no `parent`, a `parent` this file does not declare, a room that is
   its own parent, a containment cycle, a box inside a place with no footprint,
   and two boxes under one parent on one storey that overlap.
-- `rake game:doctor` reports the same four faults on a database that already
-  carries them — `location_with_a_partial_box`,
-  `location_with_a_box_and_no_parent`, `location_with_a_box_outside_a_footprint`
-  and `overlapping_sibling_locations`. **None can be repaired:** which of two
+- `rake game:doctor` reports the same faults on a database that already carries
+  them — `location_with_a_partial_box`,
+  `location_with_an_impossible_extent`, `location_with_a_box_and_no_parent`,
+  `location_with_a_box_outside_a_footprint` and
+  `overlapping_sibling_locations`. **None can be repaired:** which of two
   overlapping rooms its author put in the wrong place is not on record, and
-  clearing a box deletes a floor plan somebody laid out.
+  clearing a box deletes a floor plan somebody laid out. `rake game:export`
+  warns about every one of them too, naming the code, because a file carrying
+  one will not load.
 - **Nothing generates one yet, and no typed line may touch one.** A box is the
   world's on exactly the terms a hit die and a hazard are;
   `EngineSweep::Invariants`' `geometry_unmoved` asserts across a whole scripted

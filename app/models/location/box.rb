@@ -90,7 +90,7 @@
 # one, which `EngineSweep::Invariants#geometry_unmoved` asserts over a whole
 # walk. Today the only writer is a seed file; in slice 2 it is the layout
 # generator, rolled through `Roll` so a world's shape is re-derivable for ever.
-class Location::Box
+class Location::Box < Data.define(:x, :y, :z, :width, :depth)
   # HOW BIG A PACE IS, IN METRES, and it is here rather than in a prompt because
   # the engine owns the unit. Nothing reads it yet -- slice 3 is where
   # `Playthrough::Moment` gets to say "six paces by four" to a narrator -- and it
@@ -147,16 +147,6 @@ class Location::Box
   # as though it said something and did not.
   def self.partial?(record) = shape(record) == :partial
 
-  attr_reader :x, :y, :z, :width, :depth
-
-  def initialize(x:, y:, z:, width:, depth:)
-    @x = x
-    @y = y
-    @z = z
-    @width = width
-    @depth = depth
-  end
-
   # WHETHER THESE TWO BOXES ARE IN THE SAME PLACE AT ONCE. False across storeys
   # before any arithmetic is done, which is ruling 3 stated as code: each floor
   # is its own plane, so a room directly above another shares nothing with it.
@@ -173,15 +163,6 @@ class Location::Box
     x < other.x + other.width && other.x < x + width &&
       y < other.y + other.depth && other.y < y + depth
   end
-
-  def ==(other)
-    other.is_a?(self.class) && to_h == other.to_h
-  end
-  alias eql? ==
-
-  def hash = to_h.hash
-
-  def to_h = { x: x, y: y, z: z, width: width, depth: depth }
 
   # One phrase, for a doctor finding and a broken invariant -- so the two places
   # that have to describe a box to a person describe it the same way.

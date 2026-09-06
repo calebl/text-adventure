@@ -1371,7 +1371,7 @@ class Story::Doctor
 
   # --- the shape of a place, since the rulings of 2026-09-06 ----------------
   #
-  # FOUR WAYS A LAYOUT CAN BE WRONG, and every one of them is a WARNING with a
+  # FIVE WAYS A LAYOUT CAN BE WRONG, and every one of them is a WARNING with a
   # MANUAL remedy. Both halves are choices and both are worth saying out loud.
   #
   # WARNING RATHER THAN FATAL, because `fatal` in this file means one thing --
@@ -1390,7 +1390,8 @@ class Story::Doctor
   # somebody laid out; giving its parent a footprint invents one. Filling in the
   # two numbers a partial box is missing invents a room's size. Every one of
   # those is exactly what this tool's own rule forbids: backfilling world data to
-  # make a check pass. A person edits the world file and re-seeds.
+  # make a check pass. Deciding how wide a room is whose author wrote zero is the
+  # same act. A person edits the world file and re-seeds.
   #
   # WHAT IS DELIBERATELY NOT CHECKED HERE is whether a child's box lies INSIDE
   # its parent's footprint. It is a real fault and it will want a finding, but
@@ -1398,8 +1399,8 @@ class Story::Doctor
   # about how a layout fits together would be a rule with no author to hold to
   # it. Whoever writes the layout generator adds it alongside the generator.
   def geometry
-    [ *rooms_with_a_partial_box, *boxes_with_no_parent, *boxes_with_no_parent_footprint,
-      *overlapping_sibling_rooms ]
+    [ *rooms_with_a_partial_box, *rooms_with_an_impossible_extent, *boxes_with_no_parent,
+      *boxes_with_no_parent_footprint, *overlapping_sibling_rooms ]
   end
 
   # HALF A LAYOUT: neither a footprint, nor a box, nor nothing at all, which are
@@ -1418,6 +1419,30 @@ class Story::Doctor
               "#{room.name} carries #{present.join(", ")}, which is neither a footprint " \
               "(#{Location::Box::EXTENT.join(", ")}) nor a box (all of #{Location::Box::COLUMNS.join(", ")}), " \
               "so it reads as a place with no inside at all and its author was laying one out",
+              :manual, subject: room)
+    end
+  end
+
+  # A PLACE NOTHING CAN STAND IN. `width` and `depth` are a count of paces, so
+  # zero across is not a small room -- it is a plane with no area, and a room
+  # placed inside it is read against nothing. `Location`'s numericality rule and
+  # `WorldSeed::Loader#validate_one_box!` both refuse it, so a row here arrived
+  # through raw SQL or a database older than that rule.
+  #
+  # ITS OWN FINDING RATHER THAN PART OF THE PARTIAL BOX ABOVE, because
+  # `Location::Box.shape` cannot see it: `0.present?` is true, so a row carrying
+  # `width: 0` and a depth is a whole `:footprint` as far as every other reader
+  # of these columns is concerned, and `Location#interior?` calls it a plane.
+  # Nothing else here would ever mention it.
+  def rooms_with_an_impossible_extent
+    story.locations.order(:id).filter_map do |room|
+      wrong = Location::Box::EXTENT.select { |column| room[column].present? && room[column].to_i < 1 }
+      next if wrong.empty?
+
+      finding(:location_with_an_impossible_extent, :warning,
+              "#{room.name} has #{wrong.map { |column| "#{column} #{room[column]}" }.join(" and ")} -- a place is " \
+              "at least one pace across, so this is a plane with no area and anything placed inside it is measured " \
+              "against nothing",
               :manual, subject: room)
     end
   end
