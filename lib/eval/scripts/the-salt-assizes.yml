@@ -83,8 +83,8 @@ turns:
     draft of turns 12-20 talked to the Justicar from there (he is on the bench, a
     hundred yards away) and reached for a slate it had put down somewhere else.
     A script is a sequence of states. There is deliberately NO scripted talk to
-    Halloran at the post either: nothing records where a character stands
-    (ROADMAP, known issues), so whether he is in the post's cast is luck.
+    Halloran at the post either: nothing recorded where a character stood when
+    this script was written, so whether he is in the post's cast is luck.
 - id: t14-talk-5
   command: Brace, read me the case above the figure and tell me whose fee it is.
   expect: talk

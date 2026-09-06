@@ -2,9 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Current status and the task queue live in [ROADMAP.md](ROADMAP.md).** Read it
-before planning work, and update it when work lands. See [AGENTS.md](AGENTS.md)
-for agent working agreements.
+**Two rules stand over everything in this repo**, and
+[AGENTS.md](AGENTS.md) — the agent working agreements — carries both in full:
+
+1. **The game engine is the source of truth.** Nothing may depend on the
+   narrator obeying its prompt. *Gate the state, inform the prose, audit the
+   difference.* See AGENTS.md → *The standing constraint*.
+2. **A prompt is not changed without a baseline to judge it against.** Have a
+   stored baseline first, judge the change with a verdict that can say *noise*,
+   and re-baseline only afterwards. See AGENTS.md → *A prompt is not changed
+   without a baseline* and [EVALUATION.md](EVALUATION.md).
+
+There is no status file in this repo: the code is the record of what is built,
+a decision lives in the header of the file it constrains, and the task queue
+lives in firstmate.
 
 ## Project Overview
 
@@ -633,7 +644,7 @@ The current database includes the following story-related models with proper ass
   and the turn's **provenance frozen onto the row** — which model wrote the
   prose, **which version of the prose PROMPT it wrote under** — the instruction
   block AND the per-turn scaffold around the facts
-  (`prose_prompt_digest`, out of `Playthrough::PromptVersion` — the ROADMAP's
+  (`prose_prompt_digest`, out of `Playthrough::PromptVersion` — the
   `ta-prompt-bench` ask; `rake eval:prompt` records the instruction half of it
   per pass, so a set and a verdict group by one version as far as the
   instructions go), the prose attempt chain, every model that answered, the

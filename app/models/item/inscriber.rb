@@ -144,11 +144,12 @@ class Item::Inscriber
   # description when it is lying in a written room, because a docket nailed to a
   # wall says something about that wall.
   #
-  # A thing somebody is HOLDING gets the sentence and no room. Nothing records
-  # where a character stands (ROADMAP, *nothing records where a character
-  # stands*), so whose hands it is in is honestly the whole of what the records
-  # can say -- and a room guessed at here would be a guess written into a field
-  # that is never regenerated.
+  # A thing somebody is HOLDING gets the sentence and no room. Whose hands it is
+  # in is what `Item#whereabouts` answers, and a room guessed at here would be a
+  # guess written into a field that is never regenerated. `characters.location_id`
+  # exists now, so a holder's room could be reached in a second hop -- whether an
+  # inscription should follow one there is a decision nobody has made, and this
+  # reader deliberately does not make it.
   def whereabouts_line
     place = item.location
     return "where it is: #{item.whereabouts}" if place.nil?

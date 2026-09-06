@@ -15,8 +15,8 @@ module DebugHelper
 
   # Same, for a moment on the story's clock. Always UTC and always in the
   # story's own terms -- these are story times, and formatting one in the
-  # reader's zone would invite exactly the wall-clock confusion the model
-  # spent a whole roadmap item getting rid of.
+  # reader's zone would invite exactly the wall-clock confusion story time was
+  # built to get rid of.
   def debug_time(value, absent: "never")
     return tag.span("(#{absent})", class: "absent") if value.nil?
 

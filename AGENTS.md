@@ -4,38 +4,86 @@ Guidance for AI coding agents working in this repository.
 
 ## Start here
 
-**[ROADMAP.md](ROADMAP.md) is the source of truth for status and tasks.** Read it
-before planning any work. It records what is built, what is next, the reasoning
-behind the persistence model, and the known issues.
-
-When you finish a piece of work, update `ROADMAP.md` in the same change: check
-off what landed, move it into **Status → Done**, and add anything new you
-discovered to **Next up** or **Known issues**. A task queue that drifts from the
-code is worse than none.
+**The code is the source of truth for what is built.** A decision lives in the
+header of the file it constrains, and `CLAUDE.md`'s architecture section names
+which file owns which decision — read the header before changing the thing it
+governs. The task queue lives in firstmate, not in this repo.
 
 `CLAUDE.md` holds the project conventions (testing requirements, factory rules,
-architecture notes). This file and `CLAUDE.md` are complementary — conventions
-there, status here.
+architecture notes); this file holds the working agreements.
 
 ## What this project is
 
 A text adventure that generates itself as the player explores, and keeps what it
-generates. `Location` is the durable world and is generated once; `Scene` is a
-timestamped moment in a location. See the persistence model section in
-`ROADMAP.md` before touching either model — that split is the whole design.
+generates.
+
+**The persistence model is the load-bearing design decision, and the schema
+encodes it.** `Location` is the durable world — name, description, `lore`, the
+`location_connections` graph (with `distance` / `time_to_travel` /
+`travel_method`), `parent_location` for containment — generated once and then
+reused forever. `Scene` is a moment in that world: `belongs_to :location`, plus
+a `previous_scene` linked list and a `story_timestamp`. So revisiting a place
+reuses the persisted `Location` while creating a new `Scene`. The world stays
+fixed; time still moves. Generation happens at the `Location` boundary, never
+twice for the same place. That split is the whole design — do not touch either
+model without it.
 
 ## Working agreements
 
-### The standing constraint
+### The standing constraint: the game engine is the source of truth
 
-**Nothing may depend on the narrator obeying its prompt.** Prompt it with the
-world's rules — that is cheap and it raises the odds — but never let a
-guarantee rest on its compliance. *Gate the state, inform the prose, audit the
-difference.* Where a model must be involved, do not ask it what should happen:
-ask it to pick from a set the app closed, then have the app act on the record,
-never on the label. The README's turn diagram states it in colours
-([README.md](README.md#how-a-turn-works)); `ROADMAP.md` → *The standing
-constraint* has the captain's wording and where the full audit lives.
+The captain's ruling, and it governs design decisions across the whole project:
+
+> *"I would rather not depend on the narrator doing what we tell it to do. We
+> should prompt it with rules if that makes it more likely that it will follow
+> them though and save on tokens. But I think we ultimately need a verification
+> process."*
+
+**Nothing may depend on the narrator obeying its prompt.** Both halves, not one:
+**inform and verify.** Prompt the narrator with the world's laws — it is cheap
+and it raises the odds — but never let a guarantee rest on its compliance.
+*Gate the state, inform the prose, audit the difference.* An unenforced
+narration rule costs a sentence; an unenforced state rule costs the game.
+
+The README's turn diagram already states it best, in the colours: purple is a
+model call, teal is the app deciding from records it holds, and every branch is
+taken on a record rather than on a label a model wrote — see
+[README.md](README.md#how-a-turn-works). The pattern to copy: *do not ask a
+model what should happen; ask it to pick from a set the app closed, then have
+the app act.* `Playthrough::Classifier` is the worked example — it is a model
+call, so it can be **wrong**, but its answer is a closed enum built from the
+room's real exits and cast, so it cannot be **out of bounds**.
+
+The full audit of every planned piece of work against this constraint is in
+`data/ta-direction/report.md` §0.1 (firstmate repo).
+
+### A prompt is not changed without a baseline to judge it against
+
+The captain's ruling of 2026-09-06, and it is the other rule that stands over
+everything: **always have a baseline for evaluating a prompt before deciding to
+change it.**
+
+Generated prose is model output, and two identical runs disagree by more than
+most claimed improvements — [EVALUATION.md](EVALUATION.md) opens with the spread
+and keeps it current. So "it reads better" is not evidence, and neither is a
+single run either side of an edit. Before touching `Scene::Narrator::INSTRUCTIONS`,
+`Character#interaction_instructions`, `Playthrough::Classifier::INSTRUCTIONS` or
+anything else a model is handed:
+
+1. **Have a stored baseline the change can be measured against.**
+   `rake eval:prompt` (fixed single-turn cases against fixed facts, cents a
+   run) is the first gate and the cheap one; `rake eval:run` confirms it;
+   `rake eval:classifier` is the classifier's own bench. Baselines are checked
+   in under `db/eval/` and `db/eval_baseline.json` and replay offline for free.
+2. **Judge the after against the before with a verdict that can say *noise***
+   — `rake eval:prompt_compare` / `rake eval:compare`, four runs a side minimum.
+3. **Re-baseline only once the change is judged.**
+
+[EVALUATION.md](EVALUATION.md) is the protocol. A prompt change shipped without
+a baseline is a change nobody can defend — and a plausible-sounding prompt fix
+has more than once been measured moving the wrong number, which is the whole
+reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
+`Playthrough::Turn#taken_fact` carry one such finding between them).
 
 ### Talking to models
 
@@ -747,8 +795,8 @@ before changing the loop; the rules below are what it does not fit.
   somebody WAS — which a column with no history cannot reconstruct and which
   `Eval::Richness`, `still_run` and both frozen corpora read. Do not read it
   back to decide who is present; that is the direction that forgot people.
-- **Tools on the narrator were evaluated and rejected for movement** (see the
-  ROADMAP): `gemma3:12b`, first in `LOCAL_MODEL_OPTIONS`, has no tool
+- **Tools on the narrator were evaluated and rejected for movement**:
+  `gemma3:12b`, first in `LOCAL_MODEL_OPTIONS`, has no tool
   capability at all, and a model that cannot call tools does not fail — it
   narrates walking through a door and the player never moves. Tool support is
   slated to land with the narrator creating characters, where a missed call
@@ -1458,7 +1506,12 @@ using any of this.** What belongs here is the part that changes how you work:
   check or put one in a fixture. Nothing enforces this today.
 - **An eval script's talk beats must name no place.** A command that names a
   room the player can reach is a `move`, correctly, and it costs the run the
-  branch the script existed to exercise. See the ROADMAP's known issues.
+  branch the script existed to exercise. `the-lunar-cartographer.yml` cost eight
+  runs to this: *"Grenn, unlock the roof door and take me up onto the Larkspur
+  Quarter rooftops yourself"* names a destination the room has an exit to, so
+  `Playthrough::Classifier` resolved it as `move` on every one of them —
+  correctly — and the rest of each run played out somewhere the script did not
+  intend. Fixed in the script; it is not a defect in the game.
 - **`Eval::MEASUREMENT_FILES` is the list an improving agent may not change.**
   Declared, not enforced; `rake eval:manifest` prints it with digests.
 
@@ -1672,8 +1725,11 @@ path, and answers in sentences.
   runs in another process, so a server that was up before `db:migrate` serves
   models built from the old schema — which is `undefined method 'is_opening?'`
   for a column that exists. `StaleSchemaGuard` (development middleware) catches
-  that and says restart; see the ROADMAP's *Known issues* for why it reports
-  rather than repairs.
+  that and says restart. It reports rather than repairs on purpose: resetting
+  column information in place leaves the connection's prepared statements still
+  selecting the old columns, so a new process is the honest answer. **`bin/jobs`
+  is a second long-lived process with the same hazard and no guard** — restart
+  it after a migration too.
 
 ### When a world outlives its seed file
 
@@ -1773,8 +1829,12 @@ database he already has. So:
   reads the value into a lottery, and the failure lands on whoever runs the
   suite next rather than on whoever wrote the test. `location_connections`
   did this and cost a 1-in-35 flake that survived nine full runs and a re-run
-  of its own seed — see **Known issues** in `ROADMAP.md` for why parallel
-  workers made it unreproducible. Ask for a variation by trait, and pin the
+  of its own seed. **Parallelism was the exposing condition, not the cause**:
+  Minitest `srand`s the global RNG once from the run seed, so the sequence is
+  fixed, but the *position* it has reached when a given test's factories fire
+  depends on how many earlier `rand` calls landed in that forked worker — same
+  seed, different schedule, different dice, which is the whole of why the seed
+  did not reproduce it. Ask for a variation by trait, and pin the
   values a test actually asserts against in the test itself.
 - Per `CLAUDE.md`: every model needs a test file and a factory.
 - **An engine change earns a sweep script, not only a unit test.** A unit test

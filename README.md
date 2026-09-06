@@ -4,8 +4,6 @@ Text Adventure is a text-based adventure game that generates itself as you
 explore, and keeps what it generates. Locations are created on demand and then
 persist — walk back into a room and it is the room you left.
 
-See **[ROADMAP.md](ROADMAP.md)** for current status and what is being worked on.
-
 ## Development setup
 
 ```bash
@@ -1118,8 +1116,6 @@ check.
   was actually shown against the ones there are now, because over two nights a
   shuffle can return a place to the same neighbour and replaying an event log
   would announce a change the player never experienced.
-
-See **[ROADMAP.md](ROADMAP.md)** for where each of those sits in the queue.
 
 ## Tests
 
