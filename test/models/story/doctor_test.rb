@@ -1345,7 +1345,8 @@ class Story::DoctorTest < ActiveSupport::TestCase
                                    location_with_a_box_and_no_parent
                                    location_with_a_box_outside_a_footprint overlapping_sibling_locations
                                    locations_containing_each_other location_outside_its_parents_footprint
-                                   interior_with_an_unreachable_room stairs_between_rooms_that_do_not_line_up]
+                                   interior_with_an_unreachable_room stairs_between_rooms_that_do_not_line_up
+                                   place_with_a_footprint_and_no_rooms]
   end
 
   # A WELL FORMED INTERIOR: a place with a footprint, two rooms inside it
@@ -1379,7 +1380,8 @@ class Story::DoctorTest < ActiveSupport::TestCase
                                    location_with_a_box_and_no_parent
                                    location_with_a_box_outside_a_footprint overlapping_sibling_locations
                                    locations_containing_each_other location_outside_its_parents_footprint
-                                   interior_with_an_unreachable_room stairs_between_rooms_that_do_not_line_up]
+                                   interior_with_an_unreachable_room stairs_between_rooms_that_do_not_line_up
+                                   place_with_a_footprint_and_no_rooms]
   end
 
   # STRAIGHT TO THE COLUMNS, because `Location#a_box_is_whole` refuses to save
@@ -1658,6 +1660,40 @@ class Story::DoctorTest < ActiveSupport::TestCase
          travel_method: Location::Interior::STAIRS)
 
     assert_not_includes codes(story), :stairs_between_rooms_that_do_not_line_up
+  end
+
+  # A BUILDING WRITTEN OUT IN FULL WITH NOTHING INSIDE IT. The layout and the
+  # flip to `realized` are one transaction, so a realized place with a footprint
+  # has rooms -- see `Location::Generator#lay_out_interior!`.
+  test "a realized place with a footprint and no rooms is reported and cannot be repaired" do
+    story = healthy_story
+    place = create(:location, :with_a_footprint, story: story, name: "The Custom House")
+
+    assert_includes codes(story), :place_with_a_footprint_and_no_rooms
+    assert_equal :warning, finding(story, :place_with_a_footprint_and_no_rooms).severity
+    assert_equal :manual, finding(story, :place_with_a_footprint_and_no_rooms).remedy
+    assert_equal place, finding(story, :place_with_a_footprint_and_no_rooms).subject
+    assert_match(/not one room inside it/, finding(story, :place_with_a_footprint_and_no_rooms).message)
+  end
+
+  # THE ORDINARY CASE THIS MUST STAY QUIET ABOUT: an interior is laid out on
+  # first entry, so every building nobody has walked into yet is a stub with a
+  # footprint and no rooms.
+  test "a stub place waiting to be entered is not reported as an empty building" do
+    story = healthy_story
+    create(:location, :stub, :with_a_footprint, story: story, name: "The Custom House")
+
+    assert_not_includes codes(story), :place_with_a_footprint_and_no_rooms
+  end
+
+  # A ROOM IS NOT A PLACE by `Location#place?`, so a childless room on the top
+  # floor is not a building with nothing in it.
+  test "a realized room with no rooms of its own is not an empty building" do
+    story = healthy_story
+    _place, taproom, = a_place_with_two_rooms(story)
+
+    assert_predicate taproom, :realized?
+    assert_not_includes codes(story), :place_with_a_footprint_and_no_rooms
   end
 
   # COORDINATES ARE LOCAL TO A PARENT: two buildings sharing an origin share

@@ -93,7 +93,7 @@ locations:
   detail_level: stub
   width: 14
   depth: 10
-  teaser: Three floors of ledgers with the door standing open.
+  teaser: Two floors of ledgers with the door standing open.
 - name: The Custom House room 1
   detail_level: stub
   parent: The Custom House

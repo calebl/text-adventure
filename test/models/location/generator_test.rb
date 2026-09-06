@@ -132,6 +132,80 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_equal before, place.reload.child_locations.order(:id).pluck(:id)
   end
 
+  # A DOOR NEVER CROSSES THE WALL OF A BUILDING. The rooms of a laid-out place
+  # are stubs in the same story as every other location, so nothing but this
+  # refusal stops the exits call reusing one by name -- and an exterior edge
+  # into a room walks the party off the street into somebody's back room, spends
+  # the entry room's reserved slot, and can take a room past
+  # `Location::ExitsSchema::MAX_EXITS`.
+  test "an exit that names a room inside another place is refused" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+    room = place.reload.child_locations.order(:id).last
+    named_room = { "exits" => [ { "name" => room.name, "teaser" => "A door that should be locked.",
+                                  "distance" => "adjacent", "travel_method" => "walking" } ] }
+    road = stub_location(name: "The Harbour Road")
+
+    realize(road, FakeAgent.new(DETAIL, named_room))
+
+    assert_empty road.reload.exits
+    assert_empty room.reload.exits.where(parent_location_id: nil)
+    assert_equal 1, @story.locations.where(name: room.name).count
+    assert(place.reload.child_locations.all? { |one| one.exits.count <= Location::ExitsSchema::MAX_EXITS })
+  end
+
+  # AND THE FLOOR DOES NOT LIFT IT. `#write_exits!` takes a written room rather
+  # than sealing a player in; a room inside a building is a name it cannot
+  # honour on any pass, because honouring it breaks an invariant.
+  test "the fewer-exits floor does not open a door into a room either" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+    room = place.reload.child_locations.order(:id).first
+    named_room = { "exits" => [ { "name" => room.name, "teaser" => "A door that should be locked.",
+                                  "distance" => "adjacent", "travel_method" => "walking" } ] }
+    road = stub_location(name: "The Harbour Road")
+
+    realize(road, FakeAgent.new(DETAIL, named_room))
+
+    assert_empty road.reload.exits
+    assert_empty room.reload.exits.where(parent_location_id: nil)
+  end
+
+  # BOTH ENDS OF A DOOR HAVE THE BUDGET FOR IT, and the far side is a record
+  # this room's own allowance says nothing about.
+  test "an exit into a neighbour already at its cap is refused, and not half written" do
+    location = stub_location(name: "The Drowned Ledger")
+    full = stub_location(name: "The Pump Gallery")
+    Location::ExitsSchema::MAX_EXITS.times { |n| already_reaching(full, "Filled Way #{n}") }
+    named_full = { "exits" => [ EXITS["exits"].first ] }
+
+    realize(location, FakeAgent.new(DETAIL, named_full))
+
+    assert_empty location.reload.exits
+    assert_equal Location::ExitsSchema::MAX_EXITS, full.reload.exits.count
+  end
+
+  # A LAYOUT THAT RAISES LEAVES A RETRYABLE STUB. The flip to `realized` is the
+  # "generate once per place" guarantee, so a place realized on the far side of
+  # a failed layout would carry a footprint and no inside for ever.
+  test "a place whose layout fails is left a stub the next entry retries" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    exploding = ->(*) { raise ActiveRecord::RecordInvalid, Location.new }
+
+    Location::Interior.stub(:lay_out!, exploding) do
+      assert_raises(ActiveRecord::RecordInvalid) { realize(place, FakeAgent.new(DETAIL, ONE_EXIT)) }
+    end
+
+    assert_predicate place.reload, :stub?
+    assert_nil place.description
+    assert_empty place.child_locations
+
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+
+    assert_predicate place.reload, :realized?
+    assert_predicate place.child_locations.count, :positive?
+  end
+
   # A ROOM IS BORN ONE WAY. `Location::Interior` creates its rooms through this
   # class method, so an interior's rooms get the danger roll a stub named by a
   # neighbour gets.

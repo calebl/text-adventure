@@ -1395,17 +1395,19 @@ class Story::Doctor
   # other -- which of them its author meant to be the outermost is not on record.
   # A person edits the world file and re-seeds.
   #
-  # THE LAST THREE ARE ABOUT A LAYOUT AS A WHOLE rather than about one row, and
+  # THE LAST FOUR ARE ABOUT A LAYOUT AS A WHOLE rather than about one row, and
   # they arrived with the thing that writes one (`Location::Interior`). Until
   # something laid an interior out, a rule about how a layout FITS TOGETHER was
   # a rule with no author to hold to it; now there is one, and these are the
-  # three statements it makes that a database could contradict -- a room outside
-  # the building it is a room of, a room nothing can walk to, and a stair that
-  # does not arrive where it set off from.
+  # four statements it makes that a database could contradict -- a room outside
+  # the building it is a room of, a room nothing can walk to, a stair that does
+  # not arrive where it set off from, and a place written out in full with
+  # nothing inside it at all.
   def geometry
     [ *rooms_with_a_partial_box, *rooms_with_an_impossible_extent, *boxes_with_no_parent,
       *boxes_with_no_parent_footprint, *overlapping_sibling_rooms, *locations_containing_each_other,
-      *rooms_outside_their_footprint, *interiors_with_an_unreachable_room, *misaligned_stairs ]
+      *rooms_outside_their_footprint, *interiors_with_an_unreachable_room, *misaligned_stairs,
+      *places_with_a_footprint_and_no_rooms ]
   end
 
   # HALF A LAYOUT: neither a footprint, nor a box, nor nothing at all, which are
@@ -1649,6 +1651,39 @@ class Story::Doctor
       next unless one.id < other.id
 
       [ one, other ]
+    end
+  end
+
+  # A BUILDING WRITTEN OUT IN FULL WITH NOTHING INSIDE IT. A place is laid out
+  # on the entry that realizes it, in the same transaction as the flip to
+  # `realized` and before it (`Location::Generator#lay_out_interior!`) -- so a
+  # realized place carrying a footprint HAS rooms, and one with none is a layout
+  # that was rolled back next to a flip that was not, a world file whose author
+  # wrote a building and no inside for it, or raw SQL.
+  #
+  # ONLY A REALIZED PLACE, which is what keeps this quiet about the ordinary
+  # case: a STUB carrying a footprint is a building waiting for somebody to walk
+  # into it, which is the whole of the captain's first ruling of 2026-09-06, and
+  # reporting one would be reporting every unvisited building in the world.
+  #
+  # `Location#place?` IS THE PREDICATE, the same one the generator asks before
+  # laying anything out. A room is not a place by it -- a room carries all five
+  # columns -- so a childless room on the top floor is not reported as a
+  # building with nothing in it.
+  #
+  # MANUAL, this section's standing remedy: laying the inside out now would
+  # invent a floor plan for a place whose description has already been written
+  # around whatever its author meant to be in it.
+  def places_with_a_footprint_and_no_rooms
+    story.locations.realized.with_a_footprint.order(:id).filter_map do |place|
+      next unless place.place?
+      next if place.child_locations.exists?
+
+      finding(:place_with_a_footprint_and_no_rooms, :warning,
+              "#{place.name} is #{place.width}x#{place.depth} paces and has been written out in full, and there " \
+              "is not one room inside it -- a place is laid out on the entry that realizes it, so this one was " \
+              "realized and its inside was not",
+              :manual, subject: place)
     end
   end
 
