@@ -150,6 +150,38 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     assert_includes scorer.flagged_for(:proposal_refused).first.evidence, "Vessa Kirn"
   end
 
+  # A ROOM THAT NAMED ONE PERSON TWICE GOT ONE PERSON.
+  # `Character::Registry#admit_one` resolves the second proposal to the row the
+  # first one just created and the `update!` is a no-op, so asking only whether
+  # the NAME is in the records would call both admitted and report a room that
+  # lost somebody as clean. Each record seats one proposal; the second is the
+  # one refused.
+  test "a name the answer proposed twice against one record is one refusal, not none" do
+    scorer = scored(people: [ person("Vessa Kirn"), person("Vessa Kirn") ],
+                    after: { "people" => [ "Vessa Kirn" ], "items" => [], "exits" => [], "new_places" => [] })
+
+    assert_equal 1, scorer.flagged_for(:proposal_refused).size
+    assert_equal 2, scorer.judgeable_for(:proposal_refused), "the denominator is every proposal made"
+    assert_includes scorer.flagged_for(:proposal_refused).first.evidence, "Vessa Kirn"
+  end
+
+  test "a thing the answer proposed twice against one record is one refusal, and the case is ignored" do
+    scorer = scored(items: [ { "name" => "a folder" }, { "name" => "A Folder" } ],
+                    after: { "people" => [], "items" => [ "a folder" ], "exits" => [], "new_places" => [] })
+
+    assert_equal 1, scorer.flagged_for(:proposal_refused).size
+    assert_equal 2, scorer.judgeable_for(:proposal_refused)
+  end
+
+  test "two of a name with two records behind them is no refusal at all" do
+    scorer = scored(items: [ { "name" => "a folder" }, { "name" => "a folder" } ],
+                    after: { "people" => [], "items" => [ "a folder", "a folder" ],
+                             "exits" => [], "new_places" => [] })
+
+    assert_empty scorer.flagged_for(:proposal_refused)
+    assert_equal 2, scorer.judgeable_for(:proposal_refused)
+  end
+
   test "a readable thing with nothing written on it is flagged, and judged only on readable things" do
     scorer = scored(items: [ { "name" => "a docket", "readable" => true, "inscription" => "" },
                              { "name" => "a chair leg", "readable" => false } ])
@@ -225,6 +257,36 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     assert_equal 0, scorer.scanned
     assert_empty scorer.flags
     Eval::Realization.checks.each { |code| assert_equal 0, scorer.judgeable_for(code), code }
+  end
+
+  # WHY A CALL FAILED IS THE ERROR'S CLASS AND NOT A PREFIX OF ITS MESSAGE.
+  # `Eval::Realization::Result.figures_of` counts refusals and crises through
+  # these, so a check that matched a prefix would count a differently named
+  # error class as a refusal it is not.
+  test "a failure is classified by the error class, not by a prefix of the message" do
+    readings = Eval::Realization::Scorer.new(
+      [ row.merge("error" => "BaseAgent::RefusalError: I can't help with that"),
+        row.merge("error" => "BaseAgent::CrisisResponseError: here is a helpline"),
+        row.merge("error" => "BaseAgent::RefusalErrorSomethingElse: not the same class"),
+        row.merge("error" => "Net::ReadTimeout: gave up"),
+        row ]
+    ).all_readings
+
+    assert_equal 4, readings.count(&:failed?), "the clean row is not a failure"
+    assert_equal 1, readings.count(&:refused?)
+    assert_equal 1, readings.count(&:crisis?)
+    assert_equal [ "Net::ReadTimeout" ], readings.select(&:failed?).map(&:error_class).last(1)
+
+    figures = Eval::Realization::Result.figures_of(readings.map(&:row))
+    assert_equal 4, figures["failures"]
+    assert_equal 1, figures["refusals"], "a differently named error class is a failure and not a refusal"
+    assert_equal 1, figures["crises"]
+  end
+
+  test "a third call is counted as an extra one and two are not" do
+    scorer = Eval::Realization::Scorer.new([ row.merge("calls" => 3), row, row.merge("calls" => 1) ])
+
+    assert_equal [ 1, 0, 0 ], scorer.all_readings.map(&:extra_calls)
   end
 
   private

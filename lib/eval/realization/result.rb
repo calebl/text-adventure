@@ -77,16 +77,20 @@ class Eval::Realization::Result
   # `Stored` reads the answer back off the file.
   def self.figures_of(rows)
     scorer = Eval::Realization::Scorer.new(rows)
-    failed = rows.select { |row| row["error"] }
+    # THROUGH THE READING AND NOT OFF THE ROW STRING. `Scorer::Reading` owns the
+    # one spelling of "was this a refusal" -- the error's CLASS NAME, not a
+    # prefix of the stored message, which would count a
+    # `BaseAgent::RefusalErrorSomething` as one of them.
+    failed = scorer.all_readings.select(&:failed?)
     latencies = rows.filter_map { |row| row["seconds"] }.sort
 
     { "scanned" => scorer.scanned,
       "cases" => rows.size,
       "failures" => failed.size,
-      "refusals" => failed.count { |row| row["error"].to_s.start_with?("BaseAgent::RefusalError") },
-      "crises" => failed.count { |row| row["error"].to_s.start_with?("BaseAgent::CrisisResponseError") },
+      "refusals" => failed.count(&:refused?),
+      "crises" => failed.count(&:crisis?),
       "rotations" => rows.count { |row| rotated?(row) },
-      "extra_calls" => rows.sum { |row| [ row["calls"].to_i - Eval::Realization::CALLS.size, 0 ].max },
+      "extra_calls" => scorer.all_readings.sum(&:extra_calls),
       "omitted_fields" => rows.sum { |row| Array(row["missing_fields"]).size },
       "cap_hits" => rows.sum { |row| Array(row["cap_hits"]).size },
       "input_tokens" => rows.sum { |row| row["input_tokens"].to_i },

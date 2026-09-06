@@ -68,20 +68,12 @@ class Eval::Realization::Bench
     def failed? = !error.nil?
     def held_out? = Eval::Realization.held_out?(story)
 
-    # WHY A CALL FAILED, as a class name -- `BaseAgent::RefusalError` reads
-    # differently from a timeout and a count cannot tell them apart. Split on
-    # colon-space, not on a colon: the class is usually namespaced.
-    def error_class = error&.split(": ")&.first
-
-    # THE MODEL DECLINED TO BUILD THE ROOM. With an arm of one there is nothing
-    # to rotate to, so it arrives here as a failure of a nameable class rather
-    # than as an answer. Its own figure because it is the one failure that is
-    # about the PROMPT.
-    def refused? = error_class == "BaseAgent::RefusalError"
-
-    # THE PROVIDER ANSWERED WITH REAL-WORLD CRISIS RESOURCES. Never persisted,
-    # never rotated, counted apart -- see `BaseAgent::CrisisResponseError`.
-    def crisis? = error_class == "BaseAgent::CrisisResponseError"
+    # WHY A CALL FAILED, WHAT IT COST IN EXTRA CALLS AND WHETHER IT WAS A
+    # REFUSAL ARE NOT ASKED HERE. They are read off the stored ROW by
+    # `Eval::Realization::Scorer::Reading`, which is the object that survives
+    # being written to a file -- so a set rescored offline and a live pass
+    # cannot disagree about what a refusal is. A second spelling on this class
+    # would be a second answer nobody reads.
 
     # THE GUARD, not a figure: with an arm of one there is nothing to rotate to,
     # so this is false on every reading of a healthy run.
@@ -108,11 +100,6 @@ class Eval::Realization::Bench
     # instruments' measurement files and are not this task's to edit; this note
     # is here so whoever looks knows what to look for.
     def stored_arm = { arm: arm, rep: rep }
-
-    # ONE REALIZATION, TWO CALLS, AND NOT ONE MORE. A third would mean something
-    # else was bought -- and the corpus validator refuses the one case shape
-    # that could buy fewer (a stub already at its exit cap makes only one).
-    def extra_calls = [ calls.to_i - Eval::Realization::CALLS.size, 0 ].max
 
     def to_h
       { id:, shape:, story:, held_out: held_out?, room: kase.room,

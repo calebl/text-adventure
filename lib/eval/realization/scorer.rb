@@ -87,6 +87,31 @@ class Eval::Realization::Scorer
     def held_out? = Eval::Realization.held_out?(story)
     def failed? = !row["error"].nil?
     def scored? = !failed? && detail.present?
+    def error = row["error"]
+    def calls = row["calls"].to_i
+
+    # WHY A CALL FAILED, as a class name -- `BaseAgent::RefusalError` reads
+    # differently from a timeout and a count cannot tell them apart. The ONE
+    # spelling of it: `Eval::Realization::Result.figures_of` asks through here
+    # rather than matching the stored string's prefix, because a prefix match
+    # would count a `BaseAgent::RefusalErrorSomething` as a refusal. Split on
+    # colon-space, not on a colon: the class is usually namespaced.
+    def error_class = error&.split(": ")&.first
+
+    # THE MODEL DECLINED TO BUILD THE ROOM. With an arm of one there is nothing
+    # to rotate to, so it arrives as a failure of a nameable class rather than
+    # as an answer. Its own figure because it is the one failure about the
+    # PROMPT.
+    def refused? = error_class == "BaseAgent::RefusalError"
+
+    # THE PROVIDER ANSWERED WITH REAL-WORLD CRISIS RESOURCES. Never persisted,
+    # never rotated, counted apart -- see `BaseAgent::CrisisResponseError`.
+    def crisis? = error_class == "BaseAgent::CrisisResponseError"
+
+    # ONE REALIZATION, TWO CALLS, AND NOT ONE MORE. A third would mean something
+    # else was bought -- and the corpus validator refuses the one case shape
+    # that could buy fewer (a stub already at its exit cap makes only one).
+    def extra_calls = [ calls - Eval::Realization::CALLS.size, 0 ].max
 
     def facts = row["facts"] || {}
     def answers = row["answers"] || {}
@@ -149,13 +174,22 @@ class Eval::Realization::Scorer
     @rows = Array(rows).map { |row| row.transform_keys(&:to_s) }
   end
 
+  # EVERY ROW WRAPPED, THE FAILURES INCLUDED. `#readings` below is the SCORED
+  # subset and the one every check is judged over -- a failed call is out of
+  # every denominator, which is what stops a run of refusals reading as a run
+  # with nothing wrong with it. The operational counts want the other list, so
+  # `Eval::Realization::Result.figures_of` reads its refusals, its crises and
+  # its extra calls through here instead of re-deriving them off the row
+  # strings. One object, one spelling of each predicate.
+  def all_readings
+    @all_readings ||= rows.map { |row| Reading.new(row) }
+  end
+
   def readings
-    @readings ||= rows.reject { |row| row["error"] }.map { |row| Reading.new(row) }
+    @readings ||= all_readings.reject(&:failed?)
   end
 
   def scanned = readings.count(&:scored?)
-
-  def available_checks = CHECKS.keys
 
   def flags
     @flags ||= CHECKS.keys.flat_map { |code| flagged_for(code) }
@@ -319,19 +353,48 @@ class Eval::Realization::Scorer
   # than inferred from the answer. The superset of every name collision above,
   # plus the caps, plus a sheet that arrived cut off -- every reason
   # `Item::Registry` and `Character::Registry` drop a proposal.
+  #
+  # COUNTED PER NAME AND NOT BY MEMBERSHIP, which is the difference between this
+  # figure and a reading of the answer. An answer that names one person twice
+  # gets ONE row: `Character::Registry#admit_one` resolves the second proposal
+  # to the character the first one just created, `#refusal` returns nothing
+  # because that character is already in this room, and the `update!` is a
+  # no-op. Asking only whether the name appears in the records would call both
+  # proposals admitted and report a room that lost somebody as clean. So each
+  # admitted row seats ONE proposal, in the order the answer made them, and a
+  # SELF-COLLISION is a refusal of the SECOND occurrence -- the denominator
+  # stays every proposal the answer made, so a room that named one person twice
+  # and got one reads one of two.
   def judge_proposal_refused
     flag_each(:proposal_refused, ->(r) { r.people.size + r.items.size }) do |reading|
-      people = reading.people.reject { |person|
-        reading.any_named?(reading.admitted_people, person["fullname"])
-      }.map { |person| person["fullname"].presence || "an unnamed person" }
-
-      things = reading.items.reject { |item|
-        reading.any_named?(reading.admitted_items, item["name"])
-      }.map { |item| item["name"].presence || "an unnamed thing" }
-
-      (people + things).map { |name| "the engine would not admit #{name}" }
+      unseated(reading.people.map { |person| person["fullname"] },
+               reading.admitted_people, "an unnamed person") +
+        unseated(reading.items.map { |item| item["name"] }, reading.admitted_items, "an unnamed thing")
     end
   end
+
+  # THE PROPOSALS NO RECORD ANSWERS FOR. Each admitted row is a seat, taken by
+  # the first proposal of that name; every proposal left standing is one the
+  # room lost. A proposal with no name at all never takes a seat -- the
+  # registries refuse it (`Character::Registry#create_one`), and matching it
+  # against a blank would be matching two different absences.
+  def unseated(proposed, admitted, unnamed)
+    seats = admitted.each_with_object(Hash.new(0)) { |name, tally| tally[key_for(name)] += 1 }
+
+    proposed.filter_map do |name|
+      seat = key_for(name)
+      if seat.present? && seats[seat].positive?
+        seats[seat] -= 1
+        next
+      end
+
+      "the engine would not admit #{name.presence || unnamed}"
+    end
+  end
+
+  # The same comparison `Reading#same?` makes, as a hash key: a name is one name
+  # however it was spaced or cased.
+  def key_for(name) = name.to_s.strip.downcase
 
   def judge_readable_without_words
     flag_each(:readable_without_words, ->(r) { r.items.count { |item| item["readable"] == true } }) do |reading|
