@@ -415,6 +415,20 @@ class LocationTest < ActiveSupport::TestCase
     assert_not room.overlaps?(room)
   end
 
+  # TWO ROOMS THAT HAVE NOT BEEN SAVED ARE STILL TWO ROOMS, which is the shape a
+  # layout generator holds while it is deciding where to put things: it asks
+  # whether a candidate box lands on one it has already chosen, and neither has
+  # an id yet.
+  test "two unsaved rooms on the same rectangle of one parent overlap" do
+    place = create(:location, :with_a_footprint)
+    one = build(:location, story: place.story, parent_location: place, x: 0, y: 0, z: 0, width: 5, depth: 5)
+    other = build(:location, story: place.story, parent_location: place, x: 0, y: 0, z: 0, width: 5, depth: 5)
+
+    assert one.overlaps?(other)
+    assert other.overlaps?(one)
+    assert_not one.overlaps?(one)
+  end
+
   test "an unplaced room overlaps nothing, including a placed sibling" do
     place = create(:location, :with_a_footprint)
     placed = create(:location, story: place.story, parent_location: place, x: 0, y: 0, z: 0, width: 5, depth: 5)
@@ -433,5 +447,20 @@ class LocationTest < ActiveSupport::TestCase
     assert_equal [ footprint, placed.parent_location, placed ].map(&:id).sort,
                  story.locations.with_a_footprint.pluck(:id).sort
     assert_equal [ placed ], story.locations.with_a_box.to_a
+  end
+
+  # HALF A LAYOUT IS IN NEITHER SCOPE. `#a_box_is_whole` refuses to save a row
+  # like this, so it is written past the validation the way a database older
+  # than the validation already carries one -- and that is exactly the row a
+  # scope must not count as laid out, because `Story::Doctor` reads `#box` off
+  # everything the scope hands it and a partial row has none.
+  test "a row carrying part of a box is in neither scope" do
+    story = create(:story)
+    create(:location, story: story).update_columns(width: 6, x: 1)
+    create(:location, story: story).update_columns(x: 0, y: 0, z: 0)
+    create(:location, story: story).update_columns(width: 6)
+
+    assert_empty story.locations.with_a_footprint
+    assert_empty story.locations.with_a_box
   end
 end

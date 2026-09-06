@@ -451,7 +451,7 @@ class EngineSweep::Invariants
     moved = story.locations.includes(:parent_location).order(:id).filter_map do |room|
       wanted = geometry_in_file.fetch(room.name, no_geometry)
       now = geometry_on_record(room)
-      next if now == wanted
+      next if comparable_geometry(now) == comparable_geometry(wanted)
 
       "#{room.name} is #{describe_geometry(now)} and the file says #{describe_geometry(wanted)}"
     end
@@ -477,6 +477,16 @@ class EngineSweep::Invariants
 
   def no_geometry
     (Location::Box::COLUMNS + [ "parent" ]).index_with(nil)
+  end
+
+  # THE PARENT IS COMPARED THE WAY THE LOADER RESOLVED IT, on
+  # `WorldSeed.natural_key`: `WorldSeed::Loader#load_containment!` matches a
+  # `parent` key that way on purpose, so "the Rusted Anchor" and "Rusted Anchor"
+  # name one place -- and an invariant comparing the two strings would call a
+  # spelling the format supports a wall that moved. The names themselves are
+  # left alone, so the message still reads the way the file is written.
+  def comparable_geometry(geometry)
+    geometry.merge("parent" => geometry["parent"].presence&.then { |name| WorldSeed.natural_key(name) })
   end
 
   # The three whole shapes and the broken one, said in a phrase --

@@ -769,6 +769,18 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_empty EngineSweep::Invariants.new(story, seed: seed).check
   end
 
+  # THE LOADER RESOLVES A `parent` KEY ON `WorldSeed.natural_key`, so a file may
+  # spell it with or without its article and still name one place. The invariant
+  # has to read it the same way, or a world the format accepts would break a
+  # walk that touched nothing.
+  test "a parent key spelled with a different article leaves the invariant quiet" do
+    seed = WorldSeed.parse(File.read(Rails.root.join("test/fixtures/files/a-world-with-an-interior.yml")))
+    seed["locations"].each { |row| row["parent"] = "rusted anchor" if row["parent"] }
+    story = WorldSeed::Loader.new(seed.deep_dup).load!
+
+    assert_empty EngineSweep::Invariants.new(story, seed: seed).check
+  end
+
   def seeded_copy(slug)
     seed = WorldSeed.parse(File.read(WorldSeed::DIRECTORY.join("#{slug}.yml")))
     document = seed.deep_dup

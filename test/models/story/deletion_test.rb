@@ -158,6 +158,24 @@ class Story::DeletionTest < ActiveSupport::TestCase
 
   # A story that cannot be played is still a story: the tool has to remove the
   # broken ones, which is most of what it will be pointed at.
+  # A WORLD WITH AN INTERIOR CAN STILL BE DELETED. `locations.parent_location_id`
+  # is a restricting foreign key and a story destroys its locations in id order,
+  # so on this fixture -- which declares The Rusted Anchor after the first of its
+  # own rooms -- the parent goes while a child is still pointing at it. What
+  # keeps that from raising is `Location has_many :child_locations, dependent:
+  # :nullify`, which lets the rooms go before the building does.
+  test "deletes a story whose world declares an interior" do
+    document = WorldSeed.parse(File.read(Rails.root.join("test/fixtures/files/a-world-with-an-interior.yml")))
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_equal "The Rusted Anchor", story.locations.find_by(name: "The Taproom").parent_location.name
+
+    Story::Deletion.new(story).destroy!(confirm: story.title)
+
+    assert_not Story.exists?(story.id)
+    assert_equal 0, Location.count
+  end
+
   test "deletes a story that has nothing in it" do
     story = create(:story)
 

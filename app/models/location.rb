@@ -16,7 +16,18 @@ class Location < ApplicationRecord
   # `Location::Box` is read in, so nothing may re-parent a room during a walk:
   # `EngineSweep::Invariants#geometry_unmoved` asserts that.
   belongs_to :parent_location, class_name: "Location", optional: true
-  has_many :child_locations, class_name: "Location", foreign_key: "parent_location_id"
+  #
+  # NULLIFIED rather than destroyed, the answer `has_many :characters` gives
+  # three declarations down and for its reason: a thing lying in a room belongs
+  # to the room, and everything that outlives the room is let go instead.
+  # Destroying a place leaves its rooms parentless -- outside anything, which is
+  # a state `Location` allows and `rake game:doctor` reports as
+  # `location_with_a_box_and_no_parent`. Destroying them with it would cascade a
+  # deletion nobody asked for; `restrict` -- which is what the foreign key does
+  # on its own -- would make `rake game:delete` refuse any world with an
+  # interior, and depend on the order `Story` happens to destroy its locations
+  # in. Nullifying answers all three at once.
+  has_many :child_locations, class_name: "Location", foreign_key: "parent_location_id", dependent: :nullify
   has_many :scenes, dependent: :destroy
   # What is lying here. An item is either in somebody's hands or in a place
   # (Item), and the ones in a place are the closed set `take` resolves
@@ -219,12 +230,12 @@ class Location < ApplicationRecord
   # Places with an inside: a plane their children's positions are read in. This
   # is the extent alone, so it holds for the outermost place of an interior as
   # well as for a room within one.
-  scope :with_a_footprint, -> { where.not(width: nil, depth: nil) }
+  scope :with_a_footprint, -> { where.not(width: nil).where.not(depth: nil) }
 
   # Rooms that have been PLACED -- all five columns, so they sit somewhere on a
   # storey of their parent. Almost no row in any database is one, which is the
   # point of the columns being nullable.
-  scope :with_a_box, -> { with_a_footprint.where.not(x: nil, y: nil, z: nil) }
+  scope :with_a_box, -> { with_a_footprint.where.not(x: nil).where.not(y: nil).where.not(z: nil) }
 
   # HALF A LAYOUT IS REFUSED, as one thing, for the reason `#a_hazard_is_whole`
   # refuses half a hazard and `Character#a_stat_block_is_whole` refuses half a
@@ -276,9 +287,13 @@ class Location < ApplicationRecord
   #
   # False for a room that has not been placed, for the same reason: a room with
   # no position is nowhere, and nowhere overlaps nothing.
+  #
+  # A ROOM IS ONLY ITSELF, and that is asked on IDENTITY rather than on `id`
+  # alone: two rooms built and not yet saved both carry a nil id, and `nil ==
+  # nil` would make a whole candidate layout one room laid on itself.
   def overlaps?(other)
     return false if parent_location_id.nil? || parent_location_id != other.parent_location_id
-    return false if id == other.id
+    return false if equal?(other) || (id.present? && id == other.id)
 
     mine, theirs = box, other.box
     return false if mine.nil? || theirs.nil?
