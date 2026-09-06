@@ -107,11 +107,10 @@ class Location::Generator
   # IT USED TO RUN AFTER THE EXITS CALL, so that the model would not be handed
   # this place's own rooms as somewhere to open a door to. That ordering is no
   # longer what carries the rule and was never strong enough to: a room is now
-  # neither OFFERED (`#known_location_names` lists only locations at this one's
-  # own containment level) nor ACCEPTED (`#connect_exit!` refuses a row inside
-  # another place outright), whenever the rooms happen to have been written. A
-  # rule about who may be a neighbour holds in an order a rule about which call
-  # comes first does not.
+  # neither OFFERED (`#known_location_names` takes the placed rooms of other
+  # places off the list) nor ACCEPTED (`#connect_exit!` refuses one outright),
+  # whenever the rooms happen to have been written. A rule about who may be a
+  # neighbour holds in an order a rule about which call comes first does not.
   #
   # THE ROOMS ARE NOT WIRED TO THIS PLACE'S OWN EXITS, so the party still stands
   # in the place rather than in one of its rooms. Entering a room instead of the
@@ -480,27 +479,40 @@ class Location::Generator
       "Those exist already and do not need naming again. Do not contradict them."
   end
 
-  # A ROOM INSIDE ANOTHER PLACE IS NOT ON THE LIST. Only locations at this one's
-  # own containment level are, which is the half of the rule that costs a
-  # sentence -- the half nothing depends on the model for is #connect_exit!'s
-  # refusal.
+  # A PLACED ROOM OF ANOTHER PLACE IS NOT ON THE LIST, and that is the whole of
+  # what comes off it: a row carrying a BOX, read in some other place's plane.
+  # This is the half of the rule that costs a sentence; the half nothing depends
+  # on the model for is #connect_exit!'s matching refusal. `#rooms_elsewhere` is
+  # the one statement of it, asked once as a query and once as a predicate.
+  #
+  # KEYED ON PLACEMENT AND NOT ON `parent_location_id` EQUALITY, and the
+  # difference is a shape a world file may legitimately write: PLAIN
+  # CONTAINMENT, a `parent` with no box -- a district a street sits in, which
+  # `WorldSeed::Loader#validate_one_parent!` allows and `WorldSeed::Exporter`
+  # round-trips. Nothing laid a district out, so its children are ordinary
+  # places whose ways out are still the model's to name. Keyed on parent
+  # equality instead, a street inside a district would be offered nothing but
+  # the district's other streets -- "None yet." for the only child of one -- and
+  # would then be refused every outermost name it reused, which is a realized
+  # room with no way out of it.
   #
   # THIS IS NOT A PROMPT CHANGE WANTING A STORED BASELINE, and it is worth
-  # saying so here so nobody later reads it as one. Nothing wrote a
-  # `parent_location` until `Location::Interior` did, so for every story any
-  # baseline in `db/eval/` was measured on, every location in the story is at
-  # the outermost level and this filter selects all of them. It RESTORES the
-  # text those baselines were measured against rather than moving it.
-  #
-  # IT IS WRITTEN AS "THIS LOCATION'S OWN LEVEL" RATHER THAN "THE OUTERMOST
-  # LEVEL", and the two are the same list today: #write_exits! does not build
-  # this prompt for a room inside a laid-out place, so `parent_location_id` is
-  # nil every time this runs. Said the general way it stays true if a later
-  # slice ever asks a room for a way out, where the outermost level would be
-  # exactly the wrong list to offer.
+  # saying so here so nobody later reads it as one. Nothing in the app wrote a
+  # `parent_location` before `Location::Interior` did, and no world any stored
+  # `db/eval/` baseline was measured on carries one -- so for every story those
+  # baselines saw there is no placed room to take off the list and this selects
+  # all of them. It cannot have moved the text they were measured against.
   def known_location_names
-    story.locations.where(parent_location_id: location.parent_location_id).where.not(id: location.id)
+    story.locations.where.not(id: location.id).where.not(id: rooms_elsewhere.select(:id))
          .order(:id).map { |place| known_location_line(place) }.join("\n")
+  end
+
+  # THE ROOMS OF SOMEBODY ELSE'S INTERIOR: placed -- all five columns, so read
+  # in a parent's own plane -- inside a place that is not the one this location
+  # is in. A room of THIS location's own parent is not one of them, so a sibling
+  # stays nameable if a later slice ever asks a room for a way out.
+  def rooms_elsewhere
+    story.locations.with_a_box.where.not(parent_location_id: [ nil, location.parent_location_id ])
   end
 
   def known_location_line(place)
@@ -530,13 +542,13 @@ class Location::Generator
   # and #write_exits! to mean that -- neither half is the whole rule, and a
   # reader who trusts one of them alone will be wrong.
   #
-  # THIS HALF IS THE WAY IN: a name that RESOLVES is refused unless it sits at
-  # this location's own containment level, so an exterior exit never lands on a
-  # room inside some place. Three things go wrong at once without it, and only
-  # the first is cosmetic: the party walks off a street straight into somebody's
-  # back room, which is slice 4's decision to make and not a model's; the entry
-  # room's spare exit -- the slot `Location::Interior` keeps free for the way IN
-  # -- is spent on a door somewhere else; and a room already carrying its full
+  # THIS HALF IS THE WAY IN: a name that RESOLVES to a PLACED ROOM of some other
+  # place is refused, so an exterior exit never lands inside a building somebody
+  # laid out. Three things go wrong at once without it, and only the first is
+  # cosmetic: the party walks off a street straight into somebody's back room,
+  # which is slice 4's decision to make and not a model's; the entry room's
+  # spare exit -- the slot `Location::Interior` keeps free for the way IN -- is
+  # spent on a door somewhere else; and a room already carrying its full
   # `Location::ExitsSchema::MAX_EXITS` takes one more, which
   # `EngineSweep::Invariants#exit_cap` fails a walk for. THE NAME IS DROPPED
   # WHOLE and no stub is created under it: a second location called what a room
@@ -546,9 +558,20 @@ class Location::Generator
   # does NOT resolve becomes a stub, and `.create_stub!` writes no
   # `parent_location` at all -- every invented neighbour is born at the
   # outermost level, so nothing here could tell a door out of a room from a door
-  # between two streets. What holds instead is that #write_exits! never runs for
-  # a room inside a laid-out place, so `location` here is never one and its
-  # parent is always the outermost nothing an invented stub is born into.
+  # between two streets. What holds instead is #write_exits!, which asks for no
+  # exits at all for a placed room of a laid-out interior: those rooms' doors
+  # are `Location::Interior`'s, decided before anybody typed a line. For
+  # everything else an outermost stub is the RIGHT neighbour -- an outermost
+  # place opens onto an outermost place, and a street inside a district that
+  # opens onto somewhere outside the district is a street you can leave the
+  # district by.
+  #
+  # PLACEMENT, NOT `parent_location_id` EQUALITY, is what both halves are keyed
+  # on, and `#known_location_names` says why at length: PLAIN CONTAINMENT -- a
+  # `parent` with no box, which a world file may write -- is not an interior and
+  # is not gated as one. Keyed on parent equality this would refuse a street
+  # inside a district every outermost name it reused and leave it realized with
+  # no way out.
   #
   # BOTH ENDS HAVE THE BUDGET, checked here rather than in #connect! because A
   # DOOR IS TWO ROWS and a per-direction check would write one of them -- the
@@ -559,7 +582,7 @@ class Location::Generator
     return if name.blank? || name.casecmp?(location.name.to_s)
 
     existing = find_location(name)
-    return if existing && existing.parent_location_id != location.parent_location_id
+    return if room_elsewhere?(existing)
     return if existing&.realized? && !into_written && !connected?(existing)
     return unless room_for_this_door?(existing)
 
@@ -581,6 +604,18 @@ class Location::Generator
     return true if existing && connected?(existing)
 
     room_for_exits.positive? && (existing.nil? || existing.exits.count < Location::ExitsSchema::MAX_EXITS)
+  end
+
+  # `#rooms_elsewhere` ASKED OF ONE ROW: whether this is a placed room of a
+  # place that is not the one this location is in. The query and this predicate
+  # are one rule at two boundaries -- the query keeps the name off the prompt,
+  # this keeps the door out of the records -- and only the second of them is
+  # something nothing depends on a model for.
+  def room_elsewhere?(other)
+    return false if other.nil?
+
+    other.placed? && other.parent_location_id.present? &&
+      other.parent_location_id != location.parent_location_id
   end
 
   def find_location(name)

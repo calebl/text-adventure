@@ -200,6 +200,41 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_not_includes agent.schemas, Location::ExitsSchema
   end
 
+  # PLAIN CONTAINMENT IS NOT AN INTERIOR, and this is the shape that tells the
+  # two apart: a `parent` with NO box -- a district a street sits in, which
+  # `WorldSeed::Loader#validate_one_parent!` allows and `WorldSeed::Exporter`
+  # round-trips. Nothing laid a district out, so its children are ordinary
+  # places: the exits call IS made, the outermost names ARE offered, and a name
+  # that resolves to one of them IS honoured.
+  #
+  # AND AN INVENTED NAME IS BORN AT THE OUTERMOST LEVEL, not inside the
+  # district. `.create_stub!` writes no `parent_location` and that is right
+  # here: a street you can leave the district by opens onto somewhere outside
+  # it, and nothing on record says a new place belongs to the district its
+  # neighbour is in.
+  test "a location inside a district with no box keeps its exits" do
+    district = stub_location(name: "The Docks District")
+    row = stub_location(name: "Warehouse Row", parent_location: district)
+    custom_house = stub_location(name: "The Custom House")
+    named = { "exits" => [
+      { "name" => custom_house.name, "teaser" => "Ledgers behind shuttered glass.",
+        "distance" => "adjacent", "travel_method" => "walking" },
+      { "name" => "The Salt Store", "teaser" => "A door propped open with a crate.",
+        "distance" => "adjacent", "travel_method" => "walking" }
+    ] }
+    agent = FakeAgent.new(DETAIL, named)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(row).realize! }
+
+    assert_includes agent.prompts.last, custom_house.name
+    assert_includes agent.prompts.last, district.name
+    assert_includes row.reload.exits, custom_house
+    assert LocationConnection.exists?(location: custom_house, connected_location: row)
+    salt_store = @story.locations.find_by(name: "The Salt Store")
+    assert_includes row.exits, salt_store
+    assert_nil salt_store.parent_location_id
+  end
+
   # AND `Story::Repair` GETS THE SAME ANSWER, because #write_exits! is where the
   # rule lives rather than #realize!: the way into a building is not something a
   # recovery may invent either.

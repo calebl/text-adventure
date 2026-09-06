@@ -126,13 +126,15 @@ class Location::InteriorTest < ActiveSupport::TestCase
   # --- determinism ----------------------------------------------------------
   #
   # The whole reason the layout is drawn from `Roll` rather than from `rand`:
-  # the same place lays out the same way in any process for ever, so `DRY_RUN=1`
-  # and an offline sweep re-derive what the real run wrote.
+  # the same place lays out the same way in any process for ever, so an offline
+  # sweep re-derives what the real run wrote. There is no rehearsal command for
+  # a layout -- see `Location::Interior`'s determinism section, which says which
+  # `DRY_RUN=1` that is and why it is not this one.
 
   # THE SAME PLACE, LAID OUT AGAIN FROM NOTHING. The rooms are taken away and
   # the same row is handed back to the generator -- which is what a second
-  # process, a `DRY_RUN=1` rehearsal and an offline sweep all are: the same
-  # story id and the same place id, with no memory of the first answer.
+  # process and an offline sweep both are: the same story id and the same place
+  # id, with no memory of the first answer.
   test "the same place lays out the same way twice" do
     place = laid_out
     first = layout_of(place)
