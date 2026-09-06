@@ -368,11 +368,14 @@ refusal `offers` as an alternative, how the engine `understood` the line, and
 how many `drifts` rows it wrote. **A key outside that list raises**, so
 a fixture typo cannot become an expectation that silently holds.
 
-After every walk, four **invariants** are checked over the whole world against
-the file it was loaded from: no door was opened or closed, no room leads more
+After every walk a set of **invariants** is checked over the whole world against
+the file it was loaded from. The oldest of them are the shape the generator
+defects of 2026-09-03 had — no door was opened or closed, no room leads more
 ways out than `Location::ExitsSchema::MAX_EXITS`, every item is in exactly one
-place, and no room got written. Those are the shape the generator defects of
-2026-09-03 had — nobody typed a line that gave The Supply Closet a second door.
+place, and no room got written; nobody typed a line that gave The Supply Closet
+a second door. The ones added since hold that same line over everything else a
+typed line must not move. `EngineSweep::Invariants`' header is the whole list,
+each with what it is for.
 
 Three things make it repeatable. **No model**: `BaseAgent.new` is replaced for
 the length of the run, so a call from anywhere raises instead of reaching a

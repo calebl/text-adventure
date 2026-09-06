@@ -100,6 +100,27 @@
 #                        `cast_unmoved`'s reason: a world with no monsters at
 #                        all is the ordinary world and comparing against the
 #                        file catches everything a stronger sentence would.
+#   geometry_unmoved     every location's box -- `Location::Box::COLUMNS` and the
+#                        `parent_location` those five numbers are read in -- is
+#                        what the world file says it is, and a room the file
+#                        gives no box still has none. It is
+#                        `stat_blocks_unmoved`'s statement about a place instead
+#                        of a body, and it is the standing constraint applied to
+#                        geometry: the ENGINE owns every one of those numbers.
+#                        The writers are a seed file and, from slice 2, the
+#                        interior layout generator; no model and no typed line is
+#                        on that list, and nothing in the play path so much as
+#                        reads a coordinate today. THE PARENT IS IN IT because it
+#                        is the frame -- coordinates are local to a parent and
+#                        there is no global space (`Location::Box`), so a walk
+#                        that re-parented a room would move it without changing a
+#                        number, and an invariant over the five columns alone
+#                        would not notice. Stated as "unmoved" against the file
+#                        for `cast_unmoved`'s reason: a world with no interiors
+#                        at all is the ordinary world -- it is what all three
+#                        checked-in worlds are, by the captain's fourth ruling of
+#                        2026-09-06 -- and comparing against the file catches
+#                        everything a stronger sentence would.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
@@ -137,7 +158,7 @@ class EngineSweep::Invariants
 
   def check
     [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, stat_blocks_unmoved,
-      hostility_unmoved, hazards_unmoved, nothing_was_written ].flatten.compact
+      hostility_unmoved, hazards_unmoved, geometry_unmoved, nothing_was_written ].flatten.compact
   end
 
   private
@@ -410,6 +431,75 @@ class EngineSweep::Invariants
 
       "the way from #{pair.first} into #{pair.last} has hazard #{edge.hazard.inspect} and the file says " \
         "#{wanted[pair].inspect}"
+    end
+  end
+
+  # NO TYPED LINE MAY MOVE A WALL. The standing constraint applied to geometry,
+  # and the reason it can be stated as a flat comparison against the file is
+  # that a box is the WORLD's on exactly the terms a hit die and a hazard
+  # already are -- see the header.
+  #
+  # SIX FACTS PER ROOM, not five: the parent is the frame the other five are
+  # read in, so a walk that left every number alone and re-parented the room
+  # would have moved it and this would say so.
+  #
+  # Read against the file both ways, like `#danger_of_the_rooms`: a room that
+  # ACQUIRED a box during a walk fails exactly as loudly as one that lost it,
+  # which is what makes this hold on the three checked-in worlds -- they declare
+  # no boxes at all, so every room is expected to have none.
+  def geometry_unmoved
+    moved = story.locations.includes(:parent_location).order(:id).filter_map do |room|
+      wanted = geometry_in_file.fetch(room.name, no_geometry)
+      now = geometry_on_record(room)
+      next if comparable_geometry(now) == comparable_geometry(wanted)
+
+      "#{room.name} is #{describe_geometry(now)} and the file says #{describe_geometry(wanted)}"
+    end
+    return nil if moved.empty?
+
+    broken("geometry_unmoved", moved.join("; "))
+  end
+
+  # `{ name => { the five columns, plus the parent's name } }` out of the file,
+  # with nil for every key it does not write -- which is all six for every room
+  # in every checked-in world.
+  def geometry_in_file
+    @geometry_in_file ||= Array(seed["locations"]).to_h do |row|
+      [ row["name"], no_geometry.merge(Location::Box::COLUMNS.to_h { |column| [ column, row[column] ] })
+                                .merge("parent" => row["parent"]) ]
+    end
+  end
+
+  def geometry_on_record(room)
+    Location::Box::COLUMNS.to_h { |column| [ column, room[column] ] }
+                          .merge("parent" => room.parent_location&.name)
+  end
+
+  def no_geometry
+    (Location::Box::COLUMNS + [ "parent" ]).index_with(nil)
+  end
+
+  # THE PARENT IS COMPARED THE WAY THE LOADER RESOLVED IT, on
+  # `WorldSeed.natural_key`: `WorldSeed::Loader#load_containment!` matches a
+  # `parent` key that way on purpose, so "the Rusted Anchor" and "Rusted Anchor"
+  # name one place -- and an invariant comparing the two strings would call a
+  # spelling the format supports a wall that moved. The names themselves are
+  # left alone, so the message still reads the way the file is written.
+  def comparable_geometry(geometry)
+    geometry.merge("parent" => geometry["parent"].presence&.then { |name| WorldSeed.natural_key(name) })
+  end
+
+  # The three whole shapes and the broken one, said in a phrase --
+  # `Location::Box.shape`'s four answers, so a broken invariant reads the same
+  # way a doctor finding does.
+  def describe_geometry(geometry)
+    inside = geometry["parent"] ? "inside #{geometry["parent"]}" : "inside nothing"
+
+    case Location::Box.shape(geometry)
+    when :box then "#{Location::Box.of(geometry)} #{inside}"
+    when :footprint then "#{geometry["width"]}x#{geometry["depth"]} paces #{inside}"
+    when :partial then "part of a box (#{Location::Box::COLUMNS.select { |column| geometry[column] }.join(", ")}) #{inside}"
+    else "unlaid out, #{inside}"
     end
   end
 

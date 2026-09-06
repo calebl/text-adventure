@@ -1,0 +1,142 @@
+# A WORLD WITH AN INTERIOR, and the only one in the repository that has one.
+#
+# It exists to prove the format round-trips, not to be played: the three worlds
+# in `db/seeds/worlds/` are left flat by the captain's fourth ruling of
+# 2026-09-06, so there was nowhere else a two-room interior could be written
+# down and read back. It lives under `test/fixtures/files/` deliberately --
+# `db/seeds.rb` loads every `*.yml` in the seeds directory, and a fourth world
+# appearing in a fresh clone is not what this is for.
+#
+# WHAT IT DECLARES, and it is the shape a slice-2 interior will have:
+#
+#   The Rusted Anchor is a PLACE. It carries a FOOTPRINT and no position -- 12
+#   by 8 paces, inside nothing -- which is what the outermost place of an
+#   interior carries and why `Location::Box` has two whole shapes rather than
+#   one. Nobody ever stands in it; the party stands in its rooms.
+#
+#   The Taproom and The Back Room are its rooms: `parent: The Rusted Anchor`
+#   and all five numbers each. The taproom runs 0..6 along x, the back room
+#   7..11, so they share the wall at x = 7 -- a touch and not an overlap,
+#   because the intervals are half-open. Both are on storey 0.
+#
+#   The Harbour Road is outside all of it, with no geometry at all, which is
+#   what almost every location in every world is and what the three checked-in
+#   worlds are entirely.
+format: 2
+universe:
+  physics: |-
+    Ordinary physics, and a tide that keeps to its table.
+  technology: |-
+    Rope, tar, lamp oil and a ledger.
+  weapons: |-
+    A gaff hook, and whatever is nearest the door.
+  geographies: |-
+    One harbour, one road above it, and the water at the end of both.
+  civilizations: |-
+    A port that has never been anything else.
+  history: |-
+    Three hundred years of the same tide.
+  economics: |-
+    Paid in salt weight, settled in coin when the assessor is watching.
+  politics: |-
+    The harbourmaster, and whoever is owed money by the harbourmaster.
+  religion: |-
+    The tide table, read aloud.
+  races:
+  - name: Harbourfolk
+    description: |-
+      Born to the water line, and unimpressed by anybody who was not.
+story:
+  title: A World With An Interior
+  genre: harbour mystery
+  start_time: '2026-09-06T19:00:00Z'
+  preface: |-
+    The taproom has been shut since noon and the door is still warm.
+  summary: |-
+    Somebody was in the back room of the Rusted Anchor when it should have been empty.
+opening_scene:
+  location: The Taproom
+  characters:
+  - Nell Cawsand
+  description: |-
+    The shutters are down and the lamps are still lit, which is nobody's idea of shut.
+  summary: |-
+    The story opens in the taproom of the Rusted Anchor with the lamps still burning.
+characters:
+- fullname: Nell Cawsand
+  race: Harbourfolk
+  location: The Taproom
+  nickname: Nell
+  age: 38
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: |-
+    Kept the Anchor's books for eleven years without once being asked to.
+  personality: |-
+    Unhurried, and counts things twice.
+  appearance: |-
+    Salt at the cuff, whatever she is wearing.
+  likes: |-
+    A tide that comes in on the table
+  dislikes: |-
+    A door found open
+  fears: |-
+    Being the last one to know
+  stats:
+    level: 2
+    hit_die: 8
+    strength: 11
+    dexterity: 13
+    will: 12
+locations:
+- name: The Taproom
+  detail_level: realized
+  opening: true
+  parent: The Rusted Anchor
+  x: 0
+  y: 0
+  z: 0
+  width: 7
+  depth: 8
+  teaser: |-
+    Lamps lit, shutters down.
+  description: |-
+    Seven paces of scarred boards, eight deep, and every lamp still burning.
+  lore: |-
+    The room the harbour drinks in, and has since before the road was paved.
+- name: The Rusted Anchor
+  detail_level: stub
+  width: 12
+  depth: 8
+  teaser: |-
+    A public house with the shutters down.
+- name: The Back Room
+  detail_level: realized
+  parent: The Rusted Anchor
+  x: 7
+  y: 0
+  z: 0
+  width: 5
+  depth: 8
+  teaser: |-
+    A door that should have been locked.
+  description: |-
+    Five paces of casks and ledgers, and a chair pulled out from the table.
+  lore: |-
+    Where the Anchor's books are kept, and where they are argued over.
+- name: The Harbour Road
+  detail_level: stub
+  teaser: |-
+    The water at one end and the town at the other.
+connections:
+- between:
+  - The Taproom
+  - The Back Room
+  distance: adjacent
+  travel_method: walking
+- between:
+  - The Taproom
+  - The Harbour Road
+  distance: adjacent
+  travel_method: walking

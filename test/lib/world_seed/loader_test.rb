@@ -1088,6 +1088,197 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_match(/not one of its own/, error.message)
   end
 
+  # --- an interior, which a file may declare and the three seeded worlds do not
+
+  # THE CHECKED-IN FIXTURE, and the only world in the repository with an
+  # interior. It is here rather than in `db/seeds/worlds/` on purpose:
+  # `db/seeds.rb` loads every file in that directory, and the captain's fourth
+  # ruling of 2026-09-06 leaves the three seeded worlds flat.
+  def interior_document
+    WorldSeed.parse(File.read(Rails.root.join("test/fixtures/files/a-world-with-an-interior.yml")))
+  end
+
+  # A file may put a room after the place that contains it or before it; the
+  # loader wires containment in a second pass so neither ordering matters. This
+  # fixture declares the taproom BEFORE the Anchor, which is the harder way
+  # round and the reason the pass exists.
+  test "loads a two-room interior, with the parent declared after its first room" do
+    story = WorldSeed::Loader.new(interior_document).load!
+    anchor = story.locations.find_by(name: "The Rusted Anchor")
+    taproom = story.locations.find_by(name: "The Taproom")
+    back = story.locations.find_by(name: "The Back Room")
+
+    assert_equal anchor, taproom.parent_location
+    assert_equal anchor, back.parent_location
+    assert_equal [ "The Back Room", "The Taproom" ], anchor.child_locations.order(:name).pluck(:name)
+  end
+
+  # THE OUTERMOST PLACE CARRIES AN EXTENT AND NO POSITION -- the second whole
+  # shape, and the one that makes an interior possible at all.
+  test "the place at the top of an interior loads as a footprint" do
+    story = WorldSeed::Loader.new(interior_document).load!
+    anchor = story.locations.find_by(name: "The Rusted Anchor")
+
+    assert_predicate anchor, :interior?
+    assert_not anchor.placed?
+    assert_equal [ 12, 8 ], [ anchor.width, anchor.depth ]
+  end
+
+  test "the rooms inside it load with all five numbers" do
+    story = WorldSeed::Loader.new(interior_document).load!
+
+    assert_equal Location::Box.new(x: 0, y: 0, z: 0, width: 7, depth: 8),
+                 story.locations.find_by(name: "The Taproom").box
+    assert_equal Location::Box.new(x: 7, y: 0, z: 0, width: 5, depth: 8),
+                 story.locations.find_by(name: "The Back Room").box
+  end
+
+  test "a location the file lays out nothing for loads with no geometry at all" do
+    story = WorldSeed::Loader.new(interior_document).load!
+    road = story.locations.find_by(name: "The Harbour Road")
+
+    assert_nil road.parent_location
+    assert_not road.interior?
+    assert_equal :none, Location::Box.shape(road)
+  end
+
+  test "the fixture world is healthy" do
+    story = WorldSeed::Loader.new(interior_document).load!
+
+    assert_predicate Story::Doctor.new(story), :healthy?
+  end
+
+  # BOTH DIRECTIONS, like `danger` and `hazard`: taking the keys out of a file
+  # and re-seeding has to take the room back out of the building, or a world
+  # could be laid out once and never un-laid-out from the file.
+  test "deleting the geometry keys and re-seeding takes the rooms back out of the building" do
+    WorldSeed::Loader.new(interior_document).load!
+
+    flattened = interior_document
+    flattened["locations"].each { |row| row.delete("parent") }
+    flattened["locations"].each { |row| Location::Box::COLUMNS.each { |column| row.delete(column) } }
+    story = WorldSeed::Loader.new(flattened).load!
+
+    assert_equal [ nil ], story.locations.pluck(:parent_location_id).uniq
+    assert_empty story.locations.with_a_footprint
+  end
+
+  # --- what a file may not say about a layout --------------------------------
+
+  def laid_out(**overrides)
+    world = document
+    world["locations"] << { "name" => "The Rusted Anchor", "detail_level" => "stub",
+                            "teaser" => "Shutters down.", "width" => 12, "depth" => 8 }
+    world["locations"].first.merge!({ "parent" => "The Rusted Anchor",
+                                      "x" => 0, "y" => 0, "z" => 0, "width" => 7, "depth" => 8 }
+                                      .merge(overrides.transform_keys(&:to_s)))
+    world
+  end
+
+  test "a file that carries part of a box is refused, naming the room" do
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(laid_out(depth: nil)).load! }
+
+    assert_match(/The Office/, error.message)
+    assert_match(/neither a footprint/, error.message)
+  end
+
+  test "a file that gives a room a position and no parent is refused" do
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(laid_out(parent: nil)).load! }
+
+    assert_match(/has a position and is inside nothing/, error.message)
+  end
+
+  # THE MIRROR OF THE ONE ABOVE, and the reason there are two whole shapes: an
+  # extent with no position inside nothing is the top of an interior.
+  test "a file that gives a place a footprint and no parent loads" do
+    world = document
+    world["locations"].first.merge!("width" => 12, "depth" => 8)
+
+    assert_predicate WorldSeed::Loader.new(world).load!.opening_location, :interior?
+  end
+
+  test "a file that places a room inside something with no footprint is refused" do
+    world = laid_out
+    world["locations"].last.delete("width")
+    world["locations"].last.delete("depth")
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+
+    assert_match(/no footprint of its own/, error.message)
+  end
+
+  test "a file whose parent names a location it does not declare is refused" do
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(laid_out(parent: "The Drowned Chapel")).load! }
+
+    assert_match(/does not declare as a location/, error.message)
+  end
+
+  test "a room that is its own parent is refused" do
+    world = document
+    world["locations"].first["parent"] = world["locations"].first["name"]
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+
+    assert_match(/is its own `parent`/, error.message)
+  end
+
+  # A CONTAINMENT GRAPH WITH NO OUTERMOST PLACE: nothing that walks it upwards
+  # has a stopping condition.
+  test "two locations that contain each other are refused" do
+    world = document
+    world["locations"][0]["parent"] = world["locations"][1]["name"]
+    world["locations"][1]["parent"] = world["locations"][0]["name"]
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+
+    assert_match(/contain each other/, error.message)
+  end
+
+  test "a room zero paces across is refused" do
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(laid_out(width: 0)).load! }
+
+    assert_match(/at least one pace across/, error.message)
+  end
+
+  test "a box that is not whole numbers is refused" do
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(laid_out(x: 1.5)).load! }
+
+    assert_match(/whole numbers of paces/, error.message)
+  end
+
+  test "two rooms in the same place at once are refused, naming both" do
+    world = laid_out
+    world["locations"] << { "name" => "The Cellar Stair", "detail_level" => "stub", "teaser" => "Down.",
+                            "parent" => "The Rusted Anchor", "x" => 5, "y" => 0, "z" => 0,
+                            "width" => 4, "depth" => 4 }
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+
+    assert_match(/The Office/, error.message)
+    assert_match(/The Cellar Stair/, error.message)
+    assert_match(/same place at once/, error.message)
+  end
+
+  test "two rooms sharing a wall load, because the intervals are half-open" do
+    world = laid_out
+    world["locations"] << { "name" => "The Cellar Stair", "detail_level" => "stub", "teaser" => "Down.",
+                            "parent" => "The Rusted Anchor", "x" => 7, "y" => 0, "z" => 0,
+                            "width" => 5, "depth" => 8 }
+
+    assert_predicate WorldSeed::Loader.new(world).load!.locations.with_a_box.count, :positive?
+  end
+
+  # 2.5D: each floor is its own plane, so this is a building with two storeys
+  # and not two rooms on top of each other.
+  test "the same rectangle on a second storey loads" do
+    world = laid_out
+    world["locations"] << { "name" => "The Upstairs Room", "detail_level" => "stub", "teaser" => "Up.",
+                            "parent" => "The Rusted Anchor", "x" => 0, "y" => 0, "z" => 1,
+                            "width" => 7, "depth" => 8 }
+
+    assert_equal 2, WorldSeed::Loader.new(world).load!.locations.with_a_box.count
+  end
+
   # Built fresh on every call so a test can edit it without touching another's.
   def document
     WorldSeed.parse(WorldSeed.dump(

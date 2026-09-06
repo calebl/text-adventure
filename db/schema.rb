@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_05_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -125,6 +125,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_150000) do
   create_table "locations", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "danger", default: "safe", null: false
+    t.integer "depth"
     t.text "description"
     t.string "detail_level", default: "stub", null: false
     t.string "hazard"
@@ -137,6 +138,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_150000) do
     t.integer "story_id", null: false
     t.text "teaser"
     t.datetime "updated_at", null: false
+    t.integer "width"
+    t.integer "x"
+    t.integer "y"
+    t.integer "z"
     t.index ["parent_location_id"], name: "index_locations_on_parent_location_id"
     t.index ["story_id", "detail_level"], name: "index_locations_on_story_id_and_detail_level"
     t.index ["story_id"], name: "index_locations_on_story_id"

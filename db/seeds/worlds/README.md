@@ -39,7 +39,7 @@ One file is one universe and one story. Keys are written in this order:
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
 | `characters`    | one entry each, `race` by name, optional `location` (or `absent`), optional `hostile`, optional `stats`, and `items` |
-| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `hazard` + `hazard_die`; `items` |
+| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `hazard` + `hazard_die`; optional `parent` + a box (`x`, `y`, `z`, `width`, `depth`); `items` |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair; optional `hazard` + `hazard_die` + `hazard_from` |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
 
@@ -552,10 +552,100 @@ connections:
   when it is born; there is no counterpart for `hazard`, deliberately, and
   adding one is a later question.
 
+### `parent`, and the box — a place that has an inside
+
+Since the captain's four rulings of 2026-09-06, a `Location` can be a **place**
+with rooms inside it. `parent` names the containing place; the five integer
+columns say where in it a room sits. The unit is the **pace**, one cell of
+roughly 1.5 m, and `Location::Box` owns the whole design — read its header, not
+this list.
+
+```yaml
+locations:
+- name: The Taproom            # a ROOM inside the place below: all five numbers
+  detail_level: realized       # and the opening row, so it LEADS the list
+  opening: true
+  parent: The Rusted Anchor
+  x: 0
+  y: 0
+  z: 0
+  width: 7
+  depth: 8
+- name: The Rusted Anchor      # a PLACE: an extent, and no position
+  detail_level: stub
+  width: 12
+  depth: 8
+- name: The Back Room          # beside the taproom, sharing the wall at x = 7
+  detail_level: realized
+  parent: The Rusted Anchor
+  x: 7
+  y: 0
+  z: 0
+  width: 5
+  depth: 8
+```
+
+- **Containment imposes NO ordering — but the opening row still has to lead the
+  list.** A `parent` may be named before or after the rooms inside it: the
+  loader wires containment in a second pass precisely so a file need not be
+  sorted. What is NOT free is where the opening room goes.
+  `Story#opening_location` is the story's lowest-id location and the loader
+  creates rows in file order, so the row marked `opening: true` must also be the
+  FIRST row. Nothing refuses a file that breaks it — it loads, and then the
+  story's opening room and the room the browser actually starts you in are two
+  different places. The trap is specific to interiors: a reader's instinct is to
+  write the building before the rooms in it, and that is the one order this rule
+  forbids when the opening room is one of those rooms. The example above leads
+  with the taproom for that reason, and so does
+  `test/fixtures/files/a-world-with-an-interior.yml`.
+- **Every one of these keys is optional and NONE of the three worlds here uses
+  them.** The captain's fourth ruling leaves the seeded worlds flat; interiors
+  are opt-in per file, and generated worlds get them from slice 2 onward. The
+  worked example above is
+  `test/fixtures/files/a-world-with-an-interior.yml` — a fixture rather than a
+  fourth world here, because `db/seeds.rb` loads everything in this directory.
+- **There are two whole shapes, not one.** An extent alone (`width` + `depth`)
+  is a **footprint**: *this place has an inside, and it is this big*, which is
+  what the outermost place of an interior carries. All five is a **box**: *and
+  it sits here, on this storey of its parent*. Anything else — two of the three
+  position keys, or a position with no extent — is refused.
+- **Coordinates are local to a parent; there is no global space.** That is what
+  lets the world graph stay non-planar (two cities are *days apart*, not
+  *n paces apart*) while an interior is exact. So a box needs a `parent`; a
+  footprint must not have one forced on it, or nothing could sit at the top.
+- **`z` is a storey index, not a height.** 2.5D: each floor is its own plane and
+  a stair is an ordinary connection with `travel_method: taking stairs`. The
+  same rectangle on two storeys is a building with two floors, not an overlap.
+- **The intervals are half-open.** A room at `x: 0` `width: 7` occupies 0–6, so
+  a room at `x: 7` shares its wall and does not overlap it.
+- Both are **omitted rather than written out** on export, like `mobile` and
+  `danger`, and both are **re-asserted in both directions** on load: deleting
+  `parent:` and the box from a file and re-seeding takes the room back out of
+  the building.
+- **The loader refuses** a partial shape, a non-integer or a zero-width room, a
+  box with no `parent`, a `parent` this file does not declare, a room that is
+  its own parent, a containment cycle, a box inside a place with no footprint,
+  and two boxes under one parent on one storey that overlap.
+- `rake game:doctor` reports the same faults on a database that already carries
+  them — `location_with_a_partial_box`,
+  `location_with_an_impossible_extent`, `location_with_a_box_and_no_parent`,
+  `location_with_a_box_outside_a_footprint`, `overlapping_sibling_locations`
+  and `locations_containing_each_other`. **None can be repaired:** which of two
+  overlapping rooms its author put in the wrong place is not on record, and
+  clearing a box deletes a floor plan somebody laid out. `rake game:export`
+  warns about every one of them too, naming the code, because a file carrying
+  one will not load.
+- **Nothing generates one yet, and no typed line may touch one.** A box is the
+  world's on exactly the terms a hit die and a hazard are;
+  `EngineSweep::Invariants`' `geometry_unmoved` asserts across a whole scripted
+  play that no coordinate and no `parent` moved.
+
 ### Rules the loader enforces
 
 - Exactly one location is `opening: true`, and it must be `realized` — a story
-  whose first location is a stub cannot be started in the browser.
+  whose opening location is a stub cannot be started in the browser. That row
+  must also be the FIRST in the list, which the loader does not check: see
+  the `parent` section above for why an interior makes it easy to get wrong.
 - An `opening_scene` is **required**, it must be in the location marked
   `opening: true`, and it must have a `description`. Required rather than
   optional on purpose: a key that is usually there closes neither of the two
@@ -600,6 +690,9 @@ connections:
   the edge's **own two ends**. Without it there is no way to say which direction
   costs something; with the wrong name the edge would load with no hazard at all
   and no complaint.
+- A `parent` and a box are held to the rules `WorldSeed::Loader#validate_boxes!`
+  names — whole, integers, framed, footprint, declared, apart — which are not
+  repeated here: see the `parent` section above.
 - `sex` is a `Character.sexes` key: `male`, `female`, `non_binary`,
   `trans_woman`, `trans_man`. Not checked by `validate!` -- it is `Character`'s
   own `inclusion` validation that rejects a bad one, inside the same
@@ -750,6 +843,12 @@ optional and both default to "this world does not move", so every format 2 file
 written before they existed — `the-unrecorded-hour.yml` included — still loads
 and still means exactly what it meant. A required key, as `opening_scene` was,
 is what bumps the number.
+
+`locations[].parent` and the box (`x`, `y`, `z`, `width`, `depth`) were added to
+format 2 on that same rule: all six are optional, all six default to a world
+with no interiors in it — which is what every world here is, by the captain's
+fourth ruling of 2026-09-06 — and the columns are nullable, so no existing
+database needs a backfill either. See the `parent` section above.
 
 ### `the-lunar-cartographer.yml`
 

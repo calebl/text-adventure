@@ -546,4 +546,175 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
   def connect(from, to)
     create(:location_connection, :short_distance, location: from, connected_location: to)
   end
+  # --- an interior, since the rulings of 2026-09-06 --------------------------
+  #
+  # A ROUND TRIP IS THE ONLY THING THAT PROVES THE TWO HALVES AGREE, which is
+  # what every other geometry-free key in this file is held to as well.
+
+  test "a place with a footprint exports its extent and no position" do
+    @opening.update!(width: 12, depth: 8)
+    document = WorldSeed::Exporter.new(@story).document
+    place = document["locations"].detect { |row| row["name"] == "The Opening Room" }
+
+    assert_equal 12, place["width"]
+    assert_equal 8, place["depth"]
+    Location::Box::POSITION.each { |column| assert_not place.key?(column), "exported a #{column} it does not have" }
+  end
+
+  # OMITTED RATHER THAN WRITTEN NULL, which is the rule every key in this format
+  # follows -- and it is what keeps the three checked-in worlds byte-identical
+  # through an export, since they are left flat on purpose.
+  test "a flat world exports no geometry keys at all" do
+    document = WorldSeed::Exporter.new(@story).document
+
+    document["locations"].each do |row|
+      (Location::Box::COLUMNS + [ "parent" ]).each do |key|
+        assert_not row.key?(key), "#{row["name"]} exported a #{key} it does not have"
+      end
+    end
+  end
+
+  test "a two-room interior round-trips through export, load and export unchanged" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Back Room",
+                      x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    once = WorldSeed::Exporter.new(@story).document
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(once))).load!
+    twice = WorldSeed::Exporter.new(reloaded).document
+
+    assert_equal once, twice
+  end
+
+  # THE PARENT GOES OUT AS A NAME, like every other cross reference in the
+  # format: ids do not survive a re-seed.
+  test "containment exports as the parent's name, and loads back onto the same rows" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+
+    document = WorldSeed::Exporter.new(@story).document
+    taproom = document["locations"].detect { |row| row["name"] == "The Taproom" }
+
+    assert_equal "The Rusted Anchor", taproom["parent"]
+
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load!
+    assert_equal "The Rusted Anchor", reloaded.locations.find_by(name: "The Taproom").parent_location.name
+  end
+
+  # A ROW THAT GOT PAST THE APP. `Location#a_box_is_whole` refuses to save this,
+  # so the file is written as the records stand and the warning is where the
+  # person editing it finds out -- rather than the exporter quietly inventing
+  # the two numbers that are missing.
+  test "a place carrying part of a box is exported as it stands, with a warning" do
+    @stub.update_columns(x: 3, y: 4)
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_equal 3, document["locations"].detect { |row| row["name"] == "Somewhere Else" }["x"]
+    assert_match(/neither a footprint nor a box/, exporter.warnings.join)
+  end
+
+  # THE OTHER THREE SHAPES THE LOADER REFUSES. Each of these exported silently
+  # before, so `rake game:export` produced a file `rake game:seed` rejected with
+  # nothing said -- and the round trip below is what proves the warning is about
+  # a real refusal rather than a guess at one.
+
+  # WHAT DESTROYING A PLACE LEAVES BEHIND: `dependent: :nullify` on
+  # `child_locations` keeps the rooms and takes their parent away, so a story
+  # can genuinely be in this state without anybody touching SQL.
+  test "a room left placed inside nothing is exported as it stands, with a warning" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+    place.destroy!
+
+    exporter = WorldSeed::Exporter.new(@story.reload)
+    document = exporter.document
+
+    assert_equal 0, document["locations"].detect { |row| row["name"] == "The Taproom" }["x"]
+    assert_match(/location_with_a_box_and_no_parent/, exporter.warnings.join)
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  test "a room placed inside a place with no footprint is exported as it stands, with a warning" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor")
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_match(/location_with_a_box_outside_a_footprint/, exporter.warnings.join)
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  test "two rooms in the same place at once are exported as they stand, with a warning" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Back Room",
+                      x: 6, y: 0, z: 0, width: 5, depth: 8)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_match(/overlapping_sibling_locations/, exporter.warnings.join)
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  # `Location::Box.shape` calls this a whole footprint, so nothing else in the
+  # export notices it -- and the loader refuses the file anyway.
+  test "a place zero paces across is exported as it stands, with a warning" do
+    @stub.update_columns(width: 0, depth: 8)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_equal 0, document["locations"].detect { |row| row["name"] == "Somewhere Else" }["width"]
+    assert_match(/location_with_an_impossible_extent/, exporter.warnings.join)
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  # A WORLD WITH NO OUTERMOST PLACE. The export writes both `parent` keys as
+  # they stand, so the ring survives into the file and the loader refuses it.
+  test "two places inside each other are exported as they stand, with a warning" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor")
+    room = create(:location, story: @story, parent_location: place, name: "The Taproom")
+    place.update_column(:parent_location_id, room.id)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_equal "The Taproom", document["locations"].detect { |row| row["name"] == "The Rusted Anchor" }["parent"]
+    assert_equal 1, exporter.warnings.grep(/locations_containing_each_other/).size
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  test "a place that is its own parent is exported as it stands, with a warning" do
+    @stub.update_column(:parent_location_id, @stub.id)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_match(/locations_containing_each_other/, exporter.warnings.join)
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  # THE ONE THAT MUST STAY QUIET: a well formed interior, and the shape every
+  # generated world gets from slice 2 on.
+  test "a well formed interior exports with no geometry warning at all" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Back Room",
+                      x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    exporter.document
+
+    assert_empty exporter.warnings.grep(/location_with_|overlapping_sibling_locations|locations_containing_each_other|pace across/)
+  end
 end

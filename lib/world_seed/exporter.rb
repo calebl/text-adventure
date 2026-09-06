@@ -117,6 +117,24 @@ class WorldSeed::Exporter
                    "is their progress through the world rather than the world."
     end
 
+    # A PLACE THAT IS HALF LAID OUT. `Location::Box` has three whole answers --
+    # nothing, a footprint, a box -- and `Location#a_box_is_whole` refuses
+    # anything else, so a row here came through raw SQL or a database older than
+    # that validation. It is written out AS IT STANDS rather than tidied,
+    # because which two numbers are missing is not derivable and inventing them
+    # would be inventing a floor plan; the loader will refuse the file, which is
+    # what makes this warning the place the person editing it finds out.
+    story.locations.order(:id).each do |location|
+      next unless Location::Box.partial?(location)
+
+      @warnings << "#{location.name} carries #{Location::Box::COLUMNS.select { |column| location[column] }.join(", ")}, " \
+                   "which is neither a footprint nor a box: the file is written as the records stand and will not " \
+                   "load until somebody says what shape that place is. `rake game:doctor` reports it as " \
+                   "`location_with_a_partial_box`."
+    end
+
+    report_unloadable_geometry
+
     # A ROW THAT SAYS BOTH THINGS. `deliberately_absent` with a whereabouts is
     # a contradiction no code path in the app writes -- `Character#move_to!`
     # clears the marker -- so it arrives through raw SQL or a hand-edited file
@@ -135,6 +153,68 @@ class WorldSeed::Exporter
     end
 
     report_partial_stats
+  end
+
+  # THE REST OF WHAT `WorldSeed::Loader#validate_boxes!` REFUSES, and it is here
+  # for the partial box's reason one block up: `#warnings` is everything a human
+  # has to fix before the file will load, and every one of these can stand in the
+  # records. An orphan box is not hypothetical -- destroying a place leaves its
+  # rooms placed and inside nothing, which is what
+  # `Location has_many :child_locations, dependent: :nullify` means.
+  #
+  # READ OFF THE SAME PREDICATES `Story::Doctor#geometry` READS -- `#placed?`,
+  # `#interior?` and `#overlaps?` -- rather than re-derived here, so the
+  # exporter, the doctor and the loader cannot drift apart about what a fault is.
+  # Each warning names the matching `rake game:doctor` code for the same reason.
+  #
+  # NOTHING IS TIDIED ON THE WAY OUT. The file is written as the records stand,
+  # which is the rule the partial box already states: moving one of two
+  # overlapping rooms, or breaking one link of a ring of places that contain each
+  # other, would be this exporter deciding which of them its author got wrong.
+  def report_unloadable_geometry
+    story.locations.order(:id).each do |location|
+      wrong = Location::Box::EXTENT.select { |column| location[column].present? && location[column].to_i < 1 }
+      next if wrong.empty?
+
+      @warnings << "#{location.name} has #{wrong.map { |column| "#{column}: #{location[column]}" }.join(" and ")}: " \
+                   "a place is at least one pace across, and the file will not load until somebody says how big " \
+                   "that place really is. `rake game:doctor` reports it as `location_with_an_impossible_extent`."
+    end
+
+    placed = story.locations.includes(:parent_location).order(:id).select(&:placed?)
+
+    placed.each do |room|
+      parent = room.parent_location
+
+      if parent.nil?
+        @warnings << "#{room.name} is #{room.box} and is inside nothing: a position is read in the parent's own " \
+                     "plane, so the file will not load until this room is put inside somewhere or the position " \
+                     "goes. `rake game:doctor` reports it as `location_with_a_box_and_no_parent`."
+      elsif !parent.interior?
+        @warnings << "#{room.name} is #{room.box} inside #{parent.name}, which has no footprint of its own: the " \
+                     "plane those numbers are read in does not exist, so the file will not load until " \
+                     "#{parent.name} carries a width and a depth. `rake game:doctor` reports it as " \
+                     "`location_with_a_box_outside_a_footprint`."
+      end
+    end
+
+    placed.group_by { |room| [ room.parent_location_id, room.z ] }.each_value do |siblings|
+      siblings.combination(2).each do |one, other|
+        next unless one.overlaps?(other)
+
+        @warnings << "#{one.name} (#{one.box}) and #{other.name} (#{other.box}) are both inside " \
+                     "#{one.parent_location.name} and are in the same place at once: the file will not load until " \
+                     "one of them moves. `rake game:doctor` reports it as `overlapping_sibling_locations`."
+      end
+    end
+
+    rings = story.locations.includes(:parent_location).order(:id).filter_map(&:containment_ring)
+
+    rings.uniq { |ring| ring.map(&:id).sort }.each do |ring|
+      @warnings << "#{(ring + [ ring.first ]).map(&:name).join(" -> ")} contain each other: this file declares no " \
+                   "outermost place for them and will not load until one of those `parent` keys goes. " \
+                   "`rake game:doctor` reports it as `locations_containing_each_other`."
+    end
   end
 
   # Re-exporting overwrites the file, which would throw away a header somebody
@@ -312,6 +392,29 @@ class WorldSeed::Exporter
       if location.hazard.present?
         document["hazard"] = location.hazard
         document["hazard_die"] = location.hazard_die
+      end
+      # WHAT IS INSIDE WHAT, and WHERE IN IT. Both omitted rather than written
+      # null when there is none, which is the rule every key above follows -- and
+      # here it is also what the loader reads back as "this place has no
+      # interior", so the round trip is exact for the three checked-in worlds,
+      # which have none and are left flat on purpose (the captain's fourth ruling
+      # of 2026-09-06).
+      #
+      # THE PARENT IS WRITTEN AS A NAME, like every other cross reference in the
+      # format: ids do not survive a re-seed and `WorldSeed::Loader` matches
+      # rooms on `WorldSeed.natural_key`. It goes out even for a place with no
+      # box of its own, because containment is a fact about the world whether or
+      # not anybody has laid the inside of it out.
+      #
+      # WHAT IS WRITTEN IS WHAT THE ROW HAS, which is not "all five or none":
+      # `Location::Box` has TWO whole shapes, and the outermost place of an
+      # interior carries an extent with no position on purpose. Writing a
+      # position it does not have would put it in a frame that does not exist.
+      # A row in neither shape is a partial box, which the loader refuses; it is
+      # reported by `#warnings` rather than quietly repaired here.
+      document["parent"] = location.parent_location.name if location.parent_location
+      Location::Box::COLUMNS.each do |column|
+        document[column] = location[column] unless location[column].nil?
       end
       document["teaser"] = text(location.teaser)
       if location.realized?

@@ -159,6 +159,7 @@ class WorldSeed::Loader
       universe = load_universe!
       story = load_story!(universe)
       locations = load_locations!(story)
+      load_containment!(locations)
       load_connections!(story, locations)
       load_characters!(story, universe)
       load_mechanics!(story)
@@ -244,15 +245,56 @@ class WorldSeed::Loader
       # players hit points in a room its author had made safe, with no way to
       # undo it from the file. An absent key is NO HAZARD, which is what every
       # room already written is and what the nullable column says.
+      # AND WHERE IN ITS PARENT IT SITS, IF THE FILE LAYS ONE OUT. Written in
+      # both directions on every load for `danger`'s reason two keys up: a
+      # stale box left on a row the file no longer lays out would go on putting
+      # a room somewhere its author had taken it out of, with no way to undo it
+      # from the file. An absent set of keys is NO INTERIOR, which is what every
+      # room in every checked-in world is (the captain's fourth ruling of
+      # 2026-09-06) and what the five nullable columns say.
+      #
+      # `parent` IS EXCLUDED because it is a name and not a column: containment
+      # is wired in `#load_containment!` after every room exists, since a file
+      # may name a parent that is declared further down.
       location.assign_attributes(
-        attributes.except("opening", "items")
+        attributes.except("opening", "items", "parent")
                   .merge("name" => name, "danger" => attributes["danger"].presence || Location::SAFE,
                          "hazard" => attributes["hazard"].presence, "hazard_die" => attributes["hazard_die"])
+                  .merge(Location::Box::COLUMNS.to_h { |column| [ column, attributes[column] ] })
       )
       location.save!
       load_items!(story, attributes["items"], character: nil, location: location)
 
       [ name, location ]
+    end
+  end
+
+  # WHAT IS INSIDE WHAT, and it is a SECOND PASS on purpose: a file may put a
+  # room before the place that contains it, and a loader that wired containment
+  # while it created rows would be holding the file to an ordering nothing else
+  # in the format asks for. `#load_connections!` one method down is a second
+  # pass for exactly the same reason.
+  #
+  # WRITTEN IN BOTH DIRECTIONS, like the box the parent is the frame for:
+  # deleting a `parent` key from a file and re-seeding takes the room back out
+  # of the building. Without that, a room could be put inside something and
+  # never taken out again from the file, which is the failure every "both
+  # directions" comment in this file is about.
+  #
+  # MATCHED ON `WorldSeed.natural_key`, which is the key every other cross
+  # reference in this file resolves on, so "the Rusted Anchor" and "Rusted
+  # Anchor" name one place. `#validate_boxes!` has already refused a `parent`
+  # that names a room the file does not declare, so the lookup cannot miss.
+  def load_containment!(locations)
+    by_key = locations.transform_keys { |name| WorldSeed.natural_key(name) }
+
+    location_documents.each do |attributes|
+      location = locations.fetch(attributes.fetch("name"))
+      parent = attributes["parent"]
+      wanted = parent.present? ? by_key.fetch(WorldSeed.natural_key(parent)) : nil
+      next if location.parent_location_id == wanted&.id
+
+      location.update!(parent_location: wanted)
     end
   end
 
@@ -679,6 +721,7 @@ class WorldSeed::Loader
     validate_bulks!
     validate_dangers!
     validate_hazards!
+    validate_boxes!
 
     connection_documents.each do |attributes|
       pair = Array(attributes["between"])
@@ -841,6 +884,154 @@ class WorldSeed::Loader
 
       raise InvalidWorld, "#{where}: #{where_it_is} has `hazard_from: #{from.inspect}`, which is not one of its own " \
                           "two ends (#{pair.join(", ")})"
+    end
+  end
+
+  # A LAYOUT A FILE CAN GET WRONG, and a file is held to every rule the records
+  # allow -- `#validate_stats!`'s argument for a body, said for a place. A
+  # hand-authored world IS the decision about what is inside what; a half-laid
+  # out one is an editing slip, and the slip is silent. A position on a room
+  # with no `parent` reads against nothing at all, and two rooms in the same
+  # place at once load without complaint and are only ever noticed by somebody
+  # drawing the map.
+  #
+  # `Location::Box` owns what a whole shape IS -- an extent alone is a
+  # FOOTPRINT, the plane a place's children are read in; all five is a BOX, a
+  # room placed on a storey of its parent; anything else is partial. What is
+  # here is the six rules a FILE is held to on top of that:
+  #
+  #   whole      one of `Location::Box.shape`'s three whole answers. `Location`
+  #              refuses a partial one too, so a file with one never loads
+  #              either way; this names the file and the room.
+  #   integers   whole numbers, with a positive width and depth. A room zero
+  #              paces across is a room nothing can stand in.
+  #   framed     a BOX needs a `parent`, because coordinates are local to a
+  #              parent and there is no global space. A footprint does not, and
+  #              must not be made to: something has to sit at the top of the
+  #              containment tree.
+  #   footprint  and that parent needs an extent of its own, or the plane the
+  #              child's position is read in does not exist.
+  #   declared   `parent` names one of this file's own locations, and not
+  #              itself, and not a cycle -- a room cannot be inside a place that
+  #              is inside it.
+  #   apart      no two boxes under one parent on one storey overlap. Across
+  #              storeys is not an overlap at all: 2.5D, so each floor is its
+  #              own plane (the captain's third ruling of 2026-09-06).
+  #
+  # `rake game:doctor` reports these faults on a database that already carries
+  # them -- all but the half of `declared` that is a question about a file and
+  # not about a row, that a `parent` names a location THIS FILE declares -- which
+  # is what makes a world written before any of this diagnosable rather than
+  # unloadable. The file is held to the stronger rule.
+  def validate_boxes!
+    location_documents.each do |attributes|
+      validate_one_box!(attributes)
+      validate_one_parent!(attributes)
+    end
+
+    validate_no_parent_cycles!
+    validate_boxes_do_not_overlap!
+  end
+
+  def validate_one_box!(attributes)
+    room = attributes.fetch("name").inspect
+    written = Location::Box::COLUMNS.reject { |column| attributes[column].nil? }
+    return if written.empty?
+
+    if Location::Box.partial?(attributes)
+      raise InvalidWorld, "#{where}: location #{room} carries #{written.join(", ")}, which is neither a " \
+                          "footprint (#{Location::Box::EXTENT.join(", ")}) nor a box (all of " \
+                          "#{Location::Box::COLUMNS.join(", ")}) -- a place missing part of either has no shape " \
+                          "the engine can read"
+    end
+
+    written.each do |column|
+      value = attributes[column]
+      raise InvalidWorld, "#{where}: location #{room} has `#{column}: #{value.inspect}`; a box is whole " \
+                          "numbers of paces" unless value.is_a?(Integer)
+    end
+
+    Location::Box::EXTENT.each do |column|
+      next if attributes[column].positive?
+
+      raise InvalidWorld, "#{where}: location #{room} has `#{column}: #{attributes[column]}` -- a place is at " \
+                          "least one pace across, and one that is not is a place nothing can stand in"
+    end
+  end
+
+  # WHAT A `parent` HAS TO NAME, and the rules a BOX brings with it. Checked here
+  # rather than in `#load_containment!` because that runs inside the transaction
+  # and reports by column; somebody editing YAML needs the file and the room.
+  def validate_one_parent!(attributes)
+    room = attributes.fetch("name")
+    parent = attributes["parent"]
+    placed = Location::Box.shape(attributes) == :box
+
+    if parent.blank?
+      return unless placed
+
+      raise InvalidWorld, "#{where}: location #{room.inspect} has a position and is inside nothing -- " \
+                          "#{Location::Box::POSITION.join(", ")} are read in the parent's own plane, so a placed " \
+                          "room needs a `parent`. A place at the top of an interior carries " \
+                          "#{Location::Box::EXTENT.join(" and ")} alone."
+    end
+
+    found = location_documents.detect { |candidate| WorldSeed.natural_key(candidate.fetch("name")) == WorldSeed.natural_key(parent) }
+    if found.nil?
+      raise InvalidWorld, "#{where}: location #{room.inspect} has `parent: #{parent.inspect}`, which this file " \
+                          "does not declare as a location"
+    end
+
+    if WorldSeed.natural_key(found.fetch("name")) == WorldSeed.natural_key(room)
+      raise InvalidWorld, "#{where}: location #{room.inspect} is its own `parent`"
+    end
+
+    return unless placed
+    return if Location::Box::EXTENT.none? { |column| found[column].nil? }
+
+    raise InvalidWorld, "#{where}: location #{room.inspect} is placed inside #{found.fetch("name").inspect}, " \
+                        "which has no footprint of its own -- so the plane its position is read in does not exist"
+  end
+
+  # A ROOM INSIDE A PLACE THAT IS INSIDE IT. Refused rather than loaded, because
+  # a cycle is a containment graph with no outermost place: nothing that walks
+  # it upwards -- a description, a map, a repair -- has a stopping condition.
+  def validate_no_parent_cycles!
+    parents = location_documents.to_h do |attributes|
+      [ WorldSeed.natural_key(attributes.fetch("name")),
+        attributes["parent"].presence&.then { |name| WorldSeed.natural_key(name) } ]
+    end
+
+    parents.each_key do |start|
+      seen = [ start ]
+      walker = parents[start]
+      while walker
+        if seen.include?(walker)
+          raise InvalidWorld, "#{where}: these locations contain each other: #{(seen + [ walker ]).join(" -> ")}"
+        end
+
+        seen << walker
+        walker = parents[walker]
+      end
+    end
+  end
+
+  # TWO ROOMS IN THE SAME PLACE AT ONCE, decided exactly the way
+  # `Story::Doctor#overlapping_sibling_rooms` decides it, off the same
+  # `Location::Box` -- so the file and the database cannot disagree about what
+  # an overlap is.
+  def validate_boxes_do_not_overlap!
+    placed = location_documents.select { |attributes| Location::Box.of(attributes) }
+
+    placed.group_by { |attributes| [ WorldSeed.natural_key(attributes.fetch("parent")), attributes.fetch("z") ] }
+          .each_value do |siblings|
+      siblings.combination(2).each do |one, other|
+        next unless Location::Box.of(one).overlaps?(Location::Box.of(other))
+
+        raise InvalidWorld, "#{where}: #{one.fetch("name").inspect} (#{Location::Box.of(one)}) and " \
+                            "#{other.fetch("name").inspect} (#{Location::Box.of(other)}) are both inside " \
+                            "#{one.fetch("parent").inspect} and are in the same place at once"
+      end
     end
   end
 
