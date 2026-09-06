@@ -1,9 +1,10 @@
 # WHAT A CHECKOUT HAS TO DO AFTER IT PULLS, WRITTEN DOWN ONCE.
 #
 # THE PROBLEM THIS EXISTS FOR. A story is written once and then sits in the
-# database while features land around it (`AGENTS.md` -> *When a world outlives
-# the schema*), so every PR that adds a column also adds a sentence to its own
-# body: run this backfill, then that repair, then the doctor. Five of them
+# database while features land around it (`Story::Doctor`'s header is where a
+# world outliving its schema is written down), so every PR that adds a column
+# also adds a sentence to its own body: run this backfill, then that repair,
+# then the doctor. Five of them
 # landed in one week (PRs 105, 109, 110, 111, 113) and the captain was left
 # reading five PR bodies to work out what his own database still needed. A
 # sentence in a merged PR body is not a place a checkout can look things up.

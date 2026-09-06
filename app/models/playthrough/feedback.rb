@@ -70,7 +70,7 @@ class Playthrough::Feedback < ApplicationRecord
   # `interaction-narration` is `InteractionAgent`'s second pass turning a
   # character's reaction into prose, and `arrival` is `Scene::Generator`
   # narrating walking into a place. Those are the three calls on the prose side
-  # of the line AGENTS.md draws -- prose the player watches arrive, as against
+  # of the line this app draws -- prose the player watches arrive, as against
   # anything that fills a record.
   #
   # The other purposes are deliberately absent: `classifier` picks from a closed
@@ -192,7 +192,7 @@ class Playthrough::Feedback < ApplicationRecord
   def rotated? = prose_model_ids.size > 1
 
   # Where the turn sits on the story's clock, read through the Scene rather than
-  # copied. Story time, never the wall clock -- see AGENTS.md.
+  # copied. Story time, never the wall clock -- see `Story#clock`.
   def story_timestamp = scene&.story_timestamp
 
   # What the player typed to cause the turn being judged. `Scene#typed` is a

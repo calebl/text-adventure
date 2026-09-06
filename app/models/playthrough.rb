@@ -258,7 +258,7 @@ class Playthrough < ApplicationRecord
   # THE END, WRITTEN ONCE. `Playthrough::Turn#harm!` is the only caller, and it
   # calls it in the same statement that takes the last hit point.
   #
-  # STORY TIME, NOT THE WALL CLOCK (AGENTS.md -> *Story time*): the playthrough
+  # STORY TIME, NOT THE WALL CLOCK (`Story#clock`): the playthrough
   # ended at the moment in the fiction the player died, which is where their own
   # clock stands. `Time.current` here would date a death rehearsed from a backup
   # to whenever the backup was opened.

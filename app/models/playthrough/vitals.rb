@@ -112,7 +112,7 @@ class Playthrough::Vitals < ApplicationRecord
   #
   # A MOMENT AND NOT A BOOLEAN, for `playthroughs.ended_at`'s reason: when a
   # fight started is worth as much as that it did, and it is STORY time rather
-  # than the wall clock (AGENTS.md -> *Story time*).
+  # than the wall clock (`Story#clock`).
   def provoked? = provoked_at.present?
 
   # THE ONE WRITER OF THE MARK, and it is called from exactly one place --

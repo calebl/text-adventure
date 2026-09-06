@@ -16,8 +16,8 @@ updates:
   # 1.x from landing is CI, loudly: PR #91's `test` job went red with 11
   # failures and 6 errors, led by `RubyLLMSchemaEnvelopeTest` reporting that
   # "with_schema dropped Universe::PhysicalSchema" (run 33604977815). See
-  # AGENTS.md -> *Never let `ruby_llm-schema` resolve to 1.x* for why the
-  # whole 1.x line is refused, and for the trade this comment records.
+  # the `ruby_llm-schema` bound in the `Gemfile` for why the whole 1.x line is
+  # refused, and for the trade this comment records.
   #
   # ignore:
   # - dependency-name: "ruby_llm-schema"

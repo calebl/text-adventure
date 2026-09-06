@@ -9,7 +9,7 @@
 # `playthroughs.ended_at` is the other half: *"zero hit points means death.
 # Playthrough is over and you can't do anything else."* The marker is on the
 # playthrough because the playthrough is what stops, and it is a moment on the
-# STORY's clock rather than the wall clock (AGENTS.md -> *Story time*).
+# STORY's clock rather than the wall clock (`Story#clock`).
 class CreatePlaythroughVitals < ActiveRecord::Migration[8.1]
   def change
     create_table :playthrough_vitals do |t|

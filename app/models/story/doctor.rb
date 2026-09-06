@@ -466,7 +466,7 @@ class Story::Doctor
   end
 
   # A realized room with no way out is the documented cost of saving the
-  # description before asking for the exits (AGENTS.md, "Generating the world"):
+  # description before asking for the exits (`Location::Generator`'s header):
   # `realize!` returns an already-realized location untouched, so a room whose
   # exits call failed stays exitless forever and `write_exits!` is the recovery.
   def exits
