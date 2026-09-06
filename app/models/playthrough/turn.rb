@@ -545,10 +545,16 @@ class Playthrough::Turn
   # narrator, and a fact that says "somebody picked it up" is not a fact.
   def take_item(item, command, &block)
     taker = playthrough.character
+    from = playthrough.current_location
 
     carry!(item)
 
-    Scene::Narrator.new(playthrough).narrate(command, fact: taken_fact(item, taker), &block)
+    Scene::Narrator.new(playthrough).narrate(
+      command,
+      fact: taken_fact(item, taker, from),
+      handled: Playthrough::Moment::Handled.new(item: item, direction: :taken),
+      &block
+    )
   end
 
   # PUTTING SOMETHING DOWN, and the app does the putting down.
@@ -568,10 +574,16 @@ class Playthrough::Turn
   # shape.
   def drop_item(item, command, &block)
     here = playthrough.current_location
+    dropper = playthrough.character
 
     put_down!(item)
 
-    Scene::Narrator.new(playthrough).narrate(command, fact: dropped_fact(item, here), &block)
+    Scene::Narrator.new(playthrough).narrate(
+      command,
+      fact: dropped_fact(item, here, dropper),
+      handled: Playthrough::Moment::Handled.new(item: item, direction: :dropped),
+      &block
+    )
   end
 
   # READING WHAT IS WRITTEN ON SOMETHING, and the words come out of the records.
@@ -1090,15 +1102,55 @@ class Playthrough::Turn
   # half of the rule, because picking a thing up is not reading it and a take
   # must not silently become a model call. A readable thing with no words yet is
   # simply not quoted, and the first read writes them.
-  def taken_fact(item, taker)
-    "#{taker.fullname} has picked up the #{item.name} and is now carrying it" \
-      "#{" -- #{item.description}" if item.description.present?}." \
+  #
+  # AND IT IS STATED AS A CHANGE RATHER THAN AS A STATE, which is the whole of
+  # the take-denied fix of 2026-09-05. It used to read *"Odile Vance has picked
+  # up the Ward Office 12 daybook and is now carrying it"* -- a perfect
+  # description of where the row now stands and no account at all of where it
+  # stood a moment ago. Beside it `Playthrough::Moment` listed the daybook under
+  # *"The player is carrying:"*, because by then it truly was, and the two
+  # together read as one fact stated twice: the thing is theirs. So the narrator
+  # wrote the pickup as redundant -- *"You reach for the daybook, but it is
+  # already in your hands"* -- on 19 of 20 judgeable take turns of the
+  # 2026-09-05 re-baseline and 14..17 of 18 of the prompt bench's take cases.
+  #
+  # The sentence now says WHEN (this turn and not before it), WHERE IT WAS
+  # (lying in this room, not in their hands) and WHAT TO WRITE (the taking).
+  # `Playthrough::Moment::Handled` is the other half and marks the same row on
+  # the carried list, so the standing state and the fact agree about which of
+  # the two they are.
+  #
+  # AND IT SAYS WHAT DID NOT MOVE, which is `one line, one act` handed to the
+  # prose and was forced by measurement. Prose that finally narrated the pickup
+  # started narrating the pickup's SOURCE with it -- *"you reach behind the
+  # stack of blank ward forms and draw out the copy-room apron"*, of an apron
+  # the records put somewhere else -- and `item_not_held` on take-shaped cases
+  # went from 1 flag to 12 over four repetitions (take-fix-1, 2026-09-05). One
+  # row moved, so one row is what the sentence lets the paragraph move.
+  def taken_fact(item, taker, from = nil)
+    "ON THIS TURN, and not before it, #{taker.fullname} picked the #{item.name} up. " \
+      "Until this turn it was NOT in their hands at all: it was lying " \
+      "#{from ? "in #{from.name}" : "in this room"}. Now they are carrying it" \
+      "#{" -- #{item.description}" if item.description.present?}. " \
+      "The picking up is what has just happened and it is what to narrate. Do not " \
+      "write it as something they already had, already held, or turn out to be " \
+      "holding. The #{item.name} is the only thing that moved: nothing else was " \
+      "lifted, opened, drawn out or taken into anybody's hands." \
       "#{" #{written_words_fact(item)}" if item.inscribed?}"
   end
 
-  def dropped_fact(item, here)
-    "The #{item.name} is no longer carried: it is now lying in #{here.name}, " \
-      "where it stays until somebody picks it up."
+  # `#taken_fact`'s mirror, and it is stated as the same kind of change for the
+  # same reason: the row left the hands ON THIS TURN, and prose that lifts it
+  # off a floor first has invented a pickup (`pickup_invented`, 4 of 32 on the
+  # 2026-09-03 baseline).
+  def dropped_fact(item, here, dropper = nil)
+    "ON THIS TURN, and not before it, #{dropper&.fullname || "The party"} put the " \
+      "#{item.name} down. Until this turn it WAS in their hands: it is no longer " \
+      "carried, and it is now lying in #{here.name}, where it stays until somebody " \
+      "picks it up. The putting down is what has just happened and it is what to " \
+      "narrate. Do not write them picking it up or finding it. The #{item.name} is " \
+      "the only thing that moved: nothing else was lifted, opened, drawn out or " \
+      "taken into anybody's hands."
   end
 
   # WHAT THE THROW DID, in the app's own words, and stated as done because it is.

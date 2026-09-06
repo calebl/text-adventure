@@ -812,6 +812,16 @@ The current database includes the following story-related models with proper ass
   explicitly *not* a defect). `Story::Audit::Prose` holds the text predicates as
   pure functions so the live database and the frozen corpora read them through
   the same code.
+- **The narrator is told what CHANGED as well as what IS.**
+  `Playthrough::Turn#taken_fact` and `#dropped_fact` state the change -- when
+  (this turn and not before it), where the row was until then, what to narrate,
+  and that nothing else moved -- and `Playthrough::Moment::Handled` marks that
+  one row in the standing list it moved to. Two true sentences that said only
+  that the thing was the player's is what `take_denied` was: 19 of 20 judgeable
+  takes on 2026-09-05, 0 of 20 after. **The rule is deliberately NOT in
+  `Scene::Narrator::INSTRUCTIONS`** -- that block is read on every turn and most
+  turns move nothing; the version that lived there cost `item_not_held` REAL on
+  read turns. Read both classes' headers before moving it.
 - **`take_denied` and `pickup_invented` read a CHANGE, not a state**, and they
   are the only two that can. Every other check reads one scene against the world
   as it stands; these read a narration against `Scene#resolved_action` and

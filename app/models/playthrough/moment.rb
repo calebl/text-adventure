@@ -33,10 +33,49 @@ class Playthrough::Moment
   # chat already replays verbatim. The budget is the real limit.
   CONCLUSIONS = 6
 
-  attr_reader :playthrough
+  # WHAT CHANGED HANDS THIS TURN, AS DISTINCT FROM WHAT IS.
+  #
+  # THE STANDING SETS BELOW ARE STATE AND NOT EVENTS, and until this existed
+  # that was the whole of the take-denied defect. `Playthrough::Turn#take_item`
+  # moves the row BEFORE the prose is written, so by the time `#narration_context`
+  # is built the daybook is simply on the carried list -- indistinguishable from
+  # a daybook the player walked in holding. The narrator was handed
+  # `#taken_fact` beside it and read the two together as *"it is already
+  # theirs, and the game says so twice"*, and wrote the pickup as redundant:
+  # *"You reach for the daybook, but it is already in your hands"*, on 19 of 20
+  # judgeable take turns of the 2026-09-05 re-baseline and 14..17 of 18 of the
+  # prompt bench's take cases.
+  #
+  # So the row that moved is MARKED where it now stands, and the mark says
+  # WHICH TURN it moved on. It is the same doctrine every other line here keeps
+  # -- a record read out, never a rule -- applied to the one thing the records
+  # hold that a standing list cannot express: the difference between a
+  # possession and a change of possession.
+  #
+  # It is NOT dropped from the list instead. Silence about a thing the player is
+  # holding is exactly what `#floor_names` and `#carried_names` are stated-even-
+  # when-empty to prevent, and a narrator that cannot see the daybook on the
+  # carried list is a narrator that can be told it was never picked up.
+  #
+  # ONE ITEM AT MOST, because one line is one act (the captain's ruling of
+  # 2026-09-04) and a `take` or a `drop` moves exactly one row.
+  Handled = Data.define(:item, :direction) do
+    def taken? = direction == :taken
+    def dropped? = direction == :dropped
 
-  def initialize(playthrough)
+    # The parenthetical the list carries. Short on purpose: the whole account of
+    # what the turn did is `Playthrough::Turn#taken_fact`'s, and this is only
+    # the mark that says the row on this list is the one that fact is about.
+    def note = taken? ? "picked up just now, on this turn" : "put down just now, on this turn"
+  end
+
+  attr_reader :playthrough, :handled
+
+  # `handled` is the row this turn moved, when the caller is a branch that moved
+  # one. Nil for every other kind of turn, which is most of them.
+  def initialize(playthrough, handled: nil)
     @playthrough = playthrough
+    @handled = handled
   end
 
   # THE MOMENT FOR A NARRATOR: everything a prose pass answering the player
@@ -372,7 +411,7 @@ class Playthrough::Moment
   # against. Not the protagonist's `items`: that is one row per story and it is
   # the story's starting inventory, shared by every play of the world.
   def carried_names
-    playthrough.carried.map(&:name).join(", ")
+    item_list(playthrough.carried)
   end
 
   # WHAT IS ON THE FLOOR OF THIS ROOM, IN THIS GAME -- the same closed set
@@ -391,7 +430,14 @@ class Playthrough::Moment
   def floor_names
     return "" if location.nil?
 
-    playthrough.items_lying_in(location).map(&:name).join(", ")
+    item_list(playthrough.items_lying_in(location))
+  end
+
+  # A LIST OF THINGS, WITH THE ONE THIS TURN MOVED MARKED WHERE IT NOW STANDS.
+  # `Handled`'s header has the reason; the mark is on the list the row moved TO,
+  # because that is the list a narrator reads as prior possession.
+  def item_list(items)
+    items.map { |item| item == handled&.item ? "#{item.name} (#{handled.note})" : item.name }.join(", ")
   end
 
   def name_list(people)
