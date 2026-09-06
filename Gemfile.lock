@@ -317,17 +317,18 @@ GEM
       rubocop-performance (>= 1.24)
       rubocop-rails (>= 2.30)
     ruby-progressbar (1.13.0)
-    ruby_llm (1.16.0)
+    ruby_llm (1.8.2)
       base64
       event_stream_parser (~> 1)
       faraday (>= 1.10.0)
       faraday-multipart (>= 1)
       faraday-net_http (>= 1)
       faraday-retry (>= 1)
-      marcel (~> 1)
-      ruby_llm-schema (~> 0)
+      marcel (~> 1.0)
       zeitwerk (~> 2)
-    ruby_llm-schema (0.4.0)
+    ruby_llm-schema (1.0.0)
+      schematist (~> 1.0)
+    schematist (1.1.0)
     securerandom (0.4.1)
     solid_cable (4.0.2)
       actioncable (>= 7.2)
@@ -414,7 +415,7 @@ DEPENDENCIES
   rails (~> 8.1.0)
   rubocop-rails-omakase
   ruby_llm
-  ruby_llm-schema (~> 0.2)
+  ruby_llm-schema (~> 1.0)
   solid_cable
   solid_cache
   solid_queue
