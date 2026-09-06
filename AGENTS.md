@@ -115,7 +115,11 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
   written after a bug pins the bug; a script in `lib/engine_sweep/scripts/`
   walks the game a player walks and would have caught it. Both.
 - **Every model needs a test file in `test/models/` and a factory in
-  `test/factories/`.**
+  `test/factories/`, and a factory must not roll dice.** A random default turns
+  every test that reads the value into a lottery and lands the failure on
+  whoever runs the suite next; ask for a variation by trait instead.
+  `test/factories/location_connections.rb` carries the full diagnosis of the
+  1-in-35 flake that established this.
 - **A PR that needs a post-update action adds a step to `Update::REGISTRY`
   (`lib/update.rb`) and says so in its body** — never a hand list of commands in
   the description. `bin/update` is the one command after a pull. No step may

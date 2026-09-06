@@ -1,8 +1,10 @@
 # THE GAME WITH THE PROSE TAKEN OUT, and nothing else taken out with it.
 #
-# WHY IT EXISTS. A turn that goes wrong could have gone wrong in the classifier,
-# in the prose, or in the engine underneath, and the three arrive together. This
-# mode removes exactly one of them:
+# WHY IT EXISTS. The captain's complaint, and it is the whole brief:
+# *"we are testing too many variables at the same time."* A turn that goes wrong
+# could have gone wrong in the classifier, in the prose, or in the engine
+# underneath, and the three arrive together. This mode removes exactly one of
+# them:
 #
 #   the classifier   KEPT. Free text goes to `Playthrough::Classifier` and the
 #                    intent it resolved is printed -- `understood: take -> ward
