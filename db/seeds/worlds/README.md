@@ -562,19 +562,20 @@ this list.
 
 ```yaml
 locations:
-- name: The Rusted Anchor      # a PLACE: an extent, and no position
-  detail_level: stub
-  width: 12
-  depth: 8
-- name: The Taproom            # a ROOM inside it: all five numbers
-  detail_level: realized
+- name: The Taproom            # a ROOM inside the place below: all five numbers
+  detail_level: realized       # and the opening row, so it LEADS the list
+  opening: true
   parent: The Rusted Anchor
   x: 0
   y: 0
   z: 0
   width: 7
   depth: 8
-- name: The Back Room          # beside it, sharing the wall at x = 7
+- name: The Rusted Anchor      # a PLACE: an extent, and no position
+  detail_level: stub
+  width: 12
+  depth: 8
+- name: The Back Room          # beside the taproom, sharing the wall at x = 7
   detail_level: realized
   parent: The Rusted Anchor
   x: 7
@@ -584,6 +585,19 @@ locations:
   depth: 8
 ```
 
+- **Containment imposes NO ordering — but the opening row still has to lead the
+  list.** A `parent` may be named before or after the rooms inside it: the
+  loader wires containment in a second pass precisely so a file need not be
+  sorted. What is NOT free is where the opening room goes.
+  `Story#opening_location` is the story's lowest-id location and the loader
+  creates rows in file order, so the row marked `opening: true` must also be the
+  FIRST row. Nothing refuses a file that breaks it — it loads, and then the
+  story's opening room and the room the browser actually starts you in are two
+  different places. The trap is specific to interiors: a reader's instinct is to
+  write the building before the rooms in it, and that is the one order this rule
+  forbids when the opening room is one of those rooms. The example above leads
+  with the taproom for that reason, and so does
+  `test/fixtures/files/a-world-with-an-interior.yml`.
 - **Every one of these keys is optional and NONE of the three worlds here uses
   them.** The captain's fourth ruling leaves the seeded worlds flat; interiors
   are opt-in per file, and generated worlds get them from slice 2 onward. The
@@ -629,7 +643,9 @@ locations:
 ### Rules the loader enforces
 
 - Exactly one location is `opening: true`, and it must be `realized` — a story
-  whose first location is a stub cannot be started in the browser.
+  whose opening location is a stub cannot be started in the browser. That row
+  must also be the FIRST in the list, which the loader does not check: see
+  the `parent` section above for why an interior makes it easy to get wrong.
 - An `opening_scene` is **required**, it must be in the location marked
   `opening: true`, and it must have a `description`. Required rather than
   optional on purpose: a key that is usually there closes neither of the two

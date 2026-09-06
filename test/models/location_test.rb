@@ -454,6 +454,16 @@ class LocationTest < ActiveSupport::TestCase
   # than the validation already carries one -- and that is exactly the row a
   # scope must not count as laid out, because `Story::Doctor` reads `#box` off
   # everything the scope hands it and a partial row has none.
+  test "a row carrying part of a box is in neither scope" do
+    story = create(:story)
+    create(:location, story: story).update_columns(width: 6, x: 1)
+    create(:location, story: story).update_columns(x: 0, y: 0, z: 0)
+    create(:location, story: story).update_columns(width: 6)
+
+    assert_empty story.locations.with_a_footprint
+    assert_empty story.locations.with_a_box
+  end
+
   # A RING IS THE ONE QUESTION THAT CAN LOOP THE READER ASKING IT, so the walk
   # carries what it has seen. Written straight to the column because nothing in
   # the app will save a place inside itself.
@@ -491,15 +501,5 @@ class LocationTest < ActiveSupport::TestCase
     hanger = create(:location, story: one.story, name: "The Back Room", parent_location: other)
 
     assert_equal [ one, other ].map(&:id).sort, hanger.containment_ring.map(&:id).sort
-  end
-
-  test "a row carrying part of a box is in neither scope" do
-    story = create(:story)
-    create(:location, story: story).update_columns(width: 6, x: 1)
-    create(:location, story: story).update_columns(x: 0, y: 0, z: 0)
-    create(:location, story: story).update_columns(width: 6)
-
-    assert_empty story.locations.with_a_footprint
-    assert_empty story.locations.with_a_box
   end
 end

@@ -766,6 +766,41 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_empty EngineSweep::Invariants.new(story, seed: seed).check
   end
 
+  # THE INVARIANT ACROSS AN ACTUAL WALK, ON A WORLD THAT HAS GEOMETRY, and it is
+  # the one this slice most wants: the two assertions above load and check
+  # without taking a turn, and the only scripted walk is over a flat world where
+  # both sides of every comparison are nil -- so it would hold even if the two
+  # readers disagreed about a box entirely.
+  #
+  # NOT A SCRIPT, because `EngineSweep::Script` resolves a world by slug out of
+  # `db/seeds/worlds/` and the captain's fourth ruling leaves those three flat.
+  # `Playthrough::Mechanics` with `model: false` is what a script's step runs
+  # anyway (`EngineSweep::Walk#engine_for`), so the typed lines below go through
+  # the same engine the browser moves the world with.
+  #
+  # THE MOVE IS BETWEEN TWO CHILDREN OF ONE PLACE -- out of the taproom, into
+  # the back room and back again -- which is the case the whole programme exists
+  # for, and it must leave all six facts about all four rooms exactly as the
+  # file wrote them.
+  test "typed lines that move the party between two rooms of one place move no wall" do
+    seed = WorldSeed.parse(File.read(Rails.root.join("test/fixtures/files/a-world-with-an-interior.yml")))
+    story = WorldSeed::Loader.new(seed.deep_dup).load!
+    game = Playthrough.create!(story: story, character: story.protagonist,
+                               current_location: story.locations.realized.order(:id).first,
+                               current_scene: story.opening_scene)
+    engine = Playthrough::Mechanics.new(game, model: false)
+
+    [ "go to The Back Room", "look", "go to The Taproom" ].each do |typed|
+      report = engine.run(typed)
+
+      assert_not report.refused?, "#{typed.inspect} was refused: #{report.refusal}"
+    end
+
+    assert_equal "The Taproom", game.reload.current_location.name
+    assert_equal 2, story.locations.where.not(parent_location_id: nil).count
+    assert_empty EngineSweep::Invariants.new(story, seed: seed).check
+  end
+
   # THE LOADER RESOLVES A `parent` KEY ON `WorldSeed.natural_key`, so a file may
   # spell it with or without its article and still name one place. The invariant
   # has to read it the same way, or a world the format accepts would break a
