@@ -1,9 +1,9 @@
 # THE LAST WORD ON THE RUN: what every story in this database looks like now.
 #
-# `Story::Doctor` reports and never writes (`AGENTS.md` -> *When a world
-# outlives the schema*), which is why this is `reports_only?` -- it is asked
-# once, its lines print whether or not anything above it changed, and a dry run
-# is free to run it in full because there is nothing to hold back.
+# `Story::Doctor` reports and never writes (its own header is the decision),
+# which is why this is `reports_only?` -- it is asked once, its lines print
+# whether or not anything above it changed, and a dry run is free to run it in
+# full because there is nothing to hold back.
 #
 # It prints the headline per story and then only the findings NOTHING IN THE
 # REGISTRY CAN ACT ON, because the ones it can act on have just been acted on

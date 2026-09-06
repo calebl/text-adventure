@@ -1141,10 +1141,11 @@ engine*.
 
 ## What is measured
 
-Ten checks, all of them from `Story::Audit`, all offline and deterministic.
-Four categories that are never merged — see `AGENTS.md` → *Auditing the
-difference*. Each one counts an error that is objectively present or absent and
-each was measured for false positives on real prose before it shipped.
+The checks all come from `Story::Audit`, all offline and deterministic, in
+categories that are never merged — see its header, where the checks and their
+categories are defined. Each one counts an error that is objectively present or
+absent, and each was measured for false positives on real prose before it
+shipped.
 
 **Two of them read a change rather than a state**, which is new and is the
 reason the board's recall was poor before. `take_denied` and `pickup_invented`

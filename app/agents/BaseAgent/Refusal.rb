@@ -1,8 +1,8 @@
 # WHAT A MODEL SAID INSTEAD OF NARRATING, AND HOW THE APP TELLS THE TWO APART.
 #
 # `Scene::Narrator` and `InteractionAgent`'s second pass are the two unschema'd
-# calls in the app (AGENTS.md -> *Talking to models*), so they are the two that
-# can come back as prose about the request rather than prose answering it. A
+# calls in the app (`Scene::Narrator`'s header says why), so they are the two
+# that can come back as prose about the request rather than prose answering it. A
 # schema'd call cannot fail this way and is not read here: it either returns the
 # Hash it was asked for or `verify_schema_honored!` fails it.
 #

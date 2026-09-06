@@ -444,7 +444,7 @@ class Playthrough::Moment
     people.map { |person| person.nickname.present? ? "#{person.fullname} (#{person.nickname})" : person.fullname }.join(", ")
   end
 
-  # Story time, not the wall clock (AGENTS.md, *Story time*). The hour is what a
+  # Story time, not the wall clock (`Story#clock`). The hour is what a
   # person in the room knows; the date is not something they would say.
   def time_of_day
     playthrough.story_now.strftime("%-l %P")

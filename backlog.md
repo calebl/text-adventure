@@ -41,8 +41,8 @@
   positives, so "keep it fixed" costs nothing new once the rate is down.
 
   READ BEFORE STARTING: EVALUATION.md (the protocol), `Eval::Noise`'s header (the
-  spread and the verdict rule), and AGENTS.md -> *Measuring a change against the
-  noise it makes*. Generation spends money and never runs in CI; a 3-world,
+  spread and the verdict rule). EVALUATION.md carries the measurement protocol in
+  full. Generation spends money and never runs in CI; a 3-world,
   4-run-a-side comparison is about $0.47 a side.
 
   NOT IN SCOPE: the prose-quality question. This counts one error that is

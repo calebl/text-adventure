@@ -64,12 +64,18 @@ end
 
 
 gem "ruby_llm"
-# Must stay below 1.0: that release is a deprecation shim forwarding to the
-# renamed `schematist` gem, and taking it silently pins ruby_llm to 1.8.2.
-# ruby_llm's own `~> 0` already rules it out; this restates the bound rather
-# than establishing it. See AGENTS.md -> *Never let `ruby_llm-schema`
-# resolve to 1.x*, and `.github/dependabot.yml` for why the weekly 1.0.0 PR
-# is not silenced with an `ignore` rule.
+# NEVER LET THIS RESOLVE TO 1.x. That release is a deprecation shim forwarding
+# to the renamed `schematist` gem, and taking it silently drags ruby_llm back to
+# 1.8.2, the last release with no such dependency. ruby_llm's own `~> 0` already
+# rules it out, so the bound below restates it rather than establishing it --
+# what matters is never *widening* past it: an unconstrained
+# `gem "ruby_llm-schema"` lets the resolver take 1.0.0. The failure is silent
+# twice over, because the shim and ruby_llm then disagree about what
+# `to_json_schema` returns and `RubyLLM::Chat#with_schema` drops the schema with
+# no error at all -- every structured call goes out as prose.
+# `test/models/ruby_llm_schema_envelope_test.rb` guards that seam all the way to
+# the rendered request body; keep it passing. See `.github/dependabot.yml` for
+# why the weekly 1.0.0 PR is not silenced with an `ignore` rule.
 gem "ruby_llm-schema", "~> 0.2"
 
 gem "open_router", "~> 0.3.3"
