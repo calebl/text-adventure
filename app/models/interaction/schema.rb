@@ -54,9 +54,9 @@ class Interaction::Schema < RubyLLM::Schema
          max_length: MAX_LENGTHS[:post_thought]
   # WHAT THEY DECIDED, as opposed to what they did. `Interaction#completed?`
   # reads it and was therefore always false, because nothing had ever written
-  # one -- the ROADMAP called it "a second call nothing asks for yet", and a
-  # second call per line of dialogue is the most expensive way to get one
-  # sentence. It is a sixth field on a call that already happens instead: no
+  # one. It used to be imagined as a second call, and a second call per line of
+  # dialogue is the most expensive way to get one sentence. It is a sixth field
+  # on a call that already happens instead: no
   # extra round trip, ~30 tokens.
   #
   # It is deliberately NOT interpolated into the narrator pass. A resolution is

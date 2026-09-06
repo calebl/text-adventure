@@ -97,8 +97,8 @@ Practicalities:
 - It **does not stamp `Location#last_protagonist_visit`**, and that is deliberate
   rather than an oversight. These files sit on disk for months. If seeding stamped
   the visit, the first player to walk back into the opening room would be told, in
-  fiction, that they had been gone that long — the wall-clock defect in the
-  ROADMAP's **Known issues**, amplified into something a player reads.
+  fiction, that they had been gone that long — the wall-clock defect story time
+  was built to close, amplified into something a player reads.
   `PlaythroughsController#create` stamps it when a player actually arrives.
 - Every playthrough of a story starts on the **same** opening `Scene`. The turn
   log walks backwards from `current_scene`, so branching playthroughs still each

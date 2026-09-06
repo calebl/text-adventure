@@ -117,8 +117,10 @@ class Scene::Generator
   # clock advances by the world's own distances, and `#time_since_last_visit`
   # -- the value that becomes "you were last here about an hour ago" in the
   # prompt -- is measured in the fiction rather than against whenever the player
-  # happened to have a browser open. That is the wall-clock defect, fixed in the
-  # single place the ROADMAP asks for it.
+  # happened to have a browser open. That is the wall-clock defect, and it is
+  # fixed in this one place: `Time.current` is gone from the whole arrival path,
+  # so `Location#last_protagonist_visit` holds a story moment rather than an
+  # instant on the machine's clock.
   def story_timestamp
     return story.start_time if opening?
     return story.clock if previous_scene.nil?

@@ -15,6 +15,28 @@ any improvement anybody is going to claim. So no number in this loop is reported
 without the spread of the runs that produced it, and no before/after is reported
 without a verdict that can say *noise*.
 
+## The rule this whole file exists to serve
+
+The captain's ruling of 2026-09-06: **always have a baseline for evaluating a
+prompt before deciding to change it.**
+
+It is not advice about rigour, it is the order of operations. Before editing
+`Scene::Narrator::INSTRUCTIONS`, `Character#interaction_instructions`,
+`Playthrough::Classifier::INSTRUCTIONS`, a schema's field descriptions or
+anything else a model is handed:
+
+1. **Store a baseline first.** `rake eval:prompt` is the cheap first gate,
+   `rake eval:run` the confirming one, `rake eval:classifier` the classifier's.
+   Sets live under `db/eval/` and `db/eval_baseline.json` and re-score offline
+   for free, so the before half costs nothing once it exists.
+2. **Judge the after against it with a verdict that can say *noise***
+   — `rake eval:prompt_compare` / `rake eval:compare`, four runs a side.
+3. **Re-baseline only once the change has a verdict.**
+
+A prompt change with no before is not a change anybody can defend, and this
+file's opening paragraph is why: the spread of an unchanged configuration is
+wider than most improvements anybody claims.
+
 ---
 
 ## The one command
@@ -174,10 +196,11 @@ defects that every check passed:
 2. **The generated arrival cast drops characters the world is about**, and
    nothing can contradict it, because no record says where a character is.
 
-Both are in ROADMAP's *Known issues* with the figures, and both are queued. The
-lesson for anybody adding a check: **a board of zeroes is a claim about the
-checks, not about the game.** One read of one clean run cost twenty minutes and
-found a defect on 94% of a mechanic the app owns.
+The first has since been fixed and is guarded by `take_denied` and
+`pickup_invented`; the second is answered by `characters.location_id` and
+`Character.present_in`. The lesson for anybody adding a check: **a board of
+zeroes is a claim about the checks, not about the game.** One read of one clean
+run cost twenty minutes and found a defect on 94% of a mechanic the app owns.
 
 ---
 

@@ -139,7 +139,7 @@ class Playthrough::Feedback < ApplicationRecord
       prose_model: kept&.model&.model_id,
       prose_purpose: kept&.chat&.purpose,
       # AND WHICH VERSION OF THE PROMPT IT WROTE UNDER, beside which model wrote
-      # it, so his verdicts group by prompt as well as by model -- the ROADMAP's
+      # it, so his verdicts group by prompt as well as by model -- the
       # `ta-prompt-bench` ask. Frozen with everything else here and for the same
       # reason: the instruction half is read off the conversation, and the
       # pruner can be asked to destroy that. The scaffold half is read off the

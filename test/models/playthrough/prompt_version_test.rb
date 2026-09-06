@@ -66,7 +66,7 @@ class Playthrough::PromptVersionTest < ActiveSupport::TestCase
     assert_nil Playthrough::PromptVersion.for_chat(chat)
   end
 
-  # THE VERSION IS FROZEN BESIDE THE MODEL, which is the ROADMAP's ask: a
+  # THE VERSION IS FROZEN BESIDE THE MODEL, which is `ta-prompt-bench`'s ask: a
   # verdict groups by prompt as well as by model, and both are copies rather
   # than references because `Playthrough#prune_conversations!` can destroy the
   # receipts.

@@ -1,6 +1,12 @@
 # THE ENGINE, WALKED BY A SCRIPT, WITH NOBODY AT THE KEYBOARD.
 #
-# WHY IT EXISTS. Five engine defects were found in one evening of play -- an
+# WHY IT EXISTS, in the captain's own words -- the ask this whole line of
+# offline instruments came out of:
+#
+#   *"focus on the game engine and the classifier, with a reliable way of
+#   testing before more changes."*
+#
+# Five engine defects were found in one evening of play -- an
 # invented door into a room that was already written, a two-noun line that acted
 # on one noun and said nothing about the other, "take everything" counted as
 # drift, one person counted as two, an exit cap that bounded one answer instead

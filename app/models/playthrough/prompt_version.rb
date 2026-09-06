@@ -5,9 +5,9 @@
 # every prompt-shaped change this project makes moves the thing being judged
 # underneath the verdicts already recorded: a turn marked `good` in the morning
 # and one marked `good` after lunch are evidence about two different narrators
-# if the instructions changed in between, and nothing said so. The ROADMAP's
-# `ta-prompt-bench` entry asks for exactly this -- *"freeze a digest of the
-# prose instructions alongside `prose_model`"* -- and this is the digest.
+# if the instructions changed in between, and nothing said so. `ta-prompt-bench`
+# asked for exactly this -- *"freeze a digest of the prose instructions
+# alongside `prose_model`"* -- and this is the digest.
 #
 # WHAT IT IS A DIGEST OF, stated narrowly because a version nobody can define is
 # a version nobody can trust: THE INSTRUCTION TEXT ACTUALLY SENT WITH THE CALL --

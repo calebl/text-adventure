@@ -8,9 +8,9 @@
 # `items.playthrough_id` arrived one PR earlier meaning ONE thing -- the party
 # of that playthrough is carrying this. That closed half the defect: two people
 # playing one seeded world no longer shared a pair of hands. It left the other
-# half open and said so, in `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml`
-# and in the ROADMAP: a room one party emptied was empty for the other, because
-# `items.location_id` was the world's and the world was shared.
+# half open and said so, in `lib/engine_sweep/scripts/the-unrecorded-hour-two-players.yml`:
+# a room one party emptied was empty for the other, because `items.location_id`
+# was the world's and the world was shared.
 #
 # WHAT THIS MIGRATION CHANGES IS WHAT THAT COLUMN MEANS. It is now THE LAYER:
 #

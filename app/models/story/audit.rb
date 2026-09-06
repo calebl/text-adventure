@@ -53,8 +53,9 @@
 #
 #    Three flags, three false positives, no true positives. And the records are
 #    not up to the check anyway: a `Scene::Narrator` turn records no cast at
-#    all, so on those turns EVERY character reads as absent (ROADMAP, *nothing
-#    records where a character stands*). There is still no person check.
+#    all, so on those turns EVERY character reads as absent -- nothing recorded
+#    where a character stood when this was measured; finding 5 below re-measures
+#    it with `characters.location_id` in place. There is still no person check.
 #
 # 3a. AND A NAME THE RECORDS HOLD IS NOT THE NAME THE PROSE WRITES, which
 #    `ta-eval-pipeline` found by pointing the finished check at 132 whole-run

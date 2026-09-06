@@ -9,7 +9,8 @@
 #
 # The summary is not a spare field. Nothing has ever written `scenes.summary`,
 # and long playthroughs will have to be summarised to stay inside the context
-# window (ROADMAP, "Persistence and history"). Writing it here costs ~30 output
+# window -- `Playthrough#recap` spends this field for exactly that. Writing it
+# here costs ~30 output
 # tokens on a call that has the whole moment in front of it; a later pass over
 # old scenes would be a fresh round trip with less context than this one has.
 class Scene::Schema < RubyLLM::Schema
