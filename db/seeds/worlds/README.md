@@ -690,6 +690,9 @@ locations:
   the edge's **own two ends**. Without it there is no way to say which direction
   costs something; with the wrong name the edge would load with no hazard at all
   and no complaint.
+- A `parent` and a box are held to the rules `WorldSeed::Loader#validate_boxes!`
+  names — whole, integers, framed, footprint, declared, apart — which are not
+  repeated here: see the `parent` section above.
 - `sex` is a `Character.sexes` key: `male`, `female`, `non_binary`,
   `trans_woman`, `trans_man`. Not checked by `validate!` -- it is `Character`'s
   own `inclusion` validation that rejects a bad one, inside the same
@@ -840,6 +843,12 @@ optional and both default to "this world does not move", so every format 2 file
 written before they existed — `the-unrecorded-hour.yml` included — still loads
 and still means exactly what it meant. A required key, as `opening_scene` was,
 is what bumps the number.
+
+`locations[].parent` and the box (`x`, `y`, `z`, `width`, `depth`) were added to
+format 2 on that same rule: all six are optional, all six default to a world
+with no interiors in it — which is what every world here is, by the captain's
+fourth ruling of 2026-09-06 — and the columns are nullable, so no existing
+database needs a backfill either. See the `parent` section above.
 
 ### `the-lunar-cartographer.yml`
 

@@ -918,9 +918,11 @@ class WorldSeed::Loader
   #              storeys is not an overlap at all: 2.5D, so each floor is its
   #              own plane (the captain's third ruling of 2026-09-06).
   #
-  # `rake game:doctor` reports four of these on a database that already carries
-  # them, which is what makes a world written before any of this diagnosable
-  # rather than unloadable. The file is held to the stronger rule.
+  # `rake game:doctor` reports these faults on a database that already carries
+  # them -- all but the half of `declared` that is a question about a file and
+  # not about a row, that a `parent` names a location THIS FILE declares -- which
+  # is what makes a world written before any of this diagnosable rather than
+  # unloadable. The file is held to the stronger rule.
   def validate_boxes!
     location_documents.each do |attributes|
       validate_one_box!(attributes)
