@@ -15,6 +15,14 @@ class Location < ApplicationRecord
   # will is slice 2 (`ta-interior-layout`). It is also the frame every number in
   # `Location::Box` is read in, so nothing may re-parent a room during a walk:
   # `EngineSweep::Invariants#geometry_unmoved` asserts that.
+  #
+  # NOTHING IN THE APP WRITES A RING. A place inside itself, at one hop or five,
+  # is a containment graph with no outermost place -- nothing that walks it
+  # upward has a stopping condition. `WorldSeed::Loader#validate_no_parent_cycles!`
+  # refuses a file that writes one, and there is no other writer; a ring on the
+  # records therefore came through raw SQL, and `rake game:doctor` reports it
+  # (`locations_containing_each_other`) rather than this being a validation that
+  # queried another row on every save. `#containment_ring` is the reader.
   belongs_to :parent_location, class_name: "Location", optional: true
   #
   # NULLIFIED rather than destroyed, the answer `has_many :characters` gives
@@ -299,6 +307,30 @@ class Location < ApplicationRecord
     return false if mine.nil? || theirs.nil?
 
     mine.overlaps?(theirs)
+  end
+
+  # THE RING OF PLACES THIS ONE IS CAUGHT IN, or NIL for the ordinary case --
+  # a chain of parents that ends at a place inside nothing. A self-parent is the
+  # one-hop ring and not a separate answer.
+  #
+  # THE WALK CARRIES WHAT IT HAS SEEN and stops at the first repeat, so a ring
+  # cannot loop the reader that is looking for it -- which is the whole hazard of
+  # asking this question at all. What comes back is the ring itself and not the
+  # tail that led into it: the places from the first repeat onward, so two rooms
+  # hanging off one ring answer with the same ring and a caller can report it
+  # once.
+  def containment_ring
+    seen = []
+    walker = self
+
+    while walker
+      return seen.drop(seen.index(walker)) if seen.include?(walker)
+
+      seen << walker
+      walker = walker.parent_location
+    end
+
+    nil
   end
 
   # The places you can walk to from here. Connections are stored directionally

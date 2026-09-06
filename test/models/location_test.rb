@@ -454,6 +454,45 @@ class LocationTest < ActiveSupport::TestCase
   # than the validation already carries one -- and that is exactly the row a
   # scope must not count as laid out, because `Story::Doctor` reads `#box` off
   # everything the scope hands it and a partial row has none.
+  # A RING IS THE ONE QUESTION THAT CAN LOOP THE READER ASKING IT, so the walk
+  # carries what it has seen. Written straight to the column because nothing in
+  # the app will save a place inside itself.
+  test "an ordinary chain of parents is in no ring" do
+    place = create(:location, :with_a_footprint)
+    room = create(:location, story: place.story, parent_location: place)
+
+    assert_nil room.containment_ring
+    assert_nil place.containment_ring
+  end
+
+  test "a place that is its own parent is a ring of one" do
+    place = create(:location)
+    place.update_column(:parent_location_id, place.id)
+
+    assert_equal [ place ], place.reload.containment_ring
+  end
+
+  test "two places inside each other are one ring, answered the same way from either" do
+    one = create(:location, name: "The Rusted Anchor")
+    other = create(:location, story: one.story, name: "The Taproom", parent_location: one)
+    one.update_column(:parent_location_id, other.id)
+
+    assert_equal [ one, other ].map(&:id).sort, one.reload.containment_ring.map(&:id).sort
+    assert_equal one.reload.containment_ring.map(&:id).sort,
+                 other.reload.containment_ring.map(&:id).sort
+  end
+
+  # THE TAIL IS NOT THE RING. A room hanging off a ring is not itself inside
+  # itself, and reporting it as part of one would send a reader to the wrong row.
+  test "a room hanging off a ring answers with the ring alone" do
+    one = create(:location, name: "The Rusted Anchor")
+    other = create(:location, story: one.story, name: "The Taproom", parent_location: one)
+    one.update_column(:parent_location_id, other.id)
+    hanger = create(:location, story: one.story, name: "The Back Room", parent_location: other)
+
+    assert_equal [ one, other ].map(&:id).sort, hanger.containment_ring.map(&:id).sort
+  end
+
   test "a row carrying part of a box is in neither scope" do
     story = create(:story)
     create(:location, story: story).update_columns(width: 6, x: 1)

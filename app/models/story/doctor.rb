@@ -1371,7 +1371,7 @@ class Story::Doctor
 
   # --- the shape of a place, since the rulings of 2026-09-06 ----------------
   #
-  # FIVE WAYS A LAYOUT CAN BE WRONG, and every one of them is a WARNING with a
+  # SIX WAYS A LAYOUT CAN BE WRONG, and every one of them is a WARNING with a
   # MANUAL remedy. Both halves are choices and both are worth saying out loud.
   #
   # WARNING RATHER THAN FATAL, because `fatal` in this file means one thing --
@@ -1391,7 +1391,9 @@ class Story::Doctor
   # two numbers a partial box is missing invents a room's size. Every one of
   # those is exactly what this tool's own rule forbids: backfilling world data to
   # make a check pass. Deciding how wide a room is whose author wrote zero is the
-  # same act. A person edits the world file and re-seeds.
+  # same act, and so is breaking one link of a ring of places that contain each
+  # other -- which of them its author meant to be the outermost is not on record.
+  # A person edits the world file and re-seeds.
   #
   # WHAT IS DELIBERATELY NOT CHECKED HERE is whether a child's box lies INSIDE
   # its parent's footprint. It is a real fault and it will want a finding, but
@@ -1400,7 +1402,7 @@ class Story::Doctor
   # it. Whoever writes the layout generator adds it alongside the generator.
   def geometry
     [ *rooms_with_a_partial_box, *rooms_with_an_impossible_extent, *boxes_with_no_parent,
-      *boxes_with_no_parent_footprint, *overlapping_sibling_rooms ]
+      *boxes_with_no_parent_footprint, *overlapping_sibling_rooms, *locations_containing_each_other ]
   end
 
   # HALF A LAYOUT: neither a footprint, nor a box, nor nothing at all, which are
@@ -1511,6 +1513,33 @@ class Story::Doctor
       finding(:overlapping_sibling_locations, :warning,
               "#{one.name} (#{one.box}) and #{other.name} (#{other.box}) are both inside " \
               "#{one.parent_location.name} and are in the same place at once",
+              :manual)
+    end
+  end
+
+  # A PLACE INSIDE ITSELF, at one hop or at five. It is a containment graph with
+  # no outermost place, so nothing that walks it upward -- a description, a map,
+  # a repair -- has a stopping condition. `WorldSeed::Loader#validate_no_parent_cycles!`
+  # refuses a file that writes one and nothing in the app writes one either, so a
+  # ring here arrived through raw SQL. Nothing loops on it today, and it is
+  # reported for this section's standing reason: the story exports a file
+  # `rake game:seed` will not load.
+  #
+  # ONCE PER RING RATHER THAN ONCE PER MEMBER, and it is `Location#containment_ring`
+  # that makes that cheap: every location on one ring answers with the same ring,
+  # so the rings are deduplicated on their members. Saying it once per member
+  # would be four ways of saying one thing.
+  #
+  # NO SUBJECT, for `#overlapping_sibling_rooms`' reason: `Finding#subject` is
+  # the record a repair acts on, and naming one of the ring would be this tool
+  # asserting which link its author meant to break.
+  def locations_containing_each_other
+    rings = story.locations.includes(:parent_location).order(:id).filter_map(&:containment_ring)
+
+    rings.uniq { |ring| ring.map(&:id).sort }.map do |ring|
+      finding(:locations_containing_each_other, :warning,
+              "#{(ring + [ ring.first ]).map(&:name).join(" -> ")} contain each other, so this world has no " \
+              "outermost place and nothing that reads containment upward has anywhere to stop",
               :manual)
     end
   end

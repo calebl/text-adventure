@@ -695,9 +695,6 @@ class EngineSweepTest < ActiveSupport::TestCase
     file&.delete if file&.exist?
   end
 
-  # A seeded world loaded the way a walk loads it -- under its own title, so
-  # nothing here touches a world anybody is playing -- with the file it came
-  # from, which is what the invariants compare against.
   # --- the shape of a place, which no typed line may touch -------------------
   #
   # THE STANDING CONSTRAINT APPLIED TO GEOMETRY. A box is the WORLD's on exactly
@@ -781,6 +778,9 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_empty EngineSweep::Invariants.new(story, seed: seed).check
   end
 
+  # A seeded world loaded the way a walk loads it -- under its own title, so
+  # nothing here touches a world anybody is playing -- with the file it came
+  # from, which is what the invariants compare against.
   def seeded_copy(slug)
     seed = WorldSeed.parse(File.read(WorldSeed::DIRECTORY.join("#{slug}.yml")))
     document = seed.deep_dup

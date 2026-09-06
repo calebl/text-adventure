@@ -156,8 +156,6 @@ class Story::DeletionTest < ActiveSupport::TestCase
     end
   end
 
-  # A story that cannot be played is still a story: the tool has to remove the
-  # broken ones, which is most of what it will be pointed at.
   # A WORLD WITH AN INTERIOR CAN STILL BE DELETED. `locations.parent_location_id`
   # is a restricting foreign key and a story destroys its locations in id order,
   # so on this fixture -- which declares The Rusted Anchor after the first of its
@@ -176,6 +174,8 @@ class Story::DeletionTest < ActiveSupport::TestCase
     assert_equal 0, Location.count
   end
 
+  # A story that cannot be played is still a story: the tool has to remove the
+  # broken ones, which is most of what it will be pointed at.
   test "deletes a story that has nothing in it" do
     story = create(:story)
 

@@ -169,8 +169,8 @@ class WorldSeed::Exporter
   #
   # NOTHING IS TIDIED ON THE WAY OUT. The file is written as the records stand,
   # which is the rule the partial box already states: moving one of two
-  # overlapping rooms would be this exporter deciding which of them its author
-  # put in the wrong place.
+  # overlapping rooms, or breaking one link of a ring of places that contain each
+  # other, would be this exporter deciding which of them its author got wrong.
   def report_unloadable_geometry
     story.locations.order(:id).each do |location|
       wrong = Location::Box::EXTENT.select { |column| location[column].present? && location[column].to_i < 1 }
@@ -206,6 +206,14 @@ class WorldSeed::Exporter
                      "#{one.parent_location.name} and are in the same place at once: the file will not load until " \
                      "one of them moves. `rake game:doctor` reports it as `overlapping_sibling_locations`."
       end
+    end
+
+    rings = story.locations.includes(:parent_location).order(:id).filter_map(&:containment_ring)
+
+    rings.uniq { |ring| ring.map(&:id).sort }.each do |ring|
+      @warnings << "#{(ring + [ ring.first ]).map(&:name).join(" -> ")} contain each other: this file declares no " \
+                   "outermost place for them and will not load until one of those `parent` keys goes. " \
+                   "`rake game:doctor` reports it as `locations_containing_each_other`."
     end
   end
 

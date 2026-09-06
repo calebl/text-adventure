@@ -615,8 +615,8 @@ locations:
 - `rake game:doctor` reports the same faults on a database that already carries
   them — `location_with_a_partial_box`,
   `location_with_an_impossible_extent`, `location_with_a_box_and_no_parent`,
-  `location_with_a_box_outside_a_footprint` and
-  `overlapping_sibling_locations`. **None can be repaired:** which of two
+  `location_with_a_box_outside_a_footprint`, `overlapping_sibling_locations`
+  and `locations_containing_each_other`. **None can be repaired:** which of two
   overlapping rooms its author put in the wrong place is not on record, and
   clearing a box deletes a floor plan somebody laid out. `rake game:export`
   warns about every one of them too, naming the code, because a file carrying

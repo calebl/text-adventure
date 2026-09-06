@@ -678,6 +678,31 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
   end
 
+  # A WORLD WITH NO OUTERMOST PLACE. The export writes both `parent` keys as
+  # they stand, so the ring survives into the file and the loader refuses it.
+  test "two places inside each other are exported as they stand, with a warning" do
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor")
+    room = create(:location, story: @story, parent_location: place, name: "The Taproom")
+    place.update_column(:parent_location_id, room.id)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_equal "The Taproom", document["locations"].detect { |row| row["name"] == "The Rusted Anchor" }["parent"]
+    assert_equal 1, exporter.warnings.grep(/locations_containing_each_other/).size
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  test "a place that is its own parent is exported as it stands, with a warning" do
+    @stub.update_column(:parent_location_id, @stub.id)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_match(/locations_containing_each_other/, exporter.warnings.join)
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
   # THE ONE THAT MUST STAY QUIET: a well formed interior, and the shape every
   # generated world gets from slice 2 on.
   test "a well formed interior exports with no geometry warning at all" do
@@ -690,6 +715,6 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     exporter = WorldSeed::Exporter.new(@story)
     exporter.document
 
-    assert_empty exporter.warnings.grep(/location_with_|overlapping_sibling_locations|pace across/)
+    assert_empty exporter.warnings.grep(/location_with_|overlapping_sibling_locations|locations_containing_each_other|pace across/)
   end
 end

@@ -1343,7 +1343,8 @@ class Story::DoctorTest < ActiveSupport::TestCase
 
     assert_empty codes(story) & %i[location_with_a_partial_box location_with_an_impossible_extent
                                    location_with_a_box_and_no_parent
-                                   location_with_a_box_outside_a_footprint overlapping_sibling_locations]
+                                   location_with_a_box_outside_a_footprint overlapping_sibling_locations
+                                   locations_containing_each_other]
   end
 
   # A WELL FORMED INTERIOR: a place with a footprint, two rooms inside it
@@ -1364,7 +1365,8 @@ class Story::DoctorTest < ActiveSupport::TestCase
 
     assert_empty codes(story) & %i[location_with_a_partial_box location_with_an_impossible_extent
                                    location_with_a_box_and_no_parent
-                                   location_with_a_box_outside_a_footprint overlapping_sibling_locations]
+                                   location_with_a_box_outside_a_footprint overlapping_sibling_locations
+                                   locations_containing_each_other]
   end
 
   # STRAIGHT TO THE COLUMNS, because `Location#a_box_is_whole` refuses to save
@@ -1388,6 +1390,42 @@ class Story::DoctorTest < ActiveSupport::TestCase
     room.update_columns(width: 6)
 
     assert_equal room, finding(story, :location_with_a_partial_box).subject
+  end
+
+  # A WORLD WITH NO OUTERMOST PLACE. `WorldSeed::Loader#validate_no_parent_cycles!`
+  # refuses a file that writes one and nothing in the app writes one either, so
+  # this goes straight to the column.
+  test "a place that is its own parent is reported and cannot be repaired" do
+    story = healthy_story
+    room = story.locations.realized.first
+    room.update_column(:parent_location_id, room.id)
+
+    assert_includes codes(story), :locations_containing_each_other
+    assert_equal :warning, finding(story, :locations_containing_each_other).severity
+    assert_equal :manual, finding(story, :locations_containing_each_other).remedy
+    assert_match(/contain each other/, finding(story, :locations_containing_each_other).message)
+  end
+
+  # ONCE PER RING, NOT ONCE PER MEMBER: both rooms are equally the fault, and
+  # two findings would be two ways of saying one thing.
+  test "two places inside each other are reported once, naming every place in the ring" do
+    story = healthy_story
+    place = create(:location, :stub, story: story, name: "The Rusted Anchor")
+    room = create(:location, story: story, parent_location: place, name: "The Taproom")
+    place.update_column(:parent_location_id, room.id)
+
+    rings = Story::Doctor.new(story).findings.select { |f| f.code == :locations_containing_each_other }
+
+    assert_equal 1, rings.size
+    assert_match(/The Rusted Anchor/, rings.sole.message)
+    assert_match(/The Taproom/, rings.sole.message)
+  end
+
+  test "an ordinary interior is inside no ring and is not reported" do
+    story = healthy_story
+    a_place_with_two_rooms(story)
+
+    assert_not_includes codes(story), :locations_containing_each_other
   end
 
   # A PLANE WITH NO AREA, and the one no other geometry check can see:

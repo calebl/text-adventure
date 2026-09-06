@@ -1088,7 +1088,6 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_match(/not one of its own/, error.message)
   end
 
-  # Built fresh on every call so a test can edit it without touching another's.
   # --- an interior, which a file may declare and the three seeded worlds do not
 
   # THE CHECKED-IN FIXTURE, and the only world in the repository with an
@@ -1280,6 +1279,7 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal 2, WorldSeed::Loader.new(world).load!.locations.with_a_box.count
   end
 
+  # Built fresh on every call so a test can edit it without touching another's.
   def document
     WorldSeed.parse(WorldSeed.dump(
       "format" => WorldSeed::FORMAT,
