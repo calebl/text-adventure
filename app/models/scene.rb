@@ -15,13 +15,20 @@ class Scene < ApplicationRecord
   # is the first act the engine takes that no typed word names -- so the record
   # grows here and the prompt does not.
   #
-  # `attack`, `hazard` and `throw` are in the list before anything writes one:
+  # `attack`, `hazard` and `throw` were in the list before anything wrote one:
   # the column is what says a fight is recordable, and decoupling it from the
-  # classifier's enum is the change that has to land before any of that can be
+  # classifier's enum is the change that had to land before any of that could be
   # written down. Nothing here widens `INTENTS`, and nothing here reaches a
-  # prompt. `#engine_authored?` is the difference between the two lists, asked
-  # as a question.
-  ACTIONS = (Playthrough::IntentSchema::INTENTS + %w[attack hazard throw]).freeze
+  # prompt.
+  #
+  # `attack` IS NOW IN BOTH LISTS, and the `uniq` is the whole of what that
+  # cost. Combat slice 8 made it the seventh word in `INTENTS`, so the engine's
+  # list and the prompt's overlap by one -- which is what a word arriving from
+  # the OTHER direction looks like, and not a reason to take it out of here. The
+  # two lists still answer different questions (what the engine may record,
+  # what the model may be offered) and `hazard` is the standing proof: nothing
+  # will ever type it.
+  ACTIONS = (Playthrough::IntentSchema::INTENTS + %w[attack hazard throw]).uniq.freeze
 
   # AND WHICH OF THOSE THE ENGINE WROTE THE WORDS OF, which is a DIFFERENT
   # question from which of them a player can type -- and it used to be answered

@@ -91,6 +91,11 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
     # them has to be sayable -- and it is said as `read`, the word a player types.
     assert_match(/read Perrin's private index, and read copy-room apron/,
                  refuse(intent(:examine, item: @index, also_named: @apron)).reason)
+    # AND `attack` SINCE COMBAT SLICE 8. Two people hit on one line is two acts
+    # like any other, and without a row in `ASKED` the pair would have come back
+    # as two bare names with no verb in front of either.
+    assert_match(/attack Halkett Rowe, and attack Perrin Lasco/,
+                 refuse(intent(:attack, speaker: @rowe, also_named: @lasco)).reason)
   end
 
   # THE ASYMMETRY IS DELIBERATE AND IT IS THE WHOLE BOUNDARY: a look can name two
@@ -130,6 +135,7 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
     assert_match(/There is nobody here to talk to/, refuse(intent(:talk)).reason)
     assert_match(/There is no way out of here at all/, refuse(intent(:move)).reason)
     assert_match(/You are carrying nothing/, refuse(intent(:drop)).reason)
+    assert_match(/There is nobody here to fight/, refuse(intent(:attack)).reason)
   end
 
   test "a set with something in it is refused by saying the command did not land on it" do
@@ -144,6 +150,23 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
     assert_equal "The ways out are: The Supply Closet.", refuse(intent(:move), offered: [ @there ]).offer
     assert_equal "Here with you: Halkett Rowe.", refuse(intent(:talk), offered: [ @rowe ]).offer
     assert_equal "You are carrying: copy-room apron.", refuse(intent(:drop), offered: [ @apron ]).offer
+    # THE SAME SENTENCE AS A `talk`'S, because it is the same list read back --
+    # the captain's ruling of 2026-09-05, *"anyone can be attacked"*, and there
+    # is no narrower one to offer.
+    assert_equal "Here with you: Halkett Rowe.", refuse(intent(:attack), offered: [ @rowe ]).offer
+  end
+
+  # AN ATTACK THAT FOUND NOBODY IS A REACH THAT FOUND NOTHING, which is what
+  # `Playthrough::Drift::ACTIONS` gaining the word means for what the player
+  # reads -- and it gets its own sentence rather than the `talk` one, because
+  # they typed a blow.
+  test "an attack that landed on nobody is refused as a reach that found nothing" do
+    refusal = refuse(intent(:attack), offered: [ @rowe, @lasco ])
+
+    assert_equal :unresolved, refusal.kind
+    assert_match(/did not resolve to anybody here to swing at/, refusal.reason)
+    assert_equal "Here with you: Halkett Rowe, Perrin Lasco.", refusal.offer
+    assert_includes Playthrough::Drift::ACTIONS, "attack"
   end
 
   # `EMPTY` has already said the set is empty; "Lying here: nothing" says it
