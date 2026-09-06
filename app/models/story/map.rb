@@ -139,6 +139,18 @@ class Story::Map
     def hazardous? = out.hazardous? || back&.hazardous? || false
     def stairs? = out.travel_method == "taking stairs"
 
+    # WHAT EACH DIRECTION OF THIS DOORWAY COSTS, NAMED BY THE WAY IT IS WALKED.
+    # A hazard written on one row is ONE-WAY BY CONSTRUCTION
+    # (`LocationConnection`'s header): the drop through the hatch hurts and the
+    # climb back out does not. One line collapses two rows, so the line has to
+    # say which of the two the toll is on or the picture loses the mechanic.
+    def hazard_readings
+      [ out, back ].compact.select(&:hazardous?).map do |row|
+        near, far = row.location_id == from.location.id ? [ from, to ] : [ to, from ]
+        "hazard: #{row.hazard} going #{near.name} -> #{far.name}"
+      end
+    end
+
     # The two rows disagreeing about how far it is or how you get there. Written
     # in both directions from one answer, so they should never differ.
     def directions_disagree?
@@ -158,7 +170,7 @@ class Story::Map
     # `<title>` as a tooltip on its own.
     def reading
       parts = [ "#{from.name} <-> #{to.name}", out.distance.to_s, out.travel_method.to_s, out.time_to_travel.to_s ]
-      parts << "hazard: #{out.hazard || back&.hazard}" if hazardous?
+      parts.concat(hazard_readings)
       parts << "only one row in the table" if one_sided?
       parts << "the two rows disagree" if directions_disagree?
       parts << "nobody has walked this" if frontier?
@@ -169,7 +181,13 @@ class Story::Map
   # ONE ROOM ON A FLOOR PLAN: its node, its box, and the rectangle it is drawn
   # as. The rectangle is `PACE` pixels to the pace, so a plan is to scale and two
   # rooms that share a wall are drawn sharing it.
-  Room = Data.define(:node, :box, :x, :y, :width, :height) do
+  #
+  # `box` IS THE RECORD'S AND `plan_box` IS THE PICTURE'S, and they differ by the
+  # plan's origin -- which is not zero the moment a room sits at a negative x or
+  # y, a position `Location` permits. Every pixel on the plan is derived from
+  # `plan_box` and nothing is derived from `box`, so the rectangle and the door
+  # on its wall cannot be drawn in two different frames.
+  Room = Data.define(:node, :box, :plan_box, :x, :y, :width, :height) do
     def name = node.name
   end
 
@@ -312,8 +330,25 @@ class Story::Map
   # per node. The PARTY is not in it and cannot be: the protagonist and any
   # companion are wherever the PLAYTHROUGH is, which is the "you are here" mark
   # instead.
+  #
+  # THIS GAME'S DEAD ARE NOT IN IT EITHER, for the reason `Playthrough#cast_in`
+  # exists: a corpse keeps its `location_id`, so the world's answer is no longer
+  # this game's, and a node reading "2 present" for a room this playthrough has
+  # emptied would be the instrument lying beside an item count that IS this
+  # game's. Both counts on a node read the same layer or neither can be trusted.
   def people_by_location
-    @people_by_location ||= story.characters.where.not(location_id: nil).group(:location_id).count
+    @people_by_location ||= begin
+      present = story.characters.where.not(location_id: nil)
+      present = present.where.not(id: dead_character_ids) if dead_character_ids.any?
+      present.group(:location_id).count
+    end
+  end
+
+  # WHOM THIS GAME HAS KILLED, or nothing at all when nobody is playing. An
+  # absent vitals row is a body at full health (`Playthrough::Vitals::Condition`),
+  # so the dead are exactly the rows that have run out, read in one query.
+  def dead_character_ids
+    @dead_character_ids ||= playthrough ? playthrough.vitals.where(hp_current: ..0).pluck(:character_id) : []
   end
 
   # WHAT IS LYING ON EACH FLOOR, from whichever of the two item layers this map
@@ -385,13 +420,13 @@ class Story::Map
   # BOTH ENDS OF EVERY ROW THAT TOUCHES THIS PLACE, in id order. Undirected on
   # purpose: a door is two rows and the picture draws one line, so the walk must
   # cross a door the table only half recorded.
-  def neighbours_of(id)
+  def neighbours_of(id) = adjacency.fetch(id, [])
+
+  def adjacency
     @adjacency ||= connections.each_with_object(Hash.new { |hash, key| hash[key] = [] }) do |row, index|
       index[row.location_id] << row.connected_location_id
       index[row.connected_location_id] << row.location_id
-    end
-
-    @adjacency[id].uniq.sort
+    end.transform_values { |ids| ids.uniq.sort }
   end
 
   def build_layout(placed)
@@ -481,10 +516,11 @@ class Story::Map
 
   def build_room(room, origin_x, origin_y)
     box = room.box
+    plan_box = box.with(x: box.x - origin_x, y: box.y - origin_y)
 
-    Room.new(node: node_for(room), box: box,
-             x: (box.x - origin_x) * PACE, y: (box.y - origin_y) * PACE,
-             width: box.width * PACE, height: box.depth * PACE)
+    Room.new(node: node_for(room), box: box, plan_box: plan_box,
+             x: plan_box.x * PACE, y: plan_box.y * PACE,
+             width: plan_box.width * PACE, height: plan_box.depth * PACE)
   end
 
   # EVERY DOOR ON THIS STOREY: a pair of rooms the table says are walkable, whose
@@ -499,12 +535,7 @@ class Story::Map
     end
   end
 
-  def connected?(a, b)
-    connections.any? do |row|
-      (row.location_id == a.id && row.connected_location_id == b.id) ||
-        (row.location_id == b.id && row.connected_location_id == a.id)
-    end
-  end
+  def connected?(a, b) = neighbours_of(a.id).include?(b.id)
 
   # WHERE THE GAP IN A WALL TWO ROOMS SHARE IS DRAWN, and the one piece of
   # arithmetic on this page that is neither `Location::Box`'s nor pixels. See the
@@ -515,7 +546,7 @@ class Story::Map
   # `DOOR_PACES` wide at the middle of whatever length of wall they actually
   # share, and there is no door at all when they share a corner and nothing else.
   def doorway_between(a, b)
-    wall = shared_wall(a.box, b.box)
+    wall = shared_wall(a.plan_box, b.plan_box)
     return nil if wall.nil?
 
     axis, at, from, to = wall
@@ -554,9 +585,18 @@ class Story::Map
   # every doorway out of a room on this storey whose `travel_method` is
   # "taking stairs" and whose far end stands on a different storey. Drawn in the
   # room it leaves from, so it appears once on each of the two plans it joins.
+  #
+  # ONLY BETWEEN SIBLINGS, and it is a rule about frames rather than about
+  # stairs: a child's `z` is a storey of ITS OWN parent (`Location::Box`), so
+  # comparing it with the `z` of a room in another building answers a question
+  # nobody asked. A stair out of this building is still on the graph above,
+  # marked on the edge, which is the plane it can honestly be drawn in.
   def stairs_from(rooms)
     rooms.flat_map do |room|
+      parent_id = room.node.location.parent_location_id
+
       stair_ends_from(room.node.location).filter_map do |far|
+        next if far.parent_location_id != parent_id
         next if far.box.nil? || far.box.z == room.box.z
 
         Stair.new(x: room.x + (room.width / 2.0), y: room.y + (room.height / 2.0),

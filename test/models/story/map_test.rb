@@ -84,6 +84,44 @@ class Story::MapTest < ActiveSupport::TestCase
     assert_equal [ "The Attic" ], map.one_sided_edges.map { |edge| edge.to.name }
   end
 
+  # A HAZARD IS WRITTEN ON ONE ROW AND IS THEREFORE ONE-WAY BY CONSTRUCTION
+  # (`LocationConnection`'s header). One line collapses two rows, so the line has
+  # to name the direction the toll is on -- the drop down hurts and the climb
+  # back out does not, and a picture that said only "hazard: drop" would have
+  # dropped the mechanic.
+  test "a hazard is reported in the direction its row is written in" do
+    story = create(:story)
+    hall = create(:location, story: story, name: "The Hall")
+    cellar = create(:location, story: story, name: "The Cellar")
+    ledge = create(:location, story: story, name: "The Ledge")
+    create(:location_connection, :hazardous, location: hall, connected_location: cellar)
+    create(:location_connection, location: cellar, connected_location: hall)
+    create(:location_connection, location: cellar, connected_location: ledge)
+    create(:location_connection, :hazardous, location: ledge, connected_location: cellar)
+
+    readings = Story::Map.new(story).hazardous_edges
+                                    .to_h { |edge| [ [ edge.from.name, edge.to.name ], edge.hazard_readings ] }
+
+    assert_equal [ "hazard: drop going The Hall -> The Cellar" ], readings.fetch([ "The Hall", "The Cellar" ])
+    assert_equal [ "hazard: drop going The Ledge -> The Cellar" ], readings.fetch([ "The Cellar", "The Ledge" ])
+  end
+
+  # THE PEOPLE COUNTED ARE THE LAYER THE MAP IS ABOUT, the way the things beside
+  # them already are. A corpse keeps its `location_id`, so a playthrough that has
+  # emptied a room must not be shown somebody still standing in it --
+  # `Playthrough#cast_in`'s reason, one table over.
+  test "somebody this game has killed is not counted as standing anywhere" do
+    story = walked_story
+    hall = story.locations.find_by(name: "The Hall")
+    playthrough = create(:playthrough, story: story, current_location: hall)
+    create(:character, story: story, location: hall)
+    slain = create(:character, story: story, location: hall)
+    create(:playthrough_vitals, :dead, playthrough: playthrough, character: slain)
+
+    assert_equal 2, Story::Map.new(story).node_for(hall).people
+    assert_equal 1, Story::Map.new(story, playthrough: playthrough).node_for(hall).people
+  end
+
   # EVERY PLACE STILL GETS DRAWN when nothing leads to it, and a piece of the
   # graph is laid out in a band under the piece before it -- so two components
   # can never land on top of each other.
@@ -162,6 +200,26 @@ class Story::MapTest < ActiveSupport::TestCase
     assert_equal 4 * pace, (door.y1 + door.y2) / 2, "the middle of the eight paces they share"
   end
 
+  # A ROOM MAY SIT LEFT OF OR ABOVE ITS PARENT'S OWN ORIGIN -- `Location` puts no
+  # floor under `x` and `y` -- and the plan is then drawn shifted. The door has to
+  # be shifted with it: a wall drawn at one origin and a door drawn at another is
+  # exactly the out-of-footprint fault this page exists to make visible, drawn as
+  # though nothing were wrong.
+  test "a door on a plan shifted off zero lands on the wall it belongs to" do
+    story = create(:story)
+    place = create(:location, story: story, name: "The Keep")
+    west = placed_room(story, place, name: "The West Wing", x: -3)
+    east = placed_room(story, place, name: "The East Wing", x: 0, width: 4)
+    connect(west, east)
+
+    storey = Story::Map.new(story).interiors.sole.storeys.sole
+    door = storey.doorways.sole
+    wall = storey.rooms.find { |room| room.name == "The East Wing" }.x
+
+    assert_equal 3 * Story::Map::PACE, wall, "the west wing is drawn from the plan's own origin"
+    assert_equal [ wall, wall ], [ door.x1, door.x2 ]
+  end
+
   # TWO ROOMS THE TABLE CONNECTS THAT DO NOT TOUCH get no door, because there is
   # no wall to put one in. The edge is still on the graph, which is where that
   # fault shows up.
@@ -191,6 +249,24 @@ class Story::MapTest < ActiveSupport::TestCase
     assert_equal [ false ], storeys.first.stairs.map(&:up)
     assert_equal [ true ], storeys.last.stairs.map(&:up)
     assert_match "The Upper Floor", storeys.last.stairs.sole.reading
+  end
+
+  # A STAIR OUT OF THE BUILDING IS NOT A STOREY OF IT. A child's `z` is read in
+  # ITS OWN parent's frame (`Location::Box`), so a stairs connection to a room
+  # under a different parent says nothing about which floor of this one it
+  # reaches -- it is on the graph above and nowhere on this plan.
+  test "a stair to a room under another parent is left off both plans" do
+    story = create(:story)
+    keep = create(:location, :with_a_footprint, story: story, name: "The Keep")
+    tower = create(:location, :with_a_footprint, story: story, name: "The Tower")
+    ground = placed_room(story, keep, name: "The Ground Floor", x: 0, z: 0)
+    top = placed_room(story, tower, name: "The Tower Top", x: 0, z: 1)
+    connect(ground, top, :indoor_connection)
+
+    storeys = Story::Map.new(story).interiors.flat_map(&:storeys)
+
+    assert_equal 2, storeys.size, "one storey drawn in each building"
+    assert_empty storeys.flat_map(&:stairs)
   end
 
   # A PLACE HOLDING PLACED ROOMS WITH NO FOOTPRINT OF ITS OWN is a fault
@@ -232,9 +308,9 @@ class Story::MapTest < ActiveSupport::TestCase
   # A room placed on a storey of a parent that has a plane to read it in. Fixed
   # numbers and never rolled -- a factory that threw dice for a box would land
   # an overlap on whoever ran the suite next.
-  def placed_room(story, parent, name:, x:, z: 0)
+  def placed_room(story, parent, name:, x:, z: 0, width: 3)
     create(:location, story: story, name: name, parent_location: parent,
-                      x: x, y: 0, z: z, width: 3, depth: 8)
+                      x: x, y: 0, z: z, width: width, depth: 8)
   end
 
   def interior_document
