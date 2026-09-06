@@ -469,7 +469,10 @@ namespace :eval do
       FileUtils.mkdir_p(directory.join("log"))
 
       base = Eval.root.join("base.sqlite3")
-      system(*rails_runner, "script/eval_base.rb", exception: true) unless File.exist?(base)
+      # NOT `File.exist?`: a base left behind by an interrupted build is copied
+      # to every run database and every run then dies on `Could not find table
+      # 'stories'`. `Eval::Base` asks whether the file is one a run could play.
+      system(*rails_runner, "script/eval_base.rb", exception: true) unless Eval::Base.usable?(base)
 
       pinned = pinned_model
       puts "Generating #{stories.size} worlds x #{reps} reps into #{directory}, pinned on #{pinned}."

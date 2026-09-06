@@ -17,10 +17,19 @@ require "fileutils"
 path = ENV.fetch("EVAL_BASE", Rails.root.join("tmp/eval/base.sqlite3").to_s)
 FileUtils.mkdir_p(File.dirname(path))
 
-if File.exist?(path) && ENV["REBUILD"] != "1"
+# EXISTENCE IS NOT THE QUESTION -- see `Eval::Base`. An interrupted build leaves
+# a file behind that every later run then trusts and dies on. What is asked is
+# whether the file is a base a run could actually play, and an unusable one is
+# rebuilt (over itself, at the path this script was asked to build) rather than
+# skipped.
+unusable = Eval::Base.unusable_reason(path)
+
+if unusable.nil? && ENV["REBUILD"] != "1"
   warn "  base world already at #{path} (REBUILD=1 to make it again)"
   exit 0
 end
+
+warn "  rebuilding the base world at #{path}: #{unusable}" if unusable && File.exist?(path)
 
 FileUtils.rm_f(path)
 ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: path, timeout: 15_000, pool: 5)

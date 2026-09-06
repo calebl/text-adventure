@@ -1154,6 +1154,13 @@ The current database includes the following story-related models with proper ass
   prose that says less cannot contradict the records, so it is the check on the
   checks.
 - `The Salt Assizes` is the held-out world. Tune on the other two.
+- **`Eval::Base` is the guard in front of `tmp/eval/base.sqlite3`**, and the
+  predicate is not `File.exist?`: an interrupted build leaves the base behind at
+  zero bytes and every run then dies on `Could not find table 'stories'`, a long
+  way from the cause. It asks whether the file OPENS, carries the tables a run
+  reads and holds every world `Eval::STORIES` names, and both
+  `script/eval_base.rb` and `rake eval:run` rebuild an unusable one rather than
+  trusting it. Read its header before loosening it back to a size check
 
 ### The prompt bench: one turn, fixed facts, per prompt version
 - `rake eval:prompt` is the narrator's own instrument and the FIRST GATE a
