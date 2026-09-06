@@ -91,12 +91,50 @@ The full audit of every planned piece of work against this constraint is in
   fall), every other check NOISE at a floor of zero, 300 of 300 turns on their
   scripted branch. Total spend **$0.92**.
 
-  **`Playthrough::PromptVersion` does NOT move across this**, which is a stated
-  consequence rather than an omission: it digests the instruction block, and the
-  per-turn fact scaffold is explicitly outside it (read its header). So
+  **`Playthrough::PromptVersion` did NOT move across this**, which was a stated
+  consequence rather than an omission: it digested the instruction block, and
+  the per-turn fact scaffold was explicitly outside it. So
   `Playthrough::Feedback` verdicts on take turns before and after this merge
-  group under one digest. `Eval::Prompt::Version`'s `prompt_digest` is the one
-  that moved, `0ffc0228b538ac73 -> e05adeafd329542e`.
+  would have grouped under one digest. `Eval::Prompt::Version`'s `prompt_digest`
+  is the one that moved, `0ffc0228b538ac73 -> e05adeafd329542e`. Closed by
+  `ta-promptversion-scaffold` below, which widened the digest before any verdict
+  was recorded on the new prompt.
+
+- **The prompt fingerprint covers the per-turn scaffold**
+  (`ta-promptversion-scaffold`). The defect `ta-take-drop-narration` disclosed
+  and left to its own PR. `Playthrough::PromptVersion.narration` digested
+  `Scene::Narrator::INSTRUCTIONS` alone, so that PR changed every take turn's
+  prompt and left the fingerprint byte-identical at `c5f18981f77aa01f` -- and
+  `Playthrough::Feedback` freezes that value on every verdict, so verdicts
+  either side of it would have grouped as evidence about one narrator. That is
+  the record the digest exists to protect.
+
+  **It holds no prompt wording.** It subclasses `Scene::Narrator` and
+  `Playthrough::Turn` and calls their real builders, so editing a sentence
+  changes the rendered text with nothing to keep in step. What it does hold is
+  the LIST of which builders exist, and `Playthrough::PromptVersionTest` asserts
+  that list against the classes themselves -- every `/_fact\z/` method on
+  `Playthrough::Turn`, and every constructor on `Playthrough::Turn::Throw`,
+  since a fifth outcome is a new paragraph inside a builder that is already
+  rendered. A signature change already breaks the render loudly; those two turn
+  the silent drift into a failing test.
+
+  `Playthrough::PromptVersion::Scaffold` renders every branch of the scaffold --
+  `Scene::Narrator#prompt_for`'s framing and `DOING` line,
+  `Playthrough::Turn#taken_fact` / `#dropped_fact` / `#thrown_fact` /
+  `#read_fact` / `#written_words_fact`, and `Playthrough::Moment::Handled#note`
+  -- against fixed placeholders, and the digest is over the rendered TEXT and
+  never over method source, so a refactor that changes no prompt moves nothing.
+  `.narration` is now `685d55bd5893919a`; the same renderer against the pre-138
+  scaffold gives `dda99db9cd89476a`, which is the separation that did not exist.
+  `.narration_instructions` is the narrow reader `Eval::Prompt::Version` and the
+  kept baseline still ask, so `db/eval/prompt-2026-09-05` is untouched.
+
+  **Nothing stored was rewritten and no `bin/update` step exists**, because no
+  row changes: the five narration verdicts already carrying `c5f18981f77aa01f`
+  keep it and it now reads as *before the widening* -- a value no new verdict
+  can produce. Three of those five are take turns, and every one predates the
+  138 merge, so the record was still clean when this landed.
 
 - **A generated world is played by somebody** (`ta-generated-world-cast`).
   `rake game:new` made no characters at all — not one, and nothing anywhere set

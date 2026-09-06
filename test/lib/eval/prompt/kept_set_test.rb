@@ -36,7 +36,13 @@ class Eval::Prompt::KeptSetTest < ActiveSupport::TestCase
 
     assert_equal Eval::Prompt.digest, result.corpus_digest,
                  "the corpus moved since the baseline was taken -- re-run it or the comparison is between two files"
-    assert_equal Playthrough::PromptVersion.narration, result.instruction_passes["narration"],
+    # `narration_instructions` AND NOT `narration`, which is the wider digest
+    # and the wrong question here. A stored set records the INSTRUCTION BLOCK
+    # each pass sent (`Eval::Prompt::Version#by_pass`), so this asks whether the
+    # narrator's instructions are still today's. What the set says about the
+    # per-turn scaffold is `prompt_digest`, which covers the whole prompt of one
+    # designated case and is asserted present below.
+    assert_equal Playthrough::PromptVersion.narration_instructions, result.instruction_passes["narration"],
                  "the narrator's instructions moved since the baseline was taken, so this is a baseline " \
                  "for a prompt the app no longer sends -- re-run it"
     assert_predicate result.instruction_passes["arrival"], :present?

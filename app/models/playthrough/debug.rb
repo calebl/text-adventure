@@ -91,12 +91,14 @@ class Playthrough::Debug
     def instructions = chat.messages.find { |message| message.role.to_s == "system" }
 
     # WHICH VERSION OF THE INSTRUCTIONS THIS CALL WAS UNDER, as the same short
-    # digest `Playthrough::Feedback` freezes and `rake eval:prompt` records --
-    # so a verdict, a bench set and a conversation on a page all group by one
-    # value. Read off the message above rather than through
-    # `Playthrough::PromptVersion.for_chat`, which would issue a second query
-    # for a row already in memory; both digest `content`, so they cannot
-    # disagree.
+    # digest `rake eval:prompt` records per pass
+    # (`Playthrough::PromptVersion.narration_instructions`) -- so a bench set
+    # and a conversation on a page group by one value. Read off the message
+    # above rather than through `Playthrough::PromptVersion.for_chat`: that one
+    # answers a WIDER question for a narrated turn (it folds in the per-turn
+    # scaffold, which is what `Playthrough::Feedback` freezes), and this is a
+    # label on the instruction block the panel is showing beside it. The whole
+    # prompt, scaffold and all, is on the same panel verbatim.
     #
     # Nil for a chat with no system message, which is `interaction-narration`
     # and is a real shape rather than a missing one -- see that class's header.
