@@ -251,8 +251,14 @@ class InteractionAgent
   # and this file's prompts have no stored baseline AT ALL, which is where a
   # change could not be judged either way -- and geometry was never asked for in
   # a talk turn. So this pass sends the block it sent before interiors existed.
+  #
+  # AND `arc: false` FOR THE SAME REASON PLUS A STRONGER ONE OF ITS OWN: the
+  # story's next beat is the PLAYER's errand and a fact the engine holds about
+  # their progress, so telling the person they are talking to would brief every
+  # stranger in the world on what they came for. The narrator is told it
+  # (the captain's Call 4 of 2026-09-06); nobody in the fiction is.
   def narrator_moment_section
-    context = moment&.narration_context(plan: false).presence
+    context = moment&.narration_context(plan: false, arc: false).presence
     return "" if context.nil?
 
     "## Where this happens\n#{context}\n"
