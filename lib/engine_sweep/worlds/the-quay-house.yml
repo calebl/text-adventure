@@ -23,13 +23,29 @@
 # also the worked example of what that reserved slot is for.
 #
 # AND ONE THING LYING SOMEWHERE IN PARTICULAR, which is slice 4 and is why this
-# world has an item at all. The seal ledger lies at 3,2 of room 1, which runs
-# 0..6 along x and 0..3 along y -- so `EngineSweep::Invariants#positions_in_bounds`
-# has something to be true OF, and a walk that took it, carried it upstairs and
-# put it down would break that invariant if a drop wrote a cell of the room the
-# thing came from. `things-land-somewhere-in-a-room.yml` is that walk. It is
-# hand-written for the same reason the way in is: an offline sweep realizes no
-# room, so nothing here can watch `Item::Registry` place one.
+# world has an item at all. The seal ledger lies at 6,2 of room 1 -- so
+# `EngineSweep::Invariants#positions_in_bounds` has something to be true OF, and
+# `things-land-somewhere-in-a-room.yml` is the walk that carries it upstairs and
+# puts it down.
+#
+# `x: 6` IS CHOSEN AND IS NOT AN ARBITRARY CORNER. Room 1 runs 0..6 along x and
+# room 5 -- the room above it, and the room the walk drops the ledger in -- runs
+# only 0..5, so 6 is a cell of the floor the ledger starts on and of no cell of
+# the floor it ends on. `Location::Box#contains?` IGNORES `z` by design (a
+# storey belongs to the room, `Location::Spot`), so a cell the two rooms shared
+# would be in bounds for both and a drop that kept the ledger's old numbers
+# would pass the invariant. At 6,2 it cannot: a stale cell is through the wall
+# of room 5 and the walk fails.
+#
+# WHAT EVEN THIS CANNOT CATCH, said out loud because the invariant looks
+# stronger than it is: a drop that wrote NO position at all. `#carry!` has
+# already cleared the columns, so such a row ends unplaced, drops out of
+# `Item.positioned`, and there is nothing for `positions_in_bounds` to be true
+# or false of. `Playthrough::TurnPositionTest` is what asserts a drop writes a
+# cell; a walk asserts it is the right one.
+#
+# It is hand-written for the same reason the way in is: an offline sweep
+# realizes no room, so nothing here can watch `Item::Registry` place one.
 #
 # The rooms are STUBS and stay stubs: an offline walk writes nothing, which is
 # `EngineSweep::Invariants#nothing_was_written`.
@@ -116,7 +132,7 @@ locations:
   - name: seal ledger
     description: |-
       A quarto ledger of broken seals, one line to a cargo and the last line wet.
-    x: 3
+    x: 6
     y: 2
 - name: The Custom House room 2
   detail_level: stub

@@ -162,11 +162,25 @@ class Item::LayerBackfill
   # in -- so what the room was furnished with is what it is furnished with
   # again. A world row of that name already lying there is used rather than
   # duplicated, which is what makes a second run write nothing.
+  #
+  # AND IT IS PUT BACK UNPLACED, because this statement RE-HOMES the row: a
+  # position is read in the plane of the room a thing is lying in
+  # (`Location::Spot`), so the cell the instance carries was read in whatever
+  # room it ended up in, and that is not the room of the earliest take. Copying
+  # it across would lay a template through the wall of the room it is in, which
+  # is what `Story::Doctor` reports as `thing_outside_the_room_it_is_in`.
+  # Cleared rather than re-rolled for `Story::Repair#fold_location_into`'s
+  # reason, said again: a backfill is reading a legacy row back into the two
+  # layers, and inventing a corner for it is not what it was asked to do.
+  # Unplaced is the honest answer, and `rake game:doctor` says so out loud for a
+  # room that has a plane to place it in.
   def put_the_world_s_row_back(answer)
     existing = Item.lying_in(answer.location).templates.by_name(answer.item.name).first
     return existing if existing
 
-    Item.create!(answer.item.attributes.except(*Item::NOT_COPIED).merge(location: answer.location))
+    Item.create!(answer.item.attributes.except(*Item::NOT_COPIED)
+                       .merge(Location::Placement.unplaced.stringify_keys)
+                       .merge(location: answer.location))
   end
 
   def protagonist?(item) = story.protagonist.present? && item.character_id == story.protagonist.id

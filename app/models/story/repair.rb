@@ -214,6 +214,14 @@ class Story::Repair
   #
   # `Character#move_to!` and not the registry, because this IS the explicit
   # decision: the file says so.
+  #
+  # AND WHERE IN THAT ROOM, ON THE SAME TERMS. `characters[].x` / `.y` is a
+  # value that already exists somewhere else too, so it is written back the way
+  # the room is rather than rolled: a repair that put somebody in the right room
+  # and a corner of its own choosing would be inventing half its own answer, and
+  # the next `rake game:export` would write that invention into the file. A file
+  # that places nobody in particular hands back nothing and the engine rolls, as
+  # it does for everybody in every generated world.
   def repair_seeded_whereabouts(finding)
     character = finding.subject
     room = doctor.seeded_whereabouts[character.fullname]
@@ -227,8 +235,9 @@ class Story::Repair
     location = story.locations.find_by(name: room)
     raise ArgumentError, "the world file places #{character.fullname} in #{room.inspect}, which this story has no location called" if location.nil?
 
-    character.move_to!(location)
-    "put #{character.fullname} back in #{location.name}, where the world file places them"
+    seat = doctor.seeded_positions[character.fullname]
+    character.move_to!(location, at: seat)
+    "put #{character.fullname} back in #{location.name}#{" #{seat}" if seat}, where the world file places them"
   end
 
   # NOWHERE ON PURPOSE, WRITTEN ONTO A ROW THAT PREDATES THE MARKER. The same

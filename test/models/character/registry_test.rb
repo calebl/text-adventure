@@ -493,6 +493,39 @@ class Character::RegistryTest < ActiveSupport::TestCase
     assert_equal was, brace.reload.position
   end
 
+  # AND A CORNER A SEED FILE CHOSE SURVIVES BEING DESCRIBED, which is the half
+  # the test above cannot show: a world placement is re-derivable, so re-rolling
+  # a cell the ENGINE wrote is invisible, and re-rolling one an AUTHOR wrote
+  # silently replaces their decision -- and the next `rake game:export` writes
+  # the replacement into the file. The seeded cell here is picked as a cell the
+  # roll does not give, so nothing about this assertion depends on which ids the
+  # suite happened to allocate.
+  test "re-admitting somebody the world file placed leaves the file's own cell alone" do
+    room = laid_out_room
+    brace = create(:character, story: @story, fullname: "Ammon Brace", location: room)
+    rolled = Location::Placement.in_the_world(room, brace)
+    seated = { x: room.box.x + ((rolled[:x] - room.box.x + 1) % room.box.width), y: rolled[:y] }
+    brace.update!(**seated)
+
+    Character::Registry.new(room).admit!([ brace ])
+
+    assert_equal Location::Spot.new(**seated), brace.reload.position
+  end
+
+  # AN OUT-OF-BOUNDS CELL IS NOT A DECISION ANYBODY MADE, so it is not preserved:
+  # it is a row `Story::Doctor` reports as a fault, and standing somebody through
+  # a wall for ever is not what keeping an author's cell means.
+  test "re-admitting somebody standing through a wall puts them back inside it" do
+    room = laid_out_room
+    brace = create(:character, story: @story, fullname: "Ammon Brace", location: room)
+    brace.update_columns(x: room.box.x + room.box.width + 3, y: room.box.y)
+
+    Character::Registry.new(room).admit!([ brace ])
+
+    assert_equal Location::Spot.new(**Location::Placement.in_the_world(room, brace)), brace.reload.position
+    assert room.box.contains?(brace.position), "#{brace.position} is outside #{room.box}"
+  end
+
   # THE ORDINARY CASE, and every room in every generated world today.
   test "somebody placed into a room with no box is unplaced" do
     brace = create(:character, story: @story, fullname: "Ammon Brace")

@@ -878,8 +878,14 @@ class CharacterTest < ActiveSupport::TestCase
     assert_nil clerk.position
   end
 
-  # RE-DERIVABLE FOR EVER, which is what keeps a re-admission
-  # (`Character::Registry`) a no-op rather than a shuffle.
+  # RE-DERIVABLE FOR EVER: a world placement is a pure function of the row and
+  # the room, so a REAL move out and back writes the same two numbers again.
+  #
+  # WHICH IS A STATEMENT ABOUT THE ROLL AND NOT ABOUT A FILE'S OWN CELL. Walking
+  # out of a room is a move, so the cell a seed file laid somebody in does NOT
+  # survive one -- it is replaced by the roll, exactly as it is for anybody the
+  # engine placed. What a file's cell survives is a move that moves nobody; see
+  # the two tests below.
   test "walking out of a room and back in stands them where they were" do
     clerk = create(:character, :placed)
     room = clerk.location
@@ -889,6 +895,48 @@ class CharacterTest < ActiveSupport::TestCase
     clerk.move_to!(room)
 
     assert_equal Location::Spot.new(**was), clerk.reload.position
+  end
+
+  # A MOVE THAT MOVES NOBODY ROLLS NOTHING, which is what lets a seed file's own
+  # corner survive `Character::Registry` naming somebody it already holds. The
+  # cell the factory writes is chosen here to be one the roll does not give, so
+  # nothing about this depends on which ids the suite happened to allocate.
+  test "being moved into the room they are already in keeps the cell they are on" do
+    clerk = create(:character, :placed)
+    room = clerk.location
+    rolled = Location::Placement.in_the_world(room, clerk)
+    seated = { x: room.box.x + ((rolled[:x] - room.box.x + 1) % room.box.width), y: rolled[:y] }
+    clerk.update!(**seated)
+
+    clerk.move_to!(room)
+
+    assert_equal Location::Spot.new(**seated), clerk.reload.position
+  end
+
+  # AND A CELL OUTSIDE THE ROOM IS NOT KEPT, because it is not a decision
+  # anybody made -- it is a row `Story::Doctor` reports as a fault.
+  test "a cell outside the room is re-rolled rather than kept" do
+    clerk = create(:character, :placed)
+    room = clerk.location
+    clerk.update_columns(x: room.box.x + room.box.width + 2, y: room.box.y)
+
+    clerk.move_to!(room)
+
+    assert_equal Location::Spot.new(**Location::Placement.in_the_world(room, clerk)), clerk.reload.position
+  end
+
+  # `at:` IS THE ONE WAY TO HAND THIS METHOD A POSITION, and it exists for
+  # `Story::Repair#repair_seeded_whereabouts` alone: the file's own pair, written
+  # back beside the file's own room.
+  test "a move given the file's own pair writes it rather than a roll" do
+    clerk = create(:character, :placed)
+    other = create(:location, story: clerk.story, parent_location: clerk.location.parent_location,
+                              x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    clerk.move_to!(other, at: Location::Spot.new(x: 9, y: 4))
+
+    assert_equal other, clerk.reload.location
+    assert_equal Location::Spot.new(x: 9, y: 4), clerk.position
   end
 
   test "the positioned scope takes a partial row too" do

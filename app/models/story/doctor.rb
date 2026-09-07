@@ -118,6 +118,23 @@ class Story::Doctor
     end
   end
 
+  # `{ fullname => Location::Spot }` for the people the checked-in file lays in
+  # a particular corner of the room it puts them in -- the position half of
+  # `#seeded_whereabouts`, read from the same document and for the same reason:
+  # what the file says is on record, so a repair that writes it back is putting
+  # something already written somewhere else, rather than inventing it.
+  #
+  # ONLY WHOLE PAIRS. A file that writes neither number is saying "unplaced",
+  # which is what every row of all three checked-in worlds is; a file that
+  # writes one is malformed and `WorldSeed::Loader#validate_positions!` refuses
+  # to load it. Neither is a value a repair can write back, so neither appears
+  # here and `Character#move_to!` rolls for those rows as it does for anybody.
+  def seeded_positions
+    @seeded_positions ||= Array(seed_document && seed_document["characters"])
+                          .filter_map { |row| [ row["fullname"], Location::Spot.of(row) ] if Location::Spot.of(row) }
+                          .to_h
+  end
+
   # `{ natural key => the name the file writes }` for this story's rooms, out
   # of the checked-in world file, or empty for a story that is not one of them.
   #

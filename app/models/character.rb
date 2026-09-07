@@ -565,12 +565,14 @@ class Character < ApplicationRecord
   # the party. No such mechanic exists yet; movement is still a decision rather
   # than a side effect.
   #
-  # `Character::Registry` DOES CALL IT, and only ever for somebody it has
-  # already decided is nowhere -- its own rule is that a proposal never moves
-  # somebody who is not. It goes through here rather than writing `location:`
-  # itself because a whereabouts and a POSITION in it have to be written by one
-  # statement (see below), and this class's whole premise is that there is one
-  # writer of a whereabouts.
+  # `Character::Registry` DOES CALL IT, and for two states rather than one: for
+  # somebody it has decided is NOWHERE, which is what its rule is about, and for
+  # somebody ALREADY STANDING IN THIS ROOM, whom `#refusal` lets through because
+  # a room that names a person it already holds is agreeing with the record
+  # rather than asking for anything. It goes through here rather than writing
+  # `location:` itself because a whereabouts and a POSITION in it have to be
+  # written by one statement (see below), and this class's whole premise is that
+  # there is one writer of a whereabouts.
   #
   # `nil` is legal and means "off the map": a person can stop being anywhere.
   #
@@ -589,9 +591,33 @@ class Character < ApplicationRecord
   # somebody standing at a corner of a room they have left. `Location::Placement`
   # rolls one inside the new room's box, or hands back no position at all when
   # the room has none, which is every room in the three checked-in worlds.
-  def move_to!(location)
+  #
+  # A MOVE THAT MOVES NOBODY ROLLS NOTHING, and that is the rule a SEED FILE
+  # turns on. A file may lay a person in a particular corner
+  # (`WorldSeed::Loader#validate_positions!` holds it to the same four rules a
+  # box is held to), and that corner is the author's decision in exactly the
+  # house a seeded hit die is: the engine may not quietly replace it. The one
+  # call that would have is `Character::Registry` re-admitting somebody already
+  # standing in this room -- a move whose destination is the room they are in.
+  # So a destination that is the room the row already names PRESERVES an
+  # in-bounds cell rather than re-rolling it, and everything else -- a different
+  # room, or nil -- writes the pair as before.
+  #
+  # AN OUT-OF-BOUNDS OR PARTIAL CELL IS NOT PRESERVED. It is not a decision
+  # anybody made, it is a row `Story::Doctor` reports as a fault, and standing
+  # somebody through a wall for ever is not what "keep what the author wrote"
+  # means. Those get the roll.
+  #
+  # `at:` IS THE FILE'S OWN PAIR, WRITTEN BACK, and the only way to hand this
+  # method a position. `Story::Repair#repair_seeded_whereabouts` passes it for
+  # the same reason it passes the room: both are values that already exist in a
+  # checked-in world file, and a repair puts back what the file says rather than
+  # inventing a corner. There is no other caller and there is not meant to be --
+  # a mechanic that invented a cell here would be a second author of a position,
+  # which is what `Location::Placement`'s header exists to keep down to one.
+  def move_to!(location, at: nil)
     update!(location: location, deliberately_absent: location ? false : deliberately_absent,
-            **Location::Placement.in_the_world(location, self))
+            **position_in(location, at))
   end
 
   # HOSTILE BY DEFAULT IF THE RACE IS MONSTROUS -- the captain's seventh ruling
@@ -700,6 +726,28 @@ class Character < ApplicationRecord
   end
 
   private
+
+  # WHICH PAIR `#move_to!` WRITES, and the whole of the rule its header states.
+  # Four answers in the order they are asked:
+  #
+  #   the file's       `at:` -- a whole spot a checked-in world file authored,
+  #                    handed back by `Story::Repair`. It wins over both of the
+  #                    two below, because it is the only one of the three a
+  #                    person decided.
+  #   the one they
+  #   are standing on  a destination that is the room the row already names is a
+  #                    move that moves nobody, and an in-bounds cell survives it.
+  #   the roll         every real move, into a room or out to nowhere.
+  #
+  # `Location::Box#contains?` is false for a nil spot and for half of one, so
+  # the third answer catches an unplaced row and a partial one without asking
+  # twice.
+  def position_in(destination, given)
+    return given.to_h if destination && given.is_a?(Location::Spot)
+    return position.to_h if destination && location_id == destination.id && destination.box&.contains?(position)
+
+    Location::Placement.in_the_world(destination, self)
+  end
 
   # WHO THE CHARACTER IS TALKING TO. `interaction_instructions` used to name
   # nobody at all, so a model asked for a reaction reached for the only handle

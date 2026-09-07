@@ -96,31 +96,49 @@ class Location::PlacementTest < ActiveSupport::TestCase
     assert_equal spot_from(Roll::CHARACTER_POSITION, person.id), Location::Placement.in_the_world(@room, person)
   end
 
-  # AND AN ID ON THE WRONG AXIS IS A DIFFERENT CELL, which is the half the test
+  # AND AN ID ON THE WRONG AXIS IS A DIFFERENT DIE, which is the half the test
   # above cannot show on two rows that happen to have different ids: `items.id`
   # and `characters.id` collide freely, so what keeps a chair #7 and a clerk #7
   # apart has to be the kind and nothing else.
-  test "one id on the two axes is two different cells" do
+  #
+  # ASSERTED ON THE SEED AND NOT ON THE CELL, and every test below this line is
+  # asserted the same way for the same reason. Two draws from a 56-cell room
+  # agree by coincidence about one time in 56, so a test that read "different
+  # cells" would fail for nobody's mistake on whoever ran the suite next --
+  # exactly the flake class `test/factories/location_connections.rb` diagnoses,
+  # and one whose odds move with the ids the suite happens to allocate. What is
+  # actually claimed is that the two are different DICE, which is a statement
+  # about the seed; the cell each die gives is then re-derived and pinned
+  # exactly, the way `Item::RegistryTest` and `Playthrough::TurnPositionTest`
+  # pin theirs.
+  test "one id on the two axes is two different dice" do
     item = thing
 
-    assert_not_equal spot_from(Roll::CHARACTER_POSITION, item.id),
-                     Location::Placement.in_the_world(@room, item)
+    assert_not_equal seed_for(Roll::CHARACTER_POSITION, item.id), seed_for(Roll::ITEM_POSITION, item.id)
+    assert_equal spot_from(Roll::ITEM_POSITION, item.id), Location::Placement.in_the_world(@room, item)
   end
 
-  def spot_from(kind, sequence)
+  def seed_for(kind, sequence, playthrough: 0, at: 0)
+    Roll.seed(story: @story.id, playthrough: playthrough, at: at, sequence: sequence, kind: kind)
+  end
+
+  def spot_from(kind, sequence, playthrough: 0, at: 0)
     Location::Spot.inside(@room.box,
-                          rng: Roll.generator(story: @story.id, sequence: sequence, kind: kind)).to_h
+                          rng: Roll.generator(story: @story.id, playthrough: playthrough, at: at,
+                                              sequence: sequence, kind: kind)).to_h
   end
 
   # A GAME'S OWN DIE. The world's answer and one game's answer for the same row
   # are drawn from different seeds, so a drop does not put a thing back where
   # the world laid it.
-  test "a game places the same row differently from the world" do
+  test "a game places the same row from its own die" do
     item = thing
     game = create(:playthrough, story: @story)
 
-    assert_not_equal Location::Placement.in_the_world(@room, item),
-                     Location::Placement.in_a_game(@room, item, playthrough: game)
+    assert_not_equal seed_for(Roll::ITEM_POSITION, item.id),
+                     seed_for(Roll::ITEM_POSITION, item.id, playthrough: game.id, at: game.story_now.to_i)
+    assert_equal spot_from(Roll::ITEM_POSITION, item.id, playthrough: game.id, at: game.story_now.to_i),
+                 Location::Placement.in_a_game(@room, item, playthrough: game)
   end
 
   # AND TWO GAMES ARE TWO DICE, which is the layer split read as a roll: what
@@ -130,22 +148,31 @@ class Location::PlacementTest < ActiveSupport::TestCase
     one = create(:playthrough, story: @story)
     other = create(:playthrough, story: @story)
 
-    assert_not_equal Location::Placement.in_a_game(@room, item, playthrough: one),
-                     Location::Placement.in_a_game(@room, item, playthrough: other)
+    assert_not_equal seed_for(Roll::ITEM_POSITION, item.id, playthrough: one.id, at: one.story_now.to_i),
+                     seed_for(Roll::ITEM_POSITION, item.id, playthrough: other.id, at: other.story_now.to_i)
+    assert_equal spot_from(Roll::ITEM_POSITION, item.id, playthrough: one.id, at: one.story_now.to_i),
+                 Location::Placement.in_a_game(@room, item, playthrough: one)
+    assert_equal spot_from(Roll::ITEM_POSITION, item.id, playthrough: other.id, at: other.story_now.to_i),
+                 Location::Placement.in_a_game(@room, item, playthrough: other)
   end
 
   # THE STORY'S CLOCK IS IN A GAME'S SEED, so setting a thing down later in the
   # story is setting it down somewhere else. Story time, never the wall clock --
   # `Roll`'s rule.
-  test "a later moment in one game places the same row somewhere else" do
+  test "a later moment in one game is a later die" do
     item = thing
     game = create(:playthrough, story: @story)
-    early = Location::Placement.in_a_game(@room, item, playthrough: game)
+    was = game.story_now.to_i
 
     later = create(:scene, story: @story, location: @room, story_timestamp: game.story_now + 3.hours)
     game.update!(current_scene: later)
+    now = game.story_now.to_i
 
-    assert_not_equal early, Location::Placement.in_a_game(@room, item, playthrough: game)
+    assert_not_equal was, now
+    assert_not_equal seed_for(Roll::ITEM_POSITION, item.id, playthrough: game.id, at: was),
+                     seed_for(Roll::ITEM_POSITION, item.id, playthrough: game.id, at: now)
+    assert_equal spot_from(Roll::ITEM_POSITION, item.id, playthrough: game.id, at: now),
+                 Location::Placement.in_a_game(@room, item, playthrough: game)
   end
 
   # --- what it refuses ------------------------------------------------------

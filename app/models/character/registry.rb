@@ -284,6 +284,15 @@ class Character::Registry
     # a second writer of a whereabouts is what `Character`'s header exists to
     # keep down to one.
     #
+    # AND SOMEBODY ALREADY STANDING HERE, WHICH ALSO REACHES THIS LINE. It is
+    # not only the nowhere case: `#refusal` returns nil for a person this very
+    # room already holds, because a realization that names somebody it already
+    # has is agreeing with the record rather than asking for anything. That
+    # makes the call below a move whose destination is the room the row already
+    # names, and `#move_to!` rolls nothing for one -- so a corner a seed file
+    # laid somebody in survives being described again. Said here as well as
+    # there because this is the caller that reaches the case.
+    #
     # `#move_to!` ALSO CLEARS `deliberately_absent`, which is not a change in
     # behaviour but is worth saying: `#refusal` has already declined anybody the
     # file marks absent on purpose, so nobody reaching this line carries the

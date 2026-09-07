@@ -20,20 +20,31 @@
 #
 #   THAT A DROP LANDS IN THE ROOM THE PARTY IS STANDING IN AND NOT THE ONE THE
 #   THING CAME FROM. This is the defect the invariant exists for: the ledger is
-#   picked up at 3,2 of room 1 and put down in room 5, which is a 6 x 6 room on
-#   the floor ABOVE and shares no cell with the two axes room 1 runs along
-#   beyond the overlap the stairwell needs. A drop that kept the old numbers,
-#   or that rolled inside the wrong box, is a thing lying through a wall --
-#   which `EngineSweep::Invariants#positions_in_bounds` fails the whole walk
-#   for. It is read ONCE, over the records the walk leaves behind, which is why
-#   the last typed line below is a drop -- see the note above it.
+#   picked up at 6,2 of room 1, which runs 0..6 along x, and put down in room 5,
+#   which is directly above it and runs only 0..5. A drop that kept the old
+#   numbers, or that rolled inside the wrong box, is a thing lying through a
+#   wall -- which `EngineSweep::Invariants#positions_in_bounds` fails the whole
+#   walk for. `x: 6` IS WHAT MAKES THAT TRUE and is the world file's own
+#   decision: `Location::Box#contains?` ignores `z`, so any cell the two rooms
+#   shared would be in bounds for both and a stale position would pass. The
+#   world file's header has the arithmetic.
+#   It is read ONCE, over the records the walk leaves behind, which is why the
+#   last typed line below is a drop -- see the note above it.
 #
-#   THAT THE WORLD'S OWN ROW NEVER MOVES. The ledger the file lays at 3,2 is a
+#   THAT THE WORLD'S OWN ROW NEVER MOVES. The ledger the file lays at 6,2 is a
 #   TEMPLATE; what the party carries upstairs is this game's copy of it (the
 #   captain's ruling of 2026-09-04). `world_items_unmoved` reads the file back
 #   afterwards, and `positions_in_bounds` covers both layers at once -- so a
 #   take that had moved the template rather than the copy would fail this walk
 #   twice over.
+#
+# WHAT NO WALK CAN CATCH HERE, and it is worth saying because the invariant
+# reads stronger than it is: A DROP THAT WROTE NO POSITION AT ALL. `#carry!` has
+# already cleared the two columns, so a `#put_down!` that wrote neither leaves
+# the row unplaced -- out of `Item.positioned`, and therefore invisible to
+# `positions_in_bounds`, which can only be true or false OF a row that says
+# where it is. That one is `Playthrough::TurnPositionTest`'s to assert, and it
+# does; what a walk adds is that the cell is in the right room.
 #
 # WHAT THIS SCRIPT DELIBERATELY DOES NOT PIN: THE CELL. A position is rolled
 # from a seed built out of the story and playthrough ids among other things
@@ -96,9 +107,12 @@ steps:
   type: drop the seal ledger
   why: >-
     THE ONE THING PLAY CAN BREAK. The drop rolls a cell inside room 5's box, and
-    `positions_in_bounds` is what says so -- a drop that kept 3,2 or rolled
-    against room 1 would put the ledger through the floor of the room above it.
-    The cell itself is not asserted and cannot be; see the header.
+    `positions_in_bounds` is what says so -- a drop that kept 6,2 puts the ledger
+    through the wall of the room it is now in, because room 5 runs only 0..5
+    along x. A drop that rolled against the WRONG box is caught only when the
+    cell it picks is outside room 5, which is the honest limit of a bounds check
+    and the reason the world file lays the ledger where it does. The cell itself
+    is not asserted and cannot be; see the header.
   expect:
     changed: true
     here: [seal ledger]

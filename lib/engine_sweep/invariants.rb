@@ -150,6 +150,22 @@
 #                        OF and passes whatever a drop wrote.
 #                        `things-land-somewhere-in-a-room.yml` ends with a drop
 #                        for exactly that reason and says so.
+#                        AND THE OTHER HALF OF THAT, SAID PLAINLY: an UNPLACED
+#                        row is invisible here. `Item.positioned` and
+#                        `Character.positioned` take a row carrying either
+#                        column, so a `#put_down!` that wrote NEITHER leaves
+#                        nothing to check -- `#carry!` has already cleared the
+#                        pair, so the row simply drops out of the scope. This
+#                        invariant asserts that a position is in the right room,
+#                        never that there is one; `Playthrough::TurnPositionTest`
+#                        is what asserts a drop writes one at all.
+#                        A SCRIPT ALSO OWES IT A CELL THE WRONG ROOM CANNOT
+#                        HOLD. Two rooms one above the other can share a cell --
+#                        `Location::Box#contains?` ignores `z` by design -- so a
+#                        stale position carried from one to the other is in
+#                        bounds for both and passes. `the-quay-house.yml` lays
+#                        the seal ledger at an x the room above does not run to,
+#                        and its header has the arithmetic.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.

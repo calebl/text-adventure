@@ -94,6 +94,31 @@ class Item::LayerBackfillTest < ActiveSupport::TestCase
     assert_equal @office, stamp.template.location, "the world's own row goes back where it was taken from"
   end
 
+  # AND THE ROW IT PUTS BACK IS UNPLACED, because putting it back RE-HOMES it. A
+  # position is read in the plane of the room a thing is lying in
+  # (`Location::Spot`), so the cell this instance carries was read in the room it
+  # ended up in and is not a cell of the room the earliest take happened in --
+  # carrying it across would lay a template through a wall, which is what
+  # `Story::Doctor` reports as `thing_outside_the_room_it_is_in`.
+  test "the world's row a backfill re-homes is put back unplaced" do
+    place = create(:location, :stub, :with_a_footprint, story: @story, name: "The Custom House")
+    long = create(:location, story: @story, parent_location: place, name: "The Long Room",
+                             x: 0, y: 0, z: 0, width: 6, depth: 8)
+    weighing = create(:location, story: @story, parent_location: place, name: "The Weighing Room",
+                                 x: 6, y: 0, z: 0, width: 6, depth: 8)
+    playthrough = unsnapshotted_playthrough(location: long)
+    stamp = create(:item, :lying, location: weighing, name: "ward stamp", x: 9, y: 2)
+    records_taking(playthrough, stamp, location: long)
+
+    answer_for(stamp)
+
+    template = stamp.reload.template
+
+    assert_equal long, template.location
+    assert_nil template.position, "#{template.position} was read in #{weighing.name}'s plane, not #{long.name}'s"
+    assert_equal Location::Spot.new(x: 9, y: 2), stamp.position, "the player's own copy lies where they left it"
+  end
+
   # THE SHARED INVENTORY, WHICH IS ONE CASE OF THIS ONE. A row held by the
   # protagonist that a chain records taking was never the starting inventory:
   # it is that player's copy, and for an instance the protagonist's hands ARE
