@@ -258,6 +258,13 @@ class Eval::Realization::Bench
       # the two apart without this. Nil on an opening room, which has no way
       # back at all.
       "reached_from" => kase.reached_from,
+      # THE FLOOR PLAN THE DETAIL PROMPT STATED, for a room inside a laid-out
+      # place and nil for every other room. It is what the two geometry checks
+      # read a description against, and it is stored rather than re-derived at
+      # scoring time for this file's usual reason: the world is rolled back when
+      # the pass ends, so a checker that wanted to ask the records would have
+      # nothing to ask.
+      "plan" => standing.plan,
       "people_allowance" => standing.people_allowance,
       "item_allowance" => standing.item_allowance,
       "exit_allowance" => standing.exit_allowance,

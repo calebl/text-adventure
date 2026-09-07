@@ -1431,11 +1431,11 @@ class Story::Doctor
   #
   # WARNING RATHER THAN FATAL, because `fatal` in this file means one thing --
   # `PlaythroughsController` refuses the story, or the first turn raises -- and
-  # nothing in the play path reads a coordinate yet. A story with two rooms on
-  # top of each other opens and plays exactly as it did before; what is wrong
-  # with it is its map, and a map nobody has drawn breaks nobody's game. When
-  # slice 3 puts dimensions in front of the narrator, the room whose box is
-  # wrong will read wrong, and that is still not a room that cannot be entered.
+  # no coordinate can cause either. A story with two rooms on top of each other
+  # opens and plays exactly as it did before; what is wrong with it is its map.
+  # The play path DOES read a box now -- `Location::Plan` states the room's
+  # dimensions to the room writer and to the narrator -- so the room whose box
+  # is wrong reads wrong, and that is still not a room that cannot be entered.
   #
   # MANUAL RATHER THAN SAFE, which is `rooms_with_an_unknown_danger`'s argument
   # applied to five columns instead of one: THERE IS NO DERIVABLE ANSWER and

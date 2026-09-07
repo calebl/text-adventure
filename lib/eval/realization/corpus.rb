@@ -162,9 +162,17 @@ class Eval::Realization::Corpus
   end
 
   # The checks that need the world stood up.
+  #
+  # AN INTERIOR ROOM IS THE ONE CASE THAT MEASURES ONE CALL ON PURPOSE. Its ways
+  # out are the engine's -- decided by `Location::Interior` before anybody typed
+  # a line -- so `Location::Generator#write_exits!` asks for none, and the exit
+  # allowance says nothing about whether the case is worth measuring. What it
+  # measures instead is the detail call handed a floor plan
+  # (`Location::Plan`), which is a prompt shape no other case in this corpus can
+  # reach. It is recognised the way the generator recognises it, both halves.
   def problems_for(kase, standing)
     return [ "#{kase.id}: could not be staged" ] if standing.nil?
-
+    return [] if standing.plan
     return [] if standing.exit_allowance.positive?
 
     [ "#{kase.id}: #{kase.room.inspect} has no room left for a way out, so write_exits! would make no " \

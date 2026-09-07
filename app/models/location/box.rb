@@ -93,15 +93,49 @@
 # so a world's shape is re-derivable for ever.
 class Location::Box < Data.define(:x, :y, :z, :width, :depth)
   # HOW BIG A PACE IS, IN METRES, and it is here rather than in a prompt because
-  # the engine owns the unit. The floor plan on the map page is the only reader
-  # so far, and it only prints it; no model is told it yet -- slice 3 is where
-  # `Playthrough::Moment` gets to say "six paces by four" to a narrator. Written
-  # down once so that every reader gets the same answer.
+  # the engine owns the unit. The floor plan on the map page prints it and
+  # `Location::Plan` is what finally says "six paces by four" to a model, in
+  # paces and in metres off this one number. Written down once so that every
+  # reader gets the same answer.
   METRES_PER_PACE = 1.5
 
   # HOW SHORT A SHARED WALL MAY BE AND STILL HOLD A DOOR. One pace: a doorway is
   # a person wide, so two rooms meeting only at a corner share no wall at all.
   MINIMUM_DOORWAY = 1
+
+  # WHICH WAY IS WHICH, and it is a decision rather than a discovery: nothing in
+  # the records says where north is, so the engine says it here and says it
+  # once. NORTH IS UP ON THE FLOOR PLAN `Story::Map` DRAWS -- x rises to the
+  # EAST and y rises to the SOUTH, which is a plan drawn the way every plan is
+  # drawn and the way the page already renders one (SVG's y runs down the
+  # screen). A room at a greater `y` than its neighbour is therefore south of
+  # it, and `#wall_towards` is the only place that reading is made.
+  #
+  # IT IS A NAME FOR A SIDE AND NOT A CLAIM ABOUT THE WORLD. Coordinates are
+  # local to a parent (see the header), so "north" means "the top of this
+  # building's own plan" and two buildings share no compass any more than they
+  # share an origin. Nothing compares one place's north with another's.
+  NORTH = "north".freeze
+  EAST = "east".freeze
+  SOUTH = "south".freeze
+  WEST = "west".freeze
+
+  # The four, in the order a compass is read out. Named so a reader that has to
+  # list or sort walls asks one place what they are.
+  WALLS = [ NORTH, EAST, SOUTH, WEST ].freeze
+
+  # HOW FAR OFF CENTRE A PART OF A ROOM HAS TO LIE BEFORE IT IS WORTH A COMPASS
+  # WORD: a quarter of the room's own side, on that axis. It is the one number
+  # in `#bearing_of` and it is here because the alternative is worse in both
+  # directions -- with no floor at all a stairwell half a pace off centre in a
+  # seven-pace room would be reported as "in the west of the room", which is a
+  # precision the records do not have; with a floor set high nothing would ever
+  # earn a word and the answer would always be silence.
+  #
+  # A QUARTER RATHER THAN A HALF because a bearing is read against the room's
+  # CENTRE and not against its far wall: a part whose own centre stands a
+  # quarter of the way out is a part sitting plainly in that end of the room.
+  BEARING_SHARE = 4
 
   # WHERE A ROOM SITS IN ITS PARENT'S PLANE. `z` is a storey index and not a
   # height: 2.5D, so there is no vertical extent to measure.
@@ -182,10 +216,14 @@ class Location::Box < Data.define(:x, :y, :z, :width, :depth)
   # has to keep a point in a column that could disagree with the rooms it
   # names. `Location::Interior` builds every stair to satisfy this and
   # `Story::Doctor` reports a pair that does not.
-  def shares_ground?(other)
-    x < other.x + other.width && other.x < x + width &&
-      y < other.y + other.depth && other.y < y + depth
-  end
+  #
+  # `#shared_ground` IS THE STATEMENT AND THIS IS THE QUESTION, the way
+  # `#shares_a_wall?` and `#shared_wall` are one rule below. It matters more
+  # here than there: `Location::Interior` builds stairs to satisfy the
+  # PREDICATE while `Location::Plan#way_for` reads the REGION, so two
+  # statements of where a stairwell can be would eventually put a bearing on a
+  # stair the layout thinks impossible, or none on one it built.
+  def shares_ground?(other) = !shared_ground(other).nil?
 
   # WHETHER A DOOR COULD OPEN BETWEEN THESE TWO: same storey, touching walls,
   # and touching along enough of them for a doorway to stand in. Half-open
@@ -196,12 +234,90 @@ class Location::Box < Data.define(:x, :y, :z, :width, :depth)
   # THE SHARED RUN HAS TO BE AT LEAST `MINIMUM_DOORWAY`, because rooms that meet
   # at a CORNER touch on both axes and share no wall at all: the run between
   # them is zero paces long and a door there would be a door through a corner.
-  def shares_a_wall?(other)
-    return false unless z == other.z
+  # `#shared_wall` is where that arithmetic is, and this is the predicate form of
+  # it -- one rule, asked as a question or asked for the wall.
+  def shares_a_wall?(other) = !shared_wall(other).nil?
 
-    (touching?(x, width, other.x, other.width) && run(y, depth, other.y, other.depth) >= MINIMUM_DOORWAY) ||
-      (touching?(y, depth, other.y, other.depth) && run(x, width, other.x, other.width) >= MINIMUM_DOORWAY)
+  # THE WALL ITSELF: the axis it stands on, the coordinate it stands at, and the
+  # stretch of it the two rooms have in common -- or nil when they do not touch,
+  # or touch at a corner alone. `:x` is a wall running north to south at that
+  # `x`; `:y` is one running east to west.
+  #
+  # IT MOVED HERE FROM `Story::Map`, which is where it was written and which
+  # said in its own header that this is where it belongs: *"a value object gains
+  # a method when something in the engine needs it"*. Slice 3 is that moment --
+  # `Location::Plan` has to tell a model WHICH WALL a door is in, which is this
+  # arithmetic and not pixels -- so the map now calls this and owns only the
+  # drawing. One statement of where a door can stand, for the picture and for
+  # the prompt.
+  #
+  # THE STOREY IS PART OF IT. Each floor is its own plane (ruling 3), so two
+  # rooms on different storeys share no wall however their outlines lie.
+  def shared_wall(other)
+    return nil unless z == other.z
+
+    if touching?(x, width, other.x, other.width)
+      along = span(y, depth, other.y, other.depth)
+      return [ :x, x + width == other.x ? x + width : other.x + other.width, *along ] if wide_enough?(along)
+    elsif touching?(y, depth, other.y, other.depth)
+      along = span(x, width, other.x, other.width)
+      return [ :y, y + depth == other.y ? y + depth : other.y + other.depth, *along ] if wide_enough?(along)
+    end
+
+    nil
   end
+
+  # WHICH OF THIS ROOM'S FOUR WALLS THE DOOR TO `other` IS IN, or nil when no
+  # door could stand between them. Read in the parent's own plane and named by
+  # the convention at the top of this class -- and it is asked of THIS box, so
+  # the same doorway is the east wall of one room and the west wall of the
+  # other, which is what a person walking through it experiences.
+  def wall_towards(other)
+    wall = shared_wall(other)
+    return nil if wall.nil?
+
+    if wall.first == :x
+      x + width == other.x ? EAST : WEST
+    else
+      y + depth == other.y ? SOUTH : NORTH
+    end
+  end
+
+  # WHERE TWO ROOMS ON DIFFERENT STOREYS STAND OVER EACH OTHER, as a box on THIS
+  # one's storey -- or nil when they do not. `#shares_ground?` asked for the
+  # region rather than the answer.
+  #
+  # IT IS WHAT THE RECORDS KNOW ABOUT WHERE A STAIRWELL IS. There is no
+  # stairwell record and there does not need to be one (see `#shares_ground?`):
+  # a stair joins two rooms only where they stand over each other, so the
+  # stairwell can only be inside this rectangle. Anything said about where the
+  # stairs are in a room is said about this and never invented.
+  def shared_ground(other)
+    left, right = span(x, width, other.x, other.width)
+    top, bottom = span(y, depth, other.y, other.depth)
+    return nil unless right > left && bottom > top
+
+    self.class.new(x: left, y: top, z: z, width: right - left, depth: bottom - top)
+  end
+
+  # WHICH END OF THIS ROOM A PART OF IT LIES IN -- "north-west", "south", or NIL
+  # for a part sitting square in the middle or filling the room. See
+  # `BEARING_SHARE` for the floor and why there is one.
+  #
+  # DOUBLED ARITHMETIC, so it stays integer for the reason `#paces_to` does: a
+  # room an odd number of paces across has its centre on a half pace.
+  def bearing_of(part)
+    words = [ offset_word(2 * part.y + part.depth - (2 * y + depth), depth, NORTH, SOUTH),
+              offset_word(2 * part.x + part.width - (2 * x + width), width, WEST, EAST) ]
+
+    words.compact.join("-").presence
+  end
+
+  # THIS ROOM IN METRES, off the one conversion the engine owns. Rounded to
+  # whole metres: a pace is already an approximation of a stride, and a room
+  # reported to the decimetre would be claiming a precision `METRES_PER_PACE`
+  # does not have.
+  def metres = [ in_metres(width), in_metres(depth) ]
 
   # WHETHER THIS ROOM FITS IN THE PLANE IT IS READ IN. A footprint states an
   # extent and no position (see the header), so its own plane runs from the
@@ -271,9 +387,25 @@ class Location::Box < Data.define(:x, :y, :z, :width, :depth)
     start + extent == other_start || other_start + other_extent == start
   end
 
-  # How much of one axis two intervals have in common, in paces, and zero when
-  # they have none.
-  def run(start, extent, other_start, other_extent)
-    [ [ start + extent, other_start + other_extent ].min - [ start, other_start ].max, 0 ].max
+  # What two intervals on one axis have in common, as the pair of coordinates it
+  # runs between. Empty when the second is not greater than the first, which is
+  # the one test every caller here makes of it.
+  def span(start, extent, other_start, other_extent)
+    [ [ start, other_start ].max, [ start + extent, other_start + other_extent ].min ]
   end
+
+  # Whether a stretch two rooms share is long enough for a doorway to stand in
+  # it -- `MINIMUM_DOORWAY`, which is what makes a corner a corner.
+  def wide_enough?(span) = span.last - span.first >= MINIMUM_DOORWAY
+
+  # One axis of a bearing: the word for which side of centre `doubled` falls on,
+  # or nil when it is not far enough off centre to have a side. See
+  # `BEARING_SHARE`.
+  def offset_word(doubled, extent, before, after)
+    return nil if BEARING_SHARE * doubled.abs < 2 * extent
+
+    doubled.negative? ? before : after
+  end
+
+  def in_metres(paces) = (paces * METRES_PER_PACE).round
 end

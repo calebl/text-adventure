@@ -307,6 +307,21 @@ class Location < ApplicationRecord
   # level rather than a recursion nobody has designed.
   def place? = interior? && !placed?
 
+  # THE PLACE THIS ROOM IS INSIDE, or nil for a room that is inside nothing --
+  # which is every room in every flat world. It is `#place?`'s question asked
+  # from the other end, and it is a reader rather than an association call
+  # because `parent_location` alone is not the answer: PLAIN CONTAINMENT is a
+  # parent with no layout, a district a street sits in, and a street is not "in"
+  # its district the way a taproom is in an inn. Only a room the engine PLACED
+  # -- a box read in that parent's own plane -- is inside a place.
+  #
+  # WHO READS IT: the play page, which says where the party is standing, and
+  # `Location::Plan`, which tells a model which building this room is a room of.
+  # Both need the room and the place separately rather than one folded into the
+  # other -- what the PLAYER is shown is the captain's call, and both halves are
+  # on the records either way round.
+  def containing_place = placed? ? parent_location : nil
+
   # WHETHER THESE TWO ROOMS ARE IN THE SAME PLACE AT ONCE, and it is here rather
   # than on `Location::Box` because it is the half of the question that needs
   # records: coordinates are local to a parent, so two boxes under DIFFERENT

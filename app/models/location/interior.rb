@@ -6,7 +6,8 @@
 # call, from one seeded `Roll`, with NO MODEL INVOLVED AT ALL -- so connectivity
 # is a guarantee rather than a hope. The second half is unchanged and is not
 # here: a room is still a stub until somebody walks into it, and the prose is
-# still written one room at a time (slice 3).
+# still written one room at a time, against the plan this file laid down
+# (`Location::Plan`).
 #
 # WHY NO MODEL. The standing constraint -- *nothing may depend on the narrator
 # obeying its prompt* -- reads on a floor plan more strongly than it reads
@@ -14,8 +15,9 @@
 # asked for eight rooms and their doors gives back rooms in the same place at
 # once, doors to rooms it did not write, and a top floor nothing reaches, and no
 # amount of prompting makes any of those impossible. Integers and a spanning
-# path make all three impossible. So the model is never asked, and what it is
-# eventually told (slice 3) is what the engine already decided.
+# path make all three impossible. So the model is never asked, and what it IS
+# told, when the room it is writing is one of these, is what the engine already
+# decided -- `Location::Plan` reads this layout out to it.
 #
 # WHAT IT WRITES: child `Location` rows carrying a BOX, and `LocationConnection`
 # rows in BOTH directions -- a door is two rows, the ruling of 2026-09-03. It
@@ -209,8 +211,8 @@ class Location::Interior
   def self.entry_room(place) = place.child_locations.order(:id).first
 
   # THE PLACEHOLDER A ROOM IS CALLED BEFORE ANYBODY WRITES IT, and it is a
-  # method rather than an interpolation at the call site so slice 3 has ONE
-  # place to ask what an unwritten room looks like.
+  # method rather than an interpolation at the call site so there is ONE place
+  # to ask what an unwritten room looks like.
   #
   # A STUB IS A NAME AND A TEASER TODAY, and it stays one here -- what changes is
   # who wrote them. A stub from `Location::Generator` is named by the model that

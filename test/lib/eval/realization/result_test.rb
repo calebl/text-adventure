@@ -72,9 +72,29 @@ class Eval::Realization::ResultTest < ActiveSupport::TestCase
     assert_includes lines, "`no_new_ground`"
     assert_includes lines, "cost per 1,000 rooms"
 
+    # AND THE TABLE MARKS THE CHECKS THAT READ WORDS, off the same constant the
+    # note under it is written from -- a rate labelled in one place and not the
+    # other is the misreading the note exists to prevent.
+    Eval::Realization::Scorer::KEYWORD_CHECKS.each do |code|
+      assert_includes lines, "`#{code}` **[KEYWORD]**"
+    end
+    (Eval::Realization.checks - Eval::Realization::Scorer::KEYWORD_CHECKS).each do |code|
+      refute_includes lines, "`#{code}` **[KEYWORD]**", "#{code} compares records and is not a reading"
+    end
+
     warnings = board.warnings.join("\n")
     assert_includes warnings, "unavailable rather than clean"
-    assert_includes warnings, "keyword check"
+
+    # THE KEYWORD NOTE MUST NAME EVERY CHECK THAT READS WORDS AND NO OTHER,
+    # because the table above it labels each of them `[KEYWORD]` off the same
+    # constant -- a board that named one while printing two would tell the
+    # captain to weigh a figure he cannot see.
+    keyword = Eval::Realization::Scorer::KEYWORD_CHECKS
+    keyword.each { |code| assert_includes warnings, "`#{code}`", "the note names every keyword check" }
+    (Eval::Realization.checks - keyword).each do |code|
+      refute_includes warnings, "`#{code}`", "#{code} compares records and is not weighed as a reading"
+    end
+    assert_includes warnings, keyword.one? ? "is a **keyword check**" : "are **keyword checks**"
   end
 
   test "the board says so out loud when two sets did not build the same rooms" do

@@ -241,8 +241,18 @@ class InteractionAgent
     "## The moment\n#{context}\n"
   end
 
+  # THE MOMENT WITHOUT THE FLOOR PLAN, and the `plan: false` is the whole of the
+  # decision. `Location::Plan`'s sentences reach the room writer, whose new
+  # interior-room cases are measured (`rake eval:realization`), and
+  # `Scene::Narrator`, where the plan is a BYTE-LEVEL NO-OP on every world the
+  # prompt bench plays: `Eval::Prompt::STORIES` is two flat seeded worlds, so no
+  # case in that corpus ever puts a room with a box in front of the narrator and
+  # the stored baseline stays valid as it stands. `Character#interaction_instructions`
+  # and this file's prompts have no stored baseline AT ALL, which is where a
+  # change could not be judged either way -- and geometry was never asked for in
+  # a talk turn. So this pass sends the block it sent before interiors existed.
   def narrator_moment_section
-    context = moment&.narration_context.presence
+    context = moment&.narration_context(plan: false).presence
     return "" if context.nil?
 
     "## Where this happens\n#{context}\n"

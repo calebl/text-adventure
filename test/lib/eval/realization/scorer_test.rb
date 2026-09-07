@@ -371,7 +371,207 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     assert_equal [ 1, 0, 0 ], scorer.all_readings.map(&:extra_calls)
   end
 
+  # --- the description against the floor plan --------------------------------
+  #
+  # THE FIRST CHECK IN THIS FILE THAT READS PROSE RATHER THAN A LIST, and it is
+  # judgeable only on a room the engine laid out: the plan is what the detail
+  # prompt stated, so the comparison is with a record either way.
+  #
+  # THE WALLS ARE NOT AMONG WHAT IT READS. `Location::Plan` states which wall
+  # each door is in and nothing checks it -- see the last case in this section.
+
+  PLAN = {
+    "room" => "The Custom House room 3", "place" => "The Custom House", "storey" => 0,
+    "place_width" => 14, "place_depth" => 10,
+    "width" => 7, "depth" => 6,
+    "doors" => [ { "wall" => "north", "to" => "The Custom House room 2" },
+                 { "wall" => "west", "to" => "The Custom House room 4" } ],
+    "stairs" => [], "other_ways_out" => []
+  }.freeze
+
+  # THE ENTRY ROOM'S SHAPE. `quay-entry-room` is The Custom House room 1: a door
+  # in the east wall, a stair up, and a way out to The Quay that the records
+  # give no wall to. `Location::Plan#closed_walls_clause` withholds the
+  # closed-walls sentence from exactly this room, and it is here because a
+  # measurement in paces is judged the same in a room whose walls the plan
+  # cannot close.
+  ENTRY_PLAN = {
+    "room" => "The Custom House room 1", "place" => "The Custom House", "storey" => 0,
+    "place_width" => 14, "place_depth" => 10,
+    "width" => 7, "depth" => 4,
+    "doors" => [ { "wall" => "east", "to" => "The Custom House room 2" } ],
+    "stairs" => [ { "to" => "The Custom House room 5", "up" => true, "storey" => 1, "bearing" => nil } ],
+    "other_ways_out" => [ "The Quay" ]
+  }.freeze
+
+  # THE SIZE CHECK IS UNTOUCHED BY THE WAY OUT, because a measurement in paces
+  # is a claim about numbers the plan holds whatever the doorways are.
+  test "a wall-less way out does not excuse a size the records do not hold" do
+    entry = planned("A long room of 9 by 4 paces, with the quay door at one end.", plan: ENTRY_PLAN)
+
+    assert_equal 1, entry.flagged_for(:size_the_records_do_not_hold).size
+    assert_includes entry.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "said the room is 9 by 4 paces and it is 7 by 4"
+  end
+
+  # THE UPPER-FLOOR ROOM'S SHAPE, and it is the one bench case that is NOT on
+  # storey 0 -- which is what makes the storey discount below judgeable at all.
+  # `quay-upper-floor-room` is The Custom House room 6.
+  UPPER_PLAN = {
+    "room" => "The Custom House room 6", "place" => "The Custom House", "storey" => 1,
+    "place_width" => 14, "place_depth" => 10,
+    "width" => 6, "depth" => 4,
+    "doors" => [ { "wall" => "north", "to" => "The Custom House room 5" },
+                 { "wall" => "east", "to" => "The Custom House room 7" } ],
+    "stairs" => [], "other_ways_out" => []
+  }.freeze
+
+  # A DESCRIPTION THAT STATES NO MEASUREMENT HAS BROKEN NO RULE: the prompt asks
+  # for a room, not for a survey, so silence is out of the denominator rather
+  # than clean.
+  test "a description that states no measurement is not judgeable" do
+    scorer = planned("Ledgers to the ceiling, and a smell of tar that never leaves the plaster.")
+
+    assert_equal 0, scorer.judgeable_for(:size_the_records_do_not_hold)
+  end
+
+  # AND A ROOM WITH NO PLAN IS OUT OF THE CHECK ALTOGETHER, which is every room
+  # in every flat world -- including a stored set from before a plan was ever
+  # recorded.
+  test "a room the engine laid out nothing for is not judged on its numbers" do
+    scorer = scored(exits: [ "The Cellar Stair" ],
+                    people: [], items: [])
+
+    assert_equal 0, scorer.judgeable_for(:size_the_records_do_not_hold)
+    assert_empty scorer.flags.select { |flag| flag.code == :size_the_records_do_not_hold }
+  end
+
+  test "a size that is not the room's is flagged, and the plan's own size is not" do
+    assert_equal 1, planned("Seven paces by six, and every one of them cold.")
+      .judgeable_for(:size_the_records_do_not_hold)
+    assert_empty planned("Seven paces by six, and every one of them cold.")
+      .flagged_for(:size_the_records_do_not_hold)
+
+    wrong = planned("A long room, 9 by 4 paces, running back from the door.")
+    assert_equal 1, wrong.flagged_for(:size_the_records_do_not_hold).size
+    assert_includes wrong.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "said the room is 9 by 4 paces and it is 7 by 6"
+  end
+
+  test "a storey that is not the room's is flagged" do
+    wrong = planned("Storey 2 is where the ledgers are kept, and this is it.")
+
+    assert_equal 1, wrong.flagged_for(:size_the_records_do_not_hold).size
+    assert_includes wrong.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "put the room on storey 2 and it is on storey 0"
+  end
+
+  test "the storey the plan states is not flagged" do
+    assert_empty planned("You are on storey 0 and the water is not far below it.")
+      .flagged_for(:size_the_records_do_not_hold)
+  end
+
+  # THE PLACE'S OWN FOOTPRINT IS A NUMBER THE PROMPT STATED.
+  # `Location::Plan#storey_sentence` says how big the BUILDING is in paces, so
+  # prose repeating that pair is repeating a fact it was handed -- compared, and
+  # it agreed, so it counts and does not flag.
+  test "a pace pair that is the place's footprint agrees rather than flags" do
+    echoed = planned("The custom house is fourteen by ten paces of ledgers, and this room is a corner of it.")
+
+    assert_empty echoed.flagged_for(:size_the_records_do_not_hold)
+    assert_equal 1, echoed.judgeable_for(:size_the_records_do_not_hold),
+                 "the pair was compared with the plan and agreed, so it stays an opportunity"
+  end
+
+  # AND A STOREY 0 ON A ROOM THAT IS NOT ON STOREY 0 CANNOT BE TOLD FROM AN ECHO
+  # of the plan's closing clause, *"storey 0 is the ground floor"* -- so it is
+  # out of the DENOMINATOR and not merely unflagged.
+  test "a storey 0 claim on an upper-storey room is unjudgeable, not clean and not flagged" do
+    upstairs = planned("Storey 0 is the ground floor, and the stair up from it ends here.",
+                       plan: UPPER_PLAN)
+
+    assert_empty upstairs.flagged_for(:size_the_records_do_not_hold)
+    assert_equal 0, upstairs.judgeable_for(:size_the_records_do_not_hold)
+  end
+
+  test "a storey number that is not 0 is judged on an upper-storey room as it always was" do
+    upstairs = planned("Everything on storey 3 smells of tar.", plan: UPPER_PLAN)
+
+    assert_equal 1, upstairs.judgeable_for(:size_the_records_do_not_hold)
+    assert_includes upstairs.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "put the room on storey 3 and it is on storey 1"
+  end
+
+  # AND THE DISCOUNT IS NOT A HOLE IN THE CHECK ON THE GROUND FLOOR: there the
+  # claim agrees with the plan, so it is compared and counted.
+  test "a storey 0 claim on a ground-floor room is still an opportunity" do
+    assert_equal 1, planned("Storey 0 is the ground floor, and you are standing on it.")
+      .judgeable_for(:size_the_records_do_not_hold)
+  end
+
+  # A STAIR'S FAR STOREY IS A NUMBER THE PROMPT STATED TOO.
+  # `Location::Plan#stair_clause` writes *"a stair up to The Custom House room 5,
+  # on storey 1"* into the prompt for `quay-entry-room`, so prose repeating it is
+  # repeating a fact it was handed -- and it cannot be told from a passage that
+  # puts THIS room on storey 1, so it leaves the denominator rather than being
+  # merely unflagged.
+  test "a storey claim that echoes a stair's far storey is unjudgeable, not a defect" do
+    entry = planned("A stair climbs out of the corner to storey 1.", plan: ENTRY_PLAN)
+
+    assert_empty entry.flagged_for(:size_the_records_do_not_hold)
+    assert_equal 0, entry.judgeable_for(:size_the_records_do_not_hold)
+  end
+
+  # AND A STOREY THE PLAN NAMES NOWHERE IS JUDGED EXACTLY AS BEFORE, which is
+  # what keeps the discount from swallowing the check: ENTRY_PLAN's stairs reach
+  # storey 1 and nothing in it mentions storey 4.
+  test "a storey no sentence of the plan states is still flagged" do
+    entry = planned("The ledgers all came down from storey 4.", plan: ENTRY_PLAN)
+
+    assert_equal 1, entry.judgeable_for(:size_the_records_do_not_hold)
+    assert_includes entry.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "put the room on storey 4 and it is on storey 0"
+  end
+
+  # THE GEOMETRY CHECK READS WORDS, and the board is told so.
+  test "the geometry check is counted as a keyword check" do
+    assert_includes Eval::Realization::Scorer::KEYWORD_CHECKS, :size_the_records_do_not_hold
+  end
+
+  # AND THE EVIDENCE QUOTES BOTH SIDES IN THE ORDER THEY WERE WRITTEN, because a
+  # flag has to be legible beside the prompt sentence it contradicts. The
+  # comparison stays unordered: `PLAN` is 7 by 6 and "six by seven paces" agrees.
+  test "the evidence reports the prose's order and the plan's, not the sorted pair" do
+    wrong = planned("A long room, 4 by 9 paces, running back from the door.")
+
+    assert_includes wrong.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "said the room is 4 by 9 paces and it is 7 by 6"
+    assert_empty planned("Six by seven paces, and every one of them cold.")
+      .flagged_for(:size_the_records_do_not_hold),
+                 "the pair is compared unordered, so the reversed pair still agrees"
+  end
+
+  # AND THE WALLS ARE REPORTED UNANSWERED RATHER THAN SCORED. Six measured
+  # grammars each read a doorless wall named beside a door as a door claim of
+  # its own, so the question is named with its reason instead of printed as a
+  # rate -- `Story::Audit`'s header carries the record.
+  test "which wall a door is in is unavailable to this bench and is not a check" do
+    refute_includes Eval::Realization.checks, :door_the_records_do_not_hold
+    assert Eval::Realization.unavailable_to_a_realization?(:door_in_a_wall_the_records_do_not_hold)
+  end
+
   private
+
+  # A ROW OFF AN INTERIOR-ROOM CASE: one call, no exits answer at all, and the
+  # floor plan the prompt stated stored beside the description.
+  def planned(description, plan: PLAN)
+    facts = FACTS.merge("plan" => plan, "room" => plan["room"], "exit_allowance" => 0)
+    built = row(facts: facts)
+    built["answers"] = { "detail" => { "description" => description, "people" => [], "items" => [] } }
+    built["calls"] = 1
+
+    Eval::Realization::Scorer.new([ built ])
+  end
 
   def scored(**overrides) = Eval::Realization::Scorer.new([ row(**overrides) ])
 

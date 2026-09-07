@@ -163,11 +163,33 @@
 
     <%# Where the player is and what leads out of it. Not decoration: the exits
         are the move targets Playthrough::Classifier will accept, so a player
-        who cannot read them is guessing at the one command that matters. %>
+        who cannot read them is guessing at the one command that matters.
+
+        THE ROOM'S NAME, FOLDED INTO THE PLACE IT IS IN, which is the captain's
+        ruling of 2026-09-06: *"Option B."* Rooms have parents since slice 2
+        (`Location#containing_place`), so there were two ways to write this line
+        -- "in The Rusted Anchor" or "in the taproom of The Rusted Anchor" -- and
+        he took the second. So the player reads one sentence -- "You are in the
+        taproom of The Rusted Anchor." -- and the room keeps its STORED NAME
+        AS-IS, ordinal and all, while `Location::Interior.placeholder_name` is
+        still what names it (naming is deferred to `ta-interior-room-names`).
+        A room inside nothing keeps the plain sentence it has always had.
+
+        THAT IS THE HALF OF THE RULING THIS FILE OWNS -- the display. The rest
+        of it is already true of the records and is nothing for this line to do:
+        a room's way out of its place is an ordinary `LocationConnection` to
+        that other Location, so the exits below and `Playthrough::Classifier`'s
+        closed set name it by THAT PLACE's name already (The Custom House room 1
+        lists "The Quay", which `a-building-with-two-floors.yml` walks); and
+        naming the place is not required of the player to move between rooms of
+        it, because `Playthrough::Grammar::HOW_A_NAME_MATCHES` matches a typed
+        fragment by inclusion, so "room 2" resolves from inside the building. %>
     <p class="place">
       <% if playthrough.current_location %>
         <% exits = playthrough.exits %>
-        You are in <strong><%= playthrough.current_location.name %></strong>.
+        <% place = playthrough.current_location.containing_place %>
+        You are in <strong><%= playthrough.current_location.name %></strong><%=
+          " of #{place.name}" if place %>.
         Ways out: <%= exits.any? ? exits.map(&:name).to_sentence : "none that you can see." %>
       <% end %>
     </p>

@@ -1113,7 +1113,7 @@ every one led back up (`data/ta-quest-progress-scout/report.md` D5, confirmed by
 cannot be re-run, it has no band, and no prompt change can be judged against it.
 
 ```bash
-rake eval:realization                        # 18 stubs x 4 reps x 2 calls x 1 model, ~$0.17
+rake eval:realization                        # 21 stubs x 4 reps x 2 calls x 1 model, ~$0.20
 rake eval:realization_score SET=name         # score a stored set again -- offline, free, no key
 rake eval:realization_compare BEFORE=a AFTER=b
 rake eval:realization_board                  # every stored set as one table
@@ -1157,13 +1157,16 @@ holds: the universe, the preface, the allowances, the places that already exist
 and which of them are written, the names already spoken for, and the cast slots
 the engine rolled.
 
-### What it measures, and why nothing here reads prose
+### What it measures, and how little of it reads prose
 
-**Every check is a set comparison** — a name the model wrote against a closed
-list of names the prompt handed it, or a count against a number the prompt
-stated. Both sides are records, so a rate here is the same kind of fact
-`rake game:sweep` produces rather than a reading. `Eval::Realization::Scorer`
-owns the table; the checks are:
+**Almost every check is a set comparison** — a name the model wrote against a
+closed list of names the prompt handed it, or a count against a number the
+prompt stated. Both sides are records, so a rate here is the same kind of fact
+`rake game:sweep` produces rather than a reading. The ones that read words are
+`Eval::Realization::Scorer::KEYWORD_CHECKS`, marked `[KEYWORD]` beside their
+rate in both the terminal report and the markdown board, and named for what
+they can actually see; `Eval::Realization::Scorer` owns the table, and the
+checks are:
 
 | check | what it catches |
 | --- | --- |
@@ -1176,15 +1179,78 @@ owns the table; the checks are:
 | `name_already_spoken_for` | a name the world had already given to somebody, somewhere or something |
 | `proposal_refused` | what the registries would not admit — read off the records, and the superset of every reason above |
 | `readable_without_words` | a thing marked readable with nothing written on it, which costs a later round trip to `Item::Inscriber` |
-| `race_not_named` | **a KEYWORD check, and the only figure here that reads words** |
+| `race_not_named` | **a KEYWORD check** — see below |
+| `size_the_records_do_not_hold` | **a KEYWORD check.** The description stated a size in paces, or a storey, that is not this room's. Judgeable only on an `interior-room` case, where `Location::Plan` stated the numbers in the prompt |
 
-**`race_not_named` is weighed differently and labelled `[KEYWORD]` on the
-board.** The engine writes the rolled race onto the row whatever the model
-answers, so the RECORD is never wrong and the PROSE can be: a Nocturna-Blighted
-slot described as a nervous clerk is a person the room is wrong about, and every
-later conversation inherits it. What the check can see is the race name missing
-from the sheet. What it cannot see is a compliant person written entirely in
-chitin and silence. **Its false-positive rate is unknown until a baseline is
+**The keyword checks are weighed differently and labelled `[KEYWORD]` beside
+their own rate**, in the board's table and in the report. The note beneath that
+table is written off `Eval::Realization::Scorer::KEYWORD_CHECKS` too, so it
+cannot come to name a different set from the one the rows are marked with.
+
+The geometry check is halfway between a reading and a comparison, and it is
+worth saying which half is which: what it COMPARES is a record and nothing else
+— a number out of `Location::Box`, off the very `Location::Plan` the prompt was
+built from — while what it READS is prose.
+`Story::Audit::Prose.size_claims` and `.storey_claims` are the grammars, and
+both were measured before they shipped: **0 detections over all 367 real
+passages in the four corpora**. Over the room prose of every world in the
+repository they detect 12 sentences — 10 the ENGINE itself wrote
+(`Location::Interior.teaser_for`) and 2 the hand-written descriptions of The
+Custom House rooms 3 and 4 in `lib/engine_sweep/worlds/the-quay-house.yml` —
+and every one of the 12 agrees with the box it was written from. A description
+that contradicts its plan in a sentence neither grammar reads is a miss, which
+is why this sits here rather than with the set comparisons.
+
+**WHICH WALL A DOOR IS IN IS STATED IN THE PROMPT AND IS NOT CHECKED.** It was a
+check, `door_the_records_do_not_hold`, and it is now
+`door_in_a_wall_the_records_do_not_hold` in
+`Eval::Realization::UNAVAILABLE_TO_A_REALIZATION` — reported unanswered rather
+than as a rate. `Location::Plan#closed_walls_clause` tells the model no other
+wall of the room holds a door, so the prose it invites names the DOORLESS walls
+in the same breath as the doors — *"A door in the north wall gives back onto the
+landing, and another in the east wall leads on; the south wall is hung with
+tarred canvas"* — and six successive grammars each read one of those as a door
+claim of its own. A threshold anywhere in the sentence, then a character bridge,
+then an attached anaphor, then a forward-binding rule, then a closed list of
+three attachment forms, then that list with the inversion fronted: each closed
+one shape and admitted the next, which is how a prose heuristic dies here (see
+`Story::Audit`'s header, which carries the full record, the sentences that
+settled it, and the two heuristics it killed before this one). Telling a real
+claim from a doorless wall named beside a door needs the sentence's verbs and
+objects — a parser, not a regex — and a zero off any of those six grammars would
+have been a clean-looking lie on the bench this baseline is bought from. **The
+prompt did not move:** `Location::Plan` still states every door's wall, because
+that is a record read out, and the doors are `LocationConnection` rows no
+description can add to (`Location::Generator#write_exits!` asks a room inside a
+place for no exits at all).
+
+**The check convicts prose of no claim the prompt itself made.**
+`Location::Plan` states more than the room's own box, so there are two
+discounts, and each is `#correct_dead_end?`'s rule kept — a rate the check did
+not earn is worse than no rate.
+
+* The PLACE's footprint in paces is in the plan's storey sentence, so a pace pair
+  equal to it *agrees* — counted, not flagged.
+* A storey the prompt states of something that is not this room cannot be told
+  from a false claim about the room, so that claim leaves the **denominator**
+  rather than being merely unflagged. There are two: *"storey 0 is the ground
+  floor"*, which every plan ends with, and the far storey of each stair
+  (*"a stair up to The Custom House room 5, on storey 1"*). The room's **own**
+  storey is compared and agrees, so it counts; a storey the plan states nowhere
+  is judged.
+
+Both sets are read off the plan hash — `Reading#paces_stated` and
+`Reading#storeys_stated` — and not off a list of remembered clauses, because
+three separate rounds of review found a prompt-stated number about to be
+reported as a defect. `Location::Plan` is the one author of what the prompt
+states, so a sentence added there is covered by construction.
+
+**What `race_not_named` can and cannot see.** The engine writes the rolled race
+onto the row whatever the model answers, so the RECORD is never wrong and the
+PROSE can be: a Nocturna-Blighted slot described as a nervous clerk is a person
+the room is wrong about, and every later conversation inherits it. What the
+check can see is the race name missing from the sheet. What it cannot see is a
+compliant person written entirely in chitin and silence. **Its false-positive rate is unknown until a baseline is
 bought** — which is the discipline two earlier prose-reading checks failed, and
 the reason it is named for what it can see rather than for what it would like to
 mean.
@@ -1210,10 +1276,11 @@ narrower shapes above it are the defects.
 
 ### The corpus
 
-`test/fixtures/files/realization_corpus.yml` — cases across **four worlds,
-three seeded and one generated**. The validator runs offline in `bin/rails test`
-and stages every case against the world file it names, so a room somebody
-renamed is a failing test rather than a hole in a paid run.
+`test/fixtures/files/realization_corpus.yml` — cases across **five worlds:
+three seeded, one generated, and one that exists to be walked**. The validator
+runs offline in `bin/rails test` and stages every case against the world file it
+names, so a room somebody renamed is a failing test rather than a hole in a paid
+run.
 
 **`The Iron Gate Descends` is a GENERATED world**, exported with
 `rake 'game:export[7]'` and frozen at `test/fixtures/files/worlds/`. It is
@@ -1231,6 +1298,30 @@ up before it narrates. **This bench plays no turn** — no `Scene` is written an
 no clock advances — so the doorways are the ones the seed file lists, on the
 hundredth repetition as on the first. It is also the only world with a bestiary,
 which is what makes `race_not_named` judgeable at all.
+
+**`The Quay House` is the only world with an INSIDE**, and its three
+`interior-room` cases are the only ones in the corpus that measure a room the
+room builder may not name a way out of. `Location::Interior` laid The Custom
+House out in one call from one seeded roll and `rake game:export` wrote what it
+produced, so the boxes and doors those cases stand on are the engine's own
+arithmetic. It lives under `lib/engine_sweep/worlds/` — the third of
+`Eval::Realization::WORLD_ROOTS`, read last — because that is where it already
+was, and a second copy of a generated floor plan would be a second thing to keep
+in step with the generator.
+
+**Those cases measure ONE call and not two, on purpose.** A room inside a
+laid-out place has its ways out from the engine, so
+`Location::Generator#write_exits!` asks a model for none of them: every exit
+check is out of its own denominator by construction, and what the detail prompt
+carries instead is the room's own floor plan. Two things follow, and both are
+written down in code rather than assumed. The corpus validator's "no room left
+for a way out" rule does not apply to them
+(`Eval::Realization::Corpus#problems_for`), and the STAGING DOES NOT WIND THEIR
+EDGES BACK (`Eval::Realization::Stage#wind_back!`) — every other stub's edges
+arrived with its realization, while these arrived with the layout, so dropping
+one would stage a room the engine never laid out. The estimate still prices
+every case at two calls, which over-prices these three: an estimate that comes
+in under is a nasty surprise and one that comes in over is not.
 
 `The Salt Assizes` is **held out**, reported apart and never pooled.
 
@@ -1257,8 +1348,9 @@ be constant, and `prompt_stable` is the check on that claim —
 ### There is no baseline yet
 
 `db/eval/` holds no realization set. **The instrument is built and the baseline
-is a spend the captain makes**, at `rake eval:realization` — about **$0.17** at
-`REPS=4` on `mistralai/mistral-medium-3.1`. Until it exists, no change to
+is a spend the captain makes**, at `rake eval:realization` — about **$0.20** at
+`REPS=4` on `mistralai/mistral-medium-3.1`, and `rake eval:estimate` prints the
+current figure rather than this sentence. Until it exists, no change to
 `Location::Generator`'s people, items or exits instructions can be judged, which
 is the whole point of the rule this file opens with.
 

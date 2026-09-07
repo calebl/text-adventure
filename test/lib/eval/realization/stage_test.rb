@@ -132,6 +132,28 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
     assert_includes error.message, "where the story opens"
   end
 
+  # AN INTERIOR ROOM'S EDGES ARE NOT WOUND BACK, because they were not written
+  # by realizing it: `Location::Interior` decided every door and every stair in
+  # one call before the room was anything but a box. Dropping one would stage a
+  # room the layout never wrote and hand `Location::Plan` a floor plan with a
+  # wall missing out of it.
+  test "a room inside a laid-out place keeps every door, and an ordinary room keeps only the way in" do
+    interior = kase(room: "The Custom House room 1", reached_from: "The Quay", story: "The Quay House")
+
+    stage(interior) do |standing|
+      assert_equal [ "The Quay", "The Custom House room 2", "The Custom House room 5" ].sort,
+                   standing.reachable.sort
+      assert_equal 7, standing.plan["width"]
+      assert_equal "east", standing.plan["doors"].sole["wall"]
+      assert_equal [ "The Quay" ], standing.plan["other_ways_out"]
+    end
+
+    stage(kase(room: "The Long Hallway", reached_from: "Ward Office 12")) do |standing|
+      assert_equal [ "Ward Office 12" ], standing.reachable
+      assert_nil standing.plan
+    end
+  end
+
   test "nothing survives the staging" do
     before = [ Story.count, Location.count, Character.count, Item.count, LocationConnection.count ]
     stage(kase(room: "The Long Hallway", reached_from: "Ward Office 12", absent: [ "The Supply Closet" ])) { |_| }

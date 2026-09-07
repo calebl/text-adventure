@@ -33,14 +33,15 @@
 # WHAT IT MEASURES, AND WHY EVERY FIGURE IS A RECORD AND NOT A READING OF PROSE.
 # The standing constraint (AGENTS.md) is that nothing may depend on the narrator
 # obeying its prompt, and the corollary for an instrument is that nothing may
-# depend on a checker UNDERSTANDING prose. So every check here is a set
+# depend on a checker UNDERSTANDING prose. So nearly every check here is a set
 # comparison the app could have made itself: a name the model wrote against the
 # closed set of names the prompt handed it, a count against the allowance the
 # prompt stated, an exit against the list of places that already exist. What the
 # prompt SAID is measurable because the prompt said a number or a list, and the
 # answer either matched it or did not. `Eval::Realization::Scorer` is the whole
-# of it, and the one keyword check in there is named for what it can actually
-# see (`race_not_named`) rather than for what it would like to mean.
+# of it, and the checks in `Scorer::KEYWORD_CHECKS` -- the ones that have to
+# READ prose to get their side of the comparison -- are each named for what it
+# can actually see rather than for what it would like to mean.
 #
 # WHAT IT DELIBERATELY DOES NOT DO: change a prompt. This is the instrument. The
 # prompt half of `ta-room-people-count`, the exits findings and the bench cases
@@ -74,7 +75,23 @@ module Eval::Realization
   # made as a side effect of building an instrument. It lives under
   # `test/fixtures/files/worlds/` instead, which is where the frozen inputs to a
   # measurement already live, and `rake game:export` is how it got there.
-  WORLD_ROOTS = [ "db/seeds/worlds", "test/fixtures/files/worlds" ].freeze
+  #
+  # AND THE SWEEP'S OWN WORLDS ARE READ LAST, for the one thing only they have:
+  # A LAID-OUT INTERIOR. `The Quay House` is the only world in the repository
+  # with a building in it, its floor plan is `Location::Interior`'s own output
+  # exported with `rake game:export`, and it is already held to every standard a
+  # seeded world is (`EngineSweep::WORLDS`). A second copy of that plan under
+  # this bench's own root would be a second floor plan to keep in step with the
+  # generator, which is exactly the drift `Eval::Realization::Stage` refuses to
+  # let a case's FACTS have.
+  #
+  # IT IS READ LAST BECAUSE IT IS THE LEAST CANONICAL OF THE THREE, and that is
+  # all the order buys. `.world_file` takes the FIRST root that has the file, so
+  # a duplicate under `test/fixtures/files/worlds/` would WIN over the playable
+  # copy and the sweep's own world would go unread -- which is a reason never to
+  # make one, not a protection against it. Every world named here exists in
+  # exactly one root.
+  WORLD_ROOTS = [ "db/seeds/worlds", "test/fixtures/files/worlds", "lib/engine_sweep/worlds" ].freeze
 
   def self.world_file(story)
     slug = WorldSeed.slug(story)
@@ -103,8 +120,17 @@ module Eval::Realization
   # measured exit defect came out of a generated world's rooms, and a corpus of
   # nothing but hand-authored seeds would be a corpus of worlds a person wrote
   # the neighbours of.
+  #
+  # `The Quay House` IS THE ONE WORLD WITH AN INSIDE, and it is here for slice
+  # 3: a room of a laid-out interior is realized on different terms from every
+  # other room in the game -- its ways out are the ENGINE's, so no exits call is
+  # made at all, and the detail prompt is handed the room's own floor plan as
+  # fact (`Location::Plan`). That is a prompt shape nothing else in this corpus
+  # can reach, and the check it exists to feed
+  # (`size_the_records_do_not_hold`) is unjudgeable anywhere else.
   STORIES = [
-    "The Unrecorded Hour", "The Lunar Cartographer", "The Salt Assizes", "The Iron Gate Descends"
+    "The Unrecorded Hour", "The Lunar Cartographer", "The Salt Assizes", "The Iron Gate Descends",
+    "The Quay House"
   ].freeze
 
   # AND THE HELD-OUT WORLD IS STILL HELD OUT, reported apart and never pooled --
@@ -148,7 +174,13 @@ module Eval::Realization
     the_room_fits_its_neighbours: "the description is told not to describe its neighbours " \
                                   "(Location::DetailSchema), so agreement with them is not asked for",
     the_cast_is_worth_talking_to: "a person's sheet is judged by the conversation it produces, " \
-                                  "which is InteractionAgent's call and not this one"
+                                  "which is InteractionAgent's call and not this one",
+    door_in_a_wall_the_records_do_not_hold: "a description that puts a door in a wall the plan does not " \
+                                            "hold cannot be told from one that describes a DOORLESS wall " \
+                                            "beside a door without parsing the sentence, and six measured " \
+                                            "grammars each admitted a shape the one before it did not -- " \
+                                            "Story::Audit's header carries the record. The prompt still " \
+                                            "states every door's wall (Location::Plan); only the check is gone"
   }.freeze
 
   def self.unavailable_to_a_realization?(code) = UNAVAILABLE_TO_A_REALIZATION.key?(code.to_sym)
@@ -194,9 +226,10 @@ module Eval::Realization
   #
   # PRICED AT TWO CALLS A CASE, which is what a realization costs when the room
   # has room for another way out. A case whose stub is already at the exit cap
-  # costs one, and the estimate does not model that: an estimate that comes in
-  # under is a nasty surprise and one that comes in over is not
-  # (`Eval::Cost`'s rule).
+  # costs one, and so does every INTERIOR ROOM -- its ways out are the engine's
+  # and `Location::Generator#write_exits!` asks for none. The estimate models
+  # neither: an estimate that comes in under is a nasty surprise and one that
+  # comes in over is not (`Eval::Cost`'s rule).
   def self.estimate(cases:, reps:, models:)
     per = CALLS.sum { |call| PER_CALL.fetch(call)[:input] }
     out = CALLS.sum { |call| PER_CALL.fetch(call)[:output] }

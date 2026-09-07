@@ -85,12 +85,32 @@ class Playthrough::Moment
   # The closed sets are stated even when empty. "The player is carrying
   # nothing" is a fact the narrator can use; silence about it is an invitation
   # to decide.
-  def narration_context
+  #
+  # `plan:` IS WHAT SEPARATES THE TWO PASSES THAT READ THIS. The narrator wants
+  # the floor plan; `InteractionAgent`'s character pass, which builds the same
+  # section for an NPC's reply, asks for it WITHOUT -- geometry was never asked
+  # for in dialogue and `Character#interaction_instructions` has no stored
+  # baseline to judge a change to it against (AGENTS.md, and EVALUATION.md's
+  # rule). One keyword rather than a second reader, because everything else in
+  # these parts is the same moment and must not come apart.
+  def narration_context(plan: true)
     parts = [ "Story: #{story.title} (#{story.genre})", "Premise: #{story.summary}" ]
 
     if location
       parts << "The player is in #{location.name}: #{location.description}"
       parts << "Ways out of here: #{exit_names.presence || "none"}. There are no others."
+      # AND WHERE THOSE WAYS OUT ARE, for a room the engine laid out. The line
+      # above names them; this says which wall each one is in, how big the room
+      # is and which storey of which place it stands on -- the same sentences
+      # `Location::Generator` handed the model that WROTE this room
+      # (`Location::Plan`), so the description and the narration cannot come to
+      # describe one building two ways.
+      #
+      # NOTHING AT ALL FOR A ROOM WITH NO BOX, which is almost every room in
+      # every world: `Location::Plan.for` answers nil and silence is the honest
+      # answer where there is no geometry to state. And nothing at all for a
+      # caller that asked for the moment without a plan.
+      parts << plan_facts if plan && plan_facts
     end
 
     parts << "The player is #{protagonist.fullname}." if protagonist
@@ -404,6 +424,16 @@ class Playthrough::Moment
 
   def exit_names
     playthrough.exits.map(&:name).join(", ")
+  end
+
+  # THE ROOM'S OWN WALLS, out of `Location::Plan` and never re-derived here.
+  # Memoized with `defined?` rather than `||=` because nil is the ordinary
+  # answer and is worth caching -- a turn in a room with no box would otherwise
+  # ask the question twice.
+  def plan_facts
+    return @plan_facts if defined?(@plan_facts)
+
+    @plan_facts = Location::Plan.for(location)&.to_prompt
   end
 
   # WHAT THE PARTY HAS IN ITS HANDS, out of the playthrough's own record --

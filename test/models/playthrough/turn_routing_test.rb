@@ -42,6 +42,25 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
     [ outcome, agent ]
   end
 
+  # A PLACE WITH TWO ROOMS AND ONE DOOR BETWEEN THEM, placed by hand so the
+  # assertion can name the door: the party stands in the taproom and the snug is
+  # the stub it walks into. A room is a child of a place carrying a footprint,
+  # which is the only whole way to have a position (`Location::Box`).
+  def a_building
+    anchor = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    taproom = create(:location, story: @story, name: "the taproom", parent_location: anchor,
+                                x: 0, y: 0, z: 0, width: 6, depth: 4)
+    snug = create(:location, :stub, story: @story, name: "the snug", parent_location: anchor,
+                                    x: 6, y: 0, z: 0, width: 6, depth: 4)
+    [ [ taproom, snug ], [ snug, taproom ] ].each do |from, to|
+      create(:location_connection, location: from, connected_location: to,
+                                   distance: "adjacent", travel_method: "walking")
+    end
+    @playthrough.update!(current_location: taproom)
+
+    [ taproom, snug ]
+  end
+
   # --- the grammar answers, and the model is never asked --------------------
 
   test "a slashed take resolves offline and costs no classifier call" do
@@ -82,6 +101,53 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
     assert_equal @closet, @playthrough.reload.current_location
     assert_equal "grammar", scene.resolved_by
     assert_equal @closet, scene.acted_on
+  end
+
+  # WALKING INTO A ROOM OF A BUILDING, WHICH IS THE WHOLE OF SLICE 3 AS A TURN.
+  # Three things at once, and each is one half of a rule stated elsewhere: the
+  # engine's own door is what the move resolves against (a `LocationConnection`
+  # row like any other), the room is realized on ONE call because its ways out
+  # are already the engine's (`Location::Generator#write_exits!`), and both the
+  # room writer and the narrator are handed the same floor plan
+  # (`Location::Plan`).
+  test "a move through an engine-owned door realizes the room on one call and narrates with its plan" do
+    taproom, snug = a_building
+
+    scene, agent = play("/go to the snug",
+                        { "description" => "A bench, a bar, and the door you came in by.",
+                          "lore" => "The room the tallies were settled in." },
+                        { "description" => "You duck through into the snug.", "summary" => "Arrived." })
+
+    assert_equal 2, agent.prompts.count, "one realization call and the arrival -- no exits call, no classifier"
+    assert_equal snug, @playthrough.reload.current_location
+    assert_equal snug, scene.acted_on
+    assert_predicate snug.reload, :realized?
+    assert_equal [ taproom ], snug.exits.to_a, "the doors of a laid-out room are not the model's to add to"
+
+    plan = Location::Plan.for(snug).to_prompt
+    assert_includes agent.prompts.first, plan, "the room was written against its own floor plan"
+    assert_includes Playthrough::Moment.new(@playthrough).narration_context, plan,
+                    "and every turn taken in it afterwards is narrated against the same one"
+  end
+
+  # THE ARRIVAL IS NOT NARRATED FROM THE PLAN, and that is a decision rather than
+  # an omission. `Scene::Generator` builds its own context for the moment of
+  # walking in -- the room's description, its lore and its ways out -- and the
+  # description it is handed was itself written against the plan a moment
+  # earlier, so the geometry reaches the arrival through the room rather than
+  # twice. `Playthrough::Moment` is where the facts are stated, because that is
+  # the prompt that answers a player standing in a room they may have been in
+  # for twenty turns.
+  test "the arrival prompt is the one Scene::Generator always built" do
+    a_building
+
+    _scene, agent = play("/go to the snug",
+                         { "description" => "A bench, a bar, and the door you came in by.",
+                           "lore" => "The room the tallies were settled in." },
+                         { "description" => "You duck through into the snug.", "summary" => "Arrived." })
+
+    assert_not_includes agent.prompts.last, "paces"
+    assert_includes agent.prompts.last, "ways out: the taproom"
   end
 
   test "a grammar-resolved talk reaches the interaction agent and nothing else" do

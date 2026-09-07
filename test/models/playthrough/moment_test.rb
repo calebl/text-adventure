@@ -243,6 +243,49 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     assert_match(/Ways out of here: The Sunken Stair, Cooper's Row\. There are no others\./, context)
   end
 
+  # AND WHERE THOSE WAYS OUT ARE, for a room the engine laid out. The line above
+  # names them; these say which wall each one is in, out of the same
+  # `Location::Plan` the room's own description was written against.
+  test "the narration context states the room's plan when the engine laid one out" do
+    stand_in_a_laid_out_room
+
+    context = moment.narration_context
+
+    assert_includes context, "This room is 6 by 4 paces -- about 9 by 6 metres."
+    assert_includes context, "It is on storey 0 of The Rusted Anchor, which is 12 by 8 paces across"
+    assert_includes context, "a door in the east wall, to the snug"
+  end
+
+  test "the narrator is told exactly what the room's own writer was told" do
+    room = stand_in_a_laid_out_room
+
+    assert_includes moment.narration_context, Location::Plan.for(room).to_prompt
+  end
+
+  # AND A CALLER MAY ASK FOR THE SAME MOMENT WITHOUT IT, which is what
+  # `InteractionAgent`'s talk-turn prose pass does: it has no stored bench
+  # baseline, so it sends the block it sent before interiors existed. Everything
+  # else in the moment is unchanged by the keyword.
+  test "the moment can be built without the plan, and loses only the plan" do
+    stand_in_a_laid_out_room
+
+    context = moment.narration_context(plan: false)
+
+    assert_no_match(/paces/, context)
+    assert_no_match(/storey/, context)
+    assert_no_match(/a door in the east wall/, context)
+    assert_match(/Ways out of here: the snug\. There are no others\./, context)
+  end
+
+  # NOTHING AT ALL FOR A ROOM WITH NO BOX, which is almost every room in every
+  # world: silence is the honest answer where there is no geometry to state.
+  test "a room with no box says nothing about paces or storeys" do
+    context = moment.narration_context
+
+    assert_no_match(/paces/, context)
+    assert_no_match(/storey/, context)
+  end
+
   test "the narration context lists who else is here, by name" do
     stands_here("Maren Vosk", nickname: "Maren")
 
@@ -506,6 +549,24 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
   end
 
   private
+
+  # THE PARTY MOVED INTO A ROOM OF A BUILDING, with the room, its place and one
+  # door written by hand rather than rolled: the point is the sentence, so the
+  # walls have to be the ones the assertion names. `Location::PlanTest` is where
+  # a rolled layout is read.
+  def stand_in_a_laid_out_room
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    taproom = create(:location, story: @story, name: "the taproom", parent_location: place,
+                                x: 0, y: 0, z: 0, width: 6, depth: 4)
+    snug = create(:location, story: @story, name: "the snug", parent_location: place,
+                             x: 6, y: 0, z: 0, width: 6, depth: 4)
+    [ [ taproom, snug ], [ snug, taproom ] ].each do |from, to|
+      create(:location_connection, location: from, connected_location: to)
+    end
+    @playthrough.update!(current_location: taproom)
+
+    taproom
+  end
 
   # One talk turn per resolution, each on its own scene in this playthrough's chain.
   def converse(character, *resolutions)

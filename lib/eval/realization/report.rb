@@ -12,11 +12,12 @@
 #   THE CHECKS            one rate per check, over the opportunities that check
 #                         can actually be judged on. In `Scorer::CHECKS` order,
 #                         which is the trust ordering: what the records prove
-#                         first, the one keyword check last and labelled.
+#                         first, `Scorer::KEYWORD_CHECKS` last and labelled.
 #   THE UNAVAILABLE ONES  named, with the reason, UNDER the rates and never
-#                         beside them. Four questions this bench cannot answer,
-#                         and a zero for any of them would be the most dangerous
-#                         number this instrument could print.
+#                         beside them -- every question in
+#                         `UNAVAILABLE_TO_A_REALIZATION`, because a zero for any
+#                         of them would be the most dangerous number this
+#                         instrument could print.
 #   TUNING AND HELD OUT   apart and labelled, exactly as `Eval::Board` prints
 #                         them. This bench exists so a prompt can be tuned
 #                         against a measurement, and a prompt tuned against

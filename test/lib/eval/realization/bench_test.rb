@@ -125,6 +125,64 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
                  closet["facts"]["places"].map { |place| place["name"] }
   end
 
+  # --- a room inside a laid-out place ---------------------------------------
+  #
+  # THE ONE CASE SHAPE THAT MEASURES ONE CALL ON PURPOSE. An interior room's
+  # ways out were decided by `Location::Interior` before the room existed as
+  # anything but a box, so `Location::Generator#write_exits!` asks a model for
+  # none of them -- and what the detail prompt carries instead is the room's own
+  # floor plan (`Location::Plan`).
+
+  INTERIOR = <<~YML
+    cases:
+    - id: c-back-room
+      story: The Quay House
+      room: The Custom House room 3
+      reached_from: The Custom House room 2
+      expects_new_ground: false
+      shape: interior-room
+      why: a room of the one laid-out building in the repository
+  YML
+
+  test "a room inside a laid-out place is realized on one call and told its own floor plan" do
+    agents = nil
+    result = bench(corpus: interior) { |built| agents = built }
+    row = result.passes.sole.rows.sole
+
+    assert_equal 1, row["calls"], "the exits call is not made for a room whose doors are the engine's"
+    assert_nil row.dig("answers", "exits")
+    # Two prompts and not one: the bench warms each arm with a realization of
+    # its own before the pass, and the warm-up is the same case.
+    prompt = agents.flat_map(&:prompts).last
+    assert_includes prompt, "## Where This Room Is"
+    assert_includes prompt, "This room is 7 by 6 paces"
+  end
+
+  # THE PLAN IS STORED BESIDE THE ANSWER, because the world is rolled back when
+  # the pass ends and a checker that wanted to ask the records would have
+  # nothing left to ask (`Eval::Realization::Scorer`'s geometry checks).
+  test "the floor plan the prompt stated is stored with the facts" do
+    plan = bench(corpus: interior).passes.sole.rows.sole.dig("facts", "plan")
+
+    assert_equal "The Custom House", plan["place"]
+    assert_equal [ 7, 6, 0 ], [ plan["width"], plan["depth"], plan["storey"] ]
+    # THE PLACE'S FOOTPRINT TOO, because `Location::Plan#storey_sentence` states
+    # it -- and a checker that only had the room's box would flag prose for
+    # repeating it (`Eval::Realization::Scorer#judge_size_the_records_do_not_hold`).
+    assert_equal [ 14, 10 ], [ plan["place_width"], plan["place_depth"] ]
+    assert_equal [ { "wall" => "north", "to" => "The Custom House room 2" },
+                   { "wall" => "west", "to" => "The Custom House room 4" } ], plan["doors"]
+  end
+
+  # AND ITS DOORS ARE NOT WOUND BACK. Every other stub's edges arrived with its
+  # realization and the case declares which; these arrived with the layout, so
+  # dropping one would stage a room the engine never laid out.
+  test "an interior room keeps every door the layout gave it" do
+    plan = bench(corpus: interior).passes.sole.rows.sole.dig("facts", "plan")
+
+    assert_equal 2, plan["doors"].size, "both doors, not only the one the case was reached from"
+  end
+
   test "the world outside the run is untouched" do
     before = [ Story.count, Location.count, Item.count, Character.count, LocationConnection.count ]
     bench
@@ -196,13 +254,15 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
 
   def row(pass, id) = pass.rows.find { |row| row["id"] == id }
 
+  def interior = Eval::Realization::Corpus.load(written(INTERIOR))
+
   # A FAKE THAT LEAVES THE RECORDS A REAL CALL WOULD LEAVE, which is what makes
   # this a test of the bench and not of the fake: `Eval::Realization::Bench`
   # reads both answers, what they were told and what they cost off the `chats`
   # and `messages` rows the generator wrote, exactly as
   # `Playthrough::Feedback` does. A double that wrote none would leave every one
   # of those figures nil and prove nothing about them.
-  def bench(answer = nil, answered_by: "fake/model", &block)
+  def bench(answer = nil, answered_by: "fake/model", corpus: nil, &block)
     agents = []
     block&.call(agents)
 
@@ -212,7 +272,7 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
     end
 
     BaseAgent.stub(:new, stub) do
-      Eval::Realization::Bench.new(corpus: @corpus, arms: [ "fake/model" ], reps: 1, io: nil).run
+      Eval::Realization::Bench.new(corpus: corpus || @corpus, arms: [ "fake/model" ], reps: 1, io: nil).run
     end
   end
 

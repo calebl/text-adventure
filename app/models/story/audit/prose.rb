@@ -481,6 +481,158 @@ module Story::Audit::Prose
   end
 
   # ------------------------------------------------------------------------
+  # THE PROSE ARGUES WITH THE FLOOR PLAN.
+  #
+  # A room inside a laid-out place has a `Location::Box` before anybody writes a
+  # word of it, and `Location::Plan` states it to the model that does: how many
+  # paces across, which storey, which wall each door is in. So for the first
+  # time a description can be checked against a NUMBER the app owns rather than
+  # against a judgement -- which is the only kind of prose check this project
+  # ships (see `Story::Audit`'s header for the three it has already killed).
+  #
+  # AND THE WALLS ARE NOT AMONG THEM. A grammar that read which wall the prose
+  # put a door in was built, measured and killed here -- six shapes of it, each
+  # closing one false-positive path and admitting the next. What killed it is
+  # that `Location::Plan#closed_walls_clause` tells the model no other wall of
+  # the room holds a door, so the prose it invites names the DOORLESS walls in
+  # the same breath as the doors, and telling those apart needs the sentence's
+  # verbs and objects rather than its words. `Story::Audit`'s header carries the
+  # full record and the sentences that settled it; `Eval::Realization`'s
+  # `UNAVAILABLE_TO_A_REALIZATION` carries the question, reported unanswered.
+  # THE PROMPT DID NOT MOVE: `Location::Plan` still states which wall each door
+  # is in, because that is a record read out to a model. What went is the claim
+  # that the same fact can be VERIFIED in prose afterwards.
+  #
+  # THE RECORDS NEVER COME FROM THE PROSE. What survives reads a passage and
+  # returns what it CLAIMED; `Eval::Realization::Scorer` compares that with the
+  # plan the prompt was built from, and a claim that agrees is not a flag. The
+  # passage alone convicts nobody.
+  #
+  # DELIBERATELY THE NARROWEST GRAMMAR THAT STILL CATCHES THE DEFECT, and
+  # counted by `Eval::Realization::Scorer::KEYWORD_CHECKS` -- weighed
+  # differently from the record comparisons beside it, because it reads words.
+  #
+  # MEASURED BEFORE IT SHIPPED, on all 367 real passages in the four corpora
+  # (`eval_corpus.json` 92, `narration_corpus.json` 24, `transition_corpus.json`
+  # 119, `whole_run_corpus.json` 132) and on the description, lore and teaser of
+  # every room in every world file in the repository. The numbers are on the
+  # methods, and they are DETECTION counts: a detection is a sentence these
+  # methods READ as a claim, which is the figure that says whether a grammar is
+  # narrow enough to be trusted once there is a plan to compare it against. Not
+  # one of the 367 passages was written by a model that had been told a room's
+  # shape, so a detection among them would have been a grammar reading ordinary
+  # prose as a measurement.
+  #
+  # A DETECTION IS NOT THE SAME THING AS A JUDGEMENT, and the difference is the
+  # scorer's rather than these methods'. `Location::Plan` states more than the
+  # room's own box -- the PLACE's footprint in paces, and the clause *"storey 0
+  # is the ground floor"* -- so a claim can be a true echo of the prompt.
+  # `Eval::Realization::Scorer#judge_size_the_records_do_not_hold` discounts
+  # both: the place's pair agrees rather than flags, and a "storey 0" on a room
+  # that is not on storey 0 comes out of the denominator entirely. These methods
+  # report what a passage said and never what it is worth.
+  # ------------------------------------------------------------------------
+
+  # HOW BIG THE PROSE SAYS THE ROOM IS, AND WHICH STOREY IT SAYS IT IS ON.
+  #
+  # THE PAIR AND NOT THE SINGLE MEASUREMENT, and that is what makes it exact: "6
+  # by 4 paces" and "six paces by four" say which room this is, while "four
+  # paces wide" does not say which axis it is measuring and could be checked
+  # against either. Compared unordered against the box, because a room described
+  # from the doorway is as honestly four by six as six by four -- which is why
+  # `Size` carries the pair twice: `paces` sorted, for the comparison, and
+  # `as_written` in the order the sentence put them, so a reader is shown the
+  # claim the prose made and not one the check normalised.
+  #
+  # THE STOREY IS THE ENGINE'S OWN WORD. `Location::Plan` says "storey 0" and
+  # "storey 0 is the ground floor", so "storey 2" in a passage is a number
+  # copied out of the prompt and got wrong -- exactly the shape a records check
+  # wants. "the second floor" is NOT read, and that is a measured decision
+  # rather than an oversight: floor-numbering is a convention that differs by
+  # country and the prompt never uses it, so a passage that says it is a passage
+  # this cannot convict.
+  #
+  # MEASURED: 0 detections over the 367 corpus passages -- no narration anybody
+  # has paid for has ever stated a size in paces or a storey by number. Over the
+  # room prose of every world in the repository both grammars detect exactly the
+  # same 12 sentences, and every one of the 12 agrees with the box it was written
+  # from: 10 are the ENGINE's own placeholder teaser
+  # (`Location::Interior.teaser_for`: *"A room inside The Custom House, 7 by 4
+  # paces on storey 0"*) and 2 are the hand-written descriptions of The Custom
+  # House rooms 3 and 4 in `lib/engine_sweep/worlds/the-quay-house.yml`, which
+  # are there to be a worked example of prose that agrees with its plan. That is
+  # the best evidence a grammar this narrow can have before a model has ever been
+  # handed a plan: it reads true statements, all of them the app's own or written
+  # against the app's own records, and nothing else in 367 passages of prose.
+  Size = Data.define(:paces, :as_written, :sentence)
+  Storey = Data.define(:storey, :sentence)
+
+  # The small numbers prose spells out. Bounded at twenty because a room bigger
+  # than that is written in digits, and because every word past it is also an
+  # ordinary English word.
+  NUMBER_WORDS = %w[zero one two three four five six seven eight nine ten eleven twelve thirteen
+                    fourteen fifteen sixteen seventeen eighteen nineteen twenty].freeze
+
+  # TWO GRAMMARS AND NOT ONE LOOSE ONE, because the word "paces" is what makes
+  # the pair a measurement of this room: "six by four" on its own is a phrase
+  # about anything at all, so the unit is required and is required on the side
+  # of the pair prose actually puts it on -- after it, or between the two
+  # numbers.
+  PACE_PAIRS = [
+    /\b(NUMBER)\s+by\s+(NUMBER)\s+paces\b/i,
+    /\b(NUMBER)\s+paces\s+by\s+(NUMBER)\b/i
+  ].freeze
+
+  def size_claims(text)
+    body = text.to_s
+    return [] if body.blank?
+
+    found = []
+
+    sentences(body).each do |sentence|
+      pace_pairs.each do |pattern|
+        sentence.scan(pattern) do
+          pair = [ Regexp.last_match(1), Regexp.last_match(2) ].map { |word| number_for(word) }
+          found << Size.new(paces: pair.sort, as_written: pair, sentence: sentence.strip)
+        end
+      end
+    end
+
+    found.uniq(&:paces)
+  end
+
+  # The two patterns with the number alternation spliced in, built once. A
+  # constant holding `NUMBER` as a placeholder rather than the finished regexes,
+  # so the two grammars read as grammars.
+  def pace_pairs
+    @pace_pairs ||= PACE_PAIRS.map do |pattern|
+      Regexp.new(pattern.source.gsub("NUMBER", "\\d{1,3}|#{Regexp.union(NUMBER_WORDS).source}"), pattern.options)
+    end
+  end
+
+  def storey_claims(text)
+    body = text.to_s
+    return [] if body.blank?
+
+    found = []
+
+    sentences(body).each do |sentence|
+      sentence.scan(/\bstorey\s+(-?\d{1,2})\b/i) do
+        found << Storey.new(storey: Regexp.last_match(1).to_i, sentence: sentence.strip)
+      end
+    end
+
+    found.uniq(&:storey)
+  end
+
+  # A number word or a numeral as an integer.
+  def number_for(word)
+    index = NUMBER_WORDS.index(word.to_s.downcase)
+
+    index || word.to_i
+  end
+
+  # ------------------------------------------------------------------------
 
   # Sentences, split on a terminator followed by whitespace -- the same split
   # `Story::Audit#excerpt` makes, kept identical so an excerpt and a flag can

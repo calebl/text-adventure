@@ -403,6 +403,31 @@ class InteractionAgentTest < ActiveSupport::TestCase
     assert_no_match(/## Where this happens/, InteractionAgent.new(@character).narrator_prompt("Hi", CHARACTER_RESPONSE))
   end
 
+  # AND IT DOES NOT GET THE FLOOR PLAN, which is a decision rather than an
+  # omission (`Location::Plan`'s header). No prompt in this file has a stored
+  # bench baseline AT ALL, so a change to one could not be judged either way,
+  # and the block this pass sends is the one it sent before interiors existed.
+  # Geometry reaches the room writer, whose interior-room cases are measured,
+  # and `Scene::Narrator`, where it is a byte-level no-op on every world
+  # `Eval::Prompt::STORIES` plays -- neither has a room with a box.
+  test "the narrator pass is not told the room's floor plan, and the scene narrator is" do
+    playthrough = playthrough_with_protagonist("Odile Vance")
+    place = create(:location, :stub, story: @character.story, name: "The Custom House", width: 14, depth: 10)
+    room = create(:location, :stub, story: @character.story, name: "the back room", parent_location: place,
+                                    x: 0, y: 0, z: 0, width: 7, depth: 6, description: "Ledgers to the ceiling.")
+    playthrough.update!(current_location: room)
+
+    plan = Location::Plan.for(room).to_prompt
+    prompt = InteractionAgent.new(@character, playthrough: playthrough).narrator_prompt("Hi", CHARACTER_RESPONSE)
+
+    assert_match(/## Where this happens/, prompt)
+    assert_match(/Ledgers to the ceiling\./, prompt, "it still gets the moment")
+    assert_no_match(/paces/, prompt)
+    assert_no_match(/storey/, prompt)
+    assert_includes Playthrough::Moment.new(playthrough).narration_context, plan,
+                    "the scene narrator still carries it"
+  end
+
   # THE EXAMPLE IS THE CHARACTER'S OWN. A fixed "her" and "The person" for every
   # character nudged pronouns for anyone who is not a woman and modelled avoiding
   # the name the instruction asks for.

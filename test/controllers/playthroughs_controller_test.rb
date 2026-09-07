@@ -255,6 +255,51 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_match "The Sunken Stair", response.body
   end
 
+  # THE ROOM FOLDED INTO THE PLACE IT IS IN, which is the captain's ruling of
+  # 2026-09-06: *"Option B."* Rooms have parents since slice 2, so there were two
+  # ways to write this line -- "in The Rusted Anchor" or "in the taproom of The
+  # Rusted Anchor" -- and he took the second. One sentence, and the room keeps
+  # its stored name as it stands.
+  test "show folds the room into the place it is inside" do
+    playthrough = create(:playthrough, :started)
+    story = playthrough.story
+    anchor = create(:location, :stub, story: story, name: "The Rusted Anchor", width: 12, depth: 8)
+    playthrough.current_location.update!(name: "the taproom", parent_location: anchor,
+                                         x: 0, y: 0, z: 0, width: 6, depth: 4)
+
+    get playthrough_path(playthrough)
+
+    assert_includes response.body, "You are in <strong>the taproom</strong> of The Rusted Anchor."
+    assert_no_match(/Inside The Rusted Anchor/, response.body)
+  end
+
+  # AND THE ROOM'S STORED NAME AS-IS, ordinal and all, while
+  # `Location::Interior.placeholder_name` is still what names an interior room
+  # (naming is deferred to `ta-interior-room-names`).
+  test "show uses the room's stored name even while it is a placeholder" do
+    playthrough = create(:playthrough, :started)
+    story = playthrough.story
+    house = create(:location, :stub, story: story, name: "The Custom House", width: 14, depth: 10)
+    playthrough.current_location.update!(name: "The Custom House room 3", parent_location: house,
+                                         x: 7, y: 4, z: 0, width: 7, depth: 6)
+
+    get playthrough_path(playthrough)
+
+    assert_includes response.body,
+                    "You are in <strong>The Custom House room 3</strong> of The Custom House."
+  end
+
+  # AND A ROOM INSIDE NOTHING KEEPS THE PLAIN SENTENCE IT HAS ALWAYS HAD, which
+  # is every room in every flat world.
+  test "show says nothing about a place for a room with no parent" do
+    playthrough = create(:playthrough, :started)
+
+    get playthrough_path(playthrough)
+
+    assert_includes response.body,
+                    "You are in <strong>#{playthrough.current_location.name}</strong>."
+  end
+
   # THE SLASH MENU IS RENDERED INTO THE FORM AND FETCHED FROM NOWHERE. The whole
   # point of `Playthrough::SlashMenu` is that the box needs no request and no
   # model: the closed sets arrive with the turn, and `#turn_log` is replaced at

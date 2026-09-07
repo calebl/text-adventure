@@ -175,4 +175,76 @@ class Story::Audit::ProseTest < ActiveSupport::TestCase
 
     assert_empty Prose.departure_claims(text)
   end
+
+  # --- the prose against the floor plan --------------------------------------
+  #
+  # THE TWO GRAMMARS ARE SILENT ON EVERY PASSAGE IN THIS REPOSITORY -- 0
+  # detections over all 367 real ones, which is measured and written down on the
+  # methods themselves. A check that cannot fire looks exactly like a clean
+  # result, so these fire them on written sentences of the shape a room handed a
+  # plan invites, and pin the negatives that would make either one noisy.
+  #
+  # AND THERE IS NO DOOR GRAMMAR TO FIRE. `Location::Plan` states which wall
+  # each door is in, and reading that back out of prose was tried in six
+  # measured grammars, every one of which read a DOORLESS wall named in the same
+  # sentence as a door as a door claim of its own. `Story::Audit`'s header
+  # carries the record and the sentences that settled it; the question is
+  # reported unanswered by `Eval::Realization::UNAVAILABLE_TO_A_REALIZATION`.
+  # Do not rebuild it here.
+
+  test "a size stated as a pair of paces is read, in either phrasing" do
+    assert_equal [ [ 4, 6 ] ], Prose.size_claims("The room is 6 by 4 paces of wet flagstone.").map(&:paces)
+    assert_equal [ [ 4, 6 ] ], Prose.size_claims("It runs six paces by four, no more.").map(&:paces)
+    assert_equal [ [ 4, 6 ] ], Prose.size_claims("Four paces by six paces, and every one of them cold.").map(&:paces)
+  end
+
+  # THE PAIR IS CARRIED TWICE: sorted for the comparison, and in the order the
+  # sentence wrote it so a flag can quote the claim the prose actually made
+  # (`Eval::Realization::Scorer#judge_size_the_records_do_not_hold`).
+  test "a size claim keeps the order the sentence put the numbers in" do
+    assert_equal [ [ 6, 4 ] ], Prose.size_claims("The room is 6 by 4 paces of wet flagstone.").map(&:as_written)
+    assert_equal [ [ 4, 6 ] ], Prose.size_claims("Four paces by six paces, and every one of them cold.")
+      .map(&:as_written)
+  end
+
+  # THE UNIT IS WHAT MAKES IT A MEASUREMENT OF THIS ROOM, and a single
+  # measurement does not say which axis it measured.
+  test "a pair with no paces in it, and a single measurement, claim nothing" do
+    [ "The counter runs six by four and the till is at the end of it.",
+      "The room is four paces wide.",
+      "Six feet by four, and painted on the floor." ].each do |text|
+      assert_empty Prose.size_claims(text), text
+    end
+  end
+
+  test "a storey stated as the engine states it is read" do
+    assert_equal [ 1 ], Prose.storey_claims("Everything on storey 1 smells of tar.").map(&:storey)
+    assert_equal [ -1 ], Prose.storey_claims("The cellar is storey -1 and it is under water.").map(&:storey)
+  end
+
+  # FLOOR-NUMBERING IS A CONVENTION AND THE PROMPT NEVER USES IT, so a passage
+  # that says it is a passage this cannot convict. Stated as a test because the
+  # miss is deliberate.
+  test "the second floor is not a storey claim" do
+    assert_empty Prose.storey_claims("You come out on the second floor with the rain on the skylight.")
+  end
+
+  # THE PROSE IN THE REPOSITORY THESE GRAMMARS READ THAT THE ENGINE DID NOT
+  # WRITE, verbatim from `lib/engine_sweep/worlds/the-quay-house.yml`: the
+  # hand-written descriptions of The Custom House rooms 3 and 4. Both agree with
+  # the boxes they were written from -- 7 by 6 paces on storey 0 -- and they are
+  # 2 of the 12 detections measured over every world file's room prose, which is
+  # the figure on `Prose.size_claims` and must not move.
+  test "the repository's own worked examples read as the boxes they were written from" do
+    room_three = "The back office, 7 by 6 paces of bare boards on storey 0. A door in the north wall\n" \
+                 "goes through to the counting room, and one in the west wall stands half open on the\n" \
+                 "dark. Nothing else opens anywhere."
+    room_four = "A dead end of 7 by 6 paces on storey 0, with one door in the east wall and no other\n" \
+                "way out of it at all."
+
+    [ room_three, room_four ].each do |text|
+      assert_equal [ [ 6, 7 ] ], Prose.size_claims(text).map(&:paces), text
+      assert_equal [ 0 ], Prose.storey_claims(text).map(&:storey), text
+    end
+  end
 end

@@ -82,6 +82,19 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     create(:location, :stub, story: @story, **attributes)
   end
 
+  # A ROOM OF A LAID-OUT BUILDING AND A ROOM IT REALLY HAS A DOOR TO, off
+  # `Location::Interior`'s own output rather than placed by hand -- so a test of
+  # what a room is TOLD stands on a floor plan the engine wrote. The pair is the
+  # first room and the first neighbour the layout gave it, which the serpentine
+  # guarantees exists for any building with more than one room in it.
+  def laid_out_pair
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    Location::Interior.lay_out!(place)
+    room = Location::Interior.entry_room(place.reload)
+
+    [ room, room.exits.find { |far| far.box && room.box.wall_towards(far.box) } ]
+  end
+
   # An edge this room already has before anybody asks for its exits: what a
   # world file seeds, and what a neighbour writes when it names this place.
   # Both directions, because that is how every edge in the app is written.
@@ -198,6 +211,71 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_equal locations, @story.locations.count
     assert_nil @story.locations.find_by(name: "The Strongroom")
     assert_not_includes agent.schemas, Location::ExitsSchema
+  end
+
+  # --- and what it IS told instead --------------------------------------------
+  #
+  # THE ROOM'S OWN FLOOR PLAN, AS FACTS. The captain's first ruling of
+  # 2026-09-06 has the interior laid out before anybody walks in, so by the time
+  # a model is asked to write one of its rooms the size, the storey and every
+  # door are already decided -- `Location::Plan` is the one author of them and
+  # this is the seam it reaches the prompt through.
+
+  test "a room inside a place is told its own size, storey and doors" do
+    room, sibling = laid_out_pair
+    agent = FakeAgent.new(DETAIL)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+
+    prompt = agent.prompts.sole
+    assert_includes prompt, "## Where This Room Is"
+    assert_includes prompt, "This room is #{room.box.width} by #{room.box.depth} paces"
+    assert_includes prompt, "It is on storey #{room.box.z} of The Rusted Anchor"
+    assert_includes prompt, "a door in the #{room.box.wall_towards(sibling.box)} wall, to #{sibling.name}"
+    assert_includes prompt, "Those are every way out of this room"
+  end
+
+  # THE FACTS ARE THE PLAN'S AND ARE NOT ASSEMBLED HERE, so the room writer and
+  # the narrator cannot come to describe one building two ways
+  # (`Playthrough::Moment#narration_context`).
+  test "what the room is told is what Location::Plan says, word for word" do
+    room, = laid_out_pair
+    agent = FakeAgent.new(DETAIL)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+
+    assert_includes agent.prompts.sole, Location::Plan.for(room.reload).to_prompt
+  end
+
+  # AND EVERY OTHER ROOM'S PROMPT IS THE ONE A BASELINE WAS MEASURED ON. The
+  # block is empty for anything with no plan, and empty means the blank line
+  # that was already there -- character for character, which is what
+  # `Eval::Realization::Version`'s prompt digest is comparing between runs.
+  test "an ordinary room's prompt is not changed by the geometry block at all" do
+    location = stub_location(name: "The Drowned Ledger")
+    agent = FakeAgent.new(DETAIL, EXITS)
+
+    realize(location, agent)
+
+    assert_not_includes agent.prompts.first, "## Where This Room Is"
+    assert_includes agent.prompts.first, "teaser: #{location.teaser}\n\n## Instructions"
+  end
+
+  # A ROOM IS STILL WRITTEN, FURNISHED AND PEOPLED. The only thing an interior
+  # room does differently is its ways out; everything the detail call does is
+  # the same call it makes for every other room in the game.
+  test "a room inside a place gains its prose, its floor and its cast" do
+    room, = laid_out_pair
+    answer = DETAIL.merge("items" => FURNISHED["items"], "people" => [ PERSON ])
+    agent = FakeAgent.new(answer)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+
+    assert_predicate room.reload, :realized?
+    assert_equal DETAIL["description"], room.description
+    assert_equal DETAIL["lore"], room.lore
+    assert_equal [ "floating ledger", "brass tide key" ], room.items.order(:id).pluck(:name)
+    assert_equal [ "Maren Vosk" ], Character.present_in(room).pluck(:fullname)
   end
 
   # PLAIN CONTAINMENT IS NOT AN INTERIOR, and this is the shape that tells the

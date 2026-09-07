@@ -300,7 +300,7 @@ class Location::Generator
       ## The Place
       name: #{location.name}
       teaser: #{location.teaser}
-
+      #{geometry_facts}
       ## Instructions
       Write this place out in full.
       - The description is what the player reads on arrival. Address them as "you"
@@ -311,6 +311,39 @@ class Location::Generator
       #{items_instructions}
 
       #{people_instructions}
+    PROMPT
+  end
+
+  # WHERE THIS ROOM IS, AS FACTS THE ENGINE HAS ALREADY DECIDED -- how big it
+  # is, which storey of which place it stands on, which wall each door is in and
+  # where each one leads. `Location::Plan` is the one author of them, so the
+  # room writer and the narrator are told the same walls
+  # (`Playthrough::Moment#narration_context`).
+  #
+  # IT IS THE INFORM HALF AND NOT THE VERIFY HALF, which is the standing
+  # constraint's own division of labour and is worth stating on the one prompt
+  # block that could be mistaken for a guarantee. The doors are already
+  # `LocationConnection` rows and `#write_exits!` asks a model for none of them,
+  # so a description that invents a third door changes nothing about where the
+  # player can walk. What it costs is a room whose prose argues with its own
+  # map, which `Story::Audit::Prose`'s geometry predicates read and
+  # `Eval::Realization::Scorer` scores.
+  #
+  # EMPTY FOR EVERY ROOM THAT IS NOT ONE, and empty means the prompt is the one
+  # a baseline was measured on, character for character: `Location::Plan.for`
+  # answers nil for a place, for an ordinary outermost room, and for anything
+  # else with no box read in a parent's plane, and the blank line the block
+  # stands on is the blank line that was already there.
+  def geometry_facts
+    plan = Location::Plan.for(location)
+    return "" if plan.nil?
+
+    <<~PROMPT.rstrip
+      ## Where This Room Is
+      The game's own records of this room, already decided and not yours to
+      change. Write the room around them: do not contradict a measurement, and
+      do not give it a way out this list does not have.
+      #{plan.to_prompt}
     PROMPT
   end
 
