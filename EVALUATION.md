@@ -1507,6 +1507,42 @@ a person, that convention needs teeth; today it does not have them.
 
 ---
 
+## The frozen corpus, and how it grows
+
+`test/fixtures/files/eval_corpus.json` is the regression line: real passages out
+of the captain's own playthroughs with the records around them written down,
+plus the 24 lab narrations, checked in so they need no database.
+`Story::Scoreboard::Corpus` reads it and its header says what a passage carries
+and which checks it therefore cannot answer.
+
+**`rake game:corpus` is the only thing that writes it.** It reads this machine's
+database, takes every turn the captain has judged and the turns either side of
+it, derives the facts beside each passage through `Story::Audit`'s own readers,
+and merges by scene: a row already there has its verdict and note brought up to
+date, a row that is not is appended, and nothing is ever removed. `DRY_RUN=1`
+prints what would change. `Story::Scoreboard::Capture`'s header is the rule in
+full — what an amended verdict does, why the `lab/` rows are untouchable, and
+why a captured passage and its facts stay frozen even when a re-derivation
+would now answer differently.
+
+Two things it deliberately does not do:
+
+- **It never writes `expect`.** That is the hand-signed list of flags somebody
+  read and defended. A new row arrives with it empty, so
+  `Story::Scoreboard::CorpusTest` fails until each flag the row earns has been
+  judged sentence by sentence. A capture that filled it in would turn the
+  pinned test into a test that agrees with whatever the checks currently do.
+- **It never captures the held-out world.** Verdicts recorded on
+  `Eval::HELD_OUT` are counted in the task's summary and skipped, so the rule
+  below is visible in the output rather than silent.
+
+After a refresh: read the new flags, sign for them in the test, then
+`rake game:score CORPUS=corpus SAVE=1` so the movement report compares like with
+like — the board warns when the corpus changed size, and that warning is why the
+re-baseline is part of the job rather than a follow-up.
+
+---
+
 ## The transition corpus
 
 `test/fixtures/files/transition_corpus.json` is 119 turns that the classifier
@@ -1591,7 +1627,8 @@ candidates against it:
 1. **A complaint behind it.** Every check here answers an error the captain named
    while playing, in his own words.
 2. **A measured false-positive rate on real prose**, in a test, not in a commit
-   message. The corpora are `eval_corpus.json` (92 passages),
+   message. The corpora are `eval_corpus.json` (grown by `rake game:corpus`;
+   the count is pinned in `Story::Scoreboard::CorpusTest`),
    `narration_corpus.json` (24), `whole_run_corpus.json` (132 whole-run
    narrations with the records around them) and — for a check that reads a
    change — `transition_corpus.json` (119 real `take` and `drop` turns with the

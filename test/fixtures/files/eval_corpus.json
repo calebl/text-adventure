@@ -918,7 +918,7 @@
     "present": [
       "Halkett Rowe"
     ],
-    "verdict": null,
+    "verdict": "good",
     "note": null,
     "text": "The gap in your daybook is still under your hand when the sound in the hallway stops being a sound and becomes a person. Sub-Inspector Rowe fills the doorway with the dark corridor behind him -- grey coat, Inspectorate seal on its chain, forty minutes early and entirely unhurried about being it. He looks at your desk, and at the stamp lying beside the daybook, and then for rather longer at the desk across from yours, cleared to the wood. Nothing in his face changes, which is worse than if something had. The mantle hisses over the two of you, the rain goes sideways past the glass, and behind you, close enough to touch, the narrow door of the supply closet stands exactly as unlocked as it has stood for eleven years.",
     "expect": []
@@ -1792,6 +1792,1115 @@
     "verdict": null,
     "note": null,
     "text": "You lift the daybook from the desk, its pages stiff with ink and time, and carry it to the small iron grate set into the wall. The coals within are cold, the last embers long since turned to ash. You strike a match, but the flame gutters and dies the moment it touches the paper, as if the daybook itself resists the fire. The matchstick blackens and crumbles in your fingers, leaving no mark on the page. The ruled gap between four and five o'clock remains, untouched, as legitimate as ever. The grate stays cold. Somewhere in the hallway, another door clicks shut, the sound sharp in the silence. The daybook, unburnt, lies in your hands, its absence of an hour still waiting to be accounted for.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-87",
+    "id": 87,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "what is on my desk?",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": "good",
+    "note": null,
+    "text": "You look down at your desk. The ruled gap between four and five o'clock in your daybook stares back at you, the ink unbroken around it as if the hour had never existed. Beside it lies the ward stamp, its brass handle cool under the dim gaslight. The rest of the desk is as it should be—neat, orderly, devoid of anything out of place except for the absence of the hour itself. The stamp’s weight seems heavier than it should, as if it knows something you don’t. The hissing of the mantle and the sideways rain against the window fill the silence.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-65",
+    "id": 65,
+    "story": "The Unrecorded Hour",
+    "room": "The Long Hallway",
+    "typed": "standup, pickup your daybook and walk out into the long hallway",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "bad",
+    "note": "supply closet is still listed as a location even though i'm not in Ward Office 12 anymore. And protagonist is referred to in the 3rd person",
+    "text": "The first thing you notice is the silence—thick, deliberate, as if the hallway itself is holding its breath. Then comes the scent of beeswax and old paper, sharp enough to taste, and the way the gaslight flickers just once, as though someone has passed a hand before a lamp you cannot see. The polished oak stretches ahead, its runner muffling your steps, and the numbered doors line the walls like unread ledgers. Somewhere down the corridor, a door clicks shut, and the echo lingers, too precise, as if the sound has been filed for later reference. Odile Vance stands halfway along the hall, her back to you, adjusting the strap of a satchel with the slow care of someone who knows the weight of every sheet inside it.",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "unrecorded/scene-66",
+    "id": 66,
+    "story": "The Unrecorded Hour",
+    "room": "Central Stacks",
+    "typed": "go the stacks",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "bad",
+    "note": "supply closet is still available, more 3rd person protagonist",
+    "text": "The first thing you notice is the way the air thickens as you step past the threshold, as though the very atmosphere here has been pressed between pages and left to settle. The flicker of the gas lamps seems to dim further in your presence, and the scent of old paper rises like dust from a disturbed ledger. Odile Vance stands at the far table, her back to you, the quill in her hand poised above a writ as if she has been waiting for something—or someone—to interrupt the stillness.",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "unrecorded/scene-99",
+    "id": 99,
+    "story": "The Unrecorded Hour",
+    "room": "The Supply Closet",
+    "typed": "go to the closet",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "You step back into the supply closet and the door swings shut behind you, the same dim light cutting off at the second shelf. The wax-and-dust scent is unchanged, the floor still swept, the stack of blank forms squared as precisely as before. But the private index is gone from its hiding place, leaving only the faintest impression in the dust where it once lay, as if someone else has already been here and taken what you left behind.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-100",
+    "id": 100,
+    "story": "The Unrecorded Hour",
+    "room": "The Supply Closet",
+    "typed": "pick up the apron",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": "bad",
+    "note": "I'm trying to pick it up but it's already in my hand",
+    "text": "You reach for the apron, but your fingers close on empty air. The stack of blank ward forms remains undisturbed, the dust untouched. The apron is already in your possession, folded neatly in your hand—its weight familiar, its edges crisp from repeated handling. The supply closet offers nothing more. The only way out is back through the doorway, where the gas mantle still hisses over the two desks of Ward Office 12.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-88",
+    "id": 88,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "pickup the stamp",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": "bad",
+    "note": "it should say I picked it up instead I already hold it",
+    "text": "You already hold the ward stamp—its brass weight familiar in your palm, the ink pad still damp against your fingers. The daybook remains open beneath it, the missing hour a neat, ruled void. The stamp does not resist, does not explain. It simply is, as it always has been, except now it is in your hand again, as if you had never set it down. The gas mantle hisses, the rain streaks the cold glass, and Sub-Inspector Rowe has not yet spoken.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-96",
+    "id": 96,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "take the inspectorate seal from rowe",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": "good",
+    "note": null,
+    "text": "You reach toward Sub-Inspector Rowe’s coat, fingers brushing the cold metal of the Inspectorate seal where it hangs from its chain. His hand moves faster—faster than you would have thought possible—closing around yours before you can close around the seal. His grip is dry, precise, and absolutely immovable. The seal remains where it belongs, glinting dully in the low gaslight. Rowe does not speak. The rain streaks the window behind you, the mantle hisses, and the supply closet door stays ajar, silent and unremarked. Your hand is still empty.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-97",
+    "id": 97,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "tell him you only wanted to see it",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "Sub-Inspector Rowe’s grip loosens just enough for the chain to slip through his fingers, the seal settling into your palm. His hand stays over yours, steadying it. His eyes flick to yours, then down to the seal, as if weighing the breach.\n\"It’s heavier than it looks,\" he says.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-97/action-15",
+    "id": 97,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "tell him you only wanted to see it",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "Sub-Inspector Rowe lets the chain slide through his fingers until the seal rests in her palm, then closes his hand over hers to steady it. \"It’s heavier than it looks.\"",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-101",
+    "id": 101,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "go back through the door",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "You step back into the office and the gas mantle’s hiss greets you like a held breath. The ruled gap in your daybook is still there, untouched, but the chair across from you has been nudged an inch from the desk, as if someone sat and then thought better of it. Sub-Inspector Rowe stands by the filing press, his coat damp from the hallway, watching the supply closet door as though it might speak. The pneumatic tube remains empty, the rain still slants past the window, and the air smells faintly of ink and old paper, as if nothing at all has changed.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-89",
+    "id": 89,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "pick up the daybook",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 3,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": "bad",
+    "note": "my fingers pass through the open page? and I'm already holding it?",
+    "text": "You reach for the daybook, but your fingers pass through the open page as if it were a trick of the light. The ruled gap between four and five o'clock remains, untouched, on the desk. The daybook does not lift—it is already in your possession, its weight already accounted for in your hands, though you do not remember picking it up. The stamp rests beside it, its brass cool against the wood. Sub-Inspector Rowe watches, silent, as the gas mantle flickers and the rain drags its fingers down the glass. The missing hour stays missing.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-68",
+    "id": 68,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "close the daybook and put it down",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You close the daybook with a soft thud, the pages pressing together as if sealing the absence between four and five. The leather cover is cool now as you set it back onto the desk, aligning it precisely with the edge of the blotter that no longer exists on the opposite side. Sub-Inspector Rowe’s eyes follow the movement, his expression unreadable, though his fingers tap once against his own thigh—an idle gesture, or perhaps a signal you’re not meant to interpret. The gas mantle flickers, casting long shadows across the cleared desk, and the rain continues its sideways march past the window. The supply closet door remains slightly ajar, its darkness undisturbed.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-69",
+    "id": 69,
+    "story": "The Unrecorded Hour",
+    "room": "The Long Hallway",
+    "typed": "walk out into the long hallway",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "bad",
+    "note": "Sub-Inspector Rowe was in the doorway of ward office 12 before, now he is somewhere different. Why is the Supply Closet listed twice if at all as a way out?",
+    "text": "The Long Hallway greets you with the same damp paper scent and flickering gaslight, but the footsteps from the far end have advanced, their rhythm sharper now, as if the Inspectorate has gained ground while you were away. The brass plaques on the doors gleam a little brighter, freshly polished, though you don’t recall anyone passing with a cloth. Sub-Inspector Rowe stands halfway down the corridor, his back to you, one hand resting on a doorknob as if testing its resistance. The supply closet door, left ajar before, is now shut tight, its lock glinting in the dim light.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-90",
+    "id": 90,
+    "story": "The Unrecorded Hour",
+    "room": "The Supply Closet",
+    "typed": "go to the closet",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The door swings shut behind you with the same quiet click, and the closet’s stillness presses in like a held breath. The apron is still folded behind the forms, the index still tucked inside it, but the last entry has been crossed out with a single, deliberate stroke—your own handwriting, though you do not remember writing it. The wax tins gleam dully, the nibs sit undisturbed, and the air carries the same sour tang of old ink, as if nothing here has moved in your absence. Yet the gap on the shelf where the index lay is now just a little too precise, the dust unsettled in a way that suggests someone else has been here, someone who knew exactly where to look.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-98",
+    "id": 98,
+    "story": "The Unrecorded Hour",
+    "room": "The Supply Closet",
+    "typed": "go to the supply closet",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "The door swings shut behind you with the same dull click as before, and the familiar scent of wax and old ink presses in. The shelves stand unchanged, the tins of sealing wax still unopened, the coil of cord undisturbed. But the private index is gone from its hiding place behind the ward forms, leaving only the faintest impression in the dust where it lay, as if someone else has been here in the last ten minutes and taken what you left untouched.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-102",
+    "id": 102,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "ask the inspector why he is early",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": null,
+    "note": null,
+    "text": "Sub-Inspector Rowe adjusts his chain, the metal glinting under the low gaslight. His gaze flicks to the daybook, then back to you, steady and unreadable.\n\"I was in the neighborhood and thought I’d spare you the wait.\"",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-102/action-16",
+    "id": 102,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "ask the inspector why he is early",
+    "protagonist": null,
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "Sub-Inspector Rowe adjusts his chain and says, \"I was in the neighborhood and thought I’d spare you the wait.\"",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-103",
+    "id": 103,
+    "story": "The Unrecorded Hour",
+    "room": "The Long Hallway",
+    "typed": "go to the hall",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "bad",
+    "note": "sub inspector Rowe is not in the hallway",
+    "text": "The hallway greets you as it always does—gaslight flickering, brass plaques gleaming—but something is subtly off. The door to Ward Office 12 stands slightly ajar, though you left it shut, and the air carries a sharper tang of ink, as if someone has been here in your absence. Sub-Inspector Rowe stands near the far end, his chain glinting in the dim light, his posture unchanged from when you last saw him. The footsteps you heard earlier have stopped, leaving only the quiet hum of the Registry’s unseen machinery.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-104",
+    "id": 104,
+    "story": "The Unrecorded Hour",
+    "room": "Central Stacks",
+    "typed": "go to the stacks",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The gas lamps still flicker, the air still carries the scent of old paper, but the stack of blank writs on the table is smaller than it was ten minutes ago. The quill lies exactly where you left it, yet the inkwell seems slightly fuller, as if someone has topped it off in your absence. The silence presses harder now, as though the stacks themselves are holding their breath.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-91",
+    "id": 91,
+    "story": "The Unrecorded Hour",
+    "room": "The Supply Closet",
+    "typed": "pick up the index",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": "bad",
+    "note": null,
+    "text": "You reach for the index, but your fingers close on empty air where it should be. The apron lies undisturbed, its folds still crisp, and the space behind the stack of blank forms is just that—a space, as if the index was never there at all. The sour scent of old ink lingers, and the closet remains perfectly still, the only sound the faint hiss of the gas mantle from the office beyond. The index is already in your possession, its weight slight but unmistakable against your side. You cannot pick up what you already carry.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-92",
+    "id": 92,
+    "story": "The Unrecorded Hour",
+    "room": "The Supply Closet",
+    "typed": "pick up the index",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": "bad",
+    "note": null,
+    "text": "You reach for the index, but your fingers close on empty air where it should be. The apron lies undisturbed, its folds still crisp, and the space behind the stack of blank forms is just that—a space, as if the index was never there at all. The sour scent of old ink lingers, and the closet remains perfectly still, the only sound the faint hiss of the gas mantle from the office beyond. The index is already in your possession, its weight slight but unmistakable against your side. You cannot pick up what you already carry.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-93",
+    "id": 93,
+    "story": "The Unrecorded Hour",
+    "room": "Ward Office 12",
+    "typed": "go to the office",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [
+      "Halkett Rowe"
+    ],
+    "verdict": "weak",
+    "note": "inspector rowe is damp from the hallway?",
+    "text": "You step back into the office and the gas mantle’s hiss feels louder, as if the room has been holding its breath. The gap in your daybook is still there, the ruled line between four and five o’clock unbroken, and the desk across from yours remains cleared to the wood, the chair squared away like a rebuke. Sub-Inspector Rowe stands by the filing press, his coat damp from the hallway, watching the pneumatic tube as though expecting a carrier that will never come. The supply closet door is shut now, its absence of a lock or inventory number suddenly more deliberate than before.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-94",
+    "id": 94,
+    "story": "The Unrecorded Hour",
+    "room": "The Long Hallway",
+    "typed": "go to the hallway",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "bad",
+    "note": "I've never been in the hallway. Why am I stepping back into it?",
+    "text": "You step back into the Long Hallway and the air feels no different, though the gas lamps flicker once as if acknowledging your return. The doors remain shut, their brass plaques untouched, and the scent of ink and old paper lingers as before. The footsteps from the far end have not advanced, nor have they faded—steady, deliberate, unchanged. The only shift is the absence of the faint draft that had stirred the notices on the walls earlier, as though the hallway itself has held its breath.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-95",
+    "id": 95,
+    "story": "The Unrecorded Hour",
+    "room": "Central Stacks",
+    "typed": "go to the stacks",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The brass reading lamp still burns low, its light pooling on the table where the stack of blank writs remains untouched. The air feels heavier now, as if the silence has settled into the cracks between the ledgers, and the scent of old paper seems sharper, almost metallic. You notice the quill has been moved—just slightly, as though someone lifted it and set it back down without using it. The footsteps from the Long Hallway have stopped, but the stillness here feels deliberate, like the room itself is holding its breath.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-105",
+    "id": 105,
+    "story": "The Unrecorded Hour",
+    "room": "The Long Hallway",
+    "typed": "go back to the hallway",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "bad",
+    "note": "3rd person protagonist",
+    "text": "You step back into the Long Hallway and the air feels heavier, as if the absence of something has settled like dust. The gas lamps flicker just as they did before, but the brass plaques on the doors seem slightly duller, their numbers less certain. The footsteps from the far end have not advanced, though you were gone long enough for them to have reached you. Odile Vance stands near the door to Ward Office 12, her posture rigid, as though she has been waiting for you to return.",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "unrecorded/scene-106",
+    "id": 106,
+    "story": "The Unrecorded Hour",
+    "room": "The Long Hallway",
+    "typed": "look to see if there is anything to pick up",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "You glance down at the polished wood floor, where the dropped brass key lies half-hidden in the dim light. Its surface is slightly tarnished, but the teeth are still sharp, catching the flicker of the gas lamps. It wasn’t there before—you’re sure of that. The hallway remains otherwise unchanged: the doors stay shut, the footsteps still hang in the distance, and the air carries the same weight of unanswered questions. The key is the only thing here worth taking.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-107",
+    "id": 107,
+    "story": "The Unrecorded Hour",
+    "room": "The Long Hallway",
+    "typed": "pick up the key",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "You crouch and retrieve the dropped brass key from the floor, its weight cool and solid in your palm. The ward number stamped on its bow is faint but legible—12. It fits neatly into your pocket beside the daybook and the apron, as though it had always been there. The hallway remains still, the footsteps from the far end neither closer nor farther, and the doors stay resolutely shut. The key is yours now, and the question of what it unlocks lingers like an unchecked ledger entry.",
+    "expect": []
+  },
+  {
+    "label": "unrecorded/scene-108",
+    "id": 108,
+    "story": "The Unrecorded Hour",
+    "room": "Central Stacks",
+    "typed": "go to the stacks",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "bad",
+    "note": "protagonist 3rd person",
+    "text": "The brass lamp still burns low, its light pooling on the table where the quill and inkwell sit untouched, but the stack of blank writs is thinner by one. The air carries the same damp chill, the same scent of old paper, yet the silence feels heavier now, as if the stacks themselves are holding their breath. You notice the faintest disturbance in the dust on the floor—footsteps that weren’t there twenty minutes ago, leading from the Long Hallway to the table and back again. Odile Vance stands by the shelves, her back to you, flipping through a ledger with deliberate slowness.",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "unrecorded/scene-109",
+    "id": 109,
+    "story": "The Unrecorded Hour",
+    "room": "Supply Closet",
+    "typed": "go to the supply closet",
+    "protagonist": [
+      "Odile Vance",
+      "Vance",
+      "Odile"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The door swings open with a groan of hinges long unused, and the first thing that strikes you is the scent—damp paper and the sharp tang of old ink, thick enough to taste. The flickering oil lamp on the shelf throws wavering light across the clutter, and your eyes catch on the stack of blank writs, their edges curled as if waiting for a hand that never came. Odile Vance stands near the table, her silhouette sharp against the dim glow, and the creak of the floorboards under your feet feels like a betrayal in the quiet.",
+    "expect": [
+      "third_person_protagonist"
+    ]
+  },
+  {
+    "label": "lunar/scene-70",
+    "id": 70,
+    "story": "The Lunar Cartographer",
+    "room": "Larkspur Quarter rooftops",
+    "typed": "go out to the rooftops",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "weak",
+    "note": "why did the bridge move?",
+    "text": "The wooden bridge creaks underfoot as you step onto the rooftop, the same damp slate and chimney smoke greeting you, but the path ahead has shifted—the bridge now angles sharply to the left, where it once stretched straight. The moon’s light still paints the tiles in silver, but the cracks between buildings pulse brighter, the Nocturna’s glow more insistent than before. The Bell of Saint Aravel’s chime lingers in the air, though its rhythm feels subtly off, as if the city’s heartbeat has quickened in your absence.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-73",
+    "id": 73,
+    "story": "The Lunar Cartographer",
+    "room": "Larkspur Quarter rooftops",
+    "typed": "go out onto the rooftops",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "bad",
+    "note": "3rd person",
+    "text": "The rooftop greets you with the same damp slate and chimney smoke, but the path you took moments ago has vanished—the tiles where you stood now slope into a sheer drop, the gas lamp’s flicker now casting its shadow in a direction it didn’t before. Iz stands near the edge, her silhouette sharp against the moonlit streets below, where the cobblestones ripple like water. The hum of Nocturna’s rearrangement vibrates through the soles of your boots, louder now, as if the city itself is waking.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-74",
+    "id": 74,
+    "story": "The Lunar Cartographer",
+    "room": "Larkspur Quarter rooftops",
+    "typed": "examine the rooftop",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "You crouch low, pressing your palm against the rough, damp slate of the rooftop. The tiles are cool and slightly slick under your fingers, their edges worn smooth by time and weather. Up close, you see faint veins of silver light pulsing beneath the surface, like Nocturna’s magic coursing through the very bones of the city. The seams between the tiles shift subtly, as if the rooftop itself is breathing—expanding and contracting with the slow, rhythmic hum of the city’s rearrangement. The gas lamp’s flicker reveals patches of moss clinging to the shadows, thriving in the damp, and the occasional glint of something metallic embedded in the wood beneath the tiles, perhaps remnants of past structures swallowed by the ever-changing layout. The wind tugs at your coat, carrying the scent of wet stone and the faint, acrid tang of Nocturna’s energy.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-117",
+    "id": 117,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": null,
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The fight in Grenn's Boarding House, Room 3 is over after 2 rounds. Grenn Ollivar is dead. 3 blows landed: Isbet Marrow hit Grenn Ollivar for 5 (round 1); Grenn Ollivar is badly hurt (1 of 6); Grenn Ollivar hit Isbet Marrow for 2 (round 1); Isbet Marrow is hurt (16 of 18); Isbet Marrow hit Grenn Ollivar for 4 (round 2); Grenn Ollivar is dead.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-118",
+    "id": 118,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "examine grenn",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "You step closer to Grenn Ollivar’s body, now sprawled across the floorboards where he fell. His face is turned toward you, eyes wide and unblinking, a dark smear of blood seeping from the corner of his mouth. The lantern light catches the glint of a cheap brass ring on his finger, its setting empty—perhaps a stone was pried out long ago. His coat is torn at the shoulder, the fabric frayed where your blade or fist connected. The air around him is still, the city’s usual hum of shifting stone and timber strangely muted, as if Nocturnis itself has paused to acknowledge the finality of his stillness.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-119",
+    "id": 119,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House, Room 3",
+    "typed": "check to see if he is carrying anything",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 3,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "You crouch beside Grenn Ollivar’s body, the floorboards creaking under your weight. His coat pockets are empty save for a few crumbs of dried bread and a scrap of paper—perhaps a tally of unpaid rents, now stained with blood. The brass ring on his finger is loose, but when you try to slip it off, his stiffening hand resists. The empty setting glints in the lamplight, mocking the futility of the gesture. There’s nothing else. No coins, no keys, no hidden notes—just the weight of his absence pressing down on the room. The city groans softly outside, as if reminding you that time does not stop for the dead.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-75",
+    "id": 75,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House hallway",
+    "typed": "go back inside",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "The narrow hallway swallows you whole, its peeling wallpaper and flickering gas lamp pressing in like a half-remembered dream. Your boots find the creaking floorboards before your eyes adjust, the scent of old wood and damp wool thick in the air. A sliver of light spills from Grenn’s door at the far end, cutting through the gloom like a blade, while the shadows around you seem to shift just out of sight, as if the house itself is still settling into its new form for the night.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-120",
+    "id": 120,
+    "story": "The Lunar Cartographer",
+    "room": "Larkspur Quarter rooftops",
+    "typed": "go to the rooftops",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The rooftop meets you with the same restless hum of Nocturna, but the handbill in the parapet’s corner is now gone, as if plucked by the wind—or by someone who climbed here after you. The shadows below stretch longer, the streets beneath shifting with a slower, more deliberate rhythm, as though the city itself is settling into a deeper phase of its nightly dance. Iz stands near the edge, their silhouette sharp against the moonlit haze, watching the transformations with the quiet focus of someone who knows the patterns better than most.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-76",
+    "id": 76,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House hallway",
+    "typed": "is there anything I can pickup?",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You glance around the dim hallway, your eyes adjusting to the flickering gaslight. The only thing of note is a folded note lying on the floorboards, half-hidden in the shifting shadows. The brass key you already carry weighs lightly in your pocket, its purpose still a mystery. The rest of the hallway offers nothing else to take—just the peeling wallpaper, the creaking floor, and the faint scent of damp wool clinging to the air.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-77",
+    "id": 77,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House hallway",
+    "typed": "pickup the note. what does it say?",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": "bad",
+    "note": "I just picked it up. Why does it say I already hold it?",
+    "text": "You already hold the folded note in your hand, its edges slightly crumpled from where you picked it up. Unfolding it carefully, you squint at the smudged ink in the dim gaslight. The words are hurried, as if written in haste: *\"Midnight. The Bell. They know about the maps.\"* The handwriting is unfamiliar, but the urgency in the scrawl is unmistakable. The paper trembles slightly in your grip, or perhaps that’s just the Nocturna humming through the walls, making the very air feel unstable.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-78",
+    "id": 78,
+    "story": "The Lunar Cartographer",
+    "room": "Grenn's Boarding House hallway",
+    "typed": "check what time it is",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 3,
+    "present": [],
+    "verdict": "bad",
+    "note": "time is important here, are clocks not supposed to work? Also, did I have a pocket watch?",
+    "text": "You pull out your pocket watch, its brass casing cool against your palm. The hands, however, refuse to cooperate—they spin wildly, as if caught in the same restless energy that twists the city’s streets. The watch ticks erratically, its mechanism confused by Nocturna’s influence. You snap it shut with a frown. Time here is as unreliable as the walls themselves. The note’s mention of *midnight* feels like a guess at best. The gaslight flickers again, and for a moment, the shadows stretch longer, as if the night itself is holding its breath.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-79",
+    "id": 79,
+    "story": "The Lunar Cartographer",
+    "room": "The Bell of Saint Aravel",
+    "typed": "go to the bell",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "bad",
+    "note": "protagonist referred to in the 3rd person. I don't think I'm carrying the note anymore",
+    "text": "The first thing that strikes you is the hum—the deep, resonant vibration of the bell, still trembling in the air like a held breath. Your fingers brush the bronze surface, and the faint warmth of the metal lingers, as if the chime itself has just faded from hearing. The scent of old incense curls around you, thick and dusty, while the sliver of moonlight through the high window cuts across the flagstones, sharp as a blade. Iz stands near the iron door, her silhouette framed by the shifting city beyond, her presence as still as the tower itself.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-80",
+    "id": 80,
+    "story": "The Lunar Cartographer",
+    "room": "The Bell of Saint Aravel",
+    "typed": "read the note again",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": "bad",
+    "note": "the note reads differently now than it did a few turns ago",
+    "text": "You unfold the note carefully, its edges already worn from handling. The ink is smudged in places, as if touched by damp fingers, but the words remain clear: *\"The Bell of Saint Aravel tolls at the hour of the moon’s zenith. Seek the mark beneath its shadow.\"* The handwriting is precise, deliberate, but the paper itself feels oddly warm, as though it has absorbed the lingering resonance of the bell. You trace the letters with your fingertip, half-expecting the ink to shift under your touch—another trick of Nocturna—but it stays stubbornly still. The note offers no further clues, only the same cryptic instruction as before.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-81",
+    "id": 81,
+    "story": "The Lunar Cartographer",
+    "room": "The Bell of Saint Aravel",
+    "typed": "look around",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You turn your attention to the details of the chamber, the note still clutched in your hand. The murals on the walls seem to shift slightly as you study them, the faces of the saints blurring and reforming under the influence of Nocturna. The bell above you, though silent now, still hums with a faint resonance that vibrates through the air, a tangible reminder of its recent tolling. The spiral staircase coils upward, its steps worn smooth by time and use, disappearing into a darkness that seems to pulse with the same energy as the city outside. Below, the heavy iron door stands slightly ajar, a thin slice of the ever-changing cityscape visible through the gap. The broken incense burner lies on the floor, its once-intricate design now marred by cracks and chips, while the frayed prayer rope hangs limply from a hook on the wall, its strands unraveling. The moonlight streaming through the high window casts long, shifting shadows, adding to the sense of a place caught between the mundane and the magical.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-82",
+    "id": 82,
+    "story": "The Lunar Cartographer",
+    "room": "The Bell of Saint Aravel",
+    "typed": "pick up the incense burner",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 3,
+    "present": [],
+    "verdict": "bad",
+    "note": "I reach for it but it's already in my possession?",
+    "text": "You reach for the broken incense burner, but it’s already in your possession—its tarnished silver surface cool against your palm, the faint scent of old incense still clinging to its cracks. The chamber remains still, save for the faint hum of the bell and the restless murmur of Nocturna in the air. The frayed prayer rope still hangs from its hook, swaying slightly as if stirred by an unseen breath.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-83",
+    "id": 83,
+    "story": "The Lunar Cartographer",
+    "room": "Mournwell Lane",
+    "typed": "go to mornwell lane",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "bad",
+    "note": "Iz - 3rd person again",
+    "text": "The cobblestones beneath your feet still glow, but the pattern of their light has shifted, the silvery veins now twisting into unfamiliar spirals. The gas lamp at the far end flickers as before, yet its shadow stretches longer, as if the lane itself has grown. The air hums with the same damp, metallic tang, but the mournful resonance of the street feels sharper, more insistent. Iz stands near the edge of the light, their silhouette unchanged, watching you with quiet expectation.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-84",
+    "id": 84,
+    "story": "The Lunar Cartographer",
+    "room": "Mournwell Lane",
+    "typed": "say hello to Iz",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 0,
+    "present": [],
+    "verdict": "bad",
+    "note": "now there is a moonstone shard at my feet? where did that come from?",
+    "text": "You call out to Iz, but the words dissolve into the thick, shifting air of Mournwell Lane. The figure at the edge of the light does not stir—there is no one there to hear you. The silence presses back, heavy with the hum of Nocturna, as if the street itself has swallowed your greeting. The moonstone shard at your feet glows faintly, untouched, and the shadows of the lane twist a little deeper.",
+    "expect": []
+  },
+  {
+    "label": "lunar/scene-85",
+    "id": 85,
+    "story": "The Lunar Cartographer",
+    "room": "Mournwell Lane",
+    "typed": "pick up the moonstone shard",
+    "protagonist": [
+      "Isbet Marrow",
+      "Isbet",
+      "Marrow"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You crouch, fingers brushing the jagged edge of the moonstone shard. It’s already in your palm—cool, pulsing faintly with that same eerie glow. The light from it casts shifting patterns on the cobblestones, as if the lane itself is breathing in time with your touch. The shadows around you deepen, twisting like smoke caught in an unfelt wind. There’s no one here to see it, but the Nocturna hums a little louder, as if approving.",
+    "expect": []
+  },
+  {
+    "label": "iron/scene-123",
+    "id": 123,
+    "story": "The Iron Gate Descends",
+    "room": "Iron Gate Chamber",
+    "typed": null,
+    "protagonist": [
+      "Veythra the Silent",
+      "The River’s Shadow",
+      "Veythra",
+      "Silent"
+    ],
+    "moved": null,
+    "still_run": 0,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "The first thing that hits you is the stench of wet iron and old blood, thick enough to coat your throat. Then comes the cold—damp, seeping through the seams of your armor as your boot crunches on something brittle in the mud. The air hums faintly, a vibration in your teeth, and the dim glow of the fungi pulses like a slow, dying heartbeat against the black stone. The gate’s jagged teeth yawn behind you, but the tunnel ahead swallows the light whole, leaving only the sound of something shifting in the dark.",
+    "expect": []
+  },
+  {
+    "label": "iron/scene-124",
+    "id": 124,
+    "story": "The Iron Gate Descends",
+    "room": "Iron Gate Chamber",
+    "typed": "take prince's signet ring",
+    "protagonist": [
+      "Veythra the Silent",
+      "The River’s Shadow",
+      "Veythra",
+      "Silent"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "You crouch, the damp seeping through your gauntlets as your fingers close around the prince’s signet ring. The metal is cold, almost unnaturally so, as if it has been lying in the dark for far longer than the few moments since you forced the gate. The weight of it is solid, reassuring—a tangible proof of your mission. As you straighten, the ring glints dully in the dim light, the prince’s crest etched deep into its surface. The skittering in the tunnel ahead seems to pause, as if the darkness itself has noticed your claim.",
+    "expect": []
+  },
+  {
+    "label": "iron/scene-125",
+    "id": 125,
+    "story": "The Iron Gate Descends",
+    "room": "Iron Gate Chamber",
+    "typed": "take iron key",
+    "protagonist": [
+      "Veythra the Silent",
+      "The River’s Shadow",
+      "Veythra",
+      "Silent"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "You reach for the iron key, its surface pitted with rust and grime, half-buried in the mud beside the groove. Your fingers brush against it, and for a moment, it resists—as if the earth itself is reluctant to surrender it. With a grunt, you wrench it free, the cold metal biting into your palm. The key is heavy, its bow shaped like a snarling wolf’s head, the teeth of the bit jagged and uneven. As you lift it, the skittering in the tunnel ahead grows louder, more insistent, as though the key’s removal has disturbed something waiting in the dark. The fungi’s glow flickers, casting the key’s shadow long and twisted across the stone.",
+    "expect": []
+  },
+  {
+    "label": "iron/scene-126",
+    "id": 126,
+    "story": "The Iron Gate Descends",
+    "room": "obsidian maw",
+    "typed": "continue to the obsidian maw",
+    "protagonist": [
+      "Veythra the Silent",
+      "The River’s Shadow",
+      "Veythra",
+      "Silent"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "The first thing that strikes you is the cold—sharp, sudden, like stepping into a tomb. Then comes the scent: damp stone and iron, thick enough to taste, and beneath it, the faint, cloying sweetness of the glowing fungi. The skittering stops the moment your boot touches the slick obsidian, replaced by a silence so absolute it feels like the tunnel itself is holding its breath. The blue-green light wavers, as if disturbed by your presence, casting long, wavering shadows that seem to creep along the walls.",
+    "expect": []
+  },
+  {
+    "label": "iron/scene-127",
+    "id": 127,
+    "story": "The Iron Gate Descends",
+    "room": "Iron Gate Chamber",
+    "typed": "go back to the Iron Gate",
+    "protagonist": [
+      "Veythra the Silent",
+      "The River’s Shadow",
+      "Veythra",
+      "Silent"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "The iron gate still lies half-buried, its teeth unchanged, but the groove in the stone now glistens with fresh moisture, as if something wet has passed through recently. The fungi’s glow pulses faintly, no brighter than before, and the skittering from the tunnel ahead has grown louder, more insistent. The air feels heavier, the taste of iron sharper, as if the chamber itself is holding its breath. You stand where you stood moments ago, but the shadows seem to press closer now, as though the darkness has taken a step forward.",
+    "expect": []
+  },
+  {
+    "label": "iron/scene-128",
+    "id": 128,
+    "story": "The Iron Gate Descends",
+    "room": "Iron Gate Chamber",
+    "typed": "take prince's signet ring",
+    "protagonist": [
+      "Veythra the Silent",
+      "The River’s Shadow",
+      "Veythra",
+      "Silent"
+    ],
+    "moved": false,
+    "still_run": 1,
+    "present": [],
+    "verdict": "bad",
+    "note": "picking up the signet ring but it is already in my possession",
+    "text": "Your fingers close around the prince’s signet ring, but it is already in your possession, the cold gold heavy against your palm. The ring’s royal crest presses into your skin, a silent reminder of the Church’s decree. The mud from the groove clings to your gauntlet, the damp seeping through the metal as if the earth itself resists your touch. The skittering in the tunnel ahead grows louder, as if sensing your hesitation.",
+    "expect": []
+  },
+  {
+    "label": "iron/scene-129",
+    "id": 129,
+    "story": "The Iron Gate Descends",
+    "room": "Iron Gate Chamber",
+    "typed": "take iron key",
+    "protagonist": [
+      "Veythra the Silent",
+      "The River’s Shadow",
+      "Veythra",
+      "Silent"
+    ],
+    "moved": false,
+    "still_run": 2,
+    "present": [],
+    "verdict": "bad",
+    "note": "picking up the iron key but it is already in my possession",
+    "text": "Your fingers tighten around the iron key, but it is already in your possession, its rusted surface biting into your palm. The serpent’s head of its bow presses against your gauntlet, a cold reminder of its presence. The skittering in the tunnel ahead pauses, as if the creatures within sense your stillness, then resumes with a renewed urgency. The damp air clings to you, the weight of the Church’s decree and the prince’s fate pressing down like the stone above.",
+    "expect": []
+  },
+  {
+    "label": "iron/scene-130",
+    "id": 130,
+    "story": "The Iron Gate Descends",
+    "room": "obsidian maw",
+    "typed": "go obsidian maw",
+    "protagonist": [
+      "Veythra the Silent",
+      "The River’s Shadow",
+      "Veythra",
+      "Silent"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The obsidian walls glisten with the same damp sheen as before, but the skittering has grown louder, more insistent, as if whatever lurks in the dark has learned your scent. The fungi’s glow pulses faintly, unchanged, casting the same sickly light over the slick floor. The metallic tang in the air is sharper now, and the cold bites deeper, as though the tunnel itself has taken note of your return. You stand in the same silence, but it feels thinner, stretched taut by the unseen movement ahead.",
+    "expect": []
+  },
+  {
+    "label": "iron/scene-131",
+    "id": 131,
+    "story": "The Iron Gate Descends",
+    "room": "Blackfang Tunnel",
+    "typed": "go to blackfang tunnel",
+    "protagonist": [
+      "Veythra the Silent",
+      "The River’s Shadow",
+      "Veythra",
+      "Silent"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": "good",
+    "note": null,
+    "text": "The first thing that strikes you is the sudden chill against your skin, as if the tunnel itself exhales a breath of damp, ancient air. The skittering sounds snap into focus—too many, too close—while the metallic tang in the air sharpens, like a blade dragged across stone. The faint vibration beneath your boots pulses once, slow and deliberate, as the ley line stirs beneath the obsidian floor. The glow of the fungi flickers weakly, as though something has passed between you and the light. You tighten your grip on your weapon, the cold draft curling around your legs like a warning.",
+    "expect": []
+  },
+  {
+    "label": "iron/scene-132",
+    "id": 132,
+    "story": "The Iron Gate Descends",
+    "room": "obsidian maw",
+    "typed": "go to the obsidian maw",
+    "protagonist": [
+      "Veythra the Silent",
+      "The River’s Shadow",
+      "Veythra",
+      "Silent"
+    ],
+    "moved": true,
+    "still_run": 0,
+    "present": [],
+    "verdict": null,
+    "note": null,
+    "text": "The obsidian walls still glisten with the same slow drips, but the metallic tang in the air is sharper now, as if something fresh has bled into the stone. The blue-green fungi pulse faintly, their light no brighter than before, yet the skittering from the depths has grown louder, more insistent—no longer testing, but waiting. The cold presses against your armor just as it did ten minutes ago, but the silence between the sounds feels heavier, as though the tunnel itself has taken a breath.",
     "expect": []
   }
 ]

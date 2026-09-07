@@ -378,6 +378,57 @@ namespace :game do
     end
   end
 
+  desc "Refresh the frozen corpus from the verdicts in this database. Usage: rake game:corpus, DRY_RUN=1 to see it first"
+  task corpus: :environment do
+    dry = ENV["DRY_RUN"].present?
+
+    puts "THE TURNS HE JUDGED, AND THE TURNS EITHER SIDE OF THEM, WRITTEN DOWN WITH THEIR RECORDS."
+    puts "#{Story::Scoreboard::Corpus::PATH} is the regression line; his verdicts are the only ground"
+    puts "truth this project has, and they live on one machine until they are captured. This merges by"
+    puts "scene: a row already there has its verdict and note brought up to date, a row that is not is"
+    puts "appended, and NOTHING IS EVER REMOVED. A captured passage and the facts beside it stay frozen;"
+    puts "a re-derivation that disagrees with one is reported below and written by nobody but a person."
+    puts "The facts come from Story::Audit's own readers and never from reading the prose. No model call."
+    puts "A new row arrives with an empty `expect`, so Story::Scoreboard::CorpusTest fails until every"
+    puts "flag it earns has been read and signed for. That failure is the point of it."
+    puts "DRY RUN: nothing is written." if dry
+    puts
+
+    result = Story::Scoreboard::Capture.new.run(dry_run: dry)
+
+    result.changes.each do |change|
+      verdict = change.verdict ? " [#{change.verdict}]" : ""
+      amended = change.was && change.was != change.verdict ? " (was #{change.was})" : ""
+      puts format("  %-8s %s%s%s", change.kind, change.label, verdict, amended)
+    end
+    puts if result.changed?
+
+    if result.changed?
+      puts "#{result.added.size} row(s) added, #{result.updated.size} row(s) updated, " \
+           "#{result.rows.size} in the file."
+    else
+      puts "Nothing to do: every judged turn and its neighbours are already in the corpus, unchanged."
+    end
+    puts "#{result.labelled} labelled turn(s): #{Playthrough::Feedback::VERDICTS.map { |v| "#{result.verdict_tally[v].to_i} #{v}" }.join(", ")}."
+    puts "Agreement prints as figures at #{Story::Scoreboard::MIN_VERDICTS} labelled turns; " \
+         "below that Story::Scoreboard states it UNESTABLISHED."
+    if result.held_out_verdicts.positive?
+      puts "#{result.held_out_verdicts} verdict(s) on #{Eval::HELD_OUT} were NOT captured: it is the held-out"
+      puts "  world (Eval::HELD_OUT), and EVALUATION.md forbids putting a held-out passage in a fixture."
+    end
+    if result.drifts.any?
+      puts
+      puts "#{result.drifts.size} captured value(s) the records would now derive differently. NOT WRITTEN:"
+      result.drifts.each do |drift|
+        puts "  #{drift.label} #{drift.field}: frozen #{drift.captured.inspect.truncate(60)}, " \
+             "now #{drift.now.inspect.truncate(60)}"
+      end
+      puts "  A frozen passage is the regression line. Judge each one before changing the fixture by hand."
+    end
+    puts
+    puts "Then: rake game:score CORPUS=corpus, and SAVE=1 to re-baseline once the flags are signed for."
+  end
+
   desc "Score the game against the errors that can be checked. Usage: rake game:score, SAVE=1 to re-baseline, CORPUS=database|corpus|transitions"
   task :score, [ :story_id ] => :environment do |t, args|
     boards =

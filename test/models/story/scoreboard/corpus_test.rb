@@ -1,21 +1,46 @@
 require "test_helper"
 
-# THE PRECISION OF THE CHECKS, MEASURED ON 92 REAL PASSAGES AND PINNED HERE.
+# THE PRECISION OF THE CHECKS, MEASURED ON REAL PASSAGES AND PINNED HERE.
 #
-# `test/fixtures/files/eval_corpus.json` is every stored `Scene` description and
-# `Interaction` action from the two worlds the captain has actually played --
-# 68 passages -- plus the 24 narrations `narration_corpus.json` already holds,
-# which two remote models wrote against six commands designed to break a world's
-# laws. Nothing in it was written for this test.
+# `test/fixtures/files/eval_corpus.json` is real prose out of the captain's own
+# database with the records around it written down, plus the 24 narrations
+# `narration_corpus.json` already holds, which two remote models wrote against
+# six commands designed to break a world's laws. Nothing in it was written for
+# this test. `rake game:corpus` (`Story::Scoreboard::Capture`) is what grows it,
+# and its header is the rule for how.
 #
 # THE MEASUREMENT, as it stands:
 #
-#   passages                              92   (68 played, 24 from the lab sweep)
-#   flags raised                          19
+#   passages                             149   (125 played, 24 from the lab sweep)
+#   flags raised                          29
 #   false positives                        0   -- every one read and signed for below
 #   passages from the lab sweep flagged    0   -- the hardest negative case there is
-#   turns the captain judged                3   -- and all three are caught, each by
-#                                              a different check
+#   turns the captain judged              43   -- 7 of them caught
+#
+# WHAT THE REFRESH OF 2026-09-07 ADDED, and it is the whole reason the counts
+# above are not the ones this file was born with: 57 passages, taken from his
+# 43 verdicts and the turns either side of them. They earned 10 new flags, all
+# `third_person_protagonist`, over 5 turns -- and each turn earns two because
+# the same sentence trips both readings, the name as a sentence subject and the
+# short form as a coreference:
+#
+#   unrecorded/scene-65   "Odile Vance stands halfway along the hall, her back
+#                         to you" -- he marked it `bad`, and his note says
+#                         "protagonist is referred to in the 3rd person".
+#   unrecorded/scene-66   "Odile Vance stands at the far table, her back to
+#                         you" -- `bad`, "more 3rd person protagonist".
+#   unrecorded/scene-105  "Odile Vance stands near the door to Ward Office 12
+#                         ... as though she has been waiting for you to
+#                         return" -- `bad`, "3rd person protagonist".
+#   unrecorded/scene-108  "Odile Vance stands by the shelves, her back to you"
+#                         -- `bad`, "protagonist 3rd person".
+#   unrecorded/scene-109  "Odile Vance stands near the table ... the creak of
+#                         the floorboards under your feet" -- unjudged, and the
+#                         same sentence as the four he did judge: the narration
+#                         puts the player in the room opposite herself.
+#
+# Every one of them is the error the check was built for, in the most literal
+# form it takes, and four of the five carry his own words saying so.
 #
 # WHY IT IS A TEST AND NOT A LINE IN A PULL REQUEST, in the words
 # `Story::AuditPrecisionTest` already uses: a false-positive rate that lives in
@@ -32,9 +57,9 @@ class Story::Scoreboard::CorpusTest < ActiveSupport::TestCase
   end
 
   test "the corpus is what it claims to be" do
-    assert_equal 92, @corpus.passages.size
+    assert_equal 149, @corpus.passages.size
     assert_equal 24, @corpus.passages.count { |passage| passage.label.start_with?("lab/") }
-    assert_equal 68, @corpus.passages.count { |passage| !passage.label.start_with?("lab/") }
+    assert_equal 125, @corpus.passages.count { |passage| !passage.label.start_with?("lab/") }
     assert(@corpus.passages.all? { |passage| passage.text.present? })
     assert_equal @corpus.passages.size, @corpus.passages.map(&:label).uniq.size
   end
@@ -55,7 +80,7 @@ class Story::Scoreboard::CorpusTest < ActiveSupport::TestCase
   end
 
   test "the flags divide the way the measurement says they do" do
-    assert_equal({ third_person_protagonist: 12, truncated_prose: 4, still_run: 2, unrecorded_departure: 1 },
+    assert_equal({ third_person_protagonist: 22, truncated_prose: 4, still_run: 2, unrecorded_departure: 1 },
                  @corpus.flags.group_by(&:code).transform_values(&:size))
   end
 
@@ -70,28 +95,116 @@ class Story::Scoreboard::CorpusTest < ActiveSupport::TestCase
     assert_empty flagged, flagged.map { |flag| "#{flag.scene.label}: #{flag.headline}" }.join("\n")
   end
 
-  # THE VALIDATION THE WHOLE THING RESTS ON. The captain marked three turns
-  # while playing; a scoreboard that cannot catch the errors he noticed unaided
-  # would be measuring something else.
-  test "every turn the captain judged is caught, each by a different check" do
+  # THE VALIDATION THE WHOLE THING RESTS ON, AND THE HALF OF IT THAT IS STILL
+  # MISSING. He judged 43 turns while playing; 7 of them are caught, each by the
+  # check the error belongs to. A scoreboard that caught none of the errors he
+  # noticed unaided would be measuring something else.
+  #
+  # THE OTHER 36 ARE NOT A FAILURE OF THIS FIXTURE AND MUST NOT BE EDITED AWAY.
+  # 16 of them he called `good`, and a check firing on those would be the bad
+  # outcome. Most of the rest are one complaint in his own words -- *"I just
+  # picked it up. Why does it say I already hold it?"* -- which is
+  # `take_denied`, a check this corpus CANNOT ANSWER because a frozen passage
+  # carries the state around the prose and never the change the turn made. It
+  # is answered on `Story::Scoreboard::Transitions`, and that split is pinned
+  # below. `Story::Scoreboard#missed_verdicts` is where a reader sees the rest.
+  test "the turns the captain judged that a check catches, each by the check the error belongs to" do
     judged = @corpus.passages.select { |passage| passage.verdict.present? }
     by_label = @corpus.flags.group_by { |flag| flag.scene.label }
 
-    assert_equal 3, judged.size
+    assert_equal 43, judged.size
+    assert_equal({ "good" => 16, "bad" => 24, "weak" => 3 }, judged.map(&:verdict).tally)
 
-    caught = judged.to_h { |passage| [ passage.label, by_label.fetch(passage.label, []).map(&:code) ] }
+    caught = judged.filter_map do |passage|
+      flags = by_label[passage.label]
+      [ passage.label, flags.map(&:code).uniq ] if flags
+    end.to_h
 
     assert_equal({ "unrecorded/scene-59" => [ :truncated_prose ],
                    "unrecorded/scene-63" => [ :still_run ],
-                   "unrecorded/scene-64" => [ :unrecorded_departure ] }, caught)
+                   "unrecorded/scene-64" => [ :unrecorded_departure ],
+                   "unrecorded/scene-65" => [ :third_person_protagonist ],
+                   "unrecorded/scene-66" => [ :third_person_protagonist ],
+                   "unrecorded/scene-105" => [ :third_person_protagonist ],
+                   "unrecorded/scene-108" => [ :third_person_protagonist ] }, caught)
   end
 
-  test "the three verdicts are his, with the note that explains each" do
-    verdicts = @corpus.verdicts.transform_keys(&:label)
+  # NOTHING A CHECK CATCHES IS A TURN HE LIKED. The figure that would discredit
+  # the board outright, pinned on its own so it cannot be lost inside the map
+  # above: every verdict on a flagged turn is `bad` or `weak`.
+  test "no check fires on a turn the captain called good" do
+    flagged = @corpus.flags.map(&:scene).uniq.select { |passage| passage.verdict.present? }
 
-    assert_equal({ "unrecorded/scene-59" => "bad", "unrecorded/scene-63" => "weak",
-                   "unrecorded/scene-64" => "bad" }, verdicts)
+    assert_equal({ "bad" => 6, "weak" => 1 }, flagged.map(&:verdict).tally)
+  end
+
+  # HIS VERDICTS, ALL OF THEM, KEYED BY THE TURN THEY ARE ON -- the ground truth
+  # the whole instrument is measured against, written out in full so a capture
+  # that dropped or reassigned one fails here rather than quietly moving a rate.
+  # `rake game:corpus` writes these and never `expect`; see its header.
+  HIS_VERDICTS = {
+    "iron/scene-123" => "good",
+    "iron/scene-124" => "good",
+    "iron/scene-126" => "good",
+    "iron/scene-127" => "good",
+    "iron/scene-128" => "bad",
+    "iron/scene-129" => "bad",
+    "iron/scene-131" => "good",
+    "lunar/scene-70" => "weak",
+    "lunar/scene-73" => "bad",
+    "lunar/scene-74" => "good",
+    "lunar/scene-75" => "good",
+    "lunar/scene-77" => "bad",
+    "lunar/scene-78" => "bad",
+    "lunar/scene-79" => "bad",
+    "lunar/scene-80" => "bad",
+    "lunar/scene-82" => "bad",
+    "lunar/scene-83" => "bad",
+    "lunar/scene-84" => "bad",
+    "lunar/scene-118" => "good",
+    "lunar/scene-119" => "good",
+    "unrecorded/scene-19" => "good",
+    "unrecorded/scene-59" => "bad",
+    "unrecorded/scene-63" => "weak",
+    "unrecorded/scene-64" => "bad",
+    "unrecorded/scene-65" => "bad",
+    "unrecorded/scene-66" => "bad",
+    "unrecorded/scene-69" => "bad",
+    "unrecorded/scene-87" => "good",
+    "unrecorded/scene-88" => "bad",
+    "unrecorded/scene-89" => "bad",
+    "unrecorded/scene-91" => "bad",
+    "unrecorded/scene-92" => "bad",
+    "unrecorded/scene-93" => "weak",
+    "unrecorded/scene-94" => "bad",
+    "unrecorded/scene-96" => "good",
+    "unrecorded/scene-98" => "good",
+    "unrecorded/scene-99" => "good",
+    "unrecorded/scene-100" => "bad",
+    "unrecorded/scene-103" => "bad",
+    "unrecorded/scene-105" => "bad",
+    "unrecorded/scene-106" => "good",
+    "unrecorded/scene-107" => "good",
+    "unrecorded/scene-108" => "bad"
+  }.freeze
+
+  test "the verdicts are his, and the notes that explain them come with them" do
+    assert_equal HIS_VERDICTS, @corpus.verdicts.transform_keys(&:label)
+
     assert_equal "truncated", @corpus.passages.find { |p| p.label == "unrecorded/scene-59" }.note
+    assert_equal "3rd person protagonist", @corpus.passages.find { |p| p.label == "unrecorded/scene-105" }.note
+  end
+
+  # THIRTY IS WHERE `Story::Scoreboard` STOPS SAYING UNESTABLISHED and starts
+  # printing agreement as figures. It was 3 verdicts until the refresh of
+  # 2026-09-07 and the threshold had never been crossed; this pins that it now
+  # is, so a capture that lost verdicts shows up as the report going quiet again
+  # rather than as nothing at all.
+  test "the corpus carries enough verdicts for agreement to be printed as figures" do
+    board = Story::Scoreboard.corpus
+
+    assert_operator board.labelled, :>=, Story::Scoreboard::MIN_VERDICTS
+    assert_predicate board, :agreement_established?
   end
 
   # A CHECK THE CORPUS CANNOT ANSWER IS UNAVAILABLE, NOT CLEAN. Five of the
@@ -149,10 +262,10 @@ class Story::Scoreboard::CorpusTest < ActiveSupport::TestCase
   # every passage: an `Interaction#action` declares no protagonist and has no
   # turn before it.
   test "each check is scored out of the passages that could have answered it" do
-    assert_equal 92, @corpus.judgeable_for(:truncated_prose)
-    assert_equal 78, @corpus.judgeable_for(:third_person_protagonist)
-    assert_equal 74, @corpus.judgeable_for(:unrecorded_departure)
-    assert_equal 74, @corpus.judgeable_for(:still_run)
+    assert_equal 149, @corpus.judgeable_for(:truncated_prose)
+    assert_equal 133, @corpus.judgeable_for(:third_person_protagonist)
+    assert_equal 128, @corpus.judgeable_for(:unrecorded_departure)
+    assert_equal 128, @corpus.judgeable_for(:still_run)
   end
 
   # THE THRESHOLD, RE-DERIVED RATHER THAN TRUSTED. `Story::Audit::STILL_RUN` is
@@ -162,13 +275,13 @@ class Story::Scoreboard::CorpusTest < ActiveSupport::TestCase
   # change makes a different threshold the right answer, this fails and the
   # constant gets re-argued rather than nudged.
   test "four is the longest still run that still catches the turn he called weak" do
-    his_turn = @corpus.passages.find { |passage| passage.verdict == "weak" }
+    his_turn = @corpus.passages.find { |passage| passage.label == "unrecorded/scene-63" }
     sensitivity = (2..6).to_h do |threshold|
       runs = @corpus.passages.select { |passage| passage.still_run >= threshold && passage.present.any? }
       [ threshold, runs ]
     end
 
-    assert_equal({ 2 => 10, 3 => 5, 4 => 2, 5 => 0, 6 => 0 }, sensitivity.transform_values(&:size))
+    assert_equal({ 2 => 11, 3 => 6, 4 => 2, 5 => 0, 6 => 0 }, sensitivity.transform_values(&:size))
     assert_includes sensitivity.fetch(Story::Audit::STILL_RUN), his_turn
     assert_empty sensitivity.fetch(Story::Audit::STILL_RUN + 1),
                  "a longer run than #{Story::Audit::STILL_RUN} catches nothing, so it cannot be the threshold"
@@ -176,7 +289,7 @@ class Story::Scoreboard::CorpusTest < ActiveSupport::TestCase
 
   test "reading the corpus touches no table and needs no database" do
     ActiveRecord::Base.connection.stub(:execute, ->(*) { raise "the frozen corpus must not query" }) do
-      assert_equal 19, Story::Scoreboard::Corpus.load.flags.size
+      assert_equal 29, Story::Scoreboard::Corpus.load.flags.size
     end
   end
 

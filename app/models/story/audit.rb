@@ -491,6 +491,32 @@ class Story::Audit
     "#{scanned} scenes: " + counts.map { |noun, found| "#{found.size} #{noun.pluralize(found.size)}" }.join(", ")
   end
 
+  # THE FOUR FACTS A FROZEN PASSAGE CARRIES, READ BY THE CHECKS' OWN READERS.
+  #
+  # `Story::Scoreboard::Capture` writes a row of `test/fixtures/files/eval_corpus.json`
+  # out of this and nothing else, so a captured passage is judged on the same
+  # answers the live database would give it. The readers below are private
+  # because nothing may re-run a check from outside; the ANSWERS they compute
+  # are not, because a corpus that re-implemented them would be measuring a
+  # second reading of the records and could drift from this one silently. That
+  # is the same objection `Story::Audit::Prose` exists to answer on the text
+  # half, from the record half.
+  #
+  # `moved` is nil for a scene with no turn before it, which is how
+  # `Story::Scoreboard::Corpus::Passage#follows_a_turn?` tells a first turn from
+  # a turn that stayed put. `present` is names rather than rows, because a
+  # frozen passage has no `Character` to point at.
+  Facts = Data.define(:protagonist, :moved, :still_run, :present)
+
+  def facts_for(scene)
+    previous = scene.previous_scene
+
+    Facts.new(protagonist: protagonist_names,
+              moved: previous.nil? ? nil : left_the_room?(scene, previous),
+              still_run: still_run_length(scene),
+              present: cast_recorded_by(scene).map(&:fullname))
+  end
+
   private
 
   def run
