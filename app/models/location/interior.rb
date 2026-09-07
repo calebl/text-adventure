@@ -49,6 +49,34 @@
 # and a room at its cap has nowhere to attach it -- that is slice 4's problem
 # and this is what stops this file creating it.
 #
+# --- which storeys there are, and which way is down -------------------------
+#
+# AN INTERIOR MAY DESCEND. A place is laid out on storeys `-BASEMENTS` through
+# `STOREYS - 1`, so a warren cut downward out of a tunnel and an inn with a
+# cellar are both things the records can now SAY -- which they could not before,
+# because this file numbered storeys upward from 0 and every deep floor came out
+# ABOVE the way in. `Location::Plan` could already read a negative storey (its
+# header's worked example is a stair down to storey -1) and `Story::Map` already
+# draws its storeys highest first; what was missing was a layout that wrote one.
+#
+# THE ENTRY ROOM IS ON STOREY 0 WHATEVER ELSE THE PLACE HAS. The way in is the
+# first room written and `.entry_room` reads it back as the lowest id, so the
+# ground floor is built FIRST and the basements last -- `#storey_order` is where
+# that is said and why. A cellar is somewhere you go DOWN to from the way in,
+# which is the whole of what a cellar is.
+#
+# AND A STAIR JOINS TWO ADJACENT STOREYS IN BOTH DIRECTIONS ALREADY, because a
+# door is two rows (the ruling of 2026-09-03) and a stair is a door: the row
+# from the cellar to the hall and the row from the hall to the cellar are one
+# edge said twice, and which of them is "down" is read off the two boxes rather
+# than off a label (`Location::Plan#way_for`). So nothing here writes a
+# direction and nothing downstream has to trust one.
+#
+# WHAT DOES NOT DESCEND YET, said out loud: a GENERATED place. `BASEMENTS` is
+# zero-weighted, so `Location::Generator#lay_out_interior!` lays out exactly
+# what it laid out before -- see that constant for whose slice supplies a real
+# count, and `#basements` for why a range of one value is not even drawn.
+#
 # --- the shape of a storey --------------------------------------------------
 #
 # A GRID, AND NOT A BINARY SPACE PARTITION, which is the alternative that was
@@ -163,12 +191,40 @@ class Location::Interior
   # refused, because the footprint is the world's parameter and the world wins.
   MINIMUM_SIDE = 3
 
-  # HOW MANY FLOORS A PLACE COMES IN, and how many rooms one floor is divided
-  # into. Both are the engine's and neither is a target: the footprint decides
-  # what actually fits, and a place too small for the bottom of the room range
-  # holds fewer.
+  # HOW MANY FLOORS A PLACE COMES IN AT AND ABOVE THE GROUND, and how many rooms
+  # one floor is divided into. Both are the engine's and neither is a target:
+  # the footprint decides what actually fits, and a place too small for the
+  # bottom of the room range holds fewer.
+  #
+  # AT AND ABOVE, because `BASEMENTS` counts the other direction and the two are
+  # added: a place is laid out on storeys `-BASEMENTS .. STOREYS - 1`.
   STOREYS = (1..3).freeze
   ROOMS_PER_STOREY = (2..6).freeze
+
+  # HOW MANY STOREYS GO BELOW THE ENTRY, and it is `STOREYS`' counterpart in
+  # every respect: the engine's, rolled from one seeded `Roll`, and a count of
+  # planes rather than a height (`Location::Box`). A place laid out with two of
+  # them has rooms on storeys -2 and -1 under the ground floor, and the stairs
+  # that bind them are the stairs that bind any two adjacent storeys.
+  #
+  # WHY IT IS ZERO-WEIGHTED TODAY, which is the choice this file is making and
+  # not an oversight. A GENERATED place gets no basement, so every world already
+  # laid out lays out the same way after this change as before it -- the range
+  # holds one value, `#basements` does not draw at all, and no draw after it
+  # moves. What supplies a real count is the stage-one pick of `ta-interior-entry`
+  # (the captain's Call 7 answer C1 of 2026-09-07: a model may pick "storeys
+  # below" from a closed list), which is a slice of its own and is deliberately
+  # not front-run here. What this slice buys is the other half of that pick: a
+  # layout that has somewhere to WRITE the answer.
+  #
+  # SO THE ONE WAY TO GET A BASEMENT TODAY IS TO ASK FOR ONE -- `.lay_out!`'s
+  # `below:`, which is how `lib/engine_sweep/worlds/the-quay-house.yml`'s bonded
+  # cellar was written and is the "a world supplies parameters" channel until
+  # the pick exists. A seed file's own channel is unchanged and needs nothing
+  # new: `z` has always been a signed integer on `locations` and
+  # `WorldSeed::Loader` has always accepted one, so a file may write `z: -1`
+  # outright.
+  BASEMENTS = (0..0).freeze
 
   # HOW BIG A PLACE NOBODY SIZED IS, on each side. A building rather than a
   # district: the range is bounded above so an interior stays a thing a player
@@ -252,11 +308,17 @@ class Location::Interior
 
   attr_reader :place, :story
 
-  def self.lay_out!(place) = new(place).lay_out!
+  # `below:` IS THE ONE PARAMETER A CALLER MAY OVERRULE, and it is here rather
+  # than on the place for `BASEMENTS`' reason: nothing writes a count of
+  # basements to a column yet, and a parameter with no world to supply it is a
+  # column the doctor would have to report on. Nil means ROLL IT, which is what
+  # every caller in the app passes by passing nothing.
+  def self.lay_out!(place, below: nil) = new(place, below: below).lay_out!
 
-  def initialize(place)
+  def initialize(place, below: nil)
     @place = place
     @story = place.story
+    @below = validated_below(below)
   end
 
   # THE WHOLE INTERIOR, IN ONE TRANSACTION. A place half laid out is worse than
@@ -277,7 +339,7 @@ class Location::Interior
       storeys = storey_plans.map { |boxes| create_rooms!(boxes) }
 
       storeys.each { |storey| open_backbone!(storey) }
-      storeys.each_cons(2) { |below, above| raise_stairs!(below, above) }
+      by_height(storeys).each_cons(2) { |below, above| raise_stairs!(below, above) }
       storeys.each { |storey| open_extra_doors!(storey) }
       close_connectivity!(storeys.flatten)
     end
@@ -308,7 +370,71 @@ class Location::Interior
   # EVERY STOREY'S BOXES, in serpentine order -- which is the order the rooms are
   # created in and therefore the order the backbone's doors are opened in.
   def storey_plans
-    (0...Roll.one_of(STOREYS.to_a, rng: rng)).map { |z| storey_boxes(z) }
+    storey_order(Roll.one_of(STOREYS.to_a, rng: rng), basements).map { |z| storey_boxes(z) }
+  end
+
+  # WHICH STOREYS THERE ARE, AND IN WHAT ORDER THEY ARE BUILT: the ground floor
+  # first, then up, then down. The SET is `-below .. above - 1`; the ORDER is
+  # this, and the order is load-bearing twice over.
+  #
+  # THE ENTRY ROOM IS THE FIRST ROOM WRITTEN, and `.entry_room` reads it back off
+  # the records as the lowest id -- so the way in has to be a room of the GROUND
+  # floor whatever else the place has, or a building with a cellar would have its
+  # street door in the cellar. Storey 0 first is what makes that true by
+  # construction rather than by a column. `#close_connectivity!` leans on the
+  # same thing when it takes `rooms.first` as the entry.
+  #
+  # AND A PLACE WITH NO BASEMENTS DRAWS EXACTLY WHAT IT DREW BEFORE THIS FILE
+  # COULD DESCEND. `(0...above)` is what this method used to be, and the
+  # basements are appended rather than mixed in -- so every draw of every storey
+  # of every world already laid out lands in the order it landed in then. See
+  # `BASEMENTS` for the other half of that guarantee, which is that a generated
+  # place has none.
+  #
+  # THE STAIRS ARE NOT BUILT IN THIS ORDER, because they are the one thing that
+  # is a question about HEIGHT rather than about the order rooms were written in
+  # -- `#by_height` is where that is said.
+  def storey_order(above, below) = (0...above).to_a + (-below..-1).to_a
+
+  # HOW MANY STOREYS GO BELOW: what the caller asked for, or a roll. See
+  # `BASEMENTS` for why the roll is zero-weighted today.
+  #
+  # A RANGE OF ONE VALUE IS NOT DRAWN AT ALL, and that is a determinism rule
+  # rather than a saving. `Roll.one_of` with one choice happens not to advance
+  # the generator on the Ruby this repo runs, but "happens not to" is not
+  # something a world's re-derivability may rest on: every draw after this one
+  # would move if it ever started to. So the draw is skipped where there is
+  # nothing to decide, and the whole of what widening `BASEMENTS` costs is
+  # stated in one place -- it starts drawing, and the layouts move.
+  def basements
+    return @below unless @below.nil?
+    return BASEMENTS.min if BASEMENTS.min == BASEMENTS.max
+
+    Roll.one_of(BASEMENTS.to_a, rng: rng)
+  end
+
+  # THE STOREYS IN HEIGHT ORDER, LOWEST FIRST, which is the order STAIRS are
+  # built in and the only place this file reads a storey as a height rather than
+  # as an index. `#raise_stairs!` joins two ADJACENT storeys, and adjacency is a
+  # fact about the numbers: with a cellar the pairs are (-1, 0) and (0, 1), and
+  # taking the storeys in the order the ROOMS were written would have paired the
+  # top floor with the cellar and left the cellar unreachable.
+  #
+  # IT IS THE IDENTITY FOR A PLACE WITH NO BASEMENTS, whose storeys were written
+  # from the ground up already -- so nothing about an existing layout's stairs
+  # moves. `#storey_order` carries the rest of that argument.
+  def by_height(storeys) = storeys.sort_by { |storey| storey.first.z }
+
+  # A COUNT OF BASEMENTS, OR NIL. Refused rather than coerced, for
+  # `Location::Interior`'s own reason about half-written geometry: a caller that
+  # passed a string or a negative would otherwise get a building whose storeys
+  # nobody asked for, and no record afterwards would say why.
+  def validated_below(below)
+    return nil if below.nil?
+    raise ArgumentError, "below is a whole number of storeys, got #{below.inspect}" unless below.is_a?(Integer)
+    raise ArgumentError, "below is a count and not a storey index, got #{below}" if below.negative?
+
+    below
   end
 
   # ONE FLOOR, DIVIDED. The grid is rolled first and the room sizes second, so a
@@ -446,11 +572,19 @@ class Location::Interior
     storey.each_cons(2) { |one, other| connect!(one, other, WALKING) }
   end
 
-  # THE WAYS UP. A stairwell joins a room on one floor to the room DIRECTLY
-  # ABOVE PART OF IT -- `Location::Box#shares_ground?`, which is the whole of
-  # what the captain's third ruling means by floors being kept aligned. Both
-  # storeys tile the same footprint, so every room on the lower floor has at
-  # least one room above it and a candidate always exists.
+  # THE WAYS UP -- AND SO THE WAYS DOWN, which is one set of rows and not two. A
+  # stairwell joins a room on one floor to the room DIRECTLY ABOVE PART OF IT --
+  # `Location::Box#shares_ground?`, which is the whole of what the captain's
+  # third ruling means by floors being kept aligned. Both storeys tile the same
+  # footprint, so every room on the lower floor has at least one room above it
+  # and a candidate always exists.
+  #
+  # `below` AND `above` ARE THE TWO STOREYS IN HEIGHT ORDER and never in the
+  # order the rooms were written: `#by_height` is what hands them over that way,
+  # so a cellar is paired with the ground floor rather than with the roof. The
+  # pair is symmetric in what it WRITES -- a door is two rows -- so the naming
+  # here is about which candidates are searched and not about a direction going
+  # on a record.
   def raise_stairs!(below, above)
     Roll.one_of(STAIRWELLS.to_a, rng: rng).times do
       candidates = below.product(above).select { |one, other| stairs_possible?(one, other) }

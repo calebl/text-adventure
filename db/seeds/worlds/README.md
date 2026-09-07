@@ -623,6 +623,12 @@ locations:
 - **`z` is a storey index, not a height.** 2.5D: each floor is its own plane and
   a stair is an ordinary connection with `travel_method: taking stairs`. The
   same rectangle on two storeys is a building with two floors, not an overlap.
+  It is **signed**: `0` is the ground floor — the storey `Location::Interior`
+  puts a place's way in on — `1` the floor above it and `-1` the cellar. A file
+  may write a negative storey outright, and `Location::Interior` lays one out
+  too — see `Location::Interior::BASEMENTS` for which places get one, and
+  `lib/engine_sweep/worlds/the-quay-house.yml`'s bonded cellar for a laid-out
+  place that spans both directions from its way in.
 - **The intervals are half-open.** A room at `x: 0` `width: 7` occupies 0–6, so
   a room at `x: 7` shares its wall and does not overlap it.
 - Both are **omitted rather than written out** on export, like `mobile` and
@@ -1056,8 +1062,9 @@ Two, and each one is out of this directory for a stated reason rather than by
 oversight — `db/seeds.rb` loads everything in here, so a file here is a world
 every fresh clone and every development database gains.
 
-- `lib/engine_sweep/worlds/the-quay-house.yml` — a place with its inside laid
-  out, for the sweep script that walks one. `EngineSweep::WORLDS`.
+- `lib/engine_sweep/worlds/the-quay-house.yml` — two places with their insides
+  laid out, one of them with storeys below its own way in, for the sweep
+  scripts that walk them. `EngineSweep::WORLDS`.
 - `lib/engine_sweep/worlds/the-iron-gate-descends.yml` — a **generated** world,
   exported with `rake game:export` and then repaired by hand until its own
   premise was reachable, and the first generated world with an offline test.

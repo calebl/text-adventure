@@ -100,6 +100,37 @@ class Location::PlanTest < ActiveSupport::TestCase
     assert_includes plan_for(loft).to_prompt, "a stair down to the taproom, on storey 0"
   end
 
+  # AND IT SAYS THE SAME THING OF A CELLAR, on a NEGATIVE storey. This class
+  # could always read one -- `Way#up?` compares the two storeys rather than
+  # trusting a label, and this file's own worked example has said "on storey -1"
+  # since it was written -- but nothing in the app could WRITE one until
+  # `Location::Interior::BASEMENTS` existed, so the sentence had never been
+  # asserted of a storey below the ground. It is now, because a world has one
+  # (`lib/engine_sweep/worlds/the-quay-house.yml`'s bonded cellar).
+  test "a stair down to a storey below the ground says down, and names the negative storey" do
+    hall = room("the hall", x: 0, y: 0, z: 0, width: 6, depth: 4)
+    cellar = room("the cellar", x: 0, y: 0, z: -1, width: 6, depth: 4)
+    join!(hall, cellar, travel_method: Location::Interior::STAIRS)
+
+    assert_includes plan_for(hall).to_prompt, "a stair down to the cellar, on storey -1"
+    assert_includes plan_for(cellar).to_prompt, "a stair up to the hall, on storey 0"
+  end
+
+  # THE FRAME IS STATED WHEREVER THE ROOM STANDS, which is what stops a model
+  # reading -1 as a height in metres or as a floor of the world. The sentence is
+  # unchanged from the one a ground-floor room gets -- deliberately, because
+  # `storey 0 is the ground floor` plus a signed index is the whole of what the
+  # records know, and no prompt wording moved in the slice that made -1 possible.
+  test "a room below the ground still has the storey frame read out to it" do
+    room("the hall", x: 0, y: 0, z: 0, width: 6, depth: 4)
+    cellar = room("the cellar", x: 0, y: 0, z: -1, width: 6, depth: 4)
+
+    assert_includes plan_for(cellar).to_prompt,
+                    "It is on storey -1 of The Rusted Anchor, which is 12 by 8 paces across; " \
+                    "storey 0 is the ground floor."
+    assert_equal(-1, plan_for(cellar).to_h["storey"])
+  end
+
   # WHERE THE STAIRWELL IS, WHEN THE RECORDS PLACE IT. There is no stairwell
   # record: what there is, is the ground the two rooms share, and a bearing is
   # named only when that ground lies plainly in one end of the room.
@@ -227,10 +258,16 @@ class Location::PlanTest < ActiveSupport::TestCase
   # rooms to reach a shape; this one takes `Location::Interior`'s own output and
   # asserts that every sentence about it is true of the boxes and the rows --
   # which is what stops this class and the layout generator drifting apart.
+  #
+  # AND IT IS TAKEN FROM A BUILDING THAT DESCENDS, so the stair sentences cover
+  # both directions off one layout: `below: 1` puts rooms under the entry, and
+  # every stair out of the ground floor is then a stair somebody wrote "down"
+  # about.
   test "every room of a laid-out building is described by its own records" do
     place = create(:location, :stub, story: @story, name: "The Custom House", width: 14, depth: 10)
-    Location::Interior.lay_out!(place)
+    Location::Interior.lay_out!(place, below: 1)
 
+    assert_includes place.child_locations.map(&:z), -1, "the building this reads has a storey below its entry"
     place.child_locations.order(:id).each do |built|
       plan = Location::Plan.for(built)
       facts = plan.to_h

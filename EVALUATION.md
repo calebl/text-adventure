@@ -1208,12 +1208,12 @@ built from — while what it READS is prose.
 `Story::Audit::Prose.size_claims` and `.storey_claims` are the grammars, and
 both were measured before they shipped: **0 detections over all 367 real
 passages in the four corpora**. Over the room prose of every world in the
-repository they detect 12 sentences — 10 the ENGINE itself wrote
-(`Location::Interior.teaser_for`) and 2 the hand-written descriptions of The
-Custom House rooms 3 and 4 in `lib/engine_sweep/worlds/the-quay-house.yml` —
-and every one of the 12 agrees with the box it was written from. A description
-that contradicts its plan in a sentence neither grammar reads is a miss, which
-is why this sits here rather than with the set comparisons.
+repository every sentence they detect agrees with the box it was written from,
+and almost all of them are prose the ENGINE itself wrote
+(`Location::Interior.teaser_for`) — `Story::Audit::Prose`'s `Size` header owns
+that measurement, including the count and what moves it. A description that
+contradicts its plan in a sentence neither grammar reads is a miss, which is why
+this sits here rather than with the set comparisons.
 
 **WHICH WALL A DOOR IS IN IS STATED IN THE PROMPT AND IS NOT CHECKED.** It was a
 check, `door_the_records_do_not_hold`, and it is now

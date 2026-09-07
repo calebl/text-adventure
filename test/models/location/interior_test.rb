@@ -12,6 +12,15 @@ require "test_helper"
 # the worlds it walks are the same worlds on every run and a failure lands on
 # whoever broke it rather than on whoever ran the suite next -- which is the rule
 # `test/factories/location_connections.rb` states in full.
+#
+# AND IT WALKS BUILDINGS THAT DESCEND. `BASEMENTS_TRIED` is cycled alongside the
+# footprints, so a third of the loop is places laid out with storeys BELOW the
+# entry -- and every guarantee below is therefore asserted of a cellar as well as
+# of a top floor. That is deliberate rather than thorough: the claims
+# `Location::Interior` makes are claims about every building it can lay out, and
+# since it can lay out one that goes down, a loop that only went up would be
+# grading half the file. The descent's own facts -- which storeys there are, and
+# where the entry stands among them -- are their own section further down.
 class Location::InteriorTest < ActiveSupport::TestCase
   # A range of footprints wide enough to reach every branch of the grid: one
   # too small to divide at all, one that fits a single row, and several that
@@ -23,6 +32,15 @@ class Location::InteriorTest < ActiveSupport::TestCase
   # enough that the loop stays a test rather than a benchmark.
   PLACES = 24
 
+  # HOW MANY STOREYS BELOW THE ENTRY THE LOOP ASKS FOR, cycled across the places
+  # it lays out. Nil is the ordinary call every caller in the app makes -- roll
+  # it, which with `BASEMENTS` zero-weighted means none -- and the other two are
+  # what a caller may overrule it with. Two is here rather than only one because
+  # a single basement makes "the storeys below" and "the storey below" the same
+  # sentence, and a bug that laid one cellar per place however many were asked
+  # for would pass a loop that never asked for two.
+  BASEMENTS_TRIED = [ nil, 1, 2 ].freeze
+
   def setup
     @story = create(:story)
   end
@@ -31,20 +49,36 @@ class Location::InteriorTest < ActiveSupport::TestCase
     create(:location, :stub, story: @story, name: name, width: width, depth: depth)
   end
 
-  def laid_out(**attributes)
+  def laid_out(below: nil, **attributes)
     place = place_with(**attributes)
-    Location::Interior.lay_out!(place)
+    Location::Interior.lay_out!(place, below: below)
     place.reload
   end
 
   def rooms_of(place) = place.child_locations.order(:id).to_a
 
   # Every interior this suite reasons about: a spread of footprints, each laid
-  # out several times over under different ids.
+  # out several times over under different ids, and a third of them with storeys
+  # below the entry. The two cycles are COPRIME WITH EACH OTHER -- seven
+  # footprints and three depths -- so the pair repeats only every twenty-one
+  # places and every footprint is tried at every depth, rather than one footprint
+  # always being the flat one. `PLACES` has no part in that: it decides how many
+  # of the twenty-one the loop gets through, and being a multiple of three costs
+  # the coverage nothing.
   def every_interior
     PLACES.times.map do |number|
       width, depth = FOOTPRINTS[number % FOOTPRINTS.size]
-      laid_out(width: width, depth: depth, name: "Place #{number}")
+      laid_out(width: width, depth: depth, name: "Place #{number}",
+               below: BASEMENTS_TRIED[number % BASEMENTS_TRIED.size])
+    end
+  end
+
+  # The same spread with nothing below any of them: what a GENERATED place is,
+  # and the loop for anything asserted about what the app itself lays out today.
+  def every_flat_interior
+    PLACES.times.map do |number|
+      width, depth = FOOTPRINTS[number % FOOTPRINTS.size]
+      laid_out(width: width, depth: depth, name: "Flat place #{number}")
     end
   end
 
@@ -219,11 +253,15 @@ class Location::InteriorTest < ActiveSupport::TestCase
     end
   end
 
+  # `STOREYS` COUNTS THE STOREYS AT AND ABOVE THE GROUND and not every storey
+  # there is, which is why the count is filtered before the range is asked. What
+  # is below is `BASEMENTS`' half of the same sentence and is asserted in the
+  # descent section, against the number the caller actually asked for.
   test "a storey holds no more rooms than the range allows" do
     every_interior.each do |place|
       storeys = rooms_of(place).group_by(&:z)
 
-      assert_includes Location::Interior::STOREYS, storeys.size
+      assert_includes Location::Interior::STOREYS, storeys.keys.count { |z| z >= 0 }
       storeys.each_value do |storey|
         assert_operator storey.size, :<=, Location::Interior::ROOMS_PER_STOREY.max
       end
@@ -292,11 +330,19 @@ class Location::InteriorTest < ActiveSupport::TestCase
     end
   end
 
-  # THE DOCTOR OVER EVERY BUILDING THIS FILE CAN ROLL. `Story::Doctor#geometry`
-  # is the other half of the same rules -- it reports the layouts a database
-  # carries, this one writes them -- so a generator that could produce a finding
-  # would be a generator arguing with the tool that grades it.
-  test "no interior the generator lays out is a finding" do
+  # THE DOCTOR OVER EVERY BUILDING THIS FILE CAN ROLL, DESCENDING ONES INCLUDED.
+  # `Story::Doctor#geometry` is the other half of the same rules -- it reports
+  # the layouts a database carries, this one writes them -- so a generator that
+  # could produce a finding would be a generator arguing with the tool that
+  # grades it.
+  #
+  # AND IT IS WHERE THE DOCTOR'S OWN HONESTY ABOUT DOWN IS ASSERTED. Two of the
+  # codes below read a storey -- `stairs_between_rooms_that_do_not_line_up` asks
+  # whether two rooms are one floor apart, and `interior_with_an_unreachable_room`
+  # walks the doors out of the entry -- and both were written before a layout
+  # could descend. A third of `#every_interior` now has a cellar, so a reader
+  # that only understood upward would report one here.
+  test "no interior this file lays out is a finding" do
     every_interior
 
     assert_empty Story::Doctor.new(@story).findings.map(&:code) & GEOMETRY_CODES
@@ -311,6 +357,121 @@ class Location::InteriorTest < ActiveSupport::TestCase
                       door_between_rooms_that_share_no_wall
                       thing_with_a_partial_position thing_positioned_in_a_room_with_no_box
                       thing_outside_the_room_it_is_in].freeze
+
+  # --- which storeys there are, and which way is down ------------------------
+  #
+  # THE FACTS THE PROPERTY LOOP ABOVE CANNOT STATE. Every guarantee up to here is
+  # asserted of a descending interior already, because a third of the loop is
+  # one -- what is left is the descent itself: which storeys a place is laid out
+  # on, where the entry stands among them, and that a GENERATED place still gets
+  # none of it.
+
+  test "a place laid out with basements has rooms below the entry storey" do
+    place = laid_out(width: 12, depth: 8, below: 2)
+
+    assert_equal [ -2, -1 ], rooms_of(place).map(&:z).uniq.select(&:negative?).sort
+  end
+
+  # THE STOREYS ARE `-below .. above - 1` AND THERE ARE NO GAPS IN THEM. A gap is
+  # the failure that would not announce itself: every room would still be
+  # reachable (`#close_connectivity!` would join the strays by stairs) and every
+  # box would still be legal, but a building with a storey 2 and no storey 1
+  # would be one nothing could describe.
+  test "the storeys of a place run unbroken from its deepest basement to its top floor" do
+    BASEMENTS_TRIED.compact.each do |below|
+      FOOTPRINTS.each_with_index do |(width, depth), number|
+        place = laid_out(width: width, depth: depth, below: below, name: "Deep #{below}-#{number}")
+        storeys = rooms_of(place).map(&:z).uniq.sort
+
+        assert_equal (storeys.first..storeys.last).to_a, storeys, "#{place.name} skips a storey"
+        assert_equal(-below, storeys.first, "#{place.name} does not go down as far as it was asked to")
+        assert_includes Location::Interior::STOREYS, storeys.count { |z| z >= 0 }
+      end
+    end
+  end
+
+  # THE WAY IN IS ON THE GROUND FLOOR WHATEVER ELSE THE PLACE HAS, which is the
+  # whole reason `#storey_order` builds storey 0 first. `.entry_room` reads the
+  # lowest id, so a layout that wrote its basements first would put a building's
+  # street door in its cellar -- and every reader that asks where a place is
+  # entered would agree with it, because the records would say so.
+  test "the entry room of a place that descends is still on storey 0" do
+    BASEMENTS_TRIED.compact.each do |below|
+      PLACES.times do |number|
+        place = laid_out(width: 12, depth: 8, below: below, name: "Entry #{below}-#{number}")
+
+        assert_equal 0, Location::Interior.entry_room(place).z, "#{place.name} is entered off its ground floor"
+      end
+    end
+  end
+
+  # A CELLAR IS REACHED BY GOING DOWN FROM SOMEWHERE, and the somewhere is a
+  # room one storey up: the stairs bind ADJACENT storeys, so the only way to
+  # storey -2 is through storey -1. Asserted as a walk over the records rather
+  # than as a count of edges, because "the cellar is joined on" is a statement
+  # about what a player can reach and not about how many stairwells were rolled.
+  test "every basement is reachable from the entry by stairs that go down one storey at a time" do
+    place = laid_out(width: 15, depth: 11, below: 2)
+    rooms = rooms_of(place)
+
+    assert_equal rooms.map(&:id).sort, reachable(rooms).map(&:id).sort
+    each_door(place) do |one, other, row|
+      next unless row.travel_method == Location::Interior::STAIRS
+
+      assert_equal 1, (one.z - other.z).abs, "#{one.name} and #{other.name} are not one storey apart"
+    end
+  end
+
+  # --- what a generated place still gets ------------------------------------
+  #
+  # `BASEMENTS` IS ZERO-WEIGHTED, and these two are what that sentence means in
+  # rows. Together they are the promise the slice made to every world already on
+  # disk: nothing a generated place lays out has moved.
+
+  test "a place nobody asked for basements gets none" do
+    every_flat_interior.each do |place|
+      assert_empty rooms_of(place).map(&:z).select(&:negative?), "#{place.name} grew a cellar nobody asked for"
+    end
+  end
+
+  # AND ASKING FOR NONE IS THE SAME CALL AS NOT ASKING. The stronger half: not
+  # merely that a flat place has no basement, but that the whole layout -- every
+  # box, every door, every distance -- is what it was before this file could
+  # descend. `#basements` skips the draw where there is nothing to decide, so
+  # `below: 0` and `below: nil` take the same draws in the same order and the
+  # two buildings are the same building down to the last pace.
+  test "laying a place out with no basements draws exactly what rolling for none draws" do
+    FOOTPRINTS.each_with_index do |(width, depth), number|
+      # The layout is keyed on the place's id, so the two readings have to be of
+      # the SAME row -- a second place would be a different building for a
+      # reason that has nothing to do with basements. The rooms are taken away
+      # and the same row is handed back, which is what this suite's determinism
+      # test does and for the same reason.
+      place = laid_out(width: width, depth: depth, name: "Rolled #{number}")
+      rolled = layout_of(place)
+
+      rooms_of(place).each(&:destroy!)
+      Location::Interior.lay_out!(place.reload, below: 0)
+
+      assert_equal rolled, layout_of(place.reload),
+                   "a #{width} by #{depth} place moved when asked for no cellar"
+    end
+  end
+
+  # --- what a caller may ask for --------------------------------------------
+  #
+  # REFUSED RATHER THAN COERCED, for the reason `Location::Box` gives about half
+  # a shape: a caller that got a building it did not ask for would have no record
+  # afterwards saying why.
+
+  test "a count of basements is a whole number and is not a storey index" do
+    place = place_with
+
+    assert_raises(ArgumentError) { Location::Interior.lay_out!(place, below: -1) }
+    assert_raises(ArgumentError) { Location::Interior.lay_out!(place, below: "1") }
+    assert_raises(ArgumentError) { Location::Interior.lay_out!(place, below: 1.5) }
+    assert_empty place.reload.child_locations
+  end
 
   # --- the two travel-time rules --------------------------------------------
 

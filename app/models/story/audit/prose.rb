@@ -555,15 +555,22 @@ module Story::Audit::Prose
   # MEASURED: 0 detections over the 367 corpus passages -- no narration anybody
   # has paid for has ever stated a size in paces or a storey by number. Over the
   # room prose of every world in the repository both grammars detect exactly the
-  # same 12 sentences, and every one of the 12 agrees with the box it was written
-  # from: 10 are the ENGINE's own placeholder teaser
+  # same 23 sentences, and every one of the 23 agrees with the box it was written
+  # from: 20 are the ENGINE's own placeholder teaser
   # (`Location::Interior.teaser_for`: *"A room inside The Custom House, 7 by 4
-  # paces on storey 0"*) and 2 are the hand-written descriptions of The Custom
-  # House rooms 3 and 4 in `lib/engine_sweep/worlds/the-quay-house.yml`, which
-  # are there to be a worked example of prose that agrees with its plan. That is
-  # the best evidence a grammar this narrow can have before a model has ever been
-  # handed a plan: it reads true statements, all of them the app's own or written
-  # against the app's own records, and nothing else in 367 passages of prose.
+  # paces on storey 0"*) and 3 are hand-written descriptions kept as worked
+  # examples of prose that agrees with its plan -- The Custom House rooms 3 and 4
+  # in `lib/engine_sweep/worlds/the-quay-house.yml`, and Blackfang Warren room 3
+  # in `lib/engine_sweep/worlds/the-iron-gate-descends.yml`.
+  #
+  # THE TOTAL IS A PROPERTY OF THE WORLD FILES AND NOT OF THE GRAMMARS, so it
+  # moves whenever a world file gains a laid-out place -- every room of one
+  # carries a teaser stating its paces and its storey. Re-measure it then; it has
+  # already gone stale twice by being read as fixed. What IS fixed is the two
+  # zeros: nothing detected in 367 passages of prose anybody paid for, and
+  # nothing detected anywhere that disagrees with the box it was written from.
+  # That is the best evidence a grammar this narrow can have before a model has
+  # ever been handed a plan.
   Size = Data.define(:paces, :as_written, :sentence)
   Storey = Data.define(:storey, :sentence)
 

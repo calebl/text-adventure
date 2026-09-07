@@ -68,9 +68,41 @@
 # and it is written the way `Location::Plan` states the facts to a model that
 # does: 7 by 6 paces, storey 0, and doors in the walls the boxes really share.
 # It is a worked example of a description that agrees with its own floor plan --
-# and both rooms are the only prose in the repository `Story::Audit::Prose`'s
-# geometry grammars read that the engine did not write itself, 2 of the 12
-# detections measured over every world file's room prose.
+# and both rooms are prose `Story::Audit::Prose`'s geometry grammars read that
+# the engine did not write itself, which is why that module's `Size` header names
+# them. The measurement over every world file's room prose lives there and is not
+# repeated here.
+#
+# AND THERE IS A SECOND BUILDING ON THE QUAY, THE BONDED CELLAR, which is here
+# for one reason: it has a storey BELOW the way in. The Custom House goes up and
+# nothing in the repository went down, because `Location::Interior` numbered its
+# storeys upward from 0 and every place's deepest floor came out above its own
+# front door. The cellar is the worked example of that being fixed -- rooms on
+# storeys -1, 0 and 1, so one place spans both directions from its entry and the
+# stairs bind each pair of adjacent floors.
+#
+# ITS INTERIOR IS THE GENERATOR'S OWN OUTPUT TOO, on The Custom House's terms
+# exactly: the place was handed to `Location::Interior.lay_out!` with `below: 1`
+# and the story was exported, so every box and every door below is what the
+# engine wrote from one seeded `Roll`. `below:` is the only thing the call said
+# and the footprint is the only geometry this file decided -- a world supplies
+# parameters and never behaviour, and `Location::Interior::BASEMENTS` is where
+# the parameter will come from once `ta-interior-entry` supplies it. A GENERATED
+# place still gets no basement, which is why every other world in the repository
+# lays out exactly as it did before.
+#
+# ROOM 2 STANDS AT `Location::ExitsSchema::MAX_EXITS` and room 1 does not, which
+# is worth reading rather than counting twice: the entry room keeps a slot free
+# for the way IN (`Location::Interior`'s reserved slot, the same one The Custom
+# House's entry keeps), so `The Quay` opens onto room 1 and room 1 alone. Room 2
+# is where three of the four stairwells land, and having no way in to attach it
+# is allowed to spend the lot.
+#
+# NOTHING IN IT IS WRITTEN AND NOTHING IN IT IS PLACED. Every room is a stub, it
+# holds no item and no person, and `a-cellar-below-the-way-in.yml` is the walk
+# that goes down the stair and reads the storey off the records. Prose would
+# have to be hand-written to agree with boxes that exist only to be descended,
+# and there is nothing here for a description to be a worked example OF.
 #
 # WHAT THE GRAMMARS READ IN THEM IS THE SIZE AND THE STOREY, and not the walls.
 # Which wall a door is in is stated to a model and is not checked afterwards --
@@ -261,7 +293,95 @@ locations:
   width: 3
   depth: 4
   teaser: A room inside The Custom House, 3 by 4 paces on storey 1.
+- name: The Bonded Cellar
+  detail_level: stub
+  width: 8
+  depth: 6
+  teaser: A sealed door in the quay wall, and the stair behind it going down.
+- name: The Bonded Cellar room 1
+  detail_level: stub
+  parent: The Bonded Cellar
+  x: 0
+  y: 0
+  z: 0
+  width: 4
+  depth: 6
+  teaser: A room inside The Bonded Cellar, 4 by 6 paces on storey 0.
+- name: The Bonded Cellar room 2
+  detail_level: stub
+  danger: uneasy
+  parent: The Bonded Cellar
+  x: 4
+  y: 0
+  z: 0
+  width: 4
+  depth: 6
+  teaser: A room inside The Bonded Cellar, 4 by 6 paces on storey 0.
+- name: The Bonded Cellar room 3
+  detail_level: stub
+  danger: uneasy
+  parent: The Bonded Cellar
+  x: 0
+  y: 0
+  z: 1
+  width: 8
+  depth: 3
+  teaser: A room inside The Bonded Cellar, 8 by 3 paces on storey 1.
+- name: The Bonded Cellar room 4
+  detail_level: stub
+  danger: dangerous
+  parent: The Bonded Cellar
+  x: 0
+  y: 3
+  z: 1
+  width: 8
+  depth: 3
+  teaser: A room inside The Bonded Cellar, 8 by 3 paces on storey 1.
+- name: The Bonded Cellar room 5
+  detail_level: stub
+  danger: uneasy
+  parent: The Bonded Cellar
+  x: 0
+  y: 0
+  z: -1
+  width: 8
+  depth: 3
+  teaser: A room inside The Bonded Cellar, 8 by 3 paces on storey -1.
+- name: The Bonded Cellar room 6
+  detail_level: stub
+  danger: dangerous
+  parent: The Bonded Cellar
+  x: 0
+  y: 3
+  z: -1
+  width: 8
+  depth: 3
+  teaser: A room inside The Bonded Cellar, 8 by 3 paces on storey -1.
 connections:
+- between: [The Quay, The Bonded Cellar room 1]
+  distance: adjacent
+  travel_method: walking
+- between: [The Bonded Cellar room 1, The Bonded Cellar room 2]
+  distance: adjacent
+  travel_method: walking
+- between: [The Bonded Cellar room 1, The Bonded Cellar room 3]
+  distance: adjacent
+  travel_method: taking stairs
+- between: [The Bonded Cellar room 2, The Bonded Cellar room 4]
+  distance: adjacent
+  travel_method: taking stairs
+- between: [The Bonded Cellar room 2, The Bonded Cellar room 5]
+  distance: adjacent
+  travel_method: taking stairs
+- between: [The Bonded Cellar room 2, The Bonded Cellar room 6]
+  distance: adjacent
+  travel_method: taking stairs
+- between: [The Bonded Cellar room 3, The Bonded Cellar room 4]
+  distance: adjacent
+  travel_method: walking
+- between: [The Bonded Cellar room 5, The Bonded Cellar room 6]
+  distance: adjacent
+  travel_method: walking
 - between: [The Quay, The Custom House room 1]
   distance: adjacent
   travel_method: walking

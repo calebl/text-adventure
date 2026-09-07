@@ -73,7 +73,9 @@ steps:
   why: outside the building, so a failure inside it has a known beginning
   expect:
     location: The Quay (realized)
-    exits: [The Custom House room 1 (stub)]
+    # Both buildings on the quay, each opening onto its own entry room. This
+    # walk re-seeds the custom house; the cellar is only ever the other door.
+    exits: [The Custom House room 1 (stub), The Bonded Cellar room 1 (stub)]
     changed: false
     refused: false
 
@@ -110,11 +112,13 @@ steps:
   why: |-
     THE SHAPE OF THE DEFECT, read off the exits from outside. A second entry
     room is a quay with two doorways into the custom house, and `exits` is the
-    whole set -- so it fails this step whatever the second room is called.
+    whole set -- so it fails this step whatever the second room is called. The
+    cellar's own door is the other building's and is expected here; what would
+    fail is a THIRD way off the quay.
   expect:
     changed: true
     location: The Quay (realized)
-    exits: [the counting room (stub)]
+    exits: [the counting room (stub), The Bonded Cellar room 1 (stub)]
     refused: false
 
 - id: and-the-player-can-still-walk-in-by-the-name-they-are-shown

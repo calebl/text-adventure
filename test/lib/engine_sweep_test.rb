@@ -118,6 +118,47 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_match(/lying here\s+Perrin's private index/, failure)
   end
 
+  # `storey:` READS THE ROOM'S OWN BOX and nothing printed. Walked over The Quay
+  # House because it is the only world with an interior at all, and asserted in
+  # both polarities: the number that holds, and the number that does not.
+  test "a storey expectation is read off the room's box, and an unmet one is reported" do
+    passing = walk(<<~SCRIPT)
+      story: The Quay House
+      steps:
+      - id: down-into-the-cellar
+        type: go to The Bonded Cellar room 1
+        why: the entry room of the one place in the repository that descends
+        expect:
+          storey: 0
+      - id: and-on-down
+        type: go to The Bonded Cellar room 2
+        why: across the ground floor to where the stairs down land
+        expect:
+          storey: 0
+      - id: below-the-way-in
+        type: go to The Bonded Cellar room 5
+        why: a storey below the entry
+        expect:
+          storey: -1
+    SCRIPT
+
+    assert_predicate passing, :passed?, passing.failures.map(&:to_s).join("\n")
+
+    failing = walk(<<~SCRIPT)
+      story: The Quay House
+      steps:
+      - id: the-wrong-storey
+        type: go to The Bonded Cellar room 1
+        why: a deliberately wrong storey
+        expect:
+          storey: -1
+    SCRIPT
+
+    assert_not_predicate failing, :passed?
+    assert_match(/expected storey: -1/, failing.failures.sole.to_s)
+    assert_match(/the records say:\s+0/, failing.failures.sole.to_s)
+  end
+
   test "a misspelt expectation raises rather than passing quietly" do
     error = assert_raises(EngineSweep::InvalidScript) do
       walk(<<~SCRIPT)
