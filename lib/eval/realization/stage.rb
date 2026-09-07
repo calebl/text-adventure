@@ -136,6 +136,22 @@ class Eval::Realization::Stage
     # building (`Eval::Realization::Scorer#judge_size_the_records_do_not_hold`).
     def plan = Location::Plan.for(location)&.to_h
 
+    # WHETHER THE DETAIL PROMPT WILL ASK THIS ROOM TO NAME ITSELF, and the names
+    # it will be shown as already given out. Asked through
+    # `Location::RoomName.for` -- the engine's own gate -- rather than derived
+    # from `#plan` being present: the two agree today and a checker that assumed
+    # it would go quietly wrong the day they stopped, and this is the fact both
+    # name checks stand their denominator on.
+    def naming = Location::RoomName.for(location)
+
+    def name_asked? = !naming.nil?
+
+    # EXACTLY THE LIST THE PROMPT STATES, off the same reader
+    # (`Location::Generator#named_rooms_note`), for `#taken_names`' reason: a
+    # checker reading a wider list than the model was shown would flag a
+    # collision nobody could have avoided. Empty for a room that is not asked.
+    def name_taken = naming&.named_siblings || []
+
     # THE NAMES THE PROMPT SAYS ARE SPOKEN FOR, read the way the prompt reads
     # them -- `Location::Generator#known_names_note` truncates to twenty of each,
     # and a checker that used the untruncated list would flag the model for

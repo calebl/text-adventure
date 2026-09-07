@@ -7,12 +7,12 @@
 # Generation happens once per place. A realized location is returned untouched,
 # which is what makes walking back into a room give you the room you left.
 #
-# THE THREE PROMPT BLOCKS BELOW HAVE A BENCH: `#people_instructions`,
-# `#items_instructions` and `#exits_prompt` are what `rake eval:realization`
-# measures, by staging a fixed stub and scoring the answer against the records
-# it was built from. Do not edit one of them without a stored baseline to judge
-# the change against -- EVALUATION.md -> The realization bench is the protocol
-# and `Eval::Realization` is the instrument.
+# THE PROMPT BLOCKS BELOW HAVE A BENCH: `#people_instructions`,
+# `#items_instructions`, `#name_instruction` and `#exits_prompt` are what
+# `rake eval:realization` measures, by staging a fixed stub and scoring the
+# answer against the records it was built from. Do not edit one of them without
+# a stored baseline to judge the change against -- EVALUATION.md -> The
+# realization bench is the protocol and `Eval::Realization` is the instrument.
 class Location::Generator
   include SanitizesGeneratedText
 
@@ -152,6 +152,18 @@ class Location::Generator
 
     location.description = sanitize_string(detail["description"])
     location.lore = sanitize_string(detail["lore"])
+    # AND WHAT THE PLAYER WILL CALL IT, for a room of a laid-out place and for
+    # nothing else. `Location::RoomName` is the one author of it and the one
+    # thing that says no: `#naming` is nil for every other room in the game, and
+    # `#accept` answers nil for a name it will not take -- so both of those
+    # leave the name the row already has, which for an interior room is
+    # `Location::Interior`'s placeholder and for every other room is the name a
+    # neighbour or a seed file gave it.
+    #
+    # WRITTEN ONCE, HERE, like the description and the lore beside it. A
+    # realized location is returned untouched by `#realize!`, so nothing renames
+    # a room somebody has already walked into.
+    location.name = naming.accept(detail["name"]) || location.name if naming
 
     # THE ROW, THEN THE INSIDE, THEN THE FLIP -- one transaction and that order.
     # A room is a child of a saved place, so this location has to exist before
@@ -190,6 +202,20 @@ class Location::Generator
   # described around one person and written around another.
   def cast_registry
     @cast_registry ||= Character::Registry.new(location)
+  end
+
+  # WHETHER THIS ROOM MAY BE NAMED BY THIS CALL, and who decides what it is
+  # called if it is. Nil for everything that is not a room of a laid-out place,
+  # which is the gate `Location::RoomName.for` owns so that neither the prompt
+  # nor the write has one of its own.
+  #
+  # `defined?` AND NOT `||=`, because nil is the ordinary answer and the common
+  # case is the one that must not pay for the question twice: `#name_instruction`
+  # asks on the way in and `#write_detail!` asks again on the way out.
+  def naming
+    return @naming if defined?(@naming)
+
+    @naming = Location::RoomName.for(location)
   end
 
   # The ways out, as stub neighbours plus connection rows in both directions,
@@ -306,7 +332,7 @@ class Location::Generator
       - The description is what the player reads on arrival. Address them as "you"
       - Describe what is here now, not the history -- the history is the lore
       - Stay consistent with the universe and with the teaser above
-      - Respect the stated length of each field
+      - Respect the stated length of each field#{name_instruction}
 
       #{items_instructions}
 
@@ -345,6 +371,54 @@ class Location::Generator
       do not give it a way out this list does not have.
       #{plan.to_prompt}
     PROMPT
+  end
+
+  # WHAT THE MODEL IS TOLD WHEN THE ROOM STILL NEEDS A NAME, and it is one
+  # bullet on the end of the instructions the room already has rather than a
+  # block of its own.
+  #
+  # EMPTY FOR EVERY ROOM THAT IS NOT ONE, and empty means the prompt is the one
+  # a baseline was measured on, character for character -- `#geometry_facts`'s
+  # rule, and the reason this appends to the last bullet instead of standing on
+  # a line: a block of its own would add a blank line to every prompt in the
+  # game the day it was empty. Only a room of a laid-out place has a name worth
+  # replacing (`Location::RoomName.for`); a room a neighbour named already has
+  # one a player may have typed.
+  #
+  # IT IS THE INFORM HALF AND NOT THE VERIFY HALF. Every rule stated here is
+  # one `Location::RoomName` enforces afterwards whatever comes back -- the
+  # place's name kept out of it, no comma, nothing this world has already
+  # spoken for -- so this is here to raise the odds and never to carry the
+  # guarantee. The standing constraint, applied to a name.
+  #
+  # AND IT NAMES WHAT IS ALREADY TAKEN, because a refusal after the call is a
+  # room that kept its placeholder over a collision it was never shown --
+  # `#items_instructions`' own argument, and the same trade.
+  def name_instruction
+    return "" if naming.nil?
+
+    place = naming.place.name
+    <<~PROMPT.rstrip.prepend("\n")
+      - NAME THIS ROOM. It is one room inside #{place}. The player reads the room and
+        the place together -- "the <your name> of #{place}" -- so name the ROOM only,
+        and never put the place's own name into it. A short noun phrase carrying the
+        article English wants on it, 2 to 4 words: "the counting room", "the cold
+        store", "the harbourmaster's office". Name it for what the floor plan above
+        says this room is and for what you have just described standing in it. Never
+        a comma in it#{named_rooms_note}
+    PROMPT
+  end
+
+  # The rooms of this place that have already been written and named, so the
+  # model is not offered a name the engine is about to refuse. The placeholders
+  # are left off (`Location::RoomName#named_siblings`): a fourteen-room building
+  # would otherwise spend fourteen lines saying "not the numbers", which nothing
+  # was ever going to propose.
+  def named_rooms_note
+    named = naming.named_siblings
+    return "" if named.empty?
+
+    ". Rooms of #{naming.place.name} that are already named, so do not reuse one: #{named.join("; ")}"
   end
 
   # WHAT THE MODEL IS TOLD ABOUT WHO IS IN THIS ROOM. Two things, and the second

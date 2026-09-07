@@ -60,6 +60,28 @@
 # `Location::ExitsSchema` spells out at length: rows arrive from outside this
 # call too.
 #
+# `name` IS HOW A ROOM OF A PLACE COMES TO BE CALLED SOMETHING, and it is the
+# one field here that is asked for on SOME rooms only. `Location::Interior` lays
+# a building out and numbers its rooms before anybody walks in, and a room of an
+# interior gets no exits call at all (`Location::Generator#write_exits!`) -- so
+# until this field there was no call in the game that could name one, and the
+# player read "You are in Blackfang Warren room 3 of Blackfang Warren" for good.
+#
+# IT IS OPTIONAL AND THE PROMPT IS WHAT ASKS FOR IT, which is the shape that
+# keeps every other room's prompt the one a baseline was measured on:
+# `Location::Generator#name_instruction` is empty for anything that is not a
+# room of a laid-out place, so the sentence reaches exactly the rooms that need
+# one and no baseline moves for the rest. A room a NEIGHBOUR named already has a
+# name a player may have typed, and `Location::RoomName` refuses to touch it
+# whatever comes back here.
+#
+# AND THE ENGINE DECIDES WHETHER TO TAKE IT. `Location::RoomName` is the one
+# author of a room's name on realization -- it refuses a blank, a comma, the
+# placeholder, another of the place's placeholders and any name this world has
+# already spoken for, and the placeholder simply stays. The cap is read from
+# there rather than written twice, for `Character::Registry::PERSON_LIMITS`'
+# reason.
+#
 # `readable` AND `inscription` RIDE ON THE SAME ANSWER, for the same reason the
 # items do. A note is born with its words or it is born without them, and the
 # call that just wrote the room is the one call that can say what a note in it
@@ -76,6 +98,10 @@
 class Location::DetailSchema < RubyLLM::Schema
   string :description, description: "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.", max_length: 1200
   string :lore, description: "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.", max_length: 900
+
+  string :name,
+         description: "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",
+         required: false, max_length: Location::RoomName::LIMIT
 
   array :items,
         description: "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",

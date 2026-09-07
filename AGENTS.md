@@ -79,8 +79,8 @@ current spread and keeps it current; do not quote a spread from memory. So "it
 reads better" is not evidence, and neither is a single run either side of an
 edit. Before touching `Scene::Narrator::INSTRUCTIONS`,
 `Character#interaction_instructions`, `Playthrough::Classifier::INSTRUCTIONS`,
-`Location::Generator`'s people, items and exits instructions, or anything else a
-model is handed:
+`Location::Generator`'s people, items, naming and exits instructions, or anything
+else a model is handed:
 
 1. **Have a stored baseline the change can be measured against.**
    `rake eval:prompt` (fixed single-turn cases, cents a run) is the cheap first
@@ -153,6 +153,7 @@ Read the header of the file named, not a summary of it.
 | How the inside of a place is laid out, and by what roll | `app/models/location/interior.rb` |
 | Where in a room a thing or a person is, and who may roll one | `app/models/location/spot.rb`, `location/placement.rb` |
 | What a room's own walls, doors and stairs say to a prompt | `app/models/location/plan.rb` |
+| What a room of a place is called, and who may take a proposed name | `app/models/location/room_name.rb` |
 | What the world graph looks like drawn, and its insides | `app/models/story/map.rb` |
 | A thing thrown | `Playthrough::Turn#throw_item!`, `app/models/roll.rb` |
 | The dice, and the one place a seed is built | `app/models/roll.rb` |

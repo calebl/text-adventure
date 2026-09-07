@@ -233,6 +233,23 @@ class Location::Interior
   # grammar can be handed back.
   def self.placeholder_name(place, number) = "#{place.name} room #{number}"
 
+  # AND WHETHER A NAME IS ONE OF THIS PLACE'S PLACEHOLDERS, asked of the SHAPE
+  # `.placeholder_name` writes rather than of the rows -- which is the whole
+  # reason it is worth having. A number no room of this building carries is
+  # still a placeholder, and it is the one a collision check cannot see:
+  # `Location::RoomName` refuses a model that proposes `The Custom House room
+  # 12` for an eight-room building, because a room permanently called a
+  # placeholder is worse than a room still called its own number. Nothing
+  # afterwards could tell the two apart.
+  #
+  # IDENTITY IS `WorldSeed.natural_key`'s, for the reason `Location::RoomName`
+  # gives at length: case, runs of whitespace and a leading article are not part
+  # of a name in this repo, and this has to agree with the check that refuses on
+  # them.
+  def self.placeholder_name?(place, name)
+    WorldSeed.natural_key(name).match?(/\A#{Regexp.escape(WorldSeed.natural_key(place.name))} room \d+\z/)
+  end
+
   attr_reader :place, :story
 
   def self.lay_out!(place) = new(place).lay_out!

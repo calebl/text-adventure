@@ -51,14 +51,17 @@
 #     2026-09-06, and AGENTS.md names `Character#interaction_instructions` among
 #     the prompts it binds. Geometry was never asked for in dialogue either.
 #
-# THE ROOM'S NAME IS NOT ONE OF THE THINGS THIS SLICE GIVES IT.
-# `Location::DetailSchema` has no `name` field and a room of an interior gets no
-# exits call at all (`Location::Generator#write_exits!`), so a realized interior
-# room keeps the placeholder name `Location::Interior` wrote -- which is why the
-# worked example above reads "The Rusted Anchor room 2". Naming them is DEFERRED
-# to its own item (`ta-interior-room-names` in firstmate): it means a field on
-# the detail schema and a sentence in the detail prompt, so it is a prompt change
-# and wants its own bench baseline.
+# THE ROOM'S NAME IS THIS PLAN'S CUSTOMER AND NOT ITS OUTPUT. The worked example
+# above still reads "The Rusted Anchor room 2" because a room is UNWRITTEN until
+# somebody walks in, and a placeholder is what an unwritten room is called
+# (`Location::Interior.placeholder_name`). What changed is what happens when
+# somebody does: `Location::DetailSchema` now carries an optional `name`, the
+# detail prompt asks for one against these very sentences
+# (`Location::Generator#name_instruction`), and `Location::RoomName` decides
+# whether to take it. So these facts are read out twice -- once to a model
+# choosing what to call the room, and once on every turn afterwards to the
+# narrator -- and a room named "the counting room" was named against the size,
+# the storey and the doors below.
 #
 # WHERE THE STAIRS ARE IS THE ONE THING THAT NEEDED DERIVING, and it is derived
 # from the records rather than invented for the sentence. There is no stairwell

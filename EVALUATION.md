@@ -1179,8 +1179,20 @@ checks are:
 | `name_already_spoken_for` | a name the world had already given to somebody, somewhere or something |
 | `proposal_refused` | what the registries would not admit — read off the records, and the superset of every reason above |
 | `readable_without_words` | a thing marked readable with nothing written on it, which costs a later round trip to `Item::Inscriber` |
+| `room_name_refused` | a room asked to name itself that came away still called its placeholder, **read off the room's own name after the call**. `Location::RoomName` refuses a proposal on five separate grounds and every one ends the same way, so this asks the record what happened rather than re-deciding it. Judgeable only on an `interior-room` case, where the prompt asks for a name at all |
+| `room_name_already_taken` | a proposed room name the world had already given to somewhere, somebody or something — the one refusal above that is a set comparison, against the same closed list of names `name_already_spoken_for` reads. The evidence says whether the prompt had shown it |
 | `race_not_named` | **a KEYWORD check** — see below |
 | `size_the_records_do_not_hold` | **a KEYWORD check.** The description stated a size in paces, or a storey, that is not this room's. Judgeable only on an `interior-room` case, where `Location::Plan` stated the numbers in the prompt |
+
+**The two name checks report `unavailable` on a set stored before the naming ask
+existed**, and that is the honest reading rather than a gap. Their denominator
+is the rooms the prompt actually asked to name themselves — a fact stored on the
+row as `name_asked` — so a set recorded before `Location::DetailSchema` carried
+a `name` has the key nowhere and is out of both, instead of reporting a model
+failing to answer a question nobody put to it. It is
+`Eval::Realization::Scorer::Reading#records_the_way_back?`'s rule, and it means
+the before side of a naming comparison shows the checks arriving rather than a
+rate falling.
 
 **The keyword checks are weighed differently and labelled `[KEYWORD]` beside
 their own rate**, in the board's table and in the report. The note beneath that

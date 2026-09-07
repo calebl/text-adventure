@@ -278,6 +278,111 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_equal [ "Maren Vosk" ], Character.present_in(room).pluck(:fullname)
   end
 
+  # --- and what it is ASKED, which every other room is not ---------------------
+  #
+  # THE ROOM'S OWN NAME. `Location::Interior` numbered it before anybody walked
+  # in and the number is provisional; this is the one call that can replace it,
+  # and `Location::RoomName` is what decides whether the answer is taken.
+
+  test "a room inside a place is asked to name itself, against the place it is in" do
+    room, = laid_out_pair
+    agent = FakeAgent.new(DETAIL)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+
+    prompt = agent.prompts.sole
+    assert_includes prompt, "NAME THIS ROOM"
+    assert_includes prompt, "It is one room inside The Rusted Anchor."
+    assert_includes prompt, %("the <your name> of The Rusted Anchor")
+    assert_includes prompt, "never put the place's own name into it"
+  end
+
+  # AND EVERY OTHER ROOM'S PROMPT IS THE ONE A BASELINE WAS MEASURED ON. The
+  # bullet is appended to the last instruction rather than standing in a block
+  # of its own, so an empty one is not even a blank line -- `#geometry_facts`'
+  # rule, and `Eval::Realization::Version`'s prompt digest is what it protects.
+  test "an ordinary room is never asked to rename itself" do
+    location = stub_location(name: "The Drowned Ledger")
+    agent = FakeAgent.new(DETAIL, EXITS)
+
+    realize(location, agent)
+
+    assert_not_includes agent.prompts.first, "NAME THIS ROOM"
+    assert_includes agent.prompts.first, "- Respect the stated length of each field\n\n## What Is Lying Here"
+  end
+
+  # A REFUSAL AFTER THE CALL IS A ROOM THAT KEPT ITS PLACEHOLDER over a
+  # collision it was never shown, so the names already given out are stated
+  # first -- `#items_instructions`' own argument.
+  test "the rooms of the place that are already named are stated in the prompt" do
+    room, sibling = laid_out_pair
+    sibling.update!(name: "the counting room", description: "Ledgers.", lore: "Debts.",
+                    detail_level: :realized)
+    agent = FakeAgent.new(DETAIL)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+
+    assert_includes agent.prompts.sole, "already named, so do not reuse one: the counting room"
+  end
+
+  # AND THE PLACEHOLDERS ARE NOT STATED. Nothing was ever going to propose one,
+  # and a fourteen-room building would spend fourteen lines saying so.
+  test "a building nobody has written yet states no taken room names at all" do
+    room, = laid_out_pair
+    agent = FakeAgent.new(DETAIL)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+
+    assert_not_includes agent.prompts.sole, "already named, so do not reuse one"
+  end
+
+  test "a name the engine accepts is what the room is called afterwards" do
+    room, = laid_out_pair
+    agent = FakeAgent.new(DETAIL.merge("name" => "the counting room"))
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+
+    assert_equal "the counting room", room.reload.name
+    assert_predicate room, :realized?
+  end
+
+  # THE PLACEHOLDER STAYS AND NOTHING RAISES, which is the whole of what a
+  # refusal costs: the description that was paid for, the floor and the cast all
+  # still arrive. `Location::RoomName` owns the five grounds; this asserts the
+  # seam behaves on one of them.
+  test "a name the engine refuses costs the room its name and nothing else" do
+    room, = laid_out_pair
+    placeholder = room.name
+    answer = DETAIL.merge("name" => "The Rusted Anchor room 2", "items" => FURNISHED["items"])
+    agent = FakeAgent.new(answer)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+
+    assert_equal placeholder, room.reload.name
+    assert_equal DETAIL["description"], room.description
+    assert_equal [ "floating ledger", "brass tide key" ], room.items.order(:id).pluck(:name)
+  end
+
+  test "an answer with no name at all leaves the placeholder alone" do
+    room, = laid_out_pair
+    placeholder = room.name
+
+    BaseAgent.stub(:new, FakeAgent.new(DETAIL)) { Location::Generator.new(room).realize! }
+
+    assert_equal placeholder, room.reload.name
+  end
+
+  # THE ONE THAT MUST NOT FIRE. A room a neighbour named has a name a player may
+  # already have typed, and `Location::RoomName.for` answers nil for it -- so a
+  # `name` in the answer is ignored rather than honoured.
+  test "a name in the answer never renames a room that is not inside a place" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL.merge("name" => "the counting room"), EXITS))
+
+    assert_equal "The Drowned Ledger", location.reload.name
+  end
+
   # PLAIN CONTAINMENT IS NOT AN INTERIOR, and this is the shape that tells the
   # two apart: a `parent` with NO box -- a district a street sits in, which
   # `WorldSeed::Loader#validate_one_parent!` allows and `WorldSeed::Exporter`

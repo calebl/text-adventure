@@ -560,7 +560,118 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     assert Eval::Realization.unavailable_to_a_realization?(:door_in_a_wall_the_records_do_not_hold)
   end
 
+  # --- the room's own name ---------------------------------------------------
+  #
+  # WHAT THE ROOM ENDED UP CALLED IS READ OFF THE ROOM. `Location::RoomName`
+  # refuses a proposal on five separate grounds and every one of them ends with
+  # the placeholder still on the row, so the check asks the record what happened
+  # instead of re-deciding it -- which would be a second implementation of the
+  # one thing that owns the decision.
+
+  test "a room that came away with a name of its own is not flagged" do
+    scorer = named("the counting room", accepted: "the counting room")
+
+    assert_empty scorer.flagged_for(:room_name_refused)
+    assert_equal 1, scorer.judgeable_for(:room_name_refused), "a room that was asked is an opportunity"
+  end
+
+  test "a room that kept its placeholder is flagged, whatever it proposed" do
+    scorer = named("The Custom House room 4", accepted: PLAN["room"])
+
+    assert_equal 1, scorer.flagged_for(:room_name_refused).size
+    assert_includes scorer.flagged_for(:room_name_refused).first.evidence, "The Custom House room 4"
+    assert_includes scorer.flagged_for(:room_name_refused).first.evidence, "kept the placeholder"
+  end
+
+  test "a room that proposed nothing at all is flagged and the evidence says so" do
+    scorer = named(nil, accepted: PLAN["room"])
+
+    assert_equal 1, scorer.flagged_for(:room_name_refused).size
+    assert_includes scorer.flagged_for(:room_name_refused).first.evidence, "proposed nothing"
+  end
+
+  # THE DENOMINATOR IS THE ROOMS THAT WERE ASKED. Every other room in the game
+  # already has a name a neighbour or a seed file gave it and is never asked for
+  # one, so counting it in would report a rate the check never earned.
+  test "a room the prompt never asked to name itself is unjudgeable, not clean" do
+    assert_equal 0, scored.judgeable_for(:room_name_refused)
+    assert_empty scored.flagged_for(:room_name_refused)
+  end
+
+  # AND A SET STORED BEFORE THE ASK EXISTED READS THE SAME WAY. `name_asked` is
+  # absent from every row of the before side of this slice's own baseline, which
+  # has to report the check unavailable rather than report a model failing to
+  # answer a question nobody put to it.
+  test "a row with no name_asked fact at all is out of both name checks" do
+    older = named("the counting room", accepted: "the counting room")
+                .rows.first.tap { |row| row["facts"] = row["facts"].except("name_asked", "name_taken") }
+    scorer = Eval::Realization::Scorer.new([ older ])
+
+    assert_equal 0, scorer.judgeable_for(:room_name_refused)
+    assert_equal 0, scorer.judgeable_for(:room_name_already_taken)
+  end
+
+  test "a proposed name the world already gave to a place is flagged as a collision" do
+    scorer = named("The Supply Closet", accepted: PLAN["room"])
+
+    assert_equal 1, scorer.flagged_for(:room_name_already_taken).size
+    assert_includes scorer.flagged_for(:room_name_already_taken).first.evidence, "already a place in this world"
+    assert_includes scorer.flagged_for(:room_name_already_taken).first.evidence,
+                    "the prompt never showed it",
+                    "a collision with a name the model was never shown is a defect in the prompt"
+  end
+
+  # A COLLISION WITH A NAME THE PROMPT DID STATE reads differently, because the
+  # model had it in front of it -- `#judge_name_already_spoken_for`'s rule.
+  test "a collision the prompt listed is flagged without the never-showed clause" do
+    facts = FACTS.merge("name_taken" => [ "The Supply Closet" ])
+    scorer = named("The Supply Closet", accepted: PLAN["room"], facts: facts)
+
+    assert_not_includes scorer.flagged_for(:room_name_already_taken).first.evidence, "never showed it"
+  end
+
+  # THE ROOM'S OWN PLACEHOLDER IS IN `all_names` AND IS NOT THIS CHECK'S
+  # COLLISION: a model that hands the placeholder back has proposed nothing,
+  # which reads far better as a refusal. It stays in the denominator.
+  test "handing the placeholder back is a refusal and not a collision" do
+    scorer = named(PLAN["room"], accepted: PLAN["room"])
+
+    assert_empty scorer.flagged_for(:room_name_already_taken)
+    assert_equal 1, scorer.judgeable_for(:room_name_already_taken)
+    assert_equal 1, scorer.flagged_for(:room_name_refused).size
+  end
+
+  test "a name nothing in the world answers to is no collision" do
+    scorer = named("the counting room", accepted: "the counting room")
+
+    assert_empty scorer.flagged_for(:room_name_already_taken)
+    assert_equal 1, scorer.judgeable_for(:room_name_already_taken)
+  end
+
+  # BOTH ARE RECORD COMPARISONS and are not to be weighed with the two that read
+  # words -- `Eval::Realization::Scorer::KEYWORD_CHECKS` is the one list of
+  # those, and the board and the report both label off it.
+  test "neither name check is a keyword check" do
+    assert_includes Eval::Realization.checks, :room_name_refused
+    assert_includes Eval::Realization.checks, :room_name_already_taken
+    refute_includes Eval::Realization::Scorer::KEYWORD_CHECKS, :room_name_refused
+    refute_includes Eval::Realization::Scorer::KEYWORD_CHECKS, :room_name_already_taken
+  end
+
   private
+
+  # A ROW OFF AN INTERIOR-ROOM CASE THAT WAS ASKED TO NAME ITSELF: the proposal
+  # in the answer, and what the room was really called afterwards in `after`.
+  def named(proposed, accepted:, facts: FACTS)
+    built = row(facts: facts.merge("plan" => PLAN, "room" => PLAN["room"], "exit_allowance" => 0,
+                                   "name_asked" => true, "name_taken" => facts["name_taken"] || []))
+    built["answers"] = { "detail" => { "description" => "Ledgers to the ceiling.", "name" => proposed,
+                                       "people" => [], "items" => [] } }
+    built["after"] = built["after"].merge("name" => accepted)
+    built["calls"] = 1
+
+    Eval::Realization::Scorer.new([ built ])
+  end
 
   # A ROW OFF AN INTERIOR-ROOM CASE: one call, no exits answer at all, and the
   # floor plan the prompt stated stored beside the description.

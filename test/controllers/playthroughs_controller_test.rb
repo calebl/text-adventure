@@ -273,9 +273,11 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/Inside The Rusted Anchor/, response.body)
   end
 
-  # AND THE ROOM'S STORED NAME AS-IS, ordinal and all, while
-  # `Location::Interior.placeholder_name` is still what names an interior room
-  # (naming is deferred to `ta-interior-room-names`).
+  # AND THE ROOM'S STORED NAME AS-IS, ordinal and all. An UNWRITTEN room is
+  # still called `Location::Interior.placeholder_name`'s number -- a name is
+  # written once, when somebody walks in and `Location::RoomName` takes what a
+  # model proposed -- so the one line has to read correctly either side of that.
+  # The article is in the name and not in the line: see the partial.
   test "show uses the room's stored name even while it is a placeholder" do
     playthrough = create(:playthrough, :started)
     story = playthrough.story

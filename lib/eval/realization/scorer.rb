@@ -73,6 +73,10 @@ class Eval::Realization::Scorer
     proposal_refused: "a person or a thing the engine would not admit, so the room lost it",
     readable_without_words: "a thing marked readable with nothing written on it, which costs a " \
                             "later round trip to Item::Inscriber",
+    room_name_refused: "a room asked to name itself that kept its placeholder, read off the room's " \
+                       "own name afterwards -- judgeable only on a room the engine laid out",
+    room_name_already_taken: "a proposed room name the world had already given to somewhere, " \
+                             "somebody or something",
     race_not_named: "a person written for a MONSTROUS slot whose sheet never says the race -- " \
                     "a KEYWORD check, so it reads words rather than comparing records",
     size_the_records_do_not_hold: "the description stated a size in paces, or a storey, that is not this " \
@@ -169,6 +173,21 @@ class Eval::Realization::Scorer
     # `#records_the_way_back?` follows, and for the same reason.
     def plan = facts["plan"]
     def planned? = plan.is_a?(Hash)
+
+    # WHETHER THE DETAIL PROMPT ASKED THIS ROOM TO NAME ITSELF. A set stored
+    # before the ask existed has no key and reads FALSE, which takes those rows
+    # out of both name checks' denominators -- `#records_the_way_back?`'s rule,
+    # and the reason it is a stored fact rather than `#planned?`: the before
+    # side of a naming comparison must report those checks unavailable, not
+    # report a model failing to answer a question nobody put to it.
+    def asked_for_a_name? = facts["name_asked"] == true
+
+    # THE NAME THE ANSWER PROPOSED, and the names the prompt showed as spoken
+    # for. `#name_after` is the room's own name once the engine had decided --
+    # the record, and the only thing that says whether the proposal was taken.
+    def proposed_name = detail["name"].to_s
+    def names_shown = Array(facts["name_taken"])
+    def name_after = after["name"].to_s
     def room_paces = [ plan && plan["width"], plan && plan["depth"] ].map(&:to_i).sort
 
     # THE SAME TWO NUMBERS IN THE ORDER THE PROMPT STATED THEM, for evidence and
@@ -524,6 +543,74 @@ class Eval::Realization::Scorer
     flag_each(:readable_without_words, ->(r) { r.items.count { |item| item["readable"] == true } }) do |reading|
       reading.items.select { |item| item["readable"] == true && item["inscription"].to_s.strip.empty? }
              .map { |item| "#{item["name"].inspect} is readable with nothing written on it" }
+    end
+  end
+
+  # ---------------------------------------------------------------- the room's own name
+
+  # WHETHER THE ROOM ENDED UP WITH A NAME OF ITS OWN, READ OFF THE ROOM.
+  #
+  # `Location::RoomName` refuses a proposal on five separate grounds -- blank or
+  # cut off, a comma, the name the room already has, another of the place's
+  # placeholders, and a name this world has already spoken for -- and every one
+  # of them ends the same way: the placeholder stays. So this check asks the
+  # RECORD what happened rather than re-deciding it here. A checker that
+  # re-implemented those five rules would be a second implementation of the one
+  # thing that owns them, which is the failure this whole file is written
+  # against; `#judge_room_name_already_taken` below reports the one reason that
+  # is a set comparison, and this reports the outcome.
+  #
+  # JUDGEABLE ONLY WHERE THE PROMPT ASKED, which is a room of a laid-out place
+  # and nothing else (`#asked_for_a_name?`). Every other room in the game
+  # already has a name a neighbour or a seed file gave it and is not asked for
+  # one, so counting it in would report a rate the check never earned --
+  # `Story::Audit#judgeable_for`'s rule, and the same one that keeps a set
+  # stored before the ask existed out of this entirely.
+  #
+  # AND THE FLAG IS THE ROOM AND NOT THE NAME, one per case: a room either came
+  # away with a name or kept its number.
+  def judge_room_name_refused
+    flag_cases(:room_name_refused, ->(r) { r.asked_for_a_name? && r.name_after.present? }) do |reading|
+      next nil unless reading.same?(reading.name_after, reading.room)
+
+      "was asked to name itself, proposed #{reading.proposed_name.presence&.inspect || "nothing"}, " \
+        "and kept the placeholder #{reading.room.inspect}"
+    end
+  end
+
+  # A PROPOSED ROOM NAME THE WORLD HAD ALREADY GIVEN OUT, which is the one
+  # refusal above that IS a set comparison -- the answer against the closed list
+  # of names the world already held (`facts["all_names"]`, the very list
+  # `Location::RoomName` refuses on). The rooms of the room's own place are in
+  # that list, so "unique within the place" is judged here.
+  #
+  # THE EVIDENCE SAYS WHETHER THE PROMPT SHOWED IT, exactly as
+  # `#judge_name_already_spoken_for` does and for the same reason: a collision
+  # with a name the model was never shown is a defect in what
+  # `Location::Generator#named_rooms_note` states rather than in the answer, and
+  # a reader has to be able to tell the two apart without opening the set.
+  #
+  # IT READS `Reading#same?` AND NOT `WorldSeed.natural_key`, which is this
+  # file's comparison for every other name check and is NARROWER than the
+  # engine's -- a leading article is part of a name here and is not part of one
+  # there. So a proposal refused only for its article reads clean HERE and still
+  # reads flagged in `#judge_room_name_refused`, which is the check that counts
+  # every refusal. Stated rather than left to be discovered: the outcome check
+  # is the complete one, this one is the diagnosis.
+  def judge_room_name_already_taken
+    flag_cases(:room_name_already_taken, ->(r) { r.asked_for_a_name? && r.proposed_name.present? }) do |reading|
+      # THE ROOM'S OWN PLACEHOLDER IS IN THAT LIST and is not this check's
+      # collision: a model that hands the placeholder back has proposed nothing,
+      # which is `#judge_room_name_refused`'s flag and reads far better there.
+      # It stays in the denominator -- the model did propose a name.
+      next nil if reading.same?(reading.proposed_name, reading.room)
+
+      known = reading.facts["all_names"] || {}
+      where = %w[people places things].find { |kind| reading.any_named?(known[kind], reading.proposed_name) }
+      next nil if where.nil?
+
+      "proposed #{reading.proposed_name.inspect}, which is already a #{where.singularize} in this world" \
+        "#{" -- and the prompt never showed it" unless reading.any_named?(reading.names_shown, reading.proposed_name)}"
     end
   end
 

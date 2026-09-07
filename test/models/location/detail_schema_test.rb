@@ -16,7 +16,7 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
   SCHEMA = Location::DetailSchema
 
   test "describes the two fields a realized location needs, plus what is in it and who" do
-    assert_equal %w[description lore items people], schema_properties(SCHEMA).keys
+    assert_equal %w[description lore name items people], schema_properties(SCHEMA).keys
   end
 
   # Neither `items` nor `people` is among them, and that is the point: a room
@@ -56,6 +56,34 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
 
   test "every prose field maps to a location column" do
     assert_equal [], schema_properties(SCHEMA).keys - Location.column_names - %w[items people]
+  end
+
+  # --- the name a room of a place gets ---------------------------------------
+  #
+  # OPTIONAL, AND THE PROMPT IS WHAT ASKS FOR IT. Only a room of a laid-out
+  # place needs one (`Location::Generator#name_instruction`); every other room
+  # in the game already has a name a neighbour or a seed file gave it, and
+  # leaving the field required would ask all of them to rename themselves.
+  test "name is an optional bounded string" do
+    assert_schema_field(SCHEMA, :name, type: :string, maxLength: Location::RoomName::LIMIT)
+    assert_not_includes schema_required(SCHEMA), "name"
+  end
+
+  # ONE NUMBER, so the bound the model is given and the bound the engine checks
+  # a proposal against cannot disagree -- `Character::Registry::PERSON_LIMITS`'
+  # rule, and `Location::RoomName` is where it is written down.
+  test "the name cap is read from the one place that enforces it" do
+    assert_equal Location::RoomName::LIMIT,
+                 schema_properties(SCHEMA)["name"]["maxLength"]
+  end
+
+  # The field reaches every realization and only some rooms are asked to fill
+  # it in, so the description has to say that itself.
+  test "the name says it is only for a room the instructions ask to name" do
+    described = schema_properties(SCHEMA)["name"]["description"]
+
+    assert_match(/ONLY when the instructions/, described)
+    assert_match(/Leave this out entirely/, described)
   end
 
   # THE BOUND ON ONE ANSWER, and the captain's number: nobody or one is the

@@ -183,6 +183,50 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
     assert_equal 2, plan["doors"].size, "both doors, not only the one the case was reached from"
   end
 
+  # --- and the name it was asked for ----------------------------------------
+  #
+  # BOTH SIDES OF THE NAME CHECKS ARE STORED, because neither can be re-derived
+  # once the staged world is rolled back: whether the prompt asked at all
+  # (`Location::RoomName.for`), which names it showed as taken, and what the
+  # room was really called afterwards.
+
+  test "a room inside a place records that it was asked to name itself" do
+    facts = bench(corpus: interior).passes.sole.rows.sole["facts"]
+
+    assert_equal true, facts["name_asked"]
+    # Nothing in The Quay House has been given a real room name, so the prompt
+    # shows none -- `Location::RoomName#named_siblings` leaves placeholders off.
+    assert_equal [], facts["name_taken"]
+  end
+
+  # AND EVERY OTHER ROOM RECORDS THAT IT WAS NOT, which is what takes those rows
+  # out of both name checks' denominators rather than scoring them clean.
+  test "an ordinary room records that it was never asked to name itself" do
+    facts = row(bench.passes.sole, "a-hallway")["facts"]
+
+    assert_equal false, facts["name_asked"]
+  end
+
+  # THE ROOM'S NAME AFTERWARDS IS THE ONLY THING THAT SAYS WHAT THE ENGINE DID
+  # with the proposal, so it is read off the record beside the cast and the
+  # floor -- `Eval::Realization::Scorer#judge_room_name_refused`.
+  test "what the room ended up called is read off the record after the call" do
+    named = Endless::DETAIL.merge("name" => "the counting room")
+
+    row = Endless.stub_detail(named) { bench(corpus: interior) }.passes.sole.rows.sole
+
+    assert_equal "the counting room", row.dig("after", "name")
+    assert_equal "the counting room", row.dig("answers", "detail", "name")
+  end
+
+  test "a name the engine refused leaves the placeholder in the record" do
+    refused = Endless::DETAIL.merge("name" => "The Custom House room 4")
+
+    row = Endless.stub_detail(refused) { bench(corpus: interior) }.passes.sole.rows.sole
+
+    assert_equal "The Custom House room 3", row.dig("after", "name")
+  end
+
   test "the world outside the run is untouched" do
     before = [ Story.count, Location.count, Item.count, Character.count, LocationConnection.count ]
     bench

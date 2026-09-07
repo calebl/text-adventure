@@ -154,6 +154,26 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
     end
   end
 
+  # WHETHER THE PROMPT WILL ASK FOR A NAME IS ASKED THROUGH THE ENGINE'S OWN
+  # GATE (`Location::RoomName.for`) and not derived from the plan being present.
+  # The two agree today; a checker that assumed they always would goes quietly
+  # wrong the day they stop, and this is the fact both name checks put their
+  # denominator behind.
+  test "a room inside a laid-out place is one the prompt will ask to name itself" do
+    stage(kase(room: "The Custom House room 3", reached_from: "The Custom House room 2",
+               story: "The Quay House")) do |standing|
+      assert standing.name_asked?
+      # The Quay House ships two rooms written and both keep their placeholders,
+      # so there is nothing to state as taken.
+      assert_equal [], standing.name_taken
+    end
+
+    stage(kase(room: "The Long Hallway", reached_from: "Ward Office 12")) do |standing|
+      assert_not standing.name_asked?
+      assert_equal [], standing.name_taken
+    end
+  end
+
   test "nothing survives the staging" do
     before = [ Story.count, Location.count, Character.count, Item.count, LocationConnection.count ]
     stage(kase(room: "The Long Hallway", reached_from: "Ward Office 12", absent: [ "The Supply Closet" ])) { |_| }

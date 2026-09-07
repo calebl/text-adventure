@@ -379,6 +379,13 @@ class Story::Doctor
   # gave the office a doorway onto each. The captain's database holds that pair,
   # which is what this exists to name.
   #
+  # AND IT IS THE FINDING FOR TWO ROOMS OF ONE BUILDING, which is why naming a
+  # room needed no second one. `Location::RoomName` refuses a proposed room name
+  # that any location of the story already answers to -- on this very
+  # `WorldSeed.natural_key` reading, so a name the engine takes cannot be a name
+  # this then calls a collision -- and the group below is what reports a
+  # database that carries one anyway. Gate the state, audit the difference.
+  #
   # It is not only a seeding defect: `Playthrough::Classifier` resolves a move
   # against the names of the rooms that lead out of here, so which of two rooms
   # answering to one name the player walks into is an ordering accident -- the
