@@ -338,6 +338,39 @@ class Location::InteriorTest < ActiveSupport::TestCase
     assert_includes reachable(rooms_of(place)).map(&:id), stranded.id
   end
 
+  # THE ENTRY ROOM'S RESERVED SLOT IS A RULE ABOUT THE ROWS, so it holds on a
+  # caller that did not lay this place out. The four rooms below are hand
+  # written rather than rolled, because the fault needs one exact shape: an
+  # entry room already at its reserved cap, and a stranded room that shares a
+  # wall with IT and with nothing else that is reached.
+  test "the closure leaves the entry room's reserved slot alone on a place it did not lay out" do
+    place, entry, stranded = a_broken_interior
+    LocationConnection.from_location(entry).map(&:connected_location).each { |room| assert_not_equal stranded, room }
+
+    Location::Interior.new(place).send(:close_connectivity!, rooms_of(place))
+
+    assert_equal Location::ExitsSchema::MAX_EXITS - 1, LocationConnection.from_location(entry).count
+    assert_not_includes reachable(rooms_of(place)).map(&:id), stranded.id
+  end
+
+  # A HALF-WRITTEN DOOR STOPS THE PAIR IT BELONGS TO AND NOTHING ELSE. It used
+  # to stop the whole repair: the pair came back as a candidate, `#connect!`
+  # refused it, and every other stranded room was abandoned for it.
+  test "a half-written door does not abandon the rest of the repair" do
+    place = place_with(width: 9, depth: 9)
+    entry = room_at(place, "The Hall", 3, 3)
+    north = room_at(place, "The North Room", 3, 0)
+    half = room_at(place, "The West Room", 0, 3)
+    other = room_at(place, "The South Room", 3, 6)
+    door(entry, north)
+    create(:location_connection, location: half, connected_location: entry,
+                                 distance: "adjacent", travel_method: Location::Interior::WALKING)
+
+    Location::Interior.new(place).send(:close_connectivity!, rooms_of(place))
+
+    assert_includes reachable(rooms_of(place)).map(&:id), other.id
+  end
+
   # --- the seam -------------------------------------------------------------
 
   test "a place is a row carrying a footprint, and a room is not" do
@@ -353,6 +386,34 @@ class Location::InteriorTest < ActiveSupport::TestCase
   end
 
   private
+
+  # A PLUS OF ROOMS ON ONE STOREY, hand written: the hall in the middle, three
+  # rooms doored to it, and one that is stranded. The stranded room shares a
+  # wall with the hall and meets each of the others at a corner, so the hall is
+  # the only room the closure could ever join it to.
+  def a_broken_interior
+    place = place_with(width: 9, depth: 9)
+    entry = room_at(place, "The Hall", 3, 3)
+    stranded = room_at(place, "The East Room", 6, 3)
+    [ [ "The North Room", 3, 0 ], [ "The West Room", 0, 3 ], [ "The South Room", 3, 6 ] ].each do |name, x, y|
+      door(entry, room_at(place, name, x, y))
+    end
+
+    [ place, entry, stranded ]
+  end
+
+  def room_at(place, name, x, y, z: 0, width: 3, depth: 3)
+    create(:location, :stub, story: @story, name: name, parent_location: place,
+                             x: x, y: y, z: z, width: width, depth: depth)
+  end
+
+  # A DOOR IS TWO ROWS -- the ruling of 2026-09-03.
+  def door(one, other)
+    [ [ one, other ], [ other, one ] ].each do |from, to|
+      create(:location_connection, location: from, connected_location: to,
+                                   distance: "adjacent", travel_method: Location::Interior::WALKING)
+    end
+  end
 
   def each_door(place)
     rooms = rooms_of(place).index_by(&:id)

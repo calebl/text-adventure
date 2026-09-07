@@ -395,6 +395,24 @@ class Location::Interior
     room
   end
 
+  # THE WAY IN, AS THIS INSTANCE READS IT: the first room `#create_room!` wrote
+  # while a layout is running, and `.entry_room`'s answer off the RECORDS on any
+  # other caller. They are the same room -- a place is laid out once and in one
+  # order, so the order the rows were written in IS the answer.
+  #
+  # IT FALLS BACK RATHER THAN ONLY REMEMBERING, because the reserved slot has to
+  # be a rule about the ROWS and not about how they were reached. That is
+  # `#close_connectivity!`'s own premise, and it may be handed a place this
+  # instance did not lay out -- an interior somebody else broke. With nothing
+  # but the ivar the entry room had the ordinary cap there, so a repair could
+  # spend the one slot the layout kept free for the way IN and nothing would
+  # report it.
+  #
+  # THE FALLBACK IS NEVER TAKEN DURING A LAYOUT and costs it no query:
+  # `#room_to_spare?` is reached only after `#create_rooms!` has run, so the
+  # ivar is already set by the time anything asks.
+  def entry = @entry ||= self.class.entry_room(place)
+
   # WHAT THE ENGINE KNOWS ABOUT A ROOM NOBODY HAS WRITTEN: how big it is and
   # which floor it is on. See `.placeholder_name` for why it says no more.
   def teaser_for(box)
@@ -447,10 +465,19 @@ class Location::Interior
   # joined to what is reachable, by a door if the two share a wall and by stairs
   # if one is directly above the other.
   #
-  # IT STOPS RATHER THAN RAISING when there is nothing left it may join -- every
-  # candidate pair at its exit cap. Raising would be this file taking a room off
-  # a player mid-turn to report a fault about a map; `Story::Doctor` reports the
-  # rooms (`interior_with_an_unreachable_room`) and the building still opens.
+  # IT STOPS RATHER THAN RAISING when `#joinable` has nothing left to offer --
+  # no stranded room shares a wall or stands under one that is reached, or every
+  # pair that does has an end at its exit cap. Raising would be this file taking
+  # a room off a player mid-turn to report a fault about a map; `Story::Doctor`
+  # reports the rooms (`interior_with_an_unreachable_room`) and the building
+  # still opens.
+  #
+  # `break unless connect!` IS A SAFETY NET AND NOT THE ORDINARY EXIT, which it
+  # used to be: a pair already carrying ONE row would be offered, refused, and
+  # offered again for ever, so the loop broke on it -- leaving every OTHER
+  # stranded room unjoined for the sake of one half-written door. `#joinable`
+  # now declines such a pair, so the only pairs reaching here are pairs this can
+  # write, and the guard is what stops the loop if that ever stops being true.
   def close_connectivity!(rooms)
     entry = rooms.first
     return if entry.nil?
@@ -491,8 +518,18 @@ class Location::Interior
   # The first pair -- one room already reachable, one not -- that could be
   # joined: sharing a wall on one storey, or one directly above the other. In
   # record order, so a repair is as re-derivable as the layout it is repairing.
+  #
+  # A PAIR THAT ALREADY CARRIES A ROW IS NOT A CANDIDATE. It can only be a HALF
+  # written door -- one row from the stranded room and none back, which is why
+  # `#reachable_from` never walked it -- and adding the missing row is not this
+  # file's to do: `Story::Doctor` reports it as `one_way_connection` and
+  # `Story::Repair` finishes it, on the record that already says what the edge
+  # is. What this file does is join rooms nothing connects, and these two are
+  # connected; offering them would only be offering `#connect!` something it
+  # refuses.
   def joinable(reached, stranded)
     reached.product(stranded).find do |one, other|
+      next false if connected?(one, other)
       next false unless room_to_spare?(one) && room_to_spare?(other)
 
       (one.box.shares_a_wall?(other.box) || (one.z - other.z).abs == 1 && one.box.shares_ground?(other.box))
@@ -531,7 +568,7 @@ class Location::Interior
   # is being kept for.
   def room_to_spare?(room)
     cap = Location::ExitsSchema::MAX_EXITS
-    cap -= 1 if room == @entry
+    cap -= 1 if room == entry
 
     LocationConnection.from_location(room).count < cap
   end
