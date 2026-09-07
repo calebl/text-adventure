@@ -216,10 +216,14 @@ class Location::Box < Data.define(:x, :y, :z, :width, :depth)
   # has to keep a point in a column that could disagree with the rooms it
   # names. `Location::Interior` builds every stair to satisfy this and
   # `Story::Doctor` reports a pair that does not.
-  def shares_ground?(other)
-    x < other.x + other.width && other.x < x + width &&
-      y < other.y + other.depth && other.y < y + depth
-  end
+  #
+  # `#shared_ground` IS THE STATEMENT AND THIS IS THE QUESTION, the way
+  # `#shares_a_wall?` and `#shared_wall` are one rule below. It matters more
+  # here than there: `Location::Interior` builds stairs to satisfy the
+  # PREDICATE while `Location::Plan#way_for` reads the REGION, so two
+  # statements of where a stairwell can be would eventually put a bearing on a
+  # stair the layout thinks impossible, or none on one it built.
+  def shares_ground?(other) = !shared_ground(other).nil?
 
   # WHETHER A DOOR COULD OPEN BETWEEN THESE TWO: same storey, touching walls,
   # and touching along enough of them for a doorway to stand in. Half-open

@@ -539,64 +539,120 @@ module Story::Audit::Prose
   # One door the prose put in a named wall.
   Door = Data.define(:wall, :sentence)
 
+  # A NAMED WALL, AS ONE PHRASE. The reader's spelling of `Location::Box::WALLS`
+  # with the noun required: "the north side" is where the bar is, "the north
+  # wall" is a wall.
+  WALL_PHRASE = /#{COMPASS}[-\s]?#{WALL_NOUN}/i
+
+  # WHERE A THRESHOLD SITS WHEN IT IS IN A WALL. "on" is deliberately absent:
+  # "a cold hearth ON the south wall" is what is hung there and "the door ON
+  # the north side" is scenery, while prose puts a door IN a wall.
+  DOOR_PLACEMENT = /(?:in|into|through|within)/i
+
+  # The determiner prose puts between a preposition and the noun it governs.
+  DETERMINER = /(?:the|its|his|her|their|this|that|a|an)/i
+
+  # ONE WORD OF FILLER, and never the wall noun -- so a run of filler can not
+  # swallow the wall the relation is about and hand the claim to a later one.
+  FILLER = /(?:\s+(?!walls?\b)[a-z][a-z'-]*)/i
+
   # A SECOND DOOR, NAMED WITHOUT THE WORD. Prose that has already said "door"
   # says "another" or "one" of the next one -- *"and one in the west wall stands
   # half open"* -- and that is the commonest shape a two-door room is written
-  # in, which is most rooms `Location::Interior` lays out.
+  # in, which is most rooms `Location::Interior` lays out. It is read only in a
+  # sentence that named a real threshold, which `#door_claims` requires before
+  # it reads any wall: an anaphor refers back, and a sentence with nothing to
+  # refer back to has not named a door.
   #
-  # ATTACHED TO THE WALL AND NOT MERELY NEAR IT, which is the whole of the
-  # pattern and the reason it is not the bare words. "one" is a numeral and a
-  # pronoun far more often than it is a door: *"the west wall is one long run of
-  # pigeonholes"*, *"the south wall is the one the damp has ruined"*, *"the east
-  # wall is the only one still standing beside the door"* all put it within a
-  # bridge of a wall and none of them claims a door. So the anaphor has to be
-  # doing the job the noun would -- PUT somewhere ("another in the east wall") or
-  # HELD by something ("the east wall has another") -- and the two branches are
-  # the two orders prose writes.
+  # AND WHAT DISAMBIGUATES IT IS THE FORM IT SITS IN, which is why there are
+  # two. "one" is a numeral and a pronoun far more often than it is a door, and
+  # "another" is a determiner as readily as a pronoun.
   #
-  # AND ONLY IN A SENTENCE THAT NAMED A REAL THRESHOLD, which `#door_claims`
-  # requires before it reads any wall. An anaphor refers back; a sentence with
-  # nothing to refer back to has not named a door.
-  DOOR_ANAPHORS = /\b(?:another|one)\s+(?:in|into|through)\b|
-                   \b(?:has|holds|carries)\s+(?:another|one)\b/xi
+  # PUT IN A WALL, the preposition does the work: *"another IN the east wall"*,
+  # *"one IN the west wall"*. Nothing but a door is put in a wall, so the bare
+  # word is safe here -- and the numeral readings fail for want of the
+  # preposition, since *"one long shelf OF ledgers"* and *"the one THE damp has
+  # ruined"* reach no placement at all.
+  #
+  # HELD BY A WALL, nothing follows to disambiguate, so the anaphor has to CLOSE
+  # THE NOUN PHRASE: *"the east wall has another."* stands for a door and *"the
+  # west wall carries ONE GREAT MAP of the estuary"* does not. A following word
+  # means the anaphor is modifying it -- and where that word is itself a
+  # threshold ("has another door") the threshold form reads it anyway.
+  #
+  # WHAT THE CLOSING RULE KNOWINGLY MISSES: "the east wall has another and the
+  # frame is split", where the anaphor does stand alone and a bare word follows
+  # it. One miss is the price of not reading every "has one <noun>" as a door,
+  # and this grammar takes that trade everywhere.
+  DOOR_ANAPHOR_PUT = /(?:another|one)\b/i
+  DOOR_ANAPHOR_HELD = /(?:another|one)\b(?!\s+[a-z])/i
 
-  # HOW FAR THE THRESHOLD MAY SIT FROM THE WALL IT IS IN. The longest real link
-  # measured is 21 characters -- *"the North-East wall carries a shuttered
-  # gate"* -- and the anaphors sit at 1 to 5 -- *"one in the west wall"*, *"the
-  # east wall has another"*. The window may hold no sentence end and no OTHER
-  # named wall, which is what stops a door stepping over the wall it is really
-  # in to reach the next one along.
+  # ------------------------------------------------------------------------
+  # A DOOR IS ATTACHED TO A WALL BY A RELATION, NEVER BY PROXIMITY.
   #
-  # WHAT THE LENGTH ALONE DOES AND DOES NOT BUY, and it is worth being exact
-  # because a doorless wall may stand on EITHER side of a door in one sentence.
-  # Where the doorless wall comes LAST the length is the whole of the defence:
-  # in *"…and another in the east wall leads on; the south wall is hung with
-  # tarred canvas"* the south wall is 25 characters from the nearest door word
-  # and out of reach. Where the doorless wall comes FIRST the length does NOT
-  # reach far enough on its own -- in *"a cold hearth on the south wall, and a
-  # door in the east wall"* the door is 16 characters past the south wall, well
-  # inside the bridge -- and what answers there is `DOOR_BINDS_FORWARD`, which
-  # reads the "in the " between them and gives the door to the wall it is
-  # actually in.
-  DOOR_BRIDGE = 24
+  # THE HISTORY IS THE ARGUMENT, and it is written down because it is what makes
+  # the shape of this grammar the point rather than its details. This check was
+  # first a THRESHOLD anywhere in the sentence, then a threshold within a
+  # character bridge of the wall, then a bridge plus an attached anaphor, then a
+  # bridge that would not reach forward over an "in the". Each of those closed
+  # one shape of one mistake and left the next one open, because all four asked
+  # the same question -- IS A DOOR WORD NEAR THIS WALL -- and the answer to that
+  # question is not the answer to "does the prose say this wall holds a door".
+  # `Location::Plan#closed_walls_clause` tells the model no other wall of the
+  # room holds a door, so the prose it invites names the DOORLESS walls in the
+  # same breath as the doors, and a nearness rule cannot tell the two apart.
+  # That is how a prose heuristic dies in this project -- `Story::Audit`'s
+  # header records two it has already killed.
+  #
+  # SO THE GRAMMAR IS A CLOSED LIST OF ATTACHMENT FORMS, and a wall is claimed
+  # to hold a door only where the sentence puts the two in one of them. There
+  # are three, and they are the ones prose actually writes:
+  #
+  #   PUT IN IT      a threshold bound to the wall by a preposition of place --
+  #                  "a door IN the north wall", "a hatch SET INTO the east
+  #                  wall", "a gate THROUGH the west wall", "the door out IS IN
+  #                  the east wall".
+  #   HELD BY IT     a wall that carries one -- "the north wall HOLDS a door",
+  #                  "the east wall IS BROKEN BY a hatch", "the east wall HAS
+  #                  another".
+  #   WALL FIRST     the inversion of the first, which prose writes for the same
+  #                  relation -- "IN the north wall, a door".
+  #
+  # ANYTHING ELSE CLAIMS NOTHING, whatever sits between the two words and in
+  # either order. "Rain streaks the south wall beside the door", "ledgers line
+  # the south wall; the door out is in the east wall", "the west wall carries
+  # the shelves" -- none of those says a door is in the wall it names, and none
+  # of them is a claim here.
+  #
+  # FILLER IS BOUNDED AND IS NOT A BRIDGE. Each form allows a word or two of
+  # verb or particle where prose needs it -- "is set", "leads out", "out is",
+  # "a shuttered gate" -- and the filler may never be the wall noun. What binds
+  # the claim is the CONNECTIVE, and the bound on the filler only stops one
+  # relation reading across the whole sentence.
+  # ------------------------------------------------------------------------
 
-  # EVERY WALL THE PROSE PUTS A DOOR IN. The grammar is a THRESHOLD and a
-  # COMPASS-QUALIFIED WALL WITHIN `DOOR_BRIDGE` OF EACH OTHER, in either order:
-  # "a door in the north wall", "the east wall is broken by a low hatch". A
-  # compass word with no wall is not a claim about a wall -- "the door on the
-  # north side of the yard" is scenery -- and a wall with no threshold NEAR IT
-  # claims no door at all, which is what keeps "the north wall is bare plaster"
-  # out.
-  #
-  # NEAR IT AND NOT MERELY IN THE SAME SENTENCE, which is the whole of why the
-  # bridge exists. `Location::Plan`'s closing sentence tells a model that no
-  # other wall of the room holds a door, so a description that answers it names
-  # the doorless walls -- and it names them in the same breath as the doors:
-  # *"A door in the north wall gives back onto the landing, and another in the
-  # east wall leads on; the south wall is hung with tarred canvas and the west
-  # wall carries a run of pigeonholes."* A sentence-wide threshold reads all
-  # four walls out of that and flags two of them, on prose that contradicts
-  # nothing. The bridge reads the two it should.
+  # A threshold, or a second one named without the word, PUT IN a named wall.
+  DOOR_PUT_IN_WALL =
+    /(?:#{THRESHOLD}|\b#{DOOR_ANAPHOR_PUT})#{FILLER}{0,2}\s+#{DOOR_PLACEMENT}\b
+     (?:\s+#{DETERMINER})?#{FILLER}{0,1}\s+#{WALL_PHRASE}/xi
+
+  # A named wall that HOLDS one. `is`/`was` take a participle and `by`, which is
+  # what "is broken by a hatch" is and what keeps "is bare" and "is hung with
+  # tarred canvas" out.
+  DOOR_HELD_BY_WALL =
+    /#{WALL_PHRASE}#{FILLER}{0,1}\s+(?:holds?|carries|carried|has|had|(?:is|was)\s+[a-z]+\s+by)\b
+     (?:\s+#{DETERMINER})?#{FILLER}{0,2}\s+(?:#{THRESHOLD}|#{DOOR_ANAPHOR_HELD})/xi
+
+  # The wall named first and the threshold after it, across a comma.
+  DOOR_WALL_FIRST =
+    /#{DOOR_PLACEMENT}\b(?:\s+#{DETERMINER})?\s+#{WALL_PHRASE}
+     \s*,\s*(?:#{DETERMINER}\s+)?(?:[a-z][a-z'-]*\s+){0,1}#{THRESHOLD}/xi
+
+  DOOR_RELATIONS = [ DOOR_PUT_IN_WALL, DOOR_HELD_BY_WALL, DOOR_WALL_FIRST ].freeze
+
+  # EVERY WALL THE PROSE SAYS HOLDS A DOOR, one per wall, in the order the
+  # sentence names them. See the block above for the three forms and why the
+  # grammar is a list of relations rather than a window.
   #
   # WHAT IT KNOWINGLY MISSES: the commonest way prose names a door, which is not
   # to name a wall at all. "Two doors lead out" claims nothing this can read,
@@ -609,8 +665,8 @@ module Story::Audit::Prose
   # this slice nothing ever told a model a room had walls with directions -- and
   # a check with no detections looks exactly like a clean result, which is the
   # failure mode `Story::Audit`'s header names. So `Story::Audit::ProseTest`
-  # fires it on written sentences of the shape a plan invites, in both
-  # directions.
+  # fires it on written sentences of the shape a plan invites, in both orders,
+  # and carries every sentence five rounds of review produced as its own case.
   #
   # AND 2 DETECTIONS OVER THE ROOM PROSE OF EVERY WORLD IN THE REPOSITORY, both
   # of them on one sentence: the hand-written description of The Custom House
@@ -620,16 +676,14 @@ module Story::Audit::Prose
   # and it is the worked example of a description that agrees with its own floor
   # plan. Room 4's door sentence is NOT among them -- it says "no other way out",
   # and `Story::Audit::NEGATIONS` skips the sentence -- so that room is a worked
-  # example the size grammar reads and this one does not.
+  # example the size grammar reads and this one does not. Room 3's WEST wall is
+  # the reason the anaphor forms exist at all: what stands beside that wall is
+  # "one in the west wall", and a grammar that wanted the noun would read the
+  # repository's own worked example as a one-door room.
   #
-  # BOTH FIGURES WERE RE-MEASURED AFTER EACH OF THE THREE NARROWINGS -- the
-  # bridge, the attached form of `DOOR_ANAPHORS`, and `DOOR_BINDS_FORWARD` --
-  # and neither moved through any of them: each took away a false-positive path
-  # and no real detection with it. Room 3's
-  # WEST wall is the reason `DOOR_ANAPHORS` exists at all -- its threshold noun
-  # is 69 characters away, far outside the bridge, and what stands beside the
-  # wall is "one in the west wall". Narrowing to the threshold noun alone would
-  # have read the repository's own worked example as a one-door room.
+  # BOTH FIGURES HELD THROUGH EVERY NARROWING AND THROUGH THE REBUILD, measured
+  # again each time: each change took away a false-positive path and no real
+  # detection with it.
   def door_claims(text)
     body = text.to_s
     return [] if body.blank?
@@ -640,90 +694,29 @@ module Story::Audit::Prose
       next if sentence.match?(Story::Audit::NEGATIONS)
       next unless sentence.match?(THRESHOLD)
 
-      walls = named_walls(sentence)
-      walls.each_with_index do |wall, index|
-        next unless door_word_beside?(sentence, walls, index)
-
-        found << Door.new(wall: compass_word(wall.phrase), sentence: sentence.strip)
-      end
+      found.concat(doors_in(sentence))
     end
 
     found.uniq(&:wall)
   end
 
-  # ONE NAMED WALL AND WHERE IT SITS IN THE SENTENCE. The offsets are what the
-  # bridge is measured over, and they are what let one wall's window stop at the
-  # next wall rather than running through it.
-  NamedWall = Data.define(:phrase, :from, :to)
-
-  def named_walls(sentence)
+  # THE WALLS ONE SENTENCE ATTACHES A DOOR TO, in the order it names them. The
+  # order is the sentence's and not the relation list's, so which form matched
+  # cannot change what a reader sees.
+  def doors_in(sentence)
     found = []
-    sentence.scan(/#{COMPASS}[-\s]?#{WALL_NOUN}/i) do
-      at = Regexp.last_match
-      found << NamedWall.new(phrase: at[0], from: at.begin(0), to: at.end(0))
+
+    DOOR_RELATIONS.each do |relation|
+      sentence.scan(relation) do
+        at = Regexp.last_match
+        wall = at[0][WALL_PHRASE]
+        found << [ at.begin(0), Door.new(wall: compass_word(wall), sentence: sentence.strip) ] if wall
+      end
     end
 
-    found
+    found.sort_by(&:first).map(&:last)
   end
 
-  # WHETHER A DOOR WORD SITS WITHIN `DOOR_BRIDGE` OF THIS WALL, on either side.
-  # The window is clipped at the NEIGHBOURING NAMED WALLS, so the door in one
-  # wall cannot be read as a door in the next wall along -- which is the case
-  # that made the bridge necessary and the one a length alone would leave to
-  # arithmetic. `THRESHOLD` counts; `DOOR_ANAPHORS` count too, because the
-  # caller has already established that this sentence names a real threshold for
-  # them to refer back to.
-  #
-  # THE GAP IS MEASURED TO THE NEAR EDGE OF THE WORD and never through it, so a
-  # threshold that begins inside the bridge is read whole -- *"the North-East
-  # wall carries a shuttered gate"* is 21 characters of bridge and a four-letter
-  # gate, and a window cut at 24 characters would have kept "ga".
-  def door_word_beside?(sentence, walls, index)
-    wall = walls[index]
-    floor = index.zero? ? 0 : walls[index - 1].to
-    ceiling = index == walls.size - 1 ? sentence.length : walls[index + 1].from
-
-    door_word_before?(sentence[floor...wall.from]) || door_word_after?(sentence[wall.to...ceiling])
-  end
-
-  # A door word in the run of text ENDING at the wall, close enough to its end.
-  # A trailing "in the " here is the CORRECT attachment -- "a second door in the
-  # east wall" is a door in the east wall -- so nothing is rejected on its
-  # account.
-  def door_word_before?(window)
-    any_door_word?(window) { |at| window.length - at.end(0) <= DOOR_BRIDGE }
-  end
-
-  # A door word in the run of text BEGINNING at the wall, close enough to its
-  # start AND not bound to the wall that follows.
-  def door_word_after?(window)
-    any_door_word?(window) do |at|
-      at.begin(0) <= DOOR_BRIDGE && !binds_forward?(window[at.end(0)..])
-    end
-  end
-
-  def any_door_word?(window)
-    return false if window.nil?
-
-    window.to_enum(:scan, /#{THRESHOLD}|#{DOOR_ANAPHORS}/).any? { yield(Regexp.last_match) }
-  end
-
-  # WHETHER THE DOOR WORD IS IN THE WALL THAT FOLLOWS IT RATHER THAN THIS ONE.
-  # Everything after the door word up to the end of the window, and the window
-  # ends where the NEXT named wall begins -- so a run that is nothing but a
-  # preposition of place and an article is the front half of "a door in the
-  # <wall>", and that door belongs to the wall on the far side of it.
-  #
-  # ONLY THE AFTER WINDOW ASKS, which is the whole asymmetry: "…the south wall,
-  # and a door in the east wall" names the south wall's covering and the east
-  # wall's door, and read from the south wall the door is 16 characters away and
-  # well inside the bridge. An article is REQUIRED so an exhausted window
-  # ("carries a shuttered gate" with nothing after it) is not mistaken for one,
-  # and the preposition is optional because `DOOR_ANAPHORS` has already eaten it
-  # ("and another in the east wall" leaves only " the ").
-  DOOR_BINDS_FORWARD = /\A\s*(?:(?:in|into|through|on)\s+)?(?:the|a|an|its|this|that)\s*\z/i
-
-  def binds_forward?(tail) = tail.to_s.match?(DOOR_BINDS_FORWARD)
 
   # HOW BIG THE PROSE SAYS THE ROOM IS, AND WHICH STOREY IT SAYS IT IS ON.
   #

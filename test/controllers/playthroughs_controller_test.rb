@@ -255,13 +255,12 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_match "The Sunken Stair", response.body
   end
 
-  # THE ROOM AND THE PLACE IT IS IN, AS TWO SENTENCES. Rooms have parents since
-  # slice 2, so there are two ways to write this line -- "in The Rusted Anchor"
-  # or "in the taproom of The Rusted Anchor" -- and which one the player reads is
-  # the captain's call and is open. Until he rules, the page shows the room named
-  # exactly as the exits and the classifier name it, with the building after it:
-  # the plainest thing that loses neither half.
-  test "show names the place a room is inside, without folding it into the room's name" do
+  # THE ROOM FOLDED INTO THE PLACE IT IS IN, which is the captain's ruling of
+  # 2026-09-06: *"Option B."* Rooms have parents since slice 2, so there were two
+  # ways to write this line -- "in The Rusted Anchor" or "in the taproom of The
+  # Rusted Anchor" -- and he took the second. One sentence, and the room keeps
+  # its stored name as it stands.
+  test "show folds the room into the place it is inside" do
     playthrough = create(:playthrough, :started)
     story = playthrough.story
     anchor = create(:location, :stub, story: story, name: "The Rusted Anchor", width: 12, depth: 8)
@@ -270,20 +269,35 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
 
     get playthrough_path(playthrough)
 
-    assert_match "You are in", response.body
-    assert_match "the taproom", response.body
-    assert_match "Inside The Rusted Anchor", response.body
-    assert_no_match(/taproom of The Rusted Anchor/, response.body)
+    assert_includes response.body, "You are in <strong>the taproom</strong> of The Rusted Anchor."
+    assert_no_match(/Inside The Rusted Anchor/, response.body)
   end
 
-  # AND NOTHING AT ALL FOR A ROOM THAT IS INSIDE NOTHING, which is every room in
-  # every flat world.
+  # AND THE ROOM'S STORED NAME AS-IS, ordinal and all, while
+  # `Location::Interior.placeholder_name` is still what names an interior room
+  # (naming is deferred to `ta-interior-room-names`).
+  test "show uses the room's stored name even while it is a placeholder" do
+    playthrough = create(:playthrough, :started)
+    story = playthrough.story
+    house = create(:location, :stub, story: story, name: "The Custom House", width: 14, depth: 10)
+    playthrough.current_location.update!(name: "The Custom House room 3", parent_location: house,
+                                         x: 7, y: 4, z: 0, width: 7, depth: 6)
+
+    get playthrough_path(playthrough)
+
+    assert_includes response.body,
+                    "You are in <strong>The Custom House room 3</strong> of The Custom House."
+  end
+
+  # AND A ROOM INSIDE NOTHING KEEPS THE PLAIN SENTENCE IT HAS ALWAYS HAD, which
+  # is every room in every flat world.
   test "show says nothing about a place for a room with no parent" do
     playthrough = create(:playthrough, :started)
 
     get playthrough_path(playthrough)
 
-    assert_no_match(/Inside /, response.body)
+    assert_includes response.body,
+                    "You are in <strong>#{playthrough.current_location.name}</strong>."
   end
 
   # THE SLASH MENU IS RENDERED INTO THE FORM AND FETCHED FROM NOWHERE. The whole
