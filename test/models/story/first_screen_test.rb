@@ -158,8 +158,15 @@ class Story::FirstScreenTest < ActiveSupport::TestCase
     _screen, agent = ordinary_build
 
     detail_prompt = agent.prompts[1]
-    assert_includes detail_prompt, "NOBODY is the right answer for most rooms"
+    # THE ORDINARY TERMS ARE NOW THE ROLLED COUNT, since the captain's ruling of
+    # 2026-09-07 (`Location::Population`): the opening room carries no population
+    # word -- nothing ever named it as an exit -- so it rolls one out of the same
+    # fallback every unnamed room rolls out of, and the prompt states the count
+    # that word means. What is asserted is that nothing about this room is
+    # special, either way: no floor under it and no ceiling over it.
+    assert_includes detail_prompt, "## Who Is Here"
     assert_not_includes detail_prompt, "AT LEAST"
+    assert_not_includes detail_prompt, "AT MOST #{Location::Population::MOST} people"
   end
 
   test "takes an empty opening room rather than writing somebody into it" do

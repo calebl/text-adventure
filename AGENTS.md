@@ -146,6 +146,7 @@ Read the header of the file named, not a summary of it.
 | What the narrator and an NPC are told about the moment | `app/models/playthrough/moment.rb` |
 | The game with the prose taken out | `app/models/playthrough/mechanics.rb` |
 | A body, its abilities, and the one check kernel | `app/models/character.rb`, `character/stat_block.rb` |
+| How many people a room is born with, and who picks | `app/models/location/population.rb` |
 | How much is left of one body in one game | `app/models/playthrough/vitals.rb` |
 | A fight, a round, and who strikes back | `app/models/playthrough/fight.rb`, `riposte.rb`, `blow.rb` |
 | A place or a doorway that costs hit points | `app/models/playthrough/hazards.rb`, `toll.rb` |

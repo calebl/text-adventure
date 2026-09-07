@@ -16,6 +16,18 @@
 class Location::Generator
   include SanitizesGeneratedText
 
+  # WHAT A ROOM WITH NOBODY IN IT IS TOLD, and it is a constant rather than a
+  # line inside `#people_instructions` for one reason: it is the OTHER branch of
+  # the count sentence, and `Eval::Realization::Version` has to be able to say
+  # which line of a prompt holds the engine's roll without reading two of them
+  # out of a heredoc. The heading is the same heading, on purpose -- see that
+  # method.
+  NOBODY_HERE = <<~PROMPT.rstrip
+    ## Who Is Here
+    Write NOBODY into this place. There is nobody here, and the description
+    should read like somewhere nobody is standing.
+  PROMPT
+
   attr_reader :location, :story
 
   # `location` is a stub -- a Location with a name and a teaser but no
@@ -53,9 +65,15 @@ class Location::Generator
   # them is still a stub with a danger rolled by `Location::Danger` -- and a
   # second place that knew what a new room is would be a second place to forget
   # the roll.
-  def self.create_stub!(story, name:, teaser:)
+  # AND HOW POPULATED IT IS, WHEN SOMEBODY PICKED A WORD FOR IT. Defaulted to
+  # nil, which is the honest answer for every caller that has no word to pass --
+  # `Location::Interior` lays out a building nobody named, and a row with no word
+  # is one the engine rolls one for (`Location::Population`). Only the exits call
+  # has a word, and `#connect_exit!` is what passes it.
+  def self.create_stub!(story, name:, teaser:, population: nil)
     story.locations.create!(name: name, teaser: teaser, detail_level: :stub,
-                            danger: Location::Danger.for_a_new_room(story))
+                            danger: Location::Danger.for_a_new_room(story),
+                            population: population)
   end
 
   # Description and lore, then the stub exits leading out -- saved in that
@@ -144,7 +162,23 @@ class Location::Generator
   # of 2026-09-07, that the rest of the picks ride on the detail call at first
   # entry -- and `Location::DetailSchema` is what every other room in the game
   # has always been sent, unchanged.
-  def detail_schema = location.place? ? Location::PlaceSchema : Location::DetailSchema
+  # AND FOR A ROOM IT IS BUILT FOR THAT ROOM'S OWN COUNT, which is the one
+  # schema in the app that is not a constant. The captain's ruling of 2026-09-07:
+  # the narrator picks how populated a place is and the engine rolls the count
+  # inside that word's band, so `Location::DetailSchema.for_people` requires
+  # exactly as many people as `#people_instructions` asks for and the sentence and
+  # the field cannot disagree. A BUILDING IS ASKED FOR NO PEOPLE AT ALL -- nobody
+  # ever stands in a container -- so the pick reaches rooms and never places, and
+  # this branch is where that is true.
+  #
+  # BOTH READERS GO THROUGH THE MEMOIZED `#cast_registry`, so this and
+  # `#detail_prompt` cannot come out of two different rolls whichever order they
+  # are called in.
+  def detail_schema
+    return Location::PlaceSchema if location.place?
+
+    Location::DetailSchema.for_people(cast_registry.allowance)
+  end
 
   # THE WAY IN, MOVED OFF THE BUILDING AND ONTO A ROOM OF IT.
   #
@@ -602,41 +636,58 @@ class Location::Generator
   end
 
   # WHAT THE MODEL IS TOLD ABOUT WHO IS IN THIS ROOM. Two things, and the second
-  # is what keeps this cheap: how many people it may name at all, and WHO THEY
-  # ALREADY ARE. Race, age and sex are rolled by `Character::Registry#slots`
-  # before this prompt is built and stated here per slot, so the model writes a
-  # person the engine has already decided rather than deciding one -- the rule
+  # is what keeps this cheap: HOW MANY PEOPLE THERE ARE, and WHO THEY ALREADY
+  # ARE. Race, age and sex are rolled by `Character::Registry#slots` before this
+  # prompt is built and stated here per slot, so the model writes a person the
+  # engine has already decided rather than deciding one -- the rule
   # `Character::Generator` states as *asking for a value the prompt just
   # supplied is a decision bought twice.*
   #
-  # NOBODY IS THE ORDINARY ANSWER and the sentence says so twice, because a room
-  # with somebody in it is a room with a conversation in it and most rooms are
-  # not that. A world at its cap is asked for nobody at all, and the schema's
-  # array can honestly come back empty.
+  # THE COUNT IS A FACT AND NOT A CEILING, which is what the captain's ruling of
+  # 2026-09-07 changed here. This block used to say "AT MOST n" and, two lines
+  # below it, *"NOBODY is the right answer for most rooms"* -- a ceiling and a
+  # nudge to leave it empty, in the same breath. Four of six realization answers
+  # on record then named nobody in rooms whose prompt had offered two slots. Both
+  # sentences are gone: the model has already picked how populated this place is,
+  # on the exits call of the room next door (`Location::ExitsSchema`), the engine
+  # has already rolled the number that word means
+  # (`Location::Population`), and what is left to say is how many people to write
+  # and who they are. `Location::DetailSchema.for_people` requires exactly that
+  # many, so the sentence and the schema are the same statement twice.
+  #
+  # NOUGHT IS ITS OWN SENTENCE AND KEEPS THE HEADING, and both halves of that
+  # matter. A room the pick called empty is a room to be described with nobody in
+  # it, and saying so is a shorter answer rather than a refused one -- so the
+  # array stays optional at nought (see that schema on why an empty required
+  # array reads as an omitted field to `BaseAgent#missing_schema_keys`). The
+  # heading is kept over both branches so that the count-bearing line is always
+  # the line under `## Who Is Here`, which is what
+  # `Eval::Realization::Version` scrubs to tell a prompt version from the
+  # engine's own dice.
   def people_instructions
-    allowance = cast_registry.allowance
+    wanted = cast_registry.allowance
 
-    return "Do not list any people: there is nobody left for this world to hold." if allowance.zero?
+    return NOBODY_HERE if wanted.zero?
 
     <<~PROMPT.rstrip
       ## Who Is Here
-      List AT MOST #{allowance} #{"person".pluralize(allowance)} who #{allowance == 1 ? "is" : "are"} in this place right now.
-      - NOBODY is the right answer for most rooms, and an empty list is a complete
-        answer. Name somebody only when this place would be strange without them
-      - Anyone you name is somebody the player can walk up to and talk to, so they
+      Write EXACTLY #{wanted} #{"person".pluralize(wanted)} who #{wanted == 1 ? "is" : "are"} in this place right now.
+      - Anyone you write is somebody the player can walk up to and talk to, so they
         have to have a reason to be standing here and something they want
       - Do not write the player, and do not write somebody passing through
       - Never give them the name of a place, of a thing, or any name already
         spoken for above
 
-      #{slot_details(allowance)}
+      #{slot_details(wanted)}
     PROMPT
   end
 
   # The people the engine has already decided on, one line each, in the order
-  # the answer's entries are read back in.
-  def slot_details(allowance)
-    lines = cast_registry.slots.first(allowance).each_with_index.map do |details, index|
+  # the answer's entries are read back in. `#slots` is already exactly as long
+  # as the count (`Character::Registry`), so the `first` is a belt on a
+  # statement made one method up rather than a narrowing of anything.
+  def slot_details(wanted)
+    lines = cast_registry.slots.first(wanted).each_with_index.map do |details, index|
       race = details[:race]
       # `details[:sex]` is the STORED value rather than the enum key -- "trans
       # woman", not "trans_woman" -- so the line reads as English. Same reason
@@ -739,6 +790,13 @@ class Location::Generator
       - Distance and travel method must be consistent with the description you
         just wrote, and must be true in both directions -- the way back is the
         same edge
+      - Say how populated each place is, in one of the words offered. A place is
+        peopled by what it is FOR: a market, a taproom, a guardhouse, a
+        workshop, a shrine somebody keeps -- somewhere with a reason for
+        somebody to be standing in it. A place is empty when nothing is asked of
+        anybody there: a cellar, a back stair, a stretch of road, a room that is
+        locked, a place the story has already emptied. Neither answer is the
+        safe one
       - Respect the stated length of each field
     PROMPT
   end
@@ -909,7 +967,8 @@ class Location::Generator
     return unless room_for_this_door?(existing)
 
     neighbour = existing || create_stub!(name, sanitize_string(attributes["teaser"]),
-                                         inside: sanitize_string(attributes["inside"]))
+                                         inside: sanitize_string(attributes["inside"]),
+                                         population: population(attributes))
 
     connect!(location, neighbour, attributes)
     connect!(neighbour, location, attributes)
@@ -973,8 +1032,27 @@ class Location::Generator
   # `INTERIOR`'s: the footprint is drawn before the layout and decides what the
   # layout has to divide, so drawing both from one seed would be one roll
   # deciding twice. See `Roll`'s header for what an axis buys.
-  def create_stub!(name, teaser, inside: nil)
-    room = self.class.create_stub!(story, name: name, teaser: teaser)
+  # AND THE WORD FOR HOW POPULATED IT IS, IF THE ANSWER CARRIED ONE. The
+  # captain's ruling of 2026-09-07 -- the narrator picks how populated a place is
+  # from a closed list -- and this is the moment that pick is kept:
+  # `Location::Population` needs the word before the room's OWN detail prompt is
+  # built, and the only call with any reason to have an opinion about a place it
+  # is not describing is the one naming the way there.
+  #
+  # IT IS A COLUMN WHERE `inside` IS A FOOTPRINT, and the difference is which
+  # question the pick answers. A size can be spent immediately -- the engine rolls
+  # paces and writes them, and nothing needs to remember the word. A population
+  # word cannot: the count is rolled when somebody WALKS IN, which may be never,
+  # so the word has to survive on the row until then.
+  #
+  # NOT VALIDATED HERE, and deliberately: `Location::Population.label_for` reads
+  # the column and rolls a word for a row that has none, so a model that left the
+  # field out or answered outside the enum leaves a stub the engine decides for.
+  # `Location#population` refuses a word the table has no band for, which is the
+  # verify half; sanitizing it to nil first would turn a wrong answer into a
+  # failed save of the whole room.
+  def create_stub!(name, teaser, inside: nil, population: nil)
+    room = self.class.create_stub!(story, name: name, teaser: teaser, population: population)
     sides = Location::Parameters.from("inside" => inside).footprint(footprint_rng(room))
     room.update!(width: sides.first, depth: sides.last) if sides
 
@@ -982,6 +1060,23 @@ class Location::Generator
   end
 
   def footprint_rng(room) = Roll.generator(story: story.id, sequence: room.id, kind: Roll::FOOTPRINT)
+
+  # THE WORD THIS ANSWER PICKED FOR THAT PLACE, or nil for anything the table has
+  # no band for. A word outside the enum is a model ignoring a closed list, and
+  # nil is what the engine rolls for -- so an unrecognisable answer costs the
+  # room its pick and nothing else. `Location::Population` is the one table and
+  # this is the only reader of a model's answer to it.
+  #
+  # A WORD IS ONLY TAKEN FOR A ROOM BEING BORN. An exit naming a place that
+  # already exists reaches `#connect_exit!`'s `existing` branch, and that row's
+  # word is its own: a neighbour's guess must not overwrite what a seed file
+  # wrote or what the room the player has already been in was born with. This is
+  # `#create_stub!`'s argument for that reason and not an update.
+  def population(attributes)
+    word = sanitize_string(attributes["population"])
+
+    word if Location::Population::BANDS.key?(word)
+  end
 
   # Whether the player can already get between here and there, either way
   # round. Both rows are written together, so one direction is enough to know

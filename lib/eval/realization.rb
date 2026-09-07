@@ -73,7 +73,7 @@ module Eval::Realization
   # (`Eval::Realization::Version.offline`), so a prompt edited without a run to
   # judge it is a FAILING TEST rather than a judgement nobody could make. Point
   # it at the after side once the change has been judged, and never before.
-  BASELINE = "interior-entry-after-2".freeze
+  BASELINE = "room-people-after".freeze
 
   # WHERE A CASE'S WORLD IS READ FROM, IN ORDER. The seeded worlds first, so a
   # case against `The Salt Assizes` measures the file every other instrument in

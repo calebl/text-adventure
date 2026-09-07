@@ -46,7 +46,7 @@ One file is one universe and one story. Keys are written in this order:
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
 | `characters`    | one entry each, `race` by name, optional `location` (or `absent`) + a position in it (`x`, `y`), optional `hostile`, optional `stats`, and `items` |
-| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `hazard` + `hazard_die`; optional `parent` + a box (`x`, `y`, `z`, `width`, `depth`); `items`, each with an optional position (`x`, `y`) |
+| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `population`; optional `hazard` + `hazard_die`; optional `parent` + a box (`x`, `y`, `z`, `width`, `depth`); `items`, each with an optional position (`x`, `y`) |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair; optional `hazard` + `hazard_die` + `hazard_from` |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
 
@@ -487,6 +487,42 @@ locations:
   for** (`location_with_an_unknown_danger`). Neither can be repaired: writing a
   monster is world data, and there is no record of which of the four words a
   fifth one meant.
+
+### How populated a place is: `locations[].population`
+
+```yaml
+locations:
+- name: The Fish Market
+  population: a crowd
+- name: The Bonded Cellar
+  population: nobody
+```
+
+- **`population` is how many people a room is BORN with** — one of `nobody`, `a
+  person or two`, `a crowd` (`Location::Population::BANDS`), the shape `danger`
+  and `distance` have. The word is the band and the engine rolls the exact count
+  inside it when the room is realized, so `a crowd` is two or three people and
+  not a number a file can name. The captain's ruling of 2026-09-07 is why it is
+  a word: *"The narrarator should get to decide how populated a room should
+  be"*, from a closed list, with the engine keeping the arithmetic.
+- **It affects people the ENGINE writes when a room is realized**, exactly as
+  `danger` does — so a room your file ships *realized*, with a description and a
+  cast, will never read it. Write it on the rooms you leave as **stubs**, which
+  are the rooms a player will walk into and a model will write.
+- **An absent key is not `nobody`.** Leaving it out means *nobody has picked a
+  word for this room*, and the engine rolls one out of
+  `Location::Population::ROLLED` — seeded on the room's own name, so a world
+  exported and re-seeded keeps every word it had. Writing `nobody` is your file
+  saying the place is empty, and the engine honours it.
+- **Your own cast wins either way.** A room you put three characters in has no
+  places left (`Character::Registry::MAX_PER_ROOM`), so the engine asks for
+  nobody however busy the word is. Nothing ever removes somebody your file
+  placed.
+- Like `danger`, it is **omitted rather than written out** on export when nobody
+  picked a word, and **re-asserted in both directions** on load: deleting the key
+  from a file and re-seeding hands the room back to the engine.
+- The loader refuses **a word the engine has no band for**, naming the file and
+  the room, exactly as it does for a fifth `danger`.
 
 ### Hazards: `locations[].hazard` and a doorway's one-way `hazard_from`
 

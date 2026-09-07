@@ -29,9 +29,7 @@
 # `people` IS HOW A ROOM COMES TO HAVE SOMEBODY IN IT, and it rides on this
 # call for exactly the reasons `items` does -- the room is already being
 # described, so the people the model names are the people it just finished
-# writing a room around, and the two agree by construction. Optional and
-# bounded for the same reasons too: **nobody is the ordinary answer**, and an
-# absent `people` and an empty `people` mean the same thing.
+# writing a room around, and the two agree by construction.
 #
 # WHAT IS NOT IN IT: race, age and sex. Those are `Character::Registry`'s
 # rolls, stated in the prompt per slot before the model answers, on
@@ -97,6 +95,23 @@
 # false` is the ordinary answer and an omitted `inscription` beside it means
 # exactly that. `Item::Registry` refuses an inscription on a thing marked
 # unreadable rather than believing either half over the other.
+# AND `people` IS THE ONE FIELD HERE WHOSE SHAPE IS NOT A CONSTANT, since the
+# captain's ruling of 2026-09-07: the narrator picks how populated a place is
+# from a closed list on the exits call of the room next door
+# (`Location::ExitsSchema`), the engine rolls the count inside that word's band
+# (`Location::Population`), and this field then requires EXACTLY that many
+# people. `.for_people` is the builder and its comment is the design. It used to
+# be optional and capped, with **nobody is the ordinary answer** written into its
+# own description -- which is the sentence the ruling overturned, and the reason
+# four of six realization answers on record named nobody in rooms that had
+# offered two slots.
+#
+# AT NOUGHT IT IS STILL OPTIONAL, and that is load-bearing: an empty required
+# array reads as an omitted field to `BaseAgent#missing_schema_keys`, so a room
+# the pick called empty would fail its own realization. An absent `people` and an
+# empty `people` mean the same thing there, and `Character::Registry` treats them
+# the same.
+#
 # AND THE TWO PROSE FIELDS ARE HELD AS A BLOCK, because a BUILDING is asked for
 # those two and for nothing else on this list. `Location::PlaceSchema` is that
 # schema: same description, same lore, plus the picks that decide what the engine
@@ -116,37 +131,108 @@ class Location::DetailSchema < RubyLLM::Schema
   string :lore, description: "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.", max_length: 900
   end
 
-  class_eval(&PROSE_FIELDS)
+  # AND THE WHOLE OF A ROOM'S SCHEMA IS A BLOCK TOO, one containment level out
+  # from `PROSE_FIELDS` and for a second reason on top of that one: `people` is
+  # the one field in this schema whose SHAPE depends on the room, so
+  # `.for_people` has to be able to build a variant, and `RubyLLM::Schema` keeps
+  # its properties per CLASS -- a variant cannot be a subclass, it has to be a
+  # fresh class the same declarations are run against. This is those
+  # declarations, and `class_exec` below is what runs them against THIS class.
+  #
+  # IT CALLS `PROSE_FIELDS` RATHER THAN REPEATING IT, so the two prose fields
+  # have exactly one definition across all three schemas that send them -- this
+  # one, its variants, and `Location::PlaceSchema`.
+  #
+  # THE ONE THING THE COUNT CHANGES is the `people` array, and the branch is at
+  # the bottom of the block. Everything else is byte-identical between the
+  # shapes on purpose -- a variant that quietly reworded a description would make
+  # every realization bench figure a comparison between two prompts nobody had
+  # compared.
+  DECLARE = lambda do |wanted|
+    class_eval(&PROSE_FIELDS)
 
-  string :name,
-         description: "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",
-         required: false, max_length: Location::RoomName::LIMIT
+    string :name,
+           description: "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",
+           required: false, max_length: Location::RoomName::LIMIT
 
-  array :items,
-        description: "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",
-        required: false,
-        max_items: Item::Registry::MAX_PER_ROOM do
-    object do
-      string :name, description: "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.", max_length: 60
-      string :description, description: "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.", max_length: 400
-      boolean :readable, description: "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things."
-      string :inscription, description: "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.", required: false, max_length: Item::INSCRIPTION_LIMIT
+    array :items,
+          description: "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",
+          required: false,
+          max_items: Item::Registry::MAX_PER_ROOM do
+      object do
+        string :name, description: "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.", max_length: 60
+        string :description, description: "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.", max_length: 400
+        boolean :readable, description: "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things."
+        string :inscription, description: "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.", required: false, max_length: Item::INSCRIPTION_LIMIT
+      end
+    end
+
+    # AND THE ONE FIELD THE COUNT CHANGES. At nought it is the field it always
+    # was -- optional, bounded, and asked for nobody in words; at one or more it
+    # is a length the answer has to meet. `.for_people` below has the whole of
+    # why.
+    array :people,
+          description: wanted > 1 ?
+            "The #{wanted} people who are in this place right now. Write all #{wanted} the instructions describe, in the order they are given there." :
+            (wanted == 1 ? "The person who is in this place right now. Write the one the instructions describe." : "People who are in this place right now."),
+          required: wanted.positive?,
+          min_items: (wanted if wanted.positive?),
+          max_items: wanted.positive? ? wanted : Location::Population::MOST do
+      object do
+        string :fullname, description: "Their full name, as a player would type it to speak to them. 2 or 3 words.", max_length: Character::Registry::PERSON_LIMITS[:fullname]
+        string :nickname, description: "What they are called to their face. 1 or 2 words.", max_length: Character::Registry::PERSON_LIMITS[:nickname]
+        string :appearance, description: "What somebody walking in sees of them, consistent with the room you just wrote and with the race and age you were given for them. One or two sentences.", max_length: Character::Registry::PERSON_LIMITS[:appearance]
+        string :personality, description: "How they behave and how they treat a stranger. One or two sentences.", max_length: Character::Registry::PERSON_LIMITS[:personality]
+        string :backstory, description: "Why they are in this place and what they want. Third person, by name. Two or three sentences.", max_length: Character::Registry::PERSON_LIMITS[:backstory]
+        string :likes, description: "A comma separated list of 2 or 3 things they enjoy.", max_length: Character::Registry::PERSON_LIMITS[:likes]
+        string :dislikes, description: "A comma separated list of 2 or 3 things they cannot stand.", max_length: Character::Registry::PERSON_LIMITS[:dislikes]
+        string :fears, description: "A comma separated list of 1 or 2 things they are afraid of.", max_length: Character::Registry::PERSON_LIMITS[:fears]
+      end
     end
   end
 
-  array :people,
-        description: "People who are in this place right now. Nobody is the right answer for most rooms.",
-        required: false,
-        max_items: Character::Registry::MAX_PER_CALL do
-    object do
-      string :fullname, description: "Their full name, as a player would type it to speak to them. 2 or 3 words.", max_length: Character::Registry::PERSON_LIMITS[:fullname]
-      string :nickname, description: "What they are called to their face. 1 or 2 words.", max_length: Character::Registry::PERSON_LIMITS[:nickname]
-      string :appearance, description: "What somebody walking in sees of them, consistent with the room you just wrote and with the race and age you were given for them. One or two sentences.", max_length: Character::Registry::PERSON_LIMITS[:appearance]
-      string :personality, description: "How they behave and how they treat a stranger. One or two sentences.", max_length: Character::Registry::PERSON_LIMITS[:personality]
-      string :backstory, description: "Why they are in this place and what they want. Third person, by name. Two or three sentences.", max_length: Character::Registry::PERSON_LIMITS[:backstory]
-      string :likes, description: "A comma separated list of 2 or 3 things they enjoy.", max_length: Character::Registry::PERSON_LIMITS[:likes]
-      string :dislikes, description: "A comma separated list of 2 or 3 things they cannot stand.", max_length: Character::Registry::PERSON_LIMITS[:dislikes]
-      string :fears, description: "A comma separated list of 1 or 2 things they are afraid of.", max_length: Character::Registry::PERSON_LIMITS[:fears]
-    end
+  class_exec(0, &DECLARE)
+
+  # THE SAME SCHEMA REQUIRING EXACTLY `wanted` PEOPLE, and this class itself for
+  # a room with nobody in it.
+  #
+  # The captain's ruling of 2026-09-07: the narrator picks how populated a place
+  # is from a closed list and the engine rolls the count inside that word's band
+  # (`Location::Population`). So the count is known before this call is made, and
+  # the field that used to be a ceiling the model could decline is now a length
+  # it has to meet -- `min_items` and `max_items` both, and `required`, which is
+  # what makes an answer with the wrong number of people a FAILED CALL that
+  # rotates rather than a room quietly written empty.
+  #
+  # NOUGHT RETURNS THIS CLASS UNCHANGED, and that is the guard the whole design
+  # rests on rather than an optimisation: an empty required array reads as an
+  # OMITTED FIELD to `BaseAgent#missing_schema_keys`, so a room the pick called
+  # empty would fail its own realization and rotate through every model in the
+  # rotation looking for one that would invent somebody. At nought the array
+  # stays optional and `Location::Generator::NOBODY_HERE` asks for nobody in
+  # words.
+  #
+  # BUILT AT LOAD AND HELD, one class per count the table can produce, because a
+  # schema class per realization would be a class per room for the life of the
+  # process -- `RubyLLM::Schema` keeps its properties in class-level state, so
+  # each one is retained by the constant that names it and by nothing else.
+  #
+  # AND EACH ONE ANSWERS TO THIS CLASS'S NAME. `RubyLLM::Chat#with_schema`
+  # instantiates the class and `to_json_schema` sends `@name` to the provider,
+  # which for an anonymous class would be the literal "Schema". Naming them all
+  # the same thing keeps the payload identical to the one every measured
+  # realization was made with, in the one field of it that is not a declaration.
+  def self.for_people(wanted)
+    wanted = wanted.to_i
+
+    wanted.positive? ? EXACTLY.fetch(wanted) : self
   end
+
+  EXACTLY = (1..Location::Population::MOST).to_h { |wanted|
+    variant = Class.new(RubyLLM::Schema)
+    variant.name(name)
+    variant.class_exec(wanted, &DECLARE)
+
+    [ wanted, variant ]
+  }.freeze
 end

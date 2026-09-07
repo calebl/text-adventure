@@ -103,10 +103,15 @@
 #                        same sentence about the same layer, and it has to cover
 #                        `races.monstrous` and `locations.danger` too, neither
 #                        of which is a column on a character.
-#   hostility_unmoved    the WORLD's three combat columns are what the world
-#                        file says they are: `characters.hostile` for every
-#                        person, `races.monstrous` for every race, and
-#                        `locations.danger` for every room. It is
+#   hostility_unmoved    the WORLD's four columns about what a room is born with
+#                        are what the world file says they are:
+#                        `characters.hostile` for every person,
+#                        `races.monstrous` for every race, and
+#                        `locations.danger` and `locations.population` for every
+#                        room -- the last of those since the captain's ruling of
+#                        2026-09-07 gave the narrator the pick of how populated a
+#                        place is (`Location::Population`), which is a fact about
+#                        the world on exactly `danger`'s terms. It is
 #                        `stat_blocks_unmoved`'s statement one column over --
 #                        no typed line may make somebody hostile, mark a race
 #                        monstrous or make a room dangerous -- and it is a
@@ -117,9 +122,11 @@
 #                        the wrong table. The writers are the seed file, the
 #                        derivation at creation (`Character.hostile_by_default?`,
 #                        which an offline walk cannot reach because it realizes
-#                        no rooms) and the roll a room is born with
-#                        (`Location::Danger`). No model and no player is on that
-#                        list. Stated as "unmoved" against the file, for
+#                        no rooms), the roll a room is born with
+#                        (`Location::Danger`) and, for the population word, the
+#                        exits call of the room next door. No player is on that
+#                        list and a model is on it exactly once, before the room
+#                        exists. Stated as "unmoved" against the file, for
 #                        `cast_unmoved`'s reason: a world with no monsters at
 #                        all is the ordinary world and comparing against the
 #                        file catches everything a stronger sentence would.
@@ -432,7 +439,8 @@ class EngineSweep::Invariants
   # Three statements in one check because they are one fact: a world can contain
   # an enemy, and no typed line may change what that enemy is.
   def hostility_unmoved
-    moved = [ *hostility_of_the_cast, *monstrousness_of_the_races, *danger_of_the_rooms ]
+    moved = [ *hostility_of_the_cast, *monstrousness_of_the_races, *danger_of_the_rooms,
+              *population_of_the_rooms ]
     return nil if moved.empty?
 
     broken("hostility_unmoved", moved.join("; "))
@@ -465,6 +473,37 @@ class EngineSweep::Invariants
       next if room.danger == wanted.fetch(room.name, Location::SAFE)
 
       "#{room.name} is #{room.danger} and the file says #{wanted.fetch(room.name, Location::SAFE)}"
+    end
+  end
+
+  # AND HOW POPULATED THE FILE SAYS EACH ROOM IS. The captain's ruling of
+  # 2026-09-07 -- the narrator picks a word from a closed list, the engine rolls
+  # the count inside it (`Location::Population`) -- and the word is a fact about
+  # the WORLD, on exactly the terms `danger` one method up is: a seed file may
+  # write it, a model may answer it while naming the way there, and NO TYPED
+  # LINE MAY MOVE IT.
+  #
+  # THIS IS THE HALF OF THAT CHANGE A WALK CAN SEE, and the other half it cannot
+  # is worth stating rather than leaving as a gap: the count is rolled when a
+  # room is REALIZED, realizing a room is two model calls, and `EngineSweep`
+  # replaces `BaseAgent.new` with something that raises for the length of a run
+  # (`a-monster-in-a-room.yml` says the same thing about `danger`). So no script
+  # in this directory can watch the engine roll a cast; what every script can
+  # assert, and now does, is that a hundred typed lines leave the word alone.
+  #
+  # NIL IS ASSERTED AS NIL, which is the one difference from `danger`: an absent
+  # key there means the column's default and here it means *nobody picked a
+  # word*, so `presence` is compared against `presence` and a row that ACQUIRED a
+  # word during a walk fails as loudly as one that lost it. That is the shape
+  # every check in this file has and it is here for its reason.
+  def population_of_the_rooms
+    wanted = Array(seed["locations"]).to_h { |row| [ row["name"], row["population"].presence ] }
+
+    story.locations.order(:id).filter_map do |room|
+      next if room.population.presence == wanted.fetch(room.name, nil)
+
+      "#{room.name} is #{room.population.inspect} and the file says " \
+        "#{wanted.fetch(room.name, nil).inspect}"
     end
   end
 

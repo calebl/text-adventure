@@ -45,6 +45,15 @@
 # characters-by-tool-call for CREATION; that item keeps only the memory and
 # cast-list half.
 #
+# HOW MANY OF THEM THERE ARE IS NOT THIS FILE'S, AND THAT IS THE ONE THING
+# WORTH KNOWING BEFORE READING IT. `Location::Population` owns the words a room
+# may be described by, the band of counts behind each word and the rolls; this
+# reads a number off it (`#drawn`) and clamps it against the records. The
+# captain's ruling of 2026-09-07 is quoted in full there and so is what it
+# overturned -- including the sentence that used to stand in this header, that
+# nobody is the ordinary answer. It is not any more: the ordinary answer is
+# whatever word the model picked for this place.
+#
 # WHO A NEW PERSON IS, THE ENGINE DECIDES. Race, age and sex are rolled here,
 # one set per slot, and stated in the realization prompt BEFORE the model
 # answers -- `Character::Generator`'s rule, that asking for a value the prompt
@@ -69,10 +78,19 @@
 # die is of no use to a paragraph. There is therefore no field on
 # `Location::DetailSchema`'s `people` for a model to have answered with one.
 #
-# THREE BOUNDS, and each is read back from the records rather than counted down
-# from a budget: `MAX_PER_CALL` on one answer, `MAX_PER_ROOM` on the room, and
-# `MAX_PER_STORY` on the whole world. A room generates for as long as somebody
-# keeps walking, so a per-room cap alone bounds nothing.
+# TWO BOUNDS, and each is read back from the records rather than counted down
+# from a budget: `MAX_PER_ROOM` on the room and `MAX_PER_STORY` on the whole
+# world. A room generates for as long as somebody keeps walking, so a per-room
+# cap alone bounds nothing.
+#
+# THEY ARE THE HARD LIMIT AND A POPULATION BAND IS ONLY A DISTRIBUTION, and the
+# two are different kinds of number on purpose. The band is what the room is
+# LIKE; the caps are what the game can hold -- a seed file may hand-author a
+# crowd, `#move_to!` may walk somebody into a full room, and a room is realized
+# once while people arrive for as long as the game runs. So the rolled count is
+# CLAMPED by both (`#drawn`) and neither cap moved for the 2026-09-07 ruling,
+# and `Story::Doctor`'s two cap findings go on reporting a room or a world past
+# them exactly as they did.
 #
 # Refusals are DROPPED, never raised, on `Item::Registry`'s rule: a room
 # realized with two of the three people the proposal named is a good room, and
@@ -133,12 +151,16 @@ class Character::Registry
   # their head and a model can copy from exactly.
   MAX_PER_ROOM = 3
 
-  # HOW MANY ONE REALIZATION MAY NAME. Two, and it is the captain's number:
-  # *"the schema must allow empty and the prompt should make nobody-or-one the
-  # ordinary case, not a crowd."* The schema bounds the answer
-  # (`Location::DetailSchema`) and this is the same figure, kept here because
-  # the prompt reads it to say how many slots it is describing.
-  MAX_PER_CALL = 2
+  # THERE IS NO `MAX_PER_CALL` HERE ANY MORE, and its absence is the shape of
+  # the captain's ruling of 2026-09-07 rather than a tidy-up. It was two -- *"the
+  # schema must allow empty and the prompt should make nobody-or-one the
+  # ordinary case, not a crowd"* -- and it was a CEILING the prompt offered with
+  # "AT MOST" for the model to fill as sparsely as it liked. There is no ceiling
+  # now: `#slots` is exactly as long as the count the engine rolled, and the most
+  # any one call can ask for is the top of `Location::Population`'s widest band,
+  # which that file publishes as `MOST` and `Location::DetailSchema` reads.
+  # Naming the same number twice is how the schema's bound and the table's
+  # widest band come to disagree.
 
   # HOW MANY PEOPLE ONE WORLD MAY HOLD AT ALL, seeded and generated together.
   # The per-room cap bounds nothing on its own: a world generates rooms for as
@@ -184,7 +206,7 @@ class Character::Registry
   end
 
   # WHO THE ENGINE HAS ALREADY DECIDED THE NEXT PEOPLE ARE: one race, age and
-  # sex per slot this call may fill, rolled once and read by both the prompt
+  # sex per slot this call WILL fill, rolled once and read by both the prompt
   # (`Location::Generator#people_instructions`) and the row. Memoized because
   # the two have to agree -- a prompt that described a Bell-Keeper of 44 and a
   # row that came out Shorefolk of 19 would be a person the description is
@@ -201,22 +223,43 @@ class Character::Registry
   # AND THE POOL DECIDES HOSTILITY, one line below in `#create_one`. Nothing
   # here asks a model anything: the race is the engine's own choice and the flag
   # is read off it.
+  #
+  # AND HOW MANY SLOTS THERE ARE IS `Location::Population`'s, which is the whole
+  # of what the captain's ruling of 2026-09-07 changed here. This used to build
+  # `MAX_PER_CALL` slots as a CEILING and let the model name as few of them as
+  # it liked; it now builds EXACTLY the number the engine rolled inside the band
+  # the model picked, so the length of this array is the length of the answer the
+  # prompt asks for and the length of the array the schema requires. An empty
+  # array is a room the pick said has nobody in it, and it is a complete answer
+  # rather than a failure.
+  #
+  # TWO GENERATORS, AND WHICH ONE IS WHICH IS THE DESIGN RATHER THAN AN
+  # ACCIDENT. HOW MANY people a room has is drawn by `Location::Population` off
+  # the ROOM'S NAME, because a population is a fact about a place and a place
+  # survives being exported and re-seeded with every id re-issued. WHO each of
+  # them is is drawn here off `Location::Danger.generator_for`, which keys on the
+  # room's id -- unchanged by the 2026-09-07 ruling, so a seeded world's cast
+  # comes out exactly as it did before wherever the count matches.
+  #
+  # ONE `monstrous?` THROW PER SLOT, IN ORDER, out of one generator --
+  # `Roll`'s standing rule, and the order is fixed here rather than incidental:
+  # inserting a roll ahead of another one moves every answer after it.
   def slots
     @slots ||= begin
       rng = Location::Danger.generator_for(location)
 
-      Array.new(MAX_PER_CALL) do
+      Array.new(drawn) do
         { race: race_from(Location::Danger.monstrous?(location, rng: rng)),
           age: rand(18..80), sex: Character.sexes.values.sample }
       end
     end
   end
 
-  # How many this call may actually name: the smaller of what one answer may
-  # hold, what is left of the room and what is left of the world.
-  def allowance
-    [ MAX_PER_CALL, room_for_people, world_for_people ].min
-  end
+  # HOW MANY THIS CALL ASKS FOR, and it is the length of `#slots` rather than a
+  # second calculation of the same number -- the two used to be able to
+  # disagree, and the prompt states one person per slot, so they cannot be
+  # allowed to.
+  def allowance = slots.size
 
   # WHO THE RECORDS PLACE HERE. The closed set, read through the one scope, so
   # a caller of this class never has to know how presence is stored.
@@ -238,6 +281,22 @@ class Character::Registry
   end
 
   private
+
+  # HOW MANY PEOPLE THIS ROOM GETS: the word somebody picked for it, the count
+  # the engine rolls inside that word's band, and then the two caps read back
+  # from the records. `Location::Population` owns the first two and its header
+  # is the design.
+  #
+  # THE CAPS ARE STILL THE HARD LIMIT AND THEY DID NOT MOVE. A band is a
+  # distribution, `MAX_PER_ROOM` and `MAX_PER_STORY` are invariants, and the
+  # clamp is what keeps the second true of the first: a room a seed file already
+  # put three people in has no slots left however busy the pick called it, and a
+  # world at `MAX_PER_STORY` gets rooms with nobody in them rather than failing.
+  # That is also the whole of *a seeded room's own cast wins* -- nothing here
+  # removes anybody, it only stops asking for more.
+  def drawn
+    [ Location::Population.count_for(location), room_for_people, world_for_people ].min
+  end
 
   # ONE OF THE TWO POOLS, and a pool that is empty falls back to the whole race
   # list rather than to nobody. Writing NOBODY would mean a room quietly losing
@@ -324,7 +383,15 @@ class Character::Registry
     reason = creation_refusal(fullname, attributes)
     return refuse(fullname, reason) if reason
 
-    details = slots.fetch(slot % MAX_PER_CALL)
+    # ONE PERSON PER SLOT, AND A CANDIDATE PAST THE LAST SLOT IS REFUSED. It
+    # used to wrap -- `slots.fetch(slot % MAX_PER_CALL)` -- back when `#slots`
+    # was a fixed-length ceiling and an extra entry could only be a model
+    # ignoring `max_items`. Now the array is exactly as long as the count the
+    # engine rolled (`#drawn`), so a wrap would write a second person off the
+    # first person's race and age: two rows the prompt described once. The
+    # honest answer is the one this class gives everything it will not take.
+    details = slots[slot]
+    return refuse(fullname, "the engine rolled #{slots.size} #{"person".pluralize(slots.size)} for this room and this is number #{slot + 1}") if details.nil?
     story.characters.create!(
       fullname: fullname,
       nickname: field(attributes, :nickname).presence,

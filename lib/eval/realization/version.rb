@@ -23,8 +23,9 @@
 #                          bench was built to measure, and every one of them
 #                          lives in a user message.
 #
-# AND ONE LINE IS SCRUBBED BEFORE THE DIGEST IS TAKEN, which is the whole of
-# what makes `stable` mean anything here.
+# AND TWO KINDS OF LINE ARE SCRUBBED BEFORE THE DIGEST IS TAKEN, which is the
+# whole of what makes `stable` mean anything here. Both are the engine's own
+# dice, and a die is not a version of a prompt.
 #
 # `Character::Registry#slots` rolls the race, age and sex of each person the
 # call may name, and `Location::Generator#slot_details` states them in the
@@ -34,6 +35,33 @@
 # re-issues on every load. So those lines legitimately differ between two
 # repetitions of one case, and a digest over them would call every run a
 # different prompt version and every run unstable.
+#
+# AND SO IS THE COUNT THE PEOPLE BLOCK ASKS FOR, one paragraph up's reason
+# exactly. Since the captain's ruling of 2026-09-07 the narrator picks how
+# populated a place is from a closed list on the exits call of the room next
+# door, and the engine rolls the number that word means
+# (`Location::Population`). A room a seed file left silent about carries no word,
+# so the LABEL is rolled as well -- keyed on the room's own id, which a staged
+# copy of a world re-issues on every load, exactly like the race above. So the
+# count legitimately differs between two repetitions of one case, and a digest
+# over it would call every run a different prompt version and every run
+# unstable.
+#
+# IT IS SCRUBBED BY POSITION AND NOT BY WORDING: the line under `## Who Is
+# Here`, whichever of the two sentences `Location::Generator#people_instructions`
+# put there. That is why the heading is kept over both branches -- a scrub that
+# matched the sentence would stop matching the moment somebody reworded it, which
+# is the one thing this file exists to notice. THE REST OF THE BLOCK IS STILL
+# COVERED: the bullets, the slot preamble and the nought branch's second line are
+# all inside the digest, so a reworded instruction moves the version and a
+# different roll does not.
+#
+# WHAT IS NOT LOST BY SCRUBBING IT: the count is RECORDED rather than assumed --
+# `Eval::Realization::Stage::Standing#people_allowance` -- so `people_offered` is
+# a measured mean and `people_take_up` a ratio over what was actually asked for.
+# The bench can therefore still answer the question the ruling was made to fix,
+# *does the model write the people the engine asked for*, across a spread of
+# counts rather than at one.
 #
 # THEY ARE SCRUBBED RATHER THAN PINNED, and that is a deliberate choice about
 # where the honesty goes. Pinning them would mean this file re-implementing
@@ -87,7 +115,17 @@ module Eval::Realization::Version
 
   SCRUBBED = "  <the engine's own roll -- see Eval::Realization::Version>".freeze
 
-  def scrub(prompt) = prompt.to_s.gsub(ROLLED_CAST_LINE, SCRUBBED)
+  # THE ROLLED COUNT, BY POSITION: the heading `Location::Generator` writes over
+  # both branches of the people block, and the one line under it. Anchored on the
+  # heading so that the items and exits allowances -- read off the records rather
+  # than rolled, and supposed to be constant -- go on being covered.
+  ROLLED_PEOPLE_LINE = /^(## Who Is Here\n).*$/
+
+  COUNT_SCRUBBED = "\\1<the engine's own roll -- see Eval::Realization::Version>".freeze
+
+  def scrub(prompt)
+    prompt.to_s.gsub(ROLLED_CAST_LINE, SCRUBBED).gsub(ROLLED_PEOPLE_LINE, COUNT_SCRUBBED)
+  end
 
   # The digests a run records, computed off the readings it collected -- the
   # live `Eval::Realization::Bench::Reading`s, because they are the only place

@@ -14,6 +14,28 @@
 # it follows from the other two. Three free-text fields per exit, up to four
 # exits, was twelve prose decisions per room, and the two failure modes that
 # produced are documented on LocationConnection.
+#
+# `population` IS ASKED HERE AND NOWHERE ELSE, AND IT IS A WORD. The captain's
+# ruling of 2026-09-07 -- *"The narrarator should get to decide how populated a
+# room should be"*, by a closed-list pick -- and `Location::Population` is the
+# closed list, the bands behind each word and the reason it is not a number.
+#
+# WHY THIS CALL AND NOT THE ONE THAT DESCRIBES THE PLACE.
+# `Character::Registry#slots` states WHO each person is in the detail prompt
+# before the model answers, so how many slots there are has to be known BEFORE
+# that prompt is built -- and the detail call is the first call a room gets. So
+# the word for a place is picked by the room NEXT DOOR while it is naming the
+# way there, and `Location::Generator.create_stub!` writes it on the stub as it
+# is created. That is `distance`'s own shape: a fact about somewhere else,
+# answered by the only call that has any reason to be thinking about it.
+#
+# IT IS REQUIRED HERE AND OPTIONAL IN EFFECT, which is worth saying because the
+# two do not look the same from outside. `BaseAgent#missing_schema_keys` reads
+# TOP-LEVEL required properties only, so a model that leaves this out does not
+# fail its call: the stub is written with no word and the engine rolls one at
+# realization, exactly as it does for the opening room and for every room of a
+# laid-out interior. Required is therefore the cheap half of *inform and verify*
+# -- it raises the odds of an answer and nothing depends on getting one.
 class Location::ExitsSchema < RubyLLM::Schema
   # HOW MANY WAYS OUT OF ONE ROOM, IN TOTAL AND NOT PER CALL.
   #
@@ -64,6 +86,18 @@ class Location::ExitsSchema < RubyLLM::Schema
                           "and for a room, an office or a hall, which are already somewhere you stand. " \
                           "When it really is a building, pick the size it would really be.",
              enum: Location::Parameters::INSIDE.keys, required: false
+      # AND HOW POPULATED IT IS. `Location::Population` is the closed list, the
+      # band of counts behind each word and the reason it is a word rather than a
+      # number; the header above has why the question is asked on this call.
+      #
+      # REQUIRED, WHICH IS THE ONE THING IT DOES DIFFERENTLY FROM `inside` above
+      # it, and the difference is that this list has no quietest option to fall
+      # back on. `no inside` is a real answer a model can give; there is no word
+      # for *I would rather not say how populated this is* -- nil on the column
+      # means NOBODY PICKED, which is the engine's own state and not a pick
+      # (`Location::Population`). So the field asks, and nothing rests on the
+      # asking: see the header on why required here is optional in effect.
+      string :population, description: "How many people are in that place. Pick the closest of these words. It is a word and never a number: the engine decides how many people that is.", enum: Location::Population::LABELS
     end
   end
 end

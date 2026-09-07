@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_140000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -139,6 +139,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_120000) do
     t.boolean "mobile", default: false, null: false
     t.string "name"
     t.integer "parent_location_id"
+    t.string "population"
     t.integer "story_id", null: false
     t.text "teaser"
     t.datetime "updated_at", null: false

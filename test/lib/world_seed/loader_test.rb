@@ -258,6 +258,41 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal Location::SAFE, story.locations.find_by(name: "The Closet").danger
   end
 
+  # HOW POPULATED THE FILE SAYS A ROOM IS, and the difference from `danger` one
+  # test up: an absent key is NIL rather than a default. Nil is *nobody picked a
+  # word*, which the engine rolls one for; `nobody` is a file saying the place is
+  # empty (`Location::Population`).
+  test "loads how populated a room is and leaves the rest for the engine to decide" do
+    world = document
+    world["locations"].find { |room| room["name"] == "The Closet" }["population"] = "nobody"
+
+    story = WorldSeed::Loader.new(world).load!
+
+    assert_equal "nobody", story.locations.find_by(name: "The Closet").population
+    assert_nil story.locations.find_by(name: "The Office").population
+  end
+
+  # THE SAME BOTH-DIRECTIONS RULE: a stale `a crowd` would keep the engine
+  # writing people into a room its author had emptied, with no way to undo it
+  # from the file.
+  test "re-seeding takes a room's population off when the file drops it" do
+    peopled = document
+    peopled["locations"].find { |room| room["name"] == "The Closet" }["population"] = "a crowd"
+    WorldSeed::Loader.new(peopled).load!
+
+    story = WorldSeed::Loader.new(document).load!
+
+    assert_nil story.locations.find_by(name: "The Closet").population
+  end
+
+  test "rejects a population the engine has no band for" do
+    world = document
+    world["locations"].first["population"] = "heaving"
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+    assert_match(/there is: #{Regexp.escape(Location::Population::LABELS.join(", "))}/, error.message)
+  end
+
   test "rejects a danger the engine has no table for" do
     world = document
     world["locations"].first["danger"] = "a bit worrying"

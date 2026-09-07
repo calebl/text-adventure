@@ -174,6 +174,72 @@ class Character::RegistryTest < ActiveSupport::TestCase
     assert_predicate created, :valid?
   end
 
+  # --- how many people a room gets ------------------------------------------
+  #
+  # The captain's ruling of 2026-09-07: *"The narrarator should get to decide
+  # how populated a room should be"*, by a closed-list pick, with the engine
+  # rolling the count inside the band. `Location::Population` owns the table;
+  # what is pinned here is that this class asks for EXACTLY what the roll said
+  # and refuses anything past it.
+
+  test "the rolled count is how many slots there are" do
+    (0..Location::Population::MOST).each do |wanted|
+      room = create(:location, story: @story, name: "Chamber #{wanted}")
+
+      Location::Population.stub(:count_for, wanted) do
+        assert_equal wanted, Character::Registry.new(room).slots.size
+      end
+    end
+  end
+
+  # A ROOM THE PICK SAID IS EMPTY GETS NOBODY, and it is not a failure: an empty
+  # slot list is a complete answer, which is why the schema's array stays
+  # optional at nought (`Location::DetailSchema`).
+  test "a room whose word is nobody has no slots and writes nobody" do
+    room = create(:location, :unpeopled, story: @story, name: "The Cold Store")
+
+    assert_empty Character::Registry.new(room).slots
+    assert_equal 0, Character::Registry.new(room).allowance
+    assert_no_difference -> { Character.count } do
+      Character::Registry.new(room).admit!([ sheet(fullname: "Neb Halloran") ])
+    end
+  end
+
+  # AND A PERSON PAST THE LAST SLOT IS REFUSED RATHER THAN WRAPPED. It used to
+  # wrap -- `slot % MAX_PER_CALL` -- which would now write a second row off the
+  # first person's race and age: two people the prompt described once.
+  test "a person past the last slot is refused rather than given the first slot again" do
+    room = create(:location, story: @story, name: "The Long Gallery")
+
+    Location::Population.stub(:count_for, 1) do
+      people = Character::Registry.new(room).admit!([ sheet(fullname: "Neb Halloran"), sheet(fullname: "Ammon Brace") ])
+
+      assert_equal [ "Neb Halloran" ], people.map(&:fullname)
+    end
+  end
+
+  # THE OPENING ROOM IS NOT SPECIAL-CASED. The captain's ruling of 2026-09-05 --
+  # *"the opening room should not guarantee at least one person. The protagonist
+  # can start by themselves."* -- and it holds because nothing here knows which
+  # room is the opening one: it carries no word, so it takes the same fallback
+  # every unnamed room takes.
+  test "the opening room rolls its people like any other room with no word" do
+    # A STORY OF ITS OWN, so that the room this asserts about is really the
+    # opening one: `Story#opening_location` is the story's first room and the
+    # setup above already made two of them.
+    story = create(:story)
+    opening = create(:location, :population_unset, story: story, name: "The Iron Gate")
+    ordinary = create(:location, :population_unset, story: story, name: "The Long Stair")
+
+    assert_equal opening, story.reload.opening_location
+    [ opening, ordinary ].each do |room|
+      generator = Location::Population.generator_for(room)
+
+      assert_includes Location::Population::ROLLED, Location::Population.label_for(room, rng: generator)
+      assert_equal Location::Population.count_for(room), Character::Registry.new(room).allowance
+    end
+  end
+
   # --- where monsters come from ---------------------------------------------
   #
   # THE CAPTAIN'S SEVENTH RULING, 2026-09-04 evening: a dangerous room draws its
@@ -435,13 +501,32 @@ class Character::RegistryTest < ActiveSupport::TestCase
     end
   end
 
-  test "the allowance is the smallest of the three bounds" do
-    assert_equal Character::Registry::MAX_PER_CALL, registry.allowance
+  # THE DRAW, THEN THE TWO CAPS. The rolled count is what the room is LIKE and
+  # the caps are what the game can hold, so the allowance is the smallest of the
+  # three -- and the caps are read back from the records, which is what makes
+  # them bite here at all.
+  test "the allowance is the rolled count narrowed by the room and the world" do
+    Location::Population.stub(:count_for, Character::Registry::MAX_PER_ROOM) do
+      assert_equal Character::Registry::MAX_PER_ROOM, registry.allowance
 
-    create(:character, story: @story, location: @here)
-    create(:character, story: @story, location: @here)
+      create(:character, story: @story, location: @here)
+      create(:character, story: @story, location: @here)
 
-    assert_equal 1, registry.allowance
+      assert_equal 1, Character::Registry.new(@here).allowance
+    end
+  end
+
+  # AND A ROOM A SEED FILE ALREADY FILLED GETS NOBODY, however busy the pick
+  # called it. This is *a seeded room's own cast wins*, and it is the clamp
+  # above rather than a rule of its own: nothing removes anybody, the engine
+  # only stops asking.
+  test "a room already at its cap asks for nobody whatever its population says" do
+    Character::Registry::MAX_PER_ROOM.times { create(:character, story: @story, location: @here) }
+
+    Location::Population.stub(:count_for, Character::Registry::MAX_PER_ROOM) do
+      assert_equal 0, Character::Registry.new(@here).allowance
+      assert_empty Character::Registry.new(@here).slots
+    end
   end
 
   # A refusal costs the room a person and never its description: a room realized

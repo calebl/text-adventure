@@ -129,6 +129,7 @@ module Eval
     db/eval/interior-entry-before/realization.json
     db/eval/interior-entry-after/realization.json
     db/eval/interior-entry-after-2/realization.json
+    db/eval/room-people-after/realization.json
   ].freeze
 
   # CHECKS A SCRIPTED RUN CANNOT ANSWER, AND WHY -- reported unavailable rather

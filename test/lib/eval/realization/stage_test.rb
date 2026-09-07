@@ -63,8 +63,14 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
     stage(kase(room: "The Tide Post", reached_from: "The Causeway Court", story: "The Salt Assizes")) do |standing|
       assert_includes Character.present_in(standing.location).pluck(:fullname), "Neb Halloran"
       assert_includes standing.taken_names, "Neb Halloran"
-      assert_equal Character::Registry::MAX_PER_CALL, standing.people_allowance,
-                   "the per-call cap is the binding one here, occupant or no occupant"
+      # PINNED, because the count is a roll now (`Location::Population`) and a
+      # seeded room carries no word for the engine to read: what this asserts is
+      # that the occupant costs the room one of its places, not what the die
+      # said.
+      Location::Population.stub(:count_for, Character::Registry::MAX_PER_ROOM) do
+        assert_equal Character::Registry::MAX_PER_ROOM - 1, standing.people_allowance,
+                     "the occupant costs the room one of its places"
+      end
     end
   end
 

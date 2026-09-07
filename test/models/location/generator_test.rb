@@ -43,7 +43,13 @@ class Location::GeneratorTest < ActiveSupport::TestCase
         "name" => "The Pump Gallery",
         "teaser" => "Something down there is still turning.",
         "distance" => "across the district",
-        "travel_method" => "swimming"
+        "travel_method" => "swimming",
+        # HOW POPULATED THE PLACE THAT WAY IS, which is the pick the exits call
+        # answers per exit and `.create_stub!` writes on the stub
+        # (`Location::Population`). One word here and none on the second exit,
+        # because a model that leaves it out is a case the engine has to survive:
+        # the stub is written with no word and the engine rolls one.
+        "population" => "a crowd"
       },
       {
         "name" => "Tidewater Stair",
@@ -203,7 +209,14 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     room = stub_location(name: "The Harbour Road")
 
     assert_equal Location::PlaceSchema, Location::Generator.new(place).detail_schema
-    assert_equal Location::DetailSchema, Location::Generator.new(room).detail_schema
+
+    # A ROOM'S SCHEMA IS A SHAPE OF `Location::DetailSchema` AND NOT ALWAYS THE
+    # CLASS ITSELF, since the 2026-09-07 population ruling: `.for_people` builds
+    # a variant requiring exactly the rolled count, and every shape answers to
+    # this name (`Location::DetailSchema`). What matters here is that a room is
+    # never sent the `parameters` block, which is what the name says.
+    assert_equal "Location::DetailSchema", Location::Generator.new(room).detail_schema.name
+    assert_not_includes Location::Generator.new(room).detail_schema.properties.keys, :parameters
   end
 
   test "the picks a building came back with are what its inside is laid out from" do
@@ -486,7 +499,13 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     answer = DETAIL.merge("items" => FURNISHED["items"], "people" => [ PERSON ])
     agent = FakeAgent.new(answer)
 
-    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+    # PINNED, because a room of an interior carries no population word -- no
+    # model ever named it as an exit -- so the engine rolls one, and this test
+    # is about the call being made rather than about what the die said. See
+    # `Location::Population`.
+    Location::Population.stub(:count_for, 1) do
+      BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+    end
 
     assert_predicate room.reload, :realized?
     assert_equal DETAIL["description"], room.description
@@ -811,7 +830,7 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     agent = FakeAgent.new(DETAIL, EXITS)
     realize(stub_location, agent)
 
-    assert_equal [ Location::DetailSchema, Location::ExitsSchema ], agent.schemas
+    assert_equal [ "Location::DetailSchema", "Location::ExitsSchema" ], agent.schemas.map(&:name)
   end
 
   # A room gets the place-shaped half of the universe -- what the world is made
@@ -974,7 +993,7 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_equal "The Drowned Ledger", location.name
     assert_equal OPENING["teaser"], location.teaser
     assert location.realized?
-    assert_equal [ Location::DetailSchema, Location::ExitsSchema ], agent.schemas
+    assert_equal [ "Location::DetailSchema", "Location::ExitsSchema" ], agent.schemas.map(&:name)
     assert_equal 2, location.exits.count
   end
 
@@ -1052,6 +1071,67 @@ class Location::GeneratorTest < ActiveSupport::TestCase
 
     assert location.reload.realized?, "it is still written out in full"
     assert_equal 1, agent.prompts.count, "the detail call, and no exits call"
+  end
+
+  # --- how populated the place that way is ------------------------------------
+  #
+  # The captain's ruling of 2026-09-07: the narrator picks how populated a place
+  # is, from a closed list, and the engine rolls the count inside that word's
+  # band. The pick rides on THIS call because the count has to be known before
+  # that room's own detail prompt is built -- see `Location::Population`.
+
+  test "the word the answer picked for a place is written on the stub" do
+    location = stub_location(name: "The Drowned Ledger")
+    agent = FakeAgent.new(DETAIL, EXITS)
+
+    realize(location, agent)
+
+    assert_equal "a crowd", @story.locations.find_by(name: "The Pump Gallery").population
+  end
+
+  # A MODEL THAT LEAVES IT OUT COSTS THE ROOM ITS PICK AND NOTHING ELSE: the
+  # stub is written with no word, and the engine rolls one when somebody walks
+  # in. Nothing depends on the answer arriving, which is the standing constraint.
+  test "an exit with no word is a stub the engine will decide for" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL, EXITS))
+
+    assert_nil @story.locations.find_by(name: "Tidewater Stair").population
+  end
+
+  test "a word the table has no band for is not written" do
+    location = stub_location(name: "The Drowned Ledger")
+    answer = { "exits" => [ EXITS["exits"].first.merge("population" => "heaving") ] }
+
+    realize(location, FakeAgent.new(DETAIL, answer))
+
+    assert_nil @story.locations.find_by(name: "The Pump Gallery").population
+  end
+
+  # AND A PLACE THAT ALREADY EXISTS KEEPS ITS OWN WORD. A neighbour's guess must
+  # not overwrite what a seed file wrote or what the room the player has already
+  # walked into was born with.
+  test "naming a place that already exists does not repaint its population" do
+    location = stub_location(name: "The Drowned Ledger")
+    known = create(:location, :stub, story: @story, name: "The Pump Gallery", population: "nobody")
+
+    realize(location, FakeAgent.new(DETAIL, EXITS))
+
+    assert_equal "nobody", known.reload.population
+  end
+
+  # AND THE MODEL IS TOLD WHAT MAKES A PLACE BUSY, which is the inform half. It
+  # is a prompt sentence and nothing rests on it: the engine takes a word it
+  # recognises and rolls its own for anything else.
+  test "the exits prompt says what peoples a place and what empties one" do
+    location = stub_location(name: "The Drowned Ledger")
+    agent = FakeAgent.new(DETAIL, EXITS)
+
+    realize(location, agent)
+
+    assert_match(/Say how populated each place is, in one of the words offered/, agent.prompts.last)
+    assert_match(/Neither answer is the\n?\s*safe one/, agent.prompts.last)
   end
 
   test "the room's remaining allowance is what the model is asked for" do
@@ -1132,7 +1212,7 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     realize(location, agent)
 
     assert_equal 2, agent.prompts.size
-    assert_equal [ Location::DetailSchema, Location::ExitsSchema ], agent.schemas
+    assert_equal [ "Location::DetailSchema", "Location::ExitsSchema" ], agent.schemas.map(&:name)
   end
 
   test "a room the model furnished with nothing is furnished with nothing" do
@@ -1252,7 +1332,7 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     realize(location, agent)
 
     assert_equal 2, agent.prompts.size
-    assert_equal [ Location::DetailSchema, Location::ExitsSchema ], agent.schemas
+    assert_equal [ "Location::DetailSchema", "Location::ExitsSchema" ], agent.schemas.map(&:name)
   end
 
   # NOBODY IS THE ORDINARY ANSWER, and an omitted `people` and an empty one mean
@@ -1297,13 +1377,48 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     location = stub_location(name: "The Drowned Ledger")
     agent = FakeAgent.new(PEOPLED, EXITS)
 
-    realize(location, agent)
+    Location::Population.stub(:count_for, Location::Population::MOST) { realize(location, agent) }
     prompt = agent.prompts.first
 
-    assert_match(/List AT MOST #{Character::Registry::MAX_PER_CALL} people/, prompt)
-    assert_match(/NOBODY is the right answer for most rooms/, prompt)
+    assert_match(/Write EXACTLY #{Location::Population::MOST} people/, prompt)
+    assert_no_match(/NOBODY is the right answer/, prompt,
+                    "the ceiling's nudge to leave the room empty is the sentence the 2026-09-07 ruling deleted")
     assert_match(/the 1st is .+, about \d+, /, prompt)
     assert_match(/the 2nd is .+, about \d+, /, prompt)
+  end
+
+  # THE SENTENCE AND THE SCHEMA ARE ONE STATEMENT. The prompt asks for exactly n
+  # people and the schema handed to the same call requires exactly n, so a model
+  # that answered with a different number fails the call rather than leaving a
+  # room quietly written empty -- which is what the ceiling used to allow.
+  test "the schema handed to the call requires exactly the people the prompt asks for" do
+    location = stub_location(name: "The Drowned Ledger")
+    agent = FakeAgent.new(PEOPLED, EXITS)
+
+    Location::Population.stub(:count_for, 1) { realize(location, agent) }
+    people = agent.schemas.first.new.to_json_schema[:schema][:properties][:people]
+
+    assert_match(/Write EXACTLY 1 person/, agent.prompts.first)
+    assert_equal 1, people[:minItems]
+    assert_equal 1, people[:maxItems]
+    assert_includes agent.schemas.first.new.to_json_schema[:schema][:required], :people
+  end
+
+  # AND AT NOUGHT IT IS THE FIELD IT ALWAYS WAS, which is the guard the design
+  # rests on: an empty required array reads as an OMITTED field to
+  # `BaseAgent#missing_schema_keys`, so a room the pick called empty would fail
+  # its own realization and rotate looking for a model that would invent
+  # somebody.
+  test "a room with nobody in it is asked for nobody and required to answer nothing" do
+    location = stub_location(name: "The Drowned Ledger", population: "nobody")
+    agent = FakeAgent.new(DETAIL, EXITS)
+
+    realize(location, agent)
+    schema = agent.schemas.first.new.to_json_schema[:schema]
+
+    assert_match(/Write NOBODY into this place/, agent.prompts.first)
+    assert_not_includes schema[:required], :people
+    assert_nil schema[:properties][:people][:minItems]
   end
 
   # The room the prompt described and the row that came out have to be the same
@@ -1327,7 +1442,7 @@ class Location::GeneratorTest < ActiveSupport::TestCase
 
     realize(location, agent)
 
-    assert_match(/Do not list any people/, agent.prompts.first)
+    assert_match(/Write NOBODY into this place/, agent.prompts.first)
   end
 
   test "a world already at its cast cap is asked for nobody" do
@@ -1337,7 +1452,7 @@ class Location::GeneratorTest < ActiveSupport::TestCase
 
     realize(location, agent)
 
-    assert_match(/Do not list any people/, agent.prompts.first)
+    assert_match(/Write NOBODY into this place/, agent.prompts.first)
   end
 
   test "does not people a room it declined to realize" do

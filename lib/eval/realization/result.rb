@@ -36,8 +36,19 @@ class Eval::Realization::Result
     hazard_below_ground: "the same share below ground -- the captain's own figure, and the ONLY one that " \
                          "reads whether the gradient did anything at all: it is the two ends of the slope, " \
                          "off the rows the layout wrote",
+    populations_given: "exits given a population word, over exits named -- `insides_given`'s figure one " \
+                       "field over and the same warning: nothing rests on the pick being made " \
+                       "(`Location::ExitsSchema`), so a prompt that cleared every rate and halved this " \
+                       "handed the words back to the engine",
+    crowds_picked: "picks that asked for somebody, over picks made -- THE DOMINANT-STRATEGY CHECK on the " \
+                   "population pick: `nobody` is a real answer rather than a default, so a model can make " \
+                   "the pick honestly every time and still empty the world, and the two rates would not " \
+                   "notice",
     people_named: "mean people one realization wrote",
-    people_offered: "mean slots the engine offered it -- the denominator, measured and not assumed",
+    people_offered: "mean people the engine ASKED it for -- the denominator, measured and not assumed. " \
+                    "Since 2026-09-07 it is an exact count rolled inside the word the narrator picked " \
+                    "(`Location::Population`) and not a ceiling, so it moves with the picks: a set either " \
+                    "side of that ruling is not comparing the same quantity",
     people_take_up: "people written over slots offered",
     items_named: "mean things one realization put on the floor",
     exits_named: "mean ways out one realization named",

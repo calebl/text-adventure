@@ -36,6 +36,18 @@
 # direction -- a prompt change that cleared every rate and halved those bought
 # its numbers with emptier rooms.
 #
+# THE PEOPLE HALF OF THAT HAZARD IS NOW THE SCHEMA'S, and it is the clearest
+# example in this file of the difference between a rate and a guarantee. Since
+# the captain's ruling of 2026-09-07 the count is EXACT -- the narrator picks a
+# word, the engine rolls the number, `Location::DetailSchema.for_people`
+# requires it -- so a room that answered with nobody where two were asked for is
+# a FAILED CALL and not a good score. `people_short_of_the_pick` is the check
+# that says whether that holds against a real provider, and
+# `population_declined` is the one that says whether the pick was made at all:
+# the way for that ruling to come to nothing is not a model answering `nobody`
+# but a model answering nothing, which is `inside_declined`'s finding one field
+# over.
+#
 # AND THE DENOMINATOR IS PER CHECK, exactly as `Story::Audit#judgeable_for`
 # makes it: `readable_without_words` can only be judged on a case that named
 # something readable, and counting every case into it would report a rate the
@@ -83,6 +95,10 @@ class Eval::Realization::Scorer
                                         "-- judgeable only on a case labelled `expects_inside: false`",
     no_inside_where_the_world_wanted_one: "a stub whose world plainly holds a building gave none an inside " \
                                           "-- judgeable only on a case labelled `expects_inside: true`",
+    population_declined: "an exit named with no `population` pick at all, so the engine rolled a word " \
+                         "for the place instead -- the field asks and nothing rests on the asking",
+    people_short_of_the_pick: "a room asked for an exact number of people that came back with fewer, so " \
+                              "the room the prose describes is emptier than the word somebody picked for it",
     parameters_declined: "a building offered the `parameters` block that came back without one, so every " \
                          "pick fell to its quietest default",
     parameters_the_engine_narrowed: "a building whose picks the layout could not honour -- a warren on a " \
@@ -357,6 +373,10 @@ class Eval::Realization::Scorer
       "storeys_below_ground" => Eval.mean(readings.select(&:parameters_asked?).map { |r| r.storeys_below }),
       "hazard_on_the_ground_floor" => hazard_share(0..0),
       "hazard_below_ground" => hazard_share(..-1),
+      "populations_given" => share(readings.sum { |r| population_picks(r).count(&:present?) },
+                                   readings.sum { |r| r.exit_names.size }),
+      "crowds_picked" => share(readings.sum { |r| population_picks(r).count { |pick| crowd?(pick) } },
+                               readings.sum { |r| population_picks(r).count(&:present?) }),
       "people_named" => Eval.mean(readings.map { |r| r.people.size }),
       "people_offered" => Eval.mean(readings.map { |r| r.people_allowance }),
       "people_take_up" => share(readings.sum { |r| r.people.size }, readings.sum { |r| r.people_allowance }),
@@ -385,6 +405,19 @@ class Eval::Realization::Scorer
   end
 
   def inside_picks(reading) = reading.exits.map { |exit| exit["inside"] }
+
+  # THE POPULATION WORDS ONE ANSWER PICKED, one per exit it named. A blank is an
+  # answer that left the field out, which is `population_declined`.
+  def population_picks(reading) = reading.exits.map { |exit| exit["population"] }
+
+  # WHETHER A PICK ASKED FOR MORE THAN NOBODY. There is no quietest option on
+  # this list -- `nobody` is a real answer somebody chose, not a default -- so
+  # unlike `inside?` above this is a cut of the picks rather than a test of
+  # whether one was made. Printed as `crowds_picked` beside
+  # `population_declined`, because the cheapest way to clear every rate in this
+  # file is still to write nobody, and a model that picked `nobody` everywhere
+  # would have made the pick honestly and emptied the world anyway.
+  def crowd?(pick) = pick.present? && pick != Location::Population::LABELS.first
 
   # WHETHER A PICK ASKED FOR AN INSIDE. `no inside` is the quietest option and
   # the default, and an ABSENT pick is not the same thing as that one -- the
@@ -536,6 +569,49 @@ class Eval::Realization::Scorer
       next nil if reading.exits.any? { |exit| inside?(exit["inside"]) }
 
       "gave an inside to none of #{reading.exit_names.join(", ")} in a world that plainly holds one"
+    end
+  end
+
+  # ------------------------------------------------------- the population pick
+
+  # A DECISION NOT MADE, `judge_inside_declined`'s figure one field over and its
+  # reason unchanged: `Location::ExitsSchema` asks for a `population` word per
+  # exit and nothing rests on getting one -- an absent word leaves the stub with
+  # none and `Location::Population.label_for` rolls one when somebody walks in.
+  # So the ordinary way for the captain's ruling of 2026-09-07 to come to nothing
+  # is not a model picking `nobody` but a model saying nothing at all, and this is
+  # the figure for that.
+  #
+  # A SET STORED BEFORE THE FIELD EXISTED READS AS DECLINED EVERYWHERE, which is
+  # exactly what those answers were: no pick was offered and none was made. That
+  # is what makes it honest as the before side of this pair rather than
+  # `unavailable`.
+  def judge_population_declined
+    flag_each(:population_declined, ->(r) { r.asked_for_exits? ? r.exits.size : 0 }) do |reading|
+      next [] unless reading.asked_for_exits?
+
+      reading.exits.reject { |exit| exit["population"].present? }
+             .map { |exit| "named #{exit["name"].inspect} with no population pick at all" }
+    end
+  end
+
+  # AND WHETHER THE ROOM GOT THE PEOPLE IT WAS ASKED FOR, which is the other half
+  # of the ruling and the defect it was made for: a prompt that offered slots and
+  # an answer that named nobody. The prompt now states an EXACT count and
+  # `Location::DetailSchema.for_people` requires it, so a short answer should be
+  # a failed call rather than a quiet emptying -- and this is the check that says
+  # whether that is true of a real provider rather than of the JSON schema.
+  #
+  # JUDGED ONLY WHERE PEOPLE WERE ASKED FOR, so a room the pick called empty is
+  # out of the denominator rather than counted as a success: nought people asked
+  # and nought written is not the thing being measured. `people_take_up` beside
+  # it is the same fact as a ratio.
+  def judge_people_short_of_the_pick
+    flag_cases(:people_short_of_the_pick, ->(r) { r.people_allowance.positive? }) do |reading|
+      next nil unless reading.people.size < reading.people_allowance
+
+      "was asked for #{reading.people_allowance} #{"person".pluralize(reading.people_allowance)} " \
+        "and wrote #{reading.people.size}"
     end
   end
 
