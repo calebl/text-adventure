@@ -119,9 +119,15 @@ class Location::Generator
   #
   # AN ALREADY-REALIZED PLACE IS NEVER LAID OUT, because `#realize!` returns one
   # untouched -- the "generate once per place" guarantee, which this is downhill
-  # of rather than an exception to. So a world file that ships a place already
-  # written out is a world whose author is laying its inside out themselves, and
-  # `test/fixtures/files/a-world-with-an-interior.yml` is exactly that.
+  # of rather than an exception to.
+  #
+  # AND A PLACE THAT ALREADY HAS ROOMS IS NEVER LAID OUT EITHER, which is the
+  # guard that matters to a world file and is `Location::Interior#lay_out!`'s
+  # rather than this method's: a file may ship a place as a STUB and still draw
+  # every room inside it by hand, so `#place?` is true of it and it is handed
+  # over -- and handed straight back, because the rooms are on the records.
+  # `test/fixtures/files/a-world-with-an-interior.yml` is exactly that shape,
+  # and its author owns its whole floor plan.
   def lay_out_interior!
     return location unless location.place?
 
