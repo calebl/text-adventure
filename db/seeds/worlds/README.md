@@ -940,6 +940,12 @@ with no interiors in it — which is what every world here is, by the captain's
 fourth ruling of 2026-09-06 — and the columns are nullable, so no existing
 database needs a backfill either. See the `parent` section above.
 
+`characters[].x` / `.y` and the same pair on an `items[]` entry were added to
+format 2 on that rule too: both are optional, an absent pair means *unplaced* —
+which every thing and every person in every world here is — and the columns are
+nullable, so no existing database needs a backfill either. See the `x` and `y`
+section above.
+
 ### `the-lunar-cartographer.yml`
 
 Exported from a real generated world: Nocturnis, a city that rearranges itself

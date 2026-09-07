@@ -741,10 +741,14 @@ because the protagonist is the player. `items.template_id` is the durable link,
 so the guard is per template rather than per room — which is what stops a room
 the party emptied being refurnished the next time they walk back in.
 
-A copy carries **every column but where it is and whose it is**
+A copy carries **every column but which room it is in and whose it is**
 (`Item::NOT_COPIED`), so the next column added to `items` comes along without
 anybody remembering it — which is exactly what did not happen to `readable` and
-`inscription` when they landed.
+`inscription` when they landed. *Where in that room* it is lying is one of the
+columns that comes along, deliberately: a template's `x` and `y` are the initial
+snapshot the ruling is about, so a copy of a chair standing by the window is a
+chair standing by the window, and from then on the copy moves on its own and the
+world's row never does — `Item::NOT_COPIED`'s own note has the argument.
 
 **A room one party has emptied is still furnished for the next player**, and
 that closes the open question the inventory change left. What stays shared is
