@@ -162,6 +162,11 @@ class Eval::Realization::Scorer
     def plan = facts["plan"]
     def planned? = plan.is_a?(Hash)
     def door_walls = Array(plan && plan["doors"]).filter_map { |door| door["wall"] }
+
+    # WHETHER THIS ROOM HAS A WAY OUT THE RECORDS GIVE NO WALL TO -- the doorway
+    # into the building, which passes through a wall the plan does not name. It
+    # is what takes this room's walls out of the door check altogether.
+    def wall_less_way_out? = Array(plan && plan["other_ways_out"]).any?
     def room_paces = [ plan && plan["width"], plan && plan["depth"] ].map(&:to_i).sort
     def planned_storey = plan && plan["storey"]
 
@@ -571,16 +576,28 @@ class Eval::Realization::Scorer
   # walls has broken no rule -- the prompt asks for a room, not for a
   # measurement -- so counting it in would report a rate the check never earned.
   # `Story::Audit#judgeable_for`'s rule, kept here.
+  #
+  # AND NOT JUDGEABLE AT ALL ON A ROOM WITH A WALL-LESS WAY OUT, which is out of
+  # the DENOMINATOR rather than merely unflagged -- `#correct_dead_end?`'s
+  # doctrine in this same class: a rate the check did not earn is worse than no
+  # rate. `Location::Plan::WAY_OUT` is the doorway INTO the building, and it
+  # passes through a wall the records do not name (`Location::Plan#way_for`), so
+  # ANY wall the prose puts a door in could be that one and the plan cannot say
+  # otherwise. `Location::Plan#closed_walls_clause` withholds the closed-walls
+  # sentence from exactly these rooms, and this is the other side of that: a
+  # room the prompt made no claim about is a room no answer can contradict.
   def judge_door_the_records_do_not_hold
-    flag_each(:door_the_records_do_not_hold, ->(r) { door_claims(r).size }) do |reading|
+    flag_each(:door_the_records_do_not_hold, ->(r) { judgeable_door_claims(r).size }) do |reading|
       held = reading.door_walls
 
-      door_claims(reading).reject { |claim| held.include?(claim.wall) }.map do |claim|
+      judgeable_door_claims(reading).reject { |claim| held.include?(claim.wall) }.map do |claim|
         "put a door in the #{claim.wall} wall, and the plan has #{held.presence&.join(" and ") || "no doors"}" \
           " -- #{claim.sentence.inspect}"
       end
     end
   end
+
+  def judgeable_door_claims(reading) = reading.wall_less_way_out? ? [] : door_claims(reading)
 
   # THE SAME COMPARISON FOR THE TWO NUMBERS THE PROMPT STATED. A size is
   # compared UNORDERED, because a room described from the doorway is as honestly
@@ -633,9 +650,15 @@ class Eval::Realization::Scorer
   # KEYED ON THE PASSAGE ITSELF and not on the case's id: one case is read once
   # per repetition and every repetition is a different description, so an id
   # would hand the second reading the first one's claims.
+  #
+  # AND ON WHETHER THERE WAS A PLAN, because that is the third input to the
+  # answer: an unplanned row's claims are `[]` whatever the passage says. Two
+  # rows with the same description and different plan presence would otherwise
+  # get each other's answer, and which one won would depend on the order the
+  # rows were scored in.
   def claimed(reading, grammar)
     @claimed ||= {}
-    @claimed[[ reading.description, grammar ]] ||=
+    @claimed[[ reading.description, grammar, reading.planned? ]] ||=
       reading.planned? ? Story::Audit::Prose.public_send(grammar, reading.description) : []
   end
 

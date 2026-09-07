@@ -402,6 +402,55 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
                  "both walls the prose named were compared"
   end
 
+  # THE ENTRY ROOM'S SHAPE, and it is the one room whose WALLS cannot be judged.
+  # `quay-entry-room` is The Custom House room 1: a door in the east wall, a
+  # stair up, and a way out to The Quay that the records give no wall to. That
+  # doorway passes through some wall of this room and the plan does not say
+  # which, so any wall the prose names could be it -- out of the denominator and
+  # not merely unflagged. `Location::Plan#closed_walls_clause` withholds the
+  # closed-walls sentence from exactly this room, so the prompt never made the
+  # claim this check would be convicting the answer of.
+  ENTRY_PLAN = {
+    "room" => "The Custom House room 1", "place" => "The Custom House", "storey" => 0,
+    "place_width" => 14, "place_depth" => 10,
+    "width" => 7, "depth" => 4,
+    "doors" => [ { "wall" => "east", "to" => "The Custom House room 2" } ],
+    "stairs" => [ { "to" => "The Custom House room 5", "up" => true, "storey" => 1, "bearing" => nil } ],
+    "other_ways_out" => [ "The Quay" ]
+  }.freeze
+
+  test "a room with a wall-less way out has none of its wall claims judged" do
+    entry = planned("A door in the west wall opens onto the quay, and one in the east goes further in.",
+                    plan: ENTRY_PLAN)
+
+    assert_empty entry.flagged_for(:door_the_records_do_not_hold)
+    assert_equal 0, entry.judgeable_for(:door_the_records_do_not_hold),
+                 "the records do not say which wall the way out is in, so no wall claim can be convicted"
+  end
+
+  # AND THE DISCOUNT IS NOT A HOLE IN THE CHECK: it is the wall-less way out
+  # that withholds the judgement, not the stair or the storey, so the same room
+  # with its way out inside the building is judged exactly as any other.
+  test "a room whose every way out has a wall or is a stair is judged as before" do
+    walled = planned("A door in the south wall opens on the dark, and the east wall has another.",
+                     plan: ENTRY_PLAN.merge("other_ways_out" => []))
+
+    assert_equal 1, walled.flagged_for(:door_the_records_do_not_hold).size
+    assert_equal 2, walled.judgeable_for(:door_the_records_do_not_hold)
+    assert_includes walled.flagged_for(:door_the_records_do_not_hold).first.evidence,
+                    "put a door in the south wall, and the plan has east"
+  end
+
+  # THE SIZE CHECK IS UNTOUCHED BY THE WAY OUT, because a measurement in paces
+  # is a claim about numbers the plan does hold whatever the doorways are.
+  test "a wall-less way out does not excuse a size the records do not hold" do
+    entry = planned("A long room of 9 by 4 paces, with the quay door at one end.", plan: ENTRY_PLAN)
+
+    assert_equal 1, entry.flagged_for(:size_the_records_do_not_hold).size
+    assert_includes entry.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "said the room is 4 by 9 paces and it is 4 by 7"
+  end
+
   # A DESCRIPTION THAT SAYS NOTHING ABOUT ITS WALLS HAS BROKEN NO RULE: the
   # prompt asks for a room, not for a measurement, so silence is out of the
   # denominator rather than clean.

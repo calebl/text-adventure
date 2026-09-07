@@ -514,10 +514,14 @@ module Story::Audit::Prose
   # A DETECTION IS NOT THE SAME THING AS A JUDGEMENT, and the difference is the
   # scorer's rather than these methods'. `Location::Plan` states more than the
   # room's own box -- the PLACE's footprint in paces, and the clause *"storey 0
-  # is the ground floor"* -- so a claim can be a true echo of the prompt.
-  # `Eval::Realization::Scorer#judge_size_the_records_do_not_hold` discounts
-  # both: the place's pair agrees rather than flags, and a "storey 0" on a room
-  # that is not on storey 0 comes out of the denominator entirely. These methods
+  # is the ground floor"* -- so a claim can be a true echo of the prompt, and a
+  # room with a way out the records give no wall to is a room whose walls the
+  # plan cannot close (`Location::Plan#closed_walls_clause`).
+  # `Eval::Realization::Scorer#judge_door_the_records_do_not_hold` refuses to
+  # judge that room's walls at all, and
+  # `#judge_size_the_records_do_not_hold` discounts the other two: the place's
+  # pair agrees rather than flags, and a "storey 0" on a room that is not on
+  # storey 0 comes out of the denominator entirely. These methods
   # report what a passage said and never what it is worth.
   # ------------------------------------------------------------------------
 
@@ -548,13 +552,23 @@ module Story::Audit::Prose
   # pair of leaves in one frame, and a count check would flag a room for its
   # carpentry.
   #
-  # MEASURED: 0 detections over the 367 corpus passages and 0 over the room
-  # prose of every world in the repository. No narration anybody has ever paid
-  # for in this game has put a door in a named wall, because until this slice
-  # nothing ever told a model a room had walls with directions. A check with no
-  # detections looks exactly like a clean result, which is the failure mode
-  # `Story::Audit`'s header names -- so `Story::Audit::ProseTest` fires it on
-  # written sentences of the shape a plan invites, in both directions.
+  # MEASURED: 0 detections over the 367 corpus passages. No narration anybody
+  # has ever paid for in this game has put a door in a named wall, because until
+  # this slice nothing ever told a model a room had walls with directions -- and
+  # a check with no detections looks exactly like a clean result, which is the
+  # failure mode `Story::Audit`'s header names. So `Story::Audit::ProseTest`
+  # fires it on written sentences of the shape a plan invites, in both
+  # directions.
+  #
+  # AND 2 DETECTIONS OVER THE ROOM PROSE OF EVERY WORLD IN THE REPOSITORY, both
+  # of them on one sentence: the hand-written description of The Custom House
+  # room 3 in `lib/engine_sweep/worlds/the-quay-house.yml`, which names a door in
+  # the north wall and one in the west, and both walls are walls the room's boxes
+  # really share. That is the only prose in the repository this grammar reads,
+  # and it is the worked example of a description that agrees with its own floor
+  # plan. Room 4's door sentence is NOT among them -- it says "no other way out",
+  # and `Story::Audit::NEGATIONS` skips the sentence -- so that room is a worked
+  # example the size grammar reads and this one does not.
   def door_claims(text)
     body = text.to_s
     return [] if body.blank?
@@ -592,12 +606,15 @@ module Story::Audit::Prose
   # MEASURED: 0 detections over the 367 corpus passages -- no narration anybody
   # has paid for has ever stated a size in paces or a storey by number. Over the
   # room prose of every world in the repository both grammars detect exactly the
-  # same 10 sentences, and all 10 are the ENGINE's own placeholder teaser
+  # same 12 sentences, and every one of the 12 agrees with the box it was written
+  # from: 10 are the ENGINE's own placeholder teaser
   # (`Location::Interior.teaser_for`: *"A room inside The Custom House, 7 by 4
-  # paces on storey 0"*), each one agreeing with the box it was written from.
-  # That is the best evidence a grammar this narrow can have before a model has
-  # ever been handed a plan: it reads the app's own true statements and nothing
-  # else in 367 passages of prose.
+  # paces on storey 0"*) and 2 are the hand-written descriptions of The Custom
+  # House rooms 3 and 4 in `lib/engine_sweep/worlds/the-quay-house.yml`, which
+  # are there to be a worked example of prose that agrees with its plan. That is
+  # the best evidence a grammar this narrow can have before a model has ever been
+  # handed a plan: it reads true statements, all of them the app's own or written
+  # against the app's own records, and nothing else in 367 passages of prose.
   Size = Data.define(:paces, :sentence)
   Storey = Data.define(:storey, :sentence)
 

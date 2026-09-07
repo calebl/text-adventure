@@ -59,7 +59,12 @@
 # THEIR PROSE IS HAND-WRITTEN, being the one thing here no model could supply,
 # and it is written the way `Location::Plan` states the facts to a model that
 # does: 7 by 6 paces, storey 0, and doors in the walls the boxes really share.
-# It is a worked example of a description that agrees with its own floor plan.
+# It is a worked example of a description that agrees with its own floor plan --
+# and it is the only prose in the repository `Story::Audit::Prose`'s geometry
+# grammars read that the engine did not write itself. Room 3's is the example the
+# DOOR grammar reads, both walls of it; room 4's door sentence says "no other way
+# out", which `Story::Audit::NEGATIONS` skips, so that room is an example for the
+# size and storey grammars only.
 ---
 format: 2
 universe:

@@ -405,9 +405,11 @@ class InteractionAgentTest < ActiveSupport::TestCase
 
   # AND IT DOES NOT GET THE FLOOR PLAN, which is a decision rather than an
   # omission (`Location::Plan`'s header). No prompt in this file has a stored
-  # bench baseline to judge a change against, so the block this pass sends is
-  # the one it sent before interiors existed -- geometry reaches the room writer
-  # and `Scene::Narrator`, both of which do have one.
+  # bench baseline AT ALL, so a change to one could not be judged either way,
+  # and the block this pass sends is the one it sent before interiors existed.
+  # Geometry reaches the room writer, whose interior-room cases are measured,
+  # and `Scene::Narrator`, where it is a byte-level no-op on every world
+  # `Eval::Prompt::STORIES` plays -- neither has a room with a box.
   test "the narrator pass is not told the room's floor plan, and the scene narrator is" do
     playthrough = playthrough_with_protagonist("Odile Vance")
     place = create(:location, :stub, story: @character.story, name: "The Custom House", width: 14, depth: 10)
@@ -423,7 +425,7 @@ class InteractionAgentTest < ActiveSupport::TestCase
     assert_no_match(/paces/, prompt)
     assert_no_match(/storey/, prompt)
     assert_includes Playthrough::Moment.new(playthrough).narration_context, plan,
-                    "the scene narrator, which has a baseline, still carries it"
+                    "the scene narrator still carries it"
   end
 
   # THE EXAMPLE IS THE CHARACTER'S OWN. A fixed "her" and "The person" for every

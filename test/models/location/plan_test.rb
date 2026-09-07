@@ -133,6 +133,34 @@ class Location::PlanTest < ActiveSupport::TestCase
     assert_not_includes prompt, "wall, to Mournwell Lane"
   end
 
+  # THE CLOSED SET IS STATED EITHER WAY; THE CLOSED WALLS ONLY WHERE THEY ARE A
+  # RECORD. A way out with no wall is the doorway INTO the building, and it does
+  # pass through a wall of this room -- the records just do not say which -- so
+  # claiming no other wall holds a door would be a non-record stated as one.
+  test "a room with a wall-less way out does not claim its other walls are blank" do
+    taproom = room("the taproom", x: 0, y: 0)
+    snug = room("the snug", x: 6, y: 0)
+    street = create(:location, story: @story, name: "Mournwell Lane")
+    join!(taproom, snug)
+    join!(taproom, street)
+
+    prompt = plan_for(taproom).to_prompt
+
+    assert_includes prompt, "Those are every way out of this room."
+    assert_not_includes prompt, "no other wall of it holds a door"
+  end
+
+  test "a room whose every way out has a wall or is a stair does claim its other walls are blank" do
+    taproom = room("the taproom", x: 0, y: 0)
+    snug = room("the snug", x: 6, y: 0)
+    loft = room("the loft", x: 0, y: 0, z: 1)
+    join!(taproom, snug)
+    join!(taproom, loft, travel_method: Location::Interior::STAIRS)
+
+    assert_includes plan_for(taproom).to_prompt,
+                    "Those are every way out of this room, and no other wall of it holds a door."
+  end
+
   # A FAULT IS DESCRIBED HONESTLY RATHER THAN GIVEN A WALL. Two rooms of one
   # place with a connection and no shared wall is `Story::Doctor`'s
   # `door_between_rooms_that_share_no_wall`, and a prompt built from a database

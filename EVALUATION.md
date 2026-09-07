@@ -1188,23 +1188,33 @@ record and nothing else — a wall out of `Location::Box#wall_towards`, a number
 out of `Location::Box`, both off the very `Location::Plan` the prompt was built
 from — while what they READ is prose. `Story::Audit::Prose.door_claims` and
 `.size_claims` are the grammars, and both were measured before they shipped: **0
-detections over all 367 real passages in the four corpora**, and over the room
-prose of every world in the repository the size grammar detects exactly the 10
-sentences the ENGINE itself wrote (`Location::Interior.teaser_for`), every one
-of them agreeing with its box. A description that contradicts its plan in a
-sentence neither grammar reads is a miss, which is why they sit here rather than
-with the set comparisons.
+detections over all 367 real passages in the four corpora**. Over the room prose
+of every world in the repository the size grammar detects 12 sentences — 10 the
+ENGINE itself wrote (`Location::Interior.teaser_for`) and 2 the hand-written
+descriptions of The Custom House rooms 3 and 4 in
+`lib/engine_sweep/worlds/the-quay-house.yml` — and the door grammar detects 1
+sentence, room 3's, for 2 walls. Every one of them agrees with the box or the
+boxes it was written from. A description that contradicts its plan in a sentence
+neither grammar reads is a miss, which is why they sit here rather than with the
+set comparisons.
 
-**A claim that repeats a number the prompt itself stated is not a defect**, and
-`size_the_records_do_not_hold` carries two discounts for it, because
-`Location::Plan` states more than the room's own box. The PLACE's footprint in
-paces is in the plan's storey sentence, so a pace pair equal to it *agrees* —
-counted, not flagged. And that sentence ends *"storey 0 is the ground floor"*, so
-a passage carrying "storey 0" on a room that is not on storey 0 cannot be told
-from an echo of the prompt's own explanation: that claim leaves the
-**denominator** rather than being merely unflagged, which is `#correct_dead_end?`'s
-rule kept — a rate the check did not earn is worse than no rate. Every other
-storey number is judged.
+**Neither check convicts prose of a claim the prompt itself made, or of one the
+prompt never made either way.** `Location::Plan` states more than the room's own
+box, so there are three discounts, and each is `#correct_dead_end?`'s rule kept —
+a rate the check did not earn is worse than no rate.
+
+* The PLACE's footprint in paces is in the plan's storey sentence, so a pace pair
+  equal to it *agrees* — counted, not flagged.
+* That sentence ends *"storey 0 is the ground floor"*, so a passage carrying
+  "storey 0" on a room that is not on storey 0 cannot be told from an echo of the
+  prompt's own explanation: that claim leaves the **denominator**. Every other
+  storey number is judged.
+* A room with a way out the records give no wall to — the doorway INTO the
+  building — has walls the plan cannot close, so
+  `door_the_records_do_not_hold` judges **none** of its wall claims. The door
+  passes through some wall and the records do not say which, so any wall the
+  prose names could be it. `Location::Plan#closed_walls_clause` withholds the
+  closed-walls sentence from the same rooms, and the two are one decision.
 
 **`race_not_named` is weighed differently and labelled `[KEYWORD]` on the
 board.** The engine writes the rolled race onto the row whatever the model

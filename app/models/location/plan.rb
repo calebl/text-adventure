@@ -214,7 +214,28 @@ class Location::Plan
     return "Nothing leads out of this room yet." if ways_out.empty?
 
     "Its ways out: #{ways_out.map { |way| clause_for(way) }.join("; ")}. " \
-      "Those are every way out of this room, and no other wall of it holds a door."
+      "Those are every way out of this room#{closed_walls_clause}."
+  end
+
+  # THE CLOSED SET IS A RECORD; THE CLOSED WALLS ARE NOT ALWAYS ONE. Which rows
+  # lead out of this room is exactly what `LocationConnection` holds, so the
+  # first half of that sentence is always true. "No other wall of it holds a
+  # door" is a second and stronger claim, and a room with a way out the records
+  # give no wall to is precisely the room where it is FALSE: `WAY_OUT` is the
+  # doorway INTO the building (`#clause_for`), which physically passes through a
+  # wall -- the records simply do not say which, because the far side stands in
+  # another plane (`#way_for`). The Custom House's entry room is the worked
+  # example: its own outer wall carries the quay door, and claiming otherwise
+  # would leave the model no truthful way to describe the way in.
+  #
+  # SO THE CLAIM IS MADE ONLY WHERE THE RECORDS CARRY IT -- a room whose every
+  # way out is a door in a named wall or a stair. `Eval::Realization::Scorer#judge_door_the_records_do_not_hold`
+  # keeps the other side of the same rule and refuses to judge the walls of a
+  # room this clause is withheld from.
+  def closed_walls_clause
+    return "" if others.any?
+
+    ", and no other wall of it holds a door"
   end
 
   def clause_for(way)
