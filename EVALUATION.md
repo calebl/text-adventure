@@ -1100,11 +1100,13 @@ first, confirm it there.
 ## The realization bench
 
 The prompt bench measures the call the player READS. This measures the call that
-builds the world they read it in — `Location::Generator`'s three prompt blocks:
-**who is here**, **what is lying here**, and **the ways out**. Until this
-existed none of the three had an instrument at all, which is why the cast fix
-shipped on judgement and the roadmap-era exit findings could not be measured
-either way.
+builds the world they read it in — `Location::Generator`'s prompt blocks: **who
+is here**, **what is lying here**, **what this room is called** and **the ways
+out**. Until this existed none of them had an instrument at all, which is why
+the cast fix shipped on judgement and the roadmap-era exit findings could not be
+measured either way. **What this bench covers is declared in
+`Location::Generator`'s header**, beside the blocks themselves — the naming
+block is the one that arrived with the instrument already there.
 
 **The one number anybody had was a hand count**: 36% of a generated world's exits
 named a place the story already had, and its deepest room wrote its ways out and
@@ -1325,8 +1327,10 @@ in step with the generator.
 laid-out place has its ways out from the engine, so
 `Location::Generator#write_exits!` asks a model for none of them: every exit
 check is out of its own denominator by construction, and what the detail prompt
-carries instead is the room's own floor plan. Two things follow, and both are
-written down in code rather than assumed. The corpus validator's "no room left
+carries instead is the room's own floor plan — and, for a room still called one
+of its place's numbers, the ask that it name itself, which is why they are also
+the only cases the two name checks are judgeable on. Two things follow, and both
+are written down in code rather than assumed. The corpus validator's "no room left
 for a way out" rule does not apply to them
 (`Eval::Realization::Corpus#problems_for`), and the STAGING DOES NOT WIND THEIR
 EDGES BACK (`Eval::Realization::Stage#wind_back!`) — every other stub's edges

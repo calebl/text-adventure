@@ -655,7 +655,11 @@ locations:
   with no model call. It is skipped for a place that already has children, so a
   file that draws its own rooms keeps them exactly as written and a file that
   gives only a width and a depth is asking for a building it has not seen. Read
-  `Location::Interior`'s header before writing either.
+  `Location::Interior`'s header before writing either. **The rooms it draws are
+  numbered, not named** — `The Custom House room 1` — until somebody walks into
+  one, and `Location::RoomName` writes the name then; `rake game:export` dumps
+  the numbers as it finds them, so what a re-seed does with one is under
+  *Re-seeding a world somebody has played*.
 - **No typed line may touch a box.** A box is the world's on exactly the terms a
   hit die and a hazard are; `EngineSweep::Invariants`' `geometry_unmoved` asserts
   across a whole scripted play that no coordinate and no `parent` moved.
@@ -865,18 +869,48 @@ cannot, and still deletes nothing**:
   candidates.
 - **A moved doorway has not gone missing** — the paragraph under `mechanics`
   above.
+- **A room of a place is the same room at the same coordinates**, whatever it
+  has come to be called — the one identity pass the written name cannot reach,
+  and the reason it exists is that the ENGINE renames these rooms: a room of a
+  laid-out place is named when somebody first walks into it, so a stub this file
+  declares as `The Custom House room 1` is a row called `the counting room`
+  afterwards, and no reading of the two strings could tell they are one room. So
+  a room the file gives a `parent:` and a box is matched on that place and that
+  box when both name passes miss. **Only where this file names that row nowhere else**,
+  because a row some other declaration names is that declaration's — without
+  that limit, which declaration got the played row came down to which one the
+  document happened to list first. `WorldSeed.find_location` owns all three
+  passes, and the loader, `Story::Doctor` and `Story::Repair` all read it, so
+  what a re-seed loads, what the doctor reports and what a repair puts back
+  cannot disagree about which row the file means.
 - **A rename no normalized name recognizes** — `The Supply Closet` edited to
   `The Broom Cupboard` — is, to any loader, a room that does not exist yet.
   Nothing in the file says which room it replaced. So the row is created and the
   load prints a `WARNING:` naming it, on a world that has been played; the old
   room is still there and `rake game:doctor` reports the pair whenever it can
-  recognize one.
+  recognize one. Two hand-written names for one room of a place are this shape
+  too: the box pass above takes a rename across the provisional line and not a
+  second deliberate name, which is a known limit left open on purpose.
 
 What still happens on every re-seed, and is the rule rather than a defect: **the
 file re-asserts itself over the world layer.** An item the file puts on a shelf
 is back on the shelf when the load finishes, a character goes back where the
 file places them, `absent: true` is written and deleting it is taken off. A seed
 file is the authority on the world, not a suggestion.
+
+**With one exception, and it is a number rather than a name.** A file still
+carrying `The Custom House room 1` for a room somebody has since named is not
+asserting a name: that string is the placeholder the engine wrote before anybody
+walked in, and `rake game:export` dumps those numbers straight out, so a
+round-tripped file is full of them. Loaded over a row that has a name of its own,
+the row keeps it — the one place in this file where the document does not get the
+last word. `WorldSeed.keeps_its_own_name?` carries what putting the number back
+would cost: a room realized under its number is never offered a name again, so
+the player would read *"You are in The Custom House room 1 of The Custom
+House"* for the rest of the game. Write a real room name into the file and it
+wins like everything else here.
+`lib/engine_sweep/scripts/re-seeding-a-building-somebody-is-inside.yml` walks
+both directions of that offline.
 
 **And it reaches no game at all.** Since the ruling of 2026-09-04 the world's
 own rows are the templates each playthrough copies at first contact, so what a
