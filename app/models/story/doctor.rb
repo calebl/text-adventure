@@ -1680,44 +1680,53 @@ class Story::Doctor
     end
   end
 
-  # P2: THE FRONTIER KEEPS POINTING AT THE GOAL, and this is the check no
-  # topological rule could make before the goal was a row.
+  # P2: THE FRONTIER KEEPS POINTING AT THE GOAL, and it is a question about
+  # STOREYS rather than about hops -- which is the captain's Q5 of 2026-09-06,
+  # *"b -- wait for the floor index"*, and the whole reason the arc waited for
+  # the geometry programme.
   #
-  # WHAT THE CAPTAIN ACTUALLY HIT, stated as a predicate: at the moment story 7
-  # dead-ended, the world still had unexplored rooms and was topologically
-  # healthy -- every remaining one just led UP AND OUT, in a story about going
-  # down. A frontier COUNT cannot tell "one unexplored room" from "one
-  # unexplored room in the wrong direction". Once the goal is a bound row it is
-  # a pure graph question: **is there any unexplored place that would bring the
-  # player CLOSER to it?**
+  # WHAT HE ACTUALLY HIT. At the moment story 7 dead-ended, the world was
+  # topologically healthy: it still had unexplored rooms and every one of them
+  # was reachable. They just all led UP AND OUT -- `tunnel upward`, then the
+  # surface, then a capital city *"a long journey away"* -- in a story about
+  # going down. A frontier COUNT cannot tell "one unexplored room" from "one
+  # unexplored room in the wrong direction", and `The Salt Assizes` has exactly
+  # the same count and is fine.
   #
-  # Hops and not storeys, deliberately. Depth is what the player walks; `z` is
-  # what `Quest::Deadline` reads to decide where to PUT something, which is a
-  # different question asked at a different moment.
+  # AND HOPS CANNOT TELL THEM APART EITHER, which is worth writing down because
+  # the first design of this check tried: once the goal is a bound row and is
+  # reachable, some unexplored room always lies on a shortest path to it, so
+  # *"every unexplored exit increases the distance to the goal"* can never be
+  # true. Distance-to-goal collapses into `#unreachable_quest_targets`, which is
+  # already fatal about it. Measured on his own world, graph depth puts
+  # Blackfang Tunnel and `surface` BOTH two hops from the opening room -- the
+  # bottom of the dungeon and the way out of it, tied.
   #
-  # WHAT IT CANNOT SEE, in this class's habit of writing it down: a world nobody
-  # has played. Every room is unvisited then, so the goal itself is on the
-  # frontier and this is quiet -- which is correct, because a world nobody has
-  # walked has not turned away from anything.
+  # SO IT IS `z`, WHICH CANNOT TIE. The goal stands deeper than every unexplored
+  # room in the world: nothing anybody can still open leads down toward it, and
+  # the only way on is back through rooms already walked. A WARNING and not
+  # fatal, deliberately -- the goal is reachable, so the world is completable;
+  # what is wrong is that exploring has stopped being the way to it, which is a
+  # thing to know rather than a thing that stops a game.
+  #
+  # WHAT IT CANNOT SEE, in this class's habit of writing it down: a FLAT world.
+  # Every room reads as storey 0 there, so nothing is ever deeper than anything
+  # and this is quiet -- which is honest. Direction is only expressible once the
+  # records carry a floor, and before `ta-geometry-columns` they did not.
   def frontier_turned_away_from_the_goal
     step = next_bound_step
     goal = step && room_of(step)
-    return [] if goal.nil?
+    return [] if goal.nil? || goal.z.nil?
 
-    distances = hops_to(goal)
-    visited = story.locations.where.not(last_protagonist_visit: nil).pluck(:id)
-    return [] if visited.empty? || visited.include?(goal.id)
-
-    nearest = visited.filter_map { |id| distances[id] }.min
-    return [] if nearest.nil?
-
-    closer = frontier_ids(visited).any? { |id| distances[id] && distances[id] < nearest }
-    return [] if closer
+    unexplored = story.locations.where(last_protagonist_visit: nil).where.not(id: goal.id)
+    return [] if unexplored.none?
+    return [] if unexplored.any? { |room| room.z.to_i <= goal.z }
 
     [ finding(:frontier_turned_away_from_the_goal, :warning,
-              "every unexplored way on from where this world has been walked leads FURTHER from " \
-              "#{goal.name.inspect}, which is what #{step.quest.title.inspect} step #{step.position} needs. " \
-              "The world is still connected and still has places nobody has seen; none of them is toward the goal",
+              "#{goal.name.inspect} stands on storey #{goal.z}, and every place in this world nobody has opened yet " \
+              "is level with the way out or above it. #{step.quest.title.inspect} step #{step.position} needs the " \
+              "player down there, and nothing left to explore leads down -- the only way on is back through rooms " \
+              "somebody has already walked",
               :manual, subject: goal) ]
   end
 
@@ -1768,8 +1777,6 @@ class Story::Doctor
     end
   end
 
-  def hops_to(goal) = walk_from(goal.id)
-
   # `{ location id => hops }`, out from one room. Undirected, and neighbours are
   # taken in id order so the walk is repeatable.
   def walk_from(root_id)
@@ -1796,12 +1803,6 @@ class Story::Doctor
       index[from] << to
       index[to] << from
     end.transform_values { |ids| ids.uniq.sort }
-  end
-
-  # THE UNVISITED PLACES ONE STEP OFF WHAT HAS BEEN WALKED -- the frontier, in
-  # `Story::Map`'s sense: an edge is on the frontier when one end is unvisited.
-  def frontier_ids(visited)
-    visited.flat_map { |id| adjacency.fetch(id, []) }.uniq - visited
   end
 
   def geometry
