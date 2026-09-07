@@ -53,7 +53,10 @@
 # DEEPEST ROOM of it, which is what "deepest" meant all along.
 #
 # A `reach_location` TARGET IS THE PLACE. A `speak_to` target is somebody in the
-# deepest room of one. A `hold_item` target is a thing lying in the deepest room
+# deepest room of one -- AND IT LOOKS FOR ONE THAT ALREADY EXISTS FIRST, which
+# is the rung that makes the common case free: a generated arc usually names a
+# place and a person both, so by the time the person is due the place is usually
+# already on the graph. A `hold_item` target is a thing lying in the deepest room
 # the party can reach. A `time_passed` step is never placed at all -- the clock
 # already exists, so there is nothing for the world to grow.
 #
@@ -258,25 +261,63 @@ class Quest::Deadline
     end
   end
 
-  # SOMEBODY IN THE DEEPEST ROOM OF A BUILDING THE ENGINE JUST BUILT -- the
-  # prince ruling, taken literally. The place is named for the step's own words
-  # rather than for the person, because a step that wanted a PLACE would have
-  # said so: what this one wants is somebody to be somewhere.
+  # SOMEBODY IN THE DEEPEST ROOM OF A BUILDING -- the prince ruling, taken
+  # literally: *"the prince should be in a Room inside a Location, not in an
+  # unrealized location."*
+  #
+  # AND IT LOOKS FOR A BUILDING BEFORE IT PUTS ONE UP, which is the rung that
+  # matters and the one that makes the common case cost nothing. A generated arc
+  # usually names a PLACE and a PERSON -- *Blackfang Warren*, *Prince Aurel
+  # Durn* -- so by the time the person's beat comes due the place beat has
+  # usually already been answered, either by a model naming it as an exit or by
+  # this class. Putting the person in the deepest room of THAT is better in
+  # every way than raising a second building beside it: no invented name, no
+  # second door, and the person ends up where the story said they were.
   #
   # THROUGH `Character::Registry#admit!`, which is the one thing in the app that
   # puts a person in a room -- so the caps hold, a taken name is refused, the
   # race and the body are the engine's own rolls, and the binding happens where
   # every other binding happens. This class hands it a name and a sheet and
   # decides nothing else about who they are.
+  #
+  # A ROOM AT ITS CAP PLACES NOBODY and this answers nil, which is not a failure
+  # state: the deadline runs again at the next realization, against a world one
+  # room bigger. Self-healing beats raising inside somebody's turn.
   def place_a_person!(step, room)
     Location.transaction do
-      place = Location::Generator.create_stub!(story, name: holding_name(step), teaser: teaser_for(step))
-      open_the_door!(room, place)
-      lay_out!(place)
+      cell = deepest_room_of_a_place_we_can_reach || build_somewhere_to_keep_them!(step, room)
+      next nil if cell.nil?
 
-      cell = deepest_room(place) || place
       Character::Registry.new(cell).admit!([ sheet_for(step) ]).detect { |person| person.fullname == step.target_name }
     end
+  end
+
+  # THE BOTTOM OF THE DEEPEST BUILDING THE PARTY CAN ALREADY WALK INTO, or nil
+  # for a world with no buildings in it yet. `z` decides, as it does everywhere
+  # else here; a room already holding `Character::Registry::MAX_PER_ROOM` people
+  # is not one, because admitting into it would be refused.
+  def deepest_room_of_a_place_we_can_reach
+    rooms = story.locations.where(id: hops.keys).where.not(parent_location_id: nil).order(:id)
+                 .reject { |room| Character.present_in(room).count >= Character::Registry::MAX_PER_ROOM }
+
+    rooms.min_by { |room| [ room.z.to_i, -room.id ] }
+  end
+
+  # AND A BUILDING WHERE THERE WAS NONE. The name is the ENGINE'S and reads like
+  # it: a place nobody wrote must not pretend to have been written, so it says
+  # what the row is rather than inventing a landmark. It is
+  # `Location::Interior`'s room numbers one containment level up -- provisional,
+  # honest, and the thing a person editing the exported seed file will change
+  # first.
+  #
+  # THE STEP'S TEASER IS THE TEASER, because the arc did write one and it is
+  # about this exact place: *"The Blackfang hold him below the old workings."*
+  def build_somewhere_to_keep_them!(step, room)
+    place = Location::Generator.create_stub!(story, name: holding_name(step), teaser: teaser_for(step))
+    open_the_door!(room, place)
+    lay_out!(place)
+
+    deepest_room(place) || place
   end
 
   # A THING, LYING IN THE DEEPEST ROOM THE PARTY CAN REACH. No building: a thing
@@ -317,10 +358,12 @@ class Quest::Deadline
     end
   end
 
-  # WHAT A NEW PLACE IS CALLED WHEN THE STEP NAMED A PERSON. The arc's own
-  # sentence is what the world knows about it, so that is what the teaser says
-  # and the name is built off the step rather than invented.
-  def holding_name(step) = "Where #{step.target_name} Is"
+  # WHAT A NEW PLACE IS CALLED WHEN THE STEP NAMED A PERSON -- see
+  # `#build_somewhere_to_keep_them!`. Lower case on purpose: it is the shape a
+  # generated world's own smaller places already come in (`obsidian maw`,
+  # `tunnel upward`, `the surface`), so it reads as a place rather than as a
+  # title somebody chose.
+  def holding_name(step) = "where #{step.target_name} is"
 
   def teaser_for(step) = step.teaser.presence || step.summary
 

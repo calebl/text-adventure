@@ -133,6 +133,27 @@ class Quest::DeadlineTest < ActiveSupport::TestCase
     assert_predicate cell.parent_location, :laid_out?
   end
 
+  # THE RUNG THAT MAKES THE COMMON CASE FREE. A generated arc names a place and a
+  # person both, so the place beat is usually answered before the person beat
+  # comes due -- and raising a second building beside the first would be worse in
+  # every way than using the one the story already named.
+  test "a building the world already has is used rather than a second one raised beside it" do
+    create(:quest_step, :speak_to, quest: @quest, position: 1, target_name: "Prince Aurel Durn")
+    deepest = open_rooms(Quest::Deadline::GRACE_ROOMS + 1).last
+    warren = create(:location, story: @story, name: "Blackfang Warren", width: 12, depth: 10)
+    Location::Interior.lay_out!(warren)
+    connect!(deepest, Location::Interior.entry_room(warren))
+
+    assert_difference "Location.where(parent_location_id: nil).count", 0 do
+      Quest::Deadline.after_realizing!(deepest)
+    end
+
+    prince = @story.characters.find_by(fullname: "Prince Aurel Durn")
+
+    assert_equal warren, prince.location.parent_location
+    assert_nil @story.locations.find_by(name: "where Prince Aurel Durn is")
+  end
+
   test "the person is put in the deepest room of it, by storey and not by hop count" do
     create(:quest_step, :speak_to, quest: @quest, position: 1, target_name: "Prince Aurel Durn")
     deepest = open_rooms(Quest::Deadline::GRACE_ROOMS + 1).last
