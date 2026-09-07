@@ -144,11 +144,11 @@ module WorldSeed
 
     box = Location::Box.of(declaration)
     Location.where(story_id: story.id, parent_location_id: place.id).order(:id)
-            .detect { |room| room.box == box && either_name_is_a_placeholder?(place, declaration["name"], room.name) }
+            .detect { |room| room.box == box && exactly_one_name_is_a_placeholder?(place, declaration["name"], room.name) }
   end
 
-  # ONE OF THE TWO NAMES HAS TO BE A NUMBER `Location::Interior` WROTE, and that
-  # is what holds pass 3 to the rename it exists for instead of letting it
+  # EXACTLY ONE OF THE TWO NAMES IS A NUMBER `Location::Interior` WROTE, and
+  # that is what holds pass 3 to the rename it exists for instead of letting it
   # identify rooms by coordinates in general.
   #
   # THE WRONG ANSWER IT REFUSES, because it is a wrong answer and not an error.
@@ -161,18 +161,28 @@ module WorldSeed
   # scenes and doorways, and the room that really moved is created fresh and
   # empty beside it. Declaring the two the other way round gives the right
   # answer, which is exactly what makes it worth refusing: nothing about the
-  # document says which order an author meant. Two rooms that both carry names a
-  # person wrote are never identified with each other by coordinates alone, so
-  # that edit now loads as what it is -- one moved room and one new one.
+  # document says which order an author meant.
   #
-  # BOTH DIRECTIONS ARE LEGITIMATE, which is why it is an `||` rather than a
-  # test of one side. The file still carrying the number while the row is named
-  # is a room somebody walked into (`Location::RoomName`); the file named while
-  # the row still carries the number is an author naming a room the engine had
-  # not got to. Each is one rename of one room, and neither is a coincidence of
+  # BOTH DIRECTIONS ARE LEGITIMATE, which is why it is not a test of one side.
+  # The file still carrying the number while the row is named is a room somebody
+  # walked into (`Location::RoomName`); the file naming the room while the row
+  # still carries the number is an author naming a room the engine had not got
+  # to. Each is one rename of one room, and neither is a coincidence of
   # coordinates.
-  def self.either_name_is_a_placeholder?(place, declared, carried)
-    Location::Interior.placeholder_name?(place, declared) ||
+  #
+  # EXACTLY ONE AND NOT AT LEAST ONE, WHICH IS THE WHOLE POINT -- do not
+  # "simplify" this to an `||`. Two NUMBERED rooms of one place satisfy an `||`,
+  # and they are the pair most likely to be moved around a hand-edited file:
+  # `rake game:export` writes the engine's numbers straight out, so an author
+  # who moves `<place> room 1` up a storey and declares `<place> room 3` in the
+  # box it came out of has written two placeholder names, and an `||` let room
+  # 3's declaration capture room 1's played row on coordinates alone. Two rooms
+  # that both carry names a PERSON wrote were already refused; two that both
+  # carry numbers have to be refused for the same reason, and nothing is lost by
+  # it -- pass 1 matches a numbered room by its exact name before pass 3 is ever
+  # consulted, which is both the right answer and an order-independent one.
+  def self.exactly_one_name_is_a_placeholder?(place, declared, carried)
+    Location::Interior.placeholder_name?(place, declared) ^
       Location::Interior.placeholder_name?(place, carried)
   end
 
@@ -309,5 +319,5 @@ module WorldSeed
   end
 
   private_class_method :node, :inline_array?, :needs_quoting?, :style_for, :scalar, :find_placed_location,
-                       :either_name_is_a_placeholder?
+                       :exactly_one_name_is_a_placeholder?
 end

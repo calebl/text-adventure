@@ -827,8 +827,8 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
   # and matching on the box would hand the played row, with its prose and its
   # doorways, to whichever of the two the document happens to declare first. So
   # the box pass declines to identify them at all
-  # (`WorldSeed.either_name_is_a_placeholder?`) and the edit loads as what it is:
-  # one moved room and one new one.
+  # (`WorldSeed.exactly_one_name_is_a_placeholder?`) and the edit loads as what
+  # it is: one moved room and one new one.
   #
   # ASSERTED FROM BOTH DOCUMENT ORDERS, because the whole defect was that one
   # order answered differently from the other.
@@ -858,6 +858,43 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
       assert_equal "Barrels to the ceiling.", cellar.description, "the played row kept its prose"
       assert_equal 1, cellar.z, "the file moved this room, so the row moved"
       assert_not_equal cellar.id, story.locations.find_by(name: "The Pantry").id
+    end
+  end
+
+  # AND THE SAME EDIT WITH TWO NUMBERS RATHER THAN TWO NAMES, which is the pair
+  # a hand-edited file is far MORE likely to move around: `rake game:export`
+  # writes `Location::Interior`'s own numbers straight out, so an author who
+  # moves `room 1` up a storey and puts a new `room 3` in the box it came out of
+  # has written two placeholder names. At-least-one admitted that pair, and
+  # room 3's declaration then took room 1's played row on coordinates alone --
+  # the played row came back under room 3's name carrying somebody's history,
+  # and the room that really moved was created fresh and empty beside it.
+  # `WorldSeed.exactly_one_name_is_a_placeholder?` is what refuses it, and
+  # nothing is lost: pass 1 matches a numbered room by its exact name before the
+  # box pass is ever consulted, which is the right answer and an
+  # order-independent one.
+  [ true, false ].each do |new_room_first|
+    test "a numbered room moved upstairs is not identified with a new numbered room in its box, #{new_room_first ? "new room declared first" : "moved room declared first"}" do
+      story = WorldSeed::Loader.new(with_a_building).load!
+      room = story.locations.find_by(name: "The Rusted Anchor room 1")
+      room.update!(description: "Barrels to the ceiling.", last_protagonist_visit: story.start_time)
+      create(:playthrough, story: story, current_location: room)
+      doorways = room.exits.pluck(:name).sort
+
+      edited = with_a_building
+      edited["locations"].detect { |row| row["name"] == "The Rusted Anchor room 1" }.merge!("z" => 1)
+      third = { "name" => "The Rusted Anchor room 3", "detail_level" => "stub", "teaser" => "The room below it.",
+                "parent" => "The Rusted Anchor", "x" => 0, "y" => 0, "z" => 0, "width" => 6, "depth" => 8 }
+      new_room_first ? edited["locations"].insert(0, third) : edited["locations"] << third
+
+      WorldSeed::Loader.new(edited).load!
+
+      assert_equal "The Rusted Anchor room 1", room.reload.name, "the played row is still the room it was"
+      assert_equal "Barrels to the ceiling.", room.description, "the played row kept its prose"
+      assert_equal story.start_time, room.last_protagonist_visit, "the played row kept its history"
+      assert_equal doorways, room.exits.pluck(:name).sort, "the played row kept its doorways"
+      assert_equal 1, room.z, "the file moved this room, so the row moved"
+      assert_not_equal room.id, story.locations.find_by(name: "The Rusted Anchor room 3").id
     end
   end
 
