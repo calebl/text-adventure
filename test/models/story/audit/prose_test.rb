@@ -229,12 +229,12 @@ class Story::Audit::ProseTest < ActiveSupport::TestCase
     assert_empty Prose.storey_claims("You come out on the second floor with the rain on the skylight.")
   end
 
-  # THE PROSE IN THE REPOSITORY THESE GRAMMARS READ THAT THE ENGINE DID NOT
-  # WRITE, verbatim from `lib/engine_sweep/worlds/the-quay-house.yml`: the
-  # hand-written descriptions of The Custom House rooms 3 and 4. Both agree with
-  # the boxes they were written from -- 7 by 6 paces on storey 0 -- and they are
-  # 2 of the 12 detections measured over every world file's room prose, which is
-  # the figure on `Prose.size_claims` and must not move.
+  # PROSE IN THE REPOSITORY THESE GRAMMARS READ THAT THE ENGINE DID NOT WRITE,
+  # verbatim from `lib/engine_sweep/worlds/the-quay-house.yml`: the hand-written
+  # descriptions of The Custom House rooms 3 and 4. Both agree with the boxes
+  # they were written from -- 7 by 6 paces on storey 0 -- and that agreement is
+  # what must not move. The count these two are part of is on
+  # `Prose.size_claims`, which also says why the count itself moves.
   test "the repository's own worked examples read as the boxes they were written from" do
     room_three = "The back office, 7 by 6 paces of bare boards on storey 0. A door in the north wall\n" \
                  "goes through to the counting room, and one in the west wall stands half open on the\n" \

@@ -68,9 +68,10 @@
 # and it is written the way `Location::Plan` states the facts to a model that
 # does: 7 by 6 paces, storey 0, and doors in the walls the boxes really share.
 # It is a worked example of a description that agrees with its own floor plan --
-# and both rooms are the only prose in the repository `Story::Audit::Prose`'s
-# geometry grammars read that the engine did not write itself, 2 of the 12
-# detections measured over every world file's room prose.
+# and both rooms are prose `Story::Audit::Prose`'s geometry grammars read that
+# the engine did not write itself, which is why that module's `Size` header names
+# them. The measurement over every world file's room prose lives there and is not
+# repeated here.
 #
 # AND THERE IS A SECOND BUILDING ON THE QUAY, THE BONDED CELLAR, which is here
 # for one reason: it has a storey BELOW the way in. The Custom House goes up and
