@@ -7,20 +7,28 @@ require "test_helper"
 # false-positive rate measured on real prose and a positive case that actually
 # fires. This is both, for the check `ta-eval-pipeline` added.
 #
-# THE FALSE-POSITIVE MEASUREMENT: 224 real passages, ZERO FLAGS.
+# THE FALSE-POSITIVE MEASUREMENT: 281 real passages, ZERO FLAGS.
 #
-#   92   `eval_corpus.json` -- every stored Scene description and Interaction
-#        action from the two worlds the captain played, plus the 24 lab
-#        narrations written against commands designed to break a world's laws
+#   149  `eval_corpus.json` -- real turns out of the captain's own playthroughs
+#        with the records around them, plus the 24 lab narrations written
+#        against commands designed to break a world's laws. Grown by
+#        `rake game:corpus`; it was 92 when this was first measured.
 #   132  `whole_run_corpus.json` -- the whole-run narrations of the four-arm
 #        sweep, twelve complete eleven-turn playthroughs
 #
-# Across those, the grammar DETECTS 7 arrival assertions and every one of the 7
-# names the room the records had already moved the player into, so the check
+# Across those, the grammar DETECTS 12 arrival assertions and every one of the
+# 12 names the room the records had already moved the player into, so the check
 # raises nothing. That is the number that matters and it is also the number that
 # looks identical to a check that cannot fire -- so the detections are asserted
 # separately from the flags, and the positive case below takes one of those real
 # sentences and moves the record underneath it.
+#
+# THE FIVE THAT ARRIVED WITH THE CORPUS REFRESH OF 2026-09-07 are all the same
+# sentence the first seven were -- "You step back into the office", "You step
+# back into the Long Hallway", "You step back into the supply closet" -- each
+# on a turn the records had already moved the player onto. Five more true
+# detections and no new flag is the result this check wants: the grammar keeps
+# finding real arrivals and keeps agreeing with the graph.
 #
 # AN EIGHTH REAL ARRIVAL IS GIVEN UP TO THE NEGATION GUARD, on purpose and on
 # the same trade `Story::Audit#possession_claimed?` already takes:
@@ -70,25 +78,25 @@ class Story::Audit::ArrivalTest < ActiveSupport::TestCase
     end
   end
 
-  test "the two corpora are the 224 real passages this was measured on" do
-    assert_equal 92, EVAL_CORPUS.size
+  test "the two corpora are the 281 real passages this was measured on" do
+    assert_equal 149, EVAL_CORPUS.size
     assert_equal 132, RUN_CORPUS.size
   end
 
   # THE HEADLINE. Every arrival the grammar found was one the records agreed
-  # with, so the check flags nothing on 224 real passages.
-  test "on 224 real passages every arrival the grammar finds is one the records made" do
+  # with, so the check flags nothing on 281 real passages.
+  test "on 281 real passages every arrival the grammar finds is one the records made" do
     wrong = detections.reject { |row| row[:claimed] == row[:room] }
 
     assert_empty wrong, wrong.map { |row| "#{row[:room]} -> #{row[:claimed]}: #{row[:sentence]}" }.join("\n")
   end
 
   # AND IT IS NOT A CHECK THAT CANNOT FIRE, which is the failure mode that looks
-  # exactly like the result above. Eight real sentences match the grammar.
+  # exactly like the result above. Twelve real sentences match the grammar.
   test "the grammar really does find arrival assertions in real prose" do
     found = detections
 
-    assert_equal 7, found.size, found.map { |row| row[:sentence] }.join("\n")
+    assert_equal 12, found.size, found.map { |row| row[:sentence] }.join("\n")
     assert(found.all? { |row| row[:sentence].match?(/\byou\b/i) })
   end
 

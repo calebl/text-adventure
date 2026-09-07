@@ -1,17 +1,16 @@
 # REAL PROSE, FROZEN, WITH THE RECORDS AROUND IT WRITTEN DOWN.
 #
 # The second corpus `Story::Scoreboard` reports on, and the reason the first
-# one is not enough: the captain's database is what he actually read, but it is
-# 54 scenes, it changes every time he plays, and it exists on exactly one
-# machine. Nothing in it can be a regression test. This file can: it is checked
-# in, it needs no database, and it is the same passages every run, so a check
-# that starts flagging something new fails the build instead of quietly
-# changing a number.
+# one is not enough: the captain's database is what he actually read, but it
+# changes every time he plays and it exists on exactly one machine. Nothing in
+# it can be a regression test. This file can: it is checked in, it needs no
+# database, and it is the same passages every run, so a check that starts
+# flagging something new fails the build instead of quietly changing a number.
 #
 # WHERE THE PASSAGES COME FROM, all of them real, none of them written for this:
 #
 #   * every turn the captain judged, verdict and note included, because those
-#     are the four errors this whole loop was built to catch and a corpus that
+#     are the errors this whole loop was built to catch and a corpus that
 #     cannot demonstrate them proves nothing;
 #   * the turns around them, so a check has to tell the flagged turn from its
 #     neighbours rather than from the corpus being all defects;
@@ -20,6 +19,30 @@
 #     designed to break a world's laws. They are the hardest available negative
 #     case: prose that argues about weapons, memory and locked doors, from the
 #     same worlds, and NOT ONE OF THEM MAY FLAG.
+#
+# HOW IT GROWS, since the captain asked on 2026-09-07 whether it could:
+# `rake game:corpus`, which is `Story::Scoreboard::Capture` and is the only
+# thing that may write this file. It reads his database, takes every judged
+# turn and the turns either side of it, and merges by scene. Its header is the
+# rule in full; the three parts of it that constrain a READER of this file are:
+#
+#   an amended verdict     overwrites the verdict and the note on the row that
+#                          is already here, and nothing else. A captured
+#                          passage and the facts beside it are frozen; a
+#                          re-derivation that disagrees with one is reported by
+#                          the task and written by a person or not at all.
+#   the `lab/` rows        are never touched by a capture and are never
+#                          removed. They come from no database, so nothing can
+#                          re-derive them, and they are the negative case the
+#                          whole precision claim rests on.
+#   `expect`               is hand-signed, never generated. A new row arrives
+#                          with it empty and `Story::Scoreboard::CorpusTest`
+#                          fails until somebody has read the flags that row
+#                          earns and defended each one. That failure is the
+#                          instrument working.
+#
+# THE HELD-OUT WORLD IS NOT IN HERE and a capture will not put it here. See
+# `Eval::HELD_OUT` and `EVALUATION.md`.
 #
 # WHAT IT CANNOT ANSWER, and says so rather than scoring clean. A passage is
 # prose plus the facts declared beside it, so a check that reads a record this

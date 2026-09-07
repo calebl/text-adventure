@@ -8,6 +8,17 @@ require "test_helper"
 # from 36 of 248 to 104 of 248. The NUMERATOR did not move, which is why the
 # decision did not either.
 #
+# THE NUMERATOR MOVED ON 2026-09-07, when `rake game:corpus` put 57 more of the
+# captain's own turns into `eval_corpus.json`: 1 naming in 248 became 4 in 305.
+# THE DECISION STANDS AND IT IS NO LONGER STANDING ON n = 1 -- read the
+# numerator test below, where all four are named and each is judged. The short
+# of it: two of the three new ones are real defects the captain marked `bad`
+# himself, and the third is correct prose he marked `good`, which is the
+# fourth shape to add to `CORRECT_PROSE_ABOUT_SOMEBODY_ELSEWHERE` and the
+# reason no grammar over a name will do. Somebody re-reading finding 5 now has
+# a measurement rather than an anecdote; making that decision again is not this
+# file's job.
+#
 # `ta-character-whereabouts` landed the record that was supposed to make the
 # check possible: `characters.location_id`, so "where is Ammon Brace" has an
 # answer and the objection in `Story::Audit`'s finding 2a -- that a narrated
@@ -85,7 +96,7 @@ class Story::AuditPresenceTest < ActiveSupport::TestCase
   end
 
   test "the corpora are the three EVALUATION.md names, at the sizes it states" do
-    assert_equal({ "eval_corpus" => 92, "narration_corpus" => 24, "whole_run_corpus" => 132 },
+    assert_equal({ "eval_corpus" => 149, "narration_corpus" => 24, "whole_run_corpus" => 132 },
                  passages.group_by(&:source).transform_values(&:size))
   end
 
@@ -93,37 +104,68 @@ class Story::AuditPresenceTest < ActiveSupport::TestCase
   # check can only be judged on a passage where somebody is demonstrably
   # elsewhere.
   #
-  # IT WAS 36 OF 248 WHEN FINDING 5 WAS WRITTEN AND IT IS 104 NOW, and the
-  # difference is one seeded monster. `The Lunar Cartographer` placed exactly
-  # one non-protagonist -- Grenn Ollivar, in Room 3 -- so its passages outside
-  # Room 3 had nobody demonstrably elsewhere and were unjudgeable; Marek Sollen
-  # standing in The Bell of Saint Aravel makes almost all of them judgeable.
-  # This test firing IS the guard working: a change to the world files moved the
-  # measurement, so the decision gets re-read rather than inherited.
+  # IT WAS 36 OF 248 WHEN FINDING 5 WAS WRITTEN, 104 OF 248 AFTER ONE SEEDED
+  # MONSTER, AND IT IS 140 OF 305 SINCE THE CORPUS REFRESH OF 2026-09-07.
+  # `The Lunar Cartographer` placed exactly one non-protagonist -- Grenn
+  # Ollivar, in Room 3 -- so its passages outside Room 3 had nobody
+  # demonstrably elsewhere and were unjudgeable; Marek Sollen standing in The
+  # Bell of Saint Aravel makes almost all of them judgeable, and 57 more of the
+  # captain's turns widened it again. This test firing IS the guard working: a
+  # change to the world files or to the corpora moved the measurement, so the
+  # decision gets re-read rather than inherited.
   #
-  # IT DOES NOT REOPEN THE DECISION, and the reason is the numerator below --
-  # which did NOT move. Four times as many passages can be judged and exactly
-  # one still names somebody the records place elsewhere, so the false-positive
-  # measurement is still n = 1 and `Story::Audit`'s finding 5 stands as written.
-  test "only 104 of the 248 frozen passages can judge a presence check at all" do
+  # THE HELD-OUT WORLD IS STILL NOT IN HERE. `rake game:corpus` will not capture
+  # it, so a rate measured on this set is not a rate fitted to it.
+  test "only 140 of the 305 frozen passages can judge a presence check at all" do
     judgeable = passages.count { |passage| elsewhere_in(passage).any? }
 
-    assert_equal 104, judgeable,
+    assert_equal 140, judgeable,
                  "the judgeable set changed -- re-read Story::Audit finding 5 before shipping a presence check"
   end
 
-  # THE NUMERATOR, and it is the second half: one passage in 248 even names the
-  # absent person, so there is no false-positive RATE to report. A check whose
-  # whole measurement is n = 1 fails EVALUATION.md's point 2 however clean that
-  # one flag is.
-  test "exactly one frozen passage names somebody the records place in another room" do
+  # THE NUMERATOR, and it is the second half of the argument. It was 1 in 248
+  # until `rake game:corpus` brought 57 more of the captain's own turns in; it
+  # is 4 in 305 now, and each of the four is read and signed for here because a
+  # measurement nobody has read the sentences of is not a measurement.
+  #
+  #   whole_run  "Halkett's gaze moves to the book and then away" -- DEFECT, and
+  #              the demonstrated positive case. A `move` turn into The Long
+  #              Hallway whose prose is the previous turn's office narration,
+  #              with Rowe -- recorded in Ward Office 12 -- acting in it.
+  #   scene-69   "Sub-Inspector Rowe ..." in The Long Hallway -- DEFECT, and the
+  #              captain marked it `bad` unprompted: *"Sub-Inspector Rowe was in
+  #              the doorway of ward office 12 before, now he is somewhere
+  #              different."*
+  #   scene-103  "Sub-Inspector Rowe stands ..." in The Long Hallway -- DEFECT,
+  #              marked `bad`: *"sub inspector Rowe is not in the hallway"*.
+  #   scene-75   "A sliver of light spills from Grenn's door at the far end" --
+  #              CORRECT PROSE, and he marked the turn `good`. Grenn is behind
+  #              a door in another room and the sentence says exactly that. It
+  #              is the same shape as the three in
+  #              `CORRECT_PROSE_ABOUT_SOMEBODY_ELSEWHERE` and no grammar over a
+  #              name tells it from the three above it.
+  #
+  # SO THE DECISION IS UNCHANGED AND BETTER EVIDENCED. Three real defects and
+  # one false positive over 140 judgeable passages is a 25% false-positive rate
+  # on the only cases a name-based check could ever fire on, which is not a
+  # check that clears EVALUATION.md's point 2. What it now also is, which it was
+  # not at n = 1, is a real recall case: two turns the captain marked `bad`
+  # that nothing in `Story::Audit` catches. Finding 5 is worth re-reading with
+  # this in hand; re-deciding it is not this file's job.
+  NAMED = [ "Halkett's gaze moves to the book and then away",
+            "Sub-Inspector Rowe",
+            "A sliver of light spills from Grenn" ].freeze
+
+  test "exactly four frozen passages name somebody the records place in another room" do
     named = passages.select do |passage|
       elsewhere_in(passage).any? { |fullname| names?(passage.text, fullname) }
     end
 
-    assert_equal 1, named.size, "a second judgeable naming appeared -- the measurement in finding 5 is stale"
-    assert_includes named.sole.text, DEMONSTRATED_POSITIVE
-    assert_equal "The Long Hallway", named.sole.room
+    assert_equal 4, named.size, "the namings changed -- re-read every one before touching Story::Audit finding 5"
+    assert(named.all? { |passage| NAMED.any? { |sentence| passage.text.include?(sentence) } },
+           "a naming nobody has read and signed for: #{named.map { |p| p.text.truncate(120) }}")
+    assert_includes named.map(&:text).join, DEMONSTRATED_POSITIVE
+    assert_equal [ "The Long Hallway" ], named.select { |p| p.source == "whole_run_corpus" }.map(&:room)
   end
 
   # AND THE ZERO IS AN ARTIFACT OF THE PLACEMENT, not a property of the check.

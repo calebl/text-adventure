@@ -16,17 +16,26 @@ require "test_helper"
 #
 # THE FALSE-POSITIVE MEASUREMENT, on every corpus this project has:
 #
-#   367 real passages  92 hold a double-quoted span, 177 spans in total
-#   92   `eval_corpus.json`       0 flags
-#   24   `narration_corpus.json`  0 flags
-#   132  `whole_run_corpus.json`  0 flags
-#   119  `transition_corpus.json` 0 flags
+#   424 real passages  98 hold a double-quoted span
+#   149  `eval_corpus.json`       1 detection, and it is the sentence above
+#   24   `narration_corpus.json`  0
+#   132  `whole_run_corpus.json`  0
+#   119  `transition_corpus.json` 0
 #
-# The gap between 177 quoted spans and 0 flags is the whole design: on a read
-# turn the room still has people in it, so a check that compared quoted spans to
-# an inscription would flag every line of dialogue in the game. The cue rule
-# (`Story::Audit::Prose::INSCRIPTION_CUES`) is what closes it, and the two words
-# measurement took OFF that list -- `says` and `writ` -- are pinned below,
+# ONE DETECTION IN 424, AND IT IS THE COMPLAINT ITSELF. `rake game:corpus`
+# refreshed `eval_corpus.json` on 2026-09-07 and swept in the very turn that
+# started this work: playthrough 15, scene 77, now `lunar/scene-77`. So the
+# reading half of this check is no longer demonstrated only on a constant
+# frozen at the top of this file -- it is demonstrated on the corpus, and the
+# false-positive count over the other 423 passages is still zero. A SECOND
+# DETECTION APPEARING IS NOT A PASS: read it, and if it is dialogue the cue
+# rule has broken.
+#
+# The gap between 98 quoting passages and 1 detection is the whole design: on a
+# read turn the room still has people in it, so a check that compared quoted
+# spans to an inscription would flag every line of dialogue in the game. The cue
+# rule (`Story::Audit::Prose::INSCRIPTION_CUES`) is what closes it, and the two
+# words measurement took OFF that list -- `says` and `writ` -- are pinned below,
 # because a cue list that quietly regrows them is the check turning into the
 # thing it was built not to be.
 #
@@ -62,19 +71,23 @@ class Story::Audit::InscriptionTest < ActiveSupport::TestCase
 
   # --- the false-positive rate ---------------------------------------------
 
-  test "the four corpora are 367 real passages and 92 of them quote somebody" do
-    assert_equal 367, self.class.passages.size
+  test "the four corpora are 424 real passages and 98 of them quote somebody" do
+    assert_equal 424, self.class.passages.size
     quoting = self.class.passages.count { |(_, _, text)| text.match?(Prose::QUOTED) }
 
-    assert_equal 92, quoting, "the corpora moved; re-measure before trusting the zero below"
+    assert_equal 98, quoting, "the corpora moved; re-measure before trusting the one below"
   end
 
-  test "not one of the 367 real passages reads as a quotation of something written" do
-    flagged = self.class.passages.flat_map do |(file, label, text)|
+  # THE ONE READING IN 424 IS THE CAPTAIN'S OWN NOTE, which the corpus refresh
+  # of 2026-09-07 brought in as `lunar/scene-77`. Every other passage is
+  # dialogue, description or a legal document being handed over, and the cue
+  # rule refuses all of it.
+  test "the only passage in 424 that reads as a quotation of something written is the captain's own note" do
+    read = self.class.passages.flat_map do |(file, label, text)|
       Prose.inscription_quotes(text).map { |quote| "#{file} #{label}: #{quote.text.inspect}" }
     end
 
-    assert_equal [], flagged
+    assert_equal [ "eval_corpus lunar/scene-77: #{INVENTED.inspect}" ], read
   end
 
   # THE TWO WORDS MEASUREMENT TOOK OFF THE CUE LIST. `says` is the commonest

@@ -67,6 +67,7 @@ module Eval
     app/models/story/audit/prose.rb
     app/models/story/scoreboard.rb
     app/models/story/scoreboard/baseline.rb
+    app/models/story/scoreboard/capture.rb
     app/models/story/scoreboard/corpus.rb
     app/models/story/scoreboard/transitions.rb
     lib/eval.rb

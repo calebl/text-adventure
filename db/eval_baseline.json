@@ -1,10 +1,10 @@
 {
   "corpus": {
     "corpus": "corpus",
-    "recorded_at": "2026-09-03T00:18:25Z",
-    "scenes": 92,
+    "recorded_at": "2026-09-07T18:48:37Z",
+    "scenes": 149,
     "stories": 1,
-    "labelled_turns": 3,
+    "labelled_turns": 43,
     "checks": {
       "unreachable_transition": {
         "flagged": 0,
@@ -14,8 +14,8 @@
       },
       "unrecorded_departure": {
         "flagged": 1,
-        "scanned": 74,
-        "rate": 0.013514,
+        "scanned": 128,
+        "rate": 0.007813,
         "available": true
       },
       "unrecorded_arrival": {
@@ -30,16 +30,34 @@
         "rate": 0.0,
         "available": false
       },
+      "take_denied": {
+        "flagged": 0,
+        "scanned": 0,
+        "rate": 0.0,
+        "available": false
+      },
+      "pickup_invented": {
+        "flagged": 0,
+        "scanned": 0,
+        "rate": 0.0,
+        "available": false
+      },
+      "inscription_misquoted": {
+        "flagged": 0,
+        "scanned": 0,
+        "rate": 0.0,
+        "available": false
+      },
       "truncated_prose": {
         "flagged": 4,
-        "scanned": 92,
-        "rate": 0.043478,
+        "scanned": 149,
+        "rate": 0.026846,
         "available": true
       },
       "third_person_protagonist": {
-        "flagged": 12,
-        "scanned": 78,
-        "rate": 0.153846,
+        "flagged": 22,
+        "scanned": 133,
+        "rate": 0.165414,
         "available": true
       },
       "reached_for_nothing": {
@@ -48,10 +66,16 @@
         "rate": 0.0,
         "available": false
       },
+      "named_more_than_one": {
+        "flagged": 0,
+        "scanned": 0,
+        "rate": 0.0,
+        "available": false
+      },
       "still_run": {
         "flagged": 2,
-        "scanned": 74,
-        "rate": 0.027027,
+        "scanned": 128,
+        "rate": 0.015625,
         "available": true
       }
     }
