@@ -203,6 +203,39 @@ class Story::Audit::ProseTest < ActiveSupport::TestCase
     assert_equal [ "north", "east" ], Prose.door_claims(text).map(&:wall)
   end
 
+  # A DOORLESS WALL DESCRIBED BESIDE A DOOR IS STILL A DOORLESS WALL, and it is
+  # the shape `Location::Plan`'s own closing sentence invites: the prompt tells
+  # the model no other wall of the room holds a door, so a description that
+  # answers it names those walls in the same breath as the doors. A
+  # sentence-wide threshold reads all four out of this and convicts two of them
+  # on prose that contradicts nothing -- `DOOR_BRIDGE` is what reads the two it
+  # should.
+  test "a doorless wall in the same sentence as a door is not a door claim" do
+    text = "A door in the north wall gives back onto the landing, and another in the east wall " \
+           "leads on; the south wall is hung with tarred canvas and the west wall carries a " \
+           "run of pigeonholes."
+
+    assert_equal [ "north", "east" ], Prose.door_claims(text).map(&:wall)
+  end
+
+  # AND A SECOND DOOR NAMED WITHOUT THE WORD IS STILL READ, which is what
+  # `DOOR_ANAPHORS` is for and the shape the repository's own worked example
+  # uses (`lib/engine_sweep/worlds/the-quay-house.yml`, The Custom House room
+  # 3). An anaphor counts only in a sentence that named a real threshold, so
+  # "the only one here" claims nothing on its own.
+  test "another or one standing in for a door names the wall it is in" do
+    assert_equal [ "north", "west" ],
+                 Prose.door_claims("A door in the north wall goes through to the counting room, and one " \
+                                   "in the west wall stands half open on the dark.").map(&:wall)
+    assert_equal [ "south", "east" ],
+                 Prose.door_claims("A door in the south wall opens on the dark, and the east wall has " \
+                                   "another.").map(&:wall)
+  end
+
+  test "an anaphor with no threshold anywhere in the sentence claims nothing" do
+    assert_empty Prose.door_claims("You are the only one here, and the north wall is damp to the touch.")
+  end
+
   # A COMPASS WORD IS NOT A WALL, and a wall with nothing to go through it is
   # not a door. Both are what keep this off ordinary description.
   test "a wall with no door in it, and a door with no wall, claim nothing" do

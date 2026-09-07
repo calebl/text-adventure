@@ -1198,6 +1198,16 @@ boxes it was written from. A description that contradicts its plan in a sentence
 neither grammar reads is a miss, which is why they sit here rather than with the
 set comparisons.
 
+**The door grammar wants the threshold BESIDE the wall and not merely in the same
+sentence** (`Story::Audit::Prose::DOOR_BRIDGE`), because `Location::Plan`'s
+closing sentence tells the model no other wall of the room holds a door — so a
+description that answers it names the doorless walls in the same breath as the
+doors. Read sentence-wide, *"A door in the north wall gives back onto the
+landing, and another in the east wall leads on; the south wall is hung with
+tarred canvas and the west wall carries a run of pigeonholes"* claims all four
+walls and flags two, on prose that contradicts nothing. Both figures above were
+re-measured with the bridge in place and neither moved.
+
 **Neither check convicts prose of a claim the prompt itself made, or of one the
 prompt never made either way.** `Location::Plan` states more than the room's own
 box, so there are three discounts, and each is `#correct_dead_end?`'s rule kept —

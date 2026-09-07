@@ -451,6 +451,30 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
                     "said the room is 4 by 9 paces and it is 4 by 7"
   end
 
+  # THE UPPER-FLOOR ROOM'S SHAPE, and it is the one whose walls are FULLY judged
+  # and whose description answers the plan's closing sentence. `quay-upper-floor-room`
+  # is The Custom House room 6: doors in the north and east walls, no wall-less
+  # way out. A description that names the two doors and then says what is hung
+  # on the other two walls contradicts nothing, and must cost no flag.
+  UPPER_PLAN = {
+    "room" => "The Custom House room 6", "place" => "The Custom House", "storey" => 1,
+    "place_width" => 14, "place_depth" => 10,
+    "width" => 6, "depth" => 4,
+    "doors" => [ { "wall" => "north", "to" => "The Custom House room 5" },
+                 { "wall" => "east", "to" => "The Custom House room 7" } ],
+    "stairs" => [], "other_ways_out" => []
+  }.freeze
+
+  test "a description that names the doorless walls beside the doors costs no flag" do
+    upper = planned("A door in the north wall gives back onto the landing, and another in the east " \
+                    "wall leads on; the south wall is hung with tarred canvas and the west wall " \
+                    "carries a run of pigeonholes.", plan: UPPER_PLAN)
+
+    assert_empty upper.flagged_for(:door_the_records_do_not_hold)
+    assert_equal 2, upper.judgeable_for(:door_the_records_do_not_hold),
+                 "the two walls the prose put a door in were compared, and the other two were not claims"
+  end
+
   # A DESCRIPTION THAT SAYS NOTHING ABOUT ITS WALLS HAS BROKEN NO RULE: the
   # prompt asks for a room, not for a measurement, so silence is out of the
   # denominator rather than clean.

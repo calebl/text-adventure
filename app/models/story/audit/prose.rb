@@ -539,12 +539,44 @@ module Story::Audit::Prose
   # One door the prose put in a named wall.
   Door = Data.define(:wall, :sentence)
 
+  # A SECOND DOOR, NAMED WITHOUT THE WORD. Prose that has already said "door"
+  # says "another" or "one" of the next one -- *"and one in the west wall stands
+  # half open"* -- and that is the commonest shape a two-door room is written
+  # in, which is most rooms `Location::Interior` lays out. These count as a
+  # threshold ONLY in a sentence that named a real one (`THRESHOLD`, required
+  # below before any wall is read), so "the only one here" can never claim a
+  # door on its own.
+  DOOR_ANAPHORS = /\b(?:another|one)\b/i
+
+  # HOW FAR THE THRESHOLD MAY SIT FROM THE WALL IT IS IN. The longest real link
+  # measured is 21 characters -- *"the North-East wall carries a shuttered
+  # gate"* -- and the anaphors sit at 5 to 8 -- *"one in the west wall"*, *"the
+  # west wall has another"*. Short enough that a threshold in one clause cannot
+  # reach a wall in the next: in *"A door in the north wall gives back onto the
+  # landing, and another in the east wall leads on; the south wall is hung with
+  # tarred canvas"* the south wall is 25 characters from the nearest door word
+  # and out of reach. The window may hold no sentence end and no OTHER named
+  # wall, which is what stops a door stepping over the wall it is really in to
+  # reach the next one along.
+  DOOR_BRIDGE = 24
+
   # EVERY WALL THE PROSE PUTS A DOOR IN. The grammar is a THRESHOLD and a
-  # COMPASS-QUALIFIED WALL in one sentence, in either order: "a door in the
-  # north wall", "the east wall is broken by a low hatch". A compass word with
-  # no wall is not a claim about a wall -- "the door on the north side of the
-  # yard" is scenery -- and a wall with no threshold in the sentence claims no
-  # door at all, which is what keeps "the north wall is bare plaster" out.
+  # COMPASS-QUALIFIED WALL WITHIN `DOOR_BRIDGE` OF EACH OTHER, in either order:
+  # "a door in the north wall", "the east wall is broken by a low hatch". A
+  # compass word with no wall is not a claim about a wall -- "the door on the
+  # north side of the yard" is scenery -- and a wall with no threshold NEAR IT
+  # claims no door at all, which is what keeps "the north wall is bare plaster"
+  # out.
+  #
+  # NEAR IT AND NOT MERELY IN THE SAME SENTENCE, which is the whole of why the
+  # bridge exists. `Location::Plan`'s closing sentence tells a model that no
+  # other wall of the room holds a door, so a description that answers it names
+  # the doorless walls -- and it names them in the same breath as the doors:
+  # *"A door in the north wall gives back onto the landing, and another in the
+  # east wall leads on; the south wall is hung with tarred canvas and the west
+  # wall carries a run of pigeonholes."* A sentence-wide threshold reads all
+  # four walls out of that and flags two of them, on prose that contradicts
+  # nothing. The bridge reads the two it should.
   #
   # WHAT IT KNOWINGLY MISSES: the commonest way prose names a door, which is not
   # to name a wall at all. "Two doors lead out" claims nothing this can read,
@@ -569,6 +601,13 @@ module Story::Audit::Prose
   # plan. Room 4's door sentence is NOT among them -- it says "no other way out",
   # and `Story::Audit::NEGATIONS` skips the sentence -- so that room is a worked
   # example the size grammar reads and this one does not.
+  #
+  # BOTH FIGURES WERE RE-MEASURED WITH `DOOR_BRIDGE` IN PLACE and neither moved:
+  # the bridge took away a false-positive path and no real detection with it.
+  # Room 3's WEST wall is the reason `DOOR_ANAPHORS` exists -- its threshold noun
+  # is 69 characters away, far outside the bridge, and what stands beside the
+  # wall is "one in the west wall". Narrowing to the threshold noun alone would
+  # have read the repository's own worked example as a one-door room.
   def door_claims(text)
     body = text.to_s
     return [] if body.blank?
@@ -579,12 +618,66 @@ module Story::Audit::Prose
       next if sentence.match?(Story::Audit::NEGATIONS)
       next unless sentence.match?(THRESHOLD)
 
-      sentence.scan(/#{COMPASS}[-\s]?#{WALL_NOUN}/i) do
-        found << Door.new(wall: compass_word(Regexp.last_match(0)), sentence: sentence.strip)
+      walls = named_walls(sentence)
+      walls.each_with_index do |wall, index|
+        next unless door_word_beside?(sentence, walls, index)
+
+        found << Door.new(wall: compass_word(wall.phrase), sentence: sentence.strip)
       end
     end
 
     found.uniq(&:wall)
+  end
+
+  # ONE NAMED WALL AND WHERE IT SITS IN THE SENTENCE. The offsets are what the
+  # bridge is measured over, and they are what let one wall's window stop at the
+  # next wall rather than running through it.
+  NamedWall = Data.define(:phrase, :from, :to)
+
+  def named_walls(sentence)
+    found = []
+    sentence.scan(/#{COMPASS}[-\s]?#{WALL_NOUN}/i) do
+      at = Regexp.last_match
+      found << NamedWall.new(phrase: at[0], from: at.begin(0), to: at.end(0))
+    end
+
+    found
+  end
+
+  # WHETHER A DOOR WORD SITS WITHIN `DOOR_BRIDGE` OF THIS WALL, on either side.
+  # The window is clipped at the NEIGHBOURING NAMED WALLS, so the door in one
+  # wall cannot be read as a door in the next wall along -- which is the case
+  # that made the bridge necessary and the one a length alone would leave to
+  # arithmetic. `THRESHOLD` counts; `DOOR_ANAPHORS` count too, because the
+  # caller has already established that this sentence names a real threshold for
+  # them to refer back to.
+  #
+  # THE GAP IS MEASURED TO THE NEAR EDGE OF THE WORD and never through it, so a
+  # threshold that begins inside the bridge is read whole -- *"the North-East
+  # wall carries a shuttered gate"* is 21 characters of bridge and a four-letter
+  # gate, and a window cut at 24 characters would have kept "ga".
+  def door_word_beside?(sentence, walls, index)
+    wall = walls[index]
+    floor = index.zero? ? 0 : walls[index - 1].to
+    ceiling = index == walls.size - 1 ? sentence.length : walls[index + 1].from
+
+    door_word_before?(sentence[floor...wall.from]) || door_word_after?(sentence[wall.to...ceiling])
+  end
+
+  # A door word in the run of text ENDING at the wall, close enough to its end.
+  def door_word_before?(window)
+    gaps_in(window) { |at| window.length - at.end(0) }
+  end
+
+  # A door word in the run of text BEGINNING at the wall, close enough to its start.
+  def door_word_after?(window)
+    gaps_in(window) { |at| at.begin(0) }
+  end
+
+  def gaps_in(window)
+    return false if window.nil?
+
+    window.to_enum(:scan, /#{THRESHOLD}|#{DOOR_ANAPHORS}/).any? { yield(Regexp.last_match) <= DOOR_BRIDGE }
   end
 
   # HOW BIG THE PROSE SAYS THE ROOM IS, AND WHICH STOREY IT SAYS IT IS ON.
