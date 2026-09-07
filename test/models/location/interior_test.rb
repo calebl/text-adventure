@@ -59,9 +59,12 @@ class Location::InteriorTest < ActiveSupport::TestCase
 
   # Every interior this suite reasons about: a spread of footprints, each laid
   # out several times over under different ids, and a third of them with storeys
-  # below the entry. The two cycles have no common factor with each other or
-  # with `PLACES`, so a footprint is tried at more than one depth rather than
-  # always at the same one.
+  # below the entry. The two cycles are COPRIME WITH EACH OTHER -- seven
+  # footprints and three depths -- so the pair repeats only every twenty-one
+  # places and every footprint is tried at every depth, rather than one footprint
+  # always being the flat one. `PLACES` has no part in that: it decides how many
+  # of the twenty-one the loop gets through, and being a multiple of three costs
+  # the coverage nothing.
   def every_interior
     PLACES.times.map do |number|
       width, depth = FOOTPRINTS[number % FOOTPRINTS.size]
