@@ -24,6 +24,7 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
                   { "name" => "The Supply Closet", "realized" => true, "connected" => false },
                   { "name" => "The Cellar Stair", "realized" => false, "connected" => false } ],
     "reachable" => [ "Ward Office 12" ],
+    "reached_from" => "Ward Office 12",
     "taken_names" => [ "Halkett Rowe", "ward stamp" ],
     "all_names" => { "people" => [ "Halkett Rowe" ], "places" => [ "Ward Office 12", "The Supply Closet",
                                                                    "The Cellar Stair", "The Long Hallway" ],
@@ -56,15 +57,55 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
   # else, so scoring that answer as a defect would report a rate this check never
   # earned -- it is out of the DENOMINATOR, not merely unflagged.
   test "a dead end that named only the way back is unjudgeable, not clean and not flagged" do
-    dead_end = scored(exits: [ "Ward Office 12" ], facts: FACTS.merge("expects_new_ground" => false))
+    dead_end = scored(exits: [ "Ward Office 12" ],
+                      facts: FACTS.merge("expects_new_ground" => false,
+                                         "reached_from" => "Ward Office 12"))
 
     assert_empty dead_end.flagged_for(:exit_already_reachable)
     assert_equal 0, dead_end.judgeable_for(:exit_already_reachable)
   end
 
+  # THE WAY BACK IS NOT THE SAME AS "ANYWHERE ALREADY REACHABLE" ON A STUB WITH
+  # TWO EDGES, and the prompt's sentence is about the first: *if the only way out
+  # is back the place the player came from*. A room that answered with its OTHER
+  # neighbour did not give that answer, so it stays judged -- gating it out would
+  # hide the defect the `two-ways-out` shape exists to reach.
+  test "a room that named its other neighbour and nothing else is judged, not gated out" do
+    facts = FACTS.merge("expects_new_ground" => false, "reached_from" => "Ward Office 12",
+                        "reachable" => [ "Ward Office 12", "The Cellar Stair" ])
+    scorer = scored(exits: [ "The Cellar Stair" ], facts: facts)
+
+    assert_equal 1, scorer.flagged_for(:exit_already_reachable).size
+    assert_equal 1, scorer.judgeable_for(:exit_already_reachable)
+    assert_includes scorer.flagged_for(:exit_already_reachable).first.evidence, "The Cellar Stair"
+  end
+
+  # A SET STORED BEFORE THE WAY BACK WAS RECORDED SCORES AS IT SCORED THEN: no
+  # `reached_from` key at all falls back to "one exit, and it is already
+  # reachable", which is exact for every single-edge case those sets measured.
+  test "a stored row with no `reached_from` keeps the older dead-end test" do
+    facts = FACTS.except("reached_from").merge("expects_new_ground" => false)
+    dead_end = scored(exits: [ "Ward Office 12" ], facts: facts)
+
+    assert_empty dead_end.flagged_for(:exit_already_reachable)
+    assert_equal 0, dead_end.judgeable_for(:exit_already_reachable)
+  end
+
+  # AN OPENING ROOM HAS NO WAY BACK, so nothing it names can be one and the gate
+  # never opens. The key is recorded and empty, which is not the same state as a
+  # row that never recorded it at all.
+  test "an opening room, which records no way back, is judged like any other room" do
+    facts = FACTS.merge("expects_new_ground" => false, "reached_from" => nil)
+    scorer = scored(exits: [ "Ward Office 12" ], facts: facts)
+
+    assert_equal 1, scorer.flagged_for(:exit_already_reachable).size
+    assert_equal 1, scorer.judgeable_for(:exit_already_reachable)
+  end
+
   test "the dead-end gate does not cover a room that named the way back alongside anything else" do
     pair = scored(exits: [ "Ward Office 12", "The Cellar Stair" ],
-                  facts: FACTS.merge("expects_new_ground" => false))
+                  facts: FACTS.merge("expects_new_ground" => false,
+                                     "reached_from" => "Ward Office 12"))
 
     assert_equal 1, pair.flagged_for(:exit_already_reachable).size
     assert_equal 2, pair.judgeable_for(:exit_already_reachable)
@@ -98,7 +139,8 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     assert_equal 1, scorer.flagged_for(:no_new_ground).size
     assert_equal 1, scorer.judgeable_for(:no_new_ground)
 
-    dead_end = scored(exits: [ "Ward Office 12" ], facts: FACTS.merge("expects_new_ground" => false))
+    dead_end = scored(exits: [ "Ward Office 12" ],
+                      facts: FACTS.merge("expects_new_ground" => false, "reached_from" => "Ward Office 12"))
     assert_empty dead_end.flagged_for(:no_new_ground)
     assert_equal 0, dead_end.judgeable_for(:no_new_ground),
                  "a dead end naming the way back is the RIGHT answer, so it is unjudgeable and never clean"

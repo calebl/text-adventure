@@ -122,6 +122,13 @@ class Eval::Realization::Scorer
     def room = facts["room"].to_s
     def expects_new_ground? = facts["expects_new_ground"] == true
 
+    # THE WAY BACK, and whether this row records one at all. A set stored before
+    # `reached_from` was written down has no key -- not the same state as an
+    # OPENING room, which has the key and nothing in it because it was never
+    # walked into.
+    def records_the_way_back? = facts.key?("reached_from")
+    def reached_from = facts["reached_from"].to_s
+
     def people = Array(detail["people"])
     def items = Array(detail["items"])
     def exits = Array(exits_answer["exits"])
@@ -275,11 +282,27 @@ class Eval::Realization::Scorer
     end
   end
 
-  # ONE EXIT, AND IT IS ONE THE ROOM COULD ALREADY REACH, in a case that says
-  # the story stops here.
+  # ONE EXIT, AND IT IS THE WAY BACK, in a case that says the story stops here.
+  #
+  # THE WAY BACK AND NOT MERELY SOMEWHERE ALREADY REACHABLE, because those are
+  # different on a stub with more than one edge and the prompt's sentence is
+  # about the first: *"if the only way out is back the place the player came
+  # from"*. A `two-ways-out` stub that answered with the OTHER neighbour and
+  # nothing else did not give the answer the prompt asked for, and taking it out
+  # of the denominator would hide the defect the shape exists to reach. An
+  # OPENING room has no way back, so nothing it names can be one.
+  #
+  # AND A SET STORED BEFORE THE WAY BACK WAS RECORDED SCORES AS IT SCORED THEN.
+  # Those rows have no `reached_from` key at all, so they keep the older test --
+  # one exit, and it is somewhere the room could already reach. That is exact
+  # for every single-edge case, which is every case those sets measured. A
+  # rescorable set that quietly changed its numbers under a reader would be
+  # worse than one that could not be rescored at all.
   def correct_dead_end?(reading)
-    !reading.expects_new_ground? && reading.exit_names.one? &&
-      reading.any_named?(reading.reachable, reading.exit_names.first)
+    return false if reading.expects_new_ground? || !reading.exit_names.one?
+    return reading.any_named?(reading.reachable, reading.exit_names.first) unless reading.records_the_way_back?
+
+    reading.reached_from.present? && reading.same?(reading.exit_names.first, reading.reached_from)
   end
 
   def judge_exit_named_this_room

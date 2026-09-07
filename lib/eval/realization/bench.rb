@@ -251,6 +251,13 @@ class Eval::Realization::Bench
       "danger" => standing.location.danger,
       "danger_share" => standing.location.danger_share,
       "expects_new_ground" => kase.expects_new_ground?,
+      # THE WAY BACK, BY NAME. `reachable` is every neighbour the stub already
+      # had, which on a multi-exit stub is not the same thing -- and the exits
+      # prompt's dead-end sentence is about the place the player CAME FROM
+      # specifically. `Eval::Realization::Scorer#correct_dead_end?` cannot tell
+      # the two apart without this. Nil on an opening room, which has no way
+      # back at all.
+      "reached_from" => kase.reached_from,
       "people_allowance" => standing.people_allowance,
       "item_allowance" => standing.item_allowance,
       "exit_allowance" => standing.exit_allowance,

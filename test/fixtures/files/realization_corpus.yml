@@ -138,8 +138,13 @@ cases:
   why: >-
     A chain, a man, and about five feet of dry rock, with the tide coming in.
     A dead end where the only honest answer is the causeway back -- and Neb
-    Halloran is already standing in it, so the room's people allowance is one
-    short and his name is in the list the prompt says is spoken for.
+    Halloran is already standing in it, which puts his name in the list the
+    prompt says is spoken for. He costs the room nothing on the allowance:
+    Character::Registry#allowance is the smallest of MAX_PER_CALL, what is left
+    of MAX_PER_ROOM and what is left of the world, and the per-call cap is the
+    binding one here whether he is standing there or not. What he does do is
+    make the pre-existing-occupant path in `proposal_refused` reachable -- an
+    answer that names him is refused and the room keeps the man it had.
 
 # ---------------------------------------------------------------- The Lunar Cartographer
 
@@ -175,6 +180,27 @@ cases:
     in the database, and its own description named none of them. `also_reaches`
     is what puts the spire edge back, because the defect needs the room to
     already be at two of its four.
+
+- id: lunar-boarding-house-hallway
+  story: The Lunar Cartographer
+  room: Grenn's Boarding House hallway
+  reached_from: Grenn's Boarding House, Room 3
+  also_reaches:
+  - The Bell of Saint Aravel
+  expects_new_ground: false
+  shape: two-ways-out
+  why: >-
+    A corridor with both of its ends already built: Grenn's door at one end and
+    the belfry stair at the other, both seeded edges, so the stub stages with
+    TWO ways out and an allowance of two rather than four. It is the only case
+    that is a multi-exit stub AND declares the story does not point onward, and
+    that pair is what `exit_already_reachable`'s dead-end gate turns on: naming
+    the room behind you is the answer the exits prompt asks for and is not
+    scored, while naming the belfry -- already reachable, and not the way back
+    -- is the defect and IS. Nothing here is marked "already written": both
+    realized places in this world are this hallway's own neighbours, so it can
+    reach them and the prompt lists them plain. Nobody is standing in it either,
+    so the allowance is the per-call cap.
 
 - id: lunar-celestial-spire
   story: The Lunar Cartographer

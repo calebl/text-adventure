@@ -63,7 +63,8 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
     stage(kase(room: "The Tide Post", reached_from: "The Causeway Court", story: "The Salt Assizes")) do |standing|
       assert_includes Character.present_in(standing.location).pluck(:fullname), "Neb Halloran"
       assert_includes standing.taken_names, "Neb Halloran"
-      assert_equal 2, standing.people_allowance, "one of the room's three places is taken"
+      assert_equal Character::Registry::MAX_PER_CALL, standing.people_allowance,
+                   "the per-call cap is the binding one here, occupant or no occupant"
     end
   end
 

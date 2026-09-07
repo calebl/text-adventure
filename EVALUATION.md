@@ -1208,7 +1208,7 @@ narrower shapes above it are the defects.
 
 ### The corpus
 
-`test/fixtures/files/realization_corpus.yml` — 17 cases across **four worlds,
+`test/fixtures/files/realization_corpus.yml` — cases across **four worlds,
 three seeded and one generated**. The validator runs offline in `bin/rails test`
 and stages every case against the world file it names, so a room somebody
 renamed is a failing test rather than a hole in a paid run.

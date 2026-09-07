@@ -89,6 +89,8 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
 
     assert_equal 3, facts["exit_allowance"], "one of the room's four is spent on the way back"
     assert_equal [ "Ward Office 12" ], facts["reachable"]
+    assert_equal "Ward Office 12", facts["reached_from"],
+                 "the scorer's dead-end gate needs the way back by name, not merely a reachable list"
     assert_equal facts["people_allowance"], facts["slots"].size
     assert_includes facts["taken_names"], "Halkett Rowe"
 
