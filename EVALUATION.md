@@ -22,13 +22,15 @@ prompt before deciding to change it.**
 
 It is not advice about rigour, it is the order of operations. Before editing
 `Scene::Narrator::INSTRUCTIONS`, `Character#interaction_instructions`,
-`Playthrough::Classifier::INSTRUCTIONS`, a schema's field descriptions or
-anything else a model is handed:
+`Playthrough::Classifier::INSTRUCTIONS`, `Location::Generator`'s people, items
+and exits instructions, a schema's field descriptions or anything else a model
+is handed:
 
 1. **Store a baseline first.** `rake eval:prompt` is the cheap first gate,
-   `rake eval:run` the confirming one, `rake eval:classifier` the classifier's.
-   Sets live under `db/eval/` and `db/eval_baseline.json` and re-score offline
-   for free, so the before half costs nothing once it exists.
+   `rake eval:run` the confirming one, `rake eval:classifier` the classifier's
+   and `rake eval:realization` the room-builder's. Sets live under `db/eval/`
+   and `db/eval_baseline.json` and re-score offline for free, so the before half
+   costs nothing once it exists.
 2. **Judge the after against it with a verdict that can say *noise***
    — `rake eval:prompt_compare` / `rake eval:compare`, four runs a side.
 3. **Re-baseline only once the change has a verdict.**
@@ -1111,7 +1113,7 @@ every one led back up (`data/ta-quest-progress-scout/report.md` D5, confirmed by
 cannot be re-run, it has no band, and no prompt change can be judged against it.
 
 ```bash
-rake eval:realization                        # 17 stubs x 4 reps x 2 calls x 1 model, ~$0.16
+rake eval:realization                        # 18 stubs x 4 reps x 2 calls x 1 model, ~$0.17
 rake eval:realization_score SET=name         # score a stored set again -- offline, free, no key
 rake eval:realization_compare BEFORE=a AFTER=b
 rake eval:realization_board                  # every stored set as one table
@@ -1255,7 +1257,7 @@ be constant, and `prompt_stable` is the check on that claim —
 ### There is no baseline yet
 
 `db/eval/` holds no realization set. **The instrument is built and the baseline
-is a spend the captain makes**, at `rake eval:realization` — about **$0.16** at
+is a spend the captain makes**, at `rake eval:realization` — about **$0.17** at
 `REPS=4` on `mistralai/mistral-medium-3.1`. Until it exists, no change to
 `Location::Generator`'s people, items or exits instructions can be judged, which
 is the whole point of the rule this file opens with.

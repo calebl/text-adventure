@@ -6,6 +6,13 @@
 #
 # Generation happens once per place. A realized location is returned untouched,
 # which is what makes walking back into a room give you the room you left.
+#
+# THE THREE PROMPT BLOCKS BELOW HAVE A BENCH: `#people_instructions`,
+# `#items_instructions` and `#exits_prompt` are what `rake eval:realization`
+# measures, by staging a fixed stub and scoring the answer against the records
+# it was built from. Do not edit one of them without a stored baseline to judge
+# the change against -- EVALUATION.md -> The realization bench is the protocol
+# and `Eval::Realization` is the instrument.
 class Location::Generator
   include SanitizesGeneratedText
 

@@ -246,9 +246,10 @@ namespace :eval do
     # the app is.
     def default_reps = Eval::Noise::MIN_RUNS
 
-    # A realization bench run is cents -- two calls a case, sixteen cases, four
-    # repetitions -- so the ceiling is low and the estimate is printed first
-    # anyway: the captain's rule for `eval:run` applies to anything that spends.
+    # A realization bench run is cents -- two calls a case, the whole corpus,
+    # four repetitions, and `#estimate_line` prices it rather than this comment
+    # -- so the ceiling is low and the estimate is printed first anyway: the
+    # captain's rule for `eval:run` applies to anything that spends.
     SPEND_CEILING = 1.00
 
     def reps = (ENV["REPS"].presence || default_reps).to_i
