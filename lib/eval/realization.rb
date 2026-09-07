@@ -74,7 +74,17 @@ module Eval::Realization
   # made as a side effect of building an instrument. It lives under
   # `test/fixtures/files/worlds/` instead, which is where the frozen inputs to a
   # measurement already live, and `rake game:export` is how it got there.
-  WORLD_ROOTS = [ "db/seeds/worlds", "test/fixtures/files/worlds" ].freeze
+  #
+  # AND THE SWEEP'S OWN WORLDS ARE READ LAST, for the one thing only they have:
+  # A LAID-OUT INTERIOR. `The Quay House` is the only world in the repository
+  # with a building in it, its floor plan is `Location::Interior`'s own output
+  # exported with `rake game:export`, and it is already held to every standard a
+  # seeded world is (`EngineSweep::WORLDS`). A second copy of that plan under
+  # this bench's own root would be a second floor plan to keep in step with the
+  # generator, which is exactly the drift `Eval::Realization::Stage` refuses to
+  # let a case's FACTS have. Read last, so a world that ever existed in two
+  # places is read from the playable one.
+  WORLD_ROOTS = [ "db/seeds/worlds", "test/fixtures/files/worlds", "lib/engine_sweep/worlds" ].freeze
 
   def self.world_file(story)
     slug = WorldSeed.slug(story)
@@ -103,8 +113,18 @@ module Eval::Realization
   # measured exit defect came out of a generated world's rooms, and a corpus of
   # nothing but hand-authored seeds would be a corpus of worlds a person wrote
   # the neighbours of.
+  #
+  # `The Quay House` IS THE ONE WORLD WITH AN INSIDE, and it is here for slice
+  # 3: a room of a laid-out interior is realized on different terms from every
+  # other room in the game -- its ways out are the ENGINE's, so no exits call is
+  # made at all, and the detail prompt is handed the room's own floor plan as
+  # fact (`Location::Plan`). That is a prompt shape nothing else in this corpus
+  # can reach, and the checks it exists to feed
+  # (`door_the_records_do_not_hold`, `size_the_records_do_not_hold`) are
+  # unjudgeable anywhere else.
   STORIES = [
-    "The Unrecorded Hour", "The Lunar Cartographer", "The Salt Assizes", "The Iron Gate Descends"
+    "The Unrecorded Hour", "The Lunar Cartographer", "The Salt Assizes", "The Iron Gate Descends",
+    "The Quay House"
   ].freeze
 
   # AND THE HELD-OUT WORLD IS STILL HELD OUT, reported apart and never pooled --
@@ -194,9 +214,10 @@ module Eval::Realization
   #
   # PRICED AT TWO CALLS A CASE, which is what a realization costs when the room
   # has room for another way out. A case whose stub is already at the exit cap
-  # costs one, and the estimate does not model that: an estimate that comes in
-  # under is a nasty surprise and one that comes in over is not
-  # (`Eval::Cost`'s rule).
+  # costs one, and so does every INTERIOR ROOM -- its ways out are the engine's
+  # and `Location::Generator#write_exits!` asks for none. The estimate models
+  # neither: an estimate that comes in under is a nasty surprise and one that
+  # comes in over is not (`Eval::Cost`'s rule).
   def self.estimate(cases:, reps:, models:)
     per = CALLS.sum { |call| PER_CALL.fetch(call)[:input] }
     out = CALLS.sum { |call| PER_CALL.fetch(call)[:output] }

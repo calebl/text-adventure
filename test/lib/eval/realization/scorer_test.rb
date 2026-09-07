@@ -371,7 +371,101 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     assert_equal [ 1, 0, 0 ], scorer.all_readings.map(&:extra_calls)
   end
 
+  # --- the description against the floor plan --------------------------------
+  #
+  # THE FIRST CHECKS IN THIS FILE THAT READ PROSE RATHER THAN A LIST, and they
+  # are judgeable only on a room the engine laid out: the plan is what the
+  # detail prompt stated, so the comparison is with a record either way.
+
+  PLAN = {
+    "room" => "The Custom House room 3", "place" => "The Custom House", "storey" => 0,
+    "width" => 7, "depth" => 6,
+    "doors" => [ { "wall" => "north", "to" => "The Custom House room 2" },
+                 { "wall" => "west", "to" => "The Custom House room 4" } ],
+    "stairs" => [], "other_ways_out" => []
+  }.freeze
+
+  test "a door in a wall the plan does not hold is flagged" do
+    scorer = planned("A door in the south wall opens onto the quay, and the damp comes in with it.")
+
+    assert_equal 1, scorer.flagged_for(:door_the_records_do_not_hold).size
+    assert_includes scorer.flagged_for(:door_the_records_do_not_hold).first.evidence,
+                    "put a door in the south wall, and the plan has north and west"
+  end
+
+  test "a door in a wall the plan does hold is not flagged, and is still an opportunity" do
+    scorer = planned("The door in the north wall is the one they use, and the west wall has another.")
+
+    assert_empty scorer.flagged_for(:door_the_records_do_not_hold)
+    assert_equal 2, scorer.judgeable_for(:door_the_records_do_not_hold),
+                 "both walls the prose named were compared"
+  end
+
+  # A DESCRIPTION THAT SAYS NOTHING ABOUT ITS WALLS HAS BROKEN NO RULE: the
+  # prompt asks for a room, not for a measurement, so silence is out of the
+  # denominator rather than clean.
+  test "a description that names no wall is not judgeable" do
+    scorer = planned("Ledgers to the ceiling, and a smell of tar that never leaves the plaster.")
+
+    assert_equal 0, scorer.judgeable_for(:door_the_records_do_not_hold)
+    assert_equal 0, scorer.judgeable_for(:size_the_records_do_not_hold)
+  end
+
+  # AND A ROOM WITH NO PLAN IS OUT OF BOTH CHECKS ALTOGETHER, which is every
+  # room in every flat world -- including a stored set from before a plan was
+  # ever recorded.
+  test "a room the engine laid out nothing for is judged on neither" do
+    scorer = scored(exits: [ "The Cellar Stair" ],
+                    people: [], items: [])
+
+    assert_equal 0, scorer.judgeable_for(:door_the_records_do_not_hold)
+    assert_equal 0, scorer.judgeable_for(:size_the_records_do_not_hold)
+    assert_empty scorer.flags.select { |flag| flag.code == :size_the_records_do_not_hold }
+  end
+
+  test "a size that is not the room's is flagged, and the plan's own size is not" do
+    assert_equal 1, planned("Seven paces by six, and every one of them cold.")
+      .judgeable_for(:size_the_records_do_not_hold)
+    assert_empty planned("Seven paces by six, and every one of them cold.")
+      .flagged_for(:size_the_records_do_not_hold)
+
+    wrong = planned("A long room, 9 by 4 paces, running back from the door.")
+    assert_equal 1, wrong.flagged_for(:size_the_records_do_not_hold).size
+    assert_includes wrong.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "said the room is 4 by 9 paces and it is 6 by 7"
+  end
+
+  test "a storey that is not the room's is flagged" do
+    wrong = planned("Storey 2 is where the ledgers are kept, and this is it.")
+
+    assert_equal 1, wrong.flagged_for(:size_the_records_do_not_hold).size
+    assert_includes wrong.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "put the room on storey 2 and it is on storey 0"
+  end
+
+  test "the storey the plan states is not flagged" do
+    assert_empty planned("You are on storey 0 and the water is not far below it.")
+      .flagged_for(:size_the_records_do_not_hold)
+  end
+
+  # THE TWO GEOMETRY CHECKS READ WORDS, and the board is told so.
+  test "both geometry checks are counted as keyword checks" do
+    assert_includes Eval::Realization::Scorer::KEYWORD_CHECKS, :door_the_records_do_not_hold
+    assert_includes Eval::Realization::Scorer::KEYWORD_CHECKS, :size_the_records_do_not_hold
+  end
+
   private
+
+  # A ROW OFF AN INTERIOR-ROOM CASE: one call, no exits answer at all, and the
+  # floor plan the prompt stated stored beside the description.
+  def planned(description)
+    facts = FACTS.merge("plan" => PLAN, "room" => PLAN["room"], "exit_allowance" => 0)
+    built = row(facts: facts)
+    built["answers"] = { "detail" => { "description" => description, "people" => [], "items" => [] } }
+    built["calls"] = 1
+
+    Eval::Realization::Scorer.new([ built ])
+  end
 
   def scored(**overrides) = Eval::Realization::Scorer.new([ row(**overrides) ])
 

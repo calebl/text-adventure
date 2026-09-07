@@ -51,16 +51,12 @@
 #
 # THE GEOMETRY IS `Location::Box`'s, AND IS NOT RE-DERIVED. Every position and
 # extent on this page comes off a box; what this class adds is the pixels, which
-# is drawing rather than geometry. The one piece of arithmetic that is neither
-# is WHERE A DOOR GOES on a wall two rooms share -- `#doorway_between`.
-#
-#   REJECTED: putting `#shared_wall` on `Location::Box`, beside `#overlaps?`,
-#   which is where the family belongs and where the box header already
-#   anticipates a door. It is not there because this slice adds a READER and no
-#   engine code, and a value object gains a method when something in the engine
-#   needs it. Slice 2's layout generator has to place a door to open one; that
-#   is the moment the arithmetic moves onto `Box` and this class calls it
-#   instead of owning it. Until then it is here, once, and the view has none.
+# is drawing rather than geometry. WHERE A DOOR GOES on a wall two rooms share
+# was the one exception, and it is one no longer: `#shared_wall` moved onto
+# `Location::Box` in slice 3, exactly as this header said it would when
+# something in the engine needed it -- `Location::Plan` has to name the wall a
+# door is in before it can tell a model about it. `#doorway_between` calls it
+# and turns the answer into pixels, which is this class's whole job.
 #
 # WHY IT IS NOT ON THE PLAY PAGE. The reading experience is a stage of its own
 # (`ta-api-iface`) and this is an instrument, not a scene: it is reached the way
@@ -537,16 +533,17 @@ class Story::Map
 
   def connected?(a, b) = neighbours_of(a.id).include?(b.id)
 
-  # WHERE THE GAP IN A WALL TWO ROOMS SHARE IS DRAWN, and the one piece of
-  # arithmetic on this page that is neither `Location::Box`'s nor pixels. See the
-  # class header, including what it would take to move it onto `Box`.
+  # WHERE THE GAP IN A WALL TWO ROOMS SHARE IS DRAWN. The wall itself is
+  # `Location::Box#shared_wall`'s -- it moved there when slice 3's
+  # `Location::Plan` had to name the wall a door is in, which is what the class
+  # header said would move it -- so what is left here is the pixels.
   #
   # The intervals are half-open (`Location::Box`), so two rooms that share a wall
   # do not overlap: one's far edge is the other's near edge, exactly. The door is
   # `DOOR_PACES` wide at the middle of whatever length of wall they actually
   # share, and there is no door at all when they share a corner and nothing else.
   def doorway_between(a, b)
-    wall = shared_wall(a.plan_box, b.plan_box)
+    wall = a.plan_box.shared_wall(b.plan_box)
     return nil if wall.nil?
 
     axis, at, from, to = wall
@@ -561,24 +558,6 @@ class Story::Map
     else
       Doorway.new(x1: near * PACE, y1: at * PACE, x2: far * PACE, y2: at * PACE, reading: reading)
     end
-  end
-
-  # The wall two boxes share, as an axis, the coordinate it stands at and the
-  # stretch of it they have in common -- or nil when they do not touch, or touch
-  # at a corner alone. Coordinates are in PACES and relative to the plan's own
-  # origin, which the caller has already subtracted.
-  def shared_wall(a, b)
-    if a.x + a.width == b.x || b.x + b.width == a.x
-      at = a.x + a.width == b.x ? a.x + a.width : b.x + b.width
-      overlap = [ [ a.y, b.y ].max, [ a.y + a.depth, b.y + b.depth ].min ]
-      return [ :x, at, *overlap ] if overlap.last > overlap.first
-    elsif a.y + a.depth == b.y || b.y + b.depth == a.y
-      at = a.y + a.depth == b.y ? a.y + a.depth : b.y + b.depth
-      overlap = [ [ a.x, b.x ].max, [ a.x + a.width, b.x + b.width ].min ]
-      return [ :y, at, *overlap ] if overlap.last > overlap.first
-    end
-
-    nil
   end
 
   # A STAIR IS AN EDGE, so it is read off the connections and not off a shape:

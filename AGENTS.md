@@ -152,6 +152,7 @@ Read the header of the file named, not a summary of it.
 | Where a room is, how big it is, and what a storey is | `app/models/location/box.rb` |
 | How the inside of a place is laid out, and by what roll | `app/models/location/interior.rb` |
 | Where in a room a thing or a person is, and who may roll one | `app/models/location/spot.rb`, `location/placement.rb` |
+| What a room's own walls, doors and stairs say to a prompt | `app/models/location/plan.rb` |
 | What the world graph looks like drawn, and its insides | `app/models/story/map.rb` |
 | A thing thrown | `Playthrough::Turn#throw_item!`, `app/models/roll.rb` |
 | The dice, and the one place a seed is built | `app/models/roll.rb` |

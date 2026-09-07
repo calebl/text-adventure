@@ -255,6 +255,37 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_match "The Sunken Stair", response.body
   end
 
+  # THE ROOM AND THE PLACE IT IS IN, AS TWO SENTENCES. Rooms have parents since
+  # slice 2, so there are two ways to write this line -- "in The Rusted Anchor"
+  # or "in the taproom of The Rusted Anchor" -- and which one the player reads is
+  # the captain's call and is open. Until he rules, the page shows the room named
+  # exactly as the exits and the classifier name it, with the building after it:
+  # the plainest thing that loses neither half.
+  test "show names the place a room is inside, without folding it into the room's name" do
+    playthrough = create(:playthrough, :started)
+    story = playthrough.story
+    anchor = create(:location, :stub, story: story, name: "The Rusted Anchor", width: 12, depth: 8)
+    playthrough.current_location.update!(name: "the taproom", parent_location: anchor,
+                                         x: 0, y: 0, z: 0, width: 6, depth: 4)
+
+    get playthrough_path(playthrough)
+
+    assert_match "You are in", response.body
+    assert_match "the taproom", response.body
+    assert_match "Inside The Rusted Anchor", response.body
+    assert_no_match(/taproom of The Rusted Anchor/, response.body)
+  end
+
+  # AND NOTHING AT ALL FOR A ROOM THAT IS INSIDE NOTHING, which is every room in
+  # every flat world.
+  test "show says nothing about a place for a room with no parent" do
+    playthrough = create(:playthrough, :started)
+
+    get playthrough_path(playthrough)
+
+    assert_no_match(/Inside /, response.body)
+  end
+
   # THE SLASH MENU IS RENDERED INTO THE FORM AND FETCHED FROM NOWHERE. The whole
   # point of `Playthrough::SlashMenu` is that the box needs no request and no
   # model: the closed sets arrive with the turn, and `#turn_log` is replaced at

@@ -47,8 +47,19 @@
 # It is hand-written for the same reason the way in is: an offline sweep
 # realizes no room, so nothing here can watch `Item::Registry` place one.
 #
-# The rooms are STUBS and stay stubs: an offline walk writes nothing, which is
-# `EngineSweep::Invariants#nothing_was_written`.
+# THE ROOMS ARE STUBS AND STAY STUBS -- an offline walk writes nothing, which is
+# `EngineSweep::Invariants#nothing_was_written` -- WITH TWO EXCEPTIONS, and they
+# are the state slice 3 produces: rooms 3 and 4 are WRITTEN. A sweep has no
+# model, so it can never watch a room being realized; what it can do is walk a
+# building in which some rooms already have been, which is what those two are
+# for. `Location::Generator#write_exits!` asks a model for no way out of a room
+# inside a place, so a written room must still have exactly the doors the layout
+# gave it -- and the script walks in to say so.
+#
+# THEIR PROSE IS HAND-WRITTEN, being the one thing here no model could supply,
+# and it is written the way `Location::Plan` states the facts to a model that
+# does: 7 by 6 paces, storey 0, and doors in the walls the boxes really share.
+# It is a worked example of a description that agrees with its own floor plan.
 ---
 format: 2
 universe:
@@ -144,7 +155,7 @@ locations:
   depth: 4
   teaser: A room inside The Custom House, 7 by 4 paces on storey 0.
 - name: The Custom House room 3
-  detail_level: stub
+  detail_level: realized
   danger: dangerous
   parent: The Custom House
   x: 7
@@ -153,8 +164,14 @@ locations:
   width: 7
   depth: 6
   teaser: A room inside The Custom House, 7 by 6 paces on storey 0.
+  description: |-
+    The back office, 7 by 6 paces of bare boards on storey 0. A door in the north wall
+    goes through to the counting room, and one in the west wall stands half open on the
+    dark. Nothing else opens anywhere.
+  lore: |-
+    The room where the tallies were settled when the assessor was not watching.
 - name: The Custom House room 4
-  detail_level: stub
+  detail_level: realized
   danger: uneasy
   parent: The Custom House
   x: 0
@@ -163,6 +180,11 @@ locations:
   width: 7
   depth: 6
   teaser: A room inside The Custom House, 7 by 6 paces on storey 0.
+  description: |-
+    A dead end of 7 by 6 paces on storey 0, with one door in the east wall and no other
+    way out of it at all.
+  lore: |-
+    Storage, until somebody put a cot in it and stopped saying so.
 - name: The Custom House room 5
   detail_level: stub
   danger: uneasy

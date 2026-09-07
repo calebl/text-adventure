@@ -343,3 +343,72 @@ cases:
     A stub the preface, the summary and four universe fields all point at, which
     is the most world any of these prompts carries -- and the case where a model
     has the most to restate.
+
+# ---------------------------------------------------------------- The Quay House
+#
+# THE ONLY WORLD IN THE REPOSITORY WITH AN INSIDE, and the three cases below are
+# the only ones in this corpus that measure the room builder on a room it is not
+# allowed to name a way out of. `Location::Interior` laid The Custom House out in
+# one call from one seeded roll -- two storeys tiling one 14 by 10 footprint --
+# and `rake game:export` wrote what it produced, so every box and every door
+# these cases stand on is the engine's own arithmetic and not a plan somebody
+# drew.
+#
+# WHAT IS DIFFERENT ABOUT THEM, and it is the whole reason they are here:
+#
+#   ONE CALL AND NOT TWO. An interior room's ways out are the ENGINE's, so
+#   `Location::Generator#write_exits!` asks for none -- every exit check below
+#   is out of its own denominator by construction rather than by a gate.
+#   `Eval::Realization::Corpus#problems_for` is what lets a case say so.
+#
+#   THE PROMPT CARRIES A FLOOR PLAN. `Location::Plan` states the room's size in
+#   paces, the storey of the place it stands on, and which wall each door is in
+#   -- the first facts in this game a description can be checked against as
+#   NUMBERS. `door_the_records_do_not_hold` and `size_the_records_do_not_hold`
+#   are judgeable on these three cases and nowhere else.
+#
+#   THE EDGES ARE NOT WOUND BACK. Every other stub's edges arrived with its
+#   realization; these arrived with the layout, before the room existed as
+#   anything but a box (`Eval::Realization::Stage#wind_back!`).
+
+- id: quay-entry-room
+  story: The Quay House
+  room: The Custom House room 1
+  reached_from: The Quay
+  expects_new_ground: false
+  shape: interior-room
+  why: >-
+    THE RICHEST ROOM IN THE BUILDING, and the one whose plan has all three kinds
+    of way out: a door in the east wall to room 2, a stair up to room 5 on the
+    storey above, and the way back out to The Quay, which is outside the
+    building altogether. It is also the ENTRY room, so it carries the spare exit
+    slot Location::Interior keeps for the way in -- the one room where the
+    reserved slot is a fact the prompt is standing on.
+
+- id: quay-dangerous-back-room
+  story: The Quay House
+  room: The Custom House room 3
+  reached_from: The Custom House room 2
+  expects_new_ground: false
+  shape: interior-room
+  why: >-
+    A DANGEROUS room deep in the building, two doors and no stairs, on the
+    ground floor. Its plan is the simplest shape a room has -- doors in two
+    walls and nothing else -- which is where a description that adds a window
+    onto the quay or a third door has the least excuse. The danger also puts the
+    cast prompt in front of a world whose only race is Harbourfolk, so what it
+    writes for a dangerous room is an ordinary person.
+
+- id: quay-upper-floor-room
+  story: The Quay House
+  room: The Custom House room 6
+  reached_from: The Custom House room 5
+  expects_new_ground: false
+  shape: interior-room
+  why: >-
+    A ROOM ON THE FLOOR ABOVE, which is the case that puts a storey other than
+    the ground floor in the prompt: its plan says storey 1, and a description
+    that writes a door onto the quay or a floor of flagstones has contradicted a
+    number it was handed. Two doors, both to rooms on its own storey, and no
+    stair -- so the only way the prose can reach the ground floor is by
+    inventing one.

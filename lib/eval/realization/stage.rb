@@ -129,6 +129,13 @@ class Eval::Realization::Stage
 
     def reachable = location.exits.order(:id).pluck(:name)
 
+    # THE ROOM'S OWN FLOOR PLAN AS RECORDS, or nil for a room that is not inside
+    # a laid-out place -- which is every room in every flat world. It is the
+    # same `Location::Plan` the detail prompt is built from, asked once here so
+    # the checker and the prompt cannot be reading two derivations of one
+    # building (`Eval::Realization::Scorer#judge_door_the_records_do_not_hold`).
+    def plan = Location::Plan.for(location)&.to_h
+
     # THE NAMES THE PROMPT SAYS ARE SPOKEN FOR, read the way the prompt reads
     # them -- `Location::Generator#known_names_note` truncates to twenty of each,
     # and a checker that used the untruncated list would flag the model for
@@ -245,6 +252,17 @@ class Eval::Realization::Stage
   # THE ROOM ITSELF, WOUND BACK TO THE STUB IT WAS. No description, no lore,
   # nothing lying in it, and the way in -- plus whatever else the case declared
   # this stub could already reach.
+  #
+  # AN INTERIOR ROOM KEEPS EVERY EDGE IT HAS, and that is not an exception to
+  # the winding back but the whole of what winding back means, applied to a room
+  # whose doors nobody wrote. Every other stub's edges arrived WITH its
+  # realization -- a neighbour named it, and the case declares which -- so
+  # dropping them is putting the world back. The doors and stairs of a room
+  # inside a laid-out place were all decided before it, in one call, from
+  # geometry (`Location::Interior`), and `Location::Generator#write_exits!` will
+  # ask a model for none of them. Dropping one would stage a room the layout
+  # never wrote, hand `Location::Plan` a floor plan with a wall missing out of
+  # it, and measure a prompt the app cannot build.
   def wind_back!(story)
     room = find_room!(story, kase.room, "room")
 
@@ -254,7 +272,7 @@ class Eval::Realization::Stage
                          "connected in this world, so that is not the way this room was reached"
     end
 
-    drop_edges_except!(room, [ keep, *already_reached(story, room) ].compact)
+    drop_edges_except!(room, [ keep, *already_reached(story, room) ].compact) unless interior_room?(room)
     room.items.destroy_all
     room.update!(description: nil, lore: nil, detail_level: :stub, danger: kase.danger.presence || room.danger)
     room.reload
@@ -279,6 +297,12 @@ class Eval::Realization::Stage
       other
     end
   end
+
+  # WHETHER THIS IS A ROOM INSIDE A LAID-OUT PLACE, asked exactly as
+  # `Location::Generator#interior_room?` asks it -- both halves, a box read in a
+  # parent's own plane -- because it is the same question and a second answer
+  # here would be a second thing to keep in step with the generator.
+  def interior_room?(room) = room.placed? && room.parent_location_id.present?
 
   def drop_edges_except!(room, keep)
     scope = LocationConnection.where(location: room).or(LocationConnection.where(connected_location: room))

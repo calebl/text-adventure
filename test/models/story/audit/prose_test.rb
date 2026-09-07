@@ -175,4 +175,73 @@ class Story::Audit::ProseTest < ActiveSupport::TestCase
 
     assert_empty Prose.departure_claims(text)
   end
+
+  # --- the prose against the floor plan --------------------------------------
+  #
+  # THE TWO GRAMMARS ARE SILENT ON EVERY PASSAGE IN THIS REPOSITORY -- 0
+  # detections over all 367 real ones, which is measured and written down on the
+  # methods themselves. A check that cannot fire looks exactly like a clean
+  # result, so these fire them on written sentences of the shape a room handed a
+  # plan invites, and pin the negatives that would make either one noisy.
+
+  test "a door in a named wall is a claim about that wall" do
+    claims = Prose.door_claims("A low door in the north wall stands open on the stair.")
+
+    assert_equal [ "north" ], claims.map(&:wall)
+  end
+
+  test "the wall may come before the door, and a corner is a wall of its own" do
+    assert_equal [ "east" ], Prose.door_claims("The east wall is broken by a hatch nobody has opened in years.").map(&:wall)
+    assert_equal [ "south-west" ], Prose.door_claims("A door is set into the south-west wall.").map(&:wall)
+    assert_equal [ "north-east" ], Prose.door_claims("The North-East wall carries a shuttered gate.").map(&:wall)
+  end
+
+  test "every wall the prose puts a door in is read, and each one once" do
+    text = "A door in the north wall leads on, and a second door in the east wall stands ajar. " \
+           "The north wall door is the one with the bar across it."
+
+    assert_equal [ "north", "east" ], Prose.door_claims(text).map(&:wall)
+  end
+
+  # A COMPASS WORD IS NOT A WALL, and a wall with nothing to go through it is
+  # not a door. Both are what keep this off ordinary description.
+  test "a wall with no door in it, and a door with no wall, claim nothing" do
+    [ "The north wall is bare plaster and the damp is coming through it.",
+      "Two doors lead out of here, and neither of them is locked.",
+      "The door on the north side of the yard is the one they use." ].each do |text|
+      assert_empty Prose.door_claims(text), text
+    end
+  end
+
+  test "a wall the sentence denies a door to is not a claim" do
+    assert_empty Prose.door_claims("There is no door in the north wall, whatever the plans say.")
+  end
+
+  test "a size stated as a pair of paces is read, in either phrasing" do
+    assert_equal [ [ 4, 6 ] ], Prose.size_claims("The room is 6 by 4 paces of wet flagstone.").map(&:paces)
+    assert_equal [ [ 4, 6 ] ], Prose.size_claims("It runs six paces by four, no more.").map(&:paces)
+    assert_equal [ [ 4, 6 ] ], Prose.size_claims("Four paces by six paces, and every one of them cold.").map(&:paces)
+  end
+
+  # THE UNIT IS WHAT MAKES IT A MEASUREMENT OF THIS ROOM, and a single
+  # measurement does not say which axis it measured.
+  test "a pair with no paces in it, and a single measurement, claim nothing" do
+    [ "The counter runs six by four and the till is at the end of it.",
+      "The room is four paces wide.",
+      "Six feet by four, and painted on the floor." ].each do |text|
+      assert_empty Prose.size_claims(text), text
+    end
+  end
+
+  test "a storey stated as the engine states it is read" do
+    assert_equal [ 1 ], Prose.storey_claims("Everything on storey 1 smells of tar.").map(&:storey)
+    assert_equal [ -1 ], Prose.storey_claims("The cellar is storey -1 and it is under water.").map(&:storey)
+  end
+
+  # FLOOR-NUMBERING IS A CONVENTION AND THE PROMPT NEVER USES IT, so a passage
+  # that says it is a passage this cannot convict. Stated as a test because the
+  # miss is deliberate.
+  test "the second floor is not a storey claim" do
+    assert_empty Prose.storey_claims("You come out on the second floor with the rain on the skylight.")
+  end
 end

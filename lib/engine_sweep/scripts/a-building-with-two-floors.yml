@@ -24,7 +24,15 @@
 # THE ROOMS ARE STUBS AND STAY STUBS, said out loud at every step, and
 # `nothing_was_written` asserts it again over the whole world afterwards. An
 # unwritten room is exactly what an interior is meant to be until somebody walks
-# in and a model writes it (slice 3).
+# in and a model writes it.
+#
+# TWO OF THEM HAVE BEEN WRITTEN, and they are here for slice 3: rooms 3 and 4
+# ship realized in the world file, because a sweep has no model and can never
+# watch a room being realized. What it CAN assert is what realizing one must
+# leave behind -- a room with exactly the doors the layout gave it, walkable in
+# both directions -- and that is what the middle of this walk does. The prose in
+# the file is hand-written and agrees with the boxes on purpose; see the world's
+# own header.
 story: The Quay House
 why: a building with two floors, walked the way a player walks one
 steps:
@@ -58,7 +66,49 @@ steps:
   expect:
     changed: true
     location: The Custom House room 2 (stub)
-    exits: [The Custom House room 1 (stub), The Custom House room 3 (stub)]
+    exits: [The Custom House room 1 (stub), The Custom House room 3 (realized)]
+    refused: false
+
+# A ROOM THAT HAS BEEN WRITTEN STILL HAS EXACTLY THE DOORS THE LAYOUT GAVE IT,
+# and that is the whole of what slice 3 promises at the records level.
+# `Location::Generator#write_exits!` asks a model for no way out of a room inside
+# a place, so realizing one writes its prose and nothing else -- a room that
+# gained a third door by being described would be the failure, and the closed
+# exit set here is what would catch it. A sweep cannot watch the writing happen
+# (there is no model), so the world file ships two rooms already written and this
+# walks them.
+- id: into-a-room-somebody-has-written
+  type: go to The Custom House room 3
+  why: a written room inside a building, and its ways out are still the two the layout wrote
+  expect:
+    changed: true
+    location: The Custom House room 3 (realized)
+    exits: [The Custom House room 2 (stub), The Custom House room 4 (realized)]
+    refused: false
+
+- id: on-to-the-dead-end
+  type: go to The Custom House room 4
+  why: the end of the ground-floor backbone -- one door, and the prose in the file says so too
+  expect:
+    changed: true
+    location: The Custom House room 4 (realized)
+    exits: [The Custom House room 3 (realized)]
+    refused: false
+
+- id: back-out-of-the-dead-end
+  type: go to The Custom House room 3
+  why: a written room is walkable in both directions like any other
+  expect:
+    changed: true
+    location: The Custom House room 3 (realized)
+    refused: false
+
+- id: back-along-the-ground-floor
+  type: go to The Custom House room 2
+  why: and back to the backbone, so the walk carries on from where it was
+  expect:
+    changed: true
+    location: The Custom House room 2 (stub)
     refused: false
 
 - id: and-back-the-way-we-came
@@ -116,10 +166,11 @@ steps:
 
 # AND NOTHING TWO ROOMS APART IS ONE MOVE AWAY. Room 3 is real, is inside this
 # building and is two doors off; a layout whose doors were suggestions rather
-# than records would let this through.
+# than records would let this through. It is WRITTEN, which is the sharper
+# version of the same claim: being described gave it no door onto anywhere else.
 - id: a-room-you-cannot-get-to-from-here
   type: go to The Custom House room 3
-  why: the exits of a room are a closed set, and geometry does not open a second door
+  why: the exits of a room are a closed set, and writing a room does not open a second door
   expect:
     refused: true
     changed: false

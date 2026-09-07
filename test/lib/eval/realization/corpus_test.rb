@@ -31,8 +31,33 @@ class Eval::Realization::CorpusTest < ActiveSupport::TestCase
   test "the corpus still carries every shape the bench was built to measure" do
     shapes = Eval::Realization.corpus.by_shape.keys
 
-    %w[written-neighbour unwritten-neighbour dead-end descent dangerous landmark two-ways-out].each do |shape|
+    %w[written-neighbour unwritten-neighbour dead-end descent dangerous landmark two-ways-out
+       interior-room].each do |shape|
       assert_includes shapes, shape
+    end
+  end
+
+  # AND THE SHAPE THAT IS A CLAIM ABOUT THE ROOM RATHER THAN ABOUT THE WORLD
+  # AROUND IT. An `interior-room` case exists to put a FLOOR PLAN in the detail
+  # prompt and to make no exits call at all; a case whose room lost its box, its
+  # parent or its doors in the staging would keep the name and measure an
+  # ordinary room.
+  test "an `interior-room` case stands up inside a place, with its plan and every door it was laid out with" do
+    cases = Eval::Realization.corpus.for_shape("interior-room").cases
+
+    assert_predicate cases, :any?
+    Eval::Realization::Stage.open(cases) do |stages|
+      cases.each do |kase|
+        standing = stages.fetch(kase.id)
+        plan = standing.plan
+
+        assert_not_nil plan, "#{kase.id}: a room with no plan is not an interior room"
+        assert_equal standing.location.exits.count,
+                     plan["doors"].size + plan["stairs"].size + plan["other_ways_out"].size,
+                     "#{kase.id}: every edge the layout wrote is still on the records and described"
+        assert_operator standing.location.exits.count, :>, 1,
+                        "#{kase.id}: the doors of a laid-out room are not wound back to the way in"
+      end
     end
   end
 

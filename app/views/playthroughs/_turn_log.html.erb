@@ -163,11 +163,24 @@
 
     <%# Where the player is and what leads out of it. Not decoration: the exits
         are the move targets Playthrough::Classifier will accept, so a player
-        who cannot read them is guessing at the one command that matters. %>
+        who cannot read them is guessing at the one command that matters.
+
+        THE ROOM'S NAME, AND THE PLACE IT IS IN AS A SENTENCE OF ITS OWN. Rooms
+        have parents since slice 2 (`Location#containing_place`), so there are
+        two ways to write this line -- "in The Rusted Anchor" or "in the taproom
+        of The Rusted Anchor" -- and WHICH ONE THE PLAYER READS IS THE CAPTAIN'S
+        CALL and is open. Until he rules this shows the plainest thing that
+        loses nothing: the room the engine moved the party into, named exactly
+        as the exits and the classifier name it, with the building said after
+        it. Both halves are on the records (`Location::Plan` states the same two
+        to the narrator), so his answer moves this line and nothing else. %>
     <p class="place">
       <% if playthrough.current_location %>
         <% exits = playthrough.exits %>
         You are in <strong><%= playthrough.current_location.name %></strong>.
+        <% if (place = playthrough.current_location.containing_place) %>
+          Inside <%= place.name %>.
+        <% end %>
         Ways out: <%= exits.any? ? exits.map(&:name).to_sentence : "none that you can see." %>
       <% end %>
     </p>

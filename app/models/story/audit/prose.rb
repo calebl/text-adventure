@@ -481,6 +481,187 @@ module Story::Audit::Prose
   end
 
   # ------------------------------------------------------------------------
+  # THE PROSE ARGUES WITH THE FLOOR PLAN.
+  #
+  # A room inside a laid-out place has a `Location::Box` before anybody writes a
+  # word of it, and `Location::Plan` states it to the model that does: how many
+  # paces across, which storey, which wall each door is in. So for the first
+  # time a description can be checked against a NUMBER the app owns rather than
+  # against a judgement -- which is the only kind of prose check this project
+  # ships (see `Story::Audit`'s header for the two it has already killed).
+  #
+  # THE RECORDS NEVER COME FROM THE PROSE. These two read a passage and return
+  # what it CLAIMED; `Eval::Realization::Scorer` compares that with the plan the
+  # prompt was built from, and a claim that agrees is not a flag. The passage
+  # alone convicts nobody.
+  #
+  # BOTH ARE DELIBERATELY THE NARROWEST GRAMMAR THAT STILL CATCHES THE DEFECT,
+  # and both are keyword checks by `Eval::Realization::Scorer::KEYWORD_CHECKS` --
+  # weighed differently from the record comparisons beside them, because they
+  # read words.
+  #
+  # MEASURED BEFORE THEY SHIPPED, on all 367 real passages in the four corpora
+  # (`eval_corpus.json` 92, `narration_corpus.json` 24, `transition_corpus.json`
+  # 119, `whole_run_corpus.json` 132) and on the description, lore and teaser of
+  # every room in every world file in the repository. The numbers are on each
+  # method, and they are DETECTION counts: a detection is a sentence that would
+  # have been compared with a plan, which is the figure that says whether a
+  # grammar is narrow enough to be trusted once there is a plan to compare it
+  # against. Not one of the 367 passages was written by a model that had been
+  # told a room's shape, so a detection among them would have been a grammar
+  # reading ordinary prose as a measurement.
+  # ------------------------------------------------------------------------
+
+  # The four walls as prose writes them, plus the two-word corners.
+  # `Location::Box::WALLS` is the engine's spelling and this is the reader's;
+  # they are matched on the same words, which `Story::Audit::ProseTest` pins.
+  COMPASS = /\b(north|south)[-\s]?(east|west)\b|\b(north|south|east|west)\b/i
+
+  # A wall of a room, and it has to be the word: "the north side" is where the
+  # bar is, "the north wall" is a wall. Prose that puts a door in a wall says
+  # "wall" -- measured across the four corpora, where every one of the door
+  # sentences that names a side names it as a wall.
+  WALL_NOUN = /\bwalls?\b/i
+
+  # One door the prose put in a named wall.
+  Door = Data.define(:wall, :sentence)
+
+  # EVERY WALL THE PROSE PUTS A DOOR IN. The grammar is a THRESHOLD and a
+  # COMPASS-QUALIFIED WALL in one sentence, in either order: "a door in the
+  # north wall", "the east wall is broken by a low hatch". A compass word with
+  # no wall is not a claim about a wall -- "the door on the north side of the
+  # yard" is scenery -- and a wall with no threshold in the sentence claims no
+  # door at all, which is what keeps "the north wall is bare plaster" out.
+  #
+  # WHAT IT KNOWINGLY MISSES: the commonest way prose names a door, which is not
+  # to name a wall at all. "Two doors lead out" claims nothing this can read,
+  # and counting doors is deliberately not attempted -- prose says "doors" of a
+  # pair of leaves in one frame, and a count check would flag a room for its
+  # carpentry.
+  #
+  # MEASURED: 0 detections over the 367 corpus passages and 0 over the room
+  # prose of every world in the repository. No narration anybody has ever paid
+  # for in this game has put a door in a named wall, because until this slice
+  # nothing ever told a model a room had walls with directions. A check with no
+  # detections looks exactly like a clean result, which is the failure mode
+  # `Story::Audit`'s header names -- so `Story::Audit::ProseTest` fires it on
+  # written sentences of the shape a plan invites, in both directions.
+  def door_claims(text)
+    body = text.to_s
+    return [] if body.blank?
+
+    found = []
+
+    sentences(body).each do |sentence|
+      next if sentence.match?(Story::Audit::NEGATIONS)
+      next unless sentence.match?(THRESHOLD)
+
+      sentence.scan(/#{COMPASS}[-\s]?#{WALL_NOUN}/i) do
+        found << Door.new(wall: compass_word(Regexp.last_match(0)), sentence: sentence.strip)
+      end
+    end
+
+    found.uniq(&:wall)
+  end
+
+  # HOW BIG THE PROSE SAYS THE ROOM IS, AND WHICH STOREY IT SAYS IT IS ON.
+  #
+  # THE PAIR AND NOT THE SINGLE MEASUREMENT, and that is what makes it exact: "6
+  # by 4 paces" and "six paces by four" say which room this is, while "four
+  # paces wide" does not say which axis it is measuring and could be checked
+  # against either. Compared unordered against the box, because a room described
+  # from the doorway is as honestly four by six as six by four.
+  #
+  # THE STOREY IS THE ENGINE'S OWN WORD. `Location::Plan` says "storey 0" and
+  # "storey 0 is the ground floor", so "storey 2" in a passage is a number
+  # copied out of the prompt and got wrong -- exactly the shape a records check
+  # wants. "the second floor" is NOT read, and that is a measured decision
+  # rather than an oversight: floor-numbering is a convention that differs by
+  # country and the prompt never uses it, so a passage that says it is a passage
+  # this cannot convict.
+  #
+  # MEASURED: 0 detections over the 367 corpus passages -- no narration anybody
+  # has paid for has ever stated a size in paces or a storey by number. Over the
+  # room prose of every world in the repository both grammars detect exactly the
+  # same 10 sentences, and all 10 are the ENGINE's own placeholder teaser
+  # (`Location::Interior.teaser_for`: *"A room inside The Custom House, 7 by 4
+  # paces on storey 0"*), each one agreeing with the box it was written from.
+  # That is the best evidence a grammar this narrow can have before a model has
+  # ever been handed a plan: it reads the app's own true statements and nothing
+  # else in 367 passages of prose.
+  Size = Data.define(:paces, :sentence)
+  Storey = Data.define(:storey, :sentence)
+
+  # The small numbers prose spells out. Bounded at twenty because a room bigger
+  # than that is written in digits, and because every word past it is also an
+  # ordinary English word.
+  NUMBER_WORDS = %w[zero one two three four five six seven eight nine ten eleven twelve thirteen
+                    fourteen fifteen sixteen seventeen eighteen nineteen twenty].freeze
+
+  # TWO GRAMMARS AND NOT ONE LOOSE ONE, because the word "paces" is what makes
+  # the pair a measurement of this room: "six by four" on its own is a phrase
+  # about anything at all, so the unit is required and is required on the side
+  # of the pair prose actually puts it on -- after it, or between the two
+  # numbers.
+  PACE_PAIRS = [
+    /\b(NUMBER)\s+by\s+(NUMBER)\s+paces\b/i,
+    /\b(NUMBER)\s+paces\s+by\s+(NUMBER)\b/i
+  ].freeze
+
+  def size_claims(text)
+    body = text.to_s
+    return [] if body.blank?
+
+    found = []
+
+    sentences(body).each do |sentence|
+      pace_pairs.each do |pattern|
+        sentence.scan(pattern) do
+          pair = [ Regexp.last_match(1), Regexp.last_match(2) ].map { |word| number_for(word) }
+          found << Size.new(paces: pair.sort, sentence: sentence.strip)
+        end
+      end
+    end
+
+    found.uniq(&:paces)
+  end
+
+  # The two patterns with the number alternation spliced in, built once. A
+  # constant holding `NUMBER` as a placeholder rather than the finished regexes,
+  # so the two grammars read as grammars.
+  def pace_pairs
+    @pace_pairs ||= PACE_PAIRS.map do |pattern|
+      Regexp.new(pattern.source.gsub("NUMBER", "\\d{1,3}|#{Regexp.union(NUMBER_WORDS).source}"), pattern.options)
+    end
+  end
+
+  def storey_claims(text)
+    body = text.to_s
+    return [] if body.blank?
+
+    found = []
+
+    sentences(body).each do |sentence|
+      sentence.scan(/\bstorey\s+(-?\d{1,2})\b/i) do
+        found << Storey.new(storey: Regexp.last_match(1).to_i, sentence: sentence.strip)
+      end
+    end
+
+    found.uniq(&:storey)
+  end
+
+  # The compass words out of a matched phrase, as `Location::Box::WALLS` spells
+  # them: "North-East wall" and "north east wall" are both "north-east".
+  def compass_word(phrase) = phrase.downcase.scan(/north|south|east|west/).first(2).join("-")
+
+  # A number word or a numeral as an integer.
+  def number_for(word)
+    index = NUMBER_WORDS.index(word.to_s.downcase)
+
+    index || word.to_i
+  end
+
+  # ------------------------------------------------------------------------
 
   # Sentences, split on a terminator followed by whitespace -- the same split
   # `Story::Audit#excerpt` makes, kept identical so an excerpt and a flag can
