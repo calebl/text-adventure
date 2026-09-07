@@ -379,6 +379,7 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
 
   PLAN = {
     "room" => "The Custom House room 3", "place" => "The Custom House", "storey" => 0,
+    "place_width" => 14, "place_depth" => 10,
     "width" => 7, "depth" => 6,
     "doors" => [ { "wall" => "north", "to" => "The Custom House room 2" },
                  { "wall" => "west", "to" => "The Custom House room 4" } ],
@@ -448,6 +449,44 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
       .flagged_for(:size_the_records_do_not_hold)
   end
 
+  # THE PLACE'S OWN FOOTPRINT IS A NUMBER THE PROMPT STATED.
+  # `Location::Plan#storey_sentence` says how big the BUILDING is in paces, so
+  # prose repeating that pair is repeating a fact it was handed -- compared, and
+  # it agreed, so it counts and does not flag.
+  test "a pace pair that is the place's footprint agrees rather than flags" do
+    echoed = planned("The custom house is fourteen by ten paces of ledgers, and this room is a corner of it.")
+
+    assert_empty echoed.flagged_for(:size_the_records_do_not_hold)
+    assert_equal 1, echoed.judgeable_for(:size_the_records_do_not_hold),
+                 "the pair was compared with the plan and agreed, so it stays an opportunity"
+  end
+
+  # AND A STOREY 0 ON A ROOM THAT IS NOT ON STOREY 0 CANNOT BE TOLD FROM AN ECHO
+  # of the plan's closing clause, *"storey 0 is the ground floor"* -- so it is
+  # out of the DENOMINATOR and not merely unflagged.
+  test "a storey 0 claim on an upper-storey room is unjudgeable, not clean and not flagged" do
+    upstairs = planned("Storey 0 is the ground floor, and the stair up from it ends here.",
+                       plan: PLAN.merge("storey" => 1))
+
+    assert_empty upstairs.flagged_for(:size_the_records_do_not_hold)
+    assert_equal 0, upstairs.judgeable_for(:size_the_records_do_not_hold)
+  end
+
+  test "a storey number that is not 0 is judged on an upper-storey room as it always was" do
+    upstairs = planned("Everything on storey 3 smells of tar.", plan: PLAN.merge("storey" => 1))
+
+    assert_equal 1, upstairs.judgeable_for(:size_the_records_do_not_hold)
+    assert_includes upstairs.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "put the room on storey 3 and it is on storey 1"
+  end
+
+  # AND THE DISCOUNT IS NOT A HOLE IN THE CHECK ON THE GROUND FLOOR: there the
+  # claim agrees with the plan, so it is compared and counted.
+  test "a storey 0 claim on a ground-floor room is still an opportunity" do
+    assert_equal 1, planned("Storey 0 is the ground floor, and you are standing on it.")
+      .judgeable_for(:size_the_records_do_not_hold)
+  end
+
   # THE TWO GEOMETRY CHECKS READ WORDS, and the board is told so.
   test "both geometry checks are counted as keyword checks" do
     assert_includes Eval::Realization::Scorer::KEYWORD_CHECKS, :door_the_records_do_not_hold
@@ -458,8 +497,8 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
 
   # A ROW OFF AN INTERIOR-ROOM CASE: one call, no exits answer at all, and the
   # floor plan the prompt stated stored beside the description.
-  def planned(description)
-    facts = FACTS.merge("plan" => PLAN, "room" => PLAN["room"], "exit_allowance" => 0)
+  def planned(description, plan: PLAN)
+    facts = FACTS.merge("plan" => plan, "room" => plan["room"], "exit_allowance" => 0)
     built = row(facts: facts)
     built["answers"] = { "detail" => { "description" => description, "people" => [], "items" => [] } }
     built["calls"] = 1

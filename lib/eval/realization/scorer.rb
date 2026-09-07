@@ -91,6 +91,11 @@ class Eval::Realization::Scorer
   # counts are on those methods. A description that contradicts its own floor
   # plan in a sentence neither grammar reads is a miss, so these are counted
   # here with `race_not_named` rather than beside the set comparisons.
+  #
+  # AND A CLAIM THAT ECHOES THE PROMPT IS NOT A DEFECT, which is why neither
+  # denominator is simply the count of claims a grammar found:
+  # `#judge_size_the_records_do_not_hold` and `#judgeable_storey_claims` carry
+  # the two discounts and the prompt sentences that make them necessary.
   KEYWORD_CHECKS = %i[race_not_named door_the_records_do_not_hold size_the_records_do_not_hold].freeze
 
   # ONE SCORED REALIZATION, off a stored row and nothing else.
@@ -157,6 +162,19 @@ class Eval::Realization::Scorer
     def plan = facts["plan"]
     def planned? = plan.is_a?(Hash)
     def door_walls = Array(plan && plan["doors"]).filter_map { |door| door["wall"] }
+    def room_paces = [ plan && plan["width"], plan && plan["depth"] ].map(&:to_i).sort
+    def planned_storey = plan && plan["storey"]
+
+    # THE OTHER PACE PAIR THE PROMPT STATED -- the PLACE's footprint, out of
+    # `Location::Plan#storey_sentence`. Nil for a place with no extent and for a
+    # set stored before the pair was recorded, where nothing can be said to have
+    # been echoed.
+    def place_paces
+      pair = [ plan && plan["place_width"], plan && plan["place_depth"] ]
+      return nil if pair.any?(&:nil?)
+
+      pair.map(&:to_i).sort
+    end
 
     def people = Array(detail["people"])
     def items = Array(detail["items"])
@@ -568,19 +586,41 @@ class Eval::Realization::Scorer
   # compared UNORDERED, because a room described from the doorway is as honestly
   # four by six as six by four (`Story::Audit::Prose.size_claims`), and a storey
   # is compared as the integer the plan carries.
+  #
+  # AND A CLAIM THAT REPEATS A NUMBER THE PROMPT ITSELF STATED IS NOT A DEFECT,
+  # which is the one rule both discounts below come out of. `Location::Plan`
+  # hands the model MORE than the room's own box, and a checker that knew only
+  # the box would convict prose for agreeing with the rest of it.
   def judge_size_the_records_do_not_hold
-    flag_each(:size_the_records_do_not_hold, ->(r) { size_claims(r).size + storey_claims(r).size }) do |reading|
-      plan = reading.plan || {}
-      paces = [ plan["width"], plan["depth"] ].map(&:to_i).sort
+    flag_each(:size_the_records_do_not_hold,
+              ->(r) { size_claims(r).size + judgeable_storey_claims(r).size }) do |reading|
+      paces = reading.room_paces
+      storey = reading.planned_storey
 
-      size_claims(reading).reject { |claim| claim.paces == paces }.map { |claim|
+      size_claims(reading).reject { |claim| claim.paces == paces || claim.paces == reading.place_paces }
+                          .map { |claim|
         "said the room is #{claim.paces.join(" by ")} paces and it is #{paces.join(" by ")}" \
           " -- #{claim.sentence.inspect}"
-      } + storey_claims(reading).reject { |claim| claim.storey == plan["storey"] }.map do |claim|
-        "put the room on storey #{claim.storey} and it is on storey #{plan["storey"]}" \
+      } + judgeable_storey_claims(reading).reject { |claim| claim.storey == storey }.map do |claim|
+        "put the room on storey #{claim.storey} and it is on storey #{storey}" \
           " -- #{claim.sentence.inspect}"
       end
     end
+  end
+
+  # A STOREY CLAIM OF 0 ON A ROOM THAT IS NOT ON STOREY 0 IS UNJUDGEABLE, and it
+  # is out of the DENOMINATOR rather than merely unflagged -- `#correct_dead_end?`'s
+  # doctrine in this same class: a rate the check did not earn is worse than no
+  # rate. `Location::Plan#storey_sentence` ends every plan with the clause
+  # *"storey 0 is the ground floor"*, so a passage carrying "storey 0" cannot be
+  # told from an echo of the prompt's own explanation of what the number means.
+  # A claim of any other number is judged exactly as it would be without this,
+  # and so is a "storey 0" on a room that really is on storey 0 -- that one was
+  # compared and it agreed.
+  def judgeable_storey_claims(reading)
+    return storey_claims(reading) if reading.planned_storey == 0
+
+    storey_claims(reading).reject { |claim| claim.storey.zero? }
   end
 
   # THE THREE GRAMMARS, ASKED ONCE PER READING. A denominator lambda and the

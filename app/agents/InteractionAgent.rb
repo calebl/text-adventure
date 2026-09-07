@@ -241,8 +241,14 @@ class InteractionAgent
     "## The moment\n#{context}\n"
   end
 
+  # THE MOMENT WITHOUT THE FLOOR PLAN, and the `plan: false` is the whole of the
+  # decision. `Location::Plan`'s sentences reach the room writer and
+  # `Scene::Narrator`, both of which have a stored bench to judge a change
+  # against (`rake eval:realization`, `rake eval:prompt`); no prompt in this
+  # file has one, and geometry was never asked for in a talk turn. So this pass
+  # sends the block it sent before interiors existed.
   def narrator_moment_section
-    context = moment&.narration_context.presence
+    context = moment&.narration_context(plan: false).presence
     return "" if context.nil?
 
     "## Where this happens\n#{context}\n"

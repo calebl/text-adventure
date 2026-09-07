@@ -166,6 +166,10 @@ class Eval::Realization::BenchTest < ActiveSupport::TestCase
 
     assert_equal "The Custom House", plan["place"]
     assert_equal [ 7, 6, 0 ], [ plan["width"], plan["depth"], plan["storey"] ]
+    # THE PLACE'S FOOTPRINT TOO, because `Location::Plan#storey_sentence` states
+    # it -- and a checker that only had the room's box would flag prose for
+    # repeating it (`Eval::Realization::Scorer#judge_size_the_records_do_not_hold`).
+    assert_equal [ 14, 10 ], [ plan["place_width"], plan["place_depth"] ]
     assert_equal [ { "wall" => "north", "to" => "The Custom House room 2" },
                    { "wall" => "west", "to" => "The Custom House room 4" } ], plan["doors"]
   end

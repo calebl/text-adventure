@@ -29,16 +29,36 @@
 # states these facts before the room is written and `Playthrough::Moment` states
 # them on every turn afterwards, out of this one file.
 #
-# AND THE ARRIVAL IS NOT ONE OF ITS READERS, which is a decision rather than an
-# omission. `Scene::Generator` builds its own context for the moment of walking
-# in -- the room's name, its description, its lore and its ways out -- and the
-# description it is handed was written against this plan a moment earlier, so
-# the geometry reaches that paragraph through the room rather than twice. What
-# `Playthrough::Moment` covers is every turn AFTER it, where the room's
-# description is one line among many and the player may have been standing here
-# for twenty turns. Putting these sentences in the arrival prompt as well is a
-# THIRD prompt change and would want its own baseline
-# (EVALUATION.md -> the prompt bench); it is not made here.
+# AND TWO PROMPTS THAT COULD READ IT DO NOT, which is a decision in each case
+# rather than an omission, and the reason is different for each. Named here
+# because these four prompts are the whole set: the room writer
+# (`Location::Generator`) and the narrator (`Scene::Narrator`, through
+# `Playthrough::Moment#narration_context`) carry the plan; the ARRIVAL
+# (`Scene::Generator`) and the TALK TURN (`InteractionAgent#narrator_prompt`,
+# through `#narrator_moment_section`) do not.
+#
+#   * THE ARRIVAL builds its own context for the moment of walking in -- the
+#     room's name, its description, its lore and its ways out -- and the
+#     description it is handed was written against this plan a moment earlier,
+#     so the geometry reaches that paragraph through the room rather than twice.
+#     What `Playthrough::Moment` covers is every turn AFTER it, where the room's
+#     description is one line among many and the player may have been standing
+#     here for twenty turns.
+#   * THE TALK TURN asks `Playthrough::Moment` for the same block with
+#     `plan: false`. It shares a reader with the narrator and would otherwise
+#     have gained these sentences by accident, and no prompt in `InteractionAgent`
+#     has a stored baseline to judge the change against -- the captain's rule of
+#     2026-09-06, and AGENTS.md names `Character#interaction_instructions` among
+#     the prompts it binds. Geometry was never asked for in dialogue either.
+#
+# THE ROOM'S NAME IS NOT ONE OF THE THINGS THIS SLICE GIVES IT.
+# `Location::DetailSchema` has no `name` field and a room of an interior gets no
+# exits call at all (`Location::Generator#write_exits!`), so a realized interior
+# room keeps the placeholder name `Location::Interior` wrote -- which is why the
+# worked example above reads "The Rusted Anchor room 2". Naming them is DEFERRED
+# to its own item (`ta-interior-room-names` in firstmate): it means a field on
+# the detail schema and a sentence in the detail prompt, so it is a prompt change
+# and wants its own bench baseline.
 #
 # WHERE THE STAIRS ARE IS THE ONE THING THAT NEEDED DERIVING, and it is derived
 # from the records rather than invented for the sentence. There is no stairwell
@@ -104,8 +124,17 @@ class Location::Plan
   # `Eval::Realization::Scorer` reads a description against it -- so the check
   # compares the prose with what the prompt was built from and never with a
   # second derivation of the geometry.
+  #
+  # THE PLACE'S FOOTPRINT IS HERE BECAUSE `#storey_sentence` STATES IT, and
+  # every number that reaches a model has to reach the checker too. Prose that
+  # says "fourteen by ten paces" of a room inside a fourteen-by-ten building is
+  # repeating a fact it was handed, and a checker that only had the ROOM's box
+  # would report that as a defect (`Eval::Realization::Scorer#judge_size_the_records_do_not_hold`).
+  # Nil for a place with no extent, which is what `#footprint_clause` leaves
+  # unsaid.
   def to_h
     { "room" => room.name, "place" => place.name, "storey" => box.z,
+      "place_width" => place.width, "place_depth" => place.depth,
       "width" => box.width, "depth" => box.depth,
       "doors" => doors.map { |way| { "wall" => way.wall, "to" => way.to.name } },
       "stairs" => stairs.map { |way| { "to" => way.to.name, "up" => way.up?, "storey" => way.storey,
@@ -156,9 +185,21 @@ class Location::Plan
   # the PARENT's plane, so "storey 0 is the ground floor" is the sentence that
   # stops a reader taking `z` for a height in metres or for a floor of the
   # world.
+  # AND THE PLACE'S FOOTPRINT ONLY WHERE THE RECORDS HOLD ONE.
+  # `Story::Doctor#boxes_with_no_parent_footprint` exists because a stored
+  # database can carry a placed room whose parent has no extent, and this class
+  # describes the records a database really has rather than inventing around
+  # them -- so the clause goes, the way `#stair_clause` drops the bearing when
+  # the records do not place the stairwell. "which is by paces across" is not a
+  # sentence to put in a live prompt.
   def storey_sentence
-    "It is on storey #{box.z} of #{place.name}, which is #{place.width} by #{place.depth} paces across; " \
-      "storey 0 is the ground floor."
+    "It is on storey #{box.z} of #{place.name}#{footprint_clause}; storey 0 is the ground floor."
+  end
+
+  def footprint_clause
+    return "" unless place.interior?
+
+    ", which is #{place.width} by #{place.depth} paces across"
   end
 
   # WHAT LEADS OUT, AND WHERE EACH ONE IS. The closing sentence is the closed

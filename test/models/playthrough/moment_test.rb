@@ -262,6 +262,21 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     assert_includes moment.narration_context, Location::Plan.for(room).to_prompt
   end
 
+  # AND A CALLER MAY ASK FOR THE SAME MOMENT WITHOUT IT, which is what
+  # `InteractionAgent`'s talk-turn prose pass does: it has no stored bench
+  # baseline, so it sends the block it sent before interiors existed. Everything
+  # else in the moment is unchanged by the keyword.
+  test "the moment can be built without the plan, and loses only the plan" do
+    stand_in_a_laid_out_room
+
+    context = moment.narration_context(plan: false)
+
+    assert_no_match(/paces/, context)
+    assert_no_match(/storey/, context)
+    assert_no_match(/a door in the east wall/, context)
+    assert_match(/Ways out of here: the snug\. There are no others\./, context)
+  end
+
   # NOTHING AT ALL FOR A ROOM WITH NO BOX, which is almost every room in every
   # world: silence is the honest answer where there is no geometry to state.
   test "a room with no box says nothing about paces or storeys" do

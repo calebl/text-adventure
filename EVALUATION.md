@@ -1195,6 +1195,17 @@ of them agreeing with its box. A description that contradicts its plan in a
 sentence neither grammar reads is a miss, which is why they sit here rather than
 with the set comparisons.
 
+**A claim that repeats a number the prompt itself stated is not a defect**, and
+`size_the_records_do_not_hold` carries two discounts for it, because
+`Location::Plan` states more than the room's own box. The PLACE's footprint in
+paces is in the plan's storey sentence, so a pace pair equal to it *agrees* —
+counted, not flagged. And that sentence ends *"storey 0 is the ground floor"*, so
+a passage carrying "storey 0" on a room that is not on storey 0 cannot be told
+from an echo of the prompt's own explanation: that claim leaves the
+**denominator** rather than being merely unflagged, which is `#correct_dead_end?`'s
+rule kept — a rate the check did not earn is worse than no rate. Every other
+storey number is judged.
+
 **`race_not_named` is weighed differently and labelled `[KEYWORD]` on the
 board.** The engine writes the rolled race onto the row whatever the model
 answers, so the RECORD is never wrong and the PROSE can be: a Nocturna-Blighted

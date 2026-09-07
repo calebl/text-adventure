@@ -504,12 +504,21 @@ module Story::Audit::Prose
   # (`eval_corpus.json` 92, `narration_corpus.json` 24, `transition_corpus.json`
   # 119, `whole_run_corpus.json` 132) and on the description, lore and teaser of
   # every room in every world file in the repository. The numbers are on each
-  # method, and they are DETECTION counts: a detection is a sentence that would
-  # have been compared with a plan, which is the figure that says whether a
-  # grammar is narrow enough to be trusted once there is a plan to compare it
-  # against. Not one of the 367 passages was written by a model that had been
-  # told a room's shape, so a detection among them would have been a grammar
-  # reading ordinary prose as a measurement.
+  # method, and they are DETECTION counts: a detection is a sentence these
+  # methods READ as a claim, which is the figure that says whether a grammar is
+  # narrow enough to be trusted once there is a plan to compare it against. Not
+  # one of the 367 passages was written by a model that had been told a room's
+  # shape, so a detection among them would have been a grammar reading ordinary
+  # prose as a measurement.
+  #
+  # A DETECTION IS NOT THE SAME THING AS A JUDGEMENT, and the difference is the
+  # scorer's rather than these methods'. `Location::Plan` states more than the
+  # room's own box -- the PLACE's footprint in paces, and the clause *"storey 0
+  # is the ground floor"* -- so a claim can be a true echo of the prompt.
+  # `Eval::Realization::Scorer#judge_size_the_records_do_not_hold` discounts
+  # both: the place's pair agrees rather than flags, and a "storey 0" on a room
+  # that is not on storey 0 comes out of the denominator entirely. These methods
+  # report what a passage said and never what it is worth.
   # ------------------------------------------------------------------------
 
   # The four walls as prose writes them, plus the two-word corners.

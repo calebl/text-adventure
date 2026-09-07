@@ -85,7 +85,15 @@ class Playthrough::Moment
   # The closed sets are stated even when empty. "The player is carrying
   # nothing" is a fact the narrator can use; silence about it is an invitation
   # to decide.
-  def narration_context
+  #
+  # `plan:` IS WHAT SEPARATES THE TWO PASSES THAT READ THIS. The narrator wants
+  # the floor plan; `InteractionAgent`'s character pass, which builds the same
+  # section for an NPC's reply, asks for it WITHOUT -- geometry was never asked
+  # for in dialogue and `Character#interaction_instructions` has no stored
+  # baseline to judge a change to it against (AGENTS.md, and EVALUATION.md's
+  # rule). One keyword rather than a second reader, because everything else in
+  # these parts is the same moment and must not come apart.
+  def narration_context(plan: true)
     parts = [ "Story: #{story.title} (#{story.genre})", "Premise: #{story.summary}" ]
 
     if location
@@ -100,8 +108,9 @@ class Playthrough::Moment
       #
       # NOTHING AT ALL FOR A ROOM WITH NO BOX, which is almost every room in
       # every world: `Location::Plan.for` answers nil and silence is the honest
-      # answer where there is no geometry to state.
-      parts << plan_facts if plan_facts
+      # answer where there is no geometry to state. And nothing at all for a
+      # caller that asked for the moment without a plan.
+      parts << plan_facts if plan && plan_facts
     end
 
     parts << "The player is #{protagonist.fullname}." if protagonist

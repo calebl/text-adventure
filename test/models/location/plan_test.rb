@@ -65,6 +65,23 @@ class Location::PlanTest < ActiveSupport::TestCase
                     "storey 0 is the ground floor."
   end
 
+  # A PARENT WITH NO FOOTPRINT IS A FAULT `Story::Doctor` REPORTS
+  # (`boxes_with_no_parent_footprint`), and a prompt built from a database that
+  # carries one still has to read as a sentence -- so the footprint clause goes
+  # rather than emitting "which is by paces across".
+  test "a placed room whose place has no footprint says nothing about the place's size" do
+    nowhere = create(:location, :stub, story: @story, name: "The Sunken Vestry")
+    orphan = create(:location, :stub, story: @story, name: "the vestry closet", parent_location: nowhere,
+                                      x: 0, y: 0, z: 0, width: 4, depth: 3)
+
+    plan = plan_for(orphan)
+
+    assert_includes plan.to_prompt, "It is on storey 0 of The Sunken Vestry; storey 0 is the ground floor."
+    assert_not_includes plan.to_prompt, "paces across"
+    assert_nil plan.to_h["place_width"]
+    assert_nil plan.to_h["place_depth"]
+  end
+
   test "a door is named for the wall of this room it stands in" do
     taproom = room("the taproom", x: 0, y: 0, width: 6, depth: 4)
     snug = room("the snug", x: 6, y: 0, width: 6, depth: 4)
@@ -168,6 +185,7 @@ class Location::PlanTest < ActiveSupport::TestCase
     join!(taproom, street)
 
     assert_equal({ "room" => "the taproom", "place" => "The Rusted Anchor", "storey" => 0,
+                   "place_width" => 12, "place_depth" => 8,
                    "width" => 6, "depth" => 4,
                    "doors" => [ { "wall" => "east", "to" => "the snug" } ],
                    "stairs" => [ { "to" => "the loft", "up" => true, "storey" => 1, "bearing" => nil } ],
