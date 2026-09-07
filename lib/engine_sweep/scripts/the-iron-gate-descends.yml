@@ -1,0 +1,99 @@
+# THE FIRST OFFLINE TEST ANY GENERATED WORLD HAS EVER HAD. The other scripts
+# here walk worlds that were authored or hand-finished; this one walks a world
+# `rake game:new` wrote, exported with `rake 'game:export[7]'` and repaired by
+# hand -- so what it defends is not only an engine path but the world file
+# itself, which is the only copy of that world anybody can reload.
+#
+# WHAT WAS WRONG WITH IT, and why the walk ends where it does. The story's
+# preface, its summary and its universe all turn on a captured prince held by
+# the Blackfang clan, and the prince existed in prose and in no row at all: the
+# only part of him the engine ever held was his signet ring, in the mud of the
+# opening room. Meanwhile the dungeon's deepest room was written with two exits
+# and both of them led back up, so the world's one remaining frontier was the
+# surface and the story could not be finished from inside its own records. The
+# repair is in the seed file: a `Prince's Cell` off Blackfang Tunnel, the
+# doorway written both ways, and Prince Aurel Durn standing in it.
+#
+# SO THIS FILE ASSERTS THE BEAT AND THE PRESENCE, AND NEVER THE PROSE. Where
+# the party stands, what leads out of there and who is standing in it are
+# records; the cell's description is the seed file's own words and nothing in
+# this walk could have written it, because realizing a room is
+# `Location::Generator` and a sweep makes no model call at all. The cell is
+# written in the file for the reason its header gives -- a room nobody has
+# written realizes as an empty room with the prince in the middle of it.
+#
+# THE WORLD IS ONE OF THE SWEEP'S OWN (`EngineSweep::WORLDS`) rather than a
+# world a fresh clone plays, and its header says why.
+story: The Iron Gate Descends
+why: the repaired generated world, walked from its opening room down to the prince
+steps:
+- id: the-gate-as-the-world-was-generated
+  type: look
+  why: the opening room, and the ring that was the only row the prince had
+  expect:
+    location: Iron Gate Chamber (realized)
+    exits: [tunnel upward (realized), obsidian maw (realized)]
+    here: [iron key, prince's signet ring]
+    carrying: []
+    present: []
+    changed: false
+    refused: false
+
+- id: take-the-proof-he-passed-this-way
+  type: take the signet ring
+  why: the story's own device, and an app-owned transfer off the floor
+  expect:
+    changed: true
+    understood: take -> prince's signet ring
+    here: [iron key]
+    carrying: [prince's signet ring]
+    drifts: 0
+
+- id: down-into-the-maw
+  type: go to the obsidian maw
+  why: the way in, which the generated graph did have
+  expect:
+    changed: true
+    location: obsidian maw (realized)
+    present: []
+
+- id: the-deepest-room-has-a-way-down-now
+  type: go to Blackfang Tunnel
+  why: |-
+    THE REPAIR, READ OFF THE GRAPH. This room was written with two exits and
+    both led back up; the third is the seed file's, and a doorway is two rows.
+  expect:
+    changed: true
+    location: Blackfang Tunnel (realized)
+    exits: [tunnel upward (realized), obsidian maw (realized), Prince's Cell (realized)]
+
+- id: reach-the-prince
+  type: go to the Prince's Cell
+  why: THE WHOLE STORY -- the beat and the presence, off the records, no model
+  expect:
+    changed: true
+    location: Prince's Cell (realized)
+    exits: [Blackfang Tunnel (realized)]
+    present: [Prince Aurel Durn]
+    carrying: [prince's signet ring]
+
+- id: and-he-is-there-to-be-spoken-to
+  type: talk to the prince
+  why: |-
+    he is in the closed set the classifier resolves a `talk` against, which is
+    what makes him reachable rather than merely present. The line is refused
+    because answering it is a model call and a sweep makes none.
+  expect:
+    understood: talk -> Prince Aurel Durn
+    refused: true
+    changed: false
+    offers: [Prince Aurel Durn is here and the classifier resolved them]
+    present: [Prince Aurel Durn]
+
+- id: the-way-back-out-is-a-row-too
+  type: go to Blackfang Tunnel
+  why: the far side of the doorway the file wrote, walked
+  expect:
+    changed: true
+    location: Blackfang Tunnel (realized)
+    present: []

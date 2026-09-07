@@ -349,7 +349,11 @@ of the sweep's own in `lib/engine_sweep/worlds` second — same format, same
 loader, same `rake game:doctor`, but not a world a fresh clone gets, because it
 exists to give one assertion something to stand on rather than to be played.
 `the-quay-house.yml` is one: a place with its inside laid out, which none of the
-playable worlds has. `EngineSweep::WORLDS` says why it is not a fourth file in
+playable worlds has. `the-iron-gate-descends.yml` is the other, and it is the
+first **generated** world with an offline test of any kind — exported out of a
+real `rake game:new` story with `rake game:export`, repaired by hand until its
+own premise was reachable, and walked from its opening room down to the person
+the story is about. `EngineSweep::WORLDS` says why neither is a fourth file in
 the seed directory.
 
 `present:` is who the records place in the room — the closed set `talk` resolves

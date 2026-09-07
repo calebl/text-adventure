@@ -1015,3 +1015,20 @@ to be afraid of while they decide whether to go into the closet.
 has a realized location with exactly one exit, that every world opens with a
 narrated arrival, and that every world has somebody other than the protagonist
 standing in its opening room. Keep it that way.
+
+### Worlds that are checked in and are not here
+
+Two, and each one is out of this directory for a stated reason rather than by
+oversight — `db/seeds.rb` loads everything in here, so a file here is a world
+every fresh clone and every development database gains.
+
+- `lib/engine_sweep/worlds/the-quay-house.yml` — a place with its inside laid
+  out, for the sweep script that walks one. `EngineSweep::WORLDS`.
+- `lib/engine_sweep/worlds/the-iron-gate-descends.yml` — a **generated** world,
+  exported with `rake game:export` and then repaired by hand until its own
+  premise was reachable, and the first generated world with an offline test.
+  `Eval::Realization::WORLD_ROOTS` refuses a generated world in this directory:
+  the realization bench searches here first, so a copy here would quietly
+  become the world that bench measures. The bench's own copy is the frozen
+  export at `test/fixtures/files/worlds/the-iron-gate-descends.yml` — the graph
+  as the generator left it — and it is deliberately not repaired.

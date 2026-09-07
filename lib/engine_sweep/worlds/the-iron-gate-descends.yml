@@ -1,0 +1,380 @@
+# THE IRON GATE DESCENDS -- the first GENERATED world checked in, and the world
+# `lib/engine_sweep/scripts/the-iron-gate-descends.yml` walks. Exported out of a
+# real `rake game:new` world with `rake 'game:export[7]'` and hand-repaired from
+# there, which is the workflow db/seeds/worlds/README.md describes: generate,
+# export, then edit the YAML until the world has the shape you want.
+#
+# WHAT THE GENERATOR LEFT UNFINISHED, because it is the whole reason this file
+# exists. The story's preface, its summary and four fields of its universe all
+# turn on a prince held by the Blackfang clan, and the prince was in prose and
+# in no row at all -- the only part of him the engine ever held was his signet
+# ring, in the mud of the opening room. The dungeon's deepest room, Blackfang
+# Tunnel, was written with two exits and both led back up, so the world's one
+# remaining frontier was the surface and the story could not be finished from
+# inside its own records.
+#
+# THE REPAIR, ALL OF IT IN THIS FILE: `Prince's Cell` off Blackfang Tunnel, the
+# doorway listed once and written both ways, and Prince Aurel Durn standing in
+# it with the six prose fields `Character` requires and a stat block, because a
+# hand-authored world IS the decision about a body.
+#
+# WHY THE CELL IS `realized` RATHER THAN A STUB. Both, in order: a checked-in
+# world has to be doctor-healthy (`EngineSweepTest`, and `SeededWorldsTest` for
+# the played ones), and `Story::Doctor`'s `character_in_a_stub` is a true
+# warning about exactly this room -- `Location::Generator` writes a room's
+# description without knowing anybody is in it, so a stub cell realizes as an
+# empty room with the prince standing in the middle of it and the prose and the
+# records disagree from the moment the room exists. Writing the room by hand is
+# the same move `db/seeds/worlds/the-unrecorded-hour.yml` makes for its supply
+# closet, and for the same reason: an offline walk makes no model call, so a
+# room nobody has written is a room the sweep can reach and never read.
+#
+# WHY IT IS NOT IN `db/seeds/worlds`. `Eval::Realization::WORLD_ROOTS` refuses
+# it: that directory is loaded into every development database and is searched
+# FIRST by the realization bench, so this file there would quietly become the
+# world that bench measures. The bench's own copy of this world is the frozen
+# one at `test/fixtures/files/worlds/the-iron-gate-descends.yml` -- the graph as
+# the generator left it, which is the input a measurement needs -- and it is
+# deliberately NOT repaired. Same slug, two files, two jobs. `EngineSweep::WORLDS`
+# says the rest of why a world lives here.
+#
+# TO RE-ASSERT IT OVER A DATABASE THAT HOLDS THIS STORY, which is how the
+# captain's own copy of story 7 gets the prince:
+#
+#   bin/rails runner 'WorldSeed::Loader.load_file("lib/engine_sweep/worlds/the-iron-gate-descends.yml")'
+#
+# The loader adds and updates and deletes nothing, so it can be run over a world
+# somebody is part-way through playing. Offline: no model call, no key, no
+# network.
+---
+format: 2
+universe:
+  physics: |-
+    Gravity is consistent at 9.8 m/s², but the world is veined with ley lines—thin, invisible rivers of latent magic that pulse at a frequency of 0.3 Hz, detectable only by iron-forged compasses. These lines can be tapped by blood rituals, but each use drains the caster’s lifespan by exactly one day per minute of magic. The ley lines are finite; overuse in a region causes them to fade for a century. No magic can resurrect the dead or heal mortal wounds, only delay them.
+  technology: |-
+    The world is locked in a late medieval stasis, with iron and steel as the primary metals. Clockwork mechanisms exist but are rare, limited to devices no larger than a loaf of bread due to the scarcity of precision gears. Gunpowder is known but unstable, often exploding prematurely in 1 out of 5 attempts. Most advancements are suppressed by the Church of the Eternal Pyre, which burns any invention deemed heretical.
+  weapons: |-
+    Swords, axes, and maces dominate, with the knightly class wielding blades of cold-forged Veldarian steel, which never rusts but shatters if struck by goblin-wrought obsidian. Goblins favor curved daggers coated in paralyzing venom, effective only if the wound draws blood. Crossbows are used by mercenaries but require 30 seconds to reload, making them impractical in close quarters. No ranged weapon can pierce the hide of a cave troll, which guards the dungeon’s depths.
+  geographies: |-
+    The kingdom of Durnhold is a land of jagged iron cliffs and black pine forests, its heart dominated by the Ashen Spire, a dead volcano where the Church burns heretics. The goblin caves lie beneath the Spire’s roots, a labyrinth of obsidian tunnels lit by bioluminescent fungi that dim every 12 hours. The nearest town, Hollow’s End, is a day’s ride north, its walls built from the bones of ancient trolls. The river Veyth, wide and slow, marks the border between Durnhold and the goblin territories, its waters undrinkable due to high iron content.
+  civilizations: |-
+    The Kingdom of Durnhold is ruled by the Iron Council, a cabal of knights and priests who enforce the Church’s decrees from the Obsidian Throne in the capital, Spire’s Rest. The goblins are divided into warring clans, the largest being the Blackfang, who control the dungeon where the prince is held. The Trollkin have no settlements, only nomadic bands, while the Veythi operate from floating barges on the river, their only permanent structure being the Rust Market, a black-market hub hidden in the river’s mist. The uneasy peace is maintained by the Iron Council’s threat of annihilation and the goblins’ fear of open war, but raids and executions are common.
+  history: |-
+    A century ago, the Durnish waged the War of the Spire, driving the goblins underground and sealing the caves with iron gates. The Church then burned the last great library of the Veythi, accusing them of heresy, which forced the river-dwellers into secrecy. Twenty years past, the Iron Council executed the last Trollkin king, scattering his people. Now, the prince’s capture by the Blackfang clan has shattered the fragile truce, as the Council debates whether to negotiate or burn the caves to the ground.
+  economics: |-
+    Durnhold’s wealth comes from iron and coal, mined by convicts in the Spire’s shadow. The Church taxes all trade, taking a third of all goods in the name of the Eternal Pyre. Goblins trade in stolen Durnish steel and rare fungi, which they sell to the Veythi for clockwork parts. The Veythi deal in information and forbidden tech, but their currency is blood—each transaction requires a drop from the buyer, stored in vials as proof of the exchange. Trollkin have no economy, surviving by hunting and scavenging.
+  politics: |-
+    The Iron Council holds power through fear, their knights enforcing the Church’s will with fire and steel. The Blackfang goblins are the only clan bold enough to defy them, using the prince as leverage to demand the return of their sacred obsidian, stolen during the War of the Spire. The Veythi play both sides, selling secrets to the Council while smuggling weapons to the goblins. The Trollkin are caught in the middle, hunted by the Church but too few in number to resist. The prince’s rescue could tip the balance—if he lives, the Council may strike; if he dies, the goblins will have nothing to lose.
+  religion: |-
+    The Church of the Eternal Pyre preaches that the world is a forge, and all life must be tempered by suffering to be made pure. They believe the ley lines are the veins of a sleeping god, and that magic is theft from the divine. The goblins worship the Silent Maw, a god who demands blood and silence, believing that all noise is a lie. The Veythi have no gods, only the River, which they see as a force of change and decay. The Trollkin revere the First Maw, a primordial troll said to have birthed their race, but their rituals are secret, performed only in the dark.
+  races:
+  - name: Durnish
+    description: |-
+      Humans of the kingdom of Durnhold, tall and broad-shouldered with ashen skin from generations of iron-smoke. They revere the Church of the Eternal Pyre, whose priests brand heretics with white-hot irons. Their knights wear blackened plate armor, forged from Veldarian steel, but it is heavy—no Durnish warrior can run for more than a minute in full gear.
+  - name: Goblins
+    description: |-
+      Squat, green-skinned humanoids with elongated fingers and needle teeth, dwelling in the obsidian caves beneath the Ashen Spire. They worship the Silent Maw, a god of hunger, and believe all surface-dwellers are already dead. Their venomous daggers are their only advantage; without them, they are weak in direct combat.
+  - name: Trollkin
+    description: |-
+      Hulking, gray-furred descendants of cave trolls, standing twice the height of a Durnish knight. They are immune to poison and can regenerate wounds, but only if they consume raw meat within an hour of injury. The Church hunts them as abominations, though they keep to the riverbanks and rarely attack unless provoked.
+  - name: Veythi
+    description: |-
+      Pale, gaunt humans who live along the iron-tainted River Veyth, their skin stained rust-red from the water. They trade in forbidden knowledge, smuggling clockwork devices and alchemical texts to the highest bidder. The Church executes them on sight, but the goblins tolerate them as suppliers of surface-world goods.
+story:
+  title: The Iron Gate Descends
+  genre: dark fantasy
+  start_time: '2026-09-05T20:17:00Z'
+  preface: |-
+    The iron gate groans as it settles into the stone, its teeth biting into the threshold with a finality that echoes through the cavern. You stand in the dim glow of bioluminescent fungi, the air thick with the scent of damp earth and old blood. Your gauntleted hand rests on the hilt of your Veldarian sword, its edge still sharp despite the weight of the blackened plate armor pressing into your shoulders. The prince’s signet ring, cold in your palm, was found in the mud outside this gate—proof he passed this way. Behind you, the tunnel slopes upward, but the way forward is a yawning maw of obsidian, the walls slick with moisture. Somewhere in the dark, something skitters.
+  summary: |-
+    A Durnish knight, clad in heavy blackened plate, stands at the threshold of the goblin caves beneath the Ashen Spire, having just forced open an iron gate. The prince’s signet ring, discovered in the mud, confirms his passage into the tunnels. The air is thick with the scent of damp earth and the faint glow of fungi, while the distant sound of movement hints at unseen dangers ahead. The Church’s decree to retrieve the prince or die trying weighs heavily, but the immediate threat is the darkness itself.
+opening_scene:
+  location: Iron Gate Chamber
+  characters: []
+  description: |-
+    The first thing that hits you is the stench of wet iron and old blood, thick enough to coat your throat. Then comes the cold—damp, seeping through the seams of your armor as your boot crunches on something brittle in the mud. The air hums faintly, a vibration in your teeth, and the dim glow of the fungi pulses like a slow, dying heartbeat against the black stone. The gate’s jagged teeth yawn behind you, but the tunnel ahead swallows the light whole, leaving only the sound of something shifting in the dark.
+  summary: |-
+    The player steps into the Iron Gate Chamber, encountering the sensory overload of the cavern’s atmosphere and the immediate presence of the tunnel ahead.
+characters:
+- fullname: Veythra the Silent
+  race: Trollkin
+  stats:
+    level: 1
+    hit_die: 8
+    strength: 13
+    dexterity: 7
+    will: 10
+  nickname: The River’s Shadow
+  age: 107
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: |-
+    Veythra was born on a Veythi barge, the only Trollkin child among river traders who saw her as an omen. Raised by an exiled Durnish knight turned mentor, she learned the ways of the wild and the weight of secrets. The Church’s hunts forced her into hiding, but she never forgot the debt she owed to the river for sparing her life. Now, she wanders the banks of the Veyth, tracking the movements of the Blackfang goblins, driven by a quiet vow to protect the last of her kind. The prince’s capture has drawn her attention, as the goblins’ boldness threatens the fragile balance she has spent a lifetime maintaining. She seeks not glory, but survival—for herself and the scattered remnants of the Trollkin.
+  personality: |-
+    Veythra is reserved and deliberate, speaking only when necessary and often in riddles. She carries a quiet intensity, observing the world with a hunter’s patience, though she treats others with a cautious respect born of survival. Her loyalty is rare but absolute once given.
+  appearance: |-
+    Towering over most, Veythra’s gray fur is streaked with silver, a sign of her age, and her broad frame is draped in a tattered cloak woven from river reeds. Her tusks are filed to points, and her amber eyes glow faintly in the dark, a trait of her lineage. Scars crisscross her arms, each a story she refuses to tell.
+  likes: |-
+    raw fish, the sound of flowing water, the scent of rain on stone, the weight of a well-balanced axe, solitude
+  dislikes: |-
+    fire, the Church’s hymns, the taste of cooked meat, being watched, iron chains
+  fears: |-
+    being trapped underground, the Church’s pyres, losing her sense of smell, the Silent Maw’s hunger
+- fullname: Gorva the Wanderer
+  race: Trollkin
+  location: Hollow’s End
+  stats:
+    level: 1
+    hit_die: 6
+    strength: 10
+    dexterity: 14
+    will: 6
+  nickname: Gorva
+  age: 54
+  sex: female
+  is_protagonist: false
+  is_companion: false
+  backstory: |-
+    Gorva was once part of a nomadic band, but age and injury left her behind. She now drifts between towns like Hollow’s End, trading odd jobs for coin or shelter. She knows the paths through the black pines better than most, and she has a grudging respect for the Iron Council’s reach.
+  personality: |-
+    Gorva speaks little but watches everything, her voice a low rumble when she does. She treats strangers with cautious curiosity, though her patience wears thin quickly.
+  appearance: |-
+    A tall Trollkin woman with weathered, grayish skin and deep-set, amber eyes. She wears a patched cloak of stitched hides and carries a notched axe at her belt. Her hair, streaked with white, is tied back in a loose braid.
+  likes: quiet, strong drink, sharp blades
+  dislikes: fools, the Church, wasted time
+  fears: fire, deep water
+- fullname: Lyssa of the Mist
+  race: Veythi
+  location: Hollow’s End
+  stats:
+    level: 1
+    hit_die: 10
+    strength: 10
+    dexterity: 7
+    will: 9
+  nickname: Lyssa
+  age: 41
+  sex: trans_woman
+  is_protagonist: false
+  is_companion: false
+  backstory: |-
+    Lyssa was born on the barges of the Veythi but left the river life after a falling-out with her kin. Now she trades in Hollow’s End, smuggling goods between the town and the Rust Market hidden in the river’s mist. She knows the Iron Council’s patrols and the goblin raids better than anyone.
+  personality: |-
+    Lyssa is quick with a joke and quicker with a deal, her voice smooth as the river’s current. She sizes up strangers with a practiced eye, always weighing what they might be worth.
+  appearance: |-
+    A Veythi woman with dark, braided hair streaked with silver, her sharp features framed by a high-collared coat of river-worn leather. Her hands are calloused from years of hauling nets and ropes, and her eyes flicker with the restlessness of someone used to the water.
+  likes: bargaining, river stories, fine cloth
+  dislikes: the Church, betrayal, cold nights
+  fears: being trapped, the Spire’s shadow
+- fullname: Prince Aurel Durn
+  race: Durnish
+  location: Prince's Cell
+  stats:
+    level: 1
+    hit_die: 6
+    strength: 8
+    dexterity: 10
+    will: 16
+  nickname: Aurel
+  age: 19
+  sex: male
+  is_protagonist: false
+  is_companion: false
+  backstory: |-
+    Aurel Durn is the last living son of the Iron Council’s ruling line, and until the spring he had never been further from the Obsidian Throne than the smelters at the Spire’s foot. He was taken on the north road to Hollow’s End with eleven men-at-arms around him, none of whom outlived the ambush; the Blackfang came out of the black pines without a sound, which is how the clan hunts, and cut the horses first. Somewhere outside the iron gate they wrenched the signet from his left hand, and he understood, watching it go into the mud, that they meant to be believed rather than paid. He has been in the dark since. The clan keeps him whole and keeps him fed on fungus-mash because a corpse buys nothing, and they have told him plainly what he is worth: the sacred obsidian the Durnish took in the War of the Spire, weighed out and returned. He counts the dimming of the fungi to keep the days, and he has counted enough of them to know the arithmetic the Church will do. Rescue is not what he expects. Being burned with the caves is.
+  personality: |-
+    Aurel is courteous in a way that has stopped costing him anything, and he has learned the goblin habit of silence well enough to make Durnish visitors uneasy. He listens first, at length, before he says a word, and what he says is usually a price or a warning. He does not beg and he does not thank; he bargains, even from the floor of a cell, because bargaining is the only office left to him and he was raised to hold one.
+  appearance: |-
+    A tall Durnish youth gone gaunt, his ashen skin greyer still for a season without sun, and his dark hair cropped to the scalp where the goblins took it for their own uses. What is left of a doublet of Council blue hangs off him, rotted at the seams and stiff with old blood at the collar. His wrists carry two bright rings of scar from the chain, and the third finger of his left hand is scarred around the base where the signet was pulled over the knuckle. His eyes have adjusted to the fungi’s glow and water in any brighter light.
+  likes: |-
+    the twelve-hour dimming of the fungi, which is his only clock, clean water, the sound of iron being worked, his mother’s salt-and-iron psalm, being told the truth about numbers
+  dislikes: |-
+    fungus-mash, the Church’s arithmetic, being spoken to as a price, pity, torchlight held close to his face
+  fears: |-
+    the Council burning the caves with him inside them, the Silent Maw’s hunger, losing his count of the hours, hearing his own name used as a sum
+locations:
+- name: Iron Gate Chamber
+  detail_level: realized
+  opening: true
+  teaser: |-
+    A cavernous entryway where the last iron gate of Durnhold’s defense has just been forced open, its teeth embedded in the stone floor.
+  description: |-
+    The iron gate lies half-buried in the stone floor, its jagged teeth glinting dully in the pale glow of bioluminescent fungi clinging to the cavern walls. The air is thick with the scent of damp earth and rust, the taste of iron sharp on your tongue. The tunnel ahead yawns black and slick with moisture, the faint sound of skittering claws echoing from its depths. Your boot sinks slightly into the muddy threshold, where a single, deep groove cuts across the stone—fresh, as if something heavy was dragged through. The dim light flickers, casting long, wavering shadows that seem to crawl along the obsidian walls.
+  lore: |-
+    This chamber marks the final Durnish outpost before the goblin tunnels, a last line of defense built into the roots of the Ashen Spire. The gate was forged by the Iron Council to seal the caves after the Blackfang raids grew bolder, its mechanism designed to lock from the outside. The groove in the stone is new, likely made by the prince’s captors as they hauled him deeper into the labyrinth. The fungi here pulse faintly in time with the ley lines, though their glow is too weak to reveal what lurks beyond. The Church’s decree to retrieve the prince has driven many knights this far, but few return.
+  items:
+  - name: iron key
+    description: |-
+      A small, rusted key lying near the gate’s hinge, its bow shaped like a serpent’s head. It looks too delicate to have opened this gate.
+    properties:
+  - name: prince's signet ring
+    description: |-
+      A heavy gold ring, its surface etched with the royal crest of Durnhold, still caked with mud. The metal is cold and slightly bent, as if wrenched from a finger.
+    properties:
+- name: tunnel upward
+  detail_level: realized
+  teaser: |-
+    The sloping passage back toward the surface, where the faintest glimmer of torchlight hints at the world above.
+  description: |-
+    The tunnel slopes upward, its rough-hewn walls slick with moisture and streaked with veins of iron ore. You feel the faintest draft of cooler air from above, carrying the scent of torch smoke and damp stone. The bioluminescent fungi here are sparse, their dim glow barely illuminating the uneven footing under your boots. The ceiling presses low in places, forcing you to duck as you ascend. Somewhere ahead, a distant flicker of torchlight hints at the world beyond the caves.
+  lore: |-
+    This passage was carved by goblin labor under the lash of Durnish overseers, a forced route to the surface for the Blackfang clan’s tribute and prisoners. The iron veins in the stone were once mined, but the seams played out decades ago, leaving only the damp, echoing tunnel. The Church occasionally uses it to drag heretics down to the Spire’s roots, though most never return. The torchlight above belongs to the watch posted at the cave’s mouth, a reminder of the world you left behind.
+- name: obsidian maw
+  detail_level: realized
+  teaser: |-
+    The yawning black tunnel ahead, its walls slick with moisture and the distant sound of skittering claws echoing from the dark.
+  description: |-
+    You stand at the mouth of a tunnel carved from black obsidian, its walls glistening with moisture that drips in slow, uneven rhythms. The air is thick with the scent of damp stone and something metallic, like old blood. Faint blue-green fungi cling to the ceiling, casting a sickly glow that barely reaches the slick, uneven floor. From the depths, the sound of skittering claws echoes, sharp and deliberate, as if something is testing the edges of the dark. The cold seeps through your armor, and the silence between the sounds feels heavier than the stone itself.
+  lore: |-
+    This tunnel is part of the Blackfang goblin clan’s labyrinth beneath the Ashen Spire, a network of passages hewn from the volcano’s ancient roots. The obsidian here was formed by a long-dead eruption, its surface polished smooth by centuries of water and the passage of countless goblin feet. The fungi are a symbiotic growth, fed by the iron-rich waters seeping from the stone, and their dim light is all that keeps the tunnels from absolute darkness. The skittering is likely a goblin scout or a cave-dwelling predator, both drawn to the scent of intruders. The Church’s inquisitors have long suspected these tunnels lead to the prince’s prison, but none have returned to confirm it.
+  items:
+  - name: damp scroll
+    description: |-
+      A rolled parchment, its edges frayed and its surface stained with moisture. The ink is smudged but still legible in places.
+    readable: true
+    inscription: Beware the teeth of the dark. They hunger.
+    properties:
+  - name: iron shard
+    description: |-
+      A jagged fragment of blackened metal, its edges sharp and its surface pitted with age. It looks like it was broken from something larger, perhaps a blade or a tool.
+    properties:
+- name: Blackfang Tunnel
+  detail_level: realized
+  teaser: |-
+    The obsidian passage slopes downward, the skittering sounds growing louder as the light fades.
+  description: |-
+    The obsidian walls of the tunnel glisten with moisture, their jagged edges catching the dim glow of bioluminescent fungi clinging to the ceiling. The air is thick with the scent of damp earth and something metallic, like old blood. The passage slopes downward, the floor uneven and slick underfoot, and the skittering sounds echo from deeper within the dark, growing louder as you listen. The faint pulse of a ley line hums beneath your boots, detectable only by the faintest vibration in the iron of your armor. A cold draft curls around your ankles, carrying the musk of wet stone and something faintly rotten.
+  lore: |-
+    This tunnel is part of the Blackfang clan’s network beneath the Ashen Spire, carved by goblin hands over centuries into the obsidian veins of the dead volcano. The ley line here is weak but active, often used by goblin shamans for minor rituals, though its proximity to the surface has left it nearly spent. The skittering sounds are likely cave rats or worse—goblin sentries, or something that has made its home in the dark. The dampness never fully dries, and the fungi thrive in the absence of sunlight.
+  items:
+  - name: rusted dagger
+    description: |-
+      A small, pitted blade of cheap iron, its edge dulled by time and neglect. The hilt is wrapped in frayed leather, still damp to the touch.
+    properties:
+  - name: tattered cloth
+    description: |-
+      A strip of coarse, once-red fabric, now faded and stained with something dark. It smells faintly of sweat and iron.
+    properties:
+- name: surface
+  detail_level: realized
+  danger: dangerous
+  teaser: |-
+    The mouth of the cave opens to the ashen slopes of the Spire, where the wind carries the scent of burning pitch.
+  description: |-
+    You stand on the ashen slope of the Spire, the wind biting at your exposed skin as it carries the acrid tang of burning pitch from the distant pyres. The cave mouth yawns behind you, its darkness a stark contrast to the pale, powdery ground underfoot. The air is dry here, the heat of the sun baking the iron-rich earth into a brittle crust that cracks beneath your boots. To the north, the black pines of Durnhold stretch like skeletal fingers, while the river Veyth glints far below, its surface a dull, rusted mirror. The only sound is the whisper of the wind and the occasional groan of the Spire’s iron cliffs shifting in the heat.
+  lore: |-
+    This is the surface entrance to the goblin caves, a jagged scar in the Ashen Spire’s flank where the earth has been worn away by centuries of wind and water. The Church’s heretic burnings have left the air thick with the scent of charred flesh and pitch, and the iron-rich soil here is barren, unable to sustain life beyond the hardy black pines. The cave itself was once a natural fissure, but goblin hands have widened it over generations, carving a path into the depths below. The Spire’s slopes are treacherous, littered with loose rock and the occasional bone of some unfortunate who misjudged their footing.
+  items:
+  - name: charred bone
+    description: |-
+      A blackened fragment of bone, likely from an animal, its surface cracked and brittle from the heat of the pyres. It’s light enough to carry but offers no immediate use.
+    properties:
+  - name: iron flake
+    description: |-
+      A thin, rusted shard of iron, no larger than a palm, broken off from the Spire’s cliffs. It’s sharp on one edge but too small to be a weapon.
+    properties:
+- name: Spire’s Rest
+  detail_level: realized
+  teaser: |-
+    The capital’s iron walls rise in the distance, its towers black against the ashen sky, where the Church’s banners snap in the wind.
+  description: |-
+    You stand in the shadow of Spire’s Rest, its iron walls looming high and unbroken, their surfaces pitted with age and the scars of old sieges. The air carries the sharp tang of smelted iron and the faint, acrid bite of burning pitch from the Church’s ever-lit braziers atop the towers. Black banners bearing the sigil of the Eternal Pyre snap in the cold wind, their edges frayed but defiant. The cobbled streets beneath your boots are slick with recent rain, reflecting the dim glow of lanterns that flicker in the gathering dusk. Somewhere beyond the walls, the distant clang of a smith’s hammer rings out, steady and unyielding.
+  lore: |-
+    Spire’s Rest is the capital of Durnhold, built at the foot of the Ashen Spire by the Iron Council to serve as the seat of their power and the heart of the Church of the Eternal Pyre. Its walls were forged from the iron of the Spire itself, said to be blessed by the first High Inquisitor to repel both blade and spell. The city thrives on the labor of its forges and the fear of its people, with the Church’s influence woven into every street and tower. Here, heresy is met with fire, and progress is measured in the weight of chains and the sharpness of swords.
+- name: Hollow’s End
+  detail_level: realized
+  danger: dangerous
+  teaser: |-
+    The troll-bone walls of the nearest town loom to the north, its gates a day’s hard ride away through the black pines.
+  description: |-
+    You stand before the troll-bone walls of Hollow’s End, their jagged edges bleached white by time and weather. The air smells of damp pine and the faint, metallic tang of the river Veyth to the south. The town’s gates, a day’s ride north through the black pines, loom ahead, their iron reinforcements rusted but still imposing. A few torches flicker in the gathering dusk, casting long shadows across the packed earth. The wind carries the distant clatter of a blacksmith’s hammer and the murmur of hushed voices from within.
+  lore: |-
+    Hollow’s End was built from the bones of ancient trolls, a grim testament to the Iron Council’s victory over the nomadic Trollkin centuries ago. The town serves as the last outpost of Durnhold before the goblin caves and the river Veyth, a place of uneasy trade and whispered deals. The Church’s influence is thin here, its decrees enforced only when convenient, and the townsfolk have learned to look the other way. The walls, though imposing, are more for show than defense, as the true threats lie beyond the pines.
+  items:
+  - name: iron coin
+    description: |-
+      A single, tarnished coin bearing the faded crest of the Iron Council, its edges worn smooth by time. It lies half-buried in the dirt near the gate.
+    properties:
+  - name: troll-bone shard
+    description: |-
+      A small, splintered fragment of bone, likely broken from the wall during construction or repair. It is light but sharp at the edges.
+    properties:
+- name: Ashen Spire
+  detail_level: realized
+  danger: uneasy
+  teaser: |-
+    The dead volcano looms over the city, its slopes scarred by the Church’s pyres and the iron teeth of the capital’s defenses.
+  description: |-
+    You stand on the ashen slope of the dead volcano, the air thick with the acrid tang of old smoke and the metallic bite of iron. The ground beneath your boots is a mosaic of blackened stone and rusted pyre remnants, the charred bones of heretics still half-buried in the soot. Above, the Spire’s jagged rim cuts the sky like a broken crown, its edges lined with the iron teeth of the capital’s defenses. The wind carries the distant crackle of flames from the Church’s eternal pyres, and the faint, rhythmic pulse of ley lines hums beneath your feet. The only movement is the slow drift of ash, settling like a shroud over everything.
+  lore: |-
+    The Ashen Spire is the hollowed heart of a long-dead volcano, repurposed by the Church of the Eternal Pyre as a site for executions and heretical burnings. Its slopes are scarred by centuries of iron forging and ritual fires, the stone itself darkened by the blood and ash of countless victims. The Church’s defenses—iron spikes and barbed wire—bristle along its rim, a warning to any who might defy their rule. Beneath its surface, the ley lines run thick, though tapping them here is forbidden, punishable by the pyre. The Spire overlooks Spire’s Rest, the capital of Durnhold, where the Iron Council rules from the Obsidian Throne.
+  items:
+  - name: charred amulet
+    description: |-
+      A small, blackened pendant of twisted iron, its surface pitted and warped by fire. The chain is broken, leaving only a jagged stub.
+    properties:
+  - name: iron nail
+    description: |-
+      A single, rusted nail, its head bent and its tip blunt from years of exposure to the elements. It’s cold to the touch, as if it has absorbed the chill of the Spire’s shadow.
+    properties:
+- name: Rust Market
+  detail_level: stub
+  teaser: |-
+    A thin path descends toward the river, where the mist clings to the water and the scent of iron and trade lingers.
+- name: black pines
+  detail_level: stub
+  teaser: |-
+    The dense forest stretches north, its gnarled branches blotting out the sky and the scent of iron-rich earth thick in the air.
+- name: Prince's Cell
+  detail_level: realized
+  danger: uneasy
+  teaser: |-
+    A low door of iron-strapped obsidian at the tunnel's lowest turn, where the skittering stops and something inside breathes slowly, as though it has learned to.
+  description: |-
+    The door is obsidian strapped with Durnish iron, hung the wrong way round so that it opens inward, and past it the tunnel becomes a room barely deeper than a man is tall. The fungi here have been scraped from the walls in wide grey patches, leaving just enough of a glow to see by, and the stone beneath them is scored with rows of short marks cut by something blunter than a blade. A chain runs from a ring hammered into the far wall to a shackle lying open on the floor, and the floor is dry, which nothing else down here is. The air is warm with somebody having been in it a long time. Against the wall, where the light gives out, a young man in the rags of Council blue sits with his back to the stone and his hands loose in his lap, watching the doorway as though he has watched it every hour he has been awake.
+  lore: |-
+    This is where the Blackfang keep what they intend to trade. The clan learned from the War of the Spire that a hostage held in the deep tunnels dies of the damp before any Durnish answer arrives, so this cell was cut above the seep and floored with dry obsidian, and the ring in its wall is Durnish iron taken off the gate above. The marks scratched in the stone are days. The shackle is left open because the Silent Maw's priests hold that a thing which has been given a choice and stays is a thing that has been offered properly, and because nobody has walked this far down the tunnels uninvited in a hundred years. The Iron Council has been told the price twice: the sacred obsidian, weighed out and returned. It has answered neither time.
+connections:
+- between: [Iron Gate Chamber, tunnel upward]
+  distance: a short walk
+  travel_method: walking
+- between: [Iron Gate Chamber, obsidian maw]
+  distance: adjacent
+  travel_method: walking
+- between: [tunnel upward, Blackfang Tunnel]
+  distance: a short walk
+  travel_method: walking
+- between: [tunnel upward, surface]
+  distance: a short walk
+  travel_method: walking
+- between: [obsidian maw, Blackfang Tunnel]
+  distance: a short walk
+  travel_method: walking
+- between: [Blackfang Tunnel, Prince's Cell]
+  distance: a short walk
+  travel_method: walking
+- between: [surface, Spire’s Rest]
+  distance: a long journey
+  travel_method: riding
+- between: [surface, Hollow’s End]
+  distance: a long journey
+  travel_method: riding
+- between: [Spire’s Rest, Hollow’s End]
+  distance: a long journey
+  travel_method: riding
+- between: [Spire’s Rest, Ashen Spire]
+  distance: a short walk
+  travel_method: walking
+- between: [Spire’s Rest, Rust Market]
+  distance: across the district
+  travel_method: walking
+- between: [Hollow’s End, Rust Market]
+  distance: a short walk
+  travel_method: walking
+- between: [Hollow’s End, black pines]
+  distance: a long journey
+  travel_method: riding
+- between: [Ashen Spire, Rust Market]
+  distance: a long journey
+  travel_method: riding
