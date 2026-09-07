@@ -1,7 +1,7 @@
 require "test_helper"
 
 # WHO DECIDES WHAT A ROOM OF A PLACE IS CALLED once a model has proposed
-# something -- the engine, on every one of the five grounds `Location::RoomName`
+# something -- the engine, on every one of the grounds `Location::RoomName`
 # refuses on, and never the model.
 #
 # THE SHAPE OF EVERY ASSERTION HERE IS THE SAME: a refusal answers NIL and the
@@ -49,6 +49,26 @@ class Location::RoomNameTest < ActiveSupport::TestCase
 
   test "nil is not a room" do
     assert_nil Location::RoomName.for(nil)
+  end
+
+  # A HAND-AUTHORED NAME IS NOT PROPOSED AGAINST, which is what makes the class
+  # header's claim about a seed file true: a world file may draw a whole
+  # building by hand as stub rooms, and such a room's name is listed as an exit
+  # and may already have been typed by the player before anybody walked in.
+  #
+  # IT IS THE GATE AND NOT A REFUSAL on purpose -- see `.for`. Nil means the
+  # prompt never asks, so the row leaves both name checks' denominators instead
+  # of reporting a refusal against a room that was never a candidate.
+  test "a room of a place with a name of its own is not one this names" do
+    @room.update!(name: "The Cellar Stair")
+
+    assert_nil Location::RoomName.for(@room)
+  end
+
+  test "a room still called one of the place's own numbers is one this names" do
+    @room.update!(name: "Custom House Room 1")
+
+    assert_instance_of Location::RoomName, Location::RoomName.for(@room)
   end
 
   # --- what it takes ---------------------------------------------------------
@@ -104,6 +124,25 @@ class Location::RoomNameTest < ActiveSupport::TestCase
 
     assert_nil naming.accept("The Custom House room 2")
     assert_nil naming.accept("The Custom House room 12")
+  end
+
+  # THE PLACE'S OWN NAME INSIDE THE ROOM'S. The play page prints the two
+  # together -- *"the <room> of <place>"*, the captain's ruling of 2026-09-06 --
+  # so this is the doubling the class exists to remove, one notch quieter than a
+  # placeholder: `The Custom House taproom` carries no ` room <n>` suffix, so
+  # `Location::Interior.placeholder_name?` does not see it, and it collides with
+  # nothing. The prompt tells the model to keep the place's name out; this is
+  # the half that does not depend on it having listened.
+  test "the place's own name inside the proposal is refused" do
+    assert_nil naming.accept("The Custom House taproom")
+    assert_nil naming.accept("the custom house cellar")
+    # Containment and not equality, on `WorldSeed.natural_key`'s reading: the
+    # place's name anywhere in the room's is the failure.
+    assert_nil naming.accept("the back of the Custom House")
+  end
+
+  test "a room name that merely shares a word with the place is taken" do
+    assert_equal "the custom counter", naming.accept("the custom counter")
   end
 
   test "a name another room of this place already answers to is refused" do

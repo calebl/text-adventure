@@ -563,7 +563,7 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
   # --- the room's own name ---------------------------------------------------
   #
   # WHAT THE ROOM ENDED UP CALLED IS READ OFF THE ROOM. `Location::RoomName`
-  # refuses a proposal on five separate grounds and every one of them ends with
+  # refuses a proposal on several separate grounds and every one of them ends with
   # the placeholder still on the row, so the check asks the record what happened
   # instead of re-deciding it -- which would be a second implementation of the
   # one thing that owns the decision.

@@ -550,14 +550,14 @@ class Eval::Realization::Scorer
 
   # WHETHER THE ROOM ENDED UP WITH A NAME OF ITS OWN, READ OFF THE ROOM.
   #
-  # `Location::RoomName` refuses a proposal on five separate grounds -- blank or
-  # cut off, a comma, the name the room already has, another of the place's
-  # placeholders, and a name this world has already spoken for -- and every one
-  # of them ends the same way: the placeholder stays. So this check asks the
-  # RECORD what happened rather than re-deciding it here. A checker that
-  # re-implemented those five rules would be a second implementation of the one
-  # thing that owns them, which is the failure this whole file is written
-  # against; `#judge_room_name_already_taken` below reports the one reason that
+  # `Location::RoomName` refuses a proposal on several separate grounds -- blank
+  # or cut off, a comma, the name the room already has, another of the place's
+  # placeholders, the place's own name inside it, a name this world has already
+  # spoken for -- and every one of them ends the same way: the placeholder
+  # stays. So this check asks the RECORD what happened rather than re-deciding
+  # it here. A checker that re-implemented those rules would be a second
+  # implementation of the one thing that owns them, which is the failure this
+  # whole file is written against; `#judge_room_name_already_taken` below reports the one reason that
   # is a set comparison, and this reports the outcome.
   #
   # JUDGEABLE ONLY WHERE THE PROMPT ASKED, which is a room of a laid-out place

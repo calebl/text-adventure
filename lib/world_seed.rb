@@ -60,6 +60,88 @@ module WorldSeed
     name.to_s.downcase.gsub(/[[:space:]]+/, " ").strip.sub(LEADING_ARTICLE, "").strip
   end
 
+  # THE ROW ONE OF A SEED FILE'S LOCATIONS IS, or nil for one this story has
+  # never had -- and it is THE ONE READER for that question, deliberately. Three
+  # callers ask it: `WorldSeed::Loader` decides whether to rename a row or write
+  # a second one beside it, `Story::Doctor` decides whether somebody has left
+  # the room the file puts them in, and `Story::Repair` puts them back. A loader
+  # that recognized a row the doctor did not would report and then fail to
+  # repair a defect that was never there.
+  #
+  # THREE PASSES, WIDENING, in the order of how certain each one is:
+  #
+  #   1. THE WRITTEN NAME, case-insensitively, matched exactly as
+  #      `Location::Generator#find_location` matches it, so nothing about how
+  #      the generator and the loader agree on a room turns on the rest of this.
+  #
+  #   2. `.natural_key` -- A RENAME THE FILE MADE. See it for how far it goes
+  #      and why it goes no further.
+  #
+  #   3. THE PLACE AND THE BOX -- A RENAME THE ENGINE MADE, which is the pass
+  #      this exists for. `Location::RoomName` writes a room's name when
+  #      somebody first walks into it, so a file that declares
+  #      `The Custom House room 1` as a stub of a laid-out place can come back
+  #      to a row called `the counting room`: neither written-name pass matches
+  #      it, and without this one the loader wrote a SECOND room at the same
+  #      coordinates of the same place -- the row
+  #      `Story::Doctor#duplicate_locations` exists to report and
+  #      `Location::Interior`'s reachability guarantee assumes away -- while
+  #      `Story::Repair#repair_seeded_whereabouts` raised on the name it could
+  #      not find.
+  #
+  # A ROOM'S IDENTITY INSIDE A PLACE IS ITS BOX. The coordinates are the
+  # engine's own, no model ever proposes one and nothing in the app moves a room
+  # after it is laid out (`Location::Interior`), so they are what still says
+  # "this room" once the name has moved. It is the same argument
+  # `.natural_key`'s header makes about a leading article, made one step
+  # further out: identity is asked as wide as the evidence supports and no
+  # wider.
+  #
+  # PASS 3 NEEDS THE FILE'S OWN DECLARATION OF THE ROOM and answers nil without
+  # one, which is why it is an argument rather than something read off the name:
+  # only the document says which place a room is in and where in it, and only
+  # for a room the file lays out -- a `parent` plus all five of
+  # `Location::Box::COLUMNS`. Every flat world and every ordinary place is
+  # answered by the first two passes and never reaches it.
+  def self.find_location(story, name, declaration = nil)
+    # `Location.where(story_id:)` and not `story.locations`, deliberately: a
+    # bare association read LOADS AND CACHES it, and the loader calls this in
+    # the middle of writing the very rows it would be caching. A caller that
+    # read `story.locations` afterwards -- `EngineSweep::Invariants` does --
+    # would get the loader's half-written snapshot instead of the records.
+    rows = Location.where(story_id: story.id)
+    exact = rows.where("LOWER(name) = ?", name.to_s.downcase).first
+    return exact if exact
+
+    key = natural_key(name)
+    found = rows.pluck(:id, :name).detect { |(_, candidate)| natural_key(candidate) == key }
+    return Location.find(found.first) if found
+
+    find_placed_location(story, declaration)
+  end
+
+  # PASS 3, ON ITS OWN. The place is looked up through `.find_location` rather
+  # than by name here, so a place the file has itself renamed is still found --
+  # and it recurses no further than once, because a place is declared with no
+  # `parent` of its own to widen on.
+  #
+  # AT MOST ONE ROW CAN MATCH and that is a guarantee on both sides rather than
+  # a hope: `WorldSeed::Loader#validate_boxes_do_not_overlap!` refuses a file
+  # that declares two rooms of one place in the same place at once, and
+  # `Story::Doctor#overlapping_sibling_rooms` reports a database that holds two.
+  # `order(:id)` so a database that holds one anyway is answered the same way
+  # twice.
+  def self.find_placed_location(story, declaration)
+    return nil if declaration.nil? || declaration["parent"].blank?
+    return nil unless Location::Box.shape(declaration) == :box
+
+    place = find_location(story, declaration["parent"])
+    return nil if place.nil?
+
+    box = Location::Box.of(declaration)
+    Location.where(story_id: story.id, parent_location_id: place.id).order(:id).detect { |room| room.box == box }
+  end
+
   # THE CHECKED-IN FILE FOR ONE STORY, matched on title the way
   # `WorldSeed::Loader` matches everything else, or nil for a story that is not
   # one of them -- which is every generated world and every engine-sweep copy.
@@ -151,5 +233,5 @@ module WorldSeed
     value.all? { |child| child.is_a?(String) && child.length <= BLOCK_SCALAR_THRESHOLD && !child.include?("\n") }
   end
 
-  private_class_method :node, :inline_array?, :needs_quoting?, :style_for, :scalar
+  private_class_method :node, :inline_array?, :needs_quoting?, :style_for, :scalar, :find_placed_location
 end

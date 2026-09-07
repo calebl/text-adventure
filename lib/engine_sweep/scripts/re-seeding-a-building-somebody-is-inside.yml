@@ -1,0 +1,108 @@
+# RE-SEEDING A BUILDING WITH A PLAYER STANDING IN ONE OF ITS ROOMS, and the one
+# thing about a room of a place that no other script here can reach: THE FILE'S
+# NAME FOR IT AND THE ROW'S CAN PART.
+#
+# WHY IT EXISTS. `reseed-a-played-world.yml` walks the same rule for ordinary
+# places, where a rename is a rename the FILE made and
+# `WorldSeed.natural_key` recognizes it. Inside a place there is a second way
+# for the two to part, and it is the engine's own: `Location::RoomName` writes a
+# room's name the first time somebody walks into it, so a stub the file declares
+# as `The Custom House room 1` is a row called `the counting room` afterwards --
+# a rename neither written-name pass can see. Loaded over that world, the loader
+# used to write a SECOND room at the same coordinates of the same place: the
+# office-with-two-closets defect, one containment level down, with the player's
+# doorways hanging off one row and the file's teaser on the other.
+#
+# `WorldSeed.find_location` closes it by reading the PLACE AND THE BOX when the
+# name misses -- a room's identity inside a place is where it is, not what it
+# has come to be called -- and this is that reader walked rather than argued
+# about. The steps below are not the only thing that catches a second room:
+# `doors_unchanged` and `geometry_unmoved` are checked over the whole world
+# after the last step, and a duplicated entry room leaves the played row with
+# doorways the file does not give it and a box the file no longer draws for it.
+#
+# WHAT IT CANNOT SEE, in the sweep's usual habit of writing it down: THE ENGINE
+# DOING THE RENAMING. That happens in `Location::Generator#write_detail!`, which
+# is a model call, and a sweep has no model. So the divergence is produced from
+# the FILE's side -- the same file with room 1 written under a real name -- which
+# is the identical state at the seam this script is about: two spellings of one
+# room, neither reachable from the other, and one loader deciding whether that
+# is one row or two. The engine's own half is `WorldSeed::LoaderTest`'s, which
+# renames the row and then loads the unchanged file over it.
+story: The Quay House
+why: what a re-seed does to a room of a place whose name has moved
+steps:
+- id: the-quay-as-seeded
+  type: look
+  why: outside the building, so a failure inside it has a known beginning
+  expect:
+    location: The Quay (realized)
+    exits: [The Custom House room 1 (stub)]
+    changed: false
+    refused: false
+
+- id: in-through-the-door
+  type: go to The Custom House room 1
+  why: the entry room, and the room this script is about
+  expect:
+    changed: true
+    location: The Custom House room 1 (stub)
+    exits: [The Quay (realized), The Custom House room 2 (stub), The Custom House room 5 (stub)]
+    here: [seal ledger]
+    refused: false
+
+- id: the-room-is-named-and-the-file-is-loaded-over-it
+  reseed:
+    locations: { The Custom House room 1: the counting room }
+  why: |-
+    THE WHOLE POINT OF THE SCRIPT. This is the world file with room 1 carrying a
+    real name -- the state realization leaves behind, whichever side wrote it --
+    loaded over the copy this walk is standing in. The player does not move,
+    because it is the same row: it keeps its id, its three doorways and the
+    ledger on its floor. A second room would show up as a quay with two ways
+    into the building, and as a `geometry_unmoved` failure after the walk.
+  expect:
+    changed: false
+    refused: false
+    location: the counting room (stub)
+    exits: [The Quay (realized), The Custom House room 2 (stub), The Custom House room 5 (stub)]
+    here: [seal ledger]
+    note: 'is "the counting room" in the file, so the row was renamed'
+
+- id: and-the-quay-still-has-one-way-into-the-building
+  type: go to the quay
+  why: |-
+    THE SHAPE OF THE DEFECT, read off the exits from outside. A second entry
+    room is a quay with two doorways into the custom house, and `exits` is the
+    whole set -- so it fails this step whatever the second room is called.
+  expect:
+    changed: true
+    location: The Quay (realized)
+    exits: [the counting room (stub)]
+    refused: false
+
+- id: and-the-player-can-still-walk-in-by-the-name-they-are-shown
+  type: go to the counting room
+  why: |-
+    The captain's rule about a name, applied to one a re-seed wrote: the name the
+    player reads is the name the player can type back. The room is reached by
+    the file's spelling and lands in the row that was played in.
+  expect:
+    changed: true
+    location: the counting room (stub)
+    exits: [The Quay (realized), The Custom House room 2 (stub), The Custom House room 5 (stub)]
+    here: [seal ledger]
+    refused: false
+
+- id: and-renaming-it-back-renames-the-same-room-again
+  reseed: true
+  why: |-
+    The original file over a world whose entry room is now called something
+    else. The rename runs the other way, on the same reader, and the player does
+    not move: they are standing in the row, whatever it is spelled.
+  expect:
+    changed: false
+    location: The Custom House room 1 (stub)
+    exits: [The Quay (realized), The Custom House room 2 (stub), The Custom House room 5 (stub)]
+    here: [seal ledger]
+    note: 'is "The Custom House room 1" in the file, so the row was renamed'

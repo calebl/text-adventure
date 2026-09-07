@@ -205,9 +205,10 @@ class Location::Generator
   end
 
   # WHETHER THIS ROOM MAY BE NAMED BY THIS CALL, and who decides what it is
-  # called if it is. Nil for everything that is not a room of a laid-out place,
-  # which is the gate `Location::RoomName.for` owns so that neither the prompt
-  # nor the write has one of its own.
+  # called if it is. Nil for everything that is not a room of a laid-out place
+  # still carrying one of its numbers, which is the gate `Location::RoomName.for`
+  # owns -- both halves of it -- so that neither the prompt nor the write has one
+  # of its own.
   #
   # `defined?` AND NOT `||=`, because nil is the ordinary answer and the common
   # case is the one that must not pay for the question twice: `#name_instruction`
@@ -381,15 +382,16 @@ class Location::Generator
   # a baseline was measured on, character for character -- `#geometry_facts`'s
   # rule, and the reason this appends to the last bullet instead of standing on
   # a line: a block of its own would add a blank line to every prompt in the
-  # game the day it was empty. Only a room of a laid-out place has a name worth
-  # replacing (`Location::RoomName.for`); a room a neighbour named already has
-  # one a player may have typed.
+  # game the day it was empty. Only a room of a laid-out place still called one
+  # of its numbers has a name worth replacing (`Location::RoomName.for`, which
+  # asks both); a room a neighbour named, or one a seed file named by hand,
+  # already has a name a player may have typed.
   #
   # IT IS THE INFORM HALF AND NOT THE VERIFY HALF. Every rule stated here is
-  # one `Location::RoomName` enforces afterwards whatever comes back -- the
-  # place's name kept out of it, no comma, nothing this world has already
-  # spoken for -- so this is here to raise the odds and never to carry the
-  # guarantee. The standing constraint, applied to a name.
+  # one `Location::RoomName#refusal_for` enforces afterwards whatever comes back
+  # -- the place's name kept out of it (`#repeats_place?`), no comma, nothing
+  # this world has already spoken for -- so this is here to raise the odds and
+  # never to carry the guarantee. The standing constraint, applied to a name.
   #
   # AND IT NAMES WHAT IS ALREADY TAKEN, because a refusal after the call is a
   # room that kept its placeholder over a collision it was never shown --

@@ -139,9 +139,11 @@ class Eval::Realization::Stage
     # WHETHER THE DETAIL PROMPT WILL ASK THIS ROOM TO NAME ITSELF, and the names
     # it will be shown as already given out. Asked through
     # `Location::RoomName.for` -- the engine's own gate -- rather than derived
-    # from `#plan` being present: the two agree today and a checker that assumed
-    # it would go quietly wrong the day they stopped, and this is the fact both
-    # name checks stand their denominator on.
+    # from `#plan` being present, and THE TWO ARE NOT THE SAME QUESTION: a room
+    # a seed file named by hand has a plan and is not asked, because `.for` gates
+    # on the room still carrying one of its place's numbers as well as on where
+    # it is. This is the fact both name checks stand their denominator on, so it
+    # is read off the gate and never re-derived.
     def naming = Location::RoomName.for(location)
 
     def name_asked? = !naming.nil?

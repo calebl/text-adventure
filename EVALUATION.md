@@ -1179,7 +1179,7 @@ checks are:
 | `name_already_spoken_for` | a name the world had already given to somebody, somewhere or something |
 | `proposal_refused` | what the registries would not admit — read off the records, and the superset of every reason above |
 | `readable_without_words` | a thing marked readable with nothing written on it, which costs a later round trip to `Item::Inscriber` |
-| `room_name_refused` | a room asked to name itself that came away still called its placeholder, **read off the room's own name after the call**. `Location::RoomName` refuses a proposal on five separate grounds and every one ends the same way, so this asks the record what happened rather than re-deciding it. Judgeable only on an `interior-room` case, where the prompt asks for a name at all |
+| `room_name_refused` | a room asked to name itself that came away still called its placeholder, **read off the room's own name after the call**. `Location::RoomName` refuses a proposal on several separate grounds and every one ends the same way, so this asks the record what happened rather than re-deciding it. Judgeable only on an `interior-room` case, where the prompt asks for a name at all |
 | `room_name_already_taken` | a proposed room name the world had already given to somewhere, somebody or something — the one refusal above that is a set comparison, against the same closed list of names `name_already_spoken_for` reads. The evidence says whether the prompt had shown it |
 | `race_not_named` | **a KEYWORD check** — see below |
 | `size_the_records_do_not_hold` | **a KEYWORD check.** The description stated a size in paces, or a storey, that is not this room's. Judgeable only on an `interior-room` case, where `Location::Plan` stated the numbers in the prompt |
@@ -1357,14 +1357,31 @@ repetitions than one that does not. Everything else in the prompt is supposed to
 be constant, and `prompt_stable` is the check on that claim —
 `Eval::Realization::Version` has it in full.
 
-### There is no baseline yet
+### The baseline there is, and what it does not cover
 
-`db/eval/` holds no realization set. **The instrument is built and the baseline
-is a spend the captain makes**, at `rake eval:realization` — about **$0.20** at
-`REPS=4` on `mistralai/mistral-medium-3.1`, and `rake eval:estimate` prints the
-current figure rather than this sentence. Until it exists, no change to
-`Location::Generator`'s people, items or exits instructions can be judged, which
-is the whole point of the rule this file opens with.
+`db/eval/room-names-after-bef7cec/` is the checked-in one: the set the room
+naming block was re-baselined on once its change had been judged, which is
+step 3 of the rule this file opens with. It is a **summary** — every pass's
+figures and no rows, `Eval::Realization::Result#summary`'s form — so it renders
+its own column on `rake eval:realization_board` and gives its own side of a
+verdict on `rake eval:realization_compare`, offline and for free. Read the
+numbers there; this file states none of them, because a figure quoted in prose
+is a figure that goes stale silently.
+
+Its name is the run id, so the run and the checked-in summary can be tied
+together from a PR body. **What was bought:** a before/after pair on
+`Location::Generator#name_instruction`, judged before the prompt shipped. The
+before side lives in the PR that shipped it and is not checked in — a baseline
+is kept for the state of the prompt that IS in the tree.
+
+**It does not stand in for the rest of the prompt.** The corpus and the arm are
+this set's, so it is a baseline for a naming change and not for a change to
+`Location::Generator`'s people, items or exits instructions: judging one of
+those means buying its own before side first, at `rake eval:realization` —
+`rake eval:estimate` prints what that costs today rather than this sentence.
+Which is the whole point of the rule this file opens with: the baseline is per
+change, and the set in the repository is the after side of the one change that
+has had one.
 
 ### What it is not
 

@@ -49,6 +49,12 @@
 #   worst of these to accept: a room permanently called a placeholder that was
 #   never provisional.
 #
+#   THE PLACE'S OWN NAME ANYWHERE INSIDE IT (`#repeats_place?`). The play page
+#   prints the room and the place together, so *"the Rusted Anchor taproom"*
+#   reads as *"the Rusted Anchor taproom of The Rusted Anchor"* -- the doubling
+#   this class exists to remove, one notch quieter. The prompt says to keep the
+#   place's name out; this is what makes that a guarantee rather than a request.
+#
 #   A NAME THIS WORLD HAS ALREADY GIVEN TO SOMEWHERE, SOMEBODY OR SOMETHING.
 #   The rule `Character::Registry#creation_refusal` applies to a person named
 #   after a place, asked the other way round. IT IS THE WHOLE STORY AND NOT ONLY
@@ -74,9 +80,20 @@
 # the identity and `Playthrough::Grammar::LEADING_WORDS` drops it from what the
 # player types.
 #
-# A SEED FILE'S ROOM NAME NEVER REACHES THIS. `WorldSeed::Loader` writes the
-# name the file gives and makes no model call; this is only ever asked about a
-# name that came back from one.
+# A SEED FILE'S ROOM NAME NEVER REACHES THIS, and `.for` is what makes that
+# true rather than nearly true. `WorldSeed::Loader` writes the name the file
+# gives and makes no model call, so this is only ever asked about a name that
+# came back from one -- but the ROOM it is asked about could still be one a file
+# had named by hand, because a file may draw a whole building as stub rooms. So
+# `.for` answers nil for a room whose name is not one of the place's
+# placeholders, and a hand-authored name is never proposed against.
+#
+# AND A NAME WRITTEN HERE IS STILL THE FILE'S TO RE-ASSERT. Renaming a stub the
+# file declares means the file's name and the row's have parted, which
+# `WorldSeed.find_location` recognizes on the place and the box -- so a re-seed
+# renames that row back rather than writing a second room at the same
+# coordinates. That reader is the other half of this one, and neither is safe
+# without it.
 #
 # AND A NAME IS WRITTEN ONCE, AT REALIZATION, like every other detail field. A
 # room already realized keeps whatever it is called: nothing here renames a row
@@ -91,15 +108,39 @@ class Location::RoomName
   # same thing: a place's name as a player would type it.
   LIMIT = 60
 
-  # A ROOM OF A LAID-OUT PLACE, OR NIL for everything else -- so a caller asks
-  # one question and has no gate of its own. `Location#containing_place` is the
-  # gate and not a second reading of it: a box read in a parent's own plane,
-  # which is what tells an interior room from plain containment (a district a
-  # street sits in) and from a room inside nothing at all.
+  # A ROOM OF A LAID-OUT PLACE THAT IS STILL CALLED A NUMBER, OR NIL for
+  # everything else -- so a caller asks one question and has no gate of its own.
+  # TWO THINGS ARE ASKED HERE and they are two different questions:
+  #
+  #   WHERE THE ROOM IS. `Location#containing_place` is the gate and not a
+  #   second reading of it: a box read in a parent's own plane, which is what
+  #   tells an interior room from plain containment (a district a street sits
+  #   in) and from a room inside nothing at all.
+  #
+  #   AND WHETHER IT IS STILL CALLED WHAT `Location::Interior` CALLED IT
+  #   (`.placeholder_name?`). A room whose name is a real one is not asked to
+  #   propose another, and that is what makes the header's claim about a seed
+  #   file true rather than nearly true: `Location::Generator#lay_out_interior!`
+  #   documents that a file may draw a whole building by hand, and such a file
+  #   may ship `The Cellar Stair` as a STUB room of the place. Every room this
+  #   engine laid out, and every stub room of every checked-in world, carries a
+  #   placeholder and passes; a hand-authored name is left alone -- which
+  #   matters most where it is easiest to miss, because a stub room's name is
+  #   listed as an exit and may already have been typed by the player.
+  #
+  # IT IS THE GATE AND NOT A REFUSAL, deliberately. Nil here means the prompt
+  # never ASKS such a room to name itself -- `Location::Generator#name_instruction`
+  # is empty and `Eval::Realization::Stage::Standing#name_asked?` records false,
+  # so the row leaves both name checks' denominators. Refusing after asking
+  # would instead report a `room_name_refused` defect against a room that was
+  # never a candidate, and a rate a check did not earn is worse than no rate.
+  # `#refusal_for`'s "it is the name this room already has" is the other half
+  # and stays: that one is about the PROPOSAL, this one is about the room.
   def self.for(room)
     place = room&.containing_place
+    return nil unless place && Location::Interior.placeholder_name?(place, room.name)
 
-    place && new(room, place)
+    new(room, place)
   end
 
   attr_reader :room, :place
@@ -155,9 +196,35 @@ class Location::RoomName
     return "it carries a comma, which Playthrough::Grammar reads as two acts in one line" if name.include?(",")
     return "it is the name this room already has" if same?(name, room.name)
     return "it is one of #{place.name}'s own placeholders" if Location::Interior.placeholder_name?(place, name)
+    return "it has #{place.name} in it, which the line that reads it prints anyway" if repeats_place?(name)
 
     kind = taken[WorldSeed.natural_key(name)]
     kind && "#{kind} in this story is already called that"
+  end
+
+  # THE PLACE'S OWN NAME, INSIDE THE ROOM'S. It is the VERIFY half of a rule the
+  # prompt was only informing: `Location::Generator#name_instruction` tells the
+  # model to name the ROOM only and never to put the place's name into it,
+  # because the play page prints the two together -- *"the counting room of The
+  # Custom House"* (the captain's ruling of 2026-09-06) -- and a model that
+  # ignored it gave *"the Rusted Anchor taproom of The Rusted Anchor"*. Which is
+  # a milder spelling of the very doubling this class exists to take out of the
+  # game, and it slipped past `Location::Interior.placeholder_name?` because
+  # that answers a SHAPE (`<place> room <n>`) rather than the question of
+  # whether the place is named at all.
+  #
+  # CONTAINMENT AND NOT EQUALITY, on `WorldSeed.natural_key`'s reading of a
+  # name: the whole failure is a room name with the place's inside it, so an
+  # exact match would catch the one case nobody proposes.
+  #
+  # A PLACE WITH NO NAME REFUSES NOTHING, because every string contains the
+  # empty one. Unreachable through the app -- `Location` validates a name -- and
+  # written down because the alternative is a fixture that quietly refuses every
+  # name a test proposes.
+  def repeats_place?(name)
+    key = WorldSeed.natural_key(place.name)
+
+    key.present? && WorldSeed.natural_key(name).include?(key)
   end
 
   # EVERY NAME THIS STORY HAS SPOKEN FOR, by natural key, with what kind of

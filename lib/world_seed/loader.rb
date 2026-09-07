@@ -13,12 +13,15 @@
 #                                        placement and left alone when absent.
 #                                        `hostile` is written on every load, in
 #                                        both directions, like `absent`
-#   Location   (story, name)             case-insensitively first, matching
-#                                        Location::Generator#find_location, and
-#                                        then on WorldSeed.natural_key, which is
-#                                        what recognizes a room the file renamed.
-#                                        `danger` is written on every load, in
-#                                        both directions, and an absent key is
+#   Location   (story, name), then the    case-insensitively first, matching
+#              place and the box          Location::Generator#find_location; then
+#                                        on WorldSeed.natural_key, which
+#                                        recognizes a room the FILE renamed; then
+#                                        on the place and the box a file draws a
+#                                        room in, which recognizes one the ENGINE
+#                                        renamed. WorldSeed.find_location owns all
+#                                        three. `danger` is written on every load,
+#                                        in both directions, and an absent key is
 #                                        Location::SAFE
 #   Connection (location, connected)     unique index, written both ways -- and
 #                                        a mobile room's doorway is matched on
@@ -60,6 +63,15 @@
 #   renames the row that exists instead of creating a second one beside it.
 #   Locations and items both; the file's spelling wins, which is the same
 #   "the file re-asserts itself" rule the placements follow.
+#
+#   AND A ROOM OF A PLACE IS THE SAME ROOM AT THE SAME COORDINATES, whatever it
+#   has come to be called. That is the half of the rule above the written name
+#   cannot reach: `Location::RoomName` names a room of a laid-out place when
+#   somebody first walks into it, so a stub the file declares as
+#   `The Custom House room 1` can be a row called `the counting room` by the
+#   time the file is loaded over it again -- a rename nothing about the two
+#   strings could recognize. `WorldSeed.find_location` has the argument in
+#   full.
 #
 #   A DOORWAY THE WORLD'S OWN MECHANIC MOVED HAS NOT GONE MISSING.
 #   `WorldMechanic::ShuffleConnections` repoints the anchored end of every
@@ -1304,28 +1316,27 @@ class WorldSeed::Loader
     @existing_story = Story.find_by(title: story_document.fetch("title"))
   end
 
-  # A location of this story, by the name the file gives it -- and then by the
-  # name the file USED to give it.
+  # A location of this story, by the name the file gives it -- then by the name
+  # the file USED to give it, and then by the place and the box the file draws
+  # it in, which is how a room the ENGINE renamed is still recognized.
   #
-  # The case-insensitive match comes first and is matched exactly as
-  # `Location::Generator#find_location` matches it, so nothing about how the
-  # generator and the loader agree on a room has changed. The natural-key pass
-  # behind it is what recognizes a rename: see `WorldSeed.natural_key` for how
-  # far it goes and why it goes no further. `#validate!` refuses a file whose
-  # own rooms collide on that key, so there is never more than one answer.
+  # `WorldSeed.find_location` owns all three passes and is shared with
+  # `Story::Doctor` and `Story::Repair` on purpose: three readers of one
+  # question that disagreed would report, repair and re-seed three different
+  # worlds. Read its header for what each pass buys.
+  #
+  # THE FILE'S OWN DECLARATION IS HANDED OVER HERE rather than at each call
+  # site, so every lookup this loader makes -- a room, a room's parent, the room
+  # a character stands in -- widens the same way. `#validate!` refuses a file
+  # whose own rooms collide on `WorldSeed.natural_key`, so there is never more
+  # than one declaration to hand over.
   def find_location(story, name)
-    exact = story.locations.where("LOWER(name) = ?", name.downcase).first
-    return exact if exact
+    WorldSeed.find_location(story, name, declared_location(name))
+  end
 
-    # `Location.where(story_id:)` and not `story.locations`, deliberately: a
-    # bare association read LOADS AND CACHES it, and this runs in the middle of
-    # writing the very rows it would be caching. A caller that read
-    # `story.locations` afterwards -- `EngineSweep::Invariants` does -- would get
-    # the loader's half-written snapshot instead of the records.
-    key = WorldSeed.natural_key(name)
-    found = Location.where(story_id: story.id).pluck(:id, :name).detect { |(_, candidate)| WorldSeed.natural_key(candidate) == key }
-
-    found && Location.find(found.first)
+  def declared_location(name)
+    @declared_locations ||= location_documents.index_by { |attributes| WorldSeed.natural_key(attributes["name"]) }
+    @declared_locations[WorldSeed.natural_key(name)]
   end
 
   # A row recognized under a different written name, said out loud. The rename

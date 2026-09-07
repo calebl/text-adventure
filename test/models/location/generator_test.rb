@@ -348,7 +348,7 @@ class Location::GeneratorTest < ActiveSupport::TestCase
 
   # THE PLACEHOLDER STAYS AND NOTHING RAISES, which is the whole of what a
   # refusal costs: the description that was paid for, the floor and the cast all
-  # still arrive. `Location::RoomName` owns the five grounds; this asserts the
+  # still arrive. `Location::RoomName` owns every ground; this asserts the
   # seam behaves on one of them.
   test "a name the engine refuses costs the room its name and nothing else" do
     room, = laid_out_pair

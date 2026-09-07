@@ -675,6 +675,28 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     edited
   end
 
+  # The same world with a building in it: a place carrying a FOOTPRINT and two
+  # stub rooms placed inside it, which is the shape `Location::Interior` writes
+  # and the only shape whose names the ENGINE goes on to rewrite
+  # (`Location::RoomName`). The rooms tile the footprint side by side, so the
+  # file is one `#validate_boxes_do_not_overlap!` accepts.
+  def with_a_building
+    edited = document
+    edited["locations"] << { "name" => "The Rusted Anchor", "detail_level" => "stub",
+                             "teaser" => "An inn at the end of the hallway.", "width" => 12, "depth" => 8 }
+    edited["locations"] << { "name" => "The Rusted Anchor room 1", "detail_level" => "stub",
+                             "teaser" => "A room of the inn.", "parent" => "The Rusted Anchor",
+                             "x" => 0, "y" => 0, "z" => 0, "width" => 6, "depth" => 8 }
+    edited["locations"] << { "name" => "The Rusted Anchor room 2", "detail_level" => "stub",
+                             "teaser" => "The room beside it.", "parent" => "The Rusted Anchor",
+                             "x" => 6, "y" => 0, "z" => 0, "width" => 6, "depth" => 8 }
+    edited["connections"] << { "between" => [ "The Hallway", "The Rusted Anchor room 1" ],
+                               "distance" => "adjacent", "travel_method" => "walking" }
+    edited["connections"] << { "between" => [ "The Rusted Anchor room 1", "The Rusted Anchor room 2" ],
+                               "distance" => "adjacent", "travel_method" => "walking" }
+    edited
+  end
+
   # --- re-seeding a world somebody has played --------------------------------
   #
   # THE DEFECT THESE PIN. `WorldSeed::Loader` adds and never reconciled, so
@@ -719,6 +741,53 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal "a PRIVATE index", index.reload.name
     assert_equal story.locations.find_by(name: "The Closet"), index.location
     assert_match(/renamed rather than a second item created beside it/, loader.reconciled.join("\n"))
+  end
+
+  # A ROOM THE ENGINE RENAMED, WHICH IS THE HALF NO WRITTEN NAME CAN REACH.
+  # `Location::RoomName` names a room of a laid-out place the first time
+  # somebody walks into it, so a stub the file declares as
+  # `The Rusted Anchor room 1` is a row called `the counting room` by the time
+  # the file is loaded over it again -- and *"the counting room"* is not
+  # *"The Rusted Anchor room 1"* to either written-name pass. Before
+  # `WorldSeed.find_location` read the place and the box, this load wrote a
+  # SECOND room at the same coordinates of the same place: the row
+  # `Story::Doctor#duplicate_locations` exists to report, with the player's
+  # doorways hanging off one of them and the file's teaser on the other.
+  test "a room the engine renamed is the same room, renamed back" do
+    story = WorldSeed::Loader.new(with_a_building).load!
+    room = story.locations.find_by(name: "The Rusted Anchor room 1")
+    room.update!(last_protagonist_visit: story.start_time)
+    create(:playthrough, story: story, current_location: room)
+    # WHAT REALIZATION DOES TO IT, and the only thing about this world that has
+    # changed: `Location::RoomName#accept` took a name and the row kept its id.
+    room.update!(name: "the counting room")
+    loader = WorldSeed::Loader.new(with_a_building)
+
+    assert_no_difference [ "Location.count", "LocationConnection.count" ] do
+      loader.load!
+    end
+
+    assert_equal "The Rusted Anchor room 1", room.reload.name, "the file re-asserts its own name over the row"
+    assert_equal story.start_time, room.last_protagonist_visit, "the row kept everything hanging off it"
+    assert_equal [ "The Hallway", "The Rusted Anchor room 2" ], room.exits.pluck(:name).sort
+    assert_equal story.locations.find_by(name: "The Rusted Anchor"), room.parent_location
+    assert_match(/renamed rather than a second location created beside it/, loader.reconciled.join("\n"))
+    assert_empty loader.warnings
+  end
+
+  # AND THE LOAD LEAVES THE DOCTOR NOTHING TO REPORT, which is the acceptance
+  # said the other way round: the defect was not that a name went missing, it
+  # was that re-seeding a played building wrote the duplicate row the doctor
+  # exists to find.
+  test "re-seeding a building the engine renamed a room in creates no duplicate to report" do
+    story = WorldSeed::Loader.new(with_a_building).load!
+    story.locations.find_by(name: "The Rusted Anchor room 1").update!(name: "the counting room")
+    WorldSeed::Loader.new(with_a_building).load!
+
+    codes = Story::Doctor.new(story.reload).findings.map(&:code)
+
+    assert_not_includes codes, :duplicate_locations
+    assert_not_includes codes, :overlapping_sibling_locations
   end
 
   # A rename `WorldSeed.natural_key` cannot see is, to any loader, a row that

@@ -124,6 +124,7 @@ module Eval
     db/eval/classifier-mistral-small/classifier.json
     db/eval/classifier-gemini-flash-lite/classifier.json
     db/eval/prompt-2026-09-05/prompt.json
+    db/eval/room-names-after-bef7cec/realization.json
   ].freeze
 
   # CHECKS A SCRIPTED RUN CANNOT ANSWER, AND WHY -- reported unavailable rather

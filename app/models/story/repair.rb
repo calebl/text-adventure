@@ -243,7 +243,14 @@ class Story::Repair
     # which is what makes either of them safe.
     return repair_seeded_absence(finding) if room.nil? && doctor.seeded_absences.include?(character.fullname)
 
-    location = story.locations.find_by(name: room)
+    # `Story::Doctor#seeded_room` and not a `find_by(name:)` of this method's
+    # own: a room of a laid-out place is named by `Location::RoomName` when
+    # somebody first walks in, so the file's name for it and the row's can
+    # legitimately differ -- and a repair that raised on that would refuse to
+    # put anybody back into a building a player had been inside. The doctor
+    # reports the finding through the same reader, so the two cannot disagree
+    # about which row the file means.
+    location = doctor.seeded_room(room)
     raise ArgumentError, "the world file places #{character.fullname} in #{room.inspect}, which this story has no location called" if location.nil?
 
     seat = doctor.seeded_positions[character.fullname]

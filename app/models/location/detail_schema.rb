@@ -70,15 +70,17 @@
 # IT IS OPTIONAL AND THE PROMPT IS WHAT ASKS FOR IT, which is the shape that
 # keeps every other room's prompt the one a baseline was measured on:
 # `Location::Generator#name_instruction` is empty for anything that is not a
-# room of a laid-out place, so the sentence reaches exactly the rooms that need
-# one and no baseline moves for the rest. A room a NEIGHBOUR named already has a
-# name a player may have typed, and `Location::RoomName` refuses to touch it
-# whatever comes back here.
+# room of a laid-out place STILL CALLED ONE OF ITS NUMBERS, so the sentence
+# reaches exactly the rooms that need one and no baseline moves for the rest. A
+# room a NEIGHBOUR named, and a room a SEED FILE named by hand, already have a
+# name a player may have typed -- `Location::RoomName.for` answers nil for both,
+# so this field is never asked about them and is ignored if it arrives anyway.
 #
 # AND THE ENGINE DECIDES WHETHER TO TAKE IT. `Location::RoomName` is the one
 # author of a room's name on realization -- it refuses a blank, a comma, the
-# placeholder, another of the place's placeholders and any name this world has
-# already spoken for, and the placeholder simply stays. The cap is read from
+# placeholder, another of the place's placeholders, the place's own name inside
+# it and any name this world has already spoken for, and the placeholder simply
+# stays. The cap is read from
 # there rather than written twice, for `Character::Registry::PERSON_LIMITS`'
 # reason.
 #
