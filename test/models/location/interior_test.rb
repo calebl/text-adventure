@@ -78,6 +78,29 @@ class Location::InteriorTest < ActiveSupport::TestCase
     assert(rooms_of(place).map(&:name).uniq.size == rooms_of(place).size)
   end
 
+  # AND THE TWO READINGS OF A PLACEHOLDER AGREE. `.placeholder_name?` is asked
+  # of a SHAPE rather than of the rows, because the name a model must not be
+  # given is a number no room carries as much as one that does -- so the writer
+  # and the reader are asserted against each other rather than trusted.
+  test "every placeholder this writes is one it reads back as a placeholder" do
+    place = laid_out
+
+    assert(rooms_of(place).all? { |room| Location::Interior.placeholder_name?(place, room.name) })
+    assert(Location::Interior.placeholder_name?(place, Location::Interior.placeholder_name(place, 99)))
+  end
+
+  # CASE, SPACING AND A LEADING ARTICLE ARE NOT PART OF A NAME HERE, which is
+  # `WorldSeed.natural_key`'s reading and the one `Location::RoomName` refuses
+  # a proposal on.
+  test "a placeholder is read on the natural key and not on the written string" do
+    place = laid_out(name: "The Custom House")
+
+    assert(Location::Interior.placeholder_name?(place, "custom  house   room 4"))
+    assert_not(Location::Interior.placeholder_name?(place, "the counting room"))
+    assert_not(Location::Interior.placeholder_name?(place, "The Custom House room"))
+    assert_not(Location::Interior.placeholder_name?(place, "The Salt Store room 4"))
+  end
+
   # The teaser is what slice 3 hands the model that eventually writes this room,
   # so it carries what the ENGINE knows and nothing it does not.
   test "a room's teaser states its size and its storey and invents nothing" do

@@ -272,7 +272,43 @@ class Story::Doctor
                          .to_set
   end
 
+  # THE ROW ONE OF THE CHECKED-IN FILE'S ROOMS IS, or nil for a room this story
+  # does not have -- and it is `WorldSeed.find_location`'s answer rather than a
+  # `find_by(name:)` of this class's own. THE NAME ALONE IS NOT THE ROOM: a
+  # stub of a laid-out place is named by `Location::RoomName` the first time
+  # somebody walks in, so the file's `The Custom House room 1` and the database's
+  # `the counting room` are one row, and a reader matching on the string sees
+  # neither.
+  #
+  # WHAT IT COSTS TO GET THIS WRONG, which is why the doctor asks here rather
+  # than deciding for itself: read on the name, a party standing in a room the
+  # engine had named read as somebody who had LEFT the room the file puts them
+  # in -- `character_moved_from_the_seed`, reported `safe` -- and then
+  # `Story::Repair` raised `ArgumentError` on the very name the doctor had just
+  # failed to find. One reader, so the report and the repair cannot disagree.
+  #
+  # `Story::Repair` READS IT HERE for the reason it reads `#seeded_whereabouts`
+  # here: the file is read once, by whichever of the two is running.
+  def seeded_room(name)
+    @seeded_room ||= {}
+    return @seeded_room[name] if @seeded_room.key?(name)
+    return @seeded_room[name] = nil if name.blank?
+
+    @seeded_room[name] = WorldSeed.find_location(story, name, seeded_location_documents)
+  end
+
   private
+
+  # `{ natural key => the row the file writes }` for this story's rooms -- the
+  # whole declaration and not only its name, and the whole INDEX rather than one
+  # entry, because `WorldSeed.find_location`'s widest pass reads two things off
+  # it: the place and the box of the room it was asked about, and the set of
+  # every name this document spoke for, which is what says a row is already some
+  # other declaration's.
+  def seeded_location_documents
+    @seeded_location_documents ||= Array(seed_document && seed_document["locations"])
+                                   .index_by { |row| WorldSeed.natural_key(row["name"]) }
+  end
 
   def finding(code, severity, message, remedy, subject: nil)
     Finding.new(code: code, severity: severity, message: message, remedy: remedy, subject: subject)
@@ -378,6 +414,13 @@ class Story::Doctor
   # Supply Closet" in a seed file created a second room beside the first and
   # gave the office a doorway onto each. The captain's database holds that pair,
   # which is what this exists to name.
+  #
+  # AND IT IS THE FINDING FOR TWO ROOMS OF ONE BUILDING, which is why naming a
+  # room needed no second one. `Location::RoomName` refuses a proposed room name
+  # that any location of the story already answers to -- on this very
+  # `WorldSeed.natural_key` reading, so a name the engine takes cannot be a name
+  # this then calls a collision -- and the group below is what reports a
+  # database that carries one anyway. Gate the state, audit the difference.
   #
   # It is not only a seeding defect: `Playthrough::Classifier` resolves a move
   # against the names of the rooms that lead out of here, so which of two rooms
@@ -832,7 +875,15 @@ class Story::Doctor
   def characters_the_seed_placed_elsewhere
     placed = seeded_whereabouts.filter_map do |fullname, room|
       character = story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
-      next if character.nil? || character.location&.name == room
+      next if character.nil?
+      # THE ROW AND NOT THE NAME (`#seeded_room`). A room of a laid-out place is
+      # named by `Location::RoomName` when somebody walks in, so a party
+      # standing exactly where the file puts them read as having LEFT the moment
+      # the engine renamed the room around them. A row this story does not have
+      # at all is still a finding -- that is the file naming a room nothing
+      # answers to, and it is what `Story::Repair` raises on.
+      seated = seeded_room(room)
+      next if seated && character.location_id == seated.id
 
       finding(:character_moved_from_the_seed, :warning,
               "#{character.fullname} is #{character.whereabouts}, and #{seed_basename} puts them in " \
@@ -884,7 +935,7 @@ class Story::Doctor
       character = story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
       next if character.nil?
 
-      room = story.locations.find_by(name: seeded_whereabouts[fullname])
+      room = seeded_room(seeded_whereabouts[fullname])
       next if room.nil? || room.box&.contains?(seat)
 
       finding(:seeded_position_outside_the_room, :warning,

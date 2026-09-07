@@ -303,6 +303,52 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_nil neb.position
   end
 
+  # A ROOM THE ENGINE HAS SINCE NAMED IS STILL THE ROOM THE FILE MEANS.
+  # `Location::RoomName` writes a room of a laid-out place a name the first time
+  # somebody walks in, so the file's `The Assize Hall room 1` is a row called
+  # `the holding cell` afterwards. Read on the written name, this raised
+  # `ArgumentError` -- "which this story has no location called" -- and refused
+  # to put anybody back into a building a player had been inside. It goes
+  # through `Story::Doctor#seeded_room`, so the finding and the repair cannot
+  # disagree about which row the file means.
+  #
+  # THE FILE IS STOOD IN for the reason the two tests above stand it in: the
+  # three checked-in worlds are flat, so no checked-in document has a room
+  # inside a place for anybody to be seated in.
+  test "puts a seeded character back into a room the engine has since named" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    place = create(:location, :stub, :with_a_footprint, story: story, name: "The Assize Hall")
+    room = create(:location, story: story, parent_location: place, name: "The Assize Hall room 1",
+                             x: 0, y: 0, z: 0, width: 7, depth: 4)
+    neb = story.characters.find_by(fullname: "Neb Halloran")
+    document = WorldSeed.checked_in_document(story.title)
+    document["locations"] += [
+      { "name" => place.name, "detail_level" => "stub", "width" => 12, "depth" => 8 },
+      { "name" => room.name, "detail_level" => "stub", "parent" => place.name,
+        "x" => 0, "y" => 0, "z" => 0, "width" => 7, "depth" => 4 }
+    ]
+    document["characters"].detect { |row| row["fullname"] == neb.fullname }["location"] = room.name
+    room.update!(name: "the holding cell")
+    neb.move_to!(story.locations.find_by(name: "The Vestry Hulk"))
+
+    results = WorldSeed.stub(:checked_in_document, ->(_title) { document }) do
+      BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) do
+        Story::Repair.new(story).apply!
+      end
+    end
+
+    assert_includes results.select(&:repaired?).map(&:code), :character_moved_from_the_seed
+    assert_equal room, neb.reload.location
+    # AND THE DOCTOR THEN REPORTS NOTHING, which is the same fix read from the
+    # other end: a party standing exactly where the file puts them must not read
+    # as having left the moment the engine renamed the room around them.
+    left_over = WorldSeed.stub(:checked_in_document, ->(_title) { document }) do
+      Story::Doctor.new(story.reload).findings.map(&:code)
+    end
+
+    assert_not_includes left_over, :character_moved_from_the_seed
+  end
+
   # THE ONE-TIME PATH for a database seeded before `characters.deliberately_absent`
   # existed: the file says `absent: true`, so nowhere on purpose is on record in
   # the repository and writing the marker costs nothing.

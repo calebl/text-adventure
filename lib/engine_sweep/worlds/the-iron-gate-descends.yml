@@ -53,9 +53,14 @@
 # `Location::Plan`'s own worked example). Nothing here pretends otherwise.
 #
 # THE ROOM KEEPS THE NAME THE ENGINE GAVE IT -- `Location::Interior.placeholder_name`,
-# ordinal and obviously provisional -- because naming a realized room is a
-# separate slice and this file does not front-run it. What a player reads
-# walking in is the room's own written description, not its name.
+# ordinal and obviously provisional -- and it keeps it for good, because THIS
+# FILE realizes it. A room is named by the call that writes it
+# (`Location::RoomName`, out of `Location::DetailSchema`'s `name`), and a room
+# written by hand in a world file never makes that call: a seed file's room name
+# is the file's, exactly as its description and its lore are. Renaming this one
+# would mean renaming a row in the captain's own database, which nothing here
+# does. What a player reads walking in is the room's written description
+# anyway, not its name.
 #
 # WHY IT IS NOT IN `db/seeds/worlds`. `Eval::Realization::WORLD_ROOTS` refuses
 # it: that directory is loaded into every development database and is searched

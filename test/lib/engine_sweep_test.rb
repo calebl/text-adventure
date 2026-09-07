@@ -331,6 +331,50 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_match(/The Long Hallway <-> The Supply Closet/, broken.to_s)
   end
 
+  # NO TWO ROOMS OF ONE PLACE ANSWER TO ONE NAME. Nothing offline writes a room
+  # name -- `Location::RoomName` does it at realization and a sweep has no model
+  # -- so this holds on every walk today and fires the moment one starts
+  # renaming rooms. `doors_unchanged`'s own argument, applied to names.
+  #
+  # THE OTHER BROKEN INVARIANTS ARE EXPECTED HERE: the three checked-in worlds
+  # declare no boxes, so a room built with one is `geometry_unmoved`'s business
+  # as well. The assertion is on the one being tested.
+  test "two rooms of one place answering to one name are caught after the walk" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    broken = room_names_checked(seed, story, [ "the counting room", "the counting room" ])
+
+    assert_not_nil broken
+    assert_match(/The Custom House has 2 rooms called "the counting room"/, broken.to_s)
+  end
+
+  # AND ONE NAME WRITTEN TWO WAYS IS STILL ONE NAME, on `WorldSeed.natural_key`
+  # -- the reading `Story::Doctor#duplicate_locations` reports a duplicate on
+  # and the one `Location::RoomName` refuses a proposal on.
+  test "one room name written two ways is one name to this invariant" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+
+    assert_not_nil room_names_checked(seed, story, [ "The Counting Room", "counting room" ])
+  end
+
+  test "two rooms of one place with names of their own are not a broken invariant" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+
+    assert_nil room_names_checked(seed, story, [ "the counting room", "the cold store" ])
+  end
+
+  # ROOMS OF A PLACE AND NOT EVERY CHILD ROW. Plain containment -- a district a
+  # street sits in -- is ordinary places, and their duplicates are
+  # `Story::Doctor#duplicate_locations`' over the whole story.
+  test "two streets of one district sharing a name are not this invariant's" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    district = create(:location, :stub, story: story, name: "The Docks District")
+    2.times { create(:location, :stub, story: story, name: "Warehouse Row", parent_location: district) }
+
+    caught = EngineSweep::Invariants.new(story, seed: seed).check.map(&:invariant)
+
+    assert_not_includes caught, "room_names_unique"
+  end
+
   test "a room over the exit cap is caught after the walk" do
     seed, story = seeded_copy("the-unrecorded-hour")
     office = story.locations.find_by(name: "Ward Office 12")
@@ -1012,6 +1056,20 @@ class EngineSweepTest < ActiveSupport::TestCase
     document["story"]["title"] = "#{seed["story"]["title"]}#{EngineSweep::Walk::TITLE_SUFFIX}"
 
     [ seed, WorldSeed::Loader.new(document).load! ]
+  end
+
+  # A PLACE WITH A FOOTPRINT AND ONE PLACED ROOM PER NAME GIVEN, then the one
+  # invariant this is about, or nil. Fixed coordinates and never rolled -- the
+  # west half and then the east, so the two rooms are beside each other and not
+  # on top of each other (`test/factories/location_connections.rb`'s rule).
+  def room_names_checked(seed, story, names)
+    place = create(:location, :stub, :with_a_footprint, story: story, name: "The Custom House")
+    names.each_with_index do |name, index|
+      create(:location, :stub, story: story, name: name, parent_location: place,
+                               x: index * 6, y: 0, z: 0, width: 6, depth: 8)
+    end
+
+    EngineSweep::Invariants.new(story, seed: seed).check.find { |row| row.invariant == "room_names_unique" }
   end
 
   def connect(from, to)

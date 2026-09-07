@@ -265,6 +265,13 @@ class Eval::Realization::Bench
       # the pass ends, so a checker that wanted to ask the records would have
       # nothing to ask.
       "plan" => standing.plan,
+      # WHETHER THIS ROOM WAS ASKED TO NAME ITSELF, and the names the prompt
+      # showed it as spoken for. The GATE both name checks put their
+      # denominator behind: a set stored before this key existed reads false and
+      # is out of them entirely, which is `Scorer::Reading#records_the_way_back?`'s
+      # rule -- a rate a check never earned is worse than no rate.
+      "name_asked" => standing.name_asked?,
+      "name_taken" => standing.name_taken,
       "people_allowance" => standing.people_allowance,
       "item_allowance" => standing.item_allowance,
       "exit_allowance" => standing.exit_allowance,
@@ -282,7 +289,14 @@ class Eval::Realization::Bench
   # somewhere else. Read off the records the way the game reads them.
   def after(standing, before)
     room = standing.location.reload
-    { "people" => Character.present_in(room).pluck(:fullname),
+    # WHAT THE ROOM IS CALLED AFTERWARDS, which is the only way to see what
+    # `Location::RoomName` did with the proposal: it refuses on five separate
+    # grounds and the room simply keeps its placeholder, so re-deriving the
+    # decision in the scorer would be a second implementation of the one thing
+    # that owns it. `Scorer#judge_room_name_refused` reads this against
+    # `facts["room"]` and nothing else.
+    { "name" => room.name,
+      "people" => Character.present_in(room).pluck(:fullname),
       "items" => room.items.pluck(:name),
       "exits" => room.exits.order(:id).pluck(:name),
       "new_places" => standing.story.locations.pluck(:name) - before }

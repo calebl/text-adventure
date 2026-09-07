@@ -189,6 +189,13 @@
 #                        bounds for both and passes. `the-quay-house.yml` lays
 #                        the seal ledger at an x the room above does not run to,
 #                        and its header has the arithmetic.
+#   room_names_unique    no two rooms of one place answer to one name, on
+#                        `WorldSeed.natural_key`'s reading of "one name". The
+#                        one name in the app a MODEL chooses for a row the
+#                        engine then looks up by name -- `Location::RoomName`
+#                        writes it at realization -- so this is the offline
+#                        assertion that whatever it wrote left the building's
+#                        rooms tellable apart.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
@@ -226,7 +233,7 @@ class EngineSweep::Invariants
 
   def check
     [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, stat_blocks_unmoved,
-      hostility_unmoved, hazards_unmoved, geometry_unmoved, positions_in_bounds,
+      hostility_unmoved, hazards_unmoved, geometry_unmoved, positions_in_bounds, room_names_unique,
       nothing_was_written ].flatten.compact
   end
 
@@ -618,6 +625,42 @@ class EngineSweep::Invariants
     return "#{room.name} has no box, so there is no plane to read that in" if room.box.nil?
 
     "#{room.name} is #{room.box}"
+  end
+
+  # NO TWO ROOMS OF ONE PLACE ANSWER TO ONE NAME. Not stated against the file,
+  # for `#positions_in_bounds`' reason: it is a claim about the RECORDS a walk
+  # left behind, and a file that shipped two rooms of one name would be a file
+  # this should fail on rather than agree with.
+  #
+  # WHY IT IS HERE AT ALL, given that a sweep has no model and nothing offline
+  # writes a name: because the thing that writes one now is
+  # `Location::RoomName`, at realization, and a name it accepted is the only
+  # name in the app a MODEL chose for a row the engine then looks up by name
+  # (`Story::Repair`, `Story::Doctor#duplicate_locations`, half of
+  # `WorldSeed::Loader`). It costs one query and one grouping when it holds,
+  # which is what it does today, and it fires the moment a walk starts renaming
+  # rooms -- which is exactly the change that would need watching.
+  # `doors_unchanged`'s argument, applied to names.
+  #
+  # ROOMS OF A PLACE AND NOT EVERY CHILD ROW, because that is the contract
+  # `Location::RoomName` guards from the inside: a box read in a parent's own
+  # plane. Plain containment -- a district a street sits in -- is ordinary
+  # places, and their names are `Story::Doctor#duplicate_locations`' to judge
+  # over the whole story.
+  #
+  # IDENTITY IS `WorldSeed.natural_key`'s, the same spelling the doctor reports
+  # a duplicate on and the same one the engine refuses on.
+  def room_names_unique
+    clashing = story.locations.includes(:parent_location).select(&:placed?)
+                    .group_by { |room| [ room.parent_location_id, WorldSeed.natural_key(room.name) ] }
+                    .values.select(&:many?)
+    return nil if clashing.empty?
+
+    broken("room_names_unique",
+           clashing.map { |group|
+             "#{group.first.parent_location&.name} has #{group.size} rooms called " \
+               "#{group.first.name.inspect} (#{group.map { |room| "##{room.id}" }.join(", ")})"
+           }.join("; "))
   end
 
   def nothing_was_written

@@ -171,9 +171,17 @@
         -- "in The Rusted Anchor" or "in the taproom of The Rusted Anchor" -- and
         he took the second. So the player reads one sentence -- "You are in the
         taproom of The Rusted Anchor." -- and the room keeps its STORED NAME
-        AS-IS, ordinal and all, while `Location::Interior.placeholder_name` is
-        still what names it (naming is deferred to `ta-interior-room-names`).
-        A room inside nothing keeps the plain sentence it has always had.
+        AS-IS, ordinal and all. A room inside nothing keeps the plain sentence
+        it has always had.
+
+        THE ARTICLE IS IN THE NAME AND NOT IN THIS LINE, which is what lets one
+        sentence read correctly either side of a room being written. An
+        unwritten room is called `The Custom House room 1`
+        (`Location::Interior.placeholder_name`) and a written one is called
+        `the counting room` -- both already carry whatever article English
+        wants, so `Location::RoomName` asks the model for one and this prints
+        the name it accepted. Adding a "the" here would read "the The Custom
+        House room 1" for every room nobody has walked into yet.
 
         THAT IS THE HALF OF THE RULING THIS FILE OWNS -- the display. The rest
         of it is already true of the records and is nothing for this line to do:

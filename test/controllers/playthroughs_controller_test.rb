@@ -273,9 +273,34 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/Inside The Rusted Anchor/, response.body)
   end
 
-  # AND THE ROOM'S STORED NAME AS-IS, ordinal and all, while
-  # `Location::Interior.placeholder_name` is still what names an interior room
-  # (naming is deferred to `ta-interior-room-names`).
+  # AND THE WAYS OUT NAME A SIBLING ROOM BY ITS OWN NAME, which is the other
+  # half of the ruling: movement between the rooms of one place is by room name
+  # alone, and `Playthrough::Grammar` matches a typed fragment by inclusion --
+  # so "cold store" reaches it from inside the building.
+  test "show names a sibling room in the ways out by the name it was given" do
+    playthrough = create(:playthrough, :started)
+    story = playthrough.story
+    anchor = create(:location, :stub, story: story, name: "The Rusted Anchor", width: 12, depth: 8)
+    playthrough.current_location.update!(name: "the taproom", parent_location: anchor,
+                                         x: 0, y: 0, z: 0, width: 6, depth: 4)
+    store = create(:location, :stub, story: story, name: "the cold store", parent_location: anchor,
+                                     x: 6, y: 0, z: 0, width: 6, depth: 4)
+    [ [ playthrough.current_location, store ], [ store, playthrough.current_location ] ].each do |from, to|
+      create(:location_connection, location: from, connected_location: to,
+                                   distance: "adjacent", travel_method: "walking")
+    end
+
+    get playthrough_path(playthrough)
+
+    assert_includes response.body, "Ways out: the cold store"
+    assert_no_match(/room \d/, response.body)
+  end
+
+  # AND THE ROOM'S STORED NAME AS-IS, ordinal and all. An UNWRITTEN room is
+  # still called `Location::Interior.placeholder_name`'s number -- a name is
+  # written once, when somebody walks in and `Location::RoomName` takes what a
+  # model proposed -- so the one line has to read correctly either side of that.
+  # The article is in the name and not in the line: see the partial.
   test "show uses the room's stored name even while it is a placeholder" do
     playthrough = create(:playthrough, :started)
     story = playthrough.story

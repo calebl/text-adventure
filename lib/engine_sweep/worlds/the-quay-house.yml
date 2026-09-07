@@ -56,6 +56,14 @@
 # inside a place, so a written room must still have exactly the doors the layout
 # gave it -- and the script walks in to say so.
 #
+# AND THE TWO WRITTEN ROOMS KEEP THEIR PLACEHOLDER NAMES ON PURPOSE. A room is
+# named by the call that writes it (`Location::RoomName`, out of
+# `Location::DetailSchema`'s `name`), and a room written by hand in a world file
+# never makes that call: a seed file's room name is the file's, exactly as its
+# description is. Naming them here would also move `Eval::Realization`'s corpus
+# -- three of its cases stand on these rooms BY NAME, and its digest is what
+# makes a before/after comparison pairable at all.
+#
 # THEIR PROSE IS HAND-WRITTEN, being the one thing here no model could supply,
 # and it is written the way `Location::Plan` states the facts to a model that
 # does: 7 by 6 paces, storey 0, and doors in the walls the boxes really share.

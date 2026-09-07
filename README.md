@@ -470,8 +470,9 @@ flowchart TD
         M1{"Location::Generator#realize!<br/>realized already?"}
         M1 -->|"yes: walking back in"| M5
         M1 -->|"no: a stub, first time"| M3
-        M3["MODEL CALL, schema'd<br/>Location::DetailSchema<br/>description and lore, SAVED IMMEDIATELY<br/>plus 0-3 things lying here, on the SAME call<br/>a room of a laid-out place is TOLD its floor plan<br/>Location::Plan: its size, its storey, and the wall<br/>each door is in -- records, not the model's to change"]
-        M3 --> M3A["Location::Interior.lay_out!, NO MODEL CALL<br/>a place carrying a FOOTPRINT gets its whole inside<br/>every room and every door from one seeded roll<br/>same transaction as the flip to realized"]
+        M3["MODEL CALL, schema'd<br/>Location::DetailSchema<br/>description and lore, SAVED IMMEDIATELY<br/>plus 0-3 things lying here, on the SAME call<br/>a room of a laid-out place is TOLD its floor plan<br/>Location::Plan: its size, its storey, and the wall<br/>each door is in -- records, not the model's to change<br/>and such a room, still called one of the place's<br/>numbers, is asked to PROPOSE a name for itself"]
+        M3 --> M3N["Location::RoomName, NO MODEL CALL<br/>the model proposes, the engine decides<br/>a refused name leaves the placeholder<br/>Location::Interior wrote, and a room<br/>already written is never asked again"]
+        M3N --> M3A["Location::Interior.lay_out!, NO MODEL CALL<br/>a place carrying a FOOTPRINT gets its whole inside<br/>every room and every door from one seeded roll<br/>same transaction as the flip to realized"]
         M3A --> M3B["Item::Registry#admit!<br/>the model proposes, the engine decides<br/>a WORLD row per thing, lying in the room<br/>capped per room and per world"]
         M3B --> M3C["Item::Snapshot, no model call<br/>this playthrough takes its own copy of the floor<br/>and of what the people standing on it hold<br/>once per template, never twice"]
         M3C --> M4["MODEL CALL, schema'd<br/>Location::ExitsSchema<br/>a stub neighbour per exit, and connection<br/>rows in BOTH directions<br/>NOT MADE for a room inside a laid-out place:<br/>its doors are already the engine's"]
@@ -517,7 +518,7 @@ flowchart TD
     classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
 
     class C2,M3,M4,M6,T1,T2,I2,N2 llm
-    class W0,C1,C3,G1,M1,M3A,M3B,M3C,M5,M7,M8,T5,T6,T7,I1,I3,N3,X1 rec
+    class W0,C1,C3,G1,M1,M3N,M3A,M3B,M3C,M5,M7,M8,T5,T6,T7,I1,I3,N3,X1 rec
     class N1,T4 gap
     class IN,SSE,OUT,OUT2,D,R,G0,G2,T3 io
 ```

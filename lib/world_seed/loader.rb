@@ -13,12 +13,17 @@
 #                                        placement and left alone when absent.
 #                                        `hostile` is written on every load, in
 #                                        both directions, like `absent`
-#   Location   (story, name)             case-insensitively first, matching
-#                                        Location::Generator#find_location, and
-#                                        then on WorldSeed.natural_key, which is
-#                                        what recognizes a room the file renamed.
-#                                        `danger` is written on every load, in
-#                                        both directions, and an absent key is
+#   Location   (story, name), then the    case-insensitively first, matching
+#              place and the box          Location::Generator#find_location; then
+#                                        on WorldSeed.natural_key, which
+#                                        recognizes a room the FILE renamed; then
+#                                        on the place and the box a file draws a
+#                                        room in, which recognizes one the ENGINE
+#                                        renamed -- and only for a row this file
+#                                        names nowhere else.
+#                                        WorldSeed.find_location owns all three.
+#                                        `danger` is written on every load,
+#                                        in both directions, and an absent key is
 #                                        Location::SAFE
 #   Connection (location, connected)     unique index, written both ways -- and
 #                                        a mobile room's doorway is matched on
@@ -60,6 +65,27 @@
 #   renames the row that exists instead of creating a second one beside it.
 #   Locations and items both; the file's spelling wins, which is the same
 #   "the file re-asserts itself" rule the placements follow.
+#
+#   AND A ROOM OF A PLACE IS THE SAME ROOM AT THE SAME COORDINATES, whatever it
+#   has come to be called -- BUT ONLY WHERE THIS DOCUMENT NAMES NO OTHER ROOM
+#   THAT ROW COULD BE. That is the half of the rule above the written name
+#   cannot reach: `Location::RoomName` names a room of a laid-out place when
+#   somebody first walks into it, so a stub the file declares as
+#   `The Custom House room 1` can be a row called `the counting room` by the
+#   time the file is loaded over it again -- a rename nothing about the two
+#   strings could recognize, and the row's name appears nowhere in the file.
+#   A row the file DOES name is that declaration's, and the coordinates have
+#   nothing to add: without that limit, which of two declarations got the played
+#   row came down to which of them the document happened to list first.
+#   `WorldSeed.find_location` has the argument in full.
+#
+#   AND THE FILE'S SPELLING WINS EXCEPT OVER A NUMBER. The one exception to the
+#   two rules above, and the only place in this file where the document does not
+#   get the last word: a placeholder is PROVISIONAL, so a file still carrying
+#   `The Custom House room 1` for a row somebody has named is not asserting a
+#   name and does not overwrite one. `WorldSeed.keeps_its_own_name?` carries
+#   what putting the number back would cost -- a room realized under its number
+#   is never offered a name again.
 #
 #   A DOORWAY THE WORLD'S OWN MECHANIC MOVED HAS NOT GONE MISSING.
 #   `WorldMechanic::ShuffleConnections` repoints the anchored end of every
@@ -224,11 +250,19 @@ class WorldSeed::Loader
   # id, so its doorways, its scenes, its `last_protagonist_visit` and anybody
   # standing in it are all untouched -- which is the whole difference between
   # renaming the room and creating a second one beside it.
+  #
+  # EXCEPT WHERE THE FILE IS OFFERING A PLACEHOLDER AND THE ROW HAS A NAME, and
+  # `WorldSeed.keeps_its_own_name?` is where the whole of that reasoning lives:
+  # a number `Location::Interior` wrote is provisional, so a file still carrying
+  # one is not asserting anything for the row's own name to lose. `#written_name`
+  # is the one place the two answers are chosen between, so nothing downstream
+  # of it has to know there were two.
   def load_locations!(story)
     location_documents.to_h do |attributes|
       name = attributes.fetch("name")
       location = find_location(story, name) || story.locations.new(name: name)
-      note_rename("location", location, name)
+      written = written_name(location, attributes, name)
+      note_rename("location", location, name, written: written)
       note_creation("location", name) unless location.persisted?
       # HOW DANGEROUS THE FILE SAYS THIS PLACE IS, written in both directions on
       # every load -- the shape `absent` and `hostile` have on a character
@@ -258,7 +292,7 @@ class WorldSeed::Loader
       # may name a parent that is declared further down.
       location.assign_attributes(
         attributes.except("opening", "items", "parent")
-                  .merge("name" => name, "danger" => attributes["danger"].presence || Location::SAFE,
+                  .merge("name" => written, "danger" => attributes["danger"].presence || Location::SAFE,
                          "hazard" => attributes["hazard"].presence, "hazard_die" => attributes["hazard_die"])
                   .merge(Location::Box::COLUMNS.to_h { |column| [ column, attributes[column] ] })
       )
@@ -1304,39 +1338,59 @@ class WorldSeed::Loader
     @existing_story = Story.find_by(title: story_document.fetch("title"))
   end
 
-  # A location of this story, by the name the file gives it -- and then by the
-  # name the file USED to give it.
+  # A location of this story, by the name the file gives it -- then by the name
+  # the file USED to give it, and then by the place and the box the file draws
+  # it in, which is how a room the ENGINE renamed is still recognized.
   #
-  # The case-insensitive match comes first and is matched exactly as
-  # `Location::Generator#find_location` matches it, so nothing about how the
-  # generator and the loader agree on a room has changed. The natural-key pass
-  # behind it is what recognizes a rename: see `WorldSeed.natural_key` for how
-  # far it goes and why it goes no further. `#validate!` refuses a file whose
-  # own rooms collide on that key, so there is never more than one answer.
+  # `WorldSeed.find_location` owns all three passes and is shared with
+  # `Story::Doctor` and `Story::Repair` on purpose: three readers of one
+  # question that disagreed would report, repair and re-seed three different
+  # worlds. Read its header for what each pass buys.
+  #
+  # THE FILE'S OWN DECLARATION IS HANDED OVER HERE rather than at each call
+  # site, so every lookup this loader makes -- a room, a room's parent, the room
+  # a character stands in -- widens the same way. `#validate!` refuses a file
+  # whose own rooms collide on `WorldSeed.natural_key`, so there is never more
+  # than one declaration to hand over.
   def find_location(story, name)
-    exact = story.locations.where("LOWER(name) = ?", name.downcase).first
-    return exact if exact
-
-    # `Location.where(story_id:)` and not `story.locations`, deliberately: a
-    # bare association read LOADS AND CACHES it, and this runs in the middle of
-    # writing the very rows it would be caching. A caller that read
-    # `story.locations` afterwards -- `EngineSweep::Invariants` does -- would get
-    # the loader's half-written snapshot instead of the records.
-    key = WorldSeed.natural_key(name)
-    found = Location.where(story_id: story.id).pluck(:id, :name).detect { |(_, candidate)| WorldSeed.natural_key(candidate) == key }
-
-    found && Location.find(found.first)
+    WorldSeed.find_location(story, name, declared_locations)
   end
 
-  # A row recognized under a different written name, said out loud. The rename
-  # itself is done by the caller's `assign_attributes` -- this only reports it,
-  # so a load that quietly renamed something is not a shape this class has.
-  def note_rename(kind, record, name)
+  # THE FILE'S OWN LOCATIONS BY `WorldSeed.natural_key`, handed over whole
+  # rather than one declaration at a time: `WorldSeed.find_location`'s widest
+  # pass reads the box off the declaration for the name it was asked about AND
+  # the set of every name this document spoke for, and those two have to come
+  # from one document or a row could be claimed twice. `#validate!` refuses a
+  # file whose own rooms collide on that key, so the index is one to one.
+  def declared_locations
+    @declared_locations ||= location_documents.index_by { |attributes| WorldSeed.natural_key(attributes["name"]) }
+  end
+
+  # WHAT THIS LOAD CALLS A ROW THE FILE DECLARES: the file's name, which is the
+  # rule, or the name the row already carries in the one case
+  # `WorldSeed.keeps_its_own_name?` describes. Read on the row rather than on
+  # the pass that found it, for the reason that predicate gives.
+  def written_name(location, attributes, name)
+    WorldSeed.keeps_its_own_name?(location, attributes) ? location.name : name
+  end
+
+  # A row recognized under a different written name, said out loud -- AND WHICH
+  # WAY THE TWO NAMES WERE RECONCILED, because since `Location::RoomName` the
+  # answer is not always the file's. The write itself is the caller's
+  # `assign_attributes`; this only reports it, so a load that quietly renamed
+  # something is not a shape this class has -- and a load that quietly DECLINED
+  # to rename something would not be either, which is the second branch.
+  def note_rename(kind, record, name, written: name)
     return unless record.persisted?
     return if record.name == name
 
-    reconciled << "#{kind} #{record.name.inspect} is #{name.inspect} in the file, so the row was renamed rather " \
-                  "than a second #{kind} created beside it (##{record.id}, unchanged otherwise)"
+    reconciled << if record.name == written
+      "#{kind} #{record.name.inspect} is #{name.inspect} in the file, which is one of its place's provisional " \
+        "numbers, so the row kept the name it has (##{record.id}, unchanged otherwise)"
+    else
+      "#{kind} #{record.name.inspect} is #{name.inspect} in the file, so the row was renamed rather " \
+        "than a second #{kind} created beside it (##{record.id}, unchanged otherwise)"
+    end
   end
 
   # A ROW A RE-SEED CREATED IN A WORLD SOMEBODY HAS PLAYED, which is the one

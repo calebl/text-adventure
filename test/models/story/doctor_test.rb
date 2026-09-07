@@ -804,6 +804,23 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_match(/no checked-in file declares any of them/, finding(story, :duplicate_locations).message)
   end
 
+  # AND TWO ROOMS OF ONE BUILDING ARE THE SAME FINDING, which is why naming
+  # rooms did not need a second one. `Location::RoomName` refuses a proposed
+  # name any location of the story already answers to -- the gate -- and this is
+  # what reports a database that carries one anyway, on the same
+  # `WorldSeed.natural_key` reading the gate refuses on.
+  test "two rooms of one place answering to one name are already a finding" do
+    story = healthy_story
+    place = create(:location, story: story, name: "The Custom House", width: 14, depth: 10)
+    [ 0, 7 ].each do |x|
+      create(:location, story: story, name: "the counting room", parent_location: place,
+                        x: x, y: 0, z: 0, width: 7, depth: 10)
+    end
+
+    assert_includes codes(story), :duplicate_locations
+    assert_match(/the counting room/, finding(story, :duplicate_locations).message)
+  end
+
   test "reports two items that are one item to a re-seed" do
     story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
     stamp = Item.in_story(story).find_by(name: "ward stamp")
