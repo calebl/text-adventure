@@ -71,6 +71,36 @@ The premise is optional; without one the model picks its own.
 
 `rake game:list` prints each world's id, title, genre and counts.
 
+## Play a world again from its beginning
+
+```bash
+rake 'game:fork[3]'            # DRY_RUN=1 to read it first, TITLE= to name it
+```
+
+A world generates itself as you explore it and keeps what it generates, so a
+story you have played for a week is no longer the world you generated — which
+makes "how does the game read from the first screen" a question you cannot ask
+of it any more. `rake game:fork` answers it by making a SECOND story out of the
+first one's generation-time world. **Nothing it does touches the story it was
+forked from**: its playthroughs, its scenes and the verdicts you recorded on
+turns all reference each other and all stay exactly where they are. The fork
+lands on the index page with a Play button, costs no model call, and gets a
+title nothing else answers to — the loader keys a world on its title, so a fork
+under the original's name would rewrite the original instead of copying it.
+
+Where the world comes from depends on when the story was generated.
+`rake game:new` now writes a snapshot the moment the world is finished, into
+`stories.generation_snapshot` (see `Story::Snapshot` for why a column rather
+than a file). A story older than that column has none, so
+`Story::Snapshot::Derivation` reads one back out of the records: everything
+written before the story was first played is generation, a room play realized
+comes back as the stub it was, and what the derivation cannot place with
+confidence it says out loud rather than guessing at. `DRY_RUN=1` prints that
+reading — rows kept and left behind per table, and every uncertainty — so it can
+be read before it is acted on. `rake 'game:snapshot[3]'` freezes a derivation
+once it has been read, and `rake game:doctor` judges the fork like any other
+world.
+
 ## Play it
 
 ```bash

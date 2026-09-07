@@ -37,6 +37,14 @@ namespace :game do
     location = first_screen.location
     scene = first_screen.scene
 
+    # THE MOMENT THE WORLD IS FINISHED AND BEFORE ANYBODY HAS TOUCHED IT, which
+    # is the only moment a generation-time snapshot can be taken honestly. One
+    # line here is the whole of what `rake game:fork` needs later, and taking it
+    # anywhere else means deriving it from timestamps -- see
+    # `Story::Snapshot::Derivation`, which exists for the stories generated
+    # before this line did. Offline: `WorldSeed::Exporter` reads records.
+    Helpers.timed("Snapshotting the generated world") { Story::Snapshot.capture!(story) }
+
     puts
     puts "=" * 72
     puts story.title
@@ -56,6 +64,109 @@ namespace :game do
     puts Helpers.first_screen_lines(first_screen)
     puts
     puts "Export it to a hand-editable seed file with: rake 'game:export[#{story.id}]'"
+    puts "Play it again from this exact moment, as a new story, with: rake 'game:fork[#{story.id}]'"
+  end
+
+  # FORKING A STORY SO IT CAN BE PLAYED FROM THE BEGINNING AGAIN, which is the
+  # captain's request of 2026-09-07 and his choice of the two shapes offered:
+  # *"for the story reset, I want to fork."*
+  #
+  # NOTHING IT DOES TOUCHES THE ORIGINAL. It reads one story's generation-time
+  # world -- the snapshot `game:new` took, or `Story::Snapshot::Derivation`'s
+  # reading of the records for a story older than that column -- and loads it
+  # through `WorldSeed::Loader` under a title nothing answers to. The original's
+  # playthroughs, its scenes and the verdicts referencing them are not in either
+  # path. `Story::Fork` carries why the title has to change and why the fork
+  # gets a universe of its own.
+  #
+  # Offline: no model call. A fork is a seeded world, which is the whole reason
+  # a first screen costs nothing -- `Story::FirstScreen`'s opening arrival is in
+  # the document.
+  desc "Play a story again from its beginning, as a new story. Usage: rake 'game:fork[3]', DRY_RUN=1 to read it first, TITLE= to name it"
+  task :fork, [ :story_id ] => :environment do |t, args|
+    story = Helpers.story!(args[:story_id])
+    fork = Story::Fork.new(story, title: ENV["TITLE"])
+
+    puts "#{story.title} (##{story.id}) -- #{story.genre}"
+    puts "Source: #{fork.source}"
+    puts
+
+    # THE REFUSALS ARE ASKED BEFORE THE MANIFEST IS BUILT, deliberately: every
+    # one of them is a state the derivation would otherwise have to read a world
+    # out of, and a manifest derived from a story with no opening arrival would
+    # be a page of numbers ending in "and none of this would load".
+    if fork.refused?
+      puts "REFUSED, and nothing was written:"
+      fork.refusals.each { |refusal| puts "  - #{refusal}" }
+      abort "This story cannot be forked from its records."
+    end
+
+    Helpers.print_derivation(fork.derivation)
+
+    if ENV["DRY_RUN"].present?
+      puts "Would create #{fork.title.inspect} -- #{Helpers.fork_shape(fork.document)}."
+      puts "DRY RUN: nothing was created. The original's playthroughs, scenes and verdicts are untouched either way."
+      next
+    end
+
+    forked = begin
+      fork.create!
+    rescue Story::Fork::Refused => e
+      abort "REFUSED: #{e.message}"
+    end
+    fork.warnings.each { |warning| puts "  WARNING: #{warning}" }
+
+    puts "Created #{forked.title.inspect} (story ##{forked.id}, universe ##{forked.universe_id}) -- " \
+         "#{Helpers.fork_shape(fork.document)}."
+    puts "#{story.title.inspect} (##{story.id}) is unchanged: #{story.playthroughs.count} playthrough(s), " \
+         "#{story.scenes.count} scene(s), #{Playthrough::Feedback.where(playthrough: story.playthroughs).count} verdict(s)."
+    puts
+    # THE INDEX PAGE AND NOT A URL WITH THE ID IN IT: a playthrough is STARTED by
+    # a POST (`PlaythroughsController#create`), so there is no address that
+    # opens one and never has been. `bin/dev` rather than `bin/rails server`,
+    # because a turn is a job.
+    puts "Play it: run bin/dev, open the index page, and press Play on #{forked.title.inspect} (story ##{forked.id})."
+  end
+
+  # FREEZING THE DERIVED SNAPSHOT OF A STORY THAT PREDATES `stories.generation_snapshot`,
+  # so a story can be read once and forked many times off the same reading.
+  # `rake game:fork` derives on its own and writes nothing, which is the safe
+  # default; this is for when the derivation has been read and believed.
+  #
+  # IT REFUSES A STORY THAT ALREADY HAS ONE unless FORCE=1: re-snapshotting a
+  # world somebody has played would replace what was generated with what has
+  # been walked through, which is the one thing a snapshot must never become.
+  desc "Store a story's generation-time world so it can be forked from. Usage: rake 'game:snapshot[3]', DRY_RUN=1 to read it first"
+  task :snapshot, [ :story_id ] => :environment do |t, args|
+    story = Helpers.story!(args[:story_id])
+
+    puts "#{story.title} (##{story.id}) -- #{story.genre}"
+
+    if Story::Snapshot.for(story).present? && ENV["FORCE"].blank?
+      puts "It already carries a generation snapshot. Fork it with: rake 'game:fork[#{story.id}]'"
+      puts "FORCE=1 replaces it with a derivation from the records as they stand TODAY, which for a story"
+      puts "somebody has played is not what was generated. There is almost never a reason."
+      next
+    end
+
+    derivation = Story::Snapshot::Derivation.new(story)
+    puts
+
+    if derivation.refusals.any?
+      puts "REFUSED, and nothing was written:"
+      derivation.refusals.each { |refusal| puts "  - #{refusal}" }
+      abort "This story's generation-time world cannot be read out of its records."
+    end
+
+    Helpers.print_derivation(derivation)
+
+    if ENV["DRY_RUN"].present?
+      puts "DRY RUN: nothing was written."
+      next
+    end
+
+    Story::Snapshot.capture!(story, document: derivation.document)
+    puts "Stored. Fork it with: rake 'game:fork[#{story.id}]'"
   end
 
   desc "Export a generated world to a checked-in seed file. Usage: rake 'game:export[3]'"
@@ -962,6 +1073,33 @@ namespace :game do
       end
 
       lines
+    end
+
+    # WHAT A DERIVED SNAPSHOT KEPT AND WHAT IT LEFT BEHIND, and what it is
+    # unsure of -- printed by both `game:fork` and `game:snapshot`, before
+    # either of them decides anything, because a best-effort reading of
+    # somebody's records is a thing to READ rather than to trust. Nil for a
+    # story carrying a real snapshot, which has nothing to be unsure of.
+    def self.print_derivation(derivation)
+      return if derivation.nil?
+
+      puts "Derived from the records:"
+      derivation.manifest.each { |label, line| puts format("  %-20s %s", label, line) }
+      puts
+      notes = derivation.notes
+      if notes.any?
+        puts "What the derivation is reading, and where it is unsure:"
+        notes.each { |note| puts "  - #{note}" }
+        puts
+      end
+    end
+
+    # A world in one line, off the document rather than off the database: the
+    # dry run has no rows to count.
+    def self.fork_shape(document)
+      locations = Array(document["locations"])
+      realized = locations.count { |row| row["detail_level"] == "realized" }
+      "#{locations.size} location(s), #{realized} realized, #{Array(document["characters"]).size} character(s)"
     end
 
     def self.timed(label)
