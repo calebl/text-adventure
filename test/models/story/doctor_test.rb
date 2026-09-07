@@ -1667,6 +1667,24 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_nil finding(story, :interior_with_an_unreachable_room).subject
   end
 
+  # A CELLAR NOTHING LEADS DOWN TO IS AS STRANDED AS A LOFT NOTHING LEADS UP TO,
+  # and the walk that decides it never looks at a storey at all -- it follows the
+  # doors out of the entry. What is worth pinning is the SENTENCE: the way in is
+  # read as the place's lowest-id room, which `Location::Interior` writes on
+  # storey 0 whatever else the place has (`#storey_order`), so a place with a
+  # basement still reports its ground-floor room as the way in rather than its
+  # deepest one.
+  test "a cellar nothing inside the place leads down to is reported, and the way in is still the ground floor" do
+    story = healthy_story
+    place, = a_place_with_two_rooms(story)
+    create(:location, story: story, parent_location: place, name: "The Cellar",
+                      x: 0, y: 0, z: -1, width: 12, depth: 8)
+
+    assert_includes codes(story), :interior_with_an_unreachable_room
+    assert_match(/The Cellar/, finding(story, :interior_with_an_unreachable_room).message)
+    assert_match(/the way in is The Taproom/, finding(story, :interior_with_an_unreachable_room).message)
+  end
+
   # A ROOM YOU CAN ONLY REACH BY LEAVING THE BUILDING is a room the layout
   # failed to connect, so the walk follows sibling edges and no others.
   test "a room reachable only from outside the place is still unreachable" do
@@ -1702,6 +1720,46 @@ class Story::DoctorTest < ActiveSupport::TestCase
     door(taproom, loft, travel_method: Location::Interior::STAIRS)
 
     assert_not_includes codes(story), :stairs_between_rooms_that_do_not_line_up
+  end
+
+  # AND THE SAME TWO ANSWERS BELOW THE GROUND. `#misaligned_stairs` asks whether
+  # two rooms are ONE STOREY APART, on `(one.z - other.z).abs`, so it reads a
+  # cellar the same way it reads a loft -- but nothing in the app could write a
+  # negative storey until `Location::Interior::BASEMENTS` existed, so the check
+  # had never been exercised there. Both polarities are asserted, because a
+  # reader that had got the sign wrong would either report every honest cellar
+  # stair or stay quiet about every crooked one.
+  test "a stair down to a room that stands under this one is not a finding" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    cellar = create(:location, story: story, parent_location: place, name: "The Cellar",
+                               x: 0, y: 0, z: -1, width: 12, depth: 8)
+    door(taproom, cellar, travel_method: Location::Interior::STAIRS)
+
+    assert_not_includes codes(story), :stairs_between_rooms_that_do_not_line_up
+  end
+
+  test "a stair down to a room that stands under nothing is reported" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    cellar = create(:location, story: story, parent_location: place, name: "The Cellar",
+                               x: 7, y: 0, z: -1, width: 5, depth: 8)
+    door(taproom, cellar, travel_method: Location::Interior::STAIRS)
+
+    assert_includes codes(story), :stairs_between_rooms_that_do_not_line_up
+  end
+
+  # TWO STOREYS DOWN IS NOT ONE STOREY DOWN EITHER, which is the half of the
+  # rule that reads the DISTANCE rather than the alignment -- a flight of steps
+  # from the hall to the sub-cellar passes through the cellar's floor.
+  test "a stair skipping a storey downward is reported even where the rooms line up" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    sub = create(:location, story: story, parent_location: place, name: "The Sub Cellar",
+                            x: 0, y: 0, z: -2, width: 12, depth: 8)
+    door(taproom, sub, travel_method: Location::Interior::STAIRS)
+
+    assert_includes codes(story), :stairs_between_rooms_that_do_not_line_up
   end
 
   # A DOOR IS TWO ROWS AND BOTH ARE THE SAME FLIGHT OF STEPS.

@@ -9,6 +9,16 @@
 # not do.
 #
 #   location        the room, optionally "Name (stub)" or "Name (realized)"
+#   storey          which floor of its place that room stands on, exactly --
+#                   `locations.z`, the storey index off the room's own box. It
+#                   is a SIGNED index and not a height (`Location::Box`), so 0
+#                   is the ground floor, 1 is the floor above it and -1 is the
+#                   cellar. Asserted separately from `location:` because they
+#                   are two facts: a walk that arrives in the right ROOM having
+#                   changed storey the wrong way is exactly the failure a
+#                   layout that cannot descend used to make impossible to
+#                   express. Nil for a room with no box at all, so a script
+#                   that asks it of a flat world is unmet rather than skipped
 #   exits           the WHOLE set of ways out, in any order, each optionally
 #                   carrying its detail level the same way
 #   exits_include   some of them, for a script that does not want to pin the rest
@@ -90,7 +100,7 @@
 # test fixture must not have.
 class EngineSweep::Expectation
   KEYS = %w[
-    location exits exits_include exits_exclude here carrying present foes inscription
+    location storey exits exits_include exits_exclude here carrying present foes inscription
     hp hp_of abilities dead changed change refused offers understood resolved_by note drifts blows hazards
   ].freeze
 
@@ -133,6 +143,7 @@ class EngineSweep::Expectation
 
     [
       check_location(state),
+      check_equals("storey", state.location&.z),
       check_exits(state),
       check_items("here", state.items_here),
       check_items("carrying", state.carried),

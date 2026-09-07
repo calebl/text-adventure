@@ -47,10 +47,24 @@
 # way in -- two doors deep, through the room the guards keep or through the
 # room the way you came -- which is where a clan puts what it means to trade.
 # It is on the ground floor because the layout rolled this place ONE storey, and
-# because `Location::Interior` numbers storeys upward from 0 in any case: a
-# warren cut DOWNWARD out of a tunnel is not something the layout can express
-# today, and a negative storey is a thing only a hand-written `z` can say (see
-# `Location::Plan`'s own worked example). Nothing here pretends otherwise.
+# it stayed there for a reason that has since stopped being true.
+#
+# THE LAYOUT CAN EXPRESS DOWN NOW, and this file has deliberately not been
+# re-exported to use it. `Location::Interior::BASEMENTS` and its `below:` gave
+# the layout storeys beneath the entry, so a warren cut DOWNWARD out of a tunnel
+# is a thing the engine could write today -- `lib/engine_sweep/worlds/the-quay-house.yml`'s
+# bonded cellar is one it did write. What stopped the warren being the worked
+# example is what re-laying it out would drag with it: a second `Roll` gives
+# every room a different box and the place a different room count, and room 3's
+# description, room 3's lore and the prince's own cell in it are HAND-WRITTEN
+# against the boxes below -- 6 by 4 paces, doors in the north and west walls,
+# and a chain at 10,7. Rewriting a cell's prose to agree with a floor plan
+# nobody has walked is not an engine change, and the sweep script that walks
+# this world names every room it passes through.
+#
+# SO THE WARREN DESCENDS IN A SLICE OF ITS OWN, with the prose rewritten in the
+# same commit as the boxes. Until then storey 0 is what the records say and this
+# file says so rather than relabelling the number.
 #
 # THE ROOM KEEPS THE NAME THE ENGINE GAVE IT -- `Location::Interior.placeholder_name`,
 # ordinal and obviously provisional -- and it keeps it for good, because THIS

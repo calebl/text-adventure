@@ -1,0 +1,152 @@
+# WALKING DOWN. The one script in the repository that ends up on a storey BELOW
+# the one it started on, and the reason `The Bonded Cellar` is in
+# `the-quay-house.yml` at all.
+#
+# WHAT IT IS FOR. `Location::Interior` used to number a place's storeys upward
+# from 0, so a place's deepest floor always came out ABOVE its own front door
+# and a cellar was not a thing the records could say. `Location::Plan` could
+# already READ a negative storey and `Story::Map` could already draw one; what
+# was missing was a layout that wrote one. This walks a building that has one:
+# down from the entry to storey -1, along it, and back up past the entry to
+# storey 1 -- so one place is walked in both directions from its own way in.
+#
+# IT ASSERTS THE STOREY AND NOT ONLY THE ROOM, which is `storey:`' whole reason
+# for existing as an expectation. A walk that arrived in the right ROOM having
+# gone the wrong way vertically would pass every other key here, and that is
+# precisely the failure the old numbering made impossible to express: everything
+# was upward, so nothing could be upward by mistake. The number is read off
+# `locations.z` -- the room's own box, which the engine wrote -- and never off
+# anything printed.
+#
+# WHY GOING DOWN TAKES TWO MOVES. Room 1 is the way in and its only stair goes
+# UP; the stairs down land in room 2. That is the layout's own answer and not a
+# convenience -- the engine chose which rooms the stairwells stand in
+# (`Location::Box#shares_ground?`), and a script that wanted a stair down out of
+# the entry room would be asking the fixture to be redrawn to suit the test.
+#
+# THE ROOMS ARE STUBS AND STAY STUBS, like every other room of this world:
+# `EngineSweep::Invariants#nothing_was_written` asserts it over the whole world
+# afterwards, and an offline walk has no model to write one with.
+story: The Quay House
+why: a place whose inside goes down, walked down and back up
+steps:
+- id: the-quay-as-seeded
+  type: look
+  why: outside both buildings, so a failure inside one has a known beginning
+  expect:
+    location: The Quay (realized)
+    # The Quay is not a room of anything, so it stands on no storey at all --
+    # which is what `storey:` says of a location with no box.
+    storey: null
+    exits: [The Custom House room 1 (stub), The Bonded Cellar room 1 (stub)]
+    changed: false
+    refused: false
+
+- id: in-through-the-sealed-door
+  type: go to The Bonded Cellar room 1
+  why: the entry room of a place that descends -- and it is on the ground floor like any other
+  expect:
+    changed: true
+    location: The Bonded Cellar room 1 (stub)
+    storey: 0
+    # Three ways out and the fourth slot still free: the backbone door, the
+    # stair up, and the way back onto the quay.
+    exits: [The Quay (realized), The Bonded Cellar room 2 (stub), The Bonded Cellar room 3 (stub)]
+    refused: false
+
+- id: across-the-ground-floor
+  type: go to The Bonded Cellar room 2
+  why: the room the stairs down land in, and it is still storey 0
+  expect:
+    changed: true
+    location: The Bonded Cellar room 2 (stub)
+    storey: 0
+    # At `Location::ExitsSchema::MAX_EXITS`: one door and three stairwells, two
+    # of them down and one up.
+    exits:
+    - The Bonded Cellar room 1 (stub)
+    - The Bonded Cellar room 4 (stub)
+    - The Bonded Cellar room 5 (stub)
+    - The Bonded Cellar room 6 (stub)
+    refused: false
+
+# THE WHOLE POINT OF THE SLICE, IN ONE STEP. The storey index goes DOWN.
+- id: down-the-stair
+  type: go to The Bonded Cellar room 5
+  why: a storey below the entry, which is what an interior could not express before
+  expect:
+    changed: true
+    location: The Bonded Cellar room 5 (stub)
+    storey: -1
+    exits: [The Bonded Cellar room 2 (stub), The Bonded Cellar room 6 (stub)]
+    refused: false
+
+- id: along-the-cellar
+  type: go to The Bonded Cellar room 6
+  why: a storey below the ground has a backbone of its own, laid out in the same call
+  expect:
+    changed: true
+    location: The Bonded Cellar room 6 (stub)
+    storey: -1
+    exits: [The Bonded Cellar room 2 (stub), The Bonded Cellar room 5 (stub)]
+    refused: false
+
+- id: up-out-of-the-cellar
+  type: go to The Bonded Cellar room 2
+  why: a stair is walkable upwards for the reason a door is walkable backwards -- one edge, written twice
+  expect:
+    changed: true
+    location: The Bonded Cellar room 2 (stub)
+    storey: 0
+    refused: false
+
+- id: on-up-past-the-entry
+  type: go to The Bonded Cellar room 4
+  why: and the same place goes UP as well -- one interior spanning both directions from its way in
+  expect:
+    changed: true
+    location: The Bonded Cellar room 4 (stub)
+    storey: 1
+    exits: [The Bonded Cellar room 2 (stub), The Bonded Cellar room 3 (stub)]
+    refused: false
+
+- id: along-the-floor-above
+  type: go to The Bonded Cellar room 3
+  why: the top storey's backbone, and the room the entry's own stair comes up into
+  expect:
+    changed: true
+    location: The Bonded Cellar room 3 (stub)
+    storey: 1
+    exits: [The Bonded Cellar room 1 (stub), The Bonded Cellar room 4 (stub)]
+    refused: false
+
+- id: down-to-the-entry-again
+  type: go to The Bonded Cellar room 1
+  why: back to the ground floor the way in stands on
+  expect:
+    changed: true
+    location: The Bonded Cellar room 1 (stub)
+    storey: 0
+    refused: false
+
+# THE CELLAR IS NOT ONE MOVE FROM THE QUAY. Room 5 is two floors and two doors
+# off; a layout whose stairs were suggestions rather than records would let this
+# through, and the closed exit set is what catches it.
+- id: no-shortcut-into-the-cellar
+  type: go to The Bonded Cellar room 5
+  why: the exits of a room are a closed set, and a storey below is not next door
+  expect:
+    refused: true
+    changed: false
+    location: The Bonded Cellar room 1 (stub)
+    storey: 0
+
+# AND THE PLACE ITSELF IS NOT A ROOM, the captain's second ruling of 2026-09-06,
+# which holds of a place that descends exactly as it holds of one that does not.
+- id: the-cellar-is-not-somewhere-you-stand
+  type: go to The Bonded Cellar
+  why: the party stands in a CHILD room, and a place is not one
+  expect:
+    refused: true
+    changed: false
+    location: The Bonded Cellar room 1 (stub)

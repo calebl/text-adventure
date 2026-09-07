@@ -348,8 +348,10 @@ The title resolves to a checked-in world in `db/seeds/worlds` first, and to one
 of the sweep's own in `lib/engine_sweep/worlds` second — same format, same
 loader, same `rake game:doctor`, but not a world a fresh clone gets, because it
 exists to give one assertion something to stand on rather than to be played.
-`the-quay-house.yml` is one: a place with its inside laid out, which none of the
-playable worlds has. `the-iron-gate-descends.yml` is the other, and it is the
+`the-quay-house.yml` is one: two places with their insides laid out, which none
+of the playable worlds has — the custom house, which goes up, and the bonded
+cellar, whose rooms stand on storeys −1, 0 and 1, so one building spans both
+directions from its own way in. `the-iron-gate-descends.yml` is the other, and it is the
 first **generated** world with an offline test of any kind — exported out of a
 real `rake game:new` story with `rake game:export`, repaired by hand until its
 own premise was reachable, and walked from its opening room in through a
@@ -359,7 +361,11 @@ laid-out interior to the person the story is about.
 `present:` is who the records place in the room — the closed set `talk` resolves
 against — and `foes:` is which of them means the party harm
 (`Playthrough#foes_in`, the world's `characters.hostile` narrowed by this game's
-dead). They are asserted separately because they are two facts. It could not be swept until `characters.location_id` existed: who was
+dead). They are asserted separately because they are two facts. `storey:` is the
+same idea one axis over: which floor of its place the room stands on, read off
+`locations.z` — a signed index, so `0` is the ground floor and `-1` the cellar —
+asserted apart from `location:` because a walk can arrive in the right room
+having gone the wrong way vertically. It could not be swept until `characters.location_id` existed: who was
 in a room was reconstructed from the last scene there that recorded a cast, and
 an offline walk writes no scenes at all, so presence was invisible here by
 construction and the only place to observe it was a generated run costing money.

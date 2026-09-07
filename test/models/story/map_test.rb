@@ -251,6 +251,33 @@ class Story::MapTest < ActiveSupport::TestCase
     assert_match "The Upper Floor", storeys.last.stairs.sole.reading
   end
 
+  # A CELLAR IS DRAWN UNDER THE GROUND FLOOR, which is what "highest first" means
+  # once a storey index can be negative. `#build_interior` sorts on `-z` and
+  # nothing about that had to change -- but nothing in the app could WRITE a
+  # negative storey until `Location::Interior::BASEMENTS` existed, so the order
+  # had never been asserted below zero. The plan is the page a reader checks a
+  # building against, and a cellar drawn above the hall would be a picture that
+  # contradicts its own records.
+  test "a storey below the ground is drawn under it, and the stair into it points down" do
+    story = create(:story)
+    place = create(:location, :with_a_footprint, story: story, name: "The Keep")
+    cellar = placed_room(story, place, name: "The Cellar", x: 0, z: -1)
+    ground = placed_room(story, place, name: "The Ground Floor", x: 0, z: 0)
+    upper = placed_room(story, place, name: "The Upper Floor", x: 0, z: 1)
+    connect(ground, cellar, :indoor_connection)
+    connect(ground, upper, :indoor_connection)
+
+    storeys = Story::Map.new(story).interiors.sole.storeys
+
+    assert_equal [ 1, 0, -1 ], storeys.map(&:z), "highest first, and the cellar is the lowest of the three"
+    # The ground floor leaves by two stairs: one up to the roof and one down to
+    # the cellar. Both are marked in the room they leave FROM, so the arrows are
+    # what tell a reader which is which.
+    assert_equal [ false, true ], storeys[1].stairs.map(&:up).sort_by(&:to_s)
+    assert_equal [ true ], storeys.last.stairs.map(&:up), "out of the cellar is upward"
+    assert_match "storey -1", storeys[1].stairs.find { |stair| !stair.up }.reading
+  end
+
   # A STAIR OUT OF THE BUILDING IS NOT A STOREY OF IT. A child's `z` is read in
   # ITS OWN parent's frame (`Location::Box`), so a stairs connection to a room
   # under a different parent says nothing about which floor of this one it

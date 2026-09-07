@@ -43,8 +43,11 @@ steps:
     location: The Quay (realized)
     # The way IN is the one edge of this world nobody generated: it is the spare
     # exit `Location::Interior` keeps on the entry room, wired by hand because
-    # attaching a place's own exits to a room inside it is slice 4's.
-    exits: [The Custom House room 1 (stub)]
+    # attaching a place's own exits to a room inside it is slice 4's. Two
+    # buildings stand on this quay and each one opens onto its own entry room --
+    # the cellar is `a-cellar-below-the-way-in.yml`'s, and this walk goes into
+    # the custom house.
+    exits: [The Custom House room 1 (stub), The Bonded Cellar room 1 (stub)]
     present: []
     changed: false
     refused: false
