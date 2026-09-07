@@ -1162,9 +1162,10 @@ the engine rolled.
 **Almost every check is a set comparison** — a name the model wrote against a
 closed list of names the prompt handed it, or a count against a number the
 prompt stated. Both sides are records, so a rate here is the same kind of fact
-`rake game:sweep` produces rather than a reading. The two that read words are
-labelled `[KEYWORD]` and are named for what they can actually see;
-`Eval::Realization::Scorer` owns the table, and the checks are:
+`rake game:sweep` produces rather than a reading. The ones that read words are
+`Eval::Realization::Scorer::KEYWORD_CHECKS`, labelled `[KEYWORD]` on the board
+and named for what they can actually see; `Eval::Realization::Scorer` owns the
+table, and the checks are:
 
 | check | what it catches |
 | --- | --- |
@@ -1180,11 +1181,15 @@ labelled `[KEYWORD]` and are named for what they can actually see;
 | `race_not_named` | **a KEYWORD check** — see below |
 | `size_the_records_do_not_hold` | **a KEYWORD check.** The description stated a size in paces, or a storey, that is not this room's. Judgeable only on an `interior-room` case, where `Location::Plan` stated the numbers in the prompt |
 
-**The two keyword checks are weighed differently and labelled `[KEYWORD]` on
-the board.** The geometry check is halfway between a reading and a comparison,
-and it is worth saying which half is which: what it COMPARES is a record and
-nothing else — a number out of `Location::Box`, off the very `Location::Plan`
-the prompt was built from — while what it READS is prose.
+**The keyword checks are weighed differently and labelled `[KEYWORD]` on the
+board**, and the note beneath the board's table is written off
+`Eval::Realization::Scorer::KEYWORD_CHECKS` so it cannot come to name a
+different set from the one the table labels.
+
+The geometry check is halfway between a reading and a comparison, and it is
+worth saying which half is which: what it COMPARES is a record and nothing else
+— a number out of `Location::Box`, off the very `Location::Plan` the prompt was
+built from — while what it READS is prose.
 `Story::Audit::Prose.size_claims` and `.storey_claims` are the grammars, and
 both were measured before they shipped: **0 detections over all 367 real
 passages in the four corpora**. Over the room prose of every world in the

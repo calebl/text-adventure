@@ -539,7 +539,10 @@ module Story::Audit::Prose
   # by 4 paces" and "six paces by four" say which room this is, while "four
   # paces wide" does not say which axis it is measuring and could be checked
   # against either. Compared unordered against the box, because a room described
-  # from the doorway is as honestly four by six as six by four.
+  # from the doorway is as honestly four by six as six by four -- which is why
+  # `Size` carries the pair twice: `paces` sorted, for the comparison, and
+  # `as_written` in the order the sentence put them, so a reader is shown the
+  # claim the prose made and not one the check normalised.
   #
   # THE STOREY IS THE ENGINE'S OWN WORD. `Location::Plan` says "storey 0" and
   # "storey 0 is the ground floor", so "storey 2" in a passage is a number
@@ -561,7 +564,7 @@ module Story::Audit::Prose
   # the best evidence a grammar this narrow can have before a model has ever been
   # handed a plan: it reads true statements, all of them the app's own or written
   # against the app's own records, and nothing else in 367 passages of prose.
-  Size = Data.define(:paces, :sentence)
+  Size = Data.define(:paces, :as_written, :sentence)
   Storey = Data.define(:storey, :sentence)
 
   # The small numbers prose spells out. Bounded at twenty because a room bigger
@@ -590,7 +593,7 @@ module Story::Audit::Prose
       pace_pairs.each do |pattern|
         sentence.scan(pattern) do
           pair = [ Regexp.last_match(1), Regexp.last_match(2) ].map { |word| number_for(word) }
-          found << Size.new(paces: pair.sort, sentence: sentence.strip)
+          found << Size.new(paces: pair.sort, as_written: pair, sentence: sentence.strip)
         end
       end
     end

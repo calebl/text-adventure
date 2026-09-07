@@ -198,6 +198,15 @@ class Story::Audit::ProseTest < ActiveSupport::TestCase
     assert_equal [ [ 4, 6 ] ], Prose.size_claims("Four paces by six paces, and every one of them cold.").map(&:paces)
   end
 
+  # THE PAIR IS CARRIED TWICE: sorted for the comparison, and in the order the
+  # sentence wrote it so a flag can quote the claim the prose actually made
+  # (`Eval::Realization::Scorer#judge_size_the_records_do_not_hold`).
+  test "a size claim keeps the order the sentence put the numbers in" do
+    assert_equal [ [ 6, 4 ] ], Prose.size_claims("The room is 6 by 4 paces of wet flagstone.").map(&:as_written)
+    assert_equal [ [ 4, 6 ] ], Prose.size_claims("Four paces by six paces, and every one of them cold.")
+      .map(&:as_written)
+  end
+
   # THE UNIT IS WHAT MAKES IT A MEASUREMENT OF THIS ROOM, and a single
   # measurement does not say which axis it measured.
   test "a pair with no paces in it, and a single measurement, claim nothing" do

@@ -75,8 +75,8 @@ class Eval::Realization::Board
     end
 
     # THE QUESTIONS THIS BENCH CANNOT ANSWER ARE NOT ROWS, and a table that left
-    # them out silently would read as eleven checks passing where fifteen were
-    # asked. Named under it instead, with their reasons, on the same rule
+    # them out silently would read as every question asked being answered.
+    # Named under it instead, with their reasons, on the same rule
     # `Story::Scoreboard` follows: unavailable, never zero.
     found << ""
     found << "Not in this table, because this bench cannot answer them, and they are **unavailable " \
@@ -84,9 +84,7 @@ class Eval::Realization::Board
     Eval::Realization::UNAVAILABLE_TO_A_REALIZATION.each { |code, reason| found << "- `#{code}` — #{reason}" }
 
     found << ""
-    found << "`race_not_named` is a **keyword check** and the only figure here that reads words: it sees " \
-             "the race name missing from a sheet and cannot see a compliant person who never named it. " \
-             "Weigh it accordingly — see `Eval::Realization::Scorer`."
+    found << keyword_note
 
     unstable = columns.reject { |column| column.result.prompt_stable }
     if unstable.any?
@@ -99,6 +97,23 @@ class Eval::Realization::Board
   end
 
   private
+    # THE KEYWORD NOTE IS WRITTEN OFF THE LIST AND NOT OFF A COUNT, so this
+    # sentence cannot come to disagree with the table above it -- the table's
+    # rows are `Eval::Realization.checks` and its `[KEYWORD]` labels are the
+    # same constant, so a check added to or taken out of `KEYWORD_CHECKS` moves
+    # both at once.
+    def keyword_note
+      codes = Eval::Realization::Scorer::KEYWORD_CHECKS
+      named = codes.map { |code| "`#{code}`" }.to_sentence
+      one = codes.one?
+
+      "#{named} #{one ? "is a **keyword check**" : "are **keyword checks**"}: " \
+        "#{one ? "it reads" : "they read"} words where every other figure here compares records, so " \
+        "#{one ? "its" : "their"} false-positive rate is unknown until a baseline is bought. Weigh " \
+        "#{one ? "it" : "them"} accordingly — `Eval::Realization::Scorer::KEYWORD_CHECKS` says what " \
+        "#{one ? "it" : "each"} can and cannot see."
+    end
+
     def body
       rows = { "set" => ->(column) { "`#{column.set}`" },
                "prompt version" => ->(column) { "`#{column.result.prompt_digest || "unrecorded"}`" },

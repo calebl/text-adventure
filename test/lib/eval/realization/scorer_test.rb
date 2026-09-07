@@ -411,7 +411,7 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
 
     assert_equal 1, entry.flagged_for(:size_the_records_do_not_hold).size
     assert_includes entry.flagged_for(:size_the_records_do_not_hold).first.evidence,
-                    "said the room is 4 by 9 paces and it is 4 by 7"
+                    "said the room is 9 by 4 paces and it is 7 by 4"
   end
 
   # THE UPPER-FLOOR ROOM'S SHAPE, and it is the one bench case that is NOT on
@@ -455,7 +455,7 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     wrong = planned("A long room, 9 by 4 paces, running back from the door.")
     assert_equal 1, wrong.flagged_for(:size_the_records_do_not_hold).size
     assert_includes wrong.flagged_for(:size_the_records_do_not_hold).first.evidence,
-                    "said the room is 4 by 9 paces and it is 6 by 7"
+                    "said the room is 9 by 4 paces and it is 7 by 6"
   end
 
   test "a storey that is not the room's is flagged" do
@@ -512,6 +512,19 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
   # THE GEOMETRY CHECK READS WORDS, and the board is told so.
   test "the geometry check is counted as a keyword check" do
     assert_includes Eval::Realization::Scorer::KEYWORD_CHECKS, :size_the_records_do_not_hold
+  end
+
+  # AND THE EVIDENCE QUOTES BOTH SIDES IN THE ORDER THEY WERE WRITTEN, because a
+  # flag has to be legible beside the prompt sentence it contradicts. The
+  # comparison stays unordered: `PLAN` is 7 by 6 and "six by seven paces" agrees.
+  test "the evidence reports the prose's order and the plan's, not the sorted pair" do
+    wrong = planned("A long room, 4 by 9 paces, running back from the door.")
+
+    assert_includes wrong.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "said the room is 4 by 9 paces and it is 7 by 6"
+    assert_empty planned("Six by seven paces, and every one of them cold.")
+      .flagged_for(:size_the_records_do_not_hold),
+                 "the pair is compared unordered, so the reversed pair still agrees"
   end
 
   # AND THE WALLS ARE REPORTED UNANSWERED RATHER THAN SCORED. Six measured

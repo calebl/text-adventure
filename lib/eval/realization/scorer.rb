@@ -1,22 +1,24 @@
 # WHAT THE MODEL WROTE, AGAINST WHAT THE PROMPT TOLD IT, AND NOTHING ELSE.
 #
-# EVERY CHECK IN HERE IS A SET COMPARISON, and that is the design rather than a
-# limitation. The standing constraint (AGENTS.md) is that nothing may depend on
-# a model obeying its prompt; the corollary for an instrument is that nothing
-# may depend on a CHECKER understanding prose. So each check below reads a name
-# the model wrote against a closed list of names the prompt handed it, or a
-# count against a number the prompt stated. Both sides are records. A rate here
+# NEARLY EVERY CHECK IN HERE IS A SET COMPARISON, and that is the design rather
+# than a limitation. The standing constraint (AGENTS.md) is that nothing may
+# depend on a model obeying its prompt; the corollary for an instrument is that
+# nothing may depend on a CHECKER understanding prose. So each of those reads a
+# name the model wrote against a closed list of names the prompt handed it, or a
+# count against a number the prompt stated. Both sides are records. A rate there
 # is therefore the same kind of fact `rake game:sweep` produces -- something the
 # app itself could have asserted -- rather than a reading.
 #
-# THE ONE EXCEPTION IS NAMED FOR WHAT IT CAN SEE. `race_not_named` is a keyword
-# check: it can tell that the word "Nocturna-Blighted" is absent from a sheet
-# written for a Nocturna-Blighted slot, and it cannot tell a compliant person
-# described entirely in chitin and silence from a non-compliant one. It is
-# reported apart from the checks the records prove, with that stated, and its
-# false-positive rate is unknown until a baseline is bought -- which is exactly
-# the discipline two earlier prose-reading checks failed
-# (`data/ta-model-bench`, and `Story::Scoreboard`'s header).
+# THE EXCEPTIONS ARE `KEYWORD_CHECKS`, AND EACH IS NAMED FOR WHAT IT CAN SEE.
+# `race_not_named` can tell that the word "Nocturna-Blighted" is absent from a
+# sheet written for a Nocturna-Blighted slot, and it cannot tell a compliant
+# person described entirely in chitin and silence from a non-compliant one.
+# `size_the_records_do_not_hold` compares numbers, but it has to READ them out
+# of prose first. They are reported apart from the checks the records prove,
+# with that stated, and their false-positive rate is unknown until a baseline is
+# bought -- which is exactly the discipline two earlier prose-reading checks
+# failed (`data/ta-model-bench`, and `Story::Scoreboard`'s header). That
+# constant is the one list of them; do not count them in a sentence.
 #
 # OFFLINE, FROM THE STORED ROWS AND NOTHING ELSE. It touches no table, so a set
 # can be scored again after the calls are paid for -- the rule `Eval::RunSet`
@@ -55,8 +57,8 @@
 class Eval::Realization::Scorer
   # THE CHECKS, IN TRUST ORDER: the exits the engine itself refuses first,
   # because those have a cost the records can prove; then the allowances, which
-  # are a number the prompt stated; then the names; then the one keyword check,
-  # last, because it is the only one that reads words.
+  # are a number the prompt stated; then the names; then `KEYWORD_CHECKS`, last,
+  # because those are the ones that read words.
   CHECKS = {
     exit_into_a_written_room: "an exit named a place already WRITTEN that this room cannot reach -- " \
                               "the prompt marks those and the engine drops the edge",
@@ -72,7 +74,7 @@ class Eval::Realization::Scorer
     readable_without_words: "a thing marked readable with nothing written on it, which costs a " \
                             "later round trip to Item::Inscriber",
     race_not_named: "a person written for a MONSTROUS slot whose sheet never says the race -- " \
-                    "a KEYWORD check, and the one figure here that reads words",
+                    "a KEYWORD check, so it reads words rather than comparing records",
     size_the_records_do_not_hold: "the description stated a size in paces, or a storey, that is not this " \
                                   "room's -- a KEYWORD check, judgeable only on a room the engine laid out"
   }.freeze
@@ -168,6 +170,12 @@ class Eval::Realization::Scorer
     def plan = facts["plan"]
     def planned? = plan.is_a?(Hash)
     def room_paces = [ plan && plan["width"], plan && plan["depth"] ].map(&:to_i).sort
+
+    # THE SAME TWO NUMBERS IN THE ORDER THE PROMPT STATED THEM, for evidence and
+    # never for a comparison -- `Location::Plan#size_sentence` says width by
+    # depth, and a flag an auditor reads beside that sentence has to agree with
+    # it (`#judge_size_the_records_do_not_hold`).
+    def room_extent = [ plan && plan["width"], plan && plan["depth"] ].map(&:to_i)
     def planned_storey = plan && plan["storey"]
 
     # THE OTHER PACE PAIR THE PROMPT STATED -- the PLACE's footprint, out of
@@ -502,7 +510,7 @@ class Eval::Realization::Scorer
     end
   end
 
-  # ------------------------------------------------------------ the one keyword check
+  # ------------------------------------------------------------ a sheet read for a word
 
   # THE SLOT'S RACE, AND WHETHER THE PERSON WRITTEN FOR IT SAYS SO.
   #
@@ -592,6 +600,14 @@ class Eval::Realization::Scorer
   # four by six as six by four (`Story::Audit::Prose.size_claims`), and a storey
   # is compared as the integer the plan carries.
   #
+  # AND THE EVIDENCE QUOTES BOTH SIDES AS THEY WERE WRITTEN, never as the
+  # comparison normalised them: the claim in the order the prose put it
+  # (`Size#as_written`) and the room in the order the prompt stated it
+  # (`Location::Plan#size_sentence` says width by depth, so `#room_extent` does
+  # too). A flag has to be legible against the prompt without opening the set --
+  # `Story::Scoreboard`'s rule -- and a sorted pair is a pair neither the model
+  # nor the records ever wrote.
+  #
   # AND A CLAIM THAT REPEATS A NUMBER THE PROMPT ITSELF STATED IS NOT A DEFECT,
   # which is the one rule both discounts below come out of. `Location::Plan`
   # hands the model MORE than the room's own box, and a checker that knew only
@@ -604,8 +620,8 @@ class Eval::Realization::Scorer
 
       size_claims(reading).reject { |claim| claim.paces == paces || claim.paces == reading.place_paces }
                           .map { |claim|
-        "said the room is #{claim.paces.join(" by ")} paces and it is #{paces.join(" by ")}" \
-          " -- #{claim.sentence.inspect}"
+        "said the room is #{claim.as_written.join(" by ")} paces and it is " \
+          "#{reading.room_extent.join(" by ")} -- #{claim.sentence.inspect}"
       } + judgeable_storey_claims(reading).reject { |claim| claim.storey == storey }.map do |claim|
         "put the room on storey #{claim.storey} and it is on storey #{storey}" \
           " -- #{claim.sentence.inspect}"

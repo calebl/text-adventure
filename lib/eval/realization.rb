@@ -33,14 +33,15 @@
 # WHAT IT MEASURES, AND WHY EVERY FIGURE IS A RECORD AND NOT A READING OF PROSE.
 # The standing constraint (AGENTS.md) is that nothing may depend on the narrator
 # obeying its prompt, and the corollary for an instrument is that nothing may
-# depend on a checker UNDERSTANDING prose. So every check here is a set
+# depend on a checker UNDERSTANDING prose. So nearly every check here is a set
 # comparison the app could have made itself: a name the model wrote against the
 # closed set of names the prompt handed it, a count against the allowance the
 # prompt stated, an exit against the list of places that already exist. What the
 # prompt SAID is measurable because the prompt said a number or a list, and the
 # answer either matched it or did not. `Eval::Realization::Scorer` is the whole
-# of it, and the one keyword check in there is named for what it can actually
-# see (`race_not_named`) rather than for what it would like to mean.
+# of it, and the checks in `Scorer::KEYWORD_CHECKS` -- the ones that have to
+# READ prose to get their side of the comparison -- are each named for what it
+# can actually see rather than for what it would like to mean.
 #
 # WHAT IT DELIBERATELY DOES NOT DO: change a prompt. This is the instrument. The
 # prompt half of `ta-room-people-count`, the exits findings and the bench cases
