@@ -19,7 +19,7 @@ generated one, and to rebuild these files when the schema changes. Everything
 after that is hand editing, and that is the intended workflow: generate, export,
 then edit the YAML until the world has the shape you want.
 
-Both worlds here have been edited after export. `the-unrecorded-hour.yml` was
+The worlds here have been edited after export. `the-unrecorded-hour.yml` was
 written by hand outright, to get a shape the generator cannot produce (below).
 
 Two things to know before re-exporting over a file:

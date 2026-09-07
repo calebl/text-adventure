@@ -75,7 +75,7 @@ The premise is optional; without one the model picks its own.
 
 ```bash
 bin/rails db:prepare   # three databases: the app's, Solid Queue's, Solid Cable's
-bin/rails db:seed      # two checked-in worlds, no model needed
+bin/rails db:seed      # the checked-in worlds, no model needed
 bin/dev                # then open http://localhost:3000
 ```
 
@@ -320,16 +320,9 @@ mechanics console is for once you have stopped watching it: free, deterministic,
 offline, and it runs in `bin/rails test` so the engine is regression-tested on
 every build.
 
-```
-  ok     regressions-2026-09-03        8 step(s), The Unrecorded Hour intact
-  ok     the-lunar-cartographer        9 step(s), The Lunar Cartographer intact
-  ok     the-salt-assizes-grammar      7 step(s), The Salt Assizes intact
-  ok     the-salt-assizes-presence    10 step(s), The Salt Assizes intact
-  ok     the-unrecorded-hour-two-players  9 step(s), The Unrecorded Hour intact
-  ok     the-unrecorded-hour          17 step(s), The Unrecorded Hour intact
-
-PASSED: 60 typed line(s) over 6 script(s).
-```
+It prints one line per script — `ok` or a failure, the script's name, how many
+steps it walked and the world it left intact — and then a single `PASSED` or
+`FAILED` line totalling the typed lines and the scripts behind them.
 
 A script is a YAML fixture in `lib/engine_sweep/scripts/` — a world named by
 title, an ordered list of lines somebody could have typed, and after any of them
