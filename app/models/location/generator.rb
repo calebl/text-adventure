@@ -112,10 +112,11 @@ class Location::Generator
   # whenever the rooms happen to have been written. A rule about who may be a
   # neighbour holds in an order a rule about which call comes first does not.
   #
-  # THE ROOMS ARE NOT WIRED TO THIS PLACE'S OWN EXITS, so the party still stands
-  # in the place rather than in one of its rooms. Entering a room instead of the
-  # building it is in is slice 4's, and the layout has to exist before anything
-  # can send anybody into it.
+  # AND THE ROOMS ARE WIRED TO THIS PLACE'S OWN EXITS, in the same transaction
+  # -- #open_the_way_in!, which is the captain's Call 5 of 2026-09-07. The
+  # layout has to exist before anything can send anybody into it, so this is the
+  # one moment both halves are on the records at once: the doorways the place
+  # arrived with, and the rooms they should have been landing on.
   #
   # AN ALREADY-REALIZED PLACE IS NEVER LAID OUT, because `#realize!` returns one
   # untouched -- the "generate once per place" guarantee, which this is downhill
@@ -132,8 +133,83 @@ class Location::Generator
     return location unless location.place?
 
     Location::Interior.lay_out!(location)
+    open_the_way_in!
 
     location
+  end
+
+  # THE WAY IN, MOVED OFF THE BUILDING AND ONTO A ROOM OF IT.
+  #
+  # THE CAPTAIN'S CALL 5, 2026-09-07: *"the neighbour's doorway lands on the
+  # entry room, and the place row is never an endpoint."* Until this method
+  # nothing in the app wired a place's doorway to a room inside it, and the one
+  # world in the repository with a building had its way in written by hand.
+  #
+  # WHY IT IS A TRANSPLANT AND NOT A RULE AT WRITING TIME. The doorway is
+  # written when a NEIGHBOUR names this place -- long before anybody opens it,
+  # when it has no rooms to land on. So the edge is correct when it is written
+  # (it is the way in, waiting: `Location#laid_out?`) and becomes wrong the
+  # instant there is an inside, which is here. Refusing the edge at #connect_exit!
+  # instead would be refusing to let a model name a building.
+  #
+  # THE LABEL IS CARRIED OVER, NEVER RE-DERIVED. An exterior edge keeps its
+  # label -- `Location::Interior`'s two travel-time rules, and the reason is that
+  # there is no geometry to derive one from: the quay and the counting room
+  # stand in different planes (`Location::Box`). So the distance and the travel
+  # method a model picked for "the way to The Rusted Anchor" are the distance
+  # and travel method of the way to its taproom.
+  #
+  # A DOOR IS TWO ROWS, so the pair is dropped and the pair is rewritten, and
+  # #connect! is what writes them -- the same writer, the same direction-neutral
+  # values, no second spelling of what a doorway is.
+  #
+  # WHERE IT LANDS WHEN THE ENTRY ROOM IS FULL: the next ground-floor room with
+  # a slot (`Location::Interior.doorstep`), because a place can be named by more
+  # than one neighbour before anybody opens it and the layout keeps exactly ONE
+  # slot free. A second street door on a second ground-floor room is an ordinary
+  # building.
+  #
+  # AND A DOORWAY WITH NOWHERE LEFT TO LAND IS DROPPED, which is the honest
+  # answer rather than the tidy one. The alternative is leaving it on the place
+  # row, and that is the one shape this whole method exists to make impossible:
+  # a party standing in a container, its rooms reachable from nowhere. A
+  # building nothing can reach is `Story::Doctor`'s to report
+  # (`place_reachable_only_from_inside`) and the neighbour keeps every other way
+  # out it had.
+  def open_the_way_in!
+    doorstep = Location::Interior.doorstep(location)
+    return if doorstep.empty?
+
+    ways_in.each do |neighbour, attributes|
+      LocationConnection.where(location: location, connected_location: neighbour).delete_all
+      LocationConnection.where(location: neighbour, connected_location: location).delete_all
+
+      room = doorstep.find { |candidate| room_for_a_way_in?(candidate) }
+      next if room.nil?
+
+      connect!(room, neighbour, attributes)
+      connect!(neighbour, room, attributes)
+    end
+  end
+
+  # EVERY DOORWAY THIS PLACE ARRIVED WITH, as the far end and the label to carry
+  # over. Read before anything is deleted, and once, because #open_the_way_in!
+  # writes as it goes. A door is two rows and either of them may be the one that
+  # exists -- `Story::Doctor` reports a half-written pair (`one_way_connection`)
+  # rather than this pretending not to see one -- so both directions are read
+  # and the far end is what identifies the doorway.
+  def ways_in
+    rows = LocationConnection.where(location: location).or(LocationConnection.where(connected_location: location))
+                             .order(:id)
+
+    rows.each_with_object({}) do |row, found|
+      far = row.location_id == location.id ? row.connected_location : row.location
+      found[far] ||= { "distance" => row.distance, "travel_method" => row.travel_method }
+    end
+  end
+
+  def room_for_a_way_in?(room)
+    LocationConnection.from_location(room).count < Location::ExitsSchema::MAX_EXITS
   end
 
   # What the player reads on arrival, persisted immediately -- and what is lying
@@ -264,8 +340,17 @@ class Location::Generator
   # `location_has_no_exits` and `Story::Repair` calls this and is told nothing
   # was written, which is the honest answer: the way into a building is not a
   # thing a model may name.
+  # AND A PLACE THAT HAS AN INSIDE IS NOT ASKED EITHER, for the mirror image of
+  # the reason a room of one is not. A laid-out place's ways out ARE its rooms'
+  # ways out -- #open_the_way_in! has just moved every doorway it had onto the
+  # entry room, on the captain's Call 5 that the place row is never an endpoint
+  # -- so an exit named here would be a door back onto the container, written by
+  # the very call that runs a line after the transplant. `Story::Doctor` reports
+  # one (`connection_terminating_on_a_place`); this is what stops the app
+  # writing it. SKIPPED RATHER THAN ANSWERED-AND-IGNORED, on the same terms:
+  # the call is not bought, and no prompt text moves for any other room.
   def write_exits!
-    return location if interior_room?
+    return location if interior_room? || location.laid_out?
 
     # ALREADY FULL, so there is nothing to ask and nothing to spend. A stub can
     # arrive at the cap before anybody walks into it: a world file seeds edges,
@@ -692,12 +777,32 @@ class Location::Generator
   # DOOR IS TWO ROWS and a per-direction check would write one of them -- the
   # first row spends this location's allowance, so the second call would find it
   # gone and leave a one-way door behind.
+  # AND A NAME THAT RESOLVES TO A BUILDING SOMEBODY HAS ALREADY OPENED IS
+  # RESOLVED ONE STEP FURTHER, to the room its way in lands on. The captain's
+  # Call 5 of 2026-09-07 said as a rule about writing rather than as one about
+  # repair: a model may name a place -- that is what a place is FOR -- and the
+  # engine decides that naming a building means opening a door onto a room of
+  # it. #open_the_way_in! is the same rule applied to the doorways a place
+  # already had; this is it applied to the next one.
+  #
+  # AND `#room_elsewhere?` IS ASKED FIRST, OF THE NAME AS WRITTEN, which is what
+  # keeps the two rules from cancelling each other out. That check refuses a
+  # name that resolves to a PLACED ROOM of another building -- a room a model
+  # chose -- and a place is not one, so a building passes it and is then
+  # resolved. Resolving first would hand the check the entry room and it would
+  # refuse the very door this paragraph exists to open.
+  #
+  # A PLACE NOBODY HAS OPENED RESOLVES TO ITSELF (`Location::Interior.way_in`),
+  # because it has no rooms yet -- the doorway onto it is the way in, waiting,
+  # and #open_the_way_in! moves it the moment there is somewhere for it to go.
   def connect_exit!(attributes, into_written: false)
     name = sanitize_string(attributes["name"])
     return if name.blank? || name.casecmp?(location.name.to_s)
 
     existing = find_location(name)
     return if room_elsewhere?(existing)
+
+    existing = Location::Interior.way_in(existing) if existing
     return if existing&.realized? && !into_written && !connected?(existing)
     return unless room_for_this_door?(existing)
 

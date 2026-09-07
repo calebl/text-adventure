@@ -307,6 +307,28 @@ class Location < ApplicationRecord
   # level rather than a recursion nobody has designed.
   def place? = interior? && !placed?
 
+  # AND WHETHER ITS INSIDE HAS BEEN BUILT -- a place that has rooms in it. It is
+  # `#place?` plus the records, and it is a predicate rather than a phrase
+  # repeated at each reader because THREE separate rules turn on it and all
+  # three would be wrong asked of `#place?` alone:
+  #
+  #   * A LAID-OUT PLACE IS NEVER THE FAR END OF A DOORWAY, which is the
+  #     captain's Call 5 of 2026-09-07 -- the way in lands on the entry room
+  #     (`Location::Generator#open_the_way_in!`), and `Story::Doctor` reports a
+  #     row that says otherwise (`connection_terminating_on_a_place`).
+  #   * IT IS NOT ASKED FOR WAYS OUT, because its ways out are its rooms'
+  #     (`Location::Generator#write_exits!`).
+  #   * IT IS NOT SOMEWHERE A PLAYER CAN BE SEALED INTO. `Story::Doctor#exits`
+  #     reports a realized room with no way out as a player who walked in and
+  #     cannot walk out; nobody stands in a container, so that sentence is not
+  #     true of one.
+  #
+  # A STUB PLACE THAT HAS NOT BEEN WALKED INTO IS NOT ONE, and that is the
+  # distinction the whole predicate exists for: a footprint with no rooms is a
+  # building waiting for somebody to open the door (`Story::Doctor#places_with_a_footprint_and_no_rooms`
+  # says so at length), and the doorway to it is the way in, waiting.
+  def laid_out? = place? && child_locations.exists?
+
   # THE PLACE THIS ROOM IS INSIDE, or nil for a room that is inside nothing --
   # which is every room in every flat world. It is `#place?`'s question asked
   # from the other end, and it is a reader rather than an association call

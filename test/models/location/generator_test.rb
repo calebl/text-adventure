@@ -133,6 +133,120 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert(location.exits.none?(&:placed?))
   end
 
+  # --- the way in ------------------------------------------------------------
+  #
+  # THE CAPTAIN'S CALL 5, 2026-09-07: the neighbour's doorway lands on the entry
+  # room, and the place row is never an endpoint. See
+  # `Location::Generator#open_the_way_in!`.
+
+  test "realizing a place moves the doorway it arrived with onto its entry room" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    road = already_reaching(place, "The Harbour Road")
+
+    realize(place, FakeAgent.new(DETAIL))
+
+    entry = Location::Interior.entry_room(place.reload)
+    assert_empty place.exits, "a place is never the far end of a doorway once it has an inside"
+    assert_includes entry.exits, road
+    assert_includes road.reload.exits, entry
+  end
+
+  # AN EXTERIOR EDGE KEEPS ITS LABEL -- `Location::Interior`'s two travel-time
+  # rules. There is no geometry between a road and a counting room to derive one
+  # from, so the label a model picked for the way to the building is the label
+  # of the way to its entry room, in both directions.
+  test "the way in keeps the distance and the travel method it was written with" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    road = create(:location, :stub, story: @story, name: "The Harbour Road")
+    create(:location_connection, location: place, connected_location: road,
+                                 distance: "across the district", travel_method: "climbing")
+    create(:location_connection, location: road, connected_location: place,
+                                 distance: "across the district", travel_method: "climbing")
+
+    realize(place, FakeAgent.new(DETAIL))
+
+    edge = LocationConnection.find_by(location: Location::Interior.entry_room(place.reload), connected_location: road)
+    assert_equal "across the district", edge.distance
+    assert_equal "climbing", edge.travel_method
+  end
+
+  # A PLACE WITH AN INSIDE IS ASKED FOR NO WAYS OUT, and a fake with one queued
+  # answer is what proves the call was never made: a second ask raises.
+  test "a place that has been laid out is asked for no ways out of its own" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    agent = FakeAgent.new(DETAIL)
+
+    realize(place, agent)
+
+    assert_equal 1, agent.prompts.size, "the exits call was bought for a building nobody stands in"
+  end
+
+  # A PLACE CAN BE NAMED BY MORE THAN ONE NEIGHBOUR BEFORE ANYBODY OPENS IT, and
+  # the layout keeps exactly one slot free -- so the rest land on the ground
+  # floor beside the entry room (`Location::Interior.doorstep`).
+  test "a second doorway lands on a room of the ground floor" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    roads = [ already_reaching(place, "The Harbour Road"), already_reaching(place, "Anchor Lane") ]
+
+    realize(place, FakeAgent.new(DETAIL))
+
+    landed = roads.map { |road| road.reload.exits.sole }
+    assert_empty place.reload.exits
+    assert(landed.all? { |room| room.parent_location_id == place.id }, "every way in lands inside the building")
+    assert(landed.all? { |room| room.z.zero? }, "a street door opens onto the ground floor")
+  end
+
+  # AND A DOORWAY WITH NOWHERE LEFT TO LAND IS DROPPED rather than left on the
+  # container, which is the one shape the whole method exists to make
+  # impossible. A place too small to divide has one room to a storey, so its
+  # doorstep is one room and the stairs have already spent most of its cap --
+  # which is exactly the state where a way in has nowhere to go.
+  test "a doorway with no room left to land in is dropped rather than left on the place" do
+    place = stub_location(name: "The Watch Box", width: 3, depth: 3)
+    roads = (1..Location::ExitsSchema::MAX_EXITS + 1).map { |n| already_reaching(place, "Lane #{n}") }
+
+    realize(place, FakeAgent.new(DETAIL))
+
+    landed, dropped = roads.partition { |road| road.reload.exits.any? }
+
+    assert_empty place.reload.exits, "a dropped doorway is dropped, not left on the container"
+    assert_predicate dropped, :any?, "the fixture wants more ways in than this building has room for"
+    assert(landed.all? { |road| road.exits.sole.parent_location_id == place.id })
+    assert(place.child_locations.all? { |room| room.exits.count <= Location::ExitsSchema::MAX_EXITS },
+           "no room leads more ways out than its cap, whatever the way in wanted")
+  end
+
+  # THE OTHER HALF OF THE SAME RULE: a model may name a building, and the engine
+  # decides that naming one means opening a door onto a room of it.
+  test "an exit that names a building already opened lands on its entry room" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    realize(place, FakeAgent.new(DETAIL))
+    entry = Location::Interior.entry_room(place.reload)
+
+    road = stub_location(name: "The Harbour Road")
+    named = { "exits" => [ { "name" => "The Rusted Anchor", "teaser" => "Shutters down.",
+                             "distance" => "adjacent", "travel_method" => "walking" } ] }
+    realize(road, FakeAgent.new(DETAIL, named))
+
+    assert_includes road.reload.exits, entry
+    assert_empty place.reload.exits
+    assert_nil Location.find_by(story: @story, name: "The Rusted Anchor")&.exits&.first
+  end
+
+  # AND A PLACE NOBODY HAS OPENED IS STILL NAMEABLE AS ITSELF. It has no rooms
+  # to land on; the doorway onto it is the way in, waiting, and it is moved the
+  # moment somebody walks through it.
+  test "an exit that names a building nobody has opened lands on the building" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    road = stub_location(name: "The Harbour Road")
+    named = { "exits" => [ { "name" => "The Rusted Anchor", "teaser" => "Shutters down.",
+                             "distance" => "adjacent", "travel_method" => "walking" } ] }
+
+    realize(road, FakeAgent.new(DETAIL, named))
+
+    assert_includes road.reload.exits, place
+  end
+
   # LAID OUT ONCE, EVER, which is `#realize!`'s own guarantee said about
   # geometry: walking back in gives you the building you left.
   test "a place that already has rooms is not laid out a second time" do

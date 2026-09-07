@@ -112,6 +112,42 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_equal left_behind, scene.previous_scene
   end
 
+  # --- walking into a building ---------------------------------------------
+  #
+  # THE CAPTAIN'S RULING OF 2026-09-06 -- *"the prince should be in a Room
+  # inside a Location, not in an unrealized location"* -- as the loop honours
+  # it. `Playthrough::Turn#walk_in!` is the seam.
+
+  test "walking into a building lands the party in a room of it and not in the building" do
+    anchor = connect("The Rusted Anchor", detail_level: "stub", description: nil, lore: nil,
+                                          width: 12, depth: 8)
+
+    # The place's detail call, then the entry room's -- and NO exits call for
+    # either, which is what makes this three answers and not five: a laid-out
+    # place and a room of one are both asked for no ways out.
+    scene, = play("go into the anchor", CLASSIFY.call("move", "The Rusted Anchor"),
+                  DETAIL, DETAIL, ARRIVAL)
+
+    @playthrough.reload
+    entry = Location::Interior.entry_room(anchor.reload)
+    assert_equal entry, @playthrough.current_location, "nobody stands in a container"
+    assert_equal entry, scene.location
+    assert_predicate entry, :realized?
+    assert_predicate anchor, :realized?
+  end
+
+  test "walking into a building moves the doorway it was reached by onto the room" do
+    anchor = connect("The Rusted Anchor", detail_level: "stub", description: nil, lore: nil,
+                                          width: 12, depth: 8)
+
+    play("go into the anchor", CLASSIFY.call("move", "The Rusted Anchor"), DETAIL, DETAIL, ARRIVAL)
+
+    entry = Location::Interior.entry_room(anchor.reload)
+    assert_empty anchor.exits, "a place is never the far end of a doorway once it has an inside"
+    assert_includes entry.exits, @here
+    assert_includes @here.reload.exits, entry, "the way back out is the same edge said the other way"
+  end
+
   # --- moving back into somewhere already written --------------------------
 
   # THE POINT OF THE WHOLE THING. A realized location is not regenerated, so

@@ -266,6 +266,45 @@ class Location::Interior
   # that could disagree with it.
   def self.entry_room(place) = place.child_locations.order(:id).first
 
+  # WHERE SOMEBODY ARRIVING AT THIS LOCATION ACTUALLY ENDS UP, and there is one
+  # of these rather than an `if` at each caller because the captain's ruling of
+  # 2026-09-06 -- *"the prince should be in a Room inside a Location, not in an
+  # unrealized location"* -- is a rule about the PARTY and not about one branch.
+  # `Playthrough::Turn#move_to` and `Playthrough::Mechanics#stand_in` are the two
+  # writers of where a party stands, and two spellings of this would be two
+  # answers to whether a player can stand in a container.
+  #
+  # ITSELF FOR EVERYTHING ELSE, which is every room in every flat world: a room,
+  # a street, a district (plain containment -- a parent with no footprint, whose
+  # children are ordinary places and not rooms of an inside), and a place NOBODY
+  # HAS OPENED YET. That last one is not an oversight -- a stub place has no
+  # rooms to arrive in, and arriving is exactly what lays them out
+  # (`Location::Generator#lay_out_interior!`), so this is asked AFTER the
+  # realization and not before it.
+  def self.way_in(location) = (location.laid_out? && entry_room(location)) || location
+
+  # THE ROOMS A WAY IN MAY LAND ON, IN THE ORDER IT MAY TAKE THEM: the entry
+  # room, and then the rest of the GROUND FLOOR by the order they were written.
+  #
+  # THE ENTRY ROOM FIRST BECAUSE THE SLOT WAS KEPT FOR IT (see the header) --
+  # every other room of storey 0 is at whatever cap the layout left it, so the
+  # first way in is the only one guaranteed a home. The rest are offered because
+  # a place can be named by more than one neighbour before anybody opens it, and
+  # a second street door on a second ground-floor room is an ordinary building;
+  # a second door into the cellar is not, which is why nothing below storey 0
+  # and nothing above it is on this list.
+  #
+  # IT SAYS NOTHING ABOUT BUDGET. Whether a room may take one more way out is
+  # `Location::ExitsSchema::MAX_EXITS` read off the records at the moment of
+  # writing, which is `Location::Generator#open_the_way_in!`'s to ask -- this is
+  # the order, not the permission.
+  def self.doorstep(place)
+    rooms = place.child_locations.order(:id).to_a
+    entry = rooms.first
+
+    [ entry, *rooms.select { |room| room != entry && room.z&.zero? } ].compact
+  end
+
   # THE PLACEHOLDER A ROOM IS CALLED BEFORE ANYBODY WRITES IT, and it is a
   # method rather than an interpolation at the call site so there is ONE place
   # to ask what an unwritten room looks like.

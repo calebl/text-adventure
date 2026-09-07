@@ -288,6 +288,55 @@ class Location::InteriorTest < ActiveSupport::TestCase
     end
   end
 
+  # --- where an arrival lands -------------------------------------------------
+
+  # THE CAPTAIN'S RULING OF 2026-09-06 -- *"the prince should be in a Room
+  # inside a Location, not in an unrealized location"* -- as one reader both
+  # writers of where a party stands ask.
+  test "arriving at a place that has an inside lands in its entry room" do
+    every_interior.each do |place|
+      assert_equal Location::Interior.entry_room(place), Location::Interior.way_in(place)
+    end
+  end
+
+  # AND ARRIVING AT ANYTHING ELSE LANDS WHERE IT WAS AIMED. A flat room, a room
+  # INSIDE a place, and a place nobody has opened yet -- the last one has no
+  # rooms to arrive in, and realizing it is what makes some.
+  test "arriving anywhere that is not a building with an inside lands on it" do
+    flat = create(:location, :stub, story: @story, name: "The Harbour Road")
+    shut = create(:location, :stub, :with_a_footprint, story: @story, name: "The Bonded Cellar")
+    place = laid_out(width: 12, depth: 8)
+
+    assert_equal flat, Location::Interior.way_in(flat)
+    assert_equal shut, Location::Interior.way_in(shut)
+    assert_equal Location::Interior.entry_room(place), Location::Interior.way_in(Location::Interior.entry_room(place))
+  end
+
+  # A DISTRICT IS NOT A BUILDING. Plain containment -- a parent with no
+  # footprint, whose children are ordinary places rather than rooms of an inside
+  # -- so arriving at one arrives at it, and its streets are not rooms to be
+  # redirected into.
+  test "arriving at a district arrives at the district" do
+    district = create(:location, :stub, story: @story, name: "Larkspur Quarter")
+    create(:location, :stub, story: @story, name: "Larkspur Lane", parent_location: district)
+
+    assert_equal district, Location::Interior.way_in(district)
+  end
+
+  # THE ROOMS A WAY IN MAY LAND ON: the entry room first, then the rest of the
+  # ground floor. Nothing above it and nothing below it -- a second street door
+  # on a second ground-floor room is an ordinary building; one into the cellar
+  # is not.
+  test "the doorstep is the entry room and then the ground floor" do
+    place = laid_out(width: 15, depth: 11, below: 1)
+    doorstep = Location::Interior.doorstep(place)
+
+    assert_equal Location::Interior.entry_room(place), doorstep.first
+    assert(doorstep.all? { |room| room.z.zero? }, "a way in never lands off the ground floor")
+    assert_equal place.child_locations.where(z: 0).count, doorstep.size
+    assert_equal doorstep.map(&:id), doorstep.map(&:id).uniq, "the entry room is on the list once"
+  end
+
   # The slot the way IN to a place will need one day -- see
   # `Location::Interior`'s header.
   test "the entry room keeps a way out spare" do

@@ -1403,6 +1403,8 @@ class Story::DoctorTest < ActiveSupport::TestCase
                                    locations_containing_each_other location_outside_its_parents_footprint
                                    interior_with_an_unreachable_room stairs_between_rooms_that_do_not_line_up
                                    place_with_a_footprint_and_no_rooms
+                                   connection_terminating_on_a_place
+                                   place_reachable_only_from_inside
                                    door_between_rooms_that_share_no_wall
                                    thing_with_a_partial_position
                                    thing_positioned_in_a_room_with_no_box
@@ -1410,9 +1412,17 @@ class Story::DoctorTest < ActiveSupport::TestCase
   end
 
   # A WELL FORMED INTERIOR: a place with a footprint, two rooms inside it
-  # sharing a wall, and a door between them in both directions. Nothing about it
-  # is a finding, and if this ever starts reporting one,
+  # sharing a wall, a door between them in both directions, and A WAY IN -- a
+  # road outside that opens onto the entry room and not onto the building.
+  # Nothing about it is a finding, and if this ever starts reporting one,
   # `Location::Interior` cannot lay out a building the doctor would pass.
+  #
+  # THE WAY IN IS PART OF WHAT MAKES IT WELL FORMED, on the captain's Call 5 of
+  # 2026-09-07: a building nothing outside opens onto is one nobody can ever
+  # stand in (`place_reachable_only_from_inside`), and a building the road opens
+  # onto DIRECTLY is a party standing in a container
+  # (`connection_terminating_on_a_place`). The healthy fixture has to be on the
+  # right side of both.
   def a_place_with_two_rooms(story)
     place = create(:location, :stub, :with_a_footprint, story: story, name: "The Rusted Anchor")
     taproom = create(:location, story: story, parent_location: place, name: "The Taproom",
@@ -1420,6 +1430,7 @@ class Story::DoctorTest < ActiveSupport::TestCase
     back = create(:location, story: story, parent_location: place, name: "The Back Room",
                              x: 7, y: 0, z: 0, width: 5, depth: 8)
     door(taproom, back)
+    door(taproom, create(:location, :stub, story: story, name: "The Harbour Road"))
     [ place, taproom, back ]
   end
 
@@ -1442,6 +1453,8 @@ class Story::DoctorTest < ActiveSupport::TestCase
                                    locations_containing_each_other location_outside_its_parents_footprint
                                    interior_with_an_unreachable_room stairs_between_rooms_that_do_not_line_up
                                    place_with_a_footprint_and_no_rooms
+                                   connection_terminating_on_a_place
+                                   place_reachable_only_from_inside
                                    door_between_rooms_that_share_no_wall
                                    thing_with_a_partial_position
                                    thing_positioned_in_a_room_with_no_box
@@ -1640,6 +1653,71 @@ class Story::DoctorTest < ActiveSupport::TestCase
     a_place_with_two_rooms(story)
 
     assert_not_includes codes(story), :location_outside_its_parents_footprint
+  end
+
+  # --- the way in ------------------------------------------------------------
+  #
+  # THE VERIFY HALF OF THE CAPTAIN'S CALL 5 of 2026-09-07. The RULE is
+  # `Location::Generator#open_the_way_in!` and `#connect_exit!`; these are the
+  # two findings that say a database carries the shape anyway.
+
+  test "a doorway onto a building that has an inside is reported and cannot be repaired" do
+    story = healthy_story
+    place, = a_place_with_two_rooms(story)
+    door(place, create(:location, :stub, story: story, name: "Anchor Lane"))
+
+    assert_includes codes(story), :connection_terminating_on_a_place
+    assert_equal :warning, finding(story, :connection_terminating_on_a_place).severity
+    assert_equal :manual, finding(story, :connection_terminating_on_a_place).remedy
+    assert_match(/"Anchor Lane" opens onto The Rusted Anchor/,
+                 finding(story, :connection_terminating_on_a_place).message)
+    assert_match(/The Taproom/, finding(story, :connection_terminating_on_a_place).message)
+    assert_equal place, finding(story, :connection_terminating_on_a_place).subject
+  end
+
+  # ONCE PER DOORWAY, because a door is two rows and both say the same thing.
+  test "a doorway onto a building is reported once and not once per row" do
+    story = healthy_story
+    place, = a_place_with_two_rooms(story)
+    door(place, create(:location, :stub, story: story, name: "Anchor Lane"))
+
+    assert_equal 1, codes(story).count(:connection_terminating_on_a_place)
+  end
+
+  # THE ONE THAT MUST NOT FIRE. A footprint with no rooms is a building nobody
+  # has opened, and the doorway onto it IS the way in, waiting -- reporting one
+  # would be reporting every unvisited building in the world.
+  test "a doorway onto a building nobody has opened is not reported" do
+    story = healthy_story
+    shut = create(:location, :stub, :with_a_footprint, story: story, name: "The Bonded Cellar")
+    door(shut, create(:location, :stub, story: story, name: "Anchor Lane"))
+
+    assert_not_includes codes(story), :connection_terminating_on_a_place
+  end
+
+  test "a building nothing outside opens onto is reported and cannot be repaired" do
+    story = healthy_story
+    place, = a_place_with_two_rooms(story)
+    road = story.locations.find_by(name: "The Harbour Road")
+    LocationConnection.where(location: road).or(LocationConnection.where(connected_location: road)).delete_all
+
+    assert_includes codes(story), :place_reachable_only_from_inside
+    assert_equal :warning, finding(story, :place_reachable_only_from_inside).severity
+    assert_equal :manual, finding(story, :place_reachable_only_from_inside).remedy
+    assert_match(/The Rusted Anchor has 2 rooms in it and no way in/,
+                 finding(story, :place_reachable_only_from_inside).message)
+    assert_equal place, finding(story, :place_reachable_only_from_inside).subject
+  end
+
+  # AND A BUILDING WITH AN INSIDE IS NOT SOMEBODY SEALED IN. Its own exits are
+  # empty on purpose -- every doorway it had is on a room of it -- so the
+  # finding about a player who walked in and cannot walk out does not reach it.
+  test "a realized building with an inside and no exits of its own is not reported as sealed in" do
+    story = healthy_story
+    place, = a_place_with_two_rooms(story)
+    place.update!(detail_level: :realized, description: "A public house.", lore: "It has stood here a while.")
+
+    assert_not_includes codes(story), :location_has_no_exits
   end
 
   test "a room nothing inside the place leads to is reported and cannot be repaired" do
