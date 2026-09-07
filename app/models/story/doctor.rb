@@ -294,14 +294,17 @@ class Story::Doctor
     return @seeded_room[name] if @seeded_room.key?(name)
     return @seeded_room[name] = nil if name.blank?
 
-    @seeded_room[name] = WorldSeed.find_location(story, name, seeded_location_documents[WorldSeed.natural_key(name)])
+    @seeded_room[name] = WorldSeed.find_location(story, name, seeded_location_documents)
   end
 
   private
 
   # `{ natural key => the row the file writes }` for this story's rooms -- the
-  # whole declaration and not only its name, because `WorldSeed.find_location`'s
-  # widest pass reads the place and the box off it.
+  # whole declaration and not only its name, and the whole INDEX rather than one
+  # entry, because `WorldSeed.find_location`'s widest pass reads two things off
+  # it: the place and the box of the room it was asked about, and the set of
+  # every name this document spoke for, which is what says a row is already some
+  # other declaration's.
   def seeded_location_documents
     @seeded_location_documents ||= Array(seed_document && seed_document["locations"])
                                    .index_by { |row| WorldSeed.natural_key(row["name"]) }

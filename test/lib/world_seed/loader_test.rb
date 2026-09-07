@@ -697,17 +697,17 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     edited
   end
 
-  # The same building with its one room NAMED in the file rather than numbered:
-  # a hand-authored interior, which is the shape where two declarations can both
-  # carry names a person wrote and neither is a placeholder to identify a row by.
-  def a_building_with_a_named_room
+  # The same building with ONE room, called whatever the caller says: the shape
+  # the box-pass tests below edit, where the room's name is the variable and
+  # everything else about the building is held still.
+  def a_building_with_one_room(name)
     edited = document
     edited["locations"] << { "name" => "The Rusted Anchor", "detail_level" => "stub",
                              "teaser" => "An inn at the end of the hallway.", "width" => 12, "depth" => 8 }
-    edited["locations"] << { "name" => "The Cellar", "detail_level" => "stub",
+    edited["locations"] << { "name" => name, "detail_level" => "stub",
                              "teaser" => "Down a step from the hallway.", "parent" => "The Rusted Anchor",
                              "x" => 0, "y" => 0, "z" => 0, "width" => 6, "depth" => 8 }
-    edited["connections"] << { "between" => [ "The Hallway", "The Cellar" ],
+    edited["connections"] << { "between" => [ "The Hallway", name ],
                                "distance" => "adjacent", "travel_method" => "walking" }
     edited
   end
@@ -821,81 +821,110 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_match(/renamed rather than a second location created beside it/, loader.reconciled.join("\n"))
   end
 
-  # A ROOM THAT MOVED AND A NEW ROOM IN THE BOX IT VACATED, which is the wrong
-  # answer coordinates alone give. Both rooms carry names a person wrote, so
-  # nothing about the two declarations says which of them the played row is --
-  # and matching on the box would hand the played row, with its prose and its
-  # doorways, to whichever of the two the document happens to declare first. So
-  # the box pass declines to identify them at all
-  # (`WorldSeed.exactly_one_name_is_a_placeholder?`) and the edit loads as what
-  # it is: one moved room and one new one.
+  # A ROOM THAT MOVED AND A NEW ROOM IN THE BOX IT VACATED, which is the one
+  # edit the box pass has to be held away from -- and the reason is DOCUMENT
+  # ORDER rather than any one wrong answer. `#load_locations!` walks the file in
+  # order and saves each row before the next lookup, so whichever of the pair is
+  # declared FIRST reaches the box pass while the played row is still sitting at
+  # its old coordinates. Matching there hands that row -- its prose, its
+  # history, its doorways -- to the new room's declaration; declaring the two
+  # the other way round gives the right answer. Nothing in the format says the
+  # order is meaningful, so an answer that turns on it is a wrong answer even
+  # when it happens to come out right.
   #
-  # ASSERTED FROM BOTH DOCUMENT ORDERS, because the whole defect was that one
-  # order answered differently from the other.
-  [ true, false ].each do |new_room_first|
-    test "a room moved upstairs is not identified with a new room in its box, #{new_room_first ? "new room declared first" : "moved room declared first"}" do
-      story = WorldSeed::Loader.new(a_building_with_a_named_room).load!
-      cellar = story.locations.find_by(name: "The Cellar")
-      cellar.update!(description: "Barrels to the ceiling.")
-      create(:playthrough, story: story, current_location: cellar)
+  # THE RULE THAT COVERS THE CLASS: a row is identified by its coordinates only
+  # where the document does not otherwise account for it
+  # (`WorldSeed.find_location`). Here the moved room is declared, so its row is
+  # spoken for and the box match is declined whichever order the pair appears
+  # in -- one moved room and one new one, which is what the edit says.
+  #
+  # ALL THREE POLARITIES AND BOTH ORDERS. Each of the three was found on its own
+  # and each was the same edit with the names changed, which is why the table is
+  # a table: the guard was narrowed twice on the NAMES before the rule became
+  # "is this row already spoken for", and a polarity is not what decides this.
+  [ [ "neither name is a number", "The Cellar", "The Pantry" ],
+    [ "both names are numbers", "The Rusted Anchor room 1", "The Rusted Anchor room 3" ],
+    [ "only the file's new name is a number", "The Cellar", "The Rusted Anchor room 3" ] ].each do |shape, played, arrival|
+    [ true, false ].each do |arrival_first|
+      test "a moved room keeps its own row when #{shape}, #{arrival_first ? "the new room declared first" : "the moved room declared first"}" do
+        story = WorldSeed::Loader.new(a_building_with_one_room(played)).load!
+        room = story.locations.find_by(name: played)
+        room.update!(description: "Barrels to the ceiling.", last_protagonist_visit: story.start_time)
+        create(:playthrough, story: story, current_location: room)
+        doorways = room.exits.pluck(:name).sort
 
-      edited = a_building_with_a_named_room
-      # THE FILE MOVES THE CELLAR TO THE STOREY ABOVE and declares a new room in
-      # the box it came out of. A storey is its own plane, so nothing here
-      # overlaps anything and the file loads.
-      edited["locations"].detect { |row| row["name"] == "The Cellar" }.merge!("z" => 1)
-      pantry = { "name" => "The Pantry", "detail_level" => "stub", "teaser" => "Shelves.",
-                 "parent" => "The Rusted Anchor", "x" => 0, "y" => 0, "z" => 0, "width" => 6, "depth" => 8 }
-      # THE ONE THING THAT DIFFERS BETWEEN THE TWO RUNS: which of the pair the
-      # document declares first. `#load_locations!` walks the file in order and
-      # saves each row before the next lookup, so before the guard this decided
-      # the answer -- which is what made it a wrong answer rather than an error.
-      new_room_first ? edited["locations"].insert(0, pantry) : edited["locations"] << pantry
+        # THE FILE MOVES THE PLAYED ROOM TO THE STOREY ABOVE and declares a new
+        # room in the box it came out of, with a doorway of its own. A storey is
+        # its own plane, so `#validate_boxes_do_not_overlap!` accepts the file.
+        edited = a_building_with_one_room(played)
+        edited["locations"].detect { |row| row["name"] == played }.merge!("z" => 1)
+        declaration = { "name" => arrival, "detail_level" => "stub", "teaser" => "Shelves.",
+                        "parent" => "The Rusted Anchor", "x" => 0, "y" => 0, "z" => 0,
+                        "width" => 6, "depth" => 8 }
+        edited["connections"] << { "between" => [ "The Hallway", arrival ],
+                                   "distance" => "adjacent", "travel_method" => "walking" }
+        # THE ONE THING THAT DIFFERS BETWEEN THE TWO RUNS.
+        arrival_first ? edited["locations"].insert(0, declaration) : edited["locations"] << declaration
 
-      WorldSeed::Loader.new(edited).load!
+        WorldSeed::Loader.new(edited).load!
+        arrived = story.locations.find_by(name: arrival)
 
-      assert_equal "The Cellar", cellar.reload.name, "the played row is still the room it was"
-      assert_equal "Barrels to the ceiling.", cellar.description, "the played row kept its prose"
-      assert_equal 1, cellar.z, "the file moved this room, so the row moved"
-      assert_not_equal cellar.id, story.locations.find_by(name: "The Pantry").id
+        # THE FILE'S OTHER ROOM HAS TO EXIST, and it is asserted first because
+        # the failure this closes LOSES it: the played row was claimed under the
+        # new room's name, so nothing was ever created for the new room and
+        # `note_creation` never fired.
+        assert_not_nil arrived, "the file declares this room and the load has to give it a row of its own"
+        assert_not_equal room.id, arrived.id, "the new room is not the played row under another name"
+        assert_equal played, room.reload.name, "the played row is still the room it was"
+        assert_equal "Barrels to the ceiling.", room.description, "the played row kept its prose"
+        assert_equal story.start_time, room.last_protagonist_visit, "the played row kept its history"
+        assert_equal doorways, room.exits.pluck(:name).sort, "the played row kept its own doorways"
+        assert_equal 1, room.z, "the file moved this room, so the row moved"
+        assert_equal [ "The Hallway" ], arrived.exits.pluck(:name),
+                     "the doorway the file declares to the new room belongs to the new room"
+      end
     end
   end
 
-  # AND THE SAME EDIT WITH TWO NUMBERS RATHER THAN TWO NAMES, which is the pair
-  # a hand-edited file is far MORE likely to move around: `rake game:export`
-  # writes `Location::Interior`'s own numbers straight out, so an author who
-  # moves `room 1` up a storey and puts a new `room 3` in the box it came out of
-  # has written two placeholder names. At-least-one admitted that pair, and
-  # room 3's declaration then took room 1's played row on coordinates alone --
-  # the played row came back under room 3's name carrying somebody's history,
-  # and the room that really moved was created fresh and empty beside it.
-  # `WorldSeed.exactly_one_name_is_a_placeholder?` is what refuses it, and
-  # nothing is lost: pass 1 matches a numbered room by its exact name before the
-  # box pass is ever consulted, which is the right answer and an
-  # order-independent one.
-  [ true, false ].each do |new_room_first|
-    test "a numbered room moved upstairs is not identified with a new numbered room in its box, #{new_room_first ? "new room declared first" : "moved room declared first"}" do
-      story = WorldSeed::Loader.new(with_a_building).load!
-      room = story.locations.find_by(name: "The Rusted Anchor room 1")
-      room.update!(description: "Barrels to the ceiling.", last_protagonist_visit: story.start_time)
-      create(:playthrough, story: story, current_location: room)
-      doorways = room.exits.pluck(:name).sort
+  # AND THE ROW THE FILE NAMES NOWHERE IS STILL RECOGNIZED, which is the job the
+  # box pass exists for and the thing all of the above must not cost. The file
+  # still carries the number `Location::Interior` wrote; the row carries the
+  # name `Location::RoomName` gave it when somebody walked in, and that name
+  # appears nowhere in the document -- so no declaration is competing for the
+  # row and its coordinates are the only evidence of identity there is.
+  test "a room the engine renamed is still recognized by its box" do
+    story = WorldSeed::Loader.new(a_building_with_one_room("The Rusted Anchor room 1")).load!
+    room = story.locations.find_by(name: "The Rusted Anchor room 1")
+    create(:playthrough, story: story, current_location: room)
+    room.update!(name: "the counting room")
 
-      edited = with_a_building
-      edited["locations"].detect { |row| row["name"] == "The Rusted Anchor room 1" }.merge!("z" => 1)
-      third = { "name" => "The Rusted Anchor room 3", "detail_level" => "stub", "teaser" => "The room below it.",
-                "parent" => "The Rusted Anchor", "x" => 0, "y" => 0, "z" => 0, "width" => 6, "depth" => 8 }
-      new_room_first ? edited["locations"].insert(0, third) : edited["locations"] << third
-
-      WorldSeed::Loader.new(edited).load!
-
-      assert_equal "The Rusted Anchor room 1", room.reload.name, "the played row is still the room it was"
-      assert_equal "Barrels to the ceiling.", room.description, "the played row kept its prose"
-      assert_equal story.start_time, room.last_protagonist_visit, "the played row kept its history"
-      assert_equal doorways, room.exits.pluck(:name).sort, "the played row kept its doorways"
-      assert_equal 1, room.z, "the file moved this room, so the row moved"
-      assert_not_equal room.id, story.locations.find_by(name: "The Rusted Anchor room 3").id
+    assert_no_difference -> { Location.count } do
+      WorldSeed::Loader.new(a_building_with_one_room("The Rusted Anchor room 1")).load!
     end
+
+    assert_equal "the counting room", room.reload.name, "a provisional number does not overwrite a name"
+  end
+
+  # AND TWO NAMES A PERSON WROTE ARE STILL NEVER FOLDED TOGETHER, which is the
+  # case `WorldSeed.exactly_one_name_is_a_placeholder?` refuses and the one rule
+  # above would admit -- the row's name is nowhere in the file, so it is
+  # unclaimed, and only the placeholder test keeps the box from identifying it
+  # with a room somebody named by hand. It is the KNOWN LIMIT, left open on
+  # purpose: the load creates a second row and says so, rather than guessing
+  # that two deliberate names are one room.
+  test "a room the engine named is not folded into a room the file names by hand" do
+    story = WorldSeed::Loader.new(a_building_with_one_room("The Rusted Anchor room 1")).load!
+    room = story.locations.find_by(name: "The Rusted Anchor room 1")
+    create(:playthrough, story: story, current_location: room)
+    room.update!(name: "the counting room")
+    loader = WorldSeed::Loader.new(a_building_with_one_room("The Cellar"))
+
+    assert_difference -> { Location.count }, 1 do
+      loader.load!
+    end
+
+    assert_equal "the counting room", room.reload.name, "the played row is not renamed on coordinates alone"
+    assert_match(/created location "The Cellar"/, loader.warnings.join("\n"))
   end
 
   # AND THE LOAD LEAVES THE DOCTOR NOTHING TO REPORT, which is the acceptance

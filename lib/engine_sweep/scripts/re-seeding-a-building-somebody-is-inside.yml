@@ -42,14 +42,17 @@
 # renames the row and then loads the unchanged file over it.
 #
 # AND THE WRONG-ROW CAPTURE, for the same reason one level up: refusing it is
-# about which rooms the box pass may identify at all
-# (`WorldSeed.exactly_one_name_is_a_placeholder?`), and the edit that provokes
+# about which rows the box pass may identify at all -- only ones this document
+# names nowhere else (`WorldSeed.find_location`) -- and the edit that provokes
 # it MOVES a room's box and DECLARES a room the file did not have. A `reseed:`
 # step here renames and nothing else, so neither half of that edit can be
 # written as a step, and adding a facility for it would be sweep machinery built
 # for one case. `WorldSeed::LoaderTest` walks it instead, from both document
-# orders, because document order is the whole of what made it a wrong answer.
-# Every re-seed below is a rename, which is what this script is for.
+# orders and in all three name polarities, because document order is the whole
+# of what made it a wrong answer.
+# Every re-seed below is a rename, which is what this script is for -- and a
+# rename is the shape where the box pass has a job: the row's name goes missing
+# from the file, so nothing else is competing to be it.
 #
 # AND WHY IT ENDS BY AGREEING WITH THE FILE, which is a fact about the
 # INSTRUMENT rather than about the rule. `EngineSweep::Invariants` states every

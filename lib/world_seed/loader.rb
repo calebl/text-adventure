@@ -19,8 +19,10 @@
 #                                        recognizes a room the FILE renamed; then
 #                                        on the place and the box a file draws a
 #                                        room in, which recognizes one the ENGINE
-#                                        renamed. WorldSeed.find_location owns all
-#                                        three. `danger` is written on every load,
+#                                        renamed -- and only for a row this file
+#                                        names nowhere else.
+#                                        WorldSeed.find_location owns all three.
+#                                        `danger` is written on every load,
 #                                        in both directions, and an absent key is
 #                                        Location::SAFE
 #   Connection (location, connected)     unique index, written both ways -- and
@@ -65,14 +67,17 @@
 #   "the file re-asserts itself" rule the placements follow.
 #
 #   AND A ROOM OF A PLACE IS THE SAME ROOM AT THE SAME COORDINATES, whatever it
-#   has come to be called. That is the half of the rule above the written name
+#   has come to be called -- BUT ONLY WHERE THIS DOCUMENT NAMES NO OTHER ROOM
+#   THAT ROW COULD BE. That is the half of the rule above the written name
 #   cannot reach: `Location::RoomName` names a room of a laid-out place when
 #   somebody first walks into it, so a stub the file declares as
 #   `The Custom House room 1` can be a row called `the counting room` by the
 #   time the file is loaded over it again -- a rename nothing about the two
-#   strings could recognize. `WorldSeed.find_location` has the argument in
-#   full, and it is held to a rename of a ROOM rather than to coordinates in
-#   general: one of the two names has to be a number the engine wrote.
+#   strings could recognize, and the row's name appears nowhere in the file.
+#   A row the file DOES name is that declaration's, and the coordinates have
+#   nothing to add: without that limit, which of two declarations got the played
+#   row came down to which of them the document happened to list first.
+#   `WorldSeed.find_location` has the argument in full.
 #
 #   AND THE FILE'S SPELLING WINS EXCEPT OVER A NUMBER. The one exception to the
 #   two rules above, and the only place in this file where the document does not
@@ -1348,12 +1353,17 @@ class WorldSeed::Loader
   # whose own rooms collide on `WorldSeed.natural_key`, so there is never more
   # than one declaration to hand over.
   def find_location(story, name)
-    WorldSeed.find_location(story, name, declared_location(name))
+    WorldSeed.find_location(story, name, declared_locations)
   end
 
-  def declared_location(name)
+  # THE FILE'S OWN LOCATIONS BY `WorldSeed.natural_key`, handed over whole
+  # rather than one declaration at a time: `WorldSeed.find_location`'s widest
+  # pass reads the box off the declaration for the name it was asked about AND
+  # the set of every name this document spoke for, and those two have to come
+  # from one document or a row could be claimed twice. `#validate!` refuses a
+  # file whose own rooms collide on that key, so the index is one to one.
+  def declared_locations
     @declared_locations ||= location_documents.index_by { |attributes| WorldSeed.natural_key(attributes["name"]) }
-    @declared_locations[WorldSeed.natural_key(name)]
   end
 
   # WHAT THIS LOAD CALLS A ROW THE FILE DECLARES: the file's name, which is the

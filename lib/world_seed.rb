@@ -97,17 +97,22 @@ module WorldSeed
   # further out: identity is asked as wide as the evidence supports and no
   # wider.
   #
-  # PASS 3 NEEDS THE FILE'S OWN DECLARATION OF THE ROOM and answers nil without
-  # one, which is why it is an argument rather than something read off the name:
-  # only the document says which place a room is in and where in it, and only
-  # for a room the file lays out -- a `parent` plus all five of
-  # `Location::Box::COLUMNS`. Every flat world and every ordinary place is
-  # answered by the first two passes and never reaches it.
+  # PASS 3 NEEDS THE WHOLE DOCUMENT AND NOT ONE DECLARATION, which is what
+  # `declared` is: `{ .natural_key => the file's row }` for every location the
+  # file declares. Two separate facts are read off it and they cannot be allowed
+  # to disagree, which is why it is one argument rather than two -- the
+  # declaration for THIS name, which says which place a room is in and where in
+  # it, and the set of every name the document spoke for, which says which rows
+  # are still unaccounted for. `WorldSeed::Loader` and `Story::Doctor` each
+  # already build exactly this index.
+  #
+  # WITHOUT IT, ONLY THE TWO WRITTEN-NAME PASSES RUN. Every flat world and every
+  # ordinary place is answered by those and never reaches pass 3 anyway.
   #
   # AND PASS 3 IS NOT THE WHOLE OF WHAT A PARTED NAME MEANS. Recognizing the row
   # settles WHICH row; it does not settle what the row is then called, and the
   # answer there is not always the file's -- see `.keeps_its_own_name?`.
-  def self.find_location(story, name, declaration = nil)
+  def self.find_location(story, name, declared = nil)
     # `Location.where(story_id:)` and not `story.locations`, deliberately: a
     # bare association read LOADS AND CACHES it, and the loader calls this in
     # the middle of writing the very rows it would be caching. A caller that
@@ -121,66 +126,105 @@ module WorldSeed
     found = rows.pluck(:id, :name).detect { |(_, candidate)| natural_key(candidate) == key }
     return Location.find(found.first) if found
 
-    find_placed_location(story, declaration)
+    find_placed_location(story, declared, key)
   end
 
   # PASS 3, ON ITS OWN. The place is looked up through `.find_location` rather
   # than by name here, so a place the file has itself renamed is still found --
-  # and it recurses no further than once, because a place is declared with no
-  # `parent` of its own to widen on.
+  # and it recurses no further than once, because a place is declared with a
+  # FOOTPRINT and no position, so the box test below refuses it.
   #
-  # AT MOST ONE ROW CAN MATCH and that is a guarantee on both sides rather than
-  # a hope: `WorldSeed::Loader#validate_boxes_do_not_overlap!` refuses a file
-  # that declares two rooms of one place in the same place at once, and
-  # `Story::Doctor#overlapping_sibling_rooms` reports a database that holds two.
-  # `order(:id)` so a database that holds one anyway is answered the same way
-  # twice.
-  def self.find_placed_location(story, declaration)
+  # AT MOST ONE ROW CAN MATCH ON THE BOX and that is a guarantee on both sides
+  # rather than a hope: `WorldSeed::Loader#validate_boxes_do_not_overlap!`
+  # refuses a file that declares two rooms of one place in the same place at
+  # once, and `Story::Doctor#overlapping_sibling_rooms` reports a database that
+  # holds two. `order(:id)` so a database that holds one anyway is answered the
+  # same way twice.
+  #
+  # --- THE ONE RULE, AND IT IS `#unclaimed_by_name?` -------------------------
+  #
+  # A ROW IS IDENTIFIED BY ITS COORDINATES ONLY WHERE THE DOCUMENT DOES NOT
+  # OTHERWISE ACCOUNT FOR IT. If some declaration in this file names this row,
+  # that declaration is the one that owns it and the box has nothing to add.
+  #
+  # WHY IT IS ONE RULE AND NOT A LIST OF CASES. The edit that provokes every
+  # failure here is the same: move a room to the storey above and declare a NEW
+  # room in the box it came out of, which is ordinary authoring on a
+  # `rake game:export` file and one `#validate_boxes_do_not_overlap!` accepts,
+  # since a storey is its own plane. `WorldSeed::Loader#load_locations!` walks
+  # the file IN ORDER and saves each row before the next lookup, so whichever of
+  # the pair is declared FIRST reaches this pass while the played row is still
+  # sitting at its old coordinates. A box match there hands that row -- its
+  # prose, its history, its doorways -- to the new room's declaration, and the
+  # room that really moved is created fresh and empty beside it, or is never
+  # created at all. Declaring the two the other way round gives the right
+  # answer, and THAT is the defect: not that one answer is wrong, but that the
+  # answer turns on document order, which the format nowhere says is meaningful.
+  #
+  # Held to this rule, the answer cannot turn on order. A row the file names
+  # somewhere is refused whichever declaration reaches it first, so the pass
+  # sees only rows the document has no name for -- and it keeps doing the one
+  # job it exists for, because an engine-renamed row's name appears NOWHERE in
+  # the file: the file still carries `The Custom House room 1` and the row
+  # carries `the counting room` (`Location::RoomName`). That is the whole
+  # reason the box is worth reading at all.
+  def self.find_placed_location(story, declared, key)
+    declaration = declared && declared[key]
     return nil if declaration.nil? || declaration["parent"].blank?
     return nil unless Location::Box.shape(declaration) == :box
 
-    place = find_location(story, declaration["parent"])
+    place = find_location(story, declaration["parent"], declared)
     return nil if place.nil?
 
     box = Location::Box.of(declaration)
-    Location.where(story_id: story.id, parent_location_id: place.id).order(:id)
-            .detect { |room| room.box == box && exactly_one_name_is_a_placeholder?(place, declaration["name"], room.name) }
+    Location.where(story_id: story.id, parent_location_id: place.id).order(:id).detect do |room|
+      room.box == box && unclaimed_by_name?(declared, room) &&
+        exactly_one_name_is_a_placeholder?(place, declaration["name"], room.name)
+    end
   end
 
-  # EXACTLY ONE OF THE TWO NAMES IS A NUMBER `Location::Interior` WROTE, and
-  # that is what holds pass 3 to the rename it exists for instead of letting it
-  # identify rooms by coordinates in general.
+  # WHETHER NO DECLARATION IN THIS FILE ALREADY NAMES THIS ROW -- the rule
+  # `.find_placed_location`'s header states, asked of one candidate.
   #
-  # THE WRONG ANSWER IT REFUSES, because it is a wrong answer and not an error.
-  # A file edited to MOVE a room and to declare a NEW room in the box it vacated
-  # gives two declarations that the database answers in the wrong order:
-  # `WorldSeed::Loader#load_locations!` walks the file in order and saves each
-  # row before the next lookup, so the NEW room misses both written-name passes,
-  # finds the still-unmoved played row sitting at its coordinates, and takes it.
-  # The played row then comes back under the new room's name carrying somebody's
-  # scenes and doorways, and the room that really moved is created fresh and
-  # empty beside it. Declaring the two the other way round gives the right
-  # answer, which is exactly what makes it worth refusing: nothing about the
-  # document says which order an author meant.
+  # ON `.natural_key` AND NOT THE WRITTEN STRING, because that is what pass 1
+  # and pass 2 match on: a row those two would have claimed for some other
+  # declaration must not be reachable here, and "already claimed" has to mean
+  # the same thing to all three passes or a row could be claimed twice.
+  def self.unclaimed_by_name?(declared, room)
+    !declared.key?(natural_key(room.name))
+  end
+
+  # AND SUBORDINATE TO THAT RULE, WHAT THE BOX PASS IS *FOR*: exactly one of the
+  # two names is a number `Location::Interior` wrote. `#unclaimed_by_name?`
+  # decides which rows may be reached at all; this decides which of those the
+  # box is evidence about, and it is a narrower question.
   #
-  # BOTH DIRECTIONS ARE LEGITIMATE, which is why it is not a test of one side.
-  # The file still carrying the number while the row is named is a room somebody
+  # THE PAIR IT ADMITS IS A RENAME ACROSS THE PROVISIONAL LINE, both ways round.
+  # The file carrying the number while the row is named is a room somebody
   # walked into (`Location::RoomName`); the file naming the room while the row
   # still carries the number is an author naming a room the engine had not got
-  # to. Each is one rename of one room, and neither is a coincidence of
-  # coordinates.
+  # to. Each is one room whose name moved off, or onto, a placeholder -- and a
+  # placeholder is provisional (`Location::Interior.placeholder_name`), which is
+  # what makes the coordinates better evidence of identity than the name.
   #
-  # EXACTLY ONE AND NOT AT LEAST ONE, WHICH IS THE WHOLE POINT -- do not
-  # "simplify" this to an `||`. Two NUMBERED rooms of one place satisfy an `||`,
-  # and they are the pair most likely to be moved around a hand-edited file:
-  # `rake game:export` writes the engine's numbers straight out, so an author
-  # who moves `<place> room 1` up a storey and declares `<place> room 3` in the
-  # box it came out of has written two placeholder names, and an `||` let room
-  # 3's declaration capture room 1's played row on coordinates alone. Two rooms
-  # that both carry names a PERSON wrote were already refused; two that both
-  # carry numbers have to be refused for the same reason, and nothing is lost by
-  # it -- pass 1 matches a numbered room by its exact name before pass 3 is ever
-  # consulted, which is both the right answer and an order-independent one.
+  # WHAT IT STILL REFUSES THAT THE ONE RULE WOULD ADMIT, and this is the reason
+  # it is not redundant: TWO NAMES A PERSON WROTE, neither of them provisional.
+  # A row the engine named `the counting room` and a file that has since been
+  # hand-edited to call that room `The Cellar` are two deliberate names, and
+  # nothing on record says they are one room -- so this refuses the box match
+  # and the load creates a second row, which `WorldSeed::Loader#note_creation`
+  # says out loud and `Story::Doctor`'s duplicate and overlapping-room findings
+  # report. THAT IS THE KNOWN LIMIT, left open on purpose and filed as its own
+  # work: closing it needs an identity rule that reaches past a placeholder, and
+  # a loader that silently folded two hand-written names into one row would
+  # destroy play rather than duplicate it -- `.natural_key`'s own argument for
+  # not widening past what the evidence supports.
+  #
+  # SO: EXACTLY ONE, NOT AT LEAST ONE. Two numbered rooms satisfy an `||`, and
+  # they are the pair a hand-edited file is likeliest to shuffle, since
+  # `rake game:export` writes the engine's numbers straight out. Nothing is lost
+  # by refusing them: pass 1 matches a numbered room by its exact name before
+  # this pass is ever consulted.
   def self.exactly_one_name_is_a_placeholder?(place, declared, carried)
     Location::Interior.placeholder_name?(place, declared) ^
       Location::Interior.placeholder_name?(place, carried)
@@ -319,5 +363,5 @@ module WorldSeed
   end
 
   private_class_method :node, :inline_array?, :needs_quoting?, :style_for, :scalar, :find_placed_location,
-                       :exactly_one_name_is_a_placeholder?
+                       :exactly_one_name_is_a_placeholder?, :unclaimed_by_name?
 end
