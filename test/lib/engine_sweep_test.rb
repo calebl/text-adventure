@@ -837,6 +837,104 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_empty EngineSweep::Invariants.new(story, seed: seed).check
   end
 
+  # --- positions_in_bounds --------------------------------------------------
+  #
+  # THE ONE INVARIANT THAT IS NOT STATED AGAINST THE FILE, because a walk is
+  # SUPPOSED to move a position: a take clears one and a drop rolls a new one.
+  # What a player may never do is put a thing somewhere its room is not.
+
+  test "a world whose file places things inside their rooms walks with the invariant quiet" do
+    seed = WorldSeed.parse(File.read(Rails.root.join("test/fixtures/files/a-world-with-an-interior.yml")))
+    story = WorldSeed::Loader.new(seed.deep_dup).load!
+
+    assert_empty EngineSweep::Invariants.new(story, seed: seed).check
+  end
+
+  # STRAIGHT TO THE COLUMNS, because `Item` refuses this: the invariant exists
+  # for a state a WALK could write, and the only way to reach it in a test is
+  # the way a defect would -- past the validation.
+  test "a thing outside its room breaks positions_in_bounds" do
+    seed, story = interior_world
+    key = Item.in_story(story).templates.by_name("brass tap key").sole
+    key.update_columns(x: 40, y: 40)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "positions_in_bounds", broken.invariant
+    assert_match(/brass tap key/, broken.to_s)
+    assert_match(/The Taproom is 7x8 paces at 0,0 on storey 0/, broken.to_s)
+  end
+
+  # BOTH ITEM LAYERS, because one game's copy in the wrong half of a room is as
+  # wrong as the world's own row doing it -- and the report names which.
+  test "one game's own copy outside its room breaks it too" do
+    seed, story = interior_world
+    game = Playthrough.create!(story: story, character: story.protagonist,
+                               current_location: story.locations.find_by(name: "The Taproom"),
+                               current_scene: story.opening_scene)
+    copy = game.items.by_name("brass tap key").sole
+    copy.update_columns(x: 40, y: 40)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "positions_in_bounds", broken.invariant
+    assert_match(/playthrough ##{game.id}/, broken.to_s)
+  end
+
+  test "somebody standing outside their room breaks it" do
+    seed, story = interior_world
+    story.protagonist.update_columns(x: 40, y: 40)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "positions_in_bounds", broken.invariant
+    assert_match(/Nell Cawsand/, broken.to_s)
+  end
+
+  # A ROOM WITH NO PLANE TO READ IT IN, which is the second of the three faults
+  # this one sentence covers.
+  test "a position in a room with no box breaks it" do
+    seed, story = interior_world
+    key = Item.in_story(story).templates.by_name("brass tap key").sole
+    key.update_columns(location_id: story.locations.find_by(name: "The Harbour Road").id, x: 1, y: 1)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check
+                                    .find { |failure| failure.invariant == "positions_in_bounds" }
+
+    assert_match(/The Harbour Road has no box/, broken.to_s)
+  end
+
+  # AND HALF A POSITION, which is the third: `Item.positioned` takes a row
+  # carrying EITHER column so that a partial one is caught here rather than
+  # read as unplaced.
+  test "half a position breaks it" do
+    seed, story = interior_world
+    Item.in_story(story).templates.by_name("brass tap key").sole.update_columns(y: nil)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "positions_in_bounds", broken.invariant
+    assert_match(/part-placed/, broken.to_s)
+  end
+
+  # UNPLACED IS NOT A BREAK, and it is what every row in the three checked-in
+  # worlds is: a flat world has no plane for anything to be in.
+  test "clearing a position leaves the invariant quiet" do
+    seed, story = interior_world
+    Item.in_story(story).templates.by_name("brass tap key").sole.update_columns(x: nil, y: nil)
+
+    assert_empty EngineSweep::Invariants.new(story, seed: seed).check
+                                        .select { |failure| failure.invariant == "positions_in_bounds" }
+  end
+
+  # The one world in the repository whose file places things, loaded with the
+  # file it came from -- which is what the invariants compare against.
+  def interior_world
+    seed = WorldSeed.parse(File.read(Rails.root.join("test/fixtures/files/a-world-with-an-interior.yml")))
+
+    [ seed, WorldSeed::Loader.new(seed.deep_dup).load! ]
+  end
+
   # A seeded world loaded the way a walk loads it -- under its own title, so
   # nothing here touches a world anybody is playing -- with the file it came
   # from, which is what the invariants compare against.

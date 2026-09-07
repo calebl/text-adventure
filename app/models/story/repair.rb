@@ -493,9 +493,17 @@ class Story::Repair
   # rather than left to it: the caller has already refused a ghost with any
   # scene, and moving the items is the difference between folding two rooms and
   # losing what was in one of them.
+  # AND WHATEVER WAS PLACED IN THE GHOST STOPS BEING PLACED, in the same
+  # statement that moves it. A position is read in the plane of the room a row
+  # is in (`Location::Spot`), so a cell of the ghost's floor is not a cell of
+  # the survivor's -- the two rooms are two rows and nothing says their boxes
+  # agree. Cleared rather than re-rolled: this repair is folding two records
+  # somebody's world file made one, and inventing a corner for everything in it
+  # is not what it was asked to do. Unplaced is the honest answer and
+  # `Location::Placement` writes the same one for a room with no box.
   def fold_location_into(ghost, survivor)
-    moved = Item.where(location: ghost).update_all(location_id: survivor.id)
-    moved += Character.where(location: ghost).update_all(location_id: survivor.id)
+    moved = Item.where(location: ghost).update_all(location_id: survivor.id, **Location::Placement.unplaced)
+    moved += Character.where(location: ghost).update_all(location_id: survivor.id, **Location::Placement.unplaced)
     moved += Location.where(parent_location: ghost).update_all(parent_location_id: survivor.id)
     moved += fold_doorways(ghost, survivor)
     ghost.destroy!

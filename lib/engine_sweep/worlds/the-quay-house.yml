@@ -17,10 +17,19 @@
 # tiling one 14 x 10 footprint, a serpentine of doors through each, and one
 # stairwell where room 1 and room 5 stand over each other.
 #
-# WHAT IS HAND-WRITTEN, and it is only what the layout deliberately does not do
-# (slice 4): THE WAY IN. `The Quay` is outside all of it and opens onto room 1,
-# which is the spare exit `Location::Interior` keeps on the entry room -- so
-# this file is also the worked example of what that reserved slot is for.
+# WHAT IS HAND-WRITTEN, and it is only what the layout deliberately does not do:
+# THE WAY IN. `The Quay` is outside all of it and opens onto room 1, which is
+# the spare exit `Location::Interior` keeps on the entry room -- so this file is
+# also the worked example of what that reserved slot is for.
+#
+# AND ONE THING LYING SOMEWHERE IN PARTICULAR, which is slice 4 and is why this
+# world has an item at all. The seal ledger lies at 3,2 of room 1, which runs
+# 0..6 along x and 0..3 along y -- so `EngineSweep::Invariants#positions_in_bounds`
+# has something to be true OF, and a walk that took it, carried it upstairs and
+# put it down would break that invariant if a drop wrote a cell of the room the
+# thing came from. `things-land-somewhere-in-a-room.yml` is that walk. It is
+# hand-written for the same reason the way in is: an offline sweep realizes no
+# room, so nothing here can watch `Item::Registry` place one.
 #
 # The rooms are STUBS and stay stubs: an offline walk writes nothing, which is
 # `EngineSweep::Invariants#nothing_was_written`.
@@ -103,6 +112,12 @@ locations:
   width: 7
   depth: 4
   teaser: A room inside The Custom House, 7 by 4 paces on storey 0.
+  items:
+  - name: seal ledger
+    description: |-
+      A quarto ledger of broken seals, one line to a cargo and the last line wet.
+    x: 3
+    y: 2
 - name: The Custom House room 2
   detail_level: stub
   parent: The Custom House

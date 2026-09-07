@@ -788,4 +788,115 @@ class CharacterTest < ActiveSupport::TestCase
     assert_predicate tame.race, :monstrous?
     assert_not_predicate tame.reload, :hostile?
   end
+
+  # --- where in the room they are standing, since slice 4 -------------------
+
+  test "somebody standing somewhere in a room reads their position back" do
+    clerk = create(:character, :placed)
+
+    assert_equal Location::Spot.new(x: 2, y: 5), clerk.position
+    assert_predicate clerk, :positioned?
+  end
+
+  # WHAT EVERYBODY IN EVERY DATABASE IS, and the reason the columns are
+  # nullable: a room with no box opens no plane, so nobody in one has anywhere
+  # to be.
+  test "somebody in a room with no box is unplaced and perfectly valid" do
+    story = create(:story)
+    clerk = create(:character, story: story, location: create(:location, story: story))
+
+    assert_nil clerk.position
+    assert_not_predicate clerk, :positioned?
+    assert_predicate clerk, :valid?
+  end
+
+  test "half a position is refused" do
+    assert_not_predicate build(:character, :placed, y: nil), :valid?
+    assert_not_predicate build(:character, :placed, x: nil), :valid?
+  end
+
+  test "a position is whole numbers" do
+    assert_not_predicate build(:character, :placed, x: 2.5), :valid?
+  end
+
+  test "somebody at the origin of their room is placed" do
+    clerk = create(:character, :placed, x: 0, y: 0)
+
+    assert_equal Location::Spot.new(x: 0, y: 0), clerk.reload.position
+  end
+
+  # NOWHERE IS THE ONE STATE THAT CANNOT CARRY ONE, and nowhere is a real state
+  # two of the three checked-in worlds are in.
+  test "somebody who is nowhere cannot carry a position" do
+    error = assert_raises(ActiveRecord::RecordInvalid) { create(:character, x: 1, y: 1) }
+
+    assert_match(/in no room/, error.message)
+  end
+
+  # --- a move decides where in the new room they stand ----------------------
+
+  # THE WHEREABOUTS AND THE POSITION MOVE TOGETHER, because a position is read
+  # in the plane of the room somebody is in: keeping the old numbers would leave
+  # them at a corner of a room they have left.
+  test "a move into a laid-out room places them inside its box" do
+    clerk = create(:character, :placed)
+    other = create(:location, story: clerk.story, parent_location: clerk.location.parent_location,
+                              x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    clerk.move_to!(other)
+
+    assert_equal other, clerk.reload.location
+    assert other.box.contains?(clerk.position), "#{clerk.position} is outside #{other.box}"
+  end
+
+  test "a move into a room with no box leaves them unplaced" do
+    clerk = create(:character, :placed)
+
+    clerk.move_to!(create(:location, story: clerk.story))
+
+    assert_nil clerk.reload.position
+  end
+
+  # NOWHERE ON PURPOSE IS STILL NOWHERE, so it clears the position too --
+  # `#a_position_needs_a_room` would refuse the row otherwise, which is what
+  # makes forgetting it impossible rather than invisible.
+  test "making somebody absent takes their position with them" do
+    clerk = create(:character, :placed)
+
+    clerk.absent!
+
+    assert_predicate clerk.reload, :absent?
+    assert_nil clerk.position
+  end
+
+  test "a move to nowhere takes the position with it" do
+    clerk = create(:character, :placed)
+
+    clerk.move_to!(nil)
+
+    assert_predicate clerk.reload, :nowhere?
+    assert_nil clerk.position
+  end
+
+  # RE-DERIVABLE FOR EVER, which is what keeps a re-admission
+  # (`Character::Registry`) a no-op rather than a shuffle.
+  test "walking out of a room and back in stands them where they were" do
+    clerk = create(:character, :placed)
+    room = clerk.location
+    was = Location::Placement.in_the_world(room, clerk)
+
+    clerk.move_to!(nil)
+    clerk.move_to!(room)
+
+    assert_equal Location::Spot.new(**was), clerk.reload.position
+  end
+
+  test "the positioned scope takes a partial row too" do
+    placed = create(:character, :placed)
+    partial = create(:character, story: placed.story, location: create(:location, story: placed.story))
+    partial.update_column(:y, 3)
+    create(:character, story: placed.story)
+
+    assert_equal [ placed, partial ].map(&:id).sort, Character.positioned.pluck(:id).sort
+  end
 end

@@ -487,6 +487,11 @@ class WorldSeed::Loader
                          # ask; a file has already been asked.
                          hostile: attributes["hostile"] == true,
                          **stat_block(attributes))
+                  # AND WHERE IN THE ROOM THEY STAND, written in both directions
+                  # for the reason the box keys and the items' own pair are:
+                  # deleting the keys from a file and re-seeding takes the person
+                  # out of that corner again. An absent pair is unplaced.
+                  .merge(Location::Spot::COLUMNS.to_h { |column| [ column, attributes[column] ] })
       )
       character.save!
 
@@ -577,9 +582,16 @@ class WorldSeed::Loader
       # longer marks would keep the thing unthrowable for ever with no way to
       # undo it from the file. An absent key is `Item::HANDY`, which is the
       # column's default and what almost everything is.
+      # AND WHERE IN THE ROOM THE FILE LAYS IT, written in both directions on
+      # every load -- the box keys' own rule on `locations` and its reason: a
+      # stale position left on a row the file no longer places would keep the
+      # thing in a corner its author had moved it out of, with no way to undo it
+      # from the file. An absent pair is UNPLACED, which is what every row in
+      # every checked-in world is (`Location::Spot`).
       item.assign_attributes(
         attributes.merge("name" => name, "bulk" => attributes["bulk"].presence || Item::HANDY,
                          playthrough: nil, template: nil, **place)
+                  .merge(Location::Spot::COLUMNS.to_h { |column| [ column, attributes[column] ] })
       )
       item.save!
     end
@@ -722,6 +734,7 @@ class WorldSeed::Loader
     validate_dangers!
     validate_hazards!
     validate_boxes!
+    validate_positions!
 
     connection_documents.each do |attributes|
       pair = Array(attributes["between"])
@@ -1033,6 +1046,98 @@ class WorldSeed::Loader
                             "#{one.fetch("parent").inspect} and are in the same place at once"
       end
     end
+  end
+
+  # WHERE IN A ROOM A FILE MAY PUT A THING OR A PERSON, and it is OPT-IN like
+  # every box key: a file that writes neither `x` nor `y` on an item or a
+  # character is saying "unplaced", which is what every row of all three
+  # checked-in worlds is and what the two nullable columns mean
+  # (`Location::Spot`).
+  #
+  # `#validate_boxes!`' ARGUMENT, SAID FOR A THING RATHER THAN A ROOM: a
+  # hand-authored world IS the decision about what is where, and every one of
+  # these mistakes is silent. A position on an item in somebody's hands reads
+  # against nothing; a position in a room with no box reads against a plane that
+  # does not exist; a position through the wall loads without complaint and is
+  # only ever noticed by somebody drawing the floor plan.
+  #
+  # THE FOUR RULES A FILE IS HELD TO, on top of what `Location::Spot` says a
+  # position IS:
+  #
+  #   whole      both numbers or neither -- `Location::Spot.shape`'s two whole
+  #              answers. `Item` and `Character` refuse a partial one too, so a
+  #              file with one never loads either way; this names the file and
+  #              the row.
+  #   integers   whole numbers of paces, like a box's five.
+  #   on a floor a position needs a room to be read in. An item nested under a
+  #              `characters[]` entry is in a pair of hands and has none; a
+  #              character with no `location` is nowhere and has none.
+  #   inside     that room carries a BOX -- all five columns, so it has a plane
+  #              -- and the two numbers are on its floor
+  #              (`Location::Box#contains?`, half-open like everything else).
+  #
+  # `rake game:doctor` reports all four on a database that already carries them,
+  # so a world written before any of this is diagnosable rather than unloadable.
+  # The file is held to the stronger rule.
+  def validate_positions!
+    boxes = location_documents.to_h { |attributes| [ WorldSeed.natural_key(attributes.fetch("name")), attributes ] }
+
+    location_documents.each do |attributes|
+      room = attributes.fetch("name")
+      Array(attributes["items"]).each { |item| validate_one_position!(item, "item", "name", room, boxes) }
+    end
+
+    character_documents.each do |attributes|
+      person = attributes.fetch("fullname")
+      Array(attributes["items"]).each do |item|
+        next if Location::Spot.shape(item) == :none
+
+        raise InvalidWorld, "#{where}: item #{item.fetch("name").inspect} is in #{person.inspect}'s hands and " \
+                            "carries #{Location::Spot::COLUMNS.join(", ")} -- a position is read in the plane of " \
+                            "the room a thing is LYING in, and something being carried is in no room"
+      end
+
+      validate_one_position!(attributes, "character", "fullname", attributes["location"], boxes)
+    end
+  end
+
+  # ONE ROW'S TWO NUMBERS, against the room the file puts it in. `room` is a
+  # name and may be nil -- a character with no `location` is nowhere -- which is
+  # the "on a floor" rule for a person.
+  def validate_one_position!(attributes, kind, name_key, room, boxes)
+    return if Location::Spot.shape(attributes) == :none
+
+    subject = "#{kind} #{attributes.fetch(name_key).inspect}"
+
+    if Location::Spot.partial?(attributes)
+      written = Location::Spot::COLUMNS.select { |column| attributes[column] }
+      raise InvalidWorld, "#{where}: #{subject} carries #{written.join(", ")} and not the other of " \
+                          "#{Location::Spot::COLUMNS.join(", ")} -- a position is both numbers or neither"
+    end
+
+    Location::Spot::COLUMNS.each do |column|
+      next if attributes[column].is_a?(Integer)
+
+      raise InvalidWorld, "#{where}: #{subject} has `#{column}: #{attributes[column].inspect}`; a position is " \
+                          "whole numbers of paces"
+    end
+
+    if room.blank?
+      raise InvalidWorld, "#{where}: #{subject} carries #{Location::Spot::COLUMNS.join(", ")} and is in no room -- " \
+                          "a position is read in the plane of the room a row is in, and nowhere is not one"
+    end
+
+    found = boxes[WorldSeed.natural_key(room)]
+    box = found && Location::Box.of(found)
+    if box.nil?
+      raise InvalidWorld, "#{where}: #{subject} is #{Location::Spot.of(attributes)} in #{room.inspect}, which " \
+                          "carries no box -- so the plane its position is read in does not exist"
+    end
+
+    return if box.contains?(Location::Spot.of(attributes))
+
+    raise InvalidWorld, "#{where}: #{subject} is #{Location::Spot.of(attributes)} in #{room.inspect}, which is " \
+                        "#{box} -- so it is outside the room it is in"
   end
 
   def validate_one_hazard!(catalogue, attributes, where_it_is)

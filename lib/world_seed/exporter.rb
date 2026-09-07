@@ -215,6 +215,44 @@ class WorldSeed::Exporter
                    "outermost place for them and will not load until one of those `parent` keys goes. " \
                    "`rake game:doctor` reports it as `locations_containing_each_other`."
     end
+
+    report_unloadable_positions
+  end
+
+  # A THING OR A PERSON PLACED SOMEWHERE THE FILE COULD NOT SAY. The same rule
+  # the boxes above are under, one level down and on two tables: half a
+  # position, or a whole one whose room has no plane to read it in, or one
+  # outside the room it is in. Written out as the records stand and named here,
+  # because `WorldSeed::Loader#validate_positions!` refuses the file and this
+  # warning is where the person editing it finds out why.
+  #
+  # BOTH ITEM LAYERS ARE SWEPT AND ONLY TEMPLATES ARE EXPORTED, deliberately:
+  # `#items_document` writes the world layer alone, so a warning about one
+  # game's copy would name a row that is not in the file. The scope is
+  # `.templates` for that reason and for no other.
+  def report_unloadable_positions
+    rows = Item.in_story(story).templates.positioned.includes(:location).order(:id)
+               .map { |item| [ item, item.location, "#{item.name} (#{item.whereabouts})" ] } +
+           story.characters.positioned.includes(:location).order(:id)
+                .map { |person| [ person, person.location, person.fullname ] }
+
+    rows.each do |record, room, label|
+      box = room&.box
+      next if box&.contains?(record.position)
+
+      @warnings << "#{label} is #{record.position || "part-placed"} and " \
+                   "#{position_fault(room, box)}: the file is written as the records stand and will not load " \
+                   "until somebody says where that row really is. `rake game:doctor` reports it under " \
+                   "`thing_with_a_partial_position`, `thing_positioned_in_a_room_with_no_box` or " \
+                   "`thing_outside_the_room_it_is_in`."
+    end
+  end
+
+  def position_fault(room, box)
+    return "is in no room, which has no plane to read a position in" if room.nil?
+    return "#{room.name} has no box, so there is no plane to read that in" if box.nil?
+
+    "#{room.name} is #{box}, so it is outside the room it is in"
   end
 
   # Re-exporting overwrites the file, which would throw away a header somebody
@@ -319,6 +357,20 @@ class WorldSeed::Exporter
       # an exporter that silently dropped half of a contradiction would hide
       # the thing the file's reader needs to fix.
       document["absent"] = true if character.deliberately_absent?
+      # WHERE IN THE ROOM THEY STAND. Omitted rather than written null when the
+      # records place them nowhere in particular, which is the rule every key
+      # here follows and is also what the loader reads back as "unplaced" -- so
+      # the round trip is exact for the three checked-in worlds, which are flat
+      # on purpose (the captain's fourth ruling of 2026-09-06).
+      #
+      # THE PAIR OR NEITHER, never one: a position is both numbers
+      # (`Location::Spot`) and a file carrying half of one would not load. A row
+      # holding half of one is exported as it stands and reported below, for
+      # `stats`' reason -- an exporter that silently dropped half a
+      # contradiction would hide the thing the file's reader needs to fix.
+      Location::Spot::COLUMNS.each do |column|
+        document[column] = character[column] unless character[column].nil?
+      end
       # WHETHER THIS PERSON ATTACKS THE PARTY, omitted rather than written
       # false, like every other flag here. It is exported beside `stats` and
       # not derived from the race on the way out: `Character.hostile_by_default?`
@@ -460,6 +512,14 @@ class WorldSeed::Exporter
       # back as -- the same "omitted rather than written out" rule
       # `locations.danger` and the flags above it follow.
       document["bulk"] = item.bulk unless item.bulk == Item::HANDY
+      # WHERE IN THE ROOM IT IS LYING, on the same terms as a character's pair
+      # one method up. An item exported under a CHARACTER never has one -- a
+      # thing in a pair of hands is in no room to be placed in
+      # (`Item#a_position_needs_a_floor`) -- so this writes nothing there rather
+      # than needing to know which owner it was called for.
+      Location::Spot::COLUMNS.each do |column|
+        document[column] = item[column] unless item[column].nil?
+      end
       if item.readable?
         document["readable"] = true
         document["inscription"] = text(item.inscription) if item.inscription.present?

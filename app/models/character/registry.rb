@@ -277,7 +277,18 @@ class Character::Registry
     reason = refusal(character)
     return refuse(character.fullname, reason) if reason
 
-    character.update!(location: location)
+    # SOMEBODY WHO WAS NOWHERE, PLACED -- and placed IN the room as well as into
+    # it, through `Character#move_to!` so that the whereabouts and the position
+    # are written by the one statement that owns both. It used to write
+    # `location:` straight; the two have to move together (see that method) and
+    # a second writer of a whereabouts is what `Character`'s header exists to
+    # keep down to one.
+    #
+    # `#move_to!` ALSO CLEARS `deliberately_absent`, which is not a change in
+    # behaviour but is worth saying: `#refusal` has already declined anybody the
+    # file marks absent on purpose, so nobody reaching this line carries the
+    # marker.
+    character.move_to!(location)
   end
 
   # A PERSON WHO DID NOT EXIST A MOMENT AGO, out of the sheet the realization
@@ -322,7 +333,7 @@ class Character::Registry
       # for a model to have answered. See `Character::StatBlock`.
       **Character::StatBlock.for_new(story, sequence: slot),
       **SHEET.to_h { |name| [ name, field(attributes, name) ] }
-    )
+    ).then { |person| place!(person) }
   rescue SanitizesGeneratedText::TruncatedTextError => e
     # A HALF-WRITTEN PERSON IS WORSE THAN NO PERSON, and refusing one is what
     # this class does with everything it will not take. Elsewhere in the app a
@@ -332,6 +343,25 @@ class Character::Registry
     # and cost the expensive half of the realization. So the room keeps its
     # description and loses a person, exactly as it does for a refused name.
     refuse(attributes["fullname"], "the sheet was cut off: #{e.message}")
+  end
+
+  # AND WHERE IN THE ROOM THEY ARE STANDING, which the ENGINE decides and no
+  # model is asked -- the same sentence the race, the hostility and the stat
+  # block above are under, one pair of columns further: `Location::DetailSchema`
+  # has no field for a coordinate and the realization prompt does not mention
+  # one. `Location::Placement` is the one writer and its header has the design.
+  #
+  # A SECOND WRITE, AND IT HAS TO BE, for `Item::Registry#place!`'s reason: the
+  # seed is the row's own id, so the row has to exist before it can be placed.
+  # It is not `#move_to!` -- the row was created standing in the room already,
+  # and this only decides where in it.
+  #
+  # A ROOM WITH NO BOX PLACES NOBODY, which is every room in a generated world
+  # today; the update is skipped rather than written as a pair of nils.
+  def place!(person)
+    placement = Location::Placement.in_the_world(location, person)
+    person.update!(**placement) if placement.values.any?
+    person
   end
 
   # One field of a proposed sheet, sanitized under the cap the model was given.

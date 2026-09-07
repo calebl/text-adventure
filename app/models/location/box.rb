@@ -213,6 +213,32 @@ class Location::Box < Data.define(:x, :y, :z, :width, :depth)
       x + width <= footprint_width.to_i && y + depth <= footprint_depth.to_i
   end
 
+  # WHETHER THIS SPOT IS ON THIS ROOM'S FLOOR -- the predicate a positioned
+  # `Item` or `Character` is held to, and the one `Story::Doctor` and
+  # `EngineSweep::Invariants` both ask.
+  #
+  # ONE FRAME AND NO TRANSLATION: a spot is read in the same plane a box is, so
+  # this is four comparisons and not a coordinate change. `Location::Spot`'s
+  # header has the decision and the alternative it was chosen over.
+  #
+  # HALF-OPEN, like everything else here (see the header): a room at x = 0 with
+  # width 3 holds a thing at 0, 1 and 2, and a thing at 3 is in the room next
+  # door. So two rooms sharing a wall never both contain one thing, which is
+  # what makes "outside its room" an exact fault rather than an off-by-one
+  # argument.
+  #
+  # NIL IS FALSE AND NOT AN ERROR: a row with no position is nowhere, and
+  # nowhere is inside nothing. That is `Location#overlaps?`'s answer for an
+  # unplaced room and it is right here for the same reason -- the callers sweep
+  # every row in a story and would otherwise have to filter before they could
+  # ask.
+  def contains?(spot)
+    return false if spot.nil?
+
+    spot.x >= x && spot.x < x + width &&
+      spot.y >= y && spot.y < y + depth
+  end
+
   # HOW FAR APART THESE TWO ARE, IN PACES, measured centre to centre and by the
   # streets rather than through the wall -- a person walks around the furniture,
   # not diagonally through it.

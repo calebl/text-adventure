@@ -285,7 +285,9 @@ class Location::InteriorTest < ActiveSupport::TestCase
                       location_outside_its_parents_footprint interior_with_an_unreachable_room
                       stairs_between_rooms_that_do_not_line_up
                       place_with_a_footprint_and_no_rooms
-                      door_between_rooms_that_share_no_wall].freeze
+                      door_between_rooms_that_share_no_wall
+                      thing_with_a_partial_position thing_positioned_in_a_room_with_no_box
+                      thing_outside_the_room_it_is_in].freeze
 
   # --- the two travel-time rules --------------------------------------------
 

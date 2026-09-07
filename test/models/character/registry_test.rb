@@ -454,7 +454,65 @@ class Character::RegistryTest < ActiveSupport::TestCase
     assert_equal [ "Ammon Brace" ], people.map(&:fullname)
   end
 
+  # --- where in the room they stand, since slice 4 --------------------------
+
+  # THE ENGINE PLACES THEM AND NO MODEL IS ASKED: the sheet has no coordinate
+  # in it and there is no field for one on `Location::DetailSchema`.
+  test "somebody created into a laid-out room stands inside its box" do
+    room = laid_out_room
+    Character::Registry.new(room).admit!([ sheet(fullname: "Odile Vance") ])
+    created = @story.characters.find_by(fullname: "Odile Vance")
+
+    assert_predicate created, :positioned?
+    assert room.box.contains?(created.position), "#{created.position} is outside #{room.box}"
+  end
+
+  # AND SO IS SOMEBODY WHO ALREADY EXISTED AND WAS NOWHERE. Placement goes
+  # through `Character#move_to!`, which writes the whereabouts and the position
+  # in one statement.
+  test "somebody nowhere placed into a laid-out room stands inside its box" do
+    room = laid_out_room
+    brace = create(:character, story: @story, fullname: "Ammon Brace")
+
+    Character::Registry.new(room).admit!([ brace ])
+
+    assert room.box.contains?(brace.reload.position), "#{brace.position} is outside #{room.box}"
+  end
+
+  # A PROPOSAL THAT NAMES SOMEBODY ALREADY STANDING HERE MOVES NOTHING, and now
+  # that includes the cell they are standing in: a world placement is
+  # re-derivable, so re-admitting them writes the same two numbers.
+  test "re-admitting somebody already standing here leaves their cell alone" do
+    room = laid_out_room
+    brace = create(:character, story: @story, fullname: "Ammon Brace")
+    Character::Registry.new(room).admit!([ brace ])
+    was = brace.reload.position
+
+    Character::Registry.new(room).admit!([ brace ])
+
+    assert_equal was, brace.reload.position
+  end
+
+  # THE ORDINARY CASE, and every room in every generated world today.
+  test "somebody placed into a room with no box is unplaced" do
+    brace = create(:character, story: @story, fullname: "Ammon Brace")
+
+    registry.admit!([ brace ])
+
+    assert_equal @here, brace.reload.location
+    assert_nil brace.position
+  end
+
   private
+
+  # A PLACE WITH A FOOTPRINT AND ONE ROOM INSIDE IT -- the only shape a position
+  # can be read in, because coordinates are local to a parent
+  # (`Location::Box`).
+  def laid_out_room
+    place = create(:location, :stub, :with_a_footprint, story: @story, name: "The Custom House")
+    create(:location, story: @story, parent_location: place, name: "The Long Room",
+                      x: 0, y: 0, z: 0, width: 7, depth: 4)
+  end
 
   # One entry of `Location::DetailSchema`'s `people` array, as a realization
   # answers with it: string keys, every field of the sheet, and nothing the

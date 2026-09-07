@@ -121,6 +121,35 @@
 #                        checked-in worlds are, by the captain's fourth ruling of
 #                        2026-09-06 -- and comparing against the file catches
 #                        everything a stronger sentence would.
+#   positions_in_bounds  every row that says WHERE IN A ROOM it is is inside that
+#                        room's box. Items in both layers and characters alike:
+#                        the world's own chair, this game's copy of it, and the
+#                        clerk standing beside both. It is the ONE invariant
+#                        here that is not stated
+#                        against the file, and it is not because it cannot be --
+#                        a walk is SUPPOSED to move a position. A take clears
+#                        one and a drop rolls a new one
+#                        (`Playthrough::Turn#carry!` / `#put_down!`), so "unmoved"
+#                        would fail on the ordinary case; what a player may
+#                        never do is put a thing somewhere its room is not, and
+#                        that is a statement about the rows on their own. It
+#                        covers three faults in one sentence: a position outside
+#                        its box, a position in a room with no box at all (there
+#                        is no plane to read it in), and half a position -- and
+#                        the last two are only reachable through raw SQL, since
+#                        `Item` and `Character` refuse them, so what this
+#                        actually watches is the drop. `Story::Doctor` reports
+#                        the same three on a stored world; this asserts them
+#                        after a walk.
+#                        WHAT A SCRIPT OWES IT, because this one is easier to
+#                        pass vacuously than the others: every invariant here is
+#                        read ONCE, over the records the walk leaves behind
+#                        (`EngineSweep::Walk`), and a position exists only while
+#                        the thing is on a floor. So a script whose last line
+#                        picks everything up leaves nothing for this to be true
+#                        OF and passes whatever a drop wrote.
+#                        `things-land-somewhere-in-a-room.yml` ends with a drop
+#                        for exactly that reason and says so.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
@@ -158,7 +187,8 @@ class EngineSweep::Invariants
 
   def check
     [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, stat_blocks_unmoved,
-      hostility_unmoved, hazards_unmoved, geometry_unmoved, nothing_was_written ].flatten.compact
+      hostility_unmoved, hazards_unmoved, geometry_unmoved, positions_in_bounds,
+      nothing_was_written ].flatten.compact
   end
 
   private
@@ -501,6 +531,43 @@ class EngineSweep::Invariants
     when :partial then "part of a box (#{Location::Box::COLUMNS.select { |column| geometry[column] }.join(", ")}) #{inside}"
     else "unlaid out, #{inside}"
     end
+  end
+
+  # EVERY POSITIONED ROW IS ON THE FLOOR OF THE ROOM IT IS IN. See the header for
+  # why this one is not stated against the file.
+  #
+  # BOTH ITEM LAYERS AND THE CAST, through the one scope each table has
+  # (`Item.positioned`, `Character.positioned`), which takes a row carrying
+  # EITHER column -- so half a position is caught here rather than read as
+  # unplaced. `Location::Box#contains?` is false for a nil spot, which is what
+  # makes that one line cover it.
+  def positions_in_bounds
+    astray = positioned_rows.filter_map do |record, room, label|
+      box = room&.box
+      next if box&.contains?(record.position)
+
+      "#{label} is #{record.position || "part-placed"} and #{describe_floor(room)}"
+    end
+    return nil if astray.empty?
+
+    broken("positions_in_bounds", astray.join("; "))
+  end
+
+  # Every row in the story that says where in a room it is, as the record, its
+  # room and a phrase naming it -- `Story::Doctor#positioned_rows`' counterpart,
+  # and it names the layer for that method's reason.
+  def positioned_rows
+    Item.in_story(story).positioned.includes(:location).order(:id)
+        .map { |item| [ item, item.location, "#{item.name} (#{item.whereabouts})" ] } +
+      story.characters.positioned.includes(:location).order(:id)
+           .map { |person| [ person, person.location, person.fullname ] }
+  end
+
+  def describe_floor(room)
+    return "is in no room, which has no plane to read a position in" if room.nil?
+    return "#{room.name} has no box, so there is no plane to read that in" if room.box.nil?
+
+    "#{room.name} is #{room.box}"
   end
 
   def nothing_was_written

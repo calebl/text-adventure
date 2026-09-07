@@ -355,6 +355,30 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_predicate Story::Doctor.new(story.reload), :healthy?
   end
 
+  # A CELL OF THE GHOST'S FLOOR IS NOT A CELL OF THE SURVIVOR'S, and nothing on
+  # record says the two boxes agree -- so what moves over stops being placed.
+  # Cleared rather than re-rolled: this repair is folding two rows a re-seed
+  # made two, not deciding which corner of the survivor everything is in.
+  test "what a fold moves over stops being placed" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    closet = story.locations.find_by(name: "The Supply Closet")
+    closet.update!(last_protagonist_visit: story.start_time)
+    place = create(:location, :stub, :with_a_footprint, story: story, name: "The Ward Annexe")
+    ghost = create(:location, story: story, name: "Supply Closet", detail_level: "stub", teaser: "The second one.",
+                              parent_location: place, x: 0, y: 0, z: 0, width: 7, depth: 8)
+    join(story.opening_location, ghost)
+    apron = Item.in_story(story).find_by(name: "copy-room apron")
+    apron.update!(location: ghost, x: 3, y: 4)
+    clerk = create(:character, story: story, fullname: "Anse Ferrow", location: ghost, x: 5, y: 2)
+
+    BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) { Story::Repair.new(story).apply! }
+
+    assert_equal closet, apron.reload.location
+    assert_nil apron.position
+    assert_equal closet, clerk.reload.location
+    assert_nil clerk.position
+  end
+
   test "refuses to fold two rooms both of which have been stood in" do
     story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
     story.locations.find_by(name: "The Supply Closet").update!(last_protagonist_visit: story.start_time)

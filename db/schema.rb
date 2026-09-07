@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_06_130000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -36,6 +36,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.integer "strength"
     t.datetime "updated_at", null: false
     t.integer "will"
+    t.integer "x"
+    t.integer "y"
     t.index "story_id, LOWER(fullname)", name: "index_characters_on_story_id_and_lower_fullname", unique: true
     t.index ["location_id", "hostile"], name: "index_characters_on_location_id_and_hostile"
     t.index ["location_id", "id"], name: "index_characters_on_location_id_and_id"
@@ -98,6 +100,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_120000) do
     t.boolean "readable", default: false, null: false
     t.integer "template_id"
     t.datetime "updated_at", null: false
+    t.integer "x"
+    t.integer "y"
     t.index ["character_id"], name: "index_items_on_character_id"
     t.index ["location_id", "character_id"], name: "index_items_on_location_id_and_character_id"
     t.index ["location_id"], name: "index_items_on_location_id"

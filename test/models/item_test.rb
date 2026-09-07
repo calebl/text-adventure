@@ -418,4 +418,78 @@ class ItemTest < ActiveSupport::TestCase
   test "bulk is not one of the columns a copy leaves behind" do
     assert_not_includes Item::NOT_COPIED, "bulk"
   end
+
+  # --- where in the room it is lying, since slice 4 -------------------------
+
+  test "a thing lying somewhere in a room reads its position back" do
+    key = create(:item, :placed)
+
+    assert_equal Location::Spot.new(x: 3, y: 4), key.position
+    assert_predicate key, :positioned?
+  end
+
+  # WHAT EVERY ROW IN EVERY DATABASE IS, and the reason the columns are
+  # nullable: unplaced is the honest state, not a defect.
+  test "a thing with neither column is unplaced and perfectly valid" do
+    key = create(:item, :lying)
+
+    assert_nil key.position
+    assert_not_predicate key, :positioned?
+    assert_predicate key, :valid?
+  end
+
+  test "half a position is refused" do
+    assert_not_predicate build(:item, :placed, y: nil), :valid?
+    assert_not_predicate build(:item, :placed, x: nil), :valid?
+  end
+
+  test "a position is whole numbers" do
+    assert_not_predicate build(:item, :placed, x: 2.5), :valid?
+  end
+
+  # ZERO IS A CELL. A validation that read `present?` on the integers would call
+  # the near corner of a room "no position".
+  test "a thing at the origin of its room is placed" do
+    key = create(:item, :placed, x: 0, y: 0)
+
+    assert_equal Location::Spot.new(x: 0, y: 0), key.reload.position
+  end
+
+  # A POSITION NEEDS A FLOOR, and these are the three places that are not one:
+  # somebody's hands, the party's hands, and nowhere.
+  test "a thing in a pair of hands cannot carry a position" do
+    error = assert_raises(ActiveRecord::RecordInvalid) { create(:item, x: 1, y: 1) }
+
+    assert_match(/pair of hands/, error.message)
+  end
+
+  test "a thing in the party's hands cannot carry a position" do
+    assert_not_predicate build(:item, :carried, x: 1, y: 1), :valid?
+  end
+
+  # THE POSITION IS THE INITIAL SNAPSHOT, so it is deliberately NOT on the
+  # exception list -- `Item::SnapshotTest` walks the copy itself.
+  test "a position is not one of the columns a copy leaves behind" do
+    assert_not_includes Item::NOT_COPIED, "x"
+    assert_not_includes Item::NOT_COPIED, "y"
+  end
+
+  # BUT IT IS NOT PUSHED BACK DOWN BY A RE-SEED: where one player left a thing
+  # is the player's business (`Item::TemplateRefresh`).
+  test "a position is not one of the columns a re-seed refreshes onto a copy" do
+    assert_not_includes Item::TemplateRefresh::FROM_THE_TEMPLATE, "x"
+    assert_not_includes Item::TemplateRefresh::FROM_THE_TEMPLATE, "y"
+  end
+
+  # THE INSTRUMENTS' SCOPE, and it takes a row carrying EITHER column so that
+  # half a position is a row `Story::Doctor` can see rather than one that reads
+  # as unplaced.
+  test "the positioned scope reaches both layers and a partial row" do
+    placed = create(:item, :placed)
+    partial = create(:item, :lying)
+    partial.update_column(:x, 4)
+    create(:item, :lying)
+
+    assert_equal [ placed, partial ].map(&:id).sort, Item.positioned.pluck(:id).sort
+  end
 end
