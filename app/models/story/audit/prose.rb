@@ -563,13 +563,21 @@ module Story::Audit::Prose
   # HOW FAR THE THRESHOLD MAY SIT FROM THE WALL IT IS IN. The longest real link
   # measured is 21 characters -- *"the North-East wall carries a shuttered
   # gate"* -- and the anaphors sit at 1 to 5 -- *"one in the west wall"*, *"the
-  # east wall has another"*. Short enough that a threshold in one clause cannot
-  # reach a wall in the next: in *"A door in the north wall gives back onto the
-  # landing, and another in the east wall leads on; the south wall is hung with
+  # east wall has another"*. The window may hold no sentence end and no OTHER
+  # named wall, which is what stops a door stepping over the wall it is really
+  # in to reach the next one along.
+  #
+  # WHAT THE LENGTH ALONE DOES AND DOES NOT BUY, and it is worth being exact
+  # because a doorless wall may stand on EITHER side of a door in one sentence.
+  # Where the doorless wall comes LAST the length is the whole of the defence:
+  # in *"…and another in the east wall leads on; the south wall is hung with
   # tarred canvas"* the south wall is 25 characters from the nearest door word
-  # and out of reach. The window may hold no sentence end and no OTHER named
-  # wall, which is what stops a door stepping over the wall it is really in to
-  # reach the next one along.
+  # and out of reach. Where the doorless wall comes FIRST the length does NOT
+  # reach far enough on its own -- in *"a cold hearth on the south wall, and a
+  # door in the east wall"* the door is 16 characters past the south wall, well
+  # inside the bridge -- and what answers there is `DOOR_BINDS_FORWARD`, which
+  # reads the "in the " between them and gives the door to the wall it is
+  # actually in.
   DOOR_BRIDGE = 24
 
   # EVERY WALL THE PROSE PUTS A DOOR IN. The grammar is a THRESHOLD and a
@@ -614,9 +622,10 @@ module Story::Audit::Prose
   # and `Story::Audit::NEGATIONS` skips the sentence -- so that room is a worked
   # example the size grammar reads and this one does not.
   #
-  # BOTH FIGURES WERE RE-MEASURED WITH `DOOR_BRIDGE` AND THE ATTACHED FORM OF
-  # `DOOR_ANAPHORS` IN PLACE, and neither moved through either narrowing: both
-  # took away a false-positive path and no real detection with them. Room 3's
+  # BOTH FIGURES WERE RE-MEASURED AFTER EACH OF THE THREE NARROWINGS -- the
+  # bridge, the attached form of `DOOR_ANAPHORS`, and `DOOR_BINDS_FORWARD` --
+  # and neither moved through any of them: each took away a false-positive path
+  # and no real detection with it. Room 3's
   # WEST wall is the reason `DOOR_ANAPHORS` exists at all -- its threshold noun
   # is 69 characters away, far outside the bridge, and what stands beside the
   # wall is "one in the west wall". Narrowing to the threshold noun alone would
@@ -678,20 +687,43 @@ module Story::Audit::Prose
   end
 
   # A door word in the run of text ENDING at the wall, close enough to its end.
+  # A trailing "in the " here is the CORRECT attachment -- "a second door in the
+  # east wall" is a door in the east wall -- so nothing is rejected on its
+  # account.
   def door_word_before?(window)
-    gaps_in(window) { |at| window.length - at.end(0) }
+    any_door_word?(window) { |at| window.length - at.end(0) <= DOOR_BRIDGE }
   end
 
-  # A door word in the run of text BEGINNING at the wall, close enough to its start.
+  # A door word in the run of text BEGINNING at the wall, close enough to its
+  # start AND not bound to the wall that follows.
   def door_word_after?(window)
-    gaps_in(window) { |at| at.begin(0) }
+    any_door_word?(window) do |at|
+      at.begin(0) <= DOOR_BRIDGE && !binds_forward?(window[at.end(0)..])
+    end
   end
 
-  def gaps_in(window)
+  def any_door_word?(window)
     return false if window.nil?
 
-    window.to_enum(:scan, /#{THRESHOLD}|#{DOOR_ANAPHORS}/).any? { yield(Regexp.last_match) <= DOOR_BRIDGE }
+    window.to_enum(:scan, /#{THRESHOLD}|#{DOOR_ANAPHORS}/).any? { yield(Regexp.last_match) }
   end
+
+  # WHETHER THE DOOR WORD IS IN THE WALL THAT FOLLOWS IT RATHER THAN THIS ONE.
+  # Everything after the door word up to the end of the window, and the window
+  # ends where the NEXT named wall begins -- so a run that is nothing but a
+  # preposition of place and an article is the front half of "a door in the
+  # <wall>", and that door belongs to the wall on the far side of it.
+  #
+  # ONLY THE AFTER WINDOW ASKS, which is the whole asymmetry: "…the south wall,
+  # and a door in the east wall" names the south wall's covering and the east
+  # wall's door, and read from the south wall the door is 16 characters away and
+  # well inside the bridge. An article is REQUIRED so an exhausted window
+  # ("carries a shuttered gate" with nothing after it) is not mistaken for one,
+  # and the preposition is optional because `DOOR_ANAPHORS` has already eaten it
+  # ("and another in the east wall" leaves only " the ").
+  DOOR_BINDS_FORWARD = /\A\s*(?:(?:in|into|through|on)\s+)?(?:the|a|an|its|this|that)\s*\z/i
+
+  def binds_forward?(tail) = tail.to_s.match?(DOOR_BINDS_FORWARD)
 
   # HOW BIG THE PROSE SAYS THE ROOM IS, AND WHICH STOREY IT SAYS IT IS ON.
   #

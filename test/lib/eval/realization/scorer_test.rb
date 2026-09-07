@@ -475,6 +475,17 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
                  "the two walls the prose put a door in were compared, and the other two were not claims"
   end
 
+  # AND THE SAME ROOM WITH THE DOORLESS WALL NAMED FIRST, which is the other
+  # order prose writes and the one a bridge length alone does not answer.
+  test "a description that names a doorless wall before its door costs no flag" do
+    upper = planned("The south wall is blank, and a door in the north wall gives back onto the landing.",
+                    plan: UPPER_PLAN)
+
+    assert_empty upper.flagged_for(:door_the_records_do_not_hold)
+    assert_equal 1, upper.judgeable_for(:door_the_records_do_not_hold),
+                 "the north wall was compared; the blank south wall was never a claim"
+  end
+
   # A DESCRIPTION THAT SAYS NOTHING ABOUT ITS WALLS HAS BROKEN NO RULE: the
   # prompt asks for a room, not for a measurement, so silence is out of the
   # denominator rather than clean.

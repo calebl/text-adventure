@@ -257,6 +257,32 @@ class Story::Audit::ProseTest < ActiveSupport::TestCase
     assert_empty Prose.door_claims("One in the north wall would have helped, if anybody had cut one.")
   end
 
+  # A DOORLESS WALL MAY STAND ON EITHER SIDE OF A DOOR IN ONE SENTENCE, so both
+  # orders are pinned deliberately. The one above puts the doorless walls after
+  # the doors, where the bridge's own length keeps them out. This one puts them
+  # FIRST, where it does not: the door is a dozen characters past the wall and
+  # well inside the bridge, and what keeps it off is the "in the " between them
+  # binding it to the wall that follows (`DOOR_BINDS_FORWARD`).
+  test "a doorless wall named before a door in the same sentence claims no door" do
+    { "Bare boards, a cold hearth on the south wall, and a door in the east wall." => [ "east" ],
+      "The south wall is blank, and a door in the north wall gives back onto the landing." =>
+        [ "north" ],
+      "The east wall is bare, and a door in the west wall opens on the stair." => [ "west" ],
+      "The south wall is blank, and another in the east wall leads on past the door." =>
+        [ "east" ] }.each do |text, walls|
+      assert_equal walls, Prose.door_claims(text).map(&:wall), text
+    end
+  end
+
+  # AND A DOOR THAT REALLY IS IN THIS WALL IS STILL READ THROUGH THE SAME
+  # WINDOW: what `DOOR_BINDS_FORWARD` rejects is a run that is nothing but a
+  # preposition and an article, so a door word with anything of its own after it
+  # attaches where it stands.
+  test "a door named after the wall it is in is still read" do
+    assert_equal [ "east" ], Prose.door_claims("The east wall holds a door in the corner.").map(&:wall)
+    assert_equal [ "north" ], Prose.door_claims("In the north wall, a door.").map(&:wall)
+  end
+
   # A COMPASS WORD IS NOT A WALL, and a wall with nothing to go through it is
   # not a door. Both are what keep this off ordinary description.
   test "a wall with no door in it, and a door with no wall, claim nothing" do

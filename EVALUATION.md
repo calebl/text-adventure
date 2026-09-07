@@ -1207,6 +1207,18 @@ landing, and another in the east wall leads on; the south wall is hung with
 tarred canvas and the west wall carries a run of pigeonholes"* claims all four
 walls and flags two, on prose that contradicts nothing.
 
+**A doorless wall can stand on either side of a door in one sentence, and the
+bridge answers only one of them.** Where the doorless wall comes last the
+length is the whole of the defence — in the sentence above the south wall is 25
+characters from the nearest door word. Where it comes FIRST the length does not
+reach: in *"a cold hearth on the south wall, and a door in the east wall"* the
+door is 16 characters past the south wall and well inside the bridge. What
+answers there is `Story::Audit::Prose::DOOR_BINDS_FORWARD`, which reads the
+"in the " between them and gives the door to the wall it is actually in — the
+one that FOLLOWS. It asks in the after-window only; before a wall, a trailing
+"in the " is the correct attachment, and it is what keeps *"a second door in the
+east wall"* reading east.
+
 **A second door named without the word is still read**
 (`Story::Audit::Prose::DOOR_ANAPHORS`), because that is how prose writes one —
 *"and one in the west wall stands half open"* is the repository's own worked
@@ -1215,9 +1227,12 @@ doing the job the noun would, though: PUT somewhere ("another in the east wall")
 or HELD by something ("the east wall has another"). The bare words are far wider
 than the job — "one" is a numeral and a pronoun first, so *"the west wall is one
 long run of pigeonholes"* and *"the south wall is the one the damp has ruined"*
-would each claim a door the prose never put there. Both figures above were
-re-measured after the bridge and after the attached anaphor, and neither moved
-through either narrowing.
+would each claim a door the prose never put there.
+
+Both figures above were re-measured after each of the three narrowings — the
+bridge, the attached anaphor, and the forward binding — and neither moved
+through any of them. Each took away a false-positive path and no real detection
+with it.
 
 **Neither check convicts prose of a claim the prompt itself made, or of one the
 prompt never made either way.** `Location::Plan` states more than the room's own
