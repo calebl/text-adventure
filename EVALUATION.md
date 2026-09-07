@@ -1391,7 +1391,14 @@ be constant, and `prompt_stable` is the check on that claim —
 
 ### The baseline there is, and what it does not cover
 
-`db/eval/room-names-after-bef7cec/` is the checked-in one: the set the room
+`db/eval/` holds the interior-entry pair -- `interior-entry-before/` and the
+after side named by `Eval::Realization::BASELINE` -- which is the before/after of
+stage one: the `inside` pick on the exits call and the `parameters` block on a
+building's detail call. Read the numbers there. The before side is the honest
+zero for every new check: on a tree where nothing offers the picks, every exit
+declines, every building declines, and no room anywhere carries a hazard.
+
+`db/eval/room-names-after-bef7cec/` is the older one, kept: the set the room
 naming block was re-baselined on once its change had been judged, which is
 step 3 of the rule this file opens with. It is a **summary** — every pass's
 figures and no rows, `Eval::Realization::Result#summary`'s form — so it renders

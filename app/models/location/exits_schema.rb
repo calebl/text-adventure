@@ -56,11 +56,13 @@ class Location::ExitsSchema < RubyLLM::Schema
       # `Eval::Realization::Scorer` measures `inside_declined` and prints
       # `insides_given` beside the two rates that would otherwise reward it.
       string :inside,
-             description: "Whether this place has rooms inside it that a player could walk between. " \
-                          "NO INSIDE is the right answer for most exits -- a road, a shore, a clearing, " \
-                          "a bridge, a cave mouth. Answer otherwise only for somewhere a person goes IN " \
-                          "to: an inn, a keep, a counting house, a warren. Pick the size the place would " \
-                          "really be, not the most interesting one.",
+             description: "NO INSIDE for almost everything you name. Anything else here makes the game " \
+                          "build a whole floor plan of rooms there and send the player walking through " \
+                          "them, so answer otherwise ONLY for a place that is a BUILDING somebody goes in " \
+                          "at a door: an inn, a keep, a counting house, a warren. NO INSIDE for a road, a " \
+                          "shore, a clearing, a bridge, a square, a cave mouth, a stair, a courtyard -- " \
+                          "and for a room, an office or a hall, which are already somewhere you stand. " \
+                          "When it really is a building, pick the size it would really be.",
              enum: Location::Parameters::INSIDE.keys, required: false
     end
   end

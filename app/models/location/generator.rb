@@ -727,12 +727,15 @@ class Location::Generator
       - When there is more than one, give the player a reason to prefer one
         over another
       - Do not list #{location.name} itself
-      - Say which of them have an INSIDE -- rooms a player could walk between.
-        An inn, a keep, a counting house, a warren, a temple: those are places a
-        person goes IN to, and the game builds their rooms itself. A stretch of
-        road, a shore, a clearing, a bridge, a cave mouth, a market square: no
-        inside, and that is the right answer for most exits. Pick the size the
-        place would really be rather than the most interesting one
+      - Say which of them have an INSIDE, and say NO INSIDE for almost all of
+        them. Saying anything else makes the game build a whole floor plan of
+        rooms in that place and send the player walking through them, so it is
+        only ever right for a BUILDING somebody goes in at a door -- an inn, a
+        keep, a counting house, a warren. A road, a shore, a clearing, a bridge,
+        a square, a cave mouth, a stair, a courtyard: no inside. A room, an
+        office, a hall, a chamber: no inside either, because those are already
+        somewhere the player stands. Where it really is a building, pick the size
+        it would really be rather than the most interesting one
       - Distance and travel method must be consistent with the description you
         just wrote, and must be true in both directions -- the way back is the
         same edge
