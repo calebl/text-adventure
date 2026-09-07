@@ -123,6 +123,36 @@ Read the output in this order:
 3. **Did it hold on the world it was not tuned on?** The held-out corpus is
    printed separately and never pooled.
 
+### The free gate in front of all of it: can the bench see the change?
+
+**A bench whose staged worlds lack the feature cannot measure a prompt block
+that renders on records.** Both benches play a fixed corpus over a fixed set of
+worlds, so a block guarded on a story having something -- an arc, a mechanic, a
+population -- renders EMPTY for every case in a corpus whose worlds have none of
+it, and the after side is the before side bought twice.
+
+So before planning any spend, prove the prompt actually moves:
+`rake eval:realization_digest` is free, offline and keyless and says whether the
+prompts this tree would send are the ones a stored set measured. For the prompt
+bench, digest the narration context over the corpus the same way. Two things
+that catch here:
+
+- **The block renders empty and the digest does not move.** Then there is
+  nothing to buy. Judge the change on **record-only tests over every branch of
+  the block**, and add one test that reads the bench's own staged worlds and
+  FAILS the day one of them gains the feature, so the round gets bought when it
+  can finally say something --
+  `Location::GeneratorArcTest#the_bench_worlds_send_an_unchanged_prompt` is the
+  worked example, and `ta-story-arc` is the change that needed it.
+- **The digest moves and the prompt text did not.** An empty interpolation on a
+  line of its own moved the realization digest for all nine shapes: a paid round
+  to measure one newline. Append rather than interpolate, and re-read the digest.
+
+And the money gate beside it: **`rake eval:estimate` is the only command that
+prices a bench without buying it.** `rake eval:realization` prints an estimate
+and then spends in the same breath -- its `YES=1` confirmation fires only above
+that task's `SPEND_CEILING`, which an ordinary four-rep round is nowhere near.
+
 ### The rule, and why it is this rule
 
 A check is **REAL** when a two-sided exact rank test on the per-run rates
@@ -1458,6 +1488,25 @@ those means buying its own before side first, at `rake eval:realization` —
 Which is the whole point of the rule this file opens with: the baseline is per
 change, and the set in the repository is the after side of the one change that
 has had one.
+
+### The noise band, as a checked-in pair
+
+`db/eval/null-2026-09-07/` is this bench's null check kept as a file: the same
+corpus, the same model, the same `prompt_digest` as the set beside it, four
+repetitions, bought a second time. Everything that moves between the two is the
+bench disagreeing with itself, and
+`rake eval:realization_compare BEFORE=room-people-after AFTER=null-2026-09-07`
+prints all of it offline and for free. `Eval::Realization::NullSetTest` holds the
+pair to what it is and asserts the only claim it makes -- that no figure
+separates -- rather than quoting a figure into prose.
+
+**Read it before believing a REAL verdict.** `rake eval:null` splits one set's
+runs in half, which is the cheap version of this; a whole second run is the
+honest one, because it carries the between-run variation a split-half cannot.
+
+It was bought by accident, and it is kept rather than deleted because a null
+check is the run the protocol asks for that nobody ever wants to fund. What it
+cost is in the PR that added it.
 
 ### What it is not
 
