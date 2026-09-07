@@ -103,6 +103,10 @@ module WorldSeed
   # for a room the file lays out -- a `parent` plus all five of
   # `Location::Box::COLUMNS`. Every flat world and every ordinary place is
   # answered by the first two passes and never reaches it.
+  #
+  # AND PASS 3 IS NOT THE WHOLE OF WHAT A PARTED NAME MEANS. Recognizing the row
+  # settles WHICH row; it does not settle what the row is then called, and the
+  # answer there is not always the file's -- see `.keeps_its_own_name?`.
   def self.find_location(story, name, declaration = nil)
     # `Location.where(story_id:)` and not `story.locations`, deliberately: a
     # bare association read LOADS AND CACHES it, and the loader calls this in
@@ -139,7 +143,78 @@ module WorldSeed
     return nil if place.nil?
 
     box = Location::Box.of(declaration)
-    Location.where(story_id: story.id, parent_location_id: place.id).order(:id).detect { |room| room.box == box }
+    Location.where(story_id: story.id, parent_location_id: place.id).order(:id)
+            .detect { |room| room.box == box && either_name_is_a_placeholder?(place, declaration["name"], room.name) }
+  end
+
+  # ONE OF THE TWO NAMES HAS TO BE A NUMBER `Location::Interior` WROTE, and that
+  # is what holds pass 3 to the rename it exists for instead of letting it
+  # identify rooms by coordinates in general.
+  #
+  # THE WRONG ANSWER IT REFUSES, because it is a wrong answer and not an error.
+  # A file edited to MOVE a room and to declare a NEW room in the box it vacated
+  # gives two declarations that the database answers in the wrong order:
+  # `WorldSeed::Loader#load_locations!` walks the file in order and saves each
+  # row before the next lookup, so the NEW room misses both written-name passes,
+  # finds the still-unmoved played row sitting at its coordinates, and takes it.
+  # The played row then comes back under the new room's name carrying somebody's
+  # scenes and doorways, and the room that really moved is created fresh and
+  # empty beside it. Declaring the two the other way round gives the right
+  # answer, which is exactly what makes it worth refusing: nothing about the
+  # document says which order an author meant. Two rooms that both carry names a
+  # person wrote are never identified with each other by coordinates alone, so
+  # that edit now loads as what it is -- one moved room and one new one.
+  #
+  # BOTH DIRECTIONS ARE LEGITIMATE, which is why it is an `||` rather than a
+  # test of one side. The file still carrying the number while the row is named
+  # is a room somebody walked into (`Location::RoomName`); the file named while
+  # the row still carries the number is an author naming a room the engine had
+  # not got to. Each is one rename of one room, and neither is a coincidence of
+  # coordinates.
+  def self.either_name_is_a_placeholder?(place, declared, carried)
+    Location::Interior.placeholder_name?(place, declared) ||
+      Location::Interior.placeholder_name?(place, carried)
+  end
+
+  # WHETHER A ROW `.find_location` RECOGNIZED KEEPS THE NAME IT ALREADY HAS
+  # rather than taking the file's. It is the ONE exception to *the file's
+  # spelling wins*, and it is narrow on purpose.
+  #
+  # A PLACEHOLDER IS PROVISIONAL AND NOT AN ASSERTION. `Location::Interior`
+  # numbers a building's rooms before anybody walks in, and `rake game:export`
+  # writes those numbers straight into a file -- so a world file carrying
+  # `The Custom House room 1` is not saying the room is called that. It is
+  # carrying the number the engine wrote while the room was still unwritten, and
+  # `.placeholder_name`'s own header is where that is declared provisional.
+  #
+  # WHAT WRITING THE NUMBER BACK WOULD COST, which is why this exists at all.
+  # `Location::RoomName` names a room of a place the first time somebody walks
+  # into it, and the same transaction flips the room to `realized`.
+  # `Location::Generator#realize!` returns an already-realized room untouched,
+  # so a re-seed that put the file's number back over that name would undo the
+  # naming FOR GOOD: nothing would ever propose a name for that room again, and
+  # the player would read *"You are in The Custom House room 1 of The Custom
+  # House"* for the rest of the game. That is the precise defect
+  # `Location::RoomName` was built to remove, reintroduced by the reader built
+  # to protect the row.
+  #
+  # BOTH HALVES ARE REQUIRED. A file that has been given a real room name IS
+  # asserting one and re-asserts it like everything else in the document; a row
+  # still carrying a number has no name of its own to keep. So the row wins only
+  # where the file offers a placeholder and the row offers something else.
+  #
+  # IT CANNOT FIRE ON A MATCH THE FIRST TWO PASSES MADE, which is why it needs no
+  # argument saying which pass found the row. Both of those compare the two
+  # names -- exactly, or on `.natural_key` -- and `.placeholder_name?` reads the
+  # natural key too, so a file name that is a placeholder makes the row's name
+  # one as well and the second half of the test is false. Only the box pass can
+  # hand back a row whose name is unlike the file's at all.
+  def self.keeps_its_own_name?(row, declaration)
+    place = row.containing_place
+    return false if place.nil? || declaration.nil?
+
+    Location::Interior.placeholder_name?(place, declaration["name"]) &&
+      !Location::Interior.placeholder_name?(place, row.name)
   end
 
   # THE CHECKED-IN FILE FOR ONE STORY, matched on title the way
@@ -233,5 +308,6 @@ module WorldSeed
     value.all? { |child| child.is_a?(String) && child.length <= BLOCK_SCALAR_THRESHOLD && !child.include?("\n") }
   end
 
-  private_class_method :node, :inline_array?, :needs_quoting?, :style_for, :scalar, :find_placed_location
+  private_class_method :node, :inline_array?, :needs_quoting?, :style_for, :scalar, :find_placed_location,
+                       :either_name_is_a_placeholder?
 end

@@ -54,6 +54,8 @@
 #   reads as *"the Rusted Anchor taproom of The Rusted Anchor"* -- the doubling
 #   this class exists to remove, one notch quieter. The prompt says to keep the
 #   place's name out; this is what makes that a guarantee rather than a request.
+#   THE NAME AND NOT THE LETTERS: it is bounded as a word, so a place called
+#   `The Ark` does not refuse `the dark hold`.
 #
 #   A NAME THIS WORLD HAS ALREADY GIVEN TO SOMEWHERE, SOMEBODY OR SOMETHING.
 #   The rule `Character::Registry#creation_refusal` applies to a person named
@@ -217,14 +219,29 @@ class Location::RoomName
   # name: the whole failure is a room name with the place's inside it, so an
   # exact match would catch the one case nobody proposes.
   #
+  # THE PLACE'S NAME AND NOT ITS LETTERS, which is why it is bounded. A raw
+  # substring refuses a room it has no business refusing, and a refusal here
+  # leaves the placeholder standing -- so the cost of over-reaching is exactly
+  # the sentence the player was not supposed to read: a place called `The Ark`
+  # would refuse `the dark hold` and the room would stay `The Ark room 3`.
+  #
+  # THE BOUND IS `Playthrough::Grammar::HOW_A_NAME_MATCHES`', the same lookaround
+  # pair and for the same reason its third lambda gives -- an item called "key"
+  # must not be found inside "monkey". `\b` is the wrong tool on a natural key,
+  # which may begin or end with a character `\b` does not consider a word
+  # boundary at all (a possessive, or a full stop in `st. aravel`); the
+  # lookarounds hold either way.
+  #
   # A PLACE WITH NO NAME REFUSES NOTHING, because every string contains the
-  # empty one. Unreachable through the app -- `Location` validates a name -- and
-  # written down because the alternative is a fixture that quietly refuses every
-  # name a test proposes.
+  # empty one -- and an unbounded empty key would match everywhere. Unreachable
+  # through the app -- `Location` validates a name -- and written down because
+  # the alternative is a fixture that quietly refuses every name a test
+  # proposes.
   def repeats_place?(name)
     key = WorldSeed.natural_key(place.name)
 
-    key.present? && WorldSeed.natural_key(name).include?(key)
+    key.present? &&
+      WorldSeed.natural_key(name).match?(/(?<![[:alnum:]])#{Regexp.escape(key)}(?![[:alnum:]])/)
   end
 
   # EVERY NAME THIS STORY HAS SPOKEN FOR, by natural key, with what kind of

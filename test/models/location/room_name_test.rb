@@ -145,6 +145,28 @@ class Location::RoomNameTest < ActiveSupport::TestCase
     assert_equal "the custom counter", naming.accept("the custom counter")
   end
 
+  # THE PLACE'S NAME AND NOT ITS LETTERS. A refusal here leaves the placeholder
+  # standing, so an over-reaching check costs exactly the sentence this class
+  # exists to remove: a short place name inside a longer word would refuse a room
+  # that repeats nothing, and the player would read "The Ark room 3 of The Ark".
+  # `Playthrough::Grammar::HOW_A_NAME_MATCHES`' bound, for its own reason -- an
+  # item called "key" must not be found inside "monkey".
+  test "a place's name inside a longer word is not the place's name" do
+    @place.update!(name: "The Ark")
+    @room.update!(name: "The Ark room 3")
+
+    assert_equal "the dark hold", naming.accept("the dark hold")
+    assert_equal "the embarkation stair", naming.accept("the embarkation stair")
+  end
+
+  test "a short place name as a whole word is still refused" do
+    @place.update!(name: "The Ark")
+    @room.update!(name: "The Ark room 3")
+
+    assert_nil naming.accept("the ark hold")
+    assert_nil naming.accept("the head of the Ark")
+  end
+
   test "a name another room of this place already answers to is refused" do
     create(:location, story: @story, name: "the counting room",
                       parent_location: @place, x: 7, y: 0, z: 0, width: 5, depth: 8)

@@ -1179,7 +1179,7 @@ checks are:
 | `name_already_spoken_for` | a name the world had already given to somebody, somewhere or something |
 | `proposal_refused` | what the registries would not admit — read off the records, and the superset of every reason above |
 | `readable_without_words` | a thing marked readable with nothing written on it, which costs a later round trip to `Item::Inscriber` |
-| `room_name_refused` | a room asked to name itself that came away still called its placeholder, **read off the room's own name after the call**. `Location::RoomName` refuses a proposal on several separate grounds and every one ends the same way, so this asks the record what happened rather than re-deciding it. Judgeable only on an `interior-room` case, where the prompt asks for a name at all |
+| `room_name_refused` | a room asked to name itself that came away still called its placeholder, **read off the room's own name after the call**. `Location::RoomName` refuses a proposal on several separate grounds and every one ends the same way, so this asks the record what happened rather than re-deciding it. Judgeable only on an `interior-room` case, where the prompt asks for a name at all. **It measures the prompt and the engine together, so it is the one check a set can go stale on without the corpus or the prompt moving**: reading the name AFTER the engine decided means a new refusal ground changes the figure. `db/eval/room-names-after-bef7cec` was recorded before `Location::RoomName#repeats_place?` existed, so this row of that set is not like-for-like with HEAD |
 | `room_name_already_taken` | a proposed room name the world had already given to somewhere, somebody or something — the one refusal above that is a set comparison, against the same closed list of names `name_already_spoken_for` reads. The evidence says whether the prompt had shown it |
 | `race_not_named` | **a KEYWORD check** — see below |
 | `size_the_records_do_not_hold` | **a KEYWORD check.** The description stated a size in paces, or a storey, that is not this room's. Judgeable only on an `interior-room` case, where `Location::Plan` stated the numbers in the prompt |
@@ -1373,6 +1373,20 @@ together from a PR body. **What was bought:** a before/after pair on
 `Location::Generator#name_instruction`, judged before the prompt shipped. The
 before side lives in the PR that shipped it and is not checked in — a baseline
 is kept for the state of the prompt that IS in the tree.
+
+**One row of it is not like-for-like with HEAD, and it is the one this bench
+cannot re-score its way out of.** The set was recorded at `bef7cec`, and review
+afterwards added a refusal ground the engine did not have then —
+`Location::RoomName#repeats_place?`. `room_name_refused` is read off the room's
+name AFTER the engine decided (see the checks table), so that check measures the
+prompt and the engine together and a new refusal ground moves it. Re-scoring
+cannot repair it, because the refusal happens at write time and not at score
+time. So a later naming-prompt change judged against this set would read part of
+an engine change as a prompt effect on that one row — take its before side fresh
+if `room_name_refused` is what the change is about. Everything else in the set
+stands: the corpus digest is today's, the arm and the repetitions are recorded,
+and the rooms its interior cases stand in all still carry placeholders, so
+`Location::RoomName.for` keeps them in both name checks' denominators.
 
 **It does not stand in for the rest of the prompt.** The corpus and the arm are
 this set's, so it is a baseline for a naming change and not for a change to

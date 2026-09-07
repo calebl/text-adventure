@@ -71,7 +71,16 @@
 #   `The Custom House room 1` can be a row called `the counting room` by the
 #   time the file is loaded over it again -- a rename nothing about the two
 #   strings could recognize. `WorldSeed.find_location` has the argument in
-#   full.
+#   full, and it is held to a rename of a ROOM rather than to coordinates in
+#   general: one of the two names has to be a number the engine wrote.
+#
+#   AND THE FILE'S SPELLING WINS EXCEPT OVER A NUMBER. The one exception to the
+#   two rules above, and the only place in this file where the document does not
+#   get the last word: a placeholder is PROVISIONAL, so a file still carrying
+#   `The Custom House room 1` for a row somebody has named is not asserting a
+#   name and does not overwrite one. `WorldSeed.keeps_its_own_name?` carries
+#   what putting the number back would cost -- a room realized under its number
+#   is never offered a name again.
 #
 #   A DOORWAY THE WORLD'S OWN MECHANIC MOVED HAS NOT GONE MISSING.
 #   `WorldMechanic::ShuffleConnections` repoints the anchored end of every
@@ -236,11 +245,19 @@ class WorldSeed::Loader
   # id, so its doorways, its scenes, its `last_protagonist_visit` and anybody
   # standing in it are all untouched -- which is the whole difference between
   # renaming the room and creating a second one beside it.
+  #
+  # EXCEPT WHERE THE FILE IS OFFERING A PLACEHOLDER AND THE ROW HAS A NAME, and
+  # `WorldSeed.keeps_its_own_name?` is where the whole of that reasoning lives:
+  # a number `Location::Interior` wrote is provisional, so a file still carrying
+  # one is not asserting anything for the row's own name to lose. `#written_name`
+  # is the one place the two answers are chosen between, so nothing downstream
+  # of it has to know there were two.
   def load_locations!(story)
     location_documents.to_h do |attributes|
       name = attributes.fetch("name")
       location = find_location(story, name) || story.locations.new(name: name)
-      note_rename("location", location, name)
+      written = written_name(location, attributes, name)
+      note_rename("location", location, name, written: written)
       note_creation("location", name) unless location.persisted?
       # HOW DANGEROUS THE FILE SAYS THIS PLACE IS, written in both directions on
       # every load -- the shape `absent` and `hostile` have on a character
@@ -270,7 +287,7 @@ class WorldSeed::Loader
       # may name a parent that is declared further down.
       location.assign_attributes(
         attributes.except("opening", "items", "parent")
-                  .merge("name" => name, "danger" => attributes["danger"].presence || Location::SAFE,
+                  .merge("name" => written, "danger" => attributes["danger"].presence || Location::SAFE,
                          "hazard" => attributes["hazard"].presence, "hazard_die" => attributes["hazard_die"])
                   .merge(Location::Box::COLUMNS.to_h { |column| [ column, attributes[column] ] })
       )
@@ -1339,15 +1356,31 @@ class WorldSeed::Loader
     @declared_locations[WorldSeed.natural_key(name)]
   end
 
-  # A row recognized under a different written name, said out loud. The rename
-  # itself is done by the caller's `assign_attributes` -- this only reports it,
-  # so a load that quietly renamed something is not a shape this class has.
-  def note_rename(kind, record, name)
+  # WHAT THIS LOAD CALLS A ROW THE FILE DECLARES: the file's name, which is the
+  # rule, or the name the row already carries in the one case
+  # `WorldSeed.keeps_its_own_name?` describes. Read on the row rather than on
+  # the pass that found it, for the reason that predicate gives.
+  def written_name(location, attributes, name)
+    WorldSeed.keeps_its_own_name?(location, attributes) ? location.name : name
+  end
+
+  # A row recognized under a different written name, said out loud -- AND WHICH
+  # WAY THE TWO NAMES WERE RECONCILED, because since `Location::RoomName` the
+  # answer is not always the file's. The write itself is the caller's
+  # `assign_attributes`; this only reports it, so a load that quietly renamed
+  # something is not a shape this class has -- and a load that quietly DECLINED
+  # to rename something would not be either, which is the second branch.
+  def note_rename(kind, record, name, written: name)
     return unless record.persisted?
     return if record.name == name
 
-    reconciled << "#{kind} #{record.name.inspect} is #{name.inspect} in the file, so the row was renamed rather " \
-                  "than a second #{kind} created beside it (##{record.id}, unchanged otherwise)"
+    reconciled << if record.name == written
+      "#{kind} #{record.name.inspect} is #{name.inspect} in the file, which is one of its place's provisional " \
+        "numbers, so the row kept the name it has (##{record.id}, unchanged otherwise)"
+    else
+      "#{kind} #{record.name.inspect} is #{name.inspect} in the file, so the row was renamed rather " \
+        "than a second #{kind} created beside it (##{record.id}, unchanged otherwise)"
+    end
   end
 
   # A ROW A RE-SEED CREATED IN A WORLD SOMEBODY HAS PLAYED, which is the one

@@ -697,6 +697,21 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     edited
   end
 
+  # The same building with its one room NAMED in the file rather than numbered:
+  # a hand-authored interior, which is the shape where two declarations can both
+  # carry names a person wrote and neither is a placeholder to identify a row by.
+  def a_building_with_a_named_room
+    edited = document
+    edited["locations"] << { "name" => "The Rusted Anchor", "detail_level" => "stub",
+                             "teaser" => "An inn at the end of the hallway.", "width" => 12, "depth" => 8 }
+    edited["locations"] << { "name" => "The Cellar", "detail_level" => "stub",
+                             "teaser" => "Down a step from the hallway.", "parent" => "The Rusted Anchor",
+                             "x" => 0, "y" => 0, "z" => 0, "width" => 6, "depth" => 8 }
+    edited["connections"] << { "between" => [ "The Hallway", "The Cellar" ],
+                               "distance" => "adjacent", "travel_method" => "walking" }
+    edited
+  end
+
   # --- re-seeding a world somebody has played --------------------------------
   #
   # THE DEFECT THESE PIN. `WorldSeed::Loader` adds and never reconciled, so
@@ -753,7 +768,15 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
   # SECOND room at the same coordinates of the same place: the row
   # `Story::Doctor#duplicate_locations` exists to report, with the player's
   # doorways hanging off one of them and the file's teaser on the other.
-  test "a room the engine renamed is the same room, renamed back" do
+  # AND IT KEEPS THE NAME THE ENGINE GAVE IT, because a placeholder is
+  # PROVISIONAL: a file still carrying `The Rusted Anchor room 1` is carrying
+  # the number `Location::Interior` wrote before anybody walked in, not
+  # asserting what the room is called. Writing it back would undo the naming for
+  # good -- `Location::Generator#realize!` returns a realized room untouched, so
+  # nothing would ever propose a name for it again and the player would read
+  # *"You are in The Rusted Anchor room 1 of The Rusted Anchor"* for the rest of
+  # the game.
+  test "a room the engine renamed is the same room, and keeps the name it was given" do
     story = WorldSeed::Loader.new(with_a_building).load!
     room = story.locations.find_by(name: "The Rusted Anchor room 1")
     room.update!(last_protagonist_visit: story.start_time)
@@ -767,12 +790,75 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
       loader.load!
     end
 
-    assert_equal "The Rusted Anchor room 1", room.reload.name, "the file re-asserts its own name over the row"
+    assert_equal "the counting room", room.reload.name, "the file's provisional number does not overwrite a name"
     assert_equal story.start_time, room.last_protagonist_visit, "the row kept everything hanging off it"
     assert_equal [ "The Hallway", "The Rusted Anchor room 2" ], room.exits.pluck(:name).sort
     assert_equal story.locations.find_by(name: "The Rusted Anchor"), room.parent_location
-    assert_match(/renamed rather than a second location created beside it/, loader.reconciled.join("\n"))
+    assert_match(/kept the name it has/, loader.reconciled.join("\n"))
     assert_empty loader.warnings
+  end
+
+  # AND THE FILE'S SPELLING STILL WINS WHEN THE FILE IS ASSERTING A NAME, which
+  # is the other direction of the same reader and the loader's standing rule: an
+  # author who names a room in the world file names it, and the row the engine
+  # numbered takes that name.
+  test "a room the file names is renamed even though the row carries the engine's number" do
+    story = WorldSeed::Loader.new(with_a_building).load!
+    room = story.locations.find_by(name: "The Rusted Anchor room 1")
+    create(:playthrough, story: story, current_location: room)
+    named = with_a_building
+    named["locations"].detect { |row| row["name"] == "The Rusted Anchor room 1" }["name"] = "the counting room"
+    named["connections"].each do |row|
+      row["between"] = row["between"].map { |value| value == "The Rusted Anchor room 1" ? "the counting room" : value }
+    end
+    loader = WorldSeed::Loader.new(named)
+
+    assert_no_difference [ "Location.count", "LocationConnection.count" ] do
+      loader.load!
+    end
+
+    assert_equal "the counting room", room.reload.name
+    assert_match(/renamed rather than a second location created beside it/, loader.reconciled.join("\n"))
+  end
+
+  # A ROOM THAT MOVED AND A NEW ROOM IN THE BOX IT VACATED, which is the wrong
+  # answer coordinates alone give. Both rooms carry names a person wrote, so
+  # nothing about the two declarations says which of them the played row is --
+  # and matching on the box would hand the played row, with its prose and its
+  # doorways, to whichever of the two the document happens to declare first. So
+  # the box pass declines to identify them at all
+  # (`WorldSeed.either_name_is_a_placeholder?`) and the edit loads as what it is:
+  # one moved room and one new one.
+  #
+  # ASSERTED FROM BOTH DOCUMENT ORDERS, because the whole defect was that one
+  # order answered differently from the other.
+  [ true, false ].each do |new_room_first|
+    test "a room moved upstairs is not identified with a new room in its box, #{new_room_first ? "new room declared first" : "moved room declared first"}" do
+      story = WorldSeed::Loader.new(a_building_with_a_named_room).load!
+      cellar = story.locations.find_by(name: "The Cellar")
+      cellar.update!(description: "Barrels to the ceiling.")
+      create(:playthrough, story: story, current_location: cellar)
+
+      edited = a_building_with_a_named_room
+      # THE FILE MOVES THE CELLAR TO THE STOREY ABOVE and declares a new room in
+      # the box it came out of. A storey is its own plane, so nothing here
+      # overlaps anything and the file loads.
+      edited["locations"].detect { |row| row["name"] == "The Cellar" }.merge!("z" => 1)
+      pantry = { "name" => "The Pantry", "detail_level" => "stub", "teaser" => "Shelves.",
+                 "parent" => "The Rusted Anchor", "x" => 0, "y" => 0, "z" => 0, "width" => 6, "depth" => 8 }
+      # THE ONE THING THAT DIFFERS BETWEEN THE TWO RUNS: which of the pair the
+      # document declares first. `#load_locations!` walks the file in order and
+      # saves each row before the next lookup, so before the guard this decided
+      # the answer -- which is what made it a wrong answer rather than an error.
+      new_room_first ? edited["locations"].insert(0, pantry) : edited["locations"] << pantry
+
+      WorldSeed::Loader.new(edited).load!
+
+      assert_equal "The Cellar", cellar.reload.name, "the played row is still the room it was"
+      assert_equal "Barrels to the ceiling.", cellar.description, "the played row kept its prose"
+      assert_equal 1, cellar.z, "the file moved this room, so the row moved"
+      assert_not_equal cellar.id, story.locations.find_by(name: "The Pantry").id
+    end
   end
 
   # AND THE LOAD LEAVES THE DOCTOR NOTHING TO REPORT, which is the acceptance
