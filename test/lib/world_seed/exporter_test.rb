@@ -288,6 +288,34 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     assert_equal "dangerous", locations.last["danger"]
   end
 
+  # AND HOW POPULATED IT IS, WHEN SOMEBODY PICKED A WORD. Quiet about a room
+  # nobody picked for, which is not `danger`'s omission one test up: there the
+  # absent key means the column's default, here it means *nobody picked*, and
+  # that is exactly what nil is (`Location::Population`).
+  test "exports how populated a room is, and stays quiet about a room nobody picked for" do
+    # The factory gives a room a word, because a nil one would make it roll a die
+    # (see `test/factories/locations.rb`); this test is about the room that has
+    # none, so it says so.
+    @opening.update!(population: nil)
+    @stub.update!(population: "a crowd")
+
+    locations = WorldSeed::Exporter.new(@story).document["locations"]
+
+    assert_not locations.first.key?("population"), "a room nobody picked for should not claim a word"
+    assert_equal "a crowd", locations.last["population"]
+  end
+
+  test "a room the narrator called empty round-trips as empty rather than as unpicked" do
+    @opening.update!(population: nil)
+    @stub.update!(population: "nobody")
+
+    document = WorldSeed::Exporter.new(@story).document
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load!
+
+    assert_equal "nobody", reloaded.locations.find_by(name: @stub.name).population
+    assert_nil reloaded.locations.find_by(name: "The Opening Room").population
+  end
+
   # A round trip is the only thing that proves the two halves agree, and it is
   # what `SeededWorldsTest` asserts over the checked-in files.
   test "a world with a monster in it round-trips" do

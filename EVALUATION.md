@@ -1186,7 +1186,7 @@ checks are:
 | `exit_named_this_room` | an exit that names the room it leads out of |
 | `exit_over_the_allowance` | more ways out than the prompt said were left |
 | `no_new_ground` | a room the story points into whose every exit was a place the world already had — or that named no way out at all. **This is the Blackfang Tunnel defect** |
-| `person_over_the_allowance` / `item_over_the_allowance` | more people or things than the prompt allowed |
+| `person_over_the_allowance` / `item_over_the_allowance` | more people or things than the prompt allowed. Since 2026-09-07 the people half is a count and not a ceiling (`Location::Population`), so an answer with too FEW people is a failed call the rotation sees rather than a figure here — the schema requires exactly the number the prompt states |
 | `name_already_spoken_for` | a name the world had already given to somebody, somewhere or something |
 | `proposal_refused` | what the registries would not admit — read off the records, and the superset of every reason above |
 | `readable_without_words` | a thing marked readable with nothing written on it, which costs a later round trip to `Item::Inscriber` |
@@ -1300,7 +1300,10 @@ mean.
 **And the counts are printed beside the rates and never folded in.** The cheapest
 way to clear every rate above is to write one exit and nobody: a room that names
 only the way back cannot restate a place it should not have, cannot open a door
-into a written room and cannot exceed its allowance. So `exits_named`,
+into a written room and cannot exceed its allowance. **The people half of that
+argument is now the schema's**, since the count is exact — an answer with nobody
+in a room the engine asked two people for fails the call — but the figures are
+still printed, because the schema cannot make a person worth talking to. So `exits_named`,
 `new_places_opened`, `new_places_named`, `people_named`, `items_named` and
 `people_take_up` have no better direction and are reported next to the defects.
 This is `Eval::Richness`'s argument applied to rooms.
@@ -1377,6 +1380,18 @@ are **not seeded at all** — `rand(18..80)` and `Character.sexes.values.sample`
 are Kernel's own generator — and the third keys on `story_id` and `location.id`,
 which a staged copy re-issues on every load. So those lines legitimately differ
 between two repetitions of one case.
+
+**And so is the count the people block asks for**, since the captain's ruling of
+2026-09-07: the narrator picks how populated a place is from a closed list and
+the engine rolls the count inside that word's band
+(`Location::Population`). A room a seed file left silent about carries no word,
+so the label is rolled too — and although it is seeded on the room's NAME
+rather than on its id, precisely so that a staged copy of a world keeps it, the
+count is drawn from the room's own generator and that does key on the id. So the
+count varies between repetitions and the line stating it is scrubbed **by
+position** — the line under `## Who Is Here`, whichever of the two sentences
+`#people_instructions` put there. The bullets around it stay inside the digest,
+so a reworded instruction still moves the version.
 
 They are **scrubbed before the prompt digest is taken, and recorded rather than
 pinned.** Pinning would mean the bench re-implementing `#slots` — a second

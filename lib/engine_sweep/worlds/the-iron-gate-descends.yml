@@ -387,10 +387,12 @@ locations:
     properties:
 - name: Rust Market
   detail_level: stub
+  population: a crowd
   teaser: |-
     A thin path descends toward the river, where the mist clings to the water and the scent of iron and trade lingers.
 - name: black pines
   detail_level: stub
+  population: nobody
   teaser: |-
     The dense forest stretches north, its gnarled branches blotting out the sky and the scent of iron-rich earth thick in the air.
 - name: Blackfang Warren

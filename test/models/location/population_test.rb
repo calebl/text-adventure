@@ -3,9 +3,10 @@ require "test_helper"
 # HOW POPULATED A PLACE IS: the word a model picks and the number the engine
 # rolls inside it. The captain's ruling of 2026-09-07 is quoted in the file's
 # header; what is pinned here is the split -- the model never writes a count,
-# the engine never overrules a word, and every roll is re-derivable from the
-# room's own id, which is the property `rake game:sweep` and `DRY_RUN=1` are
-# worth anything because of.
+# the engine never overrules a word, and both rolls are re-derivable for ever --
+# the word from the room's NAME and the count from the room's own generator,
+# which is the property `rake game:sweep` and `DRY_RUN=1` are worth anything
+# because of.
 class Location::PopulationTest < ActiveSupport::TestCase
   def setup
     @story = create(:story)
@@ -57,20 +58,36 @@ class Location::PopulationTest < ActiveSupport::TestCase
   # ------------------------------------------------------------------------
   # THE WORD.
 
-  test "a row that carries a word is answered with it and rolls nothing" do
+  test "a row that carries a word is answered with it" do
     room = create(:location, story: @story, population: "a crowd")
-    generator = Random.new(7)
-    untouched = Random.new(7)
 
-    assert_equal "a crowd", Location::Population.label_for(room, rng: generator)
-    assert_equal untouched.rand(1..1000), generator.rand(1..1000),
-                 "a room whose word was already picked took a number out of the generator"
+    assert_equal "a crowd", Location::Population.label_for(room)
   end
 
   test "a row with no word rolls one the engine can produce" do
     room = create(:location, :population_unset, story: @story)
 
-    assert_includes Location::Population::ROLLED, Location::Population.label_for(room, rng: rng(room))
+    assert_includes Location::Population::ROLLED, Location::Population.label_for(room)
+  end
+
+  # THE WORD IS THE ROOM'S AND NOT THE ROW'S, which is what makes it survive a
+  # world being exported and loaded again: every id changes and the words do not.
+  # It is also what keeps the realization bench's staged worlds stable, since
+  # `Eval::Realization::Stage` re-loads a world per repetition.
+  test "the same room in a re-seeded world keeps its word" do
+    room = create(:location, :population_unset, story: @story, name: "The Tide Post")
+    elsewhere = create(:location, :population_unset, story: create(:story), name: "the Tide Post")
+
+    assert_equal Location::Population.label_for(room), Location::Population.label_for(elsewhere)
+  end
+
+  # AND IT IS NOT `String#hash`, which `Roll`'s header refuses by name: that is
+  # salted per process, so the same room would come out differently after a
+  # restart. This pins the checksum against a value computed outside the app.
+  test "the name is turned into an integer the same way in any process" do
+    room = create(:location, story: @story, name: "The Tide Post")
+
+    assert_equal Zlib.crc32("tide post"), Location::Population.key_for(room)
   end
 
   test "the fallback can only roll words the table has a band for" do
@@ -93,7 +110,7 @@ class Location::PopulationTest < ActiveSupport::TestCase
   # being rolled.
   test "different rooms with no word roll different words" do
     rooms = 32.times.map { |n| create(:location, :population_unset, story: @story, name: "Room #{n}") }
-    words = rooms.map { |room| Location::Population.label_for(room, rng: rng(room)) }
+    words = rooms.map { |room| Location::Population.label_for(room) }
 
     assert_operator words.uniq.size, :>, 1,
                     "every room in a world came out the same way, so nothing is being rolled"
@@ -103,8 +120,7 @@ class Location::PopulationTest < ActiveSupport::TestCase
   test "one room's word is the same word in any process" do
     room = create(:location, :population_unset, story: @story)
 
-    assert_equal Location::Population.label_for(room, rng: rng(room)),
-                 Location::Population.label_for(room, rng: rng(room))
+    assert_equal Location::Population.label_for(room), Location::Population.label_for(room)
   end
 
   # ------------------------------------------------------------------------
@@ -147,8 +163,7 @@ class Location::PopulationTest < ActiveSupport::TestCase
   test "one room's count is the same count in any process" do
     room = create(:location, :population_unset, story: @story)
     twice = 2.times.map do
-      generator = rng(room)
-      Location::Population.count_for(Location::Population.label_for(room, rng: generator), rng: generator)
+      Location::Population.count_for(Location::Population.label_for(room), rng: rng(room))
     end
 
     assert_equal twice.first, twice.last

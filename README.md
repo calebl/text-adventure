@@ -810,14 +810,30 @@ walked through. It **refuses to guess** when two playthroughs record taking one
 thing at the same story moment, and it is idempotent. `DRY_RUN=1` first; `rake
 game:doctor` reports what is left, per layer.
 
-### Rooms are born with people in them, sometimes
+### Rooms are born with people in them
 
 The other half, and it is the same seam the furniture uses.
 `Location::DetailSchema` asks for the description, the lore, *at most three
-portable things* **and at most two people** in one answer, and
-`Character::Registry` turns the sheets into rows placed in the room it just
-described. Still the same call the furniture rides on; still not a narrator tool
-and not a scan of prose.
+portable things* **and exactly as many people as the engine rolled** in one
+answer, and `Character::Registry` turns the sheets into rows placed in the room
+it just described. Still the same call the furniture rides on; still not a
+narrator tool and not a scan of prose.
+
+**How many, the narrator picks and the engine rolls.** The captain's ruling of
+2026-09-07 — *"The narrarator should get to decide how populated a room should
+be"* — as a closed-list pick: the exits call of the room next door answers one
+word per exit out of `Location::Population::LABELS`, the word is kept on
+`locations.population`, and the engine rolls the exact count inside that word's
+band when somebody walks in. The model never writes a number, and a room nobody
+picked a word for — the opening room, a room of a laid-out interior, a seeded
+room whose file is silent — rolls its own word out of a flat table seeded on the
+room's name.
+
+It replaced a **ceiling the model could decline**: the prompt used to say *at
+most two* next to *"NOBODY is the right answer for most rooms"*, and four of six
+realization answers on record then named nobody. Story 7, The Iron Gate
+Descends, reached a player with one character in it, and that character was the
+player.
 
 **Who they are, the engine decides.** Race, age and sex are rolled per slot
 before the prompt is built and *stated* in it, so the model writes a person the
@@ -827,9 +843,9 @@ twice:
 
 ```
 ## Who Is Here
-List AT MOST 2 people who are in this place right now.
-- NOBODY is the right answer for most rooms, and an empty list is a complete
-  answer. Name somebody only when this place would be strange without them
+Write EXACTLY 2 people who are in this place right now.
+- Anyone you write is somebody the player can walk up to and talk to, so they
+  have to have a reason to be standing here and something they want
 ...
 Who they are is already decided. Write these people and do not change them:
   the 1st is Bell-Keepers, about 69, trans woman
@@ -842,7 +858,7 @@ one of its own:
 | refused | why |
 | --- | --- |
 | a name a character, an item or a place in this story already has | the classifier resolves a typed line against all three closed sets by name |
-| anything past `MAX_PER_CALL` (2) / `MAX_PER_ROOM` (3) / `MAX_PER_STORY` (12) | a world generates rooms for as long as somebody walks, so a per-room cap bounds nothing on its own |
+| anybody past the count the engine rolled, or past `MAX_PER_ROOM` / `MAX_PER_STORY` | the roll is what the room is *like*; the caps are what the game can hold, and a world generates rooms for as long as somebody walks |
 | a bare name with no sheet behind it | inventing a person from a string puts somebody in the world with no appearance and nothing to say |
 | **a sheet the provider cut off** | a half-written person is worse than none. A truncated field is a *failed call* everywhere else in the app; here it is a refusal, because the call it would fail is the room's own description — already saved, and the expensive half of the realization |
 
@@ -850,7 +866,10 @@ one of its own:
 room realized. On the same room of the same world, the detail call came back at
 **789 output tokens with two complete people in it against 396 with `people`
 suppressed** — about 197 tokens a person, against a schema cap of ~400. Most
-rooms pay only the +173, because the prompt asks for nobody.
+rooms pay only the +173, because the prompt asks for nobody. Both figures were
+measured under the ceiling the 2026-09-07 ruling replaced, so the *share* of
+rooms paying only the +173 is now whatever the narrator's picks come to; the
+per-person cost is unchanged.
 
 The first live realization under this schema is also why the caps are what they
 are: it came back with `appearance` and `personality` severed mid-word — *"She

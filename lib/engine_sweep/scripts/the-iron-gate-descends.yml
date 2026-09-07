@@ -34,6 +34,17 @@
 # of the room he is in, and `exit_cap` says no room gained a way out. This file
 # asserts the doors, which is what a player can see.
 #
+# AND IT IS WHERE THE POPULATION WORD IS HELD TO ACCOUNT. This is the world the
+# 2026-09-07 ruling came out of -- it reached a player with one character in it,
+# and that character was the player -- so its file is where two rooms carry a
+# `population` word: `Rust Market` is `a crowd` and `black pines` is `nobody`.
+# Neither is read by this walk and neither could be: the word is read when a room
+# is REALIZED, which is two model calls a sweep does not have. What every step
+# below asserts instead is that a typed line never touches it --
+# `EngineSweep::Invariants#hostility_unmoved` reads both words off the file after
+# the walk, on exactly the terms it reads `locations.danger`. Without those two
+# keys that half of the check would pass by having nothing to compare.
+#
 # THE WORLD IS ONE OF THE SWEEP'S OWN (`EngineSweep::WORLDS`) rather than a
 # world a fresh clone plays, and its header says why.
 story: The Iron Gate Descends

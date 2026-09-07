@@ -36,9 +36,14 @@ class Location::ExitsSchemaTest < ActiveSupport::TestCase
     exit_properties.each_value { |property| assert property["description"].present? }
   end
 
+  # FIVE FIELDS, AND THE FIFTH IS A FACT ABOUT THE FAR END. `population` is the
+  # word the narrator picks for how populated that place is -- the captain's
+  # ruling of 2026-09-07 -- and it is asked here because the count has to be
+  # known before that room's OWN detail prompt is built. See
+  # `Location::Population`.
   test "an exit carries what a stub location and its connection both need" do
-    assert_equal %w[name teaser distance travel_method inside], exit_properties.keys
-    assert_equal %w[name teaser distance travel_method],
+    assert_equal %w[name teaser distance travel_method inside population], exit_properties.keys
+    assert_equal %w[name teaser distance travel_method population],
                  schema_properties(SCHEMA)["exits"]["items"]["required"].map(&:to_s)
   end
 
@@ -50,6 +55,19 @@ class Location::ExitsSchemaTest < ActiveSupport::TestCase
     assert_not_includes schema_properties(SCHEMA)["exits"]["items"]["required"].map(&:to_s), "inside"
     assert_equal Location::Parameters::NO_INSIDE, exit_properties["inside"]["enum"].first
     assert_equal Location::Parameters::INSIDE.keys, exit_properties["inside"]["enum"]
+  end
+
+  # AND THE POPULATION PICK IS A CLOSED LIST, never a number. A model that could
+  # write a number could write four in a room the classifier can only offer three
+  # names out of (`Location::Population`).
+  #
+  # IT IS REQUIRED WHERE `inside` IS NOT, and the difference is that this list has
+  # no quietest option: `no inside` is a real answer and there is no word for *I
+  # would rather not say*. Nothing rests on the asking either way -- a missing
+  # answer leaves the stub with no word and the engine rolls one.
+  test "how populated a place is, is one of the engine's own words" do
+    assert_equal Location::Population::LABELS, exit_properties["population"]["enum"]
+    assert_includes schema_properties(SCHEMA)["exits"]["items"]["required"].map(&:to_s), "population"
   end
 
   # It follows from the other two, so asking for it was a decision bought that

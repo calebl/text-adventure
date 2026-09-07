@@ -86,8 +86,8 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
     assert_match(/Leave this out entirely/, described)
   end
 
-  # THE BOUND ON ONE ANSWER, and the captain's number: nobody or one is the
-  # ordinary case, not a crowd. The bound on the ROOM and on the WORLD is
+  # THE BOUND ON ONE ANSWER, read off `Location::Population`'s widest band rather
+  # than written beside it. The bound on the ROOM and on the WORLD is
   # `Character::Registry`'s, read against the records, because a seeded room can
   # already be at one.
   test "people is bounded at what one answer may name" do
@@ -96,6 +96,74 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
     assert_equal "array", people["type"]
     assert_equal Location::Population::MOST, people["maxItems"]
     assert_equal Character::Registry::MAX_PER_ROOM, Location::Population::MOST
+  end
+
+  # --- the one field whose shape is not a constant ----------------------------
+  #
+  # The captain's ruling of 2026-09-07: the narrator picks how populated a place
+  # is from a closed list and the engine rolls the count inside that word's band
+  # (`Location::Population`). So the count is known before the call is made, and
+  # `people` is a length the answer has to meet rather than a ceiling it may
+  # decline.
+
+  test "a count requires exactly that many people" do
+    (1..Location::Population::MOST).each do |wanted|
+      schema = Location::DetailSchema.for_people(wanted)
+      people = schema_properties(schema)["people"]
+
+      assert_equal wanted, people["minItems"], "#{wanted} should be the floor"
+      assert_equal wanted, people["maxItems"], "#{wanted} should be the ceiling"
+      assert_includes schema_required(schema), "people", "#{wanted} people must arrive"
+    end
+  end
+
+  # NOUGHT IS THIS CLASS ITSELF, and that is the guard the whole design rests on
+  # rather than an optimisation: an empty required array reads as an OMITTED
+  # field to `BaseAgent#missing_schema_keys`, so a room the pick called empty
+  # would fail its own realization and rotate through the whole model list
+  # looking for one that would invent somebody.
+  test "nobody is the schema this class already was" do
+    assert_same Location::DetailSchema, Location::DetailSchema.for_people(0)
+    assert_not_includes schema_required(SCHEMA), "people"
+    assert_nil schema_properties(SCHEMA).dig("people", "minItems")
+  end
+
+  # EVERYTHING ELSE IS BYTE-IDENTICAL BETWEEN THE SHAPES, which is what keeps a
+  # realization bench figure a measurement of one prompt: a variant that quietly
+  # reworded a description would make every comparison a comparison of two
+  # changes.
+  test "no other field differs between one count and another" do
+    shapes = (0..Location::Population::MOST).map do |wanted|
+      schema_properties(Location::DetailSchema.for_people(wanted)).except("people")
+    end
+
+    assert_equal 1, shapes.uniq.size
+  end
+
+  # AND A PERSON IS THE SAME PERSON IN EVERY SHAPE: the count changes how many
+  # arrive and never what one of them carries.
+  test "a person carries the same sheet whatever the count is" do
+    sheets = (0..Location::Population::MOST).map do |wanted|
+      schema_properties(Location::DetailSchema.for_people(wanted)).dig("people", "items")
+    end
+
+    assert_equal 1, sheets.uniq.size
+  end
+
+  # AND EVERY SHAPE ANSWERS TO THIS CLASS'S NAME, which is the one field of the
+  # payload that is not a declaration: `RubyLLM::Chat#with_schema` instantiates
+  # the class and sends `@name` to the provider, and an anonymous class would
+  # send the literal "Schema".
+  test "every shape is sent under this schema's own name" do
+    (0..Location::Population::MOST).each do |wanted|
+      assert_equal "Location::DetailSchema", Location::DetailSchema.for_people(wanted).new.to_json_schema[:name]
+    end
+  end
+
+  # A COUNT NO BAND CAN PRODUCE IS A PROGRAMMING ERROR AND SAYS SO, rather than
+  # silently building a schema for a room that cannot exist.
+  test "a count past the widest band is refused" do
+    assert_raises(KeyError) { Location::DetailSchema.for_people(Location::Population::MOST + 1) }
   end
 
   # Race, age and sex are NOT here: `Character::Registry#slots` rolls them and

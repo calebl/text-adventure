@@ -233,12 +233,18 @@ class Character::Registry
   # array is a room the pick said has nobody in it, and it is a complete answer
   # rather than a failure.
   #
-  # THREE DICE, ONE GENERATOR, IN THIS ORDER: the label, the count, then one
-  # `monstrous?` throw per slot. `Roll`'s standing rule -- a caller throwing
-  # several dice for one decision throws them from one seed in one order -- and
-  # the order is fixed here rather than incidental, because it is what makes a
-  # room's whole cast re-derivable from the room's own id in any process for
-  # ever. Inserting a roll ahead of another one moves every answer after it.
+  # TWO DICE, ONE GENERATOR, IN THIS ORDER: the count, then one `monstrous?`
+  # throw per slot. `Roll`'s standing rule -- a caller throwing several dice for
+  # one decision throws them from one seed in one order -- and the order is fixed
+  # here rather than incidental, because it is what makes a room's whole cast
+  # re-derivable from the room's own id in any process for ever. Inserting a roll
+  # ahead of another one moves every answer after it.
+  #
+  # THE WORD IS NOT ONE OF THEM. `Location::Population.label_for` takes no
+  # generator: a room a model or a seed file picked a word for rolls nothing at
+  # all, and a room nobody picked for is seeded on its NAME rather than on this
+  # room's id, because the word is the room's own for ever and the count is this
+  # realization's. That file's header has the reasoning.
   def slots
     @slots ||= begin
       rng = Location::Danger.generator_for(location)
@@ -291,7 +297,7 @@ class Character::Registry
   # That is also the whole of *a seeded room's own cast wins* -- nothing here
   # removes anybody, it only stops asking for more.
   def drawn(rng)
-    label = Location::Population.label_for(location, rng: rng)
+    label = Location::Population.label_for(location)
 
     [ Location::Population.count_for(label, rng: rng), room_for_people, world_for_people ].min
   end

@@ -233,11 +233,10 @@ class Character::RegistryTest < ActiveSupport::TestCase
 
     assert_equal opening, story.reload.opening_location
     [ opening, ordinary ].each do |room|
-      generator = Location::Danger.generator_for(room)
-      label = Location::Population.label_for(room, rng: generator)
+      label = Location::Population.label_for(room)
 
       assert_includes Location::Population::ROLLED, label
-      assert_equal Location::Population.count_for(label, rng: generator),
+      assert_equal Location::Population.count_for(label, rng: Location::Danger.generator_for(room)),
                    Character::Registry.new(room).allowance
     end
   end

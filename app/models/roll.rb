@@ -92,6 +92,24 @@ module Roll
   # and decides what the layout has to divide, so a correlation between them
   # would be one roll deciding twice.
   FOOTPRINT = 5
+  # HOW POPULATED A PLACE NOBODY PICKED A WORD FOR IS
+  # (`Location::Population.label_for`). Its identity is WHICH PLACE, and -- alone
+  # among the rolls in this app -- that is the place's NAME rather than its row:
+  # a word is a fact about somewhere, a re-seeded world is the same somewhere,
+  # and a row id is re-issued every time a world is loaded. So the seed is a
+  # checksum of the natural key and nothing else, which is `WorldSeed`'s own
+  # doctrine about what identifies a place.
+  #
+  # `Zlib.crc32` AND NOT `String#hash`, for the reason this file's header gives
+  # in full: `String#hash` is salted per process, so seeding from it would make
+  # the same room come out differently after a restart. A checksum is a stable
+  # integer function of the bytes, which is the one property required here.
+  #
+  # A CHECKSUM IS FAR LARGER THAN ANY COUNT, so it would collide freely with
+  # `Location::Danger`'s `SEQUENCE_BASE + location.id` band on the `sequence`
+  # axis. A kind of its own is what makes that impossible -- see the header on
+  # why an axis beats a convention.
+  POPULATION = 6
 
   # THE SEED, FROM FIVE INTEGERS AND NOTHING ELSE. Public because it is the part
   # worth asserting on its own: `RollTest` pins that the same inputs give the

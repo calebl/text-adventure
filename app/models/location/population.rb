@@ -80,9 +80,11 @@
 #   a row older than the column  every stub in every database that existed
 #                        before this migration.
 #
-# All four take the same path: `.label_for` rolls one out of `ROLLED`, from the
-# room's own seeded generator, so the answer is the same in any process for
-# ever and no room is left without one.
+# All four take the same path: `.label_for` rolls one out of `ROLLED`, seeded on
+# the room's NAME, so the answer is the same in any process for ever, the same
+# after a world is exported and re-seeded, and no room is left without one. That
+# method's comment and `Roll::POPULATION`'s have why it is the name and not the
+# row.
 #
 # A SEEDED ROOM'S OWN CAST WINS, and that falls out rather than being enforced
 # here: the count is clamped by `Character::Registry#room_for_people`, which is
@@ -136,14 +138,41 @@ module Location::Population
   MOST = BANDS.values.flatten.max
 
   # THE WORD FOR THIS ROOM, whether somebody chose it or not. A row that carries
-  # a label is answered with it; a row that does not rolls one, out of the
-  # generator the caller is already using for this room's cast.
-  def self.label_for(location, rng:)
+  # a label is answered with it; a row that does not rolls one.
+  #
+  # AND THE ROLL IS SEEDED ON THE ROOM'S NAME, which is the one roll in the app
+  # that is not seeded on a row -- `Roll::POPULATION`'s comment has the whole of
+  # why and this is the half that belongs here. A word is a fact about a PLACE,
+  # and a place's durable identity is its natural key rather than its id
+  # (`WorldSeed.natural_key`, and `WorldSeed::Loader`'s whole matching doctrine):
+  # a world exported and re-seeded is the same world, and every row in it has a
+  # new id. Seeding on the id would give the same room a different word on every
+  # load -- which is also what made the realization bench's staged worlds
+  # unstable, since `Eval::Realization::Stage` re-loads a world per repetition.
+  #
+  # SO IT TAKES NO GENERATOR, and that is the visible difference from
+  # `.count_for` below. The word is the ROOM's, decided once and the same for
+  # ever; the count is THIS REALIZATION's, drawn from the generator the room's
+  # cast is drawn from. `Location::Danger` already makes the same split between
+  # what a room IS (`.for_a_new_room`, its own seed) and what one realization
+  # does with it (`.generator_for`).
+  def self.label_for(location)
     stored = location.population.presence
     return stored if BANDS.key?(stored)
 
-    Roll.one_of(ROLLED, rng: rng)
+    Roll.one_of(ROLLED, rng: Roll.generator(story: 0, sequence: key_for(location), kind: Roll::POPULATION))
   end
+
+  # THE ROOM'S NAME AS AN INTEGER, through the same natural key the loader
+  # matches a re-seeded room on -- so a room the file renamed only in its
+  # article, or in its spacing, keeps the word it had.
+  #
+  # TWO WORLDS WITH A ROOM OF ONE NAME DRAW THE SAME WORD, and that is deliberate
+  # rather than overlooked: `story: 0` is this file saying the roll does not
+  # belong to a world, the way a stat block's `playthrough: 0` says it does not
+  # belong to a game. Putting the story id in would undo the whole property above,
+  # because a re-seeded world is a new story row.
+  def self.key_for(location) = Zlib.crc32(WorldSeed.natural_key(location.name.to_s))
 
   # HOW MANY PEOPLE THE ENGINE WILL ASK FOR, thrown inside the band the label
   # names.
