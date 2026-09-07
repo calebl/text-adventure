@@ -97,9 +97,26 @@
 # false` is the ordinary answer and an omitted `inscription` beside it means
 # exactly that. `Item::Registry` refuses an inscription on a thing marked
 # unreadable rather than believing either half over the other.
+# AND THE TWO PROSE FIELDS ARE HELD AS A BLOCK, because a BUILDING is asked for
+# those two and for nothing else on this list. `Location::PlaceSchema` is that
+# schema: same description, same lore, plus the picks that decide what the engine
+# builds inside it -- and no `name` (a building is named by whoever named the
+# exit), no `items` and no `people` (nobody ever stands in a container, so a
+# thing lying in one is a thing nobody can pick up).
+#
+# A BLOCK AND NOT A SUPERCLASS. `RubyLLM::Schema` keeps its properties per CLASS
+# -- `@properties ||= {}` on the singleton -- so `< Location::DetailSchema` would
+# inherit none of them and silently send an empty schema. And a `required: false`
+# object on THIS class would put five more enums into the JSON schema of every
+# realization in the game in order to reach the handful that are buildings, which
+# is a change to a measured artifact made as a side effect.
 class Location::DetailSchema < RubyLLM::Schema
+  PROSE_FIELDS = proc do
   string :description, description: "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.", max_length: 1200
   string :lore, description: "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.", max_length: 900
+  end
+
+  class_eval(&PROSE_FIELDS)
 
   string :name,
          description: "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",

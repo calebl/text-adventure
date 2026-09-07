@@ -89,6 +89,42 @@ module Location::Danger
     Roll.generator(story: location.story_id, sequence: SEQUENCE_BASE + location.id.to_i)
   end
 
+  # WHAT A ROOM OF A BUILDING SOMEBODY PICKED PARAMETERS FOR IS BORN AS, and it
+  # is here rather than in `Location::Interior` because this module is where the
+  # app decides where monsters come from -- one file, one answer, whether the
+  # room is a stub off a road or the third floor of an inn.
+  #
+  # THE PICK MOVES THE ODDS AND THE DIE STILL DECIDES, which is the standing
+  # constraint applied to a building: a model saying "dangerous" must not be able
+  # to make nine rooms dangerous. `Location::Parameters#danger_for` is the
+  # weighted list, already leaned one rung along the gradient for this storey, and
+  # this throws it -- so a deeper floor of a place that gets worse the deeper you
+  # go really does draw from a worse list, and the room could still come out safe.
+  def self.in_a_place(parameters, storey:, rng:)
+    Roll.one_of(parameters.danger_for(storey), rng: rng)
+  end
+
+  # AND WHETHER IT CARRIES THE BUILDING'S HAZARD, which is a RATE and not an
+  # assignment -- `Location::Parameters::HAZARD_SHARE` carries the reason at
+  # length, and the short of it is that `silent` and `airless` are charged EVERY
+  # TURN, so a building every room of which carried one would end a playthrough
+  # by arithmetic.
+  #
+  # THE KEY IS THE MODEL'S AND THE DIE IS ALWAYS THE ENGINE'S, drawn from
+  # `Location::HAZARD_DICE`. Not a preference: `Location#a_hazard_is_whole`
+  # refuses a row carrying a key without a die.
+  #
+  # AT A SHARE OF ZERO NO DIE IS THROWN AT ALL -- `#monstrous?`'s rule one method
+  # down, and here for its two reasons: the answer is no for ever, and a room
+  # that asks the impossible must not consume the next room's roll.
+  def self.hazard_in_a_place(parameters, storey:, rng:)
+    share = parameters.hazard_share_for(storey)
+    return {} unless share.positive?
+    return {} unless Roll.die(Location::Parameters::HAZARD_DIE, rng: rng) <= share
+
+    { hazard: parameters.hazard, hazard_die: Roll.one_of(Location::HAZARD_DICE, rng: rng) }
+  end
+
   # WHETHER THE NEXT PERSON WRITTEN INTO THIS ROOM IS ONE OF THE WORLD'S
   # MONSTERS. `danger_share` faces of `DANGER_DIE`, and at a share of zero NO
   # DIE IS THROWN AT ALL -- `Character::Check`'s rule at an impossible target,

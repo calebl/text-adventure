@@ -40,6 +40,30 @@ class Location::ExitsSchema < RubyLLM::Schema
       string :teaser, description: "A one-line glimpse of what lies that way, enough to make the player choose it. Exactly one sentence.", max_length: 160
       string :distance, description: "How far it is. Pick the closest of these; the exact wording does not matter.", enum: LocationConnection::DISTANCES.keys
       string :travel_method, description: "How the player covers that ground. Pick the closest of these. It must read correctly in both directions, because the way back is the same edge.", enum: LocationConnection::TRAVEL_METHODS.keys
+      # WHETHER THIS PLACE HAS AN INSIDE, and it is HERE rather than on a call of
+      # its own because this is the one moment in the app that names a place that
+      # does not exist yet -- the captain's Call 7 of 2026-09-06, that the
+      # location generator decides it, and his Call 2 of 2026-09-07, that it
+      # rides on a call already being made. `Location::Parameters` is the band
+      # each label names in paces; the engine rolls the footprint inside it and
+      # `Location#place?` starts answering true with no new column.
+      #
+      # OPTIONAL, AND THE QUIETEST OPTION IS FIRST. An absent pick is a legal
+      # answer and means `no inside`, which is what a stretch of road, a
+      # clearing and a bridge all are -- so there is no separate question of
+      # which stubs get asked (his Call 3). What it costs is that a world can
+      # quietly stop having buildings in it by nobody answering, which is why
+      # `Eval::Realization::Scorer` measures `inside_declined` and prints
+      # `insides_given` beside the two rates that would otherwise reward it.
+      string :inside,
+             description: "NO INSIDE for almost everything you name. Anything else here makes the game " \
+                          "build a whole floor plan of rooms there and send the player walking through " \
+                          "them, so answer otherwise ONLY for a place that is a BUILDING somebody goes in " \
+                          "at a door: an inn, a keep, a counting house, a warren. NO INSIDE for a road, a " \
+                          "shore, a clearing, a bridge, a square, a cave mouth, a stair, a courtyard -- " \
+                          "and for a room, an office or a hall, which are already somewhere you stand. " \
+                          "When it really is a building, pick the size it would really be.",
+             enum: Location::Parameters::INSIDE.keys, required: false
     end
   end
 end

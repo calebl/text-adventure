@@ -1,0 +1,170 @@
+# THE WAY IN, WRITTEN BY THE ENGINE -- and that is the whole of what this world
+# is for.
+#
+# `lib/engine_sweep/worlds/the-quay-house.yml` has a building in it and its way
+# IN is wired by hand, because until the interior-entry slice nothing in the app
+# could attach a place's doorway to a room inside it. This world is the same
+# claim with the hand taken out: The Quay opens onto THE LANDING STAIR HOUSE
+# ROOM 1, and that edge was written by `Location::Generator#open_the_way_in!` on
+# the captain's Call 5 of 2026-09-07 -- the doorway the building arrived with,
+# moved onto the room the party actually stands in.
+#
+# HOW IT WAS MADE, so it can be made again: The Quay House loaded under this
+# title with its two hand-wired buildings deleted, then one stub created through
+# `Location::Generator.create_stub!`, given a 13 by 9 footprint, joined to The
+# Quay by an ordinary pair of connection rows, and handed to
+# `Location::Generator#lay_out_interior!`. No model call at any point -- a
+# layout is integers and one seeded `Roll` -- and `rake game:export` wrote what
+# came out. `Story::Doctor` reported nothing.
+#
+# IT IS AN AUTHORED ARTIFACT FROM HERE ON, like every other exported world: the
+# layout is keyed on the story's own id, so re-running the recipe on a different
+# database writes a DIFFERENT building. What is checked in is one building the
+# engine really wrote, and `lib/engine_sweep/scripts/walking-in-off-the-quay.yml`
+# is what walks it.
+#
+# THE ROOMS ARE STUBS AND STAY STUBS, which is what an interior is until
+# somebody walks in and a model writes one. A sweep has no model, so the walk
+# asserts the RECORDS: the way in, the doors, the stairs, and the way back out.
+#
+# Loaded offline by the sweep. No model call, no API key, no network.
+---
+format: 2
+universe:
+  physics: Ordinary physics, and a tide that keeps to its table.
+  technology: Rope, tar, lamp oil and a ledger.
+  weapons: A gaff hook, and whatever is nearest the door.
+  geographies: |-
+    One quay, one stair house standing on it, and the water at the end of both.
+  civilizations: A port that has never been anything else.
+  history: Three hundred years of the same tide.
+  economics: |-
+    Paid in salt weight, settled in coin when the assessor is watching.
+  politics: |-
+    The harbourmaster, and whoever is owed money by the harbourmaster.
+  religion: The tide table, read aloud.
+  races:
+  - name: Harbourfolk
+    description: |-
+      Born to the water line, and unimpressed by anybody who was not.
+story:
+  title: The Landing Stair
+  genre: harbour mystery
+  start_time: '2026-09-06T19:00:00Z'
+  preface: |-
+    The stair house has been locked since noon and the seal on the door is broken.
+  summary: |-
+    Somebody was inside the stair house when the whole quay says it was empty.
+opening_scene:
+  location: The Quay
+  characters: [Nell Cawsand]
+  description: |-
+    The tide is out and the stair house door is standing open, which it has no business doing.
+  summary: |-
+    The story opens on the quay with the stair house standing open.
+characters:
+- fullname: Nell Cawsand
+  race: Harbourfolk
+  location: The Quay
+  stats:
+    level: 3
+    hit_die: 8
+    strength: 11
+    dexterity: 13
+    will: 12
+  nickname: Nell
+  age: 38
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: |-
+    Kept the quay's books for eleven years without once being asked to.
+  personality: Unhurried, and counts things twice.
+  appearance: Salt at the cuff, whatever she is wearing.
+  likes: A tide that comes in on the table
+  dislikes: A door found open
+  fears: Being the last one to know
+locations:
+- name: The Quay
+  detail_level: realized
+  opening: true
+  teaser: The water at one end and the stair house at the other.
+  description: |-
+    Wet stone, a bollard worn smooth, and the stair house open against the weather.
+  lore: |-
+    Every cargo that ever came ashore here was counted twice before it left.
+- name: The Landing Stair House
+  detail_level: stub
+  width: 13
+  depth: 9
+  teaser: A stair house on the quay, its door on the latch.
+- name: The Landing Stair House room 1
+  detail_level: stub
+  danger: dangerous
+  parent: The Landing Stair House
+  x: 0
+  y: 0
+  z: 0
+  width: 7
+  depth: 9
+  teaser: |-
+    A room inside The Landing Stair House, 7 by 9 paces on storey 0.
+- name: The Landing Stair House room 2
+  detail_level: stub
+  danger: uneasy
+  parent: The Landing Stair House
+  x: 7
+  y: 0
+  z: 0
+  width: 6
+  depth: 9
+  teaser: |-
+    A room inside The Landing Stair House, 6 by 9 paces on storey 0.
+- name: The Landing Stair House room 3
+  detail_level: stub
+  danger: uneasy
+  parent: The Landing Stair House
+  x: 0
+  y: 0
+  z: 1
+  width: 5
+  depth: 9
+  teaser: |-
+    A room inside The Landing Stair House, 5 by 9 paces on storey 1.
+- name: The Landing Stair House room 4
+  detail_level: stub
+  danger: uneasy
+  parent: The Landing Stair House
+  x: 5
+  y: 0
+  z: 1
+  width: 3
+  depth: 9
+  teaser: |-
+    A room inside The Landing Stair House, 3 by 9 paces on storey 1.
+- name: The Landing Stair House room 5
+  detail_level: stub
+  parent: The Landing Stair House
+  x: 8
+  y: 0
+  z: 1
+  width: 5
+  depth: 9
+  teaser: |-
+    A room inside The Landing Stair House, 5 by 9 paces on storey 1.
+connections:
+- between: [The Quay, The Landing Stair House room 1]
+  distance: adjacent
+  travel_method: walking
+- between: [The Landing Stair House room 1, The Landing Stair House room 2]
+  distance: adjacent
+  travel_method: walking
+- between: [The Landing Stair House room 2, The Landing Stair House room 4]
+  distance: adjacent
+  travel_method: taking stairs
+- between: [The Landing Stair House room 3, The Landing Stair House room 4]
+  distance: adjacent
+  travel_method: walking
+- between: [The Landing Stair House room 4, The Landing Stair House room 5]
+  distance: adjacent
+  travel_method: walking

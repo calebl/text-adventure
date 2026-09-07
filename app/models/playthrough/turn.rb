@@ -410,9 +410,18 @@ class Playthrough::Turn
   #
   # The playthrough moves only once both calls have landed, so a failed arrival
   # leaves the player where they were rather than in a room with nothing in it.
+  #
+  # AND WALKING INTO A BUILDING IS WALKING INTO A ROOM OF IT. The captain's
+  # ruling of 2026-09-06 -- *"the prince should be in a Room inside a Location,
+  # not in an unrealized location"* -- said about the party: nobody ever stands
+  # in a container. #walk_in! is where that happens and its header is why it
+  # cannot happen any earlier.
   def move_to(destination, &block)
     realizer = Location::Generator.new(destination, playthrough: playthrough)
     realizer.realize!
+
+    destination, inside = walk_in!(destination)
+    realizers = [ realizer, inside ].compact
 
     # REALIZED, THEN COPIED, THEN NARRATED, and the order is the point.
     # `Item::Registry` writes the room's furniture into the WORLD layer as part
@@ -447,10 +456,47 @@ class Playthrough::Turn
     # calls, ~670 output tokens -- and it happens before there is a scene to file
     # it under, so the scene it paid for stamps it here. The arrival's own
     # conversation is stamped by `Scene::Generator`.
-    realizer.agent.attribute_to!(scene)
+    #
+    # BOTH REALIZATIONS WHEN THE PLAYER WALKED INTO A BUILDING, because both
+    # were paid for by this turn: the place, and then the room the way in landed
+    # on. `BaseAgent#attribute_to!` on an agent that never spoke files nothing,
+    # so the ordinary move still stamps exactly what it used to.
+    realizers.each { |one| one.agent.attribute_to!(scene) }
 
     block&.call(scene.description)
     scene
+  end
+
+  # THE ROOM A PLAYER WALKING INTO A BUILDING ACTUALLY ARRIVES IN, realized, and
+  # the realizer that paid for it -- or the destination untouched and nil, which
+  # is every move in every flat world.
+  #
+  # AFTER THE PLACE IS REALIZED AND NOT BEFORE, and the order is the whole
+  # method. A stub place has no rooms: realizing it is what lays the inside out
+  # and moves the doorway onto the entry room
+  # (`Location::Generator#lay_out_interior!`), so asked a line earlier there
+  # would be nowhere to arrive and the party would be left standing in the
+  # container.
+  #
+  # THE ENTRY ROOM IS THEN REALIZED LIKE ANY OTHER ROOM, which is the second
+  # half of the captain's first ruling of 2026-09-06 -- rooms are realized
+  # lazily -- reaching the room somebody actually walked into. It costs ONE
+  # call and not two: a room of a laid-out place is asked for no ways out,
+  # because they are the engine's already (`Location::Generator#write_exits!`).
+  #
+  # NOBODY IS EVER STOOD IN A CONTAINER, and that is asserted rather than hoped
+  # for: `Location::Interior.way_in` answers the place itself when it has no
+  # rooms, which after the realization above can only mean the layout failed and
+  # rolled back. The player stays where they were on the raise that follows,
+  # which is what every other failure in this method does.
+  def walk_in!(destination)
+    room = Location::Interior.way_in(destination)
+    return [ destination, nil ] if room == destination
+
+    realizer = Location::Generator.new(room, playthrough: playthrough)
+    realizer.realize!
+
+    [ room, realizer ]
   end
 
   # Talking is the other thing a player does with a room, and it is the one turn

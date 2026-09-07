@@ -535,6 +535,14 @@ class Story::Doctor
 
     story.locations.realized.order(:id).filter_map do |location|
       next if location.exits.any?
+      # A BUILDING WITH AN INSIDE IS NOT SOMEBODY SEALED IN. The sentence below
+      # is about a player who walked in and cannot walk out, and nobody stands
+      # in a container -- the captain's Call 5 of 2026-09-07 moved every doorway
+      # a laid-out place had onto a room of it, so having none of its own is the
+      # CORRECT state and the one `#connections_terminating_on_a_place` reports
+      # the opposite of. Whether that building can be reached at all is
+      # `#places_reachable_only_from_inside`'s question, asked of its rooms.
+      next if location.laid_out?
 
       if location == play_location
         finding(:opening_has_no_exits, :fatal,
@@ -1514,6 +1522,7 @@ class Story::Doctor
       *boxes_with_no_parent_footprint, *overlapping_sibling_rooms, *locations_containing_each_other,
       *rooms_outside_their_footprint, *interiors_with_an_unreachable_room, *misaligned_stairs,
       *doors_between_rooms_that_share_no_wall, *places_with_a_footprint_and_no_rooms,
+      *connections_terminating_on_a_place, *places_reachable_only_from_inside,
       *things_with_a_partial_position, *things_positioned_in_a_room_with_no_box,
       *things_outside_the_room_they_are_in ]
   end
@@ -1949,6 +1958,82 @@ class Story::Doctor
               "realized and its inside was not",
               :manual, subject: place)
     end
+  end
+
+  # A DOORWAY ONTO A BUILDING RATHER THAN ONTO A ROOM OF IT.
+  #
+  # THE CAPTAIN'S CALL 5, 2026-09-07: *"the neighbour's doorway lands on the
+  # entry room, and the place row is never an endpoint."* This is the VERIFY
+  # half of it -- the rule lives in `Location::Generator#open_the_way_in!` and
+  # `#connect_exit!`, and nothing in the app may write one of these, so a row
+  # here came from a seed file or from raw SQL.
+  #
+  # WHY IT COSTS THE GAME AND NOT ONLY TIDINESS: a party that walked such an
+  # edge would be standing in the container, which is exactly what the captain's
+  # ruling of 2026-09-06 -- *"the prince should be in a Room inside a Location"*
+  # -- forbids. `Location::Interior.way_in` catches the arrival, so the player
+  # is not stranded by one; what is left is a doorway that says one thing and
+  # does another.
+  #
+  # ONLY A PLACE THAT HAS AN INSIDE (`Location#laid_out?`). A STUB place
+  # carrying a footprint and no rooms is a building nobody has opened, and the
+  # doorway onto it IS the way in, waiting -- reporting one would be reporting
+  # every unvisited building in the world, which is
+  # `#places_with_a_footprint_and_no_rooms`' own argument one finding up.
+  #
+  # ONCE PER DOORWAY. A door is two rows (the ruling of 2026-09-03) and both say
+  # the same thing, so the pair is normalized rather than one ordering dropped
+  # -- `#sibling_pairs`' rule, and for its reason: dropping the reversed row
+  # would lose a HALF-written edge written from the place outward.
+  def connections_terminating_on_a_place
+    seen = []
+
+    LocationConnection.where(location: story.locations).or(LocationConnection.where(connected_location: story.locations))
+                      .includes(:location, :connected_location).order(:id).filter_map do |edge|
+      place = [ edge.location, edge.connected_location ].compact.find(&:laid_out?)
+      next if place.nil?
+
+      other = place == edge.location ? edge.connected_location : edge.location
+      next if seen.include?(pair = [ place.id, other&.id ].sort)
+
+      seen << pair
+      finding(:connection_terminating_on_a_place, :warning,
+              "#{other&.name.inspect} opens onto #{place.name}, which is a building and not a room -- a way in " \
+              "lands on a room inside it (#{Location::Interior.entry_room(place)&.name}), or the party ends up " \
+              "standing in the container",
+              :manual, subject: place)
+    end
+  end
+
+  # A BUILDING NOTHING CAN REACH. Every room of it can be walked to from the
+  # entry and the entry can be walked to from nowhere -- which is precisely the
+  # state a generated place would have been left in before
+  # `Location::Generator#open_the_way_in!` existed.
+  #
+  # `#interiors_with_an_unreachable_room` CANNOT SEE IT, and that is why this is
+  # its own finding rather than a widening of that one: that check walks SIBLING
+  # edges only, so a sealed building is perfectly connected on the inside and
+  # every room of it passes.
+  #
+  # OUTSIDE MEANS OUT OF THIS PLACE, read off `parent_location_id` and not off
+  # geometry: a room's edge to another room of the same building is a door, and
+  # an edge to anything else is a way out of the building -- which is what
+  # `Location::Plan#clause_for` already calls it in the prompt.
+  def places_reachable_only_from_inside
+    interiors.filter_map do |place, rooms|
+      next unless place.laid_out?
+      next if rooms.any? { |room| leads_outside?(room, place) }
+
+      finding(:place_reachable_only_from_inside, :warning,
+              "#{place.name} has #{rooms.size} #{"room".pluralize(rooms.size)} in it and no way in -- nothing " \
+              "outside it opens onto any of them, so a player can never stand in #{place.name}",
+              :manual, subject: place)
+    end
+  end
+
+  def leads_outside?(room, place)
+    LocationConnection.from_location(room).includes(:connected_location)
+                      .any? { |edge| edge.connected_location&.parent_location_id != place.id }
   end
 
   # The rooms of one interior that can be walked to from the entry, through the

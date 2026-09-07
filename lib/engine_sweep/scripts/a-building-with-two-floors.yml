@@ -41,12 +41,18 @@ steps:
   why: the starting state, outside the building, so a failure later has a known beginning
   expect:
     location: The Quay (realized)
-    # The way IN is the one edge of this world nobody generated: it is the spare
-    # exit `Location::Interior` keeps on the entry room, wired by hand because
-    # attaching a place's own exits to a room inside it is slice 4's. Two
-    # buildings stand on this quay and each one opens onto its own entry room --
-    # the cellar is `a-cellar-below-the-way-in.yml`'s, and this walk goes into
-    # the custom house.
+    # The way IN of THIS world is written by hand -- it is the spare exit
+    # `Location::Interior` keeps on the entry room, filled in by the file rather
+    # than by the app, because when this world was exported nothing in the app
+    # could attach a place's doorway to a room inside it. Something can now
+    # (`Location::Generator#open_the_way_in!`, the captain's Call 5 of
+    # 2026-09-07), and `walking-in-off-the-quay.yml` is the walk that proves it
+    # over an edge the ENGINE wrote. This file is left as it is on purpose: a
+    # hand-drawn floor plan and a generated one have to walk the same, which is
+    # what having both of these walks says. Two buildings stand on this quay and
+    # each one opens onto its own entry room -- the cellar is
+    # `a-cellar-below-the-way-in.yml`'s, and this walk goes into the custom
+    # house.
     exits: [The Custom House room 1 (stub), The Bonded Cellar room 1 (stub)]
     present: []
     changed: false

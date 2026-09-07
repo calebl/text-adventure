@@ -1,0 +1,132 @@
+# WALKING IN OFF A STREET THROUGH A DOORWAY THE ENGINE WROTE.
+#
+# `a-building-with-two-floors.yml` walks a building whose way IN is wired by
+# hand, and says so at the step that uses it -- because until the interior-entry
+# slice nothing in the app could attach a place's doorway to a room inside it.
+# This walk is the same claim with the hand taken out: the edge from The Quay to
+# the entry room of The Landing Stair House was written by
+# `Location::Generator#open_the_way_in!`, on the captain's Call 5 of 2026-09-07,
+# and `lib/engine_sweep/worlds/the-landing-stair.yml` records how it was made.
+#
+# WHAT IT ASSERTS THAT THE OTHER WALK CANNOT. Three things, and each is a record
+# rather than a reading:
+#
+#   * THE STREET LEADS TO A ROOM, NOT TO THE BUILDING. The Quay's one way out is
+#     `The Landing Stair House room 1`, which is the transplant having happened.
+#   * THE BUILDING IS NOT AN ENDPOINT. Nothing leads to `The Landing Stair
+#     House`, so it is not on any room's closed set of ways out -- and asking for
+#     it by name lands the party in a ROOM of it, which is the captain's ruling
+#     of 2026-09-06 read from the player's side.
+#   * THE WAY BACK OUT IS THE SAME EDGE. A door is two rows (the ruling of
+#     2026-09-03), and the transplant rewrote the pair rather than one row of it,
+#     so the entry room walks back onto the quay.
+#
+# THE ROOMS ARE STUBS AND STAY STUBS. A sweep has no model and can never watch a
+# room being written; what it can assert is that walking one is a matter of the
+# records, which is what every step below reads.
+story: The Landing Stair
+why: the way into a building, through the doorway the engine wrote rather than one a hand did
+steps:
+- id: on-the-quay
+  type: look
+  why: the starting state, outside the building, so a failure later has a known beginning
+  expect:
+    location: The Quay (realized)
+    # THE ONE LINE THIS WHOLE WORLD EXISTS FOR: the quay's way out is a ROOM of
+    # the stair house and not the stair house, and no hand wrote it.
+    exits: [The Landing Stair House room 1 (stub)]
+    present: []
+    changed: false
+    refused: false
+
+- id: in-through-the-door
+  type: go to The Landing Stair House room 1
+  why: the entry room, which is where a player entering a place ends up
+  expect:
+    changed: true
+    location: The Landing Stair House room 1 (stub)
+    # The way back out to the quay, and the backbone door the layout opened.
+    exits: [The Landing Stair House room 2 (stub), The Quay (realized)]
+    refused: false
+
+- id: along-the-ground-floor
+  type: go to The Landing Stair House room 2
+  why: a backbone door -- one storey, two rooms that share a wall
+  expect:
+    changed: true
+    location: The Landing Stair House room 2 (stub)
+    exits: [The Landing Stair House room 1 (stub), The Landing Stair House room 4 (stub)]
+    refused: false
+
+- id: up-the-stairs
+  type: go to The Landing Stair House room 4
+  why: the stairwell, and the only kind of edge in this building that changes storey
+  expect:
+    changed: true
+    location: The Landing Stair House room 4 (stub)
+    exits:
+    - The Landing Stair House room 2 (stub)
+    - The Landing Stair House room 3 (stub)
+    - The Landing Stair House room 5 (stub)
+    refused: false
+
+- id: along-the-floor-above
+  type: go to The Landing Stair House room 5
+  why: the floor above has a backbone of its own, laid out in the same call
+  expect:
+    changed: true
+    location: The Landing Stair House room 5 (stub)
+    exits: [The Landing Stair House room 4 (stub)]
+    refused: false
+
+- id: back-to-the-stairwell
+  type: go to The Landing Stair House room 4
+  why: a door is walkable in both directions, which is what two rows mean
+  expect:
+    changed: true
+    location: The Landing Stair House room 4 (stub)
+    refused: false
+
+- id: down-the-stairs
+  type: go to The Landing Stair House room 2
+  why: a stair is walkable downwards for the reason a door is walkable backwards -- one edge, written twice
+  expect:
+    changed: true
+    location: The Landing Stair House room 2 (stub)
+    refused: false
+
+- id: back-to-the-entry-room
+  type: go to The Landing Stair House room 1
+  why: back to the room the way in lands on
+  expect:
+    changed: true
+    location: The Landing Stair House room 1 (stub)
+    refused: false
+
+# AND OUT AGAIN, WHICH IS THE HALF A ONE-WAY TRANSPLANT WOULD HAVE BROKEN. The
+# doorway was rewritten as a PAIR, so the quay is a way out of the entry room
+# exactly as the entry room is a way out of the quay.
+- id: back-out-onto-the-quay
+  type: go to The Quay
+  why: the way in is the way out, because it is one edge said twice
+  expect:
+    changed: true
+    location: The Quay (realized)
+    exits: [The Landing Stair House room 1 (stub)]
+    refused: false
+
+# AND ASKING FOR THE BUILDING BY NAME PUTS THE PARTY IN A ROOM OF IT, which is
+# the captain's ruling of 2026-09-06 read from the player's side: the container
+# is not on the quay's closed set of ways out at all, so the only thing the line
+# can mean is the room the way in lands on, and that is what the engine does
+# with it. `Playthrough::Grammar::HOW_A_NAME_MATCHES` matches a typed fragment
+# by inclusion, so the building's own name reaches its rooms and never the
+# building -- which is the display half of the same ruling
+# (`app/views/playthroughs/_turn_log.html.erb`).
+- id: asking-for-the-building-lands-in-a-room-of-it
+  type: go to The Landing Stair House
+  why: a place is a container the party never occupies, so its name resolves to a room and not to it
+  expect:
+    refused: false
+    changed: true
+    location: The Landing Stair House room 1 (stub)

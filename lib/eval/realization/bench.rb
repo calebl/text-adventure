@@ -251,6 +251,12 @@ class Eval::Realization::Bench
       "danger" => standing.location.danger,
       "danger_share" => standing.location.danger_share,
       "expects_new_ground" => kase.expects_new_ground?,
+      # THE HAND LABEL, AS THE CASE WROTE IT -- true, false or nil, and nil is
+      # the ordinary answer. It is the one thing in this bench that is not a
+      # record on both sides, because there is no record of what a world SHOULD
+      # have been; `Eval::Realization::Corpus`'s header says which cases carry
+      # one and why most do not.
+      "expects_inside" => kase.expects_inside,
       # THE WAY BACK, BY NAME. `reachable` is every neighbour the stub already
       # had, which on a multi-exit stub is not the same thing -- and the exits
       # prompt's dead-end sentence is about the place the player CAME FROM
@@ -265,6 +271,13 @@ class Eval::Realization::Bench
       # the pass ends, so a checker that wanted to ask the records would have
       # nothing to ask.
       "plan" => standing.plan,
+      # WHETHER THIS ROOM WAS OFFERED THE PARAMETERS BLOCK -- true for a
+      # building with no inside yet and false for every other room in the game.
+      # The GATE the parameters checks put their denominator behind, and a set
+      # stored before the block existed has no key and reads false, which takes
+      # those rows out entirely: `Scorer::Reading#records_the_way_back?`'s rule,
+      # and its reason -- a rate a check never earned is worse than no rate.
+      "parameters_asked" => standing.place?,
       # WHETHER THIS ROOM WAS ASKED TO NAME ITSELF, and the names the prompt
       # showed it as spoken for. The GATE both name checks put their
       # denominator behind: a set stored before this key existed reads false and
@@ -296,6 +309,11 @@ class Eval::Realization::Bench
     # that owns it. `Scorer#judge_room_name_refused` reads this against
     # `facts["room"]` and nothing else.
     { "name" => room.name,
+      # THE BUILDING THE PICKS PRODUCED, or an empty list for every room that is
+      # not one. It is the only record of what the parameters did: none of them
+      # has a column, so the rooms the layout wrote ARE the answer
+      # (`Eval::Realization::Stage::Standing#rooms_laid_out`).
+      "rooms" => standing.rooms_laid_out,
       "people" => Character.present_in(room).pluck(:fullname),
       "items" => room.items.pluck(:name),
       "exits" => room.exits.order(:id).pluck(:name),

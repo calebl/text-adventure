@@ -112,10 +112,11 @@ class Location::Generator
   # whenever the rooms happen to have been written. A rule about who may be a
   # neighbour holds in an order a rule about which call comes first does not.
   #
-  # THE ROOMS ARE NOT WIRED TO THIS PLACE'S OWN EXITS, so the party still stands
-  # in the place rather than in one of its rooms. Entering a room instead of the
-  # building it is in is slice 4's, and the layout has to exist before anything
-  # can send anybody into it.
+  # AND THE ROOMS ARE WIRED TO THIS PLACE'S OWN EXITS, in the same transaction
+  # -- #open_the_way_in!, which is the captain's Call 5 of 2026-09-07. The
+  # layout has to exist before anything can send anybody into it, so this is the
+  # one moment both halves are on the records at once: the doorways the place
+  # arrived with, and the rooms they should have been landing on.
   #
   # AN ALREADY-REALIZED PLACE IS NEVER LAID OUT, because `#realize!` returns one
   # untouched -- the "generate once per place" guarantee, which this is downhill
@@ -128,12 +129,95 @@ class Location::Generator
   # over -- and handed straight back, because the rooms are on the records.
   # `test/fixtures/files/a-world-with-an-interior.yml` is exactly that shape,
   # and its author owns its whole floor plan.
-  def lay_out_interior!
+  def lay_out_interior!(picks = nil)
     return location unless location.place?
 
-    Location::Interior.lay_out!(location)
+    Location::Interior.lay_out!(location, parameters: Location::Parameters.from(picks))
+    open_the_way_in!
 
     location
+  end
+
+  # WHICH SCHEMA THE DETAIL CALL SENDS, and it is the whole of the difference
+  # between describing a room and describing a building. `Location::PlaceSchema`
+  # is the two prose fields plus the `parameters` block -- the captain's Call 2
+  # of 2026-09-07, that the rest of the picks ride on the detail call at first
+  # entry -- and `Location::DetailSchema` is what every other room in the game
+  # has always been sent, unchanged.
+  def detail_schema = location.place? ? Location::PlaceSchema : Location::DetailSchema
+
+  # THE WAY IN, MOVED OFF THE BUILDING AND ONTO A ROOM OF IT.
+  #
+  # THE CAPTAIN'S CALL 5, 2026-09-07: *"the neighbour's doorway lands on the
+  # entry room, and the place row is never an endpoint."* Until this method
+  # nothing in the app wired a place's doorway to a room inside it, and the one
+  # world in the repository with a building had its way in written by hand.
+  #
+  # WHY IT IS A TRANSPLANT AND NOT A RULE AT WRITING TIME. The doorway is
+  # written when a NEIGHBOUR names this place -- long before anybody opens it,
+  # when it has no rooms to land on. So the edge is correct when it is written
+  # (it is the way in, waiting: `Location#laid_out?`) and becomes wrong the
+  # instant there is an inside, which is here. Refusing the edge at #connect_exit!
+  # instead would be refusing to let a model name a building.
+  #
+  # THE LABEL IS CARRIED OVER, NEVER RE-DERIVED. An exterior edge keeps its
+  # label -- `Location::Interior`'s two travel-time rules, and the reason is that
+  # there is no geometry to derive one from: the quay and the counting room
+  # stand in different planes (`Location::Box`). So the distance and the travel
+  # method a model picked for "the way to The Rusted Anchor" are the distance
+  # and travel method of the way to its taproom.
+  #
+  # A DOOR IS TWO ROWS, so the pair is dropped and the pair is rewritten, and
+  # #connect! is what writes them -- the same writer, the same direction-neutral
+  # values, no second spelling of what a doorway is.
+  #
+  # WHERE IT LANDS WHEN THE ENTRY ROOM IS FULL: the next ground-floor room with
+  # a slot (`Location::Interior.doorstep`), because a place can be named by more
+  # than one neighbour before anybody opens it and the layout keeps exactly ONE
+  # slot free. A second street door on a second ground-floor room is an ordinary
+  # building.
+  #
+  # AND A DOORWAY WITH NOWHERE LEFT TO LAND IS DROPPED, which is the honest
+  # answer rather than the tidy one. The alternative is leaving it on the place
+  # row, and that is the one shape this whole method exists to make impossible:
+  # a party standing in a container, its rooms reachable from nowhere. A
+  # building nothing can reach is `Story::Doctor`'s to report
+  # (`place_reachable_only_from_inside`) and the neighbour keeps every other way
+  # out it had.
+  def open_the_way_in!
+    doorstep = Location::Interior.doorstep(location)
+    return if doorstep.empty?
+
+    ways_in.each do |neighbour, attributes|
+      LocationConnection.where(location: location, connected_location: neighbour).delete_all
+      LocationConnection.where(location: neighbour, connected_location: location).delete_all
+
+      room = doorstep.find { |candidate| room_for_a_way_in?(candidate) }
+      next if room.nil?
+
+      connect!(room, neighbour, attributes)
+      connect!(neighbour, room, attributes)
+    end
+  end
+
+  # EVERY DOORWAY THIS PLACE ARRIVED WITH, as the far end and the label to carry
+  # over. Read before anything is deleted, and once, because #open_the_way_in!
+  # writes as it goes. A door is two rows and either of them may be the one that
+  # exists -- `Story::Doctor` reports a half-written pair (`one_way_connection`)
+  # rather than this pretending not to see one -- so both directions are read
+  # and the far end is what identifies the doorway.
+  def ways_in
+    rows = LocationConnection.where(location: location).or(LocationConnection.where(connected_location: location))
+                             .order(:id)
+
+    rows.each_with_object({}) do |row, found|
+      far = row.location_id == location.id ? row.connected_location : row.location
+      found[far] ||= { "distance" => row.distance, "travel_method" => row.travel_method }
+    end
+  end
+
+  def room_for_a_way_in?(room)
+    LocationConnection.from_location(room).count < Location::ExitsSchema::MAX_EXITS
   end
 
   # What the player reads on arrival, persisted immediately -- and what is lying
@@ -148,7 +232,7 @@ class Location::Generator
   # registry decides, and a name it refuses costs the room its furniture and
   # never its description.
   def write_detail!
-    detail = ask(Location::DetailSchema, detail_prompt)
+    detail = ask(detail_schema, detail_prompt)
 
     location.description = sanitize_string(detail["description"])
     location.lore = sanitize_string(detail["lore"])
@@ -172,9 +256,18 @@ class Location::Generator
     # what makes this place one nobody realizes again.
     Location.transaction do
       location.save!
-      lay_out_interior!
+      lay_out_interior!(detail["parameters"])
       location.update!(detail_level: :realized)
     end
+
+    # AND A BUILDING KEEPS NEITHER, which is the verify half of the sentence
+    # `#place_prompt` says and `Location::PlaceSchema` has no field for. Nobody
+    # stands in a container (`Location::Interior.way_in`), so a thing admitted
+    # into one is a thing no player can ever pick up and a person is somebody
+    # nobody can talk to -- and an answer carrying either is an answer the
+    # engine drops rather than a state it writes. The rooms are where both
+    # belong, and each is asked as it is reached.
+    return location if location.laid_out?
 
     registry.admit!(detail["items"])
     # AND WHO IS IN IT, on the captain's ruling that *rooms should be born with
@@ -264,8 +357,17 @@ class Location::Generator
   # `location_has_no_exits` and `Story::Repair` calls this and is told nothing
   # was written, which is the honest answer: the way into a building is not a
   # thing a model may name.
+  # AND A PLACE THAT HAS AN INSIDE IS NOT ASKED EITHER, for the mirror image of
+  # the reason a room of one is not. A laid-out place's ways out ARE its rooms'
+  # ways out -- #open_the_way_in! has just moved every doorway it had onto the
+  # entry room, on the captain's Call 5 that the place row is never an endpoint
+  # -- so an exit named here would be a door back onto the container, written by
+  # the very call that runs a line after the transplant. `Story::Doctor` reports
+  # one (`connection_terminating_on_a_place`); this is what stops the app
+  # writing it. SKIPPED RATHER THAN ANSWERED-AND-IGNORED, on the same terms:
+  # the call is not bought, and no prompt text moves for any other room.
   def write_exits!
-    return location if interior_room?
+    return location if interior_room? || location.laid_out?
 
     # ALREADY FULL, so there is nothing to ask and nothing to spend. A stub can
     # arrive at the cap before anybody walks into it: a world file seeds edges,
@@ -320,7 +422,16 @@ class Location::Generator
     PROMPT
   end
 
+  # A BUILDING GETS A PROMPT OF ITS OWN, and the ordinary one below is not
+  # touched -- not one byte, which is `#geometry_facts`' rule applied to a whole
+  # template: every room in the game still sends the prompt a stored baseline was
+  # measured on. A building is a different ask (what kind of place is this, and
+  # what should the engine build inside it) with a different schema and no items,
+  # no people and no name, so folding the two into one template with three
+  # conditional blocks would be a template neither case reads plainly.
   def detail_prompt
+    return place_prompt if location.place?
+
     <<~PROMPT
       #{story_context}
 
@@ -338,6 +449,73 @@ class Location::Generator
       #{items_instructions}
 
       #{people_instructions}
+    PROMPT
+  end
+
+  # WHAT A BUILDING IS ASKED, and the second half of the captain's Call 7 of
+  # 2026-09-06: *"the engine actually generates the location, then it is handed
+  # back to a narrator to describe."* This is the call before that one -- the
+  # place is described here and its parameters are picked here, and the engine
+  # builds the inside out of them in the same transaction.
+  #
+  # IT SAYS WHAT THE ENGINE WILL DO WITH THE ANSWER, which is the cheap half of
+  # the standing constraint: a model told that the game draws the floor plan
+  # itself is a model with no reason to describe one, and a description that
+  # invents a staircase anyway costs a sentence rather than a room. Nothing here
+  # is a guarantee -- `Location::Interior` decides every wall from integers and
+  # one seeded roll, and never reads a word of this.
+  #
+  # AND IT ASKS FOR NOBODY AND NOTHING, because the rooms are where a person
+  # stands and a thing lies. `Location::PlaceSchema` has no field for either, so
+  # this is the prompt agreeing with the schema rather than a rule the answer
+  # could break.
+  def place_prompt
+    <<~PROMPT
+      #{story_context}
+
+      ## The Place
+      name: #{location.name}
+      teaser: #{location.teaser}
+
+      ## Instructions
+      Write this place out in full. It is a BUILDING -- somewhere with rooms
+      inside it that a player walks into and moves around in.
+      - The description is what the player reads as they come in. Address them as "you"
+      - Describe what is here now, not the history -- the history is the lore
+      - Stay consistent with the universe and with the teaser above
+      - Do NOT describe the floor plan: how many rooms there are, where the stairs
+        are and which door leads where are the game's to decide, out of the answers
+        below, and it will tell you room by room as the player reaches them
+      - Do not name anybody standing here and do not list anything lying here.
+        People and things belong to the rooms, and each room is written as it is
+        reached
+      - Respect the stated length of each field
+
+      #{parameters_instructions}
+    PROMPT
+  end
+
+  # THE PICKS, AS A BLOCK OF DIRECTION RATHER THAN A LIST OF FIELDS -- the
+  # closed lists themselves are on `Location::PlaceSchema`, so this says what
+  # they are FOR and what the quiet answer is. The captain's own words for what
+  # he wanted: *"we should provide some direction on how to make that
+  # decision."*
+  def parameters_instructions
+    <<~PROMPT.rstrip
+      ## What Kind Of Building This Is
+      The game lays the inside out itself -- every room, every door, every stair
+      -- from the answers to these, and then writes each room as the player
+      reaches it. You are choosing what KIND of place this is, not drawing it.
+      - Answer for the place you have just described and for the story it stands in
+      - Every one of them can be left out, and the quietest answer is usually the
+        right one: one floor, nothing underneath, nothing dangerous, nothing that
+        hurts you
+      - A HAZARD is not atmosphere. It takes hit points off everybody who walks
+        through those rooms, every turn in some cases, so pick one only for a
+        place that really is flooded, unlit, silent or airless
+      - A GRADIENT is only worth saying when the place itself makes it true: a
+        cellar that gets worse the further down you go, a tower that gets worse
+        the higher you climb
     PROMPT
   end
 
@@ -549,6 +727,15 @@ class Location::Generator
       - When there is more than one, give the player a reason to prefer one
         over another
       - Do not list #{location.name} itself
+      - Say which of them have an INSIDE, and say NO INSIDE for almost all of
+        them. Saying anything else makes the game build a whole floor plan of
+        rooms in that place and send the player walking through them, so it is
+        only ever right for a BUILDING somebody goes in at a door -- an inn, a
+        keep, a counting house, a warren. A road, a shore, a clearing, a bridge,
+        a square, a cave mouth, a stair, a courtyard: no inside. A room, an
+        office, a hall, a chamber: no inside either, because those are already
+        somewhere the player stands. Where it really is a building, pick the size
+        it would really be rather than the most interesting one
       - Distance and travel method must be consistent with the description you
         just wrote, and must be true in both directions -- the way back is the
         same edge
@@ -692,16 +879,37 @@ class Location::Generator
   # DOOR IS TWO ROWS and a per-direction check would write one of them -- the
   # first row spends this location's allowance, so the second call would find it
   # gone and leave a one-way door behind.
+  # AND A NAME THAT RESOLVES TO A BUILDING SOMEBODY HAS ALREADY OPENED IS
+  # RESOLVED ONE STEP FURTHER, to the room its way in lands on. The captain's
+  # Call 5 of 2026-09-07 said as a rule about writing rather than as one about
+  # repair: a model may name a place -- that is what a place is FOR -- and the
+  # engine decides that naming a building means opening a door onto a room of
+  # it. #open_the_way_in! is the same rule applied to the doorways a place
+  # already had; this is it applied to the next one.
+  #
+  # AND `#room_elsewhere?` IS ASKED FIRST, OF THE NAME AS WRITTEN, which is what
+  # keeps the two rules from cancelling each other out. That check refuses a
+  # name that resolves to a PLACED ROOM of another building -- a room a model
+  # chose -- and a place is not one, so a building passes it and is then
+  # resolved. Resolving first would hand the check the entry room and it would
+  # refuse the very door this paragraph exists to open.
+  #
+  # A PLACE NOBODY HAS OPENED RESOLVES TO ITSELF (`Location::Interior.way_in`),
+  # because it has no rooms yet -- the doorway onto it is the way in, waiting,
+  # and #open_the_way_in! moves it the moment there is somewhere for it to go.
   def connect_exit!(attributes, into_written: false)
     name = sanitize_string(attributes["name"])
     return if name.blank? || name.casecmp?(location.name.to_s)
 
     existing = find_location(name)
     return if room_elsewhere?(existing)
+
+    existing = Location::Interior.way_in(existing) if existing
     return if existing&.realized? && !into_written && !connected?(existing)
     return unless room_for_this_door?(existing)
 
-    neighbour = existing || create_stub!(name, sanitize_string(attributes["teaser"]))
+    neighbour = existing || create_stub!(name, sanitize_string(attributes["teaser"]),
+                                         inside: sanitize_string(attributes["inside"]))
 
     connect!(location, neighbour, attributes)
     connect!(neighbour, location, attributes)
@@ -749,7 +957,31 @@ class Location::Generator
   # A SEEDED room is never rolled: `WorldSeed::Loader` writes what the file says
   # and an absent key is `Location::SAFE`, which is the rule every other seeded
   # parameter is under.
-  def create_stub!(name, teaser) = self.class.create_stub!(story, name: name, teaser: teaser)
+  # AND THE `inside` PICK IS WRITTEN HERE, AS A FOOTPRINT AND NOT AS A COLUMN OF
+  # ITS OWN. `Location::Parameters::INSIDE` is the band each label names in paces
+  # and the engine rolls both sides inside it, so `Location#place?` -- which is
+  # `interior? && !placed?`, a footprint and no position -- starts answering true
+  # for a generated stub with no new column and no new writer. That predicate's
+  # own header said this is how it would happen and that it would not have to
+  # move; this is the day, and it did not.
+  #
+  # ONLY A STUB BEING BORN, never a place that already exists: a footprint is a
+  # world's parameter and this does not overrule one (`Location::Interior`'s
+  # rule). `#connect_exit!` reaches here only when the name resolved to nothing.
+  #
+  # SEEDED ON THE ROW'S OWN ID, on its OWN AXIS. `Roll::FOOTPRINT` rather than
+  # `INTERIOR`'s: the footprint is drawn before the layout and decides what the
+  # layout has to divide, so drawing both from one seed would be one roll
+  # deciding twice. See `Roll`'s header for what an axis buys.
+  def create_stub!(name, teaser, inside: nil)
+    room = self.class.create_stub!(story, name: name, teaser: teaser)
+    sides = Location::Parameters.from("inside" => inside).footprint(footprint_rng(room))
+    room.update!(width: sides.first, depth: sides.last) if sides
+
+    room
+  end
+
+  def footprint_rng(room) = Roll.generator(story: story.id, sequence: room.id, kind: Roll::FOOTPRINT)
 
   # Whether the player can already get between here and there, either way
   # round. Both rows are written together, so one direction is enough to know

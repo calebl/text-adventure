@@ -151,6 +151,8 @@ Read the header of the file named, not a summary of it.
 | A place or a doorway that costs hit points | `app/models/playthrough/hazards.rb`, `toll.rb` |
 | Where a room is, how big it is, and what a storey is | `app/models/location/box.rb` |
 | How the inside of a place is laid out, and by what roll | `app/models/location/interior.rb` |
+| What a model may decide about a building, and the table behind each label | `app/models/location/parameters.rb` |
+| How a doorway onto a building becomes a doorway onto a room of it | `Location::Generator#open_the_way_in!`, `Location::Interior.way_in` |
 | Where in a room a thing or a person is, and who may roll one | `app/models/location/spot.rb`, `location/placement.rb` |
 | What a room's own walls, doors and stairs say to a prompt | `app/models/location/plan.rb` |
 | What a room of a place is called, and who may take a proposed name | `app/models/location/room_name.rb` |

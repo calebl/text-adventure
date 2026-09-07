@@ -82,6 +82,16 @@ module Roll
   # from being the same number twice.
   ITEM_POSITION = 3
   CHARACTER_POSITION = 4
+  # HOW BIG A BUILDING IS, thrown once as its stub is written
+  # (`Location::Generator#create_stub!`, from the `inside` band a model picked).
+  # Its identity is WHICH PLACE, which is a location id -- and a location id is
+  # already spoken for twice on the `sequence` axis, by `Location::Danger`'s cast
+  # and by `INTERIOR`'s whole layout. A third kind is what keeps the footprint of
+  # a building, the shape of its inside and the people in one of its rooms from
+  # being the same number three times: the footprint is drawn BEFORE the layout
+  # and decides what the layout has to divide, so a correlation between them
+  # would be one roll deciding twice.
+  FOOTPRINT = 5
 
   # THE SEED, FROM FIVE INTEGERS AND NOTHING ELSE. Public because it is the part
   # worth asserting on its own: `RollTest` pins that the same inputs give the

@@ -52,9 +52,9 @@ class Eval::Realization::Corpus
   # recoverable from the records, and an earlier draft that inferred them from
   # id order produced a world state that never existed.
   Case = Data.define(:id, :story, :room, :reached_from, :also_reaches, :absent, :unwritten, :danger,
-                     :expects_new_ground, :shape, :why) do
+                     :expects_new_ground, :expects_inside, :shape, :why) do
     def initialize(reached_from: nil, also_reaches: [], absent: [], unwritten: [], danger: nil,
-                   expects_new_ground: nil, shape: nil, why: nil, **rest)
+                   expects_new_ground: nil, expects_inside: nil, shape: nil, why: nil, **rest)
       super
     end
 
@@ -79,7 +79,8 @@ class Eval::Realization::Corpus
              reached_from: row["reached_from"], also_reaches: Array(row["also_reaches"]),
              absent: Array(row["absent"]),
              unwritten: Array(row["unwritten"]), danger: row["danger"],
-             expects_new_ground: row["expects_new_ground"], shape: row["shape"], why: row["why"])
+             expects_new_ground: row["expects_new_ground"], expects_inside: row["expects_inside"],
+             shape: row["shape"], why: row["why"])
   end
 
   attr_reader :path, :cases
@@ -153,6 +154,10 @@ class Eval::Realization::Corpus
         found << "#{kase.id}: a case needs `expects_new_ground: true|false` -- a dead end that names " \
                  "only the way back is a correct answer, and `no_new_ground` is unjudgeable without it"
       end
+      unless [ true, false, nil ].include?(kase.expects_inside)
+        found << "#{kase.id}: `expects_inside` is true, false or left out -- a case with no label is out " \
+                 "of both inside checks' denominators, and anything else is a label nothing can read"
+      end
       if kase.danger.present? && !Location::DANGERS.key?(kase.danger)
         found << "#{kase.id}: danger #{kase.danger.inspect} is not one of #{Location::DANGERS.keys.join(", ")}"
       end
@@ -170,9 +175,17 @@ class Eval::Realization::Corpus
   # measures instead is the detail call handed a floor plan
   # (`Location::Plan`), which is a prompt shape no other case in this corpus can
   # reach. It is recognised the way the generator recognises it, both halves.
+  # AND A PLACE IS THE SECOND CASE THAT MEASURES ONE CALL ON PURPOSE, for the
+  # mirror image of the interior room's reason: a building's ways out are its
+  # ROOMS' ways out by the time it has been laid out, so
+  # `Location::Generator#write_exits!` asks for none of them either
+  # (`#open_the_way_in!` has just moved every doorway it had). What such a case
+  # measures instead is the `parameters` block -- the picks a model makes about
+  # a building, which no other case in this corpus can be offered at all.
   def problems_for(kase, standing)
     return [ "#{kase.id}: could not be staged" ] if standing.nil?
     return [] if standing.plan
+    return [] if standing.place?
     return [] if standing.exit_allowance.positive?
 
     [ "#{kase.id}: #{kase.room.inspect} has no room left for a way out, so write_exits! would make no " \

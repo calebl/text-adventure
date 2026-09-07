@@ -700,7 +700,11 @@ class Playthrough::Mechanics
     classifier.agent.attribute_to!(scene) if resolved_by == "model"
     playthrough.prune_conversations!
 
-    change("moved: #{label(from) || "nowhere"} -> #{destination.name} " \
+    # WHERE THE PARTY ENDED UP, WHICH IS NOT ALWAYS WHAT WAS NAMED. Walking into
+    # a building lands the party in a ROOM of it (`Playthrough::Turn#walk_in!`),
+    # so the line a sweep reads has to say the room -- `acted_on` above keeps the
+    # place, because that is what the player acted on.
+    change("moved: #{label(from) || "nowhere"} -> #{label(playthrough.current_location)} " \
            "(#{unwritten ? "written for the first time" : "already written"}, " \
            "arrival scene ##{scene.id}; its prose is not shown)", understood)
   end
@@ -709,6 +713,15 @@ class Playthrough::Mechanics
   # unwritten. Said out loud, because a stub is the one thing the offline mode
   # reads differently from the real loop.
   def stand_in(from, destination, understood)
+    # AND WALKING INTO A BUILDING IS WALKING INTO A ROOM OF IT HERE TOO, off the
+    # one reader both writers of where a party stands ask
+    # (`Location::Interior.way_in`). This mode cannot lay an inside out -- that
+    # happens on the realization it has no model for -- so this only ever moves
+    # on a place whose rooms are already on the records, which is a seeded
+    # building or one a real run opened. Two spellings of "nobody stands in a
+    # container" would be two answers, and the sweep is where they would
+    # disagree.
+    destination = Location::Interior.way_in(destination)
     # `Playthrough::Turn#move_to` snapshots after realizing; this is the offline
     # half of the same statement, and it is here rather than left to the next
     # turn because the read-out printed under THIS move is what a sweep script

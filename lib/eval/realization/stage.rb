@@ -100,8 +100,17 @@ class Eval::Realization::Stage
     def cast_registry = generator.cast_registry
     def item_registry = generator.registry
 
-    def people_allowance = cast_registry.allowance
-    def item_allowance = [ item_registry.room_for_items, item_registry.world_for_items ].min
+    # ZERO FOR A BUILDING, AND IT IS THE PROMPT'S OWN NUMBER RATHER THAN A
+    # CORRECTION OF IT: `Location::Generator#place_prompt` asks for nobody and
+    # for nothing, and `Location::PlaceSchema` has no field for either. Reading
+    # the registries' allowances here anyway would put an offer in the stored
+    # facts that the model was never made, and `people_offered` is a MEASURED
+    # denominator -- the whole reason it is a figure rather than an assumption.
+    #
+    # IT ALSO STOPS THE CAST BEING ROLLED. `#slots` draws a race, an age and a
+    # sex per offered slot; a building that offered none draws nothing.
+    def people_allowance = place? ? 0 : cast_registry.allowance
+    def item_allowance = place? ? 0 : [ item_registry.room_for_items, item_registry.world_for_items ].min
     def exit_allowance = generator.room_for_exits
 
     # WHO THE ENGINE HAS ALREADY DECIDED THE NEXT PEOPLE ARE, exactly as the
@@ -135,6 +144,30 @@ class Eval::Realization::Stage
     # the checker and the prompt cannot be reading two derivations of one
     # building (`Eval::Realization::Scorer#judge_size_the_records_do_not_hold`).
     def plan = Location::Plan.for(location)&.to_h
+
+    # WHETHER THIS STUB IS A BUILDING WITH NO INSIDE YET, which is the one
+    # question that decides whether the detail call is offered a `parameters`
+    # block at all -- asked through `Location#place?`, the engine's own gate,
+    # for `#naming`'s reason: a second reading of it here would be a second
+    # answer to which schema the app sends.
+    def place? = location.place?
+
+    # THE BUILDING THE PICKS PRODUCED, read off the rows AFTER the call and off
+    # nothing else. There is no column for a storey count, a gradient or a
+    # warren -- `Location::Interior`'s doctrine -- so the rooms ARE the record:
+    # how many storeys is the min and max `z` of the children, the gradient is
+    # each room's own danger, and how warren-like it is is the door count.
+    #
+    # STORED PER ROOM RATHER THAN SUMMARISED, because the figure the captain
+    # asked for is the share of rooms carrying a hazard BY STOREY and a summary
+    # taken here could not be re-cut later. It is a handful of rows.
+    def rooms_laid_out
+      location.child_locations.order(:id).map do |room|
+        { "storey" => room.z, "danger" => room.danger, "hazard" => room.hazard,
+          "hazard_die" => room.hazard_die, "width" => room.width, "depth" => room.depth,
+          "doors" => LocationConnection.from_location(room).count }
+      end
+    end
 
     # WHETHER THE DETAIL PROMPT WILL ASK THIS ROOM TO NAME ITSELF, and the names
     # it will be shown as already given out. Asked through

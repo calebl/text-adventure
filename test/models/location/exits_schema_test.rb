@@ -37,9 +37,19 @@ class Location::ExitsSchemaTest < ActiveSupport::TestCase
   end
 
   test "an exit carries what a stub location and its connection both need" do
-    assert_equal %w[name teaser distance travel_method], exit_properties.keys
+    assert_equal %w[name teaser distance travel_method inside], exit_properties.keys
     assert_equal %w[name teaser distance travel_method],
                  schema_properties(SCHEMA)["exits"]["items"]["required"].map(&:to_s)
+  end
+
+  # THE ONE OPTIONAL FIELD, and the quietest option is first on its list. An
+  # absent pick is a legal answer and means `no inside`, which is what most
+  # exits are -- the captain's Call 3 of 2026-09-07, which dissolves the
+  # question of which stubs get asked rather than answering it.
+  test "the inside pick is optional and offers no inside first" do
+    assert_not_includes schema_properties(SCHEMA)["exits"]["items"]["required"].map(&:to_s), "inside"
+    assert_equal Location::Parameters::NO_INSIDE, exit_properties["inside"]["enum"].first
+    assert_equal Location::Parameters::INSIDE.keys, exit_properties["inside"]["enum"]
   end
 
   # It follows from the other two, so asking for it was a decision bought that
@@ -80,11 +90,22 @@ class Location::ExitsSchemaTest < ActiveSupport::TestCase
     assert_equal false, schema_properties(SCHEMA)["exits"]["items"]["additionalProperties"]
   end
 
-  # Two of an exit's fields become a stub Location, the other two become the
-  # LocationConnection to it. Nothing generated here has nowhere to be stored.
-  test "every exit field maps to a location or connection column" do
+  # Two of an exit's fields become a stub Location, two become the
+  # LocationConnection to it, and the fifth becomes the stub's FOOTPRINT.
+  # Nothing generated here has nowhere to be stored.
+  #
+  # `inside` IS A KEY INTO A TABLE AND NOT A COLUMN, which is the captain's rule
+  # for every one of these picks -- *the model never writes a free number, only
+  # picks from the list* -- so it is named here rather than expected among the
+  # column names: `Location::Parameters::INSIDE` holds the band in paces and the
+  # engine rolls `width` and `depth` inside it
+  # (`Location::Generator#create_stub!`).
+  test "every exit field maps to a location or connection column, or to a table that does" do
     columns = Location.column_names + LocationConnection.column_names
 
-    assert_equal [], exit_properties.keys - columns
+    assert_equal [ "inside" ], exit_properties.keys - columns
+    assert(Location::Parameters::INSIDE.except(Location::Parameters::NO_INSIDE).values.all? { |band|
+      band.min.positive? && band.max >= band.min
+    }, "every band is a real span of paces a footprint can be rolled inside")
   end
 end

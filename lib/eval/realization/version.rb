@@ -55,6 +55,28 @@
 # one run, something in the staging is not constant and every figure in the set
 # is suspect. Reported rather than raised -- a run that cost money should print
 # what it found -- and the board says so loudly.
+#
+# AND THE SAME DIGEST CAN BE TAKEN WITHOUT SPENDING ANYTHING -- `.offline`,
+# which is the half of this module the captain's standing rule of 2026-09-06
+# actually needs. *"We should always have a baseline for evaluating a prompt
+# before we decide to change it"* has a question in front of it that nobody
+# could answer for free until this method: **is the baseline on disk still a
+# baseline for the prompts in this tree?** `#of` can only answer it by buying a
+# run, so the answer was a thing somebody remembered.
+#
+# IT WORKS BECAUSE A PROMPT IS BUILT BEFORE IT IS SENT. `Location::Generator`'s
+# `#detail_prompt`, `#exits_prompt` and `#system_prompt` are pure readers over a
+# staged world -- the same objects `Eval::Realization::Stage` stands up for a
+# real pass -- so the bytes a run WOULD send can be assembled with no key, no
+# network and no model. What it cannot do is measure anything: it says which
+# prompt, never how well it did.
+#
+# THE ONE THING IT MUST NOT DO IS DERIVE THE DIGEST A SECOND WAY. Both halves
+# below go through `#digest`, `#scrub` and the same designation rule -- lowest
+# case id per shape -- so an offline digest and a bought one are the same string
+# or the prompts really moved. `Eval::Realization::KeptSetTest` is what asserts
+# that of the checked-in set, which is how a prompt edited without a
+# re-baseline becomes a failing test rather than a thing nobody noticed.
 module Eval::Realization::Version
   extend self
 
@@ -80,6 +102,63 @@ module Eval::Realization::Version
       prompt_shapes: prompts.transform_values { |sent| Playthrough::PromptVersion.of(sent.first) },
       prompt_stable: prompts.values.all? { |sent| sent.uniq.one? },
       instructions_digest: digest(instructions(readings)) }
+  end
+
+  # THE SAME TWO DIGESTS, WITH NO MODEL CALL AND NO SPEND. See the header for
+  # what makes it possible and for the one rule it is under.
+  #
+  # `prompt_stable` IS NOT ANSWERED HERE and must not be: it is the claim that
+  # every REPETITION of a case sent the same prompt, which is a fact about a run
+  # rather than about the tree. One assembly of one prompt cannot say anything
+  # about it, and reporting `true` would be reporting a check that was never
+  # made.
+  #
+  # EACH CASE IN ITS OWN ROLLED-BACK COPY OF ITS WORLD, exactly as a pass does
+  # it -- the staging is what makes the prompt the app's rather than this file's,
+  # and a shared copy would let one case's surgery reach another's.
+  def offline(corpus = Eval::Realization.corpus)
+    sent = {}
+    instructions = []
+
+    designated_cases(corpus).each do |shape, kase|
+      Eval::Realization::Stage.open([ kase ]) do |stages|
+        generator = stages.fetch(kase.id).generator
+        sent[shape] = scrub(built(generator).join("\n \n"))
+        instructions << generator.system_prompt
+      end
+    end
+
+    { prompt_digest: digest(sent.map { |shape, one| "#{shape}\n#{one}" }),
+      prompt_shapes: sent.transform_values { |one| Playthrough::PromptVersion.of(one) },
+      instructions_digest: digest(instructions.uniq.sort) }
+  end
+
+  # ONE CASE PER SHAPE, THE SAME ONE `#designated` PICKS: the lowest case id of
+  # that shape. Asked of the CORPUS rather than of readings, because there are
+  # no readings without a run.
+  def designated_cases(corpus)
+    corpus.cases.group_by { |kase| kase.shape.to_s }
+          .transform_values { |scoped| scoped.min_by(&:id) }.sort.to_h
+  end
+
+  # THE PROMPTS ONE CASE WOULD SEND, in the app's own call order. TWO SHAPES OF
+  # ROOM SEND ONE PROMPT AND NOT TWO, and assembling a second for either would
+  # digest a prompt the app never builds:
+  #
+  #   A ROOM INSIDE A LAID-OUT PLACE. Its ways out are the engine's, so
+  #   `Location::Generator#write_exits!` asks for none -- asked here through the
+  #   generator's own `#interior_room?`, so there is no second reading of it.
+  #
+  #   A BUILDING. Its ways out are its ROOMS' ways out, and it has none of its
+  #   own by the time the exits call would be made -- realizing it is what lays
+  #   the inside out and moves every doorway onto the entry room, and
+  #   `#write_exits!` sees a laid-out place and returns. It cannot be asked
+  #   through the same predicate the app uses, because at THIS moment the inside
+  #   does not exist yet: the gate is what the detail call is about to do.
+  def built(generator)
+    return [ generator.detail_prompt ] if generator.interior_room? || generator.location.place?
+
+    [ generator.detail_prompt, generator.exits_prompt ]
   end
 
   # ONE CASE PER SHAPE, AND THE SAME ONE EVERY RUN: the lowest case id of that

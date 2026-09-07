@@ -174,6 +174,23 @@ locations:
     description: |-
       A thin, rusted shard of iron, no larger than a palm, broken off from the Spire’s cliffs. It’s sharp on one edge but too small to be a weapon.
     properties:
+# A BUILDING NOBODY HAS OPENED, and the only row in this corpus's worlds that is
+# one: a footprint, no rooms, and a way in off the tunnel. `Location#place?` is
+# true of it and `Location#laid_out?` is not, so realizing it is what lays the
+# inside out -- which is the one thing the realization bench could not reach
+# until the interior-entry slice, because the parameters a model picks for a
+# building are picked on the detail call OF a building.
+#
+# THE QUEST'S OWN BUILDING, deliberately. The Iron Gate Descends is about a
+# prince held below, and `data/ta-location-params-scout/report.md` §5.2 walks
+# this exact place through the design. Placing anybody in it is the story arc's
+# and not this fixture's.
+- name: Blackfang Warren
+  detail_level: stub
+  width: 15
+  depth: 11
+  teaser: |-
+    A cut in the obsidian where the Blackfang keep whatever they take, and the skittering comes from further in.
 - name: Spire’s Rest
   detail_level: stub
   teaser: |-
@@ -198,6 +215,9 @@ connections:
   travel_method: walking
 - between: [obsidian maw, Blackfang Tunnel]
   distance: a short walk
+  travel_method: walking
+- between: [Blackfang Tunnel, Blackfang Warren]
+  distance: adjacent
   travel_method: walking
 - between: [surface, Spire’s Rest]
   distance: a long journey
