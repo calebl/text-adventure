@@ -22,6 +22,13 @@ then edit the YAML until the world has the shape you want.
 The worlds here have been edited after export. `the-unrecorded-hour.yml` was
 written by hand outright, to get a shape the generator cannot produce (below).
 
+`WorldSeed::Exporter` has a second reader now, and it never writes here:
+`Story::Snapshot` keeps its document on the story's own row so a world can be
+played again from its beginning (`rake game:fork`). A snapshot must not become a
+file in this directory — `bin/rails db:seed` and `rake game:reseed` load every
+`*.yml` in it, so one keyed by the same title as its original would re-assert
+itself over the story it was taken from.
+
 Two things to know before re-exporting over a file:
 
 - The **leading comment block is preserved**. Put anything worth keeping there.

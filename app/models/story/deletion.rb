@@ -40,6 +40,14 @@ class Story::Deletion
 
   # Everything that goes, counted by type and in the order it is destroyed.
   # Zero counts are kept: "0 playthroughs" is information too.
+  #
+  # THE STORY'S GENERATION SNAPSHOT IS NOT COUNTED HERE AND STILL GOES:
+  # `stories.generation_snapshot` is a text column on the story's own row, so it
+  # is destroyed by the row going and there is no table to count. That is one of
+  # the four constraints that made it a column rather than a file -- a file
+  # would have needed a line in `#destroy!` that could fail halfway. See
+  # `Story::Snapshot`. Forking a story copies the snapshot onto the fork, so
+  # deleting either one leaves the other able to fork itself.
   def manifest
     {
       "characters" => characters.count,

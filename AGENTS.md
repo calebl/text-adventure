@@ -165,6 +165,7 @@ Read the header of the file named, not a summary of it.
 | Where narration contradicts the records | `app/models/story/audit.rb` |
 | The scoreboard, its corpora and its baseline | `app/models/story/scoreboard.rb` |
 | Re-seeding a world somebody has played | `lib/world_seed/loader.rb`, `item/template_refresh.rb` |
+| Playing a story again from its beginning | `app/models/story/snapshot.rb`, `story/fork.rb` |
 | A database that outlives its schema | `app/models/story/doctor.rb`, `story/repair.rb` |
 | What a pull then does to the rows already there | `lib/update.rb` |
 | What an offline walk asserts after every typed line | `lib/engine_sweep/` |
