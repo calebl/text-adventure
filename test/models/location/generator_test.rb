@@ -209,7 +209,14 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     room = stub_location(name: "The Harbour Road")
 
     assert_equal Location::PlaceSchema, Location::Generator.new(place).detail_schema
-    assert_equal Location::DetailSchema, Location::Generator.new(room).detail_schema
+
+    # A ROOM'S SCHEMA IS A SHAPE OF `Location::DetailSchema` AND NOT ALWAYS THE
+    # CLASS ITSELF, since the 2026-09-07 population ruling: `.for_people` builds
+    # a variant requiring exactly the rolled count, and every shape answers to
+    # this name (`Location::DetailSchema`). What matters here is that a room is
+    # never sent the `parameters` block, which is what the name says.
+    assert_equal "Location::DetailSchema", Location::Generator.new(room).detail_schema.name
+    assert_not_includes Location::Generator.new(room).detail_schema.properties.keys, :parameters
   end
 
   test "the picks a building came back with are what its inside is laid out from" do

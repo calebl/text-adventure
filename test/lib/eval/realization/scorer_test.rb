@@ -690,12 +690,67 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     { "id" => "a-case", "shape" => "written-neighbour", "story" => "The Unrecorded Hour",
       "facts" => facts,
       "answers" => { "detail" => { "people" => people, "items" => items },
-                     "exits" => { "exits" => exits.map { |name| { "name" => name } } } },
+                     # AN EXIT MAY BE A NAME OR A WHOLE HASH, so a case about a
+                     # per-exit PICK -- `inside`, `population` -- can say what
+                     # was picked without every other case in this file having
+                     # to.
+                     "exits" => { "exits" => exits.map { |exit| exit.is_a?(Hash) ? exit : { "name" => exit } } } },
       "after" => after || { "people" => people.map { |person| person["fullname"] },
                             "items" => items.map { |item| item["name"] },
                             "exits" => [], "new_places" => [] },
       "seconds" => 1.0, "input_tokens" => 100, "output_tokens" => 20, "calls" => 2,
       "missing_fields" => [], "cap_hits" => [], "error" => nil }
+  end
+
+  # --- the population pick --------------------------------------------------
+  #
+  # The captain's ruling of 2026-09-07: the narrator picks how populated a place
+  # is from a closed list and the engine rolls the count inside that word's band
+  # (`Location::Population`).
+
+  # A DECISION NOT MADE, which is the ordinary way for the ruling to come to
+  # nothing: not a model picking `nobody` but a model saying nothing at all.
+  test "an exit named with no population word is a decision not made" do
+    scorer = scored(exits: [ { "name" => "Ward Office 12" },
+                             { "name" => "The Cellar Stair", "population" => "a crowd" } ])
+
+    assert_equal 1, scorer.flagged_for(:population_declined).size
+    assert_equal 2, scorer.judgeable_for(:population_declined)
+    assert_match(/Ward Office 12/, scorer.flagged_for(:population_declined).sole.evidence)
+  end
+
+  # AND THE FIGURES BESIDE IT, because the cheapest way to clear every rate in
+  # that file is still to answer `nobody` everywhere -- which would be a pick
+  # honestly made and an empty world anyway.
+  test "the picks made and the share of them that asked for somebody are printed" do
+    scorer = scored(exits: [ { "name" => "A", "population" => "nobody" },
+                             { "name" => "B", "population" => "a crowd" },
+                             { "name" => "C" } ])
+
+    assert_in_delta 2.0 / 3, scorer.reported["populations_given"]
+    assert_in_delta 0.5, scorer.reported["crowds_picked"]
+  end
+
+  # THE OTHER HALF OF THE RULING, and the defect it was made for: a prompt that
+  # asked for people and an answer that named fewer.
+  test "a room that wrote fewer people than it was asked for is flagged" do
+    facts = FACTS.merge("people_allowance" => 2)
+    short = scored(facts: facts, people: [ person("Ilsa Wren") ])
+
+    assert_equal 1, short.flagged_for(:people_short_of_the_pick).size
+    assert_match(/asked for 2 people and wrote 1/, short.flagged_for(:people_short_of_the_pick).sole.evidence)
+
+    whole = scored(facts: facts, people: [ person("Ilsa Wren"), person("Casper Mund") ])
+    assert_empty whole.flagged_for(:people_short_of_the_pick)
+  end
+
+  # AND A ROOM THE PICK CALLED EMPTY IS OUT OF THE DENOMINATOR rather than
+  # counted as a success: nought asked and nought written is not the thing being
+  # measured.
+  test "a room asked for nobody is not judgeable on the count" do
+    scorer = scored(facts: FACTS.merge("people_allowance" => 0))
+
+    assert_equal 0, scorer.judgeable_for(:people_short_of_the_pick)
   end
 
   def person(fullname)

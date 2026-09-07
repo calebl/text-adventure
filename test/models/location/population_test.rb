@@ -12,7 +12,10 @@ class Location::PopulationTest < ActiveSupport::TestCase
     @story = create(:story)
   end
 
-  def rng(room) = Location::Danger.generator_for(room)
+  # THE ROOM'S OWN GENERATOR, seeded on its NAME -- the same one `.count_for`
+  # opens. `Location::Danger.generator_for` is NOT it any more and must not be
+  # used here: that one keys on the row and is what the cast rolls come out of.
+  def rng(room) = Location::Population.generator_for(room)
 
   # ------------------------------------------------------------------------
   # THE TABLE.
@@ -61,13 +64,13 @@ class Location::PopulationTest < ActiveSupport::TestCase
   test "a row that carries a word is answered with it" do
     room = create(:location, story: @story, population: "a crowd")
 
-    assert_equal "a crowd", Location::Population.label_for(room)
+    assert_equal "a crowd", Location::Population.label_for(room, rng: rng(room))
   end
 
   test "a row with no word rolls one the engine can produce" do
     room = create(:location, :population_unset, story: @story)
 
-    assert_includes Location::Population::ROLLED, Location::Population.label_for(room)
+    assert_includes Location::Population::ROLLED, Location::Population.label_for(room, rng: rng(room))
   end
 
   # THE WORD IS THE ROOM'S AND NOT THE ROW'S, which is what makes it survive a
@@ -78,7 +81,9 @@ class Location::PopulationTest < ActiveSupport::TestCase
     room = create(:location, :population_unset, story: @story, name: "The Tide Post")
     elsewhere = create(:location, :population_unset, story: create(:story), name: "the Tide Post")
 
-    assert_equal Location::Population.label_for(room), Location::Population.label_for(elsewhere)
+    assert_equal Location::Population.count_for(room), Location::Population.count_for(elsewhere)
+    assert_equal Location::Population.label_for(room, rng: rng(room)),
+                 Location::Population.label_for(elsewhere, rng: rng(elsewhere))
   end
 
   # AND IT IS NOT `String#hash`, which `Roll`'s header refuses by name: that is
@@ -110,7 +115,7 @@ class Location::PopulationTest < ActiveSupport::TestCase
   # being rolled.
   test "different rooms with no word roll different words" do
     rooms = 32.times.map { |n| create(:location, :population_unset, story: @story, name: "Room #{n}") }
-    words = rooms.map { |room| Location::Population.label_for(room) }
+    words = rooms.map { |room| Location::Population.label_for(room, rng: rng(room)) }
 
     assert_operator words.uniq.size, :>, 1,
                     "every room in a world came out the same way, so nothing is being rolled"
@@ -120,7 +125,8 @@ class Location::PopulationTest < ActiveSupport::TestCase
   test "one room's word is the same word in any process" do
     room = create(:location, :population_unset, story: @story)
 
-    assert_equal Location::Population.label_for(room), Location::Population.label_for(room)
+    assert_equal Location::Population.label_for(room, rng: rng(room)),
+                 Location::Population.label_for(room, rng: rng(room))
   end
 
   # ------------------------------------------------------------------------
@@ -128,21 +134,21 @@ class Location::PopulationTest < ActiveSupport::TestCase
 
   test "a count is drawn from inside the word's own band" do
     Location::Population::BANDS.each do |label, band|
-      drawn = 40.times.map { |n| Location::Population.count_for(label, rng: Random.new(n)) }
+      drawn = 40.times.map { |n| Location::Population.draw(label, rng: Random.new(n)) }
 
       assert_equal [], drawn.uniq - band, "#{label} drew a count outside its band"
     end
   end
 
   test "nobody is nobody, every time" do
-    assert_equal [ 0 ], 40.times.map { |n| Location::Population.count_for("nobody", rng: Random.new(n)) }.uniq
+    assert_equal [ 0 ], 40.times.map { |n| Location::Population.draw("nobody", rng: Random.new(n)) }.uniq
   end
 
   # A CROWD IS NEVER EMPTY AND A PERSON OR TWO IS NEVER NOBODY. The words mean
   # something or the pick means nothing.
   test "every word but nobody draws at least one person" do
     (Location::Population::LABELS - [ "nobody" ]).each do |label|
-      drawn = 60.times.map { |n| Location::Population.count_for(label, rng: Random.new(n)) }
+      drawn = 60.times.map { |n| Location::Population.draw(label, rng: Random.new(n)) }
 
       assert_operator drawn.min, :>=, 1, "#{label} drew a room with nobody in it"
     end
@@ -153,7 +159,7 @@ class Location::PopulationTest < ActiveSupport::TestCase
   # share, because this asserts that the weighting is USED -- both faces come
   # up -- rather than pinning a measured frequency a run could miss.
   test "a band with a repeated count leans on it" do
-    drawn = 120.times.map { |n| Location::Population.count_for("a person or two", rng: Random.new(n)) }
+    drawn = 120.times.map { |n| Location::Population.draw("a person or two", rng: Random.new(n)) }
     counts = drawn.tally
 
     assert_operator counts.fetch(1, 0), :>, counts.fetch(2, 0),
@@ -162,9 +168,7 @@ class Location::PopulationTest < ActiveSupport::TestCase
 
   test "one room's count is the same count in any process" do
     room = create(:location, :population_unset, story: @story)
-    twice = 2.times.map do
-      Location::Population.count_for(Location::Population.label_for(room), rng: rng(room))
-    end
+    twice = 2.times.map { Location::Population.count_for(room) }
 
     assert_equal twice.first, twice.last
   end

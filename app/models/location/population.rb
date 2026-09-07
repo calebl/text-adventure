@@ -80,11 +80,12 @@
 #   a row older than the column  every stub in every database that existed
 #                        before this migration.
 #
-# All four take the same path: `.label_for` rolls one out of `ROLLED`, seeded on
-# the room's NAME, so the answer is the same in any process for ever, the same
-# after a world is exported and re-seeded, and no room is left without one. That
-# method's comment and `Roll::POPULATION`'s have why it is the name and not the
-# row.
+# All four take the same path: `.label_for` rolls one out of `ROLLED`, and both
+# that roll and the count are seeded on the room's NAME -- so the answer is the
+# same in any process for ever, the same after a world is exported and
+# re-seeded, and no room is left without one. `.generator_for`'s comment and
+# `Roll::POPULATION`'s have why it is the name and not the row, and what it
+# bought.
 #
 # A SEEDED ROOM'S OWN CAST WINS, and that falls out rather than being enforced
 # here: the count is clamped by `Character::Registry#room_for_people`, which is
@@ -137,62 +138,81 @@ module Location::Population
   # be tidied away -- see the header on why a crowd stops at the room cap.
   MOST = BANDS.values.flatten.max
 
+  # HOW MANY PEOPLE THE ENGINE WILL ASK THIS ROOM FOR: the word, then a throw
+  # inside that word's band. The one reader anybody outside this file needs.
+  #
+  # UNCLAMPED -- `Character::Registry#drawn` narrows it against `MAX_PER_ROOM`
+  # and `MAX_PER_STORY`, because those are read back from the records and this
+  # knows nothing about either.
+  #
+  # BOTH DICE COME OUT OF ONE GENERATOR IN ONE ORDER, which is `Roll`'s standing
+  # rule, and the generator is seeded on the ROOM'S NAME. That is the whole of
+  # what makes this reproducible, and it is worth spelling out because it is the
+  # only roll in the app not keyed on a row: see `.generator_for`.
+  def self.count_for(location)
+    rng = generator_for(location)
+
+    draw(label_for(location, rng: rng), rng: rng)
+  end
+
+  # ONE THROW INSIDE ONE WORD'S BAND, and it is public for the reason
+  # `Roll.seed` is: it is the part worth asserting on its own. `#count_for` above
+  # is the one reader anybody outside this file needs -- this is here so a test
+  # can put forty draws through a band and see the weighting, which it cannot do
+  # through a method that opens its own generator per room.
+  def self.draw(label, rng:) = Roll.one_of(BANDS.fetch(label), rng: rng)
+
   # THE WORD FOR THIS ROOM, whether somebody chose it or not. A row that carries
-  # a label is answered with it; a row that does not rolls one.
+  # a label is answered with it; a row that does not rolls one out of `ROLLED`.
   #
-  # AND THE ROLL IS SEEDED ON THE ROOM'S NAME, which is the one roll in the app
-  # that is not seeded on a row -- `Roll::POPULATION`'s comment has the whole of
-  # why and this is the half that belongs here. A word is a fact about a PLACE,
-  # and a place's durable identity is its natural key rather than its id
-  # (`WorldSeed.natural_key`, and `WorldSeed::Loader`'s whole matching doctrine):
-  # a world exported and re-seeded is the same world, and every row in it has a
-  # new id. Seeding on the id would give the same room a different word on every
-  # load -- which is also what made the realization bench's staged worlds
-  # unstable, since `Eval::Realization::Stage` re-loads a world per repetition.
-  #
-  # SO IT TAKES NO GENERATOR, and that is the visible difference from
-  # `.count_for` below. The word is the ROOM's, decided once and the same for
-  # ever; the count is THIS REALIZATION's, drawn from the generator the room's
-  # cast is drawn from. `Location::Danger` already makes the same split between
-  # what a room IS (`.for_a_new_room`, its own seed) and what one realization
-  # does with it (`.generator_for`).
-  def self.label_for(location)
+  # A STORED WORD THROWS NO DIE, which matters for more than tidiness: the
+  # generator it is handed goes on to draw the count, so a stored word leaves
+  # that draw on the FIRST number of the stream and a rolled one leaves it on
+  # the second. Both are stable; they are simply different, and that is one seed
+  # thrown in one order either way.
+  def self.label_for(location, rng:)
     stored = location.population.presence
     return stored if BANDS.key?(stored)
 
-    Roll.one_of(ROLLED, rng: Roll.generator(story: 0, sequence: key_for(location), kind: Roll::POPULATION))
+    Roll.one_of(ROLLED, rng: rng)
+  end
+
+  # THE GENERATOR A ROOM'S POPULATION IS DRAWN FROM, AND IT IS SEEDED ON THE
+  # ROOM'S NAME -- the only roll in this app not keyed on a row.
+  # `Roll::POPULATION`'s comment has the whole of why and this is the half that
+  # belongs here.
+  #
+  # A POPULATION IS A FACT ABOUT A PLACE, and a place's durable identity is its
+  # natural key rather than its id -- `WorldSeed.natural_key`, and
+  # `WorldSeed::Loader`'s whole matching doctrine. A world exported and re-seeded
+  # is the same world with every id re-issued, so keying on the id would give the
+  # same room a different cast size on every load.
+  #
+  # AND THAT IS NOT ONLY A NICETY, it is what makes the realization bench able to
+  # measure this at all: `Eval::Realization::Stage` re-loads a world per
+  # repetition, so a count keyed on the row would state a different number in the
+  # prompt on every repetition of one case and `prompt_stable` would be false for
+  # the whole run. Measured rather than assumed --
+  # `Eval::Realization::Version.offline` disagreed with itself across two runs
+  # until this moved off the row.
+  #
+  # SO IT IS NOT `Location::Danger.generator_for`, which the cast rolls still
+  # come out of. The split is the same one `Location::Danger` already makes: what
+  # a room IS is the room's, and what one realization does with it is that
+  # realization's. HOW MANY people is the room's; WHO each of them is
+  # (`Character::Registry#slots`) is still drawn per room id, unchanged by this.
+  #
+  # TWO WORLDS WITH A ROOM OF ONE NAME DRAW THE SAME NUMBER, and that is
+  # deliberate rather than overlooked: `story: 0` is this file saying the roll
+  # does not belong to a world, the way a stat block's `playthrough: 0` says it
+  # does not belong to a game. Putting the story id in would undo the property
+  # above, because a re-seeded world is a new story row.
+  def self.generator_for(location)
+    Roll.generator(story: 0, sequence: key_for(location), kind: Roll::POPULATION)
   end
 
   # THE ROOM'S NAME AS AN INTEGER, through the same natural key the loader
   # matches a re-seeded room on -- so a room the file renamed only in its
-  # article, or in its spacing, keeps the word it had.
-  #
-  # TWO WORLDS WITH A ROOM OF ONE NAME DRAW THE SAME WORD, and that is deliberate
-  # rather than overlooked: `story: 0` is this file saying the roll does not
-  # belong to a world, the way a stat block's `playthrough: 0` says it does not
-  # belong to a game. Putting the story id in would undo the whole property above,
-  # because a re-seeded world is a new story row.
+  # article, or in its spacing, keeps the cast it had.
   def self.key_for(location) = Zlib.crc32(WorldSeed.natural_key(location.name.to_s))
-
-  # HOW MANY PEOPLE THE ENGINE WILL ASK FOR, thrown inside the band the label
-  # names.
-  #
-  # IT TAKES THE LABEL RATHER THAN THE ROOM, so that a caller which needs both
-  # throws each die once: `.label_for` may itself roll, and a method that called
-  # it again would advance the same generator twice for one question and give
-  # the second reader a different word from the first.
-  #
-  # AND IT COMES OUT OF THE GENERATOR IT IS HANDED, on `Roll`'s standing rule --
-  # a caller throwing several dice for one decision throws them from one seed in
-  # one order. `Character::Registry#slots` is that caller and the generator is
-  # `Location::Danger.generator_for`'s, the one this room's cast is already
-  # drawn from: the label, the count and then who each person is, in that order,
-  # so the whole of a room's cast is re-derivable from the room's own id.
-  #
-  # UNCLAMPED -- `Character::Registry` clamps it against the room and the world,
-  # because those are read back from the records and this knows nothing about
-  # either.
-  def self.count_for(label, rng:)
-    Roll.one_of(BANDS.fetch(label), rng: rng)
-  end
 end

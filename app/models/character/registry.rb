@@ -233,24 +233,22 @@ class Character::Registry
   # array is a room the pick said has nobody in it, and it is a complete answer
   # rather than a failure.
   #
-  # TWO DICE, ONE GENERATOR, IN THIS ORDER: the count, then one `monstrous?`
-  # throw per slot. `Roll`'s standing rule -- a caller throwing several dice for
-  # one decision throws them from one seed in one order -- and the order is fixed
-  # here rather than incidental, because it is what makes a room's whole cast
-  # re-derivable from the room's own id in any process for ever. Inserting a roll
-  # ahead of another one moves every answer after it.
+  # TWO GENERATORS, AND WHICH ONE IS WHICH IS THE DESIGN RATHER THAN AN
+  # ACCIDENT. HOW MANY people a room has is drawn by `Location::Population` off
+  # the ROOM'S NAME, because a population is a fact about a place and a place
+  # survives being exported and re-seeded with every id re-issued. WHO each of
+  # them is is drawn here off `Location::Danger.generator_for`, which keys on the
+  # room's id -- unchanged by the 2026-09-07 ruling, so a seeded world's cast
+  # comes out exactly as it did before wherever the count matches.
   #
-  # THE WORD IS NOT ONE OF THEM. `Location::Population.label_for` takes no
-  # generator: a room a model or a seed file picked a word for rolls nothing at
-  # all, and a room nobody picked for is seeded on its NAME rather than on this
-  # room's id, because the word is the room's own for ever and the count is this
-  # realization's. That file's header has the reasoning.
+  # ONE `monstrous?` THROW PER SLOT, IN ORDER, out of one generator --
+  # `Roll`'s standing rule, and the order is fixed here rather than incidental:
+  # inserting a roll ahead of another one moves every answer after it.
   def slots
     @slots ||= begin
       rng = Location::Danger.generator_for(location)
-      wanted = drawn(rng)
 
-      Array.new(wanted) do
+      Array.new(drawn) do
         { race: race_from(Location::Danger.monstrous?(location, rng: rng)),
           age: rand(18..80), sex: Character.sexes.values.sample }
       end
@@ -296,10 +294,8 @@ class Character::Registry
   # world at `MAX_PER_STORY` gets rooms with nobody in them rather than failing.
   # That is also the whole of *a seeded room's own cast wins* -- nothing here
   # removes anybody, it only stops asking for more.
-  def drawn(rng)
-    label = Location::Population.label_for(location)
-
-    [ Location::Population.count_for(label, rng: rng), room_for_people, world_for_people ].min
+  def drawn
+    [ Location::Population.count_for(location), room_for_people, world_for_people ].min
   end
 
   # ONE OF THE TWO POOLS, and a pool that is empty falls back to the whole race
