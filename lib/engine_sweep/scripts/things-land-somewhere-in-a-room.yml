@@ -33,10 +33,18 @@
 #
 #   THAT THE WORLD'S OWN ROW NEVER MOVES. The ledger the file lays at 6,2 is a
 #   TEMPLATE; what the party carries upstairs is this game's copy of it (the
-#   captain's ruling of 2026-09-04). `world_items_unmoved` reads the file back
-#   afterwards, and `positions_in_bounds` covers both layers at once -- so a
-#   take that had moved the template rather than the copy would fail this walk
-#   twice over.
+#   captain's ruling of 2026-09-04). WHAT HOLDS THAT IS THIS SCRIPT'S OWN
+#   EXPECTATIONS, and not an invariant: `here` is read through
+#   `Playthrough#items_lying_in`, which is this game's instances and nothing
+#   else, so a take that had grabbed the world's row would leave this game's
+#   copy lying in room 1 -- and `here: []` fails at
+#   `off-the-floor-and-into-a-hand` the moment it does, and again at
+#   `and-it-is-still-there-when-we-come-back`.
+#   NEITHER INVARIANT CAN FIRE FOR IT, which is worth naming so nobody goes
+#   looking: `#carry!` writes `playthrough` and clears `location` in the one
+#   statement, so a row it touched is out of `Item.lying_in(room).templates`
+#   before `world_items_unmoved` sweeps, and out of `Item.positioned` before
+#   `positions_in_bounds` does -- see the paragraph below.
 #
 # WHAT NO WALK CAN CATCH HERE, and it is worth saying because the invariant
 # reads stronger than it is: A DROP THAT WROTE NO POSITION AT ALL. `#carry!` has
