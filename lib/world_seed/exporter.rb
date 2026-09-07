@@ -241,14 +241,34 @@ class WorldSeed::Exporter
       next if box&.contains?(record.position)
 
       @warnings << "#{label} is #{record.position || "part-placed"} and " \
-                   "#{position_fault(room, box)}: the file is written as the records stand and will not load " \
-                   "until somebody says where that row really is. `rake game:doctor` reports it under " \
+                   "#{position_fault(record, room, box)}: the file is written as the records stand and will not " \
+                   "load until somebody says where that row really is. `rake game:doctor` reports it under " \
                    "`thing_with_a_partial_position`, `thing_positioned_in_a_room_with_no_box` or " \
                    "`thing_outside_the_room_it_is_in`."
     end
   end
 
-  def position_fault(room, box)
+  # WHICH OF THE THREE FAULTS THIS ROW HAS, and the ROW'S OWN SHAPE IS ASKED
+  # FIRST -- `Story::Doctor#things_outside_the_room_they_are_in` opens with the
+  # same predicate and for the same reason. Half a position is not a position,
+  # so there is nothing to be outside anything: a row carrying an `x` and no `y`
+  # is half an answer whatever box its room draws, and describing it as a thing
+  # through a wall would send its reader to the room's dimensions to fix a
+  # column that is simply empty. One fault, told once, told correctly.
+  #
+  # AND TOLD IN THE WORDS THE OTHER THREE USE for the same state --
+  # `Story::Doctor#things_with_a_partial_position`, `Item#a_position_is_whole`
+  # and `WorldSeed::Loader#validate_one_position!` -- so somebody who meets this
+  # row in the exporter, the doctor and the loader in one afternoon is told
+  # about one mistake rather than three.
+  def position_fault(record, room, box)
+    if Location::Spot.partial?(record)
+      written = Location::Spot::COLUMNS.select { |column| record[column].present? }
+      return "carries #{written.join(", ")} and not the other of #{Location::Spot::COLUMNS.join(", ")} -- a " \
+             "position is both numbers or neither, so it says half of where it is and the other half cannot be " \
+             "guessed at"
+    end
+
     return "is in no room, which has no plane to read a position in" if room.nil?
     return "#{room.name} has no box, so there is no plane to read that in" if box.nil?
 

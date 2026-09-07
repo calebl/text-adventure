@@ -812,11 +812,19 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     document = exporter.document
 
     assert_match(/outside the room it is in/, exporter.warnings.join)
+    assert_no_match(/both numbers or neither/, exporter.warnings.join)
     assert_equal 40, document["locations"].detect { |row| row["name"] == "The Taproom" }["items"].sole["x"]
     assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
   end
 
-  test "half a position is exported as it stands, with a warning" do
+  # AND IT SAYS WHICH OF THE THREE FAULTS IT IS. Half a position is not a
+  # position, so there is nothing for it to be outside of -- a warning that
+  # called this row a thing through a wall would send whoever reads it to the
+  # room's dimensions to fix a column that is simply empty. The trailing
+  # sentence of every one of these warnings lists all three finding codes, so
+  # asserting a code proves nothing about which fault was named; the phrase
+  # does.
+  test "half a position is exported as it stands, named as half a position" do
     taproom = a_room_inside_a_place
     create(:item, character: nil, location: taproom, name: "brass tap key").update_column(:x, 3)
 
@@ -824,7 +832,10 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     exporter.document
 
     assert_match(/part-placed/, exporter.warnings.join)
-    assert_match(/thing_with_a_partial_position/, exporter.warnings.join)
+    assert_match(/carries x and not the other of x, y/, exporter.warnings.join)
+    assert_match(/a position is both numbers or neither/, exporter.warnings.join)
+    assert_no_match(/outside the room it is in:/, exporter.warnings.join)
+    assert_no_match(/no plane to read/, exporter.warnings.join)
   end
 
   test "a position in a room with no box is exported as it stands, with a warning" do
@@ -834,6 +845,8 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
     exporter.document
 
     assert_match(/The Opening Room has no box/, exporter.warnings.join)
+    assert_no_match(/both numbers or neither/, exporter.warnings.join)
+    assert_no_match(/outside the room it is in:/, exporter.warnings.join)
   end
 
   # THE ONE THAT MUST STAY QUIET: things placed properly inside their rooms,
