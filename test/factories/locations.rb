@@ -19,6 +19,25 @@ FactoryBot.define do
     # for.
     danger { Location::SAFE }
 
+    # AND A PLACE HAS SOMEBODY IN IT, WHICH IS THE ONE DEFAULT HERE THAT IS NOT
+    # THE COLUMN'S. The column is nullable and nil is a real state -- *nobody
+    # picked a word for this room* -- and the engine ROLLS a label for one
+    # (`Location::Population.label_for`). A factory that left it nil would
+    # therefore roll a die: half the rooms it built would come out with nobody
+    # in them, and every test that reads a slot, a cast or an allowance off a
+    # factory location would be a lottery on that row's id. That is the flake
+    # `test/factories/location_connections.rb` carries the full diagnosis of,
+    # and this is the same rule applied one table over.
+    #
+    # `a crowd` AND NOT THE MIDDLE WORD, because the middle word is a die too:
+    # `a person or two` draws 1 or 1 or 2 and a test asserting on the second
+    # slot would be green two runs in three. `a crowd` is the one label whose
+    # whole band is at least two people, so a test that names two of them is
+    # stable whatever the row's id came out as. Ask for a variation by trait,
+    # and pin an EXACT count by stubbing `Location::Population.count_for` --
+    # nothing here may roll one.
+    population { "a crowd" }
+
     # Named by a neighbour and nothing more -- no description, no lore. This is
     # what an unexplored exit looks like until the player walks through it.
     trait :stub do
@@ -41,6 +60,20 @@ FactoryBot.define do
 
     trait :deadly do
       danger { "deadly" }
+    end
+
+    # A ROOM THE PICK SAID IS EMPTY: `nobody` is a word somebody CHOSE, so the
+    # engine asks for no people and rolls no slots.
+    trait :unpeopled do
+      population { "nobody" }
+    end
+
+    # AND A ROOM NOBODY PICKED FOR AT ALL, which is what the opening room, every
+    # room of a laid-out interior, every seeded room whose file leaves the key
+    # out and every row older than the column are. The engine rolls the label
+    # itself, so a test using this trait must not assert on a count.
+    trait :population_unset do
+      population { nil }
     end
 
     # A ROOM THAT COSTS YOU HIT POINTS FOR WALKING INTO IT. `hazard` is nullable

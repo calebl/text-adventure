@@ -486,7 +486,13 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     answer = DETAIL.merge("items" => FURNISHED["items"], "people" => [ PERSON ])
     agent = FakeAgent.new(answer)
 
-    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+    # PINNED, because a room of an interior carries no population word -- no
+    # model ever named it as an exit -- so the engine rolls one, and this test
+    # is about the call being made rather than about what the die said. See
+    # `Location::Population`.
+    Location::Population.stub(:count_for, 1) do
+      BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+    end
 
     assert_predicate room.reload, :realized?
     assert_equal DETAIL["description"], room.description
@@ -1297,10 +1303,10 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     location = stub_location(name: "The Drowned Ledger")
     agent = FakeAgent.new(PEOPLED, EXITS)
 
-    realize(location, agent)
+    Location::Population.stub(:count_for, Location::Population::MOST) { realize(location, agent) }
     prompt = agent.prompts.first
 
-    assert_match(/List AT MOST #{Character::Registry::MAX_PER_CALL} people/, prompt)
+    assert_match(/List AT MOST #{Location::Population::MOST} people/, prompt)
     assert_match(/NOBODY is the right answer for most rooms/, prompt)
     assert_match(/the 1st is .+, about \d+, /, prompt)
     assert_match(/the 2nd is .+, about \d+, /, prompt)

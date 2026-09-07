@@ -455,6 +455,14 @@ class WorldSeed::Exporter
       # rather than written out" rule the flags above follow, said for a key
       # with four values instead of two.
       document["danger"] = location.danger unless location.danger == Location::SAFE
+      # AND HOW POPULATED IT IS, when somebody picked a word for it. Omitted
+      # when the column is NIL, which is not the same omission as `danger`'s one
+      # line up: there the absent key means the column's default, here it means
+      # *nobody picked*, and that is exactly what nil is
+      # (`Location::Population`). So a room a model called `nobody` exports the
+      # word and a room nothing ever named exports no key, and both load back as
+      # what they were.
+      document["population"] = location.population if location.population.present?
       # WHAT THE PLACE DOES TO SOMEBODY STANDING IN IT. Omitted rather than
       # written null when there is none, which is the rule every key above it
       # follows -- and here it is also what the loader reads back as "this room

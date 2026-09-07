@@ -137,7 +137,7 @@ class Location::DetailSchema < RubyLLM::Schema
   array :people,
         description: "People who are in this place right now. Nobody is the right answer for most rooms.",
         required: false,
-        max_items: Character::Registry::MAX_PER_CALL do
+        max_items: Location::Population::MOST do
     object do
       string :fullname, description: "Their full name, as a player would type it to speak to them. 2 or 3 words.", max_length: Character::Registry::PERSON_LIMITS[:fullname]
       string :nickname, description: "What they are called to their face. 1 or 2 words.", max_length: Character::Registry::PERSON_LIMITS[:nickname]

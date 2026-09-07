@@ -94,8 +94,8 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
     people = schema_properties(SCHEMA)["people"]
 
     assert_equal "array", people["type"]
-    assert_equal Character::Registry::MAX_PER_CALL, people["maxItems"]
-    assert_equal 2, Character::Registry::MAX_PER_CALL
+    assert_equal Location::Population::MOST, people["maxItems"]
+    assert_equal Character::Registry::MAX_PER_ROOM, Location::Population::MOST
   end
 
   # Race, age and sex are NOT here: `Character::Registry#slots` rolls them and

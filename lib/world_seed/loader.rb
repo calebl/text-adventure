@@ -273,6 +273,16 @@ class WorldSeed::Loader
       # its author had made safe, and there would be no way to undo it from the
       # file. An absent key is `Location::SAFE`, which is the column's default
       # and what every room already written is.
+      # AND HOW POPULATED THE FILE SAYS IT IS, written in both directions on
+      # every load for `danger`'s reason one key up: a stale `a crowd` left on a
+      # row the file no longer marks would go on writing people into a room its
+      # author had emptied, with no way to undo it from the file. An absent key
+      # is NIL AND NOT `nobody`, and the two are different -- nil is *nobody
+      # picked a word*, which is the state the engine rolls one for, and
+      # `nobody` is a file saying this place is empty. `Location::Population`'s
+      # header has both, and the reason a seeded room usually notices neither:
+      # the label is read when a room is REALIZED, and a seeded room that
+      # carries a description was realized by its author.
       # AND WHAT THE PLACE DOES TO SOMEBODY STANDING IN IT, written in both
       # directions on every load for `danger`'s reason one key over: a stale
       # `flooded` left on a row the file no longer marks would go on costing
@@ -293,6 +303,7 @@ class WorldSeed::Loader
       location.assign_attributes(
         attributes.except("opening", "items", "parent")
                   .merge("name" => written, "danger" => attributes["danger"].presence || Location::SAFE,
+                         "population" => attributes["population"].presence,
                          "hazard" => attributes["hazard"].presence, "hazard_die" => attributes["hazard_die"])
                   .merge(Location::Box::COLUMNS.to_h { |column| [ column, attributes[column] ] })
       )
@@ -766,6 +777,7 @@ class WorldSeed::Loader
     validate_inscriptions!
     validate_bulks!
     validate_dangers!
+    validate_populations!
     validate_hazards!
     validate_boxes!
     validate_positions!
@@ -893,6 +905,26 @@ class WorldSeed::Loader
 
       raise InvalidWorld, "#{where}: location #{attributes.fetch("name").inspect} has `danger: #{danger.inspect}`; " \
                           "there is: #{Location::DANGERS.keys.join(", ")}"
+    end
+  end
+
+  # A POPULATION WORD THE ENGINE HAS NO BAND FOR. `Location::Population::BANDS`
+  # is the closed set of how populated a place may be -- the labels are what an
+  # author and a model read, the counts are what the engine rolls inside -- so a
+  # fourth word is a typo, and it is named here with the file and the room for
+  # `#validate_dangers!`'s reason one method up.
+  #
+  # A BLANK KEY IS NOT A TYPO and passes: it means the file does not say, which
+  # is a real answer and the one every checked-in world gives. See
+  # `#load_locations!` on why that is not the same as `nobody`.
+  def validate_populations!
+    location_documents.each do |attributes|
+      population = attributes["population"]
+      next if population.blank? || Location::Population::BANDS.key?(population)
+
+      raise InvalidWorld, "#{where}: location #{attributes.fetch("name").inspect} has " \
+                          "`population: #{population.inspect}`; " \
+                          "there is: #{Location::Population::LABELS.join(", ")}"
     end
   end
 

@@ -199,6 +199,16 @@ class Location < ApplicationRecord
   # guessing which of the four was meant.
   validates :danger, presence: true, inclusion: { in: DANGERS.keys }
 
+  # HOW POPULATED THIS PLACE IS, as one of `Location::Population`'s words or as
+  # nothing at all. `allow_nil` is the whole of the difference from `danger`
+  # above: nil means NOBODY PICKED A WORD, which is the state the opening room,
+  # every room of a laid-out interior, every seeded room whose file leaves the
+  # key out and every row older than the column are all honestly in -- and the
+  # engine rolls a word for those rather than reading one. `nobody` is a
+  # different thing from nil and cannot be conflated with it: it is a choice the
+  # engine honours. See `Location::Population`'s header and the migration's.
+  validates :population, inclusion: { in: Location::Population::LABELS }, allow_nil: true
+
   validates :name, presence: true
   # A stub has neither yet -- that is the point of a stub. A realized location
   # without them is still broken, so the requirement holds where it matters.
