@@ -19,7 +19,7 @@ generated one, and to rebuild these files when the schema changes. Everything
 after that is hand editing, and that is the intended workflow: generate, export,
 then edit the YAML until the world has the shape you want.
 
-Both worlds here have been edited after export. `the-unrecorded-hour.yml` was
+The worlds here have been edited after export. `the-unrecorded-hour.yml` was
 written by hand outright, to get a shape the generator cannot produce (below).
 
 Two things to know before re-exporting over a file:
@@ -599,11 +599,15 @@ locations:
   with the taproom for that reason, and so does
   `test/fixtures/files/a-world-with-an-interior.yml`.
 - **Every one of these keys is optional and NONE of the three worlds here uses
-  them.** The captain's fourth ruling leaves the seeded worlds flat; interiors
-  are opt-in per file, and generated worlds get them from slice 2 onward. The
-  worked example above is
-  `test/fixtures/files/a-world-with-an-interior.yml` — a fixture rather than a
-  fourth world here, because `db/seeds.rb` loads everything in this directory.
+  them.** The captain's fourth ruling leaves the seeded worlds flat, and
+  interiors are opt-in per file: a footprint is still something only a file
+  writes, so a generated world has no insides in it either — which generated
+  stubs become places is a scoping decision nobody has made yet
+  (`Location#place?`). The worked example above is
+  `test/fixtures/files/a-world-with-an-interior.yml`, and
+  `lib/engine_sweep/worlds/the-quay-house.yml` is a laid-out one the sweep
+  walks; both are out of this directory rather than a fourth world in it,
+  because `db/seeds.rb` loads everything here.
 - **There are two whole shapes, not one.** An extent alone (`width` + `depth`)
   is a **footprint**: *this place has an inside, and it is this big*, which is
   what the outermost place of an interior carries. All five is a **box**: *and
@@ -635,10 +639,23 @@ locations:
   clearing a box deletes a floor plan somebody laid out. `rake game:export`
   warns about every one of them too, naming the code, because a file carrying
   one will not load.
-- **Nothing generates one yet, and no typed line may touch one.** A box is the
-  world's on exactly the terms a hit die and a hazard are;
-  `EngineSweep::Invariants`' `geometry_unmoved` asserts across a whole scripted
-  play that no coordinate and no `parent` moved.
+- **The doctor also reports faults the loader cannot refuse** — an interior with
+  a room nothing reaches, stairs between rooms that do not stand over each
+  other, a door between two rooms that share no wall, a place written out in
+  full with not one room inside it. A file carrying one of those loads and
+  plays; it is a floor plan that does not add up rather than a file that does
+  not parse. `Story::Doctor`'s geometry group is the list, with what each one
+  means.
+- **A FOOTPRINT AND NO ROOMS MEANS THE ENGINE DRAWS THEM.** The first time
+  somebody walks into a place carrying a footprint, `Location::Interior` lays
+  out its whole inside — every room and every door, from one seeded roll and
+  with no model call. It is skipped for a place that already has children, so a
+  file that draws its own rooms keeps them exactly as written and a file that
+  gives only a width and a depth is asking for a building it has not seen. Read
+  `Location::Interior`'s header before writing either.
+- **No typed line may touch a box.** A box is the world's on exactly the terms a
+  hit die and a hazard are; `EngineSweep::Invariants`' `geometry_unmoved` asserts
+  across a whole scripted play that no coordinate and no `parent` moved.
 
 ### Rules the loader enforces
 

@@ -78,6 +78,23 @@ module EngineSweep
 
   DIRECTORY = Rails.root.join("lib/engine_sweep/scripts")
 
+  # WORLDS THAT EXIST TO BE WALKED RATHER THAN PLAYED, and a script may name one
+  # exactly as it names a checked-in world (`EngineSweep::Script#seed_file`
+  # looks here second).
+  #
+  # WHY THEY ARE NOT IN `db/seeds/worlds`. That directory is what a FRESH CLONE
+  # gets: `db/seeds.rb` loads every file in it, and each one is a world somebody
+  # is meant to sit down and play. A world whose whole purpose is to give one
+  # assertion something to stand on does not belong in that set -- it would be a
+  # fourth entry in the index page, in `rake game:list`, and in every count of
+  # what this project ships. Keeping it here says what it is.
+  #
+  # THEY ARE HELD TO THE SAME STANDARD IN EVERY OTHER RESPECT: the same format,
+  # the same `WorldSeed::Loader`, the same validations, and `rake game:doctor`
+  # says the same thing about one. A sweep world that a person could not load
+  # and play would be a fixture pretending to be a world.
+  WORLDS = Rails.root.join("lib/engine_sweep/worlds")
+
   # Every stored script, in a stable order.
   def self.scripts = Dir.glob(DIRECTORY.join("*.yml")).sort.map { |path| Script.load(path) }
 

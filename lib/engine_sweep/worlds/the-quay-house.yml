@@ -1,0 +1,222 @@
+# THE QUAY HOUSE -- a world that exists to be WALKED and not to be played, and
+# the reason `EngineSweep::WORLDS` is a directory of its own. It is not in
+# `db/seeds/worlds`: a fresh clone should not gain a fourth playable world for
+# the sake of one offline test, and the captain's fourth ruling of 2026-09-06
+# leaves the three checked-in worlds flat.
+#
+# WHAT IT IS FOR: a sweep script that walks a LAID-OUT INTERIOR. Nothing else in
+# the repository has one to walk. A sweep never realizes a room -- there is no
+# model -- so it can never watch `Location::Interior` lay a building out; what
+# it can do is walk a building that has already been laid out, which is what
+# this file carries.
+#
+# THE INTERIOR IS THE GENERATOR'S OWN OUTPUT, not a floor plan somebody drew to
+# look like one. The Custom House was handed to `Location::Interior.lay_out!`
+# and the story was exported with `WorldSeed::Exporter`, so every box, every
+# door and every flight of stairs below is what the engine wrote: two storeys
+# tiling one 14 x 10 footprint, a serpentine of doors through each, and one
+# stairwell where room 1 and room 5 stand over each other.
+#
+# WHAT IS HAND-WRITTEN, and it is only what the layout deliberately does not do
+# (slice 4): THE WAY IN. `The Quay` is outside all of it and opens onto room 1,
+# which is the spare exit `Location::Interior` keeps on the entry room -- so
+# this file is also the worked example of what that reserved slot is for.
+#
+# The rooms are STUBS and stay stubs: an offline walk writes nothing, which is
+# `EngineSweep::Invariants#nothing_was_written`.
+---
+format: 2
+universe:
+  physics: Ordinary physics, and a tide that keeps to its table.
+  technology: Rope, tar, lamp oil and a ledger.
+  weapons: A gaff hook, and whatever is nearest the door.
+  geographies: |-
+    One quay, one custom house standing on it, and the water at the end of both.
+  civilizations: A port that has never been anything else.
+  history: Three hundred years of the same tide.
+  economics: |-
+    Paid in salt weight, settled in coin when the assessor is watching.
+  politics: |-
+    The harbourmaster, and whoever is owed money by the harbourmaster.
+  religion: The tide table, read aloud.
+  races:
+  - name: Harbourfolk
+    description: |-
+      Born to the water line, and unimpressed by anybody who was not.
+story:
+  title: The Quay House
+  genre: harbour mystery
+  start_time: '2026-09-06T19:00:00Z'
+  preface: |-
+    The custom house has been locked since noon and the seal on the door is broken.
+  summary: |-
+    Somebody was inside the custom house when the whole quay says it was empty.
+opening_scene:
+  location: The Quay
+  characters: [Nell Cawsand]
+  description: |-
+    The tide is out and the custom house door is standing open, which it has no business doing.
+  summary: |-
+    The story opens on the quay with the custom house standing open.
+characters:
+- fullname: Nell Cawsand
+  race: Harbourfolk
+  location: The Quay
+  nickname: Nell
+  age: 38
+  sex: female
+  is_protagonist: true
+  is_companion: false
+  backstory: |-
+    Kept the quay's books for eleven years without once being asked to.
+  personality: Unhurried, and counts things twice.
+  appearance: Salt at the cuff, whatever she is wearing.
+  likes: A tide that comes in on the table
+  dislikes: A door found open
+  fears: Being the last one to know
+  stats:
+    level: 3
+    hit_die: 8
+    strength: 11
+    dexterity: 13
+    will: 12
+locations:
+- name: The Quay
+  detail_level: realized
+  opening: true
+  teaser: The water at one end and the custom house at the other.
+  description: |-
+    Wet stone, a bollard worn smooth, and the custom house shut against the weather.
+  lore: |-
+    Every cargo that ever came ashore here was counted twice before it left.
+- name: The Custom House
+  detail_level: stub
+  width: 14
+  depth: 10
+  teaser: Two floors of ledgers with the door standing open.
+- name: The Custom House room 1
+  detail_level: stub
+  parent: The Custom House
+  x: 0
+  y: 0
+  z: 0
+  width: 7
+  depth: 4
+  teaser: A room inside The Custom House, 7 by 4 paces on storey 0.
+- name: The Custom House room 2
+  detail_level: stub
+  parent: The Custom House
+  x: 7
+  y: 0
+  z: 0
+  width: 7
+  depth: 4
+  teaser: A room inside The Custom House, 7 by 4 paces on storey 0.
+- name: The Custom House room 3
+  detail_level: stub
+  danger: dangerous
+  parent: The Custom House
+  x: 7
+  y: 4
+  z: 0
+  width: 7
+  depth: 6
+  teaser: A room inside The Custom House, 7 by 6 paces on storey 0.
+- name: The Custom House room 4
+  detail_level: stub
+  danger: uneasy
+  parent: The Custom House
+  x: 0
+  y: 4
+  z: 0
+  width: 7
+  depth: 6
+  teaser: A room inside The Custom House, 7 by 6 paces on storey 0.
+- name: The Custom House room 5
+  detail_level: stub
+  danger: uneasy
+  parent: The Custom House
+  x: 0
+  y: 0
+  z: 1
+  width: 6
+  depth: 6
+  teaser: A room inside The Custom House, 6 by 6 paces on storey 1.
+- name: The Custom House room 6
+  detail_level: stub
+  parent: The Custom House
+  x: 0
+  y: 6
+  z: 1
+  width: 6
+  depth: 4
+  teaser: A room inside The Custom House, 6 by 4 paces on storey 1.
+- name: The Custom House room 7
+  detail_level: stub
+  parent: The Custom House
+  x: 6
+  y: 6
+  z: 1
+  width: 5
+  depth: 4
+  teaser: A room inside The Custom House, 5 by 4 paces on storey 1.
+- name: The Custom House room 8
+  detail_level: stub
+  danger: dangerous
+  parent: The Custom House
+  x: 6
+  y: 0
+  z: 1
+  width: 5
+  depth: 6
+  teaser: A room inside The Custom House, 5 by 6 paces on storey 1.
+- name: The Custom House room 9
+  detail_level: stub
+  parent: The Custom House
+  x: 11
+  y: 0
+  z: 1
+  width: 3
+  depth: 6
+  teaser: A room inside The Custom House, 3 by 6 paces on storey 1.
+- name: The Custom House room 10
+  detail_level: stub
+  danger: uneasy
+  parent: The Custom House
+  x: 11
+  y: 6
+  z: 1
+  width: 3
+  depth: 4
+  teaser: A room inside The Custom House, 3 by 4 paces on storey 1.
+connections:
+- between: [The Quay, The Custom House room 1]
+  distance: adjacent
+  travel_method: walking
+- between: [The Custom House room 1, The Custom House room 2]
+  distance: adjacent
+  travel_method: walking
+- between: [The Custom House room 1, The Custom House room 5]
+  distance: adjacent
+  travel_method: taking stairs
+- between: [The Custom House room 2, The Custom House room 3]
+  distance: adjacent
+  travel_method: walking
+- between: [The Custom House room 3, The Custom House room 4]
+  distance: adjacent
+  travel_method: walking
+- between: [The Custom House room 5, The Custom House room 6]
+  distance: adjacent
+  travel_method: walking
+- between: [The Custom House room 6, The Custom House room 7]
+  distance: adjacent
+  travel_method: walking
+- between: [The Custom House room 7, The Custom House room 8]
+  distance: adjacent
+  travel_method: walking
+- between: [The Custom House room 8, The Custom House room 9]
+  distance: adjacent
+  travel_method: walking
+- between: [The Custom House room 9, The Custom House room 10]
+  distance: adjacent
+  travel_method: walking

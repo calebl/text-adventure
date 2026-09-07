@@ -92,6 +92,211 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     neighbour
   end
 
+  # --- the seam an interior is laid out through -------------------------------
+  #
+  # ON FIRST ENTRY TO A PLACE, which is what realizing a stub IS. See
+  # `Location::Generator#lay_out_interior!` and `Location#place?`.
+
+  test "realizing a stub that carries a footprint lays out its inside" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+
+    rooms = place.reload.child_locations
+    assert_predicate rooms.count, :positive?
+    assert(rooms.all?(&:placed?))
+    assert(rooms.all?(&:stub?))
+  end
+
+  # THE ONE THAT MUST NOT FIRE. Every stub in every generated world carries no
+  # extent, so realizing one has to write exactly what it wrote before this
+  # seam existed.
+  test "realizing an ordinary stub lays out nothing at all" do
+    location = stub_location(name: "The Drowned Ledger")
+
+    realize(location, FakeAgent.new(DETAIL, EXITS))
+
+    assert_empty location.reload.child_locations
+    assert(location.exits.none?(&:placed?))
+  end
+
+  # LAID OUT ONCE, EVER, which is `#realize!`'s own guarantee said about
+  # geometry: walking back in gives you the building you left.
+  test "a place that already has rooms is not laid out a second time" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    Location::Interior.lay_out!(place)
+    before = place.child_locations.order(:id).pluck(:id)
+
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+
+    assert_equal before, place.reload.child_locations.order(:id).pluck(:id)
+  end
+
+  # A DOOR NEVER CROSSES THE WALL OF A BUILDING. The rooms of a laid-out place
+  # are stubs in the same story as every other location, so nothing but this
+  # refusal stops the exits call reusing one by name -- and an exterior edge
+  # into a room walks the party off the street into somebody's back room, spends
+  # the entry room's reserved slot, and can take a room past
+  # `Location::ExitsSchema::MAX_EXITS`.
+  test "an exit that names a room inside another place is refused" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+    room = place.reload.child_locations.order(:id).last
+    named_room = { "exits" => [ { "name" => room.name, "teaser" => "A door that should be locked.",
+                                  "distance" => "adjacent", "travel_method" => "walking" } ] }
+    road = stub_location(name: "The Harbour Road")
+
+    realize(road, FakeAgent.new(DETAIL, named_room))
+
+    assert_empty road.reload.exits
+    assert_empty room.reload.exits.where(parent_location_id: nil)
+    assert_equal 1, @story.locations.where(name: room.name).count
+    assert(place.reload.child_locations.all? { |one| one.exits.count <= Location::ExitsSchema::MAX_EXITS })
+  end
+
+  # AND THE FLOOR DOES NOT LIFT IT. `#write_exits!` takes a written room rather
+  # than sealing a player in; a room inside a building is a name it cannot
+  # honour on any pass, because honouring it breaks an invariant.
+  test "the fewer-exits floor does not open a door into a room either" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+    room = place.reload.child_locations.order(:id).first
+    named_room = { "exits" => [ { "name" => room.name, "teaser" => "A door that should be locked.",
+                                  "distance" => "adjacent", "travel_method" => "walking" } ] }
+    road = stub_location(name: "The Harbour Road")
+
+    realize(road, FakeAgent.new(DETAIL, named_room))
+
+    assert_empty road.reload.exits
+    assert_empty room.reload.exits.where(parent_location_id: nil)
+  end
+
+  # AN INTERIOR ROOM'S WAYS OUT ARE THE ENGINE'S. `Location::Interior` wrote
+  # every door and every stair the room has, under guarantees a model cannot be
+  # held to, so realizing the room writes its prose and does not ask for exits
+  # at all -- neither a sibling's name nor an invented one is honoured, and the
+  # entry room's reserved slot is left where it is.
+  test "realizing a room inside a place honours no exit a model names" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+    rooms = place.reload.child_locations.order(:id).to_a
+    room = rooms.first
+    named = { "exits" => [
+      { "name" => rooms.last.name, "teaser" => "The next room along.",
+        "distance" => "adjacent", "travel_method" => "walking" },
+      { "name" => "The Strongroom", "teaser" => "A door that should have been locked.",
+        "distance" => "adjacent", "travel_method" => "walking" }
+    ] }
+    edges = LocationConnection.count
+    locations = @story.locations.count
+    agent = FakeAgent.new(DETAIL, named)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).realize! }
+
+    assert_predicate room.reload, :realized?
+    assert_equal edges, LocationConnection.count
+    assert_equal locations, @story.locations.count
+    assert_nil @story.locations.find_by(name: "The Strongroom")
+    assert_not_includes agent.schemas, Location::ExitsSchema
+  end
+
+  # PLAIN CONTAINMENT IS NOT AN INTERIOR, and this is the shape that tells the
+  # two apart: a `parent` with NO box -- a district a street sits in, which
+  # `WorldSeed::Loader#validate_one_parent!` allows and `WorldSeed::Exporter`
+  # round-trips. Nothing laid a district out, so its children are ordinary
+  # places: the exits call IS made, the outermost names ARE offered, and a name
+  # that resolves to one of them IS honoured.
+  #
+  # AND AN INVENTED NAME IS BORN AT THE OUTERMOST LEVEL, not inside the
+  # district. `.create_stub!` writes no `parent_location` and that is right
+  # here: a street you can leave the district by opens onto somewhere outside
+  # it, and nothing on record says a new place belongs to the district its
+  # neighbour is in.
+  test "a location inside a district with no box keeps its exits" do
+    district = stub_location(name: "The Docks District")
+    row = stub_location(name: "Warehouse Row", parent_location: district)
+    custom_house = stub_location(name: "The Custom House")
+    named = { "exits" => [
+      { "name" => custom_house.name, "teaser" => "Ledgers behind shuttered glass.",
+        "distance" => "adjacent", "travel_method" => "walking" },
+      { "name" => "The Salt Store", "teaser" => "A door propped open with a crate.",
+        "distance" => "adjacent", "travel_method" => "walking" }
+    ] }
+    agent = FakeAgent.new(DETAIL, named)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(row).realize! }
+
+    assert_includes agent.prompts.last, custom_house.name
+    assert_includes agent.prompts.last, district.name
+    assert_includes row.reload.exits, custom_house
+    assert LocationConnection.exists?(location: custom_house, connected_location: row)
+    salt_store = @story.locations.find_by(name: "The Salt Store")
+    assert_includes row.exits, salt_store
+    assert_nil salt_store.parent_location_id
+  end
+
+  # AND `Story::Repair` GETS THE SAME ANSWER, because #write_exits! is where the
+  # rule lives rather than #realize!: the way into a building is not something a
+  # recovery may invent either.
+  test "write_exits! writes nothing for a room inside a place" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+    room = place.reload.child_locations.order(:id).first
+    edges = LocationConnection.count
+    agent = FakeAgent.new(EXITS)
+
+    BaseAgent.stub(:new, agent) { Location::Generator.new(room).write_exits! }
+
+    assert_equal edges, LocationConnection.count
+    assert_empty agent.schemas
+  end
+
+  # BOTH ENDS OF A DOOR HAVE THE BUDGET FOR IT, and the far side is a record
+  # this room's own allowance says nothing about.
+  test "an exit into a neighbour already at its cap is refused, and not half written" do
+    location = stub_location(name: "The Drowned Ledger")
+    full = stub_location(name: "The Pump Gallery")
+    Location::ExitsSchema::MAX_EXITS.times { |n| already_reaching(full, "Filled Way #{n}") }
+    named_full = { "exits" => [ EXITS["exits"].first ] }
+
+    realize(location, FakeAgent.new(DETAIL, named_full))
+
+    assert_empty location.reload.exits
+    assert_equal Location::ExitsSchema::MAX_EXITS, full.reload.exits.count
+  end
+
+  # A LAYOUT THAT RAISES LEAVES A RETRYABLE STUB. The flip to `realized` is the
+  # "generate once per place" guarantee, so a place realized on the far side of
+  # a failed layout would carry a footprint and no inside for ever.
+  test "a place whose layout fails is left a stub the next entry retries" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    exploding = ->(*) { raise ActiveRecord::RecordInvalid, Location.new }
+
+    Location::Interior.stub(:lay_out!, exploding) do
+      assert_raises(ActiveRecord::RecordInvalid) { realize(place, FakeAgent.new(DETAIL, ONE_EXIT)) }
+    end
+
+    assert_predicate place.reload, :stub?
+    assert_nil place.description
+    assert_empty place.child_locations
+
+    realize(place, FakeAgent.new(DETAIL, ONE_EXIT))
+
+    assert_predicate place.reload, :realized?
+    assert_predicate place.child_locations.count, :positive?
+  end
+
+  # A ROOM IS BORN ONE WAY. `Location::Interior` creates its rooms through this
+  # class method, so an interior's rooms get the danger roll a stub named by a
+  # neighbour gets.
+  test "a stub created through the class method is a stub with a rolled danger" do
+    room = Location::Generator.create_stub!(@story, name: "The Back Room", teaser: "A door that should be locked.")
+
+    assert_predicate room, :stub?
+    assert_equal "The Back Room", room.name
+    assert_includes Location::Danger::ROLLED, room.danger
+  end
+
   test "fills in a stub's description and lore" do
     location = stub_location(name: "The Drowned Ledger")
 

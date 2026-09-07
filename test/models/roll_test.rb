@@ -75,6 +75,19 @@ class RollTest < ActiveSupport::TestCase
     assert_not_equal Roll.seed(story: 1, kind: Roll::THROW), Roll.seed(story: 1)
   end
 
+  # A KIND IS A SPACE OF ITS OWN, so a second one is a different die from the
+  # first and from the unnamed kind everything else rolls with. An interior is
+  # keyed on a location id and `Location::Danger` already keys a room's cast on
+  # one; the axis is what keeps the shape of a building and the people in one of
+  # its rooms from being the same number twice.
+  test "the interior kind is a die of its own" do
+    assert_operator Roll::INTERIOR, :>, 0
+    assert_not_equal Roll::THROW, Roll::INTERIOR
+    assert_not_equal Roll.seed(story: 1, sequence: 9, kind: Roll::INTERIOR), Roll.seed(story: 1, sequence: 9)
+    assert_not_equal Roll.seed(story: 1, sequence: 9, kind: Roll::INTERIOR),
+                     Roll.seed(story: 1, sequence: 9 + Location::Danger::SEQUENCE_BASE)
+  end
+
   test "two generators from one seed roll the same sequence of dice" do
     first = Roll.generator(story: 11, sequence: 4)
     second = Roll.generator(story: 11, sequence: 4)

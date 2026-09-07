@@ -75,7 +75,7 @@ The premise is optional; without one the model picks its own.
 
 ```bash
 bin/rails db:prepare   # three databases: the app's, Solid Queue's, Solid Cable's
-bin/rails db:seed      # two checked-in worlds, no model needed
+bin/rails db:seed      # the checked-in worlds, no model needed
 bin/dev                # then open http://localhost:3000
 ```
 
@@ -320,20 +320,13 @@ mechanics console is for once you have stopped watching it: free, deterministic,
 offline, and it runs in `bin/rails test` so the engine is regression-tested on
 every build.
 
-```
-  ok     regressions-2026-09-03        8 step(s), The Unrecorded Hour intact
-  ok     the-lunar-cartographer        9 step(s), The Lunar Cartographer intact
-  ok     the-salt-assizes-grammar      7 step(s), The Salt Assizes intact
-  ok     the-salt-assizes-presence    10 step(s), The Salt Assizes intact
-  ok     the-unrecorded-hour-two-players  9 step(s), The Unrecorded Hour intact
-  ok     the-unrecorded-hour          17 step(s), The Unrecorded Hour intact
+It prints one line per script — `ok` or a failure, the script's name, how many
+steps it walked and the world it left intact — and then a single `PASSED` or
+`FAILED` line totalling the typed lines and the scripts behind them.
 
-PASSED: 60 typed line(s) over 6 script(s).
-```
-
-A script is a YAML fixture in `lib/engine_sweep/scripts/` — a seeded world, an
-ordered list of lines somebody could have typed, and after any of them a block
-of facts somebody could have read off the screen:
+A script is a YAML fixture in `lib/engine_sweep/scripts/` — a world named by
+title, an ordered list of lines somebody could have typed, and after any of them
+a block of facts somebody could have read off the screen:
 
 ```yaml
 story: The Salt Assizes
@@ -350,6 +343,14 @@ steps:
     carrying: []
     present: [Ammon Brace]
 ```
+
+The title resolves to a checked-in world in `db/seeds/worlds` first, and to one
+of the sweep's own in `lib/engine_sweep/worlds` second — same format, same
+loader, same `rake game:doctor`, but not a world a fresh clone gets, because it
+exists to give one assertion something to stand on rather than to be played.
+`the-quay-house.yml` is one: a place with its inside laid out, which none of the
+playable worlds has. `EngineSweep::WORLDS` says why it is not a fourth file in
+the seed directory.
 
 `present:` is who the records place in the room — the closed set `talk` resolves
 against — and `foes:` is which of them means the party harm
@@ -466,9 +467,10 @@ flowchart TD
         M1 -->|"yes: walking back in"| M5
         M1 -->|"no: a stub, first time"| M3
         M3["MODEL CALL, schema'd<br/>Location::DetailSchema<br/>description and lore, SAVED IMMEDIATELY<br/>plus 0-3 things lying here, on the SAME call"]
-        M3 --> M3B["Item::Registry#admit!<br/>the model proposes, the engine decides<br/>a WORLD row per thing, lying in the room<br/>capped per room and per world"]
+        M3 --> M3A["Location::Interior.lay_out!, NO MODEL CALL<br/>a place carrying a FOOTPRINT gets its whole inside<br/>every room and every door from one seeded roll<br/>same transaction as the flip to realized"]
+        M3A --> M3B["Item::Registry#admit!<br/>the model proposes, the engine decides<br/>a WORLD row per thing, lying in the room<br/>capped per room and per world"]
         M3B --> M3C["Item::Snapshot, no model call<br/>this playthrough takes its own copy of the floor<br/>and of what the people standing on it hold<br/>once per template, never twice"]
-        M3C --> M4["MODEL CALL, schema'd<br/>Location::ExitsSchema<br/>a stub neighbour per exit, and connection<br/>rows in BOTH directions"]
+        M3C --> M4["MODEL CALL, schema'd<br/>Location::ExitsSchema<br/>a stub neighbour per exit, and connection<br/>rows in BOTH directions<br/>NOT MADE for a room inside a laid-out place:<br/>its doors are already the engine's"]
         M4 --> M5
         M5["Read FROM RECORDS, before anything is created<br/>last_protagonist_visit: discovery or return<br/>Character.present_in: who is here"]
         M5 --> M6["MODEL CALL, schema'd<br/>Scene::Schema, the arrival paragraph<br/>Cannot stream: a schema'd call emits JSON"]
@@ -511,7 +513,7 @@ flowchart TD
     classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
 
     class C2,M3,M4,M6,T1,T2,I2,N2 llm
-    class W0,C1,C3,G1,M1,M3B,M5,M7,M8,T5,T6,T7,I1,I3,N3,X1 rec
+    class W0,C1,C3,G1,M1,M3A,M3B,M3C,M5,M7,M8,T5,T6,T7,I1,I3,N3,X1 rec
     class N1,T4 gap
     class IN,SSE,OUT,OUT2,D,R,G0,G2,T3 io
 ```

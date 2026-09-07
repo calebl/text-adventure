@@ -64,8 +64,16 @@ module Roll
   # THE KINDS OF ROLL THERE ARE, and `0` is *everything that carves `sequence`
   # up between itself* -- a check, a blow, a toll, a stat block, a shuffle. A
   # named kind is for a roll whose identity is NOT a count and so cannot take a
-  # band on that axis; see the header. One entry, so far.
+  # band on that axis; see the header.
   THROW = 1
+  # A WHOLE INTERIOR, laid out from one seed (`Location::Interior`). Its
+  # identity is WHICH PLACE, which is a location id -- and a location id is
+  # already spoken for on the `sequence` axis by `Location::Danger`, which keys
+  # a room's cast on `SEQUENCE_BASE + location.id`. Two rolls of different kinds
+  # are different dice whatever either one counts, so a kind is what keeps the
+  # shape of a building and the people in one of its rooms from being the same
+  # number twice.
+  INTERIOR = 2
 
   # THE SEED, FROM FIVE INTEGERS AND NOTHING ELSE. Public because it is the part
   # worth asserting on its own: `RollTest` pins that the same inputs give the

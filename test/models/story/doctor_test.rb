@@ -1344,19 +1344,33 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_empty codes(story) & %i[location_with_a_partial_box location_with_an_impossible_extent
                                    location_with_a_box_and_no_parent
                                    location_with_a_box_outside_a_footprint overlapping_sibling_locations
-                                   locations_containing_each_other]
+                                   locations_containing_each_other location_outside_its_parents_footprint
+                                   interior_with_an_unreachable_room stairs_between_rooms_that_do_not_line_up
+                                   place_with_a_footprint_and_no_rooms
+                                   door_between_rooms_that_share_no_wall]
   end
 
   # A WELL FORMED INTERIOR: a place with a footprint, two rooms inside it
-  # sharing a wall. Nothing about it is a finding, and if this ever starts
-  # reporting one, slice 2 cannot lay out a building.
+  # sharing a wall, and a door between them in both directions. Nothing about it
+  # is a finding, and if this ever starts reporting one,
+  # `Location::Interior` cannot lay out a building the doctor would pass.
   def a_place_with_two_rooms(story)
     place = create(:location, :stub, :with_a_footprint, story: story, name: "The Rusted Anchor")
     taproom = create(:location, story: story, parent_location: place, name: "The Taproom",
                                 x: 0, y: 0, z: 0, width: 7, depth: 8)
     back = create(:location, story: story, parent_location: place, name: "The Back Room",
                              x: 7, y: 0, z: 0, width: 5, depth: 8)
+    door(taproom, back)
     [ place, taproom, back ]
+  end
+
+  # A DOOR IS TWO ROWS -- the ruling of 2026-09-03 -- so a fixture that wrote
+  # one would be a fixture with a one-way door in it.
+  def door(one, other, travel_method: "walking")
+    [ [ one, other ], [ other, one ] ].map do |from, to|
+      create(:location_connection, location: from, connected_location: to,
+                                   distance: "adjacent", travel_method: travel_method)
+    end
   end
 
   test "a place with two rooms laid out inside it is healthy" do
@@ -1366,7 +1380,10 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_empty codes(story) & %i[location_with_a_partial_box location_with_an_impossible_extent
                                    location_with_a_box_and_no_parent
                                    location_with_a_box_outside_a_footprint overlapping_sibling_locations
-                                   locations_containing_each_other]
+                                   locations_containing_each_other location_outside_its_parents_footprint
+                                   interior_with_an_unreachable_room stairs_between_rooms_that_do_not_line_up
+                                   place_with_a_footprint_and_no_rooms
+                                   door_between_rooms_that_share_no_wall]
   end
 
   # STRAIGHT TO THE COLUMNS, because `Location#a_box_is_whole` refuses to save
@@ -1525,6 +1542,253 @@ class Story::DoctorTest < ActiveSupport::TestCase
                       x: 0, y: 0, z: 1, width: 7, depth: 8)
 
     assert_not_includes codes(story), :overlapping_sibling_locations
+  end
+
+  # --- what a layout has to be true of as a whole ----------------------------
+  #
+  # The three that arrived with `Location::Interior`: a room outside the
+  # building it is a room of, a room nothing can walk to, and a stair that does
+  # not arrive where it set off from.
+
+  test "a room hanging outside its parent's footprint is reported and cannot be repaired" do
+    story = healthy_story
+    place, = a_place_with_two_rooms(story)
+    create(:location, story: story, parent_location: place, name: "The Yard", x: 10, y: 0, z: 1, width: 6, depth: 4)
+
+    assert_includes codes(story), :location_outside_its_parents_footprint
+    assert_equal :warning, finding(story, :location_outside_its_parents_footprint).severity
+    assert_equal :manual, finding(story, :location_outside_its_parents_footprint).remedy
+    assert_match(/outside the building it is a room of/,
+                 finding(story, :location_outside_its_parents_footprint).message)
+  end
+
+  test "a room outside its footprint names the room, so a reader is sent to the right row" do
+    story = healthy_story
+    place, = a_place_with_two_rooms(story)
+    yard = create(:location, story: story, parent_location: place, name: "The Yard",
+                             x: -4, y: 0, z: 1, width: 4, depth: 4)
+
+    assert_equal yard, finding(story, :location_outside_its_parents_footprint).subject
+  end
+
+  # A ROOM ENDING EXACTLY AT THE FAR WALL IS INSIDE: half-open intervals, which
+  # is the same rule that makes two rooms sharing a wall not an overlap.
+  test "a room that ends exactly on the far wall is inside the footprint" do
+    story = healthy_story
+    a_place_with_two_rooms(story)
+
+    assert_not_includes codes(story), :location_outside_its_parents_footprint
+  end
+
+  test "a room nothing inside the place leads to is reported and cannot be repaired" do
+    story = healthy_story
+    place, = a_place_with_two_rooms(story)
+    create(:location, story: story, parent_location: place, name: "The Loft", x: 0, y: 0, z: 1, width: 12, depth: 8)
+
+    assert_includes codes(story), :interior_with_an_unreachable_room
+    assert_equal :warning, finding(story, :interior_with_an_unreachable_room).severity
+    assert_equal :manual, finding(story, :interior_with_an_unreachable_room).remedy
+    assert_match(/The Loft/, finding(story, :interior_with_an_unreachable_room).message)
+    assert_match(/the way in is The Taproom/, finding(story, :interior_with_an_unreachable_room).message)
+  end
+
+  # ONCE PER PLACE, because a pair of stranded rooms is one fault told twice --
+  # and NO SUBJECT, because a repair would have to decide which door somebody
+  # meant to leave open.
+  test "an unreachable room is reported once for the place and names no record to act on" do
+    story = healthy_story
+    place, = a_place_with_two_rooms(story)
+    create(:location, story: story, parent_location: place, name: "The Loft", x: 0, y: 0, z: 1, width: 6, depth: 8)
+    create(:location, story: story, parent_location: place, name: "The Eaves", x: 6, y: 0, z: 1, width: 6, depth: 8)
+
+    assert_equal 1, codes(story).count(:interior_with_an_unreachable_room)
+    assert_nil finding(story, :interior_with_an_unreachable_room).subject
+  end
+
+  # A ROOM YOU CAN ONLY REACH BY LEAVING THE BUILDING is a room the layout
+  # failed to connect, so the walk follows sibling edges and no others.
+  test "a room reachable only from outside the place is still unreachable" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    loft = create(:location, story: story, parent_location: place, name: "The Loft",
+                             x: 0, y: 0, z: 1, width: 12, depth: 8)
+    road = create(:location, story: story, name: "The Harbour Road")
+    door(taproom, road)
+    door(road, loft)
+
+    assert_includes codes(story), :interior_with_an_unreachable_room
+  end
+
+  test "stairs that do not stand over each other are reported and cannot be repaired" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    loft = create(:location, story: story, parent_location: place, name: "The Loft",
+                             x: 7, y: 0, z: 1, width: 5, depth: 8)
+    door(taproom, loft, travel_method: Location::Interior::STAIRS)
+
+    assert_includes codes(story), :stairs_between_rooms_that_do_not_line_up
+    assert_equal :warning, finding(story, :stairs_between_rooms_that_do_not_line_up).severity
+    assert_equal :manual, finding(story, :stairs_between_rooms_that_do_not_line_up).remedy
+    assert_match(/do not line up/, finding(story, :stairs_between_rooms_that_do_not_line_up).message)
+  end
+
+  test "stairs between rooms that stand over each other are not a finding" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    loft = create(:location, story: story, parent_location: place, name: "The Loft",
+                             x: 0, y: 0, z: 1, width: 12, depth: 8)
+    door(taproom, loft, travel_method: Location::Interior::STAIRS)
+
+    assert_not_includes codes(story), :stairs_between_rooms_that_do_not_line_up
+  end
+
+  # A DOOR IS TWO ROWS AND BOTH ARE THE SAME FLIGHT OF STEPS.
+  test "a misaligned staircase is reported once and not once per row" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    loft = create(:location, story: story, parent_location: place, name: "The Loft",
+                             x: 7, y: 0, z: 2, width: 5, depth: 8)
+    door(taproom, loft, travel_method: Location::Interior::STAIRS)
+
+    assert_equal 1, codes(story).count(:stairs_between_rooms_that_do_not_line_up)
+  end
+
+  # `taking stairs` IS AN ORDINARY TRAVEL METHOD between two flat locations, and
+  # alignment is a question you can only ask of two boxes in one plane.
+  test "stairs between two locations with no geometry are not misaligned" do
+    story = healthy_story
+    door(create(:location, story: story, name: "The Lower Landing"),
+         create(:location, story: story, name: "The Upper Landing"),
+         travel_method: Location::Interior::STAIRS)
+
+    assert_not_includes codes(story), :stairs_between_rooms_that_do_not_line_up
+  end
+
+  # A DOOR THROUGH A CORNER: two rooms that touch on both axes share no wall at
+  # all, so the doorway between them stands in nothing.
+  test "a door between two rooms that meet at a corner is reported and cannot be repaired" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    cellar = create(:location, story: story, parent_location: place, name: "The Cellar",
+                               x: 7, y: 8, z: 0, width: 5, depth: 4)
+    door(taproom, cellar)
+
+    assert_includes codes(story), :door_between_rooms_that_share_no_wall
+    assert_equal :warning, finding(story, :door_between_rooms_that_share_no_wall).severity
+    assert_equal :manual, finding(story, :door_between_rooms_that_share_no_wall).remedy
+    assert_match(/stands in no wall/, finding(story, :door_between_rooms_that_share_no_wall).message)
+  end
+
+  # A DOOR THROUGH A CEILING is the same fault said across storeys: two rooms on
+  # different floors share no wall either, and `walking` between them is not a
+  # stair.
+  test "a walking door between two storeys is a door that stands in no wall" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    loft = create(:location, story: story, parent_location: place, name: "The Loft",
+                             x: 0, y: 0, z: 1, width: 12, depth: 8)
+    door(taproom, loft)
+
+    assert_includes codes(story), :door_between_rooms_that_share_no_wall
+  end
+
+  # A DOOR IS TWO ROWS AND BOTH ARE THE SAME DOORWAY.
+  test "a door standing in no wall is reported once and not once per row" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    cellar = create(:location, story: story, parent_location: place, name: "The Cellar",
+                               x: 7, y: 8, z: 0, width: 5, depth: 4)
+    door(taproom, cellar)
+
+    assert_equal 1, codes(story).count(:door_between_rooms_that_share_no_wall)
+    assert_nil finding(story, :door_between_rooms_that_share_no_wall).subject
+  end
+
+  # A HALF-WRITTEN DOOR IS STILL A DOOR STANDING IN NO WALL, and the row may be
+  # the one from the HIGHER-id room -- which is the ordering a dedupe that kept
+  # only "lower id first" would have thrown away, taking the geometry fault with
+  # it. `one_way_connection` says the pair is half written; that it also stands
+  # in no wall is this section's to say.
+  test "a one-row door standing in no wall is reported whichever end wrote it" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    cellar = create(:location, story: story, parent_location: place, name: "The Cellar",
+                               x: 7, y: 8, z: 0, width: 5, depth: 4)
+    create(:location_connection, location: cellar, connected_location: taproom,
+                                 distance: "adjacent", travel_method: "walking")
+
+    assert_operator cellar.id, :>, taproom.id
+    assert_includes codes(story), :door_between_rooms_that_share_no_wall
+    assert_equal 1, codes(story).count(:door_between_rooms_that_share_no_wall)
+  end
+
+  # THE SAME FOR A HALF-WRITTEN STAIRCASE, since both findings read the same
+  # pairs.
+  test "a one-row staircase that does not line up is reported whichever end wrote it" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    loft = create(:location, story: story, parent_location: place, name: "The Loft",
+                             x: 7, y: 0, z: 1, width: 5, depth: 8)
+    create(:location_connection, location: loft, connected_location: taproom,
+                                 distance: "adjacent", travel_method: Location::Interior::STAIRS)
+
+    assert_operator loft.id, :>, taproom.id
+    assert_includes codes(story), :stairs_between_rooms_that_do_not_line_up
+  end
+
+  # A STAIR IS GRADED BY ALIGNMENT AND NOT BY WALLS, which is the whole reason
+  # the two findings are separate: no stairwell shares a wall with the room it
+  # arrives in.
+  test "a staircase between two storeys is not reported as a door with no wall" do
+    story = healthy_story
+    place, taproom, = a_place_with_two_rooms(story)
+    loft = create(:location, story: story, parent_location: place, name: "The Loft",
+                             x: 0, y: 0, z: 1, width: 12, depth: 8)
+    door(taproom, loft, travel_method: Location::Interior::STAIRS)
+
+    assert_not_includes codes(story), :door_between_rooms_that_share_no_wall
+  end
+
+  # THE FLAT WORLDS WALK BETWEEN FLAT ROOMS ALL DAY, and a wall is a question
+  # you can only ask of two boxes in one plane.
+  test "a walking edge between two locations with no geometry has no wall to stand in" do
+    story = healthy_story
+
+    assert_not_includes codes(story), :door_between_rooms_that_share_no_wall
+  end
+
+  # A BUILDING WRITTEN OUT IN FULL WITH NOTHING INSIDE IT. The layout and the
+  # flip to `realized` are one transaction, so a realized place with a footprint
+  # has rooms -- see `Location::Generator#lay_out_interior!`.
+  test "a realized place with a footprint and no rooms is reported and cannot be repaired" do
+    story = healthy_story
+    place = create(:location, :with_a_footprint, story: story, name: "The Custom House")
+
+    assert_includes codes(story), :place_with_a_footprint_and_no_rooms
+    assert_equal :warning, finding(story, :place_with_a_footprint_and_no_rooms).severity
+    assert_equal :manual, finding(story, :place_with_a_footprint_and_no_rooms).remedy
+    assert_equal place, finding(story, :place_with_a_footprint_and_no_rooms).subject
+    assert_match(/not one room inside it/, finding(story, :place_with_a_footprint_and_no_rooms).message)
+  end
+
+  # THE ORDINARY CASE THIS MUST STAY QUIET ABOUT: an interior is laid out on
+  # first entry, so every building nobody has walked into yet is a stub with a
+  # footprint and no rooms.
+  test "a stub place waiting to be entered is not reported as an empty building" do
+    story = healthy_story
+    create(:location, :stub, :with_a_footprint, story: story, name: "The Custom House")
+
+    assert_not_includes codes(story), :place_with_a_footprint_and_no_rooms
+  end
+
+  # A ROOM IS NOT A PLACE by `Location#place?`, so a childless room on the top
+  # floor is not a building with nothing in it.
+  test "a realized room with no rooms of its own is not an empty building" do
+    story = healthy_story
+    _place, taproom, = a_place_with_two_rooms(story)
+
+    assert_predicate taproom, :realized?
+    assert_not_includes codes(story), :place_with_a_footprint_and_no_rooms
   end
 
   # COORDINATES ARE LOCAL TO A PARENT: two buildings sharing an origin share

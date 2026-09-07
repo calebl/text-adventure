@@ -100,6 +100,66 @@ class Location::BoxTest < ActiveSupport::TestCase
     assert_not_equal box(x: 1), box(x: 2)
   end
 
+  # --- the arithmetic a stair and a door are built on ------------------------
+
+  # THE STOREY TAKEN OUT: what "floors are kept aligned" means, and the whole of
+  # what `Story::Doctor` reads to decide a staircase arrives where it set off
+  # from.
+  test "two rooms on different storeys can still stand over each other" do
+    below = box(x: 0, y: 0, z: 0, width: 6, depth: 6)
+    above = box(x: 3, y: 3, z: 1, width: 6, depth: 6)
+
+    assert_not below.overlaps?(above)
+    assert below.shares_ground?(above)
+  end
+
+  test "two rooms side by side stand over nothing of each other" do
+    assert_not box(x: 0, y: 0, width: 3, depth: 3).shares_ground?(box(x: 3, y: 0, z: 1, width: 3, depth: 3))
+  end
+
+  test "two rooms that share a wall could have a door in it" do
+    assert box(x: 0, y: 0, width: 4, depth: 4).shares_a_wall?(box(x: 4, y: 0, width: 4, depth: 4))
+    assert box(x: 0, y: 0, width: 4, depth: 4).shares_a_wall?(box(x: 0, y: 4, width: 4, depth: 4))
+  end
+
+  # A CORNER IS NOT A WALL. Two rooms meeting corner to corner touch on both
+  # axes and share a run of nothing, so a door there would be a door through a
+  # corner.
+  test "two rooms meeting at a corner share no wall" do
+    assert_not box(x: 0, y: 0, width: 4, depth: 4).shares_a_wall?(box(x: 4, y: 4, width: 4, depth: 4))
+  end
+
+  test "two rooms on different storeys share no wall, however they are placed" do
+    assert_not box(x: 0, y: 0, z: 0, width: 4, depth: 4).shares_a_wall?(box(x: 4, y: 0, z: 1, width: 4, depth: 4))
+  end
+
+  test "two rooms with a gap between them share no wall" do
+    assert_not box(x: 0, y: 0, width: 4, depth: 4).shares_a_wall?(box(x: 5, y: 0, width: 4, depth: 4))
+  end
+
+  # HALF-OPEN AGAIN: a room ending exactly on the far wall is inside the
+  # building, and one pace further out is not.
+  test "a room fits inside the footprint it is read in, up to the far wall" do
+    assert box(x: 0, y: 0, width: 12, depth: 8).inside_footprint?(12, 8)
+    assert_not box(x: 1, y: 0, width: 12, depth: 8).inside_footprint?(12, 8)
+    assert_not box(x: -1, y: 0, width: 4, depth: 4).inside_footprint?(12, 8)
+    assert_not box(x: 0, y: 5, width: 4, depth: 4).inside_footprint?(12, 8)
+  end
+
+  # CENTRE TO CENTRE AND BY THE STREETS, and the halves of an odd-sided room
+  # are dropped rather than carried, because the answer is read as a bucket.
+  test "how far apart two rooms are is measured centre to centre" do
+    assert_equal 0, box(x: 0, y: 0, width: 4, depth: 4).paces_to(box(x: 0, y: 0, width: 4, depth: 4))
+    assert_equal 4, box(x: 0, y: 0, width: 4, depth: 4).paces_to(box(x: 4, y: 0, width: 4, depth: 4))
+    assert_equal 8, box(x: 0, y: 0, width: 4, depth: 4).paces_to(box(x: 4, y: 4, width: 4, depth: 4))
+  end
+
+  # A STOREY INDEX IS NOT A HEIGHT, so there is no number of paces a floor is
+  # worth: what going up costs is the travel method.
+  test "the storey is not part of how far apart two rooms are" do
+    assert_equal 0, box(x: 0, y: 0, z: 0, width: 4, depth: 4).paces_to(box(x: 0, y: 0, z: 3, width: 4, depth: 4))
+  end
+
   # WHAT THE HEADER CLAIMS OF A VALUE OBJECT, asserted rather than assumed: a box
   # is handed around between the loader, the doctor, the exporter and the sweep
   # invariant, and none of them may be able to change one under another.

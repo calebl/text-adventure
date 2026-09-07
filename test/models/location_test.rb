@@ -323,6 +323,23 @@ class LocationTest < ActiveSupport::TestCase
     assert_nil place.box
   end
 
+  # WHICH LOCATIONS GET AN INSIDE, and the whole of the decision -- see
+  # `Location#place?`. It has to stay narrow: a stub with no extent is what
+  # every room in every generated world is, and the day this answers true for
+  # one of those is the day generated worlds start laying out buildings nobody
+  # asked for.
+  test "a row carrying a footprint is a place to be laid out inside" do
+    assert_predicate create(:location, :with_a_footprint), :place?
+  end
+
+  test "a stub with no extent is not a place, so nothing generated changes" do
+    assert_not create(:location, :stub).place?
+  end
+
+  test "a placed room is not itself a place, so an interior does not nest" do
+    assert_not create(:location, :placed).place?
+  end
+
   test "all five columns is a placed room, and the box reads them back" do
     room = create(:location, :placed)
 

@@ -1,0 +1,126 @@
+# WALKING A LAID-OUT INTERIOR: in off the quay, along the ground floor, up the
+# stairs and along the floor above it. The only script in the repository that
+# walks a building, because The Quay House is the only world that has one --
+# the three checked-in worlds are flat by the captain's fourth ruling of
+# 2026-09-06.
+#
+# WHAT IT IS FOR. `Location::Interior` claims that every room it lays out can be
+# reached from the entry, that a door is walkable in both directions, and that
+# the storeys are bound together by stairs. Its own test asserts those over the
+# ROWS, across many rolled layouts. This asserts the same thing THROUGH THE
+# ENGINE, over one layout the generator actually wrote: a player who types
+# ordinary lines can get from the quay to a room on the floor above and back
+# again. A layout that were connected on paper and not walkable would pass the
+# unit test and fail here.
+#
+# WHAT IT CANNOT SEE, in this file's usual habit of writing it down: THE LAYOUT
+# BEING LAID OUT. That happens when a place is realized
+# (`Location::Generator#lay_out_interior!`) and realizing anything is two model
+# calls, which a sweep does not have. So the building in `The Quay House` was
+# laid out by the generator and exported; this walks what came out. The other
+# half -- that realizing a stub with a footprint lays out its inside -- is
+# `Location::GeneratorTest`'s.
+#
+# THE ROOMS ARE STUBS AND STAY STUBS, said out loud at every step, and
+# `nothing_was_written` asserts it again over the whole world afterwards. An
+# unwritten room is exactly what an interior is meant to be until somebody walks
+# in and a model writes it (slice 3).
+story: The Quay House
+why: a building with two floors, walked the way a player walks one
+steps:
+- id: the-quay-as-seeded
+  type: look
+  why: the starting state, outside the building, so a failure later has a known beginning
+  expect:
+    location: The Quay (realized)
+    # The way IN is the one edge of this world nobody generated: it is the spare
+    # exit `Location::Interior` keeps on the entry room, wired by hand because
+    # attaching a place's own exits to a room inside it is slice 4's.
+    exits: [The Custom House room 1 (stub)]
+    present: []
+    changed: false
+    refused: false
+
+- id: in-through-the-door
+  type: go to The Custom House room 1
+  why: the entry room, which is where a player entering a place ends up
+  expect:
+    changed: true
+    location: The Custom House room 1 (stub)
+    # Three ways out of the entry room and the fourth slot still free: the
+    # backbone door, the stairs, and the way back out to the quay.
+    exits: [The Quay (realized), The Custom House room 2 (stub), The Custom House room 5 (stub)]
+    refused: false
+
+- id: along-the-ground-floor
+  type: go to The Custom House room 2
+  why: a backbone door -- one storey, two rooms that share a wall
+  expect:
+    changed: true
+    location: The Custom House room 2 (stub)
+    exits: [The Custom House room 1 (stub), The Custom House room 3 (stub)]
+    refused: false
+
+- id: and-back-the-way-we-came
+  type: go to The Custom House room 1
+  why: a door is two rows, so it is walkable in both directions -- the ruling of 2026-09-03
+  expect:
+    changed: true
+    location: The Custom House room 1 (stub)
+    refused: false
+
+- id: up-the-stairs
+  type: go to The Custom House room 5
+  why: the stairwell, and the only edge in this world that changes storey
+  expect:
+    changed: true
+    location: The Custom House room 5 (stub)
+    exits: [The Custom House room 1 (stub), The Custom House room 6 (stub)]
+    refused: false
+
+- id: along-the-floor-above
+  type: go to The Custom House room 6
+  why: the floor above has a backbone of its own, laid out in the same call
+  expect:
+    changed: true
+    location: The Custom House room 6 (stub)
+    exits: [The Custom House room 5 (stub), The Custom House room 7 (stub)]
+    refused: false
+
+- id: down-the-stairs-again
+  type: go to The Custom House room 5
+  why: back to the stairwell room
+  expect:
+    changed: true
+    location: The Custom House room 5 (stub)
+    refused: false
+
+- id: and-down-to-the-ground-floor
+  type: go to The Custom House room 1
+  why: a stair is walkable downwards for the reason a door is walkable backwards -- it is one edge, written twice
+  expect:
+    changed: true
+    location: The Custom House room 1 (stub)
+    refused: false
+
+# THE PLACE ITSELF IS NOT A ROOM. A parent is a container the player never
+# occupies -- the captain's second ruling of 2026-09-06 -- so nothing leads to
+# The Custom House and the engine has nowhere to send anybody who asks for it.
+- id: the-building-is-not-somewhere-you-stand
+  type: go to The Custom House
+  why: the party stands in a CHILD room, and a place is not one
+  expect:
+    refused: true
+    changed: false
+    location: The Custom House room 1 (stub)
+
+# AND NOTHING TWO ROOMS APART IS ONE MOVE AWAY. Room 3 is real, is inside this
+# building and is two doors off; a layout whose doors were suggestions rather
+# than records would let this through.
+- id: a-room-you-cannot-get-to-from-here
+  type: go to The Custom House room 3
+  why: the exits of a room are a closed set, and geometry does not open a second door
+  expect:
+    refused: true
+    changed: false
+    location: The Custom House room 1 (stub)
