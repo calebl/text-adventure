@@ -140,4 +140,51 @@ class Character::WhereaboutsBackfillTest < ActiveSupport::TestCase
     assert_predicate backfill(dry_run: true).sole, :placed?
     assert_predicate rowe.reload, :nowhere?
   end
+
+  # --- and where in the room they are standing, since slice 4 ---------------
+
+  # A RECOVERY PUTS SOMEBODY IN A ROOM, SO IT PUTS THEM SOMEWHERE IN IT: the
+  # write goes through `Character#move_to!`, which is the one statement that
+  # owns a whereabouts and a position together. A backfill that wrote
+  # `location:` alone would leave somebody standing nowhere in particular in a
+  # laid-out room, and nothing afterwards would ever place them -- unplaced is a
+  # legal state, so no doctor finding and no invariant would say so.
+  test "somebody recovered into a laid-out room stands somewhere inside its box" do
+    place = create(:location, :stub, :with_a_footprint, story: @story, name: "The Custom House")
+    long = create(:location, story: @story, parent_location: place, name: "The Long Room",
+                             x: 0, y: 0, z: 0, width: 7, depth: 4)
+    rowe = create(:character, story: @story, fullname: "Halkett Rowe")
+    scene_in(long, at: 1.hour.ago, cast: rowe)
+
+    backfill
+
+    assert_equal long, rowe.reload.location
+    assert_equal Location::Spot.new(**Location::Placement.in_the_world(long, rowe)), rowe.position
+    assert long.box.contains?(rowe.position), "#{rowe.position} is outside #{long.box}"
+  end
+
+  # THE ORDINARY CASE, and every room a backfill can reach in any world in the
+  # repository today: a room with no box opens no plane, so there is no cell to
+  # pick and a flat world is recovered exactly as it was before this slice.
+  test "somebody recovered into a room with no box is left unplaced" do
+    rowe = create(:character, story: @story, fullname: "Halkett Rowe")
+    scene_in(@office, at: 1.hour.ago, cast: rowe)
+
+    backfill
+
+    assert_equal @office, rowe.reload.location
+    assert_nil rowe.position
+  end
+
+  test "a dry run writes no position either" do
+    place = create(:location, :stub, :with_a_footprint, story: @story, name: "The Custom House")
+    long = create(:location, story: @story, parent_location: place, name: "The Long Room",
+                             x: 0, y: 0, z: 0, width: 7, depth: 4)
+    rowe = create(:character, story: @story, fullname: "Halkett Rowe")
+    scene_in(long, at: 1.hour.ago, cast: rowe)
+
+    assert_predicate backfill(dry_run: true).sole, :placed?
+    assert_predicate rowe.reload, :nowhere?
+    assert_nil rowe.position
+  end
 end

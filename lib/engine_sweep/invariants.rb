@@ -30,22 +30,45 @@
 #                        copy -- the party's hands -- so that half is asked of
 #                        the world layer alone.
 #   world_items_unmoved  every one of THE WORLD'S OWN rows is lying in the room
-#                        the file lays it in. A typed line may carry one game's
-#                        copy of the ward stamp anywhere it likes; it may not
-#                        touch the row the next game copies from. This is the
-#                        item half of `cast_unmoved`, and before the ruling it
-#                        could not have been written at all: `take` moved the
-#                        world's only row, so walking into a room and picking
-#                        something up emptied it for everybody.
+#                        the file lays it in, AND IN THE CORNER OF IT THE FILE
+#                        LAYS IT IN. A typed line may carry one game's copy of
+#                        the ward stamp anywhere it likes; it may not touch the
+#                        row the next game copies from. This is the item half of
+#                        `cast_unmoved`, and before the ruling it could not have
+#                        been written at all: `take` moved the world's only row,
+#                        so walking into a room and picking something up emptied
+#                        it for everybody.
+#                        THE CELL IS HELD ON THE SAME TERMS AS THE ROOM, which
+#                        is `geometry_unmoved`'s sentence one containment level
+#                        down: `items[].x` / `.y` is a value a person wrote in a
+#                        file, so a walk that re-rolled a template's corner in
+#                        place -- same room, same name, same layer -- would
+#                        otherwise pass every instrument here, and
+#                        `positions_in_bounds` would clear it for every cell of
+#                        the room but one. Both ways, so a template that
+#                        ACQUIRED a cell fails as loudly as one that lost it,
+#                        and a file that lays nothing in a corner still passes,
+#                        which is every row of all three checked-in worlds.
+#                        ONE GAME'S OWN COPY IS NOT IN IT and must not be: a
+#                        walk is SUPPOSED to move that cell, which is why
+#                        `positions_in_bounds` is the instrument for the
+#                        playthrough layer and is the one sentence here not
+#                        stated against the file.
 #   cast_unmoved         every character is standing exactly where the world
-#                        file put them, and anybody the file left nowhere is
-#                        still nowhere. `characters.location_id` is the closed
+#                        file put them -- in which room and in which corner of
+#                        it -- and anybody the file left nowhere is still
+#                        nowhere. `characters.location_id` is the closed
 #                        set `talk` resolves against, and NOTHING in a walk may
 #                        write it: the seed file, `Character::Registry` (at
 #                        realization, which this mode cannot reach) and an
 #                        explicit `Character#move_to!` are the only writers, so
 #                        a walk that moved somebody means a typed line has
-#                        started moving people. It is stated as "unmoved"
+#                        started moving people. `characters.x` / `.y` has the
+#                        same writers and is held on the same terms, for
+#                        `world_items_unmoved`'s reason: there is no per-game
+#                        copy of a person (see `Character#position`), so a cell
+#                        that moved during a walk moved for every player at
+#                        once. It is stated as "unmoved"
 #                        rather than as "nobody is nowhere" because nowhere is
 #                        a legitimate state that two of the three checked-in
 #                        worlds are in: the protagonist and any companion carry
@@ -290,21 +313,31 @@ class EngineSweep::Invariants
   def world_items_unmoved
     moved = story.locations.flat_map { |room| Item.lying_in(room).templates.to_a }.filter_map do |item|
       wanted = items_in_file_by_name[item.name]
-      next if wanted.nil? || wanted == item.location&.name
+      next if wanted.nil?
 
-      "#{item.name} is #{item.whereabouts} and the file says in #{wanted}"
+      room, seat = wanted
+      next if room == item.location&.name && seat == item.position
+
+      "#{item.name} is #{item.whereabouts}#{" #{item.position}" if item.position} and the file says " \
+        "in #{room}#{" #{seat}" if seat}"
     end
     return nil if moved.empty?
 
     broken("world_items_unmoved", moved.join("; "))
   end
 
-  # `{ name => the room the file puts it in }`, for the things the file lays in
-  # rooms. Something the file gives a CHARACTER is not in here: a template held
-  # by somebody has no room to be checked against.
+  # `{ name => [ the room the file puts it in, the corner of it or nil ] }`, for
+  # the things the file lays in rooms. Something the file gives a CHARACTER is
+  # not in here: a template held by somebody has no room to be checked against,
+  # and therefore no plane to read a corner in either (`Location::Spot`).
+  #
+  # NIL FOR A THING THE FILE PLACES BUT DOES NOT SEAT, which is every item in
+  # all three checked-in worlds, and it is a real expectation rather than an
+  # absence: the invariant reads it both ways, so a template that gained a cell
+  # during a walk fails as loudly as one that lost the cell it was written with.
   def items_in_file_by_name
     @items_in_file_by_name ||= Array(seed["locations"]).flat_map do |room|
-      Array(room["items"]).map { |item| [ item["name"], room["name"] ] }
+      Array(room["items"]).map { |item| [ item["name"], [ room["name"], Location::Spot.of(item) ] ] }
     end.to_h
   end
 
@@ -314,20 +347,21 @@ class EngineSweep::Invariants
       .map { |item| item["name"] }
   end
 
-  # WHERE THE FILE PUTS EACH OF THEM, by full name. A character the file does
-  # not place is in here as nil, so somebody who acquired a room during the
-  # walk fails just as loudly as somebody who lost one.
+  # WHERE THE FILE PUTS EACH OF THEM, by full name: the room, and the corner of
+  # it the file stands them in. A character the file does not place is in here
+  # as a pair of nils, so somebody who acquired a room -- or a cell -- during
+  # the walk fails just as loudly as somebody who lost one.
   def cast_in_file
-    Array(seed["characters"]).to_h { |row| [ row["fullname"], row["location"] ] }
+    Array(seed["characters"]).to_h { |row| [ row["fullname"], [ row["location"], Location::Spot.of(row) ] ] }
   end
 
   def cast_unmoved
     moved = story.characters.includes(:location).order(:id).filter_map do |character|
-      wanted = cast_in_file[character.fullname]
-      next if character.location&.name == wanted
+      room, seat = cast_in_file[character.fullname]
+      next if character.location&.name == room && character.position == seat
 
-      "#{character.fullname} is #{character.whereabouts} and the file says " \
-        "#{wanted ? "in #{wanted}" : "nowhere"}"
+      "#{character.fullname} is #{character.whereabouts}#{" #{character.position}" if character.position} and the " \
+        "file says #{room ? "in #{room}#{" #{seat}" if seat}" : "nowhere"}"
     end
     return nil if moved.empty?
 

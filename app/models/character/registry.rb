@@ -280,9 +280,15 @@ class Character::Registry
     # SOMEBODY WHO WAS NOWHERE, PLACED -- and placed IN the room as well as into
     # it, through `Character#move_to!` so that the whereabouts and the position
     # are written by the one statement that owns both. It used to write
-    # `location:` straight; the two have to move together (see that method) and
-    # a second writer of a whereabouts is what `Character`'s header exists to
-    # keep down to one.
+    # `location:` straight; the two have to move together (see that method), and
+    # `#move_to!` is the one statement in the app that writes them together --
+    # so every path that moves somebody INTO a room goes through it: this line,
+    # `Story::Repair` putting a seeded whereabouts back, and
+    # `Character::WhereaboutsBackfill` recovering one from the old arrival
+    # casts. `#place!` below is not one of them and does not need to be: it
+    # writes the position alone, for a row this class created standing in the
+    # room already. A seed file is the only other author, and it writes both
+    # columns too (`WorldSeed::Loader`).
     #
     # AND SOMEBODY ALREADY STANDING HERE, WHICH ALSO REACHES THIS LINE. It is
     # not only the nowhere case: `#refusal` returns nil for a person this very

@@ -163,12 +163,22 @@ class Item::LayerBackfill
   # again. A world row of that name already lying there is used rather than
   # duplicated, which is what makes a second run write nothing.
   #
-  # AND IT IS PUT BACK UNPLACED, because this statement RE-HOMES the row: a
-  # position is read in the plane of the room a thing is lying in
-  # (`Location::Spot`), so the cell the instance carries was read in whatever
-  # room it ended up in, and that is not the room of the earliest take. Copying
-  # it across would lay a template through the wall of the room it is in, which
-  # is what `Story::Doctor` reports as `thing_outside_the_room_it_is_in`.
+  # AND IT IS PUT BACK UNPLACED, ALWAYS, and the reason is not that the row
+  # moved. WHERE IN A ROOM THE WORLD'S OWN THING LIES IS THE WORLD'S ANSWER --
+  # a cell re-derivable from the row and the room for ever
+  # (`Location::Placement.in_the_world`) -- and the cell on the instance is
+  # WHERE ONE PLAYER LEFT THEIR COPY, drawn from that game's own seed at that
+  # game's own moment. The two are different answers to different questions, so
+  # the second is not evidence for the first however tidy it looks. Nor could
+  # the instance's cell be trusted as geometry: `answer.location` is the room of
+  # the EARLIEST recorded take, which may not be the room the row ended up in,
+  # and a position is read in the plane of the room a thing is lying in
+  # (`Location::Spot`) -- carrying it across rooms would lay a template through
+  # a wall, which `Story::Doctor` reports as `thing_outside_the_room_it_is_in`.
+  #
+  # UNCONDITIONAL BECAUSE TELLING THE TWO CASES APART WOULD BE GUESSING. A row
+  # still lying in the room of its earliest take carries a cell that IS readable
+  # there, and clearing it anyway costs nothing: it was never the world's cell.
   # Cleared rather than re-rolled for `Story::Repair#fold_location_into`'s
   # reason, said again: a backfill is reading a legacy row back into the two
   # layers, and inventing a corner for it is not what it was asked to do.

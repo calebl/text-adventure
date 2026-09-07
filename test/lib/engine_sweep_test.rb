@@ -790,6 +790,67 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_empty EngineSweep::Invariants.new(story, seed: seed).check
   end
 
+  # --- and the corner the file stands a row in, since slice 4 ---------------
+
+  # A CELL THAT MOVED IN PLACE IS THE ONE THING NOTHING ELSE HERE CAN SEE. The
+  # room, the layer and the name are all untouched, so `items_accounted` and the
+  # room half of this invariant stay quiet, and `positions_in_bounds` clears
+  # every cell of the taproom but the ones outside it -- so a defect that
+  # re-rolled the world's own corner would walk clean if the file's pair were
+  # not read back. It is `geometry_unmoved`'s sentence one containment level
+  # down.
+  test "a world item whose cell moved during a walk is caught after it" do
+    seed, story = interior_world
+
+    Item.in_story(story).templates.find_by(name: "brass tap key").update!(x: 4, y: 1)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "world_items_unmoved", broken.invariant
+    assert_match(/brass tap key .* at 4,1 and the file says in The Taproom at 5,1/, broken.to_s)
+  end
+
+  test "a character whose cell moved during a walk is caught after it" do
+    seed, story = interior_world
+
+    story.characters.find_by(fullname: "Nell Cawsand").update!(x: 3, y: 6)
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "cast_unmoved", broken.invariant
+    assert_match(/Nell Cawsand is in The Taproom at 3,6 and the file says in The Taproom at 2,6/, broken.to_s)
+  end
+
+  # BOTH WAYS, like the box one level up: a row that ACQUIRED a corner the file
+  # does not give it fails exactly as loudly as one that lost the corner it was
+  # written with -- which is what keeps this quiet on the three checked-in
+  # worlds, where the file seats nobody and no row carries a cell.
+  test "a world row that gained a cell the file does not give it is caught too" do
+    seed, story = interior_world
+    seed["locations"].detect { |row| row["name"] == "The Taproom" }["items"].sole.except!("x", "y")
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+
+    assert_equal "world_items_unmoved", broken.invariant
+    assert_match(/at 5,1 and the file says in The Taproom$/, broken.to_s.split("; ").first)
+  end
+
+  # AND ONE GAME'S OWN COPY IS DELIBERATELY NOT HELD TO THE FILE, because a walk
+  # is SUPPOSED to move that cell: a drop rolls a new one, which is
+  # `positions_in_bounds`' business and is why that invariant alone is not
+  # stated against the file.
+  test "a playthrough's own copy moved to another cell breaks nothing" do
+    seed, story = interior_world
+    taproom = story.locations.find_by(name: "The Taproom")
+    template = Item.in_story(story).templates.find_by(name: "brass tap key")
+    create(:item, character: nil, location: taproom, template: template, name: template.name,
+                  playthrough: create(:playthrough, story: story, character: story.protagonist,
+                                      current_location: taproom, current_scene: story.opening_scene),
+                  x: 1, y: 5)
+
+    assert_empty EngineSweep::Invariants.new(story, seed: seed).check
+  end
+
   # THE INVARIANT ACROSS AN ACTUAL WALK, ON A WORLD THAT HAS GEOMETRY, and it is
   # the one this slice most wants: the two assertions above load and check
   # without taking a turn, and the only scripted walk is over a flat world where
@@ -858,9 +919,14 @@ class EngineSweepTest < ActiveSupport::TestCase
     key = Item.in_story(story).templates.by_name("brass tap key").sole
     key.update_columns(x: 40, y: 40)
 
-    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+    # TWO SENTENCES ARE TRUE OF THIS ROW and both are reported: it is outside
+    # the room it is in, AND it is no longer in the corner the file lays it in
+    # (`world_items_unmoved`). One is about the records on their own and the
+    # other is about the file, so this asks for the one it is testing.
+    broken = EngineSweep::Invariants.new(story, seed: seed).check
+                                    .find { |failure| failure.invariant == "positions_in_bounds" }
 
-    assert_equal "positions_in_bounds", broken.invariant
+    assert broken, "nothing reported a thing lying through a wall"
     assert_match(/brass tap key/, broken.to_s)
     assert_match(/The Taproom is 7x8 paces at 0,0 on storey 0/, broken.to_s)
   end
@@ -885,9 +951,10 @@ class EngineSweepTest < ActiveSupport::TestCase
     seed, story = interior_world
     story.protagonist.update_columns(x: 40, y: 40)
 
-    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+    broken = EngineSweep::Invariants.new(story, seed: seed).check
+                                    .find { |failure| failure.invariant == "positions_in_bounds" }
 
-    assert_equal "positions_in_bounds", broken.invariant
+    assert broken, "nothing reported somebody standing through a wall"
     assert_match(/Nell Cawsand/, broken.to_s)
   end
 
@@ -911,9 +978,10 @@ class EngineSweepTest < ActiveSupport::TestCase
     seed, story = interior_world
     Item.in_story(story).templates.by_name("brass tap key").sole.update_columns(y: nil)
 
-    broken = EngineSweep::Invariants.new(story, seed: seed).check.sole
+    broken = EngineSweep::Invariants.new(story, seed: seed).check
+                                    .find { |failure| failure.invariant == "positions_in_bounds" }
 
-    assert_equal "positions_in_bounds", broken.invariant
+    assert broken, "nothing reported half a position"
     assert_match(/part-placed/, broken.to_s)
   end
 
