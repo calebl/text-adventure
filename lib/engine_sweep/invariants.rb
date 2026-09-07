@@ -54,6 +54,16 @@
 #                        `positions_in_bounds` is the instrument for the
 #                        playthrough layer and is the one sentence here not
 #                        stated against the file.
+#   quest_unmoved        the story's ARC is exactly what the world file says --
+#                        its beats, what each is bound to, and its endings.
+#                        `stat_blocks_unmoved`'s statement one table over: a
+#                        quest is written by a seed file and by
+#                        `Quest::Generator`, and no typed line may write one.
+#                        What a walk IS supposed to move is
+#                        `playthrough_beats`, which is this game's progress
+#                        through the arc rather than the arc -- the `Item` layer
+#                        split applied to plot, and the reason the two are
+#                        different tables.
 #   cast_unmoved         every character is standing exactly where the world
 #                        file put them -- in which room and in which corner of
 #                        it -- and anybody the file left nowhere is still
@@ -241,7 +251,7 @@ class EngineSweep::Invariants
   def check
     [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, stat_blocks_unmoved,
       hostility_unmoved, hazards_unmoved, geometry_unmoved, positions_in_bounds, room_names_unique,
-      nothing_was_written ].flatten.compact
+      quest_unmoved, nothing_was_written ].flatten.compact
   end
 
   private
@@ -712,6 +722,101 @@ class EngineSweep::Invariants
     return nil if written.empty?
 
     broken("nothing_was_written", written.join("; "))
+  end
+
+  # THE STORY'S ARC IS THE WORLD'S, AND NO TYPED LINE MAY MOVE IT.
+  #
+  # `stat_blocks_unmoved` and `cast_unmoved`'s statement, one table over and for
+  # the same reason: `quests`, `quest_steps` and `quest_outcomes` are written by
+  # a seed file and by `Quest::Generator`, and a beat is REACHED by
+  # `Playthrough::Arc` writing a row in `playthrough_beats` -- which is this
+  # game's progress and is SUPPOSED to move. If a walk ever changed what the arc
+  # ASKS FOR, something has started writing plot out of a typed line.
+  #
+  # THREE STATEMENTS, and each is a different way that could happen:
+  #
+  #   the beats themselves -- their order, their trigger and the one-line
+  #   summary the narrator is told. A `summary` that moved is prose the world
+  #   did not write.
+  #
+  #   WHAT EACH ONE IS BOUND TO, by the name of the row rather than by its id,
+  #   because ids differ on every load. This is the sharp one: binding is a side
+  #   effect of admission (`Quest::Binder`) and admission happens at
+  #   REALIZATION, which a sweep cannot reach -- so in this mode a step's target
+  #   can only change if something moved it, and nothing may.
+  #
+  #   the endings -- how many there are and which one the world was born with.
+  #
+  # AGAINST THE FILE, like every check here, so a step the file dropped and a
+  # step a walk deleted read the same way round: both are the records
+  # disagreeing with the world as written.
+  #
+  # A WORLD WITH NO ARC ASSERTS NOTHING AND COSTS ONE `Array()`, which is every
+  # world in the repository but one.
+  def quest_unmoved
+    wanted = quests_in_file
+    return nil if wanted.empty? && story.quests.none?
+
+    moved = [ *beats_moved(wanted), *endings_moved(wanted) ]
+    return nil if moved.empty?
+
+    broken("quest_unmoved", moved.join("; "))
+  end
+
+  def quests_in_file
+    Array(seed["quests"]).to_h { |row| [ row["title"], row ] }
+  end
+
+  def beats_moved(wanted)
+    story.quests.order(:id).flat_map do |quest|
+      file = wanted[quest.title]
+      next [ "the arc #{quest.title.inspect} is on the records and not in the file" ] if file.nil?
+
+      steps = quest.steps.order(:position).to_a
+      declared = Array(file["steps"])
+      if steps.size != declared.size
+        next [ "#{quest.title.inspect} has #{steps.size} beat(s) and the file writes #{declared.size}" ]
+      end
+
+      steps.zip(declared).filter_map { |step, row| beat_moved(quest, step, row) }
+    end
+  end
+
+  def beat_moved(quest, step, row)
+    now = describe_beat(step)
+    written = [ row["trigger"], row["target"], row["summary"] ].map(&:to_s)
+    return nil if now == written
+
+    "#{quest.title.inspect} beat #{step.position} is #{now.join(" / ")} and the file says #{written.join(" / ")}"
+  end
+
+  # THE STEP AS THE FILE WOULD WRITE IT: its trigger, the NAME it is bound to --
+  # read off the row rather than off `target_name`, so a step quietly re-pointed
+  # at a different room is caught -- and its summary.
+  def describe_beat(step)
+    bound = case step.target
+    when Character then step.target.fullname
+    when Location, Item then step.target.name
+    end
+
+    [ step.trigger_kind.to_s, (bound || step.target_name).to_s, step.summary.to_s ]
+  end
+
+  def endings_moved(wanted)
+    story.quests.order(:id).flat_map do |quest|
+      declared = Array(wanted.dig(quest.title, "outcomes"))
+      now = quest.outcomes.order(:id).map { |outcome| [ outcome.name, outcome.summary, outcome.is_default? ] }
+      written = declared.map { |row| [ row["name"], row["summary"], row["default"] == true ] }
+      next [] if now == written
+
+      [ "#{quest.title.inspect} ends #{describe_endings(now)} and the file says #{describe_endings(written)}" ]
+    end
+  end
+
+  def describe_endings(rows)
+    return "nowhere" if rows.empty?
+
+    rows.map { |name, _summary, default| default ? "#{name} (default)" : name }.join(", ")
   end
 
   def broken(invariant, detail)

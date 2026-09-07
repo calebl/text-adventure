@@ -45,10 +45,38 @@
 # the walk, on exactly the terms it reads `locations.danger`. Without those two
 # keys that half of the check would pass by having nothing to compare.
 #
+# AND SINCE `ta-story-arc` IT WALKS THE ARC TO ITS CONCLUSION, which is the
+# whole of what the captain's Q6 asked for: *offline first -- doctor clean and a
+# checked-in sweep that walks a generated world to its conclusion.* This is that
+# sweep, and the world is the one he actually generated.
+#
+# THREE BEATS, EACH REACHED BY AN ORDINARY TYPED LINE, and `quest:` says which
+# state each one is in after every step. Nothing here writes a beat: the beats
+# are `Playthrough::Arc`'s, read off the four record predicates after every line
+# the engine played, and what this file asserts is that they landed. The ARC
+# ITSELF is asserted unmoved over the whole walk by
+# `EngineSweep::Invariants#quest_unmoved` -- a typed line may reach a beat and
+# may not write one.
+#
+# AND THE LAST BEAT ENDS THE GAME WITH WORDS, which is the fourth of his five
+# properties and the one nothing could assert before: reaching the cell writes
+# the reached outcome, `playthroughs.ended_at` and an engine-authored closing
+# `Scene` carrying the sentence this world was built toward. The step after it
+# is a line typed into a finished game, which is how the walk says the ending is
+# real rather than merely recorded.
+#
+# WHAT MOVED IN THIS FILE FOR THAT, said plainly: the walk used to end at room 4
+# and used to `talk to the prince` from inside the cell. It cannot any more --
+# arriving in the cell finishes the story -- so the ring through room 4 happens
+# BEFORE the cell instead of after it, and every exit assertion it made is
+# unchanged and still here. What is genuinely lost is the old step that pinned
+# the prince into the classifier's closed set through a refused `talk`; the
+# `present:` assertion on arrival is what says he is reachable now.
+#
 # THE WORLD IS ONE OF THE SWEEP'S OWN (`EngineSweep::WORLDS`) rather than a
 # world a fresh clone plays, and its header says why.
 story: The Iron Gate Descends
-why: the repaired generated world, walked from its opening room in to the prince
+why: the repaired generated world, walked from its opening room in to the prince and on to the end of its arc
 steps:
 - id: the-gate-as-the-world-was-generated
   type: look
@@ -61,6 +89,13 @@ steps:
     present: []
     changed: false
     refused: false
+    # EVERY BEAT BOUND AND NONE REACHED, which is what a seeded arc looks like
+    # before anybody plays it: the file named three things and this world
+    # contains all three, so nothing is waiting to be grown.
+    quest:
+      1: bound
+      2: bound
+      3: bound
 
 - id: take-the-proof-he-passed-this-way
   type: take the signet ring
@@ -71,6 +106,12 @@ steps:
     here: [iron key]
     carrying: [prince's signet ring]
     drifts: 0
+    # THE FIRST BEAT, off `hold_item` -- this game's own copy of the ring is in
+    # the party's hands, which is the closed set `drop` resolves against and the
+    # one reader the arc comes through.
+    quest:
+      1: reached
+      2: bound
 
 - id: down-into-the-maw
   type: go to the obsidian maw
@@ -106,6 +147,42 @@ steps:
     - Blackfang Warren room 2 (stub)
     - Blackfang Warren room 4 (stub)
     present: []
+    # THE SECOND BEAT, and it is the one that says a place is bound as the PLACE
+    # and read as the ROOM: the step names `Blackfang Warren`, the party is
+    # standing in room 1, and it landed -- because `Quest::Step#target_room`
+    # resolves a container through `Location::Interior.way_in`. Nobody ever
+    # stands in a building.
+    quest:
+      2: reached
+      3: bound
+
+# THE OTHER DOOR OUT OF THE ENTRY ROOM, WALKED FIRST. It used to be walked from
+# the cell on the way back out; the cell is now where the story ends, so the
+# ring is walked before it instead. Every exit it asserted is asserted here.
+- id: the-other-door-out-of-the-entry-room
+  type: go to Blackfang Warren room 4
+  why: |-
+    the layout's second door off the entry room, and the room it leads to opens
+    onto the cell -- so the interior is walkable in a ring and the prince stays
+    where the world put him.
+  expect:
+    changed: true
+    location: Blackfang Warren room 4 (stub)
+    exits: [Blackfang Warren room 1 (stub), the dry cell (realized)]
+    present: []
+    # STANDING NEXT DOOR TO THE CELL IS NOT STANDING IN IT. A `reach_location`
+    # beat is the room and nothing else, which is what makes it a record rather
+    # than a reading of how close somebody got.
+    quest:
+      3: bound
+
+- id: back-to-the-entry-room
+  type: go to Blackfang Warren room 1
+  why: a door is two rows, so the ring is walkable the other way round too
+  expect:
+    changed: true
+    location: Blackfang Warren room 1 (stub)
+    refused: false
 
 - id: through-the-guards-room
   type: go to Blackfang Warren room 2
@@ -116,43 +193,48 @@ steps:
     exits: [Blackfang Warren room 1 (stub), the dry cell (realized)]
     present: []
 
-- id: reach-the-prince
+- id: reach-the-prince-and-end-the-story
   type: go to the dry cell
   why: |-
-    THE WHOLE STORY -- the beat and the presence, off the records, no model. The
-    room furthest from the way in, and the only room of this interior the file
-    writes: what the player reads on arrival is *"You are in the dry cell of
-    Blackfang Warren"* and then its own description. The line typed here is the
-    name the player read as an exit one step back, which is the captain's
-    display ruling of 2026-09-06 walked rather than asserted.
+    THE WHOLE STORY -- the last beat, the presence and the ending, off the
+    records and with no model in the room. The room furthest from the way in,
+    and the only room of this interior the file writes: what the player reads on
+    arrival is *"You are in the dry cell of Blackfang Warren"* and then its own
+    description. The line typed here is the name the player read as an exit one
+    step back, which is the captain's display ruling of 2026-09-06 walked rather
+    than asserted.
+
+    AND ARRIVING FINISHES THE ARC. Every beat is reached, so `Playthrough::Arc`
+    writes the reached outcome, ends the playthrough and writes one
+    engine-authored closing `Scene` carrying the sentence the world was built
+    toward. `dead: true` is `playthroughs.ended_at` being set -- the column says
+    the game is over and nothing about how, which is why the note is what says
+    this one ended in a story rather than in a death.
   expect:
     changed: true
     location: the dry cell (realized)
     exits: [Blackfang Warren room 2 (stub), Blackfang Warren room 4 (stub)]
     present: [Prince Aurel Durn]
     carrying: [prince's signet ring]
+    quest:
+      1: reached
+      2: reached
+      3: reached
+    dead: true
+    note: "the story is over: The prince is found alive in the dry cell"
 
-- id: and-he-is-there-to-be-spoken-to
+- id: and-the-story-stays-over
   type: talk to the prince
   why: |-
-    he is in the closed set the classifier resolves a `talk` against, which is
-    what makes him reachable rather than merely present. The line is refused
-    because answering it is a model call and a sweep makes none.
+    A LINE TYPED INTO A FINISHED GAME, which is what makes the ending real
+    rather than merely recorded: `Playthrough::Turn#play` refuses every line
+    before it costs anything, so the prince is standing right there and the
+    engine will not play it. The old walk refused this line too, for the
+    OTHER reason -- answering it is a model call -- and the swap is the whole
+    difference the arc made to this file.
   expect:
-    understood: talk -> Prince Aurel Durn
     refused: true
     changed: false
-    offers: [Prince Aurel Durn is here and the classifier resolved them]
+    dead: true
+    location: the dry cell (realized)
     present: [Prince Aurel Durn]
-
-- id: the-other-door-out-of-the-cell
-  type: go to Blackfang Warren room 4
-  why: |-
-    the layout's other door out of the cell, and the room it leads to is the
-    entry room's neighbour -- so the interior is walkable in a ring and the
-    prince stays where the world put him.
-  expect:
-    changed: true
-    location: Blackfang Warren room 4 (stub)
-    exits: [Blackfang Warren room 1 (stub), the dry cell (realized)]
-    present: []

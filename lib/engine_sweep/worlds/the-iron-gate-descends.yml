@@ -26,6 +26,21 @@
 # engine wrote from one seeded `Roll`. The footprint is the only geometry this
 # file decided, because a world supplies parameters and never behaviour.
 #
+# AND THE ARC IS HAND-WRITTEN TOO, since `ta-story-arc`: a `quests:` block with
+# three beats and two endings. This is where the world's premise stops being
+# prose and becomes rows -- the ring, the warren and the cell are things the
+# engine can ask about, and `Story::Doctor` now says so
+# (`quest_step_unbound`, `quest_target_unreachable`) instead of calling a story
+# with an unreachable premise HEALTHY.
+#
+# THE LAST BEAT IS `reach_location` AND NOT `speak_to`, which is the one place
+# the fiction was shaped by the instrument and is said out loud rather than left
+# to be discovered: an offline sweep makes no model call, so a conversation can
+# never happen in one, and an arc whose last beat were a conversation could
+# never be walked to its conclusion by `rake game:sweep`. Finding the cell they
+# are keeping him in is a natural last beat for a rescue that has not got him
+# out yet; getting him out is a further beat this world does not have.
+#
 # WHAT IS HAND-WRITTEN, and it is only what the layout deliberately does not do:
 #
 #   THE WAY IN. `Blackfang Tunnel` opens onto room 1, which is the spare exit
@@ -499,3 +514,26 @@ connections:
 - between: [the dry cell, Blackfang Warren room 4]
   distance: adjacent
   travel_method: walking
+quests:
+- title: The Church's Decree
+  premise: Retrieve the prince from the goblin caves beneath the Ashen Spire, or die trying.
+  status: open
+  contributes: true
+  steps:
+  - summary: Take the signet ring that proves he came this way.
+    trigger: hold_item
+    target: prince's signet ring
+  - summary: Get inside the warren where the Blackfang keep what they take.
+    trigger: reach_location
+    target: Blackfang Warren
+    teaser: The Blackfang hold him somewhere below the old workings.
+  - summary: Find the cell they are keeping him in.
+    trigger: reach_location
+    target: the dry cell
+  outcomes:
+  - name: rescued
+    summary: The prince is found alive in the dry cell, and the iron gate opens outward at last.
+    default: true
+  - name: too-late
+    summary: The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted.
+    default: false

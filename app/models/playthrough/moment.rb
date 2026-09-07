@@ -86,14 +86,22 @@ class Playthrough::Moment
   # nothing" is a fact the narrator can use; silence about it is an invitation
   # to decide.
   #
-  # `plan:` IS WHAT SEPARATES THE TWO PASSES THAT READ THIS. The narrator wants
-  # the floor plan; `InteractionAgent`'s character pass, which builds the same
-  # section for an NPC's reply, asks for it WITHOUT -- geometry was never asked
-  # for in dialogue and `Character#interaction_instructions` has no stored
-  # baseline to judge a change to it against (AGENTS.md, and EVALUATION.md's
-  # rule). One keyword rather than a second reader, because everything else in
+  # `plan:` AND `arc:` ARE WHAT SEPARATE THE TWO PASSES THAT READ THIS. The
+  # narrator wants the floor plan and the story's next beat; `InteractionAgent`'s
+  # character pass, which builds the same section for an NPC's reply, asks for
+  # NEITHER. Keywords rather than a second reader, because everything else in
   # these parts is the same moment and must not come apart.
-  def narration_context(plan: true)
+  #
+  # THEY ARE OFF FOR THAT PASS FOR ONE SHARED REASON AND ONE SEPARATE ONE.
+  # SHARED: `Character#interaction_instructions` and `InteractionAgent`'s
+  # prompts have no stored baseline AT ALL, so a change there could not be
+  # judged either way (AGENTS.md, and EVALUATION.md's rule) -- that pass sends
+  # what it sent before each feature existed. SEPARATE, and it is the stronger
+  # half for the arc: AN NPC DOES NOT KNOW THE PLAYER'S ERRAND. The quest is the
+  # player's, the beat is a fact the ENGINE holds about their progress, and
+  # handing it to somebody they are talking to would have every stranger in the
+  # world quietly briefed on what they came for.
+  def narration_context(plan: true, arc: true)
     parts = [ "Story: #{story.title} (#{story.genre})", "Premise: #{story.summary}" ]
 
     if location
@@ -125,6 +133,33 @@ class Playthrough::Moment
     # nil for them, and saying nothing is the honest answer where "unhurt" would
     # be an assertion about a body the engine does not have.
     parts << condition.to_s if condition
+    # AND WHERE THE STORY IS GOING NEXT -- ONE LINE, AND NEVER MORE THAN ONE.
+    #
+    # THE CAPTAIN'S CALL 4, 2026-09-06: **"a: the next open step's summary only,
+    # one line."** He was offered the whole arc and the conclusion with it, and
+    # chose the beat.
+    #
+    # WHY NOT THE CONCLUSION, which is the half worth writing down because it
+    # reads like a saving and is not one: telling a model how the story ends
+    # invites it to write TOWARD that ending -- which is the railroad by the back
+    # door, and every paragraph it writes about an ending the engine has not
+    # recorded is a contradiction `Story::Audit` cannot see, because there is no
+    # record for it to be checked against. Telling it the next BEAT is the same
+    # shape as telling it what is lying on the floor a few lines below: a fact
+    # the engine owns, stated, with nothing for the model to decide.
+    #
+    # IT IS THE SECOND THING THIS METHOD SAYS ABOUT WHERE THE STORY IS, and the
+    # first is `Premise:` at the top -- which is the story's OPENING situation,
+    # on turn 40 as on turn 1. That was the whole of the narrator's sense of
+    # direction before this line, and it is why it is worth one: the premise
+    # says where the story began and this says what it is asking for now.
+    #
+    # SILENT FOR EVERY WORLD WITH NO ARC, which is every world generated before
+    # `Quest::Generator` shipped and every seed file with no `quests:` block --
+    # so the prompt those worlds send is unchanged, byte for byte. It is also
+    # silent once the arc is finished, because there is no next beat: a game
+    # that is over is told nothing about what to do next.
+    parts << "The story is asking for: #{next_beat}" if arc && next_beat
     parts << (others.any? ? "Also here: #{name_list(others)}. Nobody else is present." : "Nobody else is here.")
     # HOW MUCH IS LEFT OF EVERYBODY ELSE IN THE ROOM, and whether any of them is
     # fighting the party. Until a fight could happen this was the one closed set
@@ -424,6 +459,20 @@ class Playthrough::Moment
 
   def exit_names
     playthrough.exits.map(&:name).join(", ")
+  end
+
+  # THE NEXT OPEN BEAT'S OWN SUMMARY, out of `Playthrough::Arc` -- which is the
+  # one thing in the app that evaluates a trigger, so the line the narrator
+  # reads and the beat the engine writes cannot come from two answers.
+  #
+  # NIL IS THE ORDINARY ANSWER and cached as one: a world with no arc, a doomed
+  # arc, and a game that has finished its arc all read nil, and a turn would
+  # otherwise ask the question twice. `defined?` rather than `||=` for
+  # `#plan_facts`' reason.
+  def next_beat
+    return @next_beat if defined?(@next_beat)
+
+    @next_beat = Playthrough::Arc.new(playthrough).next_step&.summary
   end
 
   # THE ROOM'S OWN WALLS, out of `Location::Plan` and never re-derived here.

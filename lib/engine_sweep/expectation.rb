@@ -94,6 +94,22 @@
 #                   save and the damage are dice and a script may not assert a
 #                   die, so what a walk pins is that the toll was PAID and which
 #                   direction paid it
+#   quest           WHERE THE STORY'S ARC STANDS, as a mapping of a beat's
+#                   POSITION in the main arc to `unbound`, `bound` or `reached`
+#                   -- read through `Playthrough::Arc`, which is the one thing
+#                   that evaluates a trigger, so a script and the turn loop
+#                   cannot come to two answers. A script may name one beat or
+#                   all of them.
+#                     unbound  the step names something this world does not
+#                              contain yet, so nothing could reach it
+#                     bound    it names a row, and this game has not got there
+#                     reached  this game has, and `playthrough_beats` says so
+#                   A position the arc does not have is UNMET rather than
+#                   skipped, so a typo cannot read as a pass -- `hp_of:`' rule.
+#                   The arc itself is world data and no typed line may move it,
+#                   which is `EngineSweep::Invariants#quest_unmoved` and not
+#                   this key: what a script asserts here is where the PLAYER got
+#                   to.
 #
 # `KEYS` IS CLOSED AND UNKNOWN KEYS RAISE. A misspelt expectation that was
 # quietly ignored would read as a passing step, which is the one failure mode a
@@ -101,8 +117,12 @@
 class EngineSweep::Expectation
   KEYS = %w[
     location storey exits exits_include exits_exclude here carrying present foes inscription
-    hp hp_of abilities dead changed change refused offers understood resolved_by note drifts blows hazards
+    hp hp_of abilities dead changed change refused offers understood resolved_by note drifts blows hazards quest
   ].freeze
+
+  # WHAT A BEAT MAY BE, and closed for `KEYS`' reason: a fourth word here would
+  # look like an expectation and assert nothing at all.
+  BEAT_STATES = %w[unbound bound reached].freeze
 
   # "The Vestry Hulk (stub)" -> the name and the detail level it has to be in.
   # A bare name asserts nothing about whether the room is written.
@@ -161,6 +181,7 @@ class EngineSweep::Expectation
       check_equals("understood", report.understood),
       check_equals("resolved_by", report.resolved_by),
       check_contains("note", Array(report.note).join("\n")),
+      check_arc(state),
       check_equals("drifts", drifts),
       check_equals("blows", blows),
       check_equals("hazards", hazards)
@@ -175,6 +196,7 @@ class EngineSweep::Expectation
     validate_hit_points!
     validate_abilities!
     validate_inscriptions!
+    validate_quest!
     Array(document["exits"]).each { |entry| named(entry) }
     Array(document["exits_include"]).each { |entry| named(entry) }
     Array(document["exits_exclude"]).each { |entry| named(entry) }
@@ -244,6 +266,44 @@ class EngineSweep::Expectation
 
       raise EngineSweep::InvalidScript,
             "#{where}: an \"inscription\" entry is text to look for or false, got #{expected.inspect}"
+    end
+  end
+
+  # A mapping of a beat's position to one of `BEAT_STATES`, and nothing else --
+  # `hp_of:`' shape and its reason: a list of positions here would look like an
+  # expectation and assert nothing.
+  def validate_quest!
+    return unless document.key?("quest")
+
+    wanted = document["quest"]
+    unless wanted.is_a?(Hash)
+      raise EngineSweep::InvalidScript,
+            "#{where}: \"quest\" is a mapping of a beat's position to #{BEAT_STATES.join("/")}, got #{wanted.inspect}"
+    end
+
+    wanted.each do |position, state|
+      unless position.is_a?(Integer) && position.positive?
+        raise EngineSweep::InvalidScript, "#{where}: a \"quest\" key is a beat's position, a whole number, got #{position.inspect}"
+      end
+
+      next if BEAT_STATES.include?(state)
+
+      raise EngineSweep::InvalidScript,
+            "#{where}: \"quest\" beat #{position} asks for #{state.inspect}; there is: #{BEAT_STATES.join(", ")}"
+    end
+  end
+
+  # WHERE THE ARC STANDS, position by position. A position this world's arc does
+  # not have reads as `nil` and is unmet, which is what stops a typo passing.
+  def check_arc(state)
+    return nil unless document.key?("quest")
+
+    actual = state.arc.to_h { |position, beat, _summary| [ position, beat ] }
+
+    document["quest"].filter_map do |position, wanted|
+      next if actual[position] == wanted
+
+      unmet("quest", "beat #{position} #{wanted}", "beat #{position} #{actual[position] || "is not in this arc"}")
     end
   end
 

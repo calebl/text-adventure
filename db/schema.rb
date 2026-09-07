@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_150000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -199,6 +199,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_140000) do
     t.index ["provider"], name: "index_models_on_provider"
   end
 
+  create_table "playthrough_beats", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "playthrough_id", null: false
+    t.integer "quest_step_id", null: false
+    t.datetime "reached_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["playthrough_id", "quest_step_id"], name: "index_playthrough_beats_on_playthrough_id_and_quest_step_id", unique: true
+    t.index ["playthrough_id"], name: "index_playthrough_beats_on_playthrough_id"
+    t.index ["quest_step_id"], name: "index_playthrough_beats_on_quest_step_id"
+  end
+
   create_table "playthrough_blows", force: :cascade do |t|
     t.integer "attacker_id", null: false
     t.datetime "created_at", null: false
@@ -235,6 +246,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_140000) do
     t.index ["playthrough_id", "story_timestamp"], name: "index_playthrough_drifts_on_playthrough_id_and_story_timestamp"
     t.index ["playthrough_id"], name: "index_playthrough_drifts_on_playthrough_id"
     t.index ["scene_id"], name: "index_playthrough_drifts_on_scene_id"
+  end
+
+  create_table "playthrough_endings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "playthrough_id", null: false
+    t.integer "quest_outcome_id", null: false
+    t.datetime "reached_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["playthrough_id", "quest_outcome_id"], name: "idx_on_playthrough_id_quest_outcome_id_7ea31b4171", unique: true
+    t.index ["playthrough_id"], name: "index_playthrough_endings_on_playthrough_id"
+    t.index ["quest_outcome_id"], name: "index_playthrough_endings_on_quest_outcome_id"
   end
 
   create_table "playthrough_feedbacks", force: :cascade do |t|
@@ -327,6 +349,50 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_140000) do
     t.index ["token"], name: "index_playthroughs_on_token", unique: true
   end
 
+  create_table "quest_outcomes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "is_default", default: false, null: false
+    t.string "name", null: false
+    t.integer "quest_id", null: false
+    t.text "summary", null: false
+    t.datetime "updated_at", null: false
+    t.index ["quest_id", "name"], name: "index_quest_outcomes_on_quest_id_and_name", unique: true
+    t.index ["quest_id"], name: "index_quest_outcomes_on_quest_id"
+  end
+
+  create_table "quest_steps", force: :cascade do |t|
+    t.datetime "bound_at"
+    t.datetime "created_at", null: false
+    t.integer "minutes"
+    t.integer "position", null: false
+    t.integer "quest_id", null: false
+    t.text "summary", null: false
+    t.integer "target_id"
+    t.string "target_name"
+    t.string "target_type"
+    t.text "teaser"
+    t.string "trigger_kind", null: false
+    t.datetime "updated_at", null: false
+    t.index ["quest_id", "position"], name: "index_quest_steps_on_quest_id_and_position", unique: true
+    t.index ["quest_id"], name: "index_quest_steps_on_quest_id"
+    t.index ["target_type", "target_id"], name: "index_quest_steps_on_target"
+  end
+
+  create_table "quests", force: :cascade do |t|
+    t.boolean "contributes", default: true, null: false
+    t.datetime "created_at", null: false
+    t.string "origin", default: "seeded", null: false
+    t.integer "parent_quest_id"
+    t.text "premise", null: false
+    t.string "status", default: "open", null: false
+    t.integer "story_id", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["parent_quest_id"], name: "index_quests_on_parent_quest_id"
+    t.index ["story_id", "title"], name: "index_quests_on_story_id_and_title", unique: true
+    t.index ["story_id"], name: "index_quests_on_story_id"
+  end
+
   create_table "races", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description", null: false
@@ -403,10 +469,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_140000) do
   create_table "world_events", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "occurred_at", null: false
+    t.integer "playthrough_id"
+    t.string "source", null: false
     t.integer "story_id", null: false
     t.text "summary", null: false
     t.datetime "updated_at", null: false
-    t.integer "world_mechanic_id", null: false
+    t.integer "world_mechanic_id"
+    t.index ["playthrough_id"], name: "index_world_events_on_playthrough_id"
     t.index ["story_id", "occurred_at"], name: "index_world_events_on_story_id_and_occurred_at"
     t.index ["story_id"], name: "index_world_events_on_story_id"
     t.index ["world_mechanic_id"], name: "index_world_events_on_world_mechanic_id"
@@ -446,6 +515,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_140000) do
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "scenes"
+  add_foreign_key "playthrough_beats", "playthroughs"
+  add_foreign_key "playthrough_beats", "quest_steps"
   add_foreign_key "playthrough_blows", "characters", column: "attacker_id"
   add_foreign_key "playthrough_blows", "characters", column: "target_id"
   add_foreign_key "playthrough_blows", "locations"
@@ -454,6 +525,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_140000) do
   add_foreign_key "playthrough_drifts", "locations"
   add_foreign_key "playthrough_drifts", "playthroughs"
   add_foreign_key "playthrough_drifts", "scenes"
+  add_foreign_key "playthrough_endings", "playthroughs"
+  add_foreign_key "playthrough_endings", "quest_outcomes"
   add_foreign_key "playthrough_feedbacks", "playthroughs"
   add_foreign_key "playthrough_feedbacks", "scenes"
   add_foreign_key "playthrough_overreaches", "locations"
@@ -470,6 +543,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_140000) do
   add_foreign_key "playthroughs", "locations", column: "current_location_id"
   add_foreign_key "playthroughs", "scenes", column: "current_scene_id"
   add_foreign_key "playthroughs", "stories"
+  add_foreign_key "quest_outcomes", "quests"
+  add_foreign_key "quest_steps", "quests"
+  add_foreign_key "quests", "quests", column: "parent_quest_id"
+  add_foreign_key "quests", "stories"
   add_foreign_key "races", "universes"
   add_foreign_key "scenes", "locations"
   add_foreign_key "scenes", "scenes", column: "previous_scene_id"

@@ -65,7 +65,13 @@ class Story::Deletion
       "scenes" => story.scenes.count,
       "playthroughs" => story.playthroughs.count,
       "world mechanics" => story.world_mechanics.count,
-      "world events" => story.world_events.count
+      "world events" => story.world_events.count,
+      # THE ARC AND ITS BEATS. Counted as ONE line rather than three, because
+      # they are one thing to somebody deciding whether to delete a world:
+      # `quest_steps` and `quest_outcomes` go with their quest and are never
+      # anything on their own. Every playthrough's own beats go with the
+      # playthroughs above, which is the layer split the whole arc is built on.
+      "quests" => story.quests.count
     }
   end
 

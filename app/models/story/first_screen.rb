@@ -17,34 +17,56 @@
 # It is not: a seed file is how a world is EDITED, not the only way to get a
 # cast.
 #
-# THREE THINGS, AND THE ORDER IS THE POINT:
+# FOUR THINGS, AND THE ORDER IS THE POINT:
 #
 #   1. THE PROTAGONIST, because `Scene::Generator#characters_present` reads
 #      `Story#protagonist` and the arrival prompt marks them *"the player, the
 #      one arriving"*. Written before the room is realized, so the room's own
 #      description is written by a model that has been told this world already
 #      has that person in it (`Location::Generator#known_names_note`).
-#   2. THE OPENING ROOM, realized exactly as every other room is -- cast
+#   2. THE ARC, which says where the story is GOING -- `Quest::Generator`, one
+#      call, the captain's Call 3 of 2026-09-06. It creates no rows but its own:
+#      every beat names a place, a person or a thing and every target is NULL,
+#      because the arc states what the world must contain and the registries
+#      decide when it does.
+#   3. THE OPENING ROOM, realized exactly as every other room is -- cast
 #      included. The captain's ruling of 2026-09-05: *"the opening room should
 #      not guarantee at least one person. The protagonist can start by
 #      themselves."* So the realization keeps the ordinary "sometimes nobody"
 #      answer and `#cast` may legitimately come back empty; `rake game:new`'s
 #      closing lines say so out loud when it does.
-#   3. THE OPENING ARRIVAL, last, so its `## Who Is Here` block carries both --
+#   4. THE OPENING ARRIVAL, last, so its `## Who Is Here` block carries both --
 #      which is the whole reason the order is written down here rather than
 #      left to a caller.
 #
-# WHAT IT COSTS: four model calls -- one `Character::Generator` for the
-# protagonist, two for the room (`Location::Generator` asks for the detail and
-# then the exits) and one `Scene::Generator` for the arrival. Three of the four
-# were already the task's; the protagonist is the new one, and the opening
-# room's people ride on the realization call the room was already paying for.
+# WHY THE ARC IS SECOND AND NOT LAST, which is the one ordering decision this
+# slice added and the one worth defending. The opening room is the first thing
+# any generated world realizes, and it is the only room every player of that
+# world starts in -- so it is the room it costs most to have written without
+# knowing where the story is going. An arc written after it would have missed
+# exactly that one. Nothing downstream depends on the ORDER of steps 1 and 2;
+# what depends on it is step 3.
+#
+# AND IT IS THE ONE STEP OF THE FOUR A WORLD CAN BE BORN WITHOUT. The other
+# three raise: a world with no protagonist, no room or no arrival is not a world
+# anybody can play. `Quest::Generator#generate!` answers nil on a failed call
+# and this carries on, because a world with no arc is exactly what every world
+# in this repository was before the arc existed -- playable, exportable, and
+# reported by `rake game:doctor` (`story_without_a_conclusion`) rather than
+# broken.
+#
+# WHAT IT COSTS: FIVE model calls -- one `Character::Generator` for the
+# protagonist, one `Quest::Generator` for the arc, two for the room
+# (`Location::Generator` asks for the detail and then the exits) and one
+# `Scene::Generator` for the arrival. The opening room's people ride on the
+# realization call the room was already paying for, and the arc costs nothing
+# per room and nothing per turn -- its beats are record predicates.
 #
 # IT IS THE PAID PATH, so nothing in CI runs it against a real model.
 # `Story::FirstScreenTest` drives the whole sequence with the agent stubbed,
 # which is what makes the order above something a test can hold.
 class Story::FirstScreen
-  attr_reader :story, :protagonist, :location, :scene
+  attr_reader :story, :protagonist, :quest, :location, :scene
 
   # `reporter:` is how a caller says "print what you are doing": it is called
   # with a label and the work as a block, which is exactly `Helpers.timed`'s
@@ -55,11 +77,12 @@ class Story::FirstScreen
     @reporter = reporter || ->(_label, &work) { work.call }
   end
 
-  # The three things, in the one order they work in. Returns self, because
+  # The four things, in the one order they work in. Returns self, because
   # every one of them is worth reading afterwards and a caller that only wants
   # the scene can ask for it.
   def build!
     create_protagonist!
+    write_the_arc!
     realize_opening!
     narrate_opening!
 
@@ -94,6 +117,13 @@ class Story::FirstScreen
   # `Character::StatBlock.for_a_protagonist`.
   def create_protagonist!
     @protagonist = step("Generating the protagonist") { story.create_character(protagonist: true) }
+  end
+
+  # WHERE THE STORY IS GOING, as records -- and nil is a legal answer. See the
+  # header: this is the one step of the four whose failure leaves a world that
+  # still works.
+  def write_the_arc!
+    @quest = step("Generating the story's arc") { Quest::Generator.new(story).generate! }
   end
 
   def realize_opening!

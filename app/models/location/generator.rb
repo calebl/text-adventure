@@ -71,9 +71,17 @@ class Location::Generator
   # is one the engine rolls one for (`Location::Population`). Only the exits call
   # has a word, and `#connect_exit!` is what passes it.
   def self.create_stub!(story, name:, teaser:, population: nil)
-    story.locations.create!(name: name, teaser: teaser, detail_level: :stub,
-                            danger: Location::Danger.for_a_new_room(story),
-                            population: population)
+    room = story.locations.create!(name: name, teaser: teaser, detail_level: :stub,
+                                   danger: Location::Danger.for_a_new_room(story),
+                                   population: population)
+    # AND IF THE STORY'S ARC WAS WAITING FOR A PLACE BY THIS NAME, IT NOW HAS
+    # ONE. Binding is a side effect of the room being born and never a
+    # condition of it (`Quest::Binder`) -- so a model naming an exit, a world
+    # mechanic and `Quest::Deadline` all bind on exactly the same terms,
+    # because all three come through here. A world with no arc pays one
+    # `exists?` and stops.
+    Quest::Binder.bind!(room)
+    room
   end
 
   # Description and lore, then the stub exits leading out -- saved in that
@@ -95,6 +103,17 @@ class Location::Generator
 
     write_detail!
     write_exits!
+    # AND THE STORY'S ARC GETS ITS DEADLINE CHECKED, because realizing a room is
+    # the moment the world GROWS -- which is the thing that was supposed to
+    # produce whatever the arc is still waiting for. Zero model calls, nothing
+    # at all for a world with no arc, and nothing for one still inside its
+    # grace: see `Quest::Deadline` for when it fires and where it puts things.
+    #
+    # AFTER THE EXITS AND NOT BEFORE THEM, so the room this realization just
+    # opened is a candidate to hang the way on from -- and so a place the
+    # deadline builds is never in the list of names the exits call was offered,
+    # which would have let one call name a building the next line created.
+    Quest::Deadline.after_realizing!(location)
 
     location
   end
@@ -283,6 +302,17 @@ class Location::Generator
     # a room somebody has already walked into.
     location.name = naming.accept(detail["name"]) || location.name if naming
 
+    # AND A ROOM THAT HAS JUST BEEN NAMED IS A ROOM THE ARC MAY HAVE BEEN
+    # WAITING FOR. `.create_stub!` binds a room at birth, and a room of an
+    # interior is born as a NUMBER (`Location::Interior`'s placeholder) -- so
+    # the moment it gets the name a player will read is the second and last
+    # moment it can bind. Nothing else in the app renames a location.
+    #
+    # BEFORE THE SAVE BELOW ON PURPOSE: the binding is deferred to the same
+    # transaction, so a layout that raises leaves neither the name nor the arc
+    # moved.
+    named_room = location.name_changed?
+
     # THE ROW, THEN THE INSIDE, THEN THE FLIP -- one transaction and that order.
     # A room is a child of a saved place, so this location has to exist before
     # `Location::Interior` can put anything in it (`#lay_out_interior!` may be
@@ -290,6 +320,7 @@ class Location::Generator
     # what makes this place one nobody realizes again.
     Location.transaction do
       location.save!
+      Quest::Binder.bind!(location) if named_room
       lay_out_interior!(detail["parameters"])
       location.update!(detail_level: :realized)
     end
@@ -807,8 +838,16 @@ class Location::Generator
     agent.with_schema(schema).ask(prompt).content
   end
 
+  # THE ARC BLOCK IS APPENDED RATHER THAN INTERPOLATED INTO THE HEREDOC, and
+  # that is a measurement decision rather than a style one. An empty
+  # `#{arc_block}` on a line of its own still emits that line, so every world
+  # with no arc would have sent one extra blank line -- which moved the
+  # realization bench's prompt digest for all nine shapes and would have cost a
+  # bench round to measure a newline. Appending keeps the prompt those worlds
+  # send byte-for-byte identical, which is what lets the stored baseline go on
+  # being a baseline for them.
   def story_context
-    <<~CONTEXT
+    <<~CONTEXT + arc_block
       ## Universe Details
       #{story.universe.prompt_details(:place)}
 
@@ -818,6 +857,95 @@ class Location::Generator
       preface: #{story.preface}
       summary: #{story.summary}
     CONTEXT
+  end
+
+  # WHERE THE STORY IS GOING, IN ONE BLOCK, IN THE ONE PLACE BOTH CALLS READ.
+  #
+  # THE INFORM HALF OF THE ARC, and it is only the inform half. The captain's
+  # standing constraint is *gate the state, inform the prose*: this is a prompt,
+  # so nothing may rest on it: `Quest::Deadline` is the verify half and it does
+  # not care whether this worked. A world where the model never once takes the
+  # hint still reaches its own ending; what this buys is that it reaches it as
+  # fiction rather than as an engine placement.
+  #
+  # ONE BLOCK AND NOT THREE, which is what makes it cost nothing per room.
+  # `#story_context` is sent by BOTH realization calls -- the detail call and
+  # the exits call share one `BaseAgent` conversation -- so a single block
+  # reaches the seam that names a way out, the seam that writes a person into a
+  # room, and the seam that puts a thing on the floor. There is no second call
+  # and no per-seam prompt.
+  #
+  # IT NAMES THE NEXT OPEN STEP AND NOT THE ARC. Three or four beats would be an
+  # outline, and `Story::Generator`'s closing sentence -- *"Leave the ending
+  # open. You are starting a story, not outlining one."* -- is a rule about this
+  # world that a later call must not quietly reverse.
+  #
+  # AND IT NEVER CARRIES THE CONCLUSION, which is where this departs from the
+  # arc design's own draft (`data/ta-quest-progress-scout/report.md` §5.3 puts a
+  # `conclusion:` line in this block). The captain's Call 4 of 2026-09-06 gave
+  # the reasoning against it one prompt over: a model told how the story ends
+  # writes TOWARD that ending, and a room described as though the ending were
+  # near is prose about a record the engine does not have. The step is a fact --
+  # the world must come to contain this thing -- and the ending is not one yet.
+  #
+  # THE STEP IS THE MAIN ARC'S FIRST UNREACHED ONE, asked WITHOUT a playthrough:
+  # realization is the WORLD growing, not one player's progress through it, and
+  # two people playing one world must not get two different rooms. So it is the
+  # arc's own first open beat rather than `Playthrough::Arc#next_step`'s
+  # per-game answer, and that is the one place in the app where the two
+  # deliberately differ.
+  #
+  # EMPTY FOR EVERY WORLD WITH NO ARC, which is every world generated before
+  # `Quest::Generator` shipped and every seed file with no `quests:` block -- so
+  # those worlds send the prompt they always sent, byte for byte, and the stored
+  # realization baseline stays a baseline for them.
+  def arc_block
+    step = open_step
+    return "" if step.nil?
+
+    <<~ARC
+      \n## Where This Story Is Going
+      next: #{step.summary}
+      #{wanted_line(step)}
+      #{step.teaser.presence&.then { |line| "#{line}\n" }}If this room is a natural place for it, this is where it
+      comes from; if it is not, leave it and somewhere else will do. Do not bend
+      this room to fit it.
+    ARC
+  end
+
+  # WHAT THE WORLD IS SHORT OF, in the vocabulary of the seam that can supply
+  # it: a PLACE is something the exits call names, a PERSON is somebody the
+  # detail call writes into the room, a THING is something it puts on the floor.
+  # Said as the kind rather than as the trigger, because `reach_location` is the
+  # engine's word and a model has no use for it.
+  def wanted_line(step)
+    case step.trigger_kind
+    when "reach_location"
+      %(This story needs a PLACE called "#{step.target_name}", somewhere a player can walk to. ) +
+        "There is no such place in this world yet."
+    when "speak_to"
+      %(This story needs a PERSON called "#{step.target_name}", standing somewhere a player can reach. ) +
+        "There is nobody of that name in this world yet."
+    when "hold_item"
+      %(This story needs a THING called "#{step.target_name}", lying somewhere a player can pick it up. ) +
+        "There is no such thing in this world yet."
+    end
+  end
+
+  # THE ARC'S OWN FIRST OPEN BEAT -- the lowest-positioned step of the main arc
+  # that the world has not grown a row for. Nil for a world with no arc, for a
+  # doomed one, and for an arc whose every beat is already bound, which is the
+  # state a world reaches once it contains everything its story asked for.
+  #
+  # UNBOUND AND NOT UNREACHED: this asks what the WORLD is missing, and a step
+  # bound to a row is a step the world has answered however far any player has
+  # got. `Playthrough::Arc#next_step` is the per-game question and is the
+  # narrator's; this is the world's and is the generator's.
+  def open_step
+    return @open_step if defined?(@open_step)
+
+    arc = story.main_quest
+    @open_step = arc.nil? || arc.doomed? ? nil : arc.steps.detect { |step| step.unbound? && step.wants_a_row? }
   end
 
   # The places the model may reuse a name from, with the written ones marked.

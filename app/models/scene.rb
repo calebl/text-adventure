@@ -28,7 +28,13 @@ class Scene < ApplicationRecord
   # two lists still answer different questions (what the engine may record,
   # what the model may be offered) and `hazard` is the standing proof: nothing
   # will ever type it.
-  ACTIONS = (Playthrough::IntentSchema::INTENTS + %w[attack hazard throw]).uniq.freeze
+  #
+  # `conclude` IS THE FOURTH, and it is the first act in the game the engine
+  # takes because the STORY is over rather than because a body is. Reaching the
+  # last step of the main arc ends the playthrough and writes one Scene
+  # carrying the reached outcome's sentence; see `Playthrough::Arc`. Nothing
+  # will ever type it, exactly as nothing will ever type `hazard`.
+  ACTIONS = (Playthrough::IntentSchema::INTENTS + %w[attack hazard throw conclude]).uniq.freeze
 
   # AND WHICH OF THOSE THE ENGINE WROTE THE WORDS OF, which is a DIFFERENT
   # question from which of them a player can type -- and it used to be answered
@@ -48,7 +54,17 @@ class Scene < ApplicationRecord
   # So the list is POSITIVE now: what the engine authored is named here rather
   # than inferred from what a prompt may ask for. `attack` and `hazard` keep
   # exactly the answer they had.
-  ENGINE_AUTHORED = %w[attack hazard].freeze
+  #
+  # `conclude` JOINS THEM, and it is the one entry here that is expected to
+  # LEAVE again. The engine writes the last paragraph today out of the reached
+  # `Quest::Outcome`'s stored sentence, because the game being over must not
+  # depend on a model answering -- so `Story::Audit` and `Eval::Richness` skip
+  # it and `Story::Scoreboard#excluded` counts it, which is the whole reason
+  # this list is positive: engine copy read as narration would score the app's
+  # own sentence as prose, and a smaller denominator can never read as a better
+  # rate. When `ta-quest-ending` gives the narrator the outcome to render, the
+  # paragraph stops being the engine's and this entry comes back out.
+  ENGINE_AUTHORED = %w[attack hazard conclude].freeze
 
   # How much STORY time a turn costs when it is not a journey. A fixed table in
   # code, for exactly the reason `LocationConnection::DISTANCES` is one: how

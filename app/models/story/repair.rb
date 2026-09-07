@@ -90,6 +90,7 @@ class Story::Repair
     duplicate_locations: { calls: 0, handler: :repair_duplicate_locations },
     duplicate_items: { calls: 0, handler: :repair_duplicate_items },
     mobile_doorway_re_asserted: { calls: 0, handler: :repair_re_asserted_doorway },
+    quest_target_missing: { calls: 0, handler: :repair_missing_quest_target },
     no_realized_location: { calls: 2, handler: :repair_no_realized_location },
     opening_location_is_a_stub: { calls: 2, handler: :repair_opening_location_stub },
     opening_has_no_exits: { calls: 1, handler: :repair_missing_exits },
@@ -377,6 +378,28 @@ class Story::Repair
 
     "put #{item.name.inspect} back to bulk #{Item::HANDY.inspect} from #{was.inspect}, which is not one of " \
       "#{Item::BULK.keys.join(", ")}"
+  end
+
+  # A BEAT POINTING AT A ROW THAT WENT AWAY, put back to waiting for it.
+  #
+  # SAFE, AND THE ARC'S TWO STATES ARE THE WHOLE ARGUMENT: `target_name` is the
+  # arc's own statement of what this world must contain, and deleting the row
+  # does not retract it. So there is nothing to invent -- the honest state of a
+  # step whose target is gone is UNBOUND, which is the state every step of every
+  # generated world starts in, and the registries grow the thing again the next
+  # time somebody names it (`Quest::Binder`).
+  #
+  # NOTHING ELSE ABOUT THE ARC IS REPAIRABLE and that is deliberate. An unbound
+  # step past its deadline, a story with no conclusion, a target no path reaches:
+  # each of those needs either a model call this tool may not make or a decision
+  # about the world that nobody but its author can take.
+  def repair_missing_quest_target(finding)
+    step = finding.subject
+    was = step.target_type
+    step.unbind!
+
+    "unbound #{step.quest.title.inspect} step #{step.position} from a #{was} that no longer exists; it is waiting " \
+      "for #{step.target_name.inspect} again, and the world can grow it"
   end
 
   def repair_missing_stat_block(finding)

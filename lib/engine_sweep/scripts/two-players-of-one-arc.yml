@@ -1,0 +1,155 @@
+# TWO PEOPLE WALKING ONE ARC, AND THEY ARE NOT ON THE SAME BEAT.
+#
+# THE CLAIM THIS EXISTS TO ASSERT, and it is the load-bearing one in the whole
+# arc design: **the arc is the WORLD's and the beats are each GAME's.** A
+# `Quest::Step` is what this world asks for, written by a seed file or by
+# `Quest::Generator` and touched by no player ever; whether somebody has reached
+# it is a `playthrough_beats` row. That is the `Item` layer split applied to
+# progress, and the direction report's own two tables did NOT have it -- pass one
+# put `reached_at` on the step, which is wrong on a two-player world exactly the
+# way a shared inventory was.
+#
+# WHAT ONLY TWO PLAYTHROUGHS CAN SEE, which is `the-unrecorded-hour-two-players.yml`'s
+# argument one table over: every other script here is one walk, so none of them
+# can tell a per-game beat from a per-world one -- both read the same in one
+# game. `player:` names whose game a step is typed into, and the two here are
+# playthroughs of THE SAME loaded copy of this world.
+#
+# THE THREE FACTS IT PINS, in order:
+#
+#   ONE GAME'S BEAT IS INVISIBLE TO THE OTHER. `first` takes the ring and
+#   reaches beat 1; `second` looks around the same room and beat 1 is still
+#   `bound` for them. A shared `reached_at` would read `reached` on both.
+#
+#   THE ARC ITSELF IS THE SAME ARC. Both games read the same three beats in the
+#   same order, and `EngineSweep::Invariants#quest_unmoved` asserts over the
+#   whole walk that neither of them wrote a row in `quests`, `quest_steps` or
+#   `quest_outcomes`. A typed line may REACH a beat; it may never write one.
+#
+#   AND ONE GAME ENDING DOES NOT END THE OTHER. `first` walks the whole arc and
+#   the story closes on them; `second` is still standing at the gate with every
+#   beat but the ring in front of them, and their next line is played rather
+#   than refused. `playthroughs.ended_at` is a column on a GAME.
+#
+# WHY THIS WORLD. It is the only one in the repository with an arc, and it is a
+# GENERATED one -- `rake game:new` wrote it, `rake game:export` froze it, and its
+# own header says what was repaired by hand. `the-iron-gate-descends.yml` is the
+# single walk through it; this is the two-player statement the single walk cannot
+# make.
+story: The Iron Gate Descends
+why: two playthroughs of one world walk one arc and stand on two different beats of it
+steps:
+- id: both-open-on-the-same-arc
+  type: look
+  why: the world's own arc, read by the game that will finish it
+  expect:
+    location: Iron Gate Chamber (realized)
+    quest:
+      1: bound
+      2: bound
+      3: bound
+    changed: false
+    refused: false
+
+- id: and-the-second-game-reads-the-same-three-beats
+  type: look
+  player: second
+  why: |-
+    the ARC is the world's, so both games are walking the same one. What differs
+    below is which of its beats each has reached.
+  expect:
+    location: Iron Gate Chamber (realized)
+    quest:
+      1: bound
+      2: bound
+      3: bound
+    changed: false
+    refused: false
+
+- id: the-first-game-takes-the-ring
+  type: take the signet ring
+  why: a `hold_item` beat, reached off this game's own copy in this game's own hands
+  expect:
+    changed: true
+    carrying: [prince's signet ring]
+    quest:
+      1: reached
+
+- id: the-second-game-has-not
+  type: look
+  player: second
+  why: |-
+    THE WHOLE POINT. The other game reached beat 1 a line ago; this one has not,
+    and the ring is still lying on this game's floor. A `quest_steps.reached_at`
+    column would read `reached` here.
+  expect:
+    location: Iron Gate Chamber (realized)
+    here: [iron key, prince's signet ring]
+    carrying: []
+    quest:
+      1: bound
+      2: bound
+      3: bound
+
+- id: down-into-the-maw
+  type: go to the obsidian maw
+  why: the first game carries on toward the end of the arc
+  expect:
+    changed: true
+    location: obsidian maw (realized)
+
+- id: and-on-into-the-tunnel
+  type: go to Blackfang Tunnel
+  why: the deepest room the generator wrote, and the way on the repair added
+  expect:
+    changed: true
+    location: Blackfang Tunnel (realized)
+
+- id: in-through-the-way-in
+  type: go to Blackfang Warren room 1
+  why: the entry room of the place, which is what a `reach_location` beat naming the PLACE means
+  expect:
+    changed: true
+    location: Blackfang Warren room 1 (stub)
+    quest:
+      2: reached
+      3: bound
+
+- id: through-the-guards-room
+  type: go to Blackfang Warren room 2
+  why: a door of the layout's own backbone
+  expect:
+    changed: true
+    location: Blackfang Warren room 2 (stub)
+
+- id: the-first-game-finishes-the-story
+  type: go to the dry cell
+  why: |-
+    every beat reached, so the arc closes: the reached outcome, `ended_at`, and
+    one engine-authored scene carrying the sentence this world was built toward.
+  expect:
+    changed: true
+    location: the dry cell (realized)
+    present: [Prince Aurel Durn]
+    quest:
+      1: reached
+      2: reached
+      3: reached
+    dead: true
+
+- id: and-the-second-game-is-still-being-played
+  type: go to the obsidian maw
+  why: |-
+    ONE GAME ENDING DOES NOT END THE OTHER. `playthroughs.ended_at` is a column
+    on a game, so this line is PLAYED -- and this game is still two beats short
+    of the ending the other one just read.
+  player: second
+  expect:
+    changed: true
+    refused: false
+    location: obsidian maw (realized)
+    dead: false
+    quest:
+      1: bound
+      2: bound
+      3: bound

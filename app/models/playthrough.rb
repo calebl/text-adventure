@@ -52,6 +52,20 @@ class Playthrough < ApplicationRecord
   # thing that asks whether a fight is still on.
   has_many :blows, class_name: "Playthrough::Blow", dependent: :destroy,
                    inverse_of: :playthrough
+  # WHICH BEATS OF THE STORY'S ARC THIS GAME HAS REACHED, and which ending it
+  # reached. Destroyed with it on the same reasoning as the vitals and the
+  # items: the arc is the WORLD's (`Quest`) and how far along it somebody got
+  # is this player's progress. Read through `Playthrough::Arc`, which is the
+  # one thing that evaluates a trigger or states a step's state.
+  has_many :beats, class_name: "Playthrough::Beat", dependent: :destroy,
+                   inverse_of: :playthrough
+  has_many :endings, class_name: "Playthrough::Ending", dependent: :destroy,
+                     inverse_of: :playthrough
+  # WHAT THIS GAME DID TO THE STORY'S HISTORY -- one row at most today, the
+  # failed arc. Destroyed with it for the reason above and stated in
+  # `WorldEvent`'s header: a world nobody is playing has no arc anybody failed.
+  # The world's OWN events carry no playthrough and are untouched by this.
+  has_many :world_events, dependent: :destroy
 
   # WHAT THE WORLD ITSELF TOOK OFF THIS GAME'S BODY: one row per hazard paid,
   # and the `Playthrough::Blow` of a place. A separate table from the blows and
