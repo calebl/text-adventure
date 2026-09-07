@@ -364,8 +364,9 @@ cases:
 #   THE PROMPT CARRIES A FLOOR PLAN. `Location::Plan` states the room's size in
 #   paces, the storey of the place it stands on, and which wall each door is in
 #   -- the first facts in this game a description can be checked against as
-#   NUMBERS. `door_the_records_do_not_hold` and `size_the_records_do_not_hold`
-#   are judgeable on these three cases and nowhere else.
+#   NUMBERS. `size_the_records_do_not_hold` is judgeable on these three cases
+#   and nowhere else. The walls are stated and NOT checked:
+#   `Eval::Realization::UNAVAILABLE_TO_A_REALIZATION` carries the reason.
 #
 #   THE EDGES ARE NOT WOUND BACK. Every other stub's edges arrived with its
 #   realization; these arrived with the layout, before the room existed as

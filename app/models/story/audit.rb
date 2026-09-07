@@ -16,7 +16,7 @@
 # corpus is 24 real narrations from two remote models over six commands
 # designed to break a world's laws, checked in at
 # `test/fixtures/files/narration_corpus.json` and pinned by
-# `Story::AuditPrecisionTest`. Three findings, in the order they arrived:
+# `Story::AuditPrecisionTest`. The findings, in the order they arrived:
 #
 # 1. A VOCABULARY SCAN CANNOT WORK, and it is gone. The first version of this,
 #    built as a spike, asked "which names the records know appear in this
@@ -145,6 +145,49 @@
 #    `Playthrough::Drift`, and by the engine: `Character.present_in` is the
 #    closed set `talk` resolves against, so the player cannot SPEAK to somebody
 #    who is not there whatever the prose says about them.
+#
+# 6. AND A WALL IS NOT A THING PROSE CAN BE READ FOR EITHER, which is the third
+#    heuristic measurement killed and the one killed most recently. Slice 3
+#    gives a room of a laid-out interior a floor plan before a word of it is
+#    written, and `Location::Plan` states it: how many paces across, which
+#    storey, and which wall each door is in. The first two are numbers and are
+#    checked (`Story::Audit::Prose.size_claims`, `.storey_claims`, scored on
+#    `rake eval:realization`). The third was tried in six successive grammars
+#    and every one of them failed the same way:
+#
+#      a THRESHOLD word anywhere in the sentence, then a threshold within a
+#      character bridge of a compass-named wall, then a bridge plus an anaphor
+#      attached to the wall, then a bridge that would not reach forward over an
+#      "in the", then a closed list of three grammatical attachment forms, then
+#      the same list with the inversion required to be fronted.
+#
+#    WHAT KILLED IT is that a DOORLESS wall named in the same sentence as a door
+#    is read as holding one, in either order and whatever sits between the two
+#    words -- and that prose is exactly what the prompt invites, because
+#    `Location::Plan#closed_walls_clause` tells the model no other wall of the
+#    room holds a door. Each round closed one shape and admitted the next:
+#
+#      "A window in the south wall, the door out is in the east wall."
+#        -- read the SOUTH wall as holding a door.
+#      "A door in the north wall, and another rack in the west wall holds the
+#      ledgers." -- read the WEST wall, the anaphor taken for a second door.
+#      "A door in the north wall; the south wall is covered by a curtain."
+#        -- read the SOUTH wall, a draped wall taken for a breached one.
+#
+#    Telling those from a real claim needs the sentence's verbs and objects,
+#    which is a parser and not a regex. So there is no door check: the question
+#    is `Eval::Realization::UNAVAILABLE_TO_A_REALIZATION`'s
+#    `door_in_a_wall_the_records_do_not_hold`, reported unanswered rather than
+#    as a rate, because a zero off any of those six grammars would have been a
+#    clean-looking lie on a bench a baseline was about to be bought from.
+#
+#    AND THE PROMPT DID NOT MOVE. `Location::Plan` still states which wall each
+#    door is in, because that is a record read out -- the INFORM half of the
+#    standing constraint. What was withdrawn is the instrument's claim to be
+#    able to VERIFY it in prose, and the doors themselves are gated where it
+#    matters: they are `LocationConnection` rows, and
+#    `Location::Generator#write_exits!` asks a room inside a place for no exits
+#    at all, so no description can add one whatever it says.
 #
 # WHAT IT CANNOT DO, stated so nobody expects it to: deterministic verification
 # catches the MISUSE of things that exist. It cannot catch the INVENTION of

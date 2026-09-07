@@ -60,11 +60,17 @@
 # and it is written the way `Location::Plan` states the facts to a model that
 # does: 7 by 6 paces, storey 0, and doors in the walls the boxes really share.
 # It is a worked example of a description that agrees with its own floor plan --
-# and it is the only prose in the repository `Story::Audit::Prose`'s geometry
-# grammars read that the engine did not write itself. Room 3's is the example the
-# DOOR grammar reads, both walls of it; room 4's door sentence says "no other way
-# out", which `Story::Audit::NEGATIONS` skips, so that room is an example for the
-# size and storey grammars only.
+# and both rooms are the only prose in the repository `Story::Audit::Prose`'s
+# geometry grammars read that the engine did not write itself, 2 of the 12
+# detections measured over every world file's room prose.
+#
+# WHAT THE GRAMMARS READ IN THEM IS THE SIZE AND THE STOREY, and not the walls.
+# Which wall a door is in is stated to a model and is not checked afterwards --
+# `Story::Audit`'s header carries why, and
+# `Eval::Realization::UNAVAILABLE_TO_A_REALIZATION` carries the question,
+# reported unanswered. So the door sentences here are a worked example of what
+# the PROMPT states, and of what the walk asserts about the edges the layout
+# gave the room; they are not an example any grammar reads.
 ---
 format: 2
 universe:

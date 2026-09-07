@@ -229,9 +229,15 @@ class Location::Plan
   # would leave the model no truthful way to describe the way in.
   #
   # SO THE CLAIM IS MADE ONLY WHERE THE RECORDS CARRY IT -- a room whose every
-  # way out is a door in a named wall or a stair. `Eval::Realization::Scorer#judge_door_the_records_do_not_hold`
-  # keeps the other side of the same rule and refuses to judge the walls of a
-  # room this clause is withheld from.
+  # way out is a door in a named wall or a stair.
+  #
+  # AND THIS SENTENCE IS WHY NOTHING CHECKS THE WALLS AFTERWARDS. Telling the
+  # model no other wall holds a door invites prose that names the DOORLESS walls
+  # beside the doors, and six measured grammars each read one of those as a door
+  # claim of its own -- see `Story::Audit`'s header for the record and
+  # `Eval::Realization::UNAVAILABLE_TO_A_REALIZATION` for the question, reported
+  # unanswered. The sentence stays: it is a record, and informing the prose is
+  # the half of the standing constraint that does not depend on being verifiable.
   def closed_walls_clause
     return "" if others.any?
 

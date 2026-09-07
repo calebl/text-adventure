@@ -488,23 +488,35 @@ module Story::Audit::Prose
   # paces across, which storey, which wall each door is in. So for the first
   # time a description can be checked against a NUMBER the app owns rather than
   # against a judgement -- which is the only kind of prose check this project
-  # ships (see `Story::Audit`'s header for the two it has already killed).
+  # ships (see `Story::Audit`'s header for the three it has already killed).
   #
-  # THE RECORDS NEVER COME FROM THE PROSE. These two read a passage and return
-  # what it CLAIMED; `Eval::Realization::Scorer` compares that with the plan the
-  # prompt was built from, and a claim that agrees is not a flag. The passage
-  # alone convicts nobody.
+  # AND THE WALLS ARE NOT AMONG THEM. A grammar that read which wall the prose
+  # put a door in was built, measured and killed here -- six shapes of it, each
+  # closing one false-positive path and admitting the next. What killed it is
+  # that `Location::Plan#closed_walls_clause` tells the model no other wall of
+  # the room holds a door, so the prose it invites names the DOORLESS walls in
+  # the same breath as the doors, and telling those apart needs the sentence's
+  # verbs and objects rather than its words. `Story::Audit`'s header carries the
+  # full record and the sentences that settled it; `Eval::Realization`'s
+  # `UNAVAILABLE_TO_A_REALIZATION` carries the question, reported unanswered.
+  # THE PROMPT DID NOT MOVE: `Location::Plan` still states which wall each door
+  # is in, because that is a record read out to a model. What went is the claim
+  # that the same fact can be VERIFIED in prose afterwards.
   #
-  # BOTH ARE DELIBERATELY THE NARROWEST GRAMMAR THAT STILL CATCHES THE DEFECT,
-  # and both are keyword checks by `Eval::Realization::Scorer::KEYWORD_CHECKS` --
-  # weighed differently from the record comparisons beside them, because they
-  # read words.
+  # THE RECORDS NEVER COME FROM THE PROSE. What survives reads a passage and
+  # returns what it CLAIMED; `Eval::Realization::Scorer` compares that with the
+  # plan the prompt was built from, and a claim that agrees is not a flag. The
+  # passage alone convicts nobody.
   #
-  # MEASURED BEFORE THEY SHIPPED, on all 367 real passages in the four corpora
+  # DELIBERATELY THE NARROWEST GRAMMAR THAT STILL CATCHES THE DEFECT, and
+  # counted by `Eval::Realization::Scorer::KEYWORD_CHECKS` -- weighed
+  # differently from the record comparisons beside it, because it reads words.
+  #
+  # MEASURED BEFORE IT SHIPPED, on all 367 real passages in the four corpora
   # (`eval_corpus.json` 92, `narration_corpus.json` 24, `transition_corpus.json`
   # 119, `whole_run_corpus.json` 132) and on the description, lore and teaser of
-  # every room in every world file in the repository. The numbers are on each
-  # method, and they are DETECTION counts: a detection is a sentence these
+  # every room in every world file in the repository. The numbers are on the
+  # methods, and they are DETECTION counts: a detection is a sentence these
   # methods READ as a claim, which is the figure that says whether a grammar is
   # narrow enough to be trusted once there is a plan to compare it against. Not
   # one of the 367 passages was written by a model that had been told a room's
@@ -514,209 +526,12 @@ module Story::Audit::Prose
   # A DETECTION IS NOT THE SAME THING AS A JUDGEMENT, and the difference is the
   # scorer's rather than these methods'. `Location::Plan` states more than the
   # room's own box -- the PLACE's footprint in paces, and the clause *"storey 0
-  # is the ground floor"* -- so a claim can be a true echo of the prompt, and a
-  # room with a way out the records give no wall to is a room whose walls the
-  # plan cannot close (`Location::Plan#closed_walls_clause`).
-  # `Eval::Realization::Scorer#judge_door_the_records_do_not_hold` refuses to
-  # judge that room's walls at all, and
-  # `#judge_size_the_records_do_not_hold` discounts the other two: the place's
-  # pair agrees rather than flags, and a "storey 0" on a room that is not on
-  # storey 0 comes out of the denominator entirely. These methods
+  # is the ground floor"* -- so a claim can be a true echo of the prompt.
+  # `Eval::Realization::Scorer#judge_size_the_records_do_not_hold` discounts
+  # both: the place's pair agrees rather than flags, and a "storey 0" on a room
+  # that is not on storey 0 comes out of the denominator entirely. These methods
   # report what a passage said and never what it is worth.
   # ------------------------------------------------------------------------
-
-  # The four walls as prose writes them, plus the two-word corners.
-  # `Location::Box::WALLS` is the engine's spelling and this is the reader's;
-  # they are matched on the same words, which `Story::Audit::ProseTest` pins.
-  COMPASS = /\b(north|south)[-\s]?(east|west)\b|\b(north|south|east|west)\b/i
-
-  # A wall of a room, and it has to be the word: "the north side" is where the
-  # bar is, "the north wall" is a wall. Prose that puts a door in a wall says
-  # "wall" -- measured across the four corpora, where every one of the door
-  # sentences that names a side names it as a wall.
-  WALL_NOUN = /\bwalls?\b/i
-
-  # One door the prose put in a named wall.
-  Door = Data.define(:wall, :sentence)
-
-  # A NAMED WALL, AS ONE PHRASE. The reader's spelling of `Location::Box::WALLS`
-  # with the noun required: "the north side" is where the bar is, "the north
-  # wall" is a wall.
-  WALL_PHRASE = /#{COMPASS}[-\s]?#{WALL_NOUN}/i
-
-  # WHERE A THRESHOLD SITS WHEN IT IS IN A WALL. "on" is deliberately absent:
-  # "a cold hearth ON the south wall" is what is hung there and "the door ON
-  # the north side" is scenery, while prose puts a door IN a wall.
-  DOOR_PLACEMENT = /(?:in|into|through|within)/i
-
-  # The determiner prose puts between a preposition and the noun it governs.
-  DETERMINER = /(?:the|its|his|her|their|this|that|a|an)/i
-
-  # ONE WORD OF FILLER, and never the wall noun -- so a run of filler can not
-  # swallow the wall the relation is about and hand the claim to a later one.
-  FILLER = /(?:\s+(?!walls?\b)[a-z][a-z'-]*)/i
-
-  # A SECOND DOOR, NAMED WITHOUT THE WORD. Prose that has already said "door"
-  # says "another" or "one" of the next one -- *"and one in the west wall stands
-  # half open"* -- and that is the commonest shape a two-door room is written
-  # in, which is most rooms `Location::Interior` lays out. It is read only in a
-  # sentence that named a real threshold, which `#door_claims` requires before
-  # it reads any wall: an anaphor refers back, and a sentence with nothing to
-  # refer back to has not named a door.
-  #
-  # AND WHAT DISAMBIGUATES IT IS THE FORM IT SITS IN, which is why there are
-  # two. "one" is a numeral and a pronoun far more often than it is a door, and
-  # "another" is a determiner as readily as a pronoun.
-  #
-  # PUT IN A WALL, the preposition does the work: *"another IN the east wall"*,
-  # *"one IN the west wall"*. Nothing but a door is put in a wall, so the bare
-  # word is safe here -- and the numeral readings fail for want of the
-  # preposition, since *"one long shelf OF ledgers"* and *"the one THE damp has
-  # ruined"* reach no placement at all.
-  #
-  # HELD BY A WALL, nothing follows to disambiguate, so the anaphor has to CLOSE
-  # THE NOUN PHRASE: *"the east wall has another."* stands for a door and *"the
-  # west wall carries ONE GREAT MAP of the estuary"* does not. A following word
-  # means the anaphor is modifying it -- and where that word is itself a
-  # threshold ("has another door") the threshold form reads it anyway.
-  #
-  # WHAT THE CLOSING RULE KNOWINGLY MISSES: "the east wall has another and the
-  # frame is split", where the anaphor does stand alone and a bare word follows
-  # it. One miss is the price of not reading every "has one <noun>" as a door,
-  # and this grammar takes that trade everywhere.
-  DOOR_ANAPHOR_PUT = /(?:another|one)\b/i
-  DOOR_ANAPHOR_HELD = /(?:another|one)\b(?!\s+[a-z])/i
-
-  # ------------------------------------------------------------------------
-  # A DOOR IS ATTACHED TO A WALL BY A RELATION, NEVER BY PROXIMITY.
-  #
-  # THE HISTORY IS THE ARGUMENT, and it is written down because it is what makes
-  # the shape of this grammar the point rather than its details. This check was
-  # first a THRESHOLD anywhere in the sentence, then a threshold within a
-  # character bridge of the wall, then a bridge plus an attached anaphor, then a
-  # bridge that would not reach forward over an "in the". Each of those closed
-  # one shape of one mistake and left the next one open, because all four asked
-  # the same question -- IS A DOOR WORD NEAR THIS WALL -- and the answer to that
-  # question is not the answer to "does the prose say this wall holds a door".
-  # `Location::Plan#closed_walls_clause` tells the model no other wall of the
-  # room holds a door, so the prose it invites names the DOORLESS walls in the
-  # same breath as the doors, and a nearness rule cannot tell the two apart.
-  # That is how a prose heuristic dies in this project -- `Story::Audit`'s
-  # header records two it has already killed.
-  #
-  # SO THE GRAMMAR IS A CLOSED LIST OF ATTACHMENT FORMS, and a wall is claimed
-  # to hold a door only where the sentence puts the two in one of them. There
-  # are three, and they are the ones prose actually writes:
-  #
-  #   PUT IN IT      a threshold bound to the wall by a preposition of place --
-  #                  "a door IN the north wall", "a hatch SET INTO the east
-  #                  wall", "a gate THROUGH the west wall", "the door out IS IN
-  #                  the east wall".
-  #   HELD BY IT     a wall that carries one -- "the north wall HOLDS a door",
-  #                  "the east wall IS BROKEN BY a hatch", "the east wall HAS
-  #                  another".
-  #   WALL FIRST     the inversion of the first, which prose writes for the same
-  #                  relation -- "IN the north wall, a door".
-  #
-  # ANYTHING ELSE CLAIMS NOTHING, whatever sits between the two words and in
-  # either order. "Rain streaks the south wall beside the door", "ledgers line
-  # the south wall; the door out is in the east wall", "the west wall carries
-  # the shelves" -- none of those says a door is in the wall it names, and none
-  # of them is a claim here.
-  #
-  # FILLER IS BOUNDED AND IS NOT A BRIDGE. Each form allows a word or two of
-  # verb or particle where prose needs it -- "is set", "leads out", "out is",
-  # "a shuttered gate" -- and the filler may never be the wall noun. What binds
-  # the claim is the CONNECTIVE, and the bound on the filler only stops one
-  # relation reading across the whole sentence.
-  # ------------------------------------------------------------------------
-
-  # A threshold, or a second one named without the word, PUT IN a named wall.
-  DOOR_PUT_IN_WALL =
-    /(?:#{THRESHOLD}|\b#{DOOR_ANAPHOR_PUT})#{FILLER}{0,2}\s+#{DOOR_PLACEMENT}\b
-     (?:\s+#{DETERMINER})?#{FILLER}{0,1}\s+#{WALL_PHRASE}/xi
-
-  # A named wall that HOLDS one. `is`/`was` take a participle and `by`, which is
-  # what "is broken by a hatch" is and what keeps "is bare" and "is hung with
-  # tarred canvas" out.
-  DOOR_HELD_BY_WALL =
-    /#{WALL_PHRASE}#{FILLER}{0,1}\s+(?:holds?|carries|carried|has|had|(?:is|was)\s+[a-z]+\s+by)\b
-     (?:\s+#{DETERMINER})?#{FILLER}{0,2}\s+(?:#{THRESHOLD}|#{DOOR_ANAPHOR_HELD})/xi
-
-  # The wall named first and the threshold after it, across a comma.
-  DOOR_WALL_FIRST =
-    /#{DOOR_PLACEMENT}\b(?:\s+#{DETERMINER})?\s+#{WALL_PHRASE}
-     \s*,\s*(?:#{DETERMINER}\s+)?(?:[a-z][a-z'-]*\s+){0,1}#{THRESHOLD}/xi
-
-  DOOR_RELATIONS = [ DOOR_PUT_IN_WALL, DOOR_HELD_BY_WALL, DOOR_WALL_FIRST ].freeze
-
-  # EVERY WALL THE PROSE SAYS HOLDS A DOOR, one per wall, in the order the
-  # sentence names them. See the block above for the three forms and why the
-  # grammar is a list of relations rather than a window.
-  #
-  # WHAT IT KNOWINGLY MISSES: the commonest way prose names a door, which is not
-  # to name a wall at all. "Two doors lead out" claims nothing this can read,
-  # and counting doors is deliberately not attempted -- prose says "doors" of a
-  # pair of leaves in one frame, and a count check would flag a room for its
-  # carpentry.
-  #
-  # MEASURED: 0 detections over the 367 corpus passages. No narration anybody
-  # has ever paid for in this game has put a door in a named wall, because until
-  # this slice nothing ever told a model a room had walls with directions -- and
-  # a check with no detections looks exactly like a clean result, which is the
-  # failure mode `Story::Audit`'s header names. So `Story::Audit::ProseTest`
-  # fires it on written sentences of the shape a plan invites, in both orders,
-  # and carries every sentence five rounds of review produced as its own case.
-  #
-  # AND 2 DETECTIONS OVER THE ROOM PROSE OF EVERY WORLD IN THE REPOSITORY, both
-  # of them on one sentence: the hand-written description of The Custom House
-  # room 3 in `lib/engine_sweep/worlds/the-quay-house.yml`, which names a door in
-  # the north wall and one in the west, and both walls are walls the room's boxes
-  # really share. That is the only prose in the repository this grammar reads,
-  # and it is the worked example of a description that agrees with its own floor
-  # plan. Room 4's door sentence is NOT among them -- it says "no other way out",
-  # and `Story::Audit::NEGATIONS` skips the sentence -- so that room is a worked
-  # example the size grammar reads and this one does not. Room 3's WEST wall is
-  # the reason the anaphor forms exist at all: what stands beside that wall is
-  # "one in the west wall", and a grammar that wanted the noun would read the
-  # repository's own worked example as a one-door room.
-  #
-  # BOTH FIGURES HELD THROUGH EVERY NARROWING AND THROUGH THE REBUILD, measured
-  # again each time: each change took away a false-positive path and no real
-  # detection with it.
-  def door_claims(text)
-    body = text.to_s
-    return [] if body.blank?
-
-    found = []
-
-    sentences(body).each do |sentence|
-      next if sentence.match?(Story::Audit::NEGATIONS)
-      next unless sentence.match?(THRESHOLD)
-
-      found.concat(doors_in(sentence))
-    end
-
-    found.uniq(&:wall)
-  end
-
-  # THE WALLS ONE SENTENCE ATTACHES A DOOR TO, in the order it names them. The
-  # order is the sentence's and not the relation list's, so which form matched
-  # cannot change what a reader sees.
-  def doors_in(sentence)
-    found = []
-
-    DOOR_RELATIONS.each do |relation|
-      sentence.scan(relation) do
-        at = Regexp.last_match
-        wall = at[0][WALL_PHRASE]
-        found << [ at.begin(0), Door.new(wall: compass_word(wall), sentence: sentence.strip) ] if wall
-      end
-    end
-
-    found.sort_by(&:first).map(&:last)
-  end
-
 
   # HOW BIG THE PROSE SAYS THE ROOM IS, AND WHICH STOREY IT SAYS IT IS ON.
   #
@@ -806,10 +621,6 @@ module Story::Audit::Prose
 
     found.uniq(&:storey)
   end
-
-  # The compass words out of a matched phrase, as `Location::Box::WALLS` spells
-  # them: "North-East wall" and "north east wall" are both "north-east".
-  def compass_word(phrase) = phrase.downcase.scan(/north|south|east|west/).first(2).join("-")
 
   # A number word or a numeral as an integer.
   def number_for(word)

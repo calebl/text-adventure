@@ -125,9 +125,8 @@ module Eval::Realization
   # other room in the game -- its ways out are the ENGINE's, so no exits call is
   # made at all, and the detail prompt is handed the room's own floor plan as
   # fact (`Location::Plan`). That is a prompt shape nothing else in this corpus
-  # can reach, and the checks it exists to feed
-  # (`door_the_records_do_not_hold`, `size_the_records_do_not_hold`) are
-  # unjudgeable anywhere else.
+  # can reach, and the check it exists to feed
+  # (`size_the_records_do_not_hold`) is unjudgeable anywhere else.
   STORIES = [
     "The Unrecorded Hour", "The Lunar Cartographer", "The Salt Assizes", "The Iron Gate Descends",
     "The Quay House"
@@ -174,7 +173,13 @@ module Eval::Realization
     the_room_fits_its_neighbours: "the description is told not to describe its neighbours " \
                                   "(Location::DetailSchema), so agreement with them is not asked for",
     the_cast_is_worth_talking_to: "a person's sheet is judged by the conversation it produces, " \
-                                  "which is InteractionAgent's call and not this one"
+                                  "which is InteractionAgent's call and not this one",
+    door_in_a_wall_the_records_do_not_hold: "a description that puts a door in a wall the plan does not " \
+                                            "hold cannot be told from one that describes a DOORLESS wall " \
+                                            "beside a door without parsing the sentence, and six measured " \
+                                            "grammars each admitted a shape the one before it did not -- " \
+                                            "Story::Audit's header carries the record. The prompt still " \
+                                            "states every door's wall (Location::Plan); only the check is gone"
   }.freeze
 
   def self.unavailable_to_a_realization?(code) = UNAVAILABLE_TO_A_REALIZATION.key?(code.to_sym)

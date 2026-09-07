@@ -373,9 +373,12 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
 
   # --- the description against the floor plan --------------------------------
   #
-  # THE FIRST CHECKS IN THIS FILE THAT READ PROSE RATHER THAN A LIST, and they
-  # are judgeable only on a room the engine laid out: the plan is what the
-  # detail prompt stated, so the comparison is with a record either way.
+  # THE FIRST CHECK IN THIS FILE THAT READS PROSE RATHER THAN A LIST, and it is
+  # judgeable only on a room the engine laid out: the plan is what the detail
+  # prompt stated, so the comparison is with a record either way.
+  #
+  # THE WALLS ARE NOT AMONG WHAT IT READS. `Location::Plan` states which wall
+  # each door is in and nothing checks it -- see the last case in this section.
 
   PLAN = {
     "room" => "The Custom House room 3", "place" => "The Custom House", "storey" => 0,
@@ -386,30 +389,12 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     "stairs" => [], "other_ways_out" => []
   }.freeze
 
-  test "a door in a wall the plan does not hold is flagged" do
-    scorer = planned("A door in the south wall opens onto the quay, and the damp comes in with it.")
-
-    assert_equal 1, scorer.flagged_for(:door_the_records_do_not_hold).size
-    assert_includes scorer.flagged_for(:door_the_records_do_not_hold).first.evidence,
-                    "put a door in the south wall, and the plan has north and west"
-  end
-
-  test "a door in a wall the plan does hold is not flagged, and is still an opportunity" do
-    scorer = planned("The door in the north wall is the one they use, and the west wall has another.")
-
-    assert_empty scorer.flagged_for(:door_the_records_do_not_hold)
-    assert_equal 2, scorer.judgeable_for(:door_the_records_do_not_hold),
-                 "both walls the prose named were compared"
-  end
-
-  # THE ENTRY ROOM'S SHAPE, and it is the one room whose WALLS cannot be judged.
-  # `quay-entry-room` is The Custom House room 1: a door in the east wall, a
-  # stair up, and a way out to The Quay that the records give no wall to. That
-  # doorway passes through some wall of this room and the plan does not say
-  # which, so any wall the prose names could be it -- out of the denominator and
-  # not merely unflagged. `Location::Plan#closed_walls_clause` withholds the
-  # closed-walls sentence from exactly this room, so the prompt never made the
-  # claim this check would be convicting the answer of.
+  # THE ENTRY ROOM'S SHAPE. `quay-entry-room` is The Custom House room 1: a door
+  # in the east wall, a stair up, and a way out to The Quay that the records
+  # give no wall to. `Location::Plan#closed_walls_clause` withholds the
+  # closed-walls sentence from exactly this room, and it is here because a
+  # measurement in paces is judged the same in a room whose walls the plan
+  # cannot close.
   ENTRY_PLAN = {
     "room" => "The Custom House room 1", "place" => "The Custom House", "storey" => 0,
     "place_width" => 14, "place_depth" => 10,
@@ -419,30 +404,8 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     "other_ways_out" => [ "The Quay" ]
   }.freeze
 
-  test "a room with a wall-less way out has none of its wall claims judged" do
-    entry = planned("A door in the west wall opens onto the quay, and one in the east goes further in.",
-                    plan: ENTRY_PLAN)
-
-    assert_empty entry.flagged_for(:door_the_records_do_not_hold)
-    assert_equal 0, entry.judgeable_for(:door_the_records_do_not_hold),
-                 "the records do not say which wall the way out is in, so no wall claim can be convicted"
-  end
-
-  # AND THE DISCOUNT IS NOT A HOLE IN THE CHECK: it is the wall-less way out
-  # that withholds the judgement, not the stair or the storey, so the same room
-  # with its way out inside the building is judged exactly as any other.
-  test "a room whose every way out has a wall or is a stair is judged as before" do
-    walled = planned("A door in the south wall opens on the dark, and the east wall has another.",
-                     plan: ENTRY_PLAN.merge("other_ways_out" => []))
-
-    assert_equal 1, walled.flagged_for(:door_the_records_do_not_hold).size
-    assert_equal 2, walled.judgeable_for(:door_the_records_do_not_hold)
-    assert_includes walled.flagged_for(:door_the_records_do_not_hold).first.evidence,
-                    "put a door in the south wall, and the plan has east"
-  end
-
   # THE SIZE CHECK IS UNTOUCHED BY THE WAY OUT, because a measurement in paces
-  # is a claim about numbers the plan does hold whatever the doorways are.
+  # is a claim about numbers the plan holds whatever the doorways are.
   test "a wall-less way out does not excuse a size the records do not hold" do
     entry = planned("A long room of 9 by 4 paces, with the quay door at one end.", plan: ENTRY_PLAN)
 
@@ -451,11 +414,9 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
                     "said the room is 4 by 9 paces and it is 4 by 7"
   end
 
-  # THE UPPER-FLOOR ROOM'S SHAPE, and it is the one whose walls are FULLY judged
-  # and whose description answers the plan's closing sentence. `quay-upper-floor-room`
-  # is The Custom House room 6: doors in the north and east walls, no wall-less
-  # way out. A description that names the two doors and then says what is hung
-  # on the other two walls contradicts nothing, and must cost no flag.
+  # THE UPPER-FLOOR ROOM'S SHAPE, and it is the one bench case that is NOT on
+  # storey 0 -- which is what makes the storey discount below judgeable at all.
+  # `quay-upper-floor-room` is The Custom House room 6.
   UPPER_PLAN = {
     "room" => "The Custom House room 6", "place" => "The Custom House", "storey" => 1,
     "place_width" => 14, "place_depth" => 10,
@@ -465,45 +426,22 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
     "stairs" => [], "other_ways_out" => []
   }.freeze
 
-  test "a description that names the doorless walls beside the doors costs no flag" do
-    upper = planned("A door in the north wall gives back onto the landing, and another in the east " \
-                    "wall leads on; the south wall is hung with tarred canvas and the west wall " \
-                    "carries a run of pigeonholes.", plan: UPPER_PLAN)
-
-    assert_empty upper.flagged_for(:door_the_records_do_not_hold)
-    assert_equal 2, upper.judgeable_for(:door_the_records_do_not_hold),
-                 "the two walls the prose put a door in were compared, and the other two were not claims"
-  end
-
-  # AND THE SAME ROOM WITH THE DOORLESS WALL NAMED FIRST, which is the other
-  # order prose writes and the one a bridge length alone does not answer.
-  test "a description that names a doorless wall before its door costs no flag" do
-    upper = planned("The south wall is blank, and a door in the north wall gives back onto the landing.",
-                    plan: UPPER_PLAN)
-
-    assert_empty upper.flagged_for(:door_the_records_do_not_hold)
-    assert_equal 1, upper.judgeable_for(:door_the_records_do_not_hold),
-                 "the north wall was compared; the blank south wall was never a claim"
-  end
-
-  # A DESCRIPTION THAT SAYS NOTHING ABOUT ITS WALLS HAS BROKEN NO RULE: the
-  # prompt asks for a room, not for a measurement, so silence is out of the
-  # denominator rather than clean.
-  test "a description that names no wall is not judgeable" do
+  # A DESCRIPTION THAT STATES NO MEASUREMENT HAS BROKEN NO RULE: the prompt asks
+  # for a room, not for a survey, so silence is out of the denominator rather
+  # than clean.
+  test "a description that states no measurement is not judgeable" do
     scorer = planned("Ledgers to the ceiling, and a smell of tar that never leaves the plaster.")
 
-    assert_equal 0, scorer.judgeable_for(:door_the_records_do_not_hold)
     assert_equal 0, scorer.judgeable_for(:size_the_records_do_not_hold)
   end
 
-  # AND A ROOM WITH NO PLAN IS OUT OF BOTH CHECKS ALTOGETHER, which is every
-  # room in every flat world -- including a stored set from before a plan was
-  # ever recorded.
-  test "a room the engine laid out nothing for is judged on neither" do
+  # AND A ROOM WITH NO PLAN IS OUT OF THE CHECK ALTOGETHER, which is every room
+  # in every flat world -- including a stored set from before a plan was ever
+  # recorded.
+  test "a room the engine laid out nothing for is not judged on its numbers" do
     scorer = scored(exits: [ "The Cellar Stair" ],
                     people: [], items: [])
 
-    assert_equal 0, scorer.judgeable_for(:door_the_records_do_not_hold)
     assert_equal 0, scorer.judgeable_for(:size_the_records_do_not_hold)
     assert_empty scorer.flags.select { |flag| flag.code == :size_the_records_do_not_hold }
   end
@@ -550,14 +488,14 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
   # out of the DENOMINATOR and not merely unflagged.
   test "a storey 0 claim on an upper-storey room is unjudgeable, not clean and not flagged" do
     upstairs = planned("Storey 0 is the ground floor, and the stair up from it ends here.",
-                       plan: PLAN.merge("storey" => 1))
+                       plan: UPPER_PLAN)
 
     assert_empty upstairs.flagged_for(:size_the_records_do_not_hold)
     assert_equal 0, upstairs.judgeable_for(:size_the_records_do_not_hold)
   end
 
   test "a storey number that is not 0 is judged on an upper-storey room as it always was" do
-    upstairs = planned("Everything on storey 3 smells of tar.", plan: PLAN.merge("storey" => 1))
+    upstairs = planned("Everything on storey 3 smells of tar.", plan: UPPER_PLAN)
 
     assert_equal 1, upstairs.judgeable_for(:size_the_records_do_not_hold)
     assert_includes upstairs.flagged_for(:size_the_records_do_not_hold).first.evidence,
@@ -571,10 +509,18 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
       .judgeable_for(:size_the_records_do_not_hold)
   end
 
-  # THE TWO GEOMETRY CHECKS READ WORDS, and the board is told so.
-  test "both geometry checks are counted as keyword checks" do
-    assert_includes Eval::Realization::Scorer::KEYWORD_CHECKS, :door_the_records_do_not_hold
+  # THE GEOMETRY CHECK READS WORDS, and the board is told so.
+  test "the geometry check is counted as a keyword check" do
     assert_includes Eval::Realization::Scorer::KEYWORD_CHECKS, :size_the_records_do_not_hold
+  end
+
+  # AND THE WALLS ARE REPORTED UNANSWERED RATHER THAN SCORED. Six measured
+  # grammars each read a doorless wall named beside a door as a door claim of
+  # its own, so the question is named with its reason instead of printed as a
+  # rate -- `Story::Audit`'s header carries the record.
+  test "which wall a door is in is unavailable to this bench and is not a check" do
+    refute_includes Eval::Realization.checks, :door_the_records_do_not_hold
+    assert Eval::Realization.unavailable_to_a_realization?(:door_in_a_wall_the_records_do_not_hold)
   end
 
   private

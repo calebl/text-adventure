@@ -133,7 +133,7 @@ class Eval::Realization::Stage
     # a laid-out place -- which is every room in every flat world. It is the
     # same `Location::Plan` the detail prompt is built from, asked once here so
     # the checker and the prompt cannot be reading two derivations of one
-    # building (`Eval::Realization::Scorer#judge_door_the_records_do_not_hold`).
+    # building (`Eval::Realization::Scorer#judge_size_the_records_do_not_hold`).
     def plan = Location::Plan.for(location)&.to_h
 
     # THE NAMES THE PROMPT SAYS ARE SPOKEN FOR, read the way the prompt reads

@@ -183,170 +183,14 @@ class Story::Audit::ProseTest < ActiveSupport::TestCase
   # methods themselves. A check that cannot fire looks exactly like a clean
   # result, so these fire them on written sentences of the shape a room handed a
   # plan invites, and pin the negatives that would make either one noisy.
-
-  # EVERY SENTENCE FIVE ROUNDS OF REVIEW PRODUCED, positives and negatives, each
-  # as its own case with the walls it must and must not yield. The list is long
-  # on purpose: this check began as a threshold anywhere in the sentence and was
-  # narrowed four times, and each narrowing closed one shape of one mistake
-  # because the negatives on hand only covered the shapes the round before had
-  # found. `Story::Audit::Prose`'s relation grammar is what replaced the
-  # narrowing, and this list is what stops the next one being needed.
   #
-  # A DOORLESS WALL MAY STAND ON EITHER SIDE OF A DOOR IN ONE SENTENCE, and
-  # `Location::Plan#closed_walls_clause` is what invites a model to name it
-  # there -- so both orders are pinned, and so is every connective between them.
-
-  # --- PUT IN IT: a threshold bound to the wall by a preposition of place ----
-
-  test "a door in a named wall is a claim about that wall" do
-    claims = Prose.door_claims("A low door in the north wall stands open on the stair.")
-
-    assert_equal [ "north" ], claims.map(&:wall)
-    assert_equal "A low door in the north wall stands open on the stair.", claims.sole.sentence
-  end
-
-  test "a corner is a wall of its own, and the placement may be into or through" do
-    assert_equal [ "south-west" ], Prose.door_claims("A door is set into the south-west wall.").map(&:wall)
-    assert_equal [ "east" ], Prose.door_claims("A gate stands through the east wall.").map(&:wall)
-  end
-
-  test "a verb or particle may sit between the threshold and the preposition" do
-    assert_equal [ "east" ], Prose.door_claims("The door out is in the east wall.").map(&:wall)
-    assert_equal [ "east" ], Prose.door_claims("A door leads out through the east wall.").map(&:wall)
-  end
-
-  test "every wall the prose puts a door in is read, and each one once" do
-    text = "A door in the north wall leads on, and a second door in the east wall stands ajar. " \
-           "The north wall door is the one with the bar across it."
-
-    assert_equal [ "north", "east" ], Prose.door_claims(text).map(&:wall)
-  end
-
-  # --- HELD BY IT: a wall that carries one ----------------------------------
-
-  test "a wall that is broken by, holds or carries a threshold is a claim" do
-    assert_equal [ "east" ],
-                 Prose.door_claims("The east wall is broken by a hatch nobody has opened in years.").map(&:wall)
-    assert_equal [ "north-east" ], Prose.door_claims("The North-East wall carries a shuttered gate.").map(&:wall)
-    assert_equal [ "east" ], Prose.door_claims("The east wall holds a door in the corner.").map(&:wall)
-    assert_equal [ "north" ], Prose.door_claims("The north wall has a door in it.").map(&:wall)
-  end
-
-  # --- WALL FIRST: the inversion of the first form ---------------------------
-
-  test "the wall named first and the threshold after it is the same relation" do
-    assert_equal [ "north" ], Prose.door_claims("In the north wall, a door.").map(&:wall)
-  end
-
-  # --- a second door named without the word ---------------------------------
-
-  # THE SHAPE THE REPOSITORY'S OWN WORKED EXAMPLE USES
-  # (`lib/engine_sweep/worlds/the-quay-house.yml`, The Custom House room 3): a
-  # sentence names one door by the noun and the next by "one" or "another".
-  test "another or one standing in for a door names the wall it is put in" do
-    assert_equal [ "north", "west" ],
-                 Prose.door_claims("A door in the north wall goes through to the counting room, and one " \
-                                   "in the west wall stands half open on the dark.").map(&:wall)
-    assert_equal [ "north", "east" ],
-                 Prose.door_claims("A door in the north wall opens on the landing, and another in the " \
-                                   "east wall leads on.").map(&:wall)
-  end
-
-  test "another closing the phrase names the wall that holds it" do
-    assert_equal [ "south", "east" ],
-                 Prose.door_claims("A door in the south wall opens on the dark, and the east wall has " \
-                                   "another.").map(&:wall)
-    assert_equal [ "north", "west" ],
-                 Prose.door_claims("The door in the north wall is the one they use, and the west wall " \
-                                   "has another.").map(&:wall)
-  end
-
-  # --- and everything that is NOT a claim -----------------------------------
-
-  # A COMPASS WORD IS NOT A WALL, and a wall with nothing put in it or held by
-  # it is not a door. Both are what keep this off ordinary description.
-  test "a wall with no door in it, and a door with no wall, claim nothing" do
-    [ "The north wall is bare plaster and the damp is coming through it.",
-      "Two doors lead out of here, and neither of them is locked.",
-      "The door on the north side of the yard is the one they use.",
-      "Ledgers to the ceiling, and a smell of tar that never leaves the plaster." ].each do |text|
-      assert_empty Prose.door_claims(text), text
-    end
-  end
-
-  test "a wall the sentence denies a door to is not a claim" do
-    assert_empty Prose.door_claims("There is no door in the north wall, whatever the plans say.")
-  end
-
-  # A DOOR MERELY NEAR A WALL IS NOT A DOOR IN IT, which is the whole of why the
-  # grammar reads relations. Every one of these was a false positive of some
-  # earlier version, and each names a doorless wall beside a real door.
-  test "a door near a wall it is not in claims nothing about that wall" do
-    { "Rain streaks the south wall beside the door." => [],
-      "Ledgers line the south wall; the door out is in the east wall." => [ "east" ],
-      "A cold hearth on the south wall, and a door leads out through the east wall." => [ "east" ],
-      "The north wall carries the door, and the west wall carries the shelves." => [ "north" ],
-      "The north wall has a door in it, and the east wall is bare." => [ "north" ] }.each do |text, walls|
-      assert_equal walls, Prose.door_claims(text).map(&:wall), text
-    end
-  end
-
-  # THE DOORLESS WALL AFTER THE DOORS, which is the order a description that
-  # answers the plan's closing sentence tends to use.
-  test "doorless walls named after the doors claim nothing" do
-    { "A door in the north wall gives back onto the landing, and another in the east wall leads on; " \
-      "the south wall is hung with tarred canvas and the west wall carries a run of pigeonholes." =>
-        [ "north", "east" ],
-      "A door in the north wall gives back onto the landing, and another in the east wall leads on; " \
-      "the west wall is one long run of pigeonholes." => [ "north", "east" ],
-      "A door in the north wall opens on the landing; the south wall is the one the damp has ruined." =>
-        [ "north" ],
-      "A door in the north wall leads on, and the one behind the desk is barred; the east wall is bare." =>
-        [ "north" ] }.each do |text, walls|
-      assert_equal walls, Prose.door_claims(text).map(&:wall), text
-    end
-  end
-
-  # AND THE DOORLESS WALL BEFORE THEM, the order a bridge length could not
-  # answer on its own.
-  test "doorless walls named before the doors claim nothing" do
-    { "Bare boards, a cold hearth on the south wall, and a door in the east wall." => [ "east" ],
-      "The south wall is blank, and a door in the north wall gives back onto the landing." => [ "north" ],
-      "The east wall is bare, and a door in the west wall opens on the stair." => [ "west" ],
-      "The south wall is blank, and another in the east wall leads on past the door." =>
-        [ "east" ] }.each do |text, walls|
-      assert_equal walls, Prose.door_claims(text).map(&:wall), text
-    end
-  end
-
-  # "one" IS A NUMERAL AND A PRONOUN FIRST. Held by a wall it has to close the
-  # noun phrase; put in a wall the preposition disambiguates it.
-  test "one used as a numeral or a pronoun claims no door" do
-    { "A door in the north wall, and the south wall has one long shelf of ledgers." => [ "north" ],
-      "A door in the north wall; the west wall carries one great map of the estuary." => [ "north" ],
-      "The east wall is the only one still standing beside the door." => [],
-      "A door in the west wall opens onto the quay, and one in the east goes further in." =>
-        [ "west" ] }.each do |text, walls|
-      assert_equal walls, Prose.door_claims(text).map(&:wall), text
-    end
-  end
-
-  test "an anaphor with no threshold anywhere in the sentence claims nothing" do
-    assert_empty Prose.door_claims("You are the only one here, and the north wall is damp to the touch.")
-    assert_empty Prose.door_claims("One in the north wall would have helped, if anybody had cut one.")
-  end
-
-  # THE ONE PIECE OF PROSE IN THE REPOSITORY THIS GRAMMAR READS, verbatim from
-  # `lib/engine_sweep/worlds/the-quay-house.yml`. Both walls are walls The
-  # Custom House room 3's boxes really share, so the two detections it produces
-  # are the measured figure on `Prose.door_claims` and must not move.
-  test "the repository's own worked example reads as the two doors its boxes hold" do
-    text = "The back office, 7 by 6 paces of bare boards on storey 0. A door in the north wall\n" \
-           "goes through to the counting room, and one in the west wall stands half open on the\n" \
-           "dark. Nothing else opens anywhere."
-
-    assert_equal [ "north", "west" ], Prose.door_claims(text).map(&:wall)
-  end
+  # AND THERE IS NO DOOR GRAMMAR TO FIRE. `Location::Plan` states which wall
+  # each door is in, and reading that back out of prose was tried in six
+  # measured grammars, every one of which read a DOORLESS wall named in the same
+  # sentence as a door as a door claim of its own. `Story::Audit`'s header
+  # carries the record and the sentences that settled it; the question is
+  # reported unanswered by `Eval::Realization::UNAVAILABLE_TO_A_REALIZATION`.
+  # Do not rebuild it here.
 
   test "a size stated as a pair of paces is read, in either phrasing" do
     assert_equal [ [ 4, 6 ] ], Prose.size_claims("The room is 6 by 4 paces of wet flagstone.").map(&:paces)
@@ -374,5 +218,24 @@ class Story::Audit::ProseTest < ActiveSupport::TestCase
   # miss is deliberate.
   test "the second floor is not a storey claim" do
     assert_empty Prose.storey_claims("You come out on the second floor with the rain on the skylight.")
+  end
+
+  # THE PROSE IN THE REPOSITORY THESE GRAMMARS READ THAT THE ENGINE DID NOT
+  # WRITE, verbatim from `lib/engine_sweep/worlds/the-quay-house.yml`: the
+  # hand-written descriptions of The Custom House rooms 3 and 4. Both agree with
+  # the boxes they were written from -- 7 by 6 paces on storey 0 -- and they are
+  # 2 of the 12 detections measured over every world file's room prose, which is
+  # the figure on `Prose.size_claims` and must not move.
+  test "the repository's own worked examples read as the boxes they were written from" do
+    room_three = "The back office, 7 by 6 paces of bare boards on storey 0. A door in the north wall\n" \
+                 "goes through to the counting room, and one in the west wall stands half open on the\n" \
+                 "dark. Nothing else opens anywhere."
+    room_four = "A dead end of 7 by 6 paces on storey 0, with one door in the east wall and no other\n" \
+                "way out of it at all."
+
+    [ room_three, room_four ].each do |text|
+      assert_equal [ [ 6, 7 ] ], Prose.size_claims(text).map(&:paces), text
+      assert_equal [ 0 ], Prose.storey_claims(text).map(&:storey), text
+    end
   end
 end

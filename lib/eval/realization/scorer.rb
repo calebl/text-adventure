@@ -73,8 +73,6 @@ class Eval::Realization::Scorer
                             "later round trip to Item::Inscriber",
     race_not_named: "a person written for a MONSTROUS slot whose sheet never says the race -- " \
                     "a KEYWORD check, and the one figure here that reads words",
-    door_the_records_do_not_hold: "the description put a door in a wall of this room the floor plan does " \
-                                  "not -- a KEYWORD check, judgeable only on a room the engine laid out",
     size_the_records_do_not_hold: "the description stated a size in paces, or a storey, that is not this " \
                                   "room's -- a KEYWORD check, judgeable only on a room the engine laid out"
   }.freeze
@@ -82,21 +80,29 @@ class Eval::Realization::Scorer
   # THE CHECKS THAT ARE NOT RECORD COMPARISONS, named so a reader of the board
   # can weigh them differently from the ones above them.
   #
-  # THE TWO GEOMETRY CHECKS ARE HALFWAY BETWEEN, and it is worth saying which
-  # half is which rather than filing them as either. What they COMPARE is a
-  # record and nothing but: a wall out of `Location::Box#wall_towards`, a number
-  # out of `Location::Box`, both off the very `Location::Plan` the prompt was
-  # built from. What they READ is prose -- `Story::Audit::Prose.door_claims` and
-  # `.size_claims`, whose grammars are narrow and whose measured detection
-  # counts are on those methods. A description that contradicts its own floor
-  # plan in a sentence neither grammar reads is a miss, so these are counted
-  # here with `race_not_named` rather than beside the set comparisons.
+  # THE GEOMETRY CHECK IS HALFWAY BETWEEN, and it is worth saying which half is
+  # which rather than filing it as either. What it COMPARES is a record and
+  # nothing but: a number out of `Location::Box`, off the very `Location::Plan`
+  # the prompt was built from. What it READS is prose --
+  # `Story::Audit::Prose.size_claims` and `.storey_claims`, whose grammars are
+  # narrow and whose measured detection counts are on those methods. A
+  # description that contradicts its own floor plan in a sentence neither
+  # grammar reads is a miss, so this is counted here with `race_not_named`
+  # rather than beside the set comparisons.
   #
-  # AND A CLAIM THAT ECHOES THE PROMPT IS NOT A DEFECT, which is why neither
-  # denominator is simply the count of claims a grammar found:
+  # AND THE WALLS ARE NOT CHECKED AT ALL. Which wall the prose put a door in was
+  # a check here and is now
+  # `Eval::Realization::UNAVAILABLE_TO_A_REALIZATION`'s
+  # `door_in_a_wall_the_records_do_not_hold` -- six measured grammars each
+  # admitted a false-positive shape the one before it did not, and a rate off
+  # any of them would have been a clean-looking lie. The PROMPT still states
+  # every door's wall; what is gone is the claim to verify it afterwards.
+  #
+  # AND A CLAIM THAT ECHOES THE PROMPT IS NOT A DEFECT, which is why the
+  # denominator is not simply the count of claims a grammar found:
   # `#judge_size_the_records_do_not_hold` and `#judgeable_storey_claims` carry
   # the two discounts and the prompt sentences that make them necessary.
-  KEYWORD_CHECKS = %i[race_not_named door_the_records_do_not_hold size_the_records_do_not_hold].freeze
+  KEYWORD_CHECKS = %i[race_not_named size_the_records_do_not_hold].freeze
 
   # ONE SCORED REALIZATION, off a stored row and nothing else.
   Reading = Data.define(:row) do
@@ -161,12 +167,6 @@ class Eval::Realization::Scorer
     # `#records_the_way_back?` follows, and for the same reason.
     def plan = facts["plan"]
     def planned? = plan.is_a?(Hash)
-    def door_walls = Array(plan && plan["doors"]).filter_map { |door| door["wall"] }
-
-    # WHETHER THIS ROOM HAS A WAY OUT THE RECORDS GIVE NO WALL TO -- the doorway
-    # into the building, which passes through a wall the plan does not name. It
-    # is what takes this room's walls out of the door check altogether.
-    def wall_less_way_out? = Array(plan && plan["other_ways_out"]).any?
     def room_paces = [ plan && plan["width"], plan && plan["depth"] ].map(&:to_i).sort
     def planned_storey = plan && plan["storey"]
 
@@ -551,20 +551,30 @@ class Eval::Realization::Scorer
     stem.present? && sheet.include?(stem)
   end
 
-  # ------------------------------------------------------- the room's own walls
+  # ---------------------------------------------------- the room's own numbers
 
   # THE DESCRIPTION AGAINST THE FLOOR PLAN THE PROMPT HANDED IT.
   #
-  # WHY THESE TWO EXIST AT ALL. A room inside a laid-out place is the first
-  # thing in this game whose prose can be checked against a NUMBER the app owns:
-  # the walls, the doors and the storey were decided by `Location::Interior`
-  # before anybody typed a line, `Location::Plan` states them in the detail
-  # prompt, and the answer either agrees with them or does not. Every other
-  # reading of prose this project has tried to ship died for wanting a judgement
-  # (`Story::Audit`'s header, and `Story::Scoreboard`'s); these want a
+  # WHY THIS EXISTS AT ALL. A room inside a laid-out place is the first thing in
+  # this game whose prose can be checked against a NUMBER the app owns: the
+  # extent and the storey were decided by `Location::Interior` before anybody
+  # typed a line, `Location::Plan` states them in the detail prompt, and the
+  # answer either agrees with them or does not. Every other reading of prose
+  # this project has tried to ship died for wanting a judgement
+  # (`Story::Audit`'s header, and `Story::Scoreboard`'s); this wants a
   # comparison.
   #
-  # WHAT IS AT STAKE IS THE PROSE AND NOT THE MAP, which is why neither is a
+  # AND THE WALLS ARE NOT HERE, though the plan states them. Which wall the
+  # prose put a door in was a check on this board through six measured grammars,
+  # and each of them read a DOORLESS wall named in the same sentence as a door as
+  # a door claim of its own -- which is the prose
+  # `Location::Plan#closed_walls_clause` invites. It is
+  # `Eval::Realization::UNAVAILABLE_TO_A_REALIZATION`'s
+  # `door_in_a_wall_the_records_do_not_hold` now, with the reason on it. The
+  # prompt is unchanged and still states every door's wall as fact; what no
+  # longer exists is the claim to verify that in prose afterwards.
+  #
+  # WHAT IS AT STAKE IS THE PROSE AND NOT THE MAP, which is why this is not a
   # gate on anything. The doors are `LocationConnection` rows and no answer here
   # can add one -- `Location::Generator#write_exits!` asks a room of an interior
   # for no exits at all -- so a description that invents a door in the south
@@ -572,32 +582,10 @@ class Eval::Realization::Scorer
   # prose argues with its own map, every turn, for the rest of the game.
   #
   # JUDGEABLE ONLY WHERE THERE IS A PLAN, and the denominator is the CLAIMS the
-  # prose made rather than the cases: a description that says nothing about its
-  # walls has broken no rule -- the prompt asks for a room, not for a
-  # measurement -- so counting it in would report a rate the check never earned.
+  # prose made rather than the cases: a description that states no measurement
+  # has broken no rule -- the prompt asks for a room, not for a survey -- so
+  # counting it in would report a rate the check never earned.
   # `Story::Audit#judgeable_for`'s rule, kept here.
-  #
-  # AND NOT JUDGEABLE AT ALL ON A ROOM WITH A WALL-LESS WAY OUT, which is out of
-  # the DENOMINATOR rather than merely unflagged -- `#correct_dead_end?`'s
-  # doctrine in this same class: a rate the check did not earn is worse than no
-  # rate. `Location::Plan::WAY_OUT` is the doorway INTO the building, and it
-  # passes through a wall the records do not name (`Location::Plan#way_for`), so
-  # ANY wall the prose puts a door in could be that one and the plan cannot say
-  # otherwise. `Location::Plan#closed_walls_clause` withholds the closed-walls
-  # sentence from exactly these rooms, and this is the other side of that: a
-  # room the prompt made no claim about is a room no answer can contradict.
-  def judge_door_the_records_do_not_hold
-    flag_each(:door_the_records_do_not_hold, ->(r) { judgeable_door_claims(r).size }) do |reading|
-      held = reading.door_walls
-
-      judgeable_door_claims(reading).reject { |claim| held.include?(claim.wall) }.map do |claim|
-        "put a door in the #{claim.wall} wall, and the plan has #{held.presence&.join(" and ") || "no doors"}" \
-          " -- #{claim.sentence.inspect}"
-      end
-    end
-  end
-
-  def judgeable_door_claims(reading) = reading.wall_less_way_out? ? [] : door_claims(reading)
 
   # THE SAME COMPARISON FOR THE TWO NUMBERS THE PROMPT STATED. A size is
   # compared UNORDERED, because a room described from the doorway is as honestly
@@ -640,10 +628,9 @@ class Eval::Realization::Scorer
     storey_claims(reading).reject { |claim| claim.storey.zero? }
   end
 
-  # THE THREE GRAMMARS, ASKED ONCE PER READING. A denominator lambda and the
+  # THE TWO GRAMMARS, ASKED ONCE PER READING. A denominator lambda and the
   # block both want them, and reading a passage twice for one figure is how a
   # scorer comes to disagree with itself about what a passage said.
-  def door_claims(reading) = claimed(reading, :door_claims)
   def size_claims(reading) = claimed(reading, :size_claims)
   def storey_claims(reading) = claimed(reading, :storey_claims)
 

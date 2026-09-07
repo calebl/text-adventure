@@ -1162,7 +1162,7 @@ the engine rolled.
 **Almost every check is a set comparison** — a name the model wrote against a
 closed list of names the prompt handed it, or a count against a number the
 prompt stated. Both sides are records, so a rate here is the same kind of fact
-`rake game:sweep` produces rather than a reading. The three that read words are
+`rake game:sweep` produces rather than a reading. The two that read words are
 labelled `[KEYWORD]` and are named for what they can actually see;
 `Eval::Realization::Scorer` owns the table, and the checks are:
 
@@ -1178,50 +1178,50 @@ labelled `[KEYWORD]` and are named for what they can actually see;
 | `proposal_refused` | what the registries would not admit — read off the records, and the superset of every reason above |
 | `readable_without_words` | a thing marked readable with nothing written on it, which costs a later round trip to `Item::Inscriber` |
 | `race_not_named` | **a KEYWORD check** — see below |
-| `door_the_records_do_not_hold` | **a KEYWORD check.** The description put a door in a wall of this room the floor plan does not have. Judgeable only on an `interior-room` case, where `Location::Plan` stated the walls in the prompt |
-| `size_the_records_do_not_hold` | **a KEYWORD check.** The description stated a size in paces, or a storey, that is not this room's. Same cases, same plan |
+| `size_the_records_do_not_hold` | **a KEYWORD check.** The description stated a size in paces, or a storey, that is not this room's. Judgeable only on an `interior-room` case, where `Location::Plan` stated the numbers in the prompt |
 
-**The three keyword checks are weighed differently and labelled `[KEYWORD]` on
-the board.** The two geometry checks are halfway between a reading and a
-comparison, and it is worth saying which half is which: what they COMPARE is a
-record and nothing else — a wall out of `Location::Box#wall_towards`, a number
-out of `Location::Box`, both off the very `Location::Plan` the prompt was built
-from — while what they READ is prose. `Story::Audit::Prose.door_claims` and
-`.size_claims` are the grammars, and both were measured before they shipped: **0
-detections over all 367 real passages in the four corpora**. Over the room prose
-of every world in the repository the size grammar detects 12 sentences — 10 the
-ENGINE itself wrote (`Location::Interior.teaser_for`) and 2 the hand-written
-descriptions of The Custom House rooms 3 and 4 in
-`lib/engine_sweep/worlds/the-quay-house.yml` — and the door grammar detects 1
-sentence, room 3's, for 2 walls. Every one of them agrees with the box or the
-boxes it was written from. A description that contradicts its plan in a sentence
-neither grammar reads is a miss, which is why they sit here rather than with the
-set comparisons.
+**The two keyword checks are weighed differently and labelled `[KEYWORD]` on
+the board.** The geometry check is halfway between a reading and a comparison,
+and it is worth saying which half is which: what it COMPARES is a record and
+nothing else — a number out of `Location::Box`, off the very `Location::Plan`
+the prompt was built from — while what it READS is prose.
+`Story::Audit::Prose.size_claims` and `.storey_claims` are the grammars, and
+both were measured before they shipped: **0 detections over all 367 real
+passages in the four corpora**. Over the room prose of every world in the
+repository they detect 12 sentences — 10 the ENGINE itself wrote
+(`Location::Interior.teaser_for`) and 2 the hand-written descriptions of The
+Custom House rooms 3 and 4 in `lib/engine_sweep/worlds/the-quay-house.yml` —
+and every one of the 12 agrees with the box it was written from. A description
+that contradicts its plan in a sentence neither grammar reads is a miss, which
+is why this sits here rather than with the set comparisons.
 
-**The door grammar attaches a door to a wall by a RELATION, never by
-proximity.** `Location::Plan#closed_walls_clause` tells the model no other wall
-of the room holds a door, so the prose it invites names the DOORLESS walls in the
-same breath as the doors — *"A door in the north wall gives back onto the
+**WHICH WALL A DOOR IS IN IS STATED IN THE PROMPT AND IS NOT CHECKED.** It was a
+check, `door_the_records_do_not_hold`, and it is now
+`door_in_a_wall_the_records_do_not_hold` in
+`Eval::Realization::UNAVAILABLE_TO_A_REALIZATION` — reported unanswered rather
+than as a rate. `Location::Plan#closed_walls_clause` tells the model no other
+wall of the room holds a door, so the prose it invites names the DOORLESS walls
+in the same breath as the doors — *"A door in the north wall gives back onto the
 landing, and another in the east wall leads on; the south wall is hung with
-tarred canvas"* — and no rule about how NEAR a door word sits can tell those
-apart. This check was narrowed four times trying, each round closing one shape
-and leaving the next open, which is how a prose heuristic dies here (see
-`Story::Audit`'s header for two it already killed). What it reads now is a closed
-list of three attachment forms, in `Story::Audit::Prose`: a threshold **put in**
-the wall by a preposition of place ("a door IN the north wall"), a wall that
-**holds** one ("the east wall IS BROKEN BY a hatch", "the east wall HAS
-another"), and the **inversion** of the first ("IN the north wall, a door").
-Anything else claims nothing, in either order, whatever sits between the two
-words. `Story::Audit::ProseTest` carries every sentence the five review rounds
-produced as its own case, positives and negatives; that list is what stops the
-next narrowing being needed.
+tarred canvas"* — and six successive grammars each read one of those as a door
+claim of its own. A threshold anywhere in the sentence, then a character bridge,
+then an attached anaphor, then a forward-binding rule, then a closed list of
+three attachment forms, then that list with the inversion fronted: each closed
+one shape and admitted the next, which is how a prose heuristic dies here (see
+`Story::Audit`'s header, which carries the full record, the sentences that
+settled it, and the two heuristics it killed before this one). Telling a real
+claim from a doorless wall named beside a door needs the sentence's verbs and
+objects — a parser, not a regex — and a zero off any of those six grammars would
+have been a clean-looking lie on the bench this baseline is bought from. **The
+prompt did not move:** `Location::Plan` still states every door's wall, because
+that is a record read out, and the doors are `LocationConnection` rows no
+description can add to (`Location::Generator#write_exits!` asks a room inside a
+place for no exits at all).
 
-Both figures above were measured again after the rebuild and neither moved.
-
-**Neither check convicts prose of a claim the prompt itself made, or of one the
-prompt never made either way.** `Location::Plan` states more than the room's own
-box, so there are three discounts, and each is `#correct_dead_end?`'s rule kept —
-a rate the check did not earn is worse than no rate.
+**The check convicts prose of no claim the prompt itself made.**
+`Location::Plan` states more than the room's own box, so there are two
+discounts, and each is `#correct_dead_end?`'s rule kept — a rate the check did
+not earn is worse than no rate.
 
 * The PLACE's footprint in paces is in the plan's storey sentence, so a pace pair
   equal to it *agrees* — counted, not flagged.
@@ -1229,12 +1229,6 @@ a rate the check did not earn is worse than no rate.
   "storey 0" on a room that is not on storey 0 cannot be told from an echo of the
   prompt's own explanation: that claim leaves the **denominator**. Every other
   storey number is judged.
-* A room with a way out the records give no wall to — the doorway INTO the
-  building — has walls the plan cannot close, so
-  `door_the_records_do_not_hold` judges **none** of its wall claims. The door
-  passes through some wall and the records do not say which, so any wall the
-  prose names could be it. `Location::Plan#closed_walls_clause` withholds the
-  closed-walls sentence from the same rooms, and the two are one decision.
 
 **`race_not_named` is weighed differently and labelled `[KEYWORD]` on the
 board.** The engine writes the rolled race onto the row whatever the model
