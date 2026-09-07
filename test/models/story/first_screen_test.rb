@@ -51,13 +51,33 @@ class Story::FirstScreenTest < ActiveSupport::TestCase
     "summary" => "The player arrives at the Causeway Court."
   }.freeze
 
+  # WHERE THE STORY IS GOING, as `Quest::Schema` answers it: names only, nothing
+  # bound, and every ending but one marked false.
+  ARC = {
+    "title" => "The Missing Warrant",
+    "premise" => "Find the warrant that chained Neb Halloran to the tide post, before the water turns.",
+    "steps" => [
+      { "summary" => "Find the clerk who filed it.", "trigger" => "speak_to",
+        "target" => "Sub-Inspector Rowe", "teaser" => "Somebody signed it, and somebody kept the copy." },
+      { "summary" => "Get the warrant into your own hands.", "trigger" => "hold_item",
+        "target" => "the sealed warrant", "teaser" => "Wax, and a seal nobody wants read aloud." },
+      { "summary" => "Take it to the room where it can be answered.", "trigger" => "reach_location",
+        "target" => "The Inspectorate", "teaser" => "A door at the top of the causeway steps." }
+    ],
+    "outcomes" => [
+      { "name" => "answered", "summary" => "The warrant was read aloud and the post was struck off.", "is_default" => true },
+      { "name" => "the-tide", "summary" => "The tide came in first, and the warrant was never read.", "is_default" => false }
+    ]
+  }.freeze
+
   def setup
     @story = create(:story)
     @opening = create(:location, :stub, story: @story, name: "The Causeway Court")
   end
 
   # The whole sequence, with every call the four steps make queued in order:
-  # the protagonist's sheet, the room's detail, the room's exits, the arrival.
+  # the protagonist's sheet, the ARC, the room's detail, the room's exits, the
+  # arrival.
   def build(*responses, reporter: nil)
     agent = FakeAgent.new(*responses)
     screen = BaseAgent.stub(:new, agent) do
@@ -68,11 +88,11 @@ class Story::FirstScreenTest < ActiveSupport::TestCase
   end
 
   def ordinary_build(reporter: nil)
-    build(PROTAGONIST, PEOPLED, EXITS, ARRIVAL, reporter: reporter)
+    build(PROTAGONIST, ARC, PEOPLED, EXITS, ARRIVAL, reporter: reporter)
   end
 
   # ------------------------------------------------------------------------
-  # THE THREE THINGS, AND THE ORDER.
+  # THE FOUR THINGS, AND THE ORDER.
   # ------------------------------------------------------------------------
 
   test "writes exactly one protagonist and marks them" do
@@ -157,7 +177,11 @@ class Story::FirstScreenTest < ActiveSupport::TestCase
   test "asks the opening room for a cast on the ordinary terms" do
     _screen, agent = ordinary_build
 
-    detail_prompt = agent.prompts[1]
+    # `prompts[2]` AND NOT `[1]`, since the arc call went in at `game:new`: the
+    # protagonist is asked for first, the story's ARC second, and the opening
+    # room's detail third. See `Story::FirstScreen`'s header for why the arc is
+    # written before the room rather than after it.
+    detail_prompt = agent.prompts[2]
     # THE ORDINARY TERMS ARE NOW THE ROLLED COUNT, since the captain's ruling of
     # 2026-09-07 (`Location::Population`): the opening room carries no population
     # word -- nothing ever named it as an exit -- so it rolls one out of the same
@@ -170,17 +194,17 @@ class Story::FirstScreenTest < ActiveSupport::TestCase
   end
 
   test "takes an empty opening room rather than writing somebody into it" do
-    screen, agent = build(PROTAGONIST, EMPTY_ROOM, EXITS, ARRIVAL)
+    screen, agent = build(PROTAGONIST, ARC, EMPTY_ROOM, EXITS, ARRIVAL)
 
     assert_empty screen.cast
     assert_equal 1, @story.characters.count, "only the protagonist should have been written"
-    assert_equal 4, agent.prompts.size, "an empty opening room must not buy a fifth model call"
+    assert_equal 5, agent.prompts.size, "an empty opening room must not buy a sixth model call"
   end
 
   # The player is still on the arrival's cast when they are the only one on it:
   # that is the half of `Scene::Generator#characters_present` this task fixed.
   test "narrates an empty opening room with the protagonist as its whole cast" do
-    screen, = build(PROTAGONIST, EMPTY_ROOM, EXITS, ARRIVAL)
+    screen, = build(PROTAGONIST, ARC, EMPTY_ROOM, EXITS, ARRIVAL)
 
     assert_equal [ "Coraith Vell" ], screen.scene.characters.map(&:fullname)
   end
@@ -205,7 +229,7 @@ class Story::FirstScreenTest < ActiveSupport::TestCase
   # written is how a person learns to stop reading warnings -- the same rule
   # `#characters_nowhere` is under about `deliberately_absent`.
   test "says nothing about a story that opens with nobody in the room" do
-    build(PROTAGONIST, EMPTY_ROOM, EXITS, ARRIVAL)
+    build(PROTAGONIST, ARC, EMPTY_ROOM, EXITS, ARRIVAL)
 
     doctor = Story::Doctor.new(@story.reload)
     assert doctor.playable?, doctor.findings.map(&:message).join("; ")
@@ -222,12 +246,58 @@ class Story::FirstScreenTest < ActiveSupport::TestCase
 
     ordinary_build(reporter: reporter)
 
-    assert_equal [ "Generating the protagonist", "Generating opening location", "Narrating the opening arrival" ], labels
+    assert_equal [ "Generating the protagonist", "Generating the story's arc",
+                   "Generating opening location", "Narrating the opening arrival" ], labels
   end
 
   test "runs silently with no reporter at all" do
-    screen, = build(PROTAGONIST, PEOPLED, EXITS, ARRIVAL)
+    screen, = build(PROTAGONIST, ARC, PEOPLED, EXITS, ARRIVAL)
 
     assert screen.scene.present?
+  end
+
+  # ------------------------------------------------------------------------
+  # THE ARC, WHICH IS THE ONE STEP A WORLD CAN BE BORN WITHOUT.
+  # ------------------------------------------------------------------------
+
+  test "writes the story's arc as rows and binds none of it" do
+    screen, = ordinary_build
+
+    quest = @story.reload.main_quest
+
+    assert_equal quest, screen.quest
+    assert_equal "The Missing Warrant", quest.title
+    assert_predicate quest, :generated?
+    assert_equal 3, quest.steps.count
+    assert_equal quest.steps.to_a, quest.unbound_steps,
+                 "the arc states what the world must contain; it does not create it"
+    assert_equal "The warrant was read aloud and the post was struck off.", @story.conclusion
+  end
+
+  # The opening room is the one room every player of this world starts in, so it
+  # is the room it costs most to have written without knowing where the story is
+  # going.
+  test "the arc is written before the opening room is realized" do
+    ordinary_build
+
+    quest = @story.reload.main_quest
+
+    assert_operator quest.created_at, :<=, @story.opening_location.reload.updated_at
+  end
+
+  test "a failed arc call leaves a world that still opens" do
+    agent = FakeAgent.new(PROTAGONIST, PEOPLED, EXITS, ARRIVAL)
+    def agent.with_schema(schema)
+      raise BaseAgent::NoModelConfiguredError, "no model" if schema == Quest::Schema
+
+      super
+    end
+
+    screen = BaseAgent.stub(:new, agent) { Story::FirstScreen.new(@story).build! }
+
+    assert_nil screen.quest
+    assert_nil @story.reload.main_quest
+    assert_predicate screen.scene, :present?
+    assert_predicate Story::Doctor.new(@story), :playable?
   end
 end

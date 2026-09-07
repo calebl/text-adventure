@@ -15,16 +15,20 @@ namespace :game do
     Helpers.persist!(universe, story)
 
     # EVERYTHING THAT MAKES IT PLAYABLE FROM THE FIRST SCREEN, in the one order
-    # it works in: the protagonist, then the opening room realized with
-    # whatever cast the realization writes into it, then the opening arrival
-    # narrated LAST so its `## Who Is Here` block carries both.
+    # it works in: the protagonist, then the story's ARC, then the opening room
+    # realized with whatever cast the realization writes into it, then the
+    # opening arrival narrated LAST so its `## Who Is Here` block carries both.
     # `Story::FirstScreen` is where that order lives and why -- the captain's
     # ruling of 2026-09-05, *"the generation task should create the protagonist
     # along with any characters that are in the opening scene."*
     #
-    # WHAT IT SPENDS, on top of the universe and story calls above: FOUR model
+    # WHAT IT SPENDS, on top of the universe and story calls above: FIVE model
     # calls, of which ONE is new.
-    #   1  Character::Generator for the protagonist  (~2,700 in / ~400 out) NEW
+    #   1  Character::Generator for the protagonist  (~2,700 in / ~400 out)
+    #   1  Quest::Generator for the story's arc                             NEW
+    #      -- the captain's Call 3 of 2026-09-06, one separate call per world.
+    #      It writes rows in `quests` and nowhere else: no place, no person, no
+    #      thing, and every target NULL. Nothing per room, nothing per turn.
     #   2  Location::Generator for the opening room  (~1,900 in / ~670 out) --
     #      the room's PEOPLE ride on the first of the two, so the opening cast
     #      costs nothing at all
@@ -1072,7 +1076,24 @@ namespace :game do
           "`characters[].location` if that is not what you wanted"
       end
 
+      # AND WHERE THE STORY IS GOING, out of the records that were just written.
+      # Every beat is UNBOUND at this moment, which is the correct state of a
+      # brand-new world and worth saying out loud rather than leaving somebody
+      # to read `rake game:doctor` and wonder: the arc names what this world
+      # must come to contain, and it comes to contain it as the player explores.
+      lines.concat(arc_lines(first_screen.quest))
       lines
+    end
+
+    def self.arc_lines(quest)
+      return [ "NO ARC: the quest call failed or answered with nothing usable, so this world has no destination. " \
+               "It is still playable -- write a `quests:` block into the exported seed file, or generate again" ] if quest.nil?
+
+      [ "Where it is going: #{quest.title} -- #{quest.premise}",
+        *quest.steps.map { |step| "  #{step.position}. #{step.summary} (#{step.trigger_kind} #{step.target_name.inspect})" },
+        "  ends: #{quest.conclusion}",
+        "None of that exists yet, which is the point: the arc says what this world must come to contain, and the " \
+          "rooms you walk into are what grow it. `rake game:doctor` lists what is still unbound" ]
     end
 
     # WHAT A DERIVED SNAPSHOT KEPT AND WHAT IT LEFT BEHIND, and what it is
