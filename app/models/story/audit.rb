@@ -597,7 +597,7 @@ class Story::Audit
   # bound is deliberately generous: a shuffle after the fact rewrites the graph
   # this check reads, whether or not it happened during the move itself.
   def graph_moved_since?(previous, scene)
-    story.world_events
+    story.world_events.of_the_world
          .where(occurred_at: previous.story_timestamp..)
          .joins(:locations)
          .where(locations: { id: [ previous.location_id, scene.location_id ] })
@@ -1270,8 +1270,12 @@ class Story::Audit
     world_event_times.none? { |at| at > previous.story_timestamp && at <= scene.story_timestamp }
   end
 
+  # THE WORLD'S OWN, and not a failed arc's. `#still?` asks whether anything
+  # happened between two scenes; a playthrough failing its quest changes no
+  # geometry and touches no place, so a row for it would make the last scene of
+  # a lost game read as a turn the world moved under.
   def world_event_times
-    @world_event_times ||= story.world_events.pluck(:occurred_at).compact
+    @world_event_times ||= story.world_events.of_the_world.pluck(:occurred_at).compact
   end
 
   # Whoever the game believed was standing here at this moment: the cast of the

@@ -75,8 +75,21 @@ class WorldEvent < ApplicationRecord
   scope :of_the_world, -> { where(playthrough_id: nil) }
   scope :from_mechanics, -> { where(source: WORLD_MECHANIC) }
   scope :from_quests, -> { where(source: QUEST) }
+  # THE OTHER HALF OF THE SENTENCE IN THE HEADER: what has happened in this
+  # GAME is the world's rows plus this playthrough's own, and never another
+  # playthrough's. A reader that forgets the second half shows one player a
+  # failure that is not theirs, which is the exact thing `playthrough_id` was
+  # added to prevent.
+  scope :for_a_game, ->(playthrough) { where(playthrough_id: [ nil, playthrough&.id ]) }
 
   def from_a_mechanic? = source == WORLD_MECHANIC
 
   def from_a_quest? = source == QUEST
+
+  # WHAT WROTE THE ROW, for a reader that shows the stream to a person. A
+  # mechanic has a name somebody chose; an arc has no row of its own to name,
+  # so it is described. Never `world_mechanic.name` at a call site --
+  # the association is nullable and a caller that forgets raises on the one
+  # kind of row that has no mechanic.
+  def writer = world_mechanic&.name || "the story's arc"
 end

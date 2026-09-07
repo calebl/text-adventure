@@ -302,13 +302,13 @@
 <div class="scroll">
   <table>
     <thead>
-      <tr><th>occurred at</th><th>mechanic</th><th>summary</th><th>places touched</th></tr>
+      <tr><th>occurred at</th><th>written by</th><th>summary</th><th>places touched</th></tr>
     </thead>
     <tbody>
       <% @debug.world_events.each do |event| %>
         <tr>
           <td><%= debug_time(event.occurred_at) %></td>
-          <td><%= event.world_mechanic.name %></td>
+          <td><%= event.writer %></td>
           <td><%= event.summary %></td>
           <td><%= debug_value(event.locations.map(&:name).to_sentence.presence, absent: "none recorded") %></td>
         </tr>

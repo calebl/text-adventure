@@ -453,6 +453,37 @@ class DebugControllerTest < ActionDispatch::IntegrationTest
     playthrough
   end
 
+  # A NULLABLE ASSOCIATION IS NOT A THEORETICAL RISK ON A PAGE THAT RENDERS IT.
+  # `world_mechanic_id` went nullable when a failed arc became an event, and the
+  # audit-trail table dereferenced it per row -- so this page raised for any
+  # story a game had failed its quest in, and every existing test passed because
+  # every existing test wrote a mechanic's row. `WorldEvent#writer` is what the
+  # view reads now.
+  test "the audit trail renders a row no mechanic wrote" do
+    playthrough = played_playthrough
+    create(:world_event, :a_failed_quest, story: playthrough.story, playthrough: playthrough)
+
+    get playthrough_debug_path(playthrough)
+
+    assert_response :success
+    assert_select "td", text: "the story's arc"
+  end
+
+  # AND IT IS THIS GAME'S TRAIL, not the story's. Two people play one world; one
+  # of them failing the arc is not something the other's page may report. The
+  # world's own rows are on both, which is the other half of the same rule.
+  test "the audit trail does not carry another game's failure" do
+    playthrough = played_playthrough
+    somebody_else = create(:playthrough, story: playthrough.story)
+    create(:world_event, :a_failed_quest, story: playthrough.story, playthrough: somebody_else,
+                                          summary: "A quest somebody else lost.")
+
+    get playthrough_debug_path(playthrough)
+
+    assert_response :success
+    assert_select "td", text: "A quest somebody else lost.", count: 0
+  end
+
   def table_counts
     ActiveRecord::Base.connection.tables.sort.to_h do |table|
       [ table, ActiveRecord::Base.connection.select_all("SELECT COUNT(*) AS c FROM #{table}").first["c"] ]

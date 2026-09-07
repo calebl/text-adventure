@@ -394,8 +394,11 @@ class Playthrough::Debug
   # The audit trail, newest first. NOT a narration source (see WorldEvent) --
   # it is here precisely because it is the only place a rearranged town leaves
   # a mark the player never reads.
+  # THE WORLD'S ROWS PLUS THIS GAME'S, never another game's -- `WorldEvent`'s
+  # own rule, and it started mattering the moment a failed arc could write one.
   def world_events
-    @world_events ||= story.world_events.includes(:world_mechanic, :locations).in_story_order.reverse
+    @world_events ||= story.world_events.for_a_game(playthrough)
+                           .includes(:world_mechanic, :locations).in_story_order.reverse
   end
 
   # THE MAP, every place the world has named. Stubs included and counted: an
