@@ -21,7 +21,10 @@ require "test_helper"
 # `rake eval:realization_board`, and a number copied into an assertion here
 # would be a second place they were written down.
 class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
-  BASELINE = "room-names-after-bef7cec".freeze
+  # NAMED ONCE, IN THE APP, and read here. `Eval::Realization::BASELINE` is what
+  # `rake eval:realization_digest` compares this tree against, so a second
+  # spelling of the name would be a second answer to "what is the baseline".
+  BASELINE = Eval::Realization::BASELINE
 
   ARM = "mistralai/mistral-medium-3.1".freeze
 
@@ -46,6 +49,24 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
     assert_equal Eval::Realization.digest, kept.corpus_digest,
                  "the corpus moved since the baseline was taken -- re-run it, or the comparison means nothing"
     assert_equal Eval::Realization.corpus.size, kept.corpus_size
+  end
+
+  # AND THE PROMPTS IT MEASURED ARE THE PROMPTS IN THIS TREE, which is the
+  # corpus digest's argument said about the other half of what a run measures --
+  # and the half that had no offline check at all until
+  # `Eval::Realization::Version.offline`. The captain's standing rule of
+  # 2026-09-06 is that a prompt change is judged against a baseline; this is the
+  # assertion that makes shipping one without a baseline a failing test rather
+  # than a thing nobody could see. A prompt edit re-baselines and moves
+  # `Eval::Realization::BASELINE`, in that order.
+  #
+  # IT ASSEMBLES THE PROMPTS RATHER THAN READING THEM OFF THE SET, so what is
+  # compared is what `Location::Generator` would send TODAY. No key, no network,
+  # no spend.
+  test "the baseline measured the prompts this tree would send" do
+    assert_equal Eval::Realization::Version.offline[:prompt_digest], kept.prompt_digest,
+                 "the realization prompts moved since the baseline was taken -- buy an after side and " \
+                 "point Eval::Realization::BASELINE at it, or put the prompt back"
   end
 
   # THE NAMING ASK WAS IN THE PROMPT WHEN THIS WAS TAKEN, which is the one fact

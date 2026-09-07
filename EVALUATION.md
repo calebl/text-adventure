@@ -1119,7 +1119,16 @@ rake eval:realization                        # 21 stubs x 4 reps x 2 calls x 1 m
 rake eval:realization_score SET=name         # score a stored set again -- offline, free, no key
 rake eval:realization_compare BEFORE=a AFTER=b
 rake eval:realization_board                  # every stored set as one table
+rake eval:realization_digest                 # which prompts THIS TREE would send -- offline, free, no key
 ```
+
+**Ask `realization_digest` first, before you spend anything.** It assembles the
+two prompts every designated case would send, digests them exactly as a run
+does, and says whether the checked-in baseline measured them
+(`Eval::Realization::Version.offline`). A baseline that still matches is a
+baseline you already own — the before side of your change, bought and paid for
+by somebody else. A baseline that does not match means the before side has to be
+taken fresh, and it tells you that for nothing rather than after a run.
 
 | knob | what it does |
 | --- | --- |
@@ -1371,6 +1380,12 @@ its own column on `rake eval:realization_board` and gives its own side of a
 verdict on `rake eval:realization_compare`, offline and for free. Read the
 numbers there; this file states none of them, because a figure quoted in prose
 is a figure that goes stale silently.
+
+It is also what `Eval::Realization::BASELINE` names, and pointing that constant
+at a new set is what re-baselining IS: `Eval::Realization::KeptSetTest` holds the
+named set to today's corpus digest **and** to today's prompt digest, so a
+realization prompt edited without a run to judge it is a failing test rather than
+a judgement nobody could make.
 
 Its name is the run id, so the run and the checked-in summary can be tied
 together from a PR body. **What was bought:** a before/after pair on

@@ -211,6 +211,12 @@ namespace :eval do
     abort error.message
   end
 
+  desc "Which prompts this tree would send, as the realization bench's own digests -- offline, no model " \
+       "call, no key. Usage: rake eval:realization_digest [SET=<name>]"
+  task realization_digest: :environment do
+    RealizationTasks.digest!
+  end
+
   desc "Every realization bench set on disk as one table. Usage: rake eval:realization_board SETS=a,b"
   task realization_board: :environment do
     Eval::Realization::Board.for_sets(ENV["SETS"].presence&.split(",")&.map(&:strip)).print
@@ -288,6 +294,40 @@ namespace :eval do
       format("  eval:realization   %d cases x %d reps x %d calls = %d calls, about $%.3f",
              cases.size, default_reps, Eval::Realization::CALLS.size,
              cases.size * default_reps * Eval::Realization::CALLS.size, priced)
+    end
+
+    # WHICH PROMPTS THIS TREE WOULD SEND, AND WHETHER A STORED SET STILL
+    # MEASURES THEM. The cheap gate in front of the captain's standing rule of
+    # 2026-09-06: a prompt change is judged against a baseline, and this is what
+    # says whether the baseline on disk is one -- for nothing, with no key and
+    # no network (`Eval::Realization::Version.offline`).
+    #
+    # IT COMPARES AGAINST THE CHECKED-IN BASELINE BY DEFAULT, which is the set
+    # the answer is nearly always wanted about. `SET=<name>` asks it of another.
+    def digest!
+      here = Eval::Realization::Version.offline
+      puts "The prompts in this tree, assembled and digested with no model call:"
+      puts format("  corpus        %s (%d cases)", Eval::Realization.digest, Eval::Realization.corpus.size)
+      puts format("  prompt        %s", here[:prompt_digest])
+      puts format("  instructions  %s", here[:instructions_digest])
+      here[:prompt_shapes].each { |shape, one| puts format("    %-22s %s", shape, one) }
+      puts
+
+      compare_to(ENV["SET"].presence || Eval::Realization::BASELINE, here)
+    end
+
+    def compare_to(name, here)
+      stored = Eval::Realization::Result.load(Eval.set_path(name))
+      puts "#{name}: corpus #{stored.corpus_digest || "unrecorded"} | prompt #{stored.prompt_digest || "unrecorded"}"
+
+      if stored.prompt_digest == here[:prompt_digest] && stored.corpus_digest == Eval::Realization.digest
+        puts "It measured THESE prompts on THESE cases, so it is a baseline for this tree."
+      else
+        puts "It did NOT measure these prompts on these cases. It is the BEFORE side of whatever moved, " \
+             "and a change judged against it needs an after side bought at this digest."
+      end
+    rescue ArgumentError => error
+      puts "#{name}: #{error.message}"
     end
 
     def run!
