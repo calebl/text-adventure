@@ -73,7 +73,7 @@ module Eval::Realization
   # (`Eval::Realization::Version.offline`), so a prompt edited without a run to
   # judge it is a FAILING TEST rather than a judgement nobody could make. Point
   # it at the after side once the change has been judged, and never before.
-  BASELINE = "room-names-after-bef7cec".freeze
+  BASELINE = "interior-entry-before".freeze
 
   # WHERE A CASE'S WORLD IS READ FROM, IN ORDER. The seeded worlds first, so a
   # case against `The Salt Assizes` measures the file every other instrument in
@@ -218,14 +218,16 @@ module Eval::Realization
   # gates `exit_already_reachable`'s dead-end case, and `shape` chooses the
   # designated case behind `prompt_digest` (`Eval::Realization::Version`). Flip
   # either and the rates move; leave either out and the comparison would credit
-  # the movement to the prompt. `Eval::Classifier.digest` carries its own label
+  # the movement to the prompt. `expects_inside` is in it for exactly that
+  # reason and it is the newest of them: it decides whether the two inside
+  # checks may be judged on a case at all. `Eval::Classifier.digest` carries its own label
   # fields for the same reason. `why` is NOT in it -- rewriting the sentence
   # that says why a case is here measures nothing new.
   def self.digest(corpus = self.corpus)
     Digest::SHA256.hexdigest(
       corpus.cases.map { |kase|
         [ kase.id, kase.story, kase.room, kase.reached_from, kase.danger, kase.shape,
-          kase.expects_new_ground.inspect, kase.also_reaches.join("|"),
+          kase.expects_new_ground.inspect, kase.expects_inside.inspect, kase.also_reaches.join("|"),
           kase.absent.join("|"), kase.unwritten.join("|") ].join(" ")
       }.join("\n")
     ).first(16)

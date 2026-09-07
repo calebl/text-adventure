@@ -141,12 +141,22 @@ module Eval::Realization::Version
           .transform_values { |scoped| scoped.min_by(&:id) }.sort.to_h
   end
 
-  # THE PROMPTS ONE CASE WOULD SEND, in the app's own call order and asked of
-  # the generator's own gate. A room inside a laid-out place gets NO exits call
-  # at all (`Location::Generator#write_exits!`), so assembling one for it would
-  # digest a prompt the app never builds.
+  # THE PROMPTS ONE CASE WOULD SEND, in the app's own call order. TWO SHAPES OF
+  # ROOM SEND ONE PROMPT AND NOT TWO, and assembling a second for either would
+  # digest a prompt the app never builds:
+  #
+  #   A ROOM INSIDE A LAID-OUT PLACE. Its ways out are the engine's, so
+  #   `Location::Generator#write_exits!` asks for none -- asked here through the
+  #   generator's own `#interior_room?`, so there is no second reading of it.
+  #
+  #   A BUILDING. Its ways out are its ROOMS' ways out, and it has none of its
+  #   own by the time the exits call would be made -- realizing it is what lays
+  #   the inside out and moves every doorway onto the entry room, and
+  #   `#write_exits!` sees a laid-out place and returns. It cannot be asked
+  #   through the same predicate the app uses, because at THIS moment the inside
+  #   does not exist yet: the gate is what the detail call is about to do.
   def built(generator)
-    return [ generator.detail_prompt ] if generator.interior_room?
+    return [ generator.detail_prompt ] if generator.interior_room? || generator.location.place?
 
     [ generator.detail_prompt, generator.exits_prompt ]
   end

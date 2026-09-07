@@ -77,6 +77,16 @@ class Eval::Realization::Scorer
                        "own name afterwards -- judgeable only on a room the engine laid out",
     room_name_already_taken: "a proposed room name the world had already given to somewhere, " \
                              "somebody or something",
+    inside_declined: "an exit named with no `inside` pick at all, so the engine took the quietest " \
+                     "option -- the field is optional and an absent one is a decision not made",
+    inside_where_the_world_wanted_none: "a stub whose world plainly holds no building gave one an inside " \
+                                        "-- judgeable only on a case labelled `expects_inside: false`",
+    no_inside_where_the_world_wanted_one: "a stub whose world plainly holds a building gave none an inside " \
+                                          "-- judgeable only on a case labelled `expects_inside: true`",
+    parameters_declined: "a building offered the `parameters` block that came back without one, so every " \
+                         "pick fell to its quietest default",
+    parameters_the_engine_narrowed: "a building whose picks the layout could not honour -- a warren on a " \
+                                    "footprint that holds one room, a depth the storeys do not reach",
     race_not_named: "a person written for a MONSTROUS slot whose sheet never says the race -- " \
                     "a KEYWORD check, so it reads words rather than comparing records",
     size_the_records_do_not_hold: "the description stated a size in paces, or a storey, that is not this " \
@@ -231,6 +241,29 @@ class Eval::Realization::Scorer
     def exit_names = exits.filter_map { |exit| exit["name"].presence }
     def asked_for_exits? = row["answers"].is_a?(Hash) && row["answers"].key?("exits")
 
+    # THE LABEL, AND WHETHER THERE IS ONE. `nil` takes the reading out of both
+    # inside checks' denominators, which is what a case that left the label out
+    # asked for -- and it is also what a set stored before the label existed
+    # reads, so such a set reports both checks unavailable rather than reporting
+    # a model failing a question nobody put to it.
+    def expects_inside = facts["expects_inside"]
+
+    # WHETHER THE DETAIL PROMPT OFFERED THIS ROOM THE PARAMETERS BLOCK -- true
+    # for a building with no inside yet, false for every other room in the game
+    # and for every set stored before the block existed.
+    def parameters_asked? = facts["parameters_asked"] == true
+    def parameters = detail["parameters"] || {}
+
+    # THE BUILDING THE PICKS PRODUCED, one entry per room the layout wrote.
+    # Empty for every reading that is not a building and for every set stored
+    # before it was recorded.
+    def rooms = Array(after["rooms"])
+
+    # HOW FAR DOWN THE LAYOUT ACTUALLY WENT, off the rows: the deepest storey it
+    # wrote, as a count of floors below the ground one. Zero for a building with
+    # no cellar and for a reading with no rooms at all.
+    def storeys_below = -[ rooms.filter_map { |room| room["storey"] }.min.to_i, 0 ].min
+
     def slots = Array(facts["slots"])
     def places = Array(facts["places"])
     def reachable = Array(facts["reachable"])
@@ -318,7 +351,13 @@ class Eval::Realization::Scorer
   # THE FIGURES WITH NO BETTER DIRECTION, computed here beside the rates because
   # they are the check on the rates. See this class's header.
   def reported
-    { "people_named" => Eval.mean(readings.map { |r| r.people.size }),
+    { "insides_given" => share(readings.sum { |r| inside_picks(r).count { |pick| inside?(pick) } },
+                               readings.sum { |r| r.exit_names.size }),
+      "rooms_laid_out" => Eval.mean(readings.select(&:parameters_asked?).map { |r| r.rooms.size }),
+      "storeys_below_ground" => Eval.mean(readings.select(&:parameters_asked?).map { |r| r.storeys_below }),
+      "hazard_on_the_ground_floor" => hazard_share(0..0),
+      "hazard_below_ground" => hazard_share(..-1),
+      "people_named" => Eval.mean(readings.map { |r| r.people.size }),
       "people_offered" => Eval.mean(readings.map { |r| r.people_allowance }),
       "people_take_up" => share(readings.sum { |r| r.people.size }, readings.sum { |r| r.people_allowance }),
       "items_named" => Eval.mean(readings.map { |r| r.items.size }),
@@ -332,6 +371,25 @@ class Eval::Realization::Scorer
   private
 
   def share(part, whole) = whole.to_i.zero? ? 0.0 : part.fdiv(whole)
+
+  # THE CAPTAIN'S OWN FIGURE, CUT THE ONE WAY THAT SAYS WHETHER THE GRADIENT DID
+  # ANYTHING: the share of rooms carrying a hazard, by storey. Two cuts and not a
+  # table, because a board prints numbers -- the ground floor and everything
+  # below it, which is the comparison `worse the deeper you go` is supposed to
+  # move. It reads ROWS: `Location::Interior` wrote them and no column anywhere
+  # records the pick.
+  def hazard_share(storeys)
+    rooms = readings.flat_map(&:rooms).select { |room| storeys.cover?(room["storey"].to_i) }
+
+    share(rooms.count { |room| room["hazard"].present? }, rooms.size)
+  end
+
+  def inside_picks(reading) = reading.exits.map { |exit| exit["inside"] }
+
+  # WHETHER A PICK ASKED FOR AN INSIDE. `no inside` is the quietest option and
+  # the default, and an ABSENT pick is not the same thing as that one -- the
+  # first is a decision and the second is `inside_declined`.
+  def inside?(pick) = pick.present? && pick != Location::Parameters::NO_INSIDE
 
   def judgement(code)
     @judgements ||= {}
@@ -434,6 +492,92 @@ class Eval::Realization::Scorer
 
       "every way out of #{reading.room} was a place the world already had: " \
         "#{reading.exit_names.join(", ")}"
+    end
+  end
+
+  # ------------------------------------------------------------ the inside pick
+
+  # A DECISION NOT MADE. The `inside` field is OPTIONAL, so an answer that omits
+  # it is a legal answer and the engine takes the quietest option -- which means
+  # the ordinary way for a world to end up with no buildings in it is not a
+  # model saying `no inside` but a model saying nothing at all. Its own figure
+  # for that reason, and the one figure a set stored before the field existed
+  # can honestly report: those answers have no pick, so they read as declined,
+  # which is exactly what they were.
+  def judge_inside_declined
+    flag_each(:inside_declined, ->(r) { r.asked_for_exits? ? r.exits.size : 0 }) do |reading|
+      next [] unless reading.asked_for_exits?
+
+      reading.exits.reject { |exit| exit["inside"].present? }
+             .map { |exit| "named #{exit["name"].inspect} with no inside pick at all" }
+    end
+  end
+
+  # AND THE TWO THAT READ THE PICK AGAINST A HAND LABEL, which is the only thing
+  # in this file that is not a record on both sides -- there is no record of what
+  # a world SHOULD have been. `expects_inside` is written by whoever wrote the
+  # case and is LEFT OUT unless the answer is not a guess, so most cases are out
+  # of both denominators: `Story::Audit#judgeable_for`'s rule, and the same one
+  # `no_new_ground` stands on.
+  def judge_inside_where_the_world_wanted_none
+    flag_cases(:inside_where_the_world_wanted_none,
+               ->(r) { r.asked_for_exits? && r.expects_inside == false }) do |reading|
+      given = reading.exits.select { |exit| inside?(exit["inside"]) }
+      next nil if given.empty?
+
+      "gave an inside to #{given.map { |exit| "#{exit["name"]} (#{exit["inside"]})" }.join(", ")} " \
+        "in a world that plainly holds no building"
+    end
+  end
+
+  def judge_no_inside_where_the_world_wanted_one
+    flag_cases(:no_inside_where_the_world_wanted_one,
+               ->(r) { r.asked_for_exits? && r.expects_inside == true && r.exit_names.any? }) do |reading|
+      next nil if reading.exits.any? { |exit| inside?(exit["inside"]) }
+
+      "gave an inside to none of #{reading.exit_names.join(", ")} in a world that plainly holds one"
+    end
+  end
+
+  # ----------------------------------------------------- the building's parameters
+
+  # THE SAME DECISION-NOT-MADE FIGURE FOR THE BLOCK A BUILDING IS OFFERED. The
+  # `parameters` object is optional for the reason every optional field in these
+  # schemas is optional (`Location::DetailSchema`): an absent one and an empty
+  # one mean the same thing, and a required object a model had nothing to say
+  # about would fail the whole realization.
+  def judge_parameters_declined
+    flag_cases(:parameters_declined, ->(r) { r.parameters_asked? }) do |reading|
+      next nil if reading.parameters.present?
+
+      "was offered the parameters block and picked nothing, so #{reading.room} took every default"
+    end
+  end
+
+  # AND WHAT THE ENGINE COULD NOT HONOUR, read off the ROWS the layout wrote and
+  # never off the answer -- the picks have no column, so the building IS the
+  # record (`Eval::Realization::Stage::Standing#rooms_laid_out`).
+  #
+  # TWO NARROWINGS AND NOT A GENERAL COMPARISON, because only two of the picks
+  # can fail to arrive: a footprint too small to divide holds fewer rooms than
+  # the band asked for, and a storey range is bounded by what the layout built.
+  # Danger, gradient and hazard are RATES -- a die decides each room -- so a
+  # place that picked `dangerous` and rolled quiet rooms was not narrowed, it was
+  # unlucky, and flagging that would be flagging the dice.
+  def judge_parameters_the_engine_narrowed
+    flag_cases(:parameters_the_engine_narrowed, ->(r) { r.parameters_asked? && r.parameters.present? }) do |reading|
+      complaints = []
+      wanted = Location::Parameters::ROOMS_A_BAND_PROMISES[reading.parameters["inside"]]
+      if wanted && reading.rooms.size < wanted
+        complaints << "asked for #{reading.parameters["inside"]} and the footprint held #{reading.rooms.size}"
+      end
+      asked = Location::Parameters::STOREYS_BELOW[reading.parameters["storeys_below"]]
+      if asked && reading.storeys_below < asked
+        complaints << "asked for #{reading.parameters["storeys_below"]} and the layout went " \
+                      "#{reading.storeys_below} down"
+      end
+
+      complaints.presence&.join("; ")
     end
   end
 

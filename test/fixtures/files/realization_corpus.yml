@@ -27,6 +27,14 @@
 #                       that names only the way back is the RIGHT answer -- the
 #                       prompt asks for exactly that -- so `no_new_ground` is
 #                       judged only where this is true.
+#   expects_inside      whether the world around this stub plainly holds a
+#                       building -- a lane, a walled town -- or plainly does not
+#                       -- a closet, a chain on a rock. TRUE, FALSE or LEFT OUT,
+#                       and left out is the ordinary answer: a case with no
+#                       label is out of BOTH inside checks' denominators, on
+#                       `expects_new_ground`'s own rule, because a rate a check
+#                       did not earn is worse than no rate. Only the cases where
+#                       the answer is not a guess carry one.
 #
 # WHAT THE CASES ARE CHOSEN TO REACH, since a corpus that never puts the model
 # near a failure measures nothing:
@@ -93,6 +101,7 @@ cases:
   unwritten:
   - The Long Hallway
   expects_new_ground: false
+  expects_inside: false  # a closet off one office: its one way out is the office
   shape: dead-end
   why: >-
     No inventory number, no audit slip and no lock -- a closet off one office,
@@ -134,6 +143,7 @@ cases:
   unwritten:
   - The Vestry Hulk
   expects_new_ground: false
+  expects_inside: false  # a chain, a man and five feet of rock, with the tide coming in
   shape: dead-end
   why: >-
     A chain, a man, and about five feet of dry rock, with the tide coming in.
@@ -155,6 +165,7 @@ cases:
   also_reaches:
   - Sovereign's Circle
   expects_new_ground: true
+  expects_inside: true  # a city lane: a building off one is the plainest yes there is
   shape: two-ways-out
   why: >-
     A seeded stub that already reaches TWO places -- the boarding house behind
@@ -276,6 +287,7 @@ cases:
   unwritten:
   - tunnel upward
   expects_new_ground: true
+  expects_inside: false  # a cave passage in a world that is two rooms and a stub
   shape: descent
   why: >-
     One room up from Blackfang, at the moment the world was two rooms and a
@@ -325,6 +337,7 @@ cases:
   room: Hollow’s End
   reached_from: surface
   expects_new_ground: true
+  expects_inside: true  # a walled town, so what leads out of it is what is inside it
   shape: landmark
   why: >-
     A town with troll-bone walls, a day's hard ride north, named in the
@@ -337,12 +350,40 @@ cases:
   room: Spire’s Rest
   reached_from: surface
   expects_new_ground: true
+  expects_inside: true  # the capital, and the seat of a council that meets somewhere
   shape: landmark
   why: >-
     The capital, and the seat of the Iron Council the story's summary is about.
     A stub the preface, the summary and four universe fields all point at, which
     is the most world any of these prompts carries -- and the case where a model
     has the most to restate.
+
+- id: iron-gate-blackfang-warren
+  story: The Iron Gate Descends
+  room: Blackfang Warren
+  reached_from: Blackfang Tunnel
+  absent:
+  - surface
+  - Spire’s Rest
+  - Hollow’s End
+  expects_new_ground: false
+  shape: place
+  why: >-
+    THE ONLY CASE IN THIS FILE THAT REALIZES A BUILDING, and the only one that
+    can judge the parameters half of stage one at all. Blackfang Warren carries
+    a footprint and no rooms, so `Location#place?` is true of it: the detail
+    prompt offers the `parameters` block, `Location::Interior` consumes the
+    picks in the same transaction as the flip to realized, and the layout it
+    wrote is what `parameters_the_engine_narrowed` and the hazard figures are
+    read off. ONE CALL AND NOT TWO, like the interior-room cases and for the
+    mirror-image reason: a laid-out place is asked for no ways out of its own,
+    because every doorway it had is on a room of it by then
+    (`Location::Generator#open_the_way_in!`).
+
+    `expects_new_ground: false` because no exits call is made, so there is no
+    new ground for one to open. The three rooms beyond the surface are absent
+    for `iron-gate-blackfang-deep`'s reason: at the moment somebody first walks
+    into this warren, the world above it has not been found.
 
 # ---------------------------------------------------------------- The Quay House
 #

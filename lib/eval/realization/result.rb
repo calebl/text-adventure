@@ -25,6 +25,17 @@ class Eval::Realization::Result
   # and halved these bought its numbers with emptier rooms. Folding them in --
   # in either direction -- is exactly the mistake they exist to catch.
   REPORTED_METRICS = {
+    insides_given: "exits given an inside, over exits named -- THE DOMINANT-STRATEGY CHECK on the two " \
+                   "inside rates: the cheapest way to clear both is to answer `no inside` every time, and " \
+                   "a prompt change that cleared them and halved this bought its numbers with a world of " \
+                   "open ground",
+    rooms_laid_out: "mean rooms the layout wrote for a building that was offered the parameters block",
+    storeys_below_ground: "mean floors a building was laid out below its ground floor -- the parameter " \
+                          "that exists to make \"down\" expressible is worthless if it always comes back none",
+    hazard_on_the_ground_floor: "rooms carrying a hazard, on storey 0",
+    hazard_below_ground: "the same share below ground -- the captain's own figure, and the ONLY one that " \
+                         "reads whether the gradient did anything at all: it is the two ends of the slope, " \
+                         "off the rows the layout wrote",
     people_named: "mean people one realization wrote",
     people_offered: "mean slots the engine offered it -- the denominator, measured and not assumed",
     people_take_up: "people written over slots offered",
@@ -69,7 +80,8 @@ class Eval::Realization::Result
 
   # THE FIGURES PRINTED AS A PLAIN MEAN rather than as a rate -- counts of
   # things a room contains, which have no denominator and are not defects.
-  MEANS = %i[people_named people_offered items_named exits_named new_places_opened new_places_named].freeze
+  MEANS = %i[people_named people_offered items_named exits_named new_places_opened new_places_named
+             rooms_laid_out storeys_below_ground].freeze
 
   # EVERY FIGURE OF ONE PASS, FROM ITS ROWS -- the one place a figure is
   # computed, so a live run and a set loaded off disk cannot disagree about what

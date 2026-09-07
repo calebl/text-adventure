@@ -1192,8 +1192,27 @@ checks are:
 | `readable_without_words` | a thing marked readable with nothing written on it, which costs a later round trip to `Item::Inscriber` |
 | `room_name_refused` | a room asked to name itself that came away still called its placeholder, **read off the room's own name after the call**. `Location::RoomName` refuses a proposal on several separate grounds and every one ends the same way, so this asks the record what happened rather than re-deciding it. Judgeable only on an `interior-room` case, where the prompt asks for a name at all. **It measures the prompt and the engine together, so it is the one check a set can go stale on without the corpus or the prompt moving**: reading the name AFTER the engine decided means a new refusal ground changes the figure. `db/eval/room-names-after-bef7cec` was recorded before `Location::RoomName#repeats_place?` existed, so this row of that set is not like-for-like with HEAD |
 | `room_name_already_taken` | a proposed room name the world had already given to somewhere, somebody or something — the one refusal above that is a set comparison, against the same closed list of names `name_already_spoken_for` reads. The evidence says whether the prompt had shown it |
+| `inside_declined` | an exit named with no `inside` pick at all. The field is **optional**, so an absent one is a legal answer and the engine takes `no inside` — which means the ordinary way for a world to end up with no buildings in it is not a model saying no, it is a model saying nothing. Judgeable on every exit of every case that made an exits call |
+| `inside_where_the_world_wanted_none` / `no_inside_where_the_world_wanted_one` | the pick against the case's **hand label**, `expects_inside`, both ways round. The one pair of checks in this bench that is not a record on both sides: there is no record of what a world *should* have been. **Most cases carry no label and are out of both denominators** — `expects_new_ground`'s rule, and `Eval::Realization::Corpus`'s header says which cases carry one |
+| `parameters_declined` | a building offered the `parameters` block that came back without one, so every pick fell to its quietest default. Judgeable only on a `place` case, which is a stub carrying a footprint and no rooms |
+| `parameters_the_engine_narrowed` | a building whose picks the layout could not honour — a warren on a footprint that holds one room, a depth the storeys do not reach. **Read off the rows the layout wrote**, because none of the picks has a column. Only the two picks that CAN fail to arrive are checked: danger, gradient and hazard are rates, so a place that picked `dangerous` and rolled quiet rooms was unlucky and not narrowed |
 | `race_not_named` | **a KEYWORD check** — see below |
 | `size_the_records_do_not_hold` | **a KEYWORD check.** The description stated a size in paces, or a storey, that is not this room's. Judgeable only on an `interior-room` case, where `Location::Plan` stated the numbers in the prompt |
+
+**The inside and parameters checks report `unavailable` the same way, and one of
+them reports something better than that.** A set stored before the `inside` field
+existed has no pick on any exit, which is not a gap — it is the genuine BEFORE
+figure for `inside_declined`, because a world whose exits carried no pick got no
+buildings, which is exactly what the check measures. The two labelled checks and
+both parameters checks are unavailable on such a set, because their denominators
+are facts the bench had not begun storing.
+
+**And two reported figures are the ones to read beside them.**
+`insides_given` is the dominant-strategy check on the inside pair — *the cheapest
+way to clear both rates is to answer `no inside` every time* — and
+`hazard_below_ground` against `hazard_on_the_ground_floor` is the captain's own
+figure for the gradient, the only one that reads whether it did anything at all.
+Both are off the rows; neither is ever folded into a rate.
 
 **The two name checks report `unavailable` on a set stored before the naming ask
 existed**, and that is the honest reading rather than a gap. Their denominator

@@ -485,7 +485,9 @@ locations:
 
 **A place can cost you hit points, and so can the way you got there.** Two keys
 on a room and three on a doorway, and every one of them is world data: a seed
-file writes a hazard and no model and no typed line ever does.
+file writes a hazard here and no typed line ever does. A model picks one **key**
+for a whole generated building and never a die or a room (see the last bullet of
+this section, and `Location::Parameters`).
 
 ```yaml
 locations:
@@ -550,10 +552,16 @@ connections:
   DOORWAY half specifically, because `WorldMechanic::ShuffleConnections` rewrites
   an edge from `distance` and `travel_method` alone and in both directions, so a
   directed hazard on a shufflable edge would be destroyed the first night.
-- **Whether a GENERATED world gets hazards is not settled and nothing writes
-  one.** Hazards are seeded only. `Location::Danger` rolls a room's `danger`
-  when it is born; there is no counterpart for `hazard`, deliberately, and
-  adding one is a later question.
+- **A GENERATED world gets hazards through a building and nowhere else**, on the
+  captain's Call 1 of 2026-09-07. A model realizing a place picks ONE key out of
+  `Location::HAZARDS` for the whole building — or `none`, which is the default —
+  and the engine rolls it per ROOM at a share as the room is born, biased by the
+  danger gradient, with the die drawn from `Location::HAZARD_DICE`.
+  `Location::Parameters` is the vocabulary and the reason the pick is a rate and
+  not an assignment: `silent` and `airless` are charged **every turn**, so a
+  building every room of which carried one would end a playthrough by
+  arithmetic. Nothing else in a generated world writes a hazard — an ordinary
+  room, a doorway and every `hazard_from` are still a seed file's alone.
 
 ### `parent`, and the box — a place that has an inside
 
