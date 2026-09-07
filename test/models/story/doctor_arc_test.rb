@@ -89,6 +89,22 @@ class Story::DoctorArcTest < ActiveSupport::TestCase
     assert_equal step, finding.subject
   end
 
+  # A `:safe` remedy is a promise `Story::Repair` keeps, so the finding above has
+  # to be one it actually handles -- otherwise the doctor offers a fix nothing
+  # applies.
+  test "the missing target is repaired by putting the beat back to waiting" do
+    step = bound_step(@maw)
+    @maw.destroy
+
+    repair = Story::Repair.new(@story.reload)
+
+    assert_equal [ :quest_target_missing ], repair.plan.map(&:code)
+    repair.apply!
+
+    assert_predicate step.reload, :unbound?
+    assert_equal "obsidian maw", step.target_name
+  end
+
   # --- P3: the arc can complete ----------------------------------------------
 
   test "a bound target no path leads to is fatal" do

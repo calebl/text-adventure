@@ -543,11 +543,19 @@ flowchart TD
         N2 --> N3["Persists in an ensure, and sets the scene itself<br/>Nobody has to be watching: the job outlives the tab<br/>Never touches the location: moving is not its job"]
     end
 
-    I3 --> OUT
-    M8 --> OUT["The Scene is returned; the prose already went<br/>to the block, token by token from a narrator<br/>and in one piece from a move.<br/>The job then replaces #turn_log: the new turn, where<br/>the player is, and the input -- no reload"]
-    T7 --> OUT
-    T4 --> OUT
-    N3 --> OUT
+    I3 --> A0
+    M8 --> A0
+    T7 --> A0
+    T4 --> A0
+    N3 --> A0
+
+    A0["Playthrough::Arc#run!, NO MODEL CALL<br/>four record predicates against the story's own arc:<br/>standing in the room, the interaction this turn wrote,<br/>this game's copy in the party's hands, the clock<br/>a beat REACHED is a playthrough_beats row, and the<br/>arc itself is never written by a typed line"]
+    A0 --> A1{"every beat of the main arc reached?"}
+    A1 -->|"no: almost every turn"| OUT
+    A1 -->|"yes"| A2["The ending, and the ENGINE decides the game is over<br/>the reached Quest::Outcome, playthroughs.ended_at,<br/>and ONE engine-authored Scene carrying the stored<br/>sentence the world was built toward.<br/>Scene::ENGINE_AUTHORED, so Story::Audit skips it<br/>-- ta-quest-ending gives the narrator the outcome<br/>to render, with this sentence as the fallback"]
+    A2 --> OUT
+
+    OUT["The Scene is returned; the prose already went<br/>to the block, token by token from a narrator<br/>and in one piece from a move.<br/>The job then replaces #turn_log: the new turn, where<br/>the player is, and the input -- no reload"]
     X1 --> OUT2["The refusal is returned instead of a Scene.<br/>Nothing streamed. The job replaces #turn_log with<br/>the log unchanged, the refusal in the app's own voice<br/>where the turn would have been, and the input back"]
 
     classDef llm fill:#4c1d95,stroke:#a78bfa,stroke-width:2px,color:#ffffff
@@ -556,10 +564,22 @@ flowchart TD
     classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
 
     class C2,M3,M4,M6,T1,T2,I2,N2 llm
-    class W0,C1,C3,G1,M1,M3N,M3A,M3B,M3C,M5,M7,M8,T5,T6,T7,I1,I3,N3,X1 rec
+    class W0,C1,C3,G1,M1,M3N,M3A,M3B,M3C,M5,M7,M8,T5,T6,T7,I1,I3,N3,X1,A0,A2 rec
     class N1,T4 gap
-    class IN,SSE,OUT,OUT2,D,R,G0,G2,T3 io
+    class IN,SSE,OUT,OUT2,D,R,G0,G2,T3,A1 io
 ```
+
+**The two teal boxes at the bottom are the arc, and they are teal for the
+reason every other teal box is.** Where the story is going is records — `Quest`,
+its beats and its endings — and whether a beat has been reached is four record
+predicates the app evaluates after every line it PLAYED (a refused line writes
+nothing, so it cannot reach a beat). No model is asked what happened, and the
+game being over is never a model's decision. The narrator is told exactly one
+thing about any of it: the next open beat's one-line summary, which is a fact
+the engine owns, rendered — the same shape as telling it what is lying on the
+floor. It is never told the conclusion, because a model told the ending writes
+toward an ending the engine has not recorded, which is the railroad by the back
+door.
 
 The two orange boxes are the honest ones. The narration box is where the
 classifications with nothing more specific to do end up; the blank branch of

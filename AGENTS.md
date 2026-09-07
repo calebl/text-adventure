@@ -165,6 +165,9 @@ Read the header of the file named, not a summary of it.
 | How items and people come to exist in a room | `app/models/item/registry.rb`, `character/registry.rb` |
 | What `rake game:new` builds, in what order | `app/models/story/first_screen.rb` |
 | Story time, and a world that moves on its own | `app/models/story.rb`, `app/models/world_mechanic.rb` |
+| Where a story is going, and why a beat is a record and not a name | `app/models/quest.rb`, `quest/step.rb` |
+| Who may bind a beat to a row, and when the engine places one itself | `app/models/quest/binder.rb`, `quest/deadline.rb` |
+| Which beats one game has reached, and who writes the last paragraph | `app/models/playthrough/arc.rb` |
 | Where narration contradicts the records | `app/models/story/audit.rb` |
 | The scoreboard, its corpora and its baseline | `app/models/story/scoreboard.rb` |
 | Re-seeding a world somebody has played | `lib/world_seed/loader.rb`, `item/template_refresh.rb` |
