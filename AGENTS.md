@@ -78,14 +78,16 @@ most claimed improvements — [EVALUATION.md](EVALUATION.md) opens with the
 current spread and keeps it current; do not quote a spread from memory. So "it
 reads better" is not evidence, and neither is a single run either side of an
 edit. Before touching `Scene::Narrator::INSTRUCTIONS`,
-`Character#interaction_instructions`, `Playthrough::Classifier::INSTRUCTIONS` or
-anything else a model is handed:
+`Character#interaction_instructions`, `Playthrough::Classifier::INSTRUCTIONS`,
+`Location::Generator`'s people, items and exits instructions, or anything else a
+model is handed:
 
 1. **Have a stored baseline the change can be measured against.**
    `rake eval:prompt` (fixed single-turn cases, cents a run) is the cheap first
    gate; `rake eval:run` confirms it; `rake eval:classifier` is the classifier's
-   own bench. Baselines are checked in under `db/eval/` and
-   `db/eval_baseline.json` and replay offline for free.
+   own bench and `rake eval:realization` is `Location::Generator`'s. Baselines
+   are checked in under `db/eval/` and `db/eval_baseline.json` and replay
+   offline for free.
 2. **Judge the after against the before with a verdict that can say *noise***
    — `rake eval:prompt_compare` / `rake eval:compare`, four runs a side minimum.
 3. **Re-baseline only once the change is judged.**

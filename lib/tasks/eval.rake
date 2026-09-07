@@ -22,6 +22,14 @@
 #   rake eval:prompt_board    every stored set as one table
 #   rake eval:prompt_compare  two sets, with a verdict per check
 #
+# AND THE ROOM BUILDER'S, which realizes a fixed stub and scores the answer
+# against the records the room was built from -- no prose read, no judge:
+#
+#   rake eval:realization          one realization per case, scored, per model and prompt version
+#   rake eval:realization_score    score a stored set again -- offline, free, no key
+#   rake eval:realization_board    every stored set as one table
+#   rake eval:realization_compare  two sets, with a verdict per figure
+#
 # GENERATION SPENDS MONEY AND MUST NEVER RUN IN CI. It needs `OPENROUTER_API_KEY`
 # and refuses to start without one; scoring needs nothing at all. `EVALUATION.md`
 # is the protocol.
@@ -81,6 +89,14 @@ namespace :eval do
     puts EvalTasks.estimate
     puts "Measured, not modelled: #{Eval::Cost::PER_TURN[:input]} in / #{Eval::Cost::PER_TURN[:output]} out per turn," \
          " from 12 real whole-run transcripts. See Eval::Cost."
+    puts
+    # AND WHAT THE BENCHES COST, because "what will this cost" is asked before
+    # spending on any of them and answering it for one instrument only sends
+    # the reader to a second command to find out about the others. Each is
+    # priced at ITS OWN default reps on the model the app ships with, which is
+    # what a baseline actually costs.
+    puts "THE BENCHES, each at its own defaults on #{Eval::Cost.default_model}:"
+    puts RealizationTasks.estimate_line
   end
 
   desc "The files that constitute the measurement, with a digest of each -- the manifest a future improving agent leaves alone"
@@ -175,6 +191,147 @@ namespace :eval do
                                  after_model: ENV["AFTER_MODEL"].presence).print
   rescue Eval::Prompt::Comparison::Unpairable, ArgumentError => error
     abort error.message
+  end
+
+  desc "Realize a fixed stub and score the answer against the records. REPS=4 MODELS=a,b SET=<name> SAMPLE=12 YES=1"
+  task realization: :environment do
+    RealizationTasks.run!
+  end
+
+  desc "Score a stored realization bench set again -- offline, no model call, no key. " \
+       "Usage: rake eval:realization_score SET=<name>"
+  task realization_score: :environment do
+    set = ENV["SET"].presence or abort "SET=<name> is the realization bench set to score. #{RealizationTasks.available_sets}"
+
+    puts "Scoring #{Eval.set_path(set)} -- no model call, no API key, no network."
+    puts
+    Eval::Realization::Report.new(Eval::Realization::Result.load(Eval.set_path(set)))
+                             .print(sample: (ENV["SAMPLE"].presence || Eval::Realization::Report::DEFAULT_SAMPLE).to_i)
+  rescue ArgumentError => error
+    abort error.message
+  end
+
+  desc "Every realization bench set on disk as one table. Usage: rake eval:realization_board SETS=a,b"
+  task realization_board: :environment do
+    Eval::Realization::Board.for_sets(ENV["SETS"].presence&.split(",")&.map(&:strip)).print
+  rescue ArgumentError => error
+    abort error.message
+  end
+
+  desc "Two realization bench runs, with a verdict per figure -- two prompt versions on one model, or " \
+       "two models on one prompt version. " \
+       "Usage: rake eval:realization_compare BEFORE=<set> AFTER=<set> [BEFORE_MODEL=] [AFTER_MODEL=]"
+  task realization_compare: :environment do
+    before = ENV["BEFORE"].presence or abort "BEFORE=<set> is the run to compare against. #{RealizationTasks.available_sets}"
+    after = ENV["AFTER"].presence or abort "AFTER=<set> is the run to judge. #{RealizationTasks.available_sets}"
+
+    Eval::Realization::Comparison.new(Eval::Realization::Result.load(Eval.set_path(before)),
+                                      Eval::Realization::Result.load(Eval.set_path(after)),
+                                      before_model: ENV["BEFORE_MODEL"].presence,
+                                      after_model: ENV["AFTER_MODEL"].presence).print
+  rescue Eval::Realization::Comparison::Unpairable, ArgumentError => error
+    abort error.message
+  end
+
+  # THE REALIZATION BENCH'S HALF OF THIS FILE. Separate from `PromptTasks` for
+  # the reason that one is separate from `ClassifierTasks`: they measure
+  # different calls over different corpora and share only the arm selector,
+  # which is `Eval::Classifier::Arm` in all three.
+  module RealizationTasks
+    extend self
+
+    # FOUR, BECAUSE FOUR IS `Eval::Noise::MIN_RUNS`: a run taken at the default
+    # is a run `rake eval:realization_compare` can actually give a verdict
+    # against. A METHOD AND NOT A CONSTANT, because a rake file is loaded before
+    # the app is.
+    def default_reps = Eval::Noise::MIN_RUNS
+
+    # A realization bench run is cents -- two calls a case, the whole corpus,
+    # four repetitions, and `#estimate_line` prices it rather than this comment
+    # -- so the ceiling is low and the estimate is printed first anyway: the
+    # captain's rule for `eval:run` applies to anything that spends.
+    SPEND_CEILING = 1.00
+
+    def reps = (ENV["REPS"].presence || default_reps).to_i
+
+    # THE ARM SELECTOR, `Eval::Classifier::Arm` and not a second one. The
+    # default is ONE model -- the first of `BaseAgent::REMOTE_MODEL_IDS`, which
+    # is what a player's rooms are really written by -- rather than the whole
+    # rotation, because a prompt change is judged on the model that ships.
+    def arms
+      named = ENV["MODELS"].presence&.split(",")&.map(&:strip)
+
+      Eval::Classifier::Arm.all(named.presence || [ BaseAgent::REMOTE_MODEL_IDS.first ])
+    end
+
+    def set_name = ENV["SET"].presence || Time.current.utc.strftime("realization-%Y%m%d-%H%M%S")
+
+    def corpus
+      found = Eval::Realization.corpus
+      (sample = ENV["SAMPLE_CASES"].presence) ? found.sample(sample) : found
+    end
+
+    def available_sets
+      found = (Dir.glob(Eval.root.join("*", Eval::Realization::RESULTS)) +
+               Dir.glob(Eval.kept_root.join("*", Eval::Realization::RESULTS)))
+              .map { |path| File.basename(File.dirname(path)) }.uniq.sort
+      found.any? ? "Realization bench sets: #{found.join(", ")}." :
+                   "There are no realization bench runs yet -- run `rake eval:realization` first."
+    end
+
+    # WHAT A BASELINE COSTS, in one line, so `rake eval:estimate` can print it
+    # without loading the corpus twice or knowing anything about this bench.
+    def estimate_line
+      cases = Eval::Realization.corpus.cases
+      priced = Eval::Realization.estimate(cases: cases, reps: default_reps,
+                                          models: [ Eval::Cost.default_model ])
+      format("  eval:realization   %d cases x %d reps x %d calls = %d calls, about $%.3f",
+             cases.size, default_reps, Eval::Realization::CALLS.size,
+             cases.size * default_reps * Eval::Realization::CALLS.size, priced)
+    end
+
+    def run!
+      found = corpus
+      problems = found.problems
+      abort "The corpus does not validate, so nothing measured against it would mean anything:\n  " \
+            "#{problems.join("\n  ")}" if problems.any?
+
+      priced = Eval::Realization.estimate(cases: found.cases, reps: reps, models: arms)
+      calls = found.size * reps * arms.size * Eval::Realization::CALLS.size
+      puts format("ESTIMATE: %d calls (%d stubs x %d reps x %d call%s x %d model%s), about $%.3f. " \
+                  "Measured at %d in / %d out a detail call and %d in / %d out an exits call.",
+                  calls, found.size, reps, Eval::Realization::CALLS.size,
+                  Eval::Realization::CALLS.one? ? "" : "s", arms.size, arms.one? ? "" : "s", priced,
+                  Eval::Realization::PER_CALL["detail"][:input], Eval::Realization::PER_CALL["detail"][:output],
+                  Eval::Realization::PER_CALL["exits"][:input], Eval::Realization::PER_CALL["exits"][:output])
+      abort_without_a_key(arms)
+      if priced > SPEND_CEILING && ENV["YES"] != "1"
+        abort "That is over the $#{format("%.2f", SPEND_CEILING)} this task will spend unattended. " \
+              "Re-run with YES=1, or lower REPS."
+      end
+
+      puts "Building #{found.size} rooms on #{arms.map(&:id).join(", ")}."
+      puts
+      result = Eval::Realization::Bench.new(corpus: found, arms: arms, reps: reps).run
+
+      written = result.write!(Eval.set_path(set_name), name: set_name)
+      puts
+      puts "Wrote #{written}."
+      puts
+
+      Eval::Realization::Report.new(result)
+                               .print(sample: (ENV["SAMPLE"].presence || Eval::Realization::Report::DEFAULT_SAMPLE).to_i)
+      result
+    end
+
+    def abort_without_a_key(arms)
+      if arms.any? { |arm| !arm.local? } && ENV["OPENROUTER_API_KEY"].blank?
+        abort "OPENROUTER_API_KEY is not set and #{arms.reject(&:local?).map(&:id).join(", ")} " \
+              "#{arms.reject(&:local?).one? ? "is" : "are"} hosted. Score a stored set instead, " \
+              "which needs nothing: `rake eval:realization_score SET=<name>`."
+      end
+      abort "The bench must not run in the test environment." if Rails.env.test?
+    end
   end
 
   # THE PROMPT BENCH'S HALF OF THIS FILE. Separate from `EvalTasks` for the same
@@ -404,6 +561,14 @@ namespace :eval do
 
     DEFAULT_REPS = 5
     SPEND_CEILING = 1.00
+
+    # A READER FOR THE CONSTANT, because `#reps` below asks for one and there
+    # was none: `rake eval:estimate` and `rake eval:run` both raised
+    # `NameError: undefined local variable or method 'default_reps'` on any
+    # invocation that did not set `REPS=`, which is the ordinary one. The other
+    # two task modules in this file have the method and no constant; this keeps
+    # the constant, which `EVALUATION.md` names, and gives it the reader.
+    def default_reps = DEFAULT_REPS
 
     # Seconds one run may take before it is killed. See `#spawn_run`.
     RUN_TIMEOUT = (ENV["EVAL_RUN_TIMEOUT"].presence || 1200).to_i

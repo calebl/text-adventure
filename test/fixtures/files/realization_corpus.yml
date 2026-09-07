@@ -1,0 +1,345 @@
+# THE REALIZATION BENCH'S CASES: stubs about to be written.
+#
+# Each case names a WORLD and a ROOM IN IT, and `Eval::Realization::Stage` winds
+# that room back to the stub it was -- no description, no lore, nothing lying in
+# it, and the way in (plus whatever else the case declared it already reached).
+# Everything the model is then told is read out of the records that world really
+# holds, so the prompt a case sends is `Location::Generator`'s and not this
+# file's. `Eval::Realization::Corpus`'s header is the format and the validator;
+# read it before adding a case.
+#
+# THE KEYS THAT DO THE WORK, and each is DECLARED rather than derived because
+# none of them is recoverable from the records:
+#
+#   reached_from        the ONE neighbour whose own realization created this
+#                       stub. Absent for a room nobody walked into.
+#   also_reaches        the other neighbours the stub could ALREADY reach, and
+#                       nothing by default: every edge but the way back is
+#                       removed unless a case names it here. A seeded stub can
+#                       legitimately have more than one, and those cases are the
+#                       only place the allowance in the prompt is below the cap.
+#   absent              rooms that did not exist at this moment -- destroyed.
+#   unwritten           rooms that existed but had not been written -- wound
+#                       back to stubs, so the exits prompt does not mark them
+#                       "already written -- do not open a new way into it".
+#                       This one changes what a CORRECT answer is.
+#   expects_new_ground  whether the story points onward from here. A dead end
+#                       that names only the way back is the RIGHT answer -- the
+#                       prompt asks for exactly that -- so `no_new_ground` is
+#                       judged only where this is true.
+#
+# WHAT THE CASES ARE CHOSEN TO REACH, since a corpus that never puts the model
+# near a failure measures nothing:
+#
+#   * A ROOM WHOSE NEIGHBOURS ARE ALREADY WRITTEN, which is where the 36% comes
+#     from -- the prompt marks them and the engine drops the edge, so the room
+#     loses a way out for every one named.
+#   * THE SAME ROOM WITH THOSE NEIGHBOURS UNWRITTEN, which is the control: the
+#     same stub, the same world, and naming a neighbour is now legal.
+#   * A DEAD END, where one exit is the whole correct answer.
+#   * A DEEP ROOM WITH THE SURFACE BEHIND IT -- `iron-gate-blackfang-deep`, the
+#     room that started this: it wrote its ways out and every one led back up.
+#   * A DANGEROUS ROOM IN A WORLD WITH MONSTERS, which is the only place
+#     `race_not_named` can be judged at all.
+#   * A DANGEROUS ROOM IN A WORLD WITH NONE, which is every generated world
+#     today (`Location::Danger`'s header) and the case that shows what the
+#     fallback really writes.
+#   * A ROOM ALREADY AT PART OF ITS ALLOWANCE -- the `two-ways-out` shape, whose
+#     cases declare `also_reaches` and therefore stage a stub with two ways out
+#     and two fewer left. That is the only shape where the allowance in the
+#     prompt is a number that had to be read rather than the cap.
+#
+# WORLDS. Three seeded and one generated. `The Salt Assizes` is HELD OUT --
+# `Eval::HELD_OUT`, reported apart and never pooled. Tune on the rest.
+cases:
+
+# ---------------------------------------------------------------- The Unrecorded Hour
+
+- id: hour-long-hallway
+  story: The Unrecorded Hour
+  room: The Long Hallway
+  reached_from: Ward Office 12
+  expects_new_ground: true
+  shape: written-neighbour
+  why: >-
+    The hallway is reached from the office, and both of this world's other rooms
+    are already written. THE SUPPLY CLOSET is the one marked "already written --
+    do not open a new way into it": it is written and the hallway cannot reach
+    it, which is what Location::Generator#known_location_line marks. Ward Office
+    12 is written too and is NOT marked, because it is the way back and the way
+    back is connected by construction -- it is simply listed, and naming it is a
+    no-op the engine drops rather than a lost exit. A corridor with doors closing
+    one after another is exactly the stub a model wants to answer with the rooms
+    it can see, and the closet is the one that costs it a way out.
+
+- id: hour-long-hallway-early
+  story: The Unrecorded Hour
+  room: The Long Hallway
+  reached_from: Ward Office 12
+  unwritten:
+  - The Supply Closet
+  expects_new_ground: true
+  shape: unwritten-neighbour
+  why: >-
+    The control for hour-long-hallway: the same stub in the same world with the
+    closet still a stub, so naming it is legal and the engine keeps the edge.
+    The pair is what separates "the model reuses names" from "the model reuses
+    names it was told not to".
+
+- id: hour-supply-closet
+  story: The Unrecorded Hour
+  room: The Supply Closet
+  reached_from: Ward Office 12
+  unwritten:
+  - The Long Hallway
+  expects_new_ground: false
+  shape: dead-end
+  why: >-
+    No inventory number, no audit slip and no lock -- a closet off one office,
+    and one exit is the whole correct answer. It is also the room whose written
+    description says there is no other door (Location::Generator#connect_exit!),
+    which is the defect this shape exists to keep an eye on from the other side.
+
+# ---------------------------------------------------------------- The Salt Assizes [HELD OUT]
+
+- id: assizes-vestry-hulk
+  story: The Salt Assizes
+  room: The Vestry Hulk
+  reached_from: The Causeway Court
+  expects_new_ground: true
+  shape: written-neighbour
+  why: >-
+    A revenue cutter aground since 1836, reached from the court, with the court
+    and the tide post both already written. THE TIDE POST is the marked one --
+    written, and out of the hulk's reach. The Causeway Court is the way back, so
+    it is listed unmarked however written it is. The held-out world's version of
+    hour-long-hallway, and the one whose rate is worth acting on.
+
+- id: assizes-vestry-hulk-early
+  story: The Salt Assizes
+  room: The Vestry Hulk
+  reached_from: The Causeway Court
+  unwritten:
+  - The Tide Post
+  expects_new_ground: true
+  shape: unwritten-neighbour
+  why: >-
+    The held-out control, matching hour-long-hallway-early: the same hulk with
+    the tide post still a stub.
+
+- id: assizes-tide-post
+  story: The Salt Assizes
+  room: The Tide Post
+  reached_from: The Causeway Court
+  unwritten:
+  - The Vestry Hulk
+  expects_new_ground: false
+  shape: dead-end
+  why: >-
+    A chain, a man, and about five feet of dry rock, with the tide coming in.
+    A dead end where the only honest answer is the causeway back -- and Neb
+    Halloran is already standing in it, which puts his name in the list the
+    prompt says is spoken for. He costs the room nothing on the allowance:
+    Character::Registry#allowance is the smallest of MAX_PER_CALL, what is left
+    of MAX_PER_ROOM and what is left of the world, and the per-call cap is the
+    binding one here whether he is standing there or not. What he does do is
+    make the pre-existing-occupant path in `proposal_refused` reachable -- an
+    answer that names him is refused and the room keeps the man it had.
+
+# ---------------------------------------------------------------- The Lunar Cartographer
+
+- id: lunar-mournwell-lane
+  story: The Lunar Cartographer
+  room: Mournwell Lane
+  reached_from: Grenn's Boarding House, Room 3
+  also_reaches:
+  - Sovereign's Circle
+  expects_new_ground: true
+  shape: two-ways-out
+  why: >-
+    A seeded stub that already reaches TWO places -- the boarding house behind
+    it and Sovereign's Circle ahead -- so the exits prompt states an allowance
+    of two rather than four and lists both as already reachable. The commonest
+    way a room ends up over-connected is naming one of them again, which is what
+    `exit_already_reachable` and `exit_over_the_allowance` were written for and
+    what no single-edge case in this file can reach. Both edges are seeded, so
+    `also_reaches` keeps the second rather than inventing it.
+
+- id: lunar-larkspur-rooftops
+  story: The Lunar Cartographer
+  room: Larkspur Quarter rooftops
+  reached_from: Grenn's Boarding House, Room 3
+  also_reaches:
+  - The Celestial Spire
+  expects_new_ground: true
+  shape: two-ways-out
+  why: >-
+    The room Location::ExitsSchema's header is about: seeded with two edges --
+    the boarding house below and the Celestial Spire across the district --
+    walked into, and it came back with five, more connected than anything else
+    in the database, and its own description named none of them. `also_reaches`
+    is what puts the spire edge back, because the defect needs the room to
+    already be at two of its four.
+
+- id: lunar-boarding-house-hallway
+  story: The Lunar Cartographer
+  room: Grenn's Boarding House hallway
+  reached_from: Grenn's Boarding House, Room 3
+  also_reaches:
+  - The Bell of Saint Aravel
+  expects_new_ground: false
+  shape: two-ways-out
+  why: >-
+    A corridor with both of its ends already built: Grenn's door at one end and
+    the belfry stair at the other, both seeded edges, so the stub stages with
+    TWO ways out and an allowance of two rather than four. It is the only case
+    that is a multi-exit stub AND declares the story does not point onward, and
+    that pair is what `exit_already_reachable`'s dead-end gate turns on: naming
+    the room behind you is the answer the exits prompt asks for and is not
+    scored, while naming the belfry -- already reachable, and not the way back
+    -- is the defect and IS. Nothing here is marked "already written": both
+    realized places in this world are this hallway's own neighbours, so it can
+    reach them and the prompt lists them plain. Nobody is standing in it either,
+    so the allowance is the per-call cap.
+
+- id: lunar-celestial-spire
+  story: The Lunar Cartographer
+  room: The Celestial Spire
+  reached_from: Larkspur Quarter rooftops
+  expects_new_ground: true
+  shape: landmark
+  why: >-
+    The world's landmark, reached across the district from the rooftops. A place
+    everything else in the story is named against is where a model is most
+    tempted to write the whole map out as exits.
+
+- id: lunar-bell-of-saint-aravel
+  story: The Lunar Cartographer
+  room: The Bell of Saint Aravel
+  reached_from: Grenn's Boarding House hallway
+  expects_new_ground: false
+  shape: dangerous
+  why: >-
+    The one DANGEROUS room in a world that actually has monsters in it, so it is
+    the only case where `race_not_named` can be judged: the cast slots are drawn
+    from the Nocturna-Blighted and the prompt states the race per slot before the
+    model writes anybody. Marek Sollen is already in the belfry, which takes one
+    of the room's three places and puts his name in the spoken-for list. A bell
+    at the top of a stair, so the stair back is the honest answer.
+
+- id: lunar-sovereigns-circle
+  story: The Lunar Cartographer
+  room: Sovereign's Circle
+  reached_from: Mournwell Lane
+  danger: dangerous
+  expects_new_ground: true
+  shape: dangerous
+  why: >-
+    The second monstrous case, and its `danger` is an OVERRIDE rather than the
+    world's own -- stated here because the seeds place exactly one dangerous
+    room in the one world with a bestiary, and one case cannot carry a rate. The
+    Circle is where the Sovereigns keep the Blighted out of the ledgers, so a
+    Blighted in it is the world's own premise rather than a fixture's invention.
+
+# ---------------------------------------------------------------- The Iron Gate Descends
+
+- id: iron-gate-blackfang-deep
+  story: The Iron Gate Descends
+  room: Blackfang Tunnel
+  reached_from: obsidian maw
+  absent:
+  - surface
+  - Spire’s Rest
+  - Hollow’s End
+  unwritten:
+  - tunnel upward
+  expects_new_ground: true
+  shape: descent
+  why: >-
+    THE CASE THIS BENCH WAS BUILT FOR. The deepest room in the generated world,
+    reached from the obsidian maw, in a story whose whole premise is that the
+    prince is further down. What it really wrote was ways out that led back up,
+    and nothing at all led on -- so the player's descent stopped in the room the
+    descent was for. `surface` and the two rooms beyond it did not exist yet and
+    the tunnel upward had not been written, which is what makes naming it legal
+    and the failure a matter of DIRECTION rather than of an illegal edge.
+
+- id: iron-gate-obsidian-maw
+  story: The Iron Gate Descends
+  room: obsidian maw
+  reached_from: Iron Gate Chamber
+  absent:
+  - Blackfang Tunnel
+  - surface
+  - Spire’s Rest
+  - Hollow’s End
+  unwritten:
+  - tunnel upward
+  expects_new_ground: true
+  shape: descent
+  why: >-
+    One room up from Blackfang, at the moment the world was two rooms and a
+    stub. The same downward pressure with almost nothing to reuse, which is the
+    control on iron-gate-blackfang-deep: a room that cannot restate the world
+    because the world has nothing in it yet.
+
+- id: iron-gate-tunnel-upward
+  story: The Iron Gate Descends
+  room: tunnel upward
+  reached_from: Iron Gate Chamber
+  absent:
+  - surface
+  - Spire’s Rest
+  - Hollow’s End
+  expects_new_ground: true
+  shape: written-neighbour
+  why: >-
+    The way back to the world above, realized after the caves below it were
+    written -- so the chamber, the maw AND Blackfang are all already written.
+    TWO of the three are marked: the obsidian maw and Blackfang Tunnel, neither
+    of which this stub can reach once its own edges are wound back. Iron Gate
+    Chamber is the way back and is listed unmarked. The generated world's
+    version of hour-long-hallway, with more written neighbours to restate than
+    any other case here, and the room that really did open onto somewhere new --
+    `surface` is absent, so opening onto it means inventing it.
+
+- id: iron-gate-surface
+  story: The Iron Gate Descends
+  room: surface
+  reached_from: tunnel upward
+  absent:
+  - Spire’s Rest
+  - Hollow’s End
+  expects_new_ground: true
+  shape: dangerous
+  why: >-
+    A DANGEROUS room in a GENERATED world, which is a different case from the
+    belfry and not a duplicate of it: Universe::Generator marks no race
+    monstrous, so this room's danger draws from the peoples and writes an
+    ordinary person (Character::Registry#race_from). It is the case that shows
+    what the fallback really produces, and `race_not_named` is unjudgeable on it
+    by construction rather than by accident.
+
+- id: iron-gate-hollows-end
+  story: The Iron Gate Descends
+  room: Hollow’s End
+  reached_from: surface
+  expects_new_ground: true
+  shape: landmark
+  why: >-
+    A town with troll-bone walls, a day's hard ride north, named in the
+    universe's own geography and never written. The furthest thing from the
+    caves this world has, so it is where the exits prompt is asked to leave the
+    dungeon behind -- and where the whole map is most tempting to list.
+
+- id: iron-gate-spires-rest
+  story: The Iron Gate Descends
+  room: Spire’s Rest
+  reached_from: surface
+  expects_new_ground: true
+  shape: landmark
+  why: >-
+    The capital, and the seat of the Iron Council the story's summary is about.
+    A stub the preface, the summary and four universe fields all point at, which
+    is the most world any of these prompts carries -- and the case where a model
+    has the most to restate.

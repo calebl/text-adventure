@@ -22,13 +22,15 @@ prompt before deciding to change it.**
 
 It is not advice about rigour, it is the order of operations. Before editing
 `Scene::Narrator::INSTRUCTIONS`, `Character#interaction_instructions`,
-`Playthrough::Classifier::INSTRUCTIONS`, a schema's field descriptions or
-anything else a model is handed:
+`Playthrough::Classifier::INSTRUCTIONS`, `Location::Generator`'s people, items
+and exits instructions, a schema's field descriptions or anything else a model
+is handed:
 
 1. **Store a baseline first.** `rake eval:prompt` is the cheap first gate,
-   `rake eval:run` the confirming one, `rake eval:classifier` the classifier's.
-   Sets live under `db/eval/` and `db/eval_baseline.json` and re-score offline
-   for free, so the before half costs nothing once it exists.
+   `rake eval:run` the confirming one, `rake eval:classifier` the classifier's
+   and `rake eval:realization` the room-builder's. Sets live under `db/eval/`
+   and `db/eval_baseline.json` and re-score offline for free, so the before half
+   costs nothing once it exists.
 2. **Judge the after against it with a verdict that can say *noise***
    — `rake eval:prompt_compare` / `rake eval:compare`, four runs a side.
 3. **Re-baseline only once the change has a verdict.**
@@ -69,7 +71,7 @@ rake eval:score SET=main      # score a set again -- no model call, no key, no n
 rake 'eval:read[The Salt Assizes,1]'   # one whole run as prose, every turn, flagged or not
 rake eval:compare BEFORE=main AFTER=my-branch
 rake eval:null SET=main       # split one set in half; everything should read NOISE
-rake eval:estimate REPS=8     # what a sweep of that shape would cost
+rake eval:estimate REPS=8     # what a sweep of that shape would cost, and what a bench baseline costs
 rake eval:manifest            # the measurement files, with a digest of each
 ```
 
@@ -1095,18 +1097,193 @@ first, confirm it there.
 
 ---
 
+## The realization bench
+
+The prompt bench measures the call the player READS. This measures the call that
+builds the world they read it in — `Location::Generator`'s three prompt blocks:
+**who is here**, **what is lying here**, and **the ways out**. Until this
+existed none of the three had an instrument at all, which is why the cast fix
+shipped on judgement and the roadmap-era exit findings could not be measured
+either way.
+
+**The one number anybody had was a hand count**: 36% of a generated world's exits
+named a place the story already had, and its deepest room wrote its ways out and
+every one led back up (`data/ta-quest-progress-scout/report.md` D5, confirmed by
+`data/ta-neohack-scout/report.md` §3.2). A hand count is not a baseline — it
+cannot be re-run, it has no band, and no prompt change can be judged against it.
+
+```bash
+rake eval:realization                        # 18 stubs x 4 reps x 2 calls x 1 model, ~$0.17
+rake eval:realization_score SET=name         # score a stored set again -- offline, free, no key
+rake eval:realization_compare BEFORE=a AFTER=b
+rake eval:realization_board                  # every stored set as one table
+```
+
+| knob | what it does |
+| --- | --- |
+| `REPS=4` | repetitions. **Four is the default because four is `Eval::Noise::MIN_RUNS`** |
+| `MODELS=a,b` | **the arm selector**, `Eval::Classifier::Arm` and not a second one. Defaults to ONE model — `BaseAgent::REMOTE_MODEL_IDS.first`, which is what a player's rooms are really written by |
+| `SET=name` | where the numbers land (`tmp/eval/<set>/realization.json`). Defaults to a timestamp |
+| `SAMPLE=12` | how many flagged cases the board prints in full |
+| `SAMPLE_CASES=4` | run only the first n cases — a smoke test for a few cents |
+| `YES=1` | spend past the $1.00 ceiling |
+
+`rake eval:estimate` prints what a baseline costs before anything is spent.
+
+### How a case works
+
+A case is **a world, a room in it, and the moment before that room was written.**
+`Eval::Realization::Stage` loads the world under a title of its own, winds the
+room back to the stub it was — no description, no lore, nothing lying in it, one
+way out — and then runs `Location::Generator#realize!` whole. **Nothing is
+stood in for.** The prompt bench has to replace the classifier because a second
+model between the case and the passage would change the branch; a realization
+has no such seam and needs none.
+
+The keys that do the work are **declared and not derived**, because none of them
+is recoverable from the records — connections carry no timestamp, and
+`created_at` says when a row appeared, not what the world looked like around it:
+
+| key | what it says |
+| --- | --- |
+| `reached_from` | the ONE neighbour whose realization created this stub — the way back |
+| `also_reaches` | the other neighbours this stub could ALREADY reach, and nothing by default: every edge but the way back is removed unless a case names it here. The `two-ways-out` cases declare it, and they are the only ones that stage a stub already partly connected — which is the only state where the allowance in the prompt is below the cap |
+| `absent` | rooms that did not exist yet — destroyed |
+| `unwritten` | rooms that existed but had not been written — wound back to stubs, so the prompt does not mark them *already written* |
+| `expects_new_ground` | whether the story points onward from here. **A dead end that names only the way back is the RIGHT answer** — the prompt asks for exactly that — so `no_new_ground` is judged only where this is true |
+
+Everything else the model is told is read out of the records that world really
+holds: the universe, the preface, the allowances, the places that already exist
+and which of them are written, the names already spoken for, and the cast slots
+the engine rolled.
+
+### What it measures, and why nothing here reads prose
+
+**Every check is a set comparison** — a name the model wrote against a closed
+list of names the prompt handed it, or a count against a number the prompt
+stated. Both sides are records, so a rate here is the same kind of fact
+`rake game:sweep` produces rather than a reading. `Eval::Realization::Scorer`
+owns the table; the checks are:
+
+| check | what it catches |
+| --- | --- |
+| `exit_into_a_written_room` | an exit into a place already written that this room cannot reach. The prompt marks those; the engine drops the edge, so the room loses a way out |
+| `exit_already_reachable` | an exit the room already had, which the prompt lists and says does not need naming again. **Gated the way `no_new_ground` is**: a case that declared no new ground and answered with the way back and nothing else gave the answer the exits prompt asks a dead end for, so it is out of the denominator rather than flagged — see `Eval::Realization::Scorer`'s header for the two prompt sentences that contradict each other there |
+| `exit_named_this_room` | an exit that names the room it leads out of |
+| `exit_over_the_allowance` | more ways out than the prompt said were left |
+| `no_new_ground` | a room the story points into whose every exit was a place the world already had — or that named no way out at all. **This is the Blackfang Tunnel defect** |
+| `person_over_the_allowance` / `item_over_the_allowance` | more people or things than the prompt allowed |
+| `name_already_spoken_for` | a name the world had already given to somebody, somewhere or something |
+| `proposal_refused` | what the registries would not admit — read off the records, and the superset of every reason above |
+| `readable_without_words` | a thing marked readable with nothing written on it, which costs a later round trip to `Item::Inscriber` |
+| `race_not_named` | **a KEYWORD check, and the only figure here that reads words** |
+
+**`race_not_named` is weighed differently and labelled `[KEYWORD]` on the
+board.** The engine writes the rolled race onto the row whatever the model
+answers, so the RECORD is never wrong and the PROSE can be: a Nocturna-Blighted
+slot described as a nervous clerk is a person the room is wrong about, and every
+later conversation inherits it. What the check can see is the race name missing
+from the sheet. What it cannot see is a compliant person written entirely in
+chitin and silence. **Its false-positive rate is unknown until a baseline is
+bought** — which is the discipline two earlier prose-reading checks failed, and
+the reason it is named for what it can see rather than for what it would like to
+mean.
+
+**And the counts are printed beside the rates and never folded in.** The cheapest
+way to clear every rate above is to write one exit and nobody: a room that names
+only the way back cannot restate a place it should not have, cannot open a door
+into a written room and cannot exceed its allowance. So `exits_named`,
+`new_places_opened`, `new_places_named`, `people_named`, `items_named` and
+`people_take_up` have no better direction and are reported next to the defects.
+This is `Eval::Richness`'s argument applied to rooms.
+
+**`new_places_opened` and `new_places_named` are two different figures.** The
+first is read off the records `Eval::Realization::Bench#after` wrote — what the
+room really brought into existence. The second is a reading of the answer, and
+`Location::Generator#write_exits!` stops connecting when the allowance runs out,
+so a room that named more places than it had room for opened fewer than it
+named.
+
+`exits_restating` — the scout's 36% — is **reported and not scored**, because
+the prompt asks for reuse when an exit leads somewhere already known. The three
+narrower shapes above it are the defects.
+
+### The corpus
+
+`test/fixtures/files/realization_corpus.yml` — cases across **four worlds,
+three seeded and one generated**. The validator runs offline in `bin/rails test`
+and stages every case against the world file it names, so a room somebody
+renamed is a failing test rather than a hole in a paid run.
+
+**`The Iron Gate Descends` is a GENERATED world**, exported with
+`rake 'game:export[7]'` and frozen at `test/fixtures/files/worlds/`. It is
+deliberately NOT under `db/seeds/worlds`: everything there is loaded into every
+development database and into `Eval::Base`'s base world, so putting it there
+would add a fourth world to every sweep as a side effect of building an
+instrument. It is in the corpus because the defect was measured in it, and a
+corpus of nothing but hand-authored seeds would be a corpus of worlds a person
+wrote the neighbours of.
+
+**`The Lunar Cartographer` IS played here**, though `rake eval:prompt` refuses
+it. That bench refuses it because `WorldMechanic::ShuffleConnections` repoints
+its doorways on the story's clock and `Playthrough::Turn#play` catches the world
+up before it narrates. **This bench plays no turn** — no `Scene` is written and
+no clock advances — so the doorways are the ones the seed file lists, on the
+hundredth repetition as on the first. It is also the only world with a bestiary,
+which is what makes `race_not_named` judgeable at all.
+
+`The Salt Assizes` is **held out**, reported apart and never pooled.
+
+### The one input that is not constant, and why
+
+`Character::Registry#slots` rolls the race, age and sex of everybody a
+realization may name, and the prompt states them per slot. Two of those three
+are **not seeded at all** — `rand(18..80)` and `Character.sexes.values.sample`
+are Kernel's own generator — and the third keys on `story_id` and `location.id`,
+which a staged copy re-issues on every load. So those lines legitimately differ
+between two repetitions of one case.
+
+They are **scrubbed before the prompt digest is taken, and recorded rather than
+pinned.** Pinning would mean the bench re-implementing `#slots` — a second
+implementation of the one thing in the app that decides who a new person is,
+which is precisely the failure every file here is written to avoid. What the
+bench does instead is record what was offered, so `people_offered` is a measured
+denominator rather than an assumed one. What it costs, stated rather than
+hidden: a figure that turned on WHICH race a slot drew would need more
+repetitions than one that does not. Everything else in the prompt is supposed to
+be constant, and `prompt_stable` is the check on that claim —
+`Eval::Realization::Version` has it in full.
+
+### There is no baseline yet
+
+`db/eval/` holds no realization set. **The instrument is built and the baseline
+is a spend the captain makes**, at `rake eval:realization` — about **$0.17** at
+`REPS=4` on `mistralai/mistral-medium-3.1`. Until it exists, no change to
+`Location::Generator`'s people, items or exits instructions can be judged, which
+is the whole point of the rule this file opens with.
+
+### What it is not
+
+**It does not tune a prompt**, and it is **not a substitute for
+`rake eval:run`.** A room measured on its own cannot show what it is like to
+walk into three turns later, whether the exits it wrote led anywhere a player
+wanted to go, or what its description did to the narration that followed. Judge
+a realization prompt change here first, confirm it there.
+
+---
+
 ## The instrument this is not: `rake game:sweep`
 
 Everything above measures **narration**, costs money and is noisy enough to need
 a rank test. The engine sweep is the other half and shares none of those
 properties:
 
-| | `rake eval:run` | `rake game:sweep` | `rake eval:classifier` | `rake eval:prompt` |
-| --- | --- | --- | --- | --- |
-| what it reads | prose, against the records | the records, after a typed line | the classifier's answer, against a label | one turn of prose, against fixed facts |
-| what it needs | a key, the network, minutes, dollars | nothing | a key, minutes, cents | a key, minutes, cents |
-| what it answers | a rate with a noise floor | pass or fail | a rate with a noise floor | a rate with a noise floor |
-| in CI | never | every `bin/rails test` | its offline floor and its corpus validator, yes; the calls, never | its corpus validator and its scorer, yes; the calls, never |
+| | `rake eval:run` | `rake game:sweep` | `rake eval:classifier` | `rake eval:prompt` | `rake eval:realization` |
+| --- | --- | --- | --- | --- | --- |
+| what it reads | prose, against the records | the records, after a typed line | the classifier's answer, against a label | one turn of prose, against fixed facts | one room's answer, against the records it was built from |
+| what it needs | a key, the network, minutes, dollars | nothing | a key, minutes, cents | a key, minutes, cents | a key, minutes, cents |
+| what it answers | a rate with a noise floor | pass or fail | a rate with a noise floor | a rate with a noise floor | a rate with a noise floor |
+| in CI | never | every `bin/rails test` | its offline floor and its corpus validator, yes; the calls, never | its corpus validator and its scorer, yes; the calls, never | its corpus validator, its stage and its scorer, yes; the calls, never |
 
 It plays stored scripts through `Playthrough::Mechanics` with **no model at all**
 — the classifier off, `Playthrough::Grammar` in front of the engine, and
@@ -1255,6 +1432,9 @@ db/eval_baseline.json                the line the next run moves against
 test/fixtures/files/*_corpus.json    the passages the checks were measured on
 lib/eval/classifier*                 the classifier bench
 test/fixtures/files/classifier_corpus.yml   the 339 labelled lines
+lib/eval/realization*                the realization bench
+test/fixtures/files/realization_corpus.yml  the stubs it builds
+test/fixtures/files/worlds/*.yml     the generated world it builds them in
 ```
 
 Snapshot the digests before a change and again after: nothing in the list may

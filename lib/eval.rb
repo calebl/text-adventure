@@ -92,6 +92,16 @@ module Eval
     lib/eval/prompt/result.rb
     lib/eval/prompt/scorer.rb
     lib/eval/prompt/version.rb
+    lib/eval/realization.rb
+    lib/eval/realization/bench.rb
+    lib/eval/realization/board.rb
+    lib/eval/realization/comparison.rb
+    lib/eval/realization/corpus.rb
+    lib/eval/realization/report.rb
+    lib/eval/realization/result.rb
+    lib/eval/realization/scorer.rb
+    lib/eval/realization/stage.rb
+    lib/eval/realization/version.rb
     lib/eval/cost.rb
     lib/eval/noise.rb
     lib/eval/richness.rb
@@ -108,6 +118,8 @@ module Eval
     test/fixtures/files/transition_corpus.json
     test/fixtures/files/classifier_corpus.yml
     test/fixtures/files/prompt_corpus.yml
+    test/fixtures/files/realization_corpus.yml
+    test/fixtures/files/worlds/the-iron-gate-descends.yml
     db/eval/classifier-remote/classifier.json
     db/eval/classifier-mistral-small/classifier.json
     db/eval/classifier-gemini-flash-lite/classifier.json
