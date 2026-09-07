@@ -72,6 +72,16 @@ class Eval::Realization::ResultTest < ActiveSupport::TestCase
     assert_includes lines, "`no_new_ground`"
     assert_includes lines, "cost per 1,000 rooms"
 
+    # AND THE TABLE MARKS THE CHECKS THAT READ WORDS, off the same constant the
+    # note under it is written from -- a rate labelled in one place and not the
+    # other is the misreading the note exists to prevent.
+    Eval::Realization::Scorer::KEYWORD_CHECKS.each do |code|
+      assert_includes lines, "`#{code}` **[KEYWORD]**"
+    end
+    (Eval::Realization.checks - Eval::Realization::Scorer::KEYWORD_CHECKS).each do |code|
+      refute_includes lines, "`#{code}` **[KEYWORD]**", "#{code} compares records and is not a reading"
+    end
+
     warnings = board.warnings.join("\n")
     assert_includes warnings, "unavailable rather than clean"
 

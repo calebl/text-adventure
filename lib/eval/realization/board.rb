@@ -98,10 +98,11 @@ class Eval::Realization::Board
 
   private
     # THE KEYWORD NOTE IS WRITTEN OFF THE LIST AND NOT OFF A COUNT, so this
-    # sentence cannot come to disagree with the table above it -- the table's
-    # rows are `Eval::Realization.checks` and its `[KEYWORD]` labels are the
-    # same constant, so a check added to or taken out of `KEYWORD_CHECKS` moves
-    # both at once.
+    # sentence cannot come to disagree with the table above it: the table's rows
+    # come from `Eval::Realization.checks` and `#row_label` marks them off the
+    # same `KEYWORD_CHECKS` this reads, which is also what
+    # `Eval::Realization::Report#checks` labels from -- so a check added to or
+    # taken out of that constant moves all three at once.
     def keyword_note
       codes = Eval::Realization::Scorer::KEYWORD_CHECKS
       named = codes.map { |code| "`#{code}`" }.to_sentence
@@ -114,13 +115,23 @@ class Eval::Realization::Board
         "#{one ? "it" : "each"} can and cannot see."
     end
 
+    # A CHECK THAT READS WORDS IS MARKED IN THE TABLE ITSELF and not only in the
+    # note under it, on the same rule `Eval::Realization::Report#checks` follows:
+    # the label is a fact about what the check CAN see, so it is printed wherever
+    # the rate is.
+    def row_label(code)
+      keyword = Eval::Realization::Scorer::KEYWORD_CHECKS.include?(code) ? " **[KEYWORD]**" : ""
+
+      "`#{code}`#{keyword}"
+    end
+
     def body
       rows = { "set" => ->(column) { "`#{column.set}`" },
                "prompt version" => ->(column) { "`#{column.result.prompt_digest || "unrecorded"}`" },
                "corpus" => ->(column) { "`#{column.result.corpus_digest || "unrecorded"}`" },
                "reps × cases" => ->(column) { "#{column.result.reps} × #{column.result.corpus_size}" } }
 
-      Eval::Realization.checks.each { |code| rows["`#{code}`"] = ->(column) { check(column, code) } }
+      Eval::Realization.checks.each { |code| rows[row_label(code)] = ->(column) { check(column, code) } }
 
       Eval::Realization::Result::REPORTED_METRICS.each_key do |figure|
         rows["`#{figure}` (reported)"] = ->(column) { band(column, figure) }

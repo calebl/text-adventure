@@ -189,6 +189,23 @@ class Eval::Realization::Scorer
       pair.map(&:to_i).sort
     end
 
+    # EVERY PACE PAIR THE PROMPT STATED, and `Location::Plan` is the one author
+    # of that list: the room's own box (`#size_sentence`) and the place's
+    # footprint (`#footprint_clause`). A number the prompt stated is never a
+    # defect, so a claim in here contradicts nothing.
+    def paces_stated = [ room_paces, place_paces ].compact
+
+    # EVERY STOREY THE PROMPT STATED, from the same one author: the room's own
+    # (`#storey_sentence`), the far storey of every stair (`#stair_clause`
+    # writes one per stair), and 0, which that same sentence names as the ground
+    # floor whatever storey the room is on. A sentence added to `Location::Plan`
+    # is picked up here rather than opening another hole.
+    def storeys_stated
+      stairs = Array(plan && plan["stairs"]).filter_map { |stair| stair["storey"] }
+
+      ([ planned_storey ] + stairs + [ 0 ]).compact.uniq
+    end
+
     def people = Array(detail["people"])
     def items = Array(detail["items"])
     def exits = Array(exits_answer["exits"])
@@ -608,40 +625,46 @@ class Eval::Realization::Scorer
   # `Story::Scoreboard`'s rule -- and a sorted pair is a pair neither the model
   # nor the records ever wrote.
   #
-  # AND A CLAIM THAT REPEATS A NUMBER THE PROMPT ITSELF STATED IS NOT A DEFECT,
-  # which is the one rule both discounts below come out of. `Location::Plan`
-  # hands the model MORE than the room's own box, and a checker that knew only
-  # the box would convict prose for agreeing with the rest of it.
+  # A NUMBER THE PROMPT STATED IS NEVER A DEFECT, and that is the whole rule --
+  # stated once here rather than as a discount per sentence somebody remembered.
+  # `Location::Plan` hands the model MORE than the room's own box: the place's
+  # footprint, the far storey of every stair, and the clause naming storey 0 the
+  # ground floor. A claim is a defect only when it contradicts EVERY number of
+  # its kind the plan stated, so the comparison is against
+  # `Reading#paces_stated` and `Reading#storeys_stated` -- both read off the plan
+  # hash, so a sentence added to `Location::Plan` is covered here by
+  # construction.
   def judge_size_the_records_do_not_hold
     flag_each(:size_the_records_do_not_hold,
               ->(r) { size_claims(r).size + judgeable_storey_claims(r).size }) do |reading|
-      paces = reading.room_paces
-      storey = reading.planned_storey
-
-      size_claims(reading).reject { |claim| claim.paces == paces || claim.paces == reading.place_paces }
+      size_claims(reading).reject { |claim| reading.paces_stated.include?(claim.paces) }
                           .map { |claim|
         "said the room is #{claim.as_written.join(" by ")} paces and it is " \
           "#{reading.room_extent.join(" by ")} -- #{claim.sentence.inspect}"
-      } + judgeable_storey_claims(reading).reject { |claim| claim.storey == storey }.map do |claim|
-        "put the room on storey #{claim.storey} and it is on storey #{storey}" \
+      } + judgeable_storey_claims(reading).reject { |claim| reading.storeys_stated.include?(claim.storey) }
+                                          .map do |claim|
+        "put the room on storey #{claim.storey} and it is on storey #{reading.planned_storey}" \
           " -- #{claim.sentence.inspect}"
       end
     end
   end
 
-  # A STOREY CLAIM OF 0 ON A ROOM THAT IS NOT ON STOREY 0 IS UNJUDGEABLE, and it
-  # is out of the DENOMINATOR rather than merely unflagged -- `#correct_dead_end?`'s
-  # doctrine in this same class: a rate the check did not earn is worse than no
-  # rate. `Location::Plan#storey_sentence` ends every plan with the clause
-  # *"storey 0 is the ground floor"*, so a passage carrying "storey 0" cannot be
-  # told from an echo of the prompt's own explanation of what the number means.
-  # A claim of any other number is judged exactly as it would be without this,
-  # and so is a "storey 0" on a room that really is on storey 0 -- that one was
-  # compared and it agreed.
+  # A STOREY THE PROMPT STATED OF SOMETHING OTHER THAN THIS ROOM IS UNJUDGEABLE,
+  # and it is out of the DENOMINATOR rather than merely unflagged --
+  # `#correct_dead_end?`'s doctrine in this same class: a rate the check did not
+  # earn is worse than no rate. "Storey 0" cannot be told from an echo of
+  # *"storey 0 is the ground floor"*, and "storey 1" on a room whose plan says a
+  # stair climbs to storey 1 cannot be told from an echo of that stair's own
+  # clause -- in both the passage may be saying something true about a thing
+  # that is not this room, and no reading tells which.
+  #
+  # THE ROOM'S OWN STOREY IS THE EXCEPTION AND STAYS IN, because there the claim
+  # was compared with the record it is about and it agreed. A storey the plan
+  # names nowhere is judged exactly as it would be without any of this.
   def judgeable_storey_claims(reading)
-    return storey_claims(reading) if reading.planned_storey == 0
+    echoes = reading.storeys_stated - [ reading.planned_storey ]
 
-    storey_claims(reading).reject { |claim| claim.storey.zero? }
+    storey_claims(reading).reject { |claim| echoes.include?(claim.storey) }
   end
 
   # THE TWO GRAMMARS, ASKED ONCE PER READING. A denominator lambda and the

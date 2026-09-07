@@ -1163,9 +1163,10 @@ the engine rolled.
 closed list of names the prompt handed it, or a count against a number the
 prompt stated. Both sides are records, so a rate here is the same kind of fact
 `rake game:sweep` produces rather than a reading. The ones that read words are
-`Eval::Realization::Scorer::KEYWORD_CHECKS`, labelled `[KEYWORD]` on the board
-and named for what they can actually see; `Eval::Realization::Scorer` owns the
-table, and the checks are:
+`Eval::Realization::Scorer::KEYWORD_CHECKS`, marked `[KEYWORD]` beside their
+rate in both the terminal report and the markdown board, and named for what
+they can actually see; `Eval::Realization::Scorer` owns the table, and the
+checks are:
 
 | check | what it catches |
 | --- | --- |
@@ -1181,10 +1182,10 @@ table, and the checks are:
 | `race_not_named` | **a KEYWORD check** — see below |
 | `size_the_records_do_not_hold` | **a KEYWORD check.** The description stated a size in paces, or a storey, that is not this room's. Judgeable only on an `interior-room` case, where `Location::Plan` stated the numbers in the prompt |
 
-**The keyword checks are weighed differently and labelled `[KEYWORD]` on the
-board**, and the note beneath the board's table is written off
-`Eval::Realization::Scorer::KEYWORD_CHECKS` so it cannot come to name a
-different set from the one the table labels.
+**The keyword checks are weighed differently and labelled `[KEYWORD]` beside
+their own rate**, in the board's table and in the report. The note beneath that
+table is written off `Eval::Realization::Scorer::KEYWORD_CHECKS` too, so it
+cannot come to name a different set from the one the rows are marked with.
 
 The geometry check is halfway between a reading and a comparison, and it is
 worth saying which half is which: what it COMPARES is a record and nothing else
@@ -1230,10 +1231,19 @@ not earn is worse than no rate.
 
 * The PLACE's footprint in paces is in the plan's storey sentence, so a pace pair
   equal to it *agrees* — counted, not flagged.
-* That sentence ends *"storey 0 is the ground floor"*, so a passage carrying
-  "storey 0" on a room that is not on storey 0 cannot be told from an echo of the
-  prompt's own explanation: that claim leaves the **denominator**. Every other
-  storey number is judged.
+* A storey the prompt states of something that is not this room cannot be told
+  from a false claim about the room, so that claim leaves the **denominator**
+  rather than being merely unflagged. There are two: *"storey 0 is the ground
+  floor"*, which every plan ends with, and the far storey of each stair
+  (*"a stair up to The Custom House room 5, on storey 1"*). The room's **own**
+  storey is compared and agrees, so it counts; a storey the plan states nowhere
+  is judged.
+
+Both sets are read off the plan hash — `Reading#paces_stated` and
+`Reading#storeys_stated` — and not off a list of remembered clauses, because
+three separate rounds of review found a prompt-stated number about to be
+reported as a defect. `Location::Plan` is the one author of what the prompt
+states, so a sentence added there is covered by construction.
 
 **`race_not_named` is weighed differently and labelled `[KEYWORD]` on the
 board.** The engine writes the rolled race onto the row whatever the model

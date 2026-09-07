@@ -509,6 +509,30 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
       .judgeable_for(:size_the_records_do_not_hold)
   end
 
+  # A STAIR'S FAR STOREY IS A NUMBER THE PROMPT STATED TOO.
+  # `Location::Plan#stair_clause` writes *"a stair up to The Custom House room 5,
+  # on storey 1"* into the prompt for `quay-entry-room`, so prose repeating it is
+  # repeating a fact it was handed -- and it cannot be told from a passage that
+  # puts THIS room on storey 1, so it leaves the denominator rather than being
+  # merely unflagged.
+  test "a storey claim that echoes a stair's far storey is unjudgeable, not a defect" do
+    entry = planned("A stair climbs out of the corner to storey 1.", plan: ENTRY_PLAN)
+
+    assert_empty entry.flagged_for(:size_the_records_do_not_hold)
+    assert_equal 0, entry.judgeable_for(:size_the_records_do_not_hold)
+  end
+
+  # AND A STOREY THE PLAN NAMES NOWHERE IS JUDGED EXACTLY AS BEFORE, which is
+  # what keeps the discount from swallowing the check: ENTRY_PLAN's stairs reach
+  # storey 1 and nothing in it mentions storey 4.
+  test "a storey no sentence of the plan states is still flagged" do
+    entry = planned("The ledgers all came down from storey 4.", plan: ENTRY_PLAN)
+
+    assert_equal 1, entry.judgeable_for(:size_the_records_do_not_hold)
+    assert_includes entry.flagged_for(:size_the_records_do_not_hold).first.evidence,
+                    "put the room on storey 4 and it is on storey 0"
+  end
+
   # THE GEOMETRY CHECK READS WORDS, and the board is told so.
   test "the geometry check is counted as a keyword check" do
     assert_includes Eval::Realization::Scorer::KEYWORD_CHECKS, :size_the_records_do_not_hold
