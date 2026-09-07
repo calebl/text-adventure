@@ -13,21 +13,49 @@
 # remaining frontier was the surface and the story could not be finished from
 # inside its own records.
 #
-# THE REPAIR, ALL OF IT IN THIS FILE: `Prince's Cell` off Blackfang Tunnel, the
-# doorway listed once and written both ways, and Prince Aurel Durn standing in
-# it with the six prose fields `Character` requires and a stat block, because a
-# hand-authored world IS the decision about a body.
+# THE REPAIR IS A PLACE WITH AN INSIDE, and that is the captain's own word for
+# it, 2026-09-07: *"I think the prince should be in a Room inside a Location,
+# not in an unrealized location."* So the prince is not in a location of his own
+# bolted onto the tunnel. `Blackfang Warren` is a PLACE -- a stub carrying a
+# footprint and nothing else, which is what makes `Location#place?` true -- and
+# the party never stands in it. What the party stands in is one of its ROOMS.
 #
-# WHY THE CELL IS `realized` RATHER THAN A STUB. Both, in order: a checked-in
-# world has to be doctor-healthy (`EngineSweepTest`, and `SeededWorldsTest` for
-# the played ones), and `Story::Doctor`'s `character_in_a_stub` is a true
-# warning about exactly this room -- `Location::Generator` writes a room's
-# description without knowing anybody is in it, so a stub cell realizes as an
-# empty room with the prince standing in the middle of it and the prose and the
-# records disagree from the moment the room exists. Writing the room by hand is
-# the same move `db/seeds/worlds/the-unrecorded-hour.yml` makes for its supply
-# closet, and for the same reason: an offline walk makes no model call, so a
-# room nobody has written is a room the sweep can reach and never read.
+# THE INTERIOR IS THE GENERATOR'S OWN OUTPUT, exactly as `the-quay-house.yml`'s
+# is: the warren was handed to `Location::Interior.lay_out!` and the story was
+# exported, so every box, every door and the room numbering below are what the
+# engine wrote from one seeded `Roll`. The footprint is the only geometry this
+# file decided, because a world supplies parameters and never behaviour.
+#
+# WHAT IS HAND-WRITTEN, and it is only what the layout deliberately does not do:
+#
+#   THE WAY IN. `Blackfang Tunnel` opens onto room 1, which is the spare exit
+#   `Location::Interior` keeps free on the entry room for exactly this.
+#
+#   THE CELL'S PROSE. Room 3 is `realized`, and its description and lore are the
+#   one thing here no model could supply -- an offline sweep makes no call, so a
+#   room nobody has written is a room the walk can reach and never read. They
+#   are written the way `Location::Plan` states the facts to a model that does
+#   write one: 6 by 4 paces, storey 0, and doors in the north and west walls,
+#   which are the walls room 3's box really shares with rooms 4 and 2.
+#
+#   AND WHERE THE PRINCE IS STANDING IN IT: 10,7, a cell of room 3's own floor
+#   read in the warren's plane (`Location::Spot`), against the east wall where
+#   the chain is. A seed file is one of the two writers of a position and the
+#   only one that is a decision rather than a roll.
+#
+# WHY ROOM 3, AND WHY IT IS ON STOREY 0. Room 3 is the room furthest from the
+# way in -- two doors deep, through the room the guards keep or through the
+# room the way you came -- which is where a clan puts what it means to trade.
+# It is on the ground floor because the layout rolled this place ONE storey, and
+# because `Location::Interior` numbers storeys upward from 0 in any case: a
+# warren cut DOWNWARD out of a tunnel is not something the layout can express
+# today, and a negative storey is a thing only a hand-written `z` can say (see
+# `Location::Plan`'s own worked example). Nothing here pretends otherwise.
+#
+# THE ROOM KEEPS THE NAME THE ENGINE GAVE IT -- `Location::Interior.placeholder_name`,
+# ordinal and obviously provisional -- because naming a realized room is a
+# separate slice and this file does not front-run it. What a player reads
+# walking in is the room's own written description, not its name.
 #
 # WHY IT IS NOT IN `db/seeds/worlds`. `Eval::Realization::WORLD_ROOTS` refuses
 # it: that directory is loaded into every development database and is searched
@@ -169,7 +197,9 @@ characters:
   fears: being trapped, the Spire’s shadow
 - fullname: Prince Aurel Durn
   race: Durnish
-  location: Prince's Cell
+  location: Blackfang Warren room 3
+  x: 10
+  y: 7
   stats:
     level: 1
     hit_die: 6
@@ -326,15 +356,55 @@ locations:
   detail_level: stub
   teaser: |-
     The dense forest stretches north, its gnarled branches blotting out the sky and the scent of iron-rich earth thick in the air.
-- name: Prince's Cell
+- name: Blackfang Warren
+  detail_level: stub
+  width: 12
+  depth: 9
+  teaser: |-
+    A low door of iron-strapped obsidian at the tunnel's lowest turn, and behind it the clan's own warren cut back into the rock.
+- name: Blackfang Warren room 1
+  detail_level: stub
+  parent: Blackfang Warren
+  x: 0
+  y: 0
+  z: 0
+  width: 6
+  depth: 5
+  teaser: A room inside Blackfang Warren, 6 by 5 paces on storey 0.
+- name: Blackfang Warren room 2
+  detail_level: stub
+  danger: uneasy
+  parent: Blackfang Warren
+  x: 0
+  y: 5
+  z: 0
+  width: 6
+  depth: 4
+  teaser: A room inside Blackfang Warren, 6 by 4 paces on storey 0.
+- name: Blackfang Warren room 3
   detail_level: realized
   danger: uneasy
-  teaser: |-
-    A low door of iron-strapped obsidian at the tunnel's lowest turn, where the skittering stops and something inside breathes slowly, as though it has learned to.
+  parent: Blackfang Warren
+  x: 6
+  y: 5
+  z: 0
+  width: 6
+  depth: 4
+  teaser: A room inside Blackfang Warren, 6 by 4 paces on storey 0.
   description: |-
-    The door is obsidian strapped with Durnish iron, hung the wrong way round so that it opens inward, and past it the tunnel becomes a room barely deeper than a man is tall. The fungi here have been scraped from the walls in wide grey patches, leaving just enough of a glow to see by, and the stone beneath them is scored with rows of short marks cut by something blunter than a blade. A chain runs from a ring hammered into the far wall to a shackle lying open on the floor, and the floor is dry, which nothing else down here is. The air is warm with somebody having been in it a long time. Against the wall, where the light gives out, a young man in the rags of Council blue sits with his back to the stone and his hands loose in his lap, watching the doorway as though he has watched it every hour he has been awake.
+    The warren's far corner, 6 by 4 paces of dry obsidian on storey 0, and the only room down here whose walls have been scraped clear of the fungi — grey patches of bare stone, and just enough of a glow left to see by. A door in the north wall goes back through to the room the guards keep, and the one in the west wall is the way you came; nothing else opens anywhere. The stone is scored with rows of short marks cut by something blunter than a blade, and a chain runs from a ring hammered into the east wall to a shackle lying open on the floor. The floor is dry, which nothing else beneath the Spire is. Against the far wall, where the light gives out, a young man in the rags of Council blue sits with his back to the stone and his hands loose in his lap, watching the doorway as though he has watched it every hour he has been awake.
   lore: |-
-    This is where the Blackfang keep what they intend to trade. The clan learned from the War of the Spire that a hostage held in the deep tunnels dies of the damp before any Durnish answer arrives, so this cell was cut above the seep and floored with dry obsidian, and the ring in its wall is Durnish iron taken off the gate above. The marks scratched in the stone are days. The shackle is left open because the Silent Maw's priests hold that a thing which has been given a choice and stays is a thing that has been offered properly, and because nobody has walked this far down the tunnels uninvited in a hundred years. The Iron Council has been told the price twice: the sacred obsidian, weighed out and returned. It has answered neither time.
+    This is where the Blackfang keep what they intend to trade. The clan learned in the War of the Spire that a hostage held in the wet tunnels dies of the damp before any Durnish answer arrives, so this corner of the warren was cut above the seep and floored dry, and the ring in its wall is Durnish iron taken off the gate above. The marks scratched in the stone are days. The shackle is left open because the Silent Maw's priests hold that a thing which has been given a choice and stays has been offered properly, and because nobody has walked this far in uninvited in a hundred years. The Iron Council has been told the price twice — the sacred obsidian, weighed out and returned — and has answered neither time.
+- name: Blackfang Warren room 4
+  detail_level: stub
+  danger: uneasy
+  parent: Blackfang Warren
+  x: 6
+  y: 0
+  z: 0
+  width: 6
+  depth: 5
+  teaser: A room inside Blackfang Warren, 6 by 5 paces on storey 0.
 connections:
 - between: [Iron Gate Chamber, tunnel upward]
   distance: a short walk
@@ -351,8 +421,8 @@ connections:
 - between: [obsidian maw, Blackfang Tunnel]
   distance: a short walk
   travel_method: walking
-- between: [Blackfang Tunnel, Prince's Cell]
-  distance: a short walk
+- between: [Blackfang Tunnel, Blackfang Warren room 1]
+  distance: adjacent
   travel_method: walking
 - between: [surface, Spire’s Rest]
   distance: a long journey
@@ -378,3 +448,15 @@ connections:
 - between: [Ashen Spire, Rust Market]
   distance: a long journey
   travel_method: riding
+- between: [Blackfang Warren room 1, Blackfang Warren room 2]
+  distance: adjacent
+  travel_method: walking
+- between: [Blackfang Warren room 1, Blackfang Warren room 4]
+  distance: adjacent
+  travel_method: walking
+- between: [Blackfang Warren room 2, Blackfang Warren room 3]
+  distance: adjacent
+  travel_method: walking
+- between: [Blackfang Warren room 3, Blackfang Warren room 4]
+  distance: adjacent
+  travel_method: walking

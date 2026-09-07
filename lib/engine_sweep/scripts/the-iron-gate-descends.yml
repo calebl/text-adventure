@@ -10,22 +10,32 @@
 # only part of him the engine ever held was his signet ring, in the mud of the
 # opening room. Meanwhile the dungeon's deepest room was written with two exits
 # and both of them led back up, so the world's one remaining frontier was the
-# surface and the story could not be finished from inside its own records. The
-# repair is in the seed file: a `Prince's Cell` off Blackfang Tunnel, the
-# doorway written both ways, and Prince Aurel Durn standing in it.
+# surface and the story could not be finished from inside its own records.
 #
-# SO THIS FILE ASSERTS THE BEAT AND THE PRESENCE, AND NEVER THE PROSE. Where
-# the party stands, what leads out of there and who is standing in it are
-# records; the cell's description is the seed file's own words and nothing in
-# this walk could have written it, because realizing a room is
-# `Location::Generator` and a sweep makes no model call at all. The cell is
-# written in the file for the reason its header gives -- a room nobody has
-# written realizes as an empty room with the prince in the middle of it.
+# THE REPAIR IS A PLACE WITH AN INSIDE, on the captain's word of 2026-09-07:
+# the prince is in a ROOM INSIDE a location, not in a location of his own. So
+# this walk is also the second script that walks a laid-out interior, and the
+# first that walks one to find somebody in it -- in off the tunnel through the
+# spare exit `Location::Interior` keeps on the entry room, two doors deep to
+# the room furthest from the way in, and the prince standing there.
+#
+# IT ASSERTS THE BEAT AND THE PRESENCE, AND NEVER THE PROSE. Where the party
+# stands, what leads out of there and who is standing in it are records. The
+# cell's description is the seed file's own words and nothing in this walk could
+# have written it: realizing a room is `Location::Generator`, which is model
+# calls, and a sweep makes none -- which is why the rooms it passes through on
+# the way stay stubs and are expected as stubs.
+#
+# THE INTERIOR'S OWN GEOMETRY is asserted by `EngineSweep::Invariants` over the
+# whole walk rather than step by step here: `geometry_unmoved` says no box and
+# no position moved, `positions_in_bounds` says the prince is still on the floor
+# of the room he is in, and `exit_cap` says no room gained a way out. This file
+# asserts the doors, which is what a player can see.
 #
 # THE WORLD IS ONE OF THE SWEEP'S OWN (`EngineSweep::WORLDS`) rather than a
 # world a fresh clone plays, and its header says why.
 story: The Iron Gate Descends
-why: the repaired generated world, walked from its opening room down to the prince
+why: the repaired generated world, walked from its opening room in to the prince
 steps:
 - id: the-gate-as-the-world-was-generated
   type: look
@@ -57,23 +67,52 @@ steps:
     location: obsidian maw (realized)
     present: []
 
-- id: the-deepest-room-has-a-way-down-now
+- id: the-deepest-room-has-a-way-on-now
   type: go to Blackfang Tunnel
   why: |-
     THE REPAIR, READ OFF THE GRAPH. This room was written with two exits and
-    both led back up; the third is the seed file's, and a doorway is two rows.
+    both led back up; the third is the seed file's, and it opens onto a room
+    inside a place rather than onto a location of its own.
   expect:
     changed: true
     location: Blackfang Tunnel (realized)
-    exits: [tunnel upward (realized), obsidian maw (realized), Prince's Cell (realized)]
+    exits: [tunnel upward (realized), obsidian maw (realized), Blackfang Warren room 1 (stub)]
 
-- id: reach-the-prince
-  type: go to the Prince's Cell
-  why: THE WHOLE STORY -- the beat and the presence, off the records, no model
+- id: in-through-the-spare-exit
+  type: go to Blackfang Warren room 1
+  why: |-
+    THE WAY IN TO A PLACE, walked. The party stands in a ROOM and never in the
+    place that contains it, and this room is the entry `Location::Interior`
+    reserved a slot on -- so its ways out are the tunnel behind and the two
+    doors the layout gave it.
   expect:
     changed: true
-    location: Prince's Cell (realized)
-    exits: [Blackfang Tunnel (realized)]
+    location: Blackfang Warren room 1 (stub)
+    exits:
+    - Blackfang Tunnel (realized)
+    - Blackfang Warren room 2 (stub)
+    - Blackfang Warren room 4 (stub)
+    present: []
+
+- id: through-the-guards-room
+  type: go to Blackfang Warren room 2
+  why: a door of the layout's own backbone, and nobody in it
+  expect:
+    changed: true
+    location: Blackfang Warren room 2 (stub)
+    exits: [Blackfang Warren room 1 (stub), Blackfang Warren room 3 (realized)]
+    present: []
+
+- id: reach-the-prince
+  type: go to Blackfang Warren room 3
+  why: |-
+    THE WHOLE STORY -- the beat and the presence, off the records, no model. The
+    room furthest from the way in, and the only room of this interior the file
+    writes: what the player reads on arrival is its own description.
+  expect:
+    changed: true
+    location: Blackfang Warren room 3 (realized)
+    exits: [Blackfang Warren room 2 (stub), Blackfang Warren room 4 (stub)]
     present: [Prince Aurel Durn]
     carrying: [prince's signet ring]
 
@@ -90,10 +129,14 @@ steps:
     offers: [Prince Aurel Durn is here and the classifier resolved them]
     present: [Prince Aurel Durn]
 
-- id: the-way-back-out-is-a-row-too
-  type: go to Blackfang Tunnel
-  why: the far side of the doorway the file wrote, walked
+- id: the-other-door-out-of-the-cell
+  type: go to Blackfang Warren room 4
+  why: |-
+    the layout's other door out of the cell, and the room it leads to is the
+    entry room's neighbour -- so the interior is walkable in a ring and the
+    prince stays where the world put him.
   expect:
     changed: true
-    location: Blackfang Tunnel (realized)
+    location: Blackfang Warren room 4 (stub)
+    exits: [Blackfang Warren room 1 (stub), Blackfang Warren room 3 (realized)]
     present: []
