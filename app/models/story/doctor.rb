@@ -671,7 +671,8 @@ class Story::Doctor
 
     [ *characters_nowhere(cast), *characters_absent_in_the_seed(cast), *characters_absent_but_somewhere(cast),
       *characters_in_a_stub(cast), *characters_outside_the_story(cast),
-      *rooms_over_the_cast_cap, *story_over_the_cast_cap, *characters_the_seed_placed_elsewhere ]
+      *rooms_over_the_cast_cap, *story_over_the_cast_cap, *characters_the_seed_placed_elsewhere,
+      *characters_the_seed_seats_outside_the_room ]
   end
 
   # Nobody has said where they are. `rake game:backfill_whereabouts` recovers
@@ -855,6 +856,43 @@ class Story::Doctor
     end
 
     placed + absent
+  end
+
+  # THE FILE LAYS SOMEBODY IN A CORNER THE ROOM IN THIS DATABASE DOES NOT HAVE.
+  # The two sides of a position are checked in two places and against two
+  # different boxes: `WorldSeed::Loader#validate_positions!` holds a file's pair
+  # to the box the FILE draws for that room, and every writer in the app holds a
+  # row's pair to the box the DATABASE carries. They agree for a world seeded
+  # from the file as it stands, and they can stop agreeing for exactly one
+  # reason -- a checked-in file grew a box, or moved one, after somebody's
+  # database was seeded from it. Which is the class of database this whole file
+  # exists for.
+  #
+  # IT IS THE ONE THING `#repair_seeded_whereabouts` CANNOT PUT BACK. Every
+  # other half of `character_moved_from_the_seed` is a value that already exists
+  # somewhere else, written back; this one is a value that exists and does not
+  # fit, so the repair writes the room, leaves the cell to the roll, and says so
+  # in its own message. What is left is named here.
+  #
+  # MANUAL, because there is no derivable answer: the file may be right and the
+  # room's box stale, or the box right and the file stale, and the records
+  # cannot say which. A person edits the world file or re-seeds -- and re-seeding
+  # settles it, because it writes both the box and the pair from the one
+  # document.
+  def characters_the_seed_seats_outside_the_room
+    seeded_positions.filter_map do |fullname, seat|
+      character = story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
+      next if character.nil?
+
+      room = story.locations.find_by(name: seeded_whereabouts[fullname])
+      next if room.nil? || room.box&.contains?(seat)
+
+      finding(:seeded_position_outside_the_room, :warning,
+              "#{seed_basename} lays #{character.fullname} #{seat} in #{room.name}, which " \
+              "#{room.box ? "is #{room.box}" : "carries no box in this database"} -- so nothing can put them in " \
+              "that corner. Re-seed, or make the file and the room agree about the floor plan",
+              :manual, subject: character)
+    end
   end
 
   # A malformed world file is `WorldSeed::Loader`'s to complain about, not this

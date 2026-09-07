@@ -939,6 +939,43 @@ class CharacterTest < ActiveSupport::TestCase
     assert_equal Location::Spot.new(x: 9, y: 4), clerk.position
   end
 
+  # ONE RULE WITH NO EXCEPTION: the destination's own box is asked about every
+  # pair, the file's included. A file is held to the box the FILE draws and this
+  # writes into the box the DATABASE carries, so an offer that does not fit is
+  # declined and the engine rolls -- rather than standing somebody through a
+  # wall and leaving `Story::Doctor` to report it afterwards.
+  test "a pair off the destination's floor is declined and rolled instead" do
+    clerk = create(:character, :placed)
+    other = create(:location, story: clerk.story, parent_location: clerk.location.parent_location,
+                              x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    clerk.move_to!(other, at: Location::Spot.new(x: 3, y: 4))
+
+    assert_equal Location::Spot.new(**Location::Placement.in_the_world(other, clerk)), clerk.reload.position
+    assert other.box.contains?(clerk.position), "#{clerk.position} is outside #{other.box}"
+  end
+
+  test "half a pair is declined and rolled instead" do
+    clerk = create(:character, :placed)
+    other = create(:location, story: clerk.story, parent_location: clerk.location.parent_location,
+                              x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    clerk.move_to!(other, at: Location::Spot.new(x: 9, y: nil))
+
+    assert_equal Location::Spot.new(**Location::Placement.in_the_world(other, clerk)), clerk.reload.position
+  end
+
+  # A ROOM WITH NO BOX HAS NO CORNER TO KEEP, which is the state every room in
+  # the three checked-in worlds is in -- so a file that grew a floor plan after
+  # a database was seeded from it hands back a pair this room cannot hold.
+  test "a pair offered for a room with no box leaves them unplaced" do
+    clerk = create(:character, :placed)
+
+    clerk.move_to!(create(:location, story: clerk.story), at: Location::Spot.new(x: 1, y: 1))
+
+    assert_nil clerk.reload.position
+  end
+
   test "the positioned scope takes a partial row too" do
     placed = create(:character, :placed)
     partial = create(:character, story: placed.story, location: create(:location, story: placed.story))

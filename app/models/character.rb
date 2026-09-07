@@ -603,10 +603,13 @@ class Character < ApplicationRecord
   # in-bounds cell rather than re-rolling it, and everything else -- a different
   # room, or nil -- writes the pair as before.
   #
-  # AN OUT-OF-BOUNDS OR PARTIAL CELL IS NOT PRESERVED. It is not a decision
-  # anybody made, it is a row `Story::Doctor` reports as a fault, and standing
-  # somebody through a wall for ever is not what "keep what the author wrote"
-  # means. Those get the roll.
+  # AN OUT-OF-BOUNDS OR PARTIAL CELL IS NOT PRESERVED, WHOEVER WROTE IT. It is
+  # not a decision anybody could have meant: it is a row `Story::Doctor` reports
+  # as a fault, and standing somebody through a wall for ever is not what "keep
+  # what the author wrote" means. Those get the roll -- and so does a cell in a
+  # room with no box at all, because a plane that does not exist has no corner
+  # to keep. ONE RULE WITH NO EXCEPTION: `#position_in` asks the destination's
+  # own box about every pair it is offered, the file's included.
   #
   # `at:` IS THE FILE'S OWN PAIR, WRITTEN BACK, and the only way to hand this
   # method a position. `Story::Repair#repair_seeded_whereabouts` passes it for
@@ -615,6 +618,14 @@ class Character < ApplicationRecord
   # inventing a corner. There is no other caller and there is not meant to be --
   # a mechanic that invented a cell here would be a second author of a position,
   # which is what `Location::Placement`'s header exists to keep down to one.
+  #
+  # AND IT IS AN OFFER RATHER THAN AN INSTRUCTION, because the file and the
+  # database can disagree: `WorldSeed::Loader#validate_positions!` holds a pair
+  # to the box the FILE draws, and this writes it into whatever box the row in
+  # the database carries -- which for a world seeded before that room had one is
+  # no box at all. So a pair that does not fit is declined here and named by
+  # `Story::Doctor` (`seeded_position_outside_the_room`), rather than written in
+  # and reported afterwards as a person standing through a wall.
   def move_to!(location, at: nil)
     update!(location: location, deliberately_absent: location ? false : deliberately_absent,
             **position_in(location, at))
@@ -728,23 +739,31 @@ class Character < ApplicationRecord
   private
 
   # WHICH PAIR `#move_to!` WRITES, and the whole of the rule its header states.
-  # Four answers in the order they are asked:
+  # Three answers in the order they are asked:
   #
-  #   the file's       `at:` -- a whole spot a checked-in world file authored,
-  #                    handed back by `Story::Repair`. It wins over both of the
-  #                    two below, because it is the only one of the three a
-  #                    person decided.
+  #   the file's       `at:` -- a spot a checked-in world file authored, handed
+  #                    back by `Story::Repair`. It wins over both of the two
+  #                    below, because it is the only one of the three a person
+  #                    decided.
   #   the one they
   #   are standing on  a destination that is the room the row already names is a
-  #                    move that moves nobody, and an in-bounds cell survives it.
-  #   the roll         every real move, into a room or out to nowhere.
+  #                    move that moves nobody, and a cell survives it.
+  #   the roll         every real move, into a room or out to nowhere -- and
+  #                    everything the first two would have written OFF the
+  #                    destination's floor.
   #
-  # `Location::Box#contains?` is false for a nil spot and for half of one, so
-  # the third answer catches an unplaced row and a partial one without asking
-  # twice.
+  # ONE PREDICATE GATES BOTH OF THE FIRST TWO, and that is the whole reason
+  # there is no exception to the header's rule: a pair nobody can read in the
+  # destination's plane is not a placement, whoever wrote it. It answers false
+  # for a nil spot, for half of one and for a room with no box at all, so an
+  # unplaced row, a partial one and a flat room all fall through to the roll
+  # without being asked about separately.
   def position_in(destination, given)
-    return given.to_h if destination && given.is_a?(Location::Spot)
-    return position.to_h if destination && location_id == destination.id && destination.box&.contains?(position)
+    box = destination&.box
+    seat = given if given.is_a?(Location::Spot) && [ given.x, given.y ].all?(Integer)
+
+    return seat.to_h if box&.contains?(seat)
+    return position.to_h if destination && location_id == destination.id && box&.contains?(position)
 
     Location::Placement.in_the_world(destination, self)
   end
@@ -795,10 +814,6 @@ class Character < ApplicationRecord
     ADDRESSEE
   end
 
-  # HALF A STAT BLOCK IS NOT ONE. `#max_hp` needs both columns, so a row with a
-  # hit die and no level is somebody the engine cannot say anything about while
-  # looking as though it can -- worse than the honest nothing, which is what
-  # `rake game:doctor` reports and `rake game:backfill_stat_blocks` fills in.
   # HALF A POSITION IS NOT ONE -- `#a_stat_block_is_whole`'s rule two columns
   # over, and `Item#a_position_is_whole` word for word one table over. A row
   # with an `x` and no `y` is somebody who looks as though they said where they
@@ -832,6 +847,10 @@ class Character < ApplicationRecord
                       "the plane of the room somebody is standing in, and nowhere is not one")
   end
 
+  # HALF A STAT BLOCK IS NOT ONE. `#max_hp` needs both columns, so a row with a
+  # hit die and no level is somebody the engine cannot say anything about while
+  # looking as though it can -- worse than the honest nothing, which is what
+  # `rake game:doctor` reports and `rake game:backfill_stat_blocks` fills in.
   def a_stat_block_is_whole
     return if level.present? == hit_die.present?
 

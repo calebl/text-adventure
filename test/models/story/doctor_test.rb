@@ -683,6 +683,45 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_match(/the-salt-assizes\.yml puts them in "The Tide Post"/, finding(story, :character_moved_from_the_seed).message)
   end
 
+  # THE TWO SIDES OF A POSITION ARE CHECKED AGAINST TWO DIFFERENT BOXES -- the
+  # file's, by `WorldSeed::Loader`, and the database's, by everything else -- and
+  # they can stop agreeing when a checked-in file grows a floor plan after
+  # somebody's world was seeded from it. `Story::Repair` cannot write a corner
+  # that is not on the room's floor, so this is what names what is left over.
+  #
+  # MANUAL, because the records cannot say whether the file or the box is stale.
+  test "reports a seeded corner the room in this database cannot hold" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    post = story.locations.find_by(name: "The Tide Post")
+    document = WorldSeed.checked_in_document(story.title)
+    document["characters"].detect { |row| row["fullname"] == "Neb Halloran" }.merge!("x" => 2, "y" => 1)
+
+    WorldSeed.stub(:checked_in_document, ->(_title) { document }) do
+      assert_includes codes(story), :seeded_position_outside_the_room
+      assert_equal :manual, finding(story, :seeded_position_outside_the_room).remedy
+      assert_match(/lays Neb Halloran at 2,1 in #{post.name}, which carries no box/,
+                   finding(story, :seeded_position_outside_the_room).message)
+    end
+  end
+
+  # AND IT IS SILENT WHEN THE TWO AGREE, which is the whole point: a pair on the
+  # room's own floor is a pair the repair can write back.
+  test "a seeded corner the room does have is not reported" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    place = create(:location, :stub, :with_a_footprint, story: story, name: "The Assize Hall")
+    cell = create(:location, story: story, parent_location: place, name: "The Holding Cell",
+                             x: 0, y: 0, z: 0, width: 7, depth: 4)
+    story.characters.find_by(fullname: "Neb Halloran").move_to!(cell, at: Location::Spot.new(x: 2, y: 1))
+    document = WorldSeed.checked_in_document(story.title)
+    document["characters"]
+      .detect { |row| row["fullname"] == "Neb Halloran" }
+      .merge!("location" => cell.name, "x" => 2, "y" => 1)
+
+    WorldSeed.stub(:checked_in_document, ->(_title) { document }) do
+      assert_not_includes codes(story), :seeded_position_outside_the_room
+    end
+  end
+
   test "a story that is not a checked-in world is never asked about a seed file" do
     story = healthy_story
     create(:character, story: story, fullname: "Neb Halloran", location: story.locations.first)

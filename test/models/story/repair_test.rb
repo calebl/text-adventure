@@ -248,6 +248,47 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_not_equal Location::Spot.new(**rolled), neb.position
   end
 
+  # AND A PAIR THAT DOES NOT FIT IS NOT WRITTEN AND NOT SWALLOWED. The file's
+  # pair is held to the box the FILE draws and a repair writes into the box the
+  # DATABASE carries, so the two can disagree -- a file that grew a floor plan
+  # after somebody's world was seeded from it, which is the class of database
+  # this whole class exists for. The room is still repaired, the corner falls to
+  # the roll, the message says which, and what is left over is named by the
+  # doctor rather than written in and reported afterwards as a person standing
+  # through a wall.
+  test "a seeded corner the database room cannot hold is declined and named" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    place = create(:location, :stub, :with_a_footprint, story: story, name: "The Assize Hall")
+    cell = create(:location, story: story, parent_location: place, name: "The Holding Cell",
+                             x: 0, y: 0, z: 0, width: 7, depth: 4)
+    neb = story.characters.find_by(fullname: "Neb Halloran")
+    document = WorldSeed.checked_in_document(story.title)
+    document["characters"]
+      .detect { |row| row["fullname"] == "Neb Halloran" }
+      .merge!("location" => cell.name, "x" => cell.box.x + cell.box.width, "y" => 0)
+
+    results = WorldSeed.stub(:checked_in_document, ->(_title) { document }) do
+      BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) do
+        Story::Repair.new(story).apply!
+      end
+    end
+    seated = results.detect { |result| result.code == :character_moved_from_the_seed }
+
+    assert_predicate seated, :repaired?
+    assert_match(/not at 7,0/, seated.message)
+    assert_equal cell, neb.reload.location, "the room is still on record and is still written back"
+    assert_equal Location::Spot.new(**Location::Placement.in_the_world(cell, neb)), neb.position
+    assert cell.box.contains?(neb.position), "#{neb.position} is outside #{cell.box}"
+
+    left_over = WorldSeed.stub(:checked_in_document, ->(_title) { document }) do
+      Story::Doctor.new(story.reload).findings.detect { |it| it.code == :seeded_position_outside_the_room }
+    end
+
+    assert left_over, "the repair could not put the file's corner back and nothing said so"
+    assert_equal :manual, left_over.remedy
+    assert_equal neb, left_over.subject
+  end
+
   # AND A FILE THAT PLACES NOBODY IN PARTICULAR HANDS BACK NOTHING, which is
   # every checked-in world today: the room is written back and the cell is the
   # engine's roll, exactly as it is for anybody the engine placed.

@@ -222,6 +222,17 @@ class Story::Repair
   # the next `rake game:export` would write that invention into the file. A file
   # that places nobody in particular hands back nothing and the engine rolls, as
   # it does for everybody in every generated world.
+  #
+  # AND IT DOES NOT CLAIM A REPAIR IT DID NOT MAKE. The file's pair is held to
+  # the box the FILE draws (`WorldSeed::Loader#validate_positions!`) and this
+  # writes into the box the DATABASE carries, so the two can disagree -- a file
+  # that grew a floor plan after somebody's world was seeded from it. When the
+  # pair does not fit, `Character#move_to!` declines it and rolls, and the
+  # message below SAYS SO rather than reporting a corner nobody wrote. What is
+  # left over is named by `Story::Doctor` as `seeded_position_outside_the_room`,
+  # which is `manual` because the records cannot say whether the file or the
+  # room's box is the stale one. Re-seeding settles it: it writes both from one
+  # document.
   def repair_seeded_whereabouts(finding)
     character = finding.subject
     room = doctor.seeded_whereabouts[character.fullname]
@@ -237,7 +248,19 @@ class Story::Repair
 
     seat = doctor.seeded_positions[character.fullname]
     character.move_to!(location, at: seat)
-    "put #{character.fullname} back in #{location.name}#{" #{seat}" if seat}, where the world file places them"
+    "put #{character.fullname} back in #{location.name}#{seated(character, location, seat)}, " \
+      "where the world file places them"
+  end
+
+  # What the message says about the corner, which is one of three things and
+  # never a fourth: nothing at all when the file names none, the file's own pair
+  # when it was written, and the mismatch out loud when it was declined.
+  def seated(character, location, seat)
+    return "" if seat.nil?
+    return " #{seat}" if character.position == seat
+
+    " (not #{seat}: #{location.name} is #{location.box || "a room with no box"} in this database, so the file's " \
+      "corner is not on its floor and the engine placed them #{character.position || "nowhere in particular"})"
   end
 
   # NOWHERE ON PURPOSE, WRITTEN ONTO A ROW THAT PREDATES THE MARKER. The same
