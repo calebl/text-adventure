@@ -22,9 +22,9 @@ prompt before deciding to change it.**
 
 It is not advice about rigour, it is the order of operations. Before editing
 `Scene::Narrator::INSTRUCTIONS`, `Character#interaction_instructions`,
-`Playthrough::Classifier::INSTRUCTIONS`, `Location::Generator`'s people, items
-and exits instructions, a schema's field descriptions or anything else a model
-is handed:
+`Playthrough::Classifier::INSTRUCTIONS`, `Location::Generator`'s people, items,
+naming and exits instructions, a schema's field descriptions or anything else a
+model is handed:
 
 1. **Store a baseline first.** `rake eval:prompt` is the cheap first gate,
    `rake eval:run` the confirming one, `rake eval:classifier` the classifier's

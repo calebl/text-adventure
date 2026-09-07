@@ -49,19 +49,29 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
   end
 
   # THE NAMING ASK WAS IN THE PROMPT WHEN THIS WAS TAKEN, which is the one fact
-  # about this set that makes it the AFTER side rather than a run beside it: the
-  # two name checks have a denominator. Read off `name_asked`, the fact the
+  # about this set that makes it the AFTER side rather than a run beside it:
+  # both name checks earned a denominator. Read off `name_asked`, the fact the
   # bench stores per row -- a set recorded before `Location::DetailSchema`
   # carried a `name` reports both checks `unavailable`, and that is what the
   # before side of this pair does.
+  #
+  # EACH CHECK AGAINST ITS OWN PREDICATE, AND THE TWO ARE NOT THE SAME ONE.
+  # `Eval::Realization::Scorer#judge_room_name_refused` judges a room the prompt
+  # asked whose name is on record afterwards -- which is every room it asked,
+  # since a room always has a name. `#judge_room_name_already_taken` judges a
+  # room the prompt asked THAT PROPOSED SOMETHING, and `name` is an optional
+  # field, so a room that came back without one is in the first denominator and
+  # not the second. The two figures are equal in this set because this arm
+  # answered every time; that is a fact about the run and not a rule, so it is
+  # not what is asserted here.
   test "the baseline was taken with the naming ask in the prompt" do
     judgeable = kept.passes.map { |pass| pass.judgeable.slice("room_name_refused", "room_name_already_taken") }
 
     judgeable.each do |pass|
       assert_operator pass["room_name_refused"].to_i, :>, 0,
                       "no room in this set was asked to name itself, so it is not a baseline for the naming block"
-      assert_equal pass["room_name_refused"], pass["room_name_already_taken"],
-                   "both name checks stand on the same denominator -- the rooms the prompt asked"
+      assert_operator pass["room_name_already_taken"].to_i, :>, 0,
+                      "no room the prompt asked proposed a name, so the collision check earned no rate"
     end
   end
 
