@@ -272,7 +272,14 @@ class Eval::Realization::Stage
                          "connected in this world, so that is not the way this room was reached"
     end
 
-    drop_edges_except!(room, [ keep, *already_reached(story, room) ].compact) unless interior_room?(room)
+    # ASKED FOR ITS RAISE AND NOT FOR ITS RETURN VALUE ON AN INTERIOR ROOM, which
+    # is why it is hoisted above the guard. Nothing of this room's is dropped,
+    # but a case declaring an `also_reaches` the world does not have is still
+    # the failure that key exists to make impossible -- and a validation that
+    # only runs on some case shapes is not one.
+    reached = already_reached(story, room)
+
+    drop_edges_except!(room, [ keep, *reached ].compact) unless interior_room?(room)
     room.items.destroy_all
     room.update!(description: nil, lore: nil, detail_level: :stub, danger: kase.danger.presence || room.danger)
     room.reload

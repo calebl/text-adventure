@@ -542,16 +542,28 @@ module Story::Audit::Prose
   # A SECOND DOOR, NAMED WITHOUT THE WORD. Prose that has already said "door"
   # says "another" or "one" of the next one -- *"and one in the west wall stands
   # half open"* -- and that is the commonest shape a two-door room is written
-  # in, which is most rooms `Location::Interior` lays out. These count as a
-  # threshold ONLY in a sentence that named a real one (`THRESHOLD`, required
-  # below before any wall is read), so "the only one here" can never claim a
-  # door on its own.
-  DOOR_ANAPHORS = /\b(?:another|one)\b/i
+  # in, which is most rooms `Location::Interior` lays out.
+  #
+  # ATTACHED TO THE WALL AND NOT MERELY NEAR IT, which is the whole of the
+  # pattern and the reason it is not the bare words. "one" is a numeral and a
+  # pronoun far more often than it is a door: *"the west wall is one long run of
+  # pigeonholes"*, *"the south wall is the one the damp has ruined"*, *"the east
+  # wall is the only one still standing beside the door"* all put it within a
+  # bridge of a wall and none of them claims a door. So the anaphor has to be
+  # doing the job the noun would -- PUT somewhere ("another in the east wall") or
+  # HELD by something ("the east wall has another") -- and the two branches are
+  # the two orders prose writes.
+  #
+  # AND ONLY IN A SENTENCE THAT NAMED A REAL THRESHOLD, which `#door_claims`
+  # requires before it reads any wall. An anaphor refers back; a sentence with
+  # nothing to refer back to has not named a door.
+  DOOR_ANAPHORS = /\b(?:another|one)\s+(?:in|into|through)\b|
+                   \b(?:has|holds|carries)\s+(?:another|one)\b/xi
 
   # HOW FAR THE THRESHOLD MAY SIT FROM THE WALL IT IS IN. The longest real link
   # measured is 21 characters -- *"the North-East wall carries a shuttered
-  # gate"* -- and the anaphors sit at 5 to 8 -- *"one in the west wall"*, *"the
-  # west wall has another"*. Short enough that a threshold in one clause cannot
+  # gate"* -- and the anaphors sit at 1 to 5 -- *"one in the west wall"*, *"the
+  # east wall has another"*. Short enough that a threshold in one clause cannot
   # reach a wall in the next: in *"A door in the north wall gives back onto the
   # landing, and another in the east wall leads on; the south wall is hung with
   # tarred canvas"* the south wall is 25 characters from the nearest door word
@@ -602,9 +614,10 @@ module Story::Audit::Prose
   # and `Story::Audit::NEGATIONS` skips the sentence -- so that room is a worked
   # example the size grammar reads and this one does not.
   #
-  # BOTH FIGURES WERE RE-MEASURED WITH `DOOR_BRIDGE` IN PLACE and neither moved:
-  # the bridge took away a false-positive path and no real detection with it.
-  # Room 3's WEST wall is the reason `DOOR_ANAPHORS` exists -- its threshold noun
+  # BOTH FIGURES WERE RE-MEASURED WITH `DOOR_BRIDGE` AND THE ATTACHED FORM OF
+  # `DOOR_ANAPHORS` IN PLACE, and neither moved through either narrowing: both
+  # took away a false-positive path and no real detection with them. Room 3's
+  # WEST wall is the reason `DOOR_ANAPHORS` exists at all -- its threshold noun
   # is 69 characters away, far outside the bridge, and what stands beside the
   # wall is "one in the west wall". Narrowing to the threshold noun alone would
   # have read the repository's own worked example as a one-door room.

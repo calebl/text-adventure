@@ -1205,8 +1205,19 @@ description that answers it names the doorless walls in the same breath as the
 doors. Read sentence-wide, *"A door in the north wall gives back onto the
 landing, and another in the east wall leads on; the south wall is hung with
 tarred canvas and the west wall carries a run of pigeonholes"* claims all four
-walls and flags two, on prose that contradicts nothing. Both figures above were
-re-measured with the bridge in place and neither moved.
+walls and flags two, on prose that contradicts nothing.
+
+**A second door named without the word is still read**
+(`Story::Audit::Prose::DOOR_ANAPHORS`), because that is how prose writes one —
+*"and one in the west wall stands half open"* is the repository's own worked
+example, and its threshold noun is 69 characters away. The anaphor has to be
+doing the job the noun would, though: PUT somewhere ("another in the east wall")
+or HELD by something ("the east wall has another"). The bare words are far wider
+than the job — "one" is a numeral and a pronoun first, so *"the west wall is one
+long run of pigeonholes"* and *"the south wall is the one the damp has ruined"*
+would each claim a door the prose never put there. Both figures above were
+re-measured after the bridge and after the attached anaphor, and neither moved
+through either narrowing.
 
 **Neither check convicts prose of a claim the prompt itself made, or of one the
 prompt never made either way.** `Location::Plan` states more than the room's own

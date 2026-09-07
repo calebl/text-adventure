@@ -221,19 +221,40 @@ class Story::Audit::ProseTest < ActiveSupport::TestCase
   # AND A SECOND DOOR NAMED WITHOUT THE WORD IS STILL READ, which is what
   # `DOOR_ANAPHORS` is for and the shape the repository's own worked example
   # uses (`lib/engine_sweep/worlds/the-quay-house.yml`, The Custom House room
-  # 3). An anaphor counts only in a sentence that named a real threshold, so
-  # "the only one here" claims nothing on its own.
+  # 3, whose west wall is 69 characters from the only threshold noun).
   test "another or one standing in for a door names the wall it is in" do
     assert_equal [ "north", "west" ],
                  Prose.door_claims("A door in the north wall goes through to the counting room, and one " \
                                    "in the west wall stands half open on the dark.").map(&:wall)
+    assert_equal [ "north", "east" ],
+                 Prose.door_claims("A door in the north wall opens on the landing, and another in the " \
+                                   "east wall leads on.").map(&:wall)
     assert_equal [ "south", "east" ],
                  Prose.door_claims("A door in the south wall opens on the dark, and the east wall has " \
                                    "another.").map(&:wall)
   end
 
+  # AN ANAPHOR HAS TO BE DOING THE JOB THE NOUN WOULD, which is the difference
+  # between "another in the east wall" and "one long run of pigeonholes".
+  # "one" is a numeral and a pronoun far more often than it is a door, so the
+  # bare word inside the bridge reads doorless walls as doors -- and
+  # `Location::Plan`'s closing sentence is what invites a model to describe
+  # those walls right beside the doors.
+  test "one used as a numeral or a pronoun beside a wall claims no door" do
+    { "A door in the north wall gives back onto the landing, and another in the east wall leads on; " \
+      "the west wall is one long run of pigeonholes." => [ "north", "east" ],
+      "A door in the north wall opens on the landing; the south wall is the one the damp has ruined." =>
+        [ "north" ],
+      "The east wall is the only one still standing beside the door." => [],
+      "A door in the north wall leads on, and the one behind the desk is barred; the east wall is bare." =>
+        [ "north" ] }.each do |text, walls|
+      assert_equal walls, Prose.door_claims(text).map(&:wall), text
+    end
+  end
+
   test "an anaphor with no threshold anywhere in the sentence claims nothing" do
     assert_empty Prose.door_claims("You are the only one here, and the north wall is damp to the touch.")
+    assert_empty Prose.door_claims("One in the north wall would have helped, if anybody had cut one.")
   end
 
   # A COMPASS WORD IS NOT A WALL, and a wall with nothing to go through it is

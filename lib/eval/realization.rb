@@ -82,8 +82,14 @@ module Eval::Realization
   # seeded world is (`EngineSweep::WORLDS`). A second copy of that plan under
   # this bench's own root would be a second floor plan to keep in step with the
   # generator, which is exactly the drift `Eval::Realization::Stage` refuses to
-  # let a case's FACTS have. Read last, so a world that ever existed in two
-  # places is read from the playable one.
+  # let a case's FACTS have.
+  #
+  # IT IS READ LAST BECAUSE IT IS THE LEAST CANONICAL OF THE THREE, and that is
+  # all the order buys. `.world_file` takes the FIRST root that has the file, so
+  # a duplicate under `test/fixtures/files/worlds/` would WIN over the playable
+  # copy and the sweep's own world would go unread -- which is a reason never to
+  # make one, not a protection against it. Every world named here exists in
+  # exactly one root.
   WORLD_ROOTS = [ "db/seeds/worlds", "test/fixtures/files/worlds", "lib/engine_sweep/worlds" ].freeze
 
   def self.world_file(story)
