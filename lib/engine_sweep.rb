@@ -93,6 +93,14 @@ module EngineSweep
   # the same `WorldSeed::Loader`, the same validations, and `rake game:doctor`
   # says the same thing about one. A sweep world that a person could not load
   # and play would be a fixture pretending to be a world.
+  #
+  # `the-quay-house.yml` is here because nothing a person plays has a laid-out
+  # interior to walk. `the-iron-gate-descends.yml` is here for a second reason,
+  # and its own header states it: it is a GENERATED world, exported with
+  # `rake game:export` and repaired by hand, and `Eval::Realization::WORLD_ROOTS`
+  # refuses a generated world in `db/seeds/worlds` because that directory is
+  # searched first by the realization bench -- so a copy there would silently
+  # become the world that bench measures.
   WORLDS = Rails.root.join("lib/engine_sweep/worlds")
 
   # Every stored script, in a stable order.
