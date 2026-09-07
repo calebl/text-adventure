@@ -165,9 +165,32 @@ class Item::Registry
     # is the world writing down what a room contains. The party's own copy of it
     # is `Item::Snapshot`'s, taken by whichever playthrough triggered the
     # realization on its way through `Playthrough::Turn#move_to`.
-    location.items.create!(name: name, description: description, character: nil,
-                           playthrough: nil, template: nil,
-                           **writing_on(name, attributes))
+    item = location.items.create!(name: name, description: description, character: nil,
+                                  playthrough: nil, template: nil,
+                                  **writing_on(name, attributes))
+    place!(item)
+  end
+
+  # AND WHERE IN THE ROOM IT IS LYING, which the ENGINE decides and no model is
+  # asked -- `Location::DetailSchema` has no field for a coordinate and the
+  # realization prompt does not mention one, exactly as neither mentions a hit
+  # die. `Location::Placement` is the one writer and its header has the design.
+  #
+  # A SECOND WRITE, AND IT HAS TO BE: the seed is the row's own id (see
+  # `Location::Placement`), so the row has to exist before it can be placed.
+  # `Location::Interior#create_room!` writes a stub and then its box for the
+  # same shape of reason, and this returns the item either way so
+  # `#admit!` still collects what it created.
+  #
+  # A ROOM WITH NO BOX PLACES NOTHING, and that is every room in a generated
+  # world today -- `Location#place?` is true only of a row already carrying a
+  # footprint, so nothing generated has an interior yet. The update is skipped
+  # rather than written as a pair of nils so a realization in a flat world costs
+  # no extra statement per item.
+  def place!(item)
+    placement = Location::Placement.in_the_world(location, item)
+    item.update!(**placement) if placement.values.any?
+    item
   end
 
   # WHAT IS WRITTEN ON IT, out of the same answer that named it. `readable` is

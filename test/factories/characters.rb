@@ -46,6 +46,22 @@ FactoryBot.define do
     # -- `Character.present_in(location)` is the closed set `talk` resolves
     # against, so defaulting it would put people in rooms nobody asked for.
 
+    # STANDING SOMEWHERE IN PARTICULAR IN A ROOM: `characters.x` and
+    # `characters.y`, read in the same plane the room's own box is
+    # (`Location::Spot`). It carries the room too, because a position needs one
+    # -- `Character#a_position_needs_a_room` refuses one on somebody nowhere --
+    # which is the one place this factory departs from its "whereabouts are not
+    # defaulted" rule, and it departs from it because the trait's whole subject
+    # is where in a room somebody is. `:placed` on a location runs 0..6 along x
+    # and 0..7 along y, so 2,5 is inside it.
+    #
+    # FIXED NUMBERS, NEVER ROLLED, for the reason the stat block above is fixed.
+    trait :placed do
+      location { association :location, :placed, story: instance.story }
+      x { 2 }
+      y { 5 }
+    end
+
     trait :protagonist do
       fullname { "Hero Protagonist" }
       nickname { "Hero" }

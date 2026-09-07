@@ -214,6 +214,25 @@ class Story::Repair
   #
   # `Character#move_to!` and not the registry, because this IS the explicit
   # decision: the file says so.
+  #
+  # AND WHERE IN THAT ROOM, ON THE SAME TERMS. `characters[].x` / `.y` is a
+  # value that already exists somewhere else too, so it is written back the way
+  # the room is rather than rolled: a repair that put somebody in the right room
+  # and a corner of its own choosing would be inventing half its own answer, and
+  # the next `rake game:export` would write that invention into the file. A file
+  # that places nobody in particular hands back nothing and the engine rolls, as
+  # it does for everybody in every generated world.
+  #
+  # AND IT DOES NOT CLAIM A REPAIR IT DID NOT MAKE. The file's pair is held to
+  # the box the FILE draws (`WorldSeed::Loader#validate_positions!`) and this
+  # writes into the box the DATABASE carries, so the two can disagree -- a file
+  # that grew a floor plan after somebody's world was seeded from it. When the
+  # pair does not fit, `Character#move_to!` declines it and rolls, and the
+  # message below SAYS SO rather than reporting a corner nobody wrote. What is
+  # left over is named by `Story::Doctor` as `seeded_position_outside_the_room`,
+  # which is `manual` because the records cannot say whether the file or the
+  # room's box is the stale one. Re-seeding settles it: it writes both from one
+  # document.
   def repair_seeded_whereabouts(finding)
     character = finding.subject
     room = doctor.seeded_whereabouts[character.fullname]
@@ -227,8 +246,21 @@ class Story::Repair
     location = story.locations.find_by(name: room)
     raise ArgumentError, "the world file places #{character.fullname} in #{room.inspect}, which this story has no location called" if location.nil?
 
-    character.move_to!(location)
-    "put #{character.fullname} back in #{location.name}, where the world file places them"
+    seat = doctor.seeded_positions[character.fullname]
+    character.move_to!(location, at: seat)
+    "put #{character.fullname} back in #{location.name}#{seated(character, location, seat)}, " \
+      "where the world file places them"
+  end
+
+  # What the message says about the corner, which is one of three things and
+  # never a fourth: nothing at all when the file names none, the file's own pair
+  # when it was written, and the mismatch out loud when it was declined.
+  def seated(character, location, seat)
+    return "" if seat.nil?
+    return " #{seat}" if character.position == seat
+
+    " (not #{seat}: #{location.name} is #{location.box || "a room with no box"} in this database, so the file's " \
+      "corner is not on its floor and the engine placed them #{character.position || "nowhere in particular"})"
   end
 
   # NOWHERE ON PURPOSE, WRITTEN ONTO A ROW THAT PREDATES THE MARKER. The same
@@ -493,9 +525,17 @@ class Story::Repair
   # rather than left to it: the caller has already refused a ghost with any
   # scene, and moving the items is the difference between folding two rooms and
   # losing what was in one of them.
+  # AND WHATEVER WAS PLACED IN THE GHOST STOPS BEING PLACED, in the same
+  # statement that moves it. A position is read in the plane of the room a row
+  # is in (`Location::Spot`), so a cell of the ghost's floor is not a cell of
+  # the survivor's -- the two rooms are two rows and nothing says their boxes
+  # agree. Cleared rather than re-rolled: this repair is folding two records
+  # somebody's world file made one, and inventing a corner for everything in it
+  # is not what it was asked to do. Unplaced is the honest answer and
+  # `Location::Placement` writes the same one for a room with no box.
   def fold_location_into(ghost, survivor)
-    moved = Item.where(location: ghost).update_all(location_id: survivor.id)
-    moved += Character.where(location: ghost).update_all(location_id: survivor.id)
+    moved = Item.where(location: ghost).update_all(location_id: survivor.id, **Location::Placement.unplaced)
+    moved += Character.where(location: ghost).update_all(location_id: survivor.id, **Location::Placement.unplaced)
     moved += Location.where(parent_location: ghost).update_all(parent_location_id: survivor.id)
     moved += fold_doorways(ghost, survivor)
     ghost.destroy!

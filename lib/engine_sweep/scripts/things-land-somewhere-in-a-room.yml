@@ -1,0 +1,174 @@
+# A THING IS SOMEWHERE IN PARTICULAR, AND STAYS SOMEWHERE IN PARTICULAR WHEREVER
+# IT IS PUT DOWN.
+#
+# The captain's design words, 2026-09-06: *"locations having an interior where
+# items, characters and exits are placed"*. Slice 4 gives an item and a person
+# two numbers each, and the only rule that can be broken by PLAY is this one: a
+# take clears a position because the thing is in a hand, and a drop rolls a new
+# one inside the room the party is standing in. Every other statement about a
+# position is a statement about a row somebody wrote.
+#
+# WHAT ONLY A WALK CAN SEE HERE, and it is three things:
+#
+#   THAT THE TAKE AND THE DROP CARRY THE POSITION WITH THEM THROUGH THE WHOLE
+#   ENGINE. `Playthrough::TurnTest` hands `#carry!` and `#put_down!` a record
+#   and asserts the columns. What it cannot assert is that a player who types
+#   `take the seal ledger` reaches those statements at all -- that the
+#   classifier's closed set, the grammar and the refusals all still lead to the
+#   one writer -- and that nothing between the typed line and the row writes a
+#   coordinate of its own.
+#
+#   THAT A DROP LANDS IN THE ROOM THE PARTY IS STANDING IN AND NOT THE ONE THE
+#   THING CAME FROM. This is the defect the invariant exists for: the ledger is
+#   picked up at 6,2 of room 1, which runs 0..6 along x, and put down in room 5,
+#   which is directly above it and runs only 0..5. A drop that kept the old
+#   numbers, or that rolled inside the wrong box, is a thing lying through a
+#   wall -- which `EngineSweep::Invariants#positions_in_bounds` fails the whole
+#   walk for. `x: 6` IS WHAT MAKES THAT TRUE and is the world file's own
+#   decision: `Location::Box#contains?` ignores `z`, so any cell the two rooms
+#   shared would be in bounds for both and a stale position would pass. The
+#   world file's header has the arithmetic.
+#   It is read ONCE, over the records the walk leaves behind, which is why the
+#   last typed line below is a drop -- see the note above it.
+#
+#   THAT THE WORLD'S OWN ROW NEVER MOVES. The ledger the file lays at 6,2 is a
+#   TEMPLATE; what the party carries upstairs is this game's copy of it (the
+#   captain's ruling of 2026-09-04). WHAT HOLDS THAT IS THIS SCRIPT'S OWN
+#   EXPECTATIONS, and not an invariant: `here` is read through
+#   `Playthrough#items_lying_in`, which is this game's instances and nothing
+#   else, so a take that had grabbed the world's row would leave this game's
+#   copy lying in room 1 -- and `here: []` fails at
+#   `off-the-floor-and-into-a-hand` the moment it does, and again at
+#   `and-it-is-still-there-when-we-come-back`.
+#   NEITHER INVARIANT CAN FIRE FOR IT, which is worth naming so nobody goes
+#   looking: `#carry!` writes `playthrough` and clears `location` in the one
+#   statement, so a row it touched is out of `Item.lying_in(room).templates`
+#   before `world_items_unmoved` sweeps, and out of `Item.positioned` before
+#   `positions_in_bounds` does -- see the paragraph below.
+#
+# WHAT NO WALK CAN CATCH HERE, and it is worth saying because the invariant
+# reads stronger than it is: A DROP THAT WROTE NO POSITION AT ALL. `#carry!` has
+# already cleared the two columns, so a `#put_down!` that wrote neither leaves
+# the row unplaced -- out of `Item.positioned`, and therefore invisible to
+# `positions_in_bounds`, which can only be true or false OF a row that says
+# where it is. That one is `Playthrough::TurnPositionTest`'s to assert, and it
+# does; what a walk adds is that the cell is in the right room.
+#
+# WHAT THIS SCRIPT DELIBERATELY DOES NOT PIN: THE CELL. A position is rolled
+# from a seed built out of the story and playthrough ids among other things
+# (`Location::Placement`), and a walk loads its own copy of the world -- so
+# which cell the drop lands in is re-derivable inside one process and not
+# across two databases, exactly as a die's face is not pinned in
+# `a-check-against-an-ability.yml`. `Location::PlacementTest` hands the roll its
+# own inputs and pins the cell exactly; what is pinned HERE is what a script can
+# honestly hold -- that the thing is on the right floor, in the right hands at
+# the right moment, and inside the room it says it is in.
+#
+# THE ROOMS ARE STUBS AND STAY STUBS, like every step of
+# `a-building-with-two-floors.yml`: an offline walk writes nothing, which
+# `nothing_was_written` asserts again over the whole world afterwards.
+story: The Quay House
+why: a thing keeps a place in the room it is lying in, through a take, a walk upstairs and a drop
+steps:
+- id: the-quay-as-seeded
+  type: look
+  why: the starting state, outside the building, so a failure later has a known beginning
+  expect:
+    location: The Quay (realized)
+    here: []
+    carrying: []
+    changed: false
+    refused: false
+
+- id: in-through-the-door
+  type: go to The Custom House room 1
+  why: the entry room, and the room the file lays the ledger in
+  expect:
+    changed: true
+    location: The Custom House room 1 (stub)
+    # THIS GAME'S OWN COPY of the world's ledger, taken at first contact
+    # (`Item::Snapshot`) and carrying the template's own position -- which is
+    # the initial snapshot the captain's ruling of 2026-09-04 is about.
+    here: [seal ledger]
+    refused: false
+
+- id: off-the-floor-and-into-a-hand
+  type: take the seal ledger
+  why: a take clears the position, because a thing in a hand is in no room to be read in
+  expect:
+    changed: true
+    carrying: [seal ledger]
+    here: []
+    refused: false
+
+- id: up-the-stairs-with-it
+  type: go to The Custom House room 5
+  why: the floor above, so the room it is put down in cannot be the room it came off
+  expect:
+    changed: true
+    location: The Custom House room 5 (stub)
+    carrying: [seal ledger]
+    here: []
+    refused: false
+
+- id: and-down-somewhere-in-this-room
+  type: drop the seal ledger
+  why: >-
+    THE ONE THING PLAY CAN BREAK. The drop rolls a cell inside room 5's box, and
+    `positions_in_bounds` is what says so -- a drop that kept 6,2 puts the ledger
+    through the wall of the room it is now in, because room 5 runs only 0..5
+    along x. A drop that rolled against the WRONG box is caught only when the
+    cell it picks is outside room 5, which is the honest limit of a bounds check
+    and the reason the world file lays the ledger where it does. The cell itself
+    is not asserted and cannot be; see the header.
+  expect:
+    changed: true
+    here: [seal ledger]
+    carrying: []
+    refused: false
+
+- id: and-it-is-still-there-when-we-come-back
+  type: go to The Custom House room 1
+  why: the room it came from is empty now, because what moved was this game's copy
+  expect:
+    changed: true
+    location: The Custom House room 1 (stub)
+    here: []
+    carrying: []
+    refused: false
+
+- id: picked-up-again-on-the-floor-above
+  type: go to The Custom House room 5
+  why: back to where it was left, and it is lying there rather than back on its old shelf
+  expect:
+    changed: true
+    location: The Custom House room 5 (stub)
+    here: [seal ledger]
+    refused: false
+
+- id: taken-a-second-time
+  type: take the seal ledger
+  why: >-
+    A ROW THAT HAS ALREADY MOVED ONCE, moved again -- so the take is clearing a
+    ROLLED position rather than only the one the file wrote.
+  expect:
+    changed: true
+    carrying: [seal ledger]
+    here: []
+    refused: false
+
+# AND THE WALK ENDS WITH IT ON A FLOOR, which is not tidiness: the invariants
+# run ONCE, over the records the walk leaves behind (`EngineSweep::Walk`). A
+# script that ended with everything in the party's hands would leave nothing
+# positioned for `positions_in_bounds` to be true or false OF, and would pass
+# whatever a drop had written. So the last typed line is a drop, and the row
+# this whole script is about is lying in a boxed room when the reading is taken.
+- id: and-put-down-once-more-so-the-records-end-with-it-placed
+  type: drop the seal ledger
+  why: the invariant reads the world after the last line, so the last line leaves the thing on a floor
+  expect:
+    changed: true
+    location: The Custom House room 5 (stub)
+    here: [seal ledger]
+    carrying: []
+    refused: false

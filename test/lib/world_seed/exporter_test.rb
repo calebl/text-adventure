@@ -717,4 +717,148 @@ class WorldSeed::ExporterTest < ActiveSupport::TestCase
 
     assert_empty exporter.warnings.grep(/location_with_|overlapping_sibling_locations|locations_containing_each_other|pace across/)
   end
+
+  # --- where in a room a thing or a person is, since slice 4 ----------------
+
+  # A PLACE WITH ONE ROOM IN IT, which is the only shape a position can be read
+  # in: coordinates are local to a parent (`Location::Box`).
+  def a_room_inside_a_place
+    place = create(:location, :stub, story: @story, name: "The Rusted Anchor", width: 12, depth: 8)
+    create(:location, story: @story, parent_location: place, name: "The Taproom",
+                      x: 0, y: 0, z: 0, width: 7, depth: 8)
+  end
+
+  test "a placed thing and a placed person export their positions" do
+    taproom = a_room_inside_a_place
+    create(:item, character: nil, location: taproom, name: "brass tap key", x: 5, y: 1)
+    create(:character, story: @story, location: taproom, fullname: "Nell Cawsand", x: 2, y: 6)
+
+    document = WorldSeed::Exporter.new(@story).document
+    key = document["locations"].detect { |row| row["name"] == "The Taproom" }["items"].sole
+    nell = document["characters"].detect { |row| row["fullname"] == "Nell Cawsand" }
+
+    assert_equal [ 5, 1 ], [ key["x"], key["y"] ]
+    assert_equal [ 2, 6 ], [ nell["x"], nell["y"] ]
+  end
+
+  # OMITTED RATHER THAN WRITTEN NULL, which is the rule every key in this format
+  # follows -- and what keeps the three checked-in worlds byte-identical through
+  # an export, since they are flat on purpose and nothing in them is placed.
+  test "a world that places nothing exports no position keys at all" do
+    create(:item, character: nil, location: @opening, name: "brass tap key")
+    create(:character, story: @story, location: @opening, fullname: "Nell Cawsand")
+
+    document = WorldSeed::Exporter.new(@story).document
+    rows = document["characters"] + document["locations"] +
+           (document["characters"] + document["locations"]).flat_map { |row| Array(row["items"]) }
+
+    rows.each do |row|
+      next if row.key?("width")
+
+      Location::Spot::COLUMNS.each { |key| assert_not row.key?(key), "#{row.values.first} exported a #{key}" }
+    end
+  end
+
+  # A THING IN A PAIR OF HANDS HAS NO POSITION TO EXPORT, because it is in no
+  # room -- so `#items_document` writes nothing there without knowing which
+  # owner it was called for.
+  test "a thing exported under a character carries no position" do
+    create(:character, story: @story, fullname: "Nell Cawsand").tap do |nell|
+      create(:item, character: nell, location: nil, name: "tide table")
+    end
+
+    nell = WorldSeed::Exporter.new(@story).document["characters"].detect { |row| row["fullname"] == "Nell Cawsand" }
+
+    Location::Spot::COLUMNS.each { |key| assert_not nell["items"].sole.key?(key) }
+  end
+
+  test "placed things round-trip through export, load and export unchanged" do
+    taproom = a_room_inside_a_place
+    create(:item, character: nil, location: taproom, name: "brass tap key", x: 5, y: 1)
+    create(:character, story: @story, location: taproom, fullname: "Nell Cawsand", x: 2, y: 6)
+
+    once = WorldSeed::Exporter.new(@story).document
+    reloaded = WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(once))).load!
+    twice = WorldSeed::Exporter.new(reloaded).document
+
+    assert_equal once, twice
+  end
+
+  # NO PLAYTHROUGH'S OWN COPY IS EXPORTED, so no warning may name one: a
+  # warning about a row that is not in the file would send its reader looking
+  # for something they cannot edit.
+  test "one game's own copy out of bounds is neither exported nor warned about" do
+    taproom = a_room_inside_a_place
+    template = create(:item, character: nil, location: taproom, name: "brass tap key", x: 5, y: 1)
+    copy = create(:item, character: nil, location: taproom, playthrough: create(:playthrough, story: @story),
+                         template: template)
+    copy.update_columns(x: 99, y: 99)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_equal 1, document["locations"].detect { |row| row["name"] == "The Taproom" }["items"].size
+    assert_empty exporter.warnings.grep(/thing_outside_the_room_it_is_in/)
+  end
+
+  # NOTHING IS TIDIED ON THE WAY OUT, which is the partial box's rule said for a
+  # position: the file is written as the records stand, the loader refuses it,
+  # and this warning is where the person editing it finds out why.
+  test "a thing outside its room is exported as it stands, with a warning" do
+    taproom = a_room_inside_a_place
+    create(:item, character: nil, location: taproom, name: "brass tap key").update_columns(x: 40, y: 40)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    document = exporter.document
+
+    assert_match(/outside the room it is in/, exporter.warnings.join)
+    assert_no_match(/both numbers or neither/, exporter.warnings.join)
+    assert_equal 40, document["locations"].detect { |row| row["name"] == "The Taproom" }["items"].sole["x"]
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(WorldSeed.parse(WorldSeed.dump(document))).load! }
+  end
+
+  # AND IT SAYS WHICH OF THE THREE FAULTS IT IS. Half a position is not a
+  # position, so there is nothing for it to be outside of -- a warning that
+  # called this row a thing through a wall would send whoever reads it to the
+  # room's dimensions to fix a column that is simply empty. The trailing
+  # sentence of every one of these warnings lists all three finding codes, so
+  # asserting a code proves nothing about which fault was named; the phrase
+  # does.
+  test "half a position is exported as it stands, named as half a position" do
+    taproom = a_room_inside_a_place
+    create(:item, character: nil, location: taproom, name: "brass tap key").update_column(:x, 3)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    exporter.document
+
+    assert_match(/part-placed/, exporter.warnings.join)
+    assert_match(/carries x and not the other of x, y/, exporter.warnings.join)
+    assert_match(/a position is both numbers or neither/, exporter.warnings.join)
+    assert_no_match(/outside the room it is in:/, exporter.warnings.join)
+    assert_no_match(/no plane to read/, exporter.warnings.join)
+  end
+
+  test "a position in a room with no box is exported as it stands, with a warning" do
+    create(:item, character: nil, location: @opening, name: "brass tap key").update_columns(x: 1, y: 1)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    exporter.document
+
+    assert_match(/The Opening Room has no box/, exporter.warnings.join)
+    assert_no_match(/both numbers or neither/, exporter.warnings.join)
+    assert_no_match(/outside the room it is in:/, exporter.warnings.join)
+  end
+
+  # THE ONE THAT MUST STAY QUIET: things placed properly inside their rooms,
+  # which is the shape every laid-out world gets from this slice on.
+  test "well placed things export with no position warning at all" do
+    taproom = a_room_inside_a_place
+    create(:item, character: nil, location: taproom, name: "brass tap key", x: 5, y: 1)
+    create(:character, story: @story, location: taproom, fullname: "Nell Cawsand", x: 2, y: 6)
+
+    exporter = WorldSeed::Exporter.new(@story)
+    exporter.document
+
+    assert_empty exporter.warnings.grep(/thing_with_|thing_positioned_|thing_outside_|part-placed/)
+  end
 end

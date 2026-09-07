@@ -48,8 +48,11 @@
 #                        somewhere. That rule is the Tide Post defect written
 #                        down.
 #   `#move_to!`          the explicit engine call, for a mechanic that means to
-#                        move a person. Nothing invokes it yet, and that is the
-#                        point: movement is a decision, not a side effect.
+#                        move a person -- and the one statement `Character::Registry`
+#                        places somebody THROUGH, because a whereabouts and a
+#                        POSITION in the room have to be written together. No
+#                        mechanic invokes it to MOVE anybody yet, and that is
+#                        the point: movement is a decision, not a side effect.
 #   the backfill         `rake game:backfill_whereabouts`, once, from the old
 #                        arrival casts -- and it refuses to guess.
 #
@@ -370,6 +373,14 @@ class Character < ApplicationRecord
   ABILITIES.each { |ability| validates ability, inclusion: { in: ABILITY_RANGE }, allow_nil: true }
   validate :abilities_are_whole
   validates :sex, presence: true, inclusion: { in: sexes.keys }
+  # WHERE IN THE ROOM THEY ARE STANDING. Integers, both or neither, and only for
+  # somebody who is in a room -- see `#a_position_is_whole`,
+  # `#a_position_needs_a_room` and `Location::Spot`. No `greater_than` on
+  # either: a room may sit west of its parent's origin, so a cell of its floor
+  # may be a negative number.
+  validates :x, :y, numericality: { only_integer: true }, allow_nil: true
+  validate :a_position_is_whole
+  validate :a_position_needs_a_room
   validate :race_belongs_to_story_universe
   validate :single_protagonist_per_story
   validate :location_belongs_to_story
@@ -493,9 +504,43 @@ class Character < ApplicationRecord
   # doctor can report one and stay quiet about the other.
   scope :deliberately_absent, -> { where(deliberately_absent: true) }
 
+  # ROWS THAT SAY WHERE IN THE ROOM THEY ARE STANDING -- the set the two
+  # instruments sweep (`Story::Doctor`'s geometry findings and
+  # `EngineSweep::Invariants#positions_in_bounds`). `Item.positioned` is the same
+  # scope one table over and its header has the reason for the `or`: a row
+  # carrying ONE of the two columns is a partial position, and that is precisely
+  # a fault an instrument has to see.
+  scope :positioned, -> { where.not(x: nil).or(where.not(y: nil)) }
+
   def nowhere? = location_id.nil?
 
   def somewhere? = location_id.present?
+
+  # WHERE IN THE ROOM THEY ARE STANDING, or NIL for somebody unplaced -- which
+  # is every row in every database today, everybody in a room with no box, and
+  # everybody who is nowhere. `Location::Spot` owns the value and the frame it
+  # is read in.
+  #
+  # IT LIVES ON THE WORLD ROW, WHICH IS A DECISION AND NOT AN OVERSIGHT. Who is
+  # in a room is the WORLD's (see `.present_in` above): the people standing in a
+  # room are shared exactly as the room itself is, so where they are standing in
+  # it is shared too, and a re-derived position is the same position in every
+  # game. What that costs is stated rather than discovered: two players walking
+  # one seeded world see the clerk in the same corner, and neither can move
+  # him. PER-PLAYTHROUGH MOVEMENT BELONGS BESIDE THE PER-PLAYTHROUGH VITALS --
+  # `Playthrough::Vitals` is the worked example of one body's state in one game,
+  # and a `playthrough_characters` row carrying a room and a spot is the same
+  # shape -- and it is NOT BUILT HERE. Nothing asks for it: no mechanic in the
+  # app moves an NPC during a turn, so a per-game whereabouts would be a table
+  # with one writer and no reader. Whatever world mechanic first walks somebody
+  # across a room is what earns it.
+  #
+  # THIS IS THE READER A LATER SLICE CALLS, like `Item#position`: nothing in the
+  # play path reads a coordinate yet, and `Playthrough::Moment` is slice 3's
+  # file and is untouched here.
+  def position = Location::Spot.of(self)
+
+  def positioned? = !position.nil?
 
   # Nowhere, on purpose, and still nowhere. Both halves are asked because the
   # marker and the column can contradict each other -- a row written outside
@@ -517,9 +562,17 @@ class Character < ApplicationRecord
   # THE EXPLICIT ENGINE CALL, and the only unconditional one. It moves somebody
   # whether or not they were already somewhere, so it is what a mechanic that
   # MEANS to move a person uses -- an escort, a summons, a companion following
-  # the party -- and it is deliberately not called anywhere yet. Placement, the
-  # thing that happens on its own, goes through `Character::Registry`, which
-  # refuses to move somebody who is already somewhere.
+  # the party. No such mechanic exists yet; movement is still a decision rather
+  # than a side effect.
+  #
+  # `Character::Registry` DOES CALL IT, and for two states rather than one: for
+  # somebody it has decided is NOWHERE, which is what its rule is about, and for
+  # somebody ALREADY STANDING IN THIS ROOM, whom `#refusal` lets through because
+  # a room that names a person it already holds is agreeing with the record
+  # rather than asking for anything. It goes through here rather than writing
+  # `location:` itself because a whereabouts and a POSITION in it have to be
+  # written by one statement (see below), and this class's whole premise is that
+  # there is one writer of a whereabouts.
   #
   # `nil` is legal and means "off the map": a person can stop being anywhere.
   #
@@ -531,8 +584,51 @@ class Character < ApplicationRecord
   # exactly as it was, because taking somebody off the map does not decide
   # whether that is the story or an accident; `#absent!` is the call that says
   # it is the story.
-  def move_to!(location)
-    update!(location: location, deliberately_absent: location ? false : deliberately_absent)
+  #
+  # AND IT DECIDES WHERE IN THE ROOM THEY STAND, in the same statement, because
+  # a position is read in the plane of the room somebody is in
+  # (`Location::Spot`) -- so a move that kept the old numbers would leave
+  # somebody standing at a corner of a room they have left. `Location::Placement`
+  # rolls one inside the new room's box, or hands back no position at all when
+  # the room has none, which is every room in the three checked-in worlds.
+  #
+  # A MOVE THAT MOVES NOBODY ROLLS NOTHING, and that is the rule a SEED FILE
+  # turns on. A file may lay a person in a particular corner
+  # (`WorldSeed::Loader#validate_positions!` holds it to the same four rules a
+  # box is held to), and that corner is the author's decision in exactly the
+  # house a seeded hit die is: the engine may not quietly replace it. The one
+  # call that would have is `Character::Registry` re-admitting somebody already
+  # standing in this room -- a move whose destination is the room they are in.
+  # So a destination that is the room the row already names PRESERVES an
+  # in-bounds cell rather than re-rolling it, and everything else -- a different
+  # room, or nil -- writes the pair as before.
+  #
+  # AN OUT-OF-BOUNDS OR PARTIAL CELL IS NOT PRESERVED, WHOEVER WROTE IT. It is
+  # not a decision anybody could have meant: it is a row `Story::Doctor` reports
+  # as a fault, and standing somebody through a wall for ever is not what "keep
+  # what the author wrote" means. Those get the roll -- and so does a cell in a
+  # room with no box at all, because a plane that does not exist has no corner
+  # to keep. ONE RULE WITH NO EXCEPTION: `#position_in` asks the destination's
+  # own box about every pair it is offered, the file's included.
+  #
+  # `at:` IS THE FILE'S OWN PAIR, WRITTEN BACK, and the only way to hand this
+  # method a position. `Story::Repair#repair_seeded_whereabouts` passes it for
+  # the same reason it passes the room: both are values that already exist in a
+  # checked-in world file, and a repair puts back what the file says rather than
+  # inventing a corner. There is no other caller and there is not meant to be --
+  # a mechanic that invented a cell here would be a second author of a position,
+  # which is what `Location::Placement`'s header exists to keep down to one.
+  #
+  # AND IT IS AN OFFER RATHER THAN AN INSTRUCTION, because the file and the
+  # database can disagree: `WorldSeed::Loader#validate_positions!` holds a pair
+  # to the box the FILE draws, and this writes it into whatever box the row in
+  # the database carries -- which for a world seeded before that room had one is
+  # no box at all. So a pair that does not fit is declined here and named by
+  # `Story::Doctor` (`seeded_position_outside_the_room`), rather than written in
+  # and reported afterwards as a person standing through a wall.
+  def move_to!(location, at: nil)
+    update!(location: location, deliberately_absent: location ? false : deliberately_absent,
+            **position_in(location, at))
   end
 
   # HOSTILE BY DEFAULT IF THE RACE IS MONSTROUS -- the captain's seventh ruling
@@ -637,10 +733,40 @@ class Character < ApplicationRecord
   # existed; nothing else in the app decides that somebody's absence is the
   # premise of a world.
   def absent!
-    update!(location: nil, deliberately_absent: true)
+    update!(location: nil, deliberately_absent: true, **Location::Placement.unplaced)
   end
 
   private
+
+  # WHICH PAIR `#move_to!` WRITES, and the whole of the rule its header states.
+  # Three answers in the order they are asked:
+  #
+  #   the file's       `at:` -- a spot a checked-in world file authored, handed
+  #                    back by `Story::Repair`. It wins over both of the two
+  #                    below, because it is the only one of the three a person
+  #                    decided.
+  #   the one they
+  #   are standing on  a destination that is the room the row already names is a
+  #                    move that moves nobody, and a cell survives it.
+  #   the roll         every real move, into a room or out to nowhere -- and
+  #                    everything the first two would have written OFF the
+  #                    destination's floor.
+  #
+  # ONE PREDICATE GATES BOTH OF THE FIRST TWO, and that is the whole reason
+  # there is no exception to the header's rule: a pair nobody can read in the
+  # destination's plane is not a placement, whoever wrote it. It answers false
+  # for a nil spot, for half of one and for a room with no box at all, so an
+  # unplaced row, a partial one and a flat room all fall through to the roll
+  # without being asked about separately.
+  def position_in(destination, given)
+    box = destination&.box
+    seat = given if given.is_a?(Location::Spot) && [ given.x, given.y ].all?(Integer)
+
+    return seat.to_h if box&.contains?(seat)
+    return position.to_h if destination && location_id == destination.id && box&.contains?(position)
+
+    Location::Placement.in_the_world(destination, self)
+  end
 
   # WHO THE CHARACTER IS TALKING TO. `interaction_instructions` used to name
   # nobody at all, so a model asked for a reaction reached for the only handle
@@ -686,6 +812,39 @@ class Character < ApplicationRecord
       afraid of, or has done, and you do not invent any of it. Anything more
       you learn from what #{them.fullname} says and does, here, now.
     ADDRESSEE
+  end
+
+  # HALF A POSITION IS NOT ONE -- `#a_stat_block_is_whole`'s rule two columns
+  # over, and `Item#a_position_is_whole` word for word one table over. A row
+  # with an `x` and no `y` is somebody who looks as though they said where they
+  # were standing and did not.
+  def a_position_is_whole
+    return unless Location::Spot.partial?(self)
+
+    written = Location::Spot::COLUMNS.select { |column| self[column].present? }
+    errors.add(:base, "carries #{written.join(", ")} and not the other of " \
+                      "#{Location::Spot::COLUMNS.join(", ")}; a position is both numbers or neither")
+  end
+
+  # AND A POSITION NEEDS A ROOM TO BE READ IN. Both numbers are read in the
+  # plane of the room somebody is standing in (`Location::Spot`), so NOWHERE is
+  # the one state that cannot carry a position -- and nowhere is a real state
+  # two of the three checked-in worlds are in (see the header). `#move_to!`
+  # writes the pair together on every move, so this cannot be reached through
+  # the engine; it is refused rather than tidied away so that forgetting it is
+  # impossible rather than invisible.
+  #
+  # WHETHER THAT ROOM HAS A BOX IS NOT ASKED HERE, for
+  # `Item#a_position_needs_a_floor`'s reason: it is a question about a second
+  # row, and a validation that queried one would run on every save of every
+  # character in the app. `Story::Doctor` reports it and
+  # `WorldSeed::Loader#validate_positions!` refuses a file that writes it.
+  def a_position_needs_a_room
+    return if Location::Spot::COLUMNS.none? { |column| self[column].present? }
+    return if location_id.present? || association(:location).target.present?
+
+    errors.add(:base, "is #{Location::Spot.of(self) || "part-placed"} and is in no room; a position is read in " \
+                      "the plane of the room somebody is standing in, and nowhere is not one")
   end
 
   # HALF A STAT BLOCK IS NOT ONE. `#max_hp` needs both columns, so a row with a

@@ -37,6 +37,16 @@
 # anybody but the protagonist, so a companion's lantern stays in the companion's
 # hands exactly like any other person's.
 #
+# AND WHERE IN THE ROOM IT IS LYING COMES ALONG WITH IT, which is the same
+# ruling read one pair of columns further: the template's position IS the
+# initial snapshot. It costs this file no line -- `Item::NOT_COPIED` is an
+# exception list and `x`/`y` are not on it, which is that constant's own note --
+# and it cannot produce an illegal row, because a template with a position is
+# lying in a room and a copy of one lies in that same room. What the copy does
+# afterwards is the playthrough's: `Playthrough::Turn#carry!` takes it off the
+# floor plan and `#put_down!` rolls it a new place, and the world's row stays
+# exactly where it was for the next game.
+#
 # NO MODEL, NO NETWORK, NO GENERATION. Every row it writes is a copy of a row
 # that already exists.
 class Item::Snapshot

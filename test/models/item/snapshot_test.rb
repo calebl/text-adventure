@@ -164,4 +164,63 @@ class Item::SnapshotTest < ActiveSupport::TestCase
   test "a story with no starting inventory copies nothing into the party's hands" do
     assert_empty playing.carried
   end
+
+  # --- the template's position is the initial snapshot ----------------------
+
+  # THE CAPTAIN'S RULING OF 2026-09-04, READ ONE PAIR OF COLUMNS FURTHER: *"If a
+  # location is generated with items in it, that should become the initial
+  # snapshot that any playthrough uses"*. A copy of a chair standing by the
+  # window is a chair standing by the window.
+  test "a copy of a placed template is lying where the template is" do
+    room = laid_out_room
+    template = create(:item, character: nil, location: room, x: 3, y: 2)
+
+    copy = playing(location: room).items_lying_in(room).sole
+
+    assert_equal template.position, copy.position
+    assert_equal room, copy.location
+  end
+
+  # AND THEN THE TWO PART COMPANY. What the copy does afterwards is the
+  # playthrough's, and the world's own row never moves --
+  # `Playthrough::TurnTest` walks the take and the drop.
+  test "moving a copy leaves the template's position exactly as it was" do
+    room = laid_out_room
+    template = create(:item, character: nil, location: room, x: 3, y: 2)
+    copy = playing(location: room).items_lying_in(room).sole
+
+    copy.update!(x: 6, y: 0)
+
+    assert_equal Location::Spot.new(x: 3, y: 2), template.reload.position
+    assert_equal Location::Spot.new(x: 6, y: 0), copy.reload.position
+  end
+
+  # A TEMPLATE IN A ROOM WITH NO BOX HAS NO POSITION TO COPY, which is every
+  # template in every checked-in world.
+  test "a copy of an unplaced template is unplaced" do
+    create(:item, character: nil, location: @office)
+
+    copy = playing.items_lying_in(@office).sole
+
+    assert_nil copy.position
+  end
+
+  # AND A COPY THAT LANDS IN A PAIR OF HANDS CANNOT BRING ONE, which is why the
+  # copy is safe without an exception list: a template with a position is lying
+  # in a room (`Item#a_position_needs_a_floor`), so the only copies that land in
+  # hands are copies of templates that had none.
+  test "the starting inventory copies into the party's hands with no position" do
+    create(:item, character: @protagonist, location: nil)
+
+    copy = playing.carried.sole
+
+    assert_predicate copy, :carried?
+    assert_nil copy.position
+  end
+
+  def laid_out_room
+    place = create(:location, :stub, :with_a_footprint, story: @story, name: "The Custom House")
+    create(:location, story: @story, parent_location: place, name: "The Long Room",
+                      x: 0, y: 0, z: 0, width: 7, depth: 4)
+  end
 end

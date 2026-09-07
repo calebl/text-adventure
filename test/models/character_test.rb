@@ -788,4 +788,200 @@ class CharacterTest < ActiveSupport::TestCase
     assert_predicate tame.race, :monstrous?
     assert_not_predicate tame.reload, :hostile?
   end
+
+  # --- where in the room they are standing, since slice 4 -------------------
+
+  test "somebody standing somewhere in a room reads their position back" do
+    clerk = create(:character, :placed)
+
+    assert_equal Location::Spot.new(x: 2, y: 5), clerk.position
+    assert_predicate clerk, :positioned?
+  end
+
+  # WHAT EVERYBODY IN EVERY DATABASE IS, and the reason the columns are
+  # nullable: a room with no box opens no plane, so nobody in one has anywhere
+  # to be.
+  test "somebody in a room with no box is unplaced and perfectly valid" do
+    story = create(:story)
+    clerk = create(:character, story: story, location: create(:location, story: story))
+
+    assert_nil clerk.position
+    assert_not_predicate clerk, :positioned?
+    assert_predicate clerk, :valid?
+  end
+
+  test "half a position is refused" do
+    assert_not_predicate build(:character, :placed, y: nil), :valid?
+    assert_not_predicate build(:character, :placed, x: nil), :valid?
+  end
+
+  test "a position is whole numbers" do
+    assert_not_predicate build(:character, :placed, x: 2.5), :valid?
+  end
+
+  test "somebody at the origin of their room is placed" do
+    clerk = create(:character, :placed, x: 0, y: 0)
+
+    assert_equal Location::Spot.new(x: 0, y: 0), clerk.reload.position
+  end
+
+  # NOWHERE IS THE ONE STATE THAT CANNOT CARRY ONE, and nowhere is a real state
+  # two of the three checked-in worlds are in.
+  test "somebody who is nowhere cannot carry a position" do
+    error = assert_raises(ActiveRecord::RecordInvalid) { create(:character, x: 1, y: 1) }
+
+    assert_match(/in no room/, error.message)
+  end
+
+  # --- a move decides where in the new room they stand ----------------------
+
+  # THE WHEREABOUTS AND THE POSITION MOVE TOGETHER, because a position is read
+  # in the plane of the room somebody is in: keeping the old numbers would leave
+  # them at a corner of a room they have left.
+  test "a move into a laid-out room places them inside its box" do
+    clerk = create(:character, :placed)
+    other = create(:location, story: clerk.story, parent_location: clerk.location.parent_location,
+                              x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    clerk.move_to!(other)
+
+    assert_equal other, clerk.reload.location
+    assert other.box.contains?(clerk.position), "#{clerk.position} is outside #{other.box}"
+  end
+
+  test "a move into a room with no box leaves them unplaced" do
+    clerk = create(:character, :placed)
+
+    clerk.move_to!(create(:location, story: clerk.story))
+
+    assert_nil clerk.reload.position
+  end
+
+  # NOWHERE ON PURPOSE IS STILL NOWHERE, so it clears the position too --
+  # `#a_position_needs_a_room` would refuse the row otherwise, which is what
+  # makes forgetting it impossible rather than invisible.
+  test "making somebody absent takes their position with them" do
+    clerk = create(:character, :placed)
+
+    clerk.absent!
+
+    assert_predicate clerk.reload, :absent?
+    assert_nil clerk.position
+  end
+
+  test "a move to nowhere takes the position with it" do
+    clerk = create(:character, :placed)
+
+    clerk.move_to!(nil)
+
+    assert_predicate clerk.reload, :nowhere?
+    assert_nil clerk.position
+  end
+
+  # RE-DERIVABLE FOR EVER: a world placement is a pure function of the row and
+  # the room, so a REAL move out and back writes the same two numbers again.
+  #
+  # WHICH IS A STATEMENT ABOUT THE ROLL AND NOT ABOUT A FILE'S OWN CELL. Walking
+  # out of a room is a move, so the cell a seed file laid somebody in does NOT
+  # survive one -- it is replaced by the roll, exactly as it is for anybody the
+  # engine placed. What a file's cell survives is a move that moves nobody; see
+  # the two tests below.
+  test "walking out of a room and back in stands them where they were" do
+    clerk = create(:character, :placed)
+    room = clerk.location
+    was = Location::Placement.in_the_world(room, clerk)
+
+    clerk.move_to!(nil)
+    clerk.move_to!(room)
+
+    assert_equal Location::Spot.new(**was), clerk.reload.position
+  end
+
+  # A MOVE THAT MOVES NOBODY ROLLS NOTHING, which is what lets a seed file's own
+  # corner survive `Character::Registry` naming somebody it already holds. The
+  # cell the factory writes is chosen here to be one the roll does not give, so
+  # nothing about this depends on which ids the suite happened to allocate.
+  test "being moved into the room they are already in keeps the cell they are on" do
+    clerk = create(:character, :placed)
+    room = clerk.location
+    rolled = Location::Placement.in_the_world(room, clerk)
+    seated = { x: room.box.x + ((rolled[:x] - room.box.x + 1) % room.box.width), y: rolled[:y] }
+    clerk.update!(**seated)
+
+    clerk.move_to!(room)
+
+    assert_equal Location::Spot.new(**seated), clerk.reload.position
+  end
+
+  # AND A CELL OUTSIDE THE ROOM IS NOT KEPT, because it is not a decision
+  # anybody made -- it is a row `Story::Doctor` reports as a fault.
+  test "a cell outside the room is re-rolled rather than kept" do
+    clerk = create(:character, :placed)
+    room = clerk.location
+    clerk.update_columns(x: room.box.x + room.box.width + 2, y: room.box.y)
+
+    clerk.move_to!(room)
+
+    assert_equal Location::Spot.new(**Location::Placement.in_the_world(room, clerk)), clerk.reload.position
+  end
+
+  # `at:` IS THE ONE WAY TO HAND THIS METHOD A POSITION, and it exists for
+  # `Story::Repair#repair_seeded_whereabouts` alone: the file's own pair, written
+  # back beside the file's own room.
+  test "a move given the file's own pair writes it rather than a roll" do
+    clerk = create(:character, :placed)
+    other = create(:location, story: clerk.story, parent_location: clerk.location.parent_location,
+                              x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    clerk.move_to!(other, at: Location::Spot.new(x: 9, y: 4))
+
+    assert_equal other, clerk.reload.location
+    assert_equal Location::Spot.new(x: 9, y: 4), clerk.position
+  end
+
+  # ONE RULE WITH NO EXCEPTION: the destination's own box is asked about every
+  # pair, the file's included. A file is held to the box the FILE draws and this
+  # writes into the box the DATABASE carries, so an offer that does not fit is
+  # declined and the engine rolls -- rather than standing somebody through a
+  # wall and leaving `Story::Doctor` to report it afterwards.
+  test "a pair off the destination's floor is declined and rolled instead" do
+    clerk = create(:character, :placed)
+    other = create(:location, story: clerk.story, parent_location: clerk.location.parent_location,
+                              x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    clerk.move_to!(other, at: Location::Spot.new(x: 3, y: 4))
+
+    assert_equal Location::Spot.new(**Location::Placement.in_the_world(other, clerk)), clerk.reload.position
+    assert other.box.contains?(clerk.position), "#{clerk.position} is outside #{other.box}"
+  end
+
+  test "half a pair is declined and rolled instead" do
+    clerk = create(:character, :placed)
+    other = create(:location, story: clerk.story, parent_location: clerk.location.parent_location,
+                              x: 7, y: 0, z: 0, width: 5, depth: 8)
+
+    clerk.move_to!(other, at: Location::Spot.new(x: 9, y: nil))
+
+    assert_equal Location::Spot.new(**Location::Placement.in_the_world(other, clerk)), clerk.reload.position
+  end
+
+  # A ROOM WITH NO BOX HAS NO CORNER TO KEEP, which is the state every room in
+  # the three checked-in worlds is in -- so a file that grew a floor plan after
+  # a database was seeded from it hands back a pair this room cannot hold.
+  test "a pair offered for a room with no box leaves them unplaced" do
+    clerk = create(:character, :placed)
+
+    clerk.move_to!(create(:location, story: clerk.story), at: Location::Spot.new(x: 1, y: 1))
+
+    assert_nil clerk.reload.position
+  end
+
+  test "the positioned scope takes a partial row too" do
+    placed = create(:character, :placed)
+    partial = create(:character, story: placed.story, location: create(:location, story: placed.story))
+    partial.update_column(:y, 3)
+    create(:character, story: placed.story)
+
+    assert_equal [ placed, partial ].map(&:id).sort, Character.positioned.pluck(:id).sort
+  end
 end

@@ -277,4 +277,59 @@ class Item::RegistryTest < ActiveSupport::TestCase
 
     assert_equal Item::Registry::MAX_PER_ROOM, Item::Registry.new(@room).room_for_items
   end
+
+  # --- where in the room it lands, since slice 4 ----------------------------
+
+  # THE ENGINE PLACES IT AND NO MODEL IS ASKED: the candidate hash has no
+  # coordinate in it and there is no field for one on `Location::DetailSchema`.
+  test "a thing admitted into a laid-out room lands inside its box" do
+    room = laid_out_room
+    created = admit(candidate("ward stamp"), candidate("blank ward form"), location: room)
+
+    created.each do |item|
+      assert_predicate item, :positioned?
+      assert room.box.contains?(item.position), "#{item.name} is #{item.position} and the room is #{room.box}"
+    end
+  end
+
+  # TWO THINGS ARE TWO ROLLS, so a room's furniture does not stack in one cell.
+  # Asserted by RE-DERIVING each row's own cell rather than by checking the
+  # three came out different: two of three draws landing in one cell of a
+  # 28-cell room is an ordinary coincidence, and a test that failed on it would
+  # be a lottery on whoever ran the suite next.
+  test "each thing admitted at once is placed by its own roll" do
+    room = laid_out_room
+    created = admit(*(1..3).map { |n| candidate("ward thing #{n}") }, location: room)
+
+    created.each do |item|
+      assert_equal Location::Spot.new(**Location::Placement.in_the_world(room, item)), item.position
+    end
+  end
+
+  # THE ORDINARY CASE, and every room in every generated world today: a room
+  # with no box opens no plane, so there is nowhere for a thing to be.
+  test "a thing admitted into a room with no box is unplaced" do
+    item = admit(candidate("ward stamp")).sole
+
+    assert_nil item.position
+    assert_predicate item, :lying?
+  end
+
+  # RE-DERIVABLE, which is what a world layer is for: the same row in the same
+  # room is in the same corner of it whenever anybody asks.
+  test "the cell a thing is admitted into is the one Location::Placement re-derives" do
+    room = laid_out_room
+    item = admit(candidate("ward stamp"), location: room).sole
+
+    assert_equal Location::Spot.new(**Location::Placement.in_the_world(room, item)), item.position
+  end
+
+  # A PLACE WITH A FOOTPRINT AND ONE ROOM INSIDE IT, which is the only shape a
+  # position can be read in -- see `Location::Box` for why coordinates are local
+  # to a parent.
+  def laid_out_room
+    place = create(:location, :stub, :with_a_footprint, story: @story, name: "The Custom House")
+    create(:location, story: @story, parent_location: place, name: "The Long Room",
+                      x: 0, y: 0, z: 0, width: 7, depth: 4)
+  end
 end

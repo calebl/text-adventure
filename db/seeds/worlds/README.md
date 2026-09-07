@@ -38,8 +38,8 @@ One file is one universe and one story. Keys are written in this order:
 | `universe`      | the nine prompt fields, plus `races` (name, description, optional `monstrous`) |
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
-| `characters`    | one entry each, `race` by name, optional `location` (or `absent`), optional `hostile`, optional `stats`, and `items` |
-| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `hazard` + `hazard_die`; optional `parent` + a box (`x`, `y`, `z`, `width`, `depth`); `items` |
+| `characters`    | one entry each, `race` by name, optional `location` (or `absent`) + a position in it (`x`, `y`), optional `hostile`, optional `stats`, and `items` |
+| `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `hazard` + `hazard_die`; optional `parent` + a box (`x`, `y`, `z`, `width`, `depth`); `items`, each with an optional position (`x`, `y`) |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair; optional `hazard` + `hazard_die` + `hazard_from` |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
 
@@ -209,6 +209,9 @@ when the room is realized), but a seeded room is realized by this file rather
 than by a model call, so what is lying in one is whatever the file says and
 nothing else — the registry leaves it alone. `rake game:mechanics` is the
 fastest way to see this half of the world work; see the README.
+
+An item lying in a room whose file gives that room a box may also say WHERE in
+it — see the `x` and `y` section further down.
 
 `properties` is a JSON string, stored verbatim and read back by
 `Item#properties_hash`. Entries are exported sorted by name, so keep them that
@@ -657,6 +660,72 @@ locations:
   hit die and a hazard are; `EngineSweep::Invariants`' `geometry_unmoved` asserts
   across a whole scripted play that no coordinate and no `parent` moved.
 
+### `x` and `y` on a thing and on a person — where in the room they are
+
+Once a room carries a box, a file may say where in it something is. Two integer
+keys, on an **item lying in that room** and on a **character standing in it**:
+
+```yaml
+characters:
+- fullname: Nell Cawsand
+  location: The Taproom
+  x: 2
+  y: 6
+  # ...
+locations:
+- name: The Taproom
+  parent: The Rusted Anchor
+  x: 0
+  y: 0
+  z: 0
+  width: 7
+  depth: 8
+  # ...
+  items:
+  - name: brass tap key
+    description: |-
+      A short brass key with a square bit, kept on the lintel.
+    x: 5
+    y: 1
+```
+
+`test/fixtures/files/a-world-with-an-interior.yml` is the worked example.
+`Location::Spot` owns the design; the rules a FILE is held to:
+
+- **Both keys or neither**, and integers. One of the two is half an answer and
+  the loader refuses it.
+- **Read in the same plane the room's own box is** — its parent's, not a frame
+  of the room's own. The taproom above runs 0–6 along `x`, so a thing at `x: 9`
+  is in the back room next door and not in the taproom, whatever room its
+  `items:` list hangs off. Half-open again: `x: 7` there is the far wall.
+- **There is no `z`.** A storey belongs to the room; a thing is in a room, so
+  which floor the key is on is which floor the taproom is on.
+- **A position needs a floor.** An item under a `characters:` entry is in a pair
+  of hands and is in no room, and a character with no `location` is nowhere;
+  neither may carry one. Nor may anything in a room with no box — there is no
+  plane to read the numbers in.
+- **Absent keys mean UNPLACED**, which every row of all three worlds below is
+  and which is a perfectly ordinary state. Written in both directions, like the
+  box: deleting them and re-seeding takes the thing out of that corner again.
+- **The loader refuses** every one of those, naming the file and the row, and
+  `rake game:doctor` reports the same faults on a database that already carries
+  them — `thing_with_a_partial_position`,
+  `thing_positioned_in_a_room_with_no_box` and
+  `thing_outside_the_room_it_is_in`. **None can be repaired,** for the boxes'
+  reason: when a row says it is somewhere its room is not, which of the two
+  records is wrong is not on record. `rake game:export` warns about each of
+  them, naming the code.
+- **A room with a box places what is born into it, by itself.** `Item::Registry`
+  and `Character::Registry` roll a cell for anything the engine writes into a
+  boxed room (`Location::Placement`, one seeded roll, no model call), so a file
+  only needs these keys for something it wants in a particular corner.
+- **No typed line and no model may write one.** A position is the world's on the
+  same terms a box is. What PLAY may move is one game's own copy of a thing: a
+  take clears its position (it is in a hand) and a drop rolls a new one inside
+  the room the party is standing in. `EngineSweep::Invariants`'
+  `positions_in_bounds` asserts across a whole scripted play that nothing ended
+  up outside the room it says it is in.
+
 ### Rules the loader enforces
 
 - Exactly one location is `opening: true`, and it must be `realized` — a story
@@ -710,6 +779,10 @@ locations:
 - A `parent` and a box are held to the rules `WorldSeed::Loader#validate_boxes!`
   names — whole, integers, framed, footprint, declared, apart — which are not
   repeated here: see the `parent` section above.
+- An `x` and a `y` on a thing or a person are held to the rules
+  `WorldSeed::Loader#validate_positions!` names — whole, integers, on a floor,
+  inside — which are not repeated here either: see the `x` and `y` section
+  above.
 - `sex` is a `Character.sexes` key: `male`, `female`, `non_binary`,
   `trans_woman`, `trans_man`. Not checked by `validate!` -- it is `Character`'s
   own `inclusion` validation that rejects a bad one, inside the same
@@ -866,6 +939,12 @@ format 2 on that same rule: all six are optional, all six default to a world
 with no interiors in it — which is what every world here is, by the captain's
 fourth ruling of 2026-09-06 — and the columns are nullable, so no existing
 database needs a backfill either. See the `parent` section above.
+
+`characters[].x` / `.y` and the same pair on an `items[]` entry were added to
+format 2 on that rule too: both are optional, an absent pair means *unplaced* —
+which every thing and every person in every world here is — and the columns are
+nullable, so no existing database needs a backfill either. See the `x` and `y`
+section above.
 
 ### `the-lunar-cartographer.yml`
 

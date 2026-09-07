@@ -683,6 +683,45 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_match(/the-salt-assizes\.yml puts them in "The Tide Post"/, finding(story, :character_moved_from_the_seed).message)
   end
 
+  # THE TWO SIDES OF A POSITION ARE CHECKED AGAINST TWO DIFFERENT BOXES -- the
+  # file's, by `WorldSeed::Loader`, and the database's, by everything else -- and
+  # they can stop agreeing when a checked-in file grows a floor plan after
+  # somebody's world was seeded from it. `Story::Repair` cannot write a corner
+  # that is not on the room's floor, so this is what names what is left over.
+  #
+  # MANUAL, because the records cannot say whether the file or the box is stale.
+  test "reports a seeded corner the room in this database cannot hold" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    post = story.locations.find_by(name: "The Tide Post")
+    document = WorldSeed.checked_in_document(story.title)
+    document["characters"].detect { |row| row["fullname"] == "Neb Halloran" }.merge!("x" => 2, "y" => 1)
+
+    WorldSeed.stub(:checked_in_document, ->(_title) { document }) do
+      assert_includes codes(story), :seeded_position_outside_the_room
+      assert_equal :manual, finding(story, :seeded_position_outside_the_room).remedy
+      assert_match(/lays Neb Halloran at 2,1 in #{post.name}, which carries no box/,
+                   finding(story, :seeded_position_outside_the_room).message)
+    end
+  end
+
+  # AND IT IS SILENT WHEN THE TWO AGREE, which is the whole point: a pair on the
+  # room's own floor is a pair the repair can write back.
+  test "a seeded corner the room does have is not reported" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    place = create(:location, :stub, :with_a_footprint, story: story, name: "The Assize Hall")
+    cell = create(:location, story: story, parent_location: place, name: "The Holding Cell",
+                             x: 0, y: 0, z: 0, width: 7, depth: 4)
+    story.characters.find_by(fullname: "Neb Halloran").move_to!(cell, at: Location::Spot.new(x: 2, y: 1))
+    document = WorldSeed.checked_in_document(story.title)
+    document["characters"]
+      .detect { |row| row["fullname"] == "Neb Halloran" }
+      .merge!("location" => cell.name, "x" => 2, "y" => 1)
+
+    WorldSeed.stub(:checked_in_document, ->(_title) { document }) do
+      assert_not_includes codes(story), :seeded_position_outside_the_room
+    end
+  end
+
   test "a story that is not a checked-in world is never asked about a seed file" do
     story = healthy_story
     create(:character, story: story, fullname: "Neb Halloran", location: story.locations.first)
@@ -1347,7 +1386,10 @@ class Story::DoctorTest < ActiveSupport::TestCase
                                    locations_containing_each_other location_outside_its_parents_footprint
                                    interior_with_an_unreachable_room stairs_between_rooms_that_do_not_line_up
                                    place_with_a_footprint_and_no_rooms
-                                   door_between_rooms_that_share_no_wall]
+                                   door_between_rooms_that_share_no_wall
+                                   thing_with_a_partial_position
+                                   thing_positioned_in_a_room_with_no_box
+                                   thing_outside_the_room_it_is_in]
   end
 
   # A WELL FORMED INTERIOR: a place with a footprint, two rooms inside it
@@ -1383,7 +1425,10 @@ class Story::DoctorTest < ActiveSupport::TestCase
                                    locations_containing_each_other location_outside_its_parents_footprint
                                    interior_with_an_unreachable_room stairs_between_rooms_that_do_not_line_up
                                    place_with_a_footprint_and_no_rooms
-                                   door_between_rooms_that_share_no_wall]
+                                   door_between_rooms_that_share_no_wall
+                                   thing_with_a_partial_position
+                                   thing_positioned_in_a_room_with_no_box
+                                   thing_outside_the_room_it_is_in]
   end
 
   # STRAIGHT TO THE COLUMNS, because `Location#a_box_is_whole` refuses to save
@@ -1801,5 +1846,154 @@ class Story::DoctorTest < ActiveSupport::TestCase
                       x: 0, y: 0, z: 0, width: 7, depth: 8)
 
     assert_not_includes codes(story), :overlapping_sibling_locations
+  end
+
+  # --- where in a room a thing or a person is, since slice 4 ----------------
+  #
+  # STRAIGHT TO THE COLUMNS wherever the record refuses the row, which is most
+  # of this section: `Item#a_position_is_whole`, `Item#a_position_needs_a_floor`
+  # and their counterparts on `Character` mean a row like this arrives through
+  # raw SQL or a database older than the validations -- which is what a doctor
+  # is for.
+
+  test "a well placed thing and a well placed person are not findings" do
+    story = healthy_story
+    _place, taproom, = a_place_with_two_rooms(story)
+    create(:item, character: nil, location: taproom, x: 3, y: 4)
+    create(:character, story: story, location: taproom, x: 6, y: 7)
+
+    assert_empty codes(story) & %i[thing_with_a_partial_position
+                                   thing_positioned_in_a_room_with_no_box
+                                   thing_outside_the_room_it_is_in]
+  end
+
+  test "a thing carrying half a position is reported and cannot be repaired" do
+    story = healthy_story
+    _place, taproom, = a_place_with_two_rooms(story)
+    key = create(:item, character: nil, location: taproom)
+    key.update_column(:x, 3)
+
+    assert_includes codes(story), :thing_with_a_partial_position
+    assert_equal :warning, finding(story, :thing_with_a_partial_position).severity
+    assert_equal :manual, finding(story, :thing_with_a_partial_position).remedy
+    assert_equal key, finding(story, :thing_with_a_partial_position).subject
+    assert_match(/says half of where it is/, finding(story, :thing_with_a_partial_position).message)
+  end
+
+  test "somebody carrying half a position is reported too" do
+    story = healthy_story
+    _place, taproom, = a_place_with_two_rooms(story)
+    clerk = create(:character, story: story, location: taproom, fullname: "Nell Cawsand")
+    clerk.update_column(:y, 5)
+
+    assert_equal clerk, finding(story, :thing_with_a_partial_position).subject
+    assert_match(/Nell Cawsand/, finding(story, :thing_with_a_partial_position).message)
+  end
+
+  # A PLANE THAT DOES NOT EXIST. The counterpart of
+  # `location_with_a_box_and_no_parent` one containment level down: the numbers
+  # are real and the thing they are read against is missing.
+  test "a position in a room with no box is reported and cannot be repaired" do
+    story = healthy_story
+    flat = story.locations.realized.first
+    key = create(:item, character: nil, location: flat)
+    key.update_columns(x: 1, y: 1)
+
+    assert_includes codes(story), :thing_positioned_in_a_room_with_no_box
+    assert_equal :warning, finding(story, :thing_positioned_in_a_room_with_no_box).severity
+    assert_equal :manual, finding(story, :thing_positioned_in_a_room_with_no_box).remedy
+    assert_equal key, finding(story, :thing_positioned_in_a_room_with_no_box).subject
+    assert_match(/there is none to read it in/, finding(story, :thing_positioned_in_a_room_with_no_box).message)
+  end
+
+  test "a position on a thing in no room at all is reported the same way" do
+    story = healthy_story
+    key = create(:item, character: nil, location: story.locations.realized.first)
+    key.update_columns(location_id: nil, playthrough_id: create(:playthrough, story: story).id, x: 1, y: 1)
+
+    assert_match(/is in no room/, finding(story, :thing_positioned_in_a_room_with_no_box).message)
+  end
+
+  # THE ONE FACT ABOUT A POSITION THAT IS EXACTLY DECIDABLE and is nowhere in
+  # the prose: the row and its room agree about which room it is, and the
+  # numbers put it through the wall.
+  test "a thing outside the room it is in is reported and cannot be repaired" do
+    story = healthy_story
+    _place, taproom, = a_place_with_two_rooms(story)
+    key = create(:item, character: nil, location: taproom)
+    key.update_columns(x: 9, y: 2)
+
+    assert_includes codes(story), :thing_outside_the_room_it_is_in
+    assert_equal :warning, finding(story, :thing_outside_the_room_it_is_in).severity
+    assert_equal :manual, finding(story, :thing_outside_the_room_it_is_in).remedy
+    assert_equal key, finding(story, :thing_outside_the_room_it_is_in).subject
+    assert_match(/outside the room it is in/, finding(story, :thing_outside_the_room_it_is_in).message)
+  end
+
+  # HALF-OPEN, like every interval in this programme. The taproom runs 0..6
+  # along x, so 7 is the back room and is a fault -- and 6 is the last cell of
+  # the taproom's own floor and is not.
+  test "a thing on the far wall of its room is outside it and one cell short is not" do
+    story = healthy_story
+    _place, taproom, = a_place_with_two_rooms(story)
+    key = create(:item, character: nil, location: taproom, x: 6, y: 7)
+
+    assert_not_includes codes(story), :thing_outside_the_room_it_is_in
+
+    key.update_columns(x: 7)
+
+    assert_includes codes(story), :thing_outside_the_room_it_is_in
+  end
+
+  # BOTH ITEM LAYERS, because a template in the wrong half of a room is as wrong
+  # as one game's copy doing it -- and the finding says WHICH, so a reader is
+  # sent to the right row.
+  test "one game's own copy outside its room is reported and names its layer" do
+    story = healthy_story
+    _place, taproom, = a_place_with_two_rooms(story)
+    game = create(:playthrough, story: story)
+    template = create(:item, character: nil, location: taproom, name: "ledger box")
+    copy = create(:item, character: nil, location: taproom, playthrough: game, template: template)
+    copy.update_columns(x: 99, y: 99)
+
+    assert_equal copy, finding(story, :thing_outside_the_room_it_is_in).subject
+    assert_match(/playthrough ##{game.id}/, finding(story, :thing_outside_the_room_it_is_in).message)
+  end
+
+  test "somebody standing outside the room they are in is reported too" do
+    story = healthy_story
+    _place, taproom, = a_place_with_two_rooms(story)
+    clerk = create(:character, story: story, location: taproom, fullname: "Nell Cawsand")
+    clerk.update_columns(x: 40, y: 40)
+
+    assert_equal clerk, finding(story, :thing_outside_the_room_it_is_in).subject
+    assert_match(/Nell Cawsand/, finding(story, :thing_outside_the_room_it_is_in).message)
+  end
+
+  # HALF A POSITION IS NOT ALSO REPORTED AS OUT OF BOUNDS: one fault, one
+  # finding. A row with an `x` and no `y` has no position to be outside
+  # anything, and reporting it twice would send somebody looking for two
+  # mistakes.
+  test "half a position is reported once and not also as a room with no box" do
+    story = healthy_story
+    _place, taproom, = a_place_with_two_rooms(story)
+    key = create(:item, character: nil, location: taproom)
+    key.update_column(:x, 3)
+
+    assert_includes codes(story), :thing_with_a_partial_position
+    assert_not_includes codes(story), :thing_positioned_in_a_room_with_no_box
+    assert_not_includes codes(story), :thing_outside_the_room_it_is_in
+  end
+
+  # UNPLACED IS NOT A FAULT, and it is what every row in every checked-in world
+  # is: the three seeded worlds are flat, so nothing in them has anywhere to be.
+  test "a thing with no position in a laid-out room is not a finding" do
+    story = healthy_story
+    _place, taproom, = a_place_with_two_rooms(story)
+    create(:item, character: nil, location: taproom)
+
+    assert_empty codes(story) & %i[thing_with_a_partial_position
+                                   thing_positioned_in_a_room_with_no_box
+                                   thing_outside_the_room_it_is_in]
   end
 end

@@ -688,8 +688,19 @@ class Playthrough::Turn
   # that is the whole of the ruling. Nothing offers a template to a `take`, so
   # this cannot be reached with one, and `Item` refuses the row either way -- a
   # template with a `template_id` is a copy of a copy.
+  # AND IT TAKES THE THING OFF THE FLOOR PLAN IN THE SAME STATEMENT. A position
+  # is read in the plane of the room a thing is LYING in (`Location::Spot`), so
+  # a thing in a hand has no frame and carries no position -- `Item` refuses the
+  # alternative, which is what makes forgetting this line impossible rather
+  # than invisible. `Location::Placement.unplaced` is the named pair rather than
+  # two literals, so nothing can clear half of it.
+  #
+  # IT DOES NOT REMEMBER WHERE IT WAS, and it is not meant to: `#put_down!`
+  # rolls a fresh one, because a thing set down is set down where the person
+  # setting it down was standing rather than where it was found.
   def carry!(item)
-    item.update!(playthrough: playthrough, character: nil, location: nil)
+    item.update!(playthrough: playthrough, character: nil, location: nil,
+                 **Location::Placement.unplaced)
   end
 
   # AND BACK ONTO THE FLOOR OF THIS GAME. `playthrough` is deliberately NOT
@@ -704,8 +715,20 @@ class Playthrough::Turn
   # stays there until somebody walks in and picks it up. One keyword, the same
   # statement, and the rule above holds unchanged -- what room a copy is lying
   # in is the player's business either way.
+  # AND IT LANDS SOMEWHERE IN THAT ROOM, which the ENGINE rolls: no prose and no
+  # typed line says where a dropped thing comes to rest, on the standing
+  # constraint's terms. `Location::Placement.in_a_game` is the one writer -- its
+  # header has why the seed carries the game and the story's clock -- and it
+  # hands back no position at all for a room with no box, which is every room in
+  # the three checked-in worlds. So a drop in a flat world writes exactly what
+  # it wrote before this slice.
+  #
+  # A THROW THROUGH A DOORWAY LANDS IN THE NEXT ROOM AND IS ROLLED THERE, in the
+  # same statement and with no special case, because `into:` is which floor and
+  # the placement reads the box of whatever floor that is.
   def put_down!(item, into: playthrough.current_location)
-    item.update!(playthrough: playthrough, character: nil, location: into)
+    item.update!(playthrough: playthrough, character: nil, location: into,
+                 **Location::Placement.in_a_game(into, item, playthrough: playthrough))
   end
 
   # TAKING HIT POINTS OFF A BODY, AND THE ONE PLACE A PLAYTHROUGH ENDS.
@@ -774,7 +797,11 @@ class Playthrough::Turn
     return [] if room.nil?
 
     playthrough.items_held_by(character).to_a.each do |item|
-      item.update!(playthrough: playthrough, character: nil, location: room)
+      # ON THE FLOOR OF THAT ROOM, AND SOMEWHERE ON IT -- the same pair
+      # `#put_down!` writes, and rolled per item so a body carrying three things
+      # does not drop them in one cell.
+      item.update!(playthrough: playthrough, character: nil, location: room,
+                   **Location::Placement.in_a_game(room, item, playthrough: playthrough))
     end
   end
 

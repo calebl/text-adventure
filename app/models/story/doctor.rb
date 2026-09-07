@@ -118,6 +118,23 @@ class Story::Doctor
     end
   end
 
+  # `{ fullname => Location::Spot }` for the people the checked-in file lays in
+  # a particular corner of the room it puts them in -- the position half of
+  # `#seeded_whereabouts`, read from the same document and for the same reason:
+  # what the file says is on record, so a repair that writes it back is putting
+  # something already written somewhere else, rather than inventing it.
+  #
+  # ONLY WHOLE PAIRS. A file that writes neither number is saying "unplaced",
+  # which is what every row of all three checked-in worlds is; a file that
+  # writes one is malformed and `WorldSeed::Loader#validate_positions!` refuses
+  # to load it. Neither is a value a repair can write back, so neither appears
+  # here and `Character#move_to!` rolls for those rows as it does for anybody.
+  def seeded_positions
+    @seeded_positions ||= Array(seed_document && seed_document["characters"])
+                          .filter_map { |row| [ row["fullname"], Location::Spot.of(row) ] if Location::Spot.of(row) }
+                          .to_h
+  end
+
   # `{ natural key => the name the file writes }` for this story's rooms, out
   # of the checked-in world file, or empty for a story that is not one of them.
   #
@@ -654,7 +671,8 @@ class Story::Doctor
 
     [ *characters_nowhere(cast), *characters_absent_in_the_seed(cast), *characters_absent_but_somewhere(cast),
       *characters_in_a_stub(cast), *characters_outside_the_story(cast),
-      *rooms_over_the_cast_cap, *story_over_the_cast_cap, *characters_the_seed_placed_elsewhere ]
+      *rooms_over_the_cast_cap, *story_over_the_cast_cap, *characters_the_seed_placed_elsewhere,
+      *characters_the_seed_seats_outside_the_room ]
   end
 
   # Nobody has said where they are. `rake game:backfill_whereabouts` recovers
@@ -838,6 +856,43 @@ class Story::Doctor
     end
 
     placed + absent
+  end
+
+  # THE FILE LAYS SOMEBODY IN A CORNER THE ROOM IN THIS DATABASE DOES NOT HAVE.
+  # The two sides of a position are checked in two places and against two
+  # different boxes: `WorldSeed::Loader#validate_positions!` holds a file's pair
+  # to the box the FILE draws for that room, and every writer in the app holds a
+  # row's pair to the box the DATABASE carries. They agree for a world seeded
+  # from the file as it stands, and they can stop agreeing for exactly one
+  # reason -- a checked-in file grew a box, or moved one, after somebody's
+  # database was seeded from it. Which is the class of database this whole file
+  # exists for.
+  #
+  # IT IS THE ONE THING `#repair_seeded_whereabouts` CANNOT PUT BACK. Every
+  # other half of `character_moved_from_the_seed` is a value that already exists
+  # somewhere else, written back; this one is a value that exists and does not
+  # fit, so the repair writes the room, leaves the cell to the roll, and says so
+  # in its own message. What is left is named here.
+  #
+  # MANUAL, because there is no derivable answer: the file may be right and the
+  # room's box stale, or the box right and the file stale, and the records
+  # cannot say which. A person edits the world file or re-seeds -- and re-seeding
+  # settles it, because it writes both the box and the pair from the one
+  # document.
+  def characters_the_seed_seats_outside_the_room
+    seeded_positions.filter_map do |fullname, seat|
+      character = story.characters.find_by("LOWER(fullname) = ?", fullname.downcase)
+      next if character.nil?
+
+      room = story.locations.find_by(name: seeded_whereabouts[fullname])
+      next if room.nil? || room.box&.contains?(seat)
+
+      finding(:seeded_position_outside_the_room, :warning,
+              "#{seed_basename} lays #{character.fullname} #{seat} in #{room.name}, which " \
+              "#{room.box ? "is #{room.box}" : "carries no box in this database"} -- so nothing can put them in " \
+              "that corner. Re-seed, or make the file and the room agree about the floor plan",
+              :manual, subject: character)
+    end
   end
 
   # A malformed world file is `WorldSeed::Loader`'s to complain about, not this
@@ -1407,7 +1462,9 @@ class Story::Doctor
     [ *rooms_with_a_partial_box, *rooms_with_an_impossible_extent, *boxes_with_no_parent,
       *boxes_with_no_parent_footprint, *overlapping_sibling_rooms, *locations_containing_each_other,
       *rooms_outside_their_footprint, *interiors_with_an_unreachable_room, *misaligned_stairs,
-      *doors_between_rooms_that_share_no_wall, *places_with_a_footprint_and_no_rooms ]
+      *doors_between_rooms_that_share_no_wall, *places_with_a_footprint_and_no_rooms,
+      *things_with_a_partial_position, *things_positioned_in_a_room_with_no_box,
+      *things_outside_the_room_they_are_in ]
   end
 
   # HALF A LAYOUT: neither a footprint, nor a box, nor nothing at all, which are
@@ -1658,6 +1715,115 @@ class Story::Doctor
               "meet at all",
               :manual)
     end
+  end
+
+  # --- where in a room a thing or a person is, since slice 4 --------------
+  #
+  # THE THREE WAYS A POSITION CAN BE WRONG, and they are in this section rather
+  # than beside `#item_rows` and `#cast` because they are geometry: every one of
+  # them is read by comparing two numbers on a row against the box of the room
+  # the row is in, which is the same arithmetic the eleven findings above do one
+  # containment level up. `Location::Spot` owns what a position IS.
+  #
+  # WARNING AND MANUAL, LIKE EVERYTHING ELSE HERE, and for this section's own
+  # two reasons. Nothing in the play path reads a coordinate, so a thing in the
+  # wrong half of a room breaks nobody's game -- and there is no derivable
+  # answer: when a row says it is somewhere its room is not, WHICH of the two
+  # records is wrong is not on the records. Clearing the position throws away a
+  # placement somebody made; moving it into the box invents a cell nobody chose;
+  # giving the room a box invents a floor plan. A person edits the world file
+  # and re-seeds.
+  #
+  # BOTH TABLES IN ONE FINDING EACH, rather than three findings per table: the
+  # fault is the same fault whether the row is a chair or a clerk, and a reader
+  # sent looking for "a thing outside its room" should not have to know which of
+  # two codes to grep for. `#positioned_rows` is the one query they share.
+
+  # HALF A POSITION: an `x` and no `y`, or the other way round.
+  # `Item#a_position_is_whole` and `Character#a_position_is_whole` refuse one and
+  # `WorldSeed::Loader#validate_positions!` refuses a file that writes one, so a
+  # row here arrived through raw SQL or a database older than the validations. It
+  # reads as unplaced in the meantime, so nothing is broken -- it is a row
+  # somebody started placing and the record kept only part of the answer.
+  def things_with_a_partial_position
+    positioned_rows.filter_map do |record, _room, label|
+      next unless Location::Spot.partial?(record)
+
+      written = Location::Spot::COLUMNS.select { |column| record[column].present? }
+      finding(:thing_with_a_partial_position, :warning,
+              "#{label} carries #{written.join(", ")} and not the other of " \
+              "#{Location::Spot::COLUMNS.join(", ")}, so it says half of where it is and the other half " \
+              "cannot be guessed at",
+              :manual, subject: record)
+    end
+  end
+
+  # A POSITION IN A ROOM WITH NO PLANE TO READ IT IN. Two numbers are read in the
+  # frame of the room the row is in (`Location::Spot`), and a room with no box
+  # opens no frame -- so this row says it is at 3,5 of nothing. It is the
+  # counterpart of `location_with_a_box_and_no_parent` one level up and has that
+  # finding's shape: the numbers are real and the thing they are read against is
+  # missing.
+  #
+  # A ROW IN NO ROOM AT ALL IS IN IT TOO, which is why the box is asked of a
+  # possibly-nil room: an item in a pair of hands and a person who is nowhere
+  # both have no frame, and both are refused on the record, so a row here is the
+  # same raw-SQL case.
+  def things_positioned_in_a_room_with_no_box
+    positioned_rows.filter_map do |record, room, label|
+      next if Location::Spot.partial?(record)
+      next unless room&.box.nil?
+
+      finding(:thing_positioned_in_a_room_with_no_box, :warning,
+              "#{label} is #{record.position} and #{room ? "#{room.name} has no box" : "is in no room"} -- " \
+              "a position is read in the plane of the room a row is in, and there is none to read it in",
+              :manual, subject: record)
+    end
+  end
+
+  # A THING STANDING OUTSIDE THE ROOM IT IS IN. The one fact about a position
+  # that is exactly decidable and is nowhere in the prose: the row and its room
+  # agree about which room it is, and the numbers put it through the wall.
+  # `Location::Box#contains?` is the whole of it, half-open on both axes -- so a
+  # thing on the shared wall of two rooms is in the further one and not in both.
+  #
+  # `Location::Placement` draws every cell from inside the box, so it cannot
+  # write one; a seed file cannot either (`WorldSeed::Loader#validate_positions!`
+  # refuses it), which leaves raw SQL, a database older than these columns, and a
+  # room whose box was edited under a row already placed in it.
+  # HALF A POSITION IS NOT ALSO REPORTED HERE. A row with an `x` and no `y` has
+  # no position to be outside anything, so it is one fault told once by
+  # `#things_with_a_partial_position` -- reporting it twice would send somebody
+  # looking for two mistakes.
+  def things_outside_the_room_they_are_in
+    positioned_rows.filter_map do |record, room, label|
+      next if Location::Spot.partial?(record)
+
+      box = room&.box
+      next if box.nil? || box.contains?(record.position)
+
+      finding(:thing_outside_the_room_it_is_in, :warning,
+              "#{label} is #{record.position} and #{room.name} is #{box}, so it is outside the room it is in",
+              :manual, subject: record)
+    end
+  end
+
+  # EVERY ROW IN THIS STORY THAT SAYS WHERE IN A ROOM IT IS, as the record, the
+  # room it is in and a phrase naming it -- the one query the three findings
+  # above share, in id order per table so two runs report in the same order.
+  #
+  # BOTH ITEM LAYERS, because both carry the columns and a template in the wrong
+  # half of a room is as wrong as one game's copy doing it. The phrase carries
+  # `#whereabouts`, which for an item says WHICH LAYER: "lying in Ward Office 12
+  # (the world's own)" and "playthrough #3's copy of #7" send somebody to
+  # different rows, and a finding that did not say which would send them to the
+  # wrong one.
+  def positioned_rows
+    @positioned_rows ||=
+      Item.in_story(story).positioned.includes(:location, :playthrough).order(:id)
+          .map { |item| [ item, item.location, "#{item.name}, #{item.whereabouts}," ] } +
+      story.characters.positioned.includes(:location).order(:id)
+           .map { |person| [ person, person.location, "#{person.fullname}, #{person.whereabouts}," ] }
   end
 
   # `{ place => its placed rooms, lowest id first }` for every place in this

@@ -1157,6 +1157,12 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     flattened = interior_document
     flattened["locations"].each { |row| row.delete("parent") }
     flattened["locations"].each { |row| Location::Box::COLUMNS.each { |column| row.delete(column) } }
+    # AND WHAT WAS STANDING IN THE ROOMS GOES WITH THEM, because a position is
+    # read in the plane the room's box opens and a room with no box opens none
+    # (`WorldSeed::Loader#validate_positions!`). The loader REFUSES such a file
+    # rather than tidying it, which is this class's rule everywhere else too --
+    # so flattening a world is flattening its contents as well.
+    unplace(flattened)
     story = WorldSeed::Loader.new(flattened).load!
 
     assert_equal [ nil ], story.locations.pluck(:parent_location_id).uniq
@@ -1277,6 +1283,140 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
                             "width" => 7, "depth" => 8 }
 
     assert_equal 2, WorldSeed::Loader.new(world).load!.locations.with_a_box.count
+  end
+
+  # --- where in a room a file may put a thing or a person -------------------
+
+  test "the fixture world's placed things load with their positions" do
+    story = WorldSeed::Loader.new(interior_document).load!
+
+    assert_equal Location::Spot.new(x: 5, y: 1),
+                 Item.in_story(story).templates.by_name("brass tap key").sole.position
+    assert_equal Location::Spot.new(x: 9, y: 3),
+                 Item.in_story(story).templates.by_name("ledger box").sole.position
+    assert_equal Location::Spot.new(x: 2, y: 6), story.protagonist.position
+  end
+
+  # A THING IN A PAIR OF HANDS IS IN NO ROOM, so it has no plane to be read in
+  # -- which is what the file's tide table is there to prove.
+  test "a thing the file puts in somebody's hands loads unplaced" do
+    story = WorldSeed::Loader.new(interior_document).load!
+
+    assert_nil Item.in_story(story).templates.by_name("tide table").sole.position
+  end
+
+  # BOTH DIRECTIONS, like the box keys and `danger` before them: deleting the
+  # keys from a file and re-seeding has to take the thing out of that corner
+  # again.
+  test "deleting the position keys and re-seeding leaves the rows unplaced" do
+    WorldSeed::Loader.new(interior_document).load!
+
+    flattened = unplace(interior_document)
+    story = WorldSeed::Loader.new(flattened).load!
+
+    assert_empty Item.in_story(story).positioned
+    assert_empty story.characters.positioned
+  end
+
+  # EVERY THING AND EVERY PERSON A FILE PLACES, TAKEN OUT OF ITS CORNER. It does
+  # NOT touch a `locations` row's own `x` and `y`, which are two of a BOX's five
+  # columns and a different question -- see `Location::Box` for the two frames.
+  def unplace(world)
+    world["characters"].each { |row| Location::Spot::COLUMNS.each { |column| row.delete(column) } }
+    (world["characters"] + world["locations"]).each do |row|
+      Array(row["items"]).each { |item| Location::Spot::COLUMNS.each { |column| item.delete(column) } }
+    end
+    world
+  end
+
+  # A file with a placed thing in it is held to every rule the records allow --
+  # `#validate_boxes!`' argument said for a thing rather than a room.
+  def with_a_placed_thing(**overrides)
+    world = laid_out
+    world["locations"].first["items"] = [ { "name" => "brass tap key",
+                                            "description" => "A short brass key with a square bit." }
+                                            .merge({ "x" => 3, "y" => 4 }.merge(overrides.transform_keys(&:to_s))) ]
+    world
+  end
+
+  test "a file that places a thing inside its room loads" do
+    story = WorldSeed::Loader.new(with_a_placed_thing).load!
+
+    assert_equal Location::Spot.new(x: 3, y: 4),
+                 Item.in_story(story).templates.by_name("brass tap key").sole.position
+  end
+
+  test "a file that carries half a position on a thing is refused, naming it" do
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) do
+      WorldSeed::Loader.new(with_a_placed_thing(y: nil)).load!
+    end
+
+    assert_match(/brass tap key/, error.message)
+    assert_match(/both numbers or neither/, error.message)
+  end
+
+  test "a position that is not whole numbers is refused" do
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) do
+      WorldSeed::Loader.new(with_a_placed_thing(x: 1.5)).load!
+    end
+
+    assert_match(/whole numbers of paces/, error.message)
+  end
+
+  test "a file that places a thing outside its own room is refused" do
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) do
+      WorldSeed::Loader.new(with_a_placed_thing(x: 40)).load!
+    end
+
+    assert_match(/outside the room it is in/, error.message)
+  end
+
+  # HALF-OPEN, like every interval in this programme: the room runs 0..6 along
+  # x, so 7 is the far wall and is not a cell of its floor.
+  test "a thing on the far wall of its room is refused and one cell short loads" do
+    assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(with_a_placed_thing(x: 7)).load! }
+    assert_nothing_raised { WorldSeed::Loader.new(with_a_placed_thing(x: 6)).load! }
+  end
+
+  # A PLANE THAT DOES NOT EXIST. The room the thing is in carries no box, so
+  # there is nothing for the two numbers to be read against.
+  test "a file that places a thing in a room with no box is refused" do
+    world = document
+    world["locations"].first["items"] = [ { "name" => "brass tap key",
+                                            "description" => "A short brass key.", "x" => 1, "y" => 1 } ]
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+
+    assert_match(/carries no box/, error.message)
+  end
+
+  test "a file that places a thing in somebody's hands is refused" do
+    world = document
+    world["characters"].first["items"] = [ { "name" => "brass tap key",
+                                             "description" => "A short brass key.", "x" => 1, "y" => 1 } ]
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+
+    assert_match(/something being carried is in no room/, error.message)
+  end
+
+  test "a file that places somebody outside the room it puts them in is refused" do
+    world = laid_out
+    world["characters"].first.merge!("location" => "The Office", "x" => 40, "y" => 1)
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+
+    assert_match(/outside the room it is in/, error.message)
+  end
+
+  test "a file that places somebody who is in no room is refused" do
+    world = laid_out
+    world["characters"].first.merge!("x" => 1, "y" => 1)
+    world["characters"].first.delete("location")
+
+    error = assert_raises(WorldSeed::Loader::InvalidWorld) { WorldSeed::Loader.new(world).load! }
+
+    assert_match(/is in no room/, error.message)
   end
 
   # Built fresh on every call so a test can edit it without touching another's.

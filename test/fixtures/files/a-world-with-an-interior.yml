@@ -22,6 +22,22 @@
 #   The Harbour Road is outside all of it, with no geometry at all, which is
 #   what almost every location in every world is and what the three checked-in
 #   worlds are entirely.
+#
+# AND WHAT IS STANDING IN THE ROOMS, which is slice 4 and the second thing this
+# file round-trips. A position is two numbers read in the same plane the room's
+# own box is (`Location::Spot`), so every one of them below is inside the box of
+# the room the row is in and can be checked by eye against the numbers above:
+#
+#   Nell Cawsand stands at 2,6 of the taproom, which runs 0..6 along x.
+#   The brass tap key lies at 5,1 of the taproom -- the world's own row, so it
+#   is the initial snapshot every playthrough's copy is made from.
+#   The ledger box lies at 9,3 of the back room, which runs 7..11 along x. It
+#   is the one that proves a position is read in the PARENT's plane and not in
+#   a frame of the room's own: 9 is outside the taproom and inside the back
+#   room, and a room-local reading would have put it in the wrong one.
+#   Nell's own tide table carries NO position, and must not: a thing in a pair
+#   of hands is in no room, so there is no plane to read one in
+#   (`Item#a_position_needs_a_floor`).
 format: 2
 universe:
   physics: |-
@@ -66,6 +82,8 @@ characters:
 - fullname: Nell Cawsand
   race: Harbourfolk
   location: The Taproom
+  x: 2
+  y: 6
   nickname: Nell
   age: 38
   sex: female
@@ -89,6 +107,10 @@ characters:
     strength: 11
     dexterity: 13
     will: 12
+  items:
+  - name: tide table
+    description: |-
+      A folded card of tide times, the current month's line worn through.
 locations:
 - name: The Taproom
   detail_level: realized
@@ -105,6 +127,12 @@ locations:
     Seven paces of scarred boards, eight deep, and every lamp still burning.
   lore: |-
     The room the harbour drinks in, and has since before the road was paved.
+  items:
+  - name: brass tap key
+    description: |-
+      A short brass key with a square bit, kept on the lintel and never in a pocket.
+    x: 5
+    y: 1
 - name: The Rusted Anchor
   detail_level: stub
   width: 12
@@ -125,6 +153,13 @@ locations:
     Five paces of casks and ledgers, and a chair pulled out from the table.
   lore: |-
     Where the Anchor's books are kept, and where they are argued over.
+  items:
+  - name: ledger box
+    description: |-
+      A tin box the length of a forearm, with the year scratched into the lid.
+    bulk: heavy
+    x: 9
+    y: 3
 - name: The Harbour Road
   detail_level: stub
   teaser: |-

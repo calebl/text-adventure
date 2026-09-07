@@ -209,6 +209,100 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_equal "The Tide Post", neb.reload.location.name
   end
 
+  # AND WHERE IN THAT ROOM, ON THE SAME TERMS. `characters[].x` / `.y` is a value
+  # that already exists in the file too, so a repair writes it back rather than
+  # rolling one: a rolled cell would be the engine quietly replacing an author's
+  # decision, and the next `rake game:export` would write the replacement into
+  # the file.
+  #
+  # THE FILE IS STOOD IN because the three checked-in worlds are flat by the
+  # captain's fourth ruling of 2026-09-06 -- none of them places anybody in a
+  # corner, so there is no checked-in document that exercises this. What is stood
+  # in is the real document with one room and one person's pair added, read
+  # through the one seam every reader of a checked-in file uses
+  # (`WorldSeed.checked_in_document`).
+  test "puts a seeded character back in the corner the world file lays them in" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    place = create(:location, :stub, :with_a_footprint, story: story, name: "The Assize Hall")
+    cell = create(:location, story: story, parent_location: place, name: "The Holding Cell",
+                             x: 0, y: 0, z: 0, width: 7, depth: 4)
+    neb = story.characters.find_by(fullname: "Neb Halloran")
+    # A CELL THE ROLL DOES NOT GIVE, so the assertion below cannot pass by
+    # coincidence on whichever ids the suite happened to allocate.
+    rolled = Location::Placement.in_the_world(cell, neb)
+    seated = { "x" => cell.box.x + ((rolled[:x] - cell.box.x + 1) % cell.box.width), "y" => rolled[:y] }
+    document = WorldSeed.checked_in_document(story.title)
+    document["characters"]
+      .detect { |row| row["fullname"] == "Neb Halloran" }
+      .merge!("location" => cell.name, **seated)
+
+    results = WorldSeed.stub(:checked_in_document, ->(_title) { document }) do
+      BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) do
+        Story::Repair.new(story).apply!
+      end
+    end
+
+    assert_includes results.select(&:repaired?).map(&:code), :character_moved_from_the_seed
+    assert_equal cell, neb.reload.location
+    assert_equal Location::Spot.new(x: seated["x"], y: seated["y"]), neb.position
+    assert_not_equal Location::Spot.new(**rolled), neb.position
+  end
+
+  # AND A PAIR THAT DOES NOT FIT IS NOT WRITTEN AND NOT SWALLOWED. The file's
+  # pair is held to the box the FILE draws and a repair writes into the box the
+  # DATABASE carries, so the two can disagree -- a file that grew a floor plan
+  # after somebody's world was seeded from it, which is the class of database
+  # this whole class exists for. The room is still repaired, the corner falls to
+  # the roll, the message says which, and what is left over is named by the
+  # doctor rather than written in and reported afterwards as a person standing
+  # through a wall.
+  test "a seeded corner the database room cannot hold is declined and named" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    place = create(:location, :stub, :with_a_footprint, story: story, name: "The Assize Hall")
+    cell = create(:location, story: story, parent_location: place, name: "The Holding Cell",
+                             x: 0, y: 0, z: 0, width: 7, depth: 4)
+    neb = story.characters.find_by(fullname: "Neb Halloran")
+    document = WorldSeed.checked_in_document(story.title)
+    document["characters"]
+      .detect { |row| row["fullname"] == "Neb Halloran" }
+      .merge!("location" => cell.name, "x" => cell.box.x + cell.box.width, "y" => 0)
+
+    results = WorldSeed.stub(:checked_in_document, ->(_title) { document }) do
+      BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) do
+        Story::Repair.new(story).apply!
+      end
+    end
+    seated = results.detect { |result| result.code == :character_moved_from_the_seed }
+
+    assert_predicate seated, :repaired?
+    assert_match(/not at 7,0/, seated.message)
+    assert_equal cell, neb.reload.location, "the room is still on record and is still written back"
+    assert_equal Location::Spot.new(**Location::Placement.in_the_world(cell, neb)), neb.position
+    assert cell.box.contains?(neb.position), "#{neb.position} is outside #{cell.box}"
+
+    left_over = WorldSeed.stub(:checked_in_document, ->(_title) { document }) do
+      Story::Doctor.new(story.reload).findings.detect { |it| it.code == :seeded_position_outside_the_room }
+    end
+
+    assert left_over, "the repair could not put the file's corner back and nothing said so"
+    assert_equal :manual, left_over.remedy
+    assert_equal neb, left_over.subject
+  end
+
+  # AND A FILE THAT PLACES NOBODY IN PARTICULAR HANDS BACK NOTHING, which is
+  # every checked-in world today: the room is written back and the cell is the
+  # engine's roll, exactly as it is for anybody the engine placed.
+  test "a file with no pair leaves the cell to the engine" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-salt-assizes.yml"))
+    neb = story.characters.find_by(fullname: "Neb Halloran")
+    neb.move_to!(story.locations.find_by(name: "The Vestry Hulk"))
+
+    BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) { Story::Repair.new(story).apply! }
+
+    assert_equal "The Tide Post", neb.reload.location.name
+    assert_nil neb.position
+  end
+
   # THE ONE-TIME PATH for a database seeded before `characters.deliberately_absent`
   # existed: the file says `absent: true`, so nowhere on purpose is on record in
   # the repository and writing the marker costs nothing.
@@ -353,6 +447,30 @@ class Story::RepairTest < ActiveSupport::TestCase
     assert_equal closet, apron.reload.location, "what was on the row a re-seed made moved rather than went with it"
     assert_equal [ "The Supply Closet", "The Long Hallway" ], story.opening_location.exits.reload.pluck(:name)
     assert_predicate Story::Doctor.new(story.reload), :healthy?
+  end
+
+  # A CELL OF THE GHOST'S FLOOR IS NOT A CELL OF THE SURVIVOR'S, and nothing on
+  # record says the two boxes agree -- so what moves over stops being placed.
+  # Cleared rather than re-rolled: this repair is folding two rows a re-seed
+  # made two, not deciding which corner of the survivor everything is in.
+  test "what a fold moves over stops being placed" do
+    story = WorldSeed::Loader.load_file(WorldSeed::DIRECTORY.join("the-unrecorded-hour.yml"))
+    closet = story.locations.find_by(name: "The Supply Closet")
+    closet.update!(last_protagonist_visit: story.start_time)
+    place = create(:location, :stub, :with_a_footprint, story: story, name: "The Ward Annexe")
+    ghost = create(:location, story: story, name: "Supply Closet", detail_level: "stub", teaser: "The second one.",
+                              parent_location: place, x: 0, y: 0, z: 0, width: 7, depth: 8)
+    join(story.opening_location, ghost)
+    apron = Item.in_story(story).find_by(name: "copy-room apron")
+    apron.update!(location: ghost, x: 3, y: 4)
+    clerk = create(:character, story: story, fullname: "Anse Ferrow", location: ghost, x: 5, y: 2)
+
+    BaseAgent.stub(:new, -> { flunk "a safe repair asked a model something" }) { Story::Repair.new(story).apply! }
+
+    assert_equal closet, apron.reload.location
+    assert_nil apron.position
+    assert_equal closet, clerk.reload.location
+    assert_nil clerk.position
   end
 
   test "refuses to fold two rooms both of which have been stood in" do

@@ -79,6 +79,38 @@
 # any, onto the instance AND back onto its template, so the second player's copy
 # of the note is born with the same words instead of paying for different ones.
 #
+# AND WHERE IN THE ROOM IT IS LYING, which is `x` and `y` -- the captain's
+# design words of 2026-09-06, *"locations having an interior where items,
+# characters and exits are placed"*, and the fourth slice of that programme.
+# `Location::Spot` owns what a position IS and `Location::Placement` is the one
+# thing that writes one; what is here is only what the two layers make of it.
+#
+#   A POSITION GOES WITH A FLOOR, and only with one. Both layers, one rule: a
+#   row carries a position when it is LYING IN A ROOM and never otherwise,
+#   because a position is read in the plane of the room the row is in and a
+#   thing in a pair of hands is in no room. So a template held by one of the
+#   world's people has none, an instance in the party's hands has none, and
+#   `#a_position_needs_a_floor` refuses the alternative. THE TAKE AND THE DROP
+#   ARE THE PATH THAT MATTERS: `Playthrough::Turn#carry!` clears the position
+#   because the thing is in a hand now, and `#put_down!` rolls a new one
+#   because it is on a floor again. It does not come back to where it was, and
+#   that is not something this file could arrange -- it is not on record, and a
+#   thing set down is set down where the person setting it down was.
+#
+#   THE TEMPLATE'S POSITION IS THE INITIAL SNAPSHOT, which is the captain's
+#   ruling of 2026-09-04 read one column further. `x` and `y` are deliberately
+#   NOT in `NOT_COPIED`: a copy of a chair standing by the window is a chair
+#   standing by the window, so `Item::Snapshot` brings the position along with
+#   everything else, and from then on the playthrough's own copy moves on its
+#   own and the world's row never does. The copy cannot land somewhere illegal
+#   by doing this -- a template with a position is lying in a room (the rule
+#   above), and a copy of a template lying in a room lies in that same room.
+#
+#   AND A RE-SEED DOES NOT PUSH IT BACK DOWN. `Item::TemplateRefresh` follows
+#   what the WORLD says a thing IS -- its words, its description, its bulk -- and
+#   a position is where one copy of it happens to be lying in one game, which is
+#   the player's business. See that class's header.
+#
 # AND HOW HARD IT IS TO SHIFT, which is `bulk` -- the captain's request of
 # 2026-09-05, *"I want players to be able to pick up items and throw them based
 # on a strength check"*, and the half of that arithmetic that lives on the
@@ -164,6 +196,13 @@ class Item < ApplicationRecord
   validate :in_exactly_one_place
   validate :a_template_is_a_template
   validate :inscription_requires_readable
+  # WHERE IN THE ROOM IT IS LYING. Integers, both or neither, and only for
+  # something on a floor -- see this class's header and `Location::Spot`. There
+  # is no `greater_than` on either: a room may sit west of its parent's origin,
+  # so a cell of its floor may be a negative number.
+  validates :x, :y, numericality: { only_integer: true }, allow_nil: true
+  validate :a_position_is_whole
+  validate :a_position_needs_a_floor
 
   # THE WORLD'S OWN ROWS and ONE GAME'S OWN ROWS. Every query in the app that
   # means the world says `templates`; every query that means play says
@@ -193,6 +232,19 @@ class Item < ApplicationRecord
 
   # Held by one of the world's own people, anywhere in any story.
   scope :held, -> { where.not(character_id: nil) }
+
+  # ROWS THAT SAY WHERE IN A ROOM THEY ARE -- the set the two instruments sweep
+  # (`Story::Doctor`'s geometry findings and
+  # `EngineSweep::Invariants#positions_in_bounds`). Layer-agnostic on purpose,
+  # like `#lying_in`: a template in the wrong half of a room is as wrong as one
+  # game's copy doing it, and an instrument that saw one layer would report half
+  # the fault.
+  #
+  # EITHER COLUMN AND NOT BOTH, which is deliberate and is why this is not
+  # `#positioned?` in SQL: a row carrying ONE of the two is a partial position
+  # and is precisely a fault an instrument has to see. A caller that wants only
+  # whole ones asks `#position` on the row.
+  scope :positioned, -> { where.not(x: nil).or(where.not(y: nil)) }
 
   # IN A PARTY'S HANDS: an instance with no room and no holder. `Item::PLACES`
   # empty is what the party's hands ARE, so this is the query that says so once.
@@ -242,6 +294,19 @@ class Item < ApplicationRecord
   def held? = occupies?(:character_id)
 
   def lying? = !held? && occupies?(:location_id)
+
+  # WHERE IN THE ROOM IT IS LYING, or NIL for a thing that is unplaced -- which
+  # is every row in every database today, everything in a room with no box, and
+  # everything in a pair of hands. See `Location::Spot`, which owns the value
+  # and the frame it is read in.
+  #
+  # THIS IS THE READER A LATER SLICE CALLS. Nothing in the play path reads it
+  # yet: `Playthrough::Moment` -- what the narrator and an NPC are told about
+  # the moment -- is slice 3's file and is not touched here, and this is public
+  # and tested so that slice needs no new reader of its own.
+  def position = Location::Spot.of(self)
+
+  def positioned? = !position.nil?
 
   # THE PARTY OF ONE PLAYTHROUGH HAS IT IN ITS HANDS. All three columns, because
   # the party is the ABSENCE of a room and a holder inside a game -- which is
@@ -325,6 +390,17 @@ class Item < ApplicationRecord
   # WHERE it is and WHOSE it is are what must not come along, because they are
   # precisely what the copy exists to differ in; `id` and the timestamps belong
   # to the row rather than to the thing.
+  #
+  # `x` AND `y` ARE DELIBERATELY NOT ON THIS LIST, which reads like an exception
+  # to the sentence above and is not. WHICH ROOM a copy is in is what it exists
+  # to differ in; WHERE IN THAT ROOM is the initial snapshot the captain's
+  # ruling of 2026-09-04 is about -- *"If a location is generated with items in
+  # it, that should become the initial snapshot that any playthrough uses"* -- so
+  # a copy of a chair standing by the window is a chair standing by the window,
+  # and every game that walks in finds it there. It cannot land somewhere
+  # illegal by coming along: a template carrying a position is lying in a room
+  # (`#a_position_needs_a_floor`), and its copy lies in that same room. From
+  # then on the copy moves on its own and the template never does.
   NOT_COPIED = (PLACES.map(&:to_s) + %w[id playthrough_id template_id created_at updated_at]).freeze
 
   private
@@ -389,6 +465,42 @@ class Item < ApplicationRecord
     else
       errors.add(:base, "is in #{occupied.size} places at once (#{occupied.join(", ")}); it may only be in one")
     end
+  end
+
+  # HALF A POSITION IS NOT ONE. `Location#a_box_is_whole` refuses half a box and
+  # `Character#a_stat_block_is_whole` refuses half a sheet, for the reason that
+  # reads strongest here: a row with an `x` and no `y` is a thing that looks as
+  # though it said where it was and did not, and every reader of it would have to
+  # guess at the other half. `rake game:doctor` reports a row a database already
+  # carries.
+  def a_position_is_whole
+    return unless Location::Spot.partial?(self)
+
+    written = Location::Spot::COLUMNS.select { |column| self[column].present? }
+    errors.add(:base, "carries #{written.join(", ")} and not the other of " \
+                      "#{Location::Spot::COLUMNS.join(", ")}; a position is both numbers or neither")
+  end
+
+  # AND A POSITION NEEDS A FLOOR TO BE READ ON. Both numbers are read in the
+  # plane of the room the row is LYING IN (`Location::Spot`), so a thing in
+  # somebody's hands or in the party's own has no frame and cannot have a
+  # position: that is the shape `Playthrough::Turn#carry!` writes on every take,
+  # and it is refused here rather than tidied away so that forgetting it is
+  # impossible rather than invisible.
+  #
+  # A ROOM WITH NO BOX IS NOT REFUSED HERE, deliberately, and the split is worth
+  # stating. This validation asks one column of one row -- is it on a floor at
+  # all -- and runs on every save of every item in the app. Whether that room
+  # has a plane to read the numbers in is a question about a SECOND row, which
+  # is what `Location`'s own header declines to validate for the same reason:
+  # `Story::Doctor` reports it (`thing_positioned_in_a_room_with_no_box`) and
+  # `WorldSeed::Loader#validate_positions!` refuses a file that writes it.
+  def a_position_needs_a_floor
+    return if Location::Spot::COLUMNS.none? { |column| self[column].present? }
+    return if lying?
+
+    errors.add(:base, "is #{Location::Spot.of(self) || "part-placed"} and is not lying in a room; a position is " \
+                      "read in the plane of the room a thing is lying in, and something in a pair of hands is in none")
   end
 
   # A TEMPLATE OF A TEMPLATE IS NOT A THING, and neither is a copy of a copy.

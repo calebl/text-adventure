@@ -23,6 +23,23 @@ FactoryBot.define do
       association :playthrough
     end
 
+    # LYING SOMEWHERE IN PARTICULAR IN A ROOM: `items.x` and `items.y`, read in
+    # the same plane the room's own box is (`Location::Spot`). It builds on
+    # `:lying` because a position needs a floor -- `Item#a_position_needs_a_floor`
+    # refuses one in a pair of hands -- and on the location factory's `:placed`
+    # trait, whose room runs 0..6 along x and 0..7 along y, so 3,4 is inside it.
+    #
+    # FIXED NUMBERS, NEVER ROLLED, which is the rule
+    # `test/factories/location_connections.rb` diagnoses in full and which
+    # `:placed` on a location already keeps: a factory that threw dice for a
+    # position would land a test that asserts one on whoever ran the suite next.
+    trait :placed do
+      character { nil }
+      association :location, :placed
+      x { 3 }
+      y { 4 }
+    end
+
     # A THING WITH WRITING ON IT. `readable` is the gate and the inscription is
     # the words; `Item` refuses the pair the other way round, so a factory that
     # set one without the other would build an invalid record.

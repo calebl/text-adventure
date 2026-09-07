@@ -30,22 +30,45 @@
 #                        copy -- the party's hands -- so that half is asked of
 #                        the world layer alone.
 #   world_items_unmoved  every one of THE WORLD'S OWN rows is lying in the room
-#                        the file lays it in. A typed line may carry one game's
-#                        copy of the ward stamp anywhere it likes; it may not
-#                        touch the row the next game copies from. This is the
-#                        item half of `cast_unmoved`, and before the ruling it
-#                        could not have been written at all: `take` moved the
-#                        world's only row, so walking into a room and picking
-#                        something up emptied it for everybody.
+#                        the file lays it in, AND IN THE CORNER OF IT THE FILE
+#                        LAYS IT IN. A typed line may carry one game's copy of
+#                        the ward stamp anywhere it likes; it may not touch the
+#                        row the next game copies from. This is the item half of
+#                        `cast_unmoved`, and before the ruling it could not have
+#                        been written at all: `take` moved the world's only row,
+#                        so walking into a room and picking something up emptied
+#                        it for everybody.
+#                        THE CELL IS HELD ON THE SAME TERMS AS THE ROOM, which
+#                        is `geometry_unmoved`'s sentence one containment level
+#                        down: `items[].x` / `.y` is a value a person wrote in a
+#                        file, so a walk that re-rolled a template's corner in
+#                        place -- same room, same name, same layer -- would
+#                        otherwise pass every instrument here, and
+#                        `positions_in_bounds` would clear it for every cell of
+#                        the room but one. Both ways, so a template that
+#                        ACQUIRED a cell fails as loudly as one that lost it,
+#                        and a file that lays nothing in a corner still passes,
+#                        which is every row of all three checked-in worlds.
+#                        ONE GAME'S OWN COPY IS NOT IN IT and must not be: a
+#                        walk is SUPPOSED to move that cell, which is why
+#                        `positions_in_bounds` is the instrument for the
+#                        playthrough layer and is the one sentence here not
+#                        stated against the file.
 #   cast_unmoved         every character is standing exactly where the world
-#                        file put them, and anybody the file left nowhere is
-#                        still nowhere. `characters.location_id` is the closed
+#                        file put them -- in which room and in which corner of
+#                        it -- and anybody the file left nowhere is still
+#                        nowhere. `characters.location_id` is the closed
 #                        set `talk` resolves against, and NOTHING in a walk may
 #                        write it: the seed file, `Character::Registry` (at
 #                        realization, which this mode cannot reach) and an
 #                        explicit `Character#move_to!` are the only writers, so
 #                        a walk that moved somebody means a typed line has
-#                        started moving people. It is stated as "unmoved"
+#                        started moving people. `characters.x` / `.y` has the
+#                        same writers and is held on the same terms, for
+#                        `world_items_unmoved`'s reason: there is no per-game
+#                        copy of a person (see `Character#position`), so a cell
+#                        that moved during a walk moved for every player at
+#                        once. It is stated as "unmoved"
 #                        rather than as "nobody is nowhere" because nowhere is
 #                        a legitimate state that two of the three checked-in
 #                        worlds are in: the protagonist and any companion carry
@@ -121,6 +144,51 @@
 #                        checked-in worlds are, by the captain's fourth ruling of
 #                        2026-09-06 -- and comparing against the file catches
 #                        everything a stronger sentence would.
+#   positions_in_bounds  every row that says WHERE IN A ROOM it is is inside that
+#                        room's box. Items in both layers and characters alike:
+#                        the world's own chair, this game's copy of it, and the
+#                        clerk standing beside both. It is the ONE invariant
+#                        here that is not stated
+#                        against the file, and it is not because it cannot be --
+#                        a walk is SUPPOSED to move a position. A take clears
+#                        one and a drop rolls a new one
+#                        (`Playthrough::Turn#carry!` / `#put_down!`), so "unmoved"
+#                        would fail on the ordinary case; what a player may
+#                        never do is put a thing somewhere its room is not, and
+#                        that is a statement about the rows on their own. It
+#                        covers three faults in one sentence: a position outside
+#                        its box, a position in a room with no box at all (there
+#                        is no plane to read it in), and half a position -- and
+#                        the last two are only reachable through raw SQL, since
+#                        `Item` and `Character` refuse them, so what this
+#                        actually watches is the drop. `Story::Doctor` reports
+#                        the same three on a stored world; this asserts them
+#                        after a walk.
+#                        WHAT A SCRIPT OWES IT, because this one is easier to
+#                        pass vacuously than the others: every invariant here is
+#                        read ONCE, over the records the walk leaves behind
+#                        (`EngineSweep::Walk`), and a position exists only while
+#                        the thing is on a floor. So a script whose last line
+#                        picks everything up leaves nothing for this to be true
+#                        OF and passes whatever a drop wrote.
+#                        `things-land-somewhere-in-a-room.yml` ends with a drop
+#                        for exactly that reason and says so.
+#                        AND THE OTHER HALF OF THAT, SAID PLAINLY: an UNPLACED
+#                        row is invisible here. `Item.positioned` and
+#                        `Character.positioned` take a row carrying either
+#                        column, so a `#put_down!` that wrote NEITHER leaves
+#                        nothing to check -- `#carry!` has already cleared the
+#                        pair, so the row simply drops out of the scope. This
+#                        invariant asserts that a position is in the right room,
+#                        never that there is one; `Playthrough::TurnPositionTest`
+#                        is what asserts a drop writes one at all.
+#                        A SCRIPT ALSO OWES IT A CELL THE WRONG ROOM CANNOT
+#                        HOLD. Two rooms one above the other can share a cell --
+#                        `Location::Box#contains?` ignores `z` by design -- so a
+#                        stale position carried from one to the other is in
+#                        bounds for both and passes. `the-quay-house.yml` lays
+#                        the seal ledger at an x the room above does not run to,
+#                        and its header has the arithmetic.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
@@ -158,7 +226,8 @@ class EngineSweep::Invariants
 
   def check
     [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, stat_blocks_unmoved,
-      hostility_unmoved, hazards_unmoved, geometry_unmoved, nothing_was_written ].flatten.compact
+      hostility_unmoved, hazards_unmoved, geometry_unmoved, positions_in_bounds,
+      nothing_was_written ].flatten.compact
   end
 
   private
@@ -244,21 +313,31 @@ class EngineSweep::Invariants
   def world_items_unmoved
     moved = story.locations.flat_map { |room| Item.lying_in(room).templates.to_a }.filter_map do |item|
       wanted = items_in_file_by_name[item.name]
-      next if wanted.nil? || wanted == item.location&.name
+      next if wanted.nil?
 
-      "#{item.name} is #{item.whereabouts} and the file says in #{wanted}"
+      room, seat = wanted
+      next if room == item.location&.name && seat == item.position
+
+      "#{item.name} is #{item.whereabouts}#{" #{item.position}" if item.position} and the file says " \
+        "in #{room}#{" #{seat}" if seat}"
     end
     return nil if moved.empty?
 
     broken("world_items_unmoved", moved.join("; "))
   end
 
-  # `{ name => the room the file puts it in }`, for the things the file lays in
-  # rooms. Something the file gives a CHARACTER is not in here: a template held
-  # by somebody has no room to be checked against.
+  # `{ name => [ the room the file puts it in, the corner of it or nil ] }`, for
+  # the things the file lays in rooms. Something the file gives a CHARACTER is
+  # not in here: a template held by somebody has no room to be checked against,
+  # and therefore no plane to read a corner in either (`Location::Spot`).
+  #
+  # NIL FOR A THING THE FILE PLACES BUT DOES NOT SEAT, which is every item in
+  # all three checked-in worlds, and it is a real expectation rather than an
+  # absence: the invariant reads it both ways, so a template that gained a cell
+  # during a walk fails as loudly as one that lost the cell it was written with.
   def items_in_file_by_name
     @items_in_file_by_name ||= Array(seed["locations"]).flat_map do |room|
-      Array(room["items"]).map { |item| [ item["name"], room["name"] ] }
+      Array(room["items"]).map { |item| [ item["name"], [ room["name"], Location::Spot.of(item) ] ] }
     end.to_h
   end
 
@@ -268,20 +347,21 @@ class EngineSweep::Invariants
       .map { |item| item["name"] }
   end
 
-  # WHERE THE FILE PUTS EACH OF THEM, by full name. A character the file does
-  # not place is in here as nil, so somebody who acquired a room during the
-  # walk fails just as loudly as somebody who lost one.
+  # WHERE THE FILE PUTS EACH OF THEM, by full name: the room, and the corner of
+  # it the file stands them in. A character the file does not place is in here
+  # as a pair of nils, so somebody who acquired a room -- or a cell -- during
+  # the walk fails just as loudly as somebody who lost one.
   def cast_in_file
-    Array(seed["characters"]).to_h { |row| [ row["fullname"], row["location"] ] }
+    Array(seed["characters"]).to_h { |row| [ row["fullname"], [ row["location"], Location::Spot.of(row) ] ] }
   end
 
   def cast_unmoved
     moved = story.characters.includes(:location).order(:id).filter_map do |character|
-      wanted = cast_in_file[character.fullname]
-      next if character.location&.name == wanted
+      room, seat = cast_in_file[character.fullname]
+      next if character.location&.name == room && character.position == seat
 
-      "#{character.fullname} is #{character.whereabouts} and the file says " \
-        "#{wanted ? "in #{wanted}" : "nowhere"}"
+      "#{character.fullname} is #{character.whereabouts}#{" #{character.position}" if character.position} and the " \
+        "file says #{room ? "in #{room}#{" #{seat}" if seat}" : "nowhere"}"
     end
     return nil if moved.empty?
 
@@ -501,6 +581,43 @@ class EngineSweep::Invariants
     when :partial then "part of a box (#{Location::Box::COLUMNS.select { |column| geometry[column] }.join(", ")}) #{inside}"
     else "unlaid out, #{inside}"
     end
+  end
+
+  # EVERY POSITIONED ROW IS ON THE FLOOR OF THE ROOM IT IS IN. See the header for
+  # why this one is not stated against the file.
+  #
+  # BOTH ITEM LAYERS AND THE CAST, through the one scope each table has
+  # (`Item.positioned`, `Character.positioned`), which takes a row carrying
+  # EITHER column -- so half a position is caught here rather than read as
+  # unplaced. `Location::Box#contains?` is false for a nil spot, which is what
+  # makes that one line cover it.
+  def positions_in_bounds
+    astray = positioned_rows.filter_map do |record, room, label|
+      box = room&.box
+      next if box&.contains?(record.position)
+
+      "#{label} is #{record.position || "part-placed"} and #{describe_floor(room)}"
+    end
+    return nil if astray.empty?
+
+    broken("positions_in_bounds", astray.join("; "))
+  end
+
+  # Every row in the story that says where in a room it is, as the record, its
+  # room and a phrase naming it -- `Story::Doctor#positioned_rows`' counterpart,
+  # and it names the layer for that method's reason.
+  def positioned_rows
+    Item.in_story(story).positioned.includes(:location).order(:id)
+        .map { |item| [ item, item.location, "#{item.name} (#{item.whereabouts})" ] } +
+      story.characters.positioned.includes(:location).order(:id)
+           .map { |person| [ person, person.location, person.fullname ] }
+  end
+
+  def describe_floor(room)
+    return "is in no room, which has no plane to read a position in" if room.nil?
+    return "#{room.name} has no box, so there is no plane to read that in" if room.box.nil?
+
+    "#{room.name} is #{room.box}"
   end
 
   def nothing_was_written

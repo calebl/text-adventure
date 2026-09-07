@@ -74,6 +74,14 @@ module Roll
   # shape of a building and the people in one of its rooms from being the same
   # number twice.
   INTERIOR = 2
+  # WHERE IN A ROOM ONE THING IS, and WHERE IN A ROOM ONE PERSON IS
+  # (`Location::Placement`). Their identity is WHICH ROW, which is an `items.id`
+  # and a `characters.id` -- two different tables whose ids collide freely, so
+  # one axis could not hold both and `sequence` could not tell an item #7 from a
+  # person #7. TWO KINDS rather than one is what keeps the chair and the clerk
+  # from being the same number twice.
+  ITEM_POSITION = 3
+  CHARACTER_POSITION = 4
 
   # THE SEED, FROM FIVE INTEGERS AND NOTHING ELSE. Public because it is the part
   # worth asserting on its own: `RollTest` pins that the same inputs give the

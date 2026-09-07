@@ -59,10 +59,26 @@ class Character::WhereaboutsBackfill
   # whereabouts when it started. Somebody already placed is not touched at all:
   # this is a backfill, not a re-derivation, and the records win over the
   # history everywhere else in this app.
+  #
+  # THROUGH `Character#move_to!` AND NOT `location:` STRAIGHT, because a
+  # whereabouts and a POSITION in it are written by one statement -- so a
+  # recovery that put somebody into a laid-out room would otherwise leave them
+  # standing nowhere in particular in it, and nothing afterwards would ever
+  # place them: unplaced is a legal state, so no doctor finding and no invariant
+  # would say so. The cell is not a guess. It is the same engine roll
+  # `Character::Registry` makes for anybody it admits, re-derivable from the row
+  # and the room for ever (`Location::Placement`), and for a room with no box --
+  # which is every room in every world a backfill can reach today -- it is no
+  # position at all, so a flat world is backfilled exactly as it was before.
+  #
+  # `#move_to!` ALSO CLEARS `deliberately_absent`, AND CANNOT REACH ANYBODY
+  # CARRYING IT: `#candidates` selects `deliberately_absent: false` for its own
+  # reason (see below), so the marker `The Unrecorded Hour` puts on Perrin Lasco
+  # is never in this loop to be undone.
   def run(dry_run: false)
     candidates.map do |character|
       answer = answer_for(character)
-      character.update!(location: answer.location) if answer.placed? && !dry_run
+      character.move_to!(answer.location) if answer.placed? && !dry_run
       answer
     end
   end

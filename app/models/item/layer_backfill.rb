@@ -162,11 +162,35 @@ class Item::LayerBackfill
   # in -- so what the room was furnished with is what it is furnished with
   # again. A world row of that name already lying there is used rather than
   # duplicated, which is what makes a second run write nothing.
+  #
+  # AND IT IS PUT BACK UNPLACED, ALWAYS, and the reason is not that the row
+  # moved. WHERE IN A ROOM THE WORLD'S OWN THING LIES IS THE WORLD'S ANSWER --
+  # a cell re-derivable from the row and the room for ever
+  # (`Location::Placement.in_the_world`) -- and the cell on the instance is
+  # WHERE ONE PLAYER LEFT THEIR COPY, drawn from that game's own seed at that
+  # game's own moment. The two are different answers to different questions, so
+  # the second is not evidence for the first however tidy it looks. Nor could
+  # the instance's cell be trusted as geometry: `answer.location` is the room of
+  # the EARLIEST recorded take, which may not be the room the row ended up in,
+  # and a position is read in the plane of the room a thing is lying in
+  # (`Location::Spot`) -- carrying it across rooms would lay a template through
+  # a wall, which `Story::Doctor` reports as `thing_outside_the_room_it_is_in`.
+  #
+  # UNCONDITIONAL BECAUSE TELLING THE TWO CASES APART WOULD BE GUESSING. A row
+  # still lying in the room of its earliest take carries a cell that IS readable
+  # there, and clearing it anyway costs nothing: it was never the world's cell.
+  # Cleared rather than re-rolled for `Story::Repair#fold_location_into`'s
+  # reason, said again: a backfill is reading a legacy row back into the two
+  # layers, and inventing a corner for it is not what it was asked to do.
+  # Unplaced is the honest answer, and `rake game:doctor` says so out loud for a
+  # room that has a plane to place it in.
   def put_the_world_s_row_back(answer)
     existing = Item.lying_in(answer.location).templates.by_name(answer.item.name).first
     return existing if existing
 
-    Item.create!(answer.item.attributes.except(*Item::NOT_COPIED).merge(location: answer.location))
+    Item.create!(answer.item.attributes.except(*Item::NOT_COPIED)
+                       .merge(Location::Placement.unplaced.stringify_keys)
+                       .merge(location: answer.location))
   end
 
   def protagonist?(item) = story.protagonist.present? && item.character_id == story.protagonist.id

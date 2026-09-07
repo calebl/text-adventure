@@ -45,6 +45,14 @@ class Item::TemplateRefresh
   # before that edit is carrying the default rather than the decision. It is
   # NOT one of `Item::NOT_COPIED` -- where a thing is is the player's, what it
   # weighs is the world's -- so the two lists stay each other's complement.
+  #
+  # `x` AND `y` ARE ON NEITHER LIST, which `name` and `properties` already are
+  # and which is worth stating for the position because it is the newest and the
+  # most tempting. Where in a room a copy is LYING is where one player left it:
+  # a re-seed that pushed the template's cell down would teleport a thing across
+  # somebody's floor because a world file was edited. It comes down ONCE, at
+  # first contact (`Item::Snapshot`, and `Item::NOT_COPIED`'s note), and never
+  # again.
   FROM_THE_TEMPLATE = %w[readable inscription description bulk].freeze
 
   # One copy that lags, and by which columns. `touched` is what makes it a
