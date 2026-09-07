@@ -1245,13 +1245,12 @@ three separate rounds of review found a prompt-stated number about to be
 reported as a defect. `Location::Plan` is the one author of what the prompt
 states, so a sentence added there is covered by construction.
 
-**`race_not_named` is weighed differently and labelled `[KEYWORD]` on the
-board.** The engine writes the rolled race onto the row whatever the model
-answers, so the RECORD is never wrong and the PROSE can be: a Nocturna-Blighted
-slot described as a nervous clerk is a person the room is wrong about, and every
-later conversation inherits it. What the check can see is the race name missing
-from the sheet. What it cannot see is a compliant person written entirely in
-chitin and silence. **Its false-positive rate is unknown until a baseline is
+**What `race_not_named` can and cannot see.** The engine writes the rolled race
+onto the row whatever the model answers, so the RECORD is never wrong and the
+PROSE can be: a Nocturna-Blighted slot described as a nervous clerk is a person
+the room is wrong about, and every later conversation inherits it. What the
+check can see is the race name missing from the sheet. What it cannot see is a
+compliant person written entirely in chitin and silence. **Its false-positive rate is unknown until a baseline is
 bought** — which is the discipline two earlier prose-reading checks failed, and
 the reason it is named for what it can see rather than for what it would like to
 mean.

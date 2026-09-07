@@ -466,7 +466,7 @@ flowchart TD
         M1{"Location::Generator#realize!<br/>realized already?"}
         M1 -->|"yes: walking back in"| M5
         M1 -->|"no: a stub, first time"| M3
-        M3["MODEL CALL, schema'd<br/>Location::DetailSchema<br/>description and lore, SAVED IMMEDIATELY<br/>plus 0-3 things lying here, on the SAME call"]
+        M3["MODEL CALL, schema'd<br/>Location::DetailSchema<br/>description and lore, SAVED IMMEDIATELY<br/>plus 0-3 things lying here, on the SAME call<br/>a room of a laid-out place is TOLD its floor plan<br/>Location::Plan: its size, its storey, and the wall<br/>each door is in -- records, not the model's to change"]
         M3 --> M3A["Location::Interior.lay_out!, NO MODEL CALL<br/>a place carrying a FOOTPRINT gets its whole inside<br/>every room and every door from one seeded roll<br/>same transaction as the flip to realized"]
         M3A --> M3B["Item::Registry#admit!<br/>the model proposes, the engine decides<br/>a WORLD row per thing, lying in the room<br/>capped per room and per world"]
         M3B --> M3C["Item::Snapshot, no model call<br/>this playthrough takes its own copy of the floor<br/>and of what the people standing on it hold<br/>once per template, never twice"]
@@ -576,8 +576,9 @@ Things are now born the way exits are: **as structured records, at the moment a
 room is realized.** `Location::DetailSchema` asks for the description, the lore
 and *at most three portable things lying here* in one answer, and
 `Item::Registry` turns the names into rows. It is the same call — a realization
-still costs exactly two, and a room the model furnished with nothing costs
-nothing extra.
+still costs two, and a room the model furnished with nothing costs nothing
+extra. (A room inside a laid-out place costs **one**: its doors are already the
+engine's, so no exits call is made — the diagram's `M4`.)
 
 **It is deliberately not a narrator tool and not a scan of narration prose.**
 Those were the obvious two ways to do it and both make the record depend on a
@@ -772,8 +773,8 @@ The other half, and it is the same seam the furniture uses.
 `Location::DetailSchema` asks for the description, the lore, *at most three
 portable things* **and at most two people** in one answer, and
 `Character::Registry` turns the sheets into rows placed in the room it just
-described. Still two calls per room; still not a narrator tool and not a scan
-of prose.
+described. Still the same call the furniture rides on; still not a narrator tool
+and not a scan of prose.
 
 **Who they are, the engine decides.** Race, age and sex are rolled per slot
 before the prompt is built and *stated* in it, so the model writes a person the
