@@ -97,7 +97,7 @@ class Playthrough::Mechanics
   # the write, so the read-out is what the database says and not what this class
   # believed it had done.
   State = Data.define(:location, :exits, :items_here, :carried, :present, :foes, :provoked, :conditions,
-                      :condition, :character, :over, :hazard, :hazards_out) do
+                      :condition, :character, :over, :hazard, :hazards_out, :arc) do
     # THE WORLD'S OWN NUMBERS FOR THE PLAYER, one line's worth. Read straight off
     # the character, because that is where they live: a stat block and three
     # abilities are the STORY's (`Character`'s header), and printing them beside
@@ -120,6 +120,18 @@ class Playthrough::Mechanics
     # same honest nothing `#sheet` gives.
     def others_condition
       present.filter_map { |person| "#{person.fullname} #{conditions[person.id]&.in_words}" if conditions[person.id] }
+    end
+
+    # WHERE THE STORY'S ARC STANDS, ONE LINE PER BEAT: its position, its state
+    # and its own summary. `unbound` is a step naming something this world does
+    # not contain yet, `bound` is one waiting to be walked into, `reached` is
+    # one this game has. It is what `EngineSweep::Expectation`'s `quest:`
+    # asserts, off `Playthrough::Arc` rather than off this line.
+    #
+    # Empty for every world with no arc, which is every world in the repository
+    # but one -- so no existing read-out gains a line.
+    def arc_lines
+      arc.map { |position, state, summary| "#{position}. #{state} -- #{summary}" }
     end
 
     def to_s
@@ -185,7 +197,11 @@ class Playthrough::Mechanics
         # back. An exit that hurts both ways would appear on both rooms' lines
         # and one that hurts one way appears on one, which is the record read
         # straight out.
-        [ "hazards out", hazards_out, "every way out of here is free" ]
+        [ "hazards out", hazards_out, "every way out of here is free" ],
+        # AND WHERE THE STORY IS, beat by beat -- the arc as records, which is
+        # the only place the read-out says anything about plot at all. Absent
+        # from every world with no arc, so nothing that had no arc gains a row.
+        [ "story", arc_lines, "this world has no arc" ]
       ].map { |label, values, empty| format("  %-11s %s", label, values.presence&.join(", ") || empty) }
     end
   end
@@ -334,16 +350,35 @@ class Playthrough::Mechanics
     # ruling the riposte above is under.
     Playthrough::Hazards.new(playthrough, turn: turn).every_turn!(location: from)
 
+    # AND THE STORY'S ARC IS READ, in exactly the place and on exactly the terms
+    # `Playthrough::Turn#play` reads it: after the world has finished acting, on
+    # every line the engine PLAYED and on no line it refused. The browser and
+    # this mode have to agree about whether a beat landed, and the only way they
+    # can is by asking in the same place. No model call, which is what lets an
+    # offline walk assert an arc at all.
+    arc = Playthrough::Arc.new(playthrough)
+    beats = arc.run!
+
     closing = @fight.close!
     # EVERY TOLL THIS LINE CAUSED, read off the rows: the arrival's -- which was
     # paid inside `Playthrough::Turn#move_to`, before this method existed for
     # the turn -- and step 7's, together and in the order they were written.
     taken = playthrough.tolls.where("id > ?", @tolls_before).chronological.to_a
-    return report if blows.empty? && closing.nil? && taken.empty?
+    # THE ENDING, READ BACK OFF THE ROWS rather than off what `#run!` answered:
+    # a game that was already over when this line was typed has an ending too,
+    # and the read-out must say so either way.
+    ended = playthrough.over? ? arc.ending : nil
+    return report if blows.empty? && closing.nil? && taken.empty? && beats.empty? && ended.nil?
 
     notes = blows.map { |blow| "answered: #{blow}" }
     notes.concat(taken.map { |toll| "the world: #{toll}" })
+    # WHAT THE ARC DID, said in the read-out beside what the foes and the place
+    # did, and for the same reason: a record that changed and printed nothing is
+    # a record nobody walking a script can see. The beats first and the ending
+    # last, which is the order they happened in.
+    notes.concat(beats.map { |beat| "the story: #{beat.quest_step.summary}" })
     notes << "the fight is over: #{closing.description}" if closing
+    notes << "the story is over: #{ended}" if ended
 
     report.with(note: [ *report.note, *notes ], state: state)
   end
@@ -400,8 +435,33 @@ class Playthrough::Mechanics
       # read-out and `Playthrough::Hazards` cannot come to disagree about which
       # ability saves.
       hazard: hazard_of(playthrough.current_location),
-      hazards_out: hazards_out_of(playthrough.current_location)
+      hazards_out: hazards_out_of(playthrough.current_location),
+      # WHERE THE STORY'S ARC STANDS IN THIS GAME, out of `Playthrough::Arc` --
+      # the one thing that evaluates a beat, so the read-out, the sweep and the
+      # turn loop cannot come to three answers about whether a step is reached.
+      # Empty for a world with no arc.
+      arc: arc_state
     )
+  end
+
+  # `[position, "unbound" | "bound" | "reached", summary]` per beat of the main
+  # arc, in order. The main arc only: a side quest is discovered rather than
+  # planned, and a read-out listing three of them would be an outline.
+  def arc_state
+    quest = playthrough.story.main_quest
+    return [] if quest.nil?
+
+    reached = Playthrough::Beat.where(playthrough: playthrough, quest_step: quest.steps).pluck(:quest_step_id)
+
+    quest.steps.map do |step|
+      state = if reached.include?(step.id)
+        "reached"
+      else
+        step.bound? || step.time_passed? ? "bound" : "unbound"
+      end
+
+      [ step.position, state, step.summary ]
+    end
   end
 
   # `flooded d4, strength save, on arrival -- the water takes your legs`, or nil

@@ -169,6 +169,12 @@ class Item::Registry
                                   playthrough: nil, template: nil,
                                   **writing_on(name, attributes))
     place!(item)
+    # AND IF THE STORY'S ARC WAS WAITING FOR A THING BY THIS NAME, IT NOW HAS
+    # ONE. Binding is a side effect of admission and never a condition of it
+    # (`Quest::Binder`): this registry decides what may exist, the arc reads
+    # what did. A world with no arc pays one `exists?` and stops.
+    Quest::Binder.bind!(item)
+    item
   end
 
   # AND WHERE IN THE ROOM IT IS LYING, which the ENGINE decides and no model is

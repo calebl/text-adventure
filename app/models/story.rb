@@ -18,6 +18,12 @@ class Story < ApplicationRecord
   # Parameters of the world, so they are exported and seeded with it.
   has_many :world_mechanics, dependent: :destroy
   has_many :world_events, dependent: :destroy
+  # WHERE THIS WORLD IS GOING. The arc and its beats are the WORLD's, exactly
+  # as the mechanics are -- written by a seed file or by `Quest::Generator` at
+  # `rake game:new`, exported and seeded with the world, and touched by no
+  # player ever. Which beats somebody has REACHED is `Playthrough::Beat`, one
+  # layer down. See `Quest`.
+  has_many :quests, dependent: :destroy
 
   validates :title, presence: true
   validates :genre, presence: true
@@ -89,6 +95,25 @@ class Story < ApplicationRecord
   def catch_up_world!
     WorldMechanic.catch_up_story!(self)
   end
+
+  # THE ARC, or nil for a world with none -- which is every world generated
+  # before `Quest::Generator` shipped and every seed file with no `quest:`
+  # block. `Quest.main_arc` is the one reader of "the" main arc; this is the
+  # spelling everything in the app uses, so a second query cannot come to a
+  # second answer.
+  def main_quest = Quest.main_arc(self)
+
+  # THE SENTENCE THIS WORLD WAS BUILT TOWARD -- the direction report's decided
+  # `Story#conclusion`, and the name survives even though the column does not.
+  # It reads the main arc's DEFAULT outcome, because the captain's note of
+  # 2026-09-06 made endings rows and several of them; see `Quest::Outcome` for
+  # why a column beside those rows would be a second record that could
+  # disagree with them.
+  #
+  # NIL FOR A WORLD WITH NO ARC, which is the honest nothing: a story that was
+  # never given a destination has none, and `Story::Doctor` says so
+  # (`story_without_a_conclusion`) rather than anything here inventing one.
+  def conclusion = main_quest&.conclusion
 
   # `protagonist: true` writes THE PLAYER, and `Character` already refuses a
   # second one (`#single_protagonist_per_story`), so this cannot quietly give a

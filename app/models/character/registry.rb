@@ -199,7 +199,12 @@ class Character::Registry
   # realization that threw away its description over a name would not be.
   def admit!(candidates)
     Character.transaction do
-      Array(candidates).each_with_index { |candidate, slot| admit_one(candidate, slot) }
+      # AND IF THE STORY'S ARC WAS WAITING FOR SOMEBODY BY THIS NAME, IT NOW
+      # HAS THEM. Binding is a side effect of admission and never a condition
+      # of it (`Quest::Binder`): this registry decides who may exist, the arc
+      # reads who did. `#admit_one` answers nil for anybody refused and
+      # `Quest::Binder` takes nil, so a refusal binds nothing.
+      Array(candidates).each_with_index { |candidate, slot| Quest::Binder.bind!(admit_one(candidate, slot)) }
     end
 
     present
@@ -362,7 +367,13 @@ class Character::Registry
     # behaviour but is worth saying: `#refusal` has already declined anybody the
     # file marks absent on purpose, so nobody reaching this line carries the
     # marker.
+    #
+    # THE PERSON IS RETURNED AND NOT `#move_to!`'s OWN ANSWER, so that both
+    # branches of this method answer the same kind of thing: whoever was
+    # admitted, or nil. `#admit!` binds the arc off that, and a branch that
+    # answered `true` would silently bind nothing.
     character.move_to!(location)
+    character
   end
 
   # A PERSON WHO DID NOT EXIST A MOMENT AGO, out of the sheet the realization

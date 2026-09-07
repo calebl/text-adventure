@@ -71,9 +71,17 @@ class Location::Generator
   # is one the engine rolls one for (`Location::Population`). Only the exits call
   # has a word, and `#connect_exit!` is what passes it.
   def self.create_stub!(story, name:, teaser:, population: nil)
-    story.locations.create!(name: name, teaser: teaser, detail_level: :stub,
-                            danger: Location::Danger.for_a_new_room(story),
-                            population: population)
+    room = story.locations.create!(name: name, teaser: teaser, detail_level: :stub,
+                                   danger: Location::Danger.for_a_new_room(story),
+                                   population: population)
+    # AND IF THE STORY'S ARC WAS WAITING FOR A PLACE BY THIS NAME, IT NOW HAS
+    # ONE. Binding is a side effect of the room being born and never a
+    # condition of it (`Quest::Binder`) -- so a model naming an exit, a world
+    # mechanic and `Quest::Deadline` all bind on exactly the same terms,
+    # because all three come through here. A world with no arc pays one
+    # `exists?` and stops.
+    Quest::Binder.bind!(room)
+    room
   end
 
   # Description and lore, then the stub exits leading out -- saved in that
@@ -95,6 +103,17 @@ class Location::Generator
 
     write_detail!
     write_exits!
+    # AND THE STORY'S ARC GETS ITS DEADLINE CHECKED, because realizing a room is
+    # the moment the world GROWS -- which is the thing that was supposed to
+    # produce whatever the arc is still waiting for. Zero model calls, nothing
+    # at all for a world with no arc, and nothing for one still inside its
+    # grace: see `Quest::Deadline` for when it fires and where it puts things.
+    #
+    # AFTER THE EXITS AND NOT BEFORE THEM, so the room this realization just
+    # opened is a candidate to hang the way on from -- and so a place the
+    # deadline builds is never in the list of names the exits call was offered,
+    # which would have let one call name a building the next line created.
+    Quest::Deadline.after_realizing!(location)
 
     location
   end
@@ -283,6 +302,17 @@ class Location::Generator
     # a room somebody has already walked into.
     location.name = naming.accept(detail["name"]) || location.name if naming
 
+    # AND A ROOM THAT HAS JUST BEEN NAMED IS A ROOM THE ARC MAY HAVE BEEN
+    # WAITING FOR. `.create_stub!` binds a room at birth, and a room of an
+    # interior is born as a NUMBER (`Location::Interior`'s placeholder) -- so
+    # the moment it gets the name a player will read is the second and last
+    # moment it can bind. Nothing else in the app renames a location.
+    #
+    # BEFORE THE SAVE BELOW ON PURPOSE: the binding is deferred to the same
+    # transaction, so a layout that raises leaves neither the name nor the arc
+    # moved.
+    named_room = location.name_changed?
+
     # THE ROW, THEN THE INSIDE, THEN THE FLIP -- one transaction and that order.
     # A room is a child of a saved place, so this location has to exist before
     # `Location::Interior` can put anything in it (`#lay_out_interior!` may be
@@ -290,6 +320,7 @@ class Location::Generator
     # what makes this place one nobody realizes again.
     Location.transaction do
       location.save!
+      Quest::Binder.bind!(location) if named_room
       lay_out_interior!(detail["parameters"])
       location.update!(detail_level: :realized)
     end

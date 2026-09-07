@@ -244,6 +244,10 @@ class WorldMechanic::ShuffleConnections
   def record!(moves, at)
     mechanic.world_events.create!(
       story: story,
+      # WHICH WRITER WROTE THE ROW, since the stream started serving more than
+      # one (`WorldEvent::SOURCES`). A mechanic's event is the WORLD's and
+      # carries no playthrough -- every game sees tonight's exits.
+      source: WorldEvent::WORLD_MECHANIC,
       occurred_at: at,
       summary: moves.map { |move| sentence_for(move) }.join(" "),
       locations: Location.where(id: moves.flat_map { |move| [ move[:edge].location_id, move[:from], move[:to] ] }.uniq)

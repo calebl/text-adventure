@@ -258,6 +258,20 @@ class Playthrough::Turn
     # nothing into a game that is over.
     Playthrough::Hazards.new(playthrough, turn: self).every_turn!(location: from)
 
+    # AND THEN THE STORY'S ARC IS READ AGAINST WHAT THIS TURN LEFT BEHIND. Four
+    # record predicates, no model call and nothing written on almost every turn
+    # -- and on the turn the last beat lands, the ending: the reached outcome,
+    # `playthroughs.ended_at` and one engine-authored `Scene` carrying the
+    # sentence this world was built toward. See `Playthrough::Arc`.
+    #
+    # AFTER THE RIPOSTE AND THE HAZARD AND NOT BEFORE THEM, which is the whole
+    # of why it is here rather than beside `claim_tolls!`: the world may have
+    # taken the last hit point on this very turn, and an arc that concluded
+    # first would hand a dead player an ending. A REFUSED LINE NEVER REACHES
+    # HERE, which is the same ruling the two lines above are under -- a refused
+    # line writes nothing, so it cannot reach a beat.
+    Playthrough::Arc.new(playthrough).run!
+
     # AND A FIGHT THAT HAS ENDED IS CLOSED, with one `Scene` carrying what the
     # exchange cost in story time. Nil on every turn of every game that is not
     # in a fight, which is almost all of them.

@@ -75,7 +75,8 @@ class Story::Doctor
       *hostility,
       *hazards,
       *geometry,
-      *vitals_rows
+      *vitals_rows,
+      *arc
     ]
   end
 
@@ -1517,6 +1518,292 @@ class Story::Doctor
   # building it is a room of, a room nothing can walk to, a stair that does not
   # arrive where it set off from, a door standing in no wall, and a place
   # written out in full with nothing inside it at all.
+  # --- THE ARC ---------------------------------------------------------------
+  #
+  # THE CAPTAIN'S FIVE PROPERTIES OF *"playable in a reasonable way"*, 2026-09-06,
+  # four of which are questions about records this class already walks. His
+  # fifth -- the world has somebody in it to talk to -- is `ta-room-people-count`
+  # and is not here.
+  #
+  #   P1  THE GOAL EXISTS AS A ROW before the player can run out of frontier.
+  #       `#unbound_quest_steps` and `#stories_that_cannot_progress`.
+  #   P2  THE FRONTIER KEEPS POINTING AT THE GOAL -- not every unexplored exit
+  #       leads away from it. `#frontier_turned_away_from_the_goal`.
+  #   P3  THE ARC CAN COMPLETE -- every bound step is reachable from the opening
+  #       room. `#unreachable_quest_targets`, and it is FATAL.
+  #   P4  THE ENDING IS WRITTEN -- there is an outcome row to reach.
+  #       `#quests_without_an_outcome`.
+  #
+  # WHY TWO OF THEM ARE FATAL when nothing here stops a turn from running. The
+  # doctor's own rule is that fatal means the story cannot be PLAYED, and an arc
+  # never gates a line -- but the captain's Call 1 of 2026-09-06 chose *always
+  # completable*, and a world that cannot deliver its own ending is a world the
+  # index page should not offer. A world with NO arc at all is untouched by
+  # every check here, which is every world generated before this shipped.
+  def arc
+    return [] if story.quests.none?
+
+    [ *stories_without_a_conclusion, *quests_without_an_outcome, *quests_with_two_defaults,
+      *unbound_quest_steps, *stories_that_cannot_progress, *missing_quest_targets,
+      *unreachable_quest_targets, *frontier_turned_away_from_the_goal ]
+  end
+
+  # P4, HALF ONE: a world with an arc and no sentence to end on. The direction
+  # report's `Story#conclusion` read off the main arc's default outcome, which
+  # is where the captain's *"multiple endings"* note of 2026-09-06 put it.
+  #
+  # NO REPAIR, AND THE REASON IS A RULE RATHER THAN A GAP: writing a conclusion
+  # is a model call, and `Update::Step.model_calls?` forbids one in `bin/update`.
+  # Stated rather than hidden -- a person re-generates or edits the file.
+  def stories_without_a_conclusion
+    return [] if story.conclusion.present?
+
+    [ finding(:story_without_a_conclusion, :warning,
+              "has an arc and no ending written for it: nothing says what this world was built toward, so reaching " \
+              "the last beat would close the game with nothing to read. Writing one is a model call, so there is no " \
+              "safe backfill -- re-generate the arc or write an `outcomes:` block into the world file",
+              :manual) ]
+  end
+
+  # P4, HALF TWO, ASKED OF EVERY ARC rather than only the main one: a side quest
+  # with no ending is the same defect one row down.
+  def quests_without_an_outcome
+    story.quests.order(:id).filter_map do |quest|
+      next if quest.outcomes.any?
+
+      finding(:quest_without_an_outcome, :warning,
+              "#{quest.title.inspect} has #{quest.steps.count} beat(s) and no outcome at all, so reaching its last one " \
+              "would end nothing -- an arc needs at least one ending to reach",
+              :manual, subject: quest)
+    end
+  end
+
+  # TWO SENTENCES CLAIMING TO BE THE ONE THE WORLD WAS BORN WITH.
+  # `WorldSeed::Loader` refuses a file that writes it, so a row here arrived
+  # through raw SQL or a database older than that validation. It reads as the
+  # lowest-id one in the meantime (`Quest#default_outcome`), which is honest and
+  # arbitrary, and that is exactly why it is worth reporting.
+  def quests_with_two_defaults
+    story.quests.order(:id).filter_map do |quest|
+      defaults = quest.outcomes.select(&:is_default?)
+      next if defaults.size < 2
+
+      finding(:quest_with_two_default_outcomes, :warning,
+              "#{quest.title.inspect} marks #{defaults.size} outcomes as the ending it was born with " \
+              "(#{defaults.map(&:name).join(", ")}); one of them is what the world was built toward and the rest are " \
+              "other endings",
+              :manual, subject: quest)
+    end
+  end
+
+  # P1: A BEAT THAT NAMES SOMETHING THE WORLD DOES NOT CONTAIN. Expected on a
+  # brand-new GENERATED world -- the arc states what the world must contain and
+  # the registries grow it as the player explores -- and a defect on a SEEDED
+  # one, where the file declared everything it meant to. `quests.origin` is the
+  # column that tells them apart, which is the whole reason it exists.
+  def unbound_quest_steps
+    story.quests.order(:id).flat_map do |quest|
+      quest.unbound_steps.map do |step|
+        finding(:quest_step_unbound, :warning,
+                "#{quest.title.inspect} step #{step.position} waits for #{step.target_name.inspect} " \
+                "(#{step.trigger_kind}) and this world has no such #{noun_for(step)}. " \
+                "#{unbound_remedy(quest)}",
+                :manual, subject: step)
+      end
+    end
+  end
+
+  # P1, THE FATAL HALF, AND IT IS THE SHAPE THE CAPTAIN ACTUALLY HIT. Story 7's
+  # prince was never created at all -- so under this design his arc would have
+  # been entirely UNBOUND rather than unreachable, and this is the check that
+  # would have named it. A generated world is exempt while it is still young
+  # enough for `Quest::Deadline` to fire, because being unbound is that world's
+  # ordinary first hour; a world past the deadline with nothing bound is one the
+  # deadline is not running in.
+  def stories_that_cannot_progress
+    story.quests.open_arcs.order(:id).filter_map do |quest|
+      next if quest.steps.none? || quest.steps.any?(&:bound?)
+      next if quest.generated? && !Quest::Deadline.overdue?(story)
+
+      finding(:story_cannot_progress, :fatal,
+              "#{quest.title.inspect} has #{quest.steps.count} beat(s) and not one of them names a row this world " \
+              "contains, so there is nothing in it to walk toward. The engine places an unbound target itself once " \
+              "#{Quest::Deadline::GRACE_ROOMS} room(s) have been written (`Quest::Deadline`); a world past that with " \
+              "nothing bound is one that has stopped growing",
+              :manual, subject: quest)
+    end
+  end
+
+  # A BOUND TARGET WHOSE ROW WENT AWAY. Safe: unbind the step and let the world
+  # grow the thing again, which is exactly what the arc's two states are for.
+  # `belongs_to` is polymorphic and optional, so a destroyed target leaves the
+  # id behind rather than raising -- which is what makes this findable at all.
+  def missing_quest_targets
+    story.quests.order(:id).flat_map do |quest|
+      quest.steps.select { |step| step.target_id.present? && step.target.nil? }.map do |step|
+        finding(:quest_target_missing, :warning,
+                "#{quest.title.inspect} step #{step.position} points at a #{step.target_type} that no longer exists; " \
+                "unbinding it puts the step back to waiting for #{step.target_name.inspect}, which the world can grow again",
+                :safe, subject: step)
+      end
+    end
+  end
+
+  # P3: THE ARC CAN COMPLETE. A bound target the player cannot walk to is a
+  # soft-lock with a story attached, and the captain's Call 1 chose *always
+  # completable* -- so this is FATAL, and it is the check that keeps
+  # `WorldMechanic::ShuffleConnections` honest when a mechanic moves a target's
+  # only edge away.
+  #
+  # THE ROOM AND NOT THE BUILDING: `Quest::Step#target_room` resolves a place to
+  # the room a party stands in, because a laid-out place is never an endpoint
+  # and a BFS over the connection rows would find no path to one.
+  #
+  # A PERSON OR A THING IS ASKED THROUGH WHERE IT IS. Somebody nowhere at all is
+  # not unreachable -- `The Unrecorded Hour` leaves Perrin Lasco nowhere on
+  # purpose -- so only a target standing somewhere the graph cannot reach is
+  # reported.
+  def unreachable_quest_targets
+    return [] if reachable_from_the_opening.empty?
+
+    story.quests.order(:id).flat_map do |quest|
+      quest.steps.filter_map do |step|
+        room = room_of(step)
+        next if room.nil? || reachable_from_the_opening.include?(room.id)
+
+        finding(:quest_target_unreachable, :fatal,
+                "#{quest.title.inspect} step #{step.position} is bound to #{step.target_name.inspect} in " \
+                "#{room.name.inspect}, and no path leads there from #{play_location&.name.inspect} -- so this world " \
+                "cannot be finished from inside its own records",
+                :manual, subject: step)
+      end
+    end
+  end
+
+  # P2: THE FRONTIER KEEPS POINTING AT THE GOAL, and this is the check no
+  # topological rule could make before the goal was a row.
+  #
+  # WHAT THE CAPTAIN ACTUALLY HIT, stated as a predicate: at the moment story 7
+  # dead-ended, the world still had unexplored rooms and was topologically
+  # healthy -- every remaining one just led UP AND OUT, in a story about going
+  # down. A frontier COUNT cannot tell "one unexplored room" from "one
+  # unexplored room in the wrong direction". Once the goal is a bound row it is
+  # a pure graph question: **is there any unexplored place that would bring the
+  # player CLOSER to it?**
+  #
+  # Hops and not storeys, deliberately. Depth is what the player walks; `z` is
+  # what `Quest::Deadline` reads to decide where to PUT something, which is a
+  # different question asked at a different moment.
+  #
+  # WHAT IT CANNOT SEE, in this class's habit of writing it down: a world nobody
+  # has played. Every room is unvisited then, so the goal itself is on the
+  # frontier and this is quiet -- which is correct, because a world nobody has
+  # walked has not turned away from anything.
+  def frontier_turned_away_from_the_goal
+    step = next_bound_step
+    goal = step && room_of(step)
+    return [] if goal.nil?
+
+    distances = hops_to(goal)
+    visited = story.locations.where.not(last_protagonist_visit: nil).pluck(:id)
+    return [] if visited.empty? || visited.include?(goal.id)
+
+    nearest = visited.filter_map { |id| distances[id] }.min
+    return [] if nearest.nil?
+
+    closer = frontier_ids(visited).any? { |id| distances[id] && distances[id] < nearest }
+    return [] if closer
+
+    [ finding(:frontier_turned_away_from_the_goal, :warning,
+              "every unexplored way on from where this world has been walked leads FURTHER from " \
+              "#{goal.name.inspect}, which is what #{step.quest.title.inspect} step #{step.position} needs. " \
+              "The world is still connected and still has places nobody has seen; none of them is toward the goal",
+              :manual, subject: goal) ]
+  end
+
+  # THE STEP THE ARC IS ON, for the frontier check: the lowest-numbered BOUND
+  # step of the main arc. Nothing here knows about a playthrough -- a doctor
+  # reports on a world and not on somebody's game -- so it is the arc's first
+  # bound beat rather than any player's next one.
+  def next_bound_step
+    arc = story.main_quest
+    return nil if arc.nil? || arc.doomed?
+
+    arc.steps.detect { |step| step.bound? && step.reach_location? }
+  end
+
+  # WHERE A STEP'S TARGET STANDS, or nil for one that stands nowhere. The one
+  # reader of that question here, so the reachability walk and the frontier
+  # check cannot disagree about which room a step is about.
+  def room_of(step)
+    return nil unless step.bound?
+
+    case step.target
+    when Location then step.target_room
+    when Character, Item then step.target.location
+    end
+  end
+
+  def noun_for(step)
+    { "reach_location" => "place", "speak_to" => "person", "hold_item" => "thing" }.fetch(step.trigger_kind, "thing")
+  end
+
+  def unbound_remedy(quest)
+    return "The engine places it itself once #{Quest::Deadline::GRACE_ROOMS} room(s) have been written; until then this is the ordinary state of a new world" if quest.generated?
+
+    "This file declares no such row, so the arc names something the world file does not contain"
+  end
+
+  # EVERY LOCATION THE PLAYER CAN WALK TO FROM WHERE THE GAME OPENS, breadth
+  # first over the connection rows -- both directions, because a door is two
+  # rows and a walk crosses one the table only half recorded. Stairs are
+  # ordinary rows, so a storey is walked like anything else.
+  #
+  # Computed once for the whole run: three checks ask it and a second walk would
+  # be a second answer waiting to disagree.
+  def reachable_from_the_opening
+    @reachable_from_the_opening ||= begin
+      root = play_location
+      root.nil? ? [] : walk_from(root.id).keys
+    end
+  end
+
+  def hops_to(goal) = walk_from(goal.id)
+
+  # `{ location id => hops }`, out from one room. Undirected, and neighbours are
+  # taken in id order so the walk is repeatable.
+  def walk_from(root_id)
+    seen = { root_id => 0 }
+    queue = [ root_id ]
+
+    until queue.empty?
+      id = queue.shift
+      adjacency.fetch(id, []).each do |neighbour|
+        next if seen.key?(neighbour)
+
+        seen[neighbour] = seen[id] + 1
+        queue << neighbour
+      end
+    end
+
+    seen
+  end
+
+  def adjacency
+    @adjacency ||= LocationConnection.joins(:location).where(locations: { story_id: story.id })
+                                     .pluck(:location_id, :connected_location_id)
+                                     .each_with_object(Hash.new { |hash, key| hash[key] = [] }) do |(from, to), index|
+      index[from] << to
+      index[to] << from
+    end.transform_values { |ids| ids.uniq.sort }
+  end
+
+  # THE UNVISITED PLACES ONE STEP OFF WHAT HAS BEEN WALKED -- the frontier, in
+  # `Story::Map`'s sense: an edge is on the frontier when one end is unvisited.
+  def frontier_ids(visited)
+    visited.flat_map { |id| adjacency.fetch(id, []) }.uniq - visited
+  end
+
   def geometry
     [ *rooms_with_a_partial_box, *rooms_with_an_impossible_extent, *boxes_with_no_parent,
       *boxes_with_no_parent_footprint, *overlapping_sibling_rooms, *locations_containing_each_other,

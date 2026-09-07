@@ -85,7 +85,12 @@ class WorldSeed::Exporter
       # Last, and after the graph it operates on: a mechanic's parameters only
       # mean anything once you have read which locations are `mobile` and which
       # edges join a mobile place to a fixed one.
-      "mechanics" => mechanics_document
+      "mechanics" => mechanics_document,
+      # AND WHERE THE STORY IS GOING, after everything it names. An arc's steps
+      # name a place, a person or a thing by natural key, so the file has to
+      # have declared all three above it for a reader to follow the block at
+      # all -- the same reason `mechanics` is written after the graph.
+      "quests" => quests_document
     }.compact
   end
 
@@ -111,6 +116,15 @@ class WorldSeed::Exporter
     # opening arrival does, and for the mirror-image reason -- the opening is
     # the same for everyone who ever plays; a conversation is the same for
     # nobody.
+    # WHICH BEATS SOMEBODY REACHED, and which ending they got. Progress on the
+    # same terms as the scenes above -- the ARC is exported (it is the world's
+    # own destination), and how far one player walked it is not.
+    beats = Playthrough::Beat.where(playthrough: story.playthroughs).count
+    if beats.positive?
+      @warnings << "#{beats} quest beat(s) not exported: which steps of the arc somebody has reached is their progress " \
+                   "through the world rather than the world. The arc itself IS exported."
+    end
+
     conversations = Chat.where(playthrough: story.playthroughs).count
     if conversations.positive?
       @warnings << "#{conversations} conversation(s) not exported: what a player said to a character, and what it cost, " \
@@ -584,6 +598,52 @@ class WorldSeed::Exporter
     end
 
     rows.presence
+  end
+
+  # THE WORLD'S OWN ARC, written back as what the FILE says rather than as what
+  # the records currently hold -- which is the one place this document and the
+  # database deliberately differ.
+  #
+  # `target_name` AND NOT THE BOUND ROW. A step's `target` is a foreign key and
+  # ids differ on every load, so the file carries the NAME the arc is waiting
+  # for and the loader re-resolves it (`WorldSeed::Loader#bind_quest_step!`).
+  # That is also what makes an exported arc honest about an unbound step: a
+  # world whose prince has not been grown yet exports the name it is still
+  # waiting for, and re-seeding it binds nothing, which is the true state.
+  #
+  # AND NO BEATS. Which steps somebody has REACHED is `playthrough_beats` --
+  # progress, on exactly the terms the scenes and the playthroughs above are --
+  # so it is left behind, and `#warn_about_unexported!` says so out loud.
+  def quests_document
+    rows = story.quests.order(:id).map do |quest|
+      {
+        "title" => quest.title,
+        "premise" => text(quest.premise),
+        "parent" => quest.parent_quest&.title,
+        "status" => quest.status,
+        "contributes" => quest.contributes?,
+        "steps" => quest.steps.order(:position).map { |step| quest_step_document(step) },
+        "outcomes" => quest.outcomes.order(:id).map do |outcome|
+          { "name" => outcome.name, "summary" => text(outcome.summary), "default" => outcome.is_default? }
+        end
+      }.compact
+    end
+
+    rows.presence
+  end
+
+  # `position` IS NOT WRITTEN, because the list already carries the order --
+  # the same decision `connections` makes by writing an unordered `between:`
+  # pair instead of two directed rows. A number a person has to keep in step
+  # with a list is a number a person gets wrong.
+  def quest_step_document(step)
+    {
+      "summary" => text(step.summary),
+      "trigger" => step.trigger_kind,
+      "target" => step.target_name,
+      "teaser" => text(step.teaser),
+      "minutes" => step.minutes
+    }.compact
   end
 
   def edge_document(pair, rows, order)

@@ -46,6 +46,16 @@
 #                                        than progress -- see WorldSeed::Exporter
 #   Mechanic   (story, name)             unique index; a world's own laws are
 #                                        world data, so they are seeded with it
+#   Quest      (story, title)            unique index; a world's own ARC is
+#                                        world data on exactly the terms its
+#                                        laws are. Its steps key on (quest,
+#                                        position) and its outcomes on (quest,
+#                                        name), and the whole block is
+#                                        RE-ASSERTED -- a step the file drops is
+#                                        deleted, because an arc is a shape
+#                                        rather than an accumulation. What is
+#                                        NOT re-asserted is any playthrough's
+#                                        beats: those are progress
 #
 # RE-SEEDING A WORLD SOMEBODY HAS PLAYED, which is what this file's rules are
 # actually about. The captain re-seeds his long-lived development database to
@@ -189,6 +199,11 @@ class WorldSeed::Loader
       load_connections!(story, locations)
       load_characters!(story, universe)
       load_mechanics!(story)
+      # AFTER THE GRAPH AND THE CAST, because every step names one of them by
+      # natural key and binding is a lookup -- an arc loaded first would come
+      # out entirely unbound and the doctor would report a world the file
+      # actually specified completely.
+      load_quests!(story)
       # Last, because it names a location AND a cast by natural key and both
       # have to exist first. It is written near the top of the FILE, where
       # somebody editing the prose will find it; load order and key order are
@@ -708,6 +723,118 @@ class WorldSeed::Loader
     end
   end
 
+  # THE WORLD'S OWN ARC, and it is world data on exactly the terms the mechanics
+  # above are: a seed file says where this story is going, and no player ever
+  # writes a row in any of the three tables (`EngineSweep::Invariants#quest_unmoved`).
+  #
+  # RE-ASSERTED WHOLE, WHICH IS DIFFERENT FROM EVERY OTHER LOADER HERE AND
+  # DELIBERATE. Locations, items and characters are RECONCILED and never
+  # deleted, because a played world has rows the file cannot prove anything
+  # about -- somebody moved them. An arc has no such rows: a step is a
+  # statement the file makes, and a step the file has stopped making is not a
+  # beat somebody walked, it is a plot point the author took out. Leaving it
+  # would give a re-seeded world an arc nobody can finish, which is exactly the
+  # defect this whole slice exists to prevent. What a PLAYER did -- their beats
+  # and their ending -- is `playthrough_beats` and `playthrough_endings`, is
+  # never in the file, and is never touched here.
+  #
+  # AND BINDING IS THE SAME SIDE EFFECT IT IS EVERYWHERE ELSE. A step names a
+  # place, a person or a thing and this looks it up in the story that was just
+  # loaded, through `Quest::Binder` -- the one statement of what a step will
+  # take, so a seeded arc and a generated one bind under one rule. A file may
+  # legitimately name something it does not declare: that is an UNBOUND step,
+  # which is a state the doctor reports rather than a file that will not load.
+  def load_quests!(story)
+    by_title = {}
+
+    # THE ARCS WITH NO PARENT FIRST, so a side quest's parent is on the records
+    # before it is named. `#validate_quests!` has already refused a `parent:`
+    # that names nothing, so this cannot silently orphan one.
+    quest_documents.sort_by { |attributes| attributes["parent"].present? ? 1 : 0 }.each do |attributes|
+      title = attributes.fetch("title")
+      quest = story.quests.find_by(title: title) || story.quests.new(title: title)
+      quest.assign_attributes(
+        premise: attributes.fetch("premise"),
+        status: attributes["status"].presence || "open",
+        # A SIDE QUEST IS A CHILD (`Quest`), and `contributes` is a separate
+        # question the file may answer about one: whether finishing it moves
+        # the main arc. Absent means yes, which is what a side quest usually is.
+        parent_quest: by_title[attributes["parent"]],
+        contributes: attributes.key?("contributes") ? attributes["contributes"] == true : true,
+        origin: "seeded"
+      )
+      quest.save!
+      by_title[title] = quest
+
+      load_quest_steps!(quest, Array(attributes["steps"]))
+      load_quest_outcomes!(quest, Array(attributes["outcomes"]))
+    end
+  end
+
+  # THE BEATS, IN THE ORDER THE FILE LISTS THEM -- `position` is the index and
+  # not a key the file writes, for the reason a connection is written once as an
+  # unordered pair: a number a person has to keep in step with a list is a
+  # number a person gets wrong, and the list already says the order.
+  def load_quest_steps!(quest, documents)
+    documents.each_with_index do |attributes, index|
+      position = index + 1
+      step = quest.steps.find_by(position: position) || quest.steps.new(position: position)
+      step.assign_attributes(
+        summary: attributes.fetch("summary"),
+        trigger_kind: attributes.fetch("trigger"),
+        target_name: attributes["target"],
+        teaser: attributes["teaser"],
+        minutes: attributes["minutes"]
+      )
+      # THE TARGET IS RE-RESOLVED ON EVERY LOAD, in both directions: a file that
+      # renames a step's target unbinds the row it used to point at and binds
+      # the one it now names. Without that, editing `target:` in a played world
+      # would leave the arc pointing where it used to.
+      step.target = nil
+      step.bound_at = nil
+      step.save!
+
+      bind_quest_step!(quest.story, step)
+    end
+
+    quest.steps.where.not(position: 1..documents.size).destroy_all
+  end
+
+  # THE ENDINGS. Several per quest -- the captain's note of 2026-09-06 -- keyed
+  # on `name`, which is the short label a person writes and re-asserts one
+  # under. `default: true` marks the one the world was born with; a file that
+  # marks none leaves `Quest#default_outcome` reading the first, and one that
+  # marks two is reported by `rake game:doctor` rather than refused halfway
+  # through a load.
+  def load_quest_outcomes!(quest, documents)
+    names = documents.map { |attributes| attributes.fetch("name") }
+
+    documents.each do |attributes|
+      name = attributes.fetch("name")
+      outcome = quest.outcomes.find_by(name: name) || quest.outcomes.new(name: name)
+      outcome.assign_attributes(summary: attributes.fetch("summary"), is_default: attributes["default"] == true)
+      outcome.save!
+    end
+
+    quest.outcomes.where.not(name: names).destroy_all
+  end
+
+  # THE ROW THIS STEP NAMES, IF THE WORLD HAS ONE. Through `Quest::Binder`, so
+  # the name rule is stated once for every path that binds an arc. Story time
+  # is the story's own `start_time`: a seeded arc was bound when the world was
+  # written, not when somebody happened to load the file.
+  def bind_quest_step!(story, step)
+    return if step.time_passed? || step.target_name.blank?
+
+    record = case step.trigger_kind
+    when "reach_location" then WorldSeed.find_location(story, step.target_name)
+    when "speak_to" then story.characters.find_by("LOWER(fullname) = ?", step.target_name.downcase)
+    when "hold_item" then find_item(story, step.target_name)
+    end
+
+    Quest::Binder.bind!(record, at: story.start_time) if record
+  end
+
   # The story's opening arrival: the moment the player is standing in when they
   # start, narrated once at world-building time so nobody waits on a model call
   # for the first screen of the game.
@@ -823,6 +950,92 @@ class WorldSeed::Loader
 
     validate_opening_scene!(names, openings.first.fetch("name"))
     validate_mechanics!
+    validate_quests!
+  end
+
+  # EVERYTHING A HAND-EDITED ARC CAN GET WRONG, named here rather than surfacing
+  # three records later -- `#validate_mechanics!`'s rule, one table over.
+  #
+  # WHAT IS DELIBERATELY NOT CHECKED: whether a step's `target` is something
+  # this file declares. An UNBOUND step is a legal and expected state -- it is
+  # the whole point of the arc's two states (`Quest::Step`) -- and a generated
+  # world is born full of them. `rake game:doctor` is what says a world's arc
+  # has outrun its rows; a loader that refused one could not load a world the
+  # generator wrote.
+  def validate_quests!
+    titles = quest_documents.map { |attributes| attributes.fetch("title") }
+    duplicates = titles.group_by { |title| title }.select { |_, group| group.size > 1 }.keys
+    raise InvalidWorld, "#{where}: two quests are called #{duplicates.join(", ")}; a quest is keyed on (story, title)" if duplicates.any?
+
+    # ONE MAIN ARC PER STORY, which `Quest#single_main_arc_per_story` also
+    # refuses -- here as well because the record's error names a column and
+    # this one names the file and the two quests, which is what somebody
+    # editing YAML needs.
+    mains = quest_documents.reject { |attributes| attributes["parent"].present? }.map { |attributes| attributes.fetch("title") }
+    raise InvalidWorld, "#{where}: #{mains.join(" and ")} both read as the main arc; a story has one, and a side quest names its `parent:`" if mains.size > 1
+
+    quest_documents.each do |attributes|
+      parent = attributes["parent"]
+      next if parent.blank? || titles.include?(parent)
+
+      raise InvalidWorld, "#{where}: quest #{attributes.fetch("title").inspect} names `parent: #{parent.inspect}`, which this file does not declare"
+    end
+
+    quest_documents.each do |attributes|
+      title = attributes.fetch("title").inspect
+      status = attributes["status"].presence || "open"
+      unless Quest::STATUSES.include?(status)
+        raise InvalidWorld, "#{where}: quest #{title} has `status: #{status.inspect}`; there is: #{Quest::STATUSES.join(", ")}"
+      end
+
+      steps = Array(attributes["steps"])
+      raise InvalidWorld, "#{where}: quest #{title} has no steps; an arc with no beats is one nobody can start" if steps.empty?
+
+      steps.each_with_index { |step, index| validate_one_quest_step!(title, step, index + 1) }
+      validate_quest_outcomes!(title, Array(attributes["outcomes"]))
+    end
+  end
+
+  def validate_one_quest_step!(title, attributes, position)
+    where_it_is = "quest #{title} step #{position}"
+    trigger = attributes["trigger"]
+    unless Quest::TRIGGERS.include?(trigger)
+      raise InvalidWorld, "#{where}: #{where_it_is} has `trigger: #{trigger.inspect}`; there is: #{Quest::TRIGGERS.join(", ")}"
+    end
+
+    raise InvalidWorld, "#{where}: #{where_it_is} has no `summary`, which is the one line the narrator is told" if attributes["summary"].blank?
+
+    if trigger == "time_passed"
+      minutes = attributes["minutes"]
+      unless minutes.is_a?(Integer) && minutes.positive?
+        raise InvalidWorld, "#{where}: #{where_it_is} is `time_passed` and needs `minutes:` as a whole number of story minutes, got #{minutes.inspect}"
+      end
+      raise InvalidWorld, "#{where}: #{where_it_is} is `time_passed` and cannot also name a `target`" if attributes["target"].present?
+    else
+      raise InvalidWorld, "#{where}: #{where_it_is} is `#{trigger}` and needs a `target:` -- the name the arc waits for" if attributes["target"].blank?
+      raise InvalidWorld, "#{where}: #{where_it_is} is `#{trigger}` and cannot carry `minutes:`" if attributes["minutes"].present?
+    end
+  end
+
+  # AN ARC WITH NO ENDING IS AN ARC NOTHING CAN FINISH, which is the fourth of
+  # the captain's five properties. Refused in the FILE rather than only reported
+  # by the doctor, because a hand-authored world is a decision: nobody writes
+  # three beats and means for them to lead nowhere.
+  def validate_quest_outcomes!(title, documents)
+    raise InvalidWorld, "#{where}: quest #{title} has no outcomes; reaching its last step would end nothing" if documents.empty?
+
+    names = documents.map { |attributes| attributes.fetch("name") }
+    duplicates = names.group_by { |name| name }.select { |_, group| group.size > 1 }.keys
+    raise InvalidWorld, "#{where}: quest #{title} has two outcomes called #{duplicates.join(", ")}" if duplicates.any?
+
+    documents.each do |attributes|
+      raise InvalidWorld, "#{where}: quest #{title} outcome #{attributes.fetch("name").inspect} has no `summary`" if attributes["summary"].blank?
+    end
+
+    defaults = documents.count { |attributes| attributes["default"] == true }
+    return if defaults == 1
+
+    raise InvalidWorld, "#{where}: quest #{title} marks #{defaults} outcomes `default: true`; exactly one is the ending the world was born with"
   end
 
   # A BODY THE ENGINE COULD NEVER HAVE ROLLED, caught here rather than three
@@ -1471,5 +1684,9 @@ class WorldSeed::Loader
 
   def mechanic_documents
     Array(document["mechanics"])
+  end
+
+  def quest_documents
+    Array(document["quests"])
   end
 end
