@@ -31,14 +31,15 @@
 #   THE WAY IN. `Blackfang Tunnel` opens onto room 1, which is the spare exit
 #   `Location::Interior` keeps free on the entry room for exactly this.
 #
-#   THE CELL'S PROSE. Room 3 is `realized`, and its description and lore are the
-#   one thing here no model could supply -- an offline sweep makes no call, so a
-#   room nobody has written is a room the walk can reach and never read. They
-#   are written the way `Location::Plan` states the facts to a model that does
-#   write one: 6 by 4 paces, storey 0, and doors in the north and west walls,
-#   which are the walls room 3's box really shares with rooms 4 and 2.
+#   THE CELL'S NAME AND ITS PROSE. Room 3 is `realized`, so its name, its
+#   description and its lore are the one thing here no model could supply -- an
+#   offline sweep makes no call, so a room nobody has written is a room the walk
+#   can reach and never read. The prose is written the way `Location::Plan`
+#   states the facts to a model that does write one: 6 by 4 paces, storey 0, and
+#   doors in the north and west walls, which are the walls the cell's box really
+#   shares with rooms 4 and 2. The NAME is `the dry cell` -- see below.
 #
-#   AND WHERE THE PRINCE IS STANDING IN IT: 10,7, a cell of room 3's own floor
+#   AND WHERE THE PRINCE IS STANDING IN IT: 10,7, a cell of the room's own floor
 #   read in the warren's plane (`Location::Spot`), against the east wall where
 #   the chain is. A seed file is one of the two writers of a position and the
 #   only one that is a decision rather than a roll.
@@ -66,15 +67,32 @@
 # same commit as the boxes. Until then storey 0 is what the records say and this
 # file says so rather than relabelling the number.
 #
-# THE ROOM KEEPS THE NAME THE ENGINE GAVE IT -- `Location::Interior.placeholder_name`,
-# ordinal and obviously provisional -- and it keeps it for good, because THIS
-# FILE realizes it. A room is named by the call that writes it
-# (`Location::RoomName`, out of `Location::DetailSchema`'s `name`), and a room
-# written by hand in a world file never makes that call: a seed file's room name
-# is the file's, exactly as its description and its lore are. Renaming this one
-# would mean renaming a row in the captain's own database, which nothing here
-# does. What a player reads walking in is the room's written description
-# anyway, not its name.
+# THE CELL IS THE ONE ROOM THIS FILE NAMES, and rooms 1, 2 and 4 keep the
+# numbers `Location::Interior.placeholder_name` wrote. A room is named by the
+# call that writes it (`Location::RoomName`, out of `Location::DetailSchema`'s
+# `name`), and a room written by hand in a world file never makes that call:
+# THIS FILE realizes room 3, so nothing would ever propose a name for it and the
+# player read *"You are in the Blackfang Warren room 3 of Blackfang Warren"* --
+# the doubling `Location::RoomName` exists to take out of the game, on the one
+# room of this world a player is here to reach. So the file names it, exactly as
+# the file writes its description and its lore. The other three are stubs and
+# the model names each on first entry, which is the arrangement that class
+# describes.
+#
+# `the dry cell` IS A NAME THAT WOULD PASS THE ENGINE'S OWN GATE, deliberately,
+# even though `Location::RoomName.for` never asks about it (a hand-authored name
+# is not one of the place's placeholders, so it answers nil). No comma, not a
+# placeholder shape, no `Blackfang Warren` inside it, and nowhere, nobody and
+# nothing else in this story answers to it. It is the room's own distinguishing
+# fact: the lore has this corner cut above the seep and floored dry, which
+# nothing else beneath the Spire is.
+#
+# RE-SEEDING RENAMES THE ROW RATHER THAN WRITING A SECOND ONE. A database that
+# holds this story from before still carries `Blackfang Warren room 3`, and no
+# written-name pass of `WorldSeed.find_location` matches it -- the box pass does
+# (the file names that row nowhere now, and exactly one of the two names is a
+# placeholder), and `WorldSeed.keeps_its_own_name?` is false because the FILE's
+# name is not a placeholder, so the file's spelling wins. One row, renamed.
 #
 # WHY IT IS NOT IN `db/seeds/worlds`. `Eval::Realization::WORLD_ROOTS` refuses
 # it: that directory is loaded into every development database and is searched
@@ -216,7 +234,7 @@ characters:
   fears: being trapped, the Spire’s shadow
 - fullname: Prince Aurel Durn
   race: Durnish
-  location: Blackfang Warren room 3
+  location: the dry cell
   x: 10
   y: 7
   stats:
@@ -400,7 +418,7 @@ locations:
   width: 6
   depth: 4
   teaser: A room inside Blackfang Warren, 6 by 4 paces on storey 0.
-- name: Blackfang Warren room 3
+- name: the dry cell
   detail_level: realized
   danger: uneasy
   parent: Blackfang Warren
@@ -473,9 +491,9 @@ connections:
 - between: [Blackfang Warren room 1, Blackfang Warren room 4]
   distance: adjacent
   travel_method: walking
-- between: [Blackfang Warren room 2, Blackfang Warren room 3]
+- between: [Blackfang Warren room 2, the dry cell]
   distance: adjacent
   travel_method: walking
-- between: [Blackfang Warren room 3, Blackfang Warren room 4]
+- between: [the dry cell, Blackfang Warren room 4]
   distance: adjacent
   travel_method: walking

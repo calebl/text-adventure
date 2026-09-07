@@ -21,10 +21,12 @@
 #
 # IT ASSERTS THE BEAT AND THE PRESENCE, AND NEVER THE PROSE. Where the party
 # stands, what leads out of there and who is standing in it are records. The
-# cell's description is the seed file's own words and nothing in this walk could
-# have written it: realizing a room is `Location::Generator`, which is model
-# calls, and a sweep makes none -- which is why the rooms it passes through on
-# the way stay stubs and are expected as stubs.
+# cell's NAME and its description are the seed file's own words and nothing in
+# this walk could have written either: realizing a room is `Location::Generator`,
+# which is model calls, and a sweep makes none -- which is why the rooms it
+# passes through on the way stay stubs, are expected as stubs, and are still
+# called the numbers `Location::Interior` gave them. The cell is not, and the
+# two steps that name it as an exit are what say so.
 #
 # THE INTERIOR'S OWN GEOMETRY is asserted by `EngineSweep::Invariants` over the
 # whole walk rather than step by step here: `geometry_unmoved` says no box and
@@ -100,18 +102,21 @@ steps:
   expect:
     changed: true
     location: Blackfang Warren room 2 (stub)
-    exits: [Blackfang Warren room 1 (stub), Blackfang Warren room 3 (realized)]
+    exits: [Blackfang Warren room 1 (stub), the dry cell (realized)]
     present: []
 
 - id: reach-the-prince
-  type: go to Blackfang Warren room 3
+  type: go to the dry cell
   why: |-
     THE WHOLE STORY -- the beat and the presence, off the records, no model. The
     room furthest from the way in, and the only room of this interior the file
-    writes: what the player reads on arrival is its own description.
+    writes: what the player reads on arrival is *"You are in the dry cell of
+    Blackfang Warren"* and then its own description. The line typed here is the
+    name the player read as an exit one step back, which is the captain's
+    display ruling of 2026-09-06 walked rather than asserted.
   expect:
     changed: true
-    location: Blackfang Warren room 3 (realized)
+    location: the dry cell (realized)
     exits: [Blackfang Warren room 2 (stub), Blackfang Warren room 4 (stub)]
     present: [Prince Aurel Durn]
     carrying: [prince's signet ring]
@@ -138,5 +143,5 @@ steps:
   expect:
     changed: true
     location: Blackfang Warren room 4 (stub)
-    exits: [Blackfang Warren room 1 (stub), Blackfang Warren room 3 (realized)]
+    exits: [Blackfang Warren room 1 (stub), the dry cell (realized)]
     present: []
