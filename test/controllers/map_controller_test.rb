@@ -81,6 +81,14 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     assert_match "The Rusted Anchor", response.body
     assert_match "The Harbour Road", response.body
     assert_match "storey 0", response.body
+
+    # AND EACH ROOM IS LABELLED WITH ITS OWN NAME, which is what a room gets
+    # when somebody writes it (`Location::RoomName`) and what it is called on
+    # the play page too. Truncated at 18 characters in the label and stated in
+    # full in the tooltip -- the same treatment `Location::Interior`'s
+    # placeholder already gets, since both run past it.
+    assert_select "svg.map-plan text.label", text: "The Taproom"
+    assert_select "svg.map-plan text.label", text: "The Back Room"
   end
 
   # A STAIR IS AN EDGE (the captain's third ruling of 2026-09-06), so it is
