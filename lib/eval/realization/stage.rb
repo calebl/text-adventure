@@ -100,8 +100,17 @@ class Eval::Realization::Stage
     def cast_registry = generator.cast_registry
     def item_registry = generator.registry
 
-    def people_allowance = cast_registry.allowance
-    def item_allowance = [ item_registry.room_for_items, item_registry.world_for_items ].min
+    # ZERO FOR A BUILDING, AND IT IS THE PROMPT'S OWN NUMBER RATHER THAN A
+    # CORRECTION OF IT: `Location::Generator#place_prompt` asks for nobody and
+    # for nothing, and `Location::PlaceSchema` has no field for either. Reading
+    # the registries' allowances here anyway would put an offer in the stored
+    # facts that the model was never made, and `people_offered` is a MEASURED
+    # denominator -- the whole reason it is a figure rather than an assumption.
+    #
+    # IT ALSO STOPS THE CAST BEING ROLLED. `#slots` draws a race, an age and a
+    # sex per offered slot; a building that offered none draws nothing.
+    def people_allowance = place? ? 0 : cast_registry.allowance
+    def item_allowance = place? ? 0 : [ item_registry.room_for_items, item_registry.world_for_items ].min
     def exit_allowance = generator.room_for_exits
 
     # WHO THE ENGINE HAS ALREADY DECIDED THE NEXT PEOPLE ARE, exactly as the

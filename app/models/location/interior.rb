@@ -72,10 +72,30 @@
 # than off a label (`Location::Plan#way_for`). So nothing here writes a
 # direction and nothing downstream has to trust one.
 #
-# WHAT DOES NOT DESCEND YET, said out loud: a GENERATED place. `BASEMENTS` is
-# zero-weighted, so `Location::Generator#lay_out_interior!` lays out exactly
-# what it laid out before -- see that constant for whose slice supplies a real
-# count, and `#basements` for why a range of one value is not even drawn.
+# AND WHAT SUPPLIES THE COUNT IS A PICK. `Location::Parameters` is the closed
+# vocabulary a model chooses a building out of -- how far up, how far down, how
+# dangerous, which way that runs, and what standing in it does to you -- and this
+# file is what CONSUMES it. The captain's Call 7 of 2026-09-06 and his Call 2 of
+# 2026-09-07: the picks arrive on the detail call at first entry and are spent
+# here, in the same transaction as the flip to `realized`, and not one of them
+# gets a column. The ROWS are the record: how many storeys is the min and max `z`
+# of the children, the gradient IS each room's own danger, and how warren-like it
+# is is the door count.
+#
+# `parameters:` NIL AND `Location::Parameters.none` ARE DIFFERENT STATES AND MUST
+# NOT BE COLLAPSED. Nil is a caller that ASKED NOBODY -- a seed file's building
+# drawn by hand, a test, the engine's own fallback -- and every draw is the
+# engine's exactly as it was before this slice, which is what keeps a world
+# already exported re-derivable. A `Location::Parameters` is a caller that ASKED
+# and got an answer, defaults included: the storeys come off the picks rather
+# than off `STOREYS` and `BASEMENTS`, each room's danger is rolled from the
+# building's own weighted list, and a hazardous building rolls its hazard per
+# room. Re-deriving a nil-laid-out world under a parameters object would come out
+# a different building.
+#
+# SO `BASEMENTS` STAYS ZERO-WEIGHTED, and that is not a leftover. It is what a
+# place laid out by a caller with no picks gets, and every world in the
+# repository was written by one.
 #
 # --- the shape of a storey --------------------------------------------------
 #
@@ -345,19 +365,22 @@ class Location::Interior
     WorldSeed.natural_key(name).match?(/\A#{Regexp.escape(WorldSeed.natural_key(place.name))} room \d+\z/)
   end
 
-  attr_reader :place, :story
+  attr_reader :place, :story, :parameters
 
   # `below:` IS THE ONE PARAMETER A CALLER MAY OVERRULE, and it is here rather
   # than on the place for `BASEMENTS`' reason: nothing writes a count of
   # basements to a column yet, and a parameter with no world to supply it is a
   # column the doctor would have to report on. Nil means ROLL IT, which is what
   # every caller in the app passes by passing nothing.
-  def self.lay_out!(place, below: nil) = new(place, below: below).lay_out!
+  def self.lay_out!(place, below: nil, parameters: nil)
+    new(place, below: below, parameters: parameters).lay_out!
+  end
 
-  def initialize(place, below: nil)
+  def initialize(place, below: nil, parameters: nil)
     @place = place
     @story = place.story
     @below = validated_below(below)
+    @parameters = parameters
   end
 
   # THE WHOLE INTERIOR, IN ONE TRANSACTION. A place half laid out is worse than
@@ -409,7 +432,16 @@ class Location::Interior
   # EVERY STOREY'S BOXES, in serpentine order -- which is the order the rooms are
   # created in and therefore the order the backbone's doors are opened in.
   def storey_plans
-    storey_order(Roll.one_of(STOREYS.to_a, rng: rng), basements).map { |z| storey_boxes(z) }
+    storey_order(storeys_above, basements).map { |z| storey_boxes(z) }
+  end
+
+  # HOW MANY STOREYS AT AND ABOVE THE GROUND: the pick, or a roll. `#basements`'
+  # shape and its rule -- a caller that asked somebody gets the answer, a caller
+  # that asked nobody gets the engine's own range.
+  def storeys_above
+    return parameters.above if parameters
+
+    Roll.one_of(STOREYS.to_a, rng: rng)
   end
 
   # WHICH STOREYS THERE ARE, AND IN WHAT ORDER THEY ARE BUILT: the ground floor
@@ -447,6 +479,7 @@ class Location::Interior
   # stated in one place -- it starts drawing, and the layouts move.
   def basements
     return @below unless @below.nil?
+    return parameters.below if parameters
     return BASEMENTS.min if BASEMENTS.min == BASEMENTS.max
 
     Roll.one_of(BASEMENTS.to_a, rng: rng)
@@ -571,12 +604,34 @@ class Location::Interior
   def create_room!(box, number)
     room = Location::Generator.create_stub!(story, name: self.class.placeholder_name(place, number),
                                                    teaser: teaser_for(box))
-    room.update!(parent_location: place, **box.to_h)
+    room.update!(parent_location: place, **box.to_h, **conditions(box.z))
     # THE FIRST ROOM WRITTEN IS THE WAY IN, which is what `.entry_room` reads
     # back off the records afterwards. Held here so the cap check below does not
     # ask the database which room that was on every door it opens.
     @entry ||= room
     room
+  end
+
+  # WHAT A ROOM OF THIS BUILDING IS BORN AS, over and above what
+  # `Location::Generator.create_stub!` already rolled for it: the danger the
+  # building's own pick leans towards on THIS storey, and the building's hazard if
+  # the die gives it one. Both are `Location::Danger`'s -- one file decides where
+  # monsters come from and what a room does to you, whether the room is a stub off
+  # a road or the third floor of an inn.
+  #
+  # EMPTY WHEN NOBODY WAS ASKED, and that is what keeps a world already on disk
+  # re-derivable: no parameters, no draws, and the room keeps the danger
+  # `.create_stub!` rolled and no hazard at all. See the header for why the two
+  # states are different.
+  #
+  # THE STOREY IS THE ONLY THING THE GRADIENT NEEDS, because the gradient IS the
+  # slope of these two columns down the building -- there is no gradient column
+  # and there is not going to be one, so the rooms are the record of it.
+  def conditions(storey)
+    return {} if parameters.nil?
+
+    { danger: Location::Danger.in_a_place(parameters, storey: storey, rng: rng) }
+      .merge(Location::Danger.hazard_in_a_place(parameters, storey: storey, rng: rng))
   end
 
   # THE WAY IN, AS THIS INSTANCE READS IT: the first room `#create_room!` wrote

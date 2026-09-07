@@ -129,14 +129,22 @@ class Location::Generator
   # over -- and handed straight back, because the rooms are on the records.
   # `test/fixtures/files/a-world-with-an-interior.yml` is exactly that shape,
   # and its author owns its whole floor plan.
-  def lay_out_interior!
+  def lay_out_interior!(picks = nil)
     return location unless location.place?
 
-    Location::Interior.lay_out!(location)
+    Location::Interior.lay_out!(location, parameters: Location::Parameters.from(picks))
     open_the_way_in!
 
     location
   end
+
+  # WHICH SCHEMA THE DETAIL CALL SENDS, and it is the whole of the difference
+  # between describing a room and describing a building. `Location::PlaceSchema`
+  # is the two prose fields plus the `parameters` block -- the captain's Call 2
+  # of 2026-09-07, that the rest of the picks ride on the detail call at first
+  # entry -- and `Location::DetailSchema` is what every other room in the game
+  # has always been sent, unchanged.
+  def detail_schema = location.place? ? Location::PlaceSchema : Location::DetailSchema
 
   # THE WAY IN, MOVED OFF THE BUILDING AND ONTO A ROOM OF IT.
   #
@@ -224,7 +232,7 @@ class Location::Generator
   # registry decides, and a name it refuses costs the room its furniture and
   # never its description.
   def write_detail!
-    detail = ask(Location::DetailSchema, detail_prompt)
+    detail = ask(detail_schema, detail_prompt)
 
     location.description = sanitize_string(detail["description"])
     location.lore = sanitize_string(detail["lore"])
@@ -248,9 +256,18 @@ class Location::Generator
     # what makes this place one nobody realizes again.
     Location.transaction do
       location.save!
-      lay_out_interior!
+      lay_out_interior!(detail["parameters"])
       location.update!(detail_level: :realized)
     end
+
+    # AND A BUILDING KEEPS NEITHER, which is the verify half of the sentence
+    # `#place_prompt` says and `Location::PlaceSchema` has no field for. Nobody
+    # stands in a container (`Location::Interior.way_in`), so a thing admitted
+    # into one is a thing no player can ever pick up and a person is somebody
+    # nobody can talk to -- and an answer carrying either is an answer the
+    # engine drops rather than a state it writes. The rooms are where both
+    # belong, and each is asked as it is reached.
+    return location if location.laid_out?
 
     registry.admit!(detail["items"])
     # AND WHO IS IN IT, on the captain's ruling that *rooms should be born with
@@ -405,7 +422,16 @@ class Location::Generator
     PROMPT
   end
 
+  # A BUILDING GETS A PROMPT OF ITS OWN, and the ordinary one below is not
+  # touched -- not one byte, which is `#geometry_facts`' rule applied to a whole
+  # template: every room in the game still sends the prompt a stored baseline was
+  # measured on. A building is a different ask (what kind of place is this, and
+  # what should the engine build inside it) with a different schema and no items,
+  # no people and no name, so folding the two into one template with three
+  # conditional blocks would be a template neither case reads plainly.
   def detail_prompt
+    return place_prompt if location.place?
+
     <<~PROMPT
       #{story_context}
 
@@ -423,6 +449,73 @@ class Location::Generator
       #{items_instructions}
 
       #{people_instructions}
+    PROMPT
+  end
+
+  # WHAT A BUILDING IS ASKED, and the second half of the captain's Call 7 of
+  # 2026-09-06: *"the engine actually generates the location, then it is handed
+  # back to a narrator to describe."* This is the call before that one -- the
+  # place is described here and its parameters are picked here, and the engine
+  # builds the inside out of them in the same transaction.
+  #
+  # IT SAYS WHAT THE ENGINE WILL DO WITH THE ANSWER, which is the cheap half of
+  # the standing constraint: a model told that the game draws the floor plan
+  # itself is a model with no reason to describe one, and a description that
+  # invents a staircase anyway costs a sentence rather than a room. Nothing here
+  # is a guarantee -- `Location::Interior` decides every wall from integers and
+  # one seeded roll, and never reads a word of this.
+  #
+  # AND IT ASKS FOR NOBODY AND NOTHING, because the rooms are where a person
+  # stands and a thing lies. `Location::PlaceSchema` has no field for either, so
+  # this is the prompt agreeing with the schema rather than a rule the answer
+  # could break.
+  def place_prompt
+    <<~PROMPT
+      #{story_context}
+
+      ## The Place
+      name: #{location.name}
+      teaser: #{location.teaser}
+
+      ## Instructions
+      Write this place out in full. It is a BUILDING -- somewhere with rooms
+      inside it that a player walks into and moves around in.
+      - The description is what the player reads as they come in. Address them as "you"
+      - Describe what is here now, not the history -- the history is the lore
+      - Stay consistent with the universe and with the teaser above
+      - Do NOT describe the floor plan: how many rooms there are, where the stairs
+        are and which door leads where are the game's to decide, out of the answers
+        below, and it will tell you room by room as the player reaches them
+      - Do not name anybody standing here and do not list anything lying here.
+        People and things belong to the rooms, and each room is written as it is
+        reached
+      - Respect the stated length of each field
+
+      #{parameters_instructions}
+    PROMPT
+  end
+
+  # THE PICKS, AS A BLOCK OF DIRECTION RATHER THAN A LIST OF FIELDS -- the
+  # closed lists themselves are on `Location::PlaceSchema`, so this says what
+  # they are FOR and what the quiet answer is. The captain's own words for what
+  # he wanted: *"we should provide some direction on how to make that
+  # decision."*
+  def parameters_instructions
+    <<~PROMPT.rstrip
+      ## What Kind Of Building This Is
+      The game lays the inside out itself -- every room, every door, every stair
+      -- from the answers to these, and then writes each room as the player
+      reaches it. You are choosing what KIND of place this is, not drawing it.
+      - Answer for the place you have just described and for the story it stands in
+      - Every one of them can be left out, and the quietest answer is usually the
+        right one: one floor, nothing underneath, nothing dangerous, nothing that
+        hurts you
+      - A HAZARD is not atmosphere. It takes hit points off everybody who walks
+        through those rooms, every turn in some cases, so pick one only for a
+        place that really is flooded, unlit, silent or airless
+      - A GRADIENT is only worth saying when the place itself makes it true: a
+        cellar that gets worse the further down you go, a tower that gets worse
+        the higher you climb
     PROMPT
   end
 
@@ -634,6 +727,12 @@ class Location::Generator
       - When there is more than one, give the player a reason to prefer one
         over another
       - Do not list #{location.name} itself
+      - Say which of them have an INSIDE -- rooms a player could walk between.
+        An inn, a keep, a counting house, a warren, a temple: those are places a
+        person goes IN to, and the game builds their rooms itself. A stretch of
+        road, a shore, a clearing, a bridge, a cave mouth, a market square: no
+        inside, and that is the right answer for most exits. Pick the size the
+        place would really be rather than the most interesting one
       - Distance and travel method must be consistent with the description you
         just wrote, and must be true in both directions -- the way back is the
         same edge
@@ -806,7 +905,8 @@ class Location::Generator
     return if existing&.realized? && !into_written && !connected?(existing)
     return unless room_for_this_door?(existing)
 
-    neighbour = existing || create_stub!(name, sanitize_string(attributes["teaser"]))
+    neighbour = existing || create_stub!(name, sanitize_string(attributes["teaser"]),
+                                         inside: sanitize_string(attributes["inside"]))
 
     connect!(location, neighbour, attributes)
     connect!(neighbour, location, attributes)
@@ -854,7 +954,31 @@ class Location::Generator
   # A SEEDED room is never rolled: `WorldSeed::Loader` writes what the file says
   # and an absent key is `Location::SAFE`, which is the rule every other seeded
   # parameter is under.
-  def create_stub!(name, teaser) = self.class.create_stub!(story, name: name, teaser: teaser)
+  # AND THE `inside` PICK IS WRITTEN HERE, AS A FOOTPRINT AND NOT AS A COLUMN OF
+  # ITS OWN. `Location::Parameters::INSIDE` is the band each label names in paces
+  # and the engine rolls both sides inside it, so `Location#place?` -- which is
+  # `interior? && !placed?`, a footprint and no position -- starts answering true
+  # for a generated stub with no new column and no new writer. That predicate's
+  # own header said this is how it would happen and that it would not have to
+  # move; this is the day, and it did not.
+  #
+  # ONLY A STUB BEING BORN, never a place that already exists: a footprint is a
+  # world's parameter and this does not overrule one (`Location::Interior`'s
+  # rule). `#connect_exit!` reaches here only when the name resolved to nothing.
+  #
+  # SEEDED ON THE ROW'S OWN ID, on its OWN AXIS. `Roll::FOOTPRINT` rather than
+  # `INTERIOR`'s: the footprint is drawn before the layout and decides what the
+  # layout has to divide, so drawing both from one seed would be one roll
+  # deciding twice. See `Roll`'s header for what an axis buys.
+  def create_stub!(name, teaser, inside: nil)
+    room = self.class.create_stub!(story, name: name, teaser: teaser)
+    sides = Location::Parameters.from("inside" => inside).footprint(footprint_rng(room))
+    room.update!(width: sides.first, depth: sides.last) if sides
+
+    room
+  end
+
+  def footprint_rng(room) = Roll.generator(story: story.id, sequence: room.id, kind: Roll::FOOTPRINT)
 
   # Whether the player can already get between here and there, either way
   # round. Both rows are written together, so one direction is enough to know

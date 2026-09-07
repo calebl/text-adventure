@@ -133,6 +133,109 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert(location.exits.none?(&:placed?))
   end
 
+  # --- stage one: the picks a model makes about a place -----------------------
+  #
+  # THE CAPTAIN'S CALL 2 of 2026-09-07: the exits call decides inside-or-not at
+  # stub time, the detail call picks the rest at first entry. See
+  # `Location::Parameters`.
+
+  def exit_named(name, inside: nil)
+    { "exits" => [ { "name" => name, "teaser" => "Something is that way.",
+                     "distance" => "adjacent", "travel_method" => "walking" }.merge(
+                     inside ? { "inside" => inside } : {}) ] }
+  end
+
+  test "an exit given an inside is born a place with a footprint" do
+    here = stub_location(name: "The Harbour Road")
+
+    realize(here, FakeAgent.new(DETAIL, exit_named("The Rusted Anchor", inside: "a few rooms")))
+
+    anchor = Location.find_by(story: @story, name: "The Rusted Anchor")
+    assert_predicate anchor, :place?, "Location#place? is the whole of the decision, and it answers true"
+    assert_includes Location::Parameters::INSIDE.fetch("a few rooms"), anchor.width
+    assert_includes Location::Parameters::INSIDE.fetch("a few rooms"), anchor.depth
+    assert_empty anchor.child_locations, "the inside is laid out on first entry and not at stub time"
+  end
+
+  # THE ONE THAT MUST NOT FIRE: a road, a shore, a clearing. And an answer with
+  # no pick at all, which is a legal answer and the commonest one.
+  test "an exit given no inside, or none at all, is born with no footprint" do
+    [ "no inside", nil ].each_with_index do |pick, number|
+      here = stub_location(name: "Road #{number}")
+
+      realize(here, FakeAgent.new(DETAIL, exit_named("Open Ground #{number}", inside: pick)))
+
+      assert_not_predicate Location.find_by(story: @story, name: "Open Ground #{number}"), :place?
+    end
+  end
+
+  # A FOOTPRINT IS A WORLD'S PARAMETER AND THIS DOES NOT OVERRULE ONE.
+  test "an exit that names a place that already exists does not resize it" do
+    anchor = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    here = stub_location(name: "The Harbour Road")
+
+    realize(here, FakeAgent.new(DETAIL, exit_named("The Rusted Anchor", inside: "a warren of rooms")))
+
+    assert_equal [ 12, 8 ], [ anchor.reload.width, anchor.depth ]
+  end
+
+  # RE-DERIVABLE FROM THE STORY AND THE ROW, on its own axis. The seed is plain
+  # integer arithmetic over `Roll::FOOTPRINT`, so the same building comes out the
+  # same size in any process for ever -- `Roll`'s standing rule, and the reason
+  # the axis is not `INTERIOR`'s is that the footprint decides what the layout
+  # has to divide.
+  test "the footprint a stub was born with is the one its own seed re-derives" do
+    here = stub_location(name: "The Harbour Road")
+
+    realize(here, FakeAgent.new(DETAIL, exit_named("The Rusted Anchor", inside: "a warren of rooms")))
+
+    anchor = Location.find_by(story: @story, name: "The Rusted Anchor")
+    rng = Roll.generator(story: @story.id, sequence: anchor.id, kind: Roll::FOOTPRINT)
+
+    assert_equal [ anchor.width, anchor.depth ],
+                 Location::Parameters.from("inside" => "a warren of rooms").footprint(rng)
+  end
+
+  # THE OTHER HALF: the picks that decide what the engine builds inside, on the
+  # detail call of the building itself.
+  test "a place is asked the parameters block and a room is not" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    room = stub_location(name: "The Harbour Road")
+
+    assert_equal Location::PlaceSchema, Location::Generator.new(place).detail_schema
+    assert_equal Location::DetailSchema, Location::Generator.new(room).detail_schema
+  end
+
+  test "the picks a building came back with are what its inside is laid out from" do
+    place = stub_location(name: "Blackfang Warren", width: 15, depth: 11)
+    picks = DETAIL.merge("parameters" => { "storeys_above" => "ground floor only",
+                                           "storeys_below" => "two levels down",
+                                           "danger" => "dangerous",
+                                           "gradient" => "worse the deeper you go",
+                                           "hazard" => "airless" })
+
+    realize(place, FakeAgent.new(picks))
+
+    rooms = place.reload.child_locations.to_a
+    assert_equal (-2..0).to_a, rooms.map(&:z).uniq.sort, "the storeys are the picks, read back off the rows"
+    assert(rooms.select(&:hazard).all? { |room| room.hazard == "airless" })
+    assert(rooms.all? { |room| Location::DANGERS.key?(room.danger) })
+  end
+
+  # A BUILDING IS ASKED FOR NOBODY AND NOTHING, because the rooms are where a
+  # person stands and a thing lies. The schema has no field for either, so an
+  # answer carrying one is an answer nothing reads.
+  test "a building writes no people and no things into itself" do
+    place = stub_location(name: "The Rusted Anchor", width: 12, depth: 8)
+    smuggled = DETAIL.merge("items" => [ { "name" => "brass key", "description" => "A key." } ],
+                            "people" => [ PERSON ])
+
+    realize(place, FakeAgent.new(smuggled))
+
+    assert_empty place.reload.items
+    assert_empty Character.present_in(place)
+  end
+
   # --- the way in ------------------------------------------------------------
   #
   # THE CAPTAIN'S CALL 5, 2026-09-07: the neighbour's doorway lands on the entry

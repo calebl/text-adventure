@@ -12,12 +12,23 @@
 # baseline was measured on, character for character* -- and the schema is part of
 # what was measured even though `Eval::Realization::Version` cannot digest it.
 #
-# AND IT IS THE SAME FIELDS AND NOT A SECOND COPY OF THEM.
+# AND IT IS THE SAME PROSE FIELDS AND NOT A SECOND COPY OF THEM.
 # `RubyLLM::Schema` keeps its properties PER CLASS -- `@properties ||= {}` on the
 # singleton -- so a subclass inherits none of them and `< Location::DetailSchema`
-# would silently produce an empty schema. The fields are therefore held as a
-# block on that class and evaluated into this one, which is the one arrangement
-# where a field added to a room is a field a building gets too.
+# would silently produce an empty schema. The two prose fields are therefore held
+# as a block on that class and evaluated into this one, which is the one
+# arrangement where an edit to what a description IS reaches both.
+#
+# WHAT A BUILDING IS NOT ASKED, and each is a rule rather than an omission:
+#
+#   NO `name`. A building was named by whoever named the exit that reached it,
+#   and `Location::RoomName` is for a ROOM of one still called a number.
+#
+#   NO `items` AND NO `people`. Nobody ever stands in a container -- the
+#   captain's ruling of 2026-09-06 and `Location::Interior.way_in` -- so a thing
+#   lying in one is a thing no player can pick up and a person in one is a person
+#   nobody can talk to. The rooms are where both belong, and each room is asked
+#   as it is reached.
 #
 # WHAT THE PICKS ARE AND WHY EACH IS A CLOSED LIST is `Location::Parameters`, in
 # full: the captain's Call 7 of 2026-09-06 and his Call 1 of 2026-09-07, the
@@ -27,7 +38,7 @@
 # commonest one, which is what `Eval::Realization::Scorer#judge_parameters_declined`
 # measures.
 class Location::PlaceSchema < RubyLLM::Schema
-  class_eval(&Location::DetailSchema::ROOM_FIELDS)
+  class_eval(&Location::DetailSchema::PROSE_FIELDS)
 
   object :parameters,
          description: "What kind of building this is. Every field is optional; leave one out and the " \

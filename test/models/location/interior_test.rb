@@ -288,6 +288,89 @@ class Location::InteriorTest < ActiveSupport::TestCase
     end
   end
 
+  # --- the picks a model made about the building ------------------------------
+  #
+  # `parameters:` NIL AND `Location::Parameters.none` ARE DIFFERENT STATES --
+  # nobody was asked, against asked and answered with the defaults. See the
+  # file's header for why they must not be collapsed.
+
+  def picked(**picks) = Location::Parameters.from(picks.transform_keys(&:to_s))
+
+  def laid_out_with(parameters, **attributes)
+    place = create(:location, :stub, story: @story, width: 15, depth: 11, **attributes)
+    Location::Interior.lay_out!(place, parameters: parameters)
+    place.reload
+  end
+
+  test "the storeys a building has are the ones the picks asked for" do
+    place = laid_out_with(picked(storeys_above: "two storeys up", storeys_below: "a cellar"),
+                          name: "The Deep House")
+
+    assert_equal (-1..2).to_a, place.child_locations.distinct.pluck(:z).sort
+  end
+
+  test "a building nobody was asked about lays out exactly what it laid out before" do
+    picks = create(:location, :stub, story: @story, width: 15, depth: 11, name: "Asked")
+    quiet = create(:location, :stub, story: @story, width: 15, depth: 11, name: "Unasked")
+    Location::Interior.lay_out!(quiet)
+
+    assert_equal 0, quiet.reload.child_locations.minimum(:z), "BASEMENTS is zero-weighted for an unasked place"
+    assert_includes Location::Interior::STOREYS, quiet.child_locations.maximum(:z) + 1
+    assert_nil quiet.child_locations.where.not(hazard: nil).first, "an unasked building hazards nothing"
+
+    Location::Interior.lay_out!(picks, parameters: Location::Parameters.none)
+    assert_equal [ 0 ], picks.reload.child_locations.distinct.pluck(:z), "the quietest pick is one floor"
+  end
+
+  # THE PICK MOVES THE ODDS AND THE DIE STILL DECIDES, which is the standing
+  # constraint applied to a building: over many buildings a dangerous one is
+  # worse than a safe one, and no single word makes every room dangerous.
+  test "a building picked dangerous is worse than one picked safe, and neither is all one thing" do
+    dangerous = many_rooms("dangerous")
+    safe = many_rooms(Location::SAFE)
+
+    assert_operator share_dangerous(dangerous), :>, share_dangerous(safe)
+    assert_operator share_dangerous(dangerous), :<, 1.0, "one word made every room dangerous"
+  end
+
+  # AND THE GRADIENT IS THE SLOPE OF THAT, read back off the rooms because there
+  # is no gradient column and there is not going to be one.
+  test "a building that gets worse the deeper you go is worse below ground than above it" do
+    rooms = many_rooms("uneasy", gradient: "worse the deeper you go", storeys_below: "two levels down",
+                                 storeys_above: "one storey up")
+
+    assert_operator share_dangerous(rooms.select { |room| room.z.negative? }), :>,
+                    share_dangerous(rooms.select { |room| room.z.positive? })
+  end
+
+  # A HAZARD IS A RATE AND NOT AN ASSIGNMENT: some rooms of a flooded building
+  # are flooded and the way through them is not. See `Location::Parameters::HAZARD_SHARE`.
+  test "a hazardous building hazards some of its rooms and not all of them" do
+    rooms = many_rooms(Location::SAFE, hazard: "flooded")
+    hazarded = rooms.select(&:hazard)
+
+    assert_predicate hazarded, :any?
+    assert_operator hazarded.size, :<, rooms.size
+    assert(hazarded.all? { |room| room.hazard == "flooded" }, "a building has one hazard")
+    assert(hazarded.all? { |room| Location::HAZARD_DICE.include?(room.hazard_die) },
+           "the key is the model's and the die is always the engine's")
+  end
+
+  test "a building that picked no hazard hazards nothing" do
+    assert_empty many_rooms("dangerous", gradient: "worse the deeper you go").select(&:hazard)
+  end
+
+  # Enough buildings that a share means something -- the rolls are seeded per
+  # place, so this is a fixed set of layouts and not a flaky sample.
+  def many_rooms(danger, **picks)
+    (1..12).flat_map do |number|
+      laid_out_with(picked(danger: danger, **picks), name: "Rolled #{danger} #{picks.values.join} #{number}")
+        .child_locations.to_a
+    end
+  end
+
+  def share_dangerous(rooms) = rooms.count(&:dangerous?).fdiv(rooms.size)
+
   # --- where an arrival lands -------------------------------------------------
 
   # THE CAPTAIN'S RULING OF 2026-09-06 -- *"the prince should be in a Room
