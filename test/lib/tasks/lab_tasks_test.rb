@@ -206,7 +206,10 @@ class LabTasksTest < ActiveSupport::TestCase
 
   class UnrunnableRunner
     def draw!
-      raise Lab::Realization::Runner::Unrunnable,
+      # THE STAGE'S OWN REFUSAL, which is what the runner really raises now that
+      # standing a typed stub up is `Eval::Realization::Stage`'s job -- there is
+      # no second error class of the runner's to catch.
+      raise Eval::Realization::Stage::Unstageable,
             "The Quay House has no place called \"Nowhere At All\""
     end
   end

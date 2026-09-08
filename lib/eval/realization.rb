@@ -223,11 +223,23 @@ module Eval::Realization
   # checks may be judged on a case at all. `Eval::Classifier.digest` carries its own label
   # fields for the same reason. `why` is NOT in it -- rewriting the sentence
   # that says why a case is here measures nothing new.
+  #
+  # AND A PROMOTED CASE'S OWN FIELDS ARE IN IT, ALL OF THEM. `teaser` is the
+  # prompt's second sentence about the room and changing it changes the room that
+  # is asked for; `inside` and `population` are what a real exits call supplied
+  # and both are stated to the model; and the whole `expects_*` block is in it on
+  # `expects_inside`'s precedent -- an expectation decides which figures a case
+  # may be judged on, so editing one moves the rates without touching a prompt,
+  # and a comparison across the edit would credit the movement to the prompt.
+  # That is the failure this method exists to prevent, said about the newest keys.
   def self.digest(corpus = self.corpus)
     Digest::SHA256.hexdigest(
       corpus.cases.map { |kase|
-        [ kase.id, kase.story, kase.room, kase.reached_from, kase.danger, kase.shape,
-          kase.expects_new_ground.inspect, kase.expects_inside.inspect, kase.also_reaches.join("|"),
+        [ kase.id, kase.story, kase.room, kase.teaser, kase.reached_from, kase.danger, kase.inside,
+          kase.population, kase.shape,
+          kase.expects_new_ground.inspect, kase.expects_inside.inspect,
+          kase.expects_danger_at_least.inspect, kase.expectation_line,
+          kase.also_reaches.join("|"),
           kase.absent.join("|"), kase.unwritten.join("|") ].join(" ")
       }.join("\n")
     ).first(16)
