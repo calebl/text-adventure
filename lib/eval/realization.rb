@@ -73,7 +73,19 @@ module Eval::Realization
   # (`Eval::Realization::Version.offline`), so a prompt edited without a run to
   # judge it is a FAILING TEST rather than a judgement nobody could make. Point
   # it at the after side once the change has been judged, and never before.
-  BASELINE = "room-people-after".freeze
+  #
+  # AND A CORPUS SCHEMA CHANGE RE-BASELINES IT TOO, WHICH IS THIS SET. Nothing in
+  # the prompts moved when `kind-to-corpus-after` was bought -- `prompt_digest`
+  # is the same on both sides of it, and `rake eval:realization_compare
+  # BEFORE=room-people-after AFTER=kind-to-corpus-after` reads every figure NOISE
+  # -- but the corpus grew the fields a case promoted out of `Lab::Realization`
+  # carries, and the digest folds every field that changes what was measured. So
+  # the old set stopped being a baseline for this tree while remaining a true
+  # reading of these prompts, which is exactly the state this constant exists to
+  # make visible. `room-people-after` is kept as history and is still the before
+  # side of the room-people change; the captain authorized the round on
+  # 2026-09-08.
+  BASELINE = "kind-to-corpus-after".freeze
 
   # WHERE A CASE'S WORLD IS READ FROM, IN ORDER. The seeded worlds first, so a
   # case against `The Salt Assizes` measures the file every other instrument in

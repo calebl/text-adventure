@@ -1605,6 +1605,41 @@ Which is the whole point of the rule this file opens with: the baseline is per
 change, and the set in the repository is the after side of the one change that
 has had one.
 
+### A corpus change re-baselines it too, and `kind-to-corpus-after` is the case
+
+`db/eval/kind-to-corpus-after/` is what `Eval::Realization::BASELINE` names now,
+and it is the one kind of re-baseline this file had not yet had an example of:
+**no prompt moved at all.** What moved was the corpus SCHEMA — a case may now
+carry the stub the captain typed in `Lab::Realization` and his `expects_*` block
+with it, and `Eval::Realization.digest` folds every field that changes what was
+measured. So the same twenty-two cases in the same worlds produced a new corpus
+digest, `Eval::Realization::KeptSetTest` began failing, and the set that had been
+the baseline stopped being one for this tree while remaining a true reading of
+these prompts.
+
+**Both halves of that are worth keeping straight**, because it is the situation
+somebody will next mistake for a prompt regression. The proof that the prompts did
+not move is on the two sets themselves: `prompt_digest` is identical across them,
+and so is every one of the nine per-shape digests in `prompt_shapes` — the same
+bytes, on the same nine designated cases. The compare between them therefore
+prints the WARNING that the two sets built different rooms, which is correct and
+expected here: the digest moved, and the warning cannot know that the cases behind
+it did not.
+
+**Read it as a null check, because that is what it is** — the same prompt measured
+twice, months of nothing between it, and every CHECK duly reads NOISE. The one
+figure that separates is a *reported* count and not a check, it is a rolled
+per-room quantity (`Location::Parameters::HAZARD_SHARE` of `HAZARD_DIE`), and it
+rests on the corpus's single `place` case — ONE building per repetition, which came
+back from the model with a different room count this time. Reading it as a prompt
+effect would be flagging the dice, which is what `Eval::Realization::Scorer`'s
+header and `Lab::Realization::HitRate`'s both forbid in so many words. The figures
+are in the two sets and in the PR that bought this one; this file quotes none of
+them.
+
+`room-people-after` is kept beside it as history, and it is still the after side of
+the room-people change and the before side of the pair above.
+
 ### The noise band, as a checked-in pair
 
 `db/eval/null-2026-09-07/` is this bench's null check kept as a file: the same
