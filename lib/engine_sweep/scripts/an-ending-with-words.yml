@@ -1,0 +1,128 @@
+# AN ENDING NOBODY NARRATED, AND IT STILL HAS WORDS.
+#
+# THE CLAIM THIS EXISTS TO ASSERT, and it is the one guarantee `ta-quest-ending`
+# rests on: **a finished game has something to read whether or not a model
+# answered.** The narrator writes the last paragraph in the browser
+# (`Scene::Ending`, told the reached outcome and asked for prose); the reached
+# `Quest::Outcome`'s own stored sentence is ALREADY on the closing `Scene` before
+# that call is made, and it is what the player gets when the call refuses, times
+# out or comes back cut in half.
+#
+# AND AN OFFLINE WALK IS THE ONLY THING THAT CAN PROVE THAT HALF. `rake
+# game:sweep` makes no model call at all, so this mode never reaches
+# `Scene::Ending` -- `Playthrough::Mechanics#answered_by_the_world` says so and
+# says why. What that leaves standing on the row is exactly the fallback, so
+# walking an arc to its end here and reading the paragraph off the record is the
+# fallback path measured rather than asserted in a header.
+#
+# `ending_words:` IS THE ASSERTION and it reads the closing `Scene`'s own
+# description through `Playthrough::Mechanics::State`, not the read-out line
+# beside it: `note:` would pass on a sentence the mode printed and this passes
+# only on a sentence the game STORED. It is a substring rather than the whole
+# paragraph, for `note:`' and `offers:`' reason -- these are sentences written for
+# a player to read, and a script that pinned one word for word would break on
+# every rewording without a defect anywhere.
+#
+# WHY IT IS ITS OWN SCRIPT rather than three more lines on
+# `the-iron-gate-descends.yml`, which walks this same arc in order and reads the
+# same ending. That file is the world's walk -- the graph, the interior, the cast
+# and the beats -- and this one asserts a property of the ENGINE that happens to
+# need an arc to reach. When something breaks, a script that is about one claim
+# is a diagnosis and a script that is about eight is a search.
+#
+# THE ROUTE IS THE SHORTEST ONE TO THE END, and it is the ordered route on
+# purpose: in order reaches the DEFAULT outcome (`rescued`), which is the
+# ending a world is born with and therefore the one every arc has.
+# `an-arc-that-ends-the-other-way.yml` is the same world reaching the other one,
+# and the words asserted here are the default's -- so a walk that somehow
+# selected the wrong ending fails on the sentence as well as on the name.
+story: The Iron Gate Descends
+why: an arc walked to its end with no model in the room, and the closing scene still carries the ending's own words
+steps:
+- id: nothing-to-read-yet
+  type: look
+  why: |-
+    A GAME STILL BEING PLAYED HAS NO LAST PARAGRAPH, and `ending_words: []` is
+    the assertion that there is none -- not an empty list of substrings, which
+    would assert nothing at all. The ending itself is `none`, off
+    `playthrough_endings`.
+  expect:
+    location: Iron Gate Chamber (realized)
+    here: [iron key, prince's signet ring]
+    ending: none
+    ending_words: []
+    dead: false
+
+- id: the-ring-off-the-floor
+  type: take the signet ring
+  why: beat 1, and the arc is not finished -- two beats to go and no ending
+  expect:
+    changed: true
+    carrying: [prince's signet ring]
+    quest:
+      1: reached
+    ending: none
+
+- id: down-into-the-maw
+  type: go to the obsidian maw
+  expect:
+    changed: true
+    location: obsidian maw (realized)
+
+- id: and-on-down-the-tunnel
+  type: go to Blackfang Tunnel
+  expect:
+    changed: true
+    location: Blackfang Tunnel (realized)
+
+- id: in-through-the-low-door
+  type: go to Blackfang Warren room 1
+  why: beat 2 -- the step names the PLACE and the party stands in a room of it
+  expect:
+    changed: true
+    location: Blackfang Warren room 1 (stub)
+    quest:
+      2: reached
+    ending: none
+    ending_words: []
+
+- id: past-the-room-the-guards-keep
+  type: go to Blackfang Warren room 2
+  expect:
+    changed: true
+    location: Blackfang Warren room 2 (stub)
+
+- id: the-cell-and-the-end-of-the-story
+  type: go to the dry cell
+  why: |-
+    THE WHOLE CLAIM, IN ONE STEP. The last beat lands, so `Playthrough::Arc`
+    selects an outcome off this game's own records, ends the playthrough and
+    writes ONE closing `Scene`. No model was asked anything -- this mode makes
+    no call -- and the paragraph on that row is the reached outcome's own
+    sentence out of the world file. `ending:` is the record of WHICH ending and
+    `ending_words:` is the proof it came with words.
+  expect:
+    changed: true
+    location: the dry cell (realized)
+    present: [Prince Aurel Durn]
+    quest:
+      1: reached
+      2: reached
+      3: reached
+    ending: rescued
+    ending_words: ["The prince is found alive in the dry cell", "the iron gate opens outward at last"]
+    dead: true
+
+- id: and-the-words-outlive-the-turn
+  type: talk to the prince
+  why: |-
+    A LINE TYPED INTO A FINISHED GAME IS REFUSED WHOLE and writes nothing, so
+    the last paragraph is still the last paragraph. That is the other half of
+    *the ending is written*: the words have to be there on the turn after it as
+    well, because a player reading their own ending is not taking a turn.
+  expect:
+    refused: true
+    ending: rescued
+    ending_words: ["The prince is found alive in the dry cell"]
+    dead: true
+    changed: false

@@ -552,8 +552,9 @@ flowchart TD
     A0["Playthrough::Arc#run!, NO MODEL CALL<br/>four record predicates against the story's own arc:<br/>standing in the room, the interaction this turn wrote,<br/>this game's copy in the party's hands, the clock<br/>a beat REACHED is a playthrough_beats row, and the<br/>arc itself is never written by a typed line"]
     A0 --> A1{"every beat of the main arc reached?"}
     A1 -->|"no: almost every turn"| OUT
-    A1 -->|"yes"| A2["The ending, and the ENGINE decides the game is over<br/>the reached Quest::Outcome, playthroughs.ended_at,<br/>and ONE engine-authored Scene carrying the stored<br/>sentence the world was built toward.<br/>Scene::ENGINE_AUTHORED, so Story::Audit skips it<br/>-- ta-quest-ending gives the narrator the outcome<br/>to render, with this sentence as the fallback"]
-    A2 --> OUT
+    A1 -->|"yes"| A2["The ending, and the ENGINE decides the game is over<br/>the reached Quest::Outcome, playthroughs.ended_at,<br/>and ONE Scene carrying the stored sentence already:<br/>resolved_action = conclude, engine copy, and the<br/>FALLBACK from here on -- there is no path on which<br/>the closing Scene has no words"]
+    A2 --> A3["MODEL CALL, unschema'd, STREAMS<br/>Scene::Ending, TOLD the reached outcome's sentence<br/>and asked to write it. The paragraph replaces the<br/>description of that same Scene and relabels it<br/>ending -- so Story::Audit reads it as the prose it is.<br/>A refusal, a timeout or a half sentence keeps the<br/>engine's, and the game is over either way"]
+    A3 --> OUT
 
     OUT["The Scene is returned; the prose already went<br/>to the block, token by token from a narrator<br/>and in one piece from a move.<br/>The job then replaces #turn_log: the new turn, where<br/>the player is, and the input -- no reload"]
     X1 --> OUT2["The refusal is returned instead of a Scene.<br/>Nothing streamed. The job replaces #turn_log with<br/>the log unchanged, the refusal in the app's own voice<br/>where the turn would have been, and the input back"]
@@ -563,7 +564,7 @@ flowchart TD
     classDef gap fill:#7c2d12,stroke:#fdba74,stroke-width:2px,color:#ffffff
     classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
 
-    class C2,M3,M4,M6,T1,T2,I2,N2 llm
+    class C2,M3,M4,M6,T1,T2,I2,N2,A3 llm
     class W0,C1,C3,G1,M1,M3N,M3A,M3B,M3C,M5,M7,M8,T5,T6,T7,I1,I3,N3,X1,A0,A2 rec
     class N1,T4 gap
     class IN,SSE,OUT,OUT2,D,R,G0,G2,T3,A1 io
@@ -575,11 +576,23 @@ its beats and its endings — and whether a beat has been reached is four record
 predicates the app evaluates after every line it PLAYED (a refused line writes
 nothing, so it cannot reach a beat). No model is asked what happened, and the
 game being over is never a model's decision. The narrator is told exactly one
-thing about any of it: the next open beat's one-line summary, which is a fact
-the engine owns, rendered — the same shape as telling it what is lying on the
-floor. It is never told the conclusion, because a model told the ending writes
-toward an ending the engine has not recorded, which is the railroad by the back
-door.
+thing about any of it while a game is still being played: the next open beat's
+one-line summary, which is a fact the engine owns, rendered — the same shape as
+telling it what is lying on the floor. It is never told the conclusion, because
+a model told the ending writes toward an ending the engine has not recorded,
+which is the railroad by the back door.
+
+**The purple box under them is the one place a model is asked about an ending,
+and it is a rendering rather than a decision.** By the time it runs the outcome
+is selected, the playthrough is ended and the closing `Scene` already carries the
+outcome's own sentence — so the call is handed a fact and asked for prose, and
+every way it can fail leaves the sentence standing (`Scene::Ending`, the captain's
+Call 5 of 2026-09-06: *the narrator writes a real ending, told the conclusion*).
+The objection above is spent by then: there is no next turn to be written toward
+anything. **The stored sentence is what an offline walk reaches**, because
+`rake game:sweep` makes no call at all — which is how *a game ends with words*
+gets asserted with no model in the room
+(`lib/engine_sweep/scripts/an-ending-with-words.yml`).
 
 The two orange boxes are the honest ones. The narration box is where the
 classifications with nothing more specific to do end up; the blank branch of

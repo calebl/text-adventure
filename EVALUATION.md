@@ -147,6 +147,17 @@ that catch here:
 - **The digest moves and the prompt text did not.** An empty interpolation on a
   line of its own moved the realization digest for all nine shapes: a paid round
   to measure one newline. Append rather than interpolate, and re-read the digest.
+- **A whole PASS the corpus cannot reach.** Stronger than an empty block, and
+  the answer is a SECOND CORPUS rather than a second thought. `Scene::Ending` is
+  a prose call made only on the turn a playthrough's main arc concludes, and
+  neither world `prompt_corpus.yml` plays has a `quests:` block at all -- so no
+  case in it can end a game and the ending prompt could not be sent, let alone
+  measured. What that does NOT license is adding the cases in place: `.digest` is
+  over the cases, so the checked-in baseline would stop being a before side for
+  the ninety it really measured. `prompt_ending_corpus.yml` is the answer --
+  its own file, its own digest, its own kept sets, and a second world root
+  (`Eval::Prompt::WORLD_ROOTS`) so it can play the one world with an arc. See
+  **The ending's own corpus** below.
 
 And the money gate beside it: **`rake eval:estimate` is the only command that
 prices a bench without buying it.** `rake eval:realization` prints an estimate
@@ -1103,6 +1114,81 @@ truncate, does not write the player in the third person, does not walk them into
 another room and does not misquote an inscription. `item_not_held` at 0.062 is
 the only other live rate, and every flag is a passage lifting something off a
 floor the player is standing on.
+
+### The ending's own corpus, and the baseline of 2026-09-08
+
+`test/fixtures/files/prompt_ending_corpus.yml` — **five cases across three
+positions in `The Iron Gate Descends`**, the one world in the repository with an
+arc. It is a **second file** for one reason: `Eval::Prompt.digest` is over the
+cases, so a case added to `prompt_corpus.yml` would cost the 2026-09-05 baseline
+its standing as a before side. Two files, two digests, two kept sets;
+`rake eval:prompt CORPUS=ending` plays this one.
+
+**How a case gets one beat from the end.** `Eval::Classifier::Stage` walks each
+position's `setup:` lines through the real engine with no model, so the beats
+they reach are reached by `Playthrough::Arc` exactly as a player's lines would
+reach them; the `room:` is then set as a column, with no turn and no `Scene`,
+which is what lets a position STAND in the last beat's room without having
+reached it. The validator refuses a case that is not **exactly one beat** from
+the end, or whose setup already finished the arc
+(`Eval::Prompt::Corpus#ending_problems`). Two of the three positions reach the
+default ending and one reaches `too-late`, because the engine selects it off
+`playthrough_beats` — so the corpus measures *the ending the ENGINE chose is the
+ending the narrator was told*, not only the prose.
+
+**Each case buys two calls**: an ending happens on the turn AFTER a line the
+engine played, so the take, look or arrival is narrated first and the ending
+second. The scored passage is the ending — the last `Scene` the turn wrote.
+
+**Both sides are checked in** (`db/eval/prompt-ending-before-2026-09-08`,
+`…-after-…`), 4 reps, one arm, **40 calls for $0.0197 the pair**, so the verdict
+below replays offline and free with
+`rake eval:prompt_compare BEFORE=prompt-ending-before-2026-09-08 AFTER=prompt-ending-after-2026-09-08`.
+
+**The two sides score DIFFERENT PASSAGES of the same turn**, and every figure
+has to be read knowing it: before the change there was no ending prose at all,
+so the before side scored the turn's own paragraph. `words` 83 → 44 is a closing
+paragraph measured against a take or a look, not a paragraph that got shorter;
+`commitments` 1.200 → 2.500 is the figure that reads across, and the ending
+names more of the records than the prose it follows.
+
+| figure | before | after | verdict |
+| --- | --- | --- | --- |
+| `item_not_held` | 0.000 | 0.200 | WORSE, REAL (p=0.0286) — **and it is the check, not the prose; see below** |
+| every other check | 0.000 | 0.000 | NOISE |
+| refusals, failures, cap hits | 0 | 0 | NOISE |
+| `words` (richness) | 83 | 44 | reported |
+| `commitments` (richness) | 1.200 | 2.500 | reported |
+| latency median (warm) | 1.91s | 3.23s | WORSE, REAL — the second call of the turn |
+
+**The after side records `prompt_stable: false`, and it is the only set in the
+repository that does.** The ending prompt carries `What just happened:`, which on
+this pass is the prose the FIRST call of the same turn wrote — so the designated
+case's whole prompt differs between repetitions by construction, and
+`Eval::Prompt::Version` says so rather than hiding it. The facts the engine owns
+in that prompt are as fixed as any other case's.
+
+**The one REAL defect rate is a false positive, and it is reproducible in two
+lines.** `Story::Audit::Prose.item_names("iron key")` is `["iron key", "iron"]`
+— `place_names` takes the last word of at least `Story::Audit::MIN_NAME_LENGTH`
+characters, and "key" is three. This world's central place is **the iron gate**,
+the phrase is in the engine's own outcome sentence (*"…and the iron gate opens
+outward at last"*), and every flagged passage is of the form *"the signet ring
+heavy in your grip, as the **iron** gate groans open"* — a possession verb about
+the ring, which the records agree is in the player's hand, and the alias of a key
+no passage mentions at all:
+
+```ruby
+Story::Audit::Prose.item_names("iron key")           # => ["iron key", "iron"]
+Story::Audit.allocate.send(:possession_claimed?,
+  "You hold the signet ring, and the iron gate groans open behind you.", "iron")  # => true
+```
+
+`Eval::Prompt::EndingKeptSetTest` pins both, so the diagnosis is a test rather
+than a paragraph. **The fix belongs to the check** — an item alias that is a word
+of a `Location` name in the same story is not an item alias — and that is a
+measurement-file change with its own before/after over the pinned corpora, which
+is why it is not in the change that found it.
 
 ### Serial, for now
 

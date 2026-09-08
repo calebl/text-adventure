@@ -55,6 +55,45 @@ module Eval::Prompt
   # a file nobody audits.
   CORPUS = Rails.root.join("test/fixtures/files/prompt_corpus.yml")
 
+  # AND THE SECOND CORPUS, WHICH IS A SECOND FILE AND NOT MORE CASES IN THE
+  # FIRST ONE. `Scene::Ending` is a prose pass that can only happen on the turn
+  # a playthrough's main arc concludes, and NEITHER world the corpus above plays
+  # has an arc at all -- so the cases for it need a world those two files do not
+  # contain (see `WORLD_ROOTS`).
+  #
+  # WHY NOT IN `prompt_corpus.yml`, and it is the whole reason this constant
+  # exists: `.digest` is over the cases, so adding one moves it -- and the
+  # checked-in baseline `db/eval/prompt-2026-09-05` would stop being a before
+  # side for the ninety cases it really measured (`Eval::Prompt::KeptSetTest`
+  # asserts exactly that). A new prompt must not cost the old prompt its
+  # baseline. Two files, two digests, two kept sets, and `rake eval:prompt_compare`
+  # can still only pair sets that scored the same cases.
+  ENDING_CORPUS = Rails.root.join("test/fixtures/files/prompt_ending_corpus.yml")
+
+  # WHICH CORPUS A RUN MEANS, by name, because `rake eval:prompt CORPUS=ending`
+  # has to be able to say so. `main` is the default everywhere, so every existing
+  # caller and every stored set is unaffected.
+  CORPORA = { "main" => CORPUS, "ending" => ENDING_CORPUS }.freeze
+
+  # WHERE A STAGED WORLD IS READ FROM, IN ORDER, and the second root is what
+  # makes an ending case possible at all.
+  #
+  # `db/seeds/worlds` FIRST, which is every world this bench played before the
+  # ending corpus existed. `lib/engine_sweep/worlds` SECOND, which is where a
+  # world lives that is deliberately NOT loaded into every development database
+  # (`EngineSweep::WORLDS`, and `db/seeds/worlds/README.md` for why that matters)
+  # -- and `The Iron Gate Descends` there is the one world in the repository with
+  # a `quests:` block, two reachable endings and a ramification.
+  #
+  # THE SAME SLUG EXISTS TWICE IN THIS REPOSITORY AND THE ORDER DOES NOT DECIDE
+  # IT, which is worth saying plainly because getting it wrong would measure the
+  # wrong world in silence: `test/fixtures/files/worlds/the-iron-gate-descends.yml`
+  # is the FROZEN generated graph the realization bench measures, with no arc and
+  # no prince, and it is not on this list at all. `Eval::Realization::WORLD_ROOTS`
+  # reads that one and does not read this one. Two files, two jobs, and each
+  # bench names the root it means.
+  WORLD_ROOTS = [ WorldSeed::DIRECTORY, EngineSweep::WORLDS ].freeze
+
   # Where a run's numbers land, beside `classifier.json` and `scores.json`. Its
   # own file, because a set may legitimately hold one, two or all three.
   RESULTS = "prompt.json".freeze
@@ -69,7 +108,12 @@ module Eval::Prompt
   # rooms are all stubs besides, so every `move` in it would pay for
   # `Location::Generator` -- two more calls, and the arrival prose measured
   # against a room the run had just invented.
-  STORIES = [ "The Unrecorded Hour", "The Salt Assizes" ].freeze
+  #
+  # `The Iron Gate Descends` IS THE THIRD AND IT IS PLAYED BY THE ENDING CORPUS
+  # ONLY -- not because anything stops the other cases using it, but because
+  # every case in `prompt_corpus.yml` is hand-verified against a position in one
+  # of the two seeded worlds and moving any of them would move the digest.
+  STORIES = [ "The Unrecorded Hour", "The Salt Assizes", "The Iron Gate Descends" ].freeze
 
   # AND THE HELD-OUT WORLD IS STILL HELD OUT HERE, reported apart and never
   # pooled -- `Eval::HELD_OUT`, the same convention `Eval::Board` keeps. It
@@ -108,7 +152,10 @@ module Eval::Prompt
   # and they cost different amounts. Which one a case reaches is the app's
   # decision (`Playthrough::Turn#play`), read back off the conversation the turn
   # produced rather than declared in the corpus.
-  PASSES = %w[narration arrival].freeze
+  # `ending` IS THE THIRD PASS and it is the one a case cannot ask for: the app
+  # decides it, on the turn the arc concluded (`Playthrough::Turn#play`), and
+  # what the run records is what really answered.
+  PASSES = %w[narration arrival ending].freeze
 
   # WHAT ONE CALL COSTS, PER PASS, priced the way `Eval::Cost` prices a sweep --
   # measured, not modelled. The mean over the real prose calls in the captain's
@@ -116,9 +163,23 @@ module Eval::Prompt
   # They are not the same number and must not be averaged: an arrival inlines
   # the universe and answers in a schema'd paragraph, a narration is handed the
   # moment and streams two.
+  #
+  # AND `ending` IS TWO CALLS IN ONE FIGURE, which is the one entry here that is
+  # not the cost of a single call -- said out loud because an estimate that
+  # quietly halved it would be wrong on the only shape that pays twice.
+  #
+  # AN ENDING HAPPENS ON THE TURN AFTER A LINE THE ENGINE PLAYED, and that line
+  # has prose of its own: the take, the look or the arrival is narrated first and
+  # the ending is written second. So an ending case buys a `narration` (the
+  # commonest first half by four cases to one) plus the ending itself, which is
+  # the same shape of call and is priced as one until there are enough real ones
+  # to measure. `Eval::Prompt::Bench::Reading#calls` sees only the SECOND of the
+  # two, because the first is attributed to the turn's own Scene -- the estimate
+  # is where the truth about the spend lives.
   PER_CALL = {
     "narration" => { input: 762, output: 440 },
-    "arrival" => { input: 1_112, output: 158 }
+    "arrival" => { input: 1_112, output: 158 },
+    "ending" => { input: 762 + 900, output: 440 + 200 }
   }.freeze
 
   # CHECKS A SINGLE-TURN CASE CANNOT ANSWER, AND WHY -- reported unavailable
@@ -156,7 +217,23 @@ module Eval::Prompt
   # unavailable above.
   def self.checks = Story::Scoreboard::CHECKS.keys - UNAVAILABLE_TO_A_CASE.keys
 
-  def self.corpus = Corpus.load
+  # THE CASES, BY CORPUS NAME. `main` unless a caller says otherwise, so
+  # everything that was reading `Eval::Prompt.corpus` reads exactly what it read
+  # before.
+  def self.corpus(name = "main")
+    path = CORPORA.fetch(name.to_s) do
+      raise ArgumentError, "there is no prompt corpus called #{name.inspect}. There is: #{CORPORA.keys.join(", ")}"
+    end
+
+    Corpus.load(path)
+  end
+
+  # WHICH WORLD FILE A POSITION MEANS, off `WORLD_ROOTS` in order. Nil for a
+  # story no root has, which `Eval::Classifier::Stage` reports as unstageable
+  # rather than guessing at.
+  def self.world_file(title)
+    WORLD_ROOTS.map { |root| root.join("#{WorldSeed.slug(title)}.yml") }.find(&:exist?)
+  end
 
   # A FINGERPRINT OF THE CASES A RUN MEASURED, stored on the set. Two sets are
   # only comparable if they scored the same cases against the same facts, and a

@@ -113,6 +113,40 @@ class Playthrough::ArcOutcomeTest < ActiveSupport::TestCase
     assert_equal first, arc.ending.quest_outcome
   end
 
+  # --- what it says it wrote ------------------------------------------------
+  #
+  # `#conclusion` IS THE SEAM `Scene::Ending` READS, and the only thing in this
+  # class a caller may buy a model call about. It has to be populated on exactly
+  # the turn the arc closed and empty on every other, or a game would either
+  # lose its narrated ending or pay for a second one.
+
+  test "the turn that concluded says what it concluded" do
+    reach_the_cell!
+    concluded = @concluded
+
+    assert_equal @rescued, concluded.outcome
+    assert_equal arc.ending, concluded.ending
+    assert_equal "conclude", concluded.scene.resolved_action
+    assert_equal @rescued.summary, concluded.scene.description
+    assert_equal concluded.scene, @game.reload.current_scene
+  end
+
+  test "a turn that concluded nothing says nothing" do
+    bound_step(:reach_location, @cell, "Find the cell.")
+    quiet = Playthrough::Arc.new(@game.reload)
+    quiet.run!
+
+    assert_nil quiet.conclusion, "the party never got to the cell"
+  end
+
+  test "a later turn of a finished game claims no ending to narrate" do
+    reach_the_cell!
+    again = Playthrough::Arc.new(@game.reload)
+    again.run!
+
+    assert_nil again.conclusion, "the ending was written on the turn it happened and is not written twice"
+  end
+
   # --- the event a finished arc writes --------------------------------------
 
   test "finishing the arc writes a quest event carrying the playthrough" do
@@ -187,7 +221,9 @@ class Playthrough::ArcOutcomeTest < ActiveSupport::TestCase
     bound_step(:reach_location, @cell, "Find the cell.")
     @game.update!(current_location: @cell)
     @game.update!(current_scene: scene_at(at)) if at
-    arc.run!
+    walking = arc
+    walking.run!
+    @concluded = walking.conclusion
   end
 
   def bound_step(kind, record, summary, position: 1)

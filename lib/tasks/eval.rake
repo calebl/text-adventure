@@ -155,7 +155,7 @@ namespace :eval do
     abort error.message
   end
 
-  desc "Feed fixed facts to one turn and score the prose. REPS=4 MODELS=a,b SET=<name> SAMPLE=12 YES=1"
+  desc "Feed fixed facts to one turn and score the prose. REPS=4 MODELS=a,b SET=<name> CORPUS=main|ending SAMPLE=12 YES=1"
   task prompt: :environment do
     PromptTasks.run!
   end
@@ -407,6 +407,12 @@ namespace :eval do
 
     def set_name = ENV["SET"].presence || Time.current.utc.strftime("prompt-%Y%m%d-%H%M%S")
 
+    # WHICH CORPUS, and `main` unless somebody says otherwise -- so every
+    # command anybody has ever typed means what it meant. `ending` is
+    # `Scene::Ending`'s own cases, which need a world with an arc; see
+    # `Eval::Prompt::CORPORA`.
+    def corpus_name = ENV["CORPUS"].presence || "main"
+
     def available_sets
       found = (Dir.glob(Eval.root.join("*", Eval::Prompt::RESULTS)) +
                Dir.glob(Eval.kept_root.join("*", Eval::Prompt::RESULTS)))
@@ -416,25 +422,28 @@ namespace :eval do
     end
 
     def run!
-      corpus = Eval::Prompt.corpus
+      corpus = Eval::Prompt.corpus(corpus_name)
       problems = corpus.problems
       abort "The corpus does not validate, so nothing measured against it would mean anything:\n  " \
             "#{problems.join("\n  ")}" if problems.any?
 
       priced = Eval::Prompt.estimate(cases: corpus.cases, reps: reps, models: arms)
-      calls = corpus.size * reps * arms.size
-      puts format("ESTIMATE: %d calls (%d cases x %d reps x %d model%s), about $%.3f. Measured at " \
-                  "%d in / %d out a narration and %d in / %d out an arrival.",
-                  calls, corpus.size, reps, arms.size, arms.one? ? "" : "s", priced,
-                  Eval::Prompt::PER_CALL["narration"][:input], Eval::Prompt::PER_CALL["narration"][:output],
-                  Eval::Prompt::PER_CALL["arrival"][:input], Eval::Prompt::PER_CALL["arrival"][:output])
+      # PER CASE AND NOT PER ROW, because one shape buys two calls: an ending
+      # case pays for the turn's own prose and then the ending. See
+      # `Eval::Prompt::Corpus::Case#calls`.
+      calls = corpus.cases.sum(&:calls) * reps * arms.size
+      puts format("ESTIMATE: %d calls (%d cases x %d reps x %d model%s) over the %s corpus, about $%.3f.",
+                  calls, corpus.size, reps, arms.size, arms.one? ? "" : "s", corpus_name, priced)
+      puts "Measured at #{Eval::Prompt::PER_CALL.map { |pass, per|
+        "#{per[:input]} in / #{per[:output]} out a #{pass}"
+      }.join(", ")}."
       abort_without_a_key(arms)
       if priced > SPEND_CEILING && ENV["YES"] != "1"
         abort "That is over the $#{format("%.2f", SPEND_CEILING)} this task will spend unattended. " \
               "Re-run with YES=1, or lower REPS."
       end
 
-      puts "Playing #{corpus.size} cases on #{arms.map(&:id).join(", ")}."
+      puts "Playing #{corpus.size} #{corpus_name} cases on #{arms.map(&:id).join(", ")}."
       puts
       result = Eval::Prompt::Bench.new(corpus: corpus, arms: arms, reps: reps).run
 

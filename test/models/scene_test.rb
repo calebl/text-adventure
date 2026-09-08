@@ -228,6 +228,28 @@ class SceneTest < ActiveSupport::TestCase
     assert_not_predicate build(:scene, story: @story, location: @location, resolved_action: nil), :engine_authored?
   end
 
+  # THE TWO LABELS ONE LAST PARAGRAPH CAN CARRY, and the difference between them
+  # is exactly the difference `ENGINE_AUTHORED` exists to record: the engine
+  # wrote the `conclude` row's sentence and the narrator wrote the `ending`
+  # row's. Both are the end of the story, which is what `#ending?` answers.
+  test "an ending is one row with two possible authors" do
+    engine = build(:scene, story: @story, location: @location, resolved_action: "conclude")
+    narrated = build(:scene, story: @story, location: @location, resolved_action: Scene::NARRATED_ENDING)
+
+    assert narrated.valid?, "the narrated ending is a recordable action"
+    assert_predicate engine, :ending?
+    assert_predicate narrated, :ending?
+    assert_predicate engine, :engine_authored?
+    assert_not_predicate narrated, :engine_authored?, "prose a model wrote is read as prose"
+    assert_not_predicate build(:scene, story: @story, location: @location, resolved_action: "take"), :ending?
+    assert_not_predicate build(:scene, story: @story, location: @location, resolved_action: nil), :ending?
+  end
+
+  test "nothing a player can type is an ending" do
+    assert_empty Scene::ENDINGS & Playthrough::IntentSchema::INTENTS
+    assert_equal Scene::ENDINGS, Scene::ENDINGS & Scene::ACTIONS
+  end
+
   # WHICH READER ANSWERED, and it is a wider list than what a turn can honestly
   # say: the COLUMN may hold any of `Playthrough::Grammar::PATHS`, and
   # `Scene::TURN_READERS` is what `rake game:doctor` measures a turn against.
