@@ -396,9 +396,26 @@ class Playthrough::Debug
   # a mark the player never reads.
   # THE WORLD'S ROWS PLUS THIS GAME'S, never another game's -- `WorldEvent`'s
   # own rule, and it started mattering the moment a failed arc could write one.
+  # WHAT HAS ACTUALLY HAPPENED, and not what is still going to. A scheduled row
+  # is RECORDED the moment it is written and does not happen until the engine
+  # fires it (`WorldEvent`), so listing one here under its recorded hour would
+  # show a bomb that is still ticking as a thing the world has already done.
   def world_events
-    @world_events ||= story.world_events.for_a_game(playthrough)
+    @world_events ||= story.world_events.for_a_game(playthrough).happened
                            .includes(:world_mechanic, :locations).in_story_order.reverse
+  end
+
+  # AND WHAT IT STILL OWES, oldest hour first -- the captain's Call 8 of
+  # 2026-09-06, as the one place a person can see it. Empty for every world with
+  # no `schedule:` block and no ending that earned a ramification, so no
+  # existing page gains a row.
+  #
+  # A TABLE OF ITS OWN RATHER THAN A COLUMN ON THE ONE ABOVE, because *what has
+  # happened* and *what will* are two questions and a reader scanning one list
+  # for the second sorts them by eye.
+  def scheduled_events
+    @scheduled_events ||= story.world_events.for_a_game(playthrough).pending
+                               .includes(:world_mechanic).order(:scheduled_for, :id).to_a
   end
 
   # THE MAP, every place the world has named. Stubs included and counted: an

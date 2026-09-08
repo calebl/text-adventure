@@ -320,6 +320,31 @@
   </table>
 </div>
 
+<%# WHAT THIS WORLD HAS ALREADY DECIDED WILL HAPPEN — the captain's Call 8 of
+    2026-09-06. A row here is a statement about the future, on the same stream
+    as the table above and told apart from it by `scheduled_for`. The engine
+    fires one when Story#clock reaches its hour, and NOTHING NARRATES IT: this
+    page is where a person sees it, and the player never does. %>
+<% if @debug.scheduled_events.any? %>
+  <h3>what is still to come</h3>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>due at</th><th>written by</th><th>summary</th></tr>
+      </thead>
+      <tbody>
+        <% @debug.scheduled_events.each do |event| %>
+          <tr>
+            <td><%= debug_time(event.scheduled_for) %></td>
+            <td><%= event.writer %></td>
+            <td><%= event.summary %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
 <%# WHAT THE RECORDS SAY ABOUT THE PROSE. The third clause of the standing
     constraint -- gate the state, inform the prose, AUDIT THE DIFFERENCE -- and
     the only part of it that was previously invisible. Both tables are read

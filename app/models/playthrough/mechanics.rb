@@ -41,6 +41,19 @@
 # run in; it is not the default, because a mode that cannot read what was typed
 # is testing a smaller thing than the one that can.
 #
+# AND WITH NO MODEL, THE STORY'S CLOCK DOES NOT MOVE -- which is worth writing
+# down because it is invisible and it decides what an offline walk can assert.
+# `Story#clock` is `MAX(scenes.story_timestamp)`, and `Scene` validates a
+# description, so a turn only costs story time if something wrote prose. In
+# `model: false` a move writes no arrival (`#stand_in`), so a walk of forty
+# rooms takes zero story minutes. THE ONE EXCEPTION is a fight, which closes
+# with one engine-authored `Scene` carrying what the exchange cost
+# (`Playthrough::Fight`) -- so a fight is how an offline walk buys minutes, and
+# it is what `lib/engine_sweep/scripts/a-scheduled-event-comes-due.yml` uses to
+# take the clock past a scheduled event's hour. Anything keyed on elapsed story
+# time -- a `time_passed` beat, a mechanic's cadence, a scheduled `WorldEvent`
+# -- is therefore unreachable in `rake game:sweep` unless a fight moves it.
+#
 # THE GRAMMAR IS NO LONGER THIS CLASS'S OWN, since the captain's ruling of
 # 2026-09-04, evening: *"support a slash prefix autocomplete in the text box, and
 # resolve those and verb-prefixed lines offline then fallback to the model."* It
