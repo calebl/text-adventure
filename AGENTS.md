@@ -122,6 +122,13 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
   whoever runs the suite next; ask for a variation by trait instead.
   `test/factories/location_connections.rb` carries the full diagnosis of the
   1-in-35 flake that established this.
+- **A migration's version comes from `bin/rails generate migration <Name>`**, so
+  it is the exact UTC second — never a hand-written round timestamp. Two PRs
+  that each picked one collide only once both are on main, where Rails then
+  refuses the whole migration set and nobody can migrate at all; so a PR adding
+  a migration checks its version against a freshly pulled main before opening.
+  `test/lib/migration_versions_test.rb` explains what the suite can and cannot
+  catch here.
 - **A PR that needs a post-update action adds a step to `Update::REGISTRY`
   (`lib/update.rb`) and says so in its body** — never a hand list of commands in
   the description. `bin/update` is the one command after a pull. No step may
