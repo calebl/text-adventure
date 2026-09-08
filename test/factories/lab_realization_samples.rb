@@ -62,6 +62,61 @@ FactoryBot.define do
       end
     end
 
+    # AND A BUILDING WHOSE ROOMS SAY WHERE THEY ARE -- the shape
+    # `Eval::Realization::Stage::Standing#rooms_laid_out` writes since slice 2,
+    # and the one `Lab::Realization::Plan` can draw. Six rooms: four tiling a
+    # four-by-four ground floor, two in a cellar, with the doors and the stair
+    # the layout actually opened rather than every wall the boxes share -- which
+    # is the whole reason the adjacency is stored and not derived.
+    #
+    # THE GROUND FLOOR IS A SERPENTINE, which is what `Location::Interior`
+    # actually opens: 0 -> 1 -> 3 -> 2 around the four cells, so the two rooms on
+    # the diagonal are joined by neither a door nor a wall.
+    #
+    # THE NUMBERS TILE EXACTLY, because `Location::Interior`'s rooms do: the
+    # union of these boxes is the footprint, which is what the plan reads as its
+    # plane. A fixture whose rooms overlapped would draw a building the layout
+    # cannot build.
+    trait :a_building_with_a_plan do
+      row do
+        { "id" => "lab-kind-1", "shape" => "lab", "calls" => 1,
+          "facts" => { "room" => "The Fishmonger's Warehouse", "parameters_asked" => true },
+          "answers" => { "detail" => {
+            "description" => "Black water stands a foot deep.", "lore" => "It flooded once.",
+            "parameters" => { "storeys_above" => "ground floor only", "storeys_below" => "a cellar",
+                              "danger" => "uneasy", "gradient" => "worse the deeper you go",
+                              "hazard" => "flooded" }
+          } },
+          "after" => { "name" => "The Fishmonger's Warehouse",
+                       "rooms" => [
+                         { "index" => 0, "name" => "The Loading Floor", "storey" => 0,
+                           "x" => 0, "y" => 0, "width" => 2, "depth" => 2,
+                           "danger" => "safe", "hazard" => nil, "hazard_die" => nil,
+                           "doors" => 1, "doors_to" => [ 1 ], "stairs_to" => [] },
+                         { "index" => 1, "name" => "The Salt Store", "storey" => 0,
+                           "x" => 2, "y" => 0, "width" => 2, "depth" => 2,
+                           "danger" => "dangerous", "hazard" => nil, "hazard_die" => nil,
+                           "doors" => 3, "doors_to" => [ 0, 3 ], "stairs_to" => [ 4 ] },
+                         { "index" => 2, "name" => "The Counting Room", "storey" => 0,
+                           "x" => 0, "y" => 2, "width" => 2, "depth" => 2,
+                           "danger" => "safe", "hazard" => nil, "hazard_die" => nil,
+                           "doors" => 1, "doors_to" => [ 3 ], "stairs_to" => [] },
+                         { "index" => 3, "name" => "The Wet Dock", "storey" => 0,
+                           "x" => 2, "y" => 2, "width" => 2, "depth" => 2,
+                           "danger" => "uneasy", "hazard" => "flooded", "hazard_die" => 6,
+                           "doors" => 2, "doors_to" => [ 1, 2 ], "stairs_to" => [] },
+                         { "index" => 4, "name" => "The Cellar Stair", "storey" => -1,
+                           "x" => 0, "y" => 0, "width" => 4, "depth" => 2,
+                           "danger" => "safe", "hazard" => nil, "hazard_die" => nil,
+                           "doors" => 2, "doors_to" => [ 5 ], "stairs_to" => [ 1 ] },
+                         { "index" => 5, "name" => "The Bilge", "storey" => -1,
+                           "x" => 0, "y" => 2, "width" => 4, "depth" => 2,
+                           "danger" => "dangerous", "hazard" => "flooded", "hazard_die" => 4,
+                           "doors" => 1, "doors_to" => [ 4 ], "stairs_to" => [] }
+                       ] } }
+      end
+    end
+
     # A BUILDING THAT PICKED NOTHING, so every pick fell to its quietest default
     # -- `parameters_declined`, and the state the hit rate has to read as the
     # default rather than as unjudgeable, because the default is what the place

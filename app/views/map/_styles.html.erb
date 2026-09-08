@@ -31,6 +31,13 @@
   .map-plan .room { fill: #12151a; stroke: #2f5a50; }
   .map-plan .room.stub { fill: #0d0f12; stroke: #4a3f2e; stroke-dasharray: 4 3; }
   .map-plan .room.here { stroke: #d8c07f; stroke-width: 2; }
+  /* A ROOM THAT COSTS SOMETHING TO BE IN, and both marks are the layout's own
+     reds: the muted one it gives a `bad` verdict's border for a dangerous room,
+     the bright warn one the graph already gives a hazardous edge for a hazard.
+     Hazard wins where a room is both, which is the right way round -- a hazard
+     is a toll every crossing pays and danger is only an odds. */
+  .map-plan .room.dangerous { stroke: #5c332e; stroke-width: 2; }
+  .map-plan .room.hazardous { stroke: #d88f7f; stroke-width: 2; }
   .map-plan .door { stroke: #d8c07f; stroke-width: 3; }
   .map-plan .stair { fill: #b79ad8; }
   .map-plan .label { fill: #cfd3d8; }

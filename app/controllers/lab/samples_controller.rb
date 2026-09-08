@@ -33,6 +33,11 @@ class Lab::SamplesController < ApplicationController
   def show
     @sample = Lab::Realization::Sample.find(params[:id])
     @kind = @sample.kind
+    # THE FLOOR PLAN, OR NIL. Built here rather than in the view for
+    # `Story::Map`'s rule -- the view emits markup and does no arithmetic -- and
+    # nil for a sample drawn before positions were stored, which the page says
+    # out loud (`Lab::Realization::Plan`).
+    @plan = Lab::Realization::Plan.for(@sample.reading, name: @kind.name)
   end
 
   def create

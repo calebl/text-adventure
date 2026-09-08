@@ -2,6 +2,14 @@
     every rectangle on it came off a `Location::Box` -- no geometry is worked
     out here.
 
+    THE CONTRACT IS `Story::Map::Interior` AND NOTHING NARROWER, which is what
+    makes this the ONE floor-plan renderer in the app. Nothing below reaches
+    through a room to a `Location` row: a room is asked `#stub?`, `#here?`,
+    `#dangerous?` and `#hazardous?` directly, so `Lab::Realization::Plan` can
+    build the same values out of a stored bench row -- a building whose world was
+    rolled back and whose rows are gone -- and get this drawing. A second
+    renderer for the lab is exactly what this repository refuses.
+
     ONE PLAN PER STOREY, HIGHEST FIRST, which is ruling 3 of 2026-09-06 drawn:
     each floor is its own plane, so there is nothing vertical to picture and a
     stair is a mark rather than a shape. Every storey of one place is drawn in
@@ -48,15 +56,20 @@
         <% end %>
 
         <% storey.rooms.each do |room| %>
-          <rect class="room<%= " stub" if room.node.stub? %><%= " here" if room.node.here %>"
+          <%# DANGER AND HAZARD ARE MARKED ON THE ROOM ITSELF. A hazardous
+              room costs hit points to stand in (`Playthrough::Hazards`) and a
+              dangerous one is where the cast turns monstrous -- both are on the
+              row and neither was visible on this drawing, which is the fault
+              this page exists to stop. %>
+          <rect class="room<%= " stub" if room.stub? %><%= " here" if room.here? %><%= " dangerous" if room.dangerous? %><%= " hazardous" if room.hazardous? %>"
                 x="<%= room.x %>" y="<%= room.y %>" width="<%= room.width %>" height="<%= room.height %>">
-            <title><%= room.name %>: <%= room.box %></title>
+            <title><%= room.reading %></title>
           </rect>
-          <text class="label" x="<%= room.x + (room.width / 2.0) %>" y="<%= room.y + (room.height / 2.0) %>" text-anchor="middle">
-            <%= room.node.here ? "> " : "" %><%= truncate(room.name, length: 18) %>
+          <text class="label" x="<%= room.centre_x %>" y="<%= room.centre_y %>" text-anchor="middle">
+            <%= room.here? ? "> " : "" %><%= truncate(room.name, length: 18) %>
           </text>
-          <text class="measure" x="<%= room.x + (room.width / 2.0) %>" y="<%= room.y + (room.height / 2.0) + 13 %>" text-anchor="middle">
-            <%= room.box.width %>&times;<%= room.box.depth %>
+          <text class="measure" x="<%= room.centre_x %>" y="<%= room.centre_y + 13 %>" text-anchor="middle">
+            <%= room.box.width %>&times;<%= room.box.depth %><%= " !" if room.hazardous? %>
           </text>
         <% end %>
 
