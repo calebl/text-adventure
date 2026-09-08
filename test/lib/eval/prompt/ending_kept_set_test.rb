@@ -5,8 +5,8 @@ require "test_helper"
 # `Eval::Prompt::KeptSetTest` one file over does this for the 2026-09-05
 # baseline of the ninety-case corpus. This is the pair `ta-quest-ending` bought
 # and checked in -- both sides, so the verdict replays offline and free -- plus
-# the two lines that show why `item_not_held` reads WORSE on the after side and
-# is not about the prose.
+# the diagnosis of why `item_not_held` read WORSE on the after side without the
+# prose being at fault, and the regression for the check that was fixed for it.
 #
 # NO DATABASE, NO KEY, NO NETWORK. That is the point rather than a convenience:
 # forty calls were paid for once and the numbers are judgeable for ever by
@@ -90,33 +90,76 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
                     "own prose did"
   end
 
-  # THE ONE RATE THAT MOVED, AND WHY IT IS THE CHECK RATHER THAN THE PROSE.
+  # THE ONE RATE THAT MOVED, AND WHY IT WAS THE CHECK RATHER THAN THE PROSE.
   #
   # `Story::Audit::Prose.place_names` aliases a name by its last word of at
-  # least `Story::Audit::MIN_NAME_LENGTH` characters. "key" is three, so the
-  # only alias `iron key` can have is **iron** -- and this world's central place
-  # is the IRON GATE, which is in the engine's own outcome sentence. Every
-  # flagged passage says the signet ring is in the player's hand, which the
-  # records agree with, and names the gate within the check's window; not one of
-  # them mentions a key.
+  # least `Story::Audit::MIN_NAME_LENGTH` characters, and `item_names` used to
+  # be that same method. "key" is three, so the only alias `iron key` could
+  # have was **iron** -- and this world's central place is the IRON GATE, which
+  # is in the engine's own outcome sentence. Every flagged passage says the
+  # signet ring is in the player's hand, which the records agree with, and names
+  # the gate within the check's window; not one of them mentions a key.
   #
-  # PINNED AS A TEST RATHER THAN WRITTEN IN A PR BODY, because it is a measured
-  # claim about a check. The fix belongs to the check -- an item alias that is a
-  # word of a `Location` name in the same story is not an item alias -- and that
-  # is a measurement-file change with its own before/after over the pinned
-  # corpora.
-  test "item_not_held on the after side is the iron key aliased to iron" do
+  # FIXED IN THE CHECK, NOT IN THE PROMPT: `item_names` is head-final now and an
+  # item aliases to its own last word only, so `iron key` contributes no alias
+  # at all. That ruling and what it costs are in `Story::Audit::Prose`; the
+  # regression is `#the iron key no longer aliases to the world's iron gate`
+  # below, with its inverse one test further down.
+  #
+  # THE STORED RATE DOES NOT MOVE, and that is a property of a kept set rather
+  # than a failure of the fix: `Eval::Prompt::Result#write!` drops the readings
+  # so the pair can live in the repo, so `rake eval:prompt_score` reprints the
+  # rates that were computed while the calls were being paid for and cannot
+  # recompute them. The 0.200 below is therefore a RECORD OF WHAT THE OLD CHECK
+  # READ on prose nobody kept, and it is pinned as exactly that. The corpora
+  # that DO carry their passages -- `whole_run_corpus.json` in
+  # `Story::Audit::ItemCustodyTest`, and `rake game:score CORPUS=corpus|
+  # transitions` -- re-score for free and did not move, because every item name
+  # in them ends on its own noun.
+  test "the after side's item_not_held is the frozen reading of a check since fixed" do
     assert_equal 4, Story::Audit::MIN_NAME_LENGTH, "the alias rule below is arithmetic on this number"
-    assert_equal [ "iron key", "iron" ], Story::Audit::Prose.item_names("iron key")
+
+    assert_operator kept(AFTER).spread(:item_not_held, arm: ARM).median, :>, 0.0,
+                    "the kept file holds the rates the old check computed; a summary carries no prose to " \
+                    "re-score, so this figure is history and not a verdict on the prompt"
+  end
+
+  # THE REGRESSION. The alias that flagged five clean passages is gone, and the
+  # sentence that convicted the player of holding a key it never mentions no
+  # longer matches any name the item has.
+  test "the iron key no longer aliases to the world's iron gate" do
+    assert_equal [ "iron key" ], Story::Audit::Prose.item_names("iron key"),
+                 "an item's alias is its own last word, and \"key\" is under MIN_NAME_LENGTH"
+    assert_equal [ "iron gate", "gate" ], Story::Audit::Prose.place_names("iron gate"),
+                 "the place keeps its alias -- this change is to items only"
 
     claimed = "You hold the signet ring, and the iron gate groans open behind you."
 
     assert_not claimed.match?(/\bkeys?\b/i), "the sentence names no key at all"
     assert Story::Audit.allocate.send(:possession_claimed?, claimed, "iron"),
-           "and the check reads it as the player claiming the iron key"
+           "the possession grammar is untouched: it still reads \"iron\" as a claim"
+    assert_empty Story::Audit::Prose.item_names("iron key")
+                                    .select { |name| Story::Audit.allocate.send(:possession_claimed?, claimed, name) },
+                 "but no name the iron key answers to is in that sentence, so the check cannot fire on it"
+  end
 
-    assert_operator kept(AFTER).spread(:item_not_held, arm: ARM).median, :>, 0.0,
-                    "which is why the after side reads WORSE on this one rate"
+  # THE INVERSE, because a check that has stopped firing looks exactly like a
+  # check that has been fixed. A thing whose noun is long enough still aliases,
+  # and a real claim about a thing the records give to somebody else still
+  # convicts -- on this world's OTHER item, whose name the ending prose really
+  # does write.
+  test "an item the records place elsewhere still fires on its own alias" do
+    names = Story::Audit::Prose.item_names("prince's signet ring")
+
+    assert_equal [ "prince's signet ring", "ring" ], names, "a four-letter noun still earns its alias"
+
+    claimed = "You carry the ring in your fist as the iron gate groans open behind you."
+
+    assert names.any? { |name| Story::Audit.allocate.send(:possession_claimed?, claimed, name) },
+           "the player is told they have it, which is what the check reads"
+    assert_not Story::Audit::Prose.item_names("Ward Office 12 daybook")
+                                  .any? { |name| Story::Audit.allocate.send(:possession_claimed?, claimed, name) },
+               "and it is the named thing that fires, not any item in the story"
   end
 
   # A KEPT SET IS A SUMMARY: the rows are dropped so it can live in the repo,

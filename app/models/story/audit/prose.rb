@@ -345,16 +345,61 @@ module Story::Audit::Prose
     names
   end
 
-  # THE NAMES A THING CAN BE CALLED, on the same rule and for the same reason.
+  # THE NAMES A THING CAN BE CALLED, for the same reason a place has aliases.
   # `Item#name` is what the records call it -- "Ward Office 12 daybook" -- and
   # no narration in 132 whole-run passages ever wrote that string. Every one of
   # them wrote "daybook". Without the alias `item_not_held` is live and silent,
   # which reads as a clean result and is the one failure mode
   # `Story::Audit`'s header warns about.
+  #
+  # BUT AN ITEM'S ALIAS IS ITS OWN LAST WORD AND NEVER AN EARLIER ONE, which is
+  # where this parts company with `.place_names` above. That method walks
+  # BACKWARDS past a word too short to scan for, because a place is named
+  # "Ward Office 12" and the numeral is not what prose calls it. Do the same for
+  # a thing and the alias lands on a MODIFIER: "iron key" has a last word of
+  # three letters, so the walk goes one further and aliases the key to **iron**
+  # -- and a modifier is exactly the word a place name is most likely to share.
+  # `Eval::Prompt::EndingKeptSetTest` is the measured case: the world's central
+  # place is the IRON GATE, the engine's own outcome sentence names it, and the
+  # ending bench read `item_not_held` at up to 0.200 on five passages that all
+  # held the signet ring correctly and none of which mentioned a key.
+  #
+  # SO THE RULE IS HEAD-FINAL AND NOTHING ELSE: an item's name ends on the noun
+  # and the words before it qualify that noun, so the last word is the only one
+  # the prose can be calling the thing. A trailing numeral or bracket is skipped
+  # -- it is not a word anybody writes -- but a short WORD ends the search, and
+  # then the item has no alias and is matched in full only.
+  #
+  # WHAT THAT COSTS, stated rather than buried: a thing whose noun is under
+  # `Story::Audit::MIN_NAME_LENGTH` -- a key, a cup, an axe -- is scanned for
+  # under its recorded name alone, so "you still have the key" is a custody
+  # claim this misses. That is the same precision-first trade the stop list and
+  # the length floor in `.place_names` already take, and for the same reason: a
+  # flag nobody can judge discredits every other flag on the board, while a
+  # miss is only a miss. It is not the whole of `item_not_held` either -- the
+  # measured strength of the check is on the head noun of a longer name
+  # ("daybook", "tide-slate"), which this keeps untouched.
+  #
+  # WHY NOT THE OTHER CANDIDATE. Excluding any alias that is also a word of a
+  # `Location` name in the same story is the narrower rule on paper, and it was
+  # rejected: every predicate in this file is pure by design -- text in, an
+  # answer out -- and `Story::Scoreboard::Corpus` scores a checked-in file with
+  # no database behind it, so the story's rows would have to be threaded through
+  # every caller. It also still aliases "iron key" to "iron" in a world with no
+  # iron gate, where "your iron" is not a sentence anybody writes. The
+  # head-final rule fixes the measured case with no records and no new argument.
   def item_names(item)
     name = item.respond_to?(:name) ? item.name : item
+    full = name.to_s.strip
+    return [] if full.length < Story::Audit::MIN_NAME_LENGTH
 
-    place_names(name)
+    words = full.gsub(/[^\w'\u2019-]/, " ").split
+    noun = words.reverse.find { |word| word.match?(/\A[a-z]/i) }
+
+    names = [ full ]
+    names << noun if noun && noun.length >= Story::Audit::MIN_NAME_LENGTH &&
+                     noun.casecmp(full).nonzero? && GENERIC_PLACE_WORDS.exclude?(noun.downcase)
+    names
   end
 
   # ------------------------------------------------------------------------
