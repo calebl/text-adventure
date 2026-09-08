@@ -197,7 +197,12 @@ class SeededWorldsTest < ActiveSupport::TestCase
         assert_nil mechanic.last_run_at,
                    "#{story.title}: #{mechanic.name} was seeded as though nights nobody played had happened"
       end
-      assert_empty story.world_events, "#{story.title}: seeding a world is not the world having already moved"
+      # WHAT HAS HAPPENED, and not what is scheduled to. A `schedule:` block is a
+      # statement about the future and is world data (`WorldEvent`); a row on
+      # this stream that has HAPPENED would be the world having already moved,
+      # which is what this test is about.
+      assert_empty story.world_events.happened, "#{story.title}: seeding a world is not the world having already moved"
+      assert story.world_events.all?(&:pending?), "#{story.title}: a seeded world event is a schedule, never a log entry"
     end
   end
 
@@ -211,7 +216,10 @@ class SeededWorldsTest < ActiveSupport::TestCase
     # Three story nights, with no wall-clock time passing and no model call.
     create(:scene, story: story, location: story.opening_location, previous_scene: story.opening_scene,
                    story_timestamp: story.start_time + 3.days)
-    events = story.catch_up_world!
+    # THE MECHANIC'S OWN ROWS. `#catch_up_world!` also fires this world's
+    # `schedule:` -- three days is well past both of its hours -- and those are
+    # not nights the shuffle ran.
+    events = story.catch_up_world!.select(&:from_a_mechanic?)
 
     assert_equal 3, events.size
     assert_equal Time.utc(2026, 9, 1), events.first.occurred_at

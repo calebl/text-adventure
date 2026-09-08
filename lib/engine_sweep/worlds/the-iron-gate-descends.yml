@@ -33,6 +33,18 @@
 # (`quest_step_unbound`, `quest_target_unreachable`) instead of calling a story
 # with an unreachable premise HEALTHY.
 #
+# AND THE ARC HAS TWO ENDINGS SOMEBODY CAN ACTUALLY REACH, since
+# `ta-quest-outcomes`. `too-late` carries `when: out_of_order`, so which of the
+# two a game gets is decided by the ENGINE off `playthrough_beats`: a party that
+# walks down and opens the cell before it ever finds the ring got there without
+# the proof he came this way, and the decree is answered the wrong way round.
+# `lib/engine_sweep/scripts/an-arc-that-ends-the-other-way.yml` walks it, and
+# the two walks that go in order still read `rescued`.
+#
+# ITS RAMIFICATION IS THE WORKED EXAMPLE OF THE OTHER HALF -- one scheduled
+# `WorldEvent` three story hours after that ending, on the one stream, which
+# nothing narrates and nothing else reads yet (`WorldEvent`, `Quest::Outcome`).
+#
 # THE LAST BEAT IS `reach_location` AND NOT `speak_to`, which is the one place
 # the fiction was shaped by the instrument and is said out loud rather than left
 # to be discovered: an offline sweep makes no model call, so a conversation can
@@ -537,3 +549,7 @@ quests:
   - name: too-late
     summary: The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted.
     default: false
+    when: out_of_order
+    ramification:
+      after_minutes: 180
+      summary: The Blackfang answer for the cell being opened, and the low door at the tunnel's end is barred from the inside.

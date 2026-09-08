@@ -492,6 +492,37 @@ class Story::AuditTest < ActiveSupport::TestCase
     assert_empty audit.pacing
   end
 
+  # A SCHEDULED ROW IS NOT SOMETHING THAT HAPPENED. `#still?` asks whether
+  # anything fell between two turns; a bomb that is still ticking has not, and
+  # counting the moment it was WRITTEN would let a schedule silence the pacing
+  # check for the rest of the game.
+  test "a scheduled event that has not fired does not break a still run" do
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    previous = scene_at(@here, description: "He is at the end desk.", characters: [ @protagonist, landlord ])
+    Story::Audit::STILL_RUN.times do |index|
+      previous = scene_at(@here, previous: previous, description: "You wait, turn #{index}.")
+    end
+    create(:world_event, :scheduled, story: @story, occurred_at: previous.story_timestamp - 1.minute,
+                                     scheduled_for: previous.story_timestamp + 8.hours)
+
+    assert_equal 1, audit.pacing.size
+  end
+
+  test "a scheduled event that HAS fired breaks it, at the moment it fired" do
+    landlord = create(:character, story: @story, fullname: "Grenn Ollivar")
+    previous = scene_at(@here, description: "He is at the end desk.", characters: [ @protagonist, landlord ])
+    moments = []
+    Story::Audit::STILL_RUN.times do |index|
+      previous = scene_at(@here, previous: previous, description: "You wait, turn #{index}.")
+      moments << previous.story_timestamp
+    end
+    create(:world_event, :scheduled, story: @story, occurred_at: @story.start_time,
+                                     scheduled_for: @story.start_time + 1.minute,
+                                     fired_at: moments[1])
+
+    assert_empty audit.pacing
+  end
+
   # A pacing flag is not a defect and the counts must never merge: `#tally`
   # keeps them apart and so does `#headline`.
   test "pacing is counted apart from contradictions, defects and drift" do

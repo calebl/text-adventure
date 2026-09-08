@@ -150,6 +150,37 @@ class StoryTest < ActiveSupport::TestCase
     assert_equal Time.utc(2026, 9, 1, 0, 0, 0), mechanic.reload.last_run_at
   end
 
+  # --- THE SCHEDULE, AND THE CLOCK THAT FIRES IT (the captain's Call 8) -------
+
+  test "catch_up_world! fires every scheduled event the clock has reached, once" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    soon = create(:world_event, :scheduled, story: story, summary: "the plaster stops falling",
+                                            scheduled_for: story.start_time + 5.minutes)
+    later = create(:world_event, :scheduled, story: story, summary: "Grenn comes for the rent",
+                                             scheduled_for: story.start_time + 8.hours)
+    create(:scene, story: story, location: create(:location, story: story),
+                   story_timestamp: story.start_time + 10.minutes)
+
+    assert_equal [ soon ], story.catch_up_world!
+
+    assert_equal story.start_time + 10.minutes, soon.reload.fired_at
+    assert_nil later.reload.fired_at
+
+    assert_empty story.catch_up_world!
+    assert_equal story.start_time + 10.minutes, soon.reload.fired_at
+  end
+
+  # A SCHEDULE IS DUE ON THE STORY'S OWN CLOCK, which is the whole point of it:
+  # a world nobody has played has not reached its own midnight, whatever the
+  # wall clock says.
+  test "an hour the story has not reached fires nothing" do
+    story = create(:story, start_time: Time.utc(2026, 8, 31, 23, 0, 0))
+    event = create(:world_event, :scheduled, story: story, scheduled_for: story.start_time + 5.minutes)
+
+    assert_empty story.catch_up_world!
+    assert_nil event.reload.fired_at
+  end
+
   test "should have many world mechanics, destroyed with the story" do
     story = create(:story)
     create(:world_mechanic, story: story)

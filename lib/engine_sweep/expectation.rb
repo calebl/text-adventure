@@ -110,6 +110,21 @@
 #                   which is `EngineSweep::Invariants#quest_unmoved` and not
 #                   this key: what a script asserts here is where the PLAYER got
 #                   to.
+#   ending          WHICH OF SEVERAL ENDINGS THIS GAME REACHED, by the outcome's
+#                   `name`, or `none` for a game still being played. Read
+#                   through `Playthrough::Arc#ending`, the one reader of that
+#                   question -- so a walk to a NON-default ending is asserted
+#                   off `playthrough_endings` rather than off the closing
+#                   paragraph, which is the whole point of deciding it in the
+#                   engine (`Quest::Outcome::CONDITIONS`)
+#   scheduled       HOW MANY ROWS ON THE EVENT STREAM THIS GAME CAN SEE SAY A
+#                   THING WILL HAPPEN AND HAVE NOT FIRED. The world's rows plus
+#                   this game's own, never another game's (`WorldEvent.for_a_game`)
+#   fired           AND HOW MANY OF THEM HAVE. `drifts:`' shape and its reason:
+#                   the sentence a scheduled row carries is a paragraph somebody
+#                   wrote, and a script may not assert prose -- what a walk pins
+#                   is that the story clock reached the hour and the engine
+#                   answered for it
 #
 # `KEYS` IS CLOSED AND UNKNOWN KEYS RAISE. A misspelt expectation that was
 # quietly ignored would read as a passing step, which is the one failure mode a
@@ -118,6 +133,7 @@ class EngineSweep::Expectation
   KEYS = %w[
     location storey exits exits_include exits_exclude here carrying present foes inscription
     hp hp_of abilities dead changed change refused offers understood resolved_by note drifts blows hazards quest
+    ending scheduled fired
   ].freeze
 
   # WHAT A BEAT MAY BE, and closed for `KEYS`' reason: a fourth word here would
@@ -182,6 +198,9 @@ class EngineSweep::Expectation
       check_equals("resolved_by", report.resolved_by),
       check_contains("note", Array(report.note).join("\n")),
       check_arc(state),
+      check_ending(state),
+      check_equals("scheduled", state.scheduled),
+      check_equals("fired", state.fired),
       check_equals("drifts", drifts),
       check_equals("blows", blows),
       check_equals("hazards", hazards)
@@ -305,6 +324,19 @@ class EngineSweep::Expectation
 
       unmet("quest", "beat #{position} #{wanted}", "beat #{position} #{actual[position] || "is not in this arc"}")
     end
+  end
+
+  # WHICH ENDING, BY NAME. `none` is the ordinary answer for a game still being
+  # played, and it is a word rather than a missing key so that a script can
+  # assert that a game has NOT ended -- which is what the walk either side of a
+  # conditional ending is actually about.
+  def check_ending(state)
+    return nil unless document.key?("ending")
+
+    reached = state.ending || "none"
+    return nil if document["ending"].to_s == reached
+
+    unmet("ending", document["ending"].to_s, reached)
   end
 
   def named(entry)

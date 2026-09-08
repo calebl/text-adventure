@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_120000) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -350,10 +350,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_150000) do
   end
 
   create_table "quest_outcomes", force: :cascade do |t|
+    t.string "condition"
     t.datetime "created_at", null: false
     t.boolean "is_default", default: false, null: false
+    t.integer "minutes"
     t.string "name", null: false
     t.integer "quest_id", null: false
+    t.integer "ramification_minutes"
+    t.text "ramification_summary"
     t.text "summary", null: false
     t.datetime "updated_at", null: false
     t.index ["quest_id", "name"], name: "index_quest_outcomes_on_quest_id_and_name", unique: true
@@ -468,8 +472,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_150000) do
 
   create_table "world_events", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.datetime "fired_at"
     t.datetime "occurred_at", null: false
     t.integer "playthrough_id"
+    t.datetime "scheduled_for"
     t.string "source", null: false
     t.integer "story_id", null: false
     t.text "summary", null: false
@@ -477,6 +483,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_150000) do
     t.integer "world_mechanic_id"
     t.index ["playthrough_id"], name: "index_world_events_on_playthrough_id"
     t.index ["story_id", "occurred_at"], name: "index_world_events_on_story_id_and_occurred_at"
+    t.index ["story_id", "scheduled_for"], name: "index_world_events_on_story_id_and_scheduled_for"
     t.index ["story_id"], name: "index_world_events_on_story_id"
     t.index ["world_mechanic_id"], name: "index_world_events_on_world_mechanic_id"
   end

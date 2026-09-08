@@ -4,9 +4,14 @@
 # characters (and their items), every Location the story has -- realized or
 # stub -- the edges between them, and the story's own `mechanics`. What is
 # deliberately left behind is progress rather than world: Playthroughs,
-# `last_protagonist_visit`, `WorldEvent`s, a mechanic's `last_run_at` and every
-# Scene BUT ONE are somebody's way through the world, not the world. #warnings
-# says so out loud when there is any, so nothing is dropped silently.
+# `last_protagonist_visit`, the `WorldEvent` LOG, a mechanic's `last_run_at` and
+# every Scene BUT ONE are somebody's way through the world, not the world.
+# #warnings says so out loud when there is any, so nothing is dropped silently.
+#
+# THE ONE KIND OF `WorldEvent` THAT DOES CROSS THAT LINE is an unfired row a
+# world FILE scheduled -- *the tide is over the low door in three quarters of an
+# hour* is a rule this world was written with rather than a thing that has
+# happened to it. See `#schedule_document`.
 #
 # THE ONE SCENE THAT CROSSES THAT LINE is the story's opening arrival, and it
 # is worth saying why, because the line is otherwise a good one. Every other
@@ -90,7 +95,11 @@ class WorldSeed::Exporter
       # name a place, a person or a thing by natural key, so the file has to
       # have declared all three above it for a reader to follow the block at
       # all -- the same reason `mechanics` is written after the graph.
-      "quests" => quests_document
+      "quests" => quests_document,
+      # AND WHAT THIS WORLD HAS ALREADY DECIDED WILL HAPPEN -- the captain's
+      # Call 8 of 2026-09-06, as world data. Last, beside the arc, because a
+      # scheduled row and a quest outcome's ramification are one stream.
+      "schedule" => schedule_document
     }.compact
   end
 
@@ -106,7 +115,12 @@ class WorldSeed::Exporter
     @warnings << "#{scenes} scene(s) not exported: a scene is a moment in a playthrough, not part of the world." if scenes.positive?
     @warnings << "#{playthroughs} playthrough(s) not exported: seeding a world does not seed somebody's progress through it." if playthroughs.positive?
 
-    events = story.world_events.count
+    # THE LOG, AND NOT THE SCHEDULE. What the world has already done to itself
+    # is history; a row saying a thing WILL happen is a rule, and the
+    # `schedule:` block above writes the seeded ones back. A ramification a
+    # playthrough earned is counted here too, deliberately -- see
+    # `#schedule_document` for why it is not written.
+    events = story.world_events.count - story.world_events.from_a_world_file.pending.count
     @warnings << "#{events} world event(s) not exported: what the world has already done to itself is this story's history, not its rules. The mechanics that produced them ARE exported, with their `last_run_at` left behind." if events.positive?
 
     # SAID DELIBERATELY, not by omission. Conversation history is squarely
@@ -623,10 +637,52 @@ class WorldSeed::Exporter
         "status" => quest.status,
         "contributes" => quest.contributes?,
         "steps" => quest.steps.order(:position).map { |step| quest_step_document(step) },
-        "outcomes" => quest.outcomes.order(:id).map do |outcome|
-          { "name" => outcome.name, "summary" => text(outcome.summary), "default" => outcome.is_default? }
-        end
+        "outcomes" => quest.outcomes.order(:id).map { |outcome| quest_outcome_document(outcome) }
       }.compact
+    end
+
+    rows.presence
+  end
+
+  # ONE ENDING, AND THE RULE THAT SELECTS IT. `when` is the file's spelling of
+  # `Quest::Outcome#condition` and `#compact` is what keeps a default outcome's
+  # block exactly as short as it was before conditions existed: the default
+  # carries no rule, so it writes no key.
+  def quest_outcome_document(outcome)
+    {
+      "name" => outcome.name,
+      "summary" => text(outcome.summary),
+      "default" => outcome.is_default?,
+      "when" => outcome.condition,
+      "minutes" => outcome.minutes,
+      "ramification" => ramification_document(outcome)
+    }.compact
+  end
+
+  def ramification_document(outcome)
+    return nil unless outcome.schedules_a_ramification?
+
+    { "after_minutes" => outcome.ramification_minutes, "summary" => text(outcome.ramification_summary) }
+  end
+
+  # WHAT THIS WORLD HAS ALREADY DECIDED WILL HAPPEN, and NOT what has happened.
+  # A scheduled row is a statement about the future, which is world data on
+  # exactly the terms an arc is; the log of fired and unscheduled rows is the
+  # audit trail, which this file has never exported and still does not --
+  # `#warn_about_unexported!` counts it.
+  #
+  # A ROW A QUEST OUTCOME SCHEDULED IS NOT WRITTEN EITHER, and the source column
+  # is what tells them apart: a ramification is a consequence one playthrough
+  # caused, so re-seeding a world must not hand the next load a catastrophe
+  # nobody in it has earned yet.
+  #
+  # `after_minutes` AND NOT AN ABSOLUTE MOMENT, because that is what the loader
+  # reads and what survives a story whose `start_time` somebody moved.
+  def schedule_document
+    rows = story.world_events.from_a_world_file.pending.order(:scheduled_for, :id).filter_map do |event|
+      next if event.scheduled_for.nil? || story.start_time.nil?
+
+      { "after_minutes" => ((event.scheduled_for - story.start_time) / 60).round, "summary" => text(event.summary) }
     end
 
     rows.presence

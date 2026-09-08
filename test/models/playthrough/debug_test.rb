@@ -444,6 +444,25 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
     assert_empty debug.drifts.map(&:class) & debug.overreaches.map(&:class)
   end
 
+  # A ROW ABOUT THE FUTURE IS NOT A ROW ABOUT THE PAST, and the page has to keep
+  # them apart -- a scheduled event is RECORDED the moment it is written, so
+  # listing it under "what the world did to itself" would show a bomb that is
+  # still ticking as a thing that had gone off. And looking at one must not fire
+  # it, which is this class's hard rule.
+  test "a scheduled event is listed as still to come and is not fired by looking" do
+    playthrough = create(:playthrough, :in_scene)
+    story = playthrough.story
+    coming = create(:world_event, :scheduled, story: story, scheduled_for: story.start_time + 8.hours)
+    gone_off = create(:world_event, :fired, story: story, summary: "the plaster stopped falling")
+
+    debug = Playthrough::Debug.new(playthrough)
+
+    assert_equal [ coming ], debug.scheduled_events
+    assert_includes debug.world_events, gone_off
+    assert_not_includes debug.world_events, coming
+    assert_nil coming.reload.fired_at
+  end
+
   test "a clean playthrough reports no contradictions and no drift" do
     debug = Playthrough::Debug.new(create(:playthrough, :in_scene))
 

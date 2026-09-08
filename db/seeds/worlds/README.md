@@ -190,6 +190,44 @@ Which anchored place a mobile room has come to rest against is *progress*, like
 `last_run_at` — the file was never meant to carry it. See **Re-seeding a world
 somebody has played** below.
 
+### `schedule`, and a thing this world has already decided will happen
+
+The captain's Call 8, 2026-09-06: *"some events will need to happen at a
+particular time, like if we have story where a bomb is going to go off or a
+volcano is going to explode 1 week in the future."* A `schedule:` block is that,
+as world data:
+
+```yaml
+schedule:
+- summary: |-
+    Grenn Ollivar comes for the overdue rent, and the table and the instruments
+    go out into Mournwell Lane.
+  after_minutes: 480
+```
+
+- Two keys and no others. `summary` is the sentence, and it is also the row's
+  **natural key** — a scheduled event has no name and no position, so re-seeding
+  matches on what it says.
+- `after_minutes` is counted from the story's own `start_time`, never from
+  whenever the file was loaded, so re-seeding a world a month later leaves the
+  bomb at the same hour.
+- **The engine fires it**, on the story's own clock, in the same call that
+  catches the `mechanics:` up (`Story#catch_up_world!`). A world nobody has
+  played has not reached its own midnight; a scheduled row is due when
+  `Story#clock` reaches it and not when the wall clock does.
+- **Nothing narrates it.** Firing a row writes `fired_at` and nothing else —
+  the narrator is told a scheduled event only when it happens, and today that
+  means not at all, because `WorldEvent` is an audit trail and never a narration
+  source. Telling a model about a bomb a week out invites it to foreshadow an
+  explosion the engine has not recorded.
+- A **future catastrophe is an ordinary scheduled row**. There is no volcano
+  table and no bomb mechanic. `rake game:doctor` reports a row whose hour has
+  passed with nothing fired (`scheduled_event_never_fired`), because a schedule
+  nothing reads is worse than no schedule.
+- What is **not** here is the log of what has already happened. That is
+  progress, is never exported, and is not the file's to write — see **What is
+  not exported**.
+
 ### `items`, and the two places a thing can be
 
 An `items:` list hangs off a **character** — something they are holding — or off
@@ -867,10 +905,13 @@ says so in its warnings and loading the file writes the missing row.
 
 ### What is not exported
 
-`Playthrough`s, `last_protagonist_visit`, `WorldEvent`s, a mechanic's
+`Playthrough`s, `last_protagonist_visit`, the `WorldEvent` **log**, a mechanic's
 `last_run_at`, **conversation history** (`chats` / `messages`), and every
 `Scene` **but the opening arrival**: those are somebody's progress through a
-world, not the world. `rake game:export` says out loud how many it left behind,
+world, not the world. The one `WorldEvent` that IS exported is an unfired row a
+world file **scheduled** (see `schedule` above) — a statement about what will
+happen is a rule this world was written with, and a record of what already did
+is not. `rake game:export` says out loud how many it left behind,
 so nothing is dropped silently — and it warns loudly when a story has *no*
 opening arrival, because the loader refuses such a file rather than producing a
 world that opens on a room description.

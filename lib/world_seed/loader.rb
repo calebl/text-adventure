@@ -56,6 +56,14 @@
 #                                        rather than an accumulation. What is
 #                                        NOT re-asserted is any playthrough's
 #                                        beats: those are progress
+#   WorldEvent (story, source, summary)  ONLY the `schedule:` block -- a row
+#                                        saying a thing WILL happen, which is
+#                                        world data. The LOG of what already
+#                                        did is not, is never exported, and is
+#                                        never touched here. An unfired
+#                                        seeded row the file has dropped is
+#                                        deleted; a FIRED one stays, because
+#                                        that one is history
 #
 # RE-SEEDING A WORLD SOMEBODY HAS PLAYED, which is what this file's rules are
 # actually about. The captain re-seeds his long-lived development database to
@@ -204,6 +212,10 @@ class WorldSeed::Loader
       # out entirely unbound and the doctor would report a world the file
       # actually specified completely.
       load_quests!(story)
+      # AND WHAT THE WORLD HAS ALREADY DECIDED WILL HAPPEN. It names nothing, so
+      # it could go anywhere; it goes beside the arc because a scheduled row and
+      # a quest outcome's ramification are one stream (`WorldEvent`).
+      load_schedule!(story)
       # Last, because it names a location AND a cast by natural key and both
       # have to exist first. It is written near the top of the FILE, where
       # somebody editing the prose will find it; load order and key order are
@@ -811,12 +823,59 @@ class WorldSeed::Loader
 
     documents.each do |attributes|
       name = attributes.fetch("name")
+      ramification = attributes["ramification"] || {}
       outcome = quest.outcomes.find_by(name: name) || quest.outcomes.new(name: name)
-      outcome.assign_attributes(summary: attributes.fetch("summary"), is_default: attributes["default"] == true)
+      outcome.assign_attributes(
+        summary: attributes.fetch("summary"),
+        is_default: attributes["default"] == true,
+        # `when:` IS THE RULE THAT SELECTS THIS ENDING, out of
+        # `Quest::Outcome::CONDITIONS`, and absent means *the default falls
+        # through to me* -- see that class. Spelled `when` in the file because
+        # that is the English of it; the column is `condition`, which is what a
+        # closed table of them is called everywhere else in this app.
+        condition: attributes["when"],
+        minutes: attributes["minutes"],
+        ramification_summary: ramification["summary"],
+        ramification_minutes: ramification["after_minutes"]
+      )
       outcome.save!
     end
 
     quest.outcomes.where.not(name: names).destroy_all
+  end
+
+  # WHAT THIS WORLD HAS ALREADY DECIDED WILL HAPPEN -- the captain's Call 8 of
+  # 2026-09-06, *"a bomb is going to go off or a volcano is going to explode 1
+  # week in the future"*, as world data. A file supplies the hour and the
+  # sentence; the engine supplies the firing (`Story#catch_up_world!`), which is
+  # `WorldMechanic`'s own doctrine applied to a one-off instead of to a cadence.
+  #
+  # KEYED ON THE SENTENCE, because that is the only thing a person writes about
+  # one: there is no name and no position, and `after_minutes` is a number
+  # somebody may well tune between two loads.
+  #
+  # AN UNFIRED ROW THE FILE HAS STOPPED DECLARING GOES, on `#load_quests!`'
+  # reasoning: a schedule is a statement the file makes, and a statement it has
+  # withdrawn is a catastrophe the author took out. A row that has ALREADY FIRED
+  # STAYS, and that is the one difference: it is no longer a schedule, it is
+  # history, and history is not the file's to retract.
+  def load_schedule!(story)
+    summaries = schedule_documents.map { |attributes| attributes.fetch("summary") }
+
+    schedule_documents.each do |attributes|
+      summary = attributes.fetch("summary")
+      event = story.world_events.from_a_world_file.find_by(summary: summary) ||
+              story.world_events.new(summary: summary, source: WorldEvent::SEEDED)
+      # THE HOUR IS COUNTED FROM THE STORY'S OWN BEGINNING, never from whenever
+      # the file was loaded: a world re-seeded a month later has the same bomb
+      # at the same hour, which is `Quest::Binder`'s `at: story.start_time` rule
+      # for the same reason.
+      event.assign_attributes(occurred_at: story.start_time,
+                              scheduled_for: story.start_time + attributes.fetch("after_minutes").minutes)
+      event.save!
+    end
+
+    story.world_events.from_a_world_file.pending.where.not(summary: summaries).destroy_all
   end
 
   # THE ROW THIS STEP NAMES, IF THE WORLD HAS ONE. Through `Quest::Binder`, so
@@ -951,6 +1010,7 @@ class WorldSeed::Loader
     validate_opening_scene!(names, openings.first.fetch("name"))
     validate_mechanics!
     validate_quests!
+    validate_schedule!
   end
 
   # EVERYTHING A HAND-EDITED ARC CAN GET WRONG, named here rather than surfacing
@@ -1030,12 +1090,92 @@ class WorldSeed::Loader
 
     documents.each do |attributes|
       raise InvalidWorld, "#{where}: quest #{title} outcome #{attributes.fetch("name").inspect} has no `summary`" if attributes["summary"].blank?
+
+      validate_one_quest_outcome!(title, attributes)
     end
 
     defaults = documents.count { |attributes| attributes["default"] == true }
     return if defaults == 1
 
     raise InvalidWorld, "#{where}: quest #{title} marks #{defaults} outcomes `default: true`; exactly one is the ending the world was born with"
+  end
+
+  # THE RULE THAT SELECTS ONE ENDING, and the number and the ramification that
+  # go with it. Refused in the FILE for `#validate_quest_outcomes!`' reason: a
+  # hand-authored ending is a decision, and a misspelt `when:` that loaded
+  # quietly would be an ending nobody could ever reach and nobody would notice
+  # until the doctor said so a month later.
+  #
+  # A MISSING `when:` IS NOT AN ERROR. It is what the DEFAULT is, and on a
+  # non-default outcome it is a world with an ending nothing selects -- legal,
+  # reported by `rake game:doctor` (`outcome_nothing_can_reach`), and the state
+  # every world with a second ending was in before conditions existed.
+  def validate_one_quest_outcome!(title, attributes)
+    name = attributes.fetch("name").inspect
+    where_it_is = "quest #{title} outcome #{name}"
+    condition = attributes["when"]
+
+    if condition.present? && !Quest::Outcome::CONDITIONS.key?(condition)
+      raise InvalidWorld, "#{where}: #{where_it_is} has `when: #{condition.inspect}`; there is: #{Quest::Outcome::CONDITIONS.keys.join(", ")}"
+    end
+
+    if condition.present? && attributes["default"] == true
+      raise InvalidWorld, "#{where}: #{where_it_is} is `default: true` and also names `when: #{condition.inspect}`; " \
+                          "the default is the ending an arc falls through to, which is what having no rule means"
+    end
+
+    if Quest::Outcome::NEEDS_MINUTES.include?(condition)
+      minutes = attributes["minutes"]
+      unless minutes.is_a?(Integer) && minutes.positive?
+        raise InvalidWorld, "#{where}: #{where_it_is} is `when: #{condition}` and needs `minutes:` as a whole number of story minutes, got #{minutes.inspect}"
+      end
+    elsif attributes["minutes"].present?
+      raise InvalidWorld, "#{where}: #{where_it_is} carries `minutes:` and `when: #{condition.inspect}` takes no number"
+    end
+
+    validate_one_ramification!(where_it_is, attributes["ramification"])
+  end
+
+  # ONE SCHEDULED ROW AN ENDING PUTS ON THE STREAM: an hour and a sentence, both
+  # or neither. `Quest::Outcome` refuses a half-written one too; this is the
+  # message somebody editing YAML needs, which names the file and the ending.
+  def validate_one_ramification!(where_it_is, document)
+    return if document.nil?
+
+    raise InvalidWorld, "#{where}: #{where_it_is} has a `ramification:` that is not a mapping" unless document.is_a?(Hash)
+
+    minutes = document["after_minutes"]
+    unless minutes.is_a?(Integer) && minutes.positive?
+      raise InvalidWorld, "#{where}: #{where_it_is}'s `ramification:` needs `after_minutes:` as a whole number of story minutes, got #{minutes.inspect}"
+    end
+
+    return if document["summary"].present?
+
+    raise InvalidWorld, "#{where}: #{where_it_is}'s `ramification:` has no `summary`, which is the whole of what the scheduled row says"
+  end
+
+  # WHAT THIS WORLD HAS ALREADY DECIDED WILL HAPPEN -- Call 8's bomb, as world
+  # data. Two keys and nothing else: the sentence, which is also the row's
+  # identity, and how long after the story opens it comes due.
+  def validate_schedule!
+    summaries = schedule_documents.map do |attributes|
+      raise InvalidWorld, "#{where}: a `schedule:` entry is not a mapping" unless attributes.is_a?(Hash)
+
+      summary = attributes["summary"]
+      raise InvalidWorld, "#{where}: a `schedule:` entry has no `summary`, which is what the event says and how it is keyed" if summary.blank?
+
+      minutes = attributes["after_minutes"]
+      unless minutes.is_a?(Integer) && minutes.positive?
+        raise InvalidWorld, "#{where}: scheduled event #{summary.inspect} needs `after_minutes:` as a whole number of story minutes, got #{minutes.inspect}"
+      end
+
+      summary
+    end
+
+    duplicates = summaries.group_by { |summary| summary }.select { |_, group| group.size > 1 }.keys
+    return if duplicates.none?
+
+    raise InvalidWorld, "#{where}: two scheduled events say #{duplicates.map(&:inspect).join(", ")}; a scheduled event is keyed on its own sentence"
   end
 
   # A BODY THE ENGINE COULD NEVER HAVE ROLLED, caught here rather than three
@@ -1688,5 +1828,9 @@ class WorldSeed::Loader
 
   def quest_documents
     Array(document["quests"])
+  end
+
+  def schedule_documents
+    Array(document["schedule"])
   end
 end

@@ -49,6 +49,52 @@ class Story::DoctorArcTest < ActiveSupport::TestCase
     assert_includes codes, :quest_with_two_default_outcomes
   end
 
+  # --- an ending nothing can select ------------------------------------------
+
+  test "a non-default ending with no rule is an ending no game can reach" do
+    bound_step(@maw)
+    create(:quest_outcome, quest: @quest, name: "too-late", summary: "Three days late.")
+
+    assert_includes codes, :outcome_nothing_can_reach
+  end
+
+  test "an ending with a rule is reachable, and the default needs none" do
+    bound_step(@maw)
+    create(:quest_outcome, :out_of_order, quest: @quest, name: "too-late", summary: "Three days late.")
+
+    assert_not_includes codes, :outcome_nothing_can_reach
+  end
+
+  # --- the event stream, which needs no arc at all ---------------------------
+
+  test "a scheduled event whose hour has passed with nothing fired is reported" do
+    create(:world_event, :scheduled, story: @story, scheduled_for: @story.start_time + 5.minutes)
+    create(:scene, story: @story, location: @gate, story_timestamp: @story.start_time + 1.hour)
+
+    assert_includes codes, :scheduled_event_never_fired
+  end
+
+  test "an hour this story has not reached is not a defect" do
+    create(:world_event, :scheduled, story: @story, scheduled_for: @story.start_time + 8.hours)
+
+    assert_not_includes codes, :scheduled_event_never_fired
+  end
+
+  test "a row stamped as fired that was never due is reported" do
+    event = create(:world_event, :scheduled, story: @story)
+    event.update_columns(scheduled_for: nil, fired_at: @story.start_time)
+
+    assert_includes codes, :fired_event_without_a_schedule
+  end
+
+  test "the event stream is asked about in a world with no arc at all" do
+    @quest.destroy
+    create(:world_event, :scheduled, story: @story, scheduled_for: @story.start_time + 5.minutes)
+    create(:scene, story: @story, location: @gate, story_timestamp: @story.start_time + 1.hour)
+
+    assert_includes codes, :scheduled_event_never_fired
+  end
+
   # --- P1: the goal exists as a row ------------------------------------------
 
   test "an unbound step is a warning, and a whole arc of them is fatal" do

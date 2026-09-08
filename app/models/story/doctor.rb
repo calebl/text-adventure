@@ -76,7 +76,8 @@ class Story::Doctor
       *hazards,
       *geometry,
       *vitals_rows,
-      *arc
+      *arc,
+      *event_stream
     ]
   end
 
@@ -1544,8 +1545,76 @@ class Story::Doctor
     return [] if story.quests.none?
 
     [ *stories_without_a_conclusion, *quests_without_an_outcome, *quests_with_two_defaults,
-      *unbound_quest_steps, *stories_that_cannot_progress, *missing_quest_targets,
-      *unreachable_quest_targets, *frontier_turned_away_from_the_goal ]
+      *outcomes_nothing_can_reach, *unbound_quest_steps, *stories_that_cannot_progress,
+      *missing_quest_targets, *unreachable_quest_targets, *frontier_turned_away_from_the_goal ]
+  end
+
+  # AN ENDING WRITTEN INTO A WORLD THAT NO GAME CAN EVER REACH. The default is
+  # reached by falling through and every other ending is reached by its
+  # `condition` holding (`Quest::Outcome`), so a non-default outcome with no
+  # condition is a sentence somebody wrote and nothing selects.
+  #
+  # THE STATE EVERY WORLD WITH A SECOND ENDING WAS IN BEFORE TODAY, which is why
+  # it is a warning rather than fatal and why the migration backfilled nothing:
+  # a world is perfectly playable with an ending nobody reaches, and which rule
+  # its author meant is not on record. A person writes `when:` into the file.
+  def outcomes_nothing_can_reach
+    story.quests.order(:id).flat_map do |quest|
+      quest.outcomes.reject { |outcome| outcome.is_default? || outcome.conditional? }.map do |outcome|
+        finding(:outcome_nothing_can_reach, :warning,
+                "#{quest.title.inspect} carries the ending #{outcome.name.inspect} and nothing selects it: it is not " \
+                "the default this arc falls through to and it names no `when:` rule, so no playthrough can reach it. " \
+                "There is: #{Quest::Outcome::CONDITIONS.keys.join(", ")}",
+                :manual, subject: outcome)
+      end
+    end
+  end
+
+  # --- THE EVENT STREAM ------------------------------------------------------
+  #
+  # THE CAPTAIN'S CALL 8, 2026-09-06, and the half of it that needs an
+  # instrument: a row saying a thing WILL happen is only worth writing if
+  # something fires it, and *"a schedule nothing reads is worse than no
+  # schedule."* Two findings, and they are the two ways the three moments on
+  # `world_events` can disagree with each other.
+  #
+  # ASKED OF EVERY STORY, unlike `#arc` above: a scheduled row needs no quest --
+  # a world file's `schedule:` block writes one straight onto the stream.
+  def event_stream
+    [ *scheduled_events_never_fired, *fired_events_with_no_hour ]
+  end
+
+  # THE HOUR CAME AND NOTHING HAPPENED. `Story#catch_up_world!` fires every due
+  # row on every turn of both play modes, so a row this story's own clock has
+  # passed with `fired_at` still empty means the firing pass is not running in
+  # this world -- which is the defect, not the row.
+  #
+  # AGAINST `Story#clock` AND NOT THE WALL CLOCK, which is the whole point of a
+  # story-time schedule: a world nobody has played for a month has not reached
+  # its own midnight, and reporting one that has not is reporting the calendar.
+  def scheduled_events_never_fired
+    now = story.clock
+
+    story.world_events.due_by(now).map do |event|
+      finding(:scheduled_event_never_fired, :warning,
+              "a scheduled event was due at #{event.scheduled_for.utc.iso8601} and this story's clock now reads " \
+              "#{now.utc.iso8601} with nothing fired: #{event.summary.inspect}. Every turn catches the world up " \
+              "(`Story#catch_up_world!`), so a row past its hour is one no turn has run against",
+              :manual, subject: event)
+    end
+  end
+
+  # A ROW THAT FIRED WITHOUT EVER BEING DUE. `WorldEvent` refuses one, so a row
+  # here arrived through raw SQL or a database older than that validation --
+  # `#quests_with_two_defaults`' shape, one table over.
+  def fired_events_with_no_hour
+    story.world_events.where(scheduled_for: nil).where.not(fired_at: nil).order(:id).map do |event|
+      finding(:fired_event_without_a_schedule, :warning,
+              "an event is stamped as fired at #{event.fired_at.utc.iso8601} and was never scheduled for anything: " \
+              "#{event.summary.inspect}. `fired_at` answers *when did the engine reach this row's hour*, and a row " \
+              "with no hour has none",
+              :manual, subject: event)
+    end
   end
 
   # P4, HALF ONE: a world with an arc and no sentence to end on. The direction
