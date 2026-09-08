@@ -217,10 +217,10 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
   end
 
   # The declared shapes are the whole of it, so one added without a sentence
-  # would be a refusal with nothing in it. `:dead` and `:unplayable` come off
-  # the other two entry points rather than `.for`: both are facts about the GAME
-  # rather than readings of the line, which is exactly why each has a
-  # constructor of its own.
+  # would be a refusal with nothing in it. `:dead`, `:concluded` and
+  # `:unplayable` come off the other two entry points rather than `.for`: all
+  # three are facts about the GAME rather than readings of the line, which is
+  # exactly why each has a constructor of its own.
   test "every kind the class declares is one of the three entry points can produce" do
     produced = [
       refuse(intent(:take, item: @index, also_named: @apron)),
@@ -228,7 +228,8 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
       refuse(intent(:other, unknown_action: "steal")),
       refuse(intent(:throw, item: @press, at: @rowe)),
       Playthrough::Refusal.unplayable(intent(:take, item: @index), playthrough: @castless, typed: "take the index"),
-      Playthrough::Refusal.dead(typed: "look")
+      Playthrough::Refusal.dead(typed: "look"),
+      Playthrough::Refusal.over(playthrough: finished, typed: "look")
     ].map(&:kind)
 
     assert_equal Playthrough::Refusal::KINDS.sort, produced.sort
@@ -316,7 +317,57 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
     assert_match(/You are dead/, refusal.text)
   end
 
+  # --- and the line typed into a game that is over for the OTHER reason ------
+  #
+  # `.over` is the entry point the engine calls, because `playthroughs.ended_at`
+  # says a game is finished and does not say why. It derives the reason off the
+  # records through `Playthrough::EndNotice`; these two say it derived it, in
+  # both directions, from the same call.
+
+  test "a line typed into a game that reached its ending is refused without a death" do
+    refusal = Playthrough::Refusal.over(playthrough: finished, typed: "go north")
+
+    assert_equal :concluded, refusal.kind
+    assert_equal "go north", refusal.typed
+    assert_match(/story is over/, refusal.text)
+    assert_match(/new playthrough/, refusal.text)
+    assert_not_includes refusal.text, "dead"
+  end
+
+  test "a line typed into a game whose player died is refused as a death" do
+    game = create(:playthrough, story: @story, character: @rowe, current_location: @here)
+    create(:playthrough_vitals, :dead, playthrough: game, character: @rowe)
+    game.end!
+
+    refusal = Playthrough::Refusal.over(playthrough: game, typed: "go north")
+
+    assert_equal :dead, refusal.kind
+    assert_match(/#{Regexp.escape(@rowe.fullname)} is dead/, refusal.text)
+  end
+
+  # Both shapes are terminal, so neither invites the player to try again.
+  test "a concluded refusal does not tell the player nothing has changed" do
+    refusal = Playthrough::Refusal.over(playthrough: finished, typed: "look")
+
+    assert_not_includes refusal.text, Playthrough::Refusal::UNCHANGED
+    assert_not_includes refusal.reason, Playthrough::Refusal::UNCHANGED
+    assert_predicate refusal, :game_over?
+  end
+
   private
+
+  # A GAME THAT FINISHED ITS STORY: the two rows `Playthrough::Arc#conclude!`
+  # writes in one transaction, and nothing else -- no body at zero anywhere.
+  def finished
+    @finished ||= begin
+      game = create(:playthrough, story: @story, character: @rowe, current_location: @here)
+      quest = create(:quest, story: @story)
+      create(:playthrough_ending, playthrough: game,
+                                  quest_outcome: create(:quest_outcome, :default, quest: quest))
+      game.end!
+      game
+    end
+  end
 
   def refuse(built, typed: "something", offered: [])
     Playthrough::Refusal.for(built, typed: typed, offered: offered)

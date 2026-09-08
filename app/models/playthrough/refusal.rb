@@ -73,6 +73,14 @@
 #                         `Playthrough::DeathNotice` and not from an `Intent`,
 #                         and why `.for` never returns one. Counted by nothing:
 #                         a dead player reaching for nothing is not drift.
+#   :concluded            THE STORY IS OVER AND THE GAME WITH IT -- the arc
+#                         reached its last step, `Playthrough::Arc#conclude!`
+#                         wrote the ending, and nothing killed anybody. The same
+#                         shape as `:dead` in every respect but its words, which
+#                         are `Playthrough::StoryOverNotice`'s. `.over` is what
+#                         chooses between the two, off records, through
+#                         `Playthrough::EndNotice`; `.for` never returns one
+#                         either.
 #
 # THE COUNTERS ARE UNTOUCHED BY THE RULING, and that is deliberate: it changes
 # what a turn DOES, not what is measured. `Playthrough::Classifier#classify`
@@ -110,7 +118,13 @@
 # (`fact`, `offer`, `UNCHANGED`) so that both orders read as English rather than
 # as one string with another bolted onto the end.
 class Playthrough::Refusal
-  KINDS = %i[named_more_than_one unresolved immovable unreadable unplayable dead].freeze
+  KINDS = %i[named_more_than_one unresolved immovable unreadable unplayable dead concluded].freeze
+
+  # THE TWO KINDS THAT ARE NOT A READING OF THE LINE BUT A STATE OF THE GAME.
+  # Both are terminal and neither leaves the player anything to try again, which
+  # is what `#game_over?` is asked for; they differ only in WHY the game is
+  # over, and `Playthrough::EndNotice` is the one place that decides that.
+  GAME_OVER = %i[dead concluded].freeze
 
   # ONE ACT, PHRASED AS THE PLAYER WOULD HAVE TYPED IT, so a refusal that says
   # "pick one" is naming two things somebody can actually pick between.
@@ -260,6 +274,24 @@ class Playthrough::Refusal
     new(kind: :dead, typed: typed, fact: Playthrough::DeathNotice.sentence(character))
   end
 
+  # AND THE ENTRY POINT THE ENGINE ACTUALLY CALLS, because `playthroughs.ended_at`
+  # says a game is over and does NOT say why. A game that reached the last step
+  # of its arc is over for a reason that has nothing to do with a body, and it
+  # must not be answered with "you are dead" -- the captain's ruling of
+  # 2026-09-05 on the fight UI, applied to copy: presentation must say what
+  # actually happened.
+  #
+  # THE REASON IS DERIVED OFF RECORDS AND IS NOT DECIDED HERE.
+  # `Playthrough::EndNotice` owns the rule -- an ending row means the story
+  # concluded, a protagonist at zero means death -- and owns both sets of words,
+  # so this refusal and the standing statement the play page shows where the
+  # input used to be cannot come to disagree about why the game stopped.
+  def self.over(playthrough:, typed:)
+    notice = Playthrough::EndNotice.for(playthrough)
+
+    new(kind: notice.refusal_kind, typed: typed, fact: notice.sentence)
+  end
+
   # THE ACT THIS GAME CANNOT PERFORM, or nil when it can -- and the THIRD public
   # entry point, beside `.for` (a reading of the line) and `.dead` (a game that
   # is over).
@@ -372,10 +404,10 @@ class Playthrough::Refusal
 
   # WHETHER THIS IS A LINE THE ENGINE WOULD NOT PLAY, or a GAME that is over.
   # The three reading shapes leave the player standing where they were with
-  # another line to type; `:dead` does not, so neither answer ends with
+  # another line to type; `GAME_OVER` does not, so neither answer ends with
   # `UNCHANGED` -- "nothing has changed" is an invitation to try again, and
   # there is nothing to try.
-  def game_over? = kind == :dead
+  def game_over? = GAME_OVER.include?(kind)
 
   # FOR THE CONSUMER THAT PRINTS THE RECORDS UNDERNEATH: the fact and nothing
   # else, so the lists are said once.

@@ -1115,6 +1115,48 @@ class Story::DoctorTest < ActiveSupport::TestCase
     assert_not_includes codes(story), :playthrough_dead_but_not_ended
   end
 
+  # A GAME THAT IS OVER AND NOTHING SAYS WHY. `Playthrough::EndNotice` shows the
+  # death copy for one of these, because there is no third set of words -- so
+  # the guess is reported to whoever can look at the database rather than left
+  # standing on the play page alone.
+  test "a game marked ended with no ending reached and nobody at zero is reported" do
+    story = create(:story)
+    room = create(:location, story: story)
+    vance = create(:character, :protagonist, story: story, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: vance, current_location: room)
+    game.end!
+
+    finding = Story::Doctor.new(story).findings.find do |row|
+      row.code == :playthrough_ended_for_no_recorded_reason
+    end
+
+    assert_not_nil finding
+    assert_equal :manual, finding.remedy
+    assert_equal game, finding.subject
+  end
+
+  test "a game that ended by reaching its ending is nobody's problem" do
+    story = create(:story)
+    room = create(:location, story: story)
+    vance = create(:character, :protagonist, story: story, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: vance, current_location: room)
+    create(:playthrough_ending, playthrough: game,
+                                quest_outcome: create(:quest_outcome, :default, quest: create(:quest, story: story)))
+    game.end!
+
+    assert_not_includes codes(story), :playthrough_ended_for_no_recorded_reason
+  end
+
+  test "a game that ended when the body did needs no explaining either" do
+    story = create(:story)
+    room = create(:location, story: story)
+    vance = create(:character, :protagonist, story: story, level: 1, hit_die: 8)
+    game = create(:playthrough, story: story, character: vance, current_location: room)
+    Playthrough::Turn.new(game).harm!(vance, vance.max_hp)
+
+    assert_not_includes codes(story), :playthrough_ended_for_no_recorded_reason
+  end
+
   test "the checked-in worlds give everybody a body" do
     WorldSeed::Loader.load_all(io: nil).each do |story|
       assert_not_includes codes(story), :character_without_a_stat_block, story.title
