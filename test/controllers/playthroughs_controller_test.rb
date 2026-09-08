@@ -738,6 +738,45 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # --- and a playthrough that ended by FINISHING ITS STORY -------------------
+  #
+  # The same terminal screen and a different reason for it. Reaching the last
+  # step of the main arc writes a `Playthrough::Ending` and `ended_at` and kills
+  # nobody, so the notice must say the story is over rather than that the player
+  # is; `Playthrough::EndNotice` is what tells the two apart, off the records.
+
+  test "a concluded playthrough says the story is over and never that the player is dead" do
+    playthrough = concluded_playthrough
+
+    get playthrough_path(playthrough)
+
+    assert_response :success
+    assert_select "input[name=command]", 0
+    assert_select "div.notice", text: /#{Regexp.escape(Playthrough::StoryOverNotice::HEADING)}/
+    assert_select "div.notice", text: /#{Regexp.escape(Playthrough::DeathNotice::HEADING)}/, count: 0
+  end
+
+  test "a concluded playthrough keeps the one way on: a new playthrough of the same world" do
+    playthrough = concluded_playthrough
+
+    get playthrough_path(playthrough)
+
+    assert_select "form[action=?]", playthroughs_path do
+      assert_select "input[name=?][value=?]", "story_id", playthrough.story_id.to_s
+    end
+  end
+
+  # THE ENDING'S OWN PARAGRAPH IS THE LAST ENTRY OF THE LOG, so the notice under
+  # it must not print it a second time.
+  test "a concluded playthrough prints its last paragraph once" do
+    playthrough = concluded_playthrough
+    words = playthrough.current_scene.description
+
+    get playthrough_path(playthrough)
+
+    assert_equal 1, response.body.scan(Regexp.new(Regexp.escape(words))).size
+  end
+
   test "a playthrough that is still running keeps its input" do
     playthrough = dead_playthrough
     playthrough.update!(ended_at: nil)
@@ -868,6 +907,27 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # by setting the column: `Playthrough::Turn#harm!` is where the ending is
   # written, and a test that wrote `ended_at` by hand would not notice if it
   # stopped being.
+  # A GAME THAT REACHED THE END OF ITS STORY: the rows `Playthrough::Arc#conclude!`
+  # writes in one transaction -- the reached outcome, the closing `Scene` the
+  # narrator has already rendered in place, the chain head pointed at it, and
+  # `ended_at`. Nobody is at zero anywhere in it, which is the whole point.
+  def concluded_playthrough
+    story = create(:story)
+    room = create(:location, story: story)
+    hero = create(:character, :protagonist, story: story, level: 1, hit_die: 6)
+    playthrough = create(:playthrough, story: story, character: hero, current_location: room,
+                                       current_scene: create(:scene, story: story, location: room))
+    outcome = create(:quest_outcome, :default, quest: create(:quest, story: story),
+                                               summary: "The prince walks out through the iron gate alive.")
+    scene = create(:scene, story: story, location: room, previous_scene: playthrough.current_scene,
+                           description: "The gate grinds up, and the light on the far side is the first in days.",
+                           summary: outcome.summary, resolved_action: Scene::NARRATED_ENDING)
+    create(:playthrough_ending, playthrough: playthrough, quest_outcome: outcome)
+    playthrough.update!(current_scene: scene)
+    playthrough.end!
+    playthrough
+  end
+
   def dead_playthrough
     story = create(:story)
     room = create(:location, story: story)

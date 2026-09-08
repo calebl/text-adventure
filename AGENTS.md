@@ -149,6 +149,7 @@ Read the header of the file named, not a summary of it.
 | --- | --- |
 | How a turn is read, branched and written | `app/models/playthrough/turn.rb` |
 | What the engine says when it will not play a line | `app/models/playthrough/refusal.rb` |
+| Why a playthrough ended, and what the player is told | `app/models/playthrough/end_notice.rb` |
 | Which reader answered a line, and the offline grammar | `app/models/playthrough/grammar.rb` |
 | What the narrator and an NPC are told about the moment | `app/models/playthrough/moment.rb` |
 | The game with the prose taken out | `app/models/playthrough/mechanics.rb` |

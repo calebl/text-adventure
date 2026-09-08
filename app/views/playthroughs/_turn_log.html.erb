@@ -91,8 +91,9 @@
       lands here. %>
   <%# A REFUSAL BECAUSE THE GAME IS OVER SHOWS ONLY THE ECHO. The typed line is
       still worth printing -- it says which line this answered -- but the
-      sentence is not, because the standing death statement below says the same
-      thing in full and two of it on one screen reads as a bug.
+      sentence is not, because the standing statement below (a death or a story
+      that concluded, whichever the records say) says the same thing in full and
+      two of it on one screen reads as a bug.
       `Playthrough::Refusal#game_over?` is the one question that tells the
       shapes apart. %>
   <% if refusal %>
@@ -106,24 +107,37 @@
 
   <%# THE GAME IS OVER, AND THIS IS WHERE THE INPUT USED TO BE.
 
-      The captain's ruling of 2026-09-04: at zero hit points the character is
-      dead, the playthrough is over, and the only way on is a new one. So the
-      form is not disabled and it is not left there to be refused line after
-      line -- it is GONE, and what stands in its place says why and offers the
-      one thing that is left.
+      A playthrough ends for one of two reasons and the copy says which. At zero
+      hit points the character is dead (the captain's ruling of 2026-09-04); at
+      the last step of the main arc the STORY is over and nobody died
+      (`Playthrough::Arc#conclude!`). Either way the form is not disabled and it
+      is not left there to be refused line after line -- it is GONE, and what
+      stands in its place says why and offers the one thing that is left.
 
-      `Playthrough::DeathNotice` is the one author of these words, and it also
-      writes the sentence `Playthrough::Refusal.dead` answers a typed line with,
-      so the standing statement and the refusal cannot come to disagree about
-      whether the game is over. Read its header before changing any of them.
+      `Playthrough::EndNotice` DECIDES WHICH, off the records -- an ending row
+      or a protagonist at zero -- and this view asks no other question about it.
+      It also builds the sentence `Playthrough::Refusal.over` answers a typed
+      line with, out of the same two authors (`Playthrough::DeathNotice`,
+      `Playthrough::StoryOverNotice`), so the standing statement and the refusal
+      cannot come to disagree about why the game is over. Read that class's
+      header before changing any of this.
+
+      `#closing_words` is nil on an ordinary finished game and that is the
+      point: the ending's own paragraph is the LAST ENTRY OF THE LOG ABOVE, so
+      reprinting it here would put it on the screen twice -- the same rule the
+      refusal above is under.
 
       The same `.notice` as the safety notice and the refusal above, and for the
       same reason: this is the app talking rather than the world. It is NOT an
-      alert -- nothing went wrong, the player died. %>
+      alert -- nothing went wrong, the game finished. %>
   <% if playthrough.over? %>
+    <% ended = Playthrough::EndNotice.for(playthrough) %>
     <div class="notice">
-      <p><strong><%= Playthrough::DeathNotice::HEADING %></strong></p>
-      <% Playthrough::DeathNotice::PARAGRAPHS.each do |paragraph| %>
+      <p><strong><%= ended.heading %></strong></p>
+      <% if ended.closing_words %>
+        <p><%= ended.closing_words %></p>
+      <% end %>
+      <% ended.paragraphs.each do |paragraph| %>
         <p><%= paragraph %></p>
       <% end %>
       <%# The same POST the index's Play button makes, so there is exactly one
@@ -150,8 +164,8 @@
 
         Built here rather than in the partial so a game that is not in a fight
         pays one `#foes_in` and no render at all, and inside the `else` on
-        purpose: a turn in flight has no form and a game that is over has a
-        death notice where all of this would be.
+        purpose: a turn in flight has no form and a game that is over has an
+        end notice where all of this would be.
 
         The buttons post to the same `turns#create` the box below does. See
         `Playthrough::Battle` for the one-UI argument and for what a round

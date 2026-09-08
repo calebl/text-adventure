@@ -120,8 +120,15 @@ steps:
     the last paragraph is still the last paragraph. That is the other half of
     *the ending is written*: the words have to be there on the turn after it as
     well, because a player reading their own ending is not taking a turn.
+
+    AND THE REFUSAL SAYS WHY THE GAME IS OVER. Nobody died here -- the arc
+    reached its last step -- so `offers:` pins the story-over wording and the
+    absence of the death sentence. `playthroughs.ended_at` alone cannot tell the
+    two apart, which is exactly the bug this pins: `Playthrough::EndNotice`
+    derives the reason off the `Playthrough::Ending` row instead.
   expect:
     refused: true
+    offers: ["story is over", "Start a new playthrough"]
     ending: rescued
     ending_words: ["The prince is found alive in the dry cell"]
     dead: true

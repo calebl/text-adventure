@@ -142,7 +142,7 @@ steps:
 
 - id: and-every-line-after-it-is-refused
   type: look
-  why: the gate is Playthrough::Refusal.dead, in front of everything, exactly as it was before a fight could reach it
+  why: the gate is Playthrough::Refusal.over, in front of everything, exactly as it was before a fight could reach it
   expect:
     refused: true
     changed: false

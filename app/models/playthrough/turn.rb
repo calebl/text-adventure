@@ -95,9 +95,11 @@ class Playthrough::Turn
     # THE GAME BEING OVER COMES BEFORE EVERYTHING, and it is first for a reason
     # rather than for tidiness: everything below this line costs something. The
     # world catching up writes rows, the snapshot writes rows, and the
-    # classifier is a MODEL CALL. A dead playthrough is a playthrough nothing
-    # will ever change again, so the honest cost of typing into one is nothing.
-    return Playthrough::Refusal.dead(typed: command, character: playthrough.character) if playthrough.over?
+    # classifier is a MODEL CALL. A finished playthrough is a playthrough
+    # nothing will ever change again, so the honest cost of typing into one is
+    # nothing. `Playthrough::Refusal.over` derives WHY it finished -- a death or
+    # a story that concluded -- off the records; see `Playthrough::EndNotice`.
+    return Playthrough::Refusal.over(playthrough: playthrough, typed: command) if playthrough.over?
 
     # THE WORLD MOVES FIRST, and it moves whether or not anybody was watching.
     # Every boundary the story's clock has passed since the last turn is applied

@@ -290,7 +290,7 @@ class Playthrough::Mechanics
     # playthrough is finished. Nothing below runs: not the world catching up,
     # not the snapshot, and not the classifier.
     if playthrough.over?
-      refusal = Playthrough::Refusal.dead(typed: command, character: playthrough.character)
+      refusal = Playthrough::Refusal.over(playthrough: playthrough, typed: command)
       return refuse(refusal.reason).with(command: command)
     end
 
@@ -933,7 +933,7 @@ class Playthrough::Mechanics
   # itself. So death happens HERE exactly as it happens in the browser -- the
   # last hit point and `playthroughs.ended_at` in one transaction -- and the
   # next line typed into this mode is refused by the same
-  # `Playthrough::Refusal.dead` the browser refuses it with.
+  # `Playthrough::Refusal.over` the browser refuses it with.
   #
   # IT IS ALWAYS THE PLAYER. Hurting an NPC is a mechanic nobody has ruled on
   # and there is no verb for it; this is an instrument for walking the one body

@@ -2529,7 +2529,39 @@ class Story::Doctor
 
     [ *vitals_without_a_template(rows), *hp_above_maximum(rows), *vitals_for_an_unmet_character(rows),
       *protagonists_without_vitals, *provoked_without_a_meeting(rows), *dead_bodies_holding_things(rows),
-      *playthroughs_dead_but_not_ended ]
+      *playthroughs_dead_but_not_ended, *playthroughs_ended_for_no_recorded_reason ]
+  end
+
+  # A GAME THAT IS OVER AND NOTHING SAYS WHY. `playthroughs.ended_at` is written
+  # in exactly two places -- `Playthrough::Turn#harm!`, in the transaction that
+  # takes the protagonist's last hit point, and `Playthrough::Arc#conclude!`, in
+  # the transaction that writes the reached `Quest::Outcome` -- so an ended
+  # playthrough with neither a `Playthrough::Ending` nor a protagonist at zero
+  # is a row no path in the app can have written on its own. A hand-marked game
+  # or a repair that ran against a schema older than `playthrough_endings` is
+  # what leaves one.
+  #
+  # IT IS REPORTED BECAUSE THE PLAYER IS SHOWN A GUESS. `Playthrough::EndNotice`
+  # falls back to the death copy for exactly this row -- read its header for
+  # why that is the right guess and why there is no third set of words -- and a
+  # guess on the play page is precisely the thing that should reach whoever can
+  # look at the database instead.
+  #
+  # `manual`: nothing on record says which of the two it was, and both repairs
+  # would be inventions. Writing an `Ending` means choosing an outcome the game
+  # may never have reached; zeroing the protagonist means killing somebody the
+  # records never killed. A person reads the log and decides.
+  def playthroughs_ended_for_no_recorded_reason
+    story.playthroughs.includes(:character).order(:id).filter_map do |playthrough|
+      next unless playthrough.over?
+      next unless Playthrough::EndNotice.for(playthrough).reason == :unrecorded
+
+      finding(:playthrough_ended_for_no_recorded_reason, :warning,
+              "playthrough ##{playthrough.id} is marked ended at " \
+              "#{playthrough.ended_at.utc.iso8601} with no ending reached and nobody at zero hit points, " \
+              "so the play page can only guess at why it stopped",
+              :manual, subject: playthrough)
+    end
   end
 
   # A FIGHT WITH SOMEBODY THAT GAME HAS NEVER STOOD IN A ROOM WITH.

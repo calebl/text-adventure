@@ -346,6 +346,28 @@ class NarrationJobTest < ActiveJob::TestCase
     assert_equal 1, playthrough.drifts.count, "and the drift row is taken as it always was"
   end
 
+  # A LINE TYPED INTO A GAME THAT FINISHED ITS STORY, through the browser's own
+  # path. No agent is queued at all, which is the assertion underneath the copy:
+  # the gate is in front of the classifier, so a finished game costs nothing.
+  #
+  # AND IT MUST NOT SAY THE PLAYER IS DEAD. Nobody died -- the arc reached its
+  # last step -- and `Playthrough::EndNotice` is what reads that off the records
+  # for both the refusal and the standing statement below it.
+  test "a line typed into a concluded playthrough is refused as a story that is over" do
+    playthrough = create(:playthrough, :started)
+    outcome = create(:quest_outcome, :default, quest: create(:quest, story: playthrough.story))
+    create(:playthrough_ending, playthrough: playthrough, quest_outcome: outcome)
+    playthrough.end!
+
+    html = play(playthrough, "go north").last.to_html
+
+    assert_match "story is over", html
+    assert_match "Start a new playthrough", html
+    assert_match "go north", html, "the line it refused is echoed"
+    assert_no_match(/dead/i, html)
+    assert_no_match(/what do you do\?/, html, "the game is over, so there is no input")
+  end
+
   # WHERE IT STANDS is the safety notice's place, for the same reason: the page
   # anchors at `#bottom`, so a message above a long transcript is one the player
   # has to scroll up to find.
