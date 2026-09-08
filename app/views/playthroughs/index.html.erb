@@ -1,5 +1,16 @@
 <h1>Text Adventure</h1>
 
+<%# THE REALIZATION LAB, and it is a link off the top of the page rather than one
+    per story because it is not about a story at all: a kind of place is drawn on
+    a COPY of a world put back from its seed file and rolled back afterwards, so
+    it belongs to the world rather than to any playthrough of it. Gated on
+    `Playthrough::Debug.enabled?`, the flag its controllers gate the endpoints
+    on, so a player handed this page is not shown a link that would 404 -- and,
+    unlike the map, not shown a page that can spend money. %>
+<% if Playthrough::Debug.enabled? %>
+  <p><%= link_to "the realization lab", lab_kinds_path %></p>
+<% end %>
+
 <% if @playthrough %>
   <%# `#bottom`: resuming should put him back at the end of the log he left,
       not at the preface he has already read. %>

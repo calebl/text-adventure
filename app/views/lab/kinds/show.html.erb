@@ -1,0 +1,179 @@
+<%# ONE KIND: what it is, what he says its picks should be, how often they came
+    back that way, and every draw of it.
+
+    THE RATE IS THE POINT OF THIS PAGE. `Lab::Realization::HitRate`'s header has
+    why the fraction is printed and the percentage is not, and why a kind below
+    `Lab::Realization::MIN_DRAWS` says "not established" in words. %>
+<%= render "lab/styles" %>
+
+<h1>a kind &mdash; <%= @kind.name %></h1>
+<p class="nav">
+  <%= link_to "&larr; the lab".html_safe, lab_kinds_path %>
+  &nbsp;&middot;&nbsp; <%= @kind.world %>
+  &nbsp;&middot;&nbsp; <%= @kind.place? ? "a building" : "a room" %>
+  &nbsp;&middot;&nbsp; kind #<%= @kind.id %>
+</p>
+<% if flash[:alert] %>
+  <p class="panel warn"><%= flash[:alert] %></p>
+<% end %>
+
+<div class="panel">
+  <div class="fields">
+    <div class="k">teaser</div>
+    <div class="v"><%= @kind.teaser %></div>
+    <div class="k">reached from</div>
+    <div class="v"><%= debug_value(@kind.reached_from, absent: "nothing -- an opening room") %></div>
+    <div class="k">inside</div>
+    <div class="v"><%= debug_value(@kind.inside, absent: "no inside") %></div>
+    <div class="k">population</div>
+    <div class="v"><%= debug_value(@kind.population, absent: "the engine rolls one") %></div>
+    <div class="k">danger</div>
+    <div class="v"><%= debug_value(@kind.danger, absent: "the engine rolls one") %></div>
+  </div>
+</div>
+
+<h2>draw one</h2>
+<p class="note">
+  One draw is a look and not a measurement &mdash; <code>EVALUATION.md</code>
+  opens by saying two identical runs disagree by more than most claimed
+  improvements, which is why the thing with a rate on it is the KIND. Each draw
+  runs <code>Location::Generator#realize!</code> whole against a rolled-back copy
+  of <%= @kind.world %> and <span class="warn">makes real model calls</span>.
+</p>
+<%= button_to "draw a sample", lab_kind_samples_path(@kind), method: :post %>
+
+<h2>the hit rate</h2>
+<% if @kind.declared.empty? %>
+  <p class="absent">
+    (no expectation declared, so there is nothing to score. Say what you think the
+    picks should be below &mdash; it costs nothing and it scores every sample
+    already drawn.)
+  </p>
+<% else %>
+  <p class="note">
+    <%= pluralize(@hit_rate.drawn, "draw") %>,
+    <%= @hit_rate.failed %> failed,
+    <%= @hit_rate.judged %> judged.
+    <%= Lab::Realization::MIN_DRAWS %> draws of one kind is where a rate stops
+    being printed as unestablished.
+  </p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>pick</th><th>you expect</th><th>hit</th><th>reading</th></tr></thead>
+      <tbody>
+        <% @hit_rate.figures.each do |figure| %>
+          <tr>
+            <td><%= figure.name.tr("_", " ") %></td>
+            <td><%= figure.allowed.join(", ") %></td>
+            <td><%= figure.judgeable? ? figure.fraction : "&mdash;".html_safe %></td>
+            <td>
+              <% if !@kind.answerable?(figure.pick) %>
+                <span class="absent">
+                  (never answered for this kind &mdash;
+                  <%= figure.pick.per_exit? ? "a laid-out place makes no exits call" : "the parameters block is offered only to a building" %>)
+                </span>
+              <% elsif !figure.judgeable? %>
+                <span class="absent">(nothing drawn has answered it yet)</span>
+              <% elsif !figure.established? %>
+                <span class="absent">not established</span>
+              <% else %>
+                established
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+        <% if (overall = @hit_rate.overall) %>
+          <tr>
+            <td><strong>every declared pick</strong></td>
+            <td><span class="absent">(all of the above)</span></td>
+            <td><%= overall.judgeable? ? overall.fraction : "&mdash;".html_safe %></td>
+            <td>
+              <% if !overall.judgeable? %>
+                <span class="absent">
+                  (no draw has answered all of them at once&mdash;
+                  <%= @kind.unanswerable.any? ? "#{@kind.unanswerable.map(&:name).join(", ")} cannot be answered for this kind" : "nothing drawn yet" %>)
+                </span>
+              <% elsif !overall.established? %>
+                <span class="absent">not established</span>
+              <% else %>
+                established
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%# THE MISSES, READABLE RATHER THAN ONLY COUNTED. A low rate has two
+      explanations -- a misaligned prompt, or an unreasonable expectation for the
+      teaser typed -- and the only way to tell them apart is to read the prompt
+      that was actually sent beside the pick that came back. That is on the
+      sample page, which each miss links to. %>
+  <% @hit_rate.figures.select { |figure| figure.misses.any? }.each do |figure| %>
+    <h3>misses &mdash; <%= figure.name.tr("_", " ") %></h3>
+    <ul class="evidence">
+      <% figure.misses.each do |miss| %>
+        <li>
+          <%= link_to "sample ##{miss.sample.id}", lab_sample_path(miss.sample) %>
+          picked <%= miss.made.map { |value| value.presence || "nothing at all" }.map(&:inspect).join(", ") %>
+          <%= debug_verdict(miss.sample.verdict) %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <% if @hit_rate.verdicts.any? %>
+    <h3>your verdicts on this kind</h3>
+    <p class="note">
+      Not folded into the hit rate and not comparable with it: one says whether the
+      picks were what you asked for, the other whether the room was any good.
+    </p>
+    <p>
+      <% Lab::Realization::Sample::VERDICTS.each do |verdict| %>
+        <%= debug_verdict(verdict) %> <%= @hit_rate.verdicts[verdict].to_i %>&nbsp;&nbsp;
+      <% end %>
+    </p>
+  <% end %>
+<% end %>
+
+<h2>the samples</h2>
+<% if @samples.empty? %>
+  <p class="absent">(none drawn yet)</p>
+<% else %>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>drawn</th><th>calls</th><th>tokens</th><th>seconds</th>
+          <th>flags</th><th>verdict</th><th>answered by</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @samples.each do |sample| %>
+          <tr>
+            <td><%= link_to sample.id, lab_sample_path(sample) %></td>
+            <td><%= sample.created_at.utc.strftime("%Y-%m-%d %H:%M") %></td>
+            <td><%= sample.failed? ? tag.span("FAILED", class: "warn") : sample.reading.calls %></td>
+            <td><%= sample.row["input_tokens"] %> / <%= sample.row["output_tokens"] %></td>
+            <td><%= sample.row["seconds"] %></td>
+            <td><%= sample.flags.size %></td>
+            <td><%= debug_verdict(sample.verdict) || tag.span("(unjudged)", class: "absent") %></td>
+            <td><%= debug_value(sample.row["answered_by"]) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<h2>the expectation</h2>
+<%= render "lab/kinds/form", kind: @kind %>
+
+<h2>be rid of it</h2>
+<p class="note">
+  A mis-typed kind is noise in the measurement, and its samples were drawn
+  against words you did not mean. This takes both.
+</p>
+<%= button_to "delete this kind and its #{pluralize(@samples.size, "sample")}",
+              lab_kind_path(@kind), method: :delete %>

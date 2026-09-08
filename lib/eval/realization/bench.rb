@@ -168,6 +168,50 @@ class Eval::Realization::Bench
     )
   end
 
+  # THE FACTS FIRST, THEN THE CALL. The order matters: `#facts_before` asks the
+  # cast registry for its slots, which ROLLS the race, age and sex of everybody
+  # this call may name and memoizes them -- the same memo
+  # `Location::Generator#people_instructions` reads when it builds the prompt a
+  # moment later. Reading them afterwards would be reading them; reading them
+  # first is what guarantees the prompt and the stored facts describe one set of
+  # people.
+  #
+  # PUBLIC, AND FOR ONE CALLER: `Lab::Realization::Runner`, which stages a stub
+  # the captain typed rather than a case out of the corpus and then wants
+  # everything from here on to be identical. A second implementation of what one
+  # realization WAS -- the order of the facts, the receipts read off `messages`,
+  # what the registries made of the answer -- is precisely what this codebase
+  # refuses, and it is the one thing that would let a lab sample and a bench
+  # reading disagree about a call they both watched. So the seam is here, at the
+  # narrowest point that is a whole realization.
+  def build(kase, standing, arm, rep)
+    facts = facts_before(kase, standing)
+    before = standing.story.locations.pluck(:name)
+
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    error = nil
+    begin
+      standing.generator.realize!
+    rescue StandardError => e
+      error = "#{e.class}: #{e.message}"
+    end
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+
+    receipts = receipts_for(standing.generator)
+
+    Reading.new(
+      kase: kase, arm: arm.id, rep: rep, facts: facts,
+      answers: receipts[:answers], after: after(standing, before),
+      # A FAILED CALL HAS NO LATENCY, deliberately: how long it took to fail is
+      # a fact about the failure and not about how fast this model answers.
+      seconds: (elapsed if error.nil?),
+      input_tokens: receipts[:input_tokens], output_tokens: receipts[:output_tokens],
+      calls: receipts[:calls], answered_by: receipts[:answered_by],
+      instructions: receipts[:instructions], prompts: receipts[:prompts],
+      missing_fields: receipts[:missing_fields], cap_hits: receipts[:cap_hits], error: error
+    )
+  end
+
   private
 
   # ONE REALIZATION BEFORE THE MEASUREMENT, TIMED AND THEN SET ASIDE. A real
@@ -204,41 +248,6 @@ class Eval::Realization::Bench
   # nothing left to read.
   def read(kase, arm, rep)
     Eval::Realization::Stage.open([ kase ]) { |stages| build(kase, stages.fetch(kase.id), arm, rep) }
-  end
-
-  # THE FACTS FIRST, THEN THE CALL. The order matters: `#facts_before` asks the
-  # cast registry for its slots, which ROLLS the race, age and sex of everybody
-  # this call may name and memoizes them -- the same memo
-  # `Location::Generator#people_instructions` reads when it builds the prompt a
-  # moment later. Reading them afterwards would be reading them; reading them
-  # first is what guarantees the prompt and the stored facts describe one set of
-  # people.
-  def build(kase, standing, arm, rep)
-    facts = facts_before(kase, standing)
-    before = standing.story.locations.pluck(:name)
-
-    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    error = nil
-    begin
-      standing.generator.realize!
-    rescue StandardError => e
-      error = "#{e.class}: #{e.message}"
-    end
-    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
-
-    receipts = receipts_for(standing.generator)
-
-    Reading.new(
-      kase: kase, arm: arm.id, rep: rep, facts: facts,
-      answers: receipts[:answers], after: after(standing, before),
-      # A FAILED CALL HAS NO LATENCY, deliberately: how long it took to fail is
-      # a fact about the failure and not about how fast this model answers.
-      seconds: (elapsed if error.nil?),
-      input_tokens: receipts[:input_tokens], output_tokens: receipts[:output_tokens],
-      calls: receipts[:calls], answered_by: receipts[:answered_by],
-      instructions: receipts[:instructions], prompts: receipts[:prompts],
-      missing_fields: receipts[:missing_fields], cap_hits: receipts[:cap_hits], error: error
-    )
   end
 
   # THE WORLD AS THE RECORDS HELD IT BEFORE THE CALL, and every list is asked of

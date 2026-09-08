@@ -1,0 +1,46 @@
+<%# HIS JUDGEMENT OF ONE SAMPLE. `Lab::Realization::Sample`'s header is the
+    design: three words, ordinal, one word each, read off
+    `Playthrough::Feedback::VERDICTS` rather than spelled again -- and six
+    aspects for what a bare verdict cannot say about a dozen decisions in one
+    answer.
+
+    A PLAIN FORM AND NOT A TURBO STREAM. The play page's verdict buttons are a
+    stream because a turn is a job broadcasting into a log and a reload would
+    interrupt the game; nothing is in flight here, so a POST and a redirect is
+    the honest shape and one less thing to keep working. %>
+<%= form_with url: lab_sample_path(sample), method: :patch, class: "lab-form" do |form| %>
+  <div class="panel">
+    <div class="fields">
+      <div class="k">verdict</div>
+      <div class="v">
+        <% Lab::Realization::Sample::VERDICTS.each do |verdict| %>
+          <label class="lab-choice">
+            <%= radio_button_tag :verdict, verdict, sample.verdict == verdict %>
+            <%= debug_verdict(verdict) %>
+          </label>
+        <% end %>
+        <label class="lab-choice">
+          <%= radio_button_tag :verdict, "", sample.verdict.blank? %>
+          <span class="absent">(none)</span>
+        </label>
+      </div>
+
+      <div class="k">
+        which part
+        <br><span class="absent">(only on a weak or a bad; none of them is a complete answer)</span>
+      </div>
+      <div class="v">
+        <% Lab::Realization::Sample::ASPECTS.each do |aspect| %>
+          <label class="lab-choice">
+            <%= check_box_tag "aspects[]", aspect, sample.aspect?(aspect), id: "aspect_#{aspect}" %>
+            <%= aspect.tr("_", " ") %>
+          </label>
+        <% end %>
+      </div>
+
+      <div class="k">note</div>
+      <div class="v"><%= text_area_tag :note, sample.note, rows: 3, cols: 64 %></div>
+    </div>
+    <p><%= submit_tag sample.verdict? ? "amend the verdict" : "record the verdict" %></p>
+  </div>
+<% end %>

@@ -70,10 +70,20 @@ class Location::Generator
   # `Location::Interior` lays out a building nobody named, and a row with no word
   # is one the engine rolls one for (`Location::Population`). Only the exits call
   # has a word, and `#connect_exit!` is what passes it.
-  def self.create_stub!(story, name:, teaser:, population: nil)
+  # AND THE FOOTPRINT, WHEN THE PICK THAT NAMED IT SAID IT HAS AN INSIDE. Rolled
+  # here rather than by the caller because it is the one draw a room being born
+  # makes about its own extent, and a second place that knew how to make it would
+  # be a second place to forget the axis: `Roll::FOOTPRINT` is its own kind, so
+  # the sides are drawn independently of everything else keyed on this row (see
+  # `Roll`'s header for what an axis buys). Nil for every caller with no band --
+  # `Location::Interior`'s rooms, `Quest::Deadline`'s places and every stub named
+  # by an answer that picked `no inside`.
+  def self.create_stub!(story, name:, teaser:, inside: nil, population: nil)
     room = story.locations.create!(name: name, teaser: teaser, detail_level: :stub,
                                    danger: Location::Danger.for_a_new_room(story),
                                    population: population)
+    sides = Location::Parameters.from("inside" => inside).footprint(footprint_rng(room))
+    room.update!(width: sides.first, depth: sides.last) if sides
     # AND IF THE STORY'S ARC WAS WAITING FOR A PLACE BY THIS NAME, IT NOW HAS
     # ONE. Binding is a side effect of the room being born and never a
     # condition of it (`Quest::Binder`) -- so a model naming an exit, a world
@@ -82,6 +92,14 @@ class Location::Generator
     # `exists?` and stops.
     Quest::Binder.bind!(room)
     room
+  end
+
+  # THE GENERATOR THE SIDES ARE DRAWN FROM, and it is keyed on the ROW because a
+  # footprint is a fact about this room and nothing else -- unlike
+  # `Location::Population`, which is keyed on the name for reasons its own
+  # `.generator_for` gives at length.
+  def self.footprint_rng(room)
+    Roll.generator(story: room.story_id, sequence: room.id, kind: Roll::FOOTPRINT)
   end
 
   # Description and lore, then the stub exits leading out -- saved in that
@@ -1156,11 +1174,12 @@ class Location::Generator
   # world's parameter and this does not overrule one (`Location::Interior`'s
   # rule). `#connect_exit!` reaches here only when the name resolved to nothing.
   #
-  # SEEDED ON THE ROW'S OWN ID, on its OWN AXIS. `Roll::FOOTPRINT` rather than
-  # `INTERIOR`'s: the footprint is drawn before the layout and decides what the
-  # layout has to divide, so drawing both from one seed would be one roll
-  # deciding twice. See `Roll`'s header for what an axis buys.
-  # AND THE WORD FOR HOW POPULATED IT IS, IF THE ANSWER CARRIED ONE. The
+  # THE TWO FACTS AN ANSWER MAY CARRY ABOUT A PLACE IT IS NOT DESCRIBING ARE
+  # SIMPLY HANDED ON -- `.create_stub!` is where a room being born is made, and
+  # the footprint roll lives there so the lab and `Quest::Deadline` reach it
+  # too. What is left here is why the exits call is the one asked.
+  #
+  # THE WORD FOR HOW POPULATED IT IS, IF THE ANSWER CARRIED ONE. The
   # captain's ruling of 2026-09-07 -- the narrator picks how populated a place is
   # from a closed list -- and this is the moment that pick is kept:
   # `Location::Population` needs the word before the room's OWN detail prompt is
@@ -1180,14 +1199,8 @@ class Location::Generator
   # verify half; sanitizing it to nil first would turn a wrong answer into a
   # failed save of the whole room.
   def create_stub!(name, teaser, inside: nil, population: nil)
-    room = self.class.create_stub!(story, name: name, teaser: teaser, population: population)
-    sides = Location::Parameters.from("inside" => inside).footprint(footprint_rng(room))
-    room.update!(width: sides.first, depth: sides.last) if sides
-
-    room
+    self.class.create_stub!(story, name: name, teaser: teaser, inside: inside, population: population)
   end
-
-  def footprint_rng(room) = Roll.generator(story: story.id, sequence: room.id, kind: Roll::FOOTPRINT)
 
   # THE WORD THIS ANSWER PICKED FOR THAT PLACE, or nil for anything the table has
   # no band for. A word outside the enum is a model ignoring a closed list, and

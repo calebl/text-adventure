@@ -50,5 +50,24 @@ Rails.application.routes.draw do
   # `rake game:list` to type the URL directly.
   get "stories/:story_id/map", to: "map#show", as: :story_map
 
+  # THE REALIZATION LAB -- a kind of place typed, drawn, watched in sequence,
+  # judged, and counted against what the captain said the picks should be.
+  #
+  # Drawn unconditionally and gated in the controllers, like the debug surface
+  # above and on the same flag (`Playthrough::Debug.enabled?`), so the path
+  # helpers exist in every environment and the pages exist in none but the ones
+  # that flag allows.
+  #
+  # THE ONE THING THESE ROUTES ENFORCE is that a GET never buys a model call:
+  # drawing a sample is `POST /lab/kinds/:kind_id/samples` and nothing else in
+  # the app reaches `Lab::Realization::Runner`. `Lab::Realization`'s header is
+  # the design; `Lab::SamplesController`'s says why the spend is a POST.
+  namespace :lab do
+    resources :kinds, only: [ :index, :show, :create, :update, :destroy ] do
+      resources :samples, only: [ :create ]
+    end
+    resources :samples, only: [ :show, :update ]
+  end
+
   root "playthroughs#index"
 end

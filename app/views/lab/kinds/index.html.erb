@@ -1,0 +1,53 @@
+<%# THE REALIZATION LAB, FRONT DOOR: the kinds already typed, and the form for
+    one more. `Lab::Realization`'s header is the design.
+
+    THE FORM IS FOUR PARAMETERS AND SEVEN EXPECTATIONS AND NOT ONE PROMPT FIELD.
+    See that header for why a prompt box here would be a second prompt source
+    with no baseline. %>
+<%= render "lab/styles" %>
+
+<h1>the realization lab</h1>
+<p class="nav">
+  <%= link_to "&larr; the stories".html_safe, root_path %>
+  &nbsp;&middot;&nbsp; one room built from a kind of place you type, on a copy of
+  a world that is rolled back afterwards
+  &nbsp;&middot;&nbsp; <span class="warn">drawing a sample spends money</span>
+</p>
+
+<h2>the kinds</h2>
+<% if @kinds.empty? %>
+  <p class="absent">(none yet &mdash; type one below)</p>
+<% else %>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>kind</th><th>world</th><th>inside</th><th>danger</th>
+          <th>drawn</th><th>judged</th><th>expects</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @kinds.each do |kind| %>
+          <tr>
+            <td><%= link_to kind.name, lab_kind_path(kind) %></td>
+            <td><%= kind.world %></td>
+            <td><%= debug_value(kind.inside, absent: "no inside") %></td>
+            <td><%= debug_value(kind.danger, absent: "rolled") %></td>
+            <td><%= kind.samples.size %></td>
+            <td><%= kind.samples.count(&:verdict?) %></td>
+            <td>
+              <% if kind.declared.empty? %>
+                <span class="absent">(nothing &mdash; nothing to score)</span>
+              <% else %>
+                <%= kind.declared.map(&:name).join(", ") %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<h2>a new kind</h2>
+<%= render "lab/kinds/form", kind: @kind %>

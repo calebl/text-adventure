@@ -170,6 +170,7 @@ Read the header of the file named, not a summary of it.
 | Which beats one game has reached, which of several endings it got, and who writes the last paragraph | `app/models/playthrough/arc.rb`, `quest/outcome.rb` |
 | Where narration contradicts the records | `app/models/story/audit.rb` |
 | The scoreboard, its corpora and its baseline | `app/models/story/scoreboard.rb` |
+| Where a kind of place is typed, drawn and scored against what he expects | `app/models/lab/realization.rb` |
 | Re-seeding a world somebody has played | `lib/world_seed/loader.rb`, `item/template_refresh.rb` |
 | Playing a story again from its beginning | `app/models/story/snapshot.rb`, `story/fork.rb` |
 | A database that outlives its schema | `app/models/story/doctor.rb`, `story/repair.rb` |
