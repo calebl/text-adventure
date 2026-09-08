@@ -180,6 +180,68 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
     end
   end
 
+  # WHERE EVERY ROOM OF A BUILDING IS, which is what makes a stored row
+  # DRAWABLE (`Lab::Realization::Plan`). Read off `Location`'s own `x` and `y`
+  # and never recomputed, and the doors are the ones the layout actually opened
+  # -- adjacency is not a door, so a drawing derived from the boxes would show a
+  # building `Location::Interior` refused to build.
+  test "a laid-out place records where each of its rooms is and which of them have doors between them" do
+    laid_out do |standing, place|
+      rooms = standing.rooms_laid_out
+      records = place.child_locations.order(:id).to_a
+
+      assert_equal records.size, rooms.size
+      assert_equal (0...records.size).to_a, rooms.map { |room| room["index"] }
+      rooms.zip(records).each do |stored, record|
+        assert_equal record.x, stored["x"], "#{record.name} is stored at the wrong x"
+        assert_equal record.y, stored["y"], "#{record.name} is stored at the wrong y"
+        assert_equal record.z, stored["storey"]
+        assert_equal record.name, stored["name"]
+      end
+    end
+  end
+
+  # A DOOR IS TWO ROWS, SO BOTH ENDS NAME IT. A one-sided entry would draw a
+  # door on one room and not on its neighbour, which is a drawing that cannot be
+  # read against itself.
+  test "the doors a room records are recorded from the other side too" do
+    laid_out do |standing, _place|
+      rooms = standing.rooms_laid_out
+
+      rooms.each do |room|
+        room["doors_to"].each do |far|
+          assert_includes rooms[far]["doors_to"], room["index"],
+                          "#{room["name"]} says it has a door to #{rooms[far]["name"]} and that room does not"
+        end
+        room["stairs_to"].each do |far|
+          assert_includes rooms[far]["stairs_to"], room["index"]
+        end
+      end
+    end
+  end
+
+  # A DOOR AND A STAIR ARE TOLD APART BY `LocationConnection#travel_method` and
+  # never by the two storeys differing, which would be a second answer to what a
+  # stair is. Every entry in either list is a sibling: a doorway out of the
+  # building has no index here, which is what keeps `doors` the honest total.
+  test "a stair is not a door, and neither list ever names a room outside the building" do
+    laid_out do |standing, _place|
+      rooms = standing.rooms_laid_out
+      indices = rooms.map { |room| room["index"] }
+
+      # NOT VACUOUS: the fixture really has rooms with doors between them, so a
+      # regression that emptied both lists would fail here rather than pass
+      # silently.
+      assert_operator rooms.sum { |room| room["doors_to"].size }, :>, 0
+
+      rooms.each do |room|
+        assert_empty room["doors_to"] & room["stairs_to"]
+        assert_empty (room["doors_to"] + room["stairs_to"]) - indices
+        assert_operator room["doors"], :>=, room["doors_to"].size + room["stairs_to"].size
+      end
+    end
+  end
+
   test "nothing survives the staging" do
     before = [ Story.count, Location.count, Character.count, Item.count, LocationConnection.count ]
     stage(kase(room: "The Long Hallway", reached_from: "Ward Office 12", absent: [ "The Supply Closet" ])) { |_| }
@@ -196,6 +258,24 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
       absent: absent, unwritten: unwritten, danger: danger, expects_new_ground: true,
       shape: "corridor", why: "a test"
     )
+  end
+
+  # A PLACE WITH AN INSIDE, STOOD UP IN A ROLLED-BACK COPY OF ITS WORLD. The
+  # Custom House is the one building in the checked-in worlds
+  # (`db/seeds/worlds`), and the standing is built on the PLACE rather than on
+  # one of its rooms because `#rooms_laid_out` is a reading of a place's
+  # children.
+  def laid_out
+    Eval::Concurrency.rolled_back do
+      story = Eval::Realization::Stage.load_world!("The Quay House", title: "The Quay House (a test)")
+      place = story.locations.find_by!(name: "The Custom House")
+      standing = Eval::Realization::Stage::Standing.new(
+        kase: kase(room: place.name, story: "The Quay House"), story: story,
+        location: place, generator: Location::Generator.new(place)
+      )
+
+      yield standing, place
+    end
   end
 
   def stage(kase, &block)

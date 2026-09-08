@@ -161,11 +161,53 @@ class Eval::Realization::Stage
     # STORED PER ROOM RATHER THAN SUMMARISED, because the figure the captain
     # asked for is the share of rooms carrying a hazard BY STOREY and a summary
     # taken here could not be re-cut later. It is a handful of rows.
+    #
+    # AND SINCE SLICE 2 IT CARRIES WHERE EACH ROOM IS, which is what makes a
+    # stored row DRAWABLE (`Lab::Realization::Plan`). `x` and `y` are the
+    # engine's own columns, read off the row `Location::Interior` wrote and never
+    # recomputed anywhere -- the captain's rule for a number, and the reason the
+    # floor plan on the lab page cannot disagree with the table beside it.
+    #
+    # `index` IS THE ROOM'S PLACE IN THIS LIST AND IS THE ONLY WAY A DOOR NAMES A
+    # ROOM. A database id would be an id from a transaction that was rolled back,
+    # and a name is prose a model may have written; the position in an `order(:id)`
+    # list is neither, and it is the same list the reader of the row iterates. So
+    # `doors_to` and `stairs_to` hold indices into this array and nothing else.
+    #
+    # TWO KEYS AND NOT ONE, because a door and a stair are drawn differently and
+    # the split is read off `LocationConnection#travel_method` rather than
+    # derived from the two storeys differing. Deriving would be a second answer
+    # to what a stair is; `Location::Interior::STAIRS` is the first.
+    #
+    # ADJACENCY IS NOT A DOOR, which is why this has to be stored at all rather
+    # than worked out from the boxes: `Location::Interior` opens a serpentine
+    # backbone and then throws for every other shared wall, so two rooms that
+    # touch usually have no door between them.
+    #
+    # A CONNECTION OUT OF THE BUILDING IS LEFT OUT -- `#open_the_way_in!` moves
+    # the stub's own doorways onto a room of it, and that far end is not a
+    # sibling, so it has no index here. The `doors` count still holds it, which
+    # is what keeps the count the honest total it always was.
+    #
+    # NO FOOTPRINT IS STORED BESIDE THEM. The rooms tile the footprint exactly
+    # (`Location::Interior`'s doctrine), so their own union IS the plane they are
+    # read in and a second record of it could only disagree.
     def rooms_laid_out
-      location.child_locations.order(:id).map do |room|
-        { "storey" => room.z, "danger" => room.danger, "hazard" => room.hazard,
+      rooms = location.child_locations.order(:id).to_a
+      index_of = rooms.each_with_index.to_h { |room, index| [ room.id, index ] }
+
+      rooms.each_with_index.map do |room, index|
+        out = LocationConnection.from_location(room).to_a
+        siblings = out.select { |row| index_of.key?(row.connected_location_id) }
+        walked, climbed = siblings.partition { |row| row.travel_method != Location::Interior::STAIRS }
+
+        { "index" => index, "name" => room.name, "storey" => room.z,
+          "x" => room.x, "y" => room.y,
+          "danger" => room.danger, "hazard" => room.hazard,
           "hazard_die" => room.hazard_die, "width" => room.width, "depth" => room.depth,
-          "doors" => LocationConnection.from_location(room).count }
+          "doors" => out.size,
+          "doors_to" => walked.map { |row| index_of.fetch(row.connected_location_id) }.uniq.sort,
+          "stairs_to" => climbed.map { |row| index_of.fetch(row.connected_location_id) }.uniq.sort }
       end
     end
 

@@ -63,6 +63,56 @@ class Lab::SamplesControllerTest < ActionDispatch::IntegrationTest
     assert_match "there was no call", response.body
   end
 
+  # THE SHAPE, WHICH IS WHAT SLICE 2 BUYS HIM: *he looks at a building's shape
+  # instead of reading its table.* Drawn through the map page's own partial off
+  # `Lab::Realization::Plan`, so every rectangle here is the stored row at
+  # `Story::Map::PACE` pixels to the pace.
+  test "a buildings draw is drawn as a floor plan, one panel a storey, off the stored positions" do
+    kind = create(:lab_realization_kind, :a_building)
+    sample = create(:lab_realization_sample, :a_building_with_a_plan, kind: kind)
+
+    get lab_sample_path(sample)
+
+    assert_response :success
+
+    # ONE PANEL PER STOREY, and this building has two.
+    assert_select "svg.map-plan", 2
+
+    # EVERY RECTANGLE IS THE STORED ROW. The loading floor is at 0,0 and two
+    # paces square; the salt store is two paces east of it.
+    assert_select "svg.map-plan rect.room[x=?][y=?][width=?][height=?]",
+                  "0", "0", (2 * Story::Map::PACE).to_s, (2 * Story::Map::PACE).to_s
+    assert_select "svg.map-plan rect.room[x=?][y=?]", (2 * Story::Map::PACE).to_s, "0"
+
+    # DANGER AND HAZARD ARE LEGIBLE ON THE DRAWING and not only in the table.
+    assert_select "svg.map-plan rect.room.dangerous"
+    assert_select "svg.map-plan rect.room.hazardous"
+
+    # THE DOORS THE LAYOUT OPENED, and the stair joining the two storeys -- once
+    # on each of them.
+    assert_select "svg.map-plan line.door", 4
+    assert_select "svg.map-plan text.stair", 2
+
+    # AND THE POSITIONS ARE PRINTED BESIDE THE PICTURE, so the two can be read
+    # against each other.
+    assert_select "table td", text: "The Loading Floor"
+  end
+
+  # A SAMPLE BOUGHT BEFORE THE POSITIONS WERE STORED IS NOT DRAWN AT ALL, and
+  # the page says why rather than rendering a building nobody generated --
+  # `Eval::Realization::Scorer::Reading#records_the_way_back?`'s rule.
+  test "a building stored before x and y renders no plan and says so" do
+    kind = create(:lab_realization_kind, :a_building)
+    sample = create(:lab_realization_sample, :a_building, kind: kind)
+
+    get lab_sample_path(sample)
+
+    assert_response :success
+    assert_select "svg.map-plan", 0
+    assert_select "table td span.absent", text: "(not recorded)"
+    assert_match "before <code>x</code> and", response.body
+  end
+
   test "a page for a failed draw says which failure it was" do
     sample = create(:lab_realization_sample, :failed)
 
