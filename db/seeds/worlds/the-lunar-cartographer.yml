@@ -32,6 +32,19 @@
 # Nothing fights yet -- see `lib/engine_sweep/scripts/a-monster-in-a-room.yml`,
 # which walks up to him and asserts that the records say what he is.
 #
+# AND THE ONE SEEDED WORLD WITH A `schedule:` BLOCK, which is the captain's Call
+# 8 of 2026-09-06 -- *"some events will need to happen at a particular time"* --
+# in the world that already had a clock worth reading. Two rows, and they are
+# two rows on purpose: one comes due five story minutes in, which is the
+# building finishing what the preface has it doing in its first sentence, and
+# one comes due in the morning, which is Grenn's note about the rent. The engine
+# fires them off `Story#clock` (`Story#catch_up_world!`) and NOTHING NARRATES
+# THEM -- a scheduled row is a record something later reads, not a line the
+# player is told, which is `WorldEvent`'s standing rule.
+# `lib/engine_sweep/scripts/a-scheduled-event-comes-due.yml` walks the short one
+# to its hour; the long one is still pending at the end of every walk, which is
+# what a bomb a week out looks like in the records.
+#
 # See db/seeds/worlds/README.md for the format and the rules the loader checks.
 #
 # Loaded offline by db/seeds.rb. No model call, no API key, no network.
@@ -244,3 +257,8 @@ mechanics:
   cadence: nightly
   description: |-
     At midnight Nocturna floods the city and the Larkspur Quarter travels. The boarding house, its hallway, the lane below it and the rooftops above it go as one piece with their own doors intact -- old Grenn laid his foundation stones loose for exactly this -- and come to rest against a different part of Nocturnis. The fixed ground does not move: the Celestial Spire, the Sovereign's Circle and the bell tower of Saint Aravel are where they have always been. What changes is which of them you can walk to from here, and a map of last night is a map of nowhere.
+schedule:
+- summary: The building finishes settling into its new configuration for the night, and the plaster stops falling from the ceiling of Room 3.
+  after_minutes: 5
+- summary: Grenn Ollivar comes for the overdue rent, and the table and the instruments go out into Mournwell Lane.
+  after_minutes: 480

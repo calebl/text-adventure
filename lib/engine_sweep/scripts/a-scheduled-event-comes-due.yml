@@ -1,0 +1,127 @@
+# A THING THIS WORLD DECIDED WOULD HAPPEN, HAPPENING.
+#
+# THE CAPTAIN'S CALL 8, 2026-09-06: *"one event stream could work but some
+# events will need to happen at a particular time, like if we have story where a
+# bomb is going to go off or a volcano is going to explode 1 week in the
+# future."* `the-lunar-cartographer.yml` carries two such rows in its
+# `schedule:` block -- the building finishing its settling five story minutes
+# in, and Grenn coming for the rent in the morning -- and this walk takes the
+# story's clock past the first one and nowhere near the second.
+#
+# THE THREE FACTS IT PINS, in order:
+#
+#   A SCHEDULED ROW IS ON THE STREAM FROM THE MOMENT THE WORLD IS LOADED, and
+#   it has not happened. `scheduled: 2` on the first line of a world nobody has
+#   played: the file wrote two statements about the future, and neither is a
+#   thing the world has done.
+#
+#   A TURN IS NOT AN HOUR. Walking two rooms fires nothing, because a scheduled
+#   row is due on `Story#clock` and the offline mode writes no prose, so the
+#   story's clock has not moved. What fires an event is TIME, and this is the
+#   line that says so.
+#
+#   AND THE HOUR FIRES IT, ONCE. The fight in the bell tower writes the one kind
+#   of `Scene` this mode does write (`Playthrough::Fight`, one row when the
+#   exchange ends, its `story_timestamp` advanced by the rounds it took), so the
+#   clock moves past 23:05 and the next turn's `Story#catch_up_world!` fires the
+#   row that was waiting there. `fired: 1`, `scheduled: 1`, and the second `look`
+#   is still `fired: 1` -- `WorldEvent#fire!` is idempotent, which is what stops
+#   a catch-up on every turn re-firing the same bomb.
+#
+# WHY THE CLOCK ONLY MOVES IN A FIGHT HERE, said out loud because it is the one
+# thing about this script that reads as a quirk. `Story#clock` is
+# `MAX(scenes.story_timestamp)` and the offline mode narrates nothing, so an
+# ordinary move writes no Scene and costs no story time. A fight is the
+# exception: it closes with ONE engine-authored Scene carrying what the exchange
+# cost. So a fight is how an offline walk buys minutes, and this is the only
+# script that wants any.
+#
+# NOTHING IS NARRATED AND NOTHING ASSERTS PROSE. A fired row writes `fired_at`
+# and nothing else -- `WorldEvent` is an audit trail and never a narration
+# source -- so what a walk can see is a COUNT, which is why `scheduled:` and
+# `fired:` are numbers in the way `blows:` is.
+story: The Lunar Cartographer
+why: the story's clock reaches a scheduled event's hour and the engine fires it, once
+steps:
+- id: two-things-are-going-to-happen-and-neither-has
+  type: look
+  why: a world nobody has played carries its whole schedule and none of its history
+  expect:
+    location: Grenn's Boarding House, Room 3 (realized)
+    present: [Grenn Ollivar]
+    scheduled: 2
+    fired: 0
+    changed: false
+    refused: false
+
+- id: a-turn-is-not-an-hour
+  type: go to the hallway
+  why: |-
+    THE SECOND FACT. The party moved and nothing came due -- a scheduled row is
+    due on the story's clock, and walking a corridor offline costs no story
+    time.
+  expect:
+    changed: true
+    location: Grenn's Boarding House hallway (stub)
+    scheduled: 2
+    fired: 0
+
+- id: into-the-tower
+  type: go to the bell
+  why: arriving is free -- the riposte runs in the room the turn began in, which was the empty stair
+  expect:
+    changed: true
+    location: The Bell of Saint Aravel (realized)
+    foes: [Marek Sollen]
+    scheduled: 2
+    fired: 0
+
+- id: one-round
+  type: attack Marek Sollen
+  why: |-
+    the only way an offline walk buys story minutes. Nothing is asserted about
+    the schedule here: whether he goes down on this round is the dice's
+    business, and the fight may therefore close on this line or on the next.
+  expect:
+    understood: attack -> Marek Sollen
+    changed: true
+    dead: false
+
+- id: patched-up
+  type: mend 20
+  why: an engine instrument is not a turn in the fiction, so nobody answers it and the party goes back to full
+  expect:
+    dead: false
+
+- id: back-down-the-stair
+  type: go to the hallway
+  why: |-
+    a fight is always escapable by leaving the room (the captain's call C1), so
+    this closes it either way -- and the closing Scene is what moves the clock.
+  expect:
+    changed: true
+    location: Grenn's Boarding House hallway (stub)
+    dead: false
+
+- id: and-the-hour-came
+  type: look
+  why: |-
+    THE WHOLE POINT. The clock is past 23:05, so `Story#catch_up_world!` fired
+    the row that was waiting there -- and only that one: Grenn is still due in
+    the morning, which is what a bomb a week out looks like in the records.
+  expect:
+    scheduled: 1
+    fired: 1
+    changed: false
+    refused: false
+
+- id: and-it-does-not-fire-twice
+  type: look
+  why: |-
+    `WorldEvent#fire!` keeps the moment it fired at, so the catch-up that runs
+    on every turn cannot re-date or re-fire it. Without that, a schedule would
+    be an event per turn for the rest of the game.
+  expect:
+    scheduled: 1
+    fired: 1
+    changed: false

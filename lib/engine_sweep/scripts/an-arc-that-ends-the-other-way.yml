@@ -1,0 +1,155 @@
+# ONE WORLD, TWO ENDINGS, AND THE ENGINE PICKED THE OTHER ONE.
+#
+# THE CLAIM THIS EXISTS TO ASSERT: **which of several endings a game reaches is
+# decided off that game's own records, and a non-default one is reachable by
+# PLAYING rather than only representable in the schema.** The captain's note of
+# 2026-09-06 -- *"multiple endings to a quest must be possible"* -- was answered
+# in `ta-story-arc` by making outcomes rows; this is the walk that makes the
+# second row happen to somebody.
+#
+# `lib/engine_sweep/scripts/two-players-of-one-arc.yml` and
+# `the-iron-gate-descends.yml` walk this same arc IN ORDER and both read
+# `rescued`, which is the default this world was built toward. This walk takes
+# the same three beats in a different order -- down into the warren and into the
+# cell first, back up for the ring last -- and reads `too-late`, because the
+# world file gives that ending `when: out_of_order` and `Playthrough::Arc` asks
+# `playthrough_beats` which order this player actually did it in.
+#
+# NO MODEL ANSWERED THAT QUESTION and no model could have: the rule is a
+# comparison of two lists of integers (`Quest::Outcome::CONDITIONS`), which is
+# the standing constraint applied to plot -- *do not ask a model what should
+# happen; ask the app*.
+#
+# AND THE ENDING SCHEDULES SOMETHING. `too-late` carries a ramification: one row
+# on the event stream three story hours out, saying the Blackfang bar the low
+# door. It is RECORD-ONLY -- nothing narrates it, nothing moves the graph for it
+# -- so what this walk pins is that reaching that ending PUT IT THERE, which is
+# `scheduled: 1` on the last line. It never fires here, and that is honest: the
+# game is over, so this world's clock has stopped.
+#
+# WHY THE BEATS CAN BE TAKEN OUT OF ORDER AT ALL. Nothing in the arc gates a
+# move -- *"it checks, it never gates"* (`Quest`) -- so the cell is walkable the
+# first time the player gets there whether or not they picked up the ring on the
+# way past. That is the design, and this walk is what makes it a fact rather
+# than a claim in a header.
+story: The Iron Gate Descends
+why: the same three beats in a different order reach the arc's other ending, and that ending schedules a ramification
+steps:
+- id: nothing-has-ended-yet
+  type: look
+  why: three bound beats, no ending, and nothing due in this world
+  expect:
+    location: Iron Gate Chamber (realized)
+    here: [iron key, prince's signet ring]
+    quest:
+      1: bound
+      2: bound
+      3: bound
+    ending: none
+    scheduled: 0
+    fired: 0
+    changed: false
+    refused: false
+
+- id: past-the-ring-and-down
+  type: go to the obsidian maw
+  why: |-
+    THE WHOLE POINT, IN ONE LINE. The ring is lying right there and this walk
+    leaves it. Nothing refuses the move, because the arc checks and never gates.
+  expect:
+    changed: true
+    location: obsidian maw (realized)
+    quest:
+      1: bound
+
+- id: and-on-into-the-tunnel
+  type: go to Blackfang Tunnel
+  expect:
+    changed: true
+    location: Blackfang Tunnel (realized)
+
+- id: in-through-the-way-in
+  type: go to Blackfang Warren room 1
+  why: beat 2 lands second in the arc and FIRST in this game
+  expect:
+    changed: true
+    location: Blackfang Warren room 1 (stub)
+    quest:
+      1: bound
+      2: reached
+      3: bound
+
+- id: through-the-guards-room
+  type: go to Blackfang Warren room 2
+  expect:
+    changed: true
+    location: Blackfang Warren room 2 (stub)
+
+- id: the-cell-with-nothing-to-show-for-it
+  type: go to the dry cell
+  why: |-
+    beat 3 reached with beat 1 still outstanding. The arc is not finished, so
+    nothing ends: `Quest#finished_by?` wants every beat, not the last one.
+  expect:
+    changed: true
+    location: the dry cell (realized)
+    present: [Prince Aurel Durn]
+    quest:
+      1: bound
+      2: reached
+      3: reached
+    ending: none
+    dead: false
+
+- id: back-through-the-warren
+  type: go to Blackfang Warren room 2
+  expect:
+    changed: true
+    location: Blackfang Warren room 2 (stub)
+
+- id: and-out-of-it
+  type: go to Blackfang Warren room 1
+  expect:
+    changed: true
+    location: Blackfang Warren room 1 (stub)
+
+- id: up-the-tunnel
+  type: go to Blackfang Tunnel
+  expect:
+    changed: true
+    location: Blackfang Tunnel (realized)
+
+- id: and-up-through-the-maw
+  type: go to the obsidian maw
+  expect:
+    changed: true
+    location: obsidian maw (realized)
+
+- id: back-where-it-started
+  type: go to Iron Gate Chamber
+  why: the ring is still lying where this walk left it -- nobody else was playing
+  expect:
+    changed: true
+    location: Iron Gate Chamber (realized)
+    here: [iron key, prince's signet ring]
+    ending: none
+
+- id: the-last-beat-is-the-first-one
+  type: take the signet ring
+  why: |-
+    EVERY BEAT REACHED, SO THE ARC CLOSES -- and it closes on `too-late` rather
+    than on the default, because the beats were reached 2, 3, 1 and the world
+    file gives that ending `when: out_of_order`. The ramification is on the
+    stream a line later than the ending and due three story hours out, so it is
+    `scheduled` and not `fired`: this game is over and its clock has stopped.
+  expect:
+    changed: true
+    carrying: [prince's signet ring]
+    quest:
+      1: reached
+      2: reached
+      3: reached
+    ending: too-late
+    scheduled: 1
+    fired: 0
+    dead: true

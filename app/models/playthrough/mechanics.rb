@@ -97,7 +97,8 @@ class Playthrough::Mechanics
   # the write, so the read-out is what the database says and not what this class
   # believed it had done.
   State = Data.define(:location, :exits, :items_here, :carried, :present, :foes, :provoked, :conditions,
-                      :condition, :character, :over, :hazard, :hazards_out, :arc) do
+                      :condition, :character, :over, :hazard, :hazards_out, :arc, :ending,
+                      :scheduled, :fired) do
     # THE WORLD'S OWN NUMBERS FOR THE PLAYER, one line's worth. Read straight off
     # the character, because that is where they live: a stat block and three
     # abilities are the STORY's (`Character`'s header), and printing them beside
@@ -132,6 +133,15 @@ class Playthrough::Mechanics
     # but one -- so no existing read-out gains a line.
     def arc_lines
       arc.map { |position, state, summary| "#{position}. #{state} -- #{summary}" }
+    end
+
+    # `2 due, 1 fired`, or nothing at all for a world with no schedule -- which
+    # is every world that has neither a `schedule:` block nor an ending that
+    # earned a ramification, so no existing read-out gains a row.
+    def schedule_lines
+      return [] if scheduled.zero? && fired.zero?
+
+      [ "#{scheduled} due, #{fired} fired" ]
     end
 
     def to_s
@@ -201,7 +211,14 @@ class Playthrough::Mechanics
         # AND WHERE THE STORY IS, beat by beat -- the arc as records, which is
         # the only place the read-out says anything about plot at all. Absent
         # from every world with no arc, so nothing that had no arc gains a row.
-        [ "story", arc_lines, "this world has no arc" ]
+        [ "story", arc_lines, "this world has no arc" ],
+        # AND WHAT THE CLOCK OWES THIS WORLD, in two numbers: rows saying a
+        # thing will happen that have not yet, and rows that have. It is what
+        # `EngineSweep::Expectation`'s `scheduled:` and `fired:` assert, and it
+        # is a COUNT for their reason -- the sentence a scheduled row carries is
+        # prose, and a read-out that printed it would be narrating from the log,
+        # which `WorldEvent`'s header forbids.
+        [ "coming", schedule_lines, "nothing is due in this world" ]
       ].map { |label, values, empty| format("  %-11s %s", label, values.presence&.join(", ") || empty) }
     end
   end
@@ -440,9 +457,24 @@ class Playthrough::Mechanics
       # the one thing that evaluates a beat, so the read-out, the sweep and the
       # turn loop cannot come to three answers about whether a step is reached.
       # Empty for a world with no arc.
-      arc: arc_state
+      arc: arc_state,
+      # WHICH ENDING THIS GAME REACHED, by name, through `Playthrough::Arc` --
+      # the one reader of that question, so the read-out, the sweep and the
+      # closing scene cannot come to three answers. Nil for a game still being
+      # played and for a world with no arc.
+      ending: Playthrough::Arc.new(playthrough).ending&.quest_outcome&.name,
+      # AND WHAT THE STORY'S CLOCK STILL OWES, out of the one stream: the
+      # world's rows plus this game's own, never another game's
+      # (`WorldEvent.for_a_game`). Two counts and no sentences -- see
+      # `State#schedule_lines`.
+      scheduled: visible_events.pending.count,
+      fired: visible_events.where.not(fired_at: nil).count
     )
   end
+
+  # THE EVENT STREAM AS THIS GAME SEES IT. One relation, asked twice, so the
+  # two counts above cannot come from two different sets.
+  def visible_events = playthrough.story.world_events.for_a_game(playthrough)
 
   # `[position, "unbound" | "bound" | "reached", summary]` per beat of the main
   # arc, in order. The main arc only: a side quest is discovered rather than

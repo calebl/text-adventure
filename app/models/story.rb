@@ -89,11 +89,28 @@ class Story < ApplicationRecord
   end
 
   # Runs every world mechanic that the story's clock has passed a boundary for,
-  # and returns the WorldEvents. Cheap and idempotent: safe to call on every
-  # turn, and the only thing that has to happen for the world to stay honest
-  # after the process has been down.
+  # and fires every scheduled `WorldEvent` whose hour it has reached. Returns
+  # the WorldEvents, the mechanics' first. Cheap and idempotent: safe to call on
+  # every turn, and the only thing that has to happen for the world to stay
+  # honest after the process has been down.
+  #
+  # THE SCHEDULE IS HERE AND NOT IN THE AFTER-TURN PASS, and that is the one
+  # ordering decision on this method. A scheduled row is due on `#clock` -- the
+  # story's high-water mark, because a bomb goes off for everybody -- and this
+  # is the one place in the app where the story's clock is already caught up on
+  # every turn of both play modes (`Playthrough::Turn#play` and
+  # `Playthrough::Mechanics#run`). Firing beside `Playthrough::Arc` instead
+  # would mean two per-turn passes over one clock in two call sites, which is
+  # two places that can come to disagree about whether the world has caught up.
+  #
+  # BEFORE THE PLAYER'S LINE IS EVEN READ, which is the shape the mechanics
+  # above already have and is right for the same reason: what the world owes is
+  # settled before the exits are read, so the room the classifier resolves
+  # against is the room after the tide came in.
   def catch_up_world!
-    WorldMechanic.catch_up_story!(self)
+    now = clock
+
+    WorldMechanic.catch_up_story!(self) + world_events.due_by(now).map { |event| event.fire!(at: now) }
   end
 
   # THE ARC, or nil for a world with none -- which is every world generated

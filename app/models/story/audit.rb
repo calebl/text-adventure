@@ -597,7 +597,7 @@ class Story::Audit
   # bound is deliberately generous: a shuffle after the fact rewrites the graph
   # this check reads, whether or not it happened during the move itself.
   def graph_moved_since?(previous, scene)
-    story.world_events.of_the_world
+    story.world_events.of_the_world.happened
          .where(occurred_at: previous.story_timestamp..)
          .joins(:locations)
          .where(locations: { id: [ previous.location_id, scene.location_id ] })
@@ -1274,8 +1274,13 @@ class Story::Audit
   # happened between two scenes; a playthrough failing its quest changes no
   # geometry and touches no place, so a row for it would make the last scene of
   # a lost game read as a turn the world moved under.
+  #
+  # AND ONLY WHAT HAS ACTUALLY HAPPENED, which is `WorldEvent#happened_at` and
+  # not `occurred_at`: a scheduled row is RECORDED the moment it is written and
+  # does not happen until the engine fires it, so reading the recorded hour here
+  # would let a bomb that is still ticking excuse a stretch of quiet turns.
   def world_event_times
-    @world_event_times ||= story.world_events.of_the_world.pluck(:occurred_at).compact
+    @world_event_times ||= story.world_events.of_the_world.happened.filter_map(&:happened_at)
   end
 
   # Whoever the game believed was standing here at this moment: the cast of the

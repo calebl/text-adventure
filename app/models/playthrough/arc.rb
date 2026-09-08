@@ -51,10 +51,25 @@
 # game on this turn, and an arc that concluded before the world had finished
 # acting would hand a dead player an ending.
 #
+# --- WHICH OF SEVERAL ENDINGS, AND THE ENGINE DECIDES IT -------------------
+#
+# *"multiple endings to a quest must be possible"*, 2026-09-06. The endings are
+# `Quest::Outcome` rows and WHICH ONE a game reaches is decided here, off this
+# game's own records: **the first outcome whose condition holds wins, and the
+# default is what falling through means.** `Quest::Outcome::CONDITIONS` is the
+# closed table of rules, in `Quest::TRIGGERS`' shape; `#satisfies?` is the
+# predicate, and it is public for `#reached?`'s reason -- a read-out and a sweep
+# have to be able to state a rule's state without writing one.
+#
+# NOTHING ASKS A MODEL WHICH ENDING HAPPENED. Both rules are arithmetic over
+# rows this game already wrote -- how long it took (`slower_than`) and in what
+# order it got there (`out_of_order`) -- which is what lets an offline walk
+# reach a NON-default ending and assert it.
+#
 # --- what it may write, and what it must never -----------------------------
 #
 # IT WRITES `playthrough_beats`, `playthrough_endings`, `playthroughs.ended_at`,
-# ONE `Scene`, and ONE `WorldEvent`. It writes nothing in `quests`,
+# ONE `Scene`, and up to TWO `WorldEvent`s. It writes nothing in `quests`,
 # `quest_steps` or `quest_outcomes` -- the arc is the world's, exactly as a stat
 # block is, and `EngineSweep::Invariants#quest_unmoved` asserts that over every
 # walk.
@@ -92,6 +107,20 @@
 # is untouched: the world still permitted the ending, this player did not reach
 # it, and `Story::Doctor`'s `quest_target_unreachable` stays fatal about the
 # first while saying nothing about the second.
+#
+# AND SO DOES A PLAYTHROUGH THAT FINISHED, which is new and is the answer to a
+# question the captain asked the arc's own worker directly. `Playthrough::Ending`
+# stays the record of WHICH ending happened; the `WorldEvent` is the hook
+# something later reads -- and a stream that carried only failures would make
+# every future reader of *"what has happened in this world"* ask two questions
+# where the point of one stream is that it asks one.
+#
+# A FAILURE REACHES NO OUTCOME, and that is why it schedules no ramification:
+# an outcome is an ending the arc got to, and a game that stopped short got to
+# none. Making failure a selectable outcome is a real option the shape leaves
+# open -- a `"failed"` row in `Quest::Outcome::CONDITIONS` and nothing else
+# would move -- and it is deliberately not taken here, because an ending is the
+# paragraph a game closes on and a dead player already has one.
 class Playthrough::Arc
   attr_reader :playthrough
 
@@ -157,6 +186,25 @@ class Playthrough::Arc
   # arc waits for a ROW, and a name that matches nothing is a step whose target
   # has not been grown yet. `time_passed` is the exception and the only one --
   # it wants no row, so it is bound by construction.
+  # WHETHER THIS ENDING'S RULE HOLDS OF THIS GAME RIGHT NOW, off the records.
+  # Public for `#reached?`'s reason: the read-out and the sweep both want to
+  # state where a rule stands without writing an ending, and a predicate nothing
+  # can ask is a predicate nothing can check.
+  #
+  # AN OUTCOME WITH NO CONDITION IS NEVER SATISFIED, whatever the records say --
+  # the default is reached by falling through (`#outcome_reached`) and a
+  # non-default one with no rule is an ending nothing can select, which is a
+  # `Story::Doctor` finding rather than a thing to guess at here.
+  def satisfies?(outcome)
+    return false if outcome.nil? || !outcome.conditional?
+
+    case outcome.condition
+    when "slower_than" then slower_than?(outcome.minutes)
+    when "out_of_order" then out_of_order?(outcome.quest)
+    else false
+    end
+  end
+
   def reached?(step)
     return false if step.nil?
     return elapsed?(step) if step.time_passed?
@@ -210,7 +258,7 @@ class Playthrough::Arc
     arc = main_arc
     return nil if arc.nil? || playthrough.over? || !arc.finished_by?(playthrough)
 
-    outcome = arc.default_outcome
+    outcome = outcome_reached(arc)
     # AN ARC WITH NO ENDING TO REACH ends nothing, and says so rather than
     # inventing a sentence. `Story::Doctor`'s `quest_without_an_outcome` is
     # what reports the world; this is what stops the app closing a game with
@@ -221,10 +269,59 @@ class Playthrough::Arc
 
     Playthrough.transaction do
       Playthrough::Ending.create!(playthrough: playthrough, quest_outcome: outcome, reached_at: at)
+      record_success!(arc, outcome, at: at)
+      schedule_ramification!(outcome, at: at)
       scene = write_conclusion!(outcome, at: at)
       playthrough.update!(current_scene: scene)
       playthrough.end!(at: at)
     end
+  end
+
+  # WHICH OF SEVERAL. The first outcome whose condition holds, in the order the
+  # world wrote them, and the default when none does -- one line, because the
+  # rule is one sentence and there is to be exactly one statement of it.
+  #
+  # OVER THE LOADED ASSOCIATION rather than the `conditional` scope: `#quests`
+  # already included the outcomes, and a second query per turn to re-sort rows
+  # this object is holding is a query for nothing.
+  def outcome_reached(arc)
+    arc.outcomes.select(&:conditional?).sort_by(&:id).detect { |outcome| satisfies?(outcome) } || arc.default_outcome
+  end
+
+  # THE SECOND HALF OF *"a failed quest gets stored as an event"*, and the
+  # captain asked for it directly: a game that FINISHED writes one too. See the
+  # header -- the ending is `Playthrough::Ending`, and this is the hook.
+  def record_success!(arc, outcome, at:)
+    return nil if quest_event_recorded?
+
+    WorldEvent.create!(
+      story: playthrough.story,
+      playthrough: playthrough,
+      source: WorldEvent::QUEST,
+      occurred_at: at,
+      summary: "#{arc.title} was finished (#{outcome.name}): #{outcome.summary}"
+    )
+  end
+
+  # AND WHAT THE WORLD DOES ABOUT IT LATER. One scheduled row, `WorldEvent`'s
+  # own kind, due `ramification_minutes` after the ending -- and written with NO
+  # playthrough, because the game that reached this ending is over and a
+  # consequence hung off a stopped clock is one that can never arrive. See
+  # `Quest::Outcome`.
+  #
+  # NOTHING NARRATES IT AND NOTHING ELSE READS IT YET, which is the point: the
+  # first ramification kind is record-only, so this slice is a schema and an
+  # engine pass rather than a prompt change.
+  def schedule_ramification!(outcome, at:)
+    return nil unless outcome.schedules_a_ramification?
+
+    WorldEvent.create!(
+      story: playthrough.story,
+      source: WorldEvent::QUEST,
+      occurred_at: at,
+      scheduled_for: at + outcome.ramification_minutes.minutes,
+      summary: outcome.ramification_summary
+    )
   end
 
   # THE CLOSING SCENE, AND THE ENGINE WROTE THE WORDS. `resolved_action` is
@@ -253,7 +350,7 @@ class Playthrough::Arc
   def record_failure!
     arc = main_arc
     return [] if arc.nil? || arc.steps.empty? || ending.present?
-    return [] if failure_recorded?
+    return [] if quest_event_recorded?
 
     WorldEvent.create!(
       story: playthrough.story,
@@ -266,7 +363,12 @@ class Playthrough::Arc
     []
   end
 
-  def failure_recorded?
+  # ONE QUEST ROW PER GAME, WHICHEVER WAY THE GAME WENT. It is the same guard
+  # for the failure above and the success below, and it has to be: a game
+  # reaches one ending or none, so a second row here would be the stream saying
+  # one arc closed twice. A ramification carries no playthrough, so it is not
+  # one of these and cannot block one.
+  def quest_event_recorded?
     WorldEvent.exists?(story: playthrough.story, playthrough: playthrough, source: WorldEvent::QUEST)
   end
 
@@ -307,5 +409,32 @@ class Playthrough::Arc
     return false if start.nil? || step.minutes.nil?
 
     playthrough.story_now >= start + step.minutes.minutes
+  end
+
+  # HOW LONG THIS GAME TOOK, against the story's own beginning. `#elapsed?`'s
+  # arithmetic on `#elapsed?`'s clock, and STRICTLY later rather than at-or-
+  # later: a game that finished on the stroke of the budget was not slower than
+  # it.
+  def slower_than?(minutes)
+    start = playthrough.story.start_time
+    return false if start.nil? || minutes.nil?
+
+    playthrough.story_now > start + minutes.minutes
+  end
+
+  # WHETHER THIS GAME TOOK THE BEATS OUT OF THE ORDER THE ARC LISTS THEM IN,
+  # read off `playthrough_beats.reached_at` -- which is the record of the order
+  # this player actually did it in, and the reason a beat's moment is a per-game
+  # row rather than a column on the world's step.
+  #
+  # TWO BEATS REACHED ON ONE TURN ARE NOT OUT OF ORDER: they share a moment, so
+  # `in_story_order`'s id tie-break decides, and `#reach_due_beats!` writes them
+  # in position order -- which is the honest answer, because nothing about that
+  # turn says the player did the later one first.
+  def out_of_order?(quest)
+    positions = Playthrough::Beat.where(playthrough: playthrough, quest_step: quest.steps)
+                                 .in_story_order.includes(:quest_step).map { |beat| beat.quest_step.position }
+
+    positions != positions.sort
   end
 end

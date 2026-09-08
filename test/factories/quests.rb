@@ -77,5 +77,25 @@ FactoryBot.define do
     trait :default do
       is_default { true }
     end
+
+    # THE TWO RULES A NON-DEFAULT ENDING CAN BE SELECTED BY
+    # (`Quest::Outcome::CONDITIONS`). `minutes` is fixed for
+    # `test/factories/location_connections.rb`' reason -- a budget a die picked
+    # would make every test that walks a clock a lottery.
+    trait :slower_than do
+      condition { "slower_than" }
+      minutes { 120 }
+    end
+
+    trait :out_of_order do
+      condition { "out_of_order" }
+    end
+
+    # AND WHAT THE WORLD DOES ABOUT IT AFTERWARDS: one scheduled `WorldEvent`,
+    # two story hours after the ending.
+    trait :with_a_ramification do
+      ramification_minutes { 120 }
+      ramification_summary { "The Blackfang bar the low door, and the way down closes behind whoever took it." }
+    end
   end
 end

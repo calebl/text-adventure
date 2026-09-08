@@ -18,6 +18,27 @@ FactoryBot.define do
     # A FAILED ARC, which is the other writer of this stream. It carries no
     # mechanic and it DOES carry a playthrough, because a failure is one game's
     # and the world's own events are everybody's -- see `WorldEvent`'s header.
+    # A ROW ABOUT THE FUTURE -- the captain's Call 8. A world file writes one
+    # (`schedule:`) and so does a quest outcome's ramification; both are the
+    # same shape here, which is the whole point of one stream. `after_minutes`
+    # is fixed rather than rolled, like every other number in these files.
+    trait :scheduled do
+      world_mechanic { nil }
+      source { WorldEvent::SEEDED }
+      story { association :story }
+      occurred_at { story.start_time }
+      scheduled_for { story.start_time + 1.hour }
+      summary { "The tide comes over the quay and the low door goes under water." }
+    end
+
+    # AND ONE THE ENGINE HAS ALREADY REACHED THE HOUR OF. `fired_at` is at or
+    # after `scheduled_for` -- the clock only moves when somebody plays, so the
+    # gap is real and the column keeps it.
+    trait :fired do
+      scheduled
+      fired_at { story.start_time + 70.minutes }
+    end
+
     trait :a_failed_quest do
       world_mechanic { nil }
       source { WorldEvent::QUEST }
