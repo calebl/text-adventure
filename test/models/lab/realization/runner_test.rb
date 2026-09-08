@@ -98,7 +98,7 @@ class Lab::Realization::RunnerTest < ActiveSupport::TestCase
   test "a way back the world does not have is refused with the name in it" do
     kind = create(:lab_realization_kind, world: WORLD, reached_from: "The Drowned Compact")
 
-    error = assert_raises(Lab::Realization::Runner::Unrunnable) { draw(kind) }
+    error = assert_raises(Eval::Realization::Stage::Unstageable) { draw(kind) }
 
     assert_includes error.message, "The Drowned Compact"
   end

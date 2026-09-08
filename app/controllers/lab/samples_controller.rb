@@ -45,7 +45,7 @@ class Lab::SamplesController < ApplicationController
     sample = Lab::Realization::Runner.new(kind).draw!
 
     redirect_to lab_sample_path(sample)
-  rescue Lab::Realization::Runner::Unrunnable, Eval::Realization::Stage::Unstageable => error
+  rescue Eval::Realization::Stage::Unstageable => error
     redirect_to lab_kind_path(params[:kind_id]), alert: error.message
   end
 

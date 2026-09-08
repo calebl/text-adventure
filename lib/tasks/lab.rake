@@ -1,6 +1,14 @@
-# THE REALIZATION LAB FROM THE COMMAND LINE, AND THE ONE THING IT IS FOR.
+# THE REALIZATION LAB FROM THE COMMAND LINE, AND THE TWO THINGS IT IS FOR.
 #
 #   rake lab:realization:draw KIND=<id> N=<count> YES=1
+#   rake lab:realization:promote KIND=<id>
+#
+# THE SECOND ONE IS THE WAY OUT OF THE LAB. A kind established here is a kind he
+# has an opinion about; `promote` writes it out as an `Eval::Realization` corpus
+# case so the next prompt change is measured against that opinion, which is the
+# *"maintain alignment in the future"* half of his ask.
+# `Lab::Realization::Promotion` is the emitter and its header is why it prints
+# text rather than writing the file.
 #
 # WHY IT EXISTS, in the captain's own terms: *"I want to make sure it is picking
 # what I think it should MOST OF THE TIME."* Most of the time is a rate, a rate
@@ -34,6 +42,12 @@ namespace :lab do
     desc "Every kind in the lab, with its id and how many samples it has -- offline, free"
     task kinds: :environment do
       LabTasks.list!
+    end
+
+    desc "A scored kind, written out as a realization corpus case for you to read and commit -- " \
+         "offline, no model call, no key. Usage: rake lab:realization:promote KIND=<id>"
+    task promote: :environment do
+      LabTasks.promote!
     end
   end
 end
@@ -92,14 +106,51 @@ module LabTasks
     end
   end
 
+  # A KIND, AS A CORPUS CASE, PRINTED. It writes nothing:
+  # `test/fixtures/files/realization_corpus.yml` is a checked-in measurement
+  # input, so committing a case moves `Eval::Realization.digest` and puts the
+  # tree out of baseline until a new set is bought -- which is a spend decision
+  # and therefore a person's. `Lab::Realization::Promotion`'s header is the
+  # argument in full.
+  #
+  # FREE, AND IT IS THE ONE COMMAND IN THIS FILE THAT IS. `draw!` above buys
+  # calls; this reads rows already bought.
+  def promote!
+    kind = kind_or_abort(verb: "promote")
+    promotion = Lab::Realization::Promotion.new(kind)
+
+    puts preamble(kind)
+    puts
+    puts promotion.to_yaml
+  end
+
   private
+
+  # WHAT THE PERSON PASTING IT HAS TO KNOW, printed above the case rather than
+  # left in a file header they have no reason to open.
+  def preamble(kind)
+    <<~TEXT.rstrip
+      # #{kind}: #{kind.samples.count} drawn, #{kind.hit_rate.judged} judged.
+      #
+      # PASTE THIS UNDER `cases:` IN test/fixtures/files/realization_corpus.yml YOURSELF.
+      # This task prints and never writes: every case in that file is folded into
+      # `Eval::Realization.digest`, so committing one moves the corpus digest, and a
+      # moved digest fails `Eval::Realization::KeptSetTest` until a new baseline set
+      # is bought and `Eval::Realization::BASELINE` points at it. That is a spend
+      # decision and it is the captain's, so the last step is a person reading a diff.
+      #
+      # Then, before you commit: `bin/rails test test/lib/eval/realization/corpus_test.rb`
+      # is the offline validator, and `rake eval:realization_digest` prints where the
+      # digest landed.
+    TEXT
+  end
 
   # THE KIND, BY THE ID THE PAGE PRINTS. A missing or unknown `KIND` is a
   # person's mistake and gets a sentence naming the way to find the right one --
   # never a stack trace, and never a guess at which kind was meant.
-  def kind_or_abort
+  def kind_or_abort(verb: "draw")
     id = ENV["KIND"].presence or
-      abort "KIND=<id> is the kind to draw. `rake lab:realization:kinds` lists them, and the lab " \
+      abort "KIND=<id> is the kind to #{verb}. `rake lab:realization:kinds` lists them, and the lab " \
             "at /lab/kinds is where one is typed."
 
     Lab::Realization::Kind.find_by(id: id) or
@@ -183,7 +234,7 @@ module LabTasks
       puts format("  %3d/%-3d  sample #%-6d %-46s $%.4f so far",
                   draw, count, sample.id, headline(sample), spent)
       sample
-    rescue Lab::Realization::Runner::Unrunnable, Eval::Realization::Stage::Unstageable => error
+    rescue Eval::Realization::Stage::Unstageable => error
       abort "  #{error.message}"
     end
   end

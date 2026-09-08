@@ -242,6 +242,90 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
     end
   end
 
+  # ------------------------------------------------- a case that carries its own room
+
+  # THE PROMOTION, AT THE STAGE. A kind the captain typed in the lab is in no
+  # world file, so a case for it has no room to FIND -- and until this class
+  # could create one, a scored kind could never be re-run against a changed
+  # prompt.
+  test "a case with a teaser creates the stub the world does not have, and opens the way in" do
+    stage(typed(room: "The Drowned Counting House", reached_from: "Ward Office 12")) do |standing|
+      room = standing.location
+
+      assert_predicate room, :stub?
+      assert_equal "The Drowned Counting House", room.name
+      assert_equal "A counting house half-sunk at the river's edge.", room.teaser
+      assert_nil room.description
+      assert_equal [ "Ward Office 12" ], standing.reachable
+      assert_equal "The Unrecorded Hour", standing.story.title
+      # BOTH DIRECTIONS, because the exits prompt's dead-end sentence is about
+      # the place the player came from specifically.
+      assert_includes standing.story.locations.find_by(name: "Ward Office 12").exits, room
+    end
+  end
+
+  test "a case with a teaser is offered as a place that already exists to the rest of the world" do
+    stage(typed(room: "The Drowned Counting House", reached_from: "Ward Office 12")) do |standing|
+      assert_not_includes standing.places.map { |place| place["name"] }, "The Drowned Counting House",
+                          "the room being built is never one of the places the prompt offers"
+      assert_includes standing.taken_names, "Perrin's private index",
+                      "the world around a created stub is the world's own, read off the records"
+    end
+  end
+
+  test "the declared danger and inside band reach the created stub, and a band makes it a building" do
+    typed_case = typed(room: "The Drowned Counting House", reached_from: "Ward Office 12",
+                       danger: "dangerous", inside: "a few rooms", population: "a person or two")
+
+    stage(typed_case) do |standing|
+      assert_equal "dangerous", standing.location.danger
+      assert_equal "a person or two", standing.location.population
+      assert_predicate standing, :place?, "a footprint inside a band is what makes it a building"
+      assert_equal 0, standing.people_allowance, "a building is asked for nobody and for nothing"
+    end
+  end
+
+  test "a case with a teaser may also reach a second neighbour, and both edges are written" do
+    typed_case = typed(room: "The Drowned Counting House", reached_from: "Ward Office 12",
+                       also_reaches: [ "The Supply Closet" ])
+
+    stage(typed_case) do |standing|
+      assert_equal [ "The Supply Closet", "Ward Office 12" ], standing.reachable.sort
+      assert_equal Location::ExitsSchema::MAX_EXITS - 2, standing.exit_allowance
+    end
+  end
+
+  # AND THE ORIGINAL SHAPE IS UNTOUCHED: a case with no teaser still finds its
+  # room, and a case whose room the world lost still says which key was wrong.
+  test "a case with no teaser still finds a room the world has" do
+    stage(kase(room: "The Long Hallway", reached_from: "Ward Office 12")) do |standing|
+      assert_equal "The Long Hallway", standing.location.name
+      assert_equal "The Unrecorded Hour", standing.story.title
+    end
+  end
+
+  test "a case with a teaser whose room the world already has is refused rather than written twice" do
+    error = assert_raises(Eval::Realization::Stage::Unstageable) do
+      stage(typed(room: "The Long Hallway", reached_from: "Ward Office 12")) { |_| }
+    end
+
+    assert_includes error.message, "would write it twice"
+  end
+
+  test "a created stub's way back has to be somewhere the world really is" do
+    error = assert_raises(Eval::Realization::Stage::Unstageable) do
+      stage(typed(room: "The Drowned Counting House", reached_from: "The Boiler Landing")) { |_| }
+    end
+
+    assert_includes error.message, "has no room called \"The Boiler Landing\" (reached_from)"
+  end
+
+  test "nothing survives the staging of a created stub either" do
+    before = [ Story.count, Location.count, LocationConnection.count ]
+    stage(typed(room: "The Drowned Counting House", reached_from: "Ward Office 12")) { |_| }
+
+    assert_equal before, [ Story.count, Location.count, LocationConnection.count ]
+  end
   test "nothing survives the staging" do
     before = [ Story.count, Location.count, Character.count, Item.count, LocationConnection.count ]
     stage(kase(room: "The Long Hallway", reached_from: "Ward Office 12", absent: [ "The Supply Closet" ])) { |_| }
@@ -276,6 +360,20 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
 
       yield standing, place
     end
+  end
+
+  # A CASE THAT CARRIES ITS OWN STUB. `danger` is not optional on one -- the roll
+  # a new room would get is keyed on the story's id, which a staged copy is
+  # issued afresh on every load -- and `Eval::Realization::Corpus` refuses a
+  # typed case without it, so the default here is a declared one.
+  def typed(room:, reached_from: nil, story: "The Unrecorded Hour", also_reaches: [],
+            danger: "uneasy", inside: nil, population: nil)
+    Eval::Realization::Corpus::Case.new(
+      id: "a-typed-case", story: story, room: room,
+      teaser: "A counting house half-sunk at the river's edge.",
+      reached_from: reached_from, also_reaches: also_reaches, danger: danger, inside: inside,
+      population: population, expects_new_ground: true, shape: "lab-promoted", why: "a test"
+    )
   end
 
   def stage(kase, &block)

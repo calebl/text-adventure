@@ -180,6 +180,7 @@ Read the header of the file named, not a summary of it.
 | Where narration contradicts the records | `app/models/story/audit.rb` |
 | The scoreboard, its corpora and its baseline | `app/models/story/scoreboard.rb` |
 | Where a kind of place is typed, drawn and scored against what he expects | `app/models/lab/realization.rb` |
+| How a kind he scored becomes a bench case, and why the file is not written for him | `app/models/lab/realization/promotion.rb` |
 | Re-seeding a world somebody has played | `lib/world_seed/loader.rb`, `item/template_refresh.rb` |
 | Playing a story again from its beginning | `app/models/story/snapshot.rb`, `story/fork.rb` |
 | A database that outlives its schema | `app/models/story/doctor.rb`, `story/repair.rb` |
