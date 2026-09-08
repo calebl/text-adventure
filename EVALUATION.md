@@ -147,6 +147,19 @@ that catch here:
 - **The digest moves and the prompt text did not.** An empty interpolation on a
   line of its own moved the realization digest for all nine shapes: a paid round
   to measure one newline. Append rather than interpolate, and re-read the digest.
+- **A whole PASS the corpus cannot reach.** Stronger than an empty block and it
+  has happened once: `Scene::Ending` is a new prose call made only on the turn a
+  playthrough's main arc concludes, and neither world the prompt bench plays has
+  a `quests:` block at all -- so no case in that corpus can end a game, and the
+  ending prompt cannot be sent, let alone measured. The corpus could be extended
+  to the one world with an arc
+  (`lib/engine_sweep/worlds/the-iron-gate-descends.yml`), which is a real option
+  and priced in `ta-quest-ending`'s PR body; what it must NOT be is extended in
+  place, because adding cases to `prompt_corpus.yml` moves `Eval::Prompt.digest`
+  and the checked-in baseline stops being a before side for the other ninety.
+  The judgement that shipped instead is `Scene::EndingTest` -- every branch of
+  the pass and its fallback on records, plus the canary that fails the day a
+  bench world gains an arc.
 
 And the money gate beside it: **`rake eval:estimate` is the only command that
 prices a bench without buying it.** `rake eval:realization` prints an estimate

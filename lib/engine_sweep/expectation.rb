@@ -117,6 +117,21 @@
 #                   off `playthrough_endings` rather than off the closing
 #                   paragraph, which is the whole point of deciding it in the
 #                   engine (`Quest::Outcome::CONDITIONS`)
+#   ending_words    AND THAT IT ENDED WITH WORDS -- a substring of the closing
+#                   `Scene`'s own description, asserted the way `note:` is. In
+#                   this mode those words are always the FALLBACK: nothing
+#                   offline narrates, so what a walk reads is the reached
+#                   outcome's stored sentence and never `Scene::Ending`'s
+#                   paragraph. That is the point of asserting it here -- the
+#                   guarantee is that a finished game has something to read
+#                   whether or not a model answered, and an offline walk is the
+#                   only thing that can prove the half with no model in it.
+#                   `[]` is the OTHER assertion and the reason this key is not
+#                   plain `check_contains`: it says the game has no last
+#                   paragraph at all, which is what a game still being played
+#                   must look like. An empty list through `check_contains` would
+#                   have asserted nothing, and a step that asserts nothing reads
+#                   as a passing step
 #   scheduled       HOW MANY ROWS ON THE EVENT STREAM THIS GAME CAN SEE SAY A
 #                   THING WILL HAPPEN AND HAVE NOT FIRED. The world's rows plus
 #                   this game's own, never another game's (`WorldEvent.for_a_game`)
@@ -133,7 +148,7 @@ class EngineSweep::Expectation
   KEYS = %w[
     location storey exits exits_include exits_exclude here carrying present foes inscription
     hp hp_of abilities dead changed change refused offers understood resolved_by note drifts blows hazards quest
-    ending scheduled fired
+    ending ending_words scheduled fired
   ].freeze
 
   # WHAT A BEAT MAY BE, and closed for `KEYS`' reason: a fourth word here would
@@ -199,6 +214,7 @@ class EngineSweep::Expectation
       check_contains("note", Array(report.note).join("\n")),
       check_arc(state),
       check_ending(state),
+      check_ending_words(state),
       check_equals("scheduled", state.scheduled),
       check_equals("fired", state.fired),
       check_equals("drifts", drifts),
@@ -330,6 +346,20 @@ class EngineSweep::Expectation
   # played, and it is a word rather than a missing key so that a script can
   # assert that a game has NOT ended -- which is what the walk either side of a
   # conditional ending is actually about.
+  # THE WORDS THE GAME ENDED WITH, off the closing `Scene` and not off the
+  # read-out. `[]` asserts there is no last paragraph yet -- see `KEYS` -- and
+  # anything else is a list of substrings, `note:`' own shape.
+  def check_ending_words(state)
+    return nil unless document.key?("ending_words")
+
+    wanted = document["ending_words"]
+    words = state.ending_words
+    return check_contains("ending_words", words) unless wanted == [] || wanted == false
+    return nil if words.blank?
+
+    unmet("ending_words", "no last paragraph yet", words)
+  end
+
   def check_ending(state)
     return nil unless document.key?("ending")
 

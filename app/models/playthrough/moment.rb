@@ -69,13 +69,19 @@ class Playthrough::Moment
     def note = taken? ? "picked up just now, on this turn" : "put down just now, on this turn"
   end
 
-  attr_reader :playthrough, :handled
+  attr_reader :playthrough, :handled, :ending
 
   # `handled` is the row this turn moved, when the caller is a branch that moved
   # one. Nil for every other kind of turn, which is most of them.
-  def initialize(playthrough, handled: nil)
+  #
+  # `ending` is the `Quest::Outcome` this game has just reached, and there is
+  # exactly one caller that passes one: `Scene::Ending`, on the turn the story
+  # is over. Nil everywhere else, and everything it changes is guarded on it --
+  # so every other prompt in the game is byte-for-byte what it was.
+  def initialize(playthrough, handled: nil, ending: nil)
     @playthrough = playthrough
     @handled = handled
+    @ending = ending
   end
 
   # THE MOMENT FOR A NARRATOR: everything a prose pass answering the player
@@ -158,8 +164,29 @@ class Playthrough::Moment
     # `Quest::Generator` shipped and every seed file with no `quests:` block --
     # so the prompt those worlds send is unchanged, byte for byte. It is also
     # silent once the arc is finished, because there is no next beat: a game
-    # that is over is told nothing about what to do next.
+    # that is over is told nothing about what to do next. What it is told
+    # instead is how it ended, on the one pass that asks -- see the line below.
     parts << "The story is asking for: #{next_beat}" if arc && next_beat
+    # AND HOW IT ENDED, ON THE ONE TURN THERE IS AN ANSWER TO THAT.
+    #
+    # THE SAME SHAPE AND THE SAME PLACE AS THE LINE ABOVE, deliberately: a fact
+    # the engine owns, stated, with nothing for the model to decide. The
+    # difference is which fact -- the beat above is where the story is GOING and
+    # this is where it GOT, out of the `Quest::Outcome` the engine selected off
+    # this game's own records (`Quest::Outcome::CONDITIONS`).
+    #
+    # THE OBJECTION TO TELLING A MODEL THE CONCLUSION IS SPENT BY THEN, and that
+    # is the whole reason this line is allowed to exist where the comment above
+    # forbids it. Telling a model how the story ends invites it to write toward
+    # an ending the engine has not recorded; here the engine has recorded it,
+    # the playthrough is over, and there is no turn after this one to be written
+    # toward anything.
+    #
+    # THE TWO LINES ARE MUTUALLY EXCLUSIVE WITHOUT A RULE SAYING SO: a game that
+    # reached its ending has reached every beat, so `Quest#next_step_for` is nil
+    # and the line above is already silent. Nothing here depends on that, and it
+    # is worth knowing that nothing has to.
+    parts << "The story has ended: #{ending.summary}" if arc && ending
     parts << (others.any? ? "Also here: #{name_list(others)}. Nobody else is present." : "Nobody else is here.")
     # HOW MUCH IS LEFT OF EVERYBODY ELSE IN THE ROOM, and whether any of them is
     # fighting the party. Until a fight could happen this was the one closed set
@@ -187,7 +214,7 @@ class Playthrough::Moment
     parts << "Lying here, and takeable: #{floor_names.presence || "nothing"}."
     parts << "The player is carrying: #{carried_names.presence || "nothing"}."
 
-    if (previous = playthrough.current_scene)
+    if (previous = what_just_happened)
       parts << "What just happened: #{previous.description}"
     end
 
@@ -459,6 +486,24 @@ class Playthrough::Moment
 
   def exit_names
     playthrough.exits.map(&:name).join(", ")
+  end
+
+  # THE TURN BEFORE THIS PROSE PASS, which for every pass but one is
+  # `playthrough.current_scene` -- the turn the player just read.
+  #
+  # THE ONE EXCEPTION IS THE ENDING, and it is a real difference rather than a
+  # nicety. `Playthrough::Arc#conclude!` sets `current_scene` to the CLOSING
+  # scene before `Scene::Ending` runs, and that row's description is the stored
+  # outcome sentence -- the very sentence the ending line above is stating. Left
+  # alone, the ending prompt would carry the engine's sentence twice, once as a
+  # fact and once as *what just happened*, which is a paid token and an
+  # invitation to write the sentence back. So on that pass this reads the turn
+  # the PLAYER took, which is what actually just happened in the fiction.
+  def what_just_happened
+    scene = playthrough.current_scene
+    return scene if ending.nil?
+
+    scene&.previous_scene
   end
 
   # THE NEXT OPEN BEAT'S OWN SUMMARY, out of `Playthrough::Arc` -- which is the

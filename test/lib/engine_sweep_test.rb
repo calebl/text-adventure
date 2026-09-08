@@ -14,6 +14,14 @@ require "test_helper"
 # expectation that did not hold -- `EngineSweep::Result::Failure` builds it and
 # `test/lib/engine_sweep_test.rb` is where that is proved rather than hoped for.
 class EngineSweepTest < ActiveSupport::TestCase
+  # THE ORDERED ROUTE THROUGH THE ONE ARC IN THE REPOSITORY, to the turn it
+  # closes on. Shared by the `ending_words:` walks below, whose LAST step is the
+  # one being asserted -- the route itself is `an-ending-with-words.yml`'s and is
+  # not what those tests are about.
+  TO_THE_END = [ "take the signet ring", "go to the obsidian maw", "go to Blackfang Tunnel",
+                 "go to Blackfang Warren room 1", "go to Blackfang Warren room 2",
+                 "go to the dry cell" ].freeze
+
   test "every stored script walks the engine and the records say what it says" do
     results = EngineSweep.run
 
@@ -157,6 +165,27 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_not_predicate failing, :passed?
     assert_match(/expected storey: -1/, failing.failures.sole.to_s)
     assert_match(/the records say:\s+0/, failing.failures.sole.to_s)
+  end
+
+  # THE ENDING'S OWN WORDS, and the two ways a script can be wrong about them.
+  # The passing walk is checked in as `an-ending-with-words.yml` -- run by the
+  # first test in this file -- so what is left to pin here is that the key
+  # FAILS: a wrong sentence and an `[]` after the game ended both have to be
+  # unmet, or the assertion the whole fallback rests on could pass on a game
+  # with nothing to read.
+  test "an ending_words expectation is read off the closing scene and an unmet one is reported" do
+    wrong_words = walk(to_the_end("ending" => "rescued",
+                                   "ending_words" => [ "the prince was never there at all" ]))
+
+    assert_not_predicate wrong_words, :passed?
+    assert_match(/expected ending_words/, wrong_words.failures.sole.to_s)
+    assert_match(/The prince is found alive/, wrong_words.failures.sole.to_s,
+                 "the failure prints the words the game really ended with")
+
+    claiming_nothing = walk(to_the_end("ending" => "rescued", "ending_words" => []))
+
+    assert_not_predicate claiming_nothing, :passed?
+    assert_match(/no last paragraph yet/, claiming_nothing.failures.sole.to_s)
   end
 
   test "a misspelt expectation raises rather than passing quietly" do
@@ -788,6 +817,17 @@ class EngineSweepTest < ActiveSupport::TestCase
   # One script written inline, played the way the rake task plays the stored
   # ones. Written to a file because a script IS a file -- there is no second way
   # to build one, so there is no second thing for this test to be testing.
+  # The route above as a script, with `expect` on its last step only. Built as a
+  # document rather than as a heredoc because the steps are a list this file
+  # holds, and interpolating six lines into a heredoc is an indentation bug
+  # waiting to happen.
+  def to_the_end(expectations)
+    steps = TO_THE_END.map { |line| { "type" => line } }
+    steps.last["expect"] = expectations
+
+    { "story" => "The Iron Gate Descends", "steps" => steps }.to_yaml
+  end
+
   def walk(yaml)
     EngineSweep.run([ script(yaml) ]).sole
   end

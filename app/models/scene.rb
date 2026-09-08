@@ -34,7 +34,38 @@ class Scene < ApplicationRecord
   # last step of the main arc ends the playthrough and writes one Scene
   # carrying the reached outcome's sentence; see `Playthrough::Arc`. Nothing
   # will ever type it, exactly as nothing will ever type `hazard`.
-  ACTIONS = (Playthrough::IntentSchema::INTENTS + %w[attack hazard throw conclude]).uniq.freeze
+  #
+  # `ending` IS THE FIFTH AND IT IS THE SAME ACT WITH THE WORDS REPLACED --
+  # `NARRATED_ENDING` below is the whole of what it is for. Nothing will ever
+  # type this one either.
+  ACTIONS = (Playthrough::IntentSchema::INTENTS + %w[attack hazard throw conclude ending]).uniq.freeze
+
+  # THE ENDING, ONCE THE NARRATOR HAS WRITTEN IT. `Playthrough::Arc` writes the
+  # closing row as `conclude` with the reached outcome's own sentence on it, and
+  # `Scene::Ending` renders that row in place and relabels it -- so ONE Scene
+  # carries the last paragraph and the label says whose words they are.
+  #
+  # WHY THE LABEL AND NOT A COLUMN, which is the decision worth stating: this is
+  # the one act in the game whose AUTHOR varies per row, because the fallback is
+  # what a failed call leaves behind. `resolved_action` is already the column
+  # that says what the turn did, so what the turn did is where it is said; a
+  # boolean beside it would be a second vocabulary for one question, and
+  # `#engine_authored?` would then have two things to read.
+  #
+  # WHAT IT BUYS: `ENGINE_AUTHORED` stays a POSITIVE LIST that is exactly true.
+  # A `conclude` row is engine copy for ever and is skipped by `Story::Audit`
+  # and `Eval::Richness` and counted in `Story::Scoreboard#excluded`; an
+  # `ending` row is prose a model wrote and is read like any other narration --
+  # which is the audit half of *gate the state, inform the prose, audit the
+  # difference*, and it is only available because the two are told apart on the
+  # row rather than guessed at from one label.
+  NARRATED_ENDING = "ending".freeze
+
+  # THE TWO LABELS ONE LAST PARAGRAPH CAN CARRY, so a reader that wants *is this
+  # the end of the story* does not have to know which of them it got. There is
+  # exactly one such Scene in a finished game and none in a game still being
+  # played; `Playthrough::Mechanics` reads it for the sweep's `ending_words:`.
+  ENDINGS = [ "conclude", NARRATED_ENDING ].freeze
 
   # AND WHICH OF THOSE THE ENGINE WROTE THE WORDS OF, which is a DIFFERENT
   # question from which of them a player can type -- and it used to be answered
@@ -55,15 +86,20 @@ class Scene < ApplicationRecord
   # than inferred from what a prompt may ask for. `attack` and `hazard` keep
   # exactly the answer they had.
   #
-  # `conclude` JOINS THEM, and it is the one entry here that is expected to
-  # LEAVE again. The engine writes the last paragraph today out of the reached
-  # `Quest::Outcome`'s stored sentence, because the game being over must not
-  # depend on a model answering -- so `Story::Audit` and `Eval::Richness` skip
-  # it and `Story::Scoreboard#excluded` counts it, which is the whole reason
-  # this list is positive: engine copy read as narration would score the app's
-  # own sentence as prose, and a smaller denominator can never read as a better
-  # rate. When `ta-quest-ending` gives the narrator the outcome to render, the
-  # paragraph stops being the engine's and this entry comes back out.
+  # `conclude` JOINS THEM AND IT STAYS, which is the opposite of what this
+  # comment said before `ta-quest-ending` shipped -- it expected the entry to
+  # leave the day the narrator got the outcome to render. What actually happened
+  # is better than that and is why the list did not have to move: the narrator's
+  # paragraph is a DIFFERENT LABEL on the same row (`NARRATED_ENDING`), so
+  # `conclude` still means exactly what it has always meant -- the engine's own
+  # sentence, out of the reached `Quest::Outcome`, which is what a game gets
+  # when the call refused, timed out or came back cut in half.
+  #
+  # So this list keeps saying one true thing. Engine copy read as narration
+  # would score the app's own sentence as prose, and a smaller denominator can
+  # never read as a better rate; a narrated ending is prose and is read as
+  # prose. See `Scene::Ending` for why one row is rendered in place rather than
+  # a second one written after it.
   ENGINE_AUTHORED = %w[attack hazard conclude].freeze
 
   # How much STORY time a turn costs when it is not a journey. A fixed table in
@@ -228,6 +264,12 @@ class Scene < ApplicationRecord
   def dropped? = recorded_action == "drop" && acted_on_record.is_a?(Item)
 
   def moved_to? = recorded_action == "move" && acted_on_record.is_a?(Location)
+
+  # WHETHER THIS IS THE LAST PARAGRAPH OF A FINISHED GAME, whoever wrote it --
+  # the engine's own sentence or the narrator's rendering of it. Read off
+  # `ENDINGS` for `#engine_authored?`'s reason: the list is the vocabulary and a
+  # second reading of one label would be a second answer.
+  def ending? = ENDINGS.include?(recorded_action.to_s)
 
   # WHETHER THE ENGINE, RATHER THAN A NARRATOR, WROTE THIS ROW'S DESCRIPTION.
   # One of `ENGINE_AUTHORED`, and read off that list rather than derived from

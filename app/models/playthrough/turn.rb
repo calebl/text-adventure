@@ -261,8 +261,8 @@ class Playthrough::Turn
     # AND THEN THE STORY'S ARC IS READ AGAINST WHAT THIS TURN LEFT BEHIND. Four
     # record predicates, no model call and nothing written on almost every turn
     # -- and on the turn the last beat lands, the ending: the reached outcome,
-    # `playthroughs.ended_at` and one engine-authored `Scene` carrying the
-    # sentence this world was built toward. See `Playthrough::Arc`.
+    # `playthroughs.ended_at` and one `Scene` carrying the sentence the engine
+    # selected, which the pass below then renders. See `Playthrough::Arc`.
     #
     # AFTER THE RIPOSTE AND THE HAZARD AND NOT BEFORE THEM, which is the whole
     # of why it is here rather than beside `claim_tolls!`: the world may have
@@ -270,7 +270,22 @@ class Playthrough::Turn
     # first would hand a dead player an ending. A REFUSED LINE NEVER REACHES
     # HERE, which is the same ruling the two lines above are under -- a refused
     # line writes nothing, so it cannot reach a beat.
-    Playthrough::Arc.new(playthrough).run!
+    arc = Playthrough::Arc.new(playthrough)
+    arc.run!
+
+    # AND ON THE ONE TURN THE ARC CONCLUDED, THE ENDING IS WRITTEN IN WORDS.
+    # The engine has already decided it and already stored a sentence for it, so
+    # this is the render and never the decision: `Scene::Ending` is handed the
+    # reached outcome, streams the last paragraph into the same block every
+    # other prose pass streams into, and keeps the engine's sentence if the call
+    # refuses, times out or comes back cut in half. Read that class before
+    # changing what happens here.
+    #
+    # HERE AND NOT IN THE ARC, for two reasons that both matter: the arc runs
+    # for the offline sweep as well (`Playthrough::Mechanics`), which makes no
+    # model call at all; and the ending is written in a transaction, which is no
+    # place to hold SQLite's one writer open across a provider round trip.
+    ending = arc.conclusion && Scene::Ending.new(playthrough).narrate!(arc.conclusion, &block)
 
     # AND A FIGHT THAT HAS ENDED IS CLOSED, with one `Scene` carrying what the
     # exchange cost in story time. Nil on every turn of every game that is not
@@ -295,12 +310,21 @@ class Playthrough::Turn
     # See Playthrough#prune_conversations!.
     playthrough.prune_conversations!
 
-    # THE CLOSING SCENE IS THE TURN'S ANSWER WHEN THE TURN ITSELF WROTE NONE,
-    # which is every attack: `#strike_at` returns nil, so what the consumer is
-    # handed is the one Scene that closed the fight, on the turn it ended, and
-    # nil on the rounds before it. See `Playthrough::Fight` -- the browser's
-    # per-round view is the battle panel, which is a later slice.
-    scene || closing
+    # THE LAST SCENE THE TURN WROTE IS THE TURN'S ANSWER, and on almost every
+    # turn that is the one its own branch produced.
+    #
+    # THE ENDING WINS WHEN THERE IS ONE, because it is the last thing that
+    # happened and the only thing left to read: the story is over, so a consumer
+    # handed the turn's own paragraph would be holding the second-to-last thing
+    # this game will ever say. It is `playthrough.current_scene` by then as
+    # well, which is what the browser renders the log off.
+    #
+    # AND THE CLOSING SCENE IS THE ANSWER WHEN THE TURN ITSELF WROTE NONE, which
+    # is every attack: `#strike_at` returns nil, so what the consumer is handed
+    # is the one Scene that closed the fight, on the turn it ended, and nil on
+    # the rounds before it. See `Playthrough::Fight` -- the browser's per-round
+    # view is the battle panel, which is a later slice.
+    ending || scene || closing
   end
 
   # THE PLAYER'S OWN BLOW. The record moves first and there is no prose at all:

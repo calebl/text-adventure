@@ -98,6 +98,59 @@ class Playthrough::MomentArcTest < ActiveSupport::TestCase
     assert_includes Playthrough::Moment.new(second).narration_context, "Take the ring."
   end
 
+  # --- and how it ended, on the one pass that asks --------------------------
+  #
+  # THE OTHER SIDE OF `#test_the_conclusion_is_never_in_the_prompt`, and the two
+  # are not in tension: the conclusion is withheld from every pass that is
+  # narrating a TURN, because a model told how the story ends writes toward it.
+  # `Scene::Ending` is narrating the ending itself, and by then the engine has
+  # recorded which one and there is no next turn to be written toward anything.
+
+  test "the ending is stated only to a caller that passes one" do
+    quest = arc_with("Take the ring.")
+    outcome = quest.default_outcome
+
+    assert_empty ending_lines
+    assert_equal 1, ending_lines(with_ending(outcome)).size
+    assert_includes with_ending(outcome), "The story has ended: #{outcome.summary}"
+  end
+
+  test "the ending line carries the reached outcome's own sentence and not the default's" do
+    quest = arc_with("Take the ring.")
+    other = create(:quest_outcome, :out_of_order, quest: quest, name: "too-late",
+                                                  summary: "The cell is opened and the prince is already cold.")
+
+    assert_includes with_ending(other), "The story has ended: #{other.summary}"
+    assert_not_includes with_ending(other), quest.default_outcome.summary,
+                        "which ending happened is the engine's answer, and the prompt states that one"
+  end
+
+  # The two arc lines cannot both appear, and nothing enforces it: a game that
+  # reached its ending reached every beat, so there is no next beat to state.
+  test "a game that ended is told how and not what to do next" do
+    quest = arc_with("Take the ring.")
+    Playthrough::Beat.reach!(@game, quest.steps.first, at: @story.start_time)
+
+    text = with_ending(quest.default_outcome)
+
+    assert_empty arc_lines(text)
+    assert_equal 1, ending_lines(text).size
+  end
+
+  # `arc:` GOVERNS BOTH LINES, which is what keeps the split between the two
+  # passes one decision rather than two: a pass that is not told where the story
+  # is going is not told how it ended either. Nothing in the app asks for that
+  # combination -- `Scene::Ending` is the one caller that passes an ending, and
+  # it asks for the whole moment -- and the keyword has to mean one thing.
+  test "the pass that is not told the errand is not told the ending" do
+    quest = arc_with("Take the ring.")
+
+    text = Playthrough::Moment.new(@game.reload, ending: quest.default_outcome)
+                              .narration_context(plan: false, arc: false)
+
+    assert_empty ending_lines(text)
+  end
+
   # --- and nobody in the fiction is told it ----------------------------------
 
   test "the character pass is not told the player's errand" do
@@ -118,6 +171,12 @@ class Playthrough::MomentArcTest < ActiveSupport::TestCase
   end
 
   private
+
+  def with_ending(outcome)
+    Playthrough::Moment.new(@game.reload, ending: outcome).narration_context
+  end
+
+  def ending_lines(text = context) = text.lines.grep(/The story has ended/)
 
   def arc_with(*summaries)
     quest = create(:quest, story: @story, title: "The Long Way Down")

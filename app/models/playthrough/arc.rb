@@ -86,17 +86,22 @@
 # so `Story::Audit` and `Eval::Richness` skip it and `Story::Scoreboard` counts
 # it excluded, because a smaller denominator must never read as a better rate.
 #
-# THE STORED SENTENCE IS NOT THE FINAL ANSWER AND IS NOT MEANT TO BE. The
-# captain's Call 5 of 2026-09-06 chose *the narrator writes a real ending, told
-# the conclusion*, and his Q4 on the same board chose an engine-authored one.
-# Those are one paragraph asked about on two boards, and the project's own rule
-# splits them without overruling either: **the engine owns the fact, the
-# narrator writes the prose, the stored sentence is the fallback** the way
-# `Refusal#text` is one. The prose half is `ta-quest-ending` -- a NEW narration
-# prompt, so it needs cases on `rake eval:prompt` before it ships, and a model
-# that refuses on the final turn of a forty-turn game must not cost the player
-# their ending. What lands here is the record and the fallback; the paragraph
-# replaces the sentence later and nothing else moves.
+# AND THE STORED SENTENCE IS THE FALLBACK, NOT THE ANSWER. The captain's Call 5
+# of 2026-09-06 chose *the narrator writes a real ending, told the conclusion*,
+# and his Q4 on the same board chose an engine-authored one. Those are one
+# paragraph asked about on two boards, and the project's own rule splits them
+# without overruling either: **the engine owns the fact, the narrator writes the
+# prose, the stored sentence is the fallback** the way `Refusal#text` is one.
+#
+# THE PROSE HALF LANDED IN `ta-quest-ending` AND NONE OF IT IS IN THIS FILE.
+# `#conclusion` is the whole of the seam: this class writes the outcome, the
+# `ended_at` and the closing `Scene` with the sentence already on it, and says
+# what it wrote. `Scene::Ending` -- called from `Playthrough::Turn#play`, after
+# this and outside the transaction -- renders that row in place. NOTHING HERE
+# MAKES A MODEL CALL, which is not a tidiness argument: `Playthrough::Mechanics`
+# runs this same method for the offline sweep, so a call in here would be a call
+# in a walk that is supposed to make none. What a sweep therefore walks to is
+# the fallback, which is the guarantee worth being able to prove.
 #
 # --- and failure, which is not the opposite of completable ------------------
 #
@@ -122,7 +127,23 @@
 # would move -- and it is deliberately not taken here, because an ending is the
 # paragraph a game closes on and a dead player already has one.
 class Playthrough::Arc
+  # WHAT ONE TURN ENDED THE GAME WITH: the ending row, the outcome it names and
+  # the `Scene` its sentence is already on. A Data and not three readers,
+  # because the one caller wants all three or none of them -- and never a
+  # question a later reader could ask about a game that ended on some other
+  # turn. `#ending` is that question; this is *did THIS turn conclude*.
+  Concluded = Data.define(:ending, :outcome, :scene)
+
   attr_reader :playthrough
+
+  # WHAT THIS TURN CONCLUDED, or nil -- which is every turn of every game except
+  # one. Set by `#conclude!`, so it is only ever populated after `#run!`.
+  #
+  # THE ONE THING IN THIS CLASS THAT A CALLER MAY BUY A MODEL CALL ABOUT, and it
+  # is a reader rather than `#run!`'s return value for two reasons: `#run!`
+  # answers the beats it wrote (`Playthrough::Mechanics` prints them), and an
+  # ending is not a beat. See `Scene::Ending`.
+  attr_reader :conclusion
 
   def initialize(playthrough)
     @playthrough = playthrough
@@ -267,14 +288,24 @@ class Playthrough::Arc
 
     at = playthrough.story_now
 
+    ending = nil
+    scene = nil
+
     Playthrough.transaction do
-      Playthrough::Ending.create!(playthrough: playthrough, quest_outcome: outcome, reached_at: at)
+      ending = Playthrough::Ending.create!(playthrough: playthrough, quest_outcome: outcome, reached_at: at)
       record_success!(arc, outcome, at: at)
       schedule_ramification!(outcome, at: at)
       scene = write_conclusion!(outcome, at: at)
       playthrough.update!(current_scene: scene)
       playthrough.end!(at: at)
     end
+
+    # AND WHAT IT WROTE, SAID OUT LOUD, so the one caller that may render it
+    # does not have to go looking for the rows this method just made. AFTER the
+    # transaction and not inside it: an ivar set inside a block that rolls back
+    # would survive the rollback, and a claim that there is an ending to narrate
+    # must not outlive the ending.
+    @conclusion = Concluded.new(ending: ending, outcome: outcome, scene: scene)
   end
 
   # WHICH OF SEVERAL. The first outcome whose condition holds, in the order the

@@ -111,7 +111,7 @@ class Playthrough::Mechanics
   # believed it had done.
   State = Data.define(:location, :exits, :items_here, :carried, :present, :foes, :provoked, :conditions,
                       :condition, :character, :over, :hazard, :hazards_out, :arc, :ending,
-                      :scheduled, :fired) do
+                      :ending_words, :scheduled, :fired) do
     # THE WORLD'S OWN NUMBERS FOR THE PLAYER, one line's worth. Read straight off
     # the character, because that is where they live: a stat block and three
     # abilities are the STORY's (`Character`'s header), and printing them beside
@@ -386,6 +386,16 @@ class Playthrough::Mechanics
     # this mode have to agree about whether a beat landed, and the only way they
     # can is by asking in the same place. No model call, which is what lets an
     # offline walk assert an arc at all.
+    #
+    # AND THE ENDING IS NOT NARRATED HERE, which is the one place this mode
+    # deliberately stops short of `Playthrough::Turn#play`. The browser renders
+    # the closing paragraph with `Scene::Ending` -- a model call -- and this mode
+    # makes none, so what a walk reaches is the FALLBACK: the reached outcome's
+    # own sentence, already on the row `#conclude!` wrote. That is not a gap in
+    # the sweep, it is the sweep's whole value here -- the guarantee is that a
+    # game ends with words whether or not a model answers, and this is the mode
+    # that can prove it. `EngineSweep::Expectation`'s `ending_words:` asserts it
+    # and `lib/engine_sweep/scripts/an-ending-with-words.yml` walks it.
     arc = Playthrough::Arc.new(playthrough)
     beats = arc.run!
 
@@ -476,6 +486,13 @@ class Playthrough::Mechanics
       # closing scene cannot come to three answers. Nil for a game still being
       # played and for a world with no arc.
       ending: Playthrough::Arc.new(playthrough).ending&.quest_outcome&.name,
+      # AND THE WORDS IT ENDED WITH, off the one row that carries them. It is
+      # the FALLBACK in this mode and always will be: nothing here narrates, so
+      # what a walk reads is the reached outcome's own stored sentence -- see
+      # `#answered_by_the_world` and `Scene::Ending`. `EngineSweep::Expectation`
+      # asserts a substring of it (`ending_words:`), which is what makes *a game
+      # ends with words* an offline, keyless, model-free assertion.
+      ending_words: last_paragraph&.description,
       # AND WHAT THE STORY'S CLOCK STILL OWES, out of the one stream: the
       # world's rows plus this game's own, never another game's
       # (`WorldEvent.for_a_game`). Two counts and no sentences -- see
@@ -483,6 +500,16 @@ class Playthrough::Mechanics
       scheduled: visible_events.pending.count,
       fired: visible_events.where.not(fired_at: nil).count
     )
+  end
+
+  # THE LAST PARAGRAPH OF A FINISHED GAME, or nil for one still being played.
+  # `playthrough.current_scene` and not a search: `Playthrough::Arc#conclude!`
+  # points the game at the closing Scene in the same statement that ends it, and
+  # a finished game refuses every line after, so nothing can move it off.
+  # `Scene#ending?` is what says the row is one, whoever wrote its words.
+  def last_paragraph
+    scene = playthrough.current_scene
+    scene if scene&.ending?
   end
 
   # THE EVENT STREAM AS THIS GAME SEES IT. One relation, asked twice, so the
