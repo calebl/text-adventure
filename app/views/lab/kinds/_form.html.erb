@@ -1,0 +1,135 @@
+<%# TYPING A KIND: the facts, then the expectation.
+
+    THE FACTS ARE THE ONES A REAL EXITS CALL WOULD HAVE SUPPLIED about a place it
+    named -- which room it hangs off, the `inside` band, the population word --
+    plus the danger, which is offered because the die rarely produces a dangerous
+    room and a dangerous room is where half the cast prompt becomes judgeable.
+    Every one of them is a parameter; nothing here is behaviour.
+
+    THE EXPECTATION IS A CHECKBOX GROUP PER PICK, and NOTHING TICKED IS THE
+    DEFAULT AND A COMPLETE ANSWER: it means *don't care*, which takes the kind
+    out of that figure's numerator and denominator both. It can also be declared
+    later and edited freely -- every pick is on the stored row of every sample
+    already drawn, so an expectation written after the fact re-scores rather than
+    re-buys. %>
+<% expectation_editable = kind.persisted? %>
+<%= form_with model: kind, url: (expectation_editable ? lab_kind_path(kind) : lab_kinds_path),
+              method: (expectation_editable ? :patch : :post), scope: :kind, class: "lab-form" do |form| %>
+  <% if kind.errors.any? %>
+    <div class="panel">
+      <ul class="evidence">
+        <% kind.errors.full_messages.each do |message| %>
+          <li class="warn"><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% unless expectation_editable %>
+    <div class="panel">
+      <h3>the facts</h3>
+      <div class="fields">
+        <div class="k"><%= form.label :world, "world" %></div>
+        <div class="v">
+          <%= form.select :world, Eval::Realization::STORIES, { include_blank: false } %>
+          <p class="note">
+            Staged from its seed file and rolled back &mdash; the world itself is
+            never written to. Every universe with a file under
+            <code><%= Eval::Realization::WORLD_ROOTS.join("</code>, <code>").html_safe %></code>.
+          </p>
+        </div>
+
+        <div class="k"><%= form.label :name, "name" %></div>
+        <div class="v"><%= form.text_field :name, size: 48, placeholder: "The Fishmonger's Warehouse" %></div>
+
+        <div class="k"><%= form.label :teaser, "teaser" %></div>
+        <div class="v">
+          <%= form.text_area :teaser, rows: 3, cols: 64,
+                             placeholder: "A flooded warehouse on the river, its doors swollen shut." %>
+          <p class="note">
+            The one-line glimpse a neighbour's exits call would have written. It
+            and the name are the whole of what the detail prompt is told about
+            this place; the rest of that prompt is the world around it.
+          </p>
+        </div>
+
+        <div class="k"><%= form.label :reached_from, "reached from" %></div>
+        <div class="v">
+          <%= form.text_field :reached_from, size: 48, placeholder: "Blackfang Tunnel" %>
+          <p class="note">
+            The place in that world whose own realization would have named this
+            one, by name. Leave it empty for an opening room, which has no way
+            back and is realized like every other room.
+          </p>
+        </div>
+
+        <div class="k"><%= form.label :inside, "inside" %></div>
+        <div class="v">
+          <%= form.select :inside, Location::Parameters::INSIDE.keys, include_blank: "(no inside)" %>
+          <p class="note">
+            Anything but <em>no inside</em> makes this a BUILDING: the engine
+            rolls a footprint inside the band, the detail call is sent
+            <code>Location::PlaceSchema</code> with the five parameter picks on
+            it, and it makes no exits call at all &mdash; a laid-out place's ways
+            out are its rooms'.
+          </p>
+        </div>
+
+        <div class="k"><%= form.label :population, "population" %></div>
+        <div class="v">
+          <%= form.select :population, Location::Population::LABELS, include_blank: "(the engine rolls one)" %>
+          <p class="note">
+            The word a neighbour's exits call would have picked for this place.
+            The engine rolls the count inside its band; leave it blank and the
+            engine rolls the word too, which is what the opening room and every
+            room of an interior get.
+          </p>
+        </div>
+
+        <div class="k"><%= form.label :danger, "danger" %></div>
+        <div class="v">
+          <%= form.select :danger, Location::DANGERS.keys, include_blank: "(the engine rolls one)" %>
+          <p class="note">
+            Override it to reach a shape the die rarely produces. A
+            <em>dangerous</em> room is the only place the monstrous half of the
+            cast prompt can be judged at all, and only one world in the
+            repository has monsters in it.
+          </p>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="panel">
+    <h3>the expectation &mdash; what the picks should come back as</h3>
+    <p class="note">
+      Set membership, and nothing here reads a die. A kind that expects
+      <em>dangerous</em> is satisfied by the model PICKING it, whatever the
+      per-room ladder then throws &mdash; a <em>flooded</em> place with one dry
+      room is the hazard share working, not the prompt failing. Tick nothing for
+      a pick and it is not scored.
+    </p>
+    <% Lab::Realization.picks.each do |pick| %>
+      <% allowed = kind.expects(pick) || [] %>
+      <div class="fields">
+        <div class="k">
+          <%= pick.name.tr("_", " ") %>
+          <% if kind.persisted? && !kind.answerable?(pick) %>
+            <br><span class="absent">(never answered for this kind)</span>
+          <% end %>
+        </div>
+        <div class="v">
+          <% pick.values.each do |value| %>
+            <label class="lab-choice">
+              <%= check_box_tag "expects[#{pick.name}][]", value, allowed.include?(value),
+                                id: "expects_#{pick.name}_#{value.parameterize}" %>
+              <%= value %>
+            </label>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <p><%= form.submit expectation_editable ? "save the expectation (buys nothing)" : "create the kind" %></p>
+<% end %>

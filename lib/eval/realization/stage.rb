@@ -235,6 +235,37 @@ class Eval::Realization::Stage
     end
   end
 
+  # ONE COPY OF ONE WORLD, PUT BACK FROM ITS SEED FILE UNDER A TITLE OF THIS
+  # CLASS'S OWN AND THEN CARRYING THE WORLD'S OWN.
+  #
+  # BOTH HALVES ARE LOAD-BEARING AND THE SECOND IS THE EASY ONE TO LEAVE OUT.
+  # `WorldSeed::Loader` is idempotent on the story TITLE, so the staging title
+  # has to be unique or two copies would be two views of one world -- and
+  # `Location::Generator#story_context` states the story's TITLE in the detail
+  # prompt, so the rename back is what stops a run measuring a prompt that says
+  # "realization bench" in it. The rename is only safe because the caller has
+  # opened a transaction it will roll back; nothing here checks that, and every
+  # caller does it.
+  #
+  # A CLASS METHOD BECAUSE `Lab::Realization::Runner` STAGES A ROOM NO WORLD FILE
+  # HAS. A case's identity is a room this class FINDS; a kind the captain typed
+  # in the lab has none, so the lab does its own surgery and borrows this. One
+  # spelling of the load and the rename, which is the part neither of them can
+  # afford to get subtly differently.
+  def self.load_world!(world, title:, whose: "")
+    file = Eval::Realization.world_file(world)
+    if file.nil?
+      raise Unstageable, "#{whose}there is no world file for #{world.inspect} under " \
+                         "#{Eval::Realization::WORLD_ROOTS.join(" or ")}"
+    end
+
+    document = WorldSeed.parse(File.read(file))
+    document["story"]["title"] = title
+    story = WorldSeed::Loader.new(document, source: file.to_s).load!
+    story.update!(title: world)
+    story
+  end
+
   attr_reader :kase
 
   def initialize(kase, label: LABEL)
@@ -254,20 +285,8 @@ class Eval::Realization::Stage
   private
 
   def load_world!
-    file = Eval::Realization.world_file(kase.story)
-    if file.nil?
-      raise Unstageable, "#{kase.id}: there is no world file for #{kase.story.inspect} under " \
-                         "#{Eval::Realization::WORLD_ROOTS.join(" or ")}"
-    end
-
-    document = WorldSeed.parse(File.read(file))
-    document["story"]["title"] = self.class.title_for(kase, label: @label)
-    story = WorldSeed::Loader.new(document, source: file.to_s).load!
-    # FOUND BY ITS OWN TITLE, THEN CARRYING THE WORLD'S. The rename is inside
-    # the transaction that is rolled back, so nothing outside this run ever sees
-    # either title -- and the prompt gets the title a player would see.
-    story.update!(title: kase.story)
-    story
+    self.class.load_world!(kase.story, title: self.class.title_for(kase, label: @label),
+                                       whose: "#{kase.id}: ")
   end
 
   # ROOMS THAT DID NOT EXIST YET, removed. The connections go first and

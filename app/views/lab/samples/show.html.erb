@@ -1,0 +1,391 @@
+<%# ONE SAMPLE, IN SEQUENCE: everything that happened between a name and a
+    teaser and a room a player could walk into, in the order it happened, each
+    step marked with who decided it.
+
+    THE CAPTAIN, 2026-09-07: *"It's still hard for me to hold in my head the full
+    sequence of everything that happens each turn or as you move into a new
+    room/location."* So this is a COLUMN and not a grid, and the purple/teal marks
+    down the left are the README's turn-diagram convention -- purple is a model
+    call, teal is the app deciding from records it holds.
+
+    NOTHING HERE IS COMPUTED THAT THE BENCH DOES NOT ALREADY COMPUTE. Every value
+    is read off the sample's stored row through
+    `Eval::Realization::Scorer::Reading`, which is the one reader of a row in this
+    repository -- so this page and `rake eval:realization` cannot come to
+    different readings of one call. `Lab::Realization::Sample`'s header says what
+    the row holds and why nothing is stored beside it. %>
+<% reading = @sample.reading %>
+<% facts = reading.facts %>
+<%= render "lab/styles" %>
+
+<h1>a sample &mdash; <%= @kind.name %></h1>
+<p class="nav">
+  <%= link_to "&larr; the kind".html_safe, lab_kind_path(@kind) %>
+  &nbsp;&middot;&nbsp; <%= link_to "the lab", lab_kinds_path %>
+  &nbsp;&middot;&nbsp; <%= @kind.world %>
+  &nbsp;&middot;&nbsp; sample #<%= @sample.id %>,
+  drawn <%= @sample.created_at.utc.strftime("%Y-%m-%d %H:%M") %> UTC
+</p>
+<p class="nav">
+  <%= pluralize(reading.calls, "call") %>
+  &nbsp;&middot;&nbsp; <%= @sample.row["input_tokens"] %> in / <%= @sample.row["output_tokens"] %> out
+  &nbsp;&middot;&nbsp; <%= debug_value(@sample.row["seconds"]) %>s
+  &nbsp;&middot;&nbsp; answered by <%= debug_value(@sample.row["answered_by"]) %>
+  &nbsp;&middot;&nbsp; prompt <%= debug_value(@sample.row["instructions_digest"]) %>
+</p>
+
+<% if @sample.failed? %>
+  <div class="panel">
+    <h3 class="warn">the call failed</h3>
+    <pre><%= reading.error %></pre>
+    <p class="note">
+      A failed call is still a sample and is out of every rate's denominator
+      &mdash; <code>Eval::Realization::Scorer#readings</code>' rule, which is what
+      stops a run of refusals reading as a run with nothing wrong with it. A
+      <code>BaseAgent::RefusalError</code> is the one failure that is about the
+      prompt<%= reading.refused? ? ", and this is one" : "" %>.
+    </p>
+  </div>
+<% end %>
+
+<h2>the sequence</h2>
+
+<div class="step engine">
+  <h3>1 &mdash; the stub, born <%= lab_who(:engine) %></h3>
+  <div class="fields">
+    <div class="k">name</div>
+    <div class="v"><%= facts["room"] %></div>
+    <div class="k">teaser</div>
+    <div class="v"><%= facts["teaser"] %></div>
+    <div class="k">danger</div>
+    <div class="v">
+      <%= facts["danger"] %>
+      <span class="absent">(<%= @kind.danger.present? ? "declared on the kind" : "rolled by Location::Danger.for_a_new_room" %>)</span>
+    </div>
+    <div class="k">danger share</div>
+    <div class="v"><%= debug_value(facts["danger_share"], absent: "none") %></div>
+    <div class="k">population word</div>
+    <div class="v">
+      <%= debug_value(@kind.population, absent: "none -- the engine rolls one out of Location::Population::ROLLED when somebody walks in") %>
+    </div>
+    <div class="k">the way back</div>
+    <div class="v"><%= debug_value(facts["reached_from"], absent: "nothing -- an opening room") %></div>
+    <div class="k">already reaches</div>
+    <div class="v"><%= facts["reachable"].presence&.join(", ") || debug_value(nil, absent: "nothing yet") %></div>
+  </div>
+  <% if @kind.inside.present? %>
+    <p class="note">
+      The <code><%= @kind.inside %></code> band on the kind is what a real exits
+      call would have picked. The engine rolled the footprint inside it
+      (<code>Location::Parameters#footprint</code>, on <code>Roll::FOOTPRINT</code>'s
+      own axis), which is what makes <code>Location#place?</code> true and sends
+      the detail call <code>Location::PlaceSchema</code> instead.
+    </p>
+  <% end %>
+</div>
+
+<div class="step engine">
+  <h3>2 &mdash; what the world held before the call, <%= lab_who(:engine) %></h3>
+  <p class="note">
+    Four fifths of a realization prompt is the world AROUND the room, and every
+    list here was read off the records by the same registries and scopes the
+    prompt itself reads &mdash; so nothing below is a second derivation of what
+    the model was told.
+  </p>
+  <div class="fields">
+    <div class="k">people allowed</div>
+    <div class="v">
+      <%= reading.people_allowance %>
+      <% if reading.parameters_asked? %>
+        <span class="absent">(a building is asked for nobody &mdash; nobody stands in a container)</span>
+      <% end %>
+    </div>
+    <div class="k">things allowed</div>
+    <div class="v"><%= reading.item_allowance %></div>
+    <div class="k">ways out left</div>
+    <div class="v"><%= reading.exit_allowance %></div>
+    <div class="k">the cast, already rolled</div>
+    <div class="v">
+      <% if reading.slots.empty? %>
+        <%= debug_value(nil, absent: "nobody offered, so nothing was rolled") %>
+      <% else %>
+        <% reading.slots.each_with_index do |slot, index| %>
+          the <%= (index + 1).ordinalize %> is <%= slot["race"] %>, about <%= slot["age"] %>,
+          <%= slot["sex"] %><%= slot["monstrous"] ? " (monstrous)" : "" %><br>
+        <% end %>
+      <% end %>
+    </div>
+    <div class="k">already standing here</div>
+    <div class="v"><%= reading.already_present.presence&.join(", ") || debug_value(nil, absent: "nobody") %></div>
+    <div class="k">asked to name itself</div>
+    <div class="v">
+      <%= reading.asked_for_a_name? ? "yes" : "no" %>
+      <% if reading.names_shown.any? %>
+        &mdash; shown as taken: <%= reading.names_shown.join(", ") %>
+      <% end %>
+    </div>
+    <div class="k">monstrous races in this world</div>
+    <div class="v">
+      <%= Array(facts["monstrous_races"]).presence&.join(", ") ||
+            debug_value(nil, absent: "none -- a dangerous room here draws an ordinary person") %>
+    </div>
+  </div>
+  <details>
+    <summary>every place the exits prompt was offered (<%= reading.places.size %>)</summary>
+    <div class="body scroll">
+      <table>
+        <thead><tr><th>place</th><th>written</th><th>this room can already reach it</th></tr></thead>
+        <tbody>
+          <% reading.places.each do |place| %>
+            <tr>
+              <td><%= place["name"] %></td>
+              <td><span class="tag <%= place["realized"] ? "realized" : "stub" %>"><%= place["realized"] ? "written" : "stub" %></span></td>
+              <td><%= place["connected"] ? "yes" : "no" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </details>
+  <% if reading.planned? %>
+    <details>
+      <summary>the floor plan this room was handed as fact</summary>
+      <div class="body"><pre><%= JSON.pretty_generate(reading.plan) %></pre></div>
+    </details>
+  <% end %>
+</div>
+
+<div class="step model">
+  <h3>3 &mdash; the detail call, answered <%= lab_who(:model) %></h3>
+  <p class="note">
+    Sent <code><%= reading.parameters_asked? ? "Location::PlaceSchema" : "Location::DetailSchema" %></code>
+    &mdash; <code>Location::Generator#detail_schema</code> chooses off
+    <code>Location#place?</code>, and a room's schema is built for that room's own
+    people count.
+  </p>
+  <%= render "lab/samples/exchange", call: "detail", sample: @sample %>
+</div>
+
+<% if reading.parameters_asked? %>
+  <div class="step model">
+    <h3>4 &mdash; what kind of building it is, picked <%= lab_who(:model) %></h3>
+    <p class="note">
+      Five closed lists, every field optional, and an absent pick falls to the
+      quietest option &mdash; which is what the place then became, so the reading
+      below is <code>Location::Parameters</code>' own and not a second one.
+      Nothing here is a number: the model picks a label and the engine reads the
+      table behind it. <span class="pick hit">A hit</span> is a pick inside what
+      you said you expect, <span class="pick miss">a miss</span> one outside it,
+      and <span class="pick unscored">grey</span> a pick you said nothing about.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>pick</th><th>the model said</th><th>you expect</th></tr></thead>
+        <tbody>
+          <% Lab::Realization.picks.reject(&:per_exit?).each do |pick| %>
+            <tr>
+              <td><%= pick.name.tr("_", " ") %></td>
+              <td><%= lab_pick(@sample.picks_for(pick).first, @kind.expects(pick)) %></td>
+              <td><%= @kind.expects(pick)&.join(", ") || tag.span("(don't care)", class: "absent") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <% if reading.parameters.blank? %>
+      <p class="warn">
+        The block came back empty, so every pick fell to its default &mdash;
+        <code>parameters_declined</code>.
+      </p>
+    <% end %>
+  </div>
+
+  <div class="step engine">
+    <h3>5 &mdash; the inside, laid out <%= lab_who(:engine) %></h3>
+    <p class="note">
+      <code>Location::Interior</code> divided the footprint and
+      <code>Location::Danger</code> threw for every room as it was born. THE PICK
+      MOVES THE ODDS AND THE DIE STILL DECIDES EACH ROOM, which is why a place
+      that picked <em>dangerous</em> and rolled quiet rooms is unlucky rather than
+      wrong &mdash; and why nothing on this table is scored against your
+      expectation.
+    </p>
+    <% if reading.rooms.empty? %>
+      <p class="absent">(no rooms &mdash; the layout wrote none)</p>
+    <% else %>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr><th>storey</th><th>danger</th><th>hazard</th><th>die</th><th>paces</th><th>doors</th></tr>
+          </thead>
+          <tbody>
+            <% reading.rooms.each do |room| %>
+              <tr>
+                <td><%= room["storey"] %></td>
+                <td><%= room["danger"] %></td>
+                <td><%= debug_value(room["hazard"], absent: "none") %></td>
+                <td><%= debug_value(room["hazard_die"], absent: "none") %></td>
+                <td><%= room["width"] %> &times; <%= room["depth"] %></td>
+                <td><%= room["doors"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">
+        <%= pluralize(reading.rooms.size, "room") %>,
+        <%= reading.storeys_below %> below the ground floor.
+        A drawn floor plan waits on <code>x</code> and <code>y</code> being stored
+        beside these &mdash; today the stage records the storey and the extent and
+        not the position.
+      </p>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="step model">
+  <h3><%= reading.parameters_asked? ? 6 : 4 %> &mdash; the prose, written <%= lab_who(:model) %></h3>
+  <div class="fields">
+    <div class="k">the name it proposed</div>
+    <div class="v">
+      <%= debug_value(reading.proposed_name.presence, absent: "it was not asked to name itself") %>
+      <% if reading.asked_for_a_name? %>
+        &rarr; the room is called <strong><%= reading.name_after %></strong>
+        <% if reading.name_after == facts["room"] %>
+          <span class="warn">(the proposal was refused &mdash; it kept its placeholder)</span>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+  <h3>description</h3>
+  <%= debug_prose(reading.description) %>
+  <h3>lore</h3>
+  <%= debug_prose(reading.detail["lore"].to_s) %>
+</div>
+
+<% unless reading.parameters_asked? %>
+  <div class="step model">
+    <h3>5 &mdash; the ways out, answered <%= lab_who(:model) %></h3>
+    <% if reading.asked_for_exits? %>
+      <p class="note">
+        Asked in the SAME conversation as the detail call, which is why the
+        cheaper call carries the larger input. Two of the fields per exit are
+        picks about a place that does not exist yet: whether it has an inside,
+        and how populated it is. These two are answered once PER EXIT, so the
+        kind's rate counts a sample as a hit only when EVERY exit's pick is in
+        the set you allowed.
+      </p>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr><th>exit</th><th>how far</th><th>how</th><th>inside</th><th>population</th></tr>
+          </thead>
+          <tbody>
+            <% inside_expected = @kind.expects(Lab::Realization.pick("inside")) %>
+            <% population_expected = @kind.expects(Lab::Realization.pick("population")) %>
+            <% reading.exits.each do |exit| %>
+              <tr>
+                <td><%= exit["name"] %></td>
+                <td><%= exit["distance"] %></td>
+                <td><%= exit["travel_method"] %></td>
+                <td><%= lab_pick(Location::Parameters.from("inside" => exit["inside"]).inside, inside_expected) %></td>
+                <td><%= lab_pick(exit["population"], population_expected) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <%= render "lab/samples/exchange", call: "exits", sample: @sample %>
+    <% else %>
+      <p class="absent">
+        (no exits call at all &mdash; this room was already at its cap, so
+        <code>Location::Generator#write_exits!</code> asked for nothing. No call,
+        no tokens.)
+      </p>
+    <% end %>
+  </div>
+<% else %>
+  <div class="step engine">
+    <h3>7 &mdash; the ways out, and there was no call, <%= lab_who(:engine) %></h3>
+    <p class="absent">
+      (a laid-out place's ways out are its ROOMS' ways out &mdash;
+      <code>#open_the_way_in!</code> has just moved every doorway it had onto a
+      room of it, so <code>#write_exits!</code> returns early and a building costs
+      one call rather than two.)
+    </p>
+  </div>
+<% end %>
+
+<div class="step engine">
+  <h3><%= reading.parameters_asked? ? 8 : 6 %> &mdash; what the registries made of it, <%= lab_who(:engine) %></h3>
+  <p class="note">
+    The half no reading of the answer could give. <code>Item::Registry</code> and
+    <code>Character::Registry</code> refuse a proposal for reasons the model was
+    told about and reasons it was not, and the difference between what was named
+    and what was admitted is a defect with a cost.
+  </p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th></th><th>the model named</th><th>the records hold</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>people</td>
+          <td><%= reading.people.map { |person| person["fullname"] }.compact_blank.join(", ").presence || "&mdash;".html_safe %></td>
+          <td><%= reading.admitted_people.join(", ").presence || "&mdash;".html_safe %></td>
+        </tr>
+        <tr>
+          <td>things</td>
+          <td><%= reading.items.map { |item| item["name"] }.compact_blank.join(", ").presence || "&mdash;".html_safe %></td>
+          <td><%= reading.admitted_items.join(", ").presence || "&mdash;".html_safe %></td>
+        </tr>
+        <tr>
+          <td>ways out</td>
+          <td><%= reading.exit_names.join(", ").presence || "&mdash;".html_safe %></td>
+          <td><%= Array(reading.after["exits"]).join(", ").presence || "&mdash;".html_safe %></td>
+        </tr>
+        <tr>
+          <td>places that came to exist</td>
+          <td><span class="absent">(off the records, not the answer)</span></td>
+          <td><%= reading.new_places.join(", ").presence || "&mdash;".html_safe %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <% if Array(@sample.row["missing_fields"]).any? %>
+    <p class="warn">a required field never arrived: <%= Array(@sample.row["missing_fields"]).join(", ") %></p>
+  <% end %>
+  <% if Array(@sample.row["cap_hits"]).any? %>
+    <p class="warn">
+      a field arrived at its cap, which is the provider cutting the answer off:
+      <%= Array(@sample.row["cap_hits"]).join(", ") %>
+    </p>
+  <% end %>
+</div>
+
+<div class="step engine">
+  <h3><%= reading.parameters_asked? ? 9 : 7 %> &mdash; what the checks read, <%= lab_who(:engine) %></h3>
+  <p class="note">
+    <code>Eval::Realization::Scorer</code>, over this one row and nothing else.
+    Nearly every check here is a set comparison the app could have made itself; a
+    flag is what one of them caught and not a judgement of the room.
+  </p>
+  <% if @sample.flags.empty? %>
+    <p class="absent">(nothing flagged)</p>
+  <% else %>
+    <ul class="evidence">
+      <% @sample.flags.each do |flag| %>
+        <li><span class="warn"><%= flag.code %></span> &mdash; <%= flag.evidence %></li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>
+
+<h2>your verdict</h2>
+<p class="note">
+  The picks are already scored above, mechanically and for nothing, against what
+  you said they should be. This is for what no closed list can state.
+  <strong>A <em>good</em> is one click.</strong> The aspects are what let a
+  <em>bad</em> grade a particular check later, and zero of them is a complete
+  answer.
+</p>
+<%= render "lab/samples/verdict", sample: @sample %>

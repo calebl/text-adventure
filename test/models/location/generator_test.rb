@@ -163,6 +163,25 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_empty anchor.child_locations, "the inside is laid out on first entry and not at stub time"
   end
 
+  # THE FOOTPRINT IS ROLLED BY THE CLASS METHOD, which is where a room being born
+  # is made -- so every caller that has a band gets an extent from it and no
+  # caller has to remember the roll. `Lab::Realization::Runner` is the second
+  # such caller and reaches it here rather than spelling the draw a second time.
+  test "the class method rolls the footprint from the band, and none without one" do
+    inside = Location::Generator.create_stub!(@story, name: "The Rope Walk", teaser: "A long shed.",
+                                                      inside: "a warren of rooms")
+
+    assert_predicate inside, :place?
+    assert_includes Location::Parameters::INSIDE.fetch("a warren of rooms"), inside.width
+    assert_includes Location::Parameters::INSIDE.fetch("a warren of rooms"), inside.depth
+
+    flat = Location::Generator.create_stub!(@story, name: "The Tow Path", teaser: "Mud and rope.")
+
+    assert_nil flat.width
+    assert_nil flat.depth
+    assert_not_predicate flat, :place?
+  end
+
   # THE ONE THAT MUST NOT FIRE: a road, a shore, a clearing. And an answer with
   # no pick at all, which is a legal answer and the commonest one.
   test "an exit given no inside, or none at all, is born with no footprint" do

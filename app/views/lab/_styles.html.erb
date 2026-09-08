@@ -1,0 +1,48 @@
+<%# THE LAB'S OWN FEW RULES, on top of the `debug` layout's and in its palette --
+    NO NEW COLOURS. Every value below is already in
+    `app/views/layouts/debug.html.erb`; `app/views/map/_styles.html.erb` is the
+    precedent for a page adding its own without touching the layout.
+
+    THE ONE IDEA IS THE PURPLE/TEAL CONVENTION, which is the README's turn
+    diagram's and the debug view's `.branch` colours: PURPLE is a model call,
+    TEAL is the app deciding from records it holds. The sample page is one column
+    in sequence and every step in it is marked one or the other, because the
+    thing the captain said he cannot hold in his head is exactly which of the two
+    each step was. %>
+<style>
+  /* One step of the sequence. The rule down the left is what makes the column
+     read as an order rather than as a stack of panels. */
+  .step { border-left: 2px solid #21262c; padding: 0 0 0 .8rem; margin: 0 0 1.2rem; }
+  .step.model { border-left-color: #4a3d5c; }
+  .step.engine { border-left-color: #2f5a50; }
+  .step > h3 { margin-top: 0; }
+
+  /* Who decided it. Same two colours the debug view's `.branch` gives an
+     arrival and a conversation, for the same reason. */
+  .who { padding: 0 .35rem; border: 1px solid; letter-spacing: .08em; text-transform: uppercase; font-size: 11px; }
+  .who.model { color: #b79ad8; border-color: #4a3d5c; }
+  .who.engine { color: #7fd8c0; border-color: #2f5a50; }
+
+  /* A pick against an expectation. Teal and the warn colour, so a miss reads the
+     same way a flag does. */
+  .pick.hit { color: #7fd8c0; }
+  .pick.miss { color: #d88f7f; }
+  .pick.unscored { color: #6b737b; }
+
+  /* The checkbox groups on the kind form, inline so seven picks fit on a screen. */
+  .lab-choice { display: inline-block; margin: 0 .9rem .2rem 0; color: #cfd3d8; white-space: nowrap; }
+  .lab-form input[type="text"], .lab-form textarea, .lab-form select {
+    background: #08090b; color: #cfd3d8; border: 1px solid #21262c;
+    font: inherit; padding: .2rem .3rem;
+  }
+  .lab-form input[type="submit"] {
+    background: #14140f; color: #d8c07f; border: 1px solid #4a4326;
+    font: inherit; padding: .3rem .8rem; cursor: pointer;
+  }
+  /* The one button in the app that spends money gets the warn border, so it
+     cannot be clicked by mistake for a link. */
+  form.button_to input[type="submit"] {
+    background: #12151a; color: #cfd3d8; border: 1px solid #33393f;
+    font: inherit; padding: .3rem .8rem; cursor: pointer;
+  }
+</style>

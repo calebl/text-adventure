@@ -1,0 +1,26 @@
+<%# ONE CALL'S PROMPT AS SENT AND ANSWER AS RECEIVED, collapsed.
+
+    THE PROMPT IS THE ONE THAT WAS SENT AND NEVER A REBUILT ONE.
+    `Eval::Realization::Bench#receipts_for` reads it off the `messages` rows the
+    call left behind, which is what makes this the diagnosis half of a low hit
+    rate: reading "asked for a cellar" here and seeing `none` come back is a
+    finding, and a bare fraction is only a complaint.
+
+    THE INSTRUCTION BLOCK IS NOT HERE, only its digest at the top of the page.
+    The stored row keeps `instructions_digest` rather than the block itself
+    (`Eval::Realization::Bench::Reading#to_h`), which is the bench's choice and
+    not this page's to overturn -- the block is the same on every sample of every
+    kind, and `Playthrough::PromptVersion` is how two samples are told apart by
+    it. %>
+<% prompt = (sample.row["prompts"] || {})[call] %>
+<% answer = (sample.row["answers"] || {})[call] %>
+<details class="exchange">
+  <summary>the <%= call %> prompt, as sent<%= " (#{prompt.to_s.length} characters)" if prompt.present? %></summary>
+  <div class="body"><pre><%= debug_value(prompt, absent: "not recorded -- the conversation was not kept") %></pre></div>
+</details>
+<details class="exchange">
+  <summary>the raw <%= call %> answer</summary>
+  <div class="body">
+    <pre><%= answer.present? ? JSON.pretty_generate(answer) : debug_value(nil, absent: "nothing came back") %></pre>
+  </div>
+</details>
