@@ -1140,26 +1140,56 @@ ending the narrator was told*, not only the prose.
 engine played, so the take, look or arrival is narrated first and the ending
 second. The scored passage is the ending — the last `Scene` the turn wrote.
 
-**Both sides are checked in** (`db/eval/prompt-ending-before-2026-09-08`,
-`…-after-…`), 4 reps, one arm, **40 calls for $0.0197 the pair**, so the verdict
+**Both sides are checked in and were RE-BOUGHT on 2026-09-08**
+(`db/eval/prompt-ending-before-2026-09-08-2`, `…-after-…-2`), 4 reps, one arm,
+**40 calls a side for $0.0111 + $0.0094 = $0.0205 the pair**, so the verdict
 below replays offline and free with
-`rake eval:prompt_compare BEFORE=prompt-ending-before-2026-09-08 AFTER=prompt-ending-after-2026-09-08`.
+
+```bash
+rake eval:prompt_compare BEFORE=prompt-ending-before-2026-09-08-2 AFTER=prompt-ending-after-2026-09-08-2
+```
+
+**WHY THERE ARE TWO PAIRS ON DISK, because this is the case the protocol did not
+have an answer for until it happened.** The pair PR 162 bought read
+`item_not_held` 0.000 → 0.200 REAL, and the diagnosis was the CHECK:
+`Story::Audit::Prose.item_names` aliased `iron key` to **iron**, a word of this
+world's central place, the IRON GATE. PR 164 fixed that — an item's alias is its
+own last word and never an earlier one. But **a kept set is a summary and holds
+no prose** (`Eval::Prompt::Result#summary` drops the readings so the pair can
+live in the repo), so `rake eval:prompt_score` reprints the rates that were
+computed while the calls were being paid for and *cannot recompute them*. A
+check fix therefore cannot re-score the figure it invalidated — it can only be
+re-bought, which the captain authorized and which is the `-2` pair. The
+2026-09-08 pair stays on disk as history and stays in `Eval::MEASUREMENT_FILES`;
+`Eval::Prompt::EndingKeptSetTest` is what labels it as history and asserts that
+both after sides sent byte-identical `ending` instructions, so the only
+difference between the pairs is the check.
+
+**The lesson for the next kept set**: a rate you may later want to re-score is
+only re-scorable from a corpus that carries its passages — `whole_run_corpus.json`
+and `rake game:score` do, a kept prompt set does not.
 
 **The two sides score DIFFERENT PASSAGES of the same turn**, and every figure
 has to be read knowing it: before the change there was no ending prose at all,
-so the before side scored the turn's own paragraph. `words` 83 → 44 is a closing
+so the before side scored the turn's own paragraph. `words` 87 → 51 is a closing
 paragraph measured against a take or a look, not a paragraph that got shorter;
-`commitments` 1.200 → 2.500 is the figure that reads across, and the ending
+`commitments` 1.500 → 2.600 is the figure that reads across, and the ending
 names more of the records than the prose it follows.
 
 | figure | before | after | verdict |
 | --- | --- | --- | --- |
-| `item_not_held` | 0.000 | 0.200 | WORSE, REAL (p=0.0286) — **and it is the check, not the prose; see below** |
+| `item_not_held` | 0.000 | 0.100 | **NOISE** — the band spans zero; the aliasing check called this same comparison REAL |
 | every other check | 0.000 | 0.000 | NOISE |
 | refusals, failures, cap hits | 0 | 0 | NOISE |
-| `words` (richness) | 83 | 44 | reported |
-| `commitments` (richness) | 1.200 | 2.500 | reported |
-| latency median (warm) | 1.91s | 3.23s | WORSE, REAL — the second call of the turn |
+| `words` (richness) | 87 | 51 | reported |
+| `commitments` (richness) | 1.500 | 2.600 | reported |
+| latency median (warm) | 1.84s | 3.20s | WORSE, REAL — the second call of the turn |
+
+**Nothing flagged at all on the before side, and no check REAL on either.** That
+is the whole result of the re-buy: the one rate that made the original verdict
+look like a regression was the check, and with the check fixed the ending pass
+costs a second call and buys more commitments without moving a single defect
+rate out of noise.
 
 **The after side records `prompt_stable: false`, and it is the only set in the
 repository that does.** The ending prompt carries `What just happened:`, which on
@@ -1168,27 +1198,27 @@ case's whole prompt differs between repetitions by construction, and
 `Eval::Prompt::Version` says so rather than hiding it. The facts the engine owns
 in that prompt are as fixed as any other case's.
 
-**The one REAL defect rate is a false positive, and it is reproducible in two
-lines.** `Story::Audit::Prose.item_names("iron key")` is `["iron key", "iron"]`
-— `place_names` takes the last word of at least `Story::Audit::MIN_NAME_LENGTH`
-characters, and "key" is three. This world's central place is **the iron gate**,
-the phrase is in the engine's own outcome sentence (*"…and the iron gate opens
-outward at last"*), and every flagged passage is of the form *"the signet ring
-heavy in your grip, as the **iron** gate groans open"* — a possession verb about
-the ring, which the records agree is in the player's hand, and the alias of a key
-no passage mentions at all:
+**The residual 0.100 is a SECOND false-positive class in the same check, found
+by the re-buy and reported rather than fixed.** Both flagged passages put the
+iron key *in the mud* — *"the prince's signet ring heavy in your grip, the iron
+key discarded in the mud beside his stiffened corpse"* — and the check fires
+because a true claim about the RING precedes the key in the same clause list, so
+the possession window carries the first item's claim onto the second:
 
 ```ruby
-Story::Audit::Prose.item_names("iron key")           # => ["iron key", "iron"]
-Story::Audit.allocate.send(:possession_claimed?,
-  "You hold the signet ring, and the iron gate groans open behind you.", "iron")  # => true
+audit = Story::Audit.allocate
+audit.send(:possession_claimed?, "the iron key discarded in the mud beside his corpse", "iron key")
+# => false   -- read correctly on its own
+audit.send(:possession_claimed?,
+  "the prince's signet ring heavy in your grip, the iron key discarded in the mud", "iron key")
+# => true    -- the ring's claim reaches across the comma
 ```
 
-`Eval::Prompt::EndingKeptSetTest` pins both, so the diagnosis is a test rather
-than a paragraph. **The fix belongs to the check** — an item alias that is a word
-of a `Location` name in the same story is not an item alias — and that is a
-measurement-file change with its own before/after over the pinned corpora, which
-is why it is not in the change that found it.
+`Eval::Prompt::EndingKeptSetTest` pins that class offline and for free, so the
+diagnosis is a test rather than a paragraph. **The fix belongs to the check** and
+is a measurement-file change with its own before/after over the pinned corpora,
+which is why it is not in the change that found it — the same rule that kept the
+alias fix out of PR 162.
 
 ### Serial, for now
 
