@@ -115,6 +115,21 @@ class Lab::Realization::HitRateTest < ActiveSupport::TestCase
     assert_equal "1 of 2", kind.hit_rate.overall.fraction
   end
 
+  # THE ONE FIGURE THAT BELONGS TO NO PICK, and it has to print. A `#name` that
+  # reached through the nil `pick` raised on exactly the figure a console or a
+  # rake task is most likely to print, which is how this was found.
+  test "the overall figure prints without a pick of its own" do
+    kind = create(:lab_realization_kind, :a_building, :expecting_a_cellar)
+    create(:lab_realization_sample, :a_building, kind: kind)
+
+    overall = kind.hit_rate.overall
+
+    assert_nil overall.pick
+    assert_equal Lab::Realization::HitRate::EVERY, overall.name
+    assert_equal "every declared pick: 1 of 1 -- not established", overall.to_s
+    assert(kind.hit_rate.figures.all? { |figure| figure.to_s.present? })
+  end
+
   test "an expectation spanning both calls can have no sample that answers all of it" do
     kind = create(:lab_realization_kind, :a_building, :expecting_a_cellar, :expecting_no_insides)
     create(:lab_realization_sample, :a_building, kind: kind)

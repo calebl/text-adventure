@@ -43,8 +43,15 @@ class Lab::Realization::HitRate
   # this pick says nothing about it, and counting it in would report a rate the
   # figure never earned. A failed call is out of every denominator, for the same
   # reason `Eval::Realization::Scorer#readings` rejects one.
+  # `pick` AND `allowed` ARE NIL ON EXACTLY ONE FIGURE -- `#overall`, which is
+  # every declared pick at once and therefore belongs to no single one of them.
+  # Named here rather than left to the reader because a `#name` that reached
+  # through the nil would raise on the one figure a console or a rake task is
+  # most likely to print.
+  EVERY = "every declared pick".freeze
+
   Figure = Data.define(:pick, :allowed, :hits, :answered, :misses) do
-    def name = pick.name
+    def name = pick&.name || EVERY
     def judgeable? = answered.positive?
     def established? = answered >= Lab::Realization::MIN_DRAWS
     def fraction = "#{hits} of #{answered}"
