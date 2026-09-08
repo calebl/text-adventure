@@ -145,23 +145,28 @@ class Scene::EndingTest < ActiveSupport::TestCase
     assert_equal "conclude", scene.resolved_action
   end
 
-  # --- the baseline this change could not be judged against -----------------
+  # --- what this pass is measured by, and what it must not have moved --------
   #
-  # EVALUATION.md's free gate: *a bench whose staged worlds lack the feature
-  # cannot measure a prompt block that renders on records.* Neither world the
-  # prompt bench plays has an arc, so no case in that corpus can conclude one
-  # and no case can reach `Scene::Ending` at all -- the after side would be the
-  # before side bought twice. `Location::GeneratorArcTest` is the same test for
-  # the same reason, one prompt over.
+  # THE ENDING HAS ITS OWN BENCH: `test/fixtures/files/prompt_ending_corpus.yml`,
+  # played over the one world with an arc, with both sides checked in under
+  # `db/eval/prompt-ending-*-2026-09-08` -- see EVALUATION.md and
+  # `Eval::Prompt::EndingKeptSetTest`. What it deliberately did NOT do is touch
+  # the ninety-case corpus, because `Eval::Prompt.digest` is over the cases and
+  # the 2026-09-05 baseline is the before side for the prompts those cases send.
+  #
+  # SO THIS IS THE CANARY ON THE OTHER CORPUS. None of the worlds it plays has an
+  # arc, which is why no case in it could conclude one, reach this pass, or so
+  # much as gain a line -- and the day one of them gains a `quests:` block, that
+  # is no longer true and its baseline needs re-taking.
 
-  test "the prompt bench worlds still cannot reach an ending, so there is nothing to buy" do
-    Eval::Prompt::STORIES.each do |title|
+  test "the ninety-case corpus still cannot reach an ending, so its baseline stands" do
+    Eval::Prompt.corpus("main").positions.map(&:story).uniq.each do |title|
       document = WorldSeed.checked_in_document(title)
 
       assert_not_nil document, "#{title} is not a checked-in world any more, so this check is reading nothing"
       assert_nil document["quests"],
-                 "#{title} has an arc now, so a `rake eval:prompt` case CAN end a game and reach " \
-                 "Scene::Ending -- write the cases and buy a round at today's digest"
+                 "#{title} has an arc now, so a case in the main corpus CAN end a game and reach " \
+                 "Scene::Ending -- its prompts have moved and prompt-2026-09-05 is no longer their before side"
     end
   end
 

@@ -40,7 +40,12 @@ class Playthrough::MomentArcTest < ActiveSupport::TestCase
   # cannot render for any case in it -- which is what makes the stored baseline
   # `prompt-2026-09-05` still a baseline for the prompt this tree sends.
   test "the bench corpus worlds send an unchanged context" do
-    Eval::Prompt::STORIES.each do |title|
+    # THE WORLDS THE NINETY-CASE CORPUS ACTUALLY PLAYS, off the corpus itself
+    # rather than off `Eval::Prompt::STORIES` -- that list gained a third world
+    # for the ending's own corpus (`Eval::Prompt::CORPORA`), and that world DOES
+    # have an arc. The claim here is about the cases `prompt-2026-09-05`
+    # measured.
+    Eval::Prompt.corpus("main").positions.map(&:story).uniq.each do |title|
       document = WorldSeed.checked_in_document(title)
 
       assert_not_nil document, "#{title} is not a checked-in world any more, so this check is reading nothing"

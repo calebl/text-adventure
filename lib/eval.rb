@@ -62,6 +62,15 @@ module Eval
   #
   # NOT ENFORCED. There is no hook and no lock, on purpose (see the note on
   # `HELD_OUT`). It is a declaration for the skill that will drive this loop.
+  #
+  # ONE MEASUREMENT INPUT IS DELIBERATELY NOT ON THIS LIST AND IS WORTH KNOWING
+  # ABOUT: `lib/engine_sweep/worlds/the-iron-gate-descends.yml` is the world the
+  # ending corpus stages (`Eval::Prompt::WORLD_ROOTS`), so its rooms, its items
+  # and its arc are inputs to `db/eval/prompt-ending-*`. It is a SWEEP world
+  # first -- scripts are written against it and it is meant to be editable -- so
+  # freezing it here would be freezing the wrong thing. What follows from that is
+  # a rule instead: a change to that file re-baselines the ending sets, and
+  # `Eval::Prompt::EndingKeptSetTest`'s digest assertion is what says so.
   MEASUREMENT_FILES = %w[
     app/models/story/audit.rb
     app/models/story/audit/prose.rb
@@ -119,12 +128,15 @@ module Eval
     test/fixtures/files/transition_corpus.json
     test/fixtures/files/classifier_corpus.yml
     test/fixtures/files/prompt_corpus.yml
+    test/fixtures/files/prompt_ending_corpus.yml
     test/fixtures/files/realization_corpus.yml
     test/fixtures/files/worlds/the-iron-gate-descends.yml
     db/eval/classifier-remote/classifier.json
     db/eval/classifier-mistral-small/classifier.json
     db/eval/classifier-gemini-flash-lite/classifier.json
     db/eval/prompt-2026-09-05/prompt.json
+    db/eval/prompt-ending-before-2026-09-08/prompt.json
+    db/eval/prompt-ending-after-2026-09-08/prompt.json
     db/eval/room-names-after-bef7cec/realization.json
     db/eval/interior-entry-before/realization.json
     db/eval/interior-entry-after/realization.json

@@ -23,6 +23,15 @@
 # `Eval::Prompt::UNSUPPORTED_ACTS`. `Reading#calls` counts what really happened
 # and the board says so if it was ever more than one.
 #
+# AN ENDING CASE IS THE ONE SHAPE THAT BUYS TWO, and it is not an oversight in
+# the paragraph above: an ending happens on the turn AFTER a line the engine
+# played, so the take or the look or the arrival is narrated first and
+# `Scene::Ending` is written second. `Reading#calls` sees only the second,
+# because the first is attributed to the turn's own Scene and the scored passage
+# is the LAST Scene the turn wrote -- so `extra_calls` still reads 0 and the
+# figure that tells the truth about the spend is the estimate
+# (`Eval::Prompt::PER_CALL["ending"]`, and `Corpus::Case#calls`).
+#
 # ITS OWN COPY OF THE WORLD PER CASE, THROUGH THE STAGING SEAM AND NOT AROUND
 # IT. A case moves rows -- a `take` takes, a `drop` drops, a `move` moves -- so
 # two cases sharing one staged position would not be two cases. Each one is
@@ -82,6 +91,23 @@ class Eval::Prompt::Bench
 
     def classify(_command) = @intent
   end
+
+  # THE NAME A FALLBACK IS FILED UNDER, and it is a class rather than a string
+  # for the reason every other failure here is one: `Reading#error_class` splits
+  # on colon-space and the board groups by what it finds, so a failure with no
+  # name is a failure nobody can count.
+  #
+  # IT IS NEVER RAISED. `Scene::Ending` swallows every way its call can fail --
+  # that is the whole design, the player gets an ending either way -- so from out
+  # here a refused ending and a written one both come back as a Scene. What tells
+  # them apart is the LABEL the engine wrote on the row: a `conclude` row is the
+  # engine's own sentence and a `Scene::NARRATED_ENDING` row is the narrator's.
+  #
+  # AND A FALLBACK IS NOT A PASSAGE, which is why this exists at all: scoring the
+  # engine's stored sentence as prose would put the app's own copy in the
+  # numerator of every check and in the richness figure, and a refusal would read
+  # as a clean run. Named as a failed call instead, which is what it is.
+  class EndingFellBack < StandardError; end
 
   # WHAT ONE CASE CAME BACK AS, with the facts it was written against.
   #
@@ -236,7 +262,8 @@ class Eval::Prompt::Bench
   # is nothing left to read.
   def read(kase, arm, rep)
     Eval::Classifier::Stage.open([ corpus.position(kase.position) ],
-                                 label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true) do |stages|
+                                 label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
+                                 roots: Eval::Prompt::WORLD_ROOTS) do |stages|
       play_case(kase, stages.fetch(kase.position), arm, rep)
     end
   end
@@ -255,6 +282,21 @@ class Eval::Prompt::Bench
       scene = turn.play(kase.typed)
       elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
       receipts = receipts_for(scene)
+      # THE ENDING THAT FELL BACK, read off the row the engine labelled -- see
+      # `EndingFellBack`. Nothing else in this method asks the app what happened;
+      # this one has to, because the pass being measured answers a Scene whether
+      # or not a model wrote it.
+      fell_back = kase.ending? && scene&.engine_authored?
+
+      if fell_back
+        return Reading.new(
+          kase: kase, arm: arm.id, rep: rep, story: story.title, pass: kase.pass,
+          text: nil, facts: {}, seconds: nil, input_tokens: receipts[:input_tokens],
+          output_tokens: receipts[:output_tokens], calls: receipts[:calls], answered_by: nil,
+          instructions: nil, prompt: nil, missing_fields: [], cap_hits: [],
+          error: "#{EndingFellBack}: the ending call did not answer, so the engine's stored sentence stands"
+        )
+      end
 
       Reading.new(
         kase: kase, arm: arm.id, rep: rep, story: story.title, pass: receipts[:pass],

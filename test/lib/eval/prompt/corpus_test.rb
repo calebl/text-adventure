@@ -73,6 +73,84 @@ class Eval::Prompt::CorpusTest < ActiveSupport::TestCase
     assert_empty twice.keys, "the same line at the same position is one measurement counted twice"
   end
 
+  # ------------------------------------------------------- the ending's corpus
+
+  # THE SECOND FILE, VALIDATED THE SAME WAY AND WITH ONE MORE RULE. Its cases
+  # play the one world with an arc, and every one of them has to be staged
+  # exactly one beat from the end of it -- see `Corpus#ending_problems`.
+  test "every ending case is one beat from the end of its arc, in reach, and free of a second world" do
+    problems = EngineSweep.without_a_model { Eval::Prompt.corpus("ending").problems }
+
+    assert_empty problems, <<~FAILED
+      #{Eval::Prompt::ENDING_CORPUS} does not validate:
+
+      #{problems.join("
+")}
+    FAILED
+  end
+
+  test "the ending corpus is all ending cases and reaches both of the arc's endings" do
+    corpus = Eval::Prompt.corpus("ending")
+
+    assert_equal [ "ending" ], corpus.by_shape.keys, "a case in this file that ends nothing measures nothing"
+    assert corpus.cases.all?(&:ending?)
+    assert_equal [ 2 ], corpus.cases.map(&:calls).uniq, "an ending case buys the turn's prose and the ending"
+    assert_operator corpus.positions.size, :>=, 3,
+                    "one position per shape of turn that can end a story: a take, an arrival, and a quiet line"
+    assert_equal [ "The Iron Gate Descends" ], corpus.positions.map(&:story).uniq
+  end
+
+  # A CASE WHOSE POSITION IS NOT ONE BEAT FROM THE END, which is the one way to
+  # write an ending case that measures the wrong pass: the turn narrates, the
+  # arc does not close, and `Scene::Ending` is never reached at all.
+  test "an ending case whose arc is not one beat from done is refused" do
+    problems = validate(<<~YML)
+      positions:
+      - id: at-the-gate
+        story: The Iron Gate Descends
+        room: Iron Gate Chamber
+      cases:
+      - id: too-far-out
+        position: at-the-gate
+        typed: take the signet ring
+        act: take
+        target: prince's signet ring
+        shape: ending
+        why: two beats still outstanding, so this turn ends nothing
+    YML
+
+    assert_match(/beat\(s\) from the end/, problems.sole)
+  end
+
+  # AND A CASE WHOSE SETUP ALREADY FINISHED THE ARC, which is the other way: the
+  # game is over before the case runs, so the line is refused and narrates
+  # nothing.
+  test "an ending case whose setup already ended the game is refused" do
+    problems = validate(<<~YML)
+      positions:
+      - id: all-the-way-in
+        story: The Iron Gate Descends
+        room: the dry cell
+        setup:
+        - take the signet ring
+        - go to the obsidian maw
+        - go to Blackfang Tunnel
+        - go to Blackfang Warren room 1
+        - go to Blackfang Warren room 2
+        - go to the dry cell
+      cases:
+      - id: after-the-end
+        position: all-the-way-in
+        typed: look at the ring
+        act: examine
+        target: prince's signet ring
+        shape: ending
+        why: the setup walked the whole arc, so there is nothing left to end
+    YML
+
+    assert_match(/already finished the arc/, problems.sole)
+  end
+
   # ---------------------------------------------------------------- the rules
 
   test "a case naming something out of reach is refused" do

@@ -1,5 +1,11 @@
 # THE CASES, AND THE THING THAT STOPS A CASE BEING A CLAIM.
 #
+# TWO FILES READ BY THIS ONE CLASS, and `Eval::Prompt::CORPORA` names them:
+# `prompt_corpus.yml` is the ninety hand-verified cases of the two seeded worlds,
+# and `prompt_ending_corpus.yml` is the ending's own -- a separate file because
+# `Eval::Prompt.digest` is over the cases, so a case added to the first one costs
+# the checked-in baseline its standing. Everything below is true of both.
+#
 # `test/fixtures/files/prompt_corpus.yml` is single-turn cases: a position in a
 # seeded world, a typed line, and the action the engine resolved it to. Every
 # fact the narrator will be told comes out of the records that position really
@@ -34,6 +40,10 @@
 #   * A world this bench does not play (`Eval::Prompt::STORIES`), and a `talk`
 #     (`Eval::Prompt::UNSUPPORTED_ACTS`). Both have reasons and both are stated
 #     there.
+#   * An `ending` case whose position is not EXACTLY ONE BEAT from the end of its
+#     arc, or whose setup lines finished the arc before the case ran. Either way
+#     the turn cannot reach `Scene::Ending` and the case measures the wrong pass.
+#     See `#ending_problems`.
 #
 # WHAT IT CANNOT CATCH is whether the case is worth measuring -- whether this
 # turn, in this room, with these things in reach, puts the narrator anywhere
@@ -57,6 +67,13 @@ class Eval::Prompt::Corpus
     def initialize(cast: {}, setup: [], why: nil, **rest) = super
   end
 
+  # THE ONE SHAPE THAT IS ALSO A CLAIM. Every other `shape` is a label the board
+  # groups by; this one says the case's turn ENDS THE STORY, and the validator
+  # reads it -- a position that is not exactly one beat from the end of its arc
+  # cannot reach `Scene::Ending`, and a case that cannot reach the pass it was
+  # written for measures nothing. See `#ending_problems`.
+  ENDING = "ending".freeze
+
   # ONE CASE: one turn, against one position.
   #
   # `act` and `target` are the answer the classifier would have given, and the
@@ -68,12 +85,26 @@ class Eval::Prompt::Corpus
 
     def move? = act == :move
 
+    def ending? = shape.to_s == ENDING
+
     # WHICH PROSE PASS THIS CASE WILL LAND IN. The app decides it
     # (`Playthrough::Turn#play`) and the run records what really answered; this
     # is the prediction, and it exists for one reason -- the estimate has to be
     # printed before a call is made, and an arrival and a narration cost
     # different amounts.
-    def pass = move? ? "arrival" : "narration"
+    #
+    # AN ENDING CASE LANDS IN `ending` WHATEVER ITS ACT IS, because the ending is
+    # the LAST prose the turn produced and the scored passage is the last Scene
+    # the turn wrote (`Playthrough::Turn#play`). Its own take or look or arrival
+    # is narrated first and is not what the case is about -- see `#calls`.
+    def pass = ending? ? "ending" : (move? ? "arrival" : "narration")
+
+    # HOW MANY MODEL CALLS THIS CASE REALLY BUYS. One for every shape but the
+    # ending, which buys the turn's own prose and then the ending: an ending
+    # happens on the turn AFTER a line the engine played, and that line is
+    # narrated. `Eval::Prompt::PER_CALL` prices the pair as one figure and says
+    # so; this is the count the estimate multiplies.
+    def calls = ending? ? 2 : 1
 
     def to_s = "#{act}#{" -> #{target}" if target}"
   end
@@ -144,7 +175,8 @@ class Eval::Prompt::Corpus
     found = structural_problems
     return found if found.any?
 
-    Eval::Classifier::Stage.open(positions, label: STAGE_LABEL, retitle: true) do |stages|
+    Eval::Classifier::Stage.open(positions, label: STAGE_LABEL, retitle: true,
+                                 roots: Eval::Prompt::WORLD_ROOTS) do |stages|
       cases.each { |kase| found.concat(problems_for(kase, stages[kase.position])) }
     end
     found
@@ -200,7 +232,48 @@ class Eval::Prompt::Corpus
     found = []
     found.concat(refusal_problems(kase, record))
     found.concat(extra_call_problems(kase, record))
+    found.concat(ending_problems(kase, standing))
     found
+  end
+
+  # AN ENDING CASE THAT CANNOT END THE STORY IS NOT AN ENDING CASE, and this is
+  # the one thing about these cases a validator can settle offline: the position
+  # has to be staged EXACTLY ONE BEAT from the end of its main arc, so the one
+  # turn the case plays is the turn that concludes it.
+  #
+  # WHY IT CANNOT SIMPLY PLAY THE TURN AND LOOK: the turn is a model call, which
+  # is the thing being measured and the thing a test suite may not buy. So what
+  # is checked is the STATE the turn starts from -- and if the case's own line
+  # then fails to reach that last beat, the run says so in the open, because the
+  # reading comes back on the `narration` pass instead of on `ending` and the
+  # board prints the pass it got.
+  #
+  # A SETUP THAT ALREADY ENDED THE GAME is the other way to write this wrong,
+  # and it is the easy one: `Eval::Classifier::Stage` walks setup lines through
+  # the real engine, so a setup that reached the last beat conclude!d the arc
+  # before the case ever ran and the case would be a line typed into a finished
+  # game -- refused, with no prose at all.
+  def ending_problems(kase, standing)
+    return [] unless kase.ending?
+
+    game = standing.playthrough.reload
+    quest = game.story.main_quest
+
+    if quest.nil? || quest.steps.empty?
+      return [ "#{kase.id}: #{game.story.title.inspect} has no main arc with steps, so no case in it can " \
+               "end a game -- see Eval::Prompt::WORLD_ROOTS for the one world that has one" ]
+    end
+
+    if game.over?
+      return [ "#{kase.id}: the setup lines already finished the arc, so this case is a line typed into a " \
+               "game that is over -- it would be refused and narrate nothing" ]
+    end
+
+    outstanding = quest.steps.size - Playthrough::Beat.where(playthrough: game, quest_step: quest.steps).count
+    return [] if outstanding == 1
+
+    [ "#{kase.id}: this position is #{outstanding} beat(s) from the end of #{quest.title.inspect}, and an " \
+      "ending case has to be exactly one -- the turn it plays is the turn that has to conclude the arc" ]
   end
 
   # THE TARGET, RESOLVED THROUGH THE ENGINE'S OWN CLOSED SET -- asked of

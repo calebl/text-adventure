@@ -53,6 +53,19 @@ class Eval::Classifier::Stage
   # and nothing about them changes.
   LABEL = "classifier bench".freeze
 
+  # WHERE A WORLD FILE IS LOOKED FOR, and the default is the ONE directory this
+  # class read before there was a parameter: `db/seeds/worlds`, which is every
+  # world the classifier corpus names.
+  #
+  # A CALLER MAY NAME OTHERS AND ONE DOES. `Eval::Prompt::WORLD_ROOTS` adds
+  # `lib/engine_sweep/worlds`, because the only world in the repository with an
+  # arc lives there and an ending case needs one. It is a PARAMETER rather than a
+  # longer default list for the reason that file states at length: two files in
+  # this repository share the slug `the-iron-gate-descends` and they are two
+  # different worlds, so which root a bench reads is a decision that bench has to
+  # make out loud rather than inherit from here.
+  ROOTS = [ WorldSeed::DIRECTORY ].freeze
+
   def self.title_for(position, label: LABEL) = "#{position.story} (#{label}: #{position.id})"
 
   class Unstageable < StandardError; end
@@ -113,20 +126,21 @@ class Eval::Classifier::Stage
   # `rollback_transaction` on the connection directly. A real exception
   # therefore still travels out of here, and the transaction is still rolled
   # back on its way. `Eval::Classifier::StageTest` pins both halves.
-  def self.open(positions, label: LABEL, retitle: false, &block)
+  def self.open(positions, label: LABEL, retitle: false, roots: ROOTS, &block)
     Eval::Concurrency.rolled_back do
       block.call(positions.to_h { |position|
-        [ position.id, new(position, label: label, retitle: retitle).stand! ]
+        [ position.id, new(position, label: label, retitle: retitle, roots: roots).stand! ]
       })
     end
   end
 
   attr_reader :position
 
-  def initialize(position, label: LABEL, retitle: false)
+  def initialize(position, label: LABEL, retitle: false, roots: ROOTS)
     @position = position
     @label = label
     @retitle = retitle
+    @roots = Array(roots)
   end
 
   def stand!
@@ -193,8 +207,11 @@ class Eval::Classifier::Stage
   end
 
   def load_world!
-    file = Rails.root.join("db/seeds/worlds", "#{WorldSeed.slug(position.story)}.yml")
-    raise Unstageable, "#{position.id}: there is no seeded world #{position.story.inspect} (#{file})" unless File.exist?(file)
+    file = @roots.map { |root| Pathname.new(root).join("#{WorldSeed.slug(position.story)}.yml") }.find(&:exist?)
+    unless file
+      raise Unstageable, "#{position.id}: no world file for #{position.story.inspect} under " \
+                         "#{@roots.join(", ")}"
+    end
 
     document = WorldSeed.parse(File.read(file))
     document["story"]["title"] = self.class.title_for(position, label: @label)

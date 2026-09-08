@@ -1,0 +1,168 @@
+# THE ENDING'S OWN CASES: five single-turn cases across three positions, every
+# one of them staged one beat from the end of the one arc in this repository.
+#
+# WHY THIS IS A SECOND FILE AND NOT FIVE MORE CASES IN `prompt_corpus.yml`.
+# `Eval::Prompt.digest` is a fingerprint of the cases, and the checked-in
+# baseline `db/eval/prompt-2026-09-05` records the digest of the ninety it
+# measured -- so a case added there stops that set being a before side for the
+# prompt it really measured, which is the one thing the baseline-first rule
+# cannot afford. Two files, two digests, two kept sets. See
+# `Eval::Prompt::CORPORA`.
+#
+# WHY THIS WORLD. `Scene::Ending` runs on the turn a playthrough's main arc
+# concludes, and `The Iron Gate Descends` is the ONLY world in the repository
+# with a `quests:` block -- three beats, two reachable endings and a
+# ramification. It lives in `lib/engine_sweep/worlds` rather than
+# `db/seeds/worlds` on purpose (it is not loaded into every development
+# database), which is why the prompt bench reads a second world root:
+# `Eval::Prompt::WORLD_ROOTS`, whose header also says why the identically
+# slugged file under `test/fixtures/files/worlds` is NOT the one read here.
+#
+# HOW A POSITION GETS ONE BEAT FROM THE END. `Eval::Classifier::Stage` walks the
+# `setup:` lines through the real engine with NO MODEL -- so they cost nothing,
+# they are deterministic to the row, and the beats they reach are reached by
+# `Playthrough::Arc` exactly as a player's lines would reach them. The `room:`
+# is then set directly, with no turn and no Scene, which is what lets a position
+# STAND in the last beat's room without having reached it yet: the arc is read
+# after a line the engine played, and setting a column is not one.
+#
+# THE VALIDATOR REFUSES A CASE THAT CANNOT END THE STORY -- exactly one beat
+# outstanding, and a game the setup did not already finish
+# (`Eval::Prompt::Corpus#ending_problems`). What it cannot check offline is
+# whether the case's own line reaches that last beat, because playing the turn
+# is the model call being measured. The run says so instead: a reading that came
+# back on the `narration` pass rather than on `ending` is a case that did not
+# end anything, and the board prints the pass it got.
+#
+# BOTH ENDINGS ARE REACHED, and by the engine's own rule rather than by anything
+# in this file. `too-late` carries `when: out_of_order`, so the position that
+# goes down and comes back for the ring reaches it and the two that go in order
+# read `rescued` -- which is what makes these cases a test of *the ending the
+# ENGINE selected is the ending the narrator was told*, and not only of prose.
+#
+# AND ONE THING ABOUT THIS CORPUS IS NOT CONSTANT, WHICH IS SAID OUT LOUD
+# BECAUSE EVERY OTHER PROMPT BENCH SET RECORDS `prompt_stable: true`. The ending
+# prompt carries `What just happened:` -- and on this pass that line is the prose
+# the FIRST call of the same turn wrote, so it differs between repetitions by
+# construction. `Eval::Prompt::Version`'s stability check reads the designated
+# case's whole prompt, so it reads false here and will go on reading false. The
+# facts the ENGINE owns in that prompt -- the room, the exits, the cast, the
+# hands, and the ending sentence itself -- are as fixed as any other case's.
+#
+# EACH CASE BUYS TWO CALLS, unlike every case in the other file: an ending
+# happens on the turn AFTER a line the engine played, so the take, the look or
+# the arrival is narrated first and the ending is written second. The scored
+# passage is the ending -- the last Scene the turn wrote. See
+# `Eval::Prompt::PER_CALL` and `Eval::Prompt::Corpus::Case#calls`.
+positions:
+- id: back-at-the-gate
+  story: The Iron Gate Descends
+  room: Iron Gate Chamber
+  why: |-
+    The whole warren walked and the ring still lying in the mud where the
+    Blackfang dropped it. Beats 2 and 3 are reached, beat 1 is not, and they
+    were reached in the wrong order -- so the turn that picks the ring up ends
+    the story on `too-late`, which is the engine's rule and not this file's.
+  setup:
+  - go to the obsidian maw
+  - go to Blackfang Tunnel
+  - go to Blackfang Warren room 1
+  - go to Blackfang Warren room 2
+  - go to the dry cell
+
+- id: outside-the-cell
+  story: The Iron Gate Descends
+  room: Blackfang Warren room 2
+  why: |-
+    The ring in hand and the warren behind them, one door short of the cell.
+    Beats 1 and 2 reached in the arc's own order, so the arrival in the cell
+    ends the story on the default `rescued` -- and the ending is written after
+    an ARRIVAL, which is the one first half of a turn that is schema'd.
+  setup:
+  - take the signet ring
+  - go to the obsidian maw
+  - go to Blackfang Tunnel
+  - go to Blackfang Warren room 1
+  - go to Blackfang Warren room 2
+
+- id: inside-the-cell
+  story: The Iron Gate Descends
+  room: the dry cell
+  why: |-
+    Standing in front of the prince with the ring in hand and the last beat NOT
+    reached, which is a state only the stager can build: `room:` is a column and
+    reaching a beat needs a turn. Whatever the player types next, the arc reads
+    `reach_location` off where they are standing and the story ends -- so this
+    position is what the three quietest turns in the game are measured from.
+  setup:
+  - take the signet ring
+  - go to the obsidian maw
+  - go to Blackfang Tunnel
+  - go to Blackfang Warren room 1
+
+cases:
+- id: ending-take-the-ring
+  position: back-at-the-gate
+  typed: take the signet ring
+  act: take
+  target: prince's signet ring
+  shape: ending
+  why: |-
+    THE NON-DEFAULT ENDING, and the reason it is first. The beats were reached
+    2, 3, 1, so `Quest::Outcome::CONDITIONS` selects `too-late` -- the cell
+    opened before there was any proof he came this way. The narrator is told
+    THAT sentence, and a paragraph that ends the story the other way round (the
+    prince alive, the gate open) is the failure this case exists to catch. It is
+    also a take, so `take_denied` is live over the ending's own prose.
+
+- id: ending-walk-into-the-cell
+  position: outside-the-cell
+  typed: go into the cell
+  act: move
+  target: the dry cell
+  shape: ending
+  why: |-
+    THE ENDING AFTER AN ARRIVAL. The cell is `realized` in the world file, so
+    the move costs `Scene::Generator` and not `Location::Generator`, and the
+    ending is written after a schema'd paragraph rather than after a streamed
+    one. It is the only case here whose first call is not a narration, and it is
+    what says the second call does not depend on the shape of the first.
+
+- id: ending-look-at-the-ring
+  position: inside-the-cell
+  typed: look at the ring
+  act: examine
+  target: prince's signet ring
+  shape: ending
+  why: |-
+    THE QUIETEST TURN THAT ENDS A STORY: a look at something in the player's own
+    hand, in the room the last beat asked for. Nothing moves and nothing is
+    written by the turn itself, so the whole difference between this case's
+    prompt and an ordinary examine's is the ending line -- which makes it the
+    cleanest read on what that line does to the prose.
+
+- id: ending-a-loose-line
+  position: inside-the-cell
+  typed: listen to the dark
+  act: other
+  shape: ending
+  why: |-
+    THE LOOSEST PROMPT IN THE GAME, ending a story. `other` resolves no record
+    at all, so the narrator has the moment, the ending sentence and a line that
+    asks for nothing -- which is where prose invents, and where an ending is
+    most likely to be written about a door or a person the records do not have.
+
+- id: ending-drop-the-ring
+  position: inside-the-cell
+  typed: drop the ring
+  act: drop
+  target: prince's signet ring
+  shape: ending
+  why: |-
+    THE ADVERSARIAL ONE. Beat 1 is a `hold_item` and it was reached in the
+    setup, so a `playthrough_beats` row already exists and dropping the ring on
+    the last turn does not un-reach it -- the arc still closes. What it does do
+    is put the ring on the floor of the room the ending is written in, so an
+    ending that has the player carrying it out is `item_not_held` and an ending
+    that has them pick it up first is `pickup_invented`. Both checks are live
+    over the last paragraph in the game.
