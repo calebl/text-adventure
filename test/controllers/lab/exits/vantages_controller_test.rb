@@ -179,6 +179,17 @@ class Lab::Exits::VantagesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to lab_exits_vantages_path
   end
 
+  # AND THE `absent` LIST IS ESCAPED ON THIS PAGE TOO -- see the same test on
+  # `Lab::Exits::SamplesControllerTest` for the defect both pages shipped with.
+  test "a place taken off the books with markup in its name is escaped" do
+    vantage = create(:lab_exits_vantage, absent: "<img src=x onerror=alert(2)>")
+
+    get lab_exits_vantage_path(vantage)
+
+    assert_response :success
+    assert_no_match(/<img src=x onerror/, response.body)
+  end
+
   # THE GATE. This app has no auth at all, so an endpoint behind a hidden link is
   # an endpoint anybody with the link can read -- and this one can be made to
   # spend the captain's money.

@@ -131,6 +131,25 @@ class Lab::Exits::SamplesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/The Drowned Compact/, flash[:alert])
   end
 
+  # AND WHAT HE TYPED IS ESCAPED, which is a real defect this page shipped with
+  # for one CI run: the vantage's name and its `absent` list are both text a
+  # person typed, and both reached the page through `html_safe` -- the name in the
+  # back-link and the list joined on an HTML entity. Brakeman caught both at high
+  # confidence. There is no auth on this app, so the person typing is not always
+  # the person reading.
+  test "a name typed with markup in it reaches the page escaped" do
+    vantage = create(:lab_exits_vantage, name: "<script>alert(1)</script>",
+                                         absent: "<img src=x onerror=alert(2)>")
+    sample = create(:lab_exits_sample, :one_building_and_open_ground, vantage: vantage)
+
+    get lab_exits_sample_path(sample)
+
+    assert_response :success
+    assert_no_match(/<script>alert\(1\)<\/script>/, response.body)
+    assert_no_match(/<img src=x onerror/, response.body)
+    assert_match(/&lt;script&gt;/, response.body, "the name is still shown, as text")
+  end
+
   test "every endpoint is behind the debug flag, and the one that spends most of all" do
     sample = create(:lab_exits_sample, :one_building_and_open_ground)
 

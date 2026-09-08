@@ -196,6 +196,7 @@ Read the header of the file named, not a summary of it.
 bin/rails test          # includes rake game:sweep
 bundle exec rubocop
 bin/rails zeitwerk:check   # app/agents/ uses PascalCase filenames
+bin/brakeman --no-pager    # CI fails on a warning; a new view is where they come from
 ```
 
 ## Environment

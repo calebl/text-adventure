@@ -46,7 +46,12 @@
           figures below to be far apart.
         </span>
       <% else %>
-        <%= @vantage.absent_names.join(" &middot; ").html_safe %>
+        <%# A LITERAL SEPARATOR AND NO `html_safe`, which is `debug/show.html.erb`'s
+            precedent and here it is load-bearing: these are names a person TYPED,
+            so `html_safe` on a string built from them is an unescaped attribute
+            and Brakeman says so in a high-confidence warning. Escape the names;
+            spell the middle dot as itself. %>
+        <%= @vantage.absent_names.join(" · ") %>
       <% end %>
     </div>
   </div>

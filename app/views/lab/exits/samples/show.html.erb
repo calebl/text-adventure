@@ -23,7 +23,11 @@
 
 <h1>draw #<%= @sample.id %></h1>
 <p class="nav">
-  <%= link_to "&larr; #{@vantage.name}".html_safe, lab_exits_vantage_path(@vantage) %>
+  <%# THE ARROW AS ITSELF RATHER THAN AS `&larr;`.html_safe, unlike the three
+      other back-links in this namespace: this one carries a VANTAGE'S NAME,
+      which is text a person typed, and `html_safe` on a string interpolating it
+      would hand it to the page unescaped. The others label a fixed page. %>
+  <%= link_to "← #{@vantage.name}", lab_exits_vantage_path(@vantage) %>
   &nbsp;&middot;&nbsp; <%= @vantage.world %>
   &nbsp;&middot;&nbsp; <%= @sample.created_at.strftime("%d %b %Y %H:%M") %>
   <% if @sample.row["answered_by"].present? %>
@@ -70,7 +74,12 @@
           somewhere to reuse, and a pick about one of them decides nothing
         </span>
       <% else %>
-        <%= @vantage.absent_names.join(" &middot; ").html_safe %>
+        <%# A LITERAL SEPARATOR AND NO `html_safe`, which is `debug/show.html.erb`'s
+            precedent and here it is load-bearing: these are names a person TYPED,
+            so `html_safe` on a string built from them is an unescaped attribute
+            and Brakeman says so in a high-confidence warning. Escape the names;
+            spell the middle dot as itself. %>
+        <%= @vantage.absent_names.join(" · ") %>
         <span class="absent">&mdash; destroyed before the call, so the model has a reason to invent</span>
       <% end %>
     </div>
