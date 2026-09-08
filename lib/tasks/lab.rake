@@ -116,7 +116,7 @@ module LabTasks
   # FREE, AND IT IS THE ONE COMMAND IN THIS FILE THAT IS. `draw!` above buys
   # calls; this reads rows already bought.
   def promote!
-    kind = kind_or_abort
+    kind = kind_or_abort(verb: "promote")
     promotion = Lab::Realization::Promotion.new(kind)
 
     puts preamble(kind)
@@ -148,9 +148,9 @@ module LabTasks
   # THE KIND, BY THE ID THE PAGE PRINTS. A missing or unknown `KIND` is a
   # person's mistake and gets a sentence naming the way to find the right one --
   # never a stack trace, and never a guess at which kind was meant.
-  def kind_or_abort
+  def kind_or_abort(verb: "draw")
     id = ENV["KIND"].presence or
-      abort "KIND=<id> is the kind to draw. `rake lab:realization:kinds` lists them, and the lab " \
+      abort "KIND=<id> is the kind to #{verb}. `rake lab:realization:kinds` lists them, and the lab " \
             "at /lab/kinds is where one is typed."
 
     Lab::Realization::Kind.find_by(id: id) or
