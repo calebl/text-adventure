@@ -1103,7 +1103,7 @@ class Location::Generator
   # and #open_the_way_in! moves it the moment there is somewhere for it to go.
   def connect_exit!(attributes, into_written: false)
     name = sanitize_string(attributes["name"])
-    return if name.blank? || name.casecmp?(location.name.to_s)
+    return if name.blank? || same_place_as_this_one?(name)
 
     existing = find_location(name)
     return if room_elsewhere?(existing)
@@ -1146,8 +1146,54 @@ class Location::Generator
       other.parent_location_id != location.parent_location_id
   end
 
+  # THE ROW A MODEL'S NAME FOR A PLACE MEANS, or nil for a place this story has
+  # never had -- and the whole of what stands between an exits answer and a
+  # SECOND row for a place the world already holds.
+  #
+  # MATCHED THROUGH `WorldSeed.find_location`, WHICH IS THE MATCHER ALREADY IN
+  # THE TREE. Not a second reading of "the same name written differently"
+  # written here: `WorldSeed.natural_key` is the repo's one spelling of that
+  # question, `Story::Doctor#duplicate_locations` groups on it, and a generator
+  # that resolved a name the doctor calls one thing to two rows would write the
+  # defect the doctor exists to report -- in the same request, from the same
+  # answer. The delegation is the guarantee that those two cannot drift.
+  #
+  # THE DEFECT IT CLOSES, proved offline with no model call (the captain's Call
+  # 7 of 2026-09-08). `Location::ExitsSchema` asks for a name of "1 to 4 words,
+  # no article" while the prompt lists the world's places AS STORED, articles
+  # and all. So a world holding `The Causeway Court` is correctly answered
+  # `Causeway Court`, an exact lowercased match missed it, and `#connect_exit!`
+  # created a duplicate stub -- sometimes with a footprint and a whole floor
+  # plan hung off it. This is a RECORD-MATCHING fix and deliberately not a
+  # prompt one: the schema's wording and the prompt's list are what the exits
+  # lab exists to measure, and nothing here may depend on a model spelling a
+  # name the way the database happens to.
+  #
+  # AND IT GOES NO WIDER THAN `.natural_key` GOES. Case, runs of whitespace and
+  # a leading article are not part of a name; punctuation, possessives and
+  # plurals still are, so two genuinely different places stay two places. That
+  # boundary is argued in `.natural_key`'s own header and the argument is
+  # sharper here than at a seed file, because this side WRITES: folding two
+  # names too eagerly does not duplicate a room, it silently hands one room's
+  # doorways to another and there is no repair for that.
+  #
+  # PASS 3 -- the place-and-box reading -- never runs from here, because it
+  # needs a seed document and this caller has none. Every name an exits answer
+  # can carry is settled by the two written-name passes.
+  # THIS ROOM NAMING ITSELF, and it is asked on `WorldSeed.natural_key` for the
+  # same reason #find_location is. A plain `casecmp?` here was safe only while
+  # the matcher below was also exact: once a name without its article resolves,
+  # a room called `The Causeway Court` answering `Causeway Court` would resolve
+  # to ITSELF and #connect! would write a door from the room to the room. The
+  # two questions are one question -- "is this the same place?" -- so they read
+  # the same key, and widening one without the other trades a duplicate row for
+  # a self-loop.
+  def same_place_as_this_one?(name)
+    WorldSeed.natural_key(name) == WorldSeed.natural_key(location.name.to_s)
+  end
+
   def find_location(name)
-    story.locations.where("LOWER(name) = ?", name.downcase).first
+    WorldSeed.find_location(story, name)
   end
 
   # A ROOM COMING INTO EXISTENCE, and the moment its danger is decided. The

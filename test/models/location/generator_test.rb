@@ -1481,4 +1481,124 @@ class Location::GeneratorTest < ActiveSupport::TestCase
       realize(location, FakeAgent.new(PEOPLED, EXITS))
     end
   end
+
+  # --- a place named without its article is the place, not a second one -------
+  #
+  # THE CAPTAIN'S CALL 7 OF 2026-09-08, and the case is the exits-lab scout's
+  # own replay of a STORED answer (its section 7.1): `Location::ExitsSchema`
+  # asks for a name of "1 to 4 words, no article" while the prompt lists the
+  # world's places as stored, articles and all, so the model correctly answered
+  # `Causeway Court` and `Vestry Hulk` for a world holding `The Causeway Court`
+  # and `The Vestry Hulk`. `#find_location` matched exactly, missed, and the
+  # engine wrote a second row for each -- one of them with a footprint and a
+  # floor plan to come.
+  #
+  # THE ANSWER IS THE SCOUT'S, SHAPE AND NAMES BOTH, including the causeway
+  # named twice over -- once as stored and once without its article -- because
+  # that is what made the duplicate legible: the same place reaching this method
+  # twice must come out as one door and not as two rows.
+  ASSIZES_EXITS = {
+    "exits" => [
+      { "name" => "The Causeway Court", "teaser" => "The way you came, and the tide is on it.",
+        "distance" => "adjacent", "travel_method" => "swimming" },
+      { "name" => "Causeway Court", "teaser" => "Back along the causeway.",
+        "distance" => "adjacent", "travel_method" => "swimming" },
+      { "name" => "Vestry Hulk", "teaser" => "A hull grounded in the mud, and a door in it.",
+        "distance" => "across the district", "travel_method" => "swimming", "inside" => "a few rooms" }
+    ]
+  }.freeze
+
+  # The world the scout's case stands in: the room being realized, the place it
+  # already reaches, and a third place it does not.
+  def salt_assizes
+    tide_post = stub_location(name: "The Tide Post")
+    already_reaching(tide_post, "The Causeway Court")
+    stub_location(name: "The Vestry Hulk")
+    tide_post
+  end
+
+  test "an exit named without its article resolves to the place the world already has" do
+    tide_post = salt_assizes
+    before = @story.locations.order(:id).pluck(:name)
+
+    realize(tide_post, FakeAgent.new(DETAIL, ASSIZES_EXITS))
+
+    assert_equal before, @story.reload.locations.order(:id).pluck(:name)
+    assert_equal [ "The Causeway Court", "The Vestry Hulk" ],
+                 tide_post.reload.exits.order(:id).pluck(:name).sort
+  end
+
+  # THE DUPLICATE IS A DEFECT THE APP ALREADY NAMES, so the regression is
+  # asserted where a person would see it and not only on a count of rows:
+  # `Story::Doctor#duplicate_locations` groups on `WorldSeed.natural_key`, the
+  # key `#find_location` now matches through, and it reported both pairs the
+  # moment the old matcher wrote them.
+  test "no exits answer leaves a duplicate location behind for the doctor to find" do
+    tide_post = salt_assizes
+
+    realize(tide_post, FakeAgent.new(DETAIL, ASSIZES_EXITS))
+
+    duplicates = Story::Doctor.new(@story.reload).findings.select { |f| f.code.to_s.include?("duplicate") }
+    assert_empty duplicates.map(&:message)
+  end
+
+  # AND THE FOOTPRINT DOES NOT COME WITH IT. The scout's `Vestry Hulk` arrived
+  # carrying an `inside` pick and the duplicate took it -- 9x6 paces and
+  # `place?` true, a whole building laid out inside a copy of a building. A
+  # place that already exists never has its footprint overruled
+  # (`Location::Interior`'s rule), so resolving the name is also what keeps the
+  # pick off it.
+  test "an inside pick on a name that resolves does not give the existing place a footprint" do
+    tide_post = salt_assizes
+
+    realize(tide_post, FakeAgent.new(DETAIL, ASSIZES_EXITS))
+
+    hulk = @story.locations.find_by(name: "The Vestry Hulk")
+    assert_not_predicate hulk, :place?
+    assert_nil hulk.width
+  end
+
+  # THE INVERSE, AND IT IS THE HALF THAT KEEPS THE FIX HONEST: a name the world
+  # has never had is still a place being born, footprint and all. A matcher
+  # widened until everything resolved would close the defect by never inventing
+  # anywhere again.
+  test "a genuinely new name still creates a stub with its inside pick intact" do
+    tide_post = salt_assizes
+    invented = { "exits" => [ ASSIZES_EXITS["exits"].last.merge("name" => "Gallows Rock") ] }
+
+    realize(tide_post, FakeAgent.new(DETAIL, invented))
+
+    rock = @story.locations.find_by(name: "Gallows Rock")
+    assert_predicate rock, :place?
+    assert_includes Location::Parameters::INSIDE.fetch("a few rooms"), rock.width
+    assert_includes tide_post.reload.exits, rock
+  end
+
+  # PUNCTUATION AND POSSESSIVES ARE STILL PART OF A NAME, which is where
+  # `WorldSeed.natural_key` stops on purpose -- see its header. Two genuinely
+  # different places stay two, because the cost of folding them is not a
+  # duplicate row but one place quietly wearing another's doorways.
+  test "a name differing by more than its article is still a place of its own" do
+    tide_post = stub_location(name: "The Tide Post")
+    stub_location(name: "The Salt Store")
+    named = { "exits" => [ EXITS["exits"].first.merge("name" => "Salt Stores") ] }
+
+    realize(tide_post, FakeAgent.new(DETAIL, named))
+
+    assert_not_nil @story.locations.find_by(name: "Salt Stores")
+    assert_not_includes tide_post.reload.exits.pluck(:name), "The Salt Store"
+  end
+
+  # A ROOM NAMING ITSELF WITHOUT ITS ARTICLE, and the door the widening would
+  # otherwise have written from the room to the room. #same_place_as_this_one?
+  # is the other half of the fix and this is the whole of what it is for.
+  test "a room that names itself without its article gets no door to itself" do
+    tide_post = stub_location(name: "The Tide Post")
+    itself = { "exits" => [ EXITS["exits"].first.merge("name" => "Tide Post") ] }
+
+    realize(tide_post, FakeAgent.new(DETAIL, itself))
+
+    assert_equal 1, @story.locations.count
+    assert_empty tide_post.reload.exits
+  end
 end

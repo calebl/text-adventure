@@ -60,19 +60,31 @@ module WorldSeed
     name.to_s.downcase.gsub(/[[:space:]]+/, " ").strip.sub(LEADING_ARTICLE, "").strip
   end
 
-  # THE ROW ONE OF A SEED FILE'S LOCATIONS IS, or nil for one this story has
-  # never had -- and it is THE ONE READER for that question, deliberately. Three
+  # THE ROW A WRITTEN NAME FOR A LOCATION MEANS, or nil for one this story has
+  # never had -- and it is THE ONE READER for that question, deliberately. Four
   # callers ask it: `WorldSeed::Loader` decides whether to rename a row or write
   # a second one beside it, `Story::Doctor` decides whether somebody has left
-  # the room the file puts them in, and `Story::Repair` puts them back. A loader
-  # that recognized a row the doctor did not would report and then fail to
-  # repair a defect that was never there.
+  # the room the file puts them in, `Story::Repair` puts them back, and
+  # `Location::Generator#find_location` decides whether an exits answer names a
+  # place the world already holds or one to be born. A loader that recognized a
+  # row the doctor did not would report and then fail to repair a defect that
+  # was never there -- and a GENERATOR that recognized fewer rows than the
+  # doctor wrote the doctor's duplicate defect as it went, which is exactly what
+  # it did while it matched on its own (see its header, the captain's Call 7 of
+  # 2026-09-08).
+  #
+  # SO THIS IS NO LONGER ONLY A SEED-FILE READER, and the difference matters for
+  # anything widened here: the loader and the doctor only ever RECOGNIZE a row,
+  # while the generator's caller acts on the answer by writing a doorway. A
+  # widening that folded two genuinely different places would cost the loader a
+  # merge it can be argued about and cost the generator a door between two rooms
+  # that are not neighbours.
   #
   # THREE PASSES, WIDENING, in the order of how certain each one is:
   #
-  #   1. THE WRITTEN NAME, case-insensitively, matched exactly as
-  #      `Location::Generator#find_location` matches it, so nothing about how
-  #      the generator and the loader agree on a room turns on the rest of this.
+  #   1. THE WRITTEN NAME, case-insensitively -- the narrowest reading there is,
+  #      and it stands first so that a database whose names are exact is
+  #      answered without any of the rest of this running.
   #
   #   2. `.natural_key` -- A RENAME THE FILE MADE. See it for how far it goes
   #      and why it goes no further.
