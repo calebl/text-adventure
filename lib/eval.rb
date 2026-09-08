@@ -137,6 +137,8 @@ module Eval
     db/eval/prompt-2026-09-05/prompt.json
     db/eval/prompt-ending-before-2026-09-08/prompt.json
     db/eval/prompt-ending-after-2026-09-08/prompt.json
+    db/eval/prompt-ending-before-2026-09-08-2/prompt.json
+    db/eval/prompt-ending-after-2026-09-08-2/prompt.json
     db/eval/room-names-after-bef7cec/realization.json
     db/eval/interior-entry-before/realization.json
     db/eval/interior-entry-after/realization.json

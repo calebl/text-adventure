@@ -1,33 +1,47 @@
 require "test_helper"
 
-# THE ENDING PROMPT'S OWN BASELINE, AND THE DIAGNOSIS OF THE ONE RATE THAT MOVED.
+# THE ENDING PROMPT'S OWN BASELINE, RE-BOUGHT SO THE FIGURE IS LIVE AGAIN.
 #
 # `Eval::Prompt::KeptSetTest` one file over does this for the 2026-09-05
-# baseline of the ninety-case corpus. This is the pair `ta-quest-ending` bought
-# and checked in -- both sides, so the verdict replays offline and free -- plus
-# the diagnosis of why `item_not_held` read WORSE on the after side without the
-# prose being at fault, and the regression for the check that was fixed for it.
+# baseline of the ninety-case corpus. This is the pair the ending prompt is
+# judged against -- both sides, so the verdict replays offline and free.
+#
+# WHY THERE ARE TWO PAIRS ON DISK AND THIS FILE PINS THE SECOND ONE. The pair
+# `ta-quest-ending` bought (PR 162) read `item_not_held` 0.000 -> 0.200 REAL,
+# and the diagnosis was the CHECK: `Story::Audit::Prose.item_names` aliased
+# `iron key` to **iron**, which is a word of this world's central place, the
+# IRON GATE. PR 164 fixed that -- an item's alias is its own last word and never
+# an earlier one -- but **a kept set is a summary and holds no prose**
+# (`Eval::Prompt::Result#summary`), so the fix could not re-score the figure it
+# invalidated. It could only be re-bought. The captain authorized that on
+# 2026-09-08 and this is it: same corpus, same model, same four repetitions a
+# side, the before side staged the same way, and NOTHING model-facing changed
+# between the two pairs -- the `ending` instructions digest is identical across
+# both after sides, which is asserted below.
+#
+# THE 2026-09-08 PAIR STAYS ON DISK AS HISTORY and keeps its place in
+# `Eval::MEASUREMENT_FILES`; the test at the bottom of this file is what says
+# what it is and why nothing may be concluded from its rates any more.
 #
 # NO DATABASE, NO KEY, NO NETWORK. That is the point rather than a convenience:
-# forty calls were paid for once and the numbers are judgeable for ever by
+# the calls were paid for once and the numbers are judgeable for ever by
 # somebody who never paid for one.
 class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
-  BEFORE = "prompt-ending-before-2026-09-08".freeze
+  BEFORE = "prompt-ending-before-2026-09-08-2".freeze
 
-  AFTER = "prompt-ending-after-2026-09-08".freeze
+  AFTER = "prompt-ending-after-2026-09-08-2".freeze
+
+  # THE SUPERSEDED PAIR, pinned only so that deleting it is a failing test and
+  # so that a reader who finds its rates knows what they are reading.
+  SUPERSEDED = %w[prompt-ending-before-2026-09-08 prompt-ending-after-2026-09-08].freeze
 
   ARM = "mistralai/mistral-medium-3.1".freeze
-
-  # THE DIRECTORY IS DATED AND THE FILE SAYS WHICH RUN IT CAME FROM, which is
-  # `Eval::Prompt::Result#write!`'s own rule: a set that was named once keeps
-  # that name when it is summarised and kept.
-  RUNS = { BEFORE => "ending-before", AFTER => "ending-after" }.freeze
 
   test "both sides load off disk with their provenance in the file" do
     [ BEFORE, AFTER ].each do |name|
       result = kept(name)
 
-      assert_equal RUNS.fetch(name), result.name
+      assert_equal name, result.name, "a set is named for the directory it was kept in"
       assert_equal [ ARM ], result.arms, "a set that does not say which model produced it is not a set"
       assert_equal [ ARM ], result.answered_by, "answered_by is the check on arms, and the pinning has to have held"
       assert_equal 4, result.reps, "four is Eval::Noise::MIN_RUNS -- fewer cannot be given a verdict"
@@ -51,7 +65,9 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
   # prompt: the pass did not exist. The before side was played with the one line
   # in `Playthrough::Turn#play` that calls `Scene::Ending` disabled, so its
   # readings are the turn's OWN prose -- which is what the player used to read
-  # last -- and no ending instructions were sent at all.
+  # last -- and no ending instructions were sent at all. The re-take was staged
+  # by disabling that same line and reverting it, which is why the two before
+  # sides agree on every digest a prompt has.
   test "the before side sent no ending instructions and the after side sent today's" do
     assert_nil kept(BEFORE).instruction_passes["ending"],
                "before the change there was no ending pass to send instructions for"
@@ -61,6 +77,16 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
                  kept(AFTER).instruction_passes["ending"],
                  "the ending instructions moved since the baseline was taken, so this is a baseline for " \
                  "a prompt the app no longer sends -- re-run it"
+  end
+
+  # THE RE-TAKE MEASURED THE SAME PROMPT, which is what makes it a re-take of
+  # one measurement rather than a second experiment. If this ever fails, the
+  # ending prompt moved between the two pairs and the older one is no longer a
+  # thing this one can be read beside.
+  test "the two after sides sent byte-identical ending instructions" do
+    assert_equal Eval::Prompt::Result.load(Eval.kept_root.join(SUPERSEDED.last)).instruction_passes["ending"],
+                 kept(AFTER).instruction_passes["ending"],
+                 "nothing model-facing changed in the re-buy, and this is the assertion that says so"
   end
 
   # THE ONE SET IN THE REPOSITORY THAT IS DELIBERATELY NOT PROMPT-STABLE, and it
@@ -75,8 +101,8 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
     assert kept(BEFORE).prompt_stable, "the turn's own prose is a first call and is fixed"
   end
 
-  # THE FIGURES THE PR WAS JUDGED ON, pinned so a later reader is comparing with
-  # the same numbers. `words` and `commitments` are richness and are never
+  # THE FIGURES THE PAIR WAS JUDGED ON, pinned so a later reader is comparing
+  # with the same numbers. `words` and `commitments` are richness and are never
   # folded into a rate: the two sides score DIFFERENT PASSAGES of one turn (no
   # ending prose existed before), so the honest reading of a shorter paragraph
   # that names more records is the one the board prints.
@@ -90,48 +116,46 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
                     "own prose did"
   end
 
-  # THE ONE RATE THAT MOVED, AND WHY IT WAS THE CHECK RATHER THAN THE PROSE.
+  # THE FIGURE THE RE-BUY WAS FOR, AND IT IS LIVE RATHER THAN FROZEN NOW.
   #
-  # `Story::Audit::Prose.place_names` aliases a name by its last word of at
-  # least `Story::Audit::MIN_NAME_LENGTH` characters, and `item_names` used to
-  # be that same method. "key" is three, so the only alias `iron key` could
-  # have was **iron** -- and this world's central place is the IRON GATE, which
-  # is in the engine's own outcome sentence. Every flagged passage says the
-  # signet ring is in the player's hand, which the records agree with, and names
-  # the gate within the check's window; not one of them mentions a key.
+  # Under the fixed check `item_not_held` is 0.000 on the before side and reads
+  # 0.000 on half the after side's repetitions, so the verdict is **NOISE** --
+  # where the 2026-09-08 pair, read by the aliasing check, called the same
+  # comparison REAL at p=0.0286. That reversal is the whole result of the
+  # re-buy and it is asserted rather than described, because a paragraph
+  # claiming it would be exactly the thing this file exists to replace.
   #
-  # FIXED IN THE CHECK, NOT IN THE PROMPT: `item_names` is head-final now and an
-  # item aliases to its own last word only, so `iron key` contributes no alias
-  # at all. That ruling and what it costs are in `Story::Audit::Prose`; the
-  # regression is `#the iron key no longer aliases to the world's iron gate`
-  # below, with its inverse one test further down.
-  #
-  # THE STORED RATE DOES NOT MOVE, and that is a property of a kept set rather
-  # than a failure of the fix: `Eval::Prompt::Result#write!` drops the readings
-  # so the pair can live in the repo, so `rake eval:prompt_score` reprints the
-  # rates that were computed while the calls were being paid for and cannot
-  # recompute them. The 0.200 below is therefore a RECORD OF WHAT THE OLD CHECK
-  # READ on prose nobody kept, and it is pinned as exactly that. The corpora
-  # that DO carry their passages -- `whole_run_corpus.json` in
-  # `Story::Audit::ItemCustodyTest`, and `rake game:score CORPUS=corpus|
-  # transitions` -- re-score for free and did not move, because every item name
-  # in them ends on its own noun.
-  test "the after side's item_not_held is the frozen reading of a check since fixed" do
-    assert_equal 4, Story::Audit::MIN_NAME_LENGTH, "the alias rule below is arithmetic on this number"
+  # THE RESIDUAL READINGS ARE NOT THE PROMPT EITHER, and this is reported and
+  # NOT fixed here: the audit is somebody else's slice, and a measurement
+  # predicate is never bent to improve the run that found it. Both flagged
+  # passages put the iron key *in the mud*, and the check still fires because a
+  # real claim about the ring (`in your grip`) precedes the key in the same
+  # clause list -- so the possession window carries the first item's claim onto
+  # the second. `#a possession phrase still reaches across a comma` below is
+  # that class, isolated offline and for free.
+  test "item_not_held is NOISE across the re-bought pair, which is what the fixed check reads" do
+    verdict = Eval::Prompt::Comparison.new(kept(BEFORE), kept(AFTER), io: nil)
+                                      .verdicts(ARM).find { |row| row.metric == :item_not_held }.verdict
 
-    assert_operator kept(AFTER).spread(:item_not_held, arm: ARM).median, :>, 0.0,
-                    "the kept file holds the rates the old check computed; a summary carries no prose to " \
-                    "re-score, so this figure is history and not a verdict on the prompt"
+    assert_equal 0.0, kept(BEFORE).spread(:item_not_held, arm: ARM).max,
+                 "the turn's own prose never claimed an item somebody else holds"
+    assert_not verdict.real?,
+               "the aliasing check called this REAL; the fixed one cannot, and if it does again the ending " \
+               "prose has really started handing the player things the records do not give it"
+    assert_includes kept(AFTER).spread(:item_not_held, arm: ARM).values, 0.0,
+                    "half the repetitions are clean, which is what a band spanning zero is made of"
   end
 
-  # THE REGRESSION. The alias that flagged five clean passages is gone, and the
-  # sentence that convicted the player of holding a key it never mentions no
-  # longer matches any name the item has.
+  # THE REGRESSION FOR THE FIX THAT FORCED THE RE-BUY. The alias that flagged
+  # five clean passages is gone, and the sentence that convicted the player of
+  # holding a key it never mentions no longer matches any name the item has.
   test "the iron key no longer aliases to the world's iron gate" do
+    assert_equal 4, Story::Audit::MIN_NAME_LENGTH, "the alias rule below is arithmetic on this number"
+
     assert_equal [ "iron key" ], Story::Audit::Prose.item_names("iron key"),
                  "an item's alias is its own last word, and \"key\" is under MIN_NAME_LENGTH"
     assert_equal [ "iron gate", "gate" ], Story::Audit::Prose.place_names("iron gate"),
-                 "the place keeps its alias -- this change is to items only"
+                 "the place keeps its alias -- that change was to items only"
 
     claimed = "You hold the signet ring, and the iron gate groans open behind you."
 
@@ -141,6 +165,27 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
     assert_empty Story::Audit::Prose.item_names("iron key")
                                     .select { |name| Story::Audit.allocate.send(:possession_claimed?, claimed, name) },
                  "but no name the iron key answers to is in that sentence, so the check cannot fire on it"
+  end
+
+  # THE FALSE-POSITIVE CLASS THE RE-BOUGHT AFTER SIDE STILL CARRIES, pinned as a
+  # test so the next reader of that 0.100 is not left guessing, and pinned as
+  # what it is rather than argued about in a PR. Both sentences are the real
+  # prose, trimmed; both say the key is on the ground.
+  #
+  # NOT FIXED HERE. `Story::Audit` is a measurement file and this run is what
+  # found the class, so closing it belongs in a slice with its own before and
+  # after over the pinned corpora -- the same rule that kept the alias fix out
+  # of PR 162.
+  test "a possession phrase still reaches across a comma onto the next item named" do
+    audit = Story::Audit.allocate
+
+    assert_not audit.send(:possession_claimed?, "the iron key discarded in the mud beside his corpse", "iron key"),
+               "on its own the sentence is read correctly: nobody is holding it"
+    assert audit.send(:possession_claimed?,
+                      "the prince's signet ring heavy in your grip, the iron key discarded in the mud",
+                      "iron key"),
+           "but a true claim about the RING carries onto the key, which is the class and the whole of the " \
+           "after side's residual rate"
   end
 
   # THE INVERSE, because a check that has stopped firing looks exactly like a
@@ -163,7 +208,9 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
   end
 
   # A KEPT SET IS A SUMMARY: the rows are dropped so it can live in the repo,
-  # and everything the board and the comparison read has to survive that.
+  # and everything the board and the comparison read has to survive that. It is
+  # also the reason this pair had to be re-bought at all, which is worth knowing
+  # before keeping the next one.
   test "the pair is a summary and still renders a comparison with no rows" do
     assert_empty kept(AFTER).rows, "a kept set holds no readings, on purpose"
 
@@ -176,9 +223,26 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
     assert_includes verdicts.map(&:metric), :item_not_held
   end
 
-  test "the manifest names both sides, so deleting one is a failing test" do
-    assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{BEFORE}/#{Eval::Prompt::RESULTS}"
-    assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{AFTER}/#{Eval::Prompt::RESULTS}"
+  # THE SUPERSEDED PAIR IS HISTORY AND IS LABELLED AS HISTORY. Its rates were
+  # computed by the aliasing check while the calls were being paid for, and a
+  # summary carries no prose to re-score -- so that 0.200 is a record of what
+  # the OLD check read on prose nobody kept, and nothing about the prompt may be
+  # concluded from it. It stays on disk because deleting the evidence a ruling
+  # was made on is not a tidy-up.
+  test "the 2026-09-08 pair is still on disk, and its item_not_held is the old check's reading" do
+    superseded = Eval::Prompt::Result.load(Eval.kept_root.join(SUPERSEDED.last))
+
+    assert_operator superseded.spread(:item_not_held, arm: ARM).median, :>,
+                    kept(AFTER).spread(:item_not_held, arm: ARM).median,
+                    "the aliasing check read this worse than the fixed one does, which is why it was re-bought"
+    assert_equal kept(AFTER).instruction_passes, superseded.instruction_passes,
+                 "and it measured the same prompt, so the only difference between the pairs is the check"
+  end
+
+  test "the manifest names both pairs, so deleting one is a failing test" do
+    ([ BEFORE, AFTER ] + SUPERSEDED).each do |name|
+      assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{name}/#{Eval::Prompt::RESULTS}"
+    end
     assert_includes Eval::MEASUREMENT_FILES, "test/fixtures/files/prompt_ending_corpus.yml"
   end
 
