@@ -251,6 +251,50 @@ class NarrationJobTest < ActiveJob::TestCase
     end
   end
 
+  # --- the one failure the reader CAN fix -----------------------------------
+
+  # AN INSTALL WITH NO MODEL SAYS SO. A committed action still finishes on the
+  # engine's own factual prose -- that is the whole of the recovery -- but the
+  # turn must not read as a working game whose narrator merely went quiet. This
+  # is the one reason a turn falls back that whoever is running the app can act
+  # on, so it is the one that names what to do.
+  test "an install with no model configured keeps its committed turn and says why the prose is plain" do
+    playthrough = create(:playthrough, :started)
+    item = lying_here(playthrough, playthrough.current_location, name: "red coin")
+
+    html = play(playthrough, "/take red coin", BaseAgent::NoModelConfiguredError).last.to_html
+
+    assert_includes playthrough.reload.carried, item, "the action was committed and stands"
+    assert_match Playthrough::SetupNotice::MESSAGE, html
+    assert_no_match Regexp.new(Regexp.escape(Playthrough::TurnFailureNotice::MESSAGE)), html,
+                    "the turn finished, so the vague internal-failure copy is the wrong one"
+    assert_match "what do you do?", html, "and the next line can follow"
+  end
+
+  # The same message when nothing was committed at all: the classifier is the
+  # first call of an unslashed line, so this is what typing anything into an
+  # unconfigured install looks like.
+  test "a turn that never reached an action still names the missing configuration" do
+    playthrough = create(:playthrough, :started)
+
+    html = play(playthrough, "open the ledger", BaseAgent::NoModelConfiguredError).last.to_html
+
+    assert_match Playthrough::SetupNotice::MESSAGE, html
+    assert_nil playthrough.reload.current_scene
+  end
+
+  # A rejected key is the other failure another model cannot fix, and it reads
+  # the same -- without quoting what the provider said back.
+  test "a rejected key is named as configuration rather than logged and hidden" do
+    playthrough = create(:playthrough, :started)
+    rejected = BaseAgent::UnauthorizedProviderError.new("openrouter rejected our credentials (sk-live-secret)")
+
+    html = play(playthrough, "open the ledger", rejected).last.to_html
+
+    assert_match Playthrough::SetupNotice::MESSAGE, html
+    assert_no_match(/sk-live-secret/, html, "the provider's own words are for the log")
+  end
+
   # `html:` is inserted verbatim, so the narrator's own prose has to be escaped
   # on the way out -- a model that writes "a < b" would otherwise open a tag
   # inside the turn the player is reading.

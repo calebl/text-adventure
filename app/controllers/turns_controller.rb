@@ -36,7 +36,7 @@ class TurnsController < ApplicationController
       # enqueued by the time we get here.
       format.html { redirect_to playthrough_path(playthrough, anchor: "bottom") }
     end
-  rescue Playthrough::Command::TokenConflict, ActiveRecord::RecordInvalid
+  rescue ActiveRecord::RecordInvalid
     head :conflict
   end
 end

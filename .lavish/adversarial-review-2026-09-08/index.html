@@ -10,13 +10,25 @@
 .current{border-left:2px solid var(--green);padding:.3rem 1rem;background:#101918;margin:1rem 0}
 .history{color:var(--muted)}.finding h2{margin-top:.4rem}.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}
 .check{border:1px solid var(--line);padding:1rem;background:var(--panel)}.check strong{display:block;color:var(--green)}
-.evaluation-table{overflow-x:auto}.evaluation-table table{min-width:34rem}.evaluation-table small{display:block;color:var(--muted)}
+.evaluation-table{overflow-x:auto}.evaluation-table small{display:block;color:var(--muted)}
 .check,.current{min-width:0;overflow-wrap:anywhere}.evidence-image{width:100%;height:auto;border:1px solid var(--line)}
 @media(max-width:720px){.checks{grid-template-columns:minmax(0,1fr)}}
+/* The original stylesheet's table geometry was written for the findings table
+   alone: a 4rem ID column, a 4rem risk column, and a last column dropped
+   entirely under 720px so a phone reads the finding rather than the repair.
+   Applied to the live comparison it fragmented "Measure" and "Before" into one
+   word per line and deleted every REAL/NOISE/INCONCLUSIVE verdict and p-value
+   on a narrow screen. So the live table gets its own widths and keeps all four
+   columns, inside its own horizontal scroller. */
+.evaluation-table table{table-layout:fixed;min-width:44rem}
+.evaluation-table th:first-child{width:26%}.evaluation-table th:nth-child(2){width:22%}
+.evaluation-table th:nth-child(3){width:22%}.evaluation-table th:nth-child(4){width:30%}
+@media(max-width:720px){.evaluation-table th:last-child,.evaluation-table td:last-child{display:table-cell}
+.evaluation-table th:nth-child(3){width:22%}}
 </style></head><body><main>
 <header><div class="eyebrow">Text Adventure / adversarial review / repair verification</div>
 <h1>Decisions need consequences.<br>Turns need integrity.</h1><p class="intro">The NPC action path and turn integrity fixes are integrated. All 3,881 tests pass. Live NPC cases now apply their promised state changes; arrival prose still sometimes contradicts inventory, so that finding remains partial. New deterministic notices expose crossing costs even when the narration omits them.</p>
-<p class="muted">Original review and measured baseline: 8dd1f5c. Fix branch: fix/npc-arrival-turn-integrity-20260908. Focused model candidate: 93448ade; sequential confirmation: 57f8738f, which adds the deterministic toll view without changing model input. These temporary candidate commits identify frozen evidence; the PR will also integrate current main.</p>
+<p class="muted">Original review and measured baseline: 8dd1f5c. Fix branch: fix/npc-arrival-turn-integrity-20260908. Focused model candidate: 93448ade; sequential confirmation: 57f8738f, which adds the deterministic toll view without changing model input. These temporary candidate commits identify frozen evidence, and every measured number above stays labelled with the commit it was measured on. The branch is now rebased: 337f826 sits directly on main 2ef1a20, so the place-name identity handling and the exits lab and scorer work from main are carried rather than re-measured. The suite, lint and CI gates on the rebased tree belong to the delivery pipeline and are not claimed here.</p>
 <nav><a href="#findings">Finding status</a><a href="#live-evaluation">Live comparison</a><a href="#validation">Verification</a><a href="report.md">Markdown report</a><a href="original-index.html">Original review</a></nav>
 <div class="stats"><div class="stat"><strong>4</strong><span>Verified findings</span></div><div class="stat"><strong>2</strong><span>Partial findings</span></div><div class="stat"><strong>6</strong><span>Open findings</span></div><div class="stat"><strong>0</strong><span>Pending findings</span></div></div></header>
 
@@ -155,9 +167,14 @@
       <div class="sources"><a href="https://github.com/calebl/text-adventure/blob/8dd1f5c3ebeea704771220a4257ff4e3aa7086d1/app/models/quest/schema.rb#L107">app/models/quest/schema.rb:107</a><a href="https://github.com/calebl/text-adventure/blob/8dd1f5c3ebeea704771220a4257ff4e3aa7086d1/app/models/quest/generator.rb#L158">app/models/quest/generator.rb:158</a><a href="https://github.com/calebl/text-adventure/blob/8dd1f5c3ebeea704771220a4257ff4e3aa7086d1/app/models/playthrough/arc.rb#L318">app/models/playthrough/arc.rb:318</a><a href="https://github.com/calebl/text-adventure/blob/8dd1f5c3ebeea704771220a4257ff4e3aa7086d1/app/models/playthrough/arc.rb#L422">app/models/playthrough/arc.rb:422</a></div></div></details><a class="back" href="#findings">↑ Findings</a></article></div>
 <footer>Design source: the repository’s existing application and debug layouts—dark surfaces, monospace typography and state colors. Original source links remain pinned to the reviewed commit; repair evidence is linked above.</footer>
 <script>
-const cards=[...document.querySelectorAll('.finding')], rows=[...document.querySelectorAll('tbody tr')];
+// Rows are looked up by data-id rather than by position: `tbody tr` matched the
+// live comparison table too, so the Nth card hid the Nth row of whichever table
+// came first and every filter showed the wrong findings while deleting the
+// evaluation rows. Scoped to #findings and keyed by id, neither can happen.
+const cards=[...document.querySelectorAll('.finding')];
+const rows=new Map([...document.querySelectorAll('#findings tbody tr')].map(row=>[row.dataset.id,row]));
 const statusFilter=document.getElementById('status'), search=document.getElementById('search');
-function filter(){let count=0;const query=search.value.toLowerCase().trim();cards.forEach((card,i)=>{const show=(!statusFilter.value||card.dataset.status===statusFilter.value)&&(!query||card.textContent.toLowerCase().includes(query));card.hidden=!show;rows[i].hidden=!show;if(show)count++;});document.getElementById('count').textContent=count+' findings shown';}
+function filter(){let count=0;const query=search.value.toLowerCase().trim();cards.forEach(card=>{const show=(!statusFilter.value||card.dataset.status===statusFilter.value)&&(!query||card.textContent.toLowerCase().includes(query));card.hidden=!show;const row=rows.get(card.id);if(row)row.hidden=!show;if(show)count++;});document.getElementById('count').textContent=count+' findings shown';}
 statusFilter.addEventListener('change',filter);search.addEventListener('input',filter);
 document.getElementById('expand').addEventListener('click',event=>{const details=[...document.querySelectorAll('details')];const expand=details.some(item=>!item.open);details.forEach(item=>item.open=expand);event.target.textContent=expand?'Collapse original evidence':'Expand original evidence';});
 document.getElementById('evaluation-form')?.addEventListener('submit',event=>{

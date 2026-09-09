@@ -81,7 +81,7 @@ class Playthrough::NpcAction
 
   def state!
     playthrough.npc_states.find_or_create_by!(character: character) do |row|
-      row.location = character.location || playthrough.current_location
+      row.location = playthrough.location_of(character) || playthrough.current_location
     end
   end
 

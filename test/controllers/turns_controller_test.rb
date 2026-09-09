@@ -100,13 +100,23 @@ class TurnsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "one-form" ], enqueued_jobs.last(2).map { |job| job[:args].last }.uniq
   end
 
-  test "a token cannot be reused for a different command" do
+  # A form is only re-rendered when the job replaces `#turn_log`, and that
+  # happens inside the playthrough's lock -- so a player whose previous turn is
+  # still running is looking at a form whose token is already spent. The second
+  # line they type is a second turn, and it used to be answered with a bare 409:
+  # no job, no scene, no message, and nothing for Turbo to render.
+  test "a second line typed into an already submitted form still takes its turn" do
     playthrough = create(:playthrough)
-    Playthrough::Command.accept!(playthrough, "look", "one-form")
-    assert_no_enqueued_jobs only: NarrationJob do
+    post playthrough_turns_path(playthrough),
+         params: { command: "look around", request_token: "one-form" }, as: :turbo_stream
+    assert_response :success
+
+    assert_enqueued_with job: NarrationJob, args: [ playthrough.id, "wait", "one-form" ] do
       post playthrough_turns_path(playthrough),
            params: { command: "wait", request_token: "one-form" }, as: :turbo_stream
     end
-    assert_response :conflict
+
+    assert_response :success
+    assert_equal [ "look around", "wait" ], playthrough.commands.order(:id).pluck(:command)
   end
 end

@@ -23,9 +23,21 @@ css += """
 .current{border-left:2px solid var(--green);padding:.3rem 1rem;background:#101918;margin:1rem 0}
 .history{color:var(--muted)}.finding h2{margin-top:.4rem}.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}
 .check{border:1px solid var(--line);padding:1rem;background:var(--panel)}.check strong{display:block;color:var(--green)}
-.evaluation-table{overflow-x:auto}.evaluation-table table{min-width:34rem}.evaluation-table small{display:block;color:var(--muted)}
+.evaluation-table{overflow-x:auto}.evaluation-table small{display:block;color:var(--muted)}
 .check,.current{min-width:0;overflow-wrap:anywhere}.evidence-image{width:100%;height:auto;border:1px solid var(--line)}
 @media(max-width:720px){.checks{grid-template-columns:minmax(0,1fr)}}
+/* The original stylesheet's table geometry was written for the findings table
+   alone: a 4rem ID column, a 4rem risk column, and a last column dropped
+   entirely under 720px so a phone reads the finding rather than the repair.
+   Applied to the live comparison it fragmented "Measure" and "Before" into one
+   word per line and deleted every REAL/NOISE/INCONCLUSIVE verdict and p-value
+   on a narrow screen. So the live table gets its own widths and keeps all four
+   columns, inside its own horizontal scroller. */
+.evaluation-table table{table-layout:fixed;min-width:44rem}
+.evaluation-table th:first-child{width:26%}.evaluation-table th:nth-child(2){width:22%}
+.evaluation-table th:nth-child(3){width:22%}.evaluation-table th:nth-child(4){width:30%}
+@media(max-width:720px){.evaluation-table th:last-child,.evaluation-table td:last-child{display:table-cell}
+.evaluation-table th:nth-child(3){width:22%}}
 """
 
 rows, cards = [], []
@@ -96,9 +108,14 @@ page = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name
 <div id="detail-list">{''.join(cards)}</div>
 <footer>Design source: the repository’s existing application and debug layouts—dark surfaces, monospace typography and state colors. Original source links remain pinned to the reviewed commit; repair evidence is linked above.</footer>
 <script>
-const cards=[...document.querySelectorAll('.finding')], rows=[...document.querySelectorAll('tbody tr')];
+// Rows are looked up by data-id rather than by position: `tbody tr` matched the
+// live comparison table too, so the Nth card hid the Nth row of whichever table
+// came first and every filter showed the wrong findings while deleting the
+// evaluation rows. Scoped to #findings and keyed by id, neither can happen.
+const cards=[...document.querySelectorAll('.finding')];
+const rows=new Map([...document.querySelectorAll('#findings tbody tr')].map(row=>[row.dataset.id,row]));
 const statusFilter=document.getElementById('status'), search=document.getElementById('search');
-function filter(){{let count=0;const query=search.value.toLowerCase().trim();cards.forEach((card,i)=>{{const show=(!statusFilter.value||card.dataset.status===statusFilter.value)&&(!query||card.textContent.toLowerCase().includes(query));card.hidden=!show;rows[i].hidden=!show;if(show)count++;}});document.getElementById('count').textContent=count+' findings shown';}}
+function filter(){{let count=0;const query=search.value.toLowerCase().trim();cards.forEach(card=>{{const show=(!statusFilter.value||card.dataset.status===statusFilter.value)&&(!query||card.textContent.toLowerCase().includes(query));card.hidden=!show;const row=rows.get(card.id);if(row)row.hidden=!show;if(show)count++;}});document.getElementById('count').textContent=count+' findings shown';}}
 statusFilter.addEventListener('change',filter);search.addEventListener('input',filter);
 document.getElementById('expand').addEventListener('click',event=>{{const details=[...document.querySelectorAll('details')];const expand=details.some(item=>!item.open);details.forEach(item=>item.open=expand);event.target.textContent=expand?'Collapse original evidence':'Expand original evidence';}});
 document.getElementById('evaluation-form')?.addEventListener('submit',event=>{{

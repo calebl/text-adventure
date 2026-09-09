@@ -1,6 +1,9 @@
 # One submitted browser command, independent of how often its job is delivered.
-# Its token belongs to the form, not to the text: two intentional "wait" turns
-# are different submissions, while two deliveries of one form are one turn.
+# A submission is its form token AND its text: two deliveries of one line are
+# one turn, while a second line typed into the same rendered form is a second
+# submission rather than a collision. A render-scoped token used as the whole
+# identity had no answer for that -- it either merged two intentional "wait"
+# turns or refused the new line and lost it.
 #
 # Execute only under GameLock's playthrough claim. Completed deliveries reuse
 # their outcome without touching the engine or making a model call. A worker
@@ -11,7 +14,6 @@
 class Playthrough::Command < ApplicationRecord
   self.table_name = "playthrough_commands"
 
-  class TokenConflict < StandardError; end
   class InterruptedError < StandardError; end
   class PreviouslyFailedError < StandardError; end
 
@@ -25,12 +27,7 @@ class Playthrough::Command < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
 
   def self.accept!(playthrough, command, request_token)
-    submission = create_or_find_by!(playthrough: playthrough, request_token: request_token) do |row|
-      row.command = command
-    end
-    raise TokenConflict, "A submission token cannot name two commands" unless submission.command == command
-
-    submission
+    create_or_find_by!(playthrough: playthrough, request_token: request_token, command: command)
   end
 
   def completed? = status == "completed"

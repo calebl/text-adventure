@@ -314,7 +314,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_030346) do
     t.integer "result_scene_id"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
-    t.index ["playthrough_id", "request_token"], name: "index_playthrough_commands_on_playthrough_id_and_request_token", unique: true
+    t.index ["playthrough_id", "request_token", "command"], name: "index_playthrough_commands_on_submission", unique: true
     t.index ["playthrough_id"], name: "index_playthrough_commands_on_playthrough_id"
     t.index ["result_scene_id"], name: "index_playthrough_commands_on_result_scene_id"
   end

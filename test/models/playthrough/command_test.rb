@@ -5,12 +5,19 @@ class Playthrough::CommandTest < ActiveSupport::TestCase
     assert_predicate build(:playthrough_command), :valid?
   end
 
-  test "a token identifies one command within one playthrough" do
+  test "a token and its line identify one submission within one playthrough" do
     first = create(:playthrough_command)
     assert_equal first, Playthrough::Command.accept!(first.playthrough, first.command, first.request_token)
-    assert_raises(Playthrough::Command::TokenConflict) do
-      Playthrough::Command.accept!(first.playthrough, "/wait", first.request_token)
+
+    # A SECOND LINE ON ONE TOKEN IS A SECOND SUBMISSION, not a collision: the
+    # form is only re-rendered between turns, so this is what a player typing
+    # while the previous turn runs looks like from here.
+    assert_difference -> { Playthrough::Command.count } do
+      second = Playthrough::Command.accept!(first.playthrough, "/wait", first.request_token)
+      assert_not_equal first, second
+      assert_equal "/wait", second.command
     end
+
     other = create(:playthrough)
     assert_difference -> { Playthrough::Command.count } do
       Playthrough::Command.accept!(other, first.command, first.request_token)
