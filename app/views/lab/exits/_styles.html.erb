@@ -1,0 +1,25 @@
+<%# THE EXITS LAB'S OWN FEW RULES, on top of `lab/_styles` and the `debug`
+    layout's, and in their palette -- NO NEW COLOURS. Every value below is
+    already in `app/views/layouts/debug.html.erb` or
+    `app/views/lab/_styles.html.erb`.
+
+    THERE ARE THREE, and each is here because this lab has a shape the first one
+    does not: a block per NAMED PLACE rather than a table of rooms, since every
+    place in an exits answer is separately judged and separately expected. %>
+<style>
+  /* ONE PLACE THE ANSWER NAMED. A bordered block rather than a table row,
+     because it carries a teaser, four picks, what the engine did with them and
+     his verdict -- which is more than a row wraps usefully. */
+  .place { border: 1px solid #21262c; padding: .5rem .7rem; margin: 0 0 .6rem; }
+
+  /* THE ONE WHOSE PICK REACHED THE WORLD gets the accent the debug view gives
+     the current turn, because it is the only kind of pick that decided
+     anything. */
+  .place.reaching { border-color: #4a4326; background: #14140f; }
+
+  /* AND A PLACE HE TYPED THAT NO DRAW HAS NAMED. Dimmer than a drawn one and
+     never coloured as a miss: an unnamed expectation is out of the denominator,
+     not a failure. `Lab::Exits::Judgement`'s header has the measurement behind
+     that rule. */
+  .place.unmet { border-style: dashed; }
+</style>

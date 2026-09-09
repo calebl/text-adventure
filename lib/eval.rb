@@ -137,11 +137,14 @@ module Eval
     db/eval/prompt-2026-09-05/prompt.json
     db/eval/prompt-ending-before-2026-09-08/prompt.json
     db/eval/prompt-ending-after-2026-09-08/prompt.json
+    db/eval/prompt-ending-before-2026-09-08-2/prompt.json
+    db/eval/prompt-ending-after-2026-09-08-2/prompt.json
     db/eval/room-names-after-bef7cec/realization.json
     db/eval/interior-entry-before/realization.json
     db/eval/interior-entry-after/realization.json
     db/eval/interior-entry-after-2/realization.json
     db/eval/room-people-after/realization.json
+    db/eval/kind-to-corpus-after/realization.json
     db/eval/null-2026-09-07/realization.json
   ].freeze
 

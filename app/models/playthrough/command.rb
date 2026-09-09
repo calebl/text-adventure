@@ -1,6 +1,21 @@
 # One submitted browser command, independent of how often its job is delivered.
-# Its token belongs to the form, not to the text: two intentional "wait" turns
-# are different submissions, while two deliveries of one form are one turn.
+#
+# A SUBMISSION IS ITS TOKEN AND ITS TEXT, and it takes both halves to tell the
+# three cases apart. One RESEND of one submit -- a double-click, a browser
+# retrying a POST whose response was lost, a job delivered twice -- carries the
+# same token and the same line, and is one turn. Two DIFFERENT lines can share
+# a token, because the battle panel puts every one of its buttons on the page at
+# once, and they are two turns. What neither half answers on its own is a second
+# submit of the SAME line, which is why the token is spent on use:
+# `TurnsController#create` hands the browser a fresh one with every accepted
+# submission, so a repeated "attack the guard" arrives under a new token and
+# takes its own turn. Keying on the token alone refused the new line and lost
+# it; keying on token-and-text alone merged the repeat.
+#
+# `id` IS THE ACCEPTED ORDER, and the only record of it. Two submissions can be
+# accepted while a turn is running and their jobs can reach the lock in either
+# order, so `Playthrough::Turn#play` plays every pending row up to its own in
+# `id` order rather than whichever job won the race.
 #
 # Execute only under GameLock's playthrough claim. Completed deliveries reuse
 # their outcome without touching the engine or making a model call. A worker
@@ -11,7 +26,6 @@
 class Playthrough::Command < ApplicationRecord
   self.table_name = "playthrough_commands"
 
-  class TokenConflict < StandardError; end
   class InterruptedError < StandardError; end
   class PreviouslyFailedError < StandardError; end
 
@@ -25,15 +39,46 @@ class Playthrough::Command < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
 
   def self.accept!(playthrough, command, request_token)
-    submission = create_or_find_by!(playthrough: playthrough, request_token: request_token) do |row|
-      row.command = command
-    end
-    raise TokenConflict, "A submission token cannot name two commands" unless submission.command == command
-
-    submission
+    create_or_find_by!(playthrough: playthrough, request_token: request_token, command: command)
   end
 
   def completed? = status == "completed"
+
+  # WHETHER THE GAME HAS ALREADY MOVED PAST THIS SUBMISSION, and the reason a
+  # redelivery is not always harmless.
+  #
+  # A duplicate delivery touches no records -- `#execute!` hands back what this
+  # submission produced and runs nothing -- but its consumer then paints that
+  # stored outcome as the page. The accepted-order drain makes a LATER
+  # submission finish first as an ordinary matter, so the overtaken job's own
+  # delivery arrives after the newer turn has landed: a refusal box for a line
+  # typed in the room before this one, over the room the player is standing in
+  # now, taking whatever they have typed since with it. An obsolete failure
+  # notice replaces newer successful state the same way.
+  #
+  # So a submission with a newer sibling the game has started or finished says
+  # nothing at all. The NEWEST submission is never overtaken, which is what
+  # keeps a legitimate redelivery of the current line -- its refusal, its
+  # crisis notice -- refreshing the page accurately.
+  def overtaken?
+    return false if status == "pending"
+
+    playthrough.commands.where("id > ?", id).where.not(status: "pending").exists?
+  end
+
+  # WHAT THIS SUBMISSION PRODUCED, rebuilt from its own columns: the Scene it
+  # wrote, the refusal the engine answered with, or nil for one that failed.
+  # `#execute!` reads it for a duplicate delivery and `Playthrough::Turn#play`
+  # reads it for an overtaken one, which is answered and never broadcast.
+  def outcome
+    if refusal.blank?
+      scene = result_scene
+      scene.safety_notice = true if scene && error_kind == "crisis"
+      return scene
+    end
+
+    Playthrough::Refusal.new(**refusal.symbolize_keys.merge(kind: refusal.fetch("kind").to_sym))
+  end
 
   def execute!
     return outcome if completed?
@@ -59,17 +104,5 @@ class Playthrough::Command < ApplicationRecord
       update!(status: "failed", error_kind: e.is_a?(BaseAgent::CrisisResponseError) ? "crisis" : "error")
       raise
     end
-  end
-
-  private
-
-  def outcome
-    if refusal.blank?
-      scene = result_scene
-      scene.safety_notice = true if scene && error_kind == "crisis"
-      return scene
-    end
-
-    Playthrough::Refusal.new(**refusal.symbolize_keys.merge(kind: refusal.fetch("kind").to_sym))
   end
 end

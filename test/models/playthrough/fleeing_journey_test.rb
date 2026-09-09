@@ -3,11 +3,20 @@ require "test_helper"
 class Playthrough::FleeingJourneyTest < ActiveSupport::TestCase
   ARRIVAL = { "description" => "You reach the next place.", "summary" => "You arrive." }.freeze
 
+  # THE LEVEL IS SET BEFORE THE GAME EXISTS, and that is not tidiness. A
+  # playthrough takes up the opening snapshot on create, which instantiates the
+  # protagonist's vitals at whatever `max_hp` was THEN -- so raising the level
+  # afterwards left this party looking sturdy (53) while still holding the eight
+  # hit points of a level-1 body. Maren's riposte is one die of her hit die, so
+  # one run in eight killed the player, the playthrough ended, and the second
+  # move came back a refusal instead of a journey. The dice are the engine's and
+  # they are fine; the setup was lying about the body.
   setup do
-    @game = create(:playthrough, :started)
-    @game.character.update!(level: 10)
+    story = create(:story)
+    @game = create(:playthrough, story: story,
+                                 character: create(:character, :protagonist, story: story, level: 10),
+                                 current_location: create(:location, story: story, name: "Market"))
     @market = @game.current_location
-    @market.update!(name: "Market")
     @quay = create(:location, story: @game.story, name: "Quay")
     @tower = create(:location, story: @game.story, name: "Tower")
     @opening = create(:scene, story: @game.story, location: @market, story_timestamp: @game.story.start_time)

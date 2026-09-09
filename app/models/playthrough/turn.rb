@@ -92,37 +92,121 @@ class Playthrough::Turn
   # the app's own rather than anything a model wrote. `NarrationJob` shows it
   # where `Playthrough::SafetyNotice` goes and for the same reason.
   def play(command, request_token: nil, on_start: nil, on_finish: nil, on_error: nil, &block)
-    deliver = lambda do |chunk|
-      block&.call(chunk)
-    rescue StandardError => e
-      # A consumer receives progress; it does not own the turn. An unavailable
-      # broadcast after a charged arrival cannot skip the world's response.
-      Rails.logger.warn { "Turn streaming failed: #{e.class}: #{e.message}" }
-    end
+    deliver = observer("streaming", block)
+    began = observer("start notice", on_start)
+    finished = observer("finish notice", on_finish)
+    failed = observer("failure notice", on_error)
     GameLock.synchronize("playthrough", playthrough.id) do
       # Another job may have completed while this one waited. Both the scene
       # chain and the classifier's closed sets must start from its result.
       playthrough.reload
-      outcome = if request_token
-        submission = Playthrough::Command.accept!(playthrough, command, request_token)
-        submission.execute! do
-          on_start&.call
-          play_serially(command, &deliver)
+      outcome = nil
+      if request_token
+        mine = Playthrough::Command.accept!(playthrough, command, request_token)
+        if mine.overtaken?
+          outcome = mine.outcome
+        else
+          accepted_up_to(mine).each_with_index do |row, already_played|
+            forget_line_readers! if already_played.positive?
+            played = take_turn(row.command, began, finished, submission: row, &deliver)
+            outcome = played if row.id == mine.id
+          end
         end
       else
-        on_start&.call
-        play_serially(command, &deliver)
+        outcome = take_turn(command, began, finished, &deliver)
       end
-      # The final broadcast is part of serialization too: an old worker must
-      # not replace the page after the next command has started streaming.
-      @safety_notice ||= outcome.safety_notice if outcome.is_a?(Scene)
-      on_finish&.call(outcome)
       outcome
     rescue StandardError => e
-      on_error&.call(e)
+      failed.call(e)
       raise
     end
   end
+
+  # A CONSUMER RECEIVES PROGRESS; IT DOES NOT OWN THE TURN, and every callback
+  # #play takes comes through here so that one statement holds for all of them.
+  # An unavailable broadcast after a charged arrival cannot skip the world's
+  # response -- and it cannot cost the player a line either.
+  #
+  # BOTH OTHER CALLBACKS COST ONE BEFORE THIS WAS THEIR RULE TOO. The pending
+  # page is broadcast from INSIDE `Command#execute!`, so an exception raised
+  # delivering it -- a render error, a busy cable database while another turn
+  # broadcasts -- marked a submission `failed` before its line had been played
+  # at all: the player read an internal-failure notice, a redelivery of that
+  # token raised `PreviouslyFailedError`, and the drain would not touch a row
+  # that was no longer pending. The final page is the same defect one row
+  # along: it raised out of the drain loop, so every line accepted behind the
+  # one that had just finished stayed pending.
+  #
+  # WHAT IS NOT SWALLOWED IS THE ENGINE. Only delivery is wrapped, so a real
+  # provider or engine failure still raises through #play, `Command#execute!`
+  # still records it against the submission, and `NarrationJob` still tells the
+  # player the truth about it -- including the setup notice and the crisis
+  # notice, which are engine outcomes and not delivery failures.
+  def observer(what, consumer)
+    lambda do |value|
+      consumer&.call(value)
+    rescue StandardError => e
+      Rails.logger.warn { "Turn #{what} failed: #{e.class}: #{e.message}" }
+    end
+  end
+  private :observer
+
+  # EVERY LINE THIS GAME HAS ACCEPTED AND NOT YET PLAYED, oldest first, up to
+  # and including this job's own.
+  #
+  # A player can type a second line while a turn is running: the form is only
+  # re-rendered by the job, so the browser accepts both and enqueues both, and
+  # `config/queue.yml` runs three worker threads. `flock` is not FIFO, so
+  # whichever job reaches `GameLock` first would otherwise run first -- "take
+  # the brass key" then "go north" could leave the room before the key was
+  # taken, with both reporting success.
+  #
+  # `playthrough_commands.id` is the accepted order and needs no second
+  # sequence beside it, so the job that wins the race plays its predecessors
+  # before its own line and the loser finds them completed. In the ordinary
+  # case -- one line, nothing else pending -- this is the one row and the loop
+  # below is exactly what it was.
+  #
+  # A row that is no longer pending is answered alone: a redelivery replays its
+  # stored outcome and an interrupted one raises, which is `Command#execute!`'s
+  # business and not this method's. If a predecessor fails here the loop stops
+  # and this job's own row stays pending -- the next submission's job drains it,
+  # and the reconciliation limit is the one R04 already records.
+  #
+  # WHAT THIS ORDERS IS PENDING LIVE SUBMISSIONS, AND NOTHING ELSE. Only
+  # `pending` predecessors are drained, so a predecessor a dead worker left
+  # `running` -- SIGKILL, OOM, a deploy mid-turn -- is neither replayed nor
+  # waited for, and this line plays past it. Replaying it could repeat a
+  # half-finished effect (`Command#execute!`), and blocking every later line
+  # behind it would strand the game on a row nothing will ever finish, so it is
+  # skipped and left visible for reconciliation. Accepted order is therefore a
+  # guarantee about submissions whose workers are alive; across an interrupted
+  # worker there is none, which is the R04 boundary the intent keeps partial.
+  def accepted_up_to(submission)
+    return [ submission ] unless submission.status == "pending"
+
+    playthrough.commands.where(status: "pending").where("id <= ?", submission.id).order(:id).to_a
+  end
+  private :accepted_up_to
+
+  # One line, start to finish, with the consumer told when it begins and what
+  # it produced. `@safety_notice` is per turn rather than per job, because a
+  # job that plays a predecessor as well must not carry the first turn's
+  # interception onto the second turn's page.
+  def take_turn(line, on_start, on_finish, submission: nil, &block)
+    @safety_notice = nil
+    play = lambda do
+      on_start.call(line)
+      play_serially(line, &block)
+    end
+    outcome = submission ? submission.execute!(&play) : play.call
+    # The final broadcast is part of serialization too: an old worker must
+    # not replace the page after the next command has started streaming.
+    @safety_notice ||= outcome.safety_notice if outcome.is_a?(Scene)
+    on_finish.call(outcome)
+    outcome
+  end
+  private :take_turn
 
   # Only #play enters this method. The process lock covers classification,
   # engine effects and rendering, but opens no database transaction across a
@@ -931,12 +1015,26 @@ class Playthrough::Turn
   # this cannot reach a template, and `EngineSweep::Invariants#world_items_unmoved`
   # proves it after every walk.
   #
-  # THE PARTY IS A NO-OP AND HAS TO BE. The protagonist carries nothing through
-  # `items_held_by` -- the party's hands are an instance with no room and no
-  # holder (`Playthrough#carried`) -- and they stand in no room to drop anything
-  # into, so a player dying leaves the game's inventory exactly as it was. There
-  # is no restore-from-save and no revival to hand it back to; loot is what a
-  # fight the party WON leaves on the floor.
+  # THE PARTY IS A NO-OP AND HAS TO BE, AND `Playthrough#items_held_by` IS THE
+  # WHOLE OF WHY. It matches on the HOLDER (`Item.for_character`), and the
+  # party's hands are rows with NO holder at all -- `#carry!` writes
+  # `character: nil` and `Item.in_hand` reads `character_id: nil` with
+  # `location_id: nil` (`Playthrough#carried`) -- so the protagonist's set comes
+  # back empty and the loop below writes nothing. It is NOT that there is
+  # nowhere to drop into: `Playthrough#location_of` answers `current_location`
+  # for the party, so `room` is the room they are standing in and this method
+  # runs to the end. A player dying therefore leaves the game's inventory
+  # exactly as it was. There is no restore-from-save and no revival to hand it
+  # back to; loot is what a fight the party WON leaves on the floor.
+  #
+  # A COMPANION IS NOT THE PARTY HERE, and because the room comes from
+  # `#location_of` it is the one case whose answer changed: a companion's own
+  # per-game possessions -- rows that DO name them as holder -- fall in the room
+  # THIS GAME says they are in, which is their `Playthrough::NpcState` row and
+  # the party's own room when they have none. `characters.location_id` is null
+  # for the protagonist and for anyone `is_companion` by design (`Character`'s
+  # header, `Story::Doctor#whereabouts`), so reading that column instead left a
+  # dead companion's things on their record with nowhere to fall.
   #
   # It is in the house of `#carry!` and `#put_down!` because it is the same
   # statement they are: the row moves, and nothing else does.
@@ -1500,4 +1598,27 @@ class Playthrough::Turn
   def grammar
     @grammar ||= Playthrough::Grammar.new(playthrough, classifier: classifier)
   end
+
+  # THE TWO READERS ABOVE BELONG TO ONE LINE, and this is what says so. They
+  # are memoised together on purpose -- the grammar matches a typed name
+  # against the list the model would have been offered -- and the classifier
+  # holds a `BaseAgent`, which holds a `Chat`.
+  #
+  # A `Turn` used to play one line, so nothing had to drop them: `NarrationJob`
+  # builds one per delivery. `#play` can now play a predecessor first, and
+  # handing these on would put the previous command and its answer in front of
+  # a prompt whose contract is one-shot -- and with `TA_CHAT_KEEP_TURNS=0` the
+  # first line prunes that chat, so the second writes a message against a row
+  # that is gone and the turn dies on a foreign key.
+  #
+  # CALLED BETWEEN LINES AND NEVER BEFORE THE FIRST, because the first line of
+  # a `#play` gets whatever the caller set up: `Eval::Prompt::Bench` injects a
+  # fixed classifier before `#play` so a measured case reads one pinned intent,
+  # and clearing it here would put a charged classifier call in the middle of a
+  # replayed baseline. Anything memoised per line joins this method.
+  def forget_line_readers!
+    @classifier = nil
+    @grammar = nil
+  end
+  private :forget_line_readers!
 end

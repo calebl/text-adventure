@@ -792,6 +792,46 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # panel of records inside `#turn_log`, rendered when `Playthrough#foes_in`
   # answers with somebody and gone when it does not. There is no battle flag to
   # set and none to clear.
+  # EVERY FORM ON THE PAGE CARRIES A SPENDABLE TOKEN, and the panel is the
+  # reason it is a class and not an id: the ask form and one form per act are
+  # all here at once, so `TurnsController#create` re-mints them by selector.
+  # A button whose field missed the class would keep a spent token and read a
+  # second press of the same act as a redelivery of the first.
+  test "the ask form and every battle button carry a token the acknowledgement can replace" do
+    playthrough = fighting_playthrough
+
+    get playthrough_path(playthrough)
+
+    assert_response :success
+    forms = Nokogiri::HTML(response.body)
+                   .css("#turn_log form[action='#{playthrough_turns_path(playthrough)}']")
+    assert_operator forms.length, :>, 1, "the panel puts several submissions on one page"
+    forms.each do |form|
+      assert_equal 1, form.css("input[name='request_token'].request-token").length,
+                   "every submission on the page is spendable"
+    end
+    assert_select "div.sheet.battle input.request-token", minimum: 1
+  end
+
+  # THE WIRING THE ACKNOWLEDGEMENT NEEDS, in the rendered page: an accepted
+  # submission answers with a fresh token and no page at all, so `play.js` is
+  # what echoes the line and clears the box. Behaviour is proved in a browser;
+  # what this pins is that the page still hands that controller the element and
+  # the two submit events it reads -- the Stimulus contract it consumes.
+  test "the play page wires an accepted submission to its own acknowledgement" do
+    playthrough = create(:playthrough, :started)
+
+    get playthrough_path(playthrough)
+
+    assert_response :success
+    scope = css_select("[data-controller='play']").sole
+    actions = scope["data-action"]
+    assert_includes actions, "turbo:submit-end->play#acknowledgeSubmission"
+    receipt = scope.css("#turn_log p[data-play-target='receipt']").sole
+    assert receipt["hidden"], "nothing has been submitted on a plain page load"
+    assert_empty receipt.text.strip
+  end
+
   test "a room with somebody hostile in it shows the battle panel" do
     playthrough = fighting_playthrough
 

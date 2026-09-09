@@ -33,6 +33,11 @@ class Lab::SamplesController < ApplicationController
   def show
     @sample = Lab::Realization::Sample.find(params[:id])
     @kind = @sample.kind
+    # THE FLOOR PLAN, OR NIL. Built here rather than in the view for
+    # `Story::Map`'s rule -- the view emits markup and does no arithmetic -- and
+    # nil for a sample drawn before positions were stored, which the page says
+    # out loud (`Lab::Realization::Plan`).
+    @plan = Lab::Realization::Plan.for(@sample.reading, name: @kind.name)
   end
 
   def create
@@ -40,7 +45,7 @@ class Lab::SamplesController < ApplicationController
     sample = Lab::Realization::Runner.new(kind).draw!
 
     redirect_to lab_sample_path(sample)
-  rescue Lab::Realization::Runner::Unrunnable, Eval::Realization::Stage::Unstageable => error
+  rescue Eval::Realization::Stage::Unstageable => error
     redirect_to lab_kind_path(params[:kind_id]), alert: error.message
   end
 

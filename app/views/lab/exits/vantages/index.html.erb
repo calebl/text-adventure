@@ -1,0 +1,137 @@
+<%# THE EXITS LAB, FRONT DOOR: the vantages already typed, the counter-figure
+    over all of them, and the form for one more. `Lab::Exits`'s header is the
+    design and the captain's answers in his own words.
+
+    THE COUNTER-FIGURE AND THE REFUSAL ARE HERE AND NOWHERE ELSE, which is the
+    captain's Call 5 of 2026-09-08 and `Lab::Exits::Alignment`'s header: both are
+    properties of the SET of vantages, and a per-vantage reading of either would
+    invite reading one place's open country as the game's.
+
+    THE FORM IS SIX FACTS AND NOT ONE PROMPT FIELD. See `Lab::Exits`'s header for
+    why a prompt box here would be a second prompt source with no baseline. %>
+<%= render "lab/styles" %>
+<%= render "lab/exits/styles" %>
+
+<h1>the exits lab</h1>
+<p class="nav">
+  <%= link_to "&larr; the stories".html_safe, root_path %>
+  &nbsp;&middot;&nbsp; <%= link_to "the realization lab", lab_kinds_path %>
+  &nbsp;&middot;&nbsp; what the model says lies beyond a place you type, on a copy
+  of a world that is rolled back afterwards
+  &nbsp;&middot;&nbsp; <span class="warn">drawing a sample spends money</span>
+</p>
+
+<h2>over every vantage</h2>
+<% reach = @alignment.reach %>
+<div class="panel">
+  <p class="note">
+    The two figures the rates are checked against, and neither is one you can
+    pass. A band handed to a place the world already held is discarded by
+    <code>Location::Generator#connect_exit!</code>, so the gap between them is
+    the share of picks that decided nothing.
+  </p>
+  <% if reach.judgeable? %>
+    <div class="fields">
+      <div class="k">insides given</div>
+      <div class="v">
+        <%= reach.given %> of <%= reach.named %> places named
+        <span class="absent">(<%= number_to_percentage(reach.given_share * 100, precision: 1) %>)</span>
+      </div>
+      <div class="k">insides reaching</div>
+      <div class="v">
+        <span class="<%= reach.reaching.positive? ? "pick hit" : "pick miss" %>">
+          <%= reach.reaching %> of <%= reach.named %>
+        </span>
+        <span class="absent">(<%= number_to_percentage(reach.reaching_share * 100, precision: 1) %>)</span>
+        &mdash; the ones the engine actually opened
+      </div>
+      <div class="k">discarded</div>
+      <div class="v">
+        <%= reach.discarded %>
+        <span class="absent">
+          (a band on a place that already existed. A vantage with many of these
+          wants more names in its <code>absent</code> list)
+        </span>
+      </div>
+    </div>
+  <% else %>
+    <p class="absent">(nothing drawn yet, so there is nothing to check anything against)</p>
+  <% end %>
+</div>
+
+<h2>alignment</h2>
+<% figure = @alignment.figure %>
+<div class="panel">
+  <% if figure.nil? %>
+    <p class="warn"><%= @alignment.refusal %></p>
+    <p class="note">
+      This is a refusal and not a missing feature. The exits prompt's own first
+      instruction on the field is <em>&ldquo;say NO INSIDE for almost all of
+      them&rdquo;</em>, so a set of nothing but <code>none of them</code> vantages
+      reads full marks for a model that has emptied the game of buildings &mdash;
+      which is a prompt version this project has already shipped and measured.
+      <code>Lab::Exits::Alignment</code>'s header has the argument.
+    </p>
+  <% else %>
+    <p>
+      <span class="<%= figure.established? ? "pick hit" : "pick unscored" %>">
+        <%= figure.fraction %>
+      </span>
+      draws satisfied their own quantifier<%= " -- not established" unless figure.established? %>
+    </p>
+    <p class="note">
+      Pooled over draws and not averaged over vantages, because a vantage drawn
+      thirty times and one drawn twice are not two equal opinions. Shapes held:
+      <%= figure.allowed %>.
+    </p>
+  <% end %>
+</div>
+
+<h2>the vantages</h2>
+<% if @vantages.empty? %>
+  <p class="absent">(none yet &mdash; type one below)</p>
+<% else %>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>vantage</th><th>world</th><th>off the books</th><th>expects</th>
+          <th>drawn</th><th>answers</th><th>judged</th><th>reaching</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @vantages.each do |vantage| %>
+          <% rate = vantage.hit_rate %>
+          <tr>
+            <td><%= link_to vantage.name, lab_exits_vantage_path(vantage) %></td>
+            <td><%= vantage.world %></td>
+            <td>
+              <% if vantage.absent_names.empty? %>
+                <span class="warn">nothing</span>
+              <% else %>
+                <%= vantage.absent_names.size %>
+              <% end %>
+            </td>
+            <td><%= debug_value(vantage.expects_inside_quantifier, absent: "nothing") %></td>
+            <td><%= rate.drawn %></td>
+            <%# HOW MANY DIFFERENT ANSWERS, beside how many draws -- the one
+                figure on this page that is advice rather than a score. See
+                `HitRate#distinct_answers`. %>
+            <td><%= rate.distinct_answers %> distinct</td>
+            <td><%= rate.judged %></td>
+            <td>
+              <% if rate.reach.judgeable? %>
+                <%= rate.reach.reaching %> of <%= rate.reach.named %>
+              <% else %>
+                <span class="absent">&mdash;</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<h2>a new vantage</h2>
+<%= render "lab/exits/vantages/form", vantage: @vantage %>

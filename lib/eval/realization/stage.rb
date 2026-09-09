@@ -43,7 +43,16 @@
 # `Eval::Realization::Corpus`:
 #
 #   `room`          the stub to build. Wound back to a stub: no description, no
-#                   lore, nothing lying in it.
+#                   lore, nothing lying in it -- or CREATED, when the case
+#                   carries a `teaser` and the world has no such room.
+#   `teaser`        the room's own second fact, and the key that decides which
+#                   kind of case this is. A case with one carries its stub and
+#                   this class creates it; a case without one names a room in a
+#                   checked-in world file and this class finds it.
+#   `inside`        the band a real exits call would have supplied about a place
+#   `population`    it had just named, on a typed case only. Handed straight to
+#                   `Location::Generator.create_stub!`, which is the app's own
+#                   one path for a room being born.
 #   `reached_from`  the ONE neighbour whose own realization created this stub,
 #                   which is the way back. Absent for an opening room, which has
 #                   none.
@@ -69,6 +78,26 @@
 #                   correct answer IS, which is why it is a key and not a
 #                   guess.
 #
+# A CASE THAT CARRIES ITS ROOM, AND WHY IT IS THIS CLASS'S JOB AND NOT A SECOND
+# ONE'S. A kind the captain typed in `Lab::Realization` and scored is in no world
+# file, so there is no room to find -- and until this class could CREATE one, a
+# scored kind could never be re-run against a changed prompt, which is the whole
+# of what "maintain alignment" means mechanically. So a case with a `teaser`
+# stands its stub up through `Location::Generator.create_stub!` and opens the way
+# in itself, and everything else -- the world load, the rename back, the readers
+# on `Standing`, the rollback -- is unchanged and shared.
+#
+# ONE SPELLING OF STANDING A TYPED STUB UP. `Lab::Realization::Runner` carried
+# its own copy of this while the corpus could not hold such a case, and its
+# header said the copy was temporary. It now calls this class, so a lab draw and
+# a promoted corpus case stand the same stub up in the same order -- which is the
+# one thing they cannot afford to do subtly differently, since the point of the
+# promotion is that the case re-runs what the lab scored.
+#
+# AND A TYPED CASE DECLARES ITS DANGER, checked by
+# `Eval::Realization::Corpus#stub_problems`: the roll a new room would get is
+# keyed on the story's id, which a staged copy is issued afresh on every load.
+#
 # WHAT IS DELIBERATELY LEFT ALONE: anybody standing in the room. A stub may
 # legitimately have somebody in it -- a seed file places them -- and a person
 # already here takes up one of `Character::Registry::MAX_PER_ROOM`'s slots and
@@ -82,6 +111,15 @@ class Eval::Realization::Stage
   # two views of ONE world -- and this class DELETES ROOMS, so one case's
   # surgery would be performed on every other case's world.
   LABEL = "realization bench".freeze
+
+  # THE WAY IN'S OWN LABEL, when a case that carries its stub names a neighbour it
+  # was reached from. `LocationConnection` derives `time_to_travel` from these two
+  # and refuses free text, so they come from its tables. A short walk on foot is
+  # the quietest possible way in: it is the doorway's label, nothing in a
+  # realization prompt reads it, and a case that could set it would be setting a
+  # knob with nothing behind it.
+  DISTANCE = "a short walk".freeze
+  TRAVEL_METHOD = "walking".freeze
 
   def self.title_for(kase, label: LABEL) = "#{kase.story} (#{label}: #{kase.id})"
 
@@ -161,11 +199,53 @@ class Eval::Realization::Stage
     # STORED PER ROOM RATHER THAN SUMMARISED, because the figure the captain
     # asked for is the share of rooms carrying a hazard BY STOREY and a summary
     # taken here could not be re-cut later. It is a handful of rows.
+    #
+    # AND SINCE SLICE 2 IT CARRIES WHERE EACH ROOM IS, which is what makes a
+    # stored row DRAWABLE (`Lab::Realization::Plan`). `x` and `y` are the
+    # engine's own columns, read off the row `Location::Interior` wrote and never
+    # recomputed anywhere -- the captain's rule for a number, and the reason the
+    # floor plan on the lab page cannot disagree with the table beside it.
+    #
+    # `index` IS THE ROOM'S PLACE IN THIS LIST AND IS THE ONLY WAY A DOOR NAMES A
+    # ROOM. A database id would be an id from a transaction that was rolled back,
+    # and a name is prose a model may have written; the position in an `order(:id)`
+    # list is neither, and it is the same list the reader of the row iterates. So
+    # `doors_to` and `stairs_to` hold indices into this array and nothing else.
+    #
+    # TWO KEYS AND NOT ONE, because a door and a stair are drawn differently and
+    # the split is read off `LocationConnection#travel_method` rather than
+    # derived from the two storeys differing. Deriving would be a second answer
+    # to what a stair is; `Location::Interior::STAIRS` is the first.
+    #
+    # ADJACENCY IS NOT A DOOR, which is why this has to be stored at all rather
+    # than worked out from the boxes: `Location::Interior` opens a serpentine
+    # backbone and then throws for every other shared wall, so two rooms that
+    # touch usually have no door between them.
+    #
+    # A CONNECTION OUT OF THE BUILDING IS LEFT OUT -- `#open_the_way_in!` moves
+    # the stub's own doorways onto a room of it, and that far end is not a
+    # sibling, so it has no index here. The `doors` count still holds it, which
+    # is what keeps the count the honest total it always was.
+    #
+    # NO FOOTPRINT IS STORED BESIDE THEM. The rooms tile the footprint exactly
+    # (`Location::Interior`'s doctrine), so their own union IS the plane they are
+    # read in and a second record of it could only disagree.
     def rooms_laid_out
-      location.child_locations.order(:id).map do |room|
-        { "storey" => room.z, "danger" => room.danger, "hazard" => room.hazard,
+      rooms = location.child_locations.order(:id).to_a
+      index_of = rooms.each_with_index.to_h { |room, index| [ room.id, index ] }
+
+      rooms.each_with_index.map do |room, index|
+        out = LocationConnection.from_location(room).to_a
+        siblings = out.select { |row| index_of.key?(row.connected_location_id) }
+        walked, climbed = siblings.partition { |row| row.travel_method != Location::Interior::STAIRS }
+
+        { "index" => index, "name" => room.name, "storey" => room.z,
+          "x" => room.x, "y" => room.y,
+          "danger" => room.danger, "hazard" => room.hazard,
           "hazard_die" => room.hazard_die, "width" => room.width, "depth" => room.depth,
-          "doors" => LocationConnection.from_location(room).count }
+          "doors" => out.size,
+          "doors_to" => walked.map { |row| index_of.fetch(row.connected_location_id) }.uniq.sort,
+          "stairs_to" => climbed.map { |row| index_of.fetch(row.connected_location_id) }.uniq.sort }
       end
     end
 
@@ -334,7 +414,18 @@ class Eval::Realization::Stage
   # never wrote, hand `Location::Plan` a floor plan with a wall missing out of
   # it, and measure a prompt the app cannot build.
   def wind_back!(story)
-    room = find_room!(story, kase.room, "room")
+    existing = story.locations.find_by(name: kase.room)
+    if kase.typed?
+      if existing
+        raise Unstageable, "#{kase.id}: #{kase.story.inspect} already has a room called " \
+                           "#{kase.room.inspect}, so a case that carries its own stub would write it " \
+                           "twice -- drop the `teaser` and the case finds the room instead"
+      end
+
+      return stand_up!(story)
+    end
+
+    room = existing || find_room!(story, kase.room, "room")
 
     keep = kase.reached_from.presence && find_room!(story, kase.reached_from, "reached_from")
     if keep && !edge?(room, keep)
@@ -353,6 +444,47 @@ class Eval::Realization::Stage
     room.items.destroy_all
     room.update!(description: nil, lore: nil, detail_level: :stub, danger: kase.danger.presence || room.danger)
     room.reload
+  end
+
+  # THE STUB A CASE CARRIED, CREATED. `Location::Generator.create_stub!` is the
+  # app's own one path for a room being born: it rolls the danger, rolls the
+  # footprint inside the `inside` band, keeps the `population` word and binds the
+  # story's arc if it was waiting for a place by this name -- all of which a row
+  # written here by hand would have to remember to do.
+  #
+  # THE DECLARED DANGER IS APPLIED AFTER, which is `#wind_back!`'s own order for a
+  # found room and here it is not optional: the roll is keyed on the story's id
+  # and a staged copy is issued a new one on every load, so the case's own key is
+  # the only reproducible answer. `Eval::Realization::Corpus` refuses a typed case
+  # without one.
+  def stand_up!(story)
+    stub = Location::Generator.create_stub!(story, name: kase.room, teaser: kase.teaser,
+                                            inside: kase.inside.presence,
+                                            population: kase.population.presence)
+    stub.update!(danger: kase.danger) if kase.danger.present?
+    open_the_way_in!(story, stub)
+    stub.reload
+  end
+
+  # THE WAY BACK AND WHATEVER ELSE THE CASE SAID THIS STUB ALREADY REACHED, as
+  # rows this class writes rather than rows it keeps -- the mirror image of
+  # `#drop_edges_except!`, and the same declaration read the same way.
+  #
+  # BOTH DIRECTIONS PER NEIGHBOUR, because an exit is written in both and a
+  # realization prompt's dead-end sentence is about the place the player CAME
+  # FROM specifically: `Eval::Realization::Scorer#correct_dead_end?` cannot tell
+  # a way back from any other neighbour without the row.
+  #
+  # A TYPED CASE WITH NO `reached_from` IS AN OPENING ROOM and is legitimate: the
+  # story's first room has no neighbour to have been named by, and it is realized
+  # on the same terms as every other room.
+  def open_the_way_in!(story, stub)
+    [ kase.reached_from.presence, *kase.also_reaches ].compact.each do |name|
+      other = find_room!(story, name, name == kase.reached_from ? "reached_from" : "also_reaches")
+      attributes = { distance: DISTANCE, travel_method: TRAVEL_METHOD }
+      LocationConnection.create!(location: other, connected_location: stub, **attributes)
+      LocationConnection.create!(location: stub, connected_location: other, **attributes)
+    end
   end
 
   # THE NEIGHBOURS A CASE DECLARED THIS STUB ALREADY REACHED, each checked to be

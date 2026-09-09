@@ -73,7 +73,19 @@ module Eval::Realization
   # (`Eval::Realization::Version.offline`), so a prompt edited without a run to
   # judge it is a FAILING TEST rather than a judgement nobody could make. Point
   # it at the after side once the change has been judged, and never before.
-  BASELINE = "room-people-after".freeze
+  #
+  # AND A CORPUS SCHEMA CHANGE RE-BASELINES IT TOO, WHICH IS THIS SET. Nothing in
+  # the prompts moved when `kind-to-corpus-after` was bought -- `prompt_digest`
+  # is the same on both sides of it, and `rake eval:realization_compare
+  # BEFORE=room-people-after AFTER=kind-to-corpus-after` reads every figure NOISE
+  # -- but the corpus grew the fields a case promoted out of `Lab::Realization`
+  # carries, and the digest folds every field that changes what was measured. So
+  # the old set stopped being a baseline for this tree while remaining a true
+  # reading of these prompts, which is exactly the state this constant exists to
+  # make visible. `room-people-after` is kept as history and is still the before
+  # side of the room-people change; the captain authorized the round on
+  # 2026-09-08.
+  BASELINE = "kind-to-corpus-after".freeze
 
   # WHERE A CASE'S WORLD IS READ FROM, IN ORDER. The seeded worlds first, so a
   # case against `The Salt Assizes` measures the file every other instrument in
@@ -223,11 +235,23 @@ module Eval::Realization
   # checks may be judged on a case at all. `Eval::Classifier.digest` carries its own label
   # fields for the same reason. `why` is NOT in it -- rewriting the sentence
   # that says why a case is here measures nothing new.
+  #
+  # AND A PROMOTED CASE'S OWN FIELDS ARE IN IT, ALL OF THEM. `teaser` is the
+  # prompt's second sentence about the room and changing it changes the room that
+  # is asked for; `inside` and `population` are what a real exits call supplied
+  # and both are stated to the model; and the whole `expects_*` block is in it on
+  # `expects_inside`'s precedent -- an expectation decides which figures a case
+  # may be judged on, so editing one moves the rates without touching a prompt,
+  # and a comparison across the edit would credit the movement to the prompt.
+  # That is the failure this method exists to prevent, said about the newest keys.
   def self.digest(corpus = self.corpus)
     Digest::SHA256.hexdigest(
       corpus.cases.map { |kase|
-        [ kase.id, kase.story, kase.room, kase.reached_from, kase.danger, kase.shape,
-          kase.expects_new_ground.inspect, kase.expects_inside.inspect, kase.also_reaches.join("|"),
+        [ kase.id, kase.story, kase.room, kase.teaser, kase.reached_from, kase.danger, kase.inside,
+          kase.population, kase.shape,
+          kase.expects_new_ground.inspect, kase.expects_inside.inspect,
+          kase.expects_danger_at_least.inspect, kase.expectation_line,
+          kase.also_reaches.join("|"),
           kase.absent.join("|"), kase.unwritten.join("|") ].join(" ")
       }.join("\n")
     ).first(16)

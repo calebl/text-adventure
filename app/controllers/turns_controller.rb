@@ -11,9 +11,19 @@ class TurnsController < ApplicationController
   #     takes, where SSE held one for the whole of it and three readers stalled
   #     the site on a default 3-thread Puma.
   #
-  # The HTTP response must not replace the log. A grammar command or factual
+  # THE HTTP RESPONSE MUST NOT REPLACE THE LOG. A grammar command or factual
   # fallback can finish before this response reaches the browser; a pending
   # page sent here would then erase the completed turn and strand the input.
+  # What it does send is one spent submission token, replaced by a fresh one
+  # (`turns/create.turbo_stream`), which is what makes a SECOND submit of the
+  # same line a second turn rather than a redelivery of the first. The
+  # non-Turbo path gets the same thing out of the redirect's re-render.
+  #
+  # ORDER IS THE ROW'S, NOT THIS ACTION'S. Two lines can be accepted while a
+  # turn is still running, and `config/queue.yml` runs three worker threads, so
+  # the jobs can reach `GameLock` in either order. `playthrough_commands.id` is
+  # the accepted order and `Playthrough::Turn#play` plays up to its own row in
+  # that order -- see both headers.
   def create
     playthrough = Playthrough.find(params[:playthrough_id])
     command = params[:command].to_s.strip
@@ -25,18 +35,18 @@ class TurnsController < ApplicationController
       return
     end
 
-    request_token = params[:request_token].presence || SecureRandom.uuid
-    Playthrough::Command.accept!(playthrough, command, request_token)
-    NarrationJob.perform_later(playthrough.id, command, request_token)
+    submission = Playthrough::Command.accept!(playthrough, command, params[:request_token].presence || SecureRandom.uuid)
+    NarrationJob.perform_later(playthrough.id, command, submission.request_token)
+    @request_token = SecureRandom.uuid
 
     respond_to do |format|
-      format.turbo_stream { head :no_content }
+      format.turbo_stream
       # Without Turbo -- scripts blocked, or the module still loading -- the turn
       # still runs; the player just has to reload to read it. The job is already
       # enqueued by the time we get here.
       format.html { redirect_to playthrough_path(playthrough, anchor: "bottom") }
     end
-  rescue Playthrough::Command::TokenConflict, ActiveRecord::RecordInvalid
+  rescue ActiveRecord::RecordInvalid
     head :conflict
   end
 end

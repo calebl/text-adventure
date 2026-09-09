@@ -114,6 +114,45 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_030346) do
     t.index ["template_id"], name: "index_items_on_template_id"
   end
 
+  create_table "lab_exits_judgements", force: :cascade do |t|
+    t.text "aspects"
+    t.datetime "created_at", null: false
+    t.text "expects_inside"
+    t.text "expects_population"
+    t.string "name", null: false
+    t.string "name_key", null: false
+    t.text "note"
+    t.datetime "updated_at", null: false
+    t.integer "vantage_id", null: false
+    t.string "verdict"
+    t.index ["vantage_id", "name_key"], name: "index_lab_exits_judgements_on_place", unique: true
+    t.index ["vantage_id"], name: "index_lab_exits_judgements_on_vantage_id"
+  end
+
+  create_table "lab_exits_samples", force: :cascade do |t|
+    t.text "aspects"
+    t.datetime "created_at", null: false
+    t.text "note"
+    t.json "row", default: {}, null: false
+    t.datetime "updated_at", null: false
+    t.integer "vantage_id", null: false
+    t.string "verdict"
+    t.index ["vantage_id"], name: "index_lab_exits_samples_on_vantage_id"
+  end
+
+  create_table "lab_exits_vantages", force: :cascade do |t|
+    t.text "absent"
+    t.datetime "created_at", null: false
+    t.string "danger"
+    t.string "expects_inside_quantifier"
+    t.text "expects_population"
+    t.string "name", null: false
+    t.string "reached_from"
+    t.text "teaser", null: false
+    t.datetime "updated_at", null: false
+    t.string "world", null: false
+  end
+
   create_table "lab_realization_kinds", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "danger"
@@ -275,7 +314,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_030346) do
     t.integer "result_scene_id"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
-    t.index ["playthrough_id", "request_token"], name: "index_playthrough_commands_on_playthrough_id_and_request_token", unique: true
+    t.index ["playthrough_id", "request_token", "command"], name: "index_playthrough_commands_on_submission", unique: true
     t.index ["playthrough_id"], name: "index_playthrough_commands_on_playthrough_id"
     t.index ["result_scene_id"], name: "index_playthrough_commands_on_result_scene_id"
   end
@@ -578,6 +617,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_030346) do
   add_foreign_key "items", "characters"
   add_foreign_key "items", "locations"
   add_foreign_key "items", "playthroughs"
+  add_foreign_key "lab_exits_judgements", "lab_exits_vantages", column: "vantage_id"
+  add_foreign_key "lab_exits_samples", "lab_exits_vantages", column: "vantage_id"
   add_foreign_key "lab_realization_samples", "lab_realization_kinds", column: "kind_id"
   add_foreign_key "location_connections", "locations"
   add_foreign_key "location_connections", "locations", column: "connected_location_id"

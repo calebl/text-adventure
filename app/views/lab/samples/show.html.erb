@@ -17,6 +17,9 @@
 <% reading = @sample.reading %>
 <% facts = reading.facts %>
 <%= render "lab/styles" %>
+<%# THE MAP PAGE'S OWN DRAWING RULES, rendered here because the floor plan below
+    is the map page's own partial. One stylesheet for one renderer. %>
+<%= render "map/styles" %>
 
 <h1>a sample &mdash; <%= @kind.name %></h1>
 <p class="nav">
@@ -216,16 +219,27 @@
       <div class="scroll">
         <table>
           <thead>
-            <tr><th>storey</th><th>danger</th><th>hazard</th><th>die</th><th>paces</th><th>doors</th></tr>
+            <tr><th>room</th><th>storey</th><th>at</th><th>paces</th><th>danger</th><th>hazard</th><th>die</th><th>doors</th></tr>
           </thead>
           <tbody>
             <% reading.rooms.each do |room| %>
               <tr>
+                <td><%= debug_value(room["name"], absent: "unnamed in this set") %></td>
                 <td><%= room["storey"] %></td>
+                <%# WHERE IT IS, WHICH IS WHAT THE PLAN BELOW IS DRAWN FROM. A set
+                    stored before slice 2 has no `x` at all and says so here
+                    rather than printing a nil as a nought. %>
+                <td>
+                  <% if Lab::Realization::Plan.positioned?(room) %>
+                    <%= room["x"] %>, <%= room["y"] %>
+                  <% else %>
+                    <%= debug_value(nil, absent: "not recorded") %>
+                  <% end %>
+                </td>
+                <td><%= room["width"] %> &times; <%= room["depth"] %></td>
                 <td><%= room["danger"] %></td>
                 <td><%= debug_value(room["hazard"], absent: "none") %></td>
                 <td><%= debug_value(room["hazard_die"], absent: "none") %></td>
-                <td><%= room["width"] %> &times; <%= room["depth"] %></td>
                 <td><%= room["doors"] %></td>
               </tr>
             <% end %>
@@ -235,10 +249,36 @@
       <p class="note">
         <%= pluralize(reading.rooms.size, "room") %>,
         <%= reading.storeys_below %> below the ground floor.
-        A drawn floor plan waits on <code>x</code> and <code>y</code> being stored
-        beside these &mdash; today the stage records the storey and the extent and
-        not the position.
       </p>
+
+      <%# THE SHAPE, WHICH IS THE THING THE TABLE ABOVE CANNOT SHOW. The captain,
+          2026-09-08, on what slice 2 buys him: he looks at a building's shape
+          instead of reading its table. Drawn through `map/_floor_plan` -- the
+          map page's own renderer, at the map page's own scale -- off
+          `Lab::Realization::Plan`, which reads the stored row and nothing else. %>
+      <% if @plan %>
+        <%= render "map/floor_plan", interior: @plan %>
+        <p class="note">
+          Every rectangle above is the <code>x</code>, <code>y</code>,
+          <code>width</code> and <code>depth</code> in the row beside it, at
+          <code>Story::Map::PACE</code> pixels to the pace &mdash; nothing here is
+          re-derived, and a door is drawn only where the layout actually opened
+          one. The dashed outline is the rooms' own union rather than a stored
+          extent: they tile the footprint exactly
+          (<code>Location::Interior</code>), so the union is the plane they were
+          divided out of. Every room reads as a stub because that is what a room
+          of a building is until somebody walks into it.
+        </p>
+      <% else %>
+        <p class="absent">
+          (no floor plan &mdash; this sample was drawn before <code>x</code> and
+          <code>y</code> were stored beside the storey and the extent, and a plan
+          guessed from an extent with no position would be a picture of a building
+          nobody generated. <code>Lab::Realization::Plan</code>'s header has the
+          rule and <code>Eval::Realization::Scorer::Reading#records_the_way_back?</code>
+          is where it comes from. Draw the kind again and the next one is drawable.)
+        </p>
+      <% end %>
     <% end %>
   </div>
 <% end %>

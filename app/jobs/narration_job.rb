@@ -50,10 +50,11 @@ class NarrationJob < ApplicationJob
     # All page changes travel over one ordered channel under the same lock.
     # The HTTP acknowledgement carries no competing pending page, so even an
     # immediate grammar command cannot be overwritten by a late response.
-    beginning = -> { start(playthrough, command) }
+    beginning = ->(line) { start(playthrough, line) }
     completion = lambda do |outcome|
       flush(playthrough, buffer)
       finish(playthrough, safety_notice: turn.safety_notice,
+             error: unconfigured(outcome),
              refusal: outcome.is_a?(Playthrough::Refusal) ? outcome : nil)
     end
     failure = lambda do |error|
@@ -73,6 +74,16 @@ class NarrationJob < ApplicationJob
 
   private
 
+  # A committed turn whose prose fell back to the engine's own words because the
+  # app has no narrator to ask. The turn is finished and its effects stand, so
+  # this is not a `TurnFailureNotice` -- but it must not read as a working game
+  # either. `Scene#rendering_error` is the receipt the fallback left behind.
+  def unconfigured(outcome)
+    return nil unless outcome.is_a?(Scene)
+
+    Playthrough::SetupNotice.for(outcome.rendering_error)
+  end
+
   def start(playthrough, command)
     Turbo::StreamsChannel.broadcast_replace_to(
       playthrough, target: "turn_log", partial: "playthroughs/turn_log",
@@ -87,6 +98,13 @@ class NarrationJob < ApplicationJob
     when BaseAgent::CrisisResponseError
       Rails.logger.warn { "Narration intercepted: #{error.class}: #{error.message}" }
       finish(playthrough, safety_notice: true) if playthrough
+    when *Playthrough::SetupNotice::FAILURES
+      # Nothing here is internal: the install has no model to ask, and whoever
+      # is running it can say so in one environment variable. Nothing was
+      # narrated either -- the turn stopped at the call -- so this is the
+      # unfinished copy and not the one #unconfigured shows.
+      Rails.logger.error { "Narration unconfigured: #{error.class}: #{error.message}" }
+      finish(playthrough, error: Playthrough::SetupNotice::UNFINISHED) if playthrough
     else
       # Exceptions are for the log. The player gets the current persisted
       # state and the app's own copy, which makes no claim that effects rolled

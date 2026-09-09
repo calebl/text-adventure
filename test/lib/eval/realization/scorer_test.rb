@@ -702,6 +702,163 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
       "missing_fields" => [], "cap_hits" => [], "error" => nil }
   end
 
+  # --- the inside pick ------------------------------------------------------
+  #
+  # THE SLICE THESE PIN, and it is one distinction: an inside pick that BUILT
+  # something against one the engine threw away. `Location::Generator#connect_exit!`
+  # hands `inside:` to `.create_stub!` and nowhere else, so a pick on a place
+  # the world already holds changes nothing -- and the bench used to credit it
+  # in `insides_given` and convict it in `inside_where_the_world_wanted_none`
+  # alike. The records say which happened: `facts["places"]` is what the world
+  # held and `after["new_places"]` is what the call opened.
+
+  # A GENUINELY NEW PLACE: the pick reached the world, so it is not discarded
+  # and it does count towards `insides_reaching`.
+  test "an inside pick on a place the world did not have is not a discarded pick" do
+    scorer = scored(exits: [ { "name" => "The Vestry Hulk", "inside" => "a few rooms" } ],
+                    after: after_opening("The Vestry Hulk"))
+
+    assert_empty scorer.flagged_for(:inside_on_a_place_that_already_exists)
+    assert_equal 1, scorer.judgeable_for(:inside_on_a_place_that_already_exists),
+                 "the pick was made, so it was an opportunity to discard one"
+    assert_in_delta 1.0, scorer.reported["insides_reaching"]
+  end
+
+  # AN EXISTING PLACE, NAMED EXACTLY: the engine reuses the row and the pick is
+  # gone. Flagged, and out of `insides_reaching`'s numerator while staying in
+  # `insides_given`'s -- which is the distance the two figures exist to show.
+  test "an inside pick on a place the world already held is discarded and flagged" do
+    scorer = scored(exits: [ { "name" => "The Supply Closet", "inside" => "a few rooms" } ],
+                    after: after_opening)
+
+    flag = scorer.flagged_for(:inside_on_a_place_that_already_exists).sole
+    assert_match(/The Supply Closet/, flag.evidence)
+    assert_in_delta 1.0, scorer.reported["insides_given"]
+    assert_in_delta 0.0, scorer.reported["insides_reaching"]
+  end
+
+  # THE ARTICLE VARIANT, WHICH IS THE SAME PLACE. `WorldSeed.natural_key` is
+  # what the engine resolved it through, so the pick was discarded exactly as
+  # above -- and a scorer matching on the written string would have called this
+  # a new place and credited it.
+  test "an inside pick on an article variant of an existing place is discarded too" do
+    scorer = scored(exits: [ { "name" => "Supply Closet", "inside" => "a warren" } ],
+                    after: after_opening)
+
+    assert_equal 1, scorer.flagged_for(:inside_on_a_place_that_already_exists).size
+    assert_match(/The Supply Closet/, scorer.flagged_for(:inside_on_a_place_that_already_exists).sole.evidence,
+                 "the evidence names the place AS THE WORLD SPELLS IT")
+  end
+
+  # AND THE ARTICLE VARIANT AS A CHECK OF ITS OWN. The denominator is every exit
+  # name that means a place the world already held, read canonically -- so an
+  # exact restatement is judgeable and clean, and a name for a place the world
+  # never had is in neither half.
+  test "an exit naming an existing place another way is flagged, and an exact restatement is not" do
+    scorer = scored(exits: [ "Supply Closet", "Ward Office 12", "The Vestry Hulk" ])
+
+    assert_equal 1, scorer.flagged_for(:exit_spelled_a_place_differently).size
+    assert_equal 2, scorer.judgeable_for(:exit_spelled_a_place_differently),
+                 "only a name that MEANS an existing place could have been spelled another way"
+    assert_match(/Supply Closet/, scorer.flagged_for(:exit_spelled_a_place_differently).sole.evidence)
+  end
+
+  # AN EMPTY DENOMINATOR IS UNAVAILABLE AND NEVER CLEAN -- `Story::Audit#judgeable_for`'s
+  # rule, and the reason `Eval::Realization::Report` prints `unavailable` rather
+  # than 0.000.
+  test "a room that named no place the world already had cannot be judged on spelling" do
+    scorer = scored(exits: [ "The Vestry Hulk" ])
+
+    assert_equal 0, scorer.judgeable_for(:exit_spelled_a_place_differently)
+    assert_empty scorer.flagged_for(:exit_spelled_a_place_differently)
+  end
+
+  # THE CORRECTED CHECK: judged on what REACHED the world. A world that plainly
+  # holds no building and now holds one is the defect; a pick the engine threw
+  # away left that world exactly as it was.
+  test "a world that wanted no building is convicted of the inside it actually opened" do
+    facts = FACTS.merge("expects_inside" => false)
+    opened = scored(facts: facts, exits: [ { "name" => "The Vestry Hulk", "inside" => "a few rooms" } ],
+                    after: after_opening("The Vestry Hulk"))
+    discarded = scored(facts: facts, exits: [ { "name" => "The Supply Closet", "inside" => "a few rooms" } ],
+                       after: after_opening)
+
+    assert_equal 1, opened.flagged_for(:inside_where_the_world_wanted_none).size
+    assert_match(/opened/, opened.flagged_for(:inside_where_the_world_wanted_none).sole.evidence)
+
+    assert_empty discarded.flagged_for(:inside_where_the_world_wanted_none),
+                 "the engine dropped the pick, so the world still holds no building"
+    assert_equal 1, discarded.judgeable_for(:inside_where_the_world_wanted_none),
+                 "and the case is still judged -- unflagged is not unjudgeable"
+    assert_equal 1, discarded.flagged_for(:inside_on_a_place_that_already_exists).size,
+                 "the pick is measured, one check up, as what it was"
+  end
+
+  # NO PICK AT ALL is neither, and stays `inside_declined`'s.
+  test "an exit with no inside pick is in no inside denominator but the declined one" do
+    scorer = scored(facts: FACTS.merge("expects_inside" => false),
+                    exits: [ { "name" => "The Vestry Hulk", "inside" => "no inside" } ],
+                    after: after_opening("The Vestry Hulk"))
+
+    assert_equal 0, scorer.judgeable_for(:inside_on_a_place_that_already_exists)
+    assert_empty scorer.flagged_for(:inside_where_the_world_wanted_none)
+    assert_in_delta 0.0, scorer.reported["insides_reaching"]
+  end
+
+  # A SET STORED BEFORE THE ROWS SAID WHAT A CALL OPENED cannot answer any of
+  # this, and says so. `Reading#records_the_way_back?`'s rule: an absent key is
+  # not an empty list.
+  test "a row that does not record what the call opened reports the reaching checks unavailable" do
+    built = row(exits: [ { "name" => "The Supply Closet", "inside" => "a few rooms" } ])
+    built["facts"] = FACTS.merge("expects_inside" => false)
+    built["after"] = { "people" => [], "items" => [], "exits" => [] }
+    scorer = Eval::Realization::Scorer.new([ built ])
+
+    assert_equal 0, scorer.judgeable_for(:inside_on_a_place_that_already_exists)
+    assert_equal 0, scorer.judgeable_for(:inside_where_the_world_wanted_none)
+    assert_nil scorer.reported["insides_reaching"],
+               "nil and never 0.000 -- a figure this set was never asked for"
+    assert_in_delta 1.0, scorer.reported["insides_given"], 0.001,
+                    "the pick itself is still readable off the answer"
+  end
+
+  # THE ONE THING THE COMMENTS CANNOT HOLD: that the bench and the engine still
+  # answer "is this the same place" the same way.
+  #
+  # The scorer cannot call `Location::Generator#find_location` -- it takes a
+  # story and queries the table, and this file touches none -- so it asks
+  # `WorldSeed.natural_key`, which is the rule that method turns on. That is a
+  # SHARED RULE and not a copy, and this is the test that keeps it one: the
+  # engine's matcher is run against real rows, the scorer against the stored
+  # facts for the same names, and the two answers are asserted equal. Widen
+  # either reading alone and this fails.
+  #
+  # THE SHAPES ARE `WorldSeed.natural_key`'S OWN: the two actually observed in
+  # the captain's database (a case change and a leading "The"), a run of
+  # whitespace, and -- the other half of the assertion -- a name that is NOT the
+  # same place, so a reading that folded everything together would fail here
+  # rather than pass everything.
+  test "the bench resolves a place name to the same answer the engine's matcher does" do
+    story = create(:story)
+    create(:location, story: story, name: "The Supply Closet")
+    facts = FACTS.merge("places" => [ { "name" => "The Supply Closet",
+                                        "realized" => true, "connected" => false } ])
+
+    [ "The Supply Closet", "the supply closet", "Supply Closet", "SUPPLY   CLOSET",
+      "The Supply Closets", "The Vestry Hulk" ].each do |written|
+      engine = WorldSeed.find_location(story, written).present?
+      bench = Eval::Realization::Scorer::Reading.new(row(facts: facts)).place_by_key(written).present?
+
+      assert_equal engine, bench,
+                   "the engine and the bench disagree about whether #{written.inspect} is a place the " \
+                   "world already holds -- one of the two readings has widened"
+    end
+  end
+
+  def after_opening(*names)
+    { "people" => [], "items" => [], "exits" => [], "new_places" => names }
+  end
+
   # --- the population pick --------------------------------------------------
   #
   # The captain's ruling of 2026-09-07: the narrator picks how populated a place

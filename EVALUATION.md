@@ -1140,26 +1140,56 @@ ending the narrator was told*, not only the prose.
 engine played, so the take, look or arrival is narrated first and the ending
 second. The scored passage is the ending — the last `Scene` the turn wrote.
 
-**Both sides are checked in** (`db/eval/prompt-ending-before-2026-09-08`,
-`…-after-…`), 4 reps, one arm, **40 calls for $0.0197 the pair**, so the verdict
+**Both sides are checked in and were RE-BOUGHT on 2026-09-08**
+(`db/eval/prompt-ending-before-2026-09-08-2`, `…-after-…-2`), 4 reps, one arm,
+**40 calls a side for $0.0111 + $0.0094 = $0.0205 the pair**, so the verdict
 below replays offline and free with
-`rake eval:prompt_compare BEFORE=prompt-ending-before-2026-09-08 AFTER=prompt-ending-after-2026-09-08`.
+
+```bash
+rake eval:prompt_compare BEFORE=prompt-ending-before-2026-09-08-2 AFTER=prompt-ending-after-2026-09-08-2
+```
+
+**WHY THERE ARE TWO PAIRS ON DISK, because this is the case the protocol did not
+have an answer for until it happened.** The pair PR 162 bought read
+`item_not_held` 0.000 → 0.200 REAL, and the diagnosis was the CHECK:
+`Story::Audit::Prose.item_names` aliased `iron key` to **iron**, a word of this
+world's central place, the IRON GATE. PR 164 fixed that — an item's alias is its
+own last word and never an earlier one. But **a kept set is a summary and holds
+no prose** (`Eval::Prompt::Result#summary` drops the readings so the pair can
+live in the repo), so `rake eval:prompt_score` reprints the rates that were
+computed while the calls were being paid for and *cannot recompute them*. A
+check fix therefore cannot re-score the figure it invalidated — it can only be
+re-bought, which the captain authorized and which is the `-2` pair. The
+2026-09-08 pair stays on disk as history and stays in `Eval::MEASUREMENT_FILES`;
+`Eval::Prompt::EndingKeptSetTest` is what labels it as history and asserts that
+both after sides sent byte-identical `ending` instructions, so the only
+difference between the pairs is the check.
+
+**The lesson for the next kept set**: a rate you may later want to re-score is
+only re-scorable from a corpus that carries its passages — `whole_run_corpus.json`
+and `rake game:score` do, a kept prompt set does not.
 
 **The two sides score DIFFERENT PASSAGES of the same turn**, and every figure
 has to be read knowing it: before the change there was no ending prose at all,
-so the before side scored the turn's own paragraph. `words` 83 → 44 is a closing
+so the before side scored the turn's own paragraph. `words` 87 → 51 is a closing
 paragraph measured against a take or a look, not a paragraph that got shorter;
-`commitments` 1.200 → 2.500 is the figure that reads across, and the ending
+`commitments` 1.500 → 2.600 is the figure that reads across, and the ending
 names more of the records than the prose it follows.
 
 | figure | before | after | verdict |
 | --- | --- | --- | --- |
-| `item_not_held` | 0.000 | 0.200 | WORSE, REAL (p=0.0286) — **and it is the check, not the prose; see below** |
+| `item_not_held` | 0.000 | 0.100 | **NOISE** — the band spans zero; the aliasing check called this same comparison REAL |
 | every other check | 0.000 | 0.000 | NOISE |
 | refusals, failures, cap hits | 0 | 0 | NOISE |
-| `words` (richness) | 83 | 44 | reported |
-| `commitments` (richness) | 1.200 | 2.500 | reported |
-| latency median (warm) | 1.91s | 3.23s | WORSE, REAL — the second call of the turn |
+| `words` (richness) | 87 | 51 | reported |
+| `commitments` (richness) | 1.500 | 2.600 | reported |
+| latency median (warm) | 1.84s | 3.20s | WORSE, REAL — the second call of the turn |
+
+**Nothing flagged at all on the before side, and no check REAL on either.** That
+is the whole result of the re-buy: the one rate that made the original verdict
+look like a regression was the check, and with the check fixed the ending pass
+costs a second call and buys more commitments without moving a single defect
+rate out of noise.
 
 **The after side records `prompt_stable: false`, and it is the only set in the
 repository that does.** The ending prompt carries `What just happened:`, which on
@@ -1168,27 +1198,27 @@ case's whole prompt differs between repetitions by construction, and
 `Eval::Prompt::Version` says so rather than hiding it. The facts the engine owns
 in that prompt are as fixed as any other case's.
 
-**The one REAL defect rate is a false positive, and it is reproducible in two
-lines.** `Story::Audit::Prose.item_names("iron key")` is `["iron key", "iron"]`
-— `place_names` takes the last word of at least `Story::Audit::MIN_NAME_LENGTH`
-characters, and "key" is three. This world's central place is **the iron gate**,
-the phrase is in the engine's own outcome sentence (*"…and the iron gate opens
-outward at last"*), and every flagged passage is of the form *"the signet ring
-heavy in your grip, as the **iron** gate groans open"* — a possession verb about
-the ring, which the records agree is in the player's hand, and the alias of a key
-no passage mentions at all:
+**The residual 0.100 is a SECOND false-positive class in the same check, found
+by the re-buy and reported rather than fixed.** Both flagged passages put the
+iron key *in the mud* — *"the prince's signet ring heavy in your grip, the iron
+key discarded in the mud beside his stiffened corpse"* — and the check fires
+because a true claim about the RING precedes the key in the same clause list, so
+the possession window carries the first item's claim onto the second:
 
 ```ruby
-Story::Audit::Prose.item_names("iron key")           # => ["iron key", "iron"]
-Story::Audit.allocate.send(:possession_claimed?,
-  "You hold the signet ring, and the iron gate groans open behind you.", "iron")  # => true
+audit = Story::Audit.allocate
+audit.send(:possession_claimed?, "the iron key discarded in the mud beside his corpse", "iron key")
+# => false   -- read correctly on its own
+audit.send(:possession_claimed?,
+  "the prince's signet ring heavy in your grip, the iron key discarded in the mud", "iron key")
+# => true    -- the ring's claim reaches across the comma
 ```
 
-`Eval::Prompt::EndingKeptSetTest` pins both, so the diagnosis is a test rather
-than a paragraph. **The fix belongs to the check** — an item alias that is a word
-of a `Location` name in the same story is not an item alias — and that is a
-measurement-file change with its own before/after over the pinned corpora, which
-is why it is not in the change that found it.
+`Eval::Prompt::EndingKeptSetTest` pins that class offline and for free, so the
+diagnosis is a test rather than a paragraph. **The fix belongs to the check** and
+is a measurement-file change with its own before/after over the pinned corpora,
+which is why it is not in the change that found it — the same rule that kept the
+alias fix out of PR 162.
 
 ### Serial, for now
 
@@ -1299,6 +1329,7 @@ checks are:
 | --- | --- |
 | `exit_into_a_written_room` | an exit into a place already written that this room cannot reach. The prompt marks those; the engine drops the edge, so the room loses a way out |
 | `exit_already_reachable` | an exit the room already had, which the prompt lists and says does not need naming again. **Gated the way `no_new_ground` is**: a case that declared no new ground and answered with the way back and nothing else gave the answer the exits prompt asks a dead end for, so it is out of the denominator rather than flagged — see `Eval::Realization::Scorer`'s header for the two prompt sentences that contradict each other there |
+| `exit_spelled_a_place_differently` | an exit that named a place the world already held, written another way — `WorldSeed.natural_key`'s reading of the same name, which is the one the engine resolves through (`Location::Generator#find_location`). **Not a defect of the model's**: `Location::ExitsSchema` asks for a name with no article while the prompt lists the world's places as stored, so obeying the schema on *The Vestry Hulk* produces *Vestry Hulk*. It is a rate of the BLIND SPOT in the checks beside it — `#place_for` matches the written string, so a name in this shape is invisible to `exits_restating`, `exit_already_reachable` and `no_new_ground` and is counted as new ground it is not. Judgeable on every exit name that MEANS an existing place; flagged where the two readings disagree |
 | `exit_named_this_room` | an exit that names the room it leads out of |
 | `exit_over_the_allowance` | more ways out than the prompt said were left |
 | `no_new_ground` | a room the story points into whose every exit was a place the world already had — or that named no way out at all. **This is the Blackfang Tunnel defect** |
@@ -1309,7 +1340,8 @@ checks are:
 | `room_name_refused` | a room asked to name itself that came away still called its placeholder, **read off the room's own name after the call**. `Location::RoomName` refuses a proposal on several separate grounds and every one ends the same way, so this asks the record what happened rather than re-deciding it. Judgeable only on an `interior-room` case, where the prompt asks for a name at all. **It measures the prompt and the engine together, so it is the one check a set can go stale on without the corpus or the prompt moving**: reading the name AFTER the engine decided means a new refusal ground changes the figure. `db/eval/room-names-after-bef7cec` was recorded before `Location::RoomName#repeats_place?` existed, so this row of that set is not like-for-like with HEAD |
 | `room_name_already_taken` | a proposed room name the world had already given to somewhere, somebody or something — the one refusal above that is a set comparison, against the same closed list of names `name_already_spoken_for` reads. The evidence says whether the prompt had shown it |
 | `inside_declined` | an exit named with no `inside` pick at all. The field is **optional**, so an absent one is a legal answer and the engine takes `no inside` — which means the ordinary way for a world to end up with no buildings in it is not a model saying no, it is a model saying nothing. Judgeable on every exit of every case that made an exits call |
-| `inside_where_the_world_wanted_none` / `no_inside_where_the_world_wanted_one` | the pick against the case's **hand label**, `expects_inside`, both ways round. The one pair of checks in this bench that is not a record on both sides: there is no record of what a world *should* have been. **Most cases carry no label and are out of both denominators** — `expects_new_ground`'s rule, and `Eval::Realization::Corpus`'s header says which cases carry one |
+| `inside_on_a_place_that_already_exists` | an inside pick on an exit that named a place the world already held, so `Location::Generator#connect_exit!` reused that row and **threw the pick away** — it hands `inside:` to `.create_stub!` and nowhere else. A record on both sides: `facts["places"]` is what the world held and `after["new_places"]` is what the call opened, and BOTH halves are needed — before the duplicate-place fix of 2026-09-08 an article variant did open a second row, so a historical pick of that shape reached the world (badly) and is not flagged. Judgeable on every inside pick of a set that records what a call opened |
+| `inside_where_the_world_wanted_none` / `no_inside_where_the_world_wanted_one` | the pick against the case's **hand label**, `expects_inside`, both ways round. The one pair of checks in this bench that is not a record on both sides: there is no record of what a world *should* have been. **Most cases carry no label and are out of both denominators** — `expects_new_ground`'s rule, and `Eval::Realization::Corpus`'s header says which cases carry one. The first of the pair is judged on the insides that **opened a place**, not on the picks made: a pick the engine discarded left a world that wanted no building still holding none, and convicting it was reporting a fault with no consequence. What the model said is measured one row up |
 | `population_declined` | an exit named with no `population` word at all, so the engine rolled one for the place. **`inside_declined`'s figure one field over**: the field asks and nothing rests on the asking (`Location::ExitsSchema`), so the ordinary way for the 2026-09-07 ruling to come to nothing is not a model answering `nobody` but a model answering nothing. `populations_given` and `crowds_picked` are printed beside it, because a model that picked `nobody` everywhere would have made the pick honestly and emptied the world anyway |
 | `people_short_of_the_pick` | a room asked for an exact number of people that came back with fewer — the defect the ruling was made for, read against a real provider rather than against the JSON schema. Judgeable only where people were asked for, so a room the pick called empty is out of the denominator rather than counted a success |
 | `parameters_declined` | a building offered the `parameters` block that came back without one, so every pick fell to its quietest default. Judgeable only on a `place` case, which is a stub carrying a footprint and no rooms |
@@ -1325,9 +1357,15 @@ buildings, which is exactly what the check measures. The two labelled checks and
 both parameters checks are unavailable on such a set, because their denominators
 are facts the bench had not begun storing.
 
-**And two reported figures are the ones to read beside them.**
+**And three reported figures are the ones to read beside them.**
 `insides_given` is the dominant-strategy check on the inside pair — *the cheapest
-way to clear both rates is to answer `no inside` every time* — and
+way to clear both rates is to answer `no inside` every time*. `insides_reaching`
+is that same figure cut by **what the player got**: named exits whose inside pick
+opened a place, over named exits. The distance between the two is picks the
+engine threw away, and it is not small — on the surviving row-bearing set
+`tmp/eval/interior-entry-after-2` the medians are 0.314 given against 0.129
+reaching. It is `unavailable` on a set stored before the rows recorded what a
+call opened, and never 0.000. Then
 `hazard_below_ground` against `hazard_on_the_ground_floor` is the captain's own
 figure for the gradient, the only one that reads whether it did anything at all.
 Both are off the rows; neither is ever folded into a rate.
@@ -1574,6 +1612,41 @@ those means buying its own before side first, at `rake eval:realization` —
 Which is the whole point of the rule this file opens with: the baseline is per
 change, and the set in the repository is the after side of the one change that
 has had one.
+
+### A corpus change re-baselines it too, and `kind-to-corpus-after` is the case
+
+`db/eval/kind-to-corpus-after/` is what `Eval::Realization::BASELINE` names now,
+and it is the one kind of re-baseline this file had not yet had an example of:
+**no prompt moved at all.** What moved was the corpus SCHEMA — a case may now
+carry the stub the captain typed in `Lab::Realization` and his `expects_*` block
+with it, and `Eval::Realization.digest` folds every field that changes what was
+measured. So the same twenty-two cases in the same worlds produced a new corpus
+digest, `Eval::Realization::KeptSetTest` began failing, and the set that had been
+the baseline stopped being one for this tree while remaining a true reading of
+these prompts.
+
+**Both halves of that are worth keeping straight**, because it is the situation
+somebody will next mistake for a prompt regression. The proof that the prompts did
+not move is on the two sets themselves: `prompt_digest` is identical across them,
+and so is every one of the nine per-shape digests in `prompt_shapes` — the same
+bytes, on the same nine designated cases. The compare between them therefore
+prints the WARNING that the two sets built different rooms, which is correct and
+expected here: the digest moved, and the warning cannot know that the cases behind
+it did not.
+
+**Read it as a null check, because that is what it is** — the same prompt measured
+twice, months of nothing between it, and every CHECK duly reads NOISE. The one
+figure that separates is a *reported* count and not a check, it is a rolled
+per-room quantity (`Location::Parameters::HAZARD_SHARE` of `HAZARD_DIE`), and it
+rests on the corpus's single `place` case — ONE building per repetition, which came
+back from the model with a different room count this time. Reading it as a prompt
+effect would be flagging the dice, which is what `Eval::Realization::Scorer`'s
+header and `Lab::Realization::HitRate`'s both forbid in so many words. The figures
+are in the two sets and in the PR that bought this one; this file quotes none of
+them.
+
+`room-people-after` is kept beside it as history, and it is still the after side of
+the room-people change and the before side of the pair above.
 
 ### The noise band, as a checked-in pair
 

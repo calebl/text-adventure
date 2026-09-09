@@ -149,6 +149,211 @@ class Location::GenerationRecoveryTest < ActiveSupport::TestCase
     assert_equal [ "Location::ExitsSchema" ], resumed.schemas.map(&:name)
   end
 
+  # AN UNUSABLE LABEL ON AN EDGE THIS ROOM WILL NOT WRITE. The eager check used
+  # to validate every proposal, so a name #connect_exit! was always going to
+  # drop failed the realization the entry had paid for -- and the pinned detail
+  # checkpoint could be refused the same way on every retry.
+  test "an unusable label on an already written neighbour discards only that door" do
+    create(:location, story: @story, name: "Old Mill")
+    answer = { "exits" => [
+      EXITS.fetch("exits").first,
+      { "name" => "Old Mill", "teaser" => "A shuttered mill.",
+        "distance" => "adjacent", "travel_method" => "teleporting" }
+    ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    assert_nil @location.generation_checkpoint
+    assert_equal [ "Back Lane" ], @location.exits.pluck(:name)
+    assert_empty Location.find_by!(name: "Old Mill").exits
+  end
+
+  # The same rule for the room naming ITSELF under another spelling: the check
+  # matched on `casecmp?` while `#connect_exit!` drops a natural-key match, so
+  # "The Workshop" was validated and then never written.
+  test "an unusable label on this room's own name under an article discards only that door" do
+    answer = { "exits" => [
+      EXITS.fetch("exits").first,
+      { "name" => "The Workshop", "teaser" => "The same workbench.",
+        "distance" => "adjacent", "travel_method" => "teleporting" }
+    ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    assert_nil @location.generation_checkpoint
+    assert_equal [ "Back Lane" ], @location.exits.pluck(:name)
+  end
+
+  # AND THE FORCED PASS IS STILL VALIDATED, which is why the check asks twice
+  # rather than skipping every written destination: with no ordinary exit left,
+  # `into_written:` opens onto an already-written neighbour, so that edge's
+  # label is the one that decides whether the answer is worth keeping.
+  test "an unusable label on the only door the forced pass can open is refused" do
+    create(:location, story: @story, name: "Old Mill")
+    answer = { "exits" => [ { "name" => "Old Mill", "teaser" => "A shuttered mill.",
+                              "distance" => "adjacent", "travel_method" => "teleporting" } ] }
+
+    assert_raises(ActiveRecord::RecordInvalid) { realize(FakeAgent.new(DETAIL, answer)) }
+
+    assert_predicate @location.reload, :stub?
+    assert_not @location.generation_checkpoint.key?("exits")
+    assert_empty @location.exits
+  end
+
+  test "the forced pass still opens onto an already written neighbour when nothing else survives" do
+    mill = create(:location, story: @story, name: "Old Mill")
+    answer = { "exits" => [ { "name" => "Old Mill", "teaser" => "A shuttered mill.",
+                              "distance" => "adjacent", "travel_method" => "walking" } ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    assert_equal [ "Old Mill" ], @location.exits.pluck(:name)
+    assert_equal [ @location.name ], mill.reload.exits.pluck(:name)
+  end
+
+  # WHAT THE WRITER DROPS CANNOT STRAND THE ROOM, and these four are the cases
+  # a check that read the whole answer against the graph as it arrived got
+  # wrong. Every one of them is a proposal `#connect_exit!` never writes a row
+  # for, so its label is never read -- and the paid detail the entry committed
+  # has to open the room anyway.
+  #
+  # THE ORDINARY GENERATED STUB IS THE FIRST ONE: it is born with the door its
+  # neighbour wrote, so the forced pass never runs for it, and a label on a
+  # written room it cannot reach was refused by a fallback the writer would
+  # never have taken.
+  test "an unusable label on a written neighbour cannot fail a room that already has a door" do
+    way_back = create(:location, story: @story, name: "Way Back")
+    create(:location_connection, location: @location, connected_location: way_back)
+    create(:location_connection, location: way_back, connected_location: @location)
+    create(:location, story: @story, name: "Old Mill")
+    answer = { "exits" => [ { "name" => "Old Mill", "teaser" => "A shuttered mill.",
+                              "distance" => "adjacent", "travel_method" => "teleporting" } ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    assert_nil @location.generation_checkpoint
+    assert_equal [ "Way Back" ], @location.exits.pluck(:name)
+    assert_empty Location.find_by!(name: "Old Mill").exits
+  end
+
+  # THE WAY BACK, NAMED AGAIN. Both directions already exist, so #connect!
+  # writes nothing and the labels never reach a row -- and the door keeps the
+  # values it was written with.
+  test "an unusable label on the door this room already has changes nothing" do
+    lane = create(:location, story: @story, name: "Back Lane")
+    create(:location_connection, location: @location, connected_location: lane, distance: "adjacent")
+    create(:location_connection, location: lane, connected_location: @location, distance: "adjacent")
+    answer = { "exits" => [ EXITS.fetch("exits").first.merge("travel_method" => "teleporting") ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    assert_equal [ "Back Lane" ], @location.exits.pluck(:name)
+    assert_equal "walking",
+                 LocationConnection.find_by!(location: @location, connected_location: lane).travel_method
+  end
+
+  # A SECOND SPELLING OF A DOOR THIS ANSWER JUST WROTE. The first proposal
+  # supplies the pair, so the alias resolves to it and writes nothing.
+  test "an unusable label on a second spelling of a door just written changes nothing" do
+    answer = { "exits" => [
+      EXITS.fetch("exits").first,
+      { "name" => "The Back Lane", "teaser" => "The same lane.",
+        "distance" => "adjacent", "travel_method" => "teleporting" }
+    ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    assert_equal [ "Back Lane" ], @location.exits.pluck(:name)
+    assert_equal [ "Workshop", "Back Lane" ], @story.locations.order(:id).pluck(:name)
+  end
+
+  # AND A PROPOSAL PAST THE ROOM'S ALLOWANCE. The writer stops the moment the
+  # cap is full, so the door it stopped before is not a door at all.
+  test "an unusable label past this room's allowance is discarded with the door" do
+    (Location::ExitsSchema::MAX_EXITS - 1).times do |index|
+      neighbour = create(:location, story: @story, name: "Existing #{index}")
+      create(:location_connection, location: @location, connected_location: neighbour)
+      create(:location_connection, location: neighbour, connected_location: @location)
+    end
+    answer = { "exits" => [
+      EXITS.fetch("exits").first,
+      { "name" => "Discarded Extra", "teaser" => "A door too far.",
+        "distance" => "adjacent", "travel_method" => "teleporting" }
+    ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    assert_includes @location.exits.pluck(:name), "Back Lane"
+    assert_equal Location::ExitsSchema::MAX_EXITS, @location.exits.count
+    assert_nil Location.find_by(name: "Discarded Extra")
+  end
+
+  # The same rule at the FAR end of the door: a neighbour already carrying its
+  # own cap takes no more, so that proposal is never written either.
+  test "an unusable label on a neighbour already at its own cap discards only that door" do
+    crowded = create(:location, :stub, story: @story, name: "Crowded Door")
+    Location::ExitsSchema::MAX_EXITS.times do |index|
+      neighbour = create(:location, story: @story, name: "Far Existing #{index}")
+      create(:location_connection, location: crowded, connected_location: neighbour)
+      create(:location_connection, location: neighbour, connected_location: crowded)
+    end
+    answer = { "exits" => [
+      EXITS.fetch("exits").first,
+      { "name" => "Crowded Door", "teaser" => "A busy doorway.",
+        "distance" => "adjacent", "travel_method" => "teleporting" }
+    ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    assert_equal [ "Back Lane" ], @location.exits.pluck(:name)
+    assert_not_includes crowded.reload.exits.pluck(:name), @location.name
+  end
+
+  # AND THE OTHER HALF OF THE RULE: A LABEL THAT IS USED IS STILL REFUSED. Half
+  # a pair exists, so this room's own direction is a row that has to be written
+  # -- and an answer whose labels no retry could write is dropped rather than
+  # replayed, while the paid detail beside it is kept.
+  test "an unusable label on the missing half of a door is refused and its answer dropped" do
+    lane = create(:location, story: @story, name: "Back Lane")
+    create(:location_connection, location: lane, connected_location: @location, distance: "adjacent")
+    answer = { "exits" => [ EXITS.fetch("exits").first.merge("travel_method" => "teleporting") ] }
+
+    assert_raises(ActiveRecord::RecordInvalid) { realize(FakeAgent.new(DETAIL, answer)) }
+
+    assert_predicate @location.reload, :stub?
+    assert_equal "exits_pending", @location.generation_checkpoint.fetch("phase")
+    assert_not @location.generation_checkpoint.key?("exits")
+    assert_empty @location.exits
+
+    resumed = FakeAgent.new(EXITS)
+    realize(resumed)
+
+    assert_equal [ "Location::ExitsSchema" ], resumed.schemas.map(&:name)
+    assert_predicate @location.reload, :realized?
+    assert_equal [ "Back Lane" ], @location.exits.pluck(:name)
+  end
+
+  test "the missing half of a door is written from the answer's own labels" do
+    lane = create(:location, story: @story, name: "Back Lane")
+    create(:location_connection, location: lane, connected_location: @location, distance: "adjacent")
+    answer = { "exits" => [ EXITS.fetch("exits").first.merge("travel_method" => "climbing") ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    written = LocationConnection.find_by!(location: @location, connected_location: lane)
+    assert_equal "climbing", written.travel_method
+    assert_equal "adjacent", written.distance
+  end
+
   test "a successful run builds the same exits request while completion is still pending" do
     generator = Location::Generator.new(@location)
     provider = FakeAgent.new(DETAIL, EXITS)

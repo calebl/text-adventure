@@ -213,6 +213,16 @@
 #                        writes it at realization -- so this is the offline
 #                        assertion that whatever it wrote left the building's
 #                        rooms tellable apart.
+#   place_names_unique   no two locations of the STORY answer to one name, on
+#                        the same reading -- the gap the check above leaves
+#                        open on purpose. A duplicate written at the OUTERMOST
+#                        level is `placed?` nowhere and so is invisible to it;
+#                        the captain's Call 7 of 2026-09-08 is a whole exits
+#                        answer that got through that way. It has no teeth on
+#                        the generator (an offline walk never realizes) and
+#                        real teeth on every re-seed script, where
+#                        `WorldSeed::Loader` writes rows against a played
+#                        world.
 #   nothing_was_written  no room changed detail level. This is the offline
 #                        mode's own premise: with no model there is nothing to
 #                        write a room WITH, so a stub walked into stays a stub.
@@ -251,6 +261,7 @@ class EngineSweep::Invariants
   def check
     [ doors_unchanged, exit_cap, items_accounted, world_items_unmoved, cast_unmoved, stat_blocks_unmoved,
       hostility_unmoved, hazards_unmoved, geometry_unmoved, positions_in_bounds, room_names_unique,
+      place_names_unique,
       quest_unmoved, nothing_was_written ].flatten.compact
   end
 
@@ -709,6 +720,41 @@ class EngineSweep::Invariants
            clashing.map { |group|
              "#{group.first.parent_location&.name} has #{group.size} rooms called " \
                "#{group.first.name.inspect} (#{group.map { |room| "##{room.id}" }.join(", ")})"
+           }.join("; "))
+  end
+
+  # TWO PLACES OF ONE STORY THAT ARE ONE PLACE, over the WHOLE story rather
+  # than inside one building -- the gap `#room_names_unique` above deliberately
+  # leaves open, and it names the reader it leaves it to. This is that reader,
+  # brought inside the sweep.
+  #
+  # THE CAPTAIN'S CALL 7 OF 2026-09-08 IS WHY IT IS HERE. The exits call wrote
+  # an OUTERMOST duplicate -- `Location::Generator.create_stub!` writes no
+  # `parent_location`, so every invented neighbour is born at the outermost
+  # level and not one of these rows is `placed?`. `#room_names_unique` could
+  # not see it, `#doors_unchanged` reported the extra door and not the extra
+  # place, and the defect reached the captain's database through the one shape
+  # nothing here asserted on.
+  #
+  # AND IT IS HONEST ABOUT WHAT A SWEEP CAN REACH. An offline walk never
+  # realizes a room, so no script can drive `#connect_exit!` and this check
+  # cannot fire on the generator's own path -- the unit tests in
+  # `test/models/location/generator_test.rb` are what pin that. What it DOES
+  # have teeth on is every re-seed script: `WorldSeed::Loader` writes rows
+  # against a played world, and writing a second row beside a renamed one is
+  # the original shape of this defect (`WorldSeed.natural_key`'s header).
+  #
+  # IDENTITY IS `WorldSeed.natural_key`'s, the same spelling
+  # `Story::Doctor#duplicate_locations` reports on, `#room_names_unique` groups
+  # on and `Location::Generator#find_location` resolves through. Four readers,
+  # one key, on purpose.
+  def place_names_unique
+    clashing = story.locations.group_by { |room| WorldSeed.natural_key(room.name) }.values.select(&:many?)
+    return nil if clashing.empty?
+
+    broken("place_names_unique",
+           clashing.map { |group|
+             "#{group.size} locations are one place: #{group.map { |room| "##{room.id} #{room.name.inspect}" }.join(", ")}"
            }.join("; "))
   end
 

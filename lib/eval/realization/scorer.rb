@@ -76,6 +76,10 @@ class Eval::Realization::Scorer
                               "the prompt marks those and the engine drops the edge",
     exit_already_reachable: "an exit named a place this room can already reach, which the prompt " \
                             "lists and says does not need naming again",
+    exit_spelled_a_place_differently: "an exit named a place the world already held, spelled another " \
+                                      "way -- `WorldSeed.natural_key`'s reading of the same name, which " \
+                                      "the engine resolves and every check keyed on the written string " \
+                                      "cannot see",
     exit_named_this_room: "an exit named the room it leads out of",
     exit_over_the_allowance: "more ways out than the prompt said were left",
     no_new_ground: "a room the story points into whose every exit was a place the world already had",
@@ -91,8 +95,14 @@ class Eval::Realization::Scorer
                              "somebody or something",
     inside_declined: "an exit named with no `inside` pick at all, so the engine took the quietest " \
                      "option -- the field is optional and an absent one is a decision not made",
-    inside_where_the_world_wanted_none: "a stub whose world plainly holds no building gave one an inside " \
-                                        "-- judgeable only on a case labelled `expects_inside: false`",
+    inside_on_a_place_that_already_exists: "an inside pick on an exit that named a place the world " \
+                                           "already held, so the engine reused the row and threw the " \
+                                           "pick away -- judgeable only on a set that records what " \
+                                           "the call opened",
+    inside_where_the_world_wanted_none: "a stub whose world plainly holds no building was given an inside " \
+                                        "on an exit that OPENED a place -- judgeable only on a case " \
+                                        "labelled `expects_inside: false` in a set that records what " \
+                                        "the call opened",
     no_inside_where_the_world_wanted_one: "a stub whose world plainly holds a building gave none an inside " \
                                           "-- judgeable only on a case labelled `expects_inside: true`",
     population_declined: "an exit named with no `population` pick at all, so the engine rolled a word " \
@@ -312,10 +322,67 @@ class Eval::Realization::Scorer
     # allowance, so a room that named five and was allowed three opened three.
     def new_places = Array(after["new_places"])
 
+    # WHETHER THIS ROW RECORDS WHAT THE CALL OPENED AT ALL. A set stored before
+    # `new_places` was written down has no key -- not the same state as a call
+    # that opened nothing, which has the key and an empty list. Every check that
+    # asks whether a pick REACHED THE WORLD is judgeable only where this is
+    # true, so such a set reports those unavailable rather than reporting every
+    # pick discarded: `#records_the_way_back?`'s rule, and the same reason.
+    def records_new_places? = after.key?("new_places")
+
+    # WHETHER THE ENGINE OPENED A PLACE OF THIS NAME on this call. Matched on
+    # the canonical key rather than the written string for the same reason
+    # `#place_by_key` is: `Location::Generator.create_stub!` writes the name the
+    # ANSWER gave, and a comparison that insisted on the written string would
+    # read a place the engine opened as one it did not.
+    def opened?(name) = new_places.any? { |opened| same_place?(opened, name) }
+
     def same?(left, right) = left.to_s.strip.casecmp?(right.to_s.strip)
     def any_named?(list, name) = Array(list).any? { |entry| same?(entry, name) }
 
     def place_for(name) = places.find { |place| same?(place["name"], name) }
+
+    # THE SAME PLACE UNDER A DIFFERENT WRITTEN NAME, and it is `WorldSeed`'s
+    # reading and never a second one written here. `Location::Generator#find_location`
+    # resolves an exits answer through `WorldSeed.find_location`, so this is the
+    # question the ENGINE asked of the very name being scored -- a scorer that
+    # answered it its own way would report a place opened that was not, or the
+    # reverse, and neither is a record comparison any more.
+    #
+    # WHY THE KEY AND NOT THE METHOD ITSELF, since a delegation would be
+    # tighter still and this is the obvious question to ask of it. Two reasons,
+    # and either one alone is enough:
+    #
+    #   IT TAKES A STORY AND QUERIES THE TABLE (`Location.where(story_id:)`),
+    #   and this file touches none -- that is the whole of what lets a set in
+    #   `db/eval/` be rescored after the run databases are gone and the story's
+    #   rows with them. See this class's header.
+    #
+    #   AND IT WOULD BE ASKING THE WRONG WORLD. `.find_location` searches the
+    #   story AS IT STANDS; a check has to ask what the world held when the
+    #   PROMPT WAS BUILT, which is `facts["places"]` -- the very list the model
+    #   was shown. Resolving against today's rows would score an answer against
+    #   places written after it.
+    #
+    # SO WHAT IS SHARED IS THE RULE AND NOT A COPY OF IT. `.find_location`
+    # matches in two legs -- an exact case-insensitive name, then `.natural_key`
+    # -- and the first is a SUBSET of the second, because equal downcase implies
+    # an equal key. Its third leg (`.find_placed_location`) is unreachable from
+    # the generator, which passes no declarations. So the engine's rule for a
+    # NAME is `.natural_key` equality exactly, which is what this asks.
+    # `test/lib/eval/realization/scorer_test.rb` pins the two together against
+    # real rows, so the day one of them widens is a failing test rather than a
+    # bench quietly disagreeing with the engine it measures.
+    def same_place?(left, right) = WorldSeed.natural_key(left) == WorldSeed.natural_key(right)
+
+    # THE PLACE THE WORLD ALREADY HELD THAT THIS NAME MEANS, canonically. Not
+    # `#place_for`, which is the WRITTEN string and is deliberately left alone:
+    # every rate cut out of it was baselined on that reading, and widening it
+    # here would move `exits_restating`, `no_new_ground` and
+    # `exit_already_reachable` in the same commit that added a check. The gap
+    # between the two is not hidden by that decision, it is MEASURED by it --
+    # `exit_spelled_a_place_differently` is exactly the size of the gap.
+    def place_by_key(name) = places.find { |place| same_place?(place["name"], name) }
   end
 
   # ONE FLAGGED THING, with the evidence a reader needs to see whether the check
@@ -369,6 +436,7 @@ class Eval::Realization::Scorer
   def reported
     { "insides_given" => share(readings.sum { |r| inside_picks(r).count { |pick| inside?(pick) } },
                                readings.sum { |r| r.exit_names.size }),
+      "insides_reaching" => insides_reaching_share,
       "rooms_laid_out" => Eval.mean(readings.select(&:parameters_asked?).map { |r| r.rooms.size }),
       "storeys_below_ground" => Eval.mean(readings.select(&:parameters_asked?).map { |r| r.storeys_below }),
       "hazard_on_the_ground_floor" => hazard_share(0..0),
@@ -392,6 +460,25 @@ class Eval::Realization::Scorer
 
   def share(part, whole) = whole.to_i.zero? ? 0.0 : part.fdiv(whole)
 
+  # `insides_given`'S FIGURE, CUT BY WHETHER THE PICK REACHED THE WORLD: named
+  # exits whose inside pick opened a place, over named exits. The two together
+  # are the measurement this bench was missing -- the first says how often the
+  # field was answered, this says how often answering it built anything, and the
+  # distance between them is picks the engine threw away.
+  #
+  # THE DENOMINATOR IS THE SAME QUANTITY `insides_given` USES -- exits named --
+  # so the two are read on one footing and never against each other's bases.
+  # Counted only over readings that record what the call opened, and NIL where
+  # there are none: a set stored before that was written down cannot answer
+  # this, and 0.000 there would be a figure it never earned. `Eval::Noise`
+  # compacts a nil, so such a set compares INCONCLUSIVE rather than as a fall.
+  def insides_reaching_share
+    judgeable = readings.select(&:records_new_places?)
+    return nil if judgeable.empty?
+
+    share(judgeable.sum { |r| insides_reaching(r).size }, judgeable.sum { |r| r.exit_names.size })
+  end
+
   # THE CAPTAIN'S OWN FIGURE, CUT THE ONE WAY THAT SAYS WHETHER THE GRADIENT DID
   # ANYTHING: the share of rooms carrying a hazard, by storey. Two cuts and not a
   # table, because a board prints numbers -- the ground floor and everything
@@ -405,6 +492,23 @@ class Eval::Realization::Scorer
   end
 
   def inside_picks(reading) = reading.exits.map { |exit| exit["inside"] }
+
+  # HOW MANY PICKS ONE ANSWER MADE that a record could be held against -- the
+  # denominator of `inside_on_a_place_that_already_exists`, and nought for a row
+  # that does not say what the call opened.
+  def inside_picks_judgeable(reading)
+    return 0 unless reading.asked_for_exits? && reading.records_new_places?
+
+    inside_picks(reading).count { |pick| inside?(pick) }
+  end
+
+  # THE EXITS OF ONE ANSWER WHOSE INSIDE PICK OPENED A PLACE -- what the player
+  # actually got out of the field, off the records the call wrote.
+  def insides_reaching(reading)
+    return [] unless reading.records_new_places?
+
+    reading.exits.select { |exit| inside?(exit["inside"]) && reading.opened?(exit["name"].to_s) }
+  end
 
   # THE POPULATION WORDS ONE ANSWER PICKED, one per exit it named. A blank is an
   # answer that left the field out, which is `population_declined`.
@@ -492,6 +596,40 @@ class Eval::Realization::Scorer
     reading.reached_from.present? && reading.same?(reading.exit_names.first, reading.reached_from)
   end
 
+  # THE SAME PLACE, SPELLED ANOTHER WAY. `Location::ExitsSchema` asks for a name
+  # of "1 to 4 words, no article" and the prompt lists the world's places AS
+  # STORED, articles and all -- so an answer that obeys the schema on a place
+  # called "The Vestry Hulk" writes "Vestry Hulk", and that is a CORRECT answer
+  # to a contradictory ask rather than a defect of the model's. Since the
+  # captain's Call 7 of 2026-09-08 the engine resolves it (`Location::Generator#find_location`,
+  # through `WorldSeed.find_location`) and no second row is written.
+  #
+  # SO WHAT IS THIS A RATE OF? NOT of a defect in the world -- of a defect in
+  # every other reading in this file. `#place_for` matches the written string,
+  # so an answer in this shape is invisible to `exits_restating`,
+  # `exit_already_reachable` and `no_new_ground` and is counted as new ground it
+  # is not. The rate is therefore the SIZE OF THAT BLIND SPOT, printed rather
+  # than quietly closed: a corpus where it is nought is one where those three
+  # can be read at face value, and a corpus where it is high is one where they
+  # cannot.
+  #
+  # DENOMINATOR: exit names that mean a place the world already held, read
+  # canonically -- every name where the two readings COULD disagree. FLAGGED:
+  # those where they do, which is the name written differently from the record.
+  # A name for a place the world never had is in neither: nothing to spell
+  # differently.
+  def judge_exit_spelled_a_place_differently
+    flag_each(:exit_spelled_a_place_differently,
+              ->(r) { r.exit_names.count { |name| r.place_by_key(name) } }) do |reading|
+      reading.exit_names.filter_map { |name|
+        place = reading.place_by_key(name)
+        next if place.nil? || reading.same?(place["name"], name)
+
+        "named #{name.inspect}, which is the world's #{place["name"].inspect} written another way"
+      }
+    end
+  end
+
   def judge_exit_named_this_room
     flag_each(:exit_named_this_room, ->(r) { r.exit_names.size }) do |reading|
       reading.exit_names.select { |name| reading.same?(name, reading.room) }
@@ -552,13 +690,63 @@ class Eval::Realization::Scorer
   # case and is LEFT OUT unless the answer is not a guess, so most cases are out
   # of both denominators: `Story::Audit#judgeable_for`'s rule, and the same one
   # `no_new_ground` stands on.
+  # A PICK THE ENGINE THREW AWAY. `Location::Generator#connect_exit!` passes
+  # `inside:` to `.create_stub!` and NOWHERE ELSE, so an exit that resolves to a
+  # place the world already holds reuses that row and the pick has no effect on
+  # anything: the place is whatever it already was. The answer still SPENT the
+  # field, the board still counted it in `insides_given`, and the player got
+  # nothing -- which is the whole distance between what this bench reported and
+  # what a game contains, and the reason `insides_reaching` is printed beside
+  # that figure.
+  #
+  # READ OFF THE RECORDS ON BOTH SIDES, never re-derived: the world's places are
+  # `facts["places"]` and what the call opened is `after["new_places"]`. A pick
+  # is flagged when the world already held the place AND no place of that name
+  # was opened. Both halves are needed, and the second is what keeps this
+  # honest on a HISTORICAL row: before the captain's Call 7 of 2026-09-08 an
+  # article variant DID open a second row, and the pick reached the world --
+  # badly, as the duplicate defect that fix closed, but it reached it. This
+  # check reports what happened rather than what would happen today.
+  #
+  # JUDGEABLE ONLY WHERE THE ROW SAYS WHAT WAS OPENED (`#records_new_places?`),
+  # so a set stored before that was recorded reports it unavailable rather than
+  # reading every pick as discarded.
+  def judge_inside_on_a_place_that_already_exists
+    flag_each(:inside_on_a_place_that_already_exists, ->(r) { inside_picks_judgeable(r) }) do |reading|
+      next [] unless reading.records_new_places?
+
+      reading.exits.filter_map { |exit|
+        name = exit["name"].to_s
+        next unless inside?(exit["inside"])
+
+        place = reading.place_by_key(name)
+        next if place.nil? || reading.opened?(name)
+
+        "picked #{exit["inside"].inspect} for #{name.inspect}, which the world already held as " \
+          "#{place["name"].inspect}, so the engine reused that place and dropped the pick"
+      }
+    end
+  end
+
+  # JUDGED ON WHAT REACHED THE WORLD, and that is the correction this check
+  # needed rather than a widening of it. It used to convict an answer for a pick
+  # the engine had already thrown away -- an inside on a place that already
+  # exists changes nothing (`#judge_inside_on_a_place_that_already_exists`), so
+  # a world that plainly holds no building still held none afterwards and the
+  # rate was reporting a fault with no consequence. What is a fault is a
+  # BUILDING THAT NOW EXISTS in such a world, which is a pick that opened a
+  # place, read off `after["new_places"]`.
+  #
+  # THE PICK THAT WAS MADE AND DISCARDED IS NOT UNMEASURED, it is measured one
+  # check up -- and keeping the two apart is the point: one is what the model
+  # said, the other is what the game got.
   def judge_inside_where_the_world_wanted_none
     flag_cases(:inside_where_the_world_wanted_none,
-               ->(r) { r.asked_for_exits? && r.expects_inside == false }) do |reading|
-      given = reading.exits.select { |exit| inside?(exit["inside"]) }
+               ->(r) { r.asked_for_exits? && r.expects_inside == false && r.records_new_places? }) do |reading|
+      given = reading.exits.select { |exit| inside?(exit["inside"]) && reading.opened?(exit["name"].to_s) }
       next nil if given.empty?
 
-      "gave an inside to #{given.map { |exit| "#{exit["name"]} (#{exit["inside"]})" }.join(", ")} " \
+      "opened #{given.map { |exit| "#{exit["name"]} (#{exit["inside"]})" }.join(", ")} " \
         "in a world that plainly holds no building"
     end
   end

@@ -36,6 +36,49 @@
 #                       did not earn is worse than no rate. Only the cases where
 #                       the answer is not a guess carry one.
 #
+# AND THE KEYS A CASE PROMOTED OUT OF THE REALIZATION LAB CARRIES. A kind the
+# captain typed and scored (`Lab::Realization`) is in no world file, so it has no
+# room to be found -- such a case CARRIES its stub instead, and
+# `rake lab:realization:promote KIND=<id>` prints one for a person to read and
+# commit. `Lab::Realization::Promotion`'s header is why it prints and never
+# writes.
+#
+#   teaser              the room's own second fact, and THE KEY THAT DECIDES
+#                       WHICH KIND OF CASE THIS IS: with one,
+#                       `Eval::Realization::Stage` CREATES the stub; without
+#                       one, it finds a room the world file already has. A name
+#                       and a teaser are the room's own facts and not the
+#                       world's, which is why they may live here at all -- the
+#                       universe, the preface, the places that already exist and
+#                       the names already spoken for are still every one of them
+#                       read off the records.
+#   inside              the band a real exits call would have supplied about the
+#   population          place it had just named, and the word for how populated
+#                       it is. A TYPED CASE ONLY: a room the world already holds
+#                       has both on its own row.
+#   danger              REQUIRED ON A TYPED CASE, and this is the one key with a
+#                       measurement behind the requirement rather than a
+#                       preference. `Location::Danger.for_a_new_room` is keyed on
+#                       the STORY'S ID and a staged copy of a world is issued a
+#                       new one on every load, so a typed stub that left its
+#                       danger to the roll would be born quiet on one run and
+#                       dangerous on the next -- and the room's danger is stated
+#                       in the detail prompt, so the prompt digest would move
+#                       between two runs of one tree.
+#   expects_*           what he said the picks should come back as, one key per
+#                       pick off `Lab::Realization::PICKS`, each a SUBSET of that
+#                       pick's own closed list. `expects_danger_at_least` is the
+#                       one ORDINAL key -- a floor on `Location::Parameters::LADDER`,
+#                       because *"uneasy or worse"* is what he means and
+#                       collapsing it to one value would manufacture misses. The
+#                       two picks the EXITS call answers are `expects_exit_inside`
+#                       and `expects_exit_population`, named apart because
+#                       `expects_inside` above is a different claim about a
+#                       different thing. EVERY ONE OF THEM OBEYS
+#                       `expects_inside`'S RULE: a key left out is *don't care*
+#                       and takes the case out of that figure's numerator and its
+#                       denominator both.
+#
 # WHAT THE CASES ARE CHOSEN TO REACH, since a corpus that never puts the model
 # near a failure measures nothing:
 #

@@ -1,0 +1,253 @@
+{
+  "name": "prompt-ending-before-2026-09-08-2",
+  "recorded_at": "2026-09-08T17:50:49Z",
+  "corpus_size": 5,
+  "corpus_digest": "5dbf941afd799482",
+  "prompt_digest": "6d35949466333c25",
+  "prompt_shapes": {
+    "ending": "211e952e2d606193"
+  },
+  "prompt_stable": true,
+  "instructions_digest": "be4e1bf387f97e80",
+  "instruction_passes": {
+    "arrival": "b98b293aefc9331b",
+    "narration": "c5f18981f77aa01f"
+  },
+  "arms": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "reps": 4,
+  "answered_by": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "warmups": [
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "seconds": 2.3637,
+      "residency": "not_local",
+      "error": null
+    }
+  ],
+  "passes": [
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 1,
+      "scanned": 5,
+      "cases": 5,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 0,
+      "input_tokens": 4497,
+      "output_tokens": 554,
+      "latency_median": 1.6157,
+      "latency_p95": 2.3527,
+      "words": 77,
+      "commitments": 1.6,
+      "coverage": 0.32,
+      "chars": 450,
+      "rates": {
+        "unrecorded_departure": 0.0,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.0,
+        "take_denied": 0.0,
+        "pickup_invented": 0.0,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 0,
+        "unrecorded_arrival": 0,
+        "item_not_held": 0,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 5,
+        "unrecorded_arrival": 5,
+        "item_not_held": 5,
+        "take_denied": 1,
+        "pickup_invented": 1,
+        "inscription_misquoted": 0,
+        "truncated_prose": 5,
+        "third_person_protagonist": 5
+      },
+      "by_story": {
+        "The Iron Gate Descends": 5
+      },
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 2,
+      "scanned": 5,
+      "cases": 5,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 0,
+      "input_tokens": 4241,
+      "output_tokens": 601,
+      "latency_median": 1.9817,
+      "latency_p95": 2.3497,
+      "words": 84,
+      "commitments": 1.6,
+      "coverage": 0.32,
+      "chars": 463,
+      "rates": {
+        "unrecorded_departure": 0.0,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.0,
+        "take_denied": 0.0,
+        "pickup_invented": 0.0,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 0,
+        "unrecorded_arrival": 0,
+        "item_not_held": 0,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 5,
+        "unrecorded_arrival": 5,
+        "item_not_held": 5,
+        "take_denied": 1,
+        "pickup_invented": 1,
+        "inscription_misquoted": 0,
+        "truncated_prose": 5,
+        "third_person_protagonist": 5
+      },
+      "by_story": {
+        "The Iron Gate Descends": 5
+      },
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 3,
+      "scanned": 5,
+      "cases": 5,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 0,
+      "input_tokens": 4497,
+      "output_tokens": 603,
+      "latency_median": 1.689,
+      "latency_p95": 2.7893,
+      "words": 90,
+      "commitments": 1.4,
+      "coverage": 0.28,
+      "chars": 497,
+      "rates": {
+        "unrecorded_departure": 0.0,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.0,
+        "take_denied": 0.0,
+        "pickup_invented": 0.0,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 0,
+        "unrecorded_arrival": 0,
+        "item_not_held": 0,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 5,
+        "unrecorded_arrival": 5,
+        "item_not_held": 5,
+        "take_denied": 1,
+        "pickup_invented": 1,
+        "inscription_misquoted": 0,
+        "truncated_prose": 5,
+        "third_person_protagonist": 5
+      },
+      "by_story": {
+        "The Iron Gate Descends": 5
+      },
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 4,
+      "scanned": 5,
+      "cases": 5,
+      "failures": 0,
+      "refusals": 0,
+      "crises": 0,
+      "rotations": 0,
+      "extra_calls": 0,
+      "omitted_fields": 0,
+      "cap_hits": 0,
+      "input_tokens": 2594,
+      "output_tokens": 633,
+      "latency_median": 2.0244,
+      "latency_p95": 2.4543,
+      "words": 93,
+      "commitments": 1.4,
+      "coverage": 0.28,
+      "chars": 542,
+      "rates": {
+        "unrecorded_departure": 0.0,
+        "unrecorded_arrival": 0.0,
+        "item_not_held": 0.0,
+        "take_denied": 0.0,
+        "pickup_invented": 0.0,
+        "inscription_misquoted": 0.0,
+        "truncated_prose": 0.0,
+        "third_person_protagonist": 0.0
+      },
+      "flagged": {
+        "unrecorded_departure": 0,
+        "unrecorded_arrival": 0,
+        "item_not_held": 0,
+        "take_denied": 0,
+        "pickup_invented": 0,
+        "inscription_misquoted": 0,
+        "truncated_prose": 0,
+        "third_person_protagonist": 0
+      },
+      "judgeable": {
+        "unrecorded_departure": 5,
+        "unrecorded_arrival": 5,
+        "item_not_held": 5,
+        "take_denied": 1,
+        "pickup_invented": 1,
+        "inscription_misquoted": 0,
+        "truncated_prose": 5,
+        "third_person_protagonist": 5
+      },
+      "by_story": {
+        "The Iron Gate Descends": 5
+      },
+      "readings": []
+    }
+  ]
+}

@@ -29,6 +29,11 @@ class Eval::Realization::Result
                    "inside rates: the cheapest way to clear both is to answer `no inside` every time, and " \
                    "a prompt change that cleared them and halved this bought its numbers with a world of " \
                    "open ground",
+    insides_reaching: "exits whose inside pick OPENED a place, over exits named -- `insides_given` cut " \
+                      "by what the player got: a pick on a place the world already held is thrown away " \
+                      "(`Location::Generator#connect_exit!`), so the distance between the two figures is " \
+                      "insides that built nothing. Unavailable on a set stored before the rows recorded " \
+                      "what a call opened",
     rooms_laid_out: "mean rooms the layout wrote for a building that was offered the parameters block",
     storeys_below_ground: "mean floors a building was laid out below its ground floor -- the parameter " \
                           "that exists to make \"down\" expressible is worthless if it always comes back none",

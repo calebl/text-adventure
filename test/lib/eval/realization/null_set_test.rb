@@ -63,8 +63,16 @@ class Eval::Realization::NullSetTest < ActiveSupport::TestCase
   # that is what `Eval::Noise` promises and this is the pair that can hold it to
   # it. INCONCLUSIVE is a failure here too: at the repetition floor, on a pair
   # that differs in nothing, the test has to be able to say NOISE.
+  # MEASURED ON WHAT BOTH SIDES RECORDED, which is every figure the pair holds
+  # and nothing else. A kept set is frozen the day it is written, so a check or
+  # a figure added later is absent from BOTH sides and compares INCONCLUSIVE --
+  # a fact about the file's age and not about `Eval::Noise`, which is what this
+  # test is here to hold. `Eval::Noise.compare` compacts the nils, so a side
+  # with no runs is the one honest signal for that.
   test "no figure separates the run from itself" do
-    separated = comparison.verdicts(ARM).reject { |row| row.verdict.noise? }
+    separated = comparison.verdicts(ARM)
+                          .select { |row| row.verdict.before.runs.positive? && row.verdict.after.runs.positive? }
+                          .reject { |row| row.verdict.noise? }
 
     assert_empty separated.map { |row| "#{row.metric} #{row.verdict.headline}" },
                  "the same prompt measured twice separated on a figure -- either the band is being read as " \

@@ -17,8 +17,11 @@ require "test_helper"
 #     lab pointed at the captain's own universes never writes a room into one.
 #     A regression there would be an instrument that quietly ate a database.
 #
-# NEVER A LIVE MODEL. A `FakeAgent` stands in at the `BaseAgent` boundary, the
-# way `Eval::Realization::BenchTest` and `Eval::Prompt::BenchTest` both do.
+# NEVER A LIVE MODEL. `RealizingAgent` stands in at the `BaseAgent` boundary, the
+# way `Eval::Realization::BenchTest` and `Eval::Prompt::BenchTest` both do. It
+# lives in `test/support` rather than here because `Lab::Exits::RunnerTest`
+# answers the same conversation and a second fake would be a second answer to
+# what a realization call leaves behind.
 class Lab::Realization::RunnerTest < ActiveSupport::TestCase
   # THE WORLD EVERY CASE HERE IS DRAWN IN. The sweep's own, which is the smallest
   # of the five and the only one in the repository with a building already in it.
@@ -98,7 +101,7 @@ class Lab::Realization::RunnerTest < ActiveSupport::TestCase
   test "a way back the world does not have is refused with the name in it" do
     kind = create(:lab_realization_kind, world: WORLD, reached_from: "The Drowned Compact")
 
-    error = assert_raises(Lab::Realization::Runner::Unrunnable) { draw(kind) }
+    error = assert_raises(Eval::Realization::Stage::Unstageable) { draw(kind) }
 
     assert_includes error.message, "The Drowned Compact"
   end
@@ -153,90 +156,11 @@ class Lab::Realization::RunnerTest < ActiveSupport::TestCase
 
   def draw(kind, answer: nil)
     stub = lambda do |*args, **options|
-      Answerer.new(answer, purpose: options[:purpose], instructions: args.first)
+      RealizingAgent.new(answer, purpose: options[:purpose], instructions: args.first)
     end
 
     BaseAgent.stub(:new, stub) do
       Lab::Realization::Runner.new(kind, arm: "fake/model").draw!
-    end
-  end
-
-  # A FAKE THAT LEAVES THE RECORDS A REAL CALL WOULD LEAVE, which is what makes
-  # this a test of the runner and not of the fake: the bench reads both answers,
-  # what they were told and what they cost off the `chats` and `messages` rows
-  # the generator wrote. A double that wrote none would leave every one of those
-  # figures nil and prove nothing about them.
-  #
-  # IT ANSWERS BY SCHEMA, which is how the generator itself tells its calls
-  # apart, and it is the only way to answer a conversation whose SHAPE is what
-  # the test is about: a building makes one call and a room makes two.
-  class Answerer < FakeAgent
-    DETAIL = {
-      "description" => "Black water stands a foot deep over the boards, and the doors have swollen shut.",
-      "lore" => "It took fish for forty years and then it took the river."
-    }.freeze
-
-    PLACE = DETAIL.merge(
-      "parameters" => { "storeys_above" => "ground floor only", "storeys_below" => "a cellar",
-                        "danger" => "uneasy", "gradient" => "worse the deeper you go",
-                        "hazard" => "flooded" }
-    ).freeze
-
-    EXITS = {
-      "exits" => [
-        { "name" => "The Chandler's Lane", "teaser" => "Rope and tar, and a light still on.",
-          "distance" => "a short walk", "travel_method" => "walking",
-          "inside" => Location::Parameters::NO_INSIDE, "population" => "a person or two" }
-      ]
-    }.freeze
-
-    def initialize(answer = nil, purpose: nil, instructions: nil)
-      super()
-      @answer = answer
-      @purpose = purpose
-      @instructions = instructions
-    end
-
-    def ask(prompt, verify: nil)
-      @prompts << prompt
-      raise @answer if @answer.is_a?(Exception)
-
-      content = answer_for(@schemas.last)
-      write!(prompt, content)
-      verify&.call(content)
-      Response.new(content)
-    end
-
-    def recorded_chat = @chat
-
-    def current_model = { provider: :fake, model: "fake/model" }
-
-    private
-
-    def answer_for(schema)
-      return EXITS if schema == Location::ExitsSchema
-      return PLACE if schema == Location::PlaceSchema
-
-      DETAIL
-    end
-
-    # THE REGISTRY ROW IS ASSOCIATED RATHER THAN THE ID ASSIGNED, which is
-    # `test/factories/chats.rb`' rule: assigning `model_id` as a string makes
-    # RubyLLM resolve it through the provider, which needs an API key, and this
-    # test has none and wants none.
-    def write!(prompt, content)
-      @chat ||= Chat.create!(purpose: @purpose, model: registry).tap do |chat|
-        chat.messages.create!(role: "system", content: @instructions, model: registry) if @instructions
-      end
-      @chat.messages.create!(role: "user", content: prompt, model: registry)
-      @chat.messages.create!(role: "assistant", model: registry, content: content.to_json,
-                             content_raw: content, input_tokens: 900, output_tokens: 250)
-    end
-
-    def registry
-      @registry ||= Model.find_by(model_id: "fake/model") ||
-                    FactoryBot.create(:model, model_id: "fake/model", name: "fake/model",
-                                              provider: "openrouter")
     end
   end
 end

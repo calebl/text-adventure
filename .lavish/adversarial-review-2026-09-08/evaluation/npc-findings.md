@@ -1,15 +1,21 @@
 # NPC agency: four repetitions per side
 
+*A portable mirror of `db/eval/adversarial-20260909/npc-findings.md`, which is the
+canonical copy. The only difference is that the links below are absolute and pinned to
+commit `e1c33e4`, so this document still resolves when it is read outside the
+repository and after this branch is deleted. The numbers, protocols and raw receipts are
+the canonical bytes, unchanged.*
+
 The prepared candidate fixes all twelve missing positive state effects in these
 fixtures while preserving eight appropriate refusals. The before narrated
 agreements and gifts without changing the game; the candidate records item
 ownership, following, and ceasefire through validated engine actions.
 
-The [protocol](https://github.com/calebl/text-adventure/blob/fix/npc-arrival-turn-integrity-20260908/db/eval/adversarial-20260909/npc-protocol.md) was written before live responses were read.
+The [protocol](https://github.com/calebl/text-adventure/blob/e1c33e4e9116bd5d4a9c56d4e3d6033ec437de92/db/eval/adversarial-20260909/npc-protocol.md) was written before live responses were read.
 Each repetition includes the same five fresh fictional cases, and the full
 baseline was stored and reviewed before candidate execution. Both sides used
 only `mistralai/mistral-medium-3.1` through OpenRouter, with provider fallback and
-SDK retries disabled. Raw [before](https://github.com/calebl/text-adventure/blob/fix/npc-arrival-turn-integrity-20260908/db/eval/adversarial-20260909/npc-before.json) and [after](https://github.com/calebl/text-adventure/blob/fix/npc-arrival-turn-integrity-20260908/db/eval/adversarial-20260909/npc-after.json)
+SDK retries disabled. Raw [before](https://github.com/calebl/text-adventure/blob/e1c33e4e9116bd5d4a9c56d4e3d6033ec437de92/db/eval/adversarial-20260909/npc-before.json) and [after](https://github.com/calebl/text-adventure/blob/e1c33e4e9116bd5d4a9c56d4e3d6033ec437de92/db/eval/adversarial-20260909/npc-after.json)
 include every prompt, response, actual model, token receipt, and engine result.
 
 | Metric | Before | After | Existing exact rank-test verdict |
@@ -21,8 +27,8 @@ include every prompt, response, actual model, token receipt, and engine result.
 | Median per-repetition narration words | 36.2 | 35.7 | Noise, p=0.885714 |
 
 There are four statistical observations per side, each aggregating all five
-cases. The [comparison](https://github.com/calebl/text-adventure/blob/fix/npc-arrival-turn-integrity-20260908/db/eval/adversarial-20260909/npc-comparison.json) contains the unrounded samples and
-`Eval::Noise` results. The [manual audit](https://github.com/calebl/text-adventure/blob/fix/npc-arrival-turn-integrity-20260908/db/eval/adversarial-20260909/npc-contradiction-audit.json) records a
+cases. The [comparison](https://github.com/calebl/text-adventure/blob/e1c33e4e9116bd5d4a9c56d4e3d6033ec437de92/db/eval/adversarial-20260909/npc-comparison.json) contains the unrounded samples and
+`Eval::Noise` results. The [manual audit](https://github.com/calebl/text-adventure/blob/e1c33e4e9116bd5d4a9c56d4e3d6033ec437de92/db/eval/adversarial-20260909/npc-contradiction-audit.json) records a
 judgment for every displayed passage. Its strict rubric excludes mere offers or
 future promises: two before gifts describe completed transfers and four before
 truces explicitly end fighting while the NPC remains a foe. The missing
@@ -53,11 +59,11 @@ not a claim to have received a bill for every streamed call.
 
 An initial 40-call baseline attempt encountered a bug in evaluation cost capture:
 it tried to parse an empty streamed response body as JSON. That whole
-[instrumentation-failure batch](https://github.com/calebl/text-adventure/blob/fix/npc-arrival-turn-integrity-20260908/db/eval/adversarial-20260909/npc-before-instrumentation-failure.json) is
+[instrumentation-failure batch](https://github.com/calebl/text-adventure/blob/e1c33e4e9116bd5d4a9c56d4e3d6033ec437de92/db/eval/adversarial-20260909/npc-before-instrumentation-failure.json) is
 preserved, excluded from model comparison, and remains charged to the same
 budget ledger. No unknown reservation was refunded. The unchanged corpus was
 rerun after fixing the instrumentation. The
-[instrumentation manifest](https://github.com/calebl/text-adventure/blob/fix/npc-arrival-turn-integrity-20260908/db/eval/adversarial-20260909/npc-instrumentation-manifest.json) records original,
+[instrumentation manifest](https://github.com/calebl/text-adventure/blob/e1c33e4e9116bd5d4a9c56d4e3d6033ec437de92/db/eval/adversarial-20260909/npc-instrumentation-manifest.json) records original,
 streaming-fixed, and final defensive helper hashes, including the tiny helper
 version difference between the clean arms. No prompt or case changed between
 those helper versions. Final helper offline checks pass five tests with 39

@@ -146,6 +146,18 @@ class Eval::Realization::Report
     say "  WHAT WAS ACTUALLY IN THE ROOM -- never folded into the rates above"
     Eval::Realization::Result::REPORTED_METRICS.each_key do |figure|
       spread = result.spread(figure, arm: arm)
+      # NO RUNS AT ALL IS NOT NOUGHT. A figure a set never recorded -- a kept
+      # summary written before it existed -- has every value nil, and
+      # `Eval::Noise.spread` compacts those, so a band printed off it would read
+      # 0.000 for a question the set was never asked. `#checks` above says
+      # `unavailable` for the same state and this is the same rule one section
+      # down.
+      if spread.runs.zero?
+        say format("  %-28s %s   %s", figure, "unavailable in this set",
+                   Eval::Realization::Result::REPORTED_METRICS.fetch(figure))
+        next
+      end
+
       say format("  %-28s %s   %s", figure, band(figure, spread),
                  Eval::Realization::Result::REPORTED_METRICS.fetch(figure))
     end

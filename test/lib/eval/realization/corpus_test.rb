@@ -168,6 +168,80 @@ class Eval::Realization::CorpusTest < ActiveSupport::TestCase
     end
   end
 
+  # THE PROMOTED CASE'S OWN FIELDS, EACH AGAINST THE DIGEST. `expects_inside`'s
+  # precedent: an expectation decides which figures a case may be judged on, so
+  # editing one moves the rates with no prompt touched -- and a comparison across
+  # the edit would credit the movement to the prompt, which is the one failure
+  # `Eval::Realization.digest` exists to prevent.
+  test "every field a promoted case carries moves the digest" do
+    corpus = Eval::Realization.corpus
+    was = Eval::Realization.digest(corpus)
+
+    { teaser: ->(_kase) { "A stone counting house half-sunk at the river's edge." },
+      inside: ->(_kase) { "a few rooms" },
+      population: ->(_kase) { Location::Population::LABELS.first },
+      expects_danger_at_least: ->(_kase) { "uneasy" },
+      expects: ->(_kase) { { "hazard" => [ "flooded" ] } } }.each do |field, change|
+      edited = with_cases(corpus) { |kase|
+        kase == corpus.cases.first ? kase.with(field => change.call(kase)) : kase
+      }
+
+      assert_not_equal was, Eval::Realization.digest(edited), field
+    end
+  end
+
+  # AND THE EXPECTATION IS FOLDED AS A SET RATHER THAN AS A LIST: two files that
+  # allow the same labels in a different order measured the same thing, so the
+  # digest must not call them different corpora.
+  test "reordering the labels of one expectation measures nothing new" do
+    corpus = Eval::Realization.corpus
+    one = with_cases(corpus) { |kase| kase.with(expects: { "hazard" => [ "flooded", "silent" ] }) }
+    other = with_cases(corpus) { |kase| kase.with(expects: { "hazard" => [ "silent", "flooded" ] }) }
+
+    assert_equal Eval::Realization.digest(one), Eval::Realization.digest(other)
+  end
+
+  # THE ORDINAL FLOOR IS EXPANDED TO THE RUNGS AT OR ABOVE IT, which is what
+  # *"uneasy or worse"* means -- and it is read as an allowed set exactly like
+  # every other key, so nothing downstream has to know it was written as one word.
+  test "a danger floor reads as every rung at or above it, and don't care as nil" do
+    ladder = Location::Parameters::LADDER
+    kase = Eval::Realization::Corpus::Case.new(id: "a", story: "b", room: "c",
+                                               expects_danger_at_least: ladder.second)
+
+    assert_equal ladder[1..], kase.expects_for(Eval::Realization::Corpus.danger_pick)
+    assert_equal ladder, Eval::Realization::Corpus::Case.new(id: "a", story: "b", room: "c",
+                                                             expects_danger_at_least: ladder.first)
+                                                        .expects_for("danger")
+    assert_nil Eval::Realization::Corpus::Case.new(id: "a", story: "b", room: "c").expects_for("danger")
+  end
+
+  # A KEY LEFT OUT IS *DON'T CARE*, and it is the same rule `expects_inside`
+  # already obeys: it takes the case out of that figure's numerator and its
+  # denominator both, because a rate a check did not earn is worse than no rate.
+  test "an `expects_*` key left out is don't care and a key written is read as a set" do
+    corpus = Eval::Realization::Corpus.load(fixture_of(<<~YML))
+      cases:
+      - id: expecting
+        story: The Unrecorded Hour
+        room: The Long Hallway
+        reached_from: Ward Office 12
+        expects_new_ground: true
+        expects_hazard:
+        - flooded
+        expects_exit_inside: a few rooms
+        shape: corridor
+        why: one key as a sequence, one as a bare string, and everything else left out
+    YML
+    kase = corpus.cases.sole
+
+    assert_equal [ "flooded" ], kase.expects_for("hazard")
+    assert_equal [ "a few rooms" ], kase.expects_for("inside")
+    assert_nil kase.expects_for("storeys_below")
+    assert_nil kase.expects_for("danger")
+    assert_equal %w[hazard inside], kase.declared.map(&:name)
+  end
+
   # THE VALIDATOR'S OWN CHECKS, each against a case written to trip it. A
   # validator nobody has seen fail is a validator nobody knows works.
   test "a case in a world this bench does not build rooms in is refused" do
@@ -254,7 +328,90 @@ class Eval::Realization::CorpusTest < ActiveSupport::TestCase
     YML
   end
 
+  # ------------------------------------------------- a case that carries its own stub
+
+  test "a case that carries a teaser stands its stub up in a world that never had it" do
+    corpus = Eval::Realization::Corpus.load(fixture_of(TYPED))
+
+    assert_empty corpus.problems
+  end
+
+  test "a case with a teaser and no danger is refused, because the roll is not reproducible" do
+    assert_problem "needs a `danger`", TYPED.sub("  danger: uneasy\n", "")
+  end
+
+  test "a case with a teaser whose room the world already has is refused" do
+    assert_problem "would write it twice", TYPED.sub("room: The Drowned Counting House",
+                                                     "room: The Long Hallway")
+  end
+
+  test "an `inside` or a `population` on a case that finds its room is refused" do
+    problems = problems_for(<<~YML)
+      cases:
+      - id: restating-the-world
+        story: The Unrecorded Hour
+        room: The Long Hallway
+        reached_from: Ward Office 12
+        inside: a few rooms
+        population: a crowd
+        expects_new_ground: true
+        shape: corridor
+        why: the hallway is in the world file already, so both of these are the world's own
+    YML
+
+    assert problems.any? { |problem| problem.include?("`inside`") }, problems.inspect
+    assert problems.any? { |problem| problem.include?("`population`") }, problems.inspect
+  end
+
+  test "an `inside` band the table has no footprint for is refused" do
+    assert_problem "inside \"a cathedral of rooms\"", TYPED.sub("inside: a few rooms",
+                                                                "inside: a cathedral of rooms")
+  end
+
+  test "a `population` word the table has no band for is refused" do
+    assert_problem "population \"teeming\"", TYPED.sub("population: a person or two",
+                                                        "population: teeming")
+  end
+
+  # THE EXPECTATION'S OWN VALIDATION, and it is
+  # `Lab::Realization::Kind#expectations_are_labels_the_model_is_offered`'s rule
+  # one level up: the model cannot answer a word its schema's enum does not
+  # carry, so a set holding one is a rate that can never be earned -- and it
+  # would read on a board as the prompt failing rather than as a typo.
+  test "an expectation naming a label the model is never offered is refused" do
+    assert_problem "which is not on the list the model picks from",
+                   TYPED.sub("  - flooded", "  - swarming with bees")
+  end
+
+  test "a danger floor that is not a rung of the ladder is refused" do
+    assert_problem "is a rung of the ladder", TYPED.sub("expects_danger_at_least: uneasy",
+                                                        "expects_danger_at_least: apocalyptic")
+  end
+
   private
+
+  # A CASE THAT CARRIES ITS OWN STUB, in full, so each test above can break one
+  # key of it and nothing else.
+  TYPED = <<~YML.freeze
+    cases:
+    - id: lab-the-drowned-counting-house
+      story: The Unrecorded Hour
+      room: The Drowned Counting House
+      teaser: >-
+        A counting house half-sunk at the river's edge, its ledgers still on the desks.
+      reached_from: Ward Office 12
+      inside: a few rooms
+      population: a person or two
+      danger: uneasy
+      expects_new_ground: true
+      expects_hazard:
+      - flooded
+      expects_danger_at_least: uneasy
+      shape: lab-promoted
+      why: >-
+        Typed in the realization lab and scored there. The fixture the validator's own
+        checks each break one key of.
+  YML
 
   def assert_problem(fragment, body)
     problems = problems_for(body)
@@ -267,11 +424,14 @@ class Eval::Realization::CorpusTest < ActiveSupport::TestCase
     Eval::Realization::Corpus.new(path: corpus.path, cases: corpus.cases.map(&block))
   end
 
-  def problems_for(body)
+  def problems_for(body) = Eval::Realization::Corpus.load(fixture_of(body)).problems
+
+  def fixture_of(body)
     file = Tempfile.new([ "realization_corpus", ".yml" ])
     file.write(body)
     file.close
+    @fixtures = [ *@fixtures, file ]
 
-    Eval::Realization::Corpus.load(file.path).problems
+    file.path
   end
 end

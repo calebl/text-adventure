@@ -54,6 +54,7 @@ RubyLLM.config.openrouter_api_key = nil
 require "rails/test_help"
 require "minitest/mock"
 require_relative "support/fake_agent"
+require_relative "support/realizing_agent"
 require_relative "support/schema_assertions"
 require_relative "support/offline_exchange"
 require_relative "support/refusal_corpus_skeleton"

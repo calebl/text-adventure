@@ -62,11 +62,35 @@ Rails.application.routes.draw do
   # drawing a sample is `POST /lab/kinds/:kind_id/samples` and nothing else in
   # the app reaches `Lab::Realization::Runner`. `Lab::Realization`'s header is
   # the design; `Lab::SamplesController`'s says why the spend is a POST.
+  #
+  # AND THE EXITS LAB IS THE SAME RULE ONE NAMESPACE DOWN: drawing is
+  # `POST /lab/exits/vantages/:vantage_id/samples` and nothing else in the app
+  # reaches `Lab::Exits::Runner`. Its own segment rather than a fourth resource
+  # beside `kinds`, because both labs draw a thing called a SAMPLE and two
+  # `lab_sample_path` helpers cannot both exist -- and because the captain asked
+  # for the page at `/lab/exits`, which the alias below is.
   namespace :lab do
     resources :kinds, only: [ :index, :show, :create, :update, :destroy ] do
       resources :samples, only: [ :create ]
     end
     resources :samples, only: [ :show, :update ]
+
+    get "exits", to: "exits/vantages#index", as: :exits
+
+    namespace :exits do
+      resources :vantages, only: [ :index, :show, :create, :update, :destroy ] do
+        resources :samples, only: [ :create ]
+        # ONE ENDPOINT FOR BOTH HALVES OF WHAT HE SAYS ABOUT A PLACE, and it is a
+        # POST because the row may not exist yet: he types an expectation for a
+        # place no draw has named, or judges one a draw just did, and
+        # `Lab::Exits::Vantage#judge!` finds or creates the row by its natural
+        # key either way. `Lab::Exits::Judgement`'s header has why the two halves
+        # share a row -- and neither half buys a model call, so the POST spends
+        # nothing.
+        resources :judgements, only: [ :create ]
+      end
+      resources :samples, only: [ :show, :update ]
+    end
   end
 
   root "playthroughs#index"

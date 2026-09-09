@@ -38,22 +38,30 @@
 # into a room's lore. `Eval::Realization::Stage.load_world!` is the one place
 # that rename lives and this calls it rather than repeating it.
 #
-# WHY IT IS NOT A `Stage`. A corpus case's identity is a room in a checked-in
-# world file, and `Stage#wind_back!` FINDS that room; a kind the captain typed is
-# in no world file, so there is nothing to find. That is the one mechanical thing
-# between a scored sample and a corpus case, and closing it -- teaching `Stage` to
-# CREATE the room from a `teaser:` on the case -- is the promotion step, filed
-# apart from this. Until then the staging a typed kind needs lives here, and it
-# reuses `Stage`'s world load, `Stage::Standing`'s readers and `Bench#build`'s
-# orchestration unchanged rather than reimplementing any of them.
+# THE STAGING IS `Stage`'S AND NO LONGER THIS FILE'S. A corpus case's identity
+# used to be a room in a checked-in world file that `Stage#wind_back!` FOUND, so
+# a kind the captain typed -- in no world file, with nothing to find -- needed
+# its own copy of the standing-up here. `Stage` now CREATES the stub from a
+# `teaser` on the case, which is the promotion step, so this file hands it an
+# ad-hoc case and keeps nothing of its own but the case and the arm.
+#
+# THAT IS ONE SPELLING RATHER THAN TWO, and it is the spelling the promotion
+# needs: a kind drawn here and the same kind promoted into
+# `Eval::Realization::Corpus` stand the same stub up in the same order, so the
+# corpus case really re-runs what the lab scored. Two copies of it would be two
+# answers to what a typed stub is, which is exactly what this codebase refuses.
+#
+# AND IT IS SUBCLASSED RATHER THAN COPIED. `Lab::Exits::Runner` draws the same
+# realization from the same staging and differs in three methods -- the staging
+# label, the board shape and the ad-hoc case -- because a draw for the exits lab
+# IS a draw for this one, read from the other end. One spelling of "what a lab
+# draw is", which is the same argument that moved the staging into `Stage`.
 #
 # ONE SAMPLE PER TRANSACTION, deliberately: the development database has one
 # writer, so a lab draw and a long rake task cannot both be inside a transaction
 # at once. Scoping it to a single draw is what keeps the lab usable while
 # something else is running.
 class Lab::Realization::Runner
-  class Unrunnable < StandardError; end
-
   # WHAT THE LAB CALLS ITS COPIES, beside `Eval::Realization::Stage::LABEL`'s
   # "realization bench". Its own word so a title that somehow escaped a rollback
   # says which instrument made it.
@@ -64,16 +72,19 @@ class Lab::Realization::Runner
   # that ever reached a board legible instead of masquerading as a corpus case.
   SHAPE = "lab".freeze
 
-  # THE WAY IN'S OWN LABEL, when a kind names the neighbour it was reached from.
-  # `LocationConnection` derives `time_to_travel` from these two and refuses free
-  # text, so they come from its tables. A short walk on foot is the quietest
-  # possible way in: it is the doorway's label and nothing in a realization
-  # prompt reads it, so a lab that offered a picker would be offering a knob with
-  # nothing behind it.
-  DISTANCE = "a short walk".freeze
-  TRAVEL_METHOD = "walking".freeze
-
   attr_reader :kind, :arm
+
+  # THE TWO SEAMS A SIBLING LAB OVERRIDES, AND THEY ARE METHODS RATHER THAN BARE
+  # CONSTANTS FOR ONE REASON: Ruby resolves a constant LEXICALLY, so `LABEL` read
+  # inside this class would still be this class's in a subclass, and
+  # `Lab::Exits::Runner` would stage its copies of the captain's worlds under the
+  # words "realization lab". A title that somehow escaped a rollback has to say
+  # which instrument made it.
+  #
+  # `#ad_hoc_case` below is the third and the only one with any substance in it.
+  def label = LABEL
+
+  def shape = SHAPE
 
   # THE MODEL, NAMED EXPLICITLY, WITH THE ROTATION OFF -- `Eval::Classifier::Arm`,
   # shared with all three benches rather than copied. The default is
@@ -85,10 +96,11 @@ class Lab::Realization::Runner
     @arm = Eval::Classifier::Arm.all([ arm ]).first
   end
 
-  # Draws one sample and returns it, persisted. Raises `Unrunnable` when the
-  # world has no file or the kind names a way back the world does not have --
-  # both of which are a person's mistake and want a sentence rather than a stack
-  # trace.
+  # Draws one sample and returns it, persisted. Raises
+  # `Eval::Realization::Stage::Unstageable` when the world has no file or the
+  # kind names a way back the world does not have -- both of which are a person's
+  # mistake and want a sentence rather than a stack trace, and both of which are
+  # now the stage's own refusal rather than a second error class of this file's.
   def draw!
     reading = read!
 
@@ -102,18 +114,19 @@ class Lab::Realization::Runner
   # read -- and `Eval::Concurrency.rolled_back` and NOT
   # `ActiveRecord::Base.transaction`: read that module's header before changing
   # the line.
+  #
+  # `Stage.open` IS NOT USED, and the difference is the one thing this method
+  # still owns: the arm has to be pinned around the call and the transaction has
+  # to close after the reading is out. `.open` yields inside its own rollback and
+  # would put the pinning inside it too, which is a fact about a run rather than
+  # about a world. So the stage is built and stood up here, in a rollback of this
+  # method's own -- everything about HOW it stands up is `Stage`'s.
   def read!
     kase = ad_hoc_case
     reading = nil
 
     Eval::Concurrency.rolled_back do
-      story = Eval::Realization::Stage.load_world!(kind.world, title: title_for(kase))
-      stub = stand_up!(story)
-      open_the_way_in!(story, stub)
-
-      standing = Eval::Realization::Stage::Standing.new(
-        kase: kase, story: story, location: stub, generator: Location::Generator.new(stub)
-      )
+      standing = Eval::Realization::Stage.new(kase, label: label).stand!
 
       arm.pinned { reading = bench.build(kase, standing, arm, 1) }
     end
@@ -121,9 +134,10 @@ class Lab::Realization::Runner
     reading
   end
 
-  # A CASE THE CORPUS DOES NOT HOLD, built to carry the two things `Bench#build`
-  # reads off one: the id a stored row is labelled with, and the labels that
-  # decide which checks may be judged on it.
+  # A CASE THE CORPUS DOES NOT HOLD, carrying the kind's own facts so
+  # `Eval::Realization::Stage` CREATES the stub rather than looking for one --
+  # `teaser` is the key that decides that, and it is the same key a promoted case
+  # carries into the checked-in corpus.
   #
   # `expects_new_ground: true` because a kind he typed IS somewhere the story
   # points into -- he typed it to see it built -- so `no_new_ground` is judgeable
@@ -135,57 +149,21 @@ class Lab::Realization::Runner
   # claim from the kind's own `expects_inside` expectation -- see
   # `Lab::Realization::Pick`'s header. Leaving it nil takes the sample out of both
   # inside checks' denominators, which is what a case with no label asks for.
+  #
+  # AND THE REST OF THE EXPECTATION IS NOT PUT ON IT EITHER. A kind's `expects_*`
+  # columns are scored by `Lab::Realization::HitRate` off the sample's stored row,
+  # offline and retroactively; putting them on the ad-hoc case as well would be a
+  # second place a draw's expectation was written down, and the two could
+  # disagree. The expectation reaches the corpus only through the promotion, which
+  # is a person committing a file.
   def ad_hoc_case
     Eval::Realization::Corpus::Case.new(
-      id: "lab-kind-#{kind.id}", story: kind.world, room: kind.name,
+      id: "lab-kind-#{kind.id}", story: kind.world, room: kind.name, teaser: kind.teaser,
       reached_from: kind.reached_from.presence, danger: kind.danger.presence,
-      expects_new_ground: true, shape: SHAPE,
+      inside: kind.inside.presence, population: kind.population.presence,
+      expects_new_ground: true, shape: shape,
       why: "typed in the realization lab as #{kind.name.inspect}"
     )
-  end
-
-  def title_for(kase) = Eval::Realization::Stage.title_for(kase, label: LABEL)
-
-  # THE STUB, THROUGH THE APP'S OWN CONSTRUCTOR FOR A ROOM BEING BORN. It rolls
-  # the danger (`Location::Danger.for_a_new_room`), rolls the footprint inside
-  # the `inside` band, keeps the population word and binds the story's arc if it
-  # was waiting for a place by this name -- all of which a stub written here by
-  # hand would have to remember to do.
-  #
-  # THE DECLARED DANGER IS APPLIED AFTER, which is `Eval::Realization::Stage#wind_back!`'s
-  # own order and its reason: the roll is what a new room gets, and a case (or a
-  # kind) that overrides it is reaching a shape the die rarely produces -- a
-  # `dangerous` room, which is where the monstrous half of the cast prompt becomes
-  # judgeable at all.
-  def stand_up!(story)
-    stub = Location::Generator.create_stub!(story, name: kind.name, teaser: kind.teaser,
-                                            inside: kind.inside.presence,
-                                            population: kind.population.presence)
-    stub.update!(danger: kind.danger) if kind.danger.present?
-    stub
-  end
-
-  # THE WAY BACK, IF THE KIND NAMED ONE. Both rows, because an exit is written in
-  # both directions and a realization prompt's dead-end sentence is about the
-  # place the player CAME FROM specifically -- `Eval::Realization::Scorer#correct_dead_end?`
-  # cannot tell a way back from any other neighbour without it.
-  #
-  # A KIND WITH NO WAY BACK IS AN OPENING ROOM and is a legitimate draw: the
-  # story's first room has no neighbour to have been named by, and it is realized
-  # like every other room.
-  def open_the_way_in!(story, stub)
-    name = kind.reached_from.presence
-    return if name.nil?
-
-    other = story.locations.find_by(name: name)
-    if other.nil?
-      raise Unrunnable, "#{kind.world} has no place called #{name.inspect}, so that cannot be the " \
-                        "way this kind was reached"
-    end
-
-    attributes = { distance: DISTANCE, travel_method: TRAVEL_METHOD }
-    LocationConnection.create!(location: other, connected_location: stub, **attributes)
-    LocationConnection.create!(location: stub, connected_location: other, **attributes)
   end
 
   # THE BENCH, FOR ITS ORCHESTRATION AND NOTHING ELSE. `#build` reads the facts

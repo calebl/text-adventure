@@ -1,0 +1,303 @@
+<%# ONE DRAW, IN SEQUENCE: everything that happened between a vantage and the
+    places the model said lie beyond it.
+
+    ONE COLUMN, TOP TO BOTTOM, and every step marked with WHO decided it -- purple
+    for a model call, teal for the app deciding from records it already holds.
+    `LabHelper`'s header has the captain's reason: *"It's still hard for me to
+    hold in my head the full sequence of everything that happens."*
+
+    AND THE ORDER IS INVERTED FROM THE REALIZATION LAB'S. There, the room's prose
+    is the subject and the ways out are step five of nine. Here the exits answer
+    IS the subject and the room's description is the context it was written in --
+    so the detail call is collapsed and the exits prompt, the answer and what the
+    engine did with each pick get the room.
+
+    STEP SIX IS THE ONE THAT DOES NOT EXIST ON THE OTHER PAGE, and it is the step
+    the captain asked for by asking for this space: what the engine ROLLED from
+    each pick, or that it threw the pick away. Three quarters of the bands in the
+    stored baseline disappear there. %>
+<%= render "lab/styles" %>
+<%= render "lab/exits/styles" %>
+
+<% reading = @sample.reading %>
+
+<h1>draw #<%= @sample.id %></h1>
+<p class="nav">
+  <%# THE ARROW AS ITSELF RATHER THAN AS `&larr;`.html_safe, unlike the three
+      other back-links in this namespace: this one carries a VANTAGE'S NAME,
+      which is text a person typed, and `html_safe` on a string interpolating it
+      would hand it to the page unescaped. The others label a fixed page. %>
+  <%= link_to "← #{@vantage.name}", lab_exits_vantage_path(@vantage) %>
+  &nbsp;&middot;&nbsp; <%= @vantage.world %>
+  &nbsp;&middot;&nbsp; <%= @sample.created_at.strftime("%d %b %Y %H:%M") %>
+  <% if @sample.row["answered_by"].present? %>
+    &nbsp;&middot;&nbsp; <%= @sample.row["answered_by"] %>
+  <% end %>
+  <% if @sample.row["input_tokens"].present? %>
+    &nbsp;&middot;&nbsp; <%= @sample.row["input_tokens"] %> in /
+    <%= @sample.row["output_tokens"] %> out
+  <% end %>
+  <% if @sample.row["seconds"].present? %>
+    &nbsp;&middot;&nbsp; <%= number_with_precision(@sample.row["seconds"], precision: 1) %>s
+  <% end %>
+</p>
+
+<% if @sample.failed? %>
+  <div class="panel">
+    <h3 class="warn">the call failed</h3>
+    <p><%= @sample.error %></p>
+    <p class="note">
+      A failed call is still a sample: a provider dropping one call in a hundred
+      must not cost the whole look, and a refusal is the one failure that is about
+      the prompt. It is out of every denominator.
+    </p>
+  </div>
+<% end %>
+
+<h2>the sequence</h2>
+
+<div class="step engine">
+  <h3>1 &mdash; the vantage, stood up <%= lab_who(:engine) %></h3>
+  <div class="fields">
+    <div class="k">name</div>
+    <div class="v"><%= reading.room %></div>
+    <div class="k">teaser</div>
+    <div class="v"><%= @vantage.teaser %></div>
+    <div class="k">danger</div>
+    <div class="v"><%= debug_value(reading.facts["danger"]) %></div>
+    <div class="k">off the books</div>
+    <div class="v">
+      <% if @vantage.absent_names.empty? %>
+        <span class="warn">nothing</span>
+        <span class="absent">
+          &mdash; so the prompt below offers every place this world holds as
+          somewhere to reuse, and a pick about one of them decides nothing
+        </span>
+      <% else %>
+        <%# A LITERAL SEPARATOR AND NO `html_safe`, which is `debug/show.html.erb`'s
+            precedent and here it is load-bearing: these are names a person TYPED,
+            so `html_safe` on a string built from them is an unescaped attribute
+            and Brakeman says so in a high-confidence warning. Escape the names;
+            spell the middle dot as itself. %>
+        <%= @vantage.absent_names.join(" · ") %>
+        <span class="absent">&mdash; destroyed before the call, so the model has a reason to invent</span>
+      <% end %>
+    </div>
+  </div>
+  <p class="note">
+    Stood up by <code>Location::Generator.create_stub!</code> through
+    <code>Eval::Realization::Stage</code>, inside a transaction that has already
+    been rolled back. There is no room, no cast and no story left behind: this row
+    is all that survived, and it survived complete.
+  </p>
+</div>
+
+<div class="step engine">
+  <h3>2 &mdash; what the world held before the call <%= lab_who(:engine) %></h3>
+  <div class="fields">
+    <div class="k">places on the books</div>
+    <div class="v">
+      <% if reading.places.empty? %>
+        <span class="absent">(none)</span>
+      <% else %>
+        <% reading.places.each do |place| %>
+          <%= place["name"] %><%= tag.span(" (already written)", class: "absent") if place["realized"] %><br>
+        <% end %>
+      <% end %>
+    </div>
+    <div class="k">already reachable</div>
+    <div class="v"><%= reading.reachable.join(", ").presence || tag.span("(nothing)", class: "absent") %></div>
+    <div class="k">ways out left</div>
+    <div class="v">
+      <%= reading.exit_allowance %> of <%= Location::ExitsSchema::MAX_EXITS %>
+    </div>
+  </div>
+</div>
+
+<div class="step model">
+  <h3>3 &mdash; the detail call <%= lab_who(:model) %></h3>
+  <p class="note">
+    The prose is the context the exits answer was written in, not the subject of
+    this page &mdash; the exits prompt says <em>"consistent with the description
+    you just wrote"</em> twice, which is why the two calls are one conversation
+    and why there is no cheaper exits-only sample to buy.
+  </p>
+  <details class="exchange">
+    <summary>the description and the lore this vantage got</summary>
+    <div class="body">
+      <%= debug_prose(reading.description) %>
+      <%= debug_prose(reading.detail["lore"].to_s) %>
+    </div>
+  </details>
+  <%= render "lab/samples/exchange", call: "detail", sample: @sample %>
+</div>
+
+<div class="step model">
+  <h3>4 &mdash; the exits prompt, as sent <%= lab_who(:model) %></h3>
+  <p class="note">
+    Read off the <code>messages</code> rows and never rebuilt. The
+    <code>inside</code> sentence and the <em>no article</em> clause are in this
+    text, and reading them beside a wrong pick is the difference between a
+    diagnosis and a complaint. It is also the one thing this lab may not edit
+    &mdash; see <code>Lab::Exits</code>'s header.
+  </p>
+  <%= render "lab/samples/exchange", call: "exits", sample: @sample %>
+</div>
+
+<div class="step model">
+  <h3>5 &mdash; the answer, one block per place named <%= lab_who(:model) %></h3>
+  <% if !@sample.answered? %>
+    <p class="absent">
+      (no exits call was answered &mdash;
+      <%= reading.asked_for_exits? ? "the answer named nothing" : "this vantage was already at its exit cap, so nothing was asked" %>.
+      Out of every denominator.)
+    </p>
+  <% else %>
+    <% inside_expected = @vantage.judgements.index_by(&:name_key) %>
+    <% @sample.named_places.each do |place| %>
+      <% judgement = inside_expected[place.key] %>
+      <div class="place <%= "reaching" if place.inside? && place.new_place? %>">
+        <h3><%= place.name %></h3>
+        <p><em><%= place.teaser %></em></p>
+        <div class="fields">
+          <div class="k">inside</div>
+          <div class="v">
+            <%= lab_pick(place.band, judgement&.expects(Lab::Exits.pick("inside"))) %>
+            <% unless place.pick_made? %>
+              <span class="absent">
+                &mdash; no band at all, so the engine took the quietest option.
+                <code>inside_declined</code>, which is a decision not made rather
+                than a decision to have none
+              </span>
+            <% end %>
+          </div>
+          <div class="k">population</div>
+          <div class="v">
+            <%= lab_pick(place.population, judgement&.expects(Lab::Exits.pick("population"))) %>
+          </div>
+          <div class="k">how far</div>
+          <div class="v"><%= place.distance %> &middot; <%= place.travel_method %></div>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+</div>
+
+<div class="step engine">
+  <h3>6 &mdash; what the engine did with each pick <%= lab_who(:engine) %></h3>
+  <p class="note">
+    The step this lab exists for. A band handed to a place the world already held
+    is <strong>discarded</strong>: <code>Location::Generator#connect_exit!</code>
+    only passes one to <code>create_stub!</code> when the place does not exist. On
+    the stored baseline, two thirds of the bands given went this way.
+  </p>
+  <% if @sample.answered? %>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>place</th><th>the band</th><th>what the engine did</th></tr></thead>
+        <tbody>
+          <% @sample.named_places.each do |place| %>
+            <tr>
+              <td><%= place.name %></td>
+              <td><%= place.band %></td>
+              <td>
+                <% if !place.new_place? %>
+                  <span class="absent">
+                    the place already existed, so the edge was written and
+                    <%= place.inside? ? "the band was thrown away" : "there was no band to use" %>
+                  </span>
+                <% elsif place.inside? %>
+                  <span class="pick hit">
+                    opened it and rolled a footprint inside
+                    <code><%= place.band %></code>
+                    (<%= Location::Parameters::INSIDE.fetch(place.band).to_a.minmax.join("--") %> paces a side),
+                    so <code>Location#place?</code> is now true of it and its
+                    inside is laid out when somebody walks in
+                  </span>
+                <% else %>
+                  <span class="absent">opened it with no extent &mdash; open ground</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <div class="fields">
+      <div class="k">places the engine opened</div>
+      <div class="v">
+        <%= reading.new_places.join(", ").presence || tag.span("(none -- every name restated a place the world already had)", class: "warn") %>
+      </div>
+      <div class="k">insides given / reaching</div>
+      <div class="v">
+        <%= @sample.insides_given.size %> /
+        <span class="<%= @sample.insides_reaching.any? ? "pick hit" : "pick miss" %>">
+          <%= @sample.insides_reaching.size %>
+        </span>
+      </div>
+    </div>
+  <% else %>
+    <p class="absent">(nothing was answered, so there was nothing to act on)</p>
+  <% end %>
+</div>
+
+<div class="step engine">
+  <h3>7 &mdash; what the checks read <%= lab_who(:engine) %></h3>
+  <% if @sample.flags.empty? %>
+    <p class="absent">(nothing flagged)</p>
+  <% else %>
+    <% @sample.flags.each do |flag| %>
+      <p><span class="warn"><%= flag.code %></span> <%= flag.evidence %></p>
+    <% end %>
+  <% end %>
+  <p class="note">
+    <code>Eval::Realization::Scorer</code>'s own checks, run on this stored row.
+    They are the bench's reading and not this lab's &mdash; the lab's reading is
+    the rate against what you said the picks should be.
+  </p>
+</div>
+
+<h2>your verdict on the set of ways out</h2>
+<p class="note">
+  This is about the answer as a whole: the right number of ways out, no invented
+  passage out of a dead end, a reason to prefer one over another. Every claim
+  about a <em>particular</em> place is a judgement, and those are on
+  <%= link_to "the vantage's page", lab_exits_vantage_path(@vantage, anchor: "places") %>
+  &mdash; one verdict on four picks cannot say which was wrong.
+</p>
+<%= form_with url: lab_exits_sample_path(@sample), method: :patch, class: "lab-form" do %>
+  <div class="panel">
+    <div class="fields">
+      <div class="k">verdict</div>
+      <div class="v">
+        <% Lab::Exits::Sample::VERDICTS.each do |verdict| %>
+          <label class="lab-choice">
+            <%= radio_button_tag :verdict, verdict, @sample.verdict == verdict %>
+            <%= debug_verdict(verdict) %>
+          </label>
+        <% end %>
+        <label class="lab-choice">
+          <%= radio_button_tag :verdict, "", @sample.verdict.blank? %>
+          <span class="absent">(none)</span>
+        </label>
+      </div>
+
+      <div class="k">
+        which part
+        <br><span class="absent">(only on a weak or a bad; none of them is a complete answer)</span>
+      </div>
+      <div class="v">
+        <% Lab::Exits::Sample::ASPECTS.each do |aspect| %>
+          <label class="lab-choice">
+            <%= check_box_tag "aspects[]", aspect, @sample.aspect?(aspect), id: "aspect_#{aspect}" %>
+            <%= aspect.tr("_", " ") %>
+          </label>
+        <% end %>
+      </div>
+
+      <div class="k">note</div>
+      <div class="v"><%= text_area_tag :note, @sample.note, rows: 3, cols: 64 %></div>
+    </div>
+    <p><%= submit_tag @sample.verdict? ? "amend the verdict" : "record the verdict" %></p>
+  </div>
+<% end %>

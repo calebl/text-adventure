@@ -458,8 +458,8 @@ class EngineSweepTest < ActiveSupport::TestCase
   end
 
   # ROOMS OF A PLACE AND NOT EVERY CHILD ROW. Plain containment -- a district a
-  # street sits in -- is ordinary places, and their duplicates are
-  # `Story::Doctor#duplicate_locations`' over the whole story.
+  # street sits in -- is ordinary places, and their duplicates belong to
+  # `#place_names_unique` below rather than to this check.
   test "two streets of one district sharing a name are not this invariant's" do
     seed, story = seeded_copy("the-unrecorded-hour")
     district = create(:location, :stub, story: story, name: "The Docks District")
@@ -468,6 +468,59 @@ class EngineSweepTest < ActiveSupport::TestCase
     caught = EngineSweep::Invariants.new(story, seed: seed).check.map(&:invariant)
 
     assert_not_includes caught, "room_names_unique"
+    assert_includes caught, "place_names_unique"
+  end
+
+  # --- and the same question asked of the whole story ------------------------
+  #
+  # THE CAPTAIN'S CALL 7 OF 2026-09-08. The exits call wrote its duplicate at
+  # the OUTERMOST level -- `.create_stub!` writes no `parent_location`, so
+  # neither row is `placed?` and `#room_names_unique` above could not see it.
+  # This is the shape that got through, asserted where a walk would find it.
+  def place_names_caught(seed, story)
+    EngineSweep::Invariants.new(story, seed: seed).check.map(&:invariant)
+  end
+
+  test "two outermost locations answering to one name are caught after the walk" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    create(:location, :stub, story: story, name: "The Causeway Court")
+    create(:location, :stub, story: story, name: "The Causeway Court ")
+
+    broken = EngineSweep::Invariants.new(story, seed: seed).check.find { |b| b.invariant == "place_names_unique" }
+
+    assert_not_nil broken
+    assert_match(/2 locations are one place/, broken.to_s)
+  end
+
+  # ONE NAME WRITTEN WITHOUT ITS ARTICLE IS STILL ONE NAME, which is the
+  # captain's own case: `Location::Generator#find_location` resolves through
+  # `WorldSeed.natural_key` so this pair can no longer be written by an exits
+  # answer, and this is the offline assertion that nothing else writes it.
+  test "a place named without its article is one place to this invariant" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    create(:location, :stub, story: story, name: "The Vestry Hulk")
+    create(:location, :stub, story: story, name: "Vestry Hulk")
+
+    assert_includes place_names_caught(seed, story), "place_names_unique"
+  end
+
+  # AND IT GOES NO WIDER THAN `.natural_key` GOES. Two genuinely different
+  # places stay two, so a sweep does not start failing on a world whose author
+  # named a store and a stores.
+  test "two places differing by more than an article are not a broken invariant" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+    create(:location, :stub, story: story, name: "The Salt Store")
+    create(:location, :stub, story: story, name: "Salt Stores")
+
+    assert_not_includes place_names_caught(seed, story), "place_names_unique"
+  end
+
+  # THE CHECKED-IN WORLDS THEMSELVES PASS IT, which is what makes it worth
+  # having: it is not a check every walk already breaks.
+  test "a seeded world holds no two locations that are one place" do
+    seed, story = seeded_copy("the-unrecorded-hour")
+
+    assert_not_includes place_names_caught(seed, story), "place_names_unique"
   end
 
   test "a room over the exit cap is caught after the walk" do

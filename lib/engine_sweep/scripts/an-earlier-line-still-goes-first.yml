@@ -1,0 +1,44 @@
+# A player types a second line while a turn is running, so the browser accepts
+# both and both jobs race for the game's lock. flock is not FIFO and three
+# worker threads can hold both at once, so the LATER job is delivered first
+# here. The earlier line must still be the earlier turn: before the accepted
+# order was honoured, the party left the market before the coin was taken and
+# both submissions reported success.
+story: A Turn at the Gate
+steps:
+- id: a-later-job-cannot-overtake-an-earlier-line
+  type: /move Courtyard
+  why: the move was accepted second and delivered first
+  browser:
+    token: crossing
+    accepted_first:
+    - {token: pickup, type: /take red coin}
+    replies:
+    - purpose: narration
+      content: You close your hand around the red coin.
+    - purpose: arrival
+      content:
+        description: The sheltered courtyard opens before you.
+        summary: The player crosses into the courtyard.
+  expect:
+    carrying: [red coin]
+    location: Courtyard (realized)
+    hazards: 1
+    changed: true
+    note:
+    - 'pickup: completed'
+    - 'crossing: completed'
+- id: the-overtaken-job-finds-its-line-already-played
+  type: /take red coin
+  why: the pickup's own job arrives afterwards and must not take a second turn
+  browser: {token: pickup}
+  expect:
+    carrying: [red coin]
+    location: Courtyard (realized)
+    here: []
+    blows: 0
+    hazards: 0
+    elapsed_minutes: 0
+    changed: false
+    note:
+    - 'pickup: completed'

@@ -31,6 +31,13 @@ class Location::Generator
   DETAIL_PENDING = "detail_pending".freeze
   EXITS_PENDING = "exits_pending".freeze
 
+  # A LABEL ON A DOOR THIS ROOM IS ACTUALLY WRITING that `LocationConnection`
+  # will not take. A `RecordInvalid` and a type of its own at once: every caller
+  # that only ever wanted "the write failed" reads it as what it always was, and
+  # #write_exits_serially! can still tell it from every other way a write can
+  # fail -- because it is the one failure a retry cannot get past.
+  class UnusableExitLabel < ActiveRecord::RecordInvalid; end
+
   attr_reader :location, :story
 
   # `location` is a stub -- a Location with a name and a teaser but no
@@ -109,8 +116,10 @@ class Location::Generator
   # then apply detail, layout, items and people together. Save the accepted exits
   # response before applying its edges. Each checkpoint advances in the same
   # short transaction as its writes; no transaction spans a provider call.
-  # A retry reuses paid answers, while detail_level stays stub until the final
-  # edges and deadline check commit. A completed place is never regenerated.
+  # A retry reuses paid answers -- every one but an exits answer whose labels the
+  # graph refused, which #write_exits_serially! drops rather than replay -- while
+  # detail_level stays stub until the final edges and deadline check commit.
+  # A completed place is never regenerated.
   # Old realized rows have no checkpoint and remain the authoritative world:
   # their historic missing content cannot be inferred from that flag alone.
   def realize!
@@ -469,6 +478,30 @@ class Location::Generator
     end
   end
 
+  # THE ACCEPTED EXITS ANSWER IS A PROVISIONAL RECEIPT, and the writer is what
+  # decides whether it stands. Storing it before anything is written is what
+  # stops a crash between the answer and the edges paying for the same call
+  # twice -- but an answer carrying a label the graph will not take would then
+  # be replayed by every retry, and the room could never be finished at all.
+  #
+  # SO THE ONE FAILURE THAT DISCARDS IT IS THE ONE A RETRY CANNOT GET PAST: a
+  # label on a door this room was actually writing (`UnusableExitLabel`, raised
+  # by #connect!). The transaction rolls the graph back, the answer is dropped,
+  # and the next entry asks for exits again -- for exits only, since its detail
+  # checkpoint is untouched. EVERY OTHER FAILURE KEEPS THE ANSWER, because the
+  # same answer can be applied by a retry that costs no model call: a lost
+  # connection, a busy database, a finalization that raised.
+  #
+  # WHICH DOORS GET WRITTEN IS NOT PREDICTED HERE, AND THAT IS THE WHOLE RULE.
+  # The writer is sequential -- #connect_exit! judges a proposal against the
+  # records as they stand when it reaches it, this room's allowance included,
+  # and #connect! writes nothing at all for a pair that already exists -- so a
+  # label is judged at the one moment its own row is about to be created and
+  # never before. A second reading of that policy, run over the whole answer
+  # against the graph as it was, refused proposals the writer then dropped and
+  # failed realizations the player had already paid for: a way back named again
+  # with a bad label, a written neighbour this room cannot open onto, a second
+  # spelling of a door just written, a proposal past this room's allowance.
   def write_exits_serially!
     # ALREADY FULL, so there is nothing to ask and nothing to spend. A stub can
     # arrive at the cap before anybody walks into it: a world file seeds edges,
@@ -480,7 +513,6 @@ class Location::Generator
       checkpoint.fetch("exits")
     else
       Array(ask(Location::ExitsSchema, exits_prompt)["exits"]).tap do |answer|
-        validate_exit_labels!(answer)
         location.update!(generation_checkpoint: checkpoint.merge("exits" => answer)) if checkpoint["phase"] == EXITS_PENDING
       end
     end
@@ -492,6 +524,9 @@ class Location::Generator
     end
 
     location
+  rescue UnusableExitLabel
+    discard_exits_answer!
+    raise
   end
   private :write_exits_serially!
 
@@ -934,18 +969,16 @@ class Location::Generator
     }.compact)
   end
 
-  # Use the edge model's own domain validation, before saving an answer that
-  # retries would otherwise repeat forever. A self edge here is only an unsaved
-  # validation carrier; connect_exit! still gates every proposed destination.
-  def validate_exit_labels!(exits)
-    exits.each do |attributes|
-      name = sanitize_string(attributes["name"])
-      next if name.blank? || name.casecmp?(location.name.to_s)
+  # A PAID EXITS ANSWER THIS ROOM WILL NEVER GET PAST, dropped after its writes
+  # have rolled back so the next entry asks for a different one. Read from the
+  # row rather than from memory: the rollback is what this runs after. A repair
+  # of an old realized room has no checkpoint to drop and never had an answer
+  # stored, which is the nil case.
+  def discard_exits_answer!
+    location.reload
+    return if location.generation_checkpoint.nil? || !location.generation_checkpoint.key?("exits")
 
-      LocationConnection.new(location: location, connected_location: location,
-                             distance: sanitize_string(attributes["distance"]),
-                             travel_method: sanitize_string(attributes["travel_method"])).validate!
-    end
+    location.update!(generation_checkpoint: location.generation_checkpoint.except("exits"))
   end
 
   # Edge writes, the completed flag and deadline placements share one commit.
@@ -1209,9 +1242,14 @@ class Location::Generator
   # A PLACE NOBODY HAS OPENED RESOLVES TO ITSELF (`Location::Interior.way_in`),
   # because it has no rooms yet -- the doorway onto it is the way in, waiting,
   # and #open_the_way_in! moves it the moment there is somewhere for it to go.
+  #
+  # AND EVERY ONE OF THOSE GATES IS ASKED HERE AND NOWHERE ELSE, on the records
+  # as they stand when this proposal is reached rather than as they stood when
+  # the answer arrived. `#write_exits_serially!` says at length why nothing
+  # predicts this method's verdict ahead of it.
   def connect_exit!(attributes, into_written: false)
     name = sanitize_string(attributes["name"])
-    return if name.blank? || name.casecmp?(location.name.to_s)
+    return if name.blank? || same_place_as_this_one?(name)
 
     existing = find_location(name)
     return if room_elsewhere?(existing)
@@ -1254,8 +1292,54 @@ class Location::Generator
       other.parent_location_id != location.parent_location_id
   end
 
+  # THE ROW A MODEL'S NAME FOR A PLACE MEANS, or nil for a place this story has
+  # never had -- and the whole of what stands between an exits answer and a
+  # SECOND row for a place the world already holds.
+  #
+  # MATCHED THROUGH `WorldSeed.find_location`, WHICH IS THE MATCHER ALREADY IN
+  # THE TREE. Not a second reading of "the same name written differently"
+  # written here: `WorldSeed.natural_key` is the repo's one spelling of that
+  # question, `Story::Doctor#duplicate_locations` groups on it, and a generator
+  # that resolved a name the doctor calls one thing to two rows would write the
+  # defect the doctor exists to report -- in the same request, from the same
+  # answer. The delegation is the guarantee that those two cannot drift.
+  #
+  # THE DEFECT IT CLOSES, proved offline with no model call (the captain's Call
+  # 7 of 2026-09-08). `Location::ExitsSchema` asks for a name of "1 to 4 words,
+  # no article" while the prompt lists the world's places AS STORED, articles
+  # and all. So a world holding `The Causeway Court` is correctly answered
+  # `Causeway Court`, an exact lowercased match missed it, and `#connect_exit!`
+  # created a duplicate stub -- sometimes with a footprint and a whole floor
+  # plan hung off it. This is a RECORD-MATCHING fix and deliberately not a
+  # prompt one: the schema's wording and the prompt's list are what the exits
+  # lab exists to measure, and nothing here may depend on a model spelling a
+  # name the way the database happens to.
+  #
+  # AND IT GOES NO WIDER THAN `.natural_key` GOES. Case, runs of whitespace and
+  # a leading article are not part of a name; punctuation, possessives and
+  # plurals still are, so two genuinely different places stay two places. That
+  # boundary is argued in `.natural_key`'s own header and the argument is
+  # sharper here than at a seed file, because this side WRITES: folding two
+  # names too eagerly does not duplicate a room, it silently hands one room's
+  # doorways to another and there is no repair for that.
+  #
+  # PASS 3 -- the place-and-box reading -- never runs from here, because it
+  # needs a seed document and this caller has none. Every name an exits answer
+  # can carry is settled by the two written-name passes.
+  # THIS ROOM NAMING ITSELF, and it is asked on `WorldSeed.natural_key` for the
+  # same reason #find_location is. A plain `casecmp?` here was safe only while
+  # the matcher below was also exact: once a name without its article resolves,
+  # a room called `The Causeway Court` answering `Causeway Court` would resolve
+  # to ITSELF and #connect! would write a door from the room to the room. The
+  # two questions are one question -- "is this the same place?" -- so they read
+  # the same key, and widening one without the other trades a duplicate row for
+  # a self-loop.
+  def same_place_as_this_one?(name)
+    WorldSeed.natural_key(name) == WorldSeed.natural_key(location.name.to_s)
+  end
+
   def find_location(name)
-    story.locations.where("LOWER(name) = ?", name.downcase).first
+    WorldSeed.find_location(story, name)
   end
 
   # A ROOM COMING INTO EXISTENCE, and the moment its danger is decided. The
@@ -1341,14 +1425,26 @@ class Location::Generator
   # exists before the far side is ever realized. Both rows carry the same
   # values, which is only correct because LocationConnection's enums are
   # direction-neutral; `time_to_travel` is derived there, not copied here.
+  #
+  # AND THIS IS WHERE A PROPOSED LABEL IS JUDGED, because it is where a row is
+  # created. A pair that already exists returns above and its labels are never
+  # read at all, so a name the model spent on a door this room already has
+  # cannot fail anything. A row that IS being written and does not validate
+  # raises `UnusableExitLabel` -- the one failure #write_exits_serially! will
+  # not keep a paid answer through. Anything the save itself raises is left as
+  # itself: a uniqueness collision written by the far side's own generator is
+  # not a bad label and does not cost this room its answer.
   def connect!(from, to, attributes)
     return if LocationConnection.exists?(location: from, connected_location: to)
 
-    LocationConnection.create!(
+    edge = LocationConnection.new(
       location: from,
       connected_location: to,
       distance: sanitize_string(attributes["distance"]),
       travel_method: sanitize_string(attributes["travel_method"])
     )
+    raise UnusableExitLabel.new(edge) unless edge.valid?
+
+    edge.save!
   end
 end

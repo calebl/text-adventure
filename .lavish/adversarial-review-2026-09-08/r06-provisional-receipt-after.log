@@ -1,0 +1,9 @@
+`/home/calebl` is not writable.
+Bundler will use `/tmp/bundler20260909-14-zv72qe14' as your home directory temporarily.
+/home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/io-event-1.21.1/lib/IO_Event.so: warning: io_uring_queue_init() was available at compile time but failed at run time: Operation not permitted
+
+Rails Error: Unable to access log file. Please ensure that /home/calebl/.no-mistakes/worktrees/c5dff5fb8c12/01M22V7RJHYRRPXHX04EJ2M0M0/log/test.log exists and is writable (i.e. make it writable for user and group: chmod 0664 /home/calebl/.no-mistakes/worktrees/c5dff5fb8c12/01M22V7RJHYRRPXHX04EJ2M0M0/log/test.log). The log level has been raised to WARN and the output directed to STDERR until the problem is fixed.
+Generating image variants require the image_processing gem. Please add `gem "image_processing", "~> 1.2"` to your Gemfile or set `config.active_storage.variant_processor = :disabled`.
+{"scenario":"accepted_crash","initial_error":"SimulatedWorkerExit","provisional_receipt_retained":true,"invalid_receipt_discarded":false,"fresh_instance_retry":"passed","exit_calls_on_retry":0,"provider_calls":0}
+{"scenario":"invalid_crash","initial_error":"SimulatedWorkerExit","provisional_receipt_retained":true,"invalid_receipt_discarded":true,"fresh_instance_retry":"passed","exit_calls_on_retry":1,"provider_calls":0}
+{"scenario":"persistence_failure","initial_error":"ActiveRecord::StatementInvalid","provisional_receipt_retained":true,"invalid_receipt_discarded":false,"fresh_instance_retry":"passed","exit_calls_on_retry":0,"provider_calls":0}

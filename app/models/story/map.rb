@@ -183,8 +183,40 @@ class Story::Map
   # y, a position `Location` permits. Every pixel on the plan is derived from
   # `plan_box` and nothing is derived from `box`, so the rectangle and the door
   # on its wall cannot be drawn in two different frames.
+  # `#name` AND THE FOUR PREDICATES ARE THE PARTIAL'S WHOLE CONTRACT, and that
+  # is deliberate rather than tidiness: `app/views/map/_floor_plan.html.erb`
+  # asks a ROOM what it is and never reaches through to `node`, so a caller with
+  # no `Location` row to wrap -- `Lab::Realization::Plan`, drawing a building
+  # out of a stored bench row whose world was rolled back -- can hand over a
+  # stand-in carrying these five answers and get the same drawing. One renderer
+  # for both, which is the rule this file's header sets for geometry and which
+  # holds just as well for pixels.
   Room = Data.define(:node, :box, :plan_box, :x, :y, :width, :height) do
     def name = node.name
+    def stub? = node.stub?
+    def here? = node.here
+    def dangerous? = node.dangerous?
+    def hazardous? = node.hazardous?
+
+    # THE MIDDLE OF THE RECTANGLE, which is where a label sits and where a stair
+    # is marked. Here rather than in two callers, so a mark and the label under
+    # it cannot land in different places.
+    def centre_x = x + (width / 2.0)
+    def centre_y = y + (height / 2.0)
+
+    # WHAT A READER GETS ON HOVER, `Edge#reading`'s shape and its reason: SVG
+    # draws a `<title>` as a tooltip with no JavaScript, so it is the one place
+    # a rectangle can say more than its own outline. Danger and hazard are on it
+    # because a colour says THAT a room costs something and cannot say what --
+    # and a plan whose only reading of a hazard is a stroke width is a plan the
+    # table beside it has to be consulted to understand.
+    def reading
+      parts = [ "#{name}: #{box}" ]
+      parts << "dangerous" if dangerous?
+      parts << "hazardous" if hazardous?
+      parts << "nobody has walked in" if stub?
+      parts.join(" - ")
+    end
   end
 
   # WHERE THE GAP IN A SHARED WALL IS DRAWN. A segment, in pixels, plus the two
@@ -475,7 +507,7 @@ class Story::Map
   def build_interior(place)
     rooms = children_of(place).select(&:placed?)
     footprint = place.interior? ? [ place.width, place.depth ] : nil
-    origin_x, origin_y, plan_width, plan_height = plan_bounds(footprint, rooms)
+    origin_x, origin_y, plan_width, plan_height = self.class.plan_bounds(footprint, rooms)
 
     storeys = rooms.group_by { |room| room.box.z }.sort_by { |z, _| -z }.map do |z, on_this_storey|
       build_storey(z, on_this_storey, origin_x, origin_y)
@@ -492,7 +524,9 @@ class Story::Map
   # gets the SAME viewport, which is ruling 3 as a drawing rule -- floors are
   # kept aligned, so a stairwell at (x, y) on one storey is at (x, y) on the
   # next, and two plans of one building must be readable one against the other.
-  def plan_bounds(footprint, rooms)
+  # A CLASS METHOD, so a caller drawing a plan off something other than this
+  # story's rows gets the same viewport rule rather than a second one.
+  def self.plan_bounds(footprint, rooms)
     boxes = rooms.map(&:box)
     min_x = ([ 0 ] + boxes.map(&:x)).min
     min_y = ([ 0 ] + boxes.map(&:y)).min
@@ -527,7 +561,7 @@ class Story::Map
     rooms.combination(2).filter_map do |a, b|
       next unless connected?(a.node.location, b.node.location)
 
-      doorway_between(a, b)
+      self.class.doorway_between(a, b)
     end
   end
 
@@ -542,7 +576,9 @@ class Story::Map
   # do not overlap: one's far edge is the other's near edge, exactly. The door is
   # `DOOR_PACES` wide at the middle of whatever length of wall they actually
   # share, and there is no door at all when they share a corner and nothing else.
-  def doorway_between(a, b)
+  # A CLASS METHOD FOR `.plan_bounds`' REASON: it reads nothing but the two
+  # rooms handed to it, and the lab's plan needs exactly this arithmetic.
+  def self.doorway_between(a, b)
     wall = a.plan_box.shared_wall(b.plan_box)
     return nil if wall.nil?
 
@@ -578,7 +614,7 @@ class Story::Map
         next if far.parent_location_id != parent_id
         next if far.box.nil? || far.box.z == room.box.z
 
-        Stair.new(x: room.x + (room.width / 2.0), y: room.y + (room.height / 2.0),
+        Stair.new(x: room.centre_x, y: room.centre_y,
                   up: far.box.z > room.box.z,
                   reading: "stairs to #{far.name}, storey #{far.box.z}")
       end

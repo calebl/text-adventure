@@ -180,6 +180,152 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
     end
   end
 
+  # WHERE EVERY ROOM OF A BUILDING IS, which is what makes a stored row
+  # DRAWABLE (`Lab::Realization::Plan`). Read off `Location`'s own `x` and `y`
+  # and never recomputed, and the doors are the ones the layout actually opened
+  # -- adjacency is not a door, so a drawing derived from the boxes would show a
+  # building `Location::Interior` refused to build.
+  test "a laid-out place records where each of its rooms is and which of them have doors between them" do
+    laid_out do |standing, place|
+      rooms = standing.rooms_laid_out
+      records = place.child_locations.order(:id).to_a
+
+      assert_equal records.size, rooms.size
+      assert_equal (0...records.size).to_a, rooms.map { |room| room["index"] }
+      rooms.zip(records).each do |stored, record|
+        assert_equal record.x, stored["x"], "#{record.name} is stored at the wrong x"
+        assert_equal record.y, stored["y"], "#{record.name} is stored at the wrong y"
+        assert_equal record.z, stored["storey"]
+        assert_equal record.name, stored["name"]
+      end
+    end
+  end
+
+  # A DOOR IS TWO ROWS, SO BOTH ENDS NAME IT. A one-sided entry would draw a
+  # door on one room and not on its neighbour, which is a drawing that cannot be
+  # read against itself.
+  test "the doors a room records are recorded from the other side too" do
+    laid_out do |standing, _place|
+      rooms = standing.rooms_laid_out
+
+      rooms.each do |room|
+        room["doors_to"].each do |far|
+          assert_includes rooms[far]["doors_to"], room["index"],
+                          "#{room["name"]} says it has a door to #{rooms[far]["name"]} and that room does not"
+        end
+        room["stairs_to"].each do |far|
+          assert_includes rooms[far]["stairs_to"], room["index"]
+        end
+      end
+    end
+  end
+
+  # A DOOR AND A STAIR ARE TOLD APART BY `LocationConnection#travel_method` and
+  # never by the two storeys differing, which would be a second answer to what a
+  # stair is. Every entry in either list is a sibling: a doorway out of the
+  # building has no index here, which is what keeps `doors` the honest total.
+  test "a stair is not a door, and neither list ever names a room outside the building" do
+    laid_out do |standing, _place|
+      rooms = standing.rooms_laid_out
+      indices = rooms.map { |room| room["index"] }
+
+      # NOT VACUOUS: the fixture really has rooms with doors between them, so a
+      # regression that emptied both lists would fail here rather than pass
+      # silently.
+      assert_operator rooms.sum { |room| room["doors_to"].size }, :>, 0
+
+      rooms.each do |room|
+        assert_empty room["doors_to"] & room["stairs_to"]
+        assert_empty (room["doors_to"] + room["stairs_to"]) - indices
+        assert_operator room["doors"], :>=, room["doors_to"].size + room["stairs_to"].size
+      end
+    end
+  end
+
+  # ------------------------------------------------- a case that carries its own room
+
+  # THE PROMOTION, AT THE STAGE. A kind the captain typed in the lab is in no
+  # world file, so a case for it has no room to FIND -- and until this class
+  # could create one, a scored kind could never be re-run against a changed
+  # prompt.
+  test "a case with a teaser creates the stub the world does not have, and opens the way in" do
+    stage(typed(room: "The Drowned Counting House", reached_from: "Ward Office 12")) do |standing|
+      room = standing.location
+
+      assert_predicate room, :stub?
+      assert_equal "The Drowned Counting House", room.name
+      assert_equal "A counting house half-sunk at the river's edge.", room.teaser
+      assert_nil room.description
+      assert_equal [ "Ward Office 12" ], standing.reachable
+      assert_equal "The Unrecorded Hour", standing.story.title
+      # BOTH DIRECTIONS, because the exits prompt's dead-end sentence is about
+      # the place the player came from specifically.
+      assert_includes standing.story.locations.find_by(name: "Ward Office 12").exits, room
+    end
+  end
+
+  test "a case with a teaser is offered as a place that already exists to the rest of the world" do
+    stage(typed(room: "The Drowned Counting House", reached_from: "Ward Office 12")) do |standing|
+      assert_not_includes standing.places.map { |place| place["name"] }, "The Drowned Counting House",
+                          "the room being built is never one of the places the prompt offers"
+      assert_includes standing.taken_names, "Perrin's private index",
+                      "the world around a created stub is the world's own, read off the records"
+    end
+  end
+
+  test "the declared danger and inside band reach the created stub, and a band makes it a building" do
+    typed_case = typed(room: "The Drowned Counting House", reached_from: "Ward Office 12",
+                       danger: "dangerous", inside: "a few rooms", population: "a person or two")
+
+    stage(typed_case) do |standing|
+      assert_equal "dangerous", standing.location.danger
+      assert_equal "a person or two", standing.location.population
+      assert_predicate standing, :place?, "a footprint inside a band is what makes it a building"
+      assert_equal 0, standing.people_allowance, "a building is asked for nobody and for nothing"
+    end
+  end
+
+  test "a case with a teaser may also reach a second neighbour, and both edges are written" do
+    typed_case = typed(room: "The Drowned Counting House", reached_from: "Ward Office 12",
+                       also_reaches: [ "The Supply Closet" ])
+
+    stage(typed_case) do |standing|
+      assert_equal [ "The Supply Closet", "Ward Office 12" ], standing.reachable.sort
+      assert_equal Location::ExitsSchema::MAX_EXITS - 2, standing.exit_allowance
+    end
+  end
+
+  # AND THE ORIGINAL SHAPE IS UNTOUCHED: a case with no teaser still finds its
+  # room, and a case whose room the world lost still says which key was wrong.
+  test "a case with no teaser still finds a room the world has" do
+    stage(kase(room: "The Long Hallway", reached_from: "Ward Office 12")) do |standing|
+      assert_equal "The Long Hallway", standing.location.name
+      assert_equal "The Unrecorded Hour", standing.story.title
+    end
+  end
+
+  test "a case with a teaser whose room the world already has is refused rather than written twice" do
+    error = assert_raises(Eval::Realization::Stage::Unstageable) do
+      stage(typed(room: "The Long Hallway", reached_from: "Ward Office 12")) { |_| }
+    end
+
+    assert_includes error.message, "would write it twice"
+  end
+
+  test "a created stub's way back has to be somewhere the world really is" do
+    error = assert_raises(Eval::Realization::Stage::Unstageable) do
+      stage(typed(room: "The Drowned Counting House", reached_from: "The Boiler Landing")) { |_| }
+    end
+
+    assert_includes error.message, "has no room called \"The Boiler Landing\" (reached_from)"
+  end
+
+  test "nothing survives the staging of a created stub either" do
+    before = [ Story.count, Location.count, LocationConnection.count ]
+    stage(typed(room: "The Drowned Counting House", reached_from: "Ward Office 12")) { |_| }
+
+    assert_equal before, [ Story.count, Location.count, LocationConnection.count ]
+  end
   test "nothing survives the staging" do
     before = [ Story.count, Location.count, Character.count, Item.count, LocationConnection.count ]
     stage(kase(room: "The Long Hallway", reached_from: "Ward Office 12", absent: [ "The Supply Closet" ])) { |_| }
@@ -195,6 +341,38 @@ class Eval::Realization::StageTest < ActiveSupport::TestCase
       id: "a-case", story: story, room: room, reached_from: reached_from, also_reaches: also_reaches,
       absent: absent, unwritten: unwritten, danger: danger, expects_new_ground: true,
       shape: "corridor", why: "a test"
+    )
+  end
+
+  # A PLACE WITH AN INSIDE, STOOD UP IN A ROLLED-BACK COPY OF ITS WORLD. The
+  # Custom House is the one building in the checked-in worlds
+  # (`db/seeds/worlds`), and the standing is built on the PLACE rather than on
+  # one of its rooms because `#rooms_laid_out` is a reading of a place's
+  # children.
+  def laid_out
+    Eval::Concurrency.rolled_back do
+      story = Eval::Realization::Stage.load_world!("The Quay House", title: "The Quay House (a test)")
+      place = story.locations.find_by!(name: "The Custom House")
+      standing = Eval::Realization::Stage::Standing.new(
+        kase: kase(room: place.name, story: "The Quay House"), story: story,
+        location: place, generator: Location::Generator.new(place)
+      )
+
+      yield standing, place
+    end
+  end
+
+  # A CASE THAT CARRIES ITS OWN STUB. `danger` is not optional on one -- the roll
+  # a new room would get is keyed on the story's id, which a staged copy is
+  # issued afresh on every load -- and `Eval::Realization::Corpus` refuses a
+  # typed case without it, so the default here is a declared one.
+  def typed(room:, reached_from: nil, story: "The Unrecorded Hour", also_reaches: [],
+            danger: "uneasy", inside: nil, population: nil)
+    Eval::Realization::Corpus::Case.new(
+      id: "a-typed-case", story: story, room: room,
+      teaser: "A counting house half-sunk at the river's edge.",
+      reached_from: reached_from, also_reaches: also_reaches, danger: danger, inside: inside,
+      population: population, expects_new_ground: true, shape: "lab-promoted", why: "a test"
     )
   end
 

@@ -1,0 +1,16 @@
+`/home/calebl` is not writable.
+Bundler will use `/tmp/bundler20260909-13-undlz113' as your home directory temporarily.
+/home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/io-event-1.21.1/lib/IO_Event.so: warning: io_uring_queue_init() was available at compile time but failed at run time: Operation not permitted
+
+Rails Error: Unable to access log file. Please ensure that /home/calebl/.no-mistakes/worktrees/c5dff5fb8c12/01M22V7RJHYRRPXHX04EJ2M0M0/log/test.log exists and is writable (i.e. make it writable for user and group: chmod 0664 /home/calebl/.no-mistakes/worktrees/c5dff5fb8c12/01M22V7RJHYRRPXHX04EJ2M0M0/log/test.log). The log level has been raised to WARN and the output directed to STDERR until the problem is fixed.
+Generating image variants require the image_processing gem. Please add `gem "image_processing", "~> 1.2"` to your Gemfile or set `config.active_storage.variant_processor = :disabled`.
+{"case":"already_has_exit","realization_error":null,"detail_level":"realized","checkpoint_phase":null,"cached_exits":null,"writer_error":null,"written_exits":["Way Back"]}
+{"case":"complete_existing_pair","realization_error":null,"detail_level":"realized","checkpoint_phase":null,"cached_exits":null,"writer_error":null,"written_exits":["Back Lane"]}
+{"case":"duplicate_new_alias","realization_error":null,"detail_level":"realized","checkpoint_phase":null,"cached_exits":null,"writer_error":null,"written_exits":["Back Lane"]}
+{"case":"capacity_reached","realization_error":null,"detail_level":"realized","checkpoint_phase":null,"cached_exits":null,"writer_error":null,"written_exits":["Existing 0","Existing 1","Existing 2","Back Lane"]}
+{"case":"natural_key_self","realization_error":null,"detail_level":"realized","checkpoint_phase":null,"cached_exits":null,"writer_error":null,"written_exits":["Back Lane"]}
+{"case":"forced_invalid","realization_error":["Location::Generator::UnusableExitLabel","Validation failed: Travel method is not included in the list, Time to travel can't be blank"],"detail_level":"stub","checkpoint_phase":"exits_pending","cached_exits":false,"writer_error":["Location::Generator::UnusableExitLabel","Validation failed: Travel method is not included in the list, Time to travel can't be blank"],"written_exits":[]}
+{"case":"forced_valid","realization_error":null,"detail_level":"realized","checkpoint_phase":null,"cached_exits":null,"writer_error":null,"written_exits":["Old Mill"]}
+{"case":"half_pair_invalid","realization_error":["Location::Generator::UnusableExitLabel","Validation failed: Travel method is not included in the list, Time to travel can't be blank"],"detail_level":"stub","checkpoint_phase":"exits_pending","cached_exits":false,"writer_error":["Location::Generator::UnusableExitLabel","Validation failed: Travel method is not included in the list, Time to travel can't be blank"],"written_exits":[]}
+{"case":"half_pair_valid","realization_error":null,"detail_level":"realized","checkpoint_phase":null,"cached_exits":null,"writer_error":null,"written_exits":["Back Lane"]}
+{"case":"far_end_full","realization_error":null,"detail_level":"realized","checkpoint_phase":null,"cached_exits":null,"writer_error":null,"written_exits":["Back Lane"]}
