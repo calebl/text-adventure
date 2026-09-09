@@ -936,12 +936,40 @@ class Location::Generator
 
   # Use the edge model's own domain validation, before saving an answer that
   # retries would otherwise repeat forever. A self edge here is only an unsaved
-  # validation carrier; connect_exit! still gates every proposed destination.
+  # validation carrier; #exit_destination is what decides which proposals are
+  # worth carrying one.
+  #
+  # ONLY THE EDGES THIS ROOM WILL ACTUALLY WRITE, and that is the whole rule.
+  # This used to validate every proposal against its own copy of one skip
+  # condition, so a single unusable label on a name #connect_exit! was going to
+  # DROP -- a room of another building, a neighbour already written that this
+  # room cannot reach, this room under another spelling of its own name --
+  # failed the realization the entry had already paid for. Worse, the detail
+  # checkpoint pins the prompt, so the next entry could be refused the same way
+  # and the room could never be finished. A label now discards its own edge and
+  # nothing else.
+  #
+  # THE FORCED PASS IS PART OF THE ANSWER, which is why this asks twice rather
+  # than skipping every written destination. #write_exits_serially! runs a
+  # second pass with `into_written: true` when the ordinary one wrote nothing,
+  # and that pass may legitimately open onto an already-written neighbour -- so
+  # when nothing ordinary survives, those forced edges are exactly the ones
+  # whose labels matter. Skipping them would leave the fallback to raise inside
+  # the transaction, after the answer had been cached and with the room's only
+  # way out lost.
+  #
+  # STRICTER THAN THE WRITER IN ONE DIRECTION ONLY, and deliberately: nothing is
+  # written yet, so #room_for_exits reads at its widest here and can only shrink
+  # as the writer goes. Every edge the writer admits was therefore validated
+  # here, which is the direction that matters. What is left over is a proposal
+  # past this room's allowance -- possible only on a part-connected stub, since
+  # `Location::ExitsSchema` caps one answer at MAX_EXITS -- whose unusable label
+  # is still refused rather than dropped.
   def validate_exit_labels!(exits)
-    exits.each do |attributes|
-      name = sanitize_string(attributes["name"])
-      next if name.blank? || name.casecmp?(location.name.to_s)
+    usable = exits.select { |attributes| exit_destination(attributes, into_written: false) }
+    usable = exits.select { |attributes| exit_destination(attributes, into_written: true) } if usable.empty?
 
+    usable.each do |attributes|
       LocationConnection.new(location: location, connected_location: location,
                              distance: sanitize_string(attributes["distance"]),
                              travel_method: sanitize_string(attributes["travel_method"])).validate!
@@ -1210,22 +1238,43 @@ class Location::Generator
   # because it has no rooms yet -- the doorway onto it is the way in, waiting,
   # and #open_the_way_in! moves it the moment there is somewhere for it to go.
   def connect_exit!(attributes, into_written: false)
-    name = sanitize_string(attributes["name"])
-    return if name.blank? || same_place_as_this_one?(name)
+    destination = exit_destination(attributes, into_written: into_written)
+    return if destination.nil?
 
-    existing = find_location(name)
-    return if room_elsewhere?(existing)
-
-    existing = Location::Interior.way_in(existing) if existing
-    return if existing&.realized? && !into_written && !connected?(existing)
-    return unless room_for_this_door?(existing)
-
-    neighbour = existing || create_stub!(name, sanitize_string(attributes["teaser"]),
-                                         inside: sanitize_string(attributes["inside"]),
-                                         population: population(attributes))
+    neighbour = if destination == :stub
+      create_stub!(sanitize_string(attributes["name"]), sanitize_string(attributes["teaser"]),
+                   inside: sanitize_string(attributes["inside"]),
+                   population: population(attributes))
+    else
+      destination
+    end
 
     connect!(location, neighbour, attributes)
     connect!(neighbour, location, attributes)
+  end
+
+  # WHERE ONE PROPOSED EXIT WOULD LAND: the row it resolves to, `:stub` for a
+  # neighbour that does not exist yet, or nil for a proposal this room will not
+  # write at all. Every gate above, asked without writing anything.
+  #
+  # SEPARATE FROM #connect_exit! BECAUSE ONE OTHER READER NEEDS THE ANSWER
+  # BEFORE THE WRITES. `#validate_exit_labels!` has to know which proposals
+  # become edges before it decides whether a paid answer is worth caching, and
+  # it used to answer that with its own shorter copy of these conditions --
+  # which refused rooms this method lets through. One rule, two callers, and it
+  # cannot drift.
+  def exit_destination(attributes, into_written:)
+    name = sanitize_string(attributes["name"])
+    return nil if name.blank? || same_place_as_this_one?(name)
+
+    existing = find_location(name)
+    return nil if room_elsewhere?(existing)
+
+    existing = Location::Interior.way_in(existing) if existing
+    return nil if existing&.realized? && !into_written && !connected?(existing)
+    return nil unless room_for_this_door?(existing)
+
+    existing || :stub
   end
 
   # WHETHER THIS ROOM AND THE FAR SIDE CAN EACH TAKE ONE MORE WAY OUT. A

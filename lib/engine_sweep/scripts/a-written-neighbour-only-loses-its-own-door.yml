@@ -1,0 +1,66 @@
+# A player opens a stub whose exits answer names three ways out: the market it
+# already reaches, the old mill it does not, and the workshop itself under an
+# article. Only the first is a door this room will write -- and the other two
+# carry a travel method the engine will not accept.
+#
+# Before the labels were checked against what the engine actually writes, the
+# unusable pair failed the whole realization: the paid detail was already
+# committed and pinned, so the player was left outside a room that could be
+# refused the same way on every later entry. The room must open, keep the one
+# real door, and grow no door onto the mill.
+story: A Written Mill Beside a Stub
+steps:
+- id: an-unusable-label-on-a-door-nobody-writes
+  type: /move Workshop
+  why: two of the three proposals are dropped, so neither label can fail the entry
+  browser:
+    token: open-the-workshop
+    realizes: Workshop
+    replies:
+    - purpose: location
+      content:
+        description: A workbench stands under the shuttered window.
+        lore: The workshop served the market for years.
+        items: []
+        people: []
+    - purpose: location
+      content:
+        exits:
+        # The way back, which already exists: a no-op edge with a usable label.
+        - name: Market
+          teaser: A quiet square.
+          distance: adjacent
+          travel_method: walking
+        # Already written and not reachable from here, so never written.
+        - name: Old Mill
+          teaser: A shuttered mill.
+          distance: across the district
+          travel_method: teleporting
+        # This room under its own name, so never written either.
+        - name: The Workshop
+          teaser: The same workbench.
+          distance: adjacent
+          travel_method: teleporting
+    - purpose: arrival
+      unavailable: true
+  expect:
+    location: Workshop (realized)
+    exits: [Market (realized)]
+    exits_exclude: [Old Mill]
+    here: []
+    present: []
+    changed: true
+    note: completed
+- id: the-mill-is-still-reached-only-from-the-market
+  type: /move Market
+  browser: {token: back-to-the-market, fail: arrival}
+  expect:
+    location: Market (realized)
+    exits: [Workshop (realized), Old Mill (realized)]
+- id: and-the-workshop-can-be-walked-into-again
+  type: /move Workshop
+  browser: {token: revisit, fail: arrival}
+  expect:
+    location: Workshop (realized)
+    exits: [Market (realized)]
+    exits_exclude: [Old Mill]

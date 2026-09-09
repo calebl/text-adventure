@@ -115,6 +115,7 @@ Unfinished generation now saves accepted detail, the exact NPC choices and accep
 - A real persisted conversation resumes without repeating detail; deleting the originating game restores the accepted exchange without copying billed token counts.
 - A browser sweep interrupts first entry, resumes with only the missing exits call, takes a generated item and revisits the same room.
 - Independent review fixed sanitized NPC fields that poisoned retries, stale checkpoint replay after re-seeding, and a building doorway that could bypass its unfinished parent.
+- An exits answer is checked against the doors the engine will actually write, so an unusable label on a proposal it was always going to drop — a neighbour already written and out of reach, or this room under its own name — discards that door instead of failing the entry that had already paid for the detail. A label on the only door the forced pass can open is still refused, and its answer still not cached. Unit regressions and a player walk cover both.
 
 **Remaining:** Older rooms already marked realized without checkpoints still require explicit repair. World exports and generation-time forks intentionally do not back up unfinished generation checkpoints.
 

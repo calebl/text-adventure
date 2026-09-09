@@ -149,6 +149,71 @@ class Location::GenerationRecoveryTest < ActiveSupport::TestCase
     assert_equal [ "Location::ExitsSchema" ], resumed.schemas.map(&:name)
   end
 
+  # AN UNUSABLE LABEL ON AN EDGE THIS ROOM WILL NOT WRITE. The eager check used
+  # to validate every proposal, so a name #connect_exit! was always going to
+  # drop failed the realization the entry had paid for -- and the pinned detail
+  # checkpoint could be refused the same way on every retry.
+  test "an unusable label on an already written neighbour discards only that door" do
+    create(:location, story: @story, name: "Old Mill")
+    answer = { "exits" => [
+      EXITS.fetch("exits").first,
+      { "name" => "Old Mill", "teaser" => "A shuttered mill.",
+        "distance" => "adjacent", "travel_method" => "teleporting" }
+    ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    assert_nil @location.generation_checkpoint
+    assert_equal [ "Back Lane" ], @location.exits.pluck(:name)
+    assert_empty Location.find_by!(name: "Old Mill").exits
+  end
+
+  # The same rule for the room naming ITSELF under another spelling: the check
+  # matched on `casecmp?` while `#connect_exit!` drops a natural-key match, so
+  # "The Workshop" was validated and then never written.
+  test "an unusable label on this room's own name under an article discards only that door" do
+    answer = { "exits" => [
+      EXITS.fetch("exits").first,
+      { "name" => "The Workshop", "teaser" => "The same workbench.",
+        "distance" => "adjacent", "travel_method" => "teleporting" }
+    ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    assert_nil @location.generation_checkpoint
+    assert_equal [ "Back Lane" ], @location.exits.pluck(:name)
+  end
+
+  # AND THE FORCED PASS IS STILL VALIDATED, which is why the check asks twice
+  # rather than skipping every written destination: with no ordinary exit left,
+  # `into_written:` opens onto an already-written neighbour, so that edge's
+  # label is the one that decides whether the answer is worth keeping.
+  test "an unusable label on the only door the forced pass can open is refused" do
+    create(:location, story: @story, name: "Old Mill")
+    answer = { "exits" => [ { "name" => "Old Mill", "teaser" => "A shuttered mill.",
+                              "distance" => "adjacent", "travel_method" => "teleporting" } ] }
+
+    assert_raises(ActiveRecord::RecordInvalid) { realize(FakeAgent.new(DETAIL, answer)) }
+
+    assert_predicate @location.reload, :stub?
+    assert_not @location.generation_checkpoint.key?("exits")
+    assert_empty @location.exits
+  end
+
+  test "the forced pass still opens onto an already written neighbour when nothing else survives" do
+    mill = create(:location, story: @story, name: "Old Mill")
+    answer = { "exits" => [ { "name" => "Old Mill", "teaser" => "A shuttered mill.",
+                              "distance" => "adjacent", "travel_method" => "walking" } ] }
+
+    realize(FakeAgent.new(DETAIL, answer))
+
+    assert_predicate @location.reload, :realized?
+    assert_equal [ "Old Mill" ], @location.exits.pluck(:name)
+    assert_equal [ @location.name ], mill.reload.exits.pluck(:name)
+  end
+
   test "a successful run builds the same exits request while completion is still pending" do
     generator = Location::Generator.new(@location)
     provider = FakeAgent.new(DETAIL, EXITS)
