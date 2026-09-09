@@ -1,0 +1,224 @@
+<%# ONE VANTAGE: what it is, what he expects, what its draws said, and the rate
+    over them. `Lab::Exits`'s header is the design.
+
+    THE COUNTER-FIGURE IS ON THE INDEX AND NOT HERE, deliberately -- it is a
+    property of the prompt over every vantage, and reading one place's open
+    country as the game's is the exact mistake `Lab::Exits::Alignment` exists to
+    stop. What IS here is this vantage's own reach, because the gap between its
+    two halves is how he tells whether the `absent` list is doing its job.
+
+    AND THE FRACTION IS PRINTED, NEVER THE PERCENTAGE. `4 of 5` and `40 of 50`
+    are honestly different figures and a percentage hides which one is on the
+    screen -- `Lab::Realization::HitRate`'s rule, and `Story::Scoreboard`'s
+    before it. %>
+<%= render "lab/styles" %>
+<%= render "lab/exits/styles" %>
+
+<h1><%= @vantage.name %></h1>
+<p class="nav">
+  <%= link_to "&larr; the exits lab".html_safe, lab_exits_vantages_path %>
+  &nbsp;&middot;&nbsp; <%= @vantage.world %>
+  &nbsp;&middot;&nbsp; <%= pluralize(@hit_rate.drawn, "draw") %>,
+  <%= @hit_rate.distinct_answers %> distinct
+  &nbsp;&middot;&nbsp; <%= @hit_rate.judged %> judged
+</p>
+
+<% if flash[:alert] %>
+  <div class="panel"><p class="warn"><%= flash[:alert] %></p></div>
+<% end %>
+
+<h2>the vantage</h2>
+<div class="panel">
+  <div class="fields">
+    <div class="k">teaser</div>
+    <div class="v"><%= @vantage.teaser %></div>
+    <div class="k">reached from</div>
+    <div class="v"><%= debug_value(@vantage.reached_from, absent: "nowhere -- an opening room") %></div>
+    <div class="k">danger</div>
+    <div class="v"><%= debug_value(@vantage.danger, absent: "rolled when the stub is born") %></div>
+    <div class="k">off the books</div>
+    <div class="v">
+      <% if @vantage.absent_names.empty? %>
+        <span class="warn">nothing</span>
+        <span class="absent">
+          &mdash; so every place this world still holds is on the prompt's reuse
+          list, and a pick about one of them is discarded. Expect the two reach
+          figures below to be far apart.
+        </span>
+      <% else %>
+        <%# A LITERAL SEPARATOR AND NO `html_safe`, which is `debug/show.html.erb`'s
+            precedent and here it is load-bearing: these are names a person TYPED,
+            so `html_safe` on a string built from them is an unescaped attribute
+            and Brakeman says so in a high-confidence warning. Escape the names;
+            spell the middle dot as itself. %>
+        <%= @vantage.absent_names.join(" · ") %>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<h2>draw one</h2>
+<div class="panel">
+  <p class="note">
+    Two real model calls through <code>Location::Generator#realize!</code>. There
+    is no cheaper exits-only call to buy: the two calls are one conversation and
+    the exits prompt is written to follow the description.
+  </p>
+  <%= button_to "draw a sample -- this spends money",
+                lab_exits_vantage_samples_path(@vantage), method: :post %>
+  <p class="note">
+    <code>rake lab:exits:draw VANTAGE=<%= @vantage.id %> N=<%= Lab::Exits::MIN_DRAWS %> YES=1</code>
+    is the same draws without the clicking, and it prints the price first.
+  </p>
+</div>
+
+<h2>what he expects</h2>
+<%= form_with url: lab_exits_vantage_path(@vantage), method: :patch, class: "lab-form" do |form| %>
+  <div class="panel">
+    <p class="note">
+      Free, and retroactive: every pick is already on every stored row, so
+      declaring or editing this re-scores every draw bought before it. Draw five,
+      look at them, then say what you think the picks should have been.
+    </p>
+    <div class="fields">
+      <div class="k">how many have an inside</div>
+      <div class="v">
+        <label class="lab-choice">
+          <%= radio_button_tag "expects_inside_quantifier", "", @vantage.expects_inside_quantifier.blank? %>
+          <span class="absent">(don't care)</span>
+        </label>
+        <% Lab::Exits::QUANTIFIER_NAMES.each do |name| %>
+          <label class="lab-choice">
+            <%= radio_button_tag "expects_inside_quantifier", name,
+                                 @vantage.expects_inside_quantifier == name %>
+            <%= name %>
+          </label>
+        <% end %>
+      </div>
+      <div class="k">population words</div>
+      <div class="v">
+        <% Location::Population::LABELS.each do |label| %>
+          <label class="lab-choice">
+            <%= check_box_tag "expects_population[]", label,
+                              @vantage.expects_population_labels.to_a.include?(label),
+                              id: "expects_population_#{label.parameterize}" %>
+            <%= label %>
+          </label>
+        <% end %>
+      </div>
+    </div>
+    <p><%= submit_tag "declare this" %></p>
+  </div>
+<% end %>
+
+<h2>the rate</h2>
+<div class="panel">
+  <% reach = @hit_rate.reach %>
+  <% if reach.judgeable? %>
+    <div class="fields">
+      <div class="k">insides given</div>
+      <div class="v"><%= reach.given %> of <%= reach.named %> places named</div>
+      <div class="k">insides reaching</div>
+      <div class="v">
+        <span class="<%= reach.reaching.positive? ? "pick hit" : "pick miss" %>">
+          <%= reach.reaching %> of <%= reach.named %>
+        </span>
+        <span class="absent">&mdash; <%= reach.discarded %> discarded, on places the world already held</span>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @hit_rate.figures.empty? %>
+    <p class="absent">
+      (nothing declared, so nothing to score. The judgements below cost nothing
+      and are the other half.)
+    </p>
+  <% else %>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>figure</th><th>allowed</th><th>hits</th><th>misses</th></tr></thead>
+        <tbody>
+          <% @hit_rate.figures.each do |figure| %>
+            <tr>
+              <td><%= figure.name %></td>
+              <td><%= figure.allowed %></td>
+              <td>
+                <% if figure.judgeable? %>
+                  <span class="<%= figure.established? ? "pick hit" : "pick unscored" %>">
+                    <%= figure.fraction %>
+                  </span>
+                  <%= tag.span("not established", class: "absent") unless figure.established? %>
+                <% else %>
+                  <span class="absent">(no draw has answered this)</span>
+                <% end %>
+              </td>
+              <td>
+                <% figure.misses.first(6).each do |miss| %>
+                  <%= link_to "##{miss.sample.id}", lab_exits_sample_path(miss.sample) %>
+                  <span class="pick miss"><%= miss.made.join(", ") %></span><br>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">
+      A low rate has two explanations and this page cannot tell them apart: a
+      misaligned prompt, or an unreasonable expectation for the teaser you typed.
+      The exits prompt as actually sent is on each sample's page, which is what
+      makes a miss a diagnosis rather than a complaint.
+    </p>
+  <% end %>
+
+  <% if @hit_rate.unnamed.any? %>
+    <p class="note">
+      Typed but never named by a draw, so out of every denominator rather than a
+      miss: <%= @hit_rate.unnamed.map(&:name).join(", ") %>.
+    </p>
+  <% end %>
+</div>
+
+<h2>the places these draws named</h2>
+<%= render "lab/exits/vantages/places", vantage: @vantage, hit_rate: @hit_rate %>
+
+<h2>the draws</h2>
+<% if @samples.empty? %>
+  <p class="absent">(none yet)</p>
+<% else %>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>sample</th><th>named</th><th>insides</th><th>reaching</th><th>verdict</th><th>drawn</th></tr>
+      </thead>
+      <tbody>
+        <% @samples.each do |sample| %>
+          <tr>
+            <td><%= link_to "##{sample.id}", lab_exits_sample_path(sample) %></td>
+            <td>
+              <% if sample.failed? %>
+                <span class="warn">failed</span>
+              <% else %>
+                <%= sample.named_places.map(&:name).join(", ").presence || "(nothing)" %>
+              <% end %>
+            </td>
+            <td><%= sample.insides_given.size %></td>
+            <td><%= sample.insides_reaching.size %></td>
+            <td><%= sample.verdict? ? debug_verdict(sample.verdict) : tag.span("(unjudged)", class: "absent") %></td>
+            <td><%= sample.created_at.strftime("%d %b %H:%M") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<h2>delete this vantage</h2>
+<div class="panel">
+  <p class="note">
+    Takes every draw and every judgement with it. A mis-typed vantage is noise in
+    the measurement and its draws were bought against words you did not mean.
+  </p>
+  <%= button_to "delete the vantage and its #{pluralize(@hit_rate.drawn, "draw")}",
+                lab_exits_vantage_path(@vantage), method: :delete %>
+</div>

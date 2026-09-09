@@ -151,6 +151,141 @@ class LabTasksTest < ActiveSupport::TestCase
     assert_match @kind.world, printed
   end
 
+  # ------------------------------------------------------------- the exits lab
+  #
+  # THE SAME GUARDS, SHARED RATHER THAN RE-ARGUED. `#draw_vantage!` reaches
+  # `#count_or_abort`, `#refuse_without_confirmation` and
+  # `#refuse_without_a_key` unchanged, so what is asserted here is the seam
+  # (`VANTAGE=`), the pricing difference (always both calls, because a vantage
+  # cannot be a building) and the one line this lab prints that the other does
+  # not: whether anything is off the books.
+
+  test "the exits tasks exist in the lab namespace" do
+    assert Rake::Task.task_defined?("lab:exits:draw")
+    assert Rake::Task.task_defined?("lab:exits:vantages")
+  end
+
+  test "the exits draw refuses without a vantage and says how to find one" do
+    error = assert_raises(SystemExit) { with_env("N" => "3") { LabTasks.draw_vantage! } }
+
+    assert_match "VANTAGE=<id>", message_of(error)
+    assert_match "rake lab:exits:vantages", message_of(error)
+  end
+
+  test "an unknown vantage says how to find the right one" do
+    error = assert_raises(SystemExit) do
+      with_env("VANTAGE" => "999999", "N" => "1") { LabTasks.draw_vantage! }
+    end
+
+    assert_match "rake lab:exits:vantages", message_of(error)
+  end
+
+  test "the exits draw refuses without a count, sharing the other task's sentence" do
+    vantage = create(:lab_exits_vantage)
+    error = assert_raises(SystemExit) do
+      with_env("VANTAGE" => vantage.id.to_s) { LabTasks.draw_vantage! }
+    end
+
+    assert_match "N=<count>", message_of(error)
+  end
+
+  # A VANTAGE IS NEVER A BUILDING, so it is always priced at both calls -- there
+  # is no cheaper one-call draw to model, and an estimate that offered one would
+  # be quoting a draw this lab cannot make.
+  test "a vantage is priced at both calls and the estimate says why" do
+    vantage = create(:lab_exits_vantage)
+    error = nil
+    printed = capturing do
+      error = assert_raises(SystemExit) do
+        with_env("VANTAGE" => vantage.id.to_s, "N" => "4") { LabTasks.draw_vantage! }
+      end
+    end
+
+    assert_match "YES=1", message_of(error)
+    assert_match "ESTIMATE:", printed
+    assert_match "4 draws x #{Eval::Realization::CALLS.join(" + ")}", printed
+    assert_match "never a building", printed
+  end
+
+  test "the exits draw refuses outright above the ceiling" do
+    error = nil
+    printed = capturing do
+      error = assert_raises(SystemExit) { LabTasks.send(:estimate_vantage!, 100_000, priced_arm) }
+    end
+
+    assert_match "Lower N", message_of(error)
+    assert_match "ESTIMATE:", printed
+  end
+
+  test "an ordinary look at a vantage is well inside the ceiling" do
+    capturing { LabTasks.send(:estimate_vantage!, Lab::Exits::MIN_DRAWS, priced_arm) }
+  end
+
+  test "the exits draw refuses to draw in the test environment even when confirmed" do
+    vantage = create(:lab_exits_vantage)
+    error = assert_raises(SystemExit) do
+      capturing do
+        with_env("VANTAGE" => vantage.id.to_s, "N" => "1", "YES" => "1") { LabTasks.draw_vantage! }
+      end
+    end
+
+    assert_match "must not draw in the test environment", message_of(error)
+  end
+
+  # THE HEADLINE IS THE TWO NUMBERS THIS LAB IS ABOUT, so a run says as it goes
+  # whether it is buying anything measurable at all.
+  test "each vantage draw prints what it named and how much of it reached the world" do
+    vantage = create(:lab_exits_vantage)
+    printed = nil
+
+    assert_difference -> { vantage.samples.count }, 2 do
+      Lab::Exits::Runner.stub(:new, ->(subject, **) { StubVantageRunner.new(subject) }) do
+        printed = capturing { LabTasks.send(:run_vantage_draws, vantage, 2, an_arm) }
+      end
+    end
+
+    assert_match "1/2", printed
+    assert_match "2 named", printed
+    assert_match "1 reaching", printed
+    assert_match "so far", printed
+  end
+
+  test "a vantage that cannot be staged stops the run rather than repeating the mistake" do
+    vantage = create(:lab_exits_vantage)
+    error = assert_raises(SystemExit) do
+      Lab::Exits::Runner.stub(:new, ->(_subject, **) { UnrunnableRunner.new }) do
+        capturing { LabTasks.send(:run_vantage_draws, vantage, 5, an_arm) }
+      end
+    end
+
+    assert_match "no place called", message_of(error)
+  end
+
+  test "the vantages listing is free and names every vantage with its id" do
+    vantage = create(:lab_exits_vantage, :with_places_off_the_books)
+    printed = capturing { LabTasks.list_vantages! }
+
+    assert_match vantage.id.to_s, printed
+    assert_match vantage.name, printed
+    assert_match "2 off the books", printed
+  end
+
+  # AND THE LISTING SAYS WHICH VANTAGES WILL MEASURE NOTHING, because a vantage
+  # with nothing off the books throws away every pick it makes -- the finding
+  # this lab was designed around, printed where he chooses what to spend on.
+  test "the listing says nothing off the books in words rather than as a nought" do
+    create(:lab_exits_vantage)
+    printed = capturing { LabTasks.list_vantages! }
+
+    assert_match "nothing off the books", printed
+  end
+
+  test "the vantages listing says where a vantage is typed when there are none" do
+    printed = capturing { LabTasks.list_vantages! }
+
+    assert_match "/lab/exits", printed
+  end
+
   private
 
   def an_arm = Eval::Classifier::Arm.all([ BaseAgent::REMOTE_MODEL_IDS.first ]).first
@@ -201,6 +336,26 @@ class LabTasksTest < ActiveSupport::TestCase
       @kind.samples.create!(row: { "id" => "lab-kind-#{@kind.id}", "calls" => 1,
                                    "input_tokens" => 1_399, "output_tokens" => 385,
                                    "after" => { "name" => "The Salt House", "rooms" => [] } })
+    end
+  end
+
+  # A DRAW THAT WRITES THE ROW THIS LAB READS, which is the two numbers the
+  # headline prints: two places named, one of them opened with a band the engine
+  # could use.
+  class StubVantageRunner
+    def initialize(vantage) = @vantage = vantage
+
+    def draw!
+      @vantage.samples.create!(
+        row: { "id" => "lab-vantage-#{@vantage.id}", "shape" => "exits", "calls" => 2,
+               "input_tokens" => 3_247, "output_tokens" => 529,
+               "answers" => { "exits" => { "exits" => [
+                 { "name" => "The Salt Chandlery", "inside" => "a few rooms", "population" => "nobody" },
+                 { "name" => "The Custom House", "inside" => "one room", "population" => "a crowd" }
+               ] } },
+               "after" => { "name" => "Harbour Steps", "rooms" => [],
+                            "new_places" => [ "The Salt Chandlery" ] } }
+      )
     end
   end
 

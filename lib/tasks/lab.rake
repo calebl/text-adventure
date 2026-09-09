@@ -50,6 +50,28 @@ namespace :lab do
       LabTasks.promote!
     end
   end
+
+  # THE EXITS LAB'S TWO, and it is the realization lab's draw command with one
+  # subject swapped -- every gate, every price and every refusal below is
+  # `LabTasks`' own, because a draw for this lab IS a draw for that one read from
+  # the other end (`Lab::Exits::Runner`).
+  #
+  # THERE IS NO `promote` HERE YET, deliberately. Promoting a scored vantage into
+  # `Eval::Realization::Corpus` is the captain's Call 6 of 2026-09-08 and it moves
+  # the corpus digest, which puts the tree out of baseline until a set is bought
+  # -- so it is a slice of its own (`ta-exits-lab-promotion`) and not a line here.
+  namespace :exits do
+    desc "Draw one vantage N times through the exits lab's own runner. " \
+         "Usage: rake lab:exits:draw VANTAGE=<id> N=10 YES=1"
+    task draw: :environment do
+      LabTasks.draw_vantage!
+    end
+
+    desc "Every vantage in the exits lab, with its id and how many draws it has -- offline, free"
+    task vantages: :environment do
+      LabTasks.list_vantages!
+    end
+  end
 end
 
 # The lab's rake half. Separate from `eval.rake`'s three modules for
@@ -91,6 +113,49 @@ module LabTasks
     puts
     drawn = run_draws(kind, count, arm)
     report(kind, drawn, arm)
+  end
+
+  # THE EXITS LAB'S DRAW, and it is `#draw!` with one subject swapped. Every gate
+  # is shared and none is re-argued: the price first, then `YES=1`, then whether
+  # there is a key at all.
+  #
+  # PRICED AT BOTH CALLS, ALWAYS, which is the one thing simpler here than for a
+  # kind. A vantage cannot be a building -- `Lab::Exits::Vantage`'s header says
+  # why it is unreachable rather than refused -- so `#write_exits!` always asks,
+  # and there is no cheaper one-call draw to model.
+  def draw_vantage!
+    vantage = vantage_or_abort
+    count = count_or_abort
+    arm = Eval::Classifier::Arm.all([ BaseAgent::REMOTE_MODEL_IDS.first ]).first
+
+    estimate_vantage!(count, arm)
+    refuse_without_confirmation
+    refuse_without_a_key(arm)
+
+    puts "Drawing the ways out of #{vantage.name.inspect} in #{vantage.world} " \
+         "#{count} #{"time".pluralize(count)} on #{arm.id}."
+    puts vantage.absent_names.any? ?
+      "Off the books first: #{vantage.absent_names.join(", ")}." :
+      "NOTHING is off the books, so every pick about a place this world already holds will be discarded."
+    puts
+    drawn = run_vantage_draws(vantage, count, arm)
+    report_vantage(vantage, drawn, arm)
+  end
+
+  def list_vantages!
+    vantages = Lab::Exits::Vantage.order(:id)
+    if vantages.empty?
+      puts "No vantages yet. The exits lab is at /lab/exits -- a vantage is typed there, not here."
+      return
+    end
+
+    vantages.each do |vantage|
+      rate = vantage.hit_rate
+      puts format("  %4d  %-28s %-24s %2d draw%s, %2d distinct, %s off the books",
+                  vantage.id, vantage.name, vantage.world, rate.drawn,
+                  rate.drawn == 1 ? "" : "s", rate.distinct_answers,
+                  vantage.absent_names.size.zero? ? "nothing" : vantage.absent_names.size.to_s)
+    end
   end
 
   def list!
@@ -157,6 +222,18 @@ module LabTasks
       abort "There is no kind #{id.inspect}. `rake lab:realization:kinds` lists the ones there are."
   end
 
+  # THE VANTAGE, BY THE ID THE PAGE PRINTS -- `#kind_or_abort`'s shape and its
+  # reason: a missing or unknown id is a person's mistake and gets a sentence
+  # naming the way to find the right one.
+  def vantage_or_abort
+    id = ENV["VANTAGE"].presence or
+      abort "VANTAGE=<id> is the vantage to draw. `rake lab:exits:vantages` lists them, and the lab " \
+            "at /lab/exits is where one is typed."
+
+    Lab::Exits::Vantage.find_by(id: id) or
+      abort "There is no vantage #{id.inspect}. `rake lab:exits:vantages` lists the ones there are."
+  end
+
   # HOW MANY. Required rather than defaulted, because a default would be this
   # file deciding how much of his money to spend; and a whole number above zero,
   # because `N=0` is a request to spend nothing that would print a rate over an
@@ -199,6 +276,68 @@ module LabTasks
                 Eval::Realization::PER_CALL["exits"][:input], Eval::Realization::PER_CALL["exits"][:output])
     abort "That is over the $#{format("%.2f", SPEND_CEILING)} this task will spend at all. Lower N." if
       priced > SPEND_CEILING
+  end
+
+  # BOTH CALLS, EVERY TIME -- see `#draw_vantage!`. Otherwise it is `#estimate!`'s
+  # arithmetic on the same `Eval::Realization::PER_CALL` figures and the same
+  # `Eval::Cost` registry, so the two commands cannot quote different prices for
+  # the same call.
+  def estimate_vantage!(count, arm)
+    calls = Eval::Realization::CALLS
+    priced = arm.price.of(count * calls.sum { |call| Eval::Realization::PER_CALL.fetch(call)[:input] },
+                          count * calls.sum { |call| Eval::Realization::PER_CALL.fetch(call)[:output] })
+
+    puts format("ESTIMATE: %d calls (%d draw%s x %s) on %s, about $%.4f.",
+                count * calls.size, count, count == 1 ? "" : "s", calls.join(" + "), arm.id, priced)
+    puts format("A vantage is never a building, so it is always both calls. Measured at %d in / %d out " \
+                "a detail call and %d in / %d out an exits call (Eval::Realization::PER_CALL).",
+                Eval::Realization::PER_CALL["detail"][:input], Eval::Realization::PER_CALL["detail"][:output],
+                Eval::Realization::PER_CALL["exits"][:input], Eval::Realization::PER_CALL["exits"][:output])
+    abort "That is over the $#{format("%.2f", SPEND_CEILING)} this task will spend at all. Lower N." if
+      priced > SPEND_CEILING
+  end
+
+  # THE DRAWS, ONE TRANSACTION EACH, A RUNNING TOTAL AFTER EVERY ONE --
+  # `#run_draws`' contract and its reason: an interrupted run leaves every sample
+  # it already bought and has still said what it spent.
+  def run_vantage_draws(vantage, count, arm)
+    spent = 0.0
+
+    (1..count).map do |draw|
+      sample = Lab::Exits::Runner.new(vantage, arm: arm.id).draw!
+      spent += cost_of(sample, arm)
+      puts format("  %3d/%-3d  draw #%-6d %-52s $%.4f so far",
+                  draw, count, sample.id, vantage_headline(sample), spent)
+      sample
+    rescue Eval::Realization::Stage::Unstageable => error
+      abort "  #{error.message}"
+    end
+  end
+
+  # WHAT ONE DRAW SAID, AS ONE LINE, and it is the two numbers this lab is about:
+  # how many places were named and how many of the bands given actually opened
+  # one. A draw whose second number is nought bought nothing measurable.
+  def vantage_headline(sample)
+    return "FAILED: #{sample.reading.error_class}" if sample.failed?
+    return "named nothing" unless sample.answered?
+
+    format("%d named, %d inside%s given, %d reaching", sample.named_places.size,
+           sample.insides_given.size, sample.insides_given.size == 1 ? "" : "s",
+           sample.insides_reaching.size)
+  end
+
+  def report_vantage(vantage, drawn, arm)
+    spent = drawn.sum { |sample| cost_of(sample, arm) }
+    failed = drawn.count(&:failed?)
+    reach = vantage.hit_rate.reach
+
+    puts
+    puts format("Drew %d, %d failed, $%.4f spent. %s now has %d draw%s.",
+                drawn.size, failed, spent, vantage.name, vantage.samples.count,
+                vantage.samples.count == 1 ? "" : "s")
+    puts format("Over every draw of it: %d place%s named, %d given an inside, %d of those reaching " \
+                "the world.", reach.named, reach.named == 1 ? "" : "s", reach.given, reach.reaching)
+    puts "Look at them, judge each place and read the rate at /lab/exits/vantages/#{vantage.id}."
   end
 
   def refuse_without_a_key(arm)

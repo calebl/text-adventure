@@ -51,6 +51,12 @@
 # corpus case really re-runs what the lab scored. Two copies of it would be two
 # answers to what a typed stub is, which is exactly what this codebase refuses.
 #
+# AND IT IS SUBCLASSED RATHER THAN COPIED. `Lab::Exits::Runner` draws the same
+# realization from the same staging and differs in three methods -- the staging
+# label, the board shape and the ad-hoc case -- because a draw for the exits lab
+# IS a draw for this one, read from the other end. One spelling of "what a lab
+# draw is", which is the same argument that moved the staging into `Stage`.
+#
 # ONE SAMPLE PER TRANSACTION, deliberately: the development database has one
 # writer, so a lab draw and a long rake task cannot both be inside a transaction
 # at once. Scoping it to a single draw is what keeps the lab usable while
@@ -67,6 +73,18 @@ class Lab::Realization::Runner
   SHAPE = "lab".freeze
 
   attr_reader :kind, :arm
+
+  # THE TWO SEAMS A SIBLING LAB OVERRIDES, AND THEY ARE METHODS RATHER THAN BARE
+  # CONSTANTS FOR ONE REASON: Ruby resolves a constant LEXICALLY, so `LABEL` read
+  # inside this class would still be this class's in a subclass, and
+  # `Lab::Exits::Runner` would stage its copies of the captain's worlds under the
+  # words "realization lab". A title that somehow escaped a rollback has to say
+  # which instrument made it.
+  #
+  # `#ad_hoc_case` below is the third and the only one with any substance in it.
+  def label = LABEL
+
+  def shape = SHAPE
 
   # THE MODEL, NAMED EXPLICITLY, WITH THE ROTATION OFF -- `Eval::Classifier::Arm`,
   # shared with all three benches rather than copied. The default is
@@ -108,7 +126,7 @@ class Lab::Realization::Runner
     reading = nil
 
     Eval::Concurrency.rolled_back do
-      standing = Eval::Realization::Stage.new(kase, label: LABEL).stand!
+      standing = Eval::Realization::Stage.new(kase, label: label).stand!
 
       arm.pinned { reading = bench.build(kase, standing, arm, 1) }
     end
@@ -143,7 +161,7 @@ class Lab::Realization::Runner
       id: "lab-kind-#{kind.id}", story: kind.world, room: kind.name, teaser: kind.teaser,
       reached_from: kind.reached_from.presence, danger: kind.danger.presence,
       inside: kind.inside.presence, population: kind.population.presence,
-      expects_new_ground: true, shape: SHAPE,
+      expects_new_ground: true, shape: shape,
       why: "typed in the realization lab as #{kind.name.inspect}"
     )
   end

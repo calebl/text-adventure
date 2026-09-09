@@ -1,0 +1,136 @@
+<%# A VANTAGE, TYPED. `Lab::Exits::Vantage`'s header is the design.
+
+    SIX FACTS AND NO PROMPT FIELD. The name and the teaser are the only two
+    things `Location::Generator#detail_prompt` states about the place itself --
+    everything else in that prompt is the world around it -- so "type a place for
+    the model to look out from" really is "type a name and a teaser".
+
+    AND NO `inside` BAND, WHICH IS THE ONE FIELD A READER WILL LOOK FOR. A
+    vantage with a band becomes a laid-out place and
+    `Location::Generator#write_exits!` returns early on one, so the field would
+    silently cancel the only call this lab measures. Not offered, and the note
+    below says so where he would have looked. %>
+<%= form_with url: lab_exits_vantages_path, method: :post, class: "lab-form" do |form| %>
+  <% if vantage.errors.any? %>
+    <div class="panel">
+      <% vantage.errors.full_messages.each do |message| %>
+        <p class="warn"><%= message %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="panel">
+    <div class="fields">
+      <div class="k">world</div>
+      <div class="v">
+        <%= select_tag "vantage[world]",
+                       options_for_select(Eval::Realization::STORIES, vantage.world) %>
+        <span class="absent">(one the lab has a seed file for)</span>
+      </div>
+
+      <div class="k">name</div>
+      <div class="v"><%= text_field_tag "vantage[name]", vantage.name, size: 48, maxlength: 60 %></div>
+
+      <div class="k">
+        teaser
+        <br><span class="absent">(the one sentence the detail call is given about this place)</span>
+      </div>
+      <div class="v"><%= text_area_tag "vantage[teaser]", vantage.teaser, rows: 3, cols: 64 %></div>
+
+      <div class="k">
+        reached from
+        <br><span class="absent">(the way back. Leave it empty for an opening room)</span>
+      </div>
+      <div class="v">
+        <%= text_field_tag "vantage[reached_from]", vantage.reached_from, size: 48 %>
+      </div>
+
+      <%# THE FIELD THIS LAB EXISTS AROUND. `Lab::Exits`'s header has the four
+          bought draws that made it the load-bearing input. %>
+      <div class="k">
+        off the books
+        <br><span class="absent">(one place per line, removed before the call)</span>
+      </div>
+      <div class="v">
+        <%= text_area_tag "vantage[absent]", vantage.absent, rows: 4, cols: 64 %>
+        <p class="note">
+          A world that still holds unrealized stubs has its exits call name
+          <em>those</em> &mdash; correctly, because the prompt lists them and asks
+          for reuse &mdash; and the engine then discards the
+          <code>inside</code> band for a place that already exists. Four bought
+          draws of a vantage with nothing off the books opened
+          <strong>zero</strong> new places and threw away every pick. This is what
+          gives the model a reason to invent.
+        </p>
+        <p class="note">
+          It does not stop the model naming the place: the universe and the
+          preface still describe it, so the name arrives as new ground and the
+          pick reaches the world. That is the knob working.
+        </p>
+        <p class="note">
+          One name per line, not comma-separated &mdash; a place in these worlds
+          is called <code>Grenn's Boarding House, Room 3</code>.
+        </p>
+        <p class="note">
+          It is a list of <em>places</em> and not of subtrees: naming a building
+          removes that place, and the rooms a world file declares under it stay on
+          the prompt's reuse list. Name the rooms too if you want them gone.
+        </p>
+      </div>
+
+      <div class="k">
+        danger
+        <br><span class="absent">(rolled if you leave it)</span>
+      </div>
+      <div class="v">
+        <%= select_tag "vantage[danger]",
+                       options_for_select([ [ "(rolled)", "" ] ] + Location::DANGERS.keys, vantage.danger) %>
+      </div>
+
+      <%# THE EXPECTATION'S FIRST HALF. The per-name half is typed on the
+          vantage's own page, because it is keyed on a place and he has not seen
+          one yet. %>
+      <div class="k">
+        expects: how many have an inside
+        <br><span class="absent">(over the whole answer. Leave it for <em>don't care</em>)</span>
+      </div>
+      <div class="v">
+        <label class="lab-choice">
+          <%= radio_button_tag "expects_inside_quantifier", "", vantage.expects_inside_quantifier.blank? %>
+          <span class="absent">(don't care)</span>
+        </label>
+        <% Lab::Exits::QUANTIFIER_NAMES.each do |name| %>
+          <label class="lab-choice">
+            <%= radio_button_tag "expects_inside_quantifier", name,
+                                 vantage.expects_inside_quantifier == name %>
+            <%= name %>
+          </label>
+        <% end %>
+      </div>
+
+      <div class="k">
+        expects: population words
+        <br><span class="absent">(every place named has to get one of these)</span>
+      </div>
+      <div class="v">
+        <% Location::Population::LABELS.each do |label| %>
+          <label class="lab-choice">
+            <%= check_box_tag "expects_population[]", label,
+                              vantage.expects_population_labels.to_a.include?(label),
+                              id: "expects_population_#{label.parameterize}" %>
+            <%= label %>
+          </label>
+        <% end %>
+      </div>
+    </div>
+
+    <p class="note">
+      There is no <code>inside</code> band here and its absence is deliberate: a
+      vantage with one becomes a building, and a building's ways out are its
+      rooms' &mdash; so <code>#write_exits!</code> would never make the call this
+      lab measures. That band is what the <em>realization</em> lab hands over,
+      and it is the pick this lab watches the model make.
+    </p>
+    <p><%= submit_tag "type this vantage" %></p>
+  </div>
+<% end %>

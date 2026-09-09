@@ -1,0 +1,182 @@
+<%# EVERY PLACE THIS VANTAGE'S DRAWS HAVE NAMED, plus every place he typed an
+    expectation for -- one block each, with what he expects of it and what he
+    thinks of it. The captain's Calls 3 (a) and 4 (c) of 2026-09-08, on one
+    surface, because they are two halves of one row.
+    `Lab::Exits::Judgement`'s header draws the line between them.
+
+    KEYED ON `Lab::Exits.key_for`, so `Rust Market` and `The Rust Market` are one
+    block. That is the repo's one spelling of "the same name written differently",
+    and since `Location::Generator#find_location` resolves through it, this page
+    cannot disagree with the engine about which place a name meant.
+
+    A PLACE HE TYPED THAT NO DRAW HAS NAMED IS SHOWN DASHED AND NEVER AS A MISS.
+    Measured: 26 of 66 place names on the stored baseline appeared in exactly one
+    of four repetitions, so scoring an unnamed expectation as a failure would
+    report a wall of misses about a prompt that did nothing wrong. %>
+
+<%# WHAT THE DRAWS NAMED, grouped by place, with the picks each name received. %>
+<% drawn = vantage.samples.in_draw_order.reject(&:failed?)
+        .flat_map { |sample| sample.named_places.map { |place| [ place, sample ] } }
+        .group_by { |place, _sample| place.key } %>
+<% typed = vantage.judgements.by_name.index_by(&:name_key) %>
+
+<% if drawn.empty? && typed.empty? %>
+  <p class="absent">(nothing named and nothing typed yet)</p>
+<% end %>
+
+<% (drawn.keys + typed.keys).uniq.each do |key| %>
+  <% appearances = drawn[key] || [] %>
+  <% judgement = typed[key] %>
+  <% name = appearances.first&.first&.name || judgement&.name %>
+  <% reaching = appearances.any? { |place, _sample| place.inside? && place.new_place? } %>
+  <div class="place <%= "reaching" if reaching %> <%= "unmet" if appearances.empty? %>"
+       id="place-<%= key.parameterize %>">
+    <h3><%= name %></h3>
+
+    <% if appearances.empty? %>
+      <p class="absent">
+        (you typed this and no draw has named it yet &mdash; out of every
+        denominator rather than a miss)
+      </p>
+    <% else %>
+      <p class="note">
+        named in <%= pluralize(appearances.size, "draw") %> of
+        <%= vantage.samples.reject(&:failed?).size %>
+      </p>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr><th>draw</th><th>inside</th><th>population</th><th>how far</th><th>how</th><th>the engine</th></tr>
+          </thead>
+          <tbody>
+            <% appearances.each do |place, sample| %>
+              <tr>
+                <td><%= link_to "##{sample.id}", lab_exits_sample_path(sample) %></td>
+                <td><%= lab_pick(place.band, judgement&.expects(Lab::Exits.pick("inside"))) %></td>
+                <td><%= lab_pick(place.population, judgement&.expects(Lab::Exits.pick("population"))) %></td>
+                <td><%= place.distance %></td>
+                <td><%= place.travel_method %></td>
+                <td>
+                  <% if !place.new_place? %>
+                    <span class="absent">
+                      the place already existed<%= ", so the band was discarded" if place.inside? %>
+                    </span>
+                  <% elsif place.inside? %>
+                    <span class="pick hit">opened it, with an inside to lay out</span>
+                  <% else %>
+                    <span class="absent">opened it, no inside</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">
+        <% teaser = appearances.last.first.teaser %>
+        <% if teaser.present? %>
+          The model's own line for it, last draw: <em><%= teaser %></em>
+        <% end %>
+      </p>
+    <% end %>
+
+    <%# THE TWO HALVES, IN ONE FORM, AND EITHER MAY BE POSTED ALONE.
+        `Lab::Exits::JudgementsController#recorded` leaves an absent half alone,
+        so typing an expectation does not throw away a verdict and vice versa.
+        Two forms so a submit says which half it means. %>
+    <%= form_with url: lab_exits_vantage_judgements_path(vantage), method: :post, class: "lab-form" do %>
+      <%= hidden_field_tag :name, name %>
+      <div class="fields">
+        <div class="k">
+          expects
+          <br><span class="absent">(typed in advance, scored by equality)</span>
+        </div>
+        <div class="v">
+          <% Lab::Exits.picks.each do |pick| %>
+            <div>
+              <span class="absent"><%= pick.name %>:</span>
+              <% pick.values.each do |value| %>
+                <label class="lab-choice">
+                  <%= check_box_tag "expects[#{pick.name}][]", value,
+                                    judgement&.expects(pick).to_a.include?(value),
+                                    id: "expects_#{key.parameterize}_#{pick.name}_#{value.parameterize}" %>
+                  <%= value %>
+                </label>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+      <p><%= submit_tag "expect this of #{name}" %></p>
+    <% end %>
+
+    <%= form_with url: lab_exits_vantage_judgements_path(vantage), method: :post, class: "lab-form" do %>
+      <%= hidden_field_tag :name, name %>
+      <div class="fields">
+        <div class="k">your verdict on this place</div>
+        <div class="v">
+          <% Lab::Exits::Judgement::VERDICTS.each do |verdict| %>
+            <label class="lab-choice">
+              <%= radio_button_tag :verdict, verdict, judgement&.verdict == verdict,
+                                   id: "verdict_#{key.parameterize}_#{verdict}" %>
+              <%= debug_verdict(verdict) %>
+            </label>
+          <% end %>
+          <label class="lab-choice">
+            <%= radio_button_tag :verdict, "", judgement&.verdict.blank?,
+                                 id: "verdict_#{key.parameterize}_none" %>
+            <span class="absent">(none)</span>
+          </label>
+        </div>
+
+        <div class="k">
+          which pick
+          <br><span class="absent">(only on a weak or a bad; none of them is a complete answer)</span>
+        </div>
+        <div class="v">
+          <% Lab::Exits::Judgement::ASPECTS.each do |aspect| %>
+            <label class="lab-choice">
+              <%= check_box_tag "aspects[]", aspect, judgement&.aspect?(aspect),
+                                id: "aspect_#{key.parameterize}_#{aspect}" %>
+              <%= aspect.tr("_", " ") %>
+            </label>
+          <% end %>
+        </div>
+
+        <div class="k">note</div>
+        <div class="v"><%= text_area_tag :note, judgement&.note, rows: 2, cols: 64,
+                                         id: "note_#{key.parameterize}" %></div>
+      </div>
+      <p><%= submit_tag judgement&.verdict? ? "amend the verdict" : "record the verdict" %></p>
+    <% end %>
+  </div>
+<% end %>
+
+<h3>a place you expect but have not seen</h3>
+<div class="panel">
+  <p class="note">
+    Type a name you think this vantage's exits call ought to produce and what its
+    picks should be. It scores every draw that names it &mdash; before or after
+    you type it &mdash; and a draw that never names it leaves this out of the
+    figure entirely.
+  </p>
+  <%= form_with url: lab_exits_vantage_judgements_path(vantage), method: :post, class: "lab-form" do %>
+    <div class="fields">
+      <div class="k">the place</div>
+      <div class="v"><%= text_field_tag :name, nil, size: 40, maxlength: 120 %></div>
+      <% Lab::Exits.picks.each do |pick| %>
+        <div class="k">expects <%= pick.name %></div>
+        <div class="v">
+          <% pick.values.each do |value| %>
+            <label class="lab-choice">
+              <%= check_box_tag "expects[#{pick.name}][]", value, false,
+                                id: "new_expects_#{pick.name}_#{value.parameterize}" %>
+              <%= value %>
+            </label>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    <p><%= submit_tag "expect this place" %></p>
+  <% end %>
+</div>
