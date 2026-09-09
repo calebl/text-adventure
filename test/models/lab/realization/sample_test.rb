@@ -110,6 +110,26 @@ class Lab::Realization::SampleTest < ActiveSupport::TestCase
     assert_match(/"vibes"/, sample.errors[:aspects].to_sentence)
   end
 
+  # THE SCORER'S TWO QUESTIONS, ASKED OF ONE ROW. A check can be read on this
+  # sample, and did it fire -- the two the agreement figure stands on, and both
+  # answered by the bench's own scorer rather than by a second reading of the
+  # row.
+  test "a sample says which checks could be read on it and which of them fired" do
+    sample = create(:lab_realization_sample, :a_room)
+
+    assert sample.judges?(:people_short_of_the_pick)
+    assert sample.flagged?(:people_short_of_the_pick)
+    assert sample.judges?(:exit_already_reachable)
+    assert_not sample.flagged?(:exit_already_reachable)
+  end
+
+  test "a failed call could be read for nothing" do
+    sample = create(:lab_realization_sample, :failed)
+
+    assert_empty Eval::Realization.checks.select { |code| sample.judges?(code) }
+    assert_empty sample.flags
+  end
+
   # THE THREE WORDS ARE THE PLAY PAGE'S, and one spelling of them is the point:
   # a second table here would be a second ordering to keep in step with his
   # verdicts on turns.

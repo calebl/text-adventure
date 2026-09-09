@@ -37,8 +37,14 @@ class Lab::KindsController < ApplicationController
   before_action :require_debug_view
   before_action :load_kind, only: [ :show, :update, :destroy ]
 
+  # THE BOARD, AND THE AGREEMENT IS ON IT. Both figures the lab computes are
+  # offline and free -- the hit rate per kind on its own page, and the checks
+  # against his verdicts here, over every sample in the lab at once. It is over
+  # every sample because a check's agreement is a property of the CHECK rather
+  # than of one kind he typed, which is `Lab::Exits::Alignment`'s reason for
+  # living over the whole set of vantages rather than on each one.
   def index
-    @kinds = Lab::Realization::Kind.newest_first.includes(:samples)
+    load_board
     @kind = Lab::Realization::Kind.new
   end
 
@@ -53,7 +59,7 @@ class Lab::KindsController < ApplicationController
 
     return redirect_to lab_kind_path(@kind) if @kind.save
 
-    @kinds = Lab::Realization::Kind.newest_first.includes(:samples)
+    load_board
     render :index, status: :unprocessable_content
   end
 
@@ -85,6 +91,15 @@ class Lab::KindsController < ApplicationController
 
   def load_kind
     @kind = Lab::Realization::Kind.find(params[:id])
+  end
+
+  # WHAT THE BOARD RENDERS, and it is loaded by the failed #create as well as by
+  # #index -- a form that comes back with an error comes back on the whole page,
+  # and a board missing half of itself because the name was too long would be a
+  # second version of this page nobody looked at.
+  def load_board
+    @kinds = Lab::Realization::Kind.newest_first.includes(:samples)
+    @agreement_sets = Lab::Realization::Agreement.sets
   end
 
   # THE FOUR PARAMETERS AND NOT ONE MORE, and the absence of a fifth is the

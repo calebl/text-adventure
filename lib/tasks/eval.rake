@@ -30,6 +30,13 @@
 #   rake eval:realization_board    every stored set as one table
 #   rake eval:realization_compare  two sets, with a verdict per figure
 #
+# AND ONE THAT MEASURES THOSE CHECKS RATHER THAN THE PROMPT: whether they agree
+# with the captain's own verdicts on the samples he judged in the realization lab.
+# It reads the database and no stored set, which is why it is here rather than
+# beside the three above -- `Lab::Realization::Agreement` has the design:
+#
+#   rake eval:realization_alignment  the checks against his verdicts, offline and free
+#
 # GENERATION SPENDS MONEY AND MUST NEVER RUN IN CI. It needs `OPENROUTER_API_KEY`
 # and refuses to start without one; scoring needs nothing at all. `EVALUATION.md`
 # is the protocol.
@@ -215,6 +222,12 @@ namespace :eval do
        "call, no key. Usage: rake eval:realization_digest [SET=<name>]"
   task realization_digest: :environment do
     RealizationTasks.digest!
+  end
+
+  desc "Whether the realization checks agree with the captain's own lab verdicts -- offline, free, " \
+       "no model call, no key. Usage: rake eval:realization_alignment"
+  task realization_alignment: :environment do
+    Lab::Realization::Agreement::Report.new(Lab::Realization::Agreement.sets).print
   end
 
   desc "Every realization bench set on disk as one table. Usage: rake eval:realization_board SETS=a,b"

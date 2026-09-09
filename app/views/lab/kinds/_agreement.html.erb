@@ -1,0 +1,120 @@
+<%# ONE SET'S AGREEMENT: whether the record checks agree with his own verdicts.
+
+    `Lab::Realization::Agreement`'s header is the design -- what an eligible
+    verdict is, why a prose verdict says nothing about the exits, and why the
+    percentage is withheld below the threshold.
+
+    TWO DENOMINATORS ON EVERY ROW, because "the check could not be read on
+    anything drawn" and "nothing he said speaks to it" are different states and
+    one number would hide which of them a reader is looking at. Neither is ever
+    printed as nought. %>
+<h3>
+  <%= set.label %>
+  <% if set.label == Lab::Realization::Agreement::HELD_OUT %>
+    <span class="warn">[<%= Eval::HELD_OUT %> &mdash; apart, never pooled with the tuning worlds]</span>
+  <% end %>
+</h3>
+
+<% if set.drawn.zero? %>
+  <p class="absent">(nothing drawn in <%= set.label == Lab::Realization::Agreement::HELD_OUT ? "the held-out world" : "the tuning worlds" %> yet)</p>
+<% else %>
+  <p class="note">
+    <%= pluralize(set.drawn, "sample") %>,
+    <%= set.judged.size %> judged,
+    <%= set.unjudged %> unjudged,
+    <%= set.failed %> failed.
+    <% if set.verdicts.any? %>
+      &nbsp;&middot;&nbsp;
+      <% Lab::Realization::Sample::VERDICTS.each do |word| %>
+        <%= debug_verdict(word) %> <%= set.verdicts[word].to_i %>&nbsp;
+      <% end %>
+    <% end %>
+  </p>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>check</th><th>judgeable</th><th>eligible</th><th>agreement</th>
+          <th>fired on good</th><th>weak</th><th>bad</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% set.readings.each do |reading| %>
+          <tr>
+            <td>
+              <%= reading.code.to_s.tr("_", " ") %>
+              <% if reading.keyword? %><span class="absent">[keyword]</span><% end %>
+            </td>
+            <% if !reading.available? %>
+              <td colspan="6" class="absent">
+                (unavailable &mdash; nothing drawn gave this check anything to read)
+              </td>
+            <% elsif !reading.judged? %>
+              <td><%= reading.judgeable %></td>
+              <td colspan="5" class="absent">
+                (no verdict yet says anything about this check)
+              </td>
+            <% else %>
+              <td><%= reading.judgeable %></td>
+              <td><%= reading.eligible %></td>
+              <td>
+                <%= reading.fraction %>
+                <% if reading.established? %>
+                  &nbsp;<%= reading.percentage %>%
+                <% else %>
+                  <span class="absent">&mdash; not established</span>
+                <% end %>
+              </td>
+              <td><%= reading.on_good.positive? ? tag.span(reading.on_good, class: "warn") : 0 %></td>
+              <td><%= reading.on_weak %></td>
+              <td><%= reading.on_bad %></td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%# THE DISAGREEMENTS, OPENABLE. A count is a complaint; the sample page beside
+      it carries the prompt as sent, which is the only thing that tells a wrong
+      check from a right one. %>
+  <h4>suspects &mdash; a check that fired on a sample you called good</h4>
+  <% if set.suspects.empty? %>
+    <p class="absent">(none)</p>
+  <% else %>
+    <ul class="evidence">
+      <% set.suspects.each do |suspect| %>
+        <li>
+          <%= link_to "sample ##{suspect.sample.id}", lab_sample_path(suspect.sample) %>
+          <%= suspect.code.to_s.tr("_", " ") %>
+          &mdash; <%= suspect.sample.kind.name %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <h4>missed &mdash; a sample you called weak or bad that no check fired on</h4>
+  <% if set.missed.empty? %>
+    <p class="absent">(none)</p>
+  <% else %>
+    <ul class="evidence">
+      <% set.missed.each do |sample| %>
+        <li>
+          <%= link_to "sample ##{sample.id}", lab_sample_path(sample) %>
+          <%= debug_verdict(sample.verdict) %>
+          <%= sample.aspect_names.any? ? sample.aspect_names.join(", ") : tag.span("(no aspect ticked)", class: "absent") %>
+          &mdash; <%= sample.kind.name %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <h4>prose &mdash; kept, reported, never scored</h4>
+  <p class="note">
+    <%= set.prose_verdicts %> of <%= pluralize(set.judged.size, "judged sample") %>
+    faulted for their prose. No check reads prose and none is going to
+    (<code>Eval::Realization::UNAVAILABLE_TO_A_REALIZATION</code>), so this is
+    ground truth for a check that does not exist &mdash; not an agreement figure.
+  </p>
+<% end %>

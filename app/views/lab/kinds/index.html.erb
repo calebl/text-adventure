@@ -49,5 +49,27 @@
   </div>
 <% end %>
 
+<h2>the agreement</h2>
+<p class="note">
+  The other direction of the same calibration. The hit rate on a kind's page asks
+  whether the model picked what you said it should; this asks whether the
+  realization bench's own checks agree with YOU &mdash; a check that fires on a
+  sample you called good is suspect, and a sample you called bad that nothing
+  flagged is the next check to write. Offline and free: it is read off samples
+  already bought, and <code>rake eval:realization_alignment</code> prints the same
+  figures with the evidence.
+</p>
+<p class="note">
+  An ELIGIBLE verdict is one that speaks to the check. A sample you called good
+  speaks to every check that could be read on it; a weak or a bad speaks only to
+  the checks the aspects you ticked name, so a room faulted for its prose is in no
+  exit check's denominator. Below
+  <%= Story::Scoreboard::MIN_VERDICTS %> eligible verdicts the counts are shown and no
+  percentage is.
+</p>
+<% @agreement_sets.each do |set| %>
+  <%= render "lab/kinds/agreement", set: set %>
+<% end %>
+
 <h2>a new kind</h2>
 <%= render "lab/kinds/form", kind: @kind %>

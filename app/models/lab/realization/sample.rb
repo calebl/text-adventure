@@ -83,7 +83,20 @@ class Lab::Realization::Sample < ApplicationRecord
   # AND WHAT THE CHECKS MADE OF IT, computed here and never stored. One row's
   # flags, each with the evidence sentence a reader needs to see whether the
   # check was right (`Eval::Realization::Scorer::Flag`).
-  def flags = @flags ||= Eval::Realization::Scorer.new([ stored_row ]).flags
+  def flags = @flags ||= scorer.flags
+
+  # THE BENCH'S SCORER OVER THIS ONE ROW, memoized so the three questions below
+  # cost one pass between them. One row, so every count it answers is nought or
+  # one.
+  def scorer = @scorer ||= Eval::Realization::Scorer.new([ stored_row ])
+
+  # WHETHER THIS ROW GAVE ONE CHECK ANYTHING TO READ. The denominator's gate on
+  # the agreement side, and it is the SCORER's own
+  # (`Eval::Realization::Scorer#judgeable_for`) rather than a second reading of
+  # the same row -- a check unavailable here is unavailable on the bench.
+  def judges?(code) = scorer.judgeable_for(code).positive?
+
+  def flagged?(code) = flags.any? { |flag| flag.code == code.to_sym }
 
   def failed? = reading.failed?
 
