@@ -106,7 +106,30 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
 
     assert_includes table, "`#{ARM}`"
     assert_includes table, "`room_name_refused`"
-    assert_not_includes table, "not recorded", "every figure the board prints was recorded"
+    Eval::Realization::Result::REPORTED_METRICS.each_key do |figure|
+      next if result.values(figure, arm: ARM).compact.empty?
+
+      assert_not_includes Eval::Realization::Board.new([ [ BASELINE, result ] ]).lines
+                                                  .grep(/`#{figure}` \(reported\)/).join, "not recorded",
+                          "#{figure} is in this summary and the board printed it as missing"
+    end
+  end
+
+  # AND A FIGURE THE SUMMARY DOES NOT HOLD SAYS SO. A kept set is frozen the day
+  # it is written, so every check and figure added afterwards is one it was
+  # never asked -- `insides_reaching` is the current example. The board must
+  # print `not recorded` and the checks `unavailable` for those, and never
+  # 0.000, which would read as a set that measured the question and cleared it.
+  # This is the same rule `Eval::Realization::Report#checks` holds inside one
+  # run, applied across the years between two.
+  test "a figure written after the baseline was kept reads as missing and never as nought" do
+    table = Eval::Realization::Board.new([ [ BASELINE, kept ] ]).lines
+
+    kept.passes.each do |pass|
+      assert_nil pass.figure(:insides_reaching), "the summary predates the figure and must not invent one"
+    end
+    assert_match(/not recorded/, table.grep(/`insides_reaching`/).sole)
+    assert_match(/unavailable/, table.grep(/`inside_on_a_place_that_already_exists`/).sole)
   end
 
   test "the baseline is small enough to belong in a repository" do
