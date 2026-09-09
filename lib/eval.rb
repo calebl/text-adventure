@@ -145,6 +145,7 @@ module Eval
     db/eval/interior-entry-after-2/realization.json
     db/eval/room-people-after/realization.json
     db/eval/kind-to-corpus-after/realization.json
+    db/eval/exits-quantifier-after/realization.json
     db/eval/null-2026-09-07/realization.json
   ].freeze
 

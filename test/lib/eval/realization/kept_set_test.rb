@@ -117,19 +117,58 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
 
   # AND A FIGURE THE SUMMARY DOES NOT HOLD SAYS SO. A kept set is frozen the day
   # it is written, so every check and figure added afterwards is one it was
-  # never asked -- `insides_reaching` is the current example. The board must
-  # print `not recorded` and the checks `unavailable` for those, and never
-  # 0.000, which would read as a set that measured the question and cleared it.
-  # This is the same rule `Eval::Realization::Report#checks` holds inside one
-  # run, applied across the years between two.
-  test "a figure written after the baseline was kept reads as missing and never as nought" do
-    table = Eval::Realization::Board.new([ [ BASELINE, kept ] ]).lines
+  # never asked. The board must print `not recorded` and the checks
+  # `unavailable` for those, and never 0.000, which would read as a set that
+  # measured the question and cleared it. This is the same rule
+  # `Eval::Realization::Report#checks` holds inside one run, applied across the
+  # time between two.
+  #
+  # ASSERTED ON A FROZEN HISTORICAL SET AND NOT ON THE BASELINE, which is the
+  # one thing that has to move when the baseline does. A freshly bought baseline
+  # records every figure this tree has -- that is what buying one MEANS -- so
+  # holding this rule to `BASELINE` would make it a test that passes only while
+  # the baseline is stale, and it would fail on the day somebody did the right
+  # thing. `kind-to-corpus-after` was bought before the captain's Call 7 of
+  # 2026-09-08 added `insides_reaching` and
+  # `inside_on_a_place_that_already_exists`, and it is kept as history and never
+  # rewritten, so it is the honest subject.
+  PREDATES_THE_REACH_FIGURES = "kind-to-corpus-after".freeze
 
-    kept.passes.each do |pass|
+  test "a figure written after a kept set was frozen reads as missing and never as nought" do
+    older = Eval::Realization::Result.load(Eval.kept_root.join(PREDATES_THE_REACH_FIGURES))
+    table = Eval::Realization::Board.new([ [ PREDATES_THE_REACH_FIGURES, older ] ]).lines
+
+    older.passes.each do |pass|
       assert_nil pass.figure(:insides_reaching), "the summary predates the figure and must not invent one"
     end
     assert_match(/not recorded/, table.grep(/`insides_reaching`/).sole)
     assert_match(/unavailable/, table.grep(/`inside_on_a_place_that_already_exists`/).sole)
+  end
+
+  # AND THE BASELINE'S OWN SIDE OF THAT RULE: it was bought after those two
+  # landed, so it really does hold them -- which is what makes it a baseline for
+  # the checks this tree scores rather than a set with holes in it.
+  test "the baseline holds the figures this tree measures" do
+    kept.passes.each do |pass|
+      assert_not_nil pass.figure(:insides_reaching),
+                     "a baseline bought today measures every figure today's scorer reports"
+      assert_operator pass.judgeable["inside_on_a_place_that_already_exists"].to_i, :>, 0
+    end
+  end
+
+  # THE TWO INSIDE CHECKS EARNED A DENOMINATOR, which is what makes this set a
+  # baseline for the captain's Call 6 of 2026-09-08 rather than a run beside it.
+  # The corpus labels six cases -- three with a ceiling quantifier and three with
+  # a floor -- so each check is judgeable on three and neither reports
+  # `unavailable`. A rate is NOT asserted: this file pins no rate, for the reason
+  # at the top of it.
+  test "the baseline was taken with a quantifier on both sides of the inside pair" do
+    kept.passes.each do |pass|
+      assert_operator pass.judgeable["inside_where_the_world_wanted_none"].to_i, :>, 0,
+                      "no case in this set carries a ceiling quantifier, so it is not a baseline for that check"
+      assert_operator pass.judgeable["no_inside_where_the_world_wanted_one"].to_i, :>, 0,
+                      "no case in this set carries a floor quantifier, so it is not a baseline for that check"
+    end
   end
 
   test "the baseline is small enough to belong in a repository" do
