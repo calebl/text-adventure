@@ -485,10 +485,9 @@ class Playthrough::Debug
     flags.select { |flag| scene_ids.include?(flag.scene&.id) }.reverse
   end
 
-  # Who the records place in this room. The same read
-  # `Scene::Generator.characters_present` makes, through the same scope, and
-  # deliberately so: it is what the game will answer with next time somebody
-  # walks in here, so a second opinion would be a second answer.
+  # Who the WORLD places in this room, for the world-location table. Arrival
+  # and turn evidence instead use this playthrough's whereabouts and bodies;
+  # `cast_line` must not use this world-only reader for a follower.
   #
   # It used to read the last scene in this location that had recorded anybody,
   # because that was the only place presence lived. `characters.location_id` is
@@ -560,17 +559,17 @@ class Playthrough::Debug
 
   # THE CAST ON THE TURN, and whether it still agrees with the records. Every
   # branch writes one now -- `Playthrough::Turn#play` snapshots
-  # `Character.present_in` onto the turn beside `typed` -- so an EMPTY cast is
+  # `Playthrough#cast_in` onto the turn beside `typed` -- so an EMPTY cast is
   # the surprising case rather than a full one, and a cast that no longer
   # matches the room is a record of somebody having moved since.
   def cast_line(scene)
     recorded = scene.characters.to_a
     return "no cast recorded -- a turn played before Playthrough::Turn#play snapshotted one" if recorded.empty?
 
-    now = Scene::Generator.characters_present(scene.location)
+    now = playthrough.characters_located_in(scene.location)
     moved = (recorded - now).map(&:fullname)
 
-    "cast recorded (#{recorded.size}), snapshotted from Character.present_in" +
+    "cast recorded (#{recorded.size}), snapshotted from Playthrough#cast_in" +
       (moved.any? ? " -- #{moved.join(", ")} #{moved.one? ? "is" : "are"} no longer in this room" : "")
   end
 

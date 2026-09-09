@@ -142,6 +142,9 @@ class Quest::DeadlineTest < ActiveSupport::TestCase
     deepest = open_rooms(Quest::Deadline::GRACE_ROOMS + 1).last
     warren = create(:location, story: @story, name: "Blackfang Warren", width: 12, depth: 10)
     Location::Interior.lay_out!(warren)
+    # This case tests building reuse with room to admit the prince. Generated
+    # rooms otherwise roll their population, which can correctly offer no slot.
+    warren.child_locations.each { |room| room.update!(population: "a crowd") }
     connect!(deepest, Location::Interior.entry_room(warren))
 
     assert_difference "Location.where(parent_location_id: nil).count", 0 do
@@ -150,6 +153,7 @@ class Quest::DeadlineTest < ActiveSupport::TestCase
 
     prince = @story.characters.find_by(fullname: "Prince Aurel Durn")
 
+    assert_not_nil prince
     assert_equal warren, prince.location.parent_location
     assert_nil @story.locations.find_by(name: "where Prince Aurel Durn is")
   end
