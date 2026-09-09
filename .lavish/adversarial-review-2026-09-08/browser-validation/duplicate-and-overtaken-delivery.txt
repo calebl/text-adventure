@@ -1,0 +1,19 @@
+A DUPLICATE DELIVERY AND AN OVERTAKEN ONE, driven against the running app
+
+1. The same submission token and line POSTed twice from the page (a browser resend).
+   Result: one command row, one scene, one Interaction row, and exactly two model
+   calls in total -- the redelivery replayed the stored outcome and bought nothing.
+
+35:2026-09-09T10:41:31-04:00  interaction                        mistralai/mistral-medium-3.1 answered offered=['none', 'follow']
+36:2026-09-09T10:41:31-04:00  narrator                           mistralai/mistral-medium-3.1 answered
+
+2. An OVERTAKEN submission redelivered after newer turns landed:
+   NarrationJob.perform_later(3, "/go The Vestry Hulk", "e4c2ffd0-...") -- the token of
+   command 29, which had failed and been overtaken by commands 30 and 31.
+   The job took the overtaken? path, wrote nothing, broadcast nothing, and the page
+   kept the newer state with no obsolete failure alert:
+
+44415:[ActiveJob] [NarrationJob] [81d86f6c-666a-4c98-8e6c-c3d421c54728] Performing NarrationJob (Job ID: 81d86f6c-666a-4c98-8e6c-c3d421c54728) from SolidQueue(default) enqueued at 2026-09-09
+44429:[ActiveJob] [NarrationJob] [81d86f6c-666a-4c98-8e6c-c3d421c54728]   ↳ app/models/playthrough/command.rb:66:in 'Playthrough::Command#overtaken?'
+44431:[ActiveJob] [NarrationJob] [81d86f6c-666a-4c98-8e6c-c3d421c54728]   ↳ app/models/playthrough/command.rb:66:in 'Playthrough::Command#overtaken?'
+44432:[ActiveJob] [NarrationJob] [81d86f6c-666a-4c98-8e6c-c3d421c54728] Performed NarrationJob (Job ID: 81d86f6c-666a-4c98-8e6c-c3d421c54728) from SolidQueue(default) in 7.0ms

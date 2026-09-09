@@ -1,0 +1,47 @@
+PERSISTED STATE AFTER THE LIVE BROWSER RUN
+(read from the isolated development database the running app used)
+
+== A Conversation at the Gate (playthrough 2): every NPC decision and what the engine did with it ==
+interaction 1   character=Maren          engine_action=give:10        status=applied  fact=Maren gave brass key to Cal; the player now carries it.
+interaction 2   character=Maren          engine_action=ceasefire      status=applied  fact=Maren stopped fighting the player. The ceasefire holds unless the player attacks again.
+interaction 3   character=Maren          engine_action=give:10        status=rejected fact=The proposed action was rejected: it is unavailable. No possessions, travel agreement or ceasefire changed.
+interaction 4   character=Maren          engine_action=follow         status=applied  fact=Maren is now accompanying Cal and will travel with them.
+interaction 5   character=Maren          engine_action=stop_following status=applied  fact=Maren stopped accompanying the player and remains in Courtyard.
+interaction 6   character=Neb Halloran   engine_action=none           status=none     fact=Neb Halloran changes no possessions, travel agreement or ceasefire.
+interaction 7   character=Neb Halloran   engine_action=none           status=none     fact=Neb Halloran changes no possessions, travel agreement or ceasefire.
+interaction 8   character=Neb Halloran   engine_action=none           status=none     fact=Neb Halloran changes no possessions, travel agreement or ceasefire.
+interaction 9   character=Neb Halloran   engine_action=none           status=none     fact=Neb Halloran changes no possessions, travel agreement or ceasefire.
+interaction 10  character=Neb Halloran   engine_action=none           status=none     fact=Neb Halloran changes no possessions, travel agreement or ceasefire.
+carried by the player: ["brass key"]
+Maren holds:           []
+Maren state row:       {"following" => false, "ceasefire" => true, "peace_after_blow_id" => 0}
+foes in this room:     []
+submissions:
+  command 13  "/talk Maren"                              completed  token=1e8234ea-572b-4b5e-aa3b-2a001b09b012
+  command 14  "/talk Maren"                              completed  token=603c8d02-489b-4d33-82de-0c1e84b7e6d6
+  command 15  "/talk Maren"                              completed  token=08a4344d-deb5-49ba-b076-af3b6b0649b0
+  command 16  "/talk Maren"                              completed  token=405fd1a6-9d26-4ac2-a79f-6e2426dd01b9
+  command 17  "/go Courtyard"                            completed  token=76791b4a-00a6-4132-ab36-ad1cd80eeaa0
+  command 18  "/talk Maren"                              completed  token=6cdcf6b6-1afa-4e6c-abbb-38b1be243193
+  command 19  "/talk Maren"                              failed     token=12d3768d-f2b3-4a6b-bfa5-e03d62823086
+  command 32  "/go Market"                               completed  token=80fca65e-2acf-4a3f-b66d-ffc16570997c
+  command 33  "look around the market for the gate key"  failed     token=9230bebe-2c1e-4ce2-9ec0-32438fb3964a
+
+== The Salt Assizes (playthrough 3): crossing costs and the resumed generation ==
+toll 5: flooded on The Tide Post cost Coraith Vell 4 hit points (the water takes your legs); Coraith Vell is hurt (14 of 18) (shown with scene 22)
+toll 6: flooded on The Tide Post cost Coraith Vell 3 hit points (the water takes your legs); Coraith Vell is badly hurt (9 of 18) (shown with scene 30)
+toll 7: drop on the way from The Causeway Court into The Vestry Hulk cost Coraith Vell 2 hit points (the way down is further than it looks from the top); Coraith Vell is badly hurt (2 of 18) (shown with scene 33)
+The Vestry Hulk: detail_level=realized generation_checkpoint=nil
+submissions:
+  command 20  "/go The Tide Post"                        completed
+  command 21  "/talk Neb Halloran"                       completed
+  command 22  "/talk Neb Halloran"                       completed
+  command 23  "/talk Neb Halloran"                       completed
+  command 24  "/talk Neb Halloran"                       completed
+  command 25  "/talk Neb Halloran"                       completed
+  command 26  "/go The Causeway Court"                   completed
+  command 27  "/go The Tide Post"                        completed
+  command 28  "/go The Causeway Court"                   completed
+  command 29  "/go The Vestry Hulk"                      failed
+  command 30  "/go The Vestry Hulk"                      failed
+  command 31  "/go The Vestry Hulk"                      completed
