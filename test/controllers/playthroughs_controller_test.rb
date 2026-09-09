@@ -813,6 +813,25 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
     assert_select "div.sheet.battle input.request-token", minimum: 1
   end
 
+  # THE WIRING THE ACKNOWLEDGEMENT NEEDS, in the rendered page: an accepted
+  # submission answers with a fresh token and no page at all, so `play.js` is
+  # what echoes the line and clears the box. Behaviour is proved in a browser;
+  # what this pins is that the page still hands that controller the element and
+  # the two submit events it reads -- the Stimulus contract it consumes.
+  test "the play page wires an accepted submission to its own acknowledgement" do
+    playthrough = create(:playthrough, :started)
+
+    get playthrough_path(playthrough)
+
+    assert_response :success
+    scope = css_select("[data-controller='play']").sole
+    actions = scope["data-action"]
+    assert_includes actions, "turbo:submit-end->play#acknowledgeSubmission"
+    receipt = scope.css("#turn_log p[data-play-target='receipt']").sole
+    assert receipt["hidden"], "nothing has been submitted on a plain page load"
+    assert_empty receipt.text.strip
+  end
+
   test "a room with somebody hostile in it shows the battle panel" do
     playthrough = fighting_playthrough
 

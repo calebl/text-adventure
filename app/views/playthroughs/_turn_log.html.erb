@@ -239,6 +239,20 @@
 
         With no JavaScript this is a plain text field in a plain form and
         nothing is lost but the menu. %>
+    <%# THE LINE THE PLAYER JUST SENT, and the reason it is here at all: the
+        acknowledgement carries no page (see `TurnsController#create`), and the
+        pending page is broadcast by the job only once it owns the game's lock.
+        While an earlier turn is still narrating that is the whole of the next
+        turn's wait, and before this the page did not change at all -- the typed
+        line sat in the box with nothing to say it had been taken, which is
+        exactly what makes a player retype. Filled in by `play.js` on a
+        successful submit and never by a response, so it cannot land after the
+        turn it belongs to; empty on every render, so every broadcast clears it.
+
+        `.command` is the same echo the log and a refusal use. It says the line
+        was accepted and claims nothing about what happens next. %>
+    <p class="command" data-play-target="receipt" hidden></p>
+
     <div class="ask" data-controller="slash"
          data-slash-menu-value="<%= Playthrough::SlashMenu.new(playthrough).to_json %>">
       <%= form_with url: playthrough_turns_path(playthrough) do |form| %>

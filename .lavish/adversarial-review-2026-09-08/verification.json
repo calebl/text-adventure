@@ -1,5 +1,5 @@
 {
-  "summary": "The NPC action path and turn integrity fixes are integrated. All 3,881 tests pass. Live NPC cases now apply their promised state changes; arrival prose still sometimes contradicts inventory, so that finding remains partial. New deterministic notices expose crossing costs even when the narration omits them.",
+  "summary": "The NPC action path and turn integrity fixes are integrated. The suite figures on this page are archived: 3,881 tests passed on the pre-rebase integration at 7fd0331 and 4,128 on the rebase at 337f826, and review rounds have changed the tree since both \u2014 the pull request's own checks are the current-head result. Live NPC cases now apply their promised state changes; arrival prose still sometimes contradicts inventory, so that finding remains partial. New deterministic notices expose crossing costs even when the narration omits them.",
   "revision": "Original review and measured baseline: 8dd1f5c. Fix branch: fix/npc-arrival-turn-integrity-20260908. Focused model candidate: 93448ade; sequential confirmation: 57f8738f, which adds the deterministic toll view without changing model input. These temporary candidate commits identify frozen evidence, and every measured number above stays labelled with the commit it was measured on. The branch is now rebased: 337f826 sits directly on main 2ef1a20, so the place-name identity handling and the exits lab and scorer work from main are carried rather than re-measured. The suite figure recorded for that rebase is archived below and describes 337f826, not any later head; the current head's suite, lint and CI results are the pull request's checks.",
   "candidate_revision": "93448adead431f46799573c6c8f13dd65c5b1ddb",
   "evaluation_permission_pending": false,
@@ -7,7 +7,7 @@
   "checks": [
     {
       "name": "Integrated repository suite",
-      "result": "3,881 tests / 22,172 assertions; zero failures, errors or skips. Includes engine sweeps and the real turn view. Both model integrations are active in this checkout.",
+      "result": "3,881 tests / 22,172 assertions; zero failures, errors or skips. Includes engine sweeps and the real turn view. Both model integrations were active in that checkout. Archived evidence for the pre-rebase integration at 7fd0331, before main was merged and before the review rounds \u2014 not a claim about the current head.",
       "file": "integrated-suite.log"
     },
     {
@@ -141,19 +141,22 @@
         "The failure notice no longer promises rollback. Fallback text is excluded from model-quality measurements.",
         "A missing key and a rejected key are both visible to the player and the operator; neither notice claims a turn that did not happen, and no provider secret reaches the page."
       ],
-      "remaining": "A worker killed during engine writes, or an unexpected engine/database failure, leaves an interrupted or failed command. It cannot replay automatically, but there is no automatic rollback or reconciliation. The UI does not independently recover a stranded worker, and the visible setup notice is a message rather than a recovery. If a predecessor fails while a job is playing an accepted queue, that job's own row stays pending for the next submission to drain -- still no automatic reconciliation. Incomplete new location generation now resumes on a later entry (R06)."
+      "remaining": "A worker killed during engine writes, or an unexpected engine/database failure, leaves an interrupted or failed command. It cannot replay automatically, but there is no automatic rollback or reconciliation. The UI does not independently recover a stranded worker, and the visible setup notice is a message rather than a recovery. If a predecessor fails while a job is playing an accepted queue, that job's own row stays pending for the next submission to drain. A predecessor left running by a killed worker is skipped rather than replayed or waited for, so a later accepted line plays past it and the earlier one is left visible and unplayed. Still no automatic reconciliation or rollback. Incomplete new location generation now resumes on a later entry (R06)."
     },
     "R05": {
       "status": "Verified",
-      "change": "Commands and location realization use process locks keyed to the SQLite database and record. Waiting turns reload current state. A submission is its form token AND its line, and the token is spent on use: a resend of one submit or a job delivered twice returns the completed result, while a second submit -- including the same line again -- is its own turn under the fresh token the acknowledgement installs. playthrough_commands.id is the accepted order, and the lock holder plays every pending row up to its own in that order, so a job that wins the race cannot run its line ahead of one typed earlier. The job broadcasts pending and final pages in order; the HTTP response re-mints the token and carries no page replacement.",
+      "change": "Commands and location realization use process locks keyed to the SQLite database and record. Waiting turns reload current state. A submission is its form token AND its line, and the token is spent on use: a resend of one submit or a job delivered twice returns the completed result, while a second submit -- including the same line again -- is its own turn under the fresh token the acknowledgement installs. playthrough_commands.id is the accepted order, and the lock holder plays every pending row up to its own in that order, so a job that wins the race cannot run its line ahead of one typed earlier. Each drained line gets its own classifier and grammar, so a one-shot prompt never carries the previous line. A submission the game has moved past answers its own delivery and broadcasts nothing, so an overtaken job cannot paint its old refusal over a newer turn or take the player's next line with it. The job broadcasts pending and final pages in order; the HTTP response re-mints the token and carries no page replacement.",
       "proof": [
         "Separate processes overlap two pickups: both items and both linked scenes survive. A separate database connection can write while a provider is paused.",
         "Two processes holding the same stale stub generate it once and reuse the persisted result.",
         "An immediately completed job cannot be overwritten by a late HTTP response, and duplicate completion does not introduce another pending page.",
         "Two identical submissions take two turns while one resent submit takes one; the acknowledgement replaces every spent token field and nothing else.",
-        "A take accepted before a move, with the move\u2019s job delivered first, still takes the coin before leaving the room -- asserted by unit regression and by a player-walk sweep."
+        "A take accepted before a move, with the move\u2019s job delivered first, still takes the coin before leaving the room -- asserted by unit regression and by a player-walk sweep.",
+        "Two ordinary lines drained by one job each classify against a clean chat, at the default retention and at TA_CHAT_KEEP_TURNS=0.",
+        "The overtaken job\u2019s own delivery broadcasts nothing over the newer turn, while a duplicate delivery of the newest submission still refreshes its page.",
+        "An accepted submission is echoed and its input cleared immediately \u2014 checked in an actual browser against a queued job, for the typed box and for a battle button. It is guarded on the response\u2019s success, on the form still being on the page, and on the field still holding the line that was sent, so a draft typed while the POST was in flight survives and a response that lost the race to its turn\u2019s page shows nothing."
       ],
-      "remaining": "The locking primitive assumes the app\u2019s local SQLite deployment. Durable location checkpoints handle incomplete new rooms (R06); interrupted turn reconciliation remains the limit described in R04."
+      "remaining": "The locking primitive assumes the app\u2019s local SQLite deployment. The accepted order is a guarantee about submissions whose workers are alive: a predecessor a dead worker left running is neither replayed nor waited for, and later lines play past it, so there is no ordering claim across an interrupted worker. Durable location checkpoints handle incomplete new rooms (R06); interrupted turn reconciliation remains the limit described in R04."
     },
     "R06": {
       "status": "Verified",

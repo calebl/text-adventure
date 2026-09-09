@@ -106,9 +106,14 @@ class Playthrough::Turn
       outcome = nil
       if request_token
         mine = Playthrough::Command.accept!(playthrough, command, request_token)
-        accepted_up_to(mine).each do |row|
-          played = take_turn(row.command, on_start, on_finish, submission: row, &deliver)
-          outcome = played if row.id == mine.id
+        if mine.overtaken?
+          outcome = mine.outcome
+        else
+          accepted_up_to(mine).each_with_index do |row, already_played|
+            forget_line_readers! if already_played.positive?
+            played = take_turn(row.command, on_start, on_finish, submission: row, &deliver)
+            outcome = played if row.id == mine.id
+          end
         end
       else
         outcome = take_turn(command, on_start, on_finish, &deliver)
@@ -141,6 +146,16 @@ class Playthrough::Turn
   # business and not this method's. If a predecessor fails here the loop stops
   # and this job's own row stays pending -- the next submission's job drains it,
   # and the reconciliation limit is the one R04 already records.
+  #
+  # WHAT THIS ORDERS IS PENDING LIVE SUBMISSIONS, AND NOTHING ELSE. Only
+  # `pending` predecessors are drained, so a predecessor a dead worker left
+  # `running` -- SIGKILL, OOM, a deploy mid-turn -- is neither replayed nor
+  # waited for, and this line plays past it. Replaying it could repeat a
+  # half-finished effect (`Command#execute!`), and blocking every later line
+  # behind it would strand the game on a row nothing will ever finish, so it is
+  # skipped and left visible for reconciliation. Accepted order is therefore a
+  # guarantee about submissions whose workers are alive; across an interrupted
+  # worker there is none, which is the R04 boundary the intent keeps partial.
   def accepted_up_to(submission)
     return [ submission ] unless submission.status == "pending"
 
@@ -1543,4 +1558,27 @@ class Playthrough::Turn
   def grammar
     @grammar ||= Playthrough::Grammar.new(playthrough, classifier: classifier)
   end
+
+  # THE TWO READERS ABOVE BELONG TO ONE LINE, and this is what says so. They
+  # are memoised together on purpose -- the grammar matches a typed name
+  # against the list the model would have been offered -- and the classifier
+  # holds a `BaseAgent`, which holds a `Chat`.
+  #
+  # A `Turn` used to play one line, so nothing had to drop them: `NarrationJob`
+  # builds one per delivery. `#play` can now play a predecessor first, and
+  # handing these on would put the previous command and its answer in front of
+  # a prompt whose contract is one-shot -- and with `TA_CHAT_KEEP_TURNS=0` the
+  # first line prunes that chat, so the second writes a message against a row
+  # that is gone and the turn dies on a foreign key.
+  #
+  # CALLED BETWEEN LINES AND NEVER BEFORE THE FIRST, because the first line of
+  # a `#play` gets whatever the caller set up: `Eval::Prompt::Bench` injects a
+  # fixed classifier before `#play` so a measured case reads one pinned intent,
+  # and clearing it here would put a charged classifier call in the middle of a
+  # replayed baseline. Anything memoised per line joins this method.
+  def forget_line_readers!
+    @classifier = nil
+    @grammar = nil
+  end
+  private :forget_line_readers!
 end

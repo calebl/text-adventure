@@ -44,6 +44,42 @@ class Playthrough::Command < ApplicationRecord
 
   def completed? = status == "completed"
 
+  # WHETHER THE GAME HAS ALREADY MOVED PAST THIS SUBMISSION, and the reason a
+  # redelivery is not always harmless.
+  #
+  # A duplicate delivery touches no records -- `#execute!` hands back what this
+  # submission produced and runs nothing -- but its consumer then paints that
+  # stored outcome as the page. The accepted-order drain makes a LATER
+  # submission finish first as an ordinary matter, so the overtaken job's own
+  # delivery arrives after the newer turn has landed: a refusal box for a line
+  # typed in the room before this one, over the room the player is standing in
+  # now, taking whatever they have typed since with it. An obsolete failure
+  # notice replaces newer successful state the same way.
+  #
+  # So a submission with a newer sibling the game has started or finished says
+  # nothing at all. The NEWEST submission is never overtaken, which is what
+  # keeps a legitimate redelivery of the current line -- its refusal, its
+  # crisis notice -- refreshing the page accurately.
+  def overtaken?
+    return false if status == "pending"
+
+    playthrough.commands.where("id > ?", id).where.not(status: "pending").exists?
+  end
+
+  # WHAT THIS SUBMISSION PRODUCED, rebuilt from its own columns: the Scene it
+  # wrote, the refusal the engine answered with, or nil for one that failed.
+  # `#execute!` reads it for a duplicate delivery and `Playthrough::Turn#play`
+  # reads it for an overtaken one, which is answered and never broadcast.
+  def outcome
+    if refusal.blank?
+      scene = result_scene
+      scene.safety_notice = true if scene && error_kind == "crisis"
+      return scene
+    end
+
+    Playthrough::Refusal.new(**refusal.symbolize_keys.merge(kind: refusal.fetch("kind").to_sym))
+  end
+
   def execute!
     return outcome if completed?
     raise InterruptedError, "A previous worker stopped during this turn" if status == "running"
@@ -68,17 +104,5 @@ class Playthrough::Command < ApplicationRecord
       update!(status: "failed", error_kind: e.is_a?(BaseAgent::CrisisResponseError) ? "crisis" : "error")
       raise
     end
-  end
-
-  private
-
-  def outcome
-    if refusal.blank?
-      scene = result_scene
-      scene.safety_notice = true if scene && error_kind == "crisis"
-      return scene
-    end
-
-    Playthrough::Refusal.new(**refusal.symbolize_keys.merge(kind: refusal.fetch("kind").to_sym))
   end
 end
