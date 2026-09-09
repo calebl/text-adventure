@@ -1,0 +1,172 @@
+{
+  "before": {
+    "give-owned-key:1": {
+      "contradiction": true,
+      "excerpt": "pressing the brass key into your palm",
+      "reason": "Narration describes a completed handover, but carries_key is false."
+    },
+    "follow-through-door:1": {
+      "contradiction": false,
+      "reason": "Readiness or a future invitation to lead the way; no actual accompaniment is narrated. The missing following state is counted in the primary metric."
+    },
+    "honor-ceasefire:1": {
+      "contradiction": true,
+      "excerpt": "I agree. Let’s put this behind us",
+      "reason": "NPC explicitly accepts cessation of fighting and lowers her hands, but remains a foe."
+    },
+    "refuse-trusted-key:1": {
+      "contradiction": false,
+      "reason": "The narration refuses the entrusted key or denies possessing the crown, consistent with unchanged state."
+    },
+    "cannot-give-absent-item:1": {
+      "contradiction": false,
+      "reason": "The narration refuses the entrusted key or denies possessing the crown, consistent with unchanged state."
+    },
+    "give-owned-key:2": {
+      "contradiction": true,
+      "excerpt": "places it in your hand",
+      "reason": "Narration describes a completed handover, but carries_key is false."
+    },
+    "follow-through-door:2": {
+      "contradiction": false,
+      "reason": "Readiness or a future invitation to lead the way; no actual accompaniment is narrated. The missing following state is counted in the primary metric."
+    },
+    "honor-ceasefire:2": {
+      "contradiction": true,
+      "excerpt": "I accept. Let’s end this now",
+      "reason": "NPC explicitly accepts cessation of fighting and lowers her hands, but remains a foe."
+    },
+    "refuse-trusted-key:2": {
+      "contradiction": false,
+      "reason": "The narration refuses the entrusted key or denies possessing the crown, consistent with unchanged state."
+    },
+    "cannot-give-absent-item:2": {
+      "contradiction": false,
+      "reason": "The narration refuses the entrusted key or denies possessing the crown, consistent with unchanged state."
+    },
+    "give-owned-key:3": {
+      "contradiction": false,
+      "reason": "Offers or extends the key without describing a completed transfer; the strict predeclared rubric excludes an offer alone."
+    },
+    "follow-through-door:3": {
+      "contradiction": false,
+      "reason": "Readiness or a future invitation to lead the way; no actual accompaniment is narrated. The missing following state is counted in the primary metric."
+    },
+    "honor-ceasefire:3": {
+      "contradiction": true,
+      "excerpt": "I accept your truce",
+      "reason": "NPC explicitly accepts cessation of fighting and lowers her hands, but remains a foe."
+    },
+    "refuse-trusted-key:3": {
+      "contradiction": false,
+      "reason": "The narration refuses the entrusted key or denies possessing the crown, consistent with unchanged state."
+    },
+    "cannot-give-absent-item:3": {
+      "contradiction": false,
+      "reason": "The narration refuses the entrusted key or denies possessing the crown, consistent with unchanged state."
+    },
+    "give-owned-key:4": {
+      "contradiction": false,
+      "reason": "Offers or extends the key without describing a completed transfer; the strict predeclared rubric excludes an offer alone."
+    },
+    "follow-through-door:4": {
+      "contradiction": false,
+      "reason": "Readiness or a future invitation to lead the way; no actual accompaniment is narrated. The missing following state is counted in the primary metric."
+    },
+    "honor-ceasefire:4": {
+      "contradiction": true,
+      "excerpt": "I agree. No more fighting",
+      "reason": "NPC explicitly accepts cessation of fighting and lowers her hands, but remains a foe."
+    },
+    "refuse-trusted-key:4": {
+      "contradiction": false,
+      "reason": "The narration refuses the entrusted key or denies possessing the crown, consistent with unchanged state."
+    },
+    "cannot-give-absent-item:4": {
+      "contradiction": false,
+      "reason": "The narration refuses the entrusted key or denies possessing the crown, consistent with unchanged state."
+    }
+  },
+  "after": {
+    "give-owned-key:1": {
+      "contradiction": false,
+      "reason": "The key is given or offered to the player, consistent with carries_key true; no claim of retained NPC ownership."
+    },
+    "follow-through-door:1": {
+      "contradiction": false,
+      "reason": "The NPC agrees to accompany the player or states readiness, consistent with following true."
+    },
+    "honor-ceasefire:1": {
+      "contradiction": false,
+      "reason": "The NPC accepts peace and lowers her guard, consistent with foe false."
+    },
+    "refuse-trusted-key:1": {
+      "contradiction": false,
+      "reason": "The NPC refuses to give away the entrusted key, consistent with no player-held key."
+    },
+    "cannot-give-absent-item:1": {
+      "contradiction": false,
+      "reason": "The NPC denies possessing the crown and does not invent or give it."
+    },
+    "give-owned-key:2": {
+      "contradiction": false,
+      "reason": "The key is given or offered to the player, consistent with carries_key true; no claim of retained NPC ownership."
+    },
+    "follow-through-door:2": {
+      "contradiction": false,
+      "reason": "The NPC agrees to accompany the player or states readiness, consistent with following true."
+    },
+    "honor-ceasefire:2": {
+      "contradiction": false,
+      "reason": "The NPC accepts peace and lowers her guard, consistent with foe false."
+    },
+    "refuse-trusted-key:2": {
+      "contradiction": false,
+      "reason": "The NPC refuses to give away the entrusted key, consistent with no player-held key."
+    },
+    "cannot-give-absent-item:2": {
+      "contradiction": false,
+      "reason": "The NPC denies possessing the crown and does not invent or give it."
+    },
+    "give-owned-key:3": {
+      "contradiction": false,
+      "reason": "The key is given or offered to the player, consistent with carries_key true; no claim of retained NPC ownership."
+    },
+    "follow-through-door:3": {
+      "contradiction": false,
+      "reason": "The NPC agrees to accompany the player or states readiness, consistent with following true."
+    },
+    "honor-ceasefire:3": {
+      "contradiction": false,
+      "reason": "The NPC accepts peace and lowers her guard, consistent with foe false."
+    },
+    "refuse-trusted-key:3": {
+      "contradiction": false,
+      "reason": "The NPC refuses to give away the entrusted key, consistent with no player-held key."
+    },
+    "cannot-give-absent-item:3": {
+      "contradiction": false,
+      "reason": "The NPC denies possessing the crown and does not invent or give it."
+    },
+    "give-owned-key:4": {
+      "contradiction": false,
+      "reason": "The key is given or offered to the player, consistent with carries_key true; no claim of retained NPC ownership."
+    },
+    "follow-through-door:4": {
+      "contradiction": false,
+      "reason": "The NPC agrees to accompany the player or states readiness, consistent with following true."
+    },
+    "honor-ceasefire:4": {
+      "contradiction": false,
+      "reason": "The NPC accepts peace and lowers her guard, consistent with foe false."
+    },
+    "refuse-trusted-key:4": {
+      "contradiction": false,
+      "reason": "The NPC refuses to give away the entrusted key, consistent with no player-held key."
+    },
+    "cannot-give-absent-item:4": {
+      "contradiction": false,
+      "reason": "The NPC denies possessing the crown and does not invent or give it."
+    }
+  }
+}

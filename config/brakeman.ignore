@@ -1,0 +1,52 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "d3bd18fe1381b7d550545063f9f0b62f8b074f93c4bd5ecce09468eb051afcc7",
+      "check_name": "FileAccess",
+      "message": "Model attribute used in file name",
+      "file": "lib/game_lock.rb",
+      "line": 21,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "File.open(Pathname.new(File.expand_path(ApplicationRecord.connection_db_config.database, Rails.root)).dirname.join(\"game-locks\").join(\"#{File.basename(File.expand_path(ApplicationRecord.connection_db_config.database, Rails.root))}-#{scope}-#{Integer(id)}.lock\").to_s, (File::RDWR | File::CREAT), 384)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "GameLock",
+        "method": "self.synchronize"
+      },
+      "user_input": "ApplicationRecord.connection_db_config.database",
+      "confidence": "Weak",
+      "cwe_id": [
+        22
+      ],
+      "note": "Reviewed deployment-config false positive: connection_db_config.database is the trusted Rails SQLite database configuration, not a model row or player input. Lock paths must follow that database across worker processes/deploys. Runtime scope callers supply literal location/playthrough strings; the record ID is coerced with Integer. No player-provided path is admitted. Reassess if configuration or scope becomes untrusted."
+    },
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "e2abcc3d597ad51c56d2e9a5213a5773f9197c10e8ff51cf3239713eafc4ffad",
+      "check_name": "FileAccess",
+      "message": "Model attribute used in file name",
+      "file": "lib/game_lock.rb",
+      "line": 16,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "FileUtils.mkdir_p(Pathname.new(File.expand_path(ApplicationRecord.connection_db_config.database, Rails.root)).dirname.join(\"game-locks\"))",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "GameLock",
+        "method": "self.synchronize"
+      },
+      "user_input": "ApplicationRecord.connection_db_config.database",
+      "confidence": "Weak",
+      "cwe_id": [
+        22
+      ],
+      "note": "Reviewed deployment-config false positive: connection_db_config.database is the trusted Rails SQLite database configuration, not a model row or player input. Lock paths must follow that database across worker processes/deploys. Runtime scope callers supply literal location/playthrough strings; the record ID is coerced with Integer. No player-provided path is admitted. Reassess if configuration or scope becomes untrusted."
+    }
+  ],
+  "updated": "2026-09-09T10:25:07.687194+00:00",
+  "brakeman_version": "8.0.6"
+}

@@ -13,7 +13,7 @@
 # §4) it was what most turns produced.
 #
 # So the message is the app's, written once, like `Playthrough::SafetyNotice`:
-# a turn failed, nothing was lost, try again. It is deliberately vague about
+# a turn failed, inspect the current records before the next command. It is deliberately vague about
 # WHY, because every reason is an internal one -- a model that would not answer,
 # a schema it ignored, a sheet it cut in half -- and none of them are a thing
 # the player did or can fix. `Rails.logger.error` keeps the real error in full,
@@ -24,6 +24,6 @@
 # because nothing went wrong. This one is a failure, and it is styled as one.
 module Playthrough::TurnFailureNotice
   MESSAGE = "Something went wrong on our side and that turn did not finish. " \
-            "Nothing was lost — the story is exactly where you left it. " \
-            "Try again, or try saying it another way.".freeze
+            "The log and your current possessions show what was saved. " \
+            "Check them before choosing your next action.".freeze
 end

@@ -1,43 +1,50 @@
 require "test_helper"
+require "turbo/broadcastable/test_helper"
 
 class TurnsControllerTest < ActionDispatch::IntegrationTest
+  include Turbo::Broadcastable::TestHelper
+
   test "create hands the turn to a job rather than running it in the request" do
     playthrough = create(:playthrough)
 
-    assert_enqueued_with job: NarrationJob, args: [ playthrough.id, "open the ledger" ] do
+    assert_enqueued_with job: NarrationJob, args: [ playthrough.id, "open the ledger", "open-ledger" ] do
       post playthrough_turns_path(playthrough),
-           params: { command: "  open the ledger  " }, as: :turbo_stream
+           params: { command: "  open the ledger  ", request_token: "open-ledger" }, as: :turbo_stream
     end
   end
 
   # No model is touched here at all, which is the whole point: the request that
   # accepts a command must not be the one that waits 20-30 seconds for a
   # narration.
-  test "create answers immediately with the streaming half of the page" do
+  test "create acknowledges without a pending page that could overwrite a completed turn" do
     playthrough = create(:playthrough)
 
     post playthrough_turns_path(playthrough),
          params: { command: "open the ledger" }, as: :turbo_stream
 
-    assert_response :success
-    assert_equal "text/vnd.turbo-stream.html", response.media_type
-    assert_match 'action="replace"', response.body
-    assert_match 'target="turn_log"', response.body
-    assert_match "&gt; open the ledger", response.body
-    assert_match 'id="stream"', response.body
+    assert_response :no_content
+    assert_empty response.body
   end
 
-  # The dimming rule is `.log:not(.streaming) > .entry:last-of-type .turn`, so while a
-  # turn is in flight the log has to say it is not the newest thing on the page
-  # -- the #stream div below it is.
-  test "create marks the log as streaming and takes the input away" do
-    playthrough = create(:playthrough, :in_scene)
+  test "a job finishing before the HTTP response cannot strand the browser in a pending turn" do
+    playthrough = create(:playthrough, :started)
+    item = lying_here(playthrough, playthrough.current_location, name: "red coin")
+    immediate = ->(*arguments) { NarrationJob.perform_now(*arguments) }
+    streams = capture_turbo_stream_broadcasts(playthrough) do
+      BaseAgent.stub(:new, FakeAgent.new(RuntimeError.new("provider unavailable"))) do
+        NarrationJob.stub(:perform_later, immediate) do
+          post playthrough_turns_path(playthrough),
+               params: { command: "/take red coin", request_token: "instant" }, as: :turbo_stream
+        end
+      end
+    end
 
-    post playthrough_turns_path(playthrough),
-         params: { command: "open the ledger" }, as: :turbo_stream
-
-    assert_match 'class="log streaming"', response.body
-    assert_no_match(/what do you do\?/, response.body)
+    assert_includes playthrough.reload.carried, item
+    assert_equal "completed", playthrough.commands.sole.status
+    assert_includes streams.first.to_html, 'id="stream"'
+    assert_includes streams.last.to_html, "what do you do?"
+    assert_response :no_content
+    assert_empty response.body, "a late HTTP response must have nothing that can replace the finished page"
   end
 
   test "create ignores an empty command" do
@@ -56,8 +63,8 @@ class TurnsControllerTest < ActionDispatch::IntegrationTest
   test "create still takes the turn without Turbo, and sends the player to the log" do
     playthrough = create(:playthrough)
 
-    assert_enqueued_with job: NarrationJob, args: [ playthrough.id, "look around" ] do
-      post playthrough_turns_path(playthrough), params: { command: "look around" }
+    assert_enqueued_with job: NarrationJob, args: [ playthrough.id, "look around", "look-around" ] do
+      post playthrough_turns_path(playthrough), params: { command: "look around", request_token: "look-around" }
     end
 
     assert_redirected_to playthrough_path(playthrough, anchor: "bottom")
@@ -73,24 +80,33 @@ class TurnsControllerTest < ActionDispatch::IntegrationTest
   test "a battle button's fixed command is an ordinary turn on the ordinary route" do
     playthrough = create(:playthrough)
 
-    assert_enqueued_with job: NarrationJob, args: [ playthrough.id, "/attack Marek Sollen" ] do
+    assert_enqueued_with job: NarrationJob, args: [ playthrough.id, "/attack Marek Sollen", "attack" ] do
       post playthrough_turns_path(playthrough),
-           params: { command: "/attack Marek Sollen" }, as: :turbo_stream
+           params: { command: "/attack Marek Sollen", request_token: "attack" }, as: :turbo_stream
     end
 
-    assert_response :success
-    assert_match 'target="turn_log"', response.body
+    assert_response :no_content
   end
 
-  # AND A TURN IN FLIGHT HAS NO PANEL, for the reason it has no form: the
-  # streaming half of the page is the echoed line and `#stream`, and the panel
-  # comes back with the log on the replace that ends the turn.
-  test "the streaming half of the page carries no panel" do
-    playthrough = create(:playthrough, :in_scene)
+  test "repeated delivery of one form keeps one command identity" do
+    playthrough = create(:playthrough)
+    assert_difference -> { playthrough.commands.count }, 1 do
+      2.times do
+        post playthrough_turns_path(playthrough),
+             params: { command: "look around", request_token: "one-form" }, as: :turbo_stream
+        assert_response :success
+      end
+    end
+    assert_equal [ "one-form" ], enqueued_jobs.last(2).map { |job| job[:args].last }.uniq
+  end
 
-    post playthrough_turns_path(playthrough),
-         params: { command: "/attack Marek Sollen" }, as: :turbo_stream
-
-    assert_no_match(/sheet battle/, response.body)
+  test "a token cannot be reused for a different command" do
+    playthrough = create(:playthrough)
+    Playthrough::Command.accept!(playthrough, "look", "one-form")
+    assert_no_enqueued_jobs only: NarrationJob do
+      post playthrough_turns_path(playthrough),
+           params: { command: "wait", request_token: "one-form" }, as: :turbo_stream
+    end
+    assert_response :conflict
   end
 end

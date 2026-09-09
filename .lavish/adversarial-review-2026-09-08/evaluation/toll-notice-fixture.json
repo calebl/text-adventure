@@ -1,0 +1,18 @@
+{
+  "fixture": "Deterministic offline Rails-rendered play page, not a live browser session or live model output",
+  "render": "playthroughs/show with application layout and existing inline CSS",
+  "debug": false,
+  "database": "isolated test database; all fixture writes rolled back",
+  "action": "/move Counting House",
+  "description": "The counting house opens before you.",
+  "hidden_summary": "The crossing costs the player 3 hit points.",
+  "notice": "flooded on Counting House cost Iri Calder 3 hit points (the water takes your legs); Iri Calder is hurt (15 of 18)",
+  "damage": 3,
+  "hp_after": 15,
+  "saved": false,
+  "model": "FakeAgent fixed response; no provider calls",
+  "viewport": {
+    "width": 1100,
+    "height": 850
+  }
+}

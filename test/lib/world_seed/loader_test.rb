@@ -54,6 +54,31 @@ class WorldSeed::LoaderTest < ActiveSupport::TestCase
     assert_equal first.id, WorldSeed::Loader.new(document).load!.id
   end
 
+  test "re-seeding cancels unfinished generation only for the rooms the file reasserts" do
+    story = WorldSeed::Loader.new(document).load!
+    receipt = {
+      "phase" => "detail_pending", "slots" => [],
+      "detail" => { "description" => "Superseded generated detail.", "lore" => "An abandoned account.",
+                    "items" => [], "people" => [] }
+    }
+    opening = story.opening_location
+    hallway = story.locations.find_by!(name: "The Hallway")
+    extra = create(:location, :stub, story: story, name: "An Unseeded Workshop", generation_checkpoint: receipt)
+    opening.update!(generation_checkpoint: receipt)
+    hallway.update!(generation_checkpoint: receipt)
+
+    WorldSeed::Loader.new(document).load!
+
+    assert_nil opening.reload.generation_checkpoint
+    assert_nil hallway.reload.generation_checkpoint
+    assert_predicate hallway, :stub?
+    assert_equal receipt, extra.reload.generation_checkpoint
+    BaseAgent.stub(:new, ->(*) { flunk "seeded completed prose must not resume an abandoned model answer" }) do
+      Location::Generator.new(opening).realize!
+    end
+    assert_equal "An office.", opening.reload.description
+  end
+
   test "loads a character with its race, protagonist flag and items" do
     story = WorldSeed::Loader.new(document).load!
     character = story.protagonist

@@ -1,0 +1,122 @@
+{
+  "718419d3": {
+    "arm": "before",
+    "case": "dead_resident",
+    "rep": 1
+  },
+  "4d194704": {
+    "arm": "before",
+    "case": "dead_resident",
+    "rep": 2
+  },
+  "6b090597": {
+    "arm": "before",
+    "case": "dead_resident",
+    "rep": 3
+  },
+  "a6552098": {
+    "arm": "before",
+    "case": "dead_resident",
+    "rep": 4
+  },
+  "b221e3ae": {
+    "arm": "before",
+    "case": "carried_key",
+    "rep": 1
+  },
+  "33c40ddd": {
+    "arm": "before",
+    "case": "carried_key",
+    "rep": 2
+  },
+  "ebbc1526": {
+    "arm": "before",
+    "case": "carried_key",
+    "rep": 3
+  },
+  "79e6f3da": {
+    "arm": "before",
+    "case": "carried_key",
+    "rep": 4
+  },
+  "48b020ce": {
+    "arm": "before",
+    "case": "crossing_harm",
+    "rep": 1
+  },
+  "a6c024b7": {
+    "arm": "before",
+    "case": "crossing_harm",
+    "rep": 2
+  },
+  "95eed595": {
+    "arm": "before",
+    "case": "crossing_harm",
+    "rep": 3
+  },
+  "bbe17cb2": {
+    "arm": "before",
+    "case": "crossing_harm",
+    "rep": 4
+  },
+  "822c32ad": {
+    "arm": "after",
+    "case": "dead_resident",
+    "rep": 1
+  },
+  "affe59cd": {
+    "arm": "after",
+    "case": "dead_resident",
+    "rep": 2
+  },
+  "0c84828b": {
+    "arm": "after",
+    "case": "dead_resident",
+    "rep": 3
+  },
+  "02c90dce": {
+    "arm": "after",
+    "case": "dead_resident",
+    "rep": 4
+  },
+  "70a5f8db": {
+    "arm": "after",
+    "case": "carried_key",
+    "rep": 1
+  },
+  "caa9a748": {
+    "arm": "after",
+    "case": "carried_key",
+    "rep": 2
+  },
+  "01c97fbf": {
+    "arm": "after",
+    "case": "carried_key",
+    "rep": 3
+  },
+  "bbbacad7": {
+    "arm": "after",
+    "case": "carried_key",
+    "rep": 4
+  },
+  "669765d0": {
+    "arm": "after",
+    "case": "crossing_harm",
+    "rep": 1
+  },
+  "9e0e40da": {
+    "arm": "after",
+    "case": "crossing_harm",
+    "rep": 2
+  },
+  "16096ffd": {
+    "arm": "after",
+    "case": "crossing_harm",
+    "rep": 3
+  },
+  "1ae56711": {
+    "arm": "after",
+    "case": "crossing_harm",
+    "rep": 4
+  }
+}

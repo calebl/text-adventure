@@ -360,7 +360,7 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
   # ONE `Scene` WHEN THE FIGHT ENDS, and it is what `#play` hands back on the
   # turn it ended -- the browser's per-round view is the battle panel, a later
   # slice.
-  test "leaving the room ends the fight and the turn answers with the closing scene" do
+  test "leaving the room closes the fight at the destination and retains the battlefield" do
     tough!(@vance, @rowe)
     play("/attack Halkett Rowe")
 
@@ -370,7 +370,9 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
     assert_equal "attack", @playthrough.reload.current_scene.resolved_action
     assert_predicate @playthrough.current_scene, :engine_authored?
     assert_empty @playthrough.blows.open
-    assert_equal @office, @playthrough.current_scene.location, "the fight happened in the room she left"
+    assert_equal @closet, @playthrough.current_scene.location, "the closing moment follows the party"
+    assert_equal [ @office.id ], @playthrough.current_scene.blows.distinct.pluck(:location_id),
+                 "the blows retain the room the fight happened in"
     assert_not_nil scene
   end
 

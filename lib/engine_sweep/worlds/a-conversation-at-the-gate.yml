@@ -1,0 +1,78 @@
+# A small world for real social effects, with fixed character choices supplied
+# by the walk. The file only supplies parameters; NpcAction owns every effect.
+format: 2
+universe:
+  physics: Ordinary physics.
+  technology: Keys, locks and lanterns.
+  weapons: Wooden staves.
+  geographies: A market and its courtyard.
+  civilizations: A small trading town.
+  history: Traders built the market together.
+  economics: Goods traded for coins.
+  politics: A town council keeps the peace.
+  religion: The town keeps its own festivals.
+  races:
+  - name: Townsfolk
+    description: Ordinary people of the town.
+story:
+  title: A Conversation at the Gate
+  genre: town adventure
+  start_time: '2026-09-08T12:00:00Z'
+  preface: A misunderstanding has closed the courtyard gate.
+  summary: Cal and Maren can settle their disagreement and travel together.
+opening_scene:
+  location: Market
+  characters: [Cal, Maren]
+  description: You face Maren beside the gate to the courtyard.
+  summary: Cal meets Maren at the market gate.
+characters:
+- fullname: Cal
+  nickname: Cal
+  race: Townsfolk
+  age: 30
+  sex: male
+  is_protagonist: true
+  is_companion: false
+  backstory: A trader returning to the market.
+  personality: Patient and practical.
+  appearance: A travel-worn coat.
+  likes: A fair bargain.
+  dislikes: Needless arguments.
+  fears: Losing a friend.
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+- fullname: Maren
+  nickname: Maren
+  race: Townsfolk
+  location: Market
+  age: 32
+  sex: female
+  is_protagonist: false
+  is_companion: false
+  hostile: true
+  backstory: A gatekeeper who misunderstood Cal's arrival.
+  personality: Willing to listen and keep a promise.
+  appearance: A blue coat and a wooden staff.
+  likes: Clear agreements.
+  dislikes: Deception.
+  fears: Betraying a trust.
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+  items:
+  - name: brass key
+    description: A plain brass courtyard key.
+    properties: '{}'
+locations:
+- name: Market
+  detail_level: realized
+  opening: true
+  description: A quiet square beside the courtyard gate.
+  teaser: A market square.
+  lore: Traders meet here each morning.
+- name: Courtyard
+  detail_level: realized
+  description: A sheltered courtyard beyond the market.
+  teaser: A sheltered courtyard.
+  lore: The market's oldest meetings happened here.
+connections:
+- between: [Market, Courtyard]
+  distance: adjacent
+  travel_method: walking

@@ -74,7 +74,7 @@
 # which reader answered, and everything below the read is one path either way --
 # the grammar builds the same `Intent` the classifier does, on purpose.
 class Playthrough::Turn
-  attr_reader :playthrough
+  attr_reader :playthrough, :safety_notice
 
   def initialize(playthrough)
     @playthrough = playthrough
@@ -91,7 +91,44 @@ class Playthrough::Turn
   # a refusal is not a turn, so there is no Scene to hand back, and the text is
   # the app's own rather than anything a model wrote. `NarrationJob` shows it
   # where `Playthrough::SafetyNotice` goes and for the same reason.
-  def play(command, &block)
+  def play(command, request_token: nil, on_start: nil, on_finish: nil, on_error: nil, &block)
+    deliver = lambda do |chunk|
+      block&.call(chunk)
+    rescue StandardError => e
+      # A consumer receives progress; it does not own the turn. An unavailable
+      # broadcast after a charged arrival cannot skip the world's response.
+      Rails.logger.warn { "Turn streaming failed: #{e.class}: #{e.message}" }
+    end
+    GameLock.synchronize("playthrough", playthrough.id) do
+      # Another job may have completed while this one waited. Both the scene
+      # chain and the classifier's closed sets must start from its result.
+      playthrough.reload
+      outcome = if request_token
+        submission = Playthrough::Command.accept!(playthrough, command, request_token)
+        submission.execute! do
+          on_start&.call
+          play_serially(command, &deliver)
+        end
+      else
+        on_start&.call
+        play_serially(command, &deliver)
+      end
+      # The final broadcast is part of serialization too: an old worker must
+      # not replace the page after the next command has started streaming.
+      @safety_notice ||= outcome.safety_notice if outcome.is_a?(Scene)
+      on_finish&.call(outcome)
+      outcome
+    rescue StandardError => e
+      on_error&.call(e)
+      raise
+    end
+  end
+
+  # Only #play enters this method. The process lock covers classification,
+  # engine effects and rendering, but opens no database transaction across a
+  # model call. Rendering an already committed effect has an engine fallback,
+  # so it cannot skip the rest of the world's response.
+  def play_serially(command, &block)
     # THE GAME BEING OVER COMES BEFORE EVERYTHING, and it is first for a reason
     # rather than for tidiness: everything below this line costs something. The
     # world catching up writes rows, the snapshot writes rows, and the
@@ -223,6 +260,7 @@ class Playthrough::Turn
     # `#cast_of`), so the direction the Tide Post defect ran in is reversed.
     scene&.update!(typed: typed, characters: cast_of(scene), resolved_by: resolved_by,
                    **resolution_for(intent))
+    @safety_notice ||= scene&.safety_notice
 
     # AND WHAT THE WORLD ITSELF TOOK IS FILED UNDER THE TURN THAT TOLD THE
     # PLAYER ABOUT IT. `Playthrough::Moment` states the UNTOLD tolls to the
@@ -304,7 +342,7 @@ class Playthrough::Turn
     # THE CLASSIFIER ONLY IF IT RAN. A turn the grammar resolved made no call at
     # all, and `BaseAgent#attribute_to!` on an agent that never spoke would file
     # an empty conversation under the turn.
-    classifier.agent.attribute_to!(scene) if scene && resolved_by == "model"
+    attribute_conversation!(classifier.agent, scene) if scene && resolved_by == "model"
 
     # And the retention cap is applied -- which by default does nothing at all,
     # because nothing is pruned unless `TA_CHAT_KEEP_TURNS` says so. Still called
@@ -326,8 +364,11 @@ class Playthrough::Turn
     # is the one Scene that closed the fight, on the turn it ended, and nil on
     # the rounds before it. See `Playthrough::Fight` -- the browser's per-round
     # view is the battle panel, which is a later slice.
-    ending || scene || closing
+    outcome = ending || scene || closing
+    outcome.safety_notice ||= @safety_notice if outcome
+    outcome
   end
+  private :play_serially
 
   # THE PLAYER'S OWN BLOW. The record moves first and there is no prose at all:
   # an attack turn writes `playthrough_blows` and nothing else, and the one
@@ -448,8 +489,9 @@ class Playthrough::Turn
   #   * `Scene::Generator` raises on a stub, which is why realizing is first
   #     and not optional.
   #
-  # The playthrough moves only once both calls have landed, so a failed arrival
-  # leaves the player where they were rather than in a room with nothing in it.
+  # Realization must finish before the crossing is charged. Once charged, an
+  # arrival has factual fallback prose if its model fails, so it completes in
+  # the destination and the same submission can never pay for crossing twice.
   #
   # AND WALKING INTO A BUILDING IS WALKING INTO A ROOM OF IT. The captain's
   # ruling of 2026-09-06 -- *"the prince should be in a Room inside a Location,
@@ -487,9 +529,18 @@ class Playthrough::Turn
     # last one ends the game here, on arrival, exactly as a blow does.
     Playthrough::Hazards.new(playthrough, turn: self).on_arrival!(destination, from: playthrough.current_location)
 
-    scene = Scene::Generator.new(
+    generator = Scene::Generator.new(
       destination, previous_scene: playthrough.current_scene, playthrough: playthrough
-    ).generate!
+    )
+    scene = begin
+      generator.generate!
+    rescue StandardError => e
+      Rails.logger.warn { "Arrival kept its engine outcome: #{e.class}: #{e.message}" }
+      fallback = generator.fallback!
+      fallback.rendering_error = e if fallback.engine_fallback?
+      fallback.safety_notice = true if e.is_a?(BaseAgent::CrisisResponseError)
+      fallback
+    end
     stand_in!(destination, scene: scene)
 
     # Realizing the room is the most expensive thing this branch does -- two
@@ -501,7 +552,7 @@ class Playthrough::Turn
     # were paid for by this turn: the place, and then the room the way in landed
     # on. `BaseAgent#attribute_to!` on an agent that never spoke files nothing,
     # so the ordinary move still stamps exactly what it used to.
-    realizers.each { |one| one.agent.attribute_to!(scene) }
+    realizers.each { |one| attribute_conversation!(one.agent, scene) }
 
     block&.call(scene.description)
     scene
@@ -528,7 +579,7 @@ class Playthrough::Turn
   # for: `Location::Interior.way_in` answers the place itself when it has no
   # rooms, which after the realization above can only mean the layout failed and
   # rolled back. The player stays where they were on the raise that follows,
-  # which is what every other failure in this method does.
+  # which is what a realization failure in this method does.
   def walk_in!(destination)
     room = Location::Interior.way_in(destination)
     return [ destination, nil ] if room == destination
@@ -553,35 +604,39 @@ class Playthrough::Turn
   #                       answering. The player never sees it; nothing in this
   #                       app had ever written one.
   #
-  # The narration streams, because it is prose the player is watching arrive.
-  # Blank prose is not a turn: `Scene` validates a description, and a record
-  # written from nothing would be a turn the player cannot read.
+  # The character decision is validated and applied before rendering. Failed
+  # or blank model prose gets a factual receipt; the scene, interaction and
+  # current-scene pointer are then saved together in a short transaction.
   def talk_to(character, command, &block)
     agent = InteractionAgent.new(character, playthrough: playthrough)
     exchange = agent.ask(command, &block)
     return if exchange.narration.blank?
 
-    scene = Scene.create!(
-      story: playthrough.story,
-      location: playthrough.current_location,
-      previous_scene: playthrough.current_scene,
-      description: exchange.narration,
-      summary: "The player spoke with #{character.fullname}. #{exchange.reaction[:action]}".strip,
-      story_timestamp: playthrough.story_time_after("conversation")
-    )
+    scene = nil
+    Scene.transaction do
+      scene = Scene.create!(
+        story: playthrough.story,
+        location: playthrough.current_location,
+        previous_scene: playthrough.current_scene,
+        description: exchange.narration,
+        engine_fallback: exchange.fallback?,
+        summary: [ "The player spoke with #{character.fullname}.", exchange.reaction[:action], exchange.effect&.fact ].compact.join(" "),
+        story_timestamp: playthrough.story_time_after("conversation")
+      )
+      Interaction.create!(
+        **exchange.reaction,
+        **(exchange.effect&.attributes || {}),
+        character: character,
+        scene: scene,
+        location: playthrough.current_location,
+        user_input: command
+      )
+      playthrough.update!(current_scene: scene)
+    end
 
-    # `exchange.reaction` is keyed exactly as `Interaction::Schema` names its
-    # fields, which is the same contract the narrator prompt reads it under.
-    Interaction.create!(
-      **exchange.reaction,
-      character: character,
-      scene: scene,
-      location: playthrough.current_location,
-      user_input: command
-    )
-
-    agent.attribute_to!(scene)
-    playthrough.update!(current_scene: scene)
+    scene.safety_notice = exchange.safety_notice
+    scene.rendering_error = exchange.rendering_error
+    attribute_conversation!(agent, scene)
     scene
   end
 
@@ -607,11 +662,9 @@ class Playthrough::Turn
   # generator/narrator split: the app owns the facts of a scene, the narrator
   # owns the story made out of them.
   #
-  # So a failed narration leaves the item taken, and that is the honest way
-  # round. `move_to` is the other way -- it moves the playthrough only once
-  # both calls land -- because a failed arrival would leave the player in a room
-  # with nothing in it. A taken item with no sentence about it is a record the
-  # next turn can still read.
+  # A failed narration leaves the item taken and records a factual sentence in
+  # its place. The turn then completes its enemy response, hazards and time;
+  # losing a provider's paragraph is never an opportunity to take a free turn.
   #
   # A PLAYTHROUGH WITH NO CHARACTER NEVER REACHES HERE, and that is the fix of
   # 2026-09-05 rather than an assumption. It used to: the guard on this method
@@ -638,6 +691,7 @@ class Playthrough::Turn
     Scene::Narrator.new(playthrough).narrate(
       command,
       fact: taken_fact(item, taker, from),
+      fallback_text: "You pick up the #{item.name}.",
       handled: Playthrough::Moment::Handled.new(item: item, direction: :taken),
       &block
     )
@@ -667,6 +721,7 @@ class Playthrough::Turn
     Scene::Narrator.new(playthrough).narrate(
       command,
       fact: dropped_fact(item, here, dropper),
+      fallback_text: "You put down the #{item.name} in #{here.name}.",
       handled: Playthrough::Moment::Handled.new(item: item, direction: :dropped),
       &block
     )
@@ -697,12 +752,14 @@ class Playthrough::Turn
     inscriber = Item::Inscriber.new(item, playthrough: playthrough)
     words = inscriber.inscribe!
 
-    scene = Scene::Narrator.new(playthrough).narrate(command, fact: read_fact(item, words), &block)
+    scene = Scene::Narrator.new(playthrough).narrate(
+      command, fact: read_fact(item, words), fallback_text: "On the #{item.name} you read: #{words}", &block
+    )
 
     # The words cost a call on the one turn that wrote them, and that call
     # happens before there is a scene to file it under -- so the scene it paid
     # for stamps it here, the way `#move_to` stamps a realization.
-    inscriber.agent.attribute_to!(scene) if scene && inscriber.asked?
+    attribute_conversation!(inscriber.agent, scene) if scene && inscriber.asked?
 
     scene
   end
@@ -738,7 +795,10 @@ class Playthrough::Turn
     outcome = throw_item!(intent.item, at: intent.at, round: round)
     return narrate(command, &block) if outcome.nil?
 
-    Scene::Narrator.new(playthrough).narrate(command, fact: thrown_fact(outcome, thrower), &block)
+    Scene::Narrator.new(playthrough).narrate(
+      command, fact: thrown_fact(outcome, thrower),
+      fallback_text: "Your throw of the #{intent.item.name}: #{outcome.outcome_in_words}.", &block
+    )
   end
 
   # THE THREE WRITES THAT MOVE THE WORLD, each one named rather than left inline
@@ -759,6 +819,7 @@ class Playthrough::Turn
   # no scene to hand -- which is every caller in mechanics mode, where a turn
   # produces no prose -- moves the player without wiping the turn log.
   def stand_in!(destination, scene: playthrough.current_scene)
+    playthrough.advance_followers_to!(destination)
     playthrough.update!(current_location: destination, current_scene: scene)
   end
 
@@ -848,6 +909,7 @@ class Playthrough::Turn
       row.update!(hp_current: [ row.hp_current - amount.to_i, 0 ].max)
 
       if row.dead?
+        playthrough.keep_npc_body!(character)
         # WHAT A BODY LETS GO OF, in the same transaction as the last hit point,
         # so there is no moment in which the records say somebody is dead and
         # still holding things.
@@ -879,7 +941,7 @@ class Playthrough::Turn
   # It is in the house of `#carry!` and `#put_down!` because it is the same
   # statement they are: the row moves, and nothing else does.
   def spill!(character)
-    room = character&.location
+    room = playthrough.location_of(character)
     return [] if room.nil?
 
     playthrough.items_held_by(character).to_a.each do |item|
@@ -1038,14 +1100,24 @@ class Playthrough::Turn
     character.check(ability, penalty: penalty, rng: rng)
   end
 
-  # THE TOLLS THIS TURN'S PROSE HAS NOW CARRIED, stamped with the Scene that
-  # carried them. `Playthrough::Blow` is stamped by `Playthrough::Fight#close!`
-  # for the same reason and with the same one statement: nil means "not said
-  # yet", and something has to stop saying it.
+  # THE TOLLS ASSIGNED TO THIS TURN'S VISIBLE LOG ENTRY. The renderer was
+  # supplied these facts; that does not prove its description mentioned them.
+  # The entry's record-derived notices tell the player regardless, once per
+  # claimed toll, while nil remains available for the next completed scene.
   def claim_tolls!(scene)
     return if scene.nil?
 
-    playthrough.tolls.untold.update_all(scene_id: scene.id, updated_at: Time.current)
+    tolls = playthrough.tolls.untold
+    tolls = tolls.where(id: scene.narrated_toll_ids) unless scene.narrated_toll_ids.nil?
+    tolls.update_all(scene_id: scene.id, updated_at: Time.current)
+  end
+
+  # Attribution is an audit receipt, after the action and its scene landed.
+  # Losing it must not prevent the world's response to the committed action.
+  def attribute_conversation!(agent, scene)
+    agent.attribute_to!(scene)
+  rescue StandardError => e
+    Rails.logger.warn { "Turn attribution failed after persistence: #{e.class}: #{e.message}" }
   end
 
   # WHAT A THROW CAME TO, and it is a value because every consumer only reads --

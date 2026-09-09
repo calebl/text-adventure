@@ -179,9 +179,12 @@ class Character::Registry
 
   attr_reader :location, :story
 
-  def initialize(location)
+  # A resumed realization restores the engine slots that its saved detail
+  # response was written for. These are trusted records, never model picks.
+  def initialize(location, slots: nil)
     @location = location
     @story = location.story
+    @slots = slots if slots
   end
 
   # Turns a proposed cast into rows standing in this room, and returns WHO IS
@@ -389,9 +392,13 @@ class Character::Registry
     return refuse(label(candidate), "this story has nobody of that name and there is no sheet to write one from") unless candidate.is_a?(Hash)
 
     attributes = candidate.transform_keys(&:to_s)
-    fullname = field(attributes, :fullname)
+    # Presence must be checked on the same text the row will keep. A field
+    # containing only discarded characters is a refused proposal, not a failed
+    # database write that leaves the room's paid detail impossible to resume.
+    fields = PERSON_LIMITS.to_h { |name, _limit| [ name, field(attributes, name) ] }
+    fullname = fields.fetch(:fullname)
 
-    reason = creation_refusal(fullname, attributes)
+    reason = creation_refusal(fullname, fields)
     return refuse(fullname, reason) if reason
 
     # ONE PERSON PER SLOT, AND A CANDIDATE PAST THE LAST SLOT IS REFUSED. It
@@ -405,7 +412,7 @@ class Character::Registry
     return refuse(fullname, "the engine rolled #{slots.size} #{"person".pluralize(slots.size)} for this room and this is number #{slot + 1}") if details.nil?
     story.characters.create!(
       fullname: fullname,
-      nickname: field(attributes, :nickname).presence,
+      nickname: fields[:nickname].presence,
       location: location,
       race: details[:race],
       age: details[:age],
@@ -425,7 +432,7 @@ class Character::Registry
       # nothing in the realization prompt mentions one, so there is nothing here
       # for a model to have answered. See `Character::StatBlock`.
       **Character::StatBlock.for_new(story, sequence: slot),
-      **SHEET.to_h { |name| [ name, field(attributes, name) ] }
+      **fields.slice(*SHEET)
     ).then { |person| place!(person) }
   rescue SanitizesGeneratedText::TruncatedTextError => e
     # A HALF-WRITTEN PERSON IS WORSE THAN NO PERSON, and refusing one is what
@@ -471,7 +478,7 @@ class Character::Registry
   def creation_refusal(fullname, attributes)
     return "it has no name" if fullname.blank?
 
-    missing = SHEET.select { |field| attributes[field.to_s].to_s.strip.empty? }
+    missing = SHEET.select { |field| attributes[field].blank? }
     return "the sheet is missing #{missing.join(", ")}" if missing.any?
     return "there is nobody left to write: this universe has no races" if story.universe.races.none?
     return "the room already holds #{MAX_PER_ROOM}" if room_for_people.zero?

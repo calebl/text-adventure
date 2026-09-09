@@ -259,3 +259,24 @@ steps:
     offers: there is no person here called
     drifts: 0
     blows: 0
+
+- id: leave-the-body-and-the-empty-floor-behind
+  type: go to the hallway
+  why: an arrival must use this game's cast and inventory even after somebody has died
+  expect:
+    location: Grenn's Boarding House hallway (stub)
+    carrying: [bell-rope tally]
+    present: []
+    changed: true
+
+- id: returning-does-not-revive-the-bell-keeper-or-restore-his-tally
+  type: go to the bell
+  why: the arrival reader is checked by Walk as well as mechanics; the old world cast would put Marek back here alive
+  expect:
+    location: The Bell of Saint Aravel (realized)
+    present: []
+    foes: []
+    here: []
+    carrying: [bell-rope tally]
+    changed: true
+    blows: 0

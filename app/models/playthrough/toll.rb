@@ -38,8 +38,9 @@ class Playthrough::Toll < ApplicationRecord
   # walked. Nil for a room's own hazard, and that nil is the whole of what tells
   # the two sources apart on the row.
   belongs_to :location_connection, optional: true
-  # THE SCENE THAT TOLD THE PLAYER ABOUT IT. Nil is "the prose has not said this
-  # yet" -- `Playthrough::Blow#scene_id` read for the other thing that hurts.
+  # THE SCENE WHOSE LOG ENTRY TELLS THE PLAYER ABOUT IT. Its engine notice
+  # displays this record even when the model omits it from the description.
+  # Nil means no scene has claimed the consequence for that visible entry yet.
   belongs_to :scene, optional: true
 
   validates :hazard, presence: true
@@ -122,7 +123,7 @@ class Playthrough::Toll < ApplicationRecord
     Playthrough::Vitals::Condition.new(character: character, hp: hp_after, max: character.max_hp)
   end
 
-  # For the `rake game:mechanics` read-out and for a sweep's `note:`. The
+  # For the play page's consequence notice and the mechanics read-out. The
   # numbers, because a number is a fact where "badly" is a mood -- the rule
   # `Playthrough::Blow#to_s` is written under.
   def to_s

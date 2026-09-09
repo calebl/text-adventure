@@ -1,0 +1,753 @@
+{
+  "model": "mistralai/mistral-medium-3.1",
+  "repetitions": 4,
+  "cases_per_repetition": 3,
+  "annotations": "arrival-independent-annotations.json",
+  "second_reading": "arrival-root-annotations.json",
+  "notes": [
+    "Description and summary assessed separately; summaries are not the prose shown to players.",
+    "Three corpse descriptions are ambiguous; strict and inclusive acknowledgment both reported.",
+    "No exact injury acknowledgment in any player description. The new deterministic toll notice is separately tested and not counted as model prose.",
+    "Focused cases do not establish general realism or prove absence of contradictions."
+  ],
+  "comparisons": [
+    {
+      "scope": "all",
+      "metric": "description_contradiction",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          0.6666666666666666,
+          0.6666666666666666,
+          0.3333333333333333,
+          0.6666666666666666
+        ],
+        "after": [
+          0.0,
+          0.3333333333333333,
+          0.0,
+          0.0
+        ]
+      },
+      "code": "description_contradiction",
+      "before": {
+        "runs": 4,
+        "min": 0.3333333333333333,
+        "max": 0.6666666666666666,
+        "median": 0.6666666666666666,
+        "range": 0.3333333333333333
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.3333333333333333,
+        "median": 0.0,
+        "range": 0.3333333333333333
+      },
+      "delta": -0.6667,
+      "p_value": 0.057143,
+      "exact": true,
+      "outcome": "inconclusive",
+      "band": 0.3333333333333333
+    },
+    {
+      "scope": "all",
+      "metric": "description_fact_missing_strict",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          0.6666666666666666,
+          1.0,
+          0.6666666666666666,
+          0.3333333333333333
+        ]
+      },
+      "code": "description_fact_missing_strict",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.3333333333333333,
+        "max": 1.0,
+        "median": 0.6666666666666666,
+        "range": 0.6666666666666667
+      },
+      "delta": -0.3333,
+      "p_value": 0.142857,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.6666666666666667
+    },
+    {
+      "scope": "all",
+      "metric": "description_fact_missing_inclusive",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          0.3333333333333333,
+          0.6666666666666666,
+          0.3333333333333333,
+          0.3333333333333333
+        ]
+      },
+      "code": "description_fact_missing_inclusive",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.3333333333333333,
+        "max": 0.6666666666666666,
+        "median": 0.3333333333333333,
+        "range": 0.3333333333333333
+      },
+      "delta": -0.6667,
+      "p_value": 0.028571,
+      "exact": true,
+      "outcome": "real",
+      "band": 0.3333333333333333
+    },
+    {
+      "scope": "all",
+      "metric": "summary_fact_missing_strict",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          0.3333333333333333,
+          0.3333333333333333,
+          0.3333333333333333,
+          0.3333333333333333
+        ]
+      },
+      "code": "summary_fact_missing_strict",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.3333333333333333,
+        "max": 0.3333333333333333,
+        "median": 0.3333333333333333,
+        "range": 0.0
+      },
+      "delta": -0.6667,
+      "p_value": 0.028571,
+      "exact": true,
+      "outcome": "real",
+      "band": 0.0
+    },
+    {
+      "scope": "dead_resident",
+      "metric": "description_contradiction",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "code": "description_contradiction",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": -1.0,
+      "p_value": 0.028571,
+      "exact": true,
+      "outcome": "real",
+      "band": 0.0
+    },
+    {
+      "scope": "dead_resident",
+      "metric": "description_fact_missing_strict",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          1.0,
+          1.0,
+          1.0,
+          0.0
+        ]
+      },
+      "code": "description_fact_missing_strict",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 1.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 1.0
+    },
+    {
+      "scope": "dead_resident",
+      "metric": "description_fact_missing_inclusive",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "code": "description_fact_missing_inclusive",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": -1.0,
+      "p_value": 0.028571,
+      "exact": true,
+      "outcome": "real",
+      "band": 0.0
+    },
+    {
+      "scope": "dead_resident",
+      "metric": "summary_fact_missing_strict",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "code": "summary_fact_missing_strict",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": -1.0,
+      "p_value": 0.028571,
+      "exact": true,
+      "outcome": "real",
+      "band": 0.0
+    },
+    {
+      "scope": "carried_key",
+      "metric": "description_contradiction",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          0.0,
+          1.0
+        ],
+        "after": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ]
+      },
+      "code": "description_contradiction",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 1.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0,
+        "range": 1.0
+      },
+      "delta": -1.0,
+      "p_value": 0.485714,
+      "exact": true,
+      "outcome": "noise",
+      "band": 1.0
+    },
+    {
+      "scope": "carried_key",
+      "metric": "description_fact_missing_strict",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ]
+      },
+      "code": "description_fact_missing_strict",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0,
+        "range": 1.0
+      },
+      "delta": -1.0,
+      "p_value": 0.142857,
+      "exact": true,
+      "outcome": "noise",
+      "band": 1.0
+    },
+    {
+      "scope": "carried_key",
+      "metric": "description_fact_missing_inclusive",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ]
+      },
+      "code": "description_fact_missing_inclusive",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0,
+        "range": 1.0
+      },
+      "delta": -1.0,
+      "p_value": 0.142857,
+      "exact": true,
+      "outcome": "noise",
+      "band": 1.0
+    },
+    {
+      "scope": "carried_key",
+      "metric": "summary_fact_missing_strict",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "code": "summary_fact_missing_strict",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "scope": "crossing_harm",
+      "metric": "description_contradiction",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "code": "description_contradiction",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "scope": "crossing_harm",
+      "metric": "description_fact_missing_strict",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "code": "description_fact_missing_strict",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "scope": "crossing_harm",
+      "metric": "description_fact_missing_inclusive",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "code": "description_fact_missing_inclusive",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "scope": "crossing_harm",
+      "metric": "summary_fact_missing_strict",
+      "lower_is_better": true,
+      "values": {
+        "before": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "after": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "code": "summary_fact_missing_strict",
+      "before": {
+        "runs": 4,
+        "min": 1.0,
+        "max": 1.0,
+        "median": 1.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": -1.0,
+      "p_value": 0.028571,
+      "exact": true,
+      "outcome": "real",
+      "band": 0.0
+    },
+    {
+      "scope": "all",
+      "metric": "failed_call",
+      "values": {
+        "before": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "code": "failed_call",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "scope": "all",
+      "metric": "description_words",
+      "values": {
+        "before": [
+          77.0,
+          72.0,
+          79.66666666666667,
+          77.0
+        ],
+        "after": [
+          72.33333333333333,
+          70.0,
+          73.33333333333333,
+          61.333333333333336
+        ]
+      },
+      "code": "description_words",
+      "before": {
+        "runs": 4,
+        "min": 72.0,
+        "max": 79.66666666666667,
+        "median": 77.0,
+        "range": 7.666666666666671
+      },
+      "after": {
+        "runs": 4,
+        "min": 61.333333333333336,
+        "max": 73.33333333333333,
+        "median": 71.16666666666666,
+        "range": 11.999999999999993
+      },
+      "delta": -5.8333,
+      "p_value": 0.085714,
+      "exact": true,
+      "outcome": "noise",
+      "band": 11.999999999999993
+    },
+    {
+      "scope": "all",
+      "metric": "seconds",
+      "values": {
+        "before": [
+          1.7885431116689385,
+          1.7630208746656233,
+          1.7496021533297608,
+          1.734002496668836
+        ],
+        "after": [
+          2.104836010999861,
+          1.6857348789975124,
+          1.6154533426694495,
+          1.9056836623300721
+        ]
+      },
+      "code": "seconds",
+      "before": {
+        "runs": 4,
+        "min": 1.734002496668836,
+        "max": 1.7885431116689385,
+        "median": 1.7563115139976921,
+        "range": 0.05454061500010243
+      },
+      "after": {
+        "runs": 4,
+        "min": 1.6154533426694495,
+        "max": 2.104836010999861,
+        "median": 1.7957092706637923,
+        "range": 0.48938266833041166
+      },
+      "delta": 0.0394,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.48938266833041166
+    }
+  ]
+}

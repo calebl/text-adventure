@@ -1,0 +1,19 @@
+`/home/calebl` is not writable.
+Bundler will use `/tmp/bundler20260908-5-hwrx4x5' as your home directory temporarily.
+/home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/io-event-1.21.1/lib/IO_Event.so: warning: io_uring_queue_init() was available at compile time but failed at run time: Operation not permitted
+
+/home/calebl/Projects/text-adventure/.lavish/adversarial-review-2026-09-08/pending/npc-candidate/app/agents/InteractionAgent.rb:46: warning: already initialized constant InteractionAgent::Exchange
+/home/calebl/Projects/text-adventure/app/agents/InteractionAgent.rb:42: warning: previous definition of Exchange was here
+/home/calebl/Projects/text-adventure/.lavish/adversarial-review-2026-09-08/pending/npc-candidate/app/models/playthrough/turn.rb:995: warning: already initialized constant Playthrough::Turn::SEQUENCE_OFFSET
+/home/calebl/Projects/text-adventure/app/models/playthrough/turn.rb:991: warning: previous definition of SEQUENCE_OFFSET was here
+/home/calebl/Projects/text-adventure/.lavish/adversarial-review-2026-09-08/pending/npc-candidate/app/models/playthrough/turn.rb:1144: warning: already initialized constant Playthrough::Turn::Throw
+/home/calebl/Projects/text-adventure/app/models/playthrough/turn.rb:1140: warning: previous definition of Throw was here
+
+Run options: --seed 47975
+
+# Running:
+
+.........................................................................................................................................................................................................................................
+
+Finished in 18.604187s, 12.5241 runs/s, 52.8913 assertions/s.
+233 runs, 984 assertions, 0 failures, 0 errors, 0 skips

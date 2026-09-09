@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Text Adventure</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        background: #14161a; color: #cfd3d8;
+        font: 15px/1.6 ui-monospace, "DejaVu Sans Mono", monospace;
+        margin: 0; padding: 2rem 1rem;
+      }
+      main { max-width: 44rem; margin: 0 auto; }
+      h1 { font-size: 1.2rem; letter-spacing: .08em; text-transform: uppercase; color: #8ba0b4; }
+      h2 { font-size: 1rem; color: #e6e9ec; margin: 0 0 .25rem; }
+      a { color: #7fb2d8; }
+      hr { border: 0; border-top: 1px solid #262b31; margin: 1.5rem 0; }
+      .preface { color: #9aa3ac; font-style: italic; white-space: pre-wrap; }
+      .turn { white-space: pre-wrap; margin: 0 0 1.5rem; }
+
+      /* The log dims every turn but the newest, so a player who has scrolled
+         can find where the turn they just took begins. Past turns take the
+         preface's colour; the newest keeps full-strength body colour. Colour
+         only -- the preface is italic as well, and a turn is not.
+         `:last-of-type` is the marker: no class per entry, and on a brand new
+         playthrough the opening scene is the only turn and so the newest one.
+         While a turn is streaming the newest turn is the #stream div *below*
+         the log, so the log carries `streaming` and nothing in it brightens.
+         `.entry` is the wrapper one turn's prose, verdict and machinery panel
+         share (`turns/_turn`), and it is what `:last-of-type` counts now: it
+         used to be `.log > .turn:last-of-type`, which quietly depended on
+         nothing under a turn ever being a `<div>`. Four tests assert this
+         selector directly. */
+      .log .turn { color: #9aa3ac; }
+      .log:not(.streaming) > .entry:last-of-type .turn { color: #cfd3d8; }
+      .command { color: #d8c07f; margin: 0 0 .35rem; }
+      .speaking { color: #8b939b; margin: 0 0 .35rem; }
+      .place { color: #8b939b; margin: 0 0 .75rem; }
+      .place strong { color: #cfd3d8; font-weight: normal; }
+      .story { border: 1px solid #262b31; padding: .75rem 1rem; margin-bottom: .75rem; }
+      .story p { color: #8b939b; margin: .25rem 0 .75rem; }
+      form { display: flex; gap: .5rem; }
+      input[type=text] {
+        flex: 1; background: #0e1013; color: #cfd3d8; border: 1px solid #333b44;
+        padding: .5rem .6rem; font: inherit;
+      }
+      button {
+        background: #262b31; color: #cfd3d8; border: 1px solid #3a424b;
+        padding: .5rem .9rem; font: inherit; cursor: pointer;
+      }
+      button:hover { background: #333b44; }
+      .cursor::after { content: "\2588"; animation: blink 1s steps(2) infinite; }
+      @keyframes blink { 50% { opacity: 0; } }
+      .empty { color: #6b737b; }
+      .alert { color: #d88f7f; border: 1px solid #4a3230; padding: .5rem .75rem; }
+
+      /* The app talking rather than the world -- see Playthrough::SafetyNotice.
+         Deliberately not `.alert`: nothing has gone wrong and the alarm colour
+         would say it had. A left rule and the preface's grey put it plainly
+         outside the fiction without shouting, and `.turn`'s pre-wrap is absent
+         on purpose because this text is the app's own paragraphs rather than a
+         model's. It sits at the foot of the log, where the turn would have
+         been. */
+      .notice {
+        border-left: 2px solid #4a5a4a; padding: .1rem 0 .1rem .75rem;
+        margin: 0 0 1.5rem; color: #9aa3ac;
+      }
+      .notice p { margin: .5rem 0; }
+      .notice strong { color: #cfd3d8; font-weight: normal; }
+
+      /* THE SLASH MENU -- what the play box can complete this turn with. It is
+         a list under the input rather than an overlay: the input sits at the
+         foot of the page, the log above it is what the player is reading, and a
+         floating panel would cover the turn they just took. `.ask` is the
+         positioning context and the only thing between the form and the page.
+
+         Styled out of the pieces already here -- the input's own border and
+         background, the log's dim grey for the hint -- so the menu reads as
+         part of the box and not as a widget bolted to it. */
+      .ask { position: relative; }
+      .slash-menu {
+        list-style: none; margin: .35rem 0 0; padding: 0;
+        border: 1px solid #333b44; background: #0e1013; max-height: 12rem; overflow-y: auto;
+      }
+      .slash-option {
+        padding: .25rem .6rem; cursor: pointer;
+        display: flex; gap: .75rem; align-items: baseline; justify-content: space-between;
+      }
+      .slash-option[aria-selected="true"] { background: #262b31; color: #e6e9ec; }
+      .slash-hint { color: #6b737b; font-size: 12px; }
+
+      /* A SHEET: THE ENGINE'S OWN RECORDS, RENDERED RATHER THAN NARRATED.
+
+         `.sheet` is the frame, `.battle` is the one thing built on it today
+         (`playthroughs/_battle`). Split that way on the d3 rooms scout's call
+         5, which asks that the battle panel and a future ROOM SHEET share a
+         partial and a stylesheet: the room sheet is not built here and the
+         captain has not ruled on it, but nothing in these five rules is about
+         a fight, so it can be had without a restyle.
+
+         Built out of what is already in this file -- `.story`'s border, `h1`'s
+         uppercase heading, the log's dim grey for anything secondary -- so a
+         panel reads as part of the page and not as a widget bolted to it. NO
+         BARS AND NO NEW COLOURS: the condition is `2 of 6` in the notice grey,
+         because the reading experience is `ta-api-iface`'s stage and inventing
+         a visual vocabulary in a battle panel is that stage arriving early
+         (`data/ta-combat-scout` §15.6). */
+      .sheet { border: 1px solid #262b31; padding: .6rem .85rem; margin: 0 0 1rem; }
+      .sheet h2 {
+        font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+        color: #8ba0b4; margin: 0 0 .5rem;
+      }
+      .sheet-line {
+        display: flex; gap: .75rem; align-items: baseline; justify-content: space-between;
+        margin: .1rem 0;
+      }
+      .sheet-line .who { color: #cfd3d8; }
+      .sheet-line .state { color: #9aa3ac; margin-left: auto; }
+      .sheet-line .mark { color: #6b737b; font-size: 12px; min-width: 5rem; text-align: right; }
+      .sheet-note { color: #8b939b; margin: .5rem 0 0; }
+      /* WHAT JUST HAPPENED, AND WHAT YOU DO NOW -- the two ends of a round, and
+         the panel is read between them. `.sheet-lead` is the engine's line
+         about the round that is DONE, in the body colour because it is the
+         first thing to read; `.sheet-prompt` names the round the buttons under
+         it land on, in the heading's own small-caps so a row of buttons cannot
+         read as a mode that was entered. No new colours: both are already in
+         this file. */
+      .sheet-lead { color: #cfd3d8; margin: 0 0 .6rem; }
+      .sheet-prompt {
+        font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+        color: #8ba0b4; margin: .9rem 0 0;
+      }
+      /* `form` is flex and full-width in the rule above, which would put every
+         button on a line of its own. The same fix `.verdict` makes. */
+      .sheet-actions { display: flex; flex-wrap: wrap; gap: .4rem; margin: .7rem 0 0; }
+      .sheet-actions form { display: inline-flex; margin: 0; }
+      .sheet-actions input[type=submit] { font-size: 13px; padding: .3rem .7rem; }
+
+      /* The one colour a fight adds, and it is the alert colour already here:
+         which of the bodies on the panel means the party harm. */
+      .battle .mark.hostile, .battle .mark.provoked { color: #d88f7f; }
+
+      /* THE MACHINERY BEHIND ONE TURN, and it is the play page's own vocabulary
+         rather than the debug page's.
+
+         The captain's ask of 2026-09-05: *"I want to be able to select any given
+         turn and see the current game state as well as the exact prompt that was
+         given to the narrator ... I can't compare the two side by side."* So on
+         a wide viewport the panel sits in the right-hand gutter beside the turn
+         it belongs to, and on a narrow one it stacks under it. The debug page
+         has its own layout and stylesheet BY DESIGN -- it is allowed to be as
+         dense as it likes precisely because the two share no CSS -- so nothing
+         here is imported from it; these are the play page's colours, `.sheet`'s
+         frame and the log's dim grey, spelled out again at a smaller size.
+
+         The control is barely visible until the entry is hovered, for the same
+         reason the verdict is: there is one under every turn and the log is what
+         the player is reading. An open panel stays lit. */
+      .machinery { margin: -1rem 0 1.5rem; }
+      .machinery > summary {
+        color: #4f565d; cursor: pointer; font-size: 12px; padding: .1rem 0;
+        transition: color .12s;
+      }
+      .entry:hover .machinery > summary, .machinery > summary:focus { color: #8b939b; }
+      .machinery[open] > summary { color: #cfd3d8; }
+
+      /* The panel itself, and `.machinery-panel` rather than `.machinery` is the
+         scope on purpose: with scripts blocked the same partial is served as a
+         page of its own and there is no `<details>` around it there. */
+      .machinery-panel { font-size: 13px; }
+      .machinery-panel .sheet { margin: .4rem 0 .6rem; }
+      /* A LABEL COLUMN AND A VALUE COLUMN, and the provenance mark rides with
+         the value rather than in a column of its own. `.sheet-line` is flex with
+         the mark pushed right, which is correct across the width of the page and
+         wrong in a panel a third of it: at the narrow end of the breakpoint
+         below the mark wrapped onto a line by itself and the five rows stopped
+         reading as five rows. Same three spans, same vocabulary, laid out for
+         the width it actually gets. */
+      .machinery-panel .sheet-line {
+        display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+        gap: 0 .8rem; margin: .15rem 0;
+      }
+      .machinery-panel .sheet-line .who { color: #6b737b; }
+      .machinery-panel .sheet-line .state { margin-left: 0; overflow-wrap: anywhere; }
+      .machinery-panel .sheet-line .mark {
+        min-width: 0; text-align: left; margin-left: .35rem; white-space: nowrap;
+      }
+      .machinery-panel .sheet-line .mark::before { content: "\00b7\00a0"; }
+      .machinery-panel .absent { color: #7a6a52; font-style: italic; }
+      .machinery-panel .note { color: #6b737b; }
+      .machinery-panel h3 {
+        font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+        color: #6b737b; font-weight: normal; margin: .7rem 0 .1rem;
+      }
+      /* One stored conversation, collapsed -- `debug/_conversation`, rendered
+         here so the play page and the debug page cannot come to disagree about
+         what was sent. A turn has three or four of these and an arrival prompt
+         inlines the whole universe, so open the one you want. */
+      .machinery-panel .exchange { margin: 0 0 .2rem; }
+      .machinery-panel .exchange > summary { color: #8b939b; cursor: pointer; font-size: 12px; }
+      .machinery-panel .exchange > summary:hover { color: #cfd3d8; }
+      .machinery-panel .body {
+        padding: .3rem 0 .6rem .7rem; border-left: 1px solid #21262c; margin-left: .25rem;
+      }
+      .machinery-panel .tag { color: #8b939b; border: 1px solid #33393f; padding: 0 .3rem; font-size: 11px; }
+      .machinery-panel .tag.purpose { color: #7fb2d8; border-color: #2f4a5c; }
+      .machinery-panel .tag.durable { color: #7fd8c0; border-color: #2f5a50; }
+      .machinery-panel .tag.version { color: #b79ad8; border-color: #4a3d5c; }
+      /* Wide content scrolls inside its own box; the page body never does. */
+      .machinery-panel pre {
+        background: #0e1013; border: 1px solid #21262c; color: #9aa3ac;
+        padding: .4rem .5rem; margin: .2rem 0 0; font: inherit; font-size: 12px;
+        max-height: 24rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere;
+      }
+
+      /* SIDE BY SIDE, WHEN THERE IS ROOM FOR IT -- and stacked when there is
+         not, which is the whole of the responsive story here.
+
+         The reading column stays exactly where it is: `main` is 44rem and
+         centred, and the panel is pushed into the right-hand gutter with a
+         negative margin on the entry, so the prose does not move a pixel when a
+         panel opens. `--panel` is what fits in that gutter, capped at 34rem, and
+         the breakpoint is where it stops being worth having: at 88rem of
+         viewport the gutter gives 20rem. Below that everything falls back to the
+         block layout above and the panel stacks under the turn.
+
+         `:has()` is the guard, and it is load-bearing rather than decorative: an
+         entry with no panel (the flag is off) must not be widened, or the prose
+         would reflow to the width of a column that is not there. A browser
+         without `:has()` drops the whole block and gets the stacked layout,
+         which is the correct fallback. */
+      @media (min-width: 88rem) {
+        .log .entry:has(> .machinery) {
+          --panel: min(34rem, calc((100vw - 44rem) / 2 - 2rem));
+          display: flex; gap: 1rem; align-items: flex-start;
+          margin-right: calc(-1 * (var(--panel) + 1rem));
+        }
+        .log .entry > .said { flex: 1 1 auto; min-width: 0; max-width: 44rem; }
+        .log .entry > .machinery { flex: 0 0 var(--panel); margin-top: 0; }
+      }
+
+      /* THE VERDICT ON A TURN -- the evaluation instrument, and the least
+         styling that makes it usable without competing with the prose. The
+         reading experience is still `ta-api-iface`'s job; this is not the
+         restyling, it is one control kept out of the way of it.
+
+         Barely visible until the row is hovered, because there is one of these
+         under every turn in the log and the log is what the player is reading.
+         The chosen verdict stays lit whether or not anything is hovered -- it
+         is a record, not a hover state -- and each verdict keeps its own colour
+         so a scrolled log can be scanned for the turns that were marked.
+
+         `form` is flex and full-width in the rule above, which would put each
+         of these on a line of its own; inline-flex is what keeps the whole
+         control on one. */
+      .verdict {
+        display: flex; flex-wrap: wrap; gap: .4rem; align-items: center;
+        margin: -1rem 0 1.5rem; opacity: .28; transition: opacity .12s;
+      }
+      .verdict:hover, .verdict:focus-within { opacity: 1; }
+      .verdict:has(.chosen) { opacity: .85; }
+      .verdict form { display: inline-flex; gap: .3rem; margin: 0; }
+      .verdict input[type=submit], .verdict button {
+        background: none; border: 1px solid #2b3238; color: #6b737b;
+        padding: .05rem .4rem; font: inherit; font-size: 12px; cursor: pointer;
+      }
+      .verdict input[type=submit]:hover, .verdict button:hover { background: #1c2126; color: #cfd3d8; }
+      .verdict .mark.chosen { border-color: currentColor; }
+      .verdict .mark.good.chosen { color: #7fd8c0; }
+      .verdict .mark.weak.chosen { color: #d8c07f; }
+      .verdict .mark.bad.chosen { color: #d88f7f; }
+      /* The note is a single line and sits beside the buttons rather than
+         stretching to the width of the log. */
+      .verdict .why input[type=text] {
+        flex: 0 1 18rem; padding: .05rem .4rem; font-size: 12px; border-color: #2b3238;
+      }
+    </style>
+    <script type="importmap" data-turbo-track="reload">{
+  "imports": {
+    "application": "/assets/application-2c0adcf4.js",
+    "@hotwired/turbo-rails": "/assets/turbo.min-86bf8853.js",
+    "@hotwired/stimulus": "/assets/stimulus.min-7ea3d58b.js",
+    "@hotwired/stimulus-loading": "/assets/stimulus-loading-25917588.js",
+    "controllers/application": "/assets/controllers/application-1b22bc5a.js",
+    "controllers": "/assets/controllers/index-d4623ca5.js",
+    "controllers/play_controller": "/assets/controllers/play_controller-3ae0e699.js",
+    "controllers/slash_controller": "/assets/controllers/slash_controller-de3d76f1.js"
+  }
+}</script>
+<link rel="modulepreload" href="/assets/application-2c0adcf4.js">
+<link rel="modulepreload" href="/assets/turbo.min-86bf8853.js">
+<link rel="modulepreload" href="/assets/stimulus.min-7ea3d58b.js">
+<link rel="modulepreload" href="/assets/stimulus-loading-25917588.js">
+<link rel="modulepreload" href="/assets/controllers/application-1b22bc5a.js">
+<link rel="modulepreload" href="/assets/controllers/index-d4623ca5.js">
+<link rel="modulepreload" href="/assets/controllers/play_controller-3ae0e699.js">
+<link rel="modulepreload" href="/assets/controllers/slash_controller-de3d76f1.js">
+<script type="module">import "application"</script>
+  </head>
+  <body>
+    <main>
+
+      <div data-controller="play"
+     data-action="scroll@window->play#notePosition
+                  turbo:load@document->play#notePosition
+                  turbo:before-stream-render@document->play#followStreamRender">
+  <h1>The Counting House</h1>
+  <p>
+    <a href="/">&larr; all stories</a>
+  </p>
+
+  <div class="preface">You are Iri Calder. Beyond the market, floodwater runs through the abandoned counting house.</div>
+  <hr>
+
+  <turbo-cable-stream-source channel="Turbo::StreamsChannel" signed-stream-name="IloybGtPaTh2ZEdWNGRDMWhaSFpsYm5SMWNtVXZVR3hoZVhSb2NtOTFaMmd2TVEi--a17448bb272dea4539d82037ca0e5a3f584113b68dce04af552da051253a8674"></turbo-cable-stream-source>
+
+  <div id="turn_log">
+
+  <div class="log">
+    <div class="entry">
+  <div class="said">
+    <div class="turn">The counting house opens before you.</div>
+        <p class="notice" id="playthrough_toll_1">flooded on Counting House cost Iri Calder 3 hit points (the water takes your legs); Iri Calder is hurt (15 of 18)</p>
+  </div>
+
+</div>
+
+  </div>
+
+
+
+
+    <p class="place">
+        You are in <strong>Counting House</strong>.
+        Ways out: none that you can see.
+    </p>
+
+    <div class="ask" data-controller="slash"
+         data-slash-menu-value="{&quot;verbs&quot;:[{&quot;word&quot;:&quot;go&quot;,&quot;hint&quot;:&quot;a way out of here&quot;},{&quot;word&quot;:&quot;talk&quot;,&quot;hint&quot;:&quot;somebody standing here&quot;},{&quot;word&quot;:&quot;take&quot;,&quot;hint&quot;:&quot;something lying here&quot;},{&quot;word&quot;:&quot;drop&quot;,&quot;hint&quot;:&quot;something you are carrying&quot;},{&quot;word&quot;:&quot;inspect&quot;,&quot;hint&quot;:&quot;something here or in your hands&quot;},{&quot;word&quot;:&quot;attack&quot;,&quot;hint&quot;:&quot;strike somebody standing here -- your first blow lands now, and they answer&quot;}],&quot;targets&quot;:{&quot;go&quot;:[],&quot;talk&quot;:[],&quot;take&quot;:[],&quot;drop&quot;:[],&quot;inspect&quot;:[],&quot;attack&quot;:[]}}">
+      <form action="/playthroughs/1/turns" accept-charset="UTF-8" method="post">
+        <input autocomplete="off" value="0b49ea5b-af81-4792-a1fc-c6d60b76ac48" type="hidden" name="request_token" id="request_token" />
+        <input autofocus="autofocus" autocomplete="off" placeholder="what do you do? (/ to complete)" role="combobox" aria-expanded="false" aria-controls="slash_menu" aria-autocomplete="list" data-play-target="command" data-slash-target="input" data-action="input-&gt;slash#refresh focus-&gt;slash#refresh keydown-&gt;slash#navigate blur-&gt;slash#dismiss" type="text" name="command" id="command" />
+        <input type="submit" name="commit" value="Go" data-disable-with="Go" />
+</form>      <ul class="slash-menu" id="slash_menu" role="listbox" aria-label="commands" data-slash-target="menu" hidden></ul>
+    </div>
+</div>
+
+
+  <div id="bottom"></div>
+</div>
+
+    </main>
+  </body>
+</html>

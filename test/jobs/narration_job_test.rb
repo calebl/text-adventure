@@ -27,6 +27,38 @@ class NarrationJobTest < ActiveJob::TestCase
     streams.select { |s| s["action"] == "append" }
   end
 
+  test "the job creates the streaming target before any prose and restores the input last" do
+    playthrough = create(:playthrough, :started)
+    streams = play(playthrough, "open the ledger", NOT_A_MOVE, NARRATION)
+
+    assert_equal "replace", streams.first["action"]
+    assert_equal "turn_log", streams.first["target"]
+    assert_includes streams.first.to_html, 'id="stream"'
+    assert_includes streams.first.to_html, 'class="log streaming"'
+    assert_not_includes streams.first.to_html, "what do you do?"
+    assert_not_includes streams.first.to_html, "sheet battle"
+    assert streams[1...-1].all? { |stream| stream["action"] == "append" }
+    assert_equal "replace", streams.last["action"]
+    assert_includes streams.last.to_html, "what do you do?"
+  end
+
+  test "a duplicate job only refreshes the finished log without a new pending page" do
+    playthrough = create(:playthrough, :started)
+    BaseAgent.stub(:new, FakeAgent.new(NOT_A_MOVE, NARRATION)) do
+      NarrationJob.perform_now(playthrough.id, "open the ledger", "same-form")
+    end
+    streams = capture_turbo_stream_broadcasts(playthrough) do
+      BaseAgent.stub(:new, ->(*) { flunk "a redelivery cannot ask a model" }) do
+        NarrationJob.perform_now(playthrough.id, "open the ledger", "same-form")
+      end
+    end
+
+    assert_equal 1, streams.length
+    assert_equal "replace", streams.sole["action"]
+    assert_includes streams.sole.to_html, "what do you do?"
+    assert_not_includes streams.sole.to_html, 'id="stream"'
+  end
+
   test "narrates a turn, appends the prose, and persists it" do
     playthrough = create(:playthrough, :started)
 

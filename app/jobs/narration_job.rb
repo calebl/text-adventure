@@ -41,63 +41,61 @@ class NarrationJob < ApplicationJob
   # a time, which reads as prose arriving rather than as blocks landing.
   BATCH_SIZE = 20
 
-  def perform(playthrough_id, command)
+  def perform(playthrough_id, command, request_token = job_id)
     playthrough = Playthrough.find(playthrough_id)
     buffer = +""
+    turn = Playthrough::Turn.new(playthrough)
+    handled_error = false
 
-    outcome = Playthrough::Turn.new(playthrough).play(command) do |chunk|
+    # All page changes travel over one ordered channel under the same lock.
+    # The HTTP acknowledgement carries no competing pending page, so even an
+    # immediate grammar command cannot be overwritten by a late response.
+    beginning = -> { start(playthrough, command) }
+    completion = lambda do |outcome|
+      flush(playthrough, buffer)
+      finish(playthrough, safety_notice: turn.safety_notice,
+             refusal: outcome.is_a?(Playthrough::Refusal) ? outcome : nil)
+    end
+    failure = lambda do |error|
+      handled_error = true
+      failed(playthrough_id, playthrough, error)
+    end
+    turn.play(command, request_token: request_token, on_start: beginning,
+              on_finish: completion, on_error: failure) do |chunk|
       buffer << chunk
       flush(playthrough, buffer) if buffer.length >= BATCH_SIZE
     end
-
-    flush(playthrough, buffer)
-
-    # A LINE THE ENGINE WOULD NOT PLAY comes back instead of a Scene, and this
-    # is the second place the job knows something about what a turn contained --
-    # paid here for the same reason the crisis interception is (see below):
-    # `Playthrough::Turn` produces scenes, and nothing it returns can carry
-    # "show the player something that is not a scene". The consumer is what has
-    # a screen.
-    #
-    # It streamed NOTHING, deliberately: the text is the app's own paragraph,
-    # not prose arriving token by token, and `#stream` is styled as narration.
-    # It arrives with the same `#turn_log` replace every turn ends with, so the
-    # player reads it and the form comes back under it.
-    finish(playthrough, refusal: outcome.is_a?(Playthrough::Refusal) ? outcome : nil)
-  rescue ActiveRecord::RecordNotFound
-    # The playthrough is gone. There is nobody to tell.
-    Rails.logger.info { "Narration skipped: playthrough #{playthrough_id} no longer exists" }
-  rescue BaseAgent::CrisisResponseError => e
-    # THE ONE FAILURE THE APP ANSWERS ITSELF, and the one place this job knows
-    # anything about what a turn contained -- which is a cost, and it is paid
-    # here rather than in the loop on purpose. `Playthrough::Turn` produces
-    # scenes; nothing it returns can carry "show the player something that is
-    # not a scene". The consumer is what has a screen.
-    #
-    # No scene was written -- `BaseAgent` never handed the text back and
-    # `Scene::Narrator` does not persist an unusable response -- so replacing
-    # `#turn_log` is also what takes the suppressed prose off the page: the log
-    # renders persisted scenes, and `#stream` goes with the element it lives in.
-    Rails.logger.warn { "Narration intercepted: #{e.class}: #{e.message}" }
-    finish(playthrough, safety_notice: true) if playthrough
-  rescue => e
-    # A failed turn used to leave the player with a dead cursor and no input --
-    # the SSE `error` event removed the cursor and that was all, so the only way
-    # back was a reload. Broadcasting the idle log returns the form along with
-    # a line saying so, and the player is still standing where they were.
-    #
-    # WHAT THE PLAYER SEES IS THE APP'S OWN COPY, never `e.message`. The reason
-    # a turn failed is an internal one every time -- a model that would not
-    # answer, a schema it ignored, a character sheet cut off at its cap -- and
-    # handing the exception's text to the page put an internal cap and a
-    # fragment of suppressed model output in front of somebody who typed a
-    # sentence. The full error stays here, at full detail, which is where a
-    # reason belongs. See `Playthrough::TurnFailureNotice`.
-    Rails.logger.error { "Narration failed: #{e.class}: #{e.message}" }
-    finish(playthrough, error: Playthrough::TurnFailureNotice::MESSAGE) if playthrough
+  rescue StandardError => e
+    # Only finding the game or acquiring the lock can fail outside Turn's
+    # guarded callback. Never broadcast a second terminal surface after unlock.
+    failed(playthrough_id, playthrough, e) unless handled_error
   end
 
   private
+
+  def start(playthrough, command)
+    Turbo::StreamsChannel.broadcast_replace_to(
+      playthrough, target: "turn_log", partial: "playthroughs/turn_log",
+      locals: { playthrough: playthrough, command: command }
+    )
+  end
+
+  def failed(playthrough_id, playthrough, error)
+    case error
+    when ActiveRecord::RecordNotFound
+      Rails.logger.info { "Narration skipped: playthrough #{playthrough_id} no longer exists" }
+    when BaseAgent::CrisisResponseError
+      Rails.logger.warn { "Narration intercepted: #{error.class}: #{error.message}" }
+      finish(playthrough, safety_notice: true) if playthrough
+    else
+      # Exceptions are for the log. The player gets the current persisted
+      # state and the app's own copy, which makes no claim that effects rolled
+      # back. Ordinary provider failures after a committed action have already
+      # completed with factual prose before reaching this consumer.
+      Rails.logger.error { "Narration failed: #{error.class}: #{error.message}" }
+      finish(playthrough, error: Playthrough::TurnFailureNotice::MESSAGE) if playthrough
+    end
+  end
 
   # Appends the buffered prose to the streaming div and empties the buffer.
   #

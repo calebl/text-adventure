@@ -28,7 +28,7 @@
 #   nobody left to fight   no live foe is standing in the room it happened in.
 #                          `Playthrough#foes_in` is the reader, so "left to
 #                          fight" means the world's hostile AND this game's
-#                          provoked, minus this game's dead.
+#                          provoked, minus this game's dead and agreed truces.
 #   the party left         the playthrough is standing somewhere else. The
 #                          captain's call C1: a fight is always escapable by
 #                          leaving the room, and this is that call written down.
@@ -42,6 +42,12 @@
 # Scene (`Playthrough::Blow.open`). There is no `fighting` column to go stale,
 # no `engaged_at` to disagree with the room somebody is standing in, and a
 # process that died mid-fight leaves a database that reads correctly.
+#
+# THE CLOSING MOMENT IS WHERE THE PARTY NOW STANDS. After fleeing, the blows
+# and the account below still name the room the fight happened in, but the
+# closing Scene belongs to the destination. current_scene is the next turn's
+# history link; putting the old fight room there made that moment contradict
+# the party's whereabouts and made the next journey read the wrong doorway.
 class Playthrough::Fight
   attr_reader :playthrough
 
@@ -114,19 +120,20 @@ class Playthrough::Fight
     return nil if blows.empty? || !over?
 
     here = blows.first.location
+    now = playthrough.current_location || here
     scene = nil
 
     Scene.transaction do
       scene = Scene.create!(
         story: playthrough.story,
-        location: here,
+        location: now,
         previous_scene: playthrough.current_scene,
         description: sentence(blows, here),
         summary: summary(blows, here),
         story_timestamp: playthrough.story_now + (Scene::TURN_MINUTES.fetch("action") * blows.map(&:round).uniq.size).minutes,
         resolved_action: "attack",
         acted_on: opponent,
-        characters: playthrough.cast_in(here)
+        characters: playthrough.cast_in(now)
       )
       Playthrough::Blow.where(id: blows.map(&:id)).update_all(scene_id: scene.id)
       playthrough.update!(current_scene: scene)
@@ -168,6 +175,8 @@ class Playthrough::Fight
     return "#{party.fullname} is dead." if party && dead.include?(party)
     return "#{dead.map(&:fullname).to_sentence} is dead." if dead.one?
     return "#{dead.map(&:fullname).to_sentence} are dead." if dead.many?
+
+    return "Nobody was killed: the fighting stopped." if playthrough.current_location_id == blows.first.location_id
 
     "Nobody was killed: the party is no longer standing in it."
   end

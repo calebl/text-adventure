@@ -68,7 +68,9 @@ class Item::Snapshot
     return [] if location.nil?
 
     templates = Item.lying_in(location).templates.order(:id).to_a
-    people = Character.present_in(location).to_a
+    # A follower's world row stays in the room they started in. Contact follows
+    # this game's whereabouts so their possessions can join them, once each.
+    people = playthrough.characters_located_in(location)
 
     copy_all!(templates.map { |template| [ template, { location: location } ] } +
               people.flat_map { |person| held_by(person) })

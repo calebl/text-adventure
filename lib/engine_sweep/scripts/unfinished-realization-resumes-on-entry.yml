@@ -1,0 +1,89 @@
+# First entry pays for detail and admits real nouns, then loses the exits
+# provider. Another submission must finish with one exits call, retain every
+# admission once, and never regenerate the room on a revisit. The ordered
+# replies fail immediately if a detail call is repeated.
+story: The Unfinished Workshop
+steps:
+- id: exits-provider-interrupts-first-entry
+  type: /move Workshop
+  browser:
+    token: first-entry
+    realizes: Workshop
+    raises: true
+    replies:
+    - purpose: location
+      content:
+        description: Sella stands beside a brass token on the workbench.
+        lore: Sella keeps the town's oldest workshop.
+        items:
+        - name: brass token
+          description: A small brass disc.
+        people:
+        # This apparent sheet becomes invalid after text sanitization. It must
+        # be refused, while the valid next person still reaches the world.
+        - fullname: Unusable Proposal
+          nickname: Unusable
+          appearance: A patched apron.
+          personality: '🙂'
+          backstory: A passing worker.
+          likes: Honest work.
+          dislikes: Waste.
+          fears: Fire.
+        - fullname: Sella Reed
+          nickname: Sella
+          appearance: A patched apron.
+          personality: Patient and careful.
+          backstory: A lifelong maker of keys.
+          likes: Honest work.
+          dislikes: Waste.
+          fears: Fire.
+    - purpose: location
+      unavailable: true
+  expect:
+    location: Market (realized)
+    exits: [Workshop (stub)]
+    changed: false
+    note: failed
+    elapsed_minutes: 0
+- id: retry-finishes-only-the-missing-phase
+  type: /move Workshop
+  browser:
+    token: retry-entry
+    realizes: Workshop
+    replies:
+    - purpose: location
+      content:
+        exits:
+        - name: Market
+          teaser: A quiet square.
+          distance: adjacent
+          travel_method: walking
+    - purpose: arrival
+      unavailable: true
+  expect:
+    location: Workshop (realized)
+    exits: [Market (realized)]
+    here: [brass token]
+    present: [Sella Reed]
+    changed: true
+    note: completed
+- id: take-the-generated-item
+  type: /take brass token
+  expect:
+    carrying: [brass token]
+    here: []
+- id: leave-the-generated-room
+  type: /move Market
+  browser: {token: leave, fail: arrival}
+  expect:
+    location: Market (realized)
+    carrying: [brass token]
+- id: revisit-reuses-location-and-admissions
+  type: /move Workshop
+  browser: {token: revisit, fail: arrival}
+  expect:
+    location: Workshop (realized)
+    here: []
+    carrying: [brass token]
+    present: [Sella Reed]
+    exits: [Market (realized)]

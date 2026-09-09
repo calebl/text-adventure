@@ -223,10 +223,10 @@ class Item::Registry
   #
   # IT IS DROPPED HERE RATHER THAN RAISED, which is the opposite of what every
   # other truncated field in the app does, and the reason is where this runs.
-  # `Location::Generator#write_detail!` has already SAVED the description by the
-  # time the items are admitted, and `#write_exits!` has not run yet: a raise on
-  # this line leaves a realized room with no way out of it, which is a worse
-  # world than a note with no words. And a note with no words is a shape the app
+  # `Location::Generator` now checkpoints the paid detail and rolls back failed
+  # admissions together, but a truncated inscription would still make every
+  # retry of that accepted answer fail at this same optional field. A note
+  # with no words is a shape the app
   # already answers for -- `Item::Inscriber` writes them on the first read, once,
   # from a call whose whole budget is that one field. So the thing stays
   # readable, the fragment goes, and the words arrive later and whole.

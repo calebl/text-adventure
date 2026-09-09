@@ -1,0 +1,29 @@
+{
+  "method": "All 24 responses read with arm labels hidden. Description and summary acknowledgment are separate because only description is the player's arrival prose. No model judge or keyword-only grader was used.",
+  "readings": {
+    "822c32ad": {"contradiction": false, "description_ack": true, "summary_ack": true, "ambiguous": true, "evidence": "slumped beside the desk, her stillness unnatural", "note": "Corpse-like body portrayal; death explicit in summary but inferred in description."},
+    "b221e3ae": {"contradiction": true, "description_ack": false, "summary_ack": false, "evidence": "a brass key on the desk"},
+    "01c97fbf": {"contradiction": false, "description_ack": true, "summary_ack": false, "evidence": "the brass key heavy in your palm"},
+    "48b020ce": {"contradiction": false, "description_ack": false, "summary_ack": false, "evidence": "cold, still water creeping over your boots", "note": "Wetness is not a stated injury or pain."},
+    "9e0e40da": {"contradiction": false, "description_ack": false, "summary_ack": true, "evidence": "The cold water hits your knees", "note": "Only summary says losing 3 hit points; no injury in player-readable prose."},
+    "16096ffd": {"contradiction": false, "description_ack": false, "summary_ack": true, "evidence": "soaking through your clothes as you stumble forward", "note": "Stumbling/wetness does not state injury; summary alone records HP loss."},
+    "4d194704": {"contradiction": true, "description_ack": false, "summary_ack": false, "evidence": "Maren Vosk standing beside a brass key"},
+    "0c84828b": {"contradiction": false, "description_ack": true, "summary_ack": true, "ambiguous": true, "evidence": "the pale, outstretched hand of Maren Vosk floating beside the desk", "note": "Body imagery supports death; description itself does not expressly distinguish unconsciousness."},
+    "affe59cd": {"contradiction": false, "description_ack": true, "summary_ack": true, "ambiguous": true, "evidence": "Maren Vosk lies motionless beside the desk, their stillness unnatural", "note": "Corpse-like body portrayal; death explicit only in summary."},
+    "ebbc1526": {"contradiction": false, "description_ack": false, "summary_ack": false, "ambiguous": true, "evidence": "her gaze fixed on the brass key", "note": "May imply desk placement, but no position is asserted; could be looking at the player's carried key. Possession is not acknowledged."},
+    "79e6f3da": {"contradiction": true, "description_ack": false, "summary_ack": false, "evidence": "a brass key on the desk"},
+    "70a5f8db": {"contradiction": false, "description_ack": true, "summary_ack": false, "evidence": "the brass key you carry"},
+    "bbe17cb2": {"contradiction": false, "description_ack": false, "summary_ack": false, "evidence": "water seeps through your boots", "note": "No injury or pain is acknowledged."},
+    "95eed595": {"contradiction": false, "description_ack": false, "summary_ack": false, "evidence": "the water seeping over your boots", "note": "No injury or pain is acknowledged."},
+    "bbbacad7": {"contradiction": false, "description_ack": true, "summary_ack": false, "evidence": "the brass key heavy in your pocket"},
+    "669765d0": {"contradiction": false, "description_ack": false, "summary_ack": true, "evidence": "pulling you off-balance before you catch yourself", "note": "Danger and a stumble, but no stated injury/pain. HP loss appears only in summary."},
+    "a6c024b7": {"contradiction": false, "description_ack": false, "summary_ack": false, "evidence": "water seeps into your boots", "note": "No injury or pain is acknowledged."},
+    "718419d3": {"contradiction": true, "description_ack": false, "summary_ack": false, "evidence": "her sharp eyes tracking your entrance"},
+    "02c90dce": {"contradiction": false, "description_ack": true, "summary_ack": true, "evidence": "her lifeless fingers", "note": "Secondary discrepancy: fingers curled around the key suggests holding an item recorded as lying in the room."},
+    "a6552098": {"contradiction": true, "description_ack": false, "summary_ack": false, "evidence": "Maren Vosk standing beside it, her sharp gaze already fixed on you"},
+    "caa9a748": {"contradiction": true, "description_ack": false, "summary_ack": false, "evidence": "beside the desk, her sharp eyes fixed on the brass key resting there"},
+    "33c40ddd": {"contradiction": true, "description_ack": false, "summary_ack": false, "evidence": "the brass key on the desk"},
+    "1ae56711": {"contradiction": false, "description_ack": false, "summary_ack": true, "evidence": "the sudden drag nearly pitches you forward", "note": "Near fall is not a stated injury; HP loss appears only in summary."},
+    "6b090597": {"contradiction": true, "description_ack": false, "summary_ack": false, "evidence": "her gaze steady as she waits"}
+  }
+}

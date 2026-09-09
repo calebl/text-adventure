@@ -1,0 +1,47 @@
+[
+  {
+    "command": [
+      "open",
+      "file:///home/calebl/Projects/text-adventure/.lavish/adversarial-review-2026-09-08/evaluation/toll-notice-fixture.html"
+    ],
+    "status": 0,
+    "stdout": "page:\n  title: Text Adventure\n  url: \"file:///home/calebl/Projects/text-adventure/.lavish/adversarial-review-2026-09-08/evaluation/toll-notice-fixture.html\"\n  refs: 14\nsnapshot:\nuid=g1:1_0 RootWebArea \"Text Adventure\" url=\"file:///home/calebl/Projects/text-adventure/.lavish/adversarial-review-2026-09-08/evaluation/toll-notice-fixture.html\"\n  uid=g1:1_1 main\n    uid=g1:1_2 heading \"THE COUNTING HOUSE\" level=\"1\"\n    uid=g1:1_3 link \"\u2190 all stories\" url=\"file:///\"\n      uid=g1:1_4 StaticText \"\u2190 all stories\"\n    uid=g1:1_5 StaticText \"You are Iri Calder. Beyond the market, floodwater runs through the abandoned counting house.\"\n    uid=g1:1_6 StaticText \"The counting house opens before you.\"\n    uid=g1:1_7 StaticText \"flooded on Counting House cost Iri Calder 3 hit points (the water takes your legs); Iri Calder is hurt (15 of 18)\"\n    uid=g1:1_8 StaticText \"You are in \"\n    uid=g1:1_9 StaticText \"Counting House\"\n    uid=g1:1_10 StaticText \". Ways out: none that you can see.\"\n    uid=g1:1_11 form\n      uid=g1:1_12 combobox \"what do you do? (/ to complete)\" autocomplete=\"list\" expandable haspopup=\"listbox\"\n      uid=g1:1_13 button \"Go\"\nhelp[5]:\n  Run `chrome-devtools-axi fill @g1:1_12 \"text\"` to fill the \"what do you do? (/ to complete)\" field\n  Run `chrome-devtools-axi click @g1:1_13` to click the \"Go\" button\n  Run `chrome-devtools-axi click @g1:1_3` to click the \"\u2190 all stories\" link\n  Run `chrome-devtools-axi scroll down` to scroll down\n  Use `chrome-devtools-axi eval <expr>` for JS expressions. For multi-statement code, pass a function: `eval \"() => { ...; return result }\"`\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "resize",
+      "1100",
+      "850"
+    ],
+    "status": 0,
+    "stdout": "resized:\n  width: 1100\n  height: 850\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "eval",
+      "() => ({notices: Array.from(document.querySelectorAll(\".log .notice\")).map(n => n.textContent), debugVisible: !!document.querySelector(\".machinery\"), viewport: {width: innerWidth, height: innerHeight}})"
+    ],
+    "status": 0,
+    "stdout": "result: \"{\\\"notices\\\":[\\\"flooded on Counting House cost Iri Calder 3 hit points (the water takes your legs); Iri Calder is hurt (15 of 18)\\\"],\\\"debugVisible\\\":false,\\\"viewport\\\":{\\\"width\\\":1100,\\\"height\\\":850}}\"\nhelp[1]:\n  Run `chrome-devtools-axi snapshot` to see current page state\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "screenshot",
+      "/home/calebl/Projects/text-adventure/.lavish/adversarial-review-2026-09-08/evaluation/toll-notice-ui.png"
+    ],
+    "status": 0,
+    "stdout": "screenshot: /home/calebl/Projects/text-adventure/.lavish/adversarial-review-2026-09-08/evaluation/toll-notice-ui.png\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "stop"
+    ],
+    "status": 0,
+    "stdout": "status: stopped\n",
+    "stderr": ""
+  }
+]

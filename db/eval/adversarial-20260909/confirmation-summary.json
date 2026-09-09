@@ -1,0 +1,335 @@
+{
+  "protocol": "confirmation-protocol.md",
+  "scope": "Unchanged first eight Salt Assizes turns; four runs per arm, not full-script coverage",
+  "arms": {
+    "before": {
+      "runs": 4,
+      "turns": 32,
+      "failed_turns": 0,
+      "calls": 88,
+      "failed_calls": 0,
+      "factual_fallback_scenes": [],
+      "model_prose_comparison_eligible": true,
+      "accounted_usd": 0.212887,
+      "provider_reported_usd": 0.04081244,
+      "calls_without_provider_reported_charge": 24,
+      "usage_priced_estimate_usd": 0.050804800000000004,
+      "branch_divergences": [],
+      "richness_commitments": [
+        2.5,
+        2.375,
+        2.25,
+        2.375
+      ]
+    },
+    "after": {
+      "runs": 4,
+      "turns": 32,
+      "failed_turns": 0,
+      "calls": 88,
+      "failed_calls": 0,
+      "factual_fallback_scenes": [],
+      "model_prose_comparison_eligible": true,
+      "accounted_usd": 0.215222,
+      "provider_reported_usd": 0.04073668,
+      "calls_without_provider_reported_charge": 24,
+      "usage_priced_estimate_usd": 0.0502412,
+      "branch_divergences": [],
+      "richness_commitments": [
+        2.25,
+        2.0,
+        2.125,
+        2.5
+      ]
+    }
+  },
+  "verdicts": [
+    {
+      "code": "unreachable_transition",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "code": "unrecorded_departure",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "code": "unrecorded_arrival",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "code": "item_not_held",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "code": "take_denied",
+      "before": {
+        "runs": 0,
+        "min": 0,
+        "max": 0,
+        "median": 0.0,
+        "range": 0
+      },
+      "after": {
+        "runs": 0,
+        "min": 0,
+        "max": 0,
+        "median": 0.0,
+        "range": 0
+      },
+      "delta": 0.0,
+      "p_value": null,
+      "exact": false,
+      "outcome": "inconclusive",
+      "band": 0
+    },
+    {
+      "code": "pickup_invented",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "code": "inscription_misquoted",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "code": "truncated_prose",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "code": "third_person_protagonist",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    {
+      "code": "reached_for_nothing",
+      "before": {
+        "runs": 0,
+        "min": 0,
+        "max": 0,
+        "median": 0.0,
+        "range": 0
+      },
+      "after": {
+        "runs": 0,
+        "min": 0,
+        "max": 0,
+        "median": 0.0,
+        "range": 0
+      },
+      "delta": 0.0,
+      "p_value": null,
+      "exact": false,
+      "outcome": "inconclusive",
+      "band": 0
+    },
+    {
+      "code": "named_more_than_one",
+      "before": {
+        "runs": 0,
+        "min": 0,
+        "max": 0,
+        "median": 0.0,
+        "range": 0
+      },
+      "after": {
+        "runs": 0,
+        "min": 0,
+        "max": 0,
+        "median": 0.0,
+        "range": 0
+      },
+      "delta": 0.0,
+      "p_value": null,
+      "exact": false,
+      "outcome": "inconclusive",
+      "band": 0
+    },
+    {
+      "code": "still_run",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    }
+  ],
+  "richness": {
+    "code": "richness",
+    "before": {
+      "runs": 4,
+      "min": 2.25,
+      "max": 2.5,
+      "median": 2.375,
+      "range": 0.25
+    },
+    "after": {
+      "runs": 4,
+      "min": 2.0,
+      "max": 2.5,
+      "median": 2.1875,
+      "range": 0.5
+    },
+    "delta": -0.1875,
+    "p_value": 0.342857,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.5
+  },
+  "limitation": "Zero standard flags does not establish realism or complete recall. Exploratory manual findings are retained separately; existing scorers and corpora remain unchanged."
+}

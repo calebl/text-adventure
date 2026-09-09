@@ -28,6 +28,9 @@ class Location::Generator
     should read like somewhere nobody is standing.
   PROMPT
 
+  DETAIL_PENDING = "detail_pending".freeze
+  EXITS_PENDING = "exits_pending".freeze
+
   attr_reader :location, :story
 
   # `location` is a stub -- a Location with a name and a teaser but no
@@ -102,39 +105,35 @@ class Location::Generator
     Roll.generator(story: room.story_id, sequence: room.id, kind: Roll::FOOTPRINT)
   end
 
-  # Description and lore, then the stub exits leading out -- saved in that
-  # order. The description used to be held unsaved until the exits call
-  # returned, so an exits failure threw away the more expensive of the two
-  # calls along with the cheaper one.
-  #
-  # A failure after the description lands leaves a realized room with no way
-  # out. `realize!` returns an already-realized location untouched, which is
-  # the "generate once per place" guarantee, so recovering from that means
-  # calling #write_exits! directly rather than realizing the room again.
-  #
-  # THE INSIDE OF A PLACE IS LAID OUT INSIDE #write_detail! rather than on a
-  # third line here, and #lay_out_interior!'s header is where the reason lives:
-  # it has to happen on the near side of the flip to `realized`, and that flip
-  # is #write_detail!'s to make.
+  # Save a successful detail response with the exact engine slots it described,
+  # then apply detail, layout, items and people together. Save the accepted exits
+  # response before applying its edges. Each checkpoint advances in the same
+  # short transaction as its writes; no transaction spans a provider call.
+  # A retry reuses paid answers, while detail_level stays stub until the final
+  # edges and deadline check commit. A completed place is never regenerated.
+  # Old realized rows have no checkpoint and remain the authoritative world:
+  # their historic missing content cannot be inferred from that flag alone.
   def realize!
-    return location if location.realized?
+    location.save! unless location.persisted?
+    GameLock.synchronize("location", location.id) do
+      reload_for_generation!
+      realize_serially!
+    end
+  end
 
-    write_detail!
-    write_exits!
-    # AND THE STORY'S ARC GETS ITS DEADLINE CHECKED, because realizing a room is
-    # the moment the world GROWS -- which is the thing that was supposed to
-    # produce whatever the arc is still waiting for. Zero model calls, nothing
-    # at all for a world with no arc, and nothing for one still inside its
-    # grace: see `Quest::Deadline` for when it fires and where it puts things.
-    #
-    # AFTER THE EXITS AND NOT BEFORE THEM, so the room this realization just
-    # opened is a candidate to hang the way on from -- and so a place the
-    # deadline builds is never in the list of names the exits call was offered,
-    # which would have let one call name a building the next line created.
-    Quest::Deadline.after_realizing!(location)
+  # Different playthroughs can reach the same stub at once. The caller owns
+  # its process lock through both model calls and reloads after waiting, so a
+  # previously loaded stub cannot overwrite somebody else's completed world.
+  # No SQLite transaction is held while a provider answers.
+  def realize_serially!
+    return location if location.realized? && location.generation_checkpoint.nil?
+
+    write_detail_serially!
+    write_exits_serially!
 
     location
   end
+  private :realize_serially!
 
   # THE INSIDE OF A PLACE, ON FIRST ENTRY. The captain's first ruling of
   # 2026-09-06 -- *the whole interior is laid out on first entry, rooms realized
@@ -149,13 +148,10 @@ class Location::Generator
   # stubs should become places is a decision about the Iron Gate's scope and is
   # deliberately not made here.
   #
-  # BEFORE THE FLIP TO `realized`, AND IN THE SAME TRANSACTION AS IT. The flip
-  # is the "generate once per place" guarantee -- `#realize!` returns a realized
-  # location untouched -- so a layout that raised on the far side of it would
-  # leave a place realized for ever carrying a footprint and no inside, with
-  # nothing to retry it and nothing that even looks at it again. Written and
-  # rolled back together, a layout that raises leaves the stub exactly as it
-  # was, and the next entry lays it out. `Story::Doctor`'s
+  # BEFORE THE FLIP TO `realized`, in the detail checkpoint's transaction.
+  # A layout that raises rolls back every admission and leaves its paid answer
+  # available for the next entry to finish. The final exits checkpoint is what
+  # exposes the completed place as realized. `Story::Doctor`'s
   # `place_with_a_footprint_and_no_rooms` reports the state anyway, because a
   # database can carry one this code did not write.
   #
@@ -303,7 +299,20 @@ class Location::Generator
   # registry decides, and a name it refuses costs the room its furniture and
   # never its description.
   def write_detail!
-    detail = ask(detail_schema, detail_prompt)
+    location.save! unless location.persisted?
+    GameLock.synchronize("location", location.id) do
+      reload_for_generation!
+      return location if location.realized? && location.generation_checkpoint.nil?
+
+      write_detail_serially!
+    end
+  end
+
+  def write_detail_serially!
+    checkpoint_detail! if location.generation_checkpoint.nil?
+    return location if checkpoint["phase"] == EXITS_PENDING
+
+    detail = checkpoint.fetch("detail")
 
     location.description = sanitize_string(detail["description"])
     location.lore = sanitize_string(detail["lore"])
@@ -331,38 +340,33 @@ class Location::Generator
     # moved.
     named_room = location.name_changed?
 
-    # THE ROW, THEN THE INSIDE, THEN THE FLIP -- one transaction and that order.
+    # THE ROW, THEN THE INSIDE, THEN THE ADMISSIONS -- one transaction.
     # A room is a child of a saved place, so this location has to exist before
     # `Location::Interior` can put anything in it (`#lay_out_interior!` may be
-    # handed a stub that was never saved); and the flip comes last because it is
-    # what makes this place one nobody realizes again.
+    # handed a stub that was never saved). The checkpoint advances only with
+    # every admission, so a retry cannot leave half a cast or change its slots.
     Location.transaction do
       location.save!
       Quest::Binder.bind!(location) if named_room
       lay_out_interior!(detail["parameters"])
-      location.update!(detail_level: :realized)
+      # A building keeps neither items nor people; its rooms admit them when
+      # entered. Registry refusals stay refusals, while actual write failures
+      # roll back this entire stage for a later retry.
+      unless location.laid_out?
+        registry.admit!(detail["items"])
+        cast_registry.admit!(detail["people"])
+      end
+      location.update!(generation_checkpoint: checkpoint.slice("chat_id", "prompt", "detail").merge("phase" => EXITS_PENDING))
+      # Laying out a building moves its incoming doors onto child rooms. If
+      # completion failed after those edges committed, the next entry would
+      # bypass the unfinished parent forever. With no exits call left to make,
+      # finish inside this same short transaction, or restore the original door.
+      finish_realization! if no_exits_call?
     end
-
-    # AND A BUILDING KEEPS NEITHER, which is the verify half of the sentence
-    # `#place_prompt` says and `Location::PlaceSchema` has no field for. Nobody
-    # stands in a container (`Location::Interior.way_in`), so a thing admitted
-    # into one is a thing no player can ever pick up and a person is somebody
-    # nobody can talk to -- and an answer carrying either is an answer the
-    # engine drops rather than a state it writes. The rooms are where both
-    # belong, and each is asked as it is reached.
-    return location if location.laid_out?
-
-    registry.admit!(detail["items"])
-    # AND WHO IS IN IT, on the captain's ruling that *rooms should be born with
-    # people in them sometimes.* The same shape as the line above it and for the
-    # same reasons: structured records out of the call that describes the room,
-    # never a narrator tool and never a scan of prose. `Character::Registry`
-    # decides -- it refuses a taken name, it refuses past the room's cap and the
-    # world's, and it never moves somebody who already stands somewhere.
-    cast_registry.admit!(detail["people"])
 
     location
   end
+  private :write_detail_serially!
 
   # WHAT MAY COME TO EXIST HERE, and the one thing in the app that creates an
   # `Item`. Held rather than built per call so the room's remaining allowance
@@ -377,7 +381,13 @@ class Location::Generator
   # answers. A second instance would roll a second set, and the room would be
   # described around one person and written around another.
   def cast_registry
-    @cast_registry ||= Character::Registry.new(location)
+    @cast_registry ||= begin
+      slots = checkpoint["slots"]&.map do |slot|
+        { race: story.universe.races.find(slot.fetch("race_id")),
+          age: slot.fetch("age"), sex: slot.fetch("sex") }
+      end
+      Character::Registry.new(location, slots: slots)
+    end
   end
 
   # WHETHER THIS ROOM MAY BE NAMED BY THIS CALL, and who decides what it is
@@ -450,23 +460,40 @@ class Location::Generator
   # writing it. SKIPPED RATHER THAN ANSWERED-AND-IGNORED, on the same terms:
   # the call is not bought, and no prompt text moves for any other room.
   def write_exits!
-    return location if interior_room? || location.laid_out?
+    location.save! unless location.persisted?
+    GameLock.synchronize("location", location.id) do
+      reload_for_generation!
+      return realize_serially! if checkpoint["phase"] == DETAIL_PENDING
 
+      write_exits_serially!
+    end
+  end
+
+  def write_exits_serially!
     # ALREADY FULL, so there is nothing to ask and nothing to spend. A stub can
     # arrive at the cap before anybody walks into it: a world file seeds edges,
     # and every neighbour that named this place on its way to being realized
     # wrote one. See Location::ExitsSchema::MAX_EXITS.
-    return location if room_for_exits.zero?
+    return finish_realization! if no_exits_call?
 
-    exits = Array(ask(Location::ExitsSchema, exits_prompt)["exits"])
+    exits = if checkpoint.key?("exits")
+      checkpoint.fetch("exits")
+    else
+      Array(ask(Location::ExitsSchema, exits_prompt)["exits"]).tap do |answer|
+        validate_exit_labels!(answer)
+        location.update!(generation_checkpoint: checkpoint.merge("exits" => answer)) if checkpoint["phase"] == EXITS_PENDING
+      end
+    end
 
     Location.transaction do
       exits.each { |attributes| connect_exit!(attributes) if room_for_exits.positive? }
       exits.each { |attributes| connect_exit!(attributes, into_written: true) } unless location.exits.exists?
+      finish_realization!
     end
 
     location
   end
+  private :write_exits_serially!
 
   # WHETHER THIS IS A ROOM INSIDE A LAID-OUT PLACE, which is the one question
   # #write_exits! asks before deciding whether there is anything to ask a model.
@@ -491,7 +518,21 @@ class Location::Generator
   # description the same model just wrote, so the two exchanges are one
   # conversation and the stored row is what was actually sent.
   def agent
-    @agent ||= BaseAgent.new(purpose: "location", playthrough: @playthrough).with_instructions(system_prompt)
+    @agent ||= begin
+      conversation = Chat.find_by(id: checkpoint["chat_id"]) if checkpoint["chat_id"]
+      resumed = BaseAgent.new(purpose: "location", playthrough: @playthrough, chat: conversation).with_instructions(system_prompt)
+      # A world's unfinished room outlives the playthrough that paid for it.
+      # If that game's audit chat was deleted, restore the accepted exchange
+      # exactly, without asking again or copying its original billed tokens.
+      if checkpoint["prompt"] && !detail_history?(conversation)
+        resumed.add_message(role: :user, content: checkpoint.fetch("prompt"))
+        resumed.add_message(role: :assistant, content: checkpoint.fetch("detail"))
+        if (recorded = resumed.recorded_chat)
+          location.update!(generation_checkpoint: checkpoint.merge("chat_id" => recorded.id))
+        end
+      end
+      resumed
+    end
   end
 
   def system_prompt
@@ -851,6 +892,73 @@ class Location::Generator
   end
 
   private
+
+  def checkpoint = location.generation_checkpoint || {}
+
+  def no_exits_call? = interior_room? || location.laid_out? || room_for_exits.zero?
+
+  # A caller may have inspected the schema or prepared an agent before waiting
+  # for the room's lock. A durable checkpoint outranks those earlier rolls and
+  # that earlier conversation, including when the same generator is retried.
+  def reload_for_generation!
+    location.reload
+    return if location.generation_checkpoint.nil?
+
+    %i[@agent @registry @cast_registry @naming @open_step].each do |name|
+      remove_instance_variable(name) if instance_variable_defined?(name)
+    end
+  end
+
+  def detail_history?(conversation)
+    conversation&.exchange_messages&.any? { |message| message.role == "assistant" && message.content_raw == checkpoint["detail"] }
+  end
+
+  # Check the required prose against the destination's real validation before
+  # making it a durable retry receipt. An unusable answer must remain payable
+  # again; a good one and the slots it described must not be rolled again.
+  def checkpoint_detail!
+    schema = detail_schema
+    prompt = detail_prompt
+    detail = ask(schema, prompt)
+    candidate = location.dup
+    candidate.assign_attributes(description: sanitize_string(detail["description"]),
+                                lore: sanitize_string(detail["lore"]), detail_level: :realized)
+    candidate.validate!
+    slots = location.place? ? [] : cast_registry.slots.map do |slot|
+      { "race_id" => slot.fetch(:race).id, "age" => slot.fetch(:age), "sex" => slot.fetch(:sex) }
+    end
+    conversation = agent.recorded_chat if agent.respond_to?(:recorded_chat)
+    location.update!(generation_checkpoint: {
+      "phase" => DETAIL_PENDING, "detail" => detail, "prompt" => prompt, "slots" => slots,
+      "chat_id" => conversation&.id
+    }.compact)
+  end
+
+  # Use the edge model's own domain validation, before saving an answer that
+  # retries would otherwise repeat forever. A self edge here is only an unsaved
+  # validation carrier; connect_exit! still gates every proposed destination.
+  def validate_exit_labels!(exits)
+    exits.each do |attributes|
+      name = sanitize_string(attributes["name"])
+      next if name.blank? || name.casecmp?(location.name.to_s)
+
+      LocationConnection.new(location: location, connected_location: location,
+                             distance: sanitize_string(attributes["distance"]),
+                             travel_method: sanitize_string(attributes["travel_method"])).validate!
+    end
+  end
+
+  # Edge writes, the completed flag and deadline placements share one commit.
+  # Direct repairs of an old realized room have no checkpoint to finish.
+  def finish_realization!
+    return location unless checkpoint["phase"] == EXITS_PENDING
+
+    Location.transaction do
+      location.update!(detail_level: :realized, generation_checkpoint: nil)
+      Quest::Deadline.after_realizing!(location)
+    end
+    location
+  end
 
   def ask(schema, prompt)
     agent.with_schema(schema).ask(prompt).content

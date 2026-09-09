@@ -108,6 +108,7 @@ class Eval::Prompt::Bench
   # numerator of every check and in the richness figure, and a refusal would read
   # as a clean run. Named as a failed call instead, which is what it is.
   class EndingFellBack < StandardError; end
+  class RenderingFellBack < StandardError; end
 
   # WHAT ONE CASE CAME BACK AS, with the facts it was written against.
   #
@@ -280,6 +281,12 @@ class Eval::Prompt::Bench
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     begin
       scene = turn.play(kase.typed)
+      # Recovery now completes engine effects despite an unavailable renderer.
+      # Adapt that receipt to the existing failed-call row; engine-authored
+      # fallback words must never become model prose or change refusal counts.
+      if scene&.engine_fallback?
+        raise(scene.rendering_error || RenderingFellBack.new("the renderer did not answer, so the engine's words stand"))
+      end
       elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
       receipts = receipts_for(scene)
       # THE ENDING THAT FELL BACK, read off the row the engine labelled -- see
