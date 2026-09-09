@@ -1015,12 +1015,26 @@ class Playthrough::Turn
   # this cannot reach a template, and `EngineSweep::Invariants#world_items_unmoved`
   # proves it after every walk.
   #
-  # THE PARTY IS A NO-OP AND HAS TO BE. The protagonist carries nothing through
-  # `items_held_by` -- the party's hands are an instance with no room and no
-  # holder (`Playthrough#carried`) -- and they stand in no room to drop anything
-  # into, so a player dying leaves the game's inventory exactly as it was. There
-  # is no restore-from-save and no revival to hand it back to; loot is what a
-  # fight the party WON leaves on the floor.
+  # THE PARTY IS A NO-OP AND HAS TO BE, AND `Playthrough#items_held_by` IS THE
+  # WHOLE OF WHY. It matches on the HOLDER (`Item.for_character`), and the
+  # party's hands are rows with NO holder at all -- `#carry!` writes
+  # `character: nil` and `Item.in_hand` reads `character_id: nil` with
+  # `location_id: nil` (`Playthrough#carried`) -- so the protagonist's set comes
+  # back empty and the loop below writes nothing. It is NOT that there is
+  # nowhere to drop into: `Playthrough#location_of` answers `current_location`
+  # for the party, so `room` is the room they are standing in and this method
+  # runs to the end. A player dying therefore leaves the game's inventory
+  # exactly as it was. There is no restore-from-save and no revival to hand it
+  # back to; loot is what a fight the party WON leaves on the floor.
+  #
+  # A COMPANION IS NOT THE PARTY HERE, and because the room comes from
+  # `#location_of` it is the one case whose answer changed: a companion's own
+  # per-game possessions -- rows that DO name them as holder -- fall in the room
+  # THIS GAME says they are in, which is their `Playthrough::NpcState` row and
+  # the party's own room when they have none. `characters.location_id` is null
+  # for the protagonist and for anyone `is_companion` by design (`Character`'s
+  # header, `Story::Doctor#whereabouts`), so reading that column instead left a
+  # dead companion's things on their record with nowhere to fall.
   #
   # It is in the house of `#carry!` and `#put_down!` because it is the same
   # statement they are: the row moves, and nothing else does.

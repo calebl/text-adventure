@@ -1,0 +1,224 @@
+{
+  "source_before": {
+    "head": "262e8c559f909a255d8f7cfa02ed648f2f5e1199",
+    "files": {
+      "app/models/playthrough/turn.rb": "d3909c21705b2c8e64492a76ec5544e0c0be63f0338b8a5512f39cff821a01d6",
+      "app/models/playthrough/command.rb": "64536ccbd976056648321338c39e28d6e7ef5044f93041f3cdc160f013861b3f",
+      "app/jobs/narration_job.rb": "89f680ff3411cd3ef7a9ae30b5a0f2ffe23e804ef11fd8c3f34fb6367789ed0c"
+    },
+    "dirty": []
+  },
+  "source_loaded": {
+    "head": "262e8c559f909a255d8f7cfa02ed648f2f5e1199",
+    "files": {
+      "app/models/playthrough/turn.rb": "d3909c21705b2c8e64492a76ec5544e0c0be63f0338b8a5512f39cff821a01d6",
+      "app/models/playthrough/command.rb": "64536ccbd976056648321338c39e28d6e7ef5044f93041f3cdc160f013861b3f",
+      "app/jobs/narration_job.rb": "89f680ff3411cd3ef7a9ae30b5a0f2ffe23e804ef11fd8c3f34fb6367789ed0c"
+    },
+    "dirty": []
+  },
+  "source_after": {
+    "head": "262e8c559f909a255d8f7cfa02ed648f2f5e1199",
+    "files": {
+      "app/models/playthrough/turn.rb": "d3909c21705b2c8e64492a76ec5544e0c0be63f0338b8a5512f39cff821a01d6",
+      "app/models/playthrough/command.rb": "64536ccbd976056648321338c39e28d6e7ef5044f93041f3cdc160f013861b3f",
+      "app/jobs/narration_job.rb": "89f680ff3411cd3ef7a9ae30b5a0f2ffe23e804ef11fd8c3f34fb6367789ed0c"
+    },
+    "dirty": []
+  },
+  "stable_sources": true,
+  "database": "sqlite3:/tmp/gate6-observer-drain-57a03e2d49074965.sqlite3",
+  "checks": [
+    {
+      "name": "none: observer isolation or real failure",
+      "passed": true
+    },
+    {
+      "name": "none: latest replay and overtaken suppression",
+      "passed": true
+    },
+    {
+      "name": "start: observer isolation or real failure",
+      "passed": false
+    },
+    {
+      "name": "finish: observer isolation or real failure",
+      "passed": false
+    },
+    {
+      "name": "engine: observer isolation or real failure",
+      "passed": true
+    },
+    {
+      "name": "error_observer: observer isolation or real failure",
+      "passed": false
+    }
+  ],
+  "results": [
+    {
+      "fault": "none",
+      "escaped": null,
+      "error_observed": [],
+      "statuses": [
+        "completed",
+        "completed"
+      ],
+      "actions": [
+        "take",
+        "drop"
+      ],
+      "scene_delta": 2,
+      "carried": [],
+      "floor": [
+        "red coin"
+      ],
+      "returned": "drop red coin",
+      "events": [
+        [
+          "start",
+          "/take red coin"
+        ],
+        [
+          "finish",
+          "take red coin"
+        ],
+        [
+          "start",
+          "/drop red coin"
+        ],
+        [
+          "finish",
+          "drop red coin"
+        ]
+      ]
+    },
+    {
+      "fault": "none_replay",
+      "events": [
+        [
+          "finish",
+          "drop red coin"
+        ]
+      ],
+      "scene_delta": 0
+    },
+    {
+      "fault": "start",
+      "escaped": "ProbeObserverError",
+      "error_observed": [
+        "ProbeObserverError"
+      ],
+      "statuses": [
+        "failed",
+        "pending"
+      ],
+      "actions": [],
+      "scene_delta": 0,
+      "carried": [],
+      "floor": [
+        "red coin"
+      ],
+      "returned": null,
+      "events": [
+        [
+          "start",
+          "/take red coin"
+        ],
+        [
+          "error",
+          "ProbeObserverError"
+        ]
+      ]
+    },
+    {
+      "fault": "finish",
+      "escaped": "ProbeObserverError",
+      "error_observed": [
+        "ProbeObserverError"
+      ],
+      "statuses": [
+        "completed",
+        "pending"
+      ],
+      "actions": [
+        "take"
+      ],
+      "scene_delta": 1,
+      "carried": [
+        "red coin"
+      ],
+      "floor": [],
+      "returned": null,
+      "events": [
+        [
+          "start",
+          "/take red coin"
+        ],
+        [
+          "finish",
+          "take red coin"
+        ],
+        [
+          "error",
+          "ProbeObserverError"
+        ]
+      ]
+    },
+    {
+      "fault": "engine",
+      "escaped": "ProbeEngineError",
+      "error_observed": [
+        "ProbeEngineError"
+      ],
+      "statuses": [
+        "failed",
+        "pending"
+      ],
+      "actions": [],
+      "scene_delta": 0,
+      "carried": [],
+      "floor": [
+        "red coin"
+      ],
+      "returned": null,
+      "events": [
+        [
+          "start",
+          "take red coin"
+        ],
+        [
+          "error",
+          "ProbeEngineError"
+        ]
+      ]
+    },
+    {
+      "fault": "error_observer",
+      "escaped": "ProbeObserverError",
+      "error_observed": [
+        "ProbeEngineError"
+      ],
+      "statuses": [
+        "failed",
+        "pending"
+      ],
+      "actions": [],
+      "scene_delta": 0,
+      "carried": [],
+      "floor": [
+        "red coin"
+      ],
+      "returned": null,
+      "events": [
+        [
+          "start",
+          "take red coin"
+        ],
+        [
+          "error",
+          "ProbeEngineError"
+        ]
+      ]
+    }
+  ]
+}
