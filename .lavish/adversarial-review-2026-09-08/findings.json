@@ -37,7 +37,8 @@
       "A gifted key changes only the player\u2019s item copy; repeat gifts, foreign holders, absent actors and dead actors are rejected.",
       "Followers, stopped companions, deaths and spilled inventory remain local to one playthrough. Legacy companions can choose to stay immediately.",
       "The combined candidate tests cover a gifted key and follower surviving failed arrival narration, and rejected retry output staying out of delivered prose.",
-      "Live fixed-fixture comparison: 12/20 state failures and 6/20 explicit prose contradictions before, zero after; four runs per side, both REAL at p=0.028571. Appropriate refusals were preserved."
+      "Live fixed-fixture comparison: 12/20 state failures and 6/20 explicit prose contradictions before, zero after; four runs per side, both REAL at p=0.028571. Appropriate refusals were preserved.",
+      "The optional debug panel now reads per-game whereabouts too: a present follower is not labelled absent, and a later departure is reported. The regression failed before and passes after the correction."
     ],
     "remaining": "This verifies a bounded conversation-to-state path. It does not add autonomous goal planning, long-term relationships or a scheduler. Prose may still omit a successful effect. Newly seeded possessions on already-dead NPCs remain an inventory edge case."
   },
