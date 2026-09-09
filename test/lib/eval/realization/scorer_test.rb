@@ -822,6 +822,39 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
                     "the pick itself is still readable off the answer"
   end
 
+  # THE ONE THING THE COMMENTS CANNOT HOLD: that the bench and the engine still
+  # answer "is this the same place" the same way.
+  #
+  # The scorer cannot call `Location::Generator#find_location` -- it takes a
+  # story and queries the table, and this file touches none -- so it asks
+  # `WorldSeed.natural_key`, which is the rule that method turns on. That is a
+  # SHARED RULE and not a copy, and this is the test that keeps it one: the
+  # engine's matcher is run against real rows, the scorer against the stored
+  # facts for the same names, and the two answers are asserted equal. Widen
+  # either reading alone and this fails.
+  #
+  # THE SHAPES ARE `WorldSeed.natural_key`'S OWN: the two actually observed in
+  # the captain's database (a case change and a leading "The"), a run of
+  # whitespace, and -- the other half of the assertion -- a name that is NOT the
+  # same place, so a reading that folded everything together would fail here
+  # rather than pass everything.
+  test "the bench resolves a place name to the same answer the engine's matcher does" do
+    story = create(:story)
+    create(:location, story: story, name: "The Supply Closet")
+    facts = FACTS.merge("places" => [ { "name" => "The Supply Closet",
+                                        "realized" => true, "connected" => false } ])
+
+    [ "The Supply Closet", "the supply closet", "Supply Closet", "SUPPLY   CLOSET",
+      "The Supply Closets", "The Vestry Hulk" ].each do |written|
+      engine = WorldSeed.find_location(story, written).present?
+      bench = Eval::Realization::Scorer::Reading.new(row(facts: facts)).place_by_key(written).present?
+
+      assert_equal engine, bench,
+                   "the engine and the bench disagree about whether #{written.inspect} is a place the " \
+                   "world already holds -- one of the two readings has widened"
+    end
+  end
+
   def after_opening(*names)
     { "people" => [], "items" => [], "exits" => [], "new_places" => names }
   end

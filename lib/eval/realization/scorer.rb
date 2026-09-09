@@ -348,6 +348,31 @@ class Eval::Realization::Scorer
     # question the ENGINE asked of the very name being scored -- a scorer that
     # answered it its own way would report a place opened that was not, or the
     # reverse, and neither is a record comparison any more.
+    #
+    # WHY THE KEY AND NOT THE METHOD ITSELF, since a delegation would be
+    # tighter still and this is the obvious question to ask of it. Two reasons,
+    # and either one alone is enough:
+    #
+    #   IT TAKES A STORY AND QUERIES THE TABLE (`Location.where(story_id:)`),
+    #   and this file touches none -- that is the whole of what lets a set in
+    #   `db/eval/` be rescored after the run databases are gone and the story's
+    #   rows with them. See this class's header.
+    #
+    #   AND IT WOULD BE ASKING THE WRONG WORLD. `.find_location` searches the
+    #   story AS IT STANDS; a check has to ask what the world held when the
+    #   PROMPT WAS BUILT, which is `facts["places"]` -- the very list the model
+    #   was shown. Resolving against today's rows would score an answer against
+    #   places written after it.
+    #
+    # SO WHAT IS SHARED IS THE RULE AND NOT A COPY OF IT. `.find_location`
+    # matches in two legs -- an exact case-insensitive name, then `.natural_key`
+    # -- and the first is a SUBSET of the second, because equal downcase implies
+    # an equal key. Its third leg (`.find_placed_location`) is unreachable from
+    # the generator, which passes no declarations. So the engine's rule for a
+    # NAME is `.natural_key` equality exactly, which is what this asks.
+    # `test/lib/eval/realization/scorer_test.rb` pins the two together against
+    # real rows, so the day one of them widens is a failing test rather than a
+    # bench quietly disagreeing with the engine it measures.
     def same_place?(left, right) = WorldSeed.natural_key(left) == WorldSeed.natural_key(right)
 
     # THE PLACE THE WORLD ALREADY HELD THAT THIS NAME MEANS, canonically. Not
