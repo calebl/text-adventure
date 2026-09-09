@@ -126,7 +126,7 @@ class Lab::Exits::Promotion
     lines.concat(expectation_lines)
     lines << "  shape: #{SHAPE}"
     lines.concat(why_lines)
-    lines.concat(notes)
+    lines.concat(commented(notes))
     "#{lines.join("\n")}\n"
   end
 
@@ -263,7 +263,7 @@ class Lab::Exits::Promotion
     return nil if danger
 
     seen = drawn_dangers.presence&.join(", ") || "nothing drawn yet"
-    "  # ^ CHOOSE A DANGER and uncomment the line. This vantage left it to the roll, so there is no " \
+    "^ CHOOSE A DANGER and uncomment the line. This vantage left it to the roll, so there is no " \
       "reproducible value to read off its draws (#{seen}). A promoted case must declare one, and the " \
       "corpus validator refuses it until it does."
   end
@@ -275,7 +275,7 @@ class Lab::Exits::Promotion
   def quantifier_note
     return nil if vantage.quantifier
 
-    "  # `expects_inside` is left out: this vantage declared no quantifier, so the case carries no " \
+    "`expects_inside` is left out: this vantage declared no quantifier, so the case carries no " \
       "claim about the inside pick and BOTH of the scorer's inside checks are out of its denominator. " \
       "Declare one at /lab/exits/vantages/#{vantage.id} -- it is free and retroactive -- and promote again."
   end
@@ -284,7 +284,7 @@ class Lab::Exits::Promotion
     figure = hit_rate.quantifier
     return nil if figure.nil? || figure.established?
 
-    "  # NOT ESTABLISHED: the quantifier has #{figure.fraction} behind it and " \
+    "NOT ESTABLISHED: the quantifier has #{figure.fraction} behind it and " \
       "Lab::Exits::MIN_DRAWS calls #{Lab::Exits::MIN_DRAWS} draws established. The case is still a " \
       "regression case for the claim; the claim is just less well evidenced than the file's others."
   end
@@ -296,7 +296,7 @@ class Lab::Exits::Promotion
   def absent_note
     return nil if vantage.absent_names.any?
 
-    "  # NOTHING IS OFF THE BOOKS on this vantage, so every pick about a place its world already holds " \
+    "NOTHING IS OFF THE BOOKS on this vantage, so every pick about a place its world already holds " \
       "will be discarded by Location::Generator#connect_exit! and the ceiling half of the inside checks " \
       "may never see a building at all. Lab::Exits' header has the four bought draws that measured it."
   end
@@ -306,7 +306,7 @@ class Lab::Exits::Promotion
     judged = vantage.judgements.count(&:verdict?)
     return nil if typed.zero? && judged.zero?
 
-    "  # #{typed} typed per-place expectation#{"s" unless typed == 1} and #{judged} " \
+    "#{typed} typed per-place expectation#{"s" unless typed == 1} and #{judged} " \
       "judgement#{"s" unless judged == 1} STAY IN THE LAB and are not in this case. A bench label keyed " \
       "on a name the model chose is a fact about what one model said one month, not about the world -- " \
       "Lab::Exits::Promotion's header carries the measurement. The quantifier is what they were used to " \
@@ -316,7 +316,7 @@ class Lab::Exits::Promotion
   def population_note
     return nil if vantage.expects_population_labels.nil?
 
-    "  # `#{Eval::Realization::Corpus.expectation_key(Lab::Exits.pick("population"))}` is carried and " \
+    "`#{Eval::Realization::Corpus.expectation_key(Lab::Exits.pick("population"))}` is carried and " \
       "digested, and nothing scores it yet -- the figure over a case's `expects_*` block is the " \
       "agreement half of the plan and is filed apart (Eval::Realization::Corpus's header)."
   end

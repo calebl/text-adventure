@@ -94,7 +94,7 @@ class Lab::Realization::Promotion
     lines.concat(expectation_lines)
     lines << "  shape: #{SHAPE}"
     lines.concat(why_lines)
-    lines.concat(notes)
+    lines.concat(commented(notes))
     "#{lines.join("\n")}\n"
   end
 
@@ -104,17 +104,17 @@ class Lab::Realization::Promotion
     found = []
     if danger.nil?
       seen = drawn_dangers.presence&.join(", ") || "nothing drawn yet"
-      found << "  # ^ CHOOSE A DANGER and uncomment the line. This kind left it to the roll, so there " \
+      found << "^ CHOOSE A DANGER and uncomment the line. This kind left it to the roll, so there " \
                "is no reproducible value to read off its samples (#{seen}). A promoted case must " \
                "declare one, and the corpus validator refuses it until it does."
     end
     kind.unanswerable.each do |pick|
-      found << "  # `#{Eval::Realization::Corpus.expectation_key(pick)}` is left out: a " \
+      found << "`#{Eval::Realization::Corpus.expectation_key(pick)}` is left out: a " \
                "#{kind.place? ? "building" : "room"} is never asked this pick " \
                "(Lab::Realization::Kind#answerable?), so an expectation for it could never be earned."
     end
     if danger_floor_widens?
-      found << "  # `#{Eval::Realization::Corpus::DANGER_FLOOR_KEY}` WIDENS this kind's expectation: " \
+      found << "`#{Eval::Realization::Corpus::DANGER_FLOOR_KEY}` WIDENS this kind's expectation: " \
                "he allowed #{kind.expects("danger").join(", ")}, and a floor is every rung at or " \
                "above the quietest of them."
     end
