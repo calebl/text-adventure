@@ -50,7 +50,7 @@ class NarrationJob < ApplicationJob
     # All page changes travel over one ordered channel under the same lock.
     # The HTTP acknowledgement carries no competing pending page, so even an
     # immediate grammar command cannot be overwritten by a late response.
-    beginning = -> { start(playthrough, command) }
+    beginning = ->(line) { start(playthrough, line) }
     completion = lambda do |outcome|
       flush(playthrough, buffer)
       finish(playthrough, safety_notice: turn.safety_notice,
@@ -100,9 +100,11 @@ class NarrationJob < ApplicationJob
       finish(playthrough, safety_notice: true) if playthrough
     when *Playthrough::SetupNotice::FAILURES
       # Nothing here is internal: the install has no model to ask, and whoever
-      # is running it can say so in one environment variable.
+      # is running it can say so in one environment variable. Nothing was
+      # narrated either -- the turn stopped at the call -- so this is the
+      # unfinished copy and not the one #unconfigured shows.
       Rails.logger.error { "Narration unconfigured: #{error.class}: #{error.message}" }
-      finish(playthrough, error: Playthrough::SetupNotice::MESSAGE) if playthrough
+      finish(playthrough, error: Playthrough::SetupNotice::UNFINISHED) if playthrough
     else
       # Exceptions are for the log. The player gets the current persisted
       # state and the app's own copy, which makes no claim that effects rolled

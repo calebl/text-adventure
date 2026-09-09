@@ -157,13 +157,14 @@
       "failed take moves the item and skips the enemy response"
     ],
     "status": "Partial",
-    "change": "Failed or blank rendering after a committed action now produces an engine-authored scene and completes retaliation, hazards and time. Streaming and attribution failures no longer interrupt those effects. Command receipts prevent duplicate delivery from replaying them.",
+    "change": "Failed or blank rendering after a committed action now produces an engine-authored scene and completes retaliation, hazards and time. Streaming and attribution failures no longer interrupt those effects. Command receipts prevent duplicate delivery from replaying them. An install with no usable model now says so on the page instead of reading as a working game: distinct copy for a committed turn that fell back to engine prose and for a turn that stopped at its first call, with the provider's own words kept to the log.",
     "proof": [
       "Failed pickup narration still records the pickup, elapsed time and one enemy response.",
       "Failed arrival narration completes movement and records its crossing once; redelivery adds neither another toll nor another scene.",
-      "The failure notice no longer promises rollback. Fallback text is excluded from model-quality measurements."
+      "The failure notice no longer promises rollback. Fallback text is excluded from model-quality measurements.",
+      "A missing key and a rejected key are both visible to the player and the operator; neither notice claims a turn that did not happen, and no provider secret reaches the page."
     ],
-    "remaining": "A worker killed during engine writes, or an unexpected engine/database failure, leaves an interrupted or failed command. It cannot replay automatically, but there is no automatic rollback or reconciliation. The UI does not independently recover a stranded worker. Incomplete new location generation now resumes on a later entry (R06)."
+    "remaining": "A worker killed during engine writes, or an unexpected engine/database failure, leaves an interrupted or failed command. It cannot replay automatically, but there is no automatic rollback or reconciliation. The UI does not independently recover a stranded worker, and the visible setup notice is a message rather than a recovery. If a predecessor fails while a job is playing an accepted queue, that job's own row stays pending for the next submission to drain -- still no automatic reconciliation. Incomplete new location generation now resumes on a later entry (R06)."
   },
   {
     "id": "R05",
@@ -202,11 +203,13 @@
       "two loaded stubs can generate the same location twice"
     ],
     "status": "Verified",
-    "change": "Commands and location realization use process locks keyed to the SQLite database and record. Waiting turns reload current state, and durable form tokens return completed results on duplicate jobs. The job now broadcasts pending and final pages in order; the HTTP response carries no stale page replacement.",
+    "change": "Commands and location realization use process locks keyed to the SQLite database and record. Waiting turns reload current state. A submission is its form token AND its line, and the token is spent on use: a resend of one submit or a job delivered twice returns the completed result, while a second submit -- including the same line again -- is its own turn under the fresh token the acknowledgement installs. playthrough_commands.id is the accepted order, and the lock holder plays every pending row up to its own in that order, so a job that wins the race cannot run its line ahead of one typed earlier. The job broadcasts pending and final pages in order; the HTTP response re-mints the token and carries no page replacement.",
     "proof": [
       "Separate processes overlap two pickups: both items and both linked scenes survive. A separate database connection can write while a provider is paused.",
       "Two processes holding the same stale stub generate it once and reuse the persisted result.",
-      "An immediately completed job cannot be overwritten by a late HTTP response, and duplicate completion does not introduce another pending page."
+      "An immediately completed job cannot be overwritten by a late HTTP response, and duplicate completion does not introduce another pending page.",
+      "Two identical submissions take two turns while one resent submit takes one; the acknowledgement replaces every spent token field and nothing else.",
+      "A take accepted before a move, with the move\u2019s job delivered first, still takes the coin before leaving the room -- asserted by unit regression and by a player-walk sweep."
     ],
     "remaining": "The locking primitive assumes the app\u2019s local SQLite deployment. Durable location checkpoints handle incomplete new rooms (R06); interrupted turn reconciliation remains the limit described in R04."
   },
@@ -323,9 +326,9 @@
       "important NPC conclusions fall out after enough small exchanges"
     ],
     "status": "Open",
-    "change": "Outside this repair batch.",
+    "change": "Outside this repair batch, and one cost of the NPC action slice is recorded against it. Every conversation turn appends the action receipt to scenes.summary, including the fixed no-op sentence a `none` receipt produces (Playthrough::NpcAction, Interaction#compose_summary). That summary is prompt input, not display text: Playthrough#recap spends a hard RECAP_BUDGET on summaries newest-first, so each zero-information receipt pushes real history out of the narrator's window. Narrowing it to non-`none` receipts would change model input beyond the candidate that was measured, so it was deliberately left as measured rather than fixed unmeasured.",
     "proof": [],
-    "remaining": "Maintain durable per-game relationships and salient memories with references to witnessed events. Retrieve relevant experiences, not only recent ones. Supply verified perception of injuries and conflict before asking for a response; distinguish what each NPC witnessed from global history."
+    "remaining": "Durable per-game relationships and salient retrieved memory are untouched. Before this finding is repaired, the recap budget wants re-measuring against a stored baseline: the `none`-receipt line is a known, quantified cost of R01 and the first thing a memory slice should reclaim."
   },
   {
     "id": "R09",

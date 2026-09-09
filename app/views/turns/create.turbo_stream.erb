@@ -1,0 +1,14 @@
+<%# THE ONLY THING AN ACCEPTED SUBMISSION SENDS BACK, and it is deliberately not
+    the log. A grammar command or a factual fallback can finish before this
+    response reaches the browser, so a pending page here would erase the
+    completed turn and strand the input -- see `TurnsController#create` and
+    `playthroughs/_turn_log`.
+
+    `replace_all` rather than `replace`, because the ask form and every button
+    of the battle panel carry one of these at the same time and all of them are
+    now spent. They all get the SAME fresh token: two different buttons pressed
+    after this still read as two submissions, because a submission is the token
+    and the line together. %>
+<%= turbo_stream.replace_all ".request-token" do %>
+  <%= render "turns/request_token", token: @request_token %>
+<% end %>

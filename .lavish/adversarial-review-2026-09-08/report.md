@@ -2,13 +2,14 @@
 
 The NPC action path and turn integrity fixes are integrated. All 3,881 tests pass. Live NPC cases now apply their promised state changes; arrival prose still sometimes contradicts inventory, so that finding remains partial. New deterministic notices expose crossing costs even when the narration omits them.
 
-Original review and measured baseline: 8dd1f5c. Fix branch: fix/npc-arrival-turn-integrity-20260908. Focused model candidate: 93448ade; sequential confirmation: 57f8738f, which adds the deterministic toll view without changing model input. These temporary candidate commits identify frozen evidence, and every measured number above stays labelled with the commit it was measured on. The branch is now rebased: 337f826 sits directly on main 2ef1a20, so the place-name identity handling and the exits lab and scorer work from main are carried rather than re-measured. The suite, lint and CI gates on the rebased tree belong to the delivery pipeline and are not claimed here.
+Original review and measured baseline: 8dd1f5c. Fix branch: fix/npc-arrival-turn-integrity-20260908. Focused model candidate: 93448ade; sequential confirmation: 57f8738f, which adds the deterministic toll view without changing model input. These temporary candidate commits identify frozen evidence, and every measured number above stays labelled with the commit it was measured on. The branch is now rebased: 337f826 sits directly on main 2ef1a20, so the place-name identity handling and the exits lab and scorer work from main are carried rather than re-measured. The suite figure recorded for that rebase is archived below and describes 337f826, not any later head; the current head's suite, lint and CI results are the pull request's checks.
 
 Original evidence is preserved in [the original report](original-report.md).
 
 ## Verification
 
 - **Integrated repository suite:** 3,881 tests / 22,172 assertions; zero failures, errors or skips. Includes engine sweeps and the real turn view. Both model integrations are active in this checkout. [Evidence](integrated-suite.log)
+- **Rebased suite (337f826):** bin/rails test on 337f826, rebased directly onto main 2ef1a20: 4,128 runs / 23,137 assertions, 0 failures, 0 errors, 0 skips, engine sweeps included. Higher than the pre-rebase 3,881 / 22,172 because main contributed its own tests. Archived evidence for that commit only — later review rounds changed the tree, and the current head's count is the pull request's test check. [Evidence](archived-rebase-337f826.log)
 - **Integrated static checks:** RuboCop: 523 files, no offenses. Zeitwerk and git diff --check passed. Three migration versions have no collisions with freshly fetched main (2ef1a20). [Evidence](integrated-rubocop.log)
 - **Security scan:** Brakeman: zero warnings after documenting two exact File Access false positives. Both use the trusted Rails database configuration for inter-process lock paths; fixed runtime scopes and integer IDs admit no player path. The broader check remains enabled. [Evidence](integrated-brakeman.log)
 - **NPC live comparison:** Five cases × four repetitions per arm. State failures: 12/20 → 0/20; displayed-prose contradictions: 6/20 → 0/20. Both REAL under the existing exact rank test, p=0.028571. No clean-run errors. [Evidence](evaluation/npc-findings.md)
@@ -26,7 +27,14 @@ Original evidence is preserved in [the original report](original-report.md).
 - **Generation through browser turns:** Five steps passed: interrupted generation, resumed entry, taking a generated item, departure and return. Ordered fixture replies detect repeating a paid detail call. [Evidence](r06-generation-sweep.log)
 - **Expanded delivery and travel checks:** 63 tests / 402 assertions passed, including real-process concurrency, failure recovery, job ordering, fleeing and subsequent travel. [Evidence](expanded-delivery-tests.log)
 
-Live results use one pinned model, four repetitions per arm and fixed fictional fixtures. They establish bounded behavior, not realistic psychology or complete prose grounding. Standard audit flags missed item-identity contradictions in both sequential arms. No scorer, corpus or older baseline was replaced; the prompt-bench adapter only preserves failed-call accounting when gameplay uses a factual fallback. The no-mistakes PR pipeline is the remaining delivery gate.
+Live results use one pinned model, four repetitions per arm and fixed fictional fixtures. They establish bounded behavior, not realistic psychology or complete prose grounding. Standard audit flags missed item-identity contradictions in both sequential arms. No scorer, corpus or older baseline was replaced; the prompt-bench adapter only preserves failed-call accounting when gameplay uses a factual fallback. Delivery status is whatever the pull request's own checks say; nothing on this page stands in for them.
+
+## Archived pre-integration evidence
+
+Runs kept exactly as they were produced, from before the patches were integrated. None of these is the status of a commit on this branch.
+
+- **Working-tree suite, before integration:** 3,845 runs / 21,741 assertions with 5 failures and 1 error. A mid-repair snapshot taken while the R03-R07 patches were still separate, kept because it is what was actually run. It is not the status of any commit on this branch. [Evidence](working-tree-suite.log)
+- **Expanded active suite, before integration:** 3,868 runs / 21,328 assertions with 5 failures and 1 error. The same kind of mid-repair snapshot, one patch set later. Superseded by the integrated run above and by the rebased run on 337f826. [Evidence](expanded-active-suite.log)
 
 ## Live comparison
 
@@ -74,21 +82,24 @@ Normal arrivals receive authoritative per-game destination facts: living cast, b
 
 ## R04 · Partial · Failed turns commit partial effects and retries repeat them
 
-Failed or blank rendering after a committed action now produces an engine-authored scene and completes retaliation, hazards and time. Streaming and attribution failures no longer interrupt those effects. Command receipts prevent duplicate delivery from replaying them.
+Failed or blank rendering after a committed action now produces an engine-authored scene and completes retaliation, hazards and time. Streaming and attribution failures no longer interrupt those effects. Command receipts prevent duplicate delivery from replaying them. An install with no usable model now says so on the page instead of reading as a working game: distinct copy for a committed turn that fell back to engine prose and for a turn that stopped at its first call, with the provider's own words kept to the log.
 
 - Failed pickup narration still records the pickup, elapsed time and one enemy response.
 - Failed arrival narration completes movement and records its crossing once; redelivery adds neither another toll nor another scene.
 - The failure notice no longer promises rollback. Fallback text is excluded from model-quality measurements.
+- A missing key and a rejected key are both visible to the player and the operator; neither notice claims a turn that did not happen, and no provider secret reaches the page.
 
-**Remaining:** A worker killed during engine writes, or an unexpected engine/database failure, leaves an interrupted or failed command. It cannot replay automatically, but there is no automatic rollback or reconciliation. The UI does not independently recover a stranded worker. Incomplete new location generation now resumes on a later entry (R06).
+**Remaining:** A worker killed during engine writes, or an unexpected engine/database failure, leaves an interrupted or failed command. It cannot replay automatically, but there is no automatic rollback or reconciliation. The UI does not independently recover a stranded worker, and the visible setup notice is a message rather than a recovery. If a predecessor fails while a job is playing an accepted queue, that job's own row stays pending for the next submission to drain -- still no automatic reconciliation. Incomplete new location generation now resumes on a later entry (R06).
 
 ## R05 · Verified · Concurrent turns can lose history and generate a place twice
 
-Commands and location realization use process locks keyed to the SQLite database and record. Waiting turns reload current state, and durable form tokens return completed results on duplicate jobs. The job now broadcasts pending and final pages in order; the HTTP response carries no stale page replacement.
+Commands and location realization use process locks keyed to the SQLite database and record. Waiting turns reload current state. A submission is its form token AND its line, and the token is spent on use: a resend of one submit or a job delivered twice returns the completed result, while a second submit -- including the same line again -- is its own turn under the fresh token the acknowledgement installs. playthrough_commands.id is the accepted order, and the lock holder plays every pending row up to its own in that order, so a job that wins the race cannot run its line ahead of one typed earlier. The job broadcasts pending and final pages in order; the HTTP response re-mints the token and carries no page replacement.
 
 - Separate processes overlap two pickups: both items and both linked scenes survive. A separate database connection can write while a provider is paused.
 - Two processes holding the same stale stub generate it once and reuse the persisted result.
 - An immediately completed job cannot be overwritten by a late HTTP response, and duplicate completion does not introduce another pending page.
+- Two identical submissions take two turns while one resent submit takes one; the acknowledgement replaces every spent token field and nothing else.
+- A take accepted before a move, with the move’s job delivered first, still takes the coin before leaving the room -- asserted by unit regression and by a player-walk sweep.
 
 **Remaining:** The locking primitive assumes the app’s local SQLite deployment. Durable location checkpoints handle incomplete new rooms (R06); interrupted turn reconciliation remains the limit described in R04.
 
@@ -115,10 +126,10 @@ A fight closed after fleeing now records its closing scene at the party’s curr
 
 ## R08 · Open · NPCs lose important experiences and are not told about their own wounds
 
-Outside this repair batch.
+Outside this repair batch, and one cost of the NPC action slice is recorded against it. Every conversation turn appends the action receipt to scenes.summary, including the fixed no-op sentence a `none` receipt produces (Playthrough::NpcAction, Interaction#compose_summary). That summary is prompt input, not display text: Playthrough#recap spends a hard RECAP_BUDGET on summaries newest-first, so each zero-information receipt pushes real history out of the narrator's window. Narrowing it to non-`none` receipts would change model input beyond the candidate that was measured, so it was deliberately left as measured rather than fixed unmeasured.
 
 
-**Remaining:** Maintain durable per-game relationships and salient memories with references to witnessed events. Retrieve relevant experiences, not only recent ones. Supply verified perception of injuries and conflict before asking for a response; distinguish what each NPC witnessed from global history.
+**Remaining:** Durable per-game relationships and salient retrieved memory are untouched. Before this finding is repaired, the recap budget wants re-measuring against a stored baseline: the `none`-receipt line is a known, quantified cost of R01 and the first thing a memory slice should reclaim.
 
 ## R09 · Open · The world eventually stops admitting people and items
 

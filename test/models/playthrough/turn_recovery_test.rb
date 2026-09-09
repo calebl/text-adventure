@@ -37,6 +37,50 @@ class Playthrough::TurnRecoveryTest < ActiveSupport::TestCase
     end
   end
 
+  # TWO LINES ACCEPTED WHILE A TURN RAN, AND THE JOBS RACE. `config/queue.yml`
+  # runs three worker threads and flock is not FIFO, so the move's job can reach
+  # the lock first. If it played its own line first the party would be on the
+  # quay before the coin was picked up, and the pickup would then resolve
+  # nothing -- both submissions reporting success over a lost act.
+  test "a later job that reaches the lock first still plays the earlier line first" do
+    item = lying_here(@game, @game.current_location, name: "red coin")
+    destination = create(:location, story: @game.story, name: "Quay")
+    create(:location_connection, location: @game.current_location, connected_location: destination,
+                                 distance: "adjacent")
+    Playthrough::Command.accept!(@game, "/take red coin", "pickup")
+    started = []
+    agent = FakeAgent.new("You close your hand around the red coin.",
+                          { "description" => "The quay opens out ahead of you.", "summary" => "They reach the quay." })
+
+    outcome = BaseAgent.stub(:new, agent) do
+      Playthrough::Turn.new(@game).play("/move Quay", request_token: "crossing",
+                                        on_start: ->(line) { started << line })
+    end
+
+    assert_equal [ "/take red coin", "/move Quay" ], started
+    assert_includes @game.reload.carried, item, "the earlier line resolved in the room it was typed in"
+    assert_equal destination, @game.current_location
+    assert_equal destination, outcome.location, "and the caller is handed its own submission's turn"
+    assert_equal [ "take", "move" ], @game.scene_chain.drop(1).map(&:resolved_action)
+    assert_equal %w[completed completed], @game.commands.order(:id).pluck(:status)
+  end
+
+  test "the overtaken job finds its own line already played and takes no second turn" do
+    lying_here(@game, @game.current_location, name: "red coin")
+    Playthrough::Command.accept!(@game, "/take red coin", "pickup")
+    agent = FakeAgent.new("You close your hand around the red coin.")
+    played = BaseAgent.stub(:new, agent) do
+      Playthrough::Turn.new(@game).play("/take red coin", request_token: "pickup")
+    end
+
+    assert_no_difference [ -> { Scene.count }, -> { @game.blows.count } ] do
+      repeated = BaseAgent.stub(:new, ->(*) { flunk "a redelivery must not ask a model" }) do
+        Playthrough::Turn.new(@game).play("/take red coin", request_token: "pickup")
+      end
+      assert_equal played, repeated
+    end
+  end
+
   test "an arrival renderer failure completes its charged crossing and a redelivery cannot charge twice" do
     destination = create(:location, story: @game.story, name: "Quay")
     create(:location_connection, location: @game.current_location, connected_location: destination,

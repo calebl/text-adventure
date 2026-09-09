@@ -792,6 +792,27 @@ class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
   # panel of records inside `#turn_log`, rendered when `Playthrough#foes_in`
   # answers with somebody and gone when it does not. There is no battle flag to
   # set and none to clear.
+  # EVERY FORM ON THE PAGE CARRIES A SPENDABLE TOKEN, and the panel is the
+  # reason it is a class and not an id: the ask form and one form per act are
+  # all here at once, so `TurnsController#create` re-mints them by selector.
+  # A button whose field missed the class would keep a spent token and read a
+  # second press of the same act as a redelivery of the first.
+  test "the ask form and every battle button carry a token the acknowledgement can replace" do
+    playthrough = fighting_playthrough
+
+    get playthrough_path(playthrough)
+
+    assert_response :success
+    forms = Nokogiri::HTML(response.body)
+                   .css("#turn_log form[action='#{playthrough_turns_path(playthrough)}']")
+    assert_operator forms.length, :>, 1, "the panel puts several submissions on one page"
+    forms.each do |form|
+      assert_equal 1, form.css("input[name='request_token'].request-token").length,
+                   "every submission on the page is spendable"
+    end
+    assert_select "div.sheet.battle input.request-token", minimum: 1
+  end
+
   test "a room with somebody hostile in it shows the battle panel" do
     playthrough = fighting_playthrough
 

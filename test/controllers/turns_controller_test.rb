@@ -15,15 +15,55 @@ class TurnsControllerTest < ActionDispatch::IntegrationTest
 
   # No model is touched here at all, which is the whole point: the request that
   # accepts a command must not be the one that waits 20-30 seconds for a
-  # narration.
-  test "create acknowledges without a pending page that could overwrite a completed turn" do
+  # narration. What it answers with is the spent token, replaced -- and nothing
+  # that could stand in for the log.
+  test "create acknowledges with a fresh token and no page that could overwrite a completed turn" do
     playthrough = create(:playthrough)
 
     post playthrough_turns_path(playthrough),
-         params: { command: "open the ledger" }, as: :turbo_stream
+         params: { command: "open the ledger", request_token: "spent" }, as: :turbo_stream
 
-    assert_response :no_content
-    assert_empty response.body
+    assert_response :success
+    assert_equal [ ".request-token" ], token_streams.map { |stream| stream["targets"] }
+    assert_not_includes response.body, "turn_log"
+    assert_not_includes response.body, "what do you do?"
+    assert_not_equal "spent", installed_token
+  end
+
+  # THE HALF THE COMPOSITE KEY CANNOT ANSWER. Two intentional "attack" lines
+  # carry the same token until something re-mints it, and the job cannot: it
+  # only re-renders the form once it owns the lock, which is exactly when the
+  # player is typing again. So the accepted submission's own response spends the
+  # token, and the repeat is a second turn.
+  test "the same line submitted twice takes two turns because the token is spent on use" do
+    playthrough = create(:playthrough)
+
+    post playthrough_turns_path(playthrough),
+         params: { command: "/attack Marek Sollen", request_token: "first-render" }, as: :turbo_stream
+    second = installed_token
+
+    assert_enqueued_with job: NarrationJob, args: [ playthrough.id, "/attack Marek Sollen", second ] do
+      post playthrough_turns_path(playthrough),
+           params: { command: "/attack Marek Sollen", request_token: second }, as: :turbo_stream
+    end
+
+    assert_equal 2, playthrough.commands.count
+    assert_equal [ "/attack Marek Sollen" ], playthrough.commands.pluck(:command).uniq
+  end
+
+  # And the case the spent token must NOT turn into two turns: one submit whose
+  # response never arrived, sent again with the token the browser still has.
+  test "a resend of one submit that never got its reply is still one turn" do
+    playthrough = create(:playthrough)
+
+    assert_difference -> { playthrough.commands.count }, 1 do
+      2.times do
+        post playthrough_turns_path(playthrough),
+             params: { command: "look around", request_token: "never-replaced" }, as: :turbo_stream
+        assert_response :success
+      end
+    end
+    assert_equal [ "never-replaced" ], enqueued_jobs.last(2).map { |job| job[:args].last }.uniq
   end
 
   test "a job finishing before the HTTP response cannot strand the browser in a pending turn" do
@@ -43,8 +83,11 @@ class TurnsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "completed", playthrough.commands.sole.status
     assert_includes streams.first.to_html, 'id="stream"'
     assert_includes streams.last.to_html, "what do you do?"
-    assert_response :no_content
-    assert_empty response.body, "a late HTTP response must have nothing that can replace the finished page"
+    assert_response :success
+    assert_equal [ ".request-token" ], token_streams.map { |stream| stream["targets"] },
+                 "a late HTTP response may only re-mint the token"
+    assert_not_includes response.body, "turn_log",
+                        "a late HTTP response must have nothing that can replace the finished page"
   end
 
   test "create ignores an empty command" do
@@ -85,20 +128,13 @@ class TurnsControllerTest < ActionDispatch::IntegrationTest
            params: { command: "/attack Marek Sollen", request_token: "attack" }, as: :turbo_stream
     end
 
-    assert_response :no_content
+    # A panel puts every button on the page at once, so they all share whatever
+    # token the acknowledgement installs -- which is why a submission is the
+    # token AND the line, and why pressing two different buttons is two turns.
+    assert_response :success
+    assert_not_equal "attack", installed_token
   end
 
-  test "repeated delivery of one form keeps one command identity" do
-    playthrough = create(:playthrough)
-    assert_difference -> { playthrough.commands.count }, 1 do
-      2.times do
-        post playthrough_turns_path(playthrough),
-             params: { command: "look around", request_token: "one-form" }, as: :turbo_stream
-        assert_response :success
-      end
-    end
-    assert_equal [ "one-form" ], enqueued_jobs.last(2).map { |job| job[:args].last }.uniq
-  end
 
   # A form is only re-rendered when the job replaces `#turn_log`, and that
   # happens inside the playthrough's lock -- so a player whose previous turn is
@@ -118,5 +154,15 @@ class TurnsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal [ "look around", "wait" ], playthrough.commands.order(:id).pluck(:command)
+  end
+
+  private
+
+  def token_streams
+    Nokogiri::HTML.fragment(response.body).css("turbo-stream[action=replace]").to_a
+  end
+
+  def installed_token
+    Nokogiri::HTML.fragment(response.body).at_css("input[name=request_token]")[:value]
   end
 end

@@ -68,7 +68,7 @@
   <div class="sheet-actions">
     <% (battle.strikes + battle.throws + battle.ways_out).each do |action| %>
       <%= form_with url: playthrough_turns_path(playthrough) do |form| %>
-        <%= form.hidden_field :request_token, value: SecureRandom.uuid %>
+        <%= render "turns/request_token", token: SecureRandom.uuid %>
         <%= form.hidden_field :command, value: action.command %>
         <%= form.submit action.label %>
       <% end %>

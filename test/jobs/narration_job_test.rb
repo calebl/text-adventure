@@ -265,21 +265,27 @@ class NarrationJobTest < ActiveJob::TestCase
     html = play(playthrough, "/take red coin", BaseAgent::NoModelConfiguredError).last.to_html
 
     assert_includes playthrough.reload.carried, item, "the action was committed and stands"
-    assert_match Playthrough::SetupNotice::MESSAGE, html
+    assert_match Playthrough::SetupNotice::COMPLETED, html
     assert_no_match Regexp.new(Regexp.escape(Playthrough::TurnFailureNotice::MESSAGE)), html,
                     "the turn finished, so the vague internal-failure copy is the wrong one"
     assert_match "what do you do?", html, "and the next line can follow"
+    assert_equal 1, playthrough.commands.count
+    assert_equal [ "completed" ], playthrough.commands.pluck(:status)
   end
 
-  # The same message when nothing was committed at all: the classifier is the
-  # first call of an unslashed line, so this is what typing anything into an
-  # unconfigured install looks like.
-  test "a turn that never reached an action still names the missing configuration" do
+  # THE SAME CONFIGURATION, A DIFFERENT SENTENCE. The classifier is the first
+  # call of an unslashed line, so nothing was read, nothing was written and no
+  # prose was produced -- telling this player the game described their turn in
+  # its own words would describe something that did not happen.
+  test "a turn that stopped at its first call names the configuration without claiming a turn" do
     playthrough = create(:playthrough, :started)
 
     html = play(playthrough, "open the ledger", BaseAgent::NoModelConfiguredError).last.to_html
 
-    assert_match Playthrough::SetupNotice::MESSAGE, html
+    assert_match Playthrough::SetupNotice::UNFINISHED, html
+    assert_match Playthrough::SetupNotice::WAYS_OUT, html
+    assert_no_match Regexp.new(Regexp.escape(Playthrough::SetupNotice::COMPLETED)), html,
+                    "nothing was narrated, so nothing may claim it was"
     assert_nil playthrough.reload.current_scene
   end
 
@@ -291,7 +297,7 @@ class NarrationJobTest < ActiveJob::TestCase
 
     html = play(playthrough, "open the ledger", rejected).last.to_html
 
-    assert_match Playthrough::SetupNotice::MESSAGE, html
+    assert_match Playthrough::SetupNotice::UNFINISHED, html
     assert_no_match(/sk-live-secret/, html, "the provider's own words are for the log")
   end
 

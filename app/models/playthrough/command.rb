@@ -1,9 +1,21 @@
 # One submitted browser command, independent of how often its job is delivered.
-# A submission is its form token AND its text: two deliveries of one line are
-# one turn, while a second line typed into the same rendered form is a second
-# submission rather than a collision. A render-scoped token used as the whole
-# identity had no answer for that -- it either merged two intentional "wait"
-# turns or refused the new line and lost it.
+#
+# A SUBMISSION IS ITS TOKEN AND ITS TEXT, and it takes both halves to tell the
+# three cases apart. One RESEND of one submit -- a double-click, a browser
+# retrying a POST whose response was lost, a job delivered twice -- carries the
+# same token and the same line, and is one turn. Two DIFFERENT lines can share
+# a token, because the battle panel puts every one of its buttons on the page at
+# once, and they are two turns. What neither half answers on its own is a second
+# submit of the SAME line, which is why the token is spent on use:
+# `TurnsController#create` hands the browser a fresh one with every accepted
+# submission, so a repeated "attack the guard" arrives under a new token and
+# takes its own turn. Keying on the token alone refused the new line and lost
+# it; keying on token-and-text alone merged the repeat.
+#
+# `id` IS THE ACCEPTED ORDER, and the only record of it. Two submissions can be
+# accepted while a turn is running and their jobs can reach the lock in either
+# order, so `Playthrough::Turn#play` plays every pending row up to its own in
+# `id` order rather than whichever job won the race.
 #
 # Execute only under GameLock's playthrough claim. Completed deliveries reuse
 # their outcome without touching the engine or making a model call. A worker

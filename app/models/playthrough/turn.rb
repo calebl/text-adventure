@@ -103,26 +103,69 @@ class Playthrough::Turn
       # Another job may have completed while this one waited. Both the scene
       # chain and the classifier's closed sets must start from its result.
       playthrough.reload
-      outcome = if request_token
-        submission = Playthrough::Command.accept!(playthrough, command, request_token)
-        submission.execute! do
-          on_start&.call
-          play_serially(command, &deliver)
+      outcome = nil
+      if request_token
+        mine = Playthrough::Command.accept!(playthrough, command, request_token)
+        accepted_up_to(mine).each do |row|
+          played = take_turn(row.command, on_start, on_finish, submission: row, &deliver)
+          outcome = played if row.id == mine.id
         end
       else
-        on_start&.call
-        play_serially(command, &deliver)
+        outcome = take_turn(command, on_start, on_finish, &deliver)
       end
-      # The final broadcast is part of serialization too: an old worker must
-      # not replace the page after the next command has started streaming.
-      @safety_notice ||= outcome.safety_notice if outcome.is_a?(Scene)
-      on_finish&.call(outcome)
       outcome
     rescue StandardError => e
       on_error&.call(e)
       raise
     end
   end
+
+  # EVERY LINE THIS GAME HAS ACCEPTED AND NOT YET PLAYED, oldest first, up to
+  # and including this job's own.
+  #
+  # A player can type a second line while a turn is running: the form is only
+  # re-rendered by the job, so the browser accepts both and enqueues both, and
+  # `config/queue.yml` runs three worker threads. `flock` is not FIFO, so
+  # whichever job reaches `GameLock` first would otherwise run first -- "take
+  # the brass key" then "go north" could leave the room before the key was
+  # taken, with both reporting success.
+  #
+  # `playthrough_commands.id` is the accepted order and needs no second
+  # sequence beside it, so the job that wins the race plays its predecessors
+  # before its own line and the loser finds them completed. In the ordinary
+  # case -- one line, nothing else pending -- this is the one row and the loop
+  # below is exactly what it was.
+  #
+  # A row that is no longer pending is answered alone: a redelivery replays its
+  # stored outcome and an interrupted one raises, which is `Command#execute!`'s
+  # business and not this method's. If a predecessor fails here the loop stops
+  # and this job's own row stays pending -- the next submission's job drains it,
+  # and the reconciliation limit is the one R04 already records.
+  def accepted_up_to(submission)
+    return [ submission ] unless submission.status == "pending"
+
+    playthrough.commands.where(status: "pending").where("id <= ?", submission.id).order(:id).to_a
+  end
+  private :accepted_up_to
+
+  # One line, start to finish, with the consumer told when it begins and what
+  # it produced. `@safety_notice` is per turn rather than per job, because a
+  # job that plays a predecessor as well must not carry the first turn's
+  # interception onto the second turn's page.
+  def take_turn(line, on_start, on_finish, submission: nil, &block)
+    @safety_notice = nil
+    play = lambda do
+      on_start&.call(line)
+      play_serially(line, &block)
+    end
+    outcome = submission ? submission.execute!(&play) : play.call
+    # The final broadcast is part of serialization too: an old worker must
+    # not replace the page after the next command has started streaming.
+    @safety_notice ||= outcome.safety_notice if outcome.is_a?(Scene)
+    on_finish&.call(outcome)
+    outcome
+  end
+  private :take_turn
 
   # Only #play enters this method. The process lock covers classification,
   # engine effects and rendering, but opens no database transaction across a

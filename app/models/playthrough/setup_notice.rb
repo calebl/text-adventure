@@ -20,11 +20,21 @@ module Playthrough::SetupNotice
   # another model cannot fix either of them.
   FAILURES = [ BaseAgent::NoModelConfiguredError, BaseAgent::UnauthorizedProviderError ].freeze
 
-  MESSAGE = "No narrator is configured, so the game described that turn in its own plain words. " \
-            "Set OPENROUTER_API_KEY for the hosted rotation, or TA_LOCAL_MODELS=1 to use the " \
-            "models installed on this machine. The server log names the exact reason.".freeze
+  WAYS_OUT = "Set OPENROUTER_API_KEY for the hosted rotation, or TA_LOCAL_MODELS=1 to use the " \
+             "models installed on this machine. The server log names the exact reason.".freeze
+
+  # TWO SENTENCES BECAUSE THERE ARE TWO OUTCOMES, and one of them is not a
+  # finished turn. A committed action falls back to the engine's own prose and
+  # the turn stands; a call that failed BEFORE any action -- the classifier on
+  # an unslashed line is the first one every turn makes -- produced no scene at
+  # all, and telling that player the game described their turn would be a
+  # sentence about something that did not happen.
+  COMPLETED = "No narrator is configured, so the game described that turn in its own plain words. " \
+              "#{WAYS_OUT}".freeze
+  UNFINISHED = "No narrator is configured, so that turn did not finish. The log and your current " \
+               "possessions show what was saved. #{WAYS_OUT}".freeze
 
   def self.for(error)
-    MESSAGE if FAILURES.any? { |kind| error.is_a?(kind) }
+    COMPLETED if FAILURES.any? { |kind| error.is_a?(kind) }
   end
 end

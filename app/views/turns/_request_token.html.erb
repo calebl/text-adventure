@@ -1,0 +1,23 @@
+<%# locals: (token:) %>
+<%# WHICH SUBMISSION A POST IS, and the one place the field is written.
+
+    A submission is this token AND the line it carries (`Playthrough::Command`).
+    The token tells a RESEND of one submit apart from a second submit: a
+    double-click, or a browser retrying a POST whose response was lost, sends
+    the same token with the same line and is one turn. The line tells two
+    different acts apart when they share a token, which is what the battle
+    panel's buttons do -- every one of them is a form on this page at once.
+
+    So what is left is a second submit of the SAME line, which is a second turn
+    the player meant: `TurnsController#create` answers every accepted
+    submission by replacing every one of these with a fresh token, and that
+    replacement is the whole reason this is a partial rather than a
+    `form.hidden_field`. Rendered here and in `turns/create.turbo_stream.erb`,
+    so the field the page carries and the field the response installs cannot
+    drift apart.
+
+    Server-minted, so there is no `crypto.randomUUID` and so no dependency on
+    the page being a secure context -- a plain-HTTP deployment behind somebody's
+    own reverse proxy still gets a token. %>
+<input type="hidden" name="request_token" class="request-token"
+       value="<%= token %>" autocomplete="off">

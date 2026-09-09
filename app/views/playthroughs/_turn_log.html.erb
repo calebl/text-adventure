@@ -242,7 +242,7 @@
     <div class="ask" data-controller="slash"
          data-slash-menu-value="<%= Playthrough::SlashMenu.new(playthrough).to_json %>">
       <%= form_with url: playthrough_turns_path(playthrough) do |form| %>
-        <%= form.hidden_field :request_token, value: SecureRandom.uuid %>
+        <%= render "turns/request_token", token: SecureRandom.uuid %>
         <%# Two targets on one field, and they belong to two controllers: `play`
             puts focus back here after a turn (see the note above), `slash`
             reads and completes what is in it. Targets are resolved by a live

@@ -61,8 +61,19 @@ for f in findings:
       <h3>Limits of that observation</h3><p>{escape(f['limitation'])}</p>
       <div class="sources">{refs}</div></div></details><a class="back" href="#findings">↑ Findings</a></article>''')
 
-checks = ''.join(f'<div class="check"><strong>{escape(check["name"])}</strong><p>{escape(check["result"])}</p>'
-                 f'<a href="{escape(check["file"], quote=True)}">Evidence</a></div>' for check in verification["checks"])
+def evidence_cards(rows):
+    return ''.join(f'<div class="check"><strong>{escape(row["name"])}</strong><p>{escape(row["result"])}</p>'
+                   f'<a href="{escape(row["file"], quote=True)}">Evidence</a></div>' for row in rows)
+
+
+checks = evidence_cards(verification["checks"])
+# Logs that were actually run and are NOT current status. They were checked in
+# unreferenced, which read as ambiguous beside the green ones; naming them as
+# pre-integration snapshots is the whole fix. They are never overwritten.
+archived = verification.get("archived", [])
+archive = f'''<section class="section" id="archived"><h2>Archived pre-integration evidence</h2>
+<p class="muted">Runs kept exactly as they were produced, from before the patches were integrated. None of these is the status of a commit on this branch.</p>
+<div class="checks history">{evidence_cards(archived)}</div></section>''' if archived else ''
 counts = {status: sum(f["status"] == status for f in findings) for status in status_colors}
 stats = ''.join(f'<div class="stat"><strong>{count}</strong><span>{status} findings</span></div>' for status, count in counts.items())
 approval = ""
@@ -94,12 +105,13 @@ page = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name
 <header><div class="eyebrow">Text Adventure / adversarial review / repair verification</div>
 <h1>Decisions need consequences.<br>Turns need integrity.</h1><p class="intro">{escape(verification['summary'])}</p>
 <p class="muted">{escape(verification['revision'])}</p>
-<nav><a href="#findings">Finding status</a><a href="#live-evaluation">Live comparison</a><a href="#validation">Verification</a><a href="report.md">Markdown report</a><a href="original-index.html">Original review</a></nav>
+<nav><a href="#findings">Finding status</a><a href="#live-evaluation">Live comparison</a><a href="#validation">Verification</a><a href="#archived">Archived evidence</a><a href="report.md">Markdown report</a><a href="original-index.html">Original review</a></nav>
 <div class="stats">{stats}</div></header>
 {approval}
 {evaluation}
 <section class="section" id="validation"><h2>Evidence for this repair batch</h2><div class="checks">{checks}</div>
 <p class="muted">{escape(verification['limits'])}</p></section>
+{archive}
 <section class="section" id="findings"><h2>All findings, with the repair status kept separate</h2>
 <div class="toolbar"><label for="status">Status</label><select id="status"><option value="">All</option><option>Verified</option><option>Partial</option><option>Open</option><option>Pending</option></select>
 <input id="search" type="search" placeholder="Search findings" aria-label="Search findings"><button id="expand" type="button">Expand original evidence</button></div>
@@ -133,6 +145,13 @@ markdown = ["# Adversarial review — repair verification", "", verification["su
 for check in verification["checks"]:
     markdown.extend([f'- **{check["name"]}:** {check["result"]} [Evidence]({check["file"]})'])
 markdown.extend(["", verification["limits"], ""])
+if archived:
+    markdown.extend(["## Archived pre-integration evidence", "",
+                     "Runs kept exactly as they were produced, from before the patches were integrated. "
+                     "None of these is the status of a commit on this branch.", ""])
+    for row in archived:
+        markdown.append(f'- **{row["name"]}:** {row["result"]} [Evidence]({row["file"]})')
+    markdown.append("")
 if verification.get("evaluation"):
     measured = verification["evaluation"]
     markdown.extend(["## Live comparison", "", measured["model"], "",

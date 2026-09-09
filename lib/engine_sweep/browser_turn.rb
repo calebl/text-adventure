@@ -42,6 +42,13 @@ class EngineSweep::BrowserTurn
   def run(step)
     game = @mechanics.playthrough
     before = game.current_scene_id
+    # What the player typed while the previous turn was still running: accepted
+    # and enqueued, with no job delivered. Delivering the LATER job first is the
+    # race three worker threads and a non-FIFO flock make reachable, and the
+    # only thing that proves the earlier line still goes first.
+    earlier = Array(step.browser["accepted_first"]).map do |queued|
+      Playthrough::Command.accept!(game, queued.fetch("type"), queued.fetch("token"))
+    end
     calls = []
     replies = step.browser["replies"] || [ step.browser["fail"] ].compact.map do |purpose|
       { "purpose" => purpose, "unavailable" => true }
@@ -72,7 +79,8 @@ class EngineSweep::BrowserTurn
       command: step.typed, understood: understood,
       change: ("The browser turn completed." if before != game.current_scene_id),
       refusal: (outcome.text if outcome.is_a?(Playthrough::Refusal)),
-      note: [ game.commands.find_by!(request_token: step.browser.fetch("token")).status ],
+      note: (earlier + [ game.commands.find_by!(request_token: step.browser.fetch("token")) ])
+              .map { |row| "#{row.request_token}: #{row.reload.status}" },
       resolved_by: scene&.resolved_by, state: @mechanics.state
     )
   end

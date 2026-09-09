@@ -52,6 +52,21 @@
 #
 # A step carries `type` or `reseed`, never both and never neither.
 #
+# `browser:` PLAYS ONE SUBMISSION THE WAY THE BROWSER DOES, with a token and
+# fixed provider answers, and `accepted_first` is what the player typed while
+# an earlier turn was still running -- accepted, enqueued, and not yet played.
+# The step then delivers the LATER job first, which is the race
+# `config/queue.yml`'s three worker threads make reachable:
+#
+#   - type: /move Courtyard
+#     browser:
+#       token: move
+#       accepted_first:
+#       - { token: pickup, type: /take red coin }
+#     expect:
+#       carrying: [red coin]        # the earlier line still played first
+#       location: Courtyard (realized)
+#
 # `reseed:` MAY NAME A DIFFERENT VERSION OF THE FILE, which is what lets the
 # walk reach the defect rather than only the rule. A rename is what the SECOND
 # version of a seed file says, and before `WorldSeed.natural_key` a renamed room
@@ -139,9 +154,26 @@ class EngineSweep::Script
   # fixed provider replies. A realization walk can fail after its paid detail
   # and assert its retry consumes only exits. `raises` means an unavailable
   # provider interrupts the submission instead of producing an engine fallback.
+  #
+  # `accepted_first` is the lines the browser accepted BEFORE this one whose
+  # jobs have not been delivered yet -- what the player typed while a turn was
+  # running. It is the only way a walk can reach the case where a later job
+  # takes the lock first, which is the whole of what it exists for.
   def self.read_browser(value, where)
-    unless value.is_a?(Hash) && (value.keys - %w[token fail replies raises realizes]).empty? && value["token"].is_a?(String) && value["token"].present?
+    unless value.is_a?(Hash) && (value.keys - %w[token fail replies raises realizes accepted_first]).empty? && value["token"].is_a?(String) && value["token"].present?
       raise EngineSweep::InvalidScript, "#{where}: browser expects a token and optional fail: narration or arrival"
+    end
+    if value.key?("accepted_first")
+      unless value["accepted_first"].is_a?(Array) && value["accepted_first"].any?
+        raise EngineSweep::InvalidScript, "#{where}: browser accepted_first is a nonempty list of earlier submissions"
+      end
+      value["accepted_first"].each do |earlier|
+        unless earlier.is_a?(Hash) && (earlier.keys - %w[token type]).sort.empty? &&
+            earlier["token"].is_a?(String) && earlier["token"].present? &&
+            earlier["type"].is_a?(String) && earlier["type"].present?
+          raise EngineSweep::InvalidScript, "#{where}: browser accepted_first entry needs a token and a type"
+        end
+      end
     end
     unless value["fail"].nil? || %w[narration arrival].include?(value["fail"])
       raise EngineSweep::InvalidScript, "#{where}: browser fail must be narration or arrival"
