@@ -10,9 +10,9 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
     @story = create(:story)
   end
 
-  def generate(location, previous_scene: nil, agent: FakeAgent.new(ARRIVAL))
+  def generate(location, previous_scene: nil, playthrough: nil, agent: FakeAgent.new(ARRIVAL))
     scene = BaseAgent.stub(:new, agent) do
-      Scene::Generator.new(location, previous_scene: previous_scene).generate!
+      Scene::Generator.new(location, previous_scene: previous_scene, playthrough: playthrough).generate!
     end
 
     [ scene, agent ]
@@ -20,6 +20,89 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
 
   def realized_location(**attributes)
     create(:location, story: @story, **attributes)
+  end
+
+  test "a failed arrival has a factual fallback with the same journey and supplied tolls" do
+    game = create(:playthrough, :started, story: @story)
+    destination = realized_location(name: "The Drowned Ledger")
+    previous = create(:scene, story: @story, location: game.current_location,
+                              story_timestamp: @story.start_time)
+    create(:location_connection, location: game.current_location, connected_location: destination,
+                                 distance: "a short walk", travel_method: "walking")
+    pending = create(:playthrough_toll, playthrough: game, location: destination)
+    generator = Scene::Generator.new(destination, previous_scene: previous, playthrough: game)
+
+    scene = BaseAgent.stub(:new, ->(*) { flunk "fallback must not call a provider" }) { generator.fallback! }
+
+    assert_equal destination, scene.location
+    assert_equal previous, scene.previous_scene
+    assert_equal previous.story_timestamp + 5.minutes, scene.story_timestamp
+    assert scene.engine_authored?
+    assert_includes scene.description, "You arrive at The Drowned Ledger."
+    assert_includes scene.description, "#{pending.damage} hit points"
+    assert_equal [ pending.id ], scene.narrated_toll_ids
+    assert_nil pending.reload.scene_id
+    assert_no_difference "Scene.count" do
+      assert_equal scene, generator.fallback!
+    end
+  end
+
+  test "fallback after successful scene persistence reuses that arrival" do
+    game = create(:playthrough, :started, story: @story)
+    generator = Scene::Generator.new(realized_location, playthrough: game)
+    agent = FakeAgent.new(ARRIVAL)
+    agent.define_singleton_method(:attribute_to!) { |_| raise "attribution unavailable" }
+
+    scene = BaseAgent.stub(:new, agent) { generator.generate! }
+    assert_equal ARRIVAL["description"], scene.description
+    assert_no_difference "Scene.count" do
+      assert_equal generator.completed_scene, generator.fallback!
+    end
+  end
+
+  test "a playthrough arrival supplies the living cast and overrides the original floor contents" do
+    game = create(:playthrough, :started, story: @story)
+    destination = realized_location(description: "Maren Vosk waits beside a brass key on the desk.")
+    person = create(:character, story: @story, location: destination, fullname: "Maren Vosk")
+    key = lying_here(game, destination, name: "brass key")
+    turn = Playthrough::Turn.new(game)
+    turn.harm!(person, person.max_hp)
+    turn.carry!(key)
+
+    scene, agent = generate(destination, playthrough: game)
+    prompt = agent.prompts.last
+    cast = prompt.split("## Who Is Here\n").last.split("## Just Before This").first
+
+    assert_not_includes scene.characters, person
+    assert_not_includes cast, "Maren Vosk"
+    assert_includes prompt, "Dead here: Maren Vosk. They cannot speak or act."
+    assert_includes prompt, "Lying here: nothing."
+    assert_includes prompt, "You are carrying: brass key."
+    assert_includes prompt, "take precedence"
+    assert_equal destination, person.reload.location
+    assert_equal destination, key.template.reload.location
+  end
+
+  test "a playthrough arrival supplies wounds and the actual crossing result before claiming it" do
+    game = create(:playthrough, :started, story: @story)
+    destination = realized_location
+    Playthrough::Turn.new(game).harm!(game.character, 3)
+    toll = create(:playthrough_toll, playthrough: game, location: destination,
+                                    damage: 3, hp_after: game.condition.hp)
+
+    scene, agent = generate(destination, playthrough: game)
+
+    assert_includes agent.prompts.last, "You are #{game.condition.in_words}."
+    assert_includes agent.prompts.last, "#{destination.name} cost #{game.character.fullname} 3 hit points"
+    assert_equal [ toll.id ], scene.narrated_toll_ids
+    assert_nil toll.reload.scene_id
+  end
+
+  test "world opening generation carries no playthrough-only state" do
+    _scene, agent = generate(realized_location)
+
+    assert_not_includes agent.prompts.last, "## Current State On Arrival"
+    assert_not_includes agent.prompts.last, "You are carrying:"
   end
 
   # --- what lands in the record -------------------------------------------

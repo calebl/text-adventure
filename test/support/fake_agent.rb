@@ -65,6 +65,10 @@ class FakeAgent
 
   def recorded_chat = nil
 
+  # Resuming a world checkpoint can restore an accepted exchange without a
+  # provider call. This double records no chat rows, just its queued answers.
+  def add_message(**) = nil
+
   # WHICH MODEL WOULD HAVE ANSWERED. A fake has no rotation, so it answers the
   # one it was told about -- `Eval::Classifier::Bench` reads this to tell a line
   # its arm answered from a line the rotation answered, and a fake standing in

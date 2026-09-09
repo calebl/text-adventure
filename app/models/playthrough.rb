@@ -26,6 +26,8 @@ class Playthrough < ApplicationRecord
   # Every conversation this playthrough has had with a model. Destroyed with it:
   # they are this player's progress, not the world's -- see Chat.
   has_many :chats, dependent: :destroy
+  has_many :commands, class_name: "Playthrough::Command", dependent: :destroy,
+                      inverse_of: :playthrough
   # THIS PLAYTHROUGH'S OWN COPY OF THE WORLD'S THINGS -- every `Item` in the
   # playthrough layer, wherever it is in this game: in the party's hands, lying
   # in a room, or in one of the world's people's hands. Read through `#carried`,
@@ -45,6 +47,8 @@ class Playthrough < ApplicationRecord
   # the read-out and the sweep cannot come to disagree about a number.
   has_many :vitals, class_name: "Playthrough::Vitals", dependent: :destroy,
                     inverse_of: :playthrough
+  has_many :npc_states, class_name: "Playthrough::NpcState", dependent: :destroy,
+                       inverse_of: :playthrough
   # EVERY BLOW STRUCK IN THIS GAME, one row per round per attacker. Destroyed
   # with the playthrough on the same reasoning as the vitals: who swung at whom
   # is this player's progress, and `characters.hostile` -- the world's answer --
@@ -168,7 +172,59 @@ class Playthrough < ApplicationRecord
   def cast_in(location)
     return [] if location.nil?
 
-    Scene::Generator.characters_present(location).reject { |who| vitals_for(who)&.dead? }
+    characters_located_in(location).reject { |who| vitals_for(who)&.dead? }
+  end
+
+  # Bodies in this game's room, including those who cannot answer anymore.
+  # A state row overrides the world's whereabouts rather than adding a second
+  # copy of the person. Legacy companions retain their party-wide presence
+  # until an explicit agreement gives them a location in this game.
+  def characters_located_in(location)
+    return [] if location.nil? || location.story_id != story_id
+
+    states = npc_states.includes(:character).to_a
+    overridden = states.map(&:character_id)
+    original = Scene::Generator.characters_present(location).reject { |who| overridden.include?(who.id) }
+    (original + states.select { |row| row.location_id == location.id }.map(&:character)).uniq.sort_by(&:id)
+  end
+
+  def location_of(character)
+    return nil if character.nil? || character.story_id != story_id
+
+    state = npc_states.find_by(character: character)
+    return state.location if state
+    return current_location if character == self.character || character.is_companion?
+
+    character.location
+  end
+
+  # Arrival prose is written before stand_in! commits the move. Project the
+  # accompanying NPCs into its cast, using the same list the move will write.
+  def cast_on_arrival(location)
+    (cast_in(location) + followers.map(&:character)).uniq.sort_by(&:id)
+  end
+
+  def followers
+    return [] if current_location.nil?
+
+    foes = foes_in(current_location)
+    npc_states.where(following: true, location: current_location).includes(:character).reject do |row|
+      vitals_for(row.character)&.dead? || foes.include?(row.character)
+    end
+  end
+
+  def advance_followers_to!(location)
+    followers.each { |row| row.update!(location: location) }
+  end
+
+  # Legacy companions normally derive their whereabouts from the party. Death
+  # ends that rule: a body stays where it fell, even after the player leaves.
+  # Freezing every NPC here also keeps a later world move from moving a corpse.
+  def keep_npc_body!(character)
+    return if character == self.character || character.is_protagonist?
+
+    row = npc_states.find_or_initialize_by(character: character)
+    row.update!(location: location_of(character), following: false)
   end
 
   # WHO IS FIGHTING THIS PARTY, HERE, IN THIS GAME -- and the ONE reader of it.
@@ -210,7 +266,10 @@ class Playthrough < ApplicationRecord
 
     marks = vitals.where(character: cast).index_by(&:character_id)
 
-    cast.select { |who| who.hostile? || marks[who.id]&.provoked? }
+    states = npc_states.where(character: cast).index_by(&:character_id)
+    cast.select do |who|
+      (who.hostile? || marks[who.id]&.provoked?) && !states[who.id]&.ceasefire_holds?
+    end
   end
 
   # WHETHER THIS GAME HAS PICKED A FIGHT WITH SOMEBODY, asked of one person.
@@ -221,6 +280,7 @@ class Playthrough < ApplicationRecord
   # written under.
   def provoked?(character)
     return false if character.nil?
+    return false if npc_states.find_by(character: character)&.ceasefire_holds?
 
     vitals.find_by(character: character)&.provoked? || false
   end
@@ -338,11 +398,17 @@ class Playthrough < ApplicationRecord
   #
   # `interactions` is preloaded because the turn partial reads it on every scene
   # to name who the player was talking to, and all but the talk turns have none.
+  # The toll notices read each body and hazard source, including both ends of
+  # a crossed doorway. Preload them together so rendering a long history does
+  # not query once per recorded consequence.
   def turn_log
     scenes = scene_chain
 
     ActiveRecord::Associations::Preloader.new(
-      records: scenes, associations: { interactions: :character }
+      records: scenes, associations: {
+        interactions: :character,
+        tolls: [ :character, :location, { location_connection: [ :location, :connected_location ] } ]
+      }
     ).call
 
     scenes

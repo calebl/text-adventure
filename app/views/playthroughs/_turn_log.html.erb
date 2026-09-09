@@ -1,11 +1,14 @@
 <%# locals: (playthrough:, command: nil, error: nil, safety_notice: false, refusal: nil, autofocus: false) %>
 <%# EVERYTHING A TURN CHANGES, in one Turbo Stream target.
 
-    Three callers render this partial and they render the same two states:
+    The page and the job render this partial in the same two states:
 
-      TurnsController#create   -- streaming, the moment the command is accepted
       PlaythroughsController#show -- idle, a plain page load or a Resume link
-      NarrationJob             -- idle again, broadcast when the turn finishes
+      NarrationJob             -- streaming, then idle when the turn finishes
+
+    The command's HTTP response carries no replacement. The job's pending and
+    final pages arrive over the same channel, so a fast turn cannot be erased
+    by a late pending response.
 
     So the end of a turn is a `replace` of this one element rather than a page
     reload, and the log, the location line and the form all arrive together.
@@ -26,8 +29,8 @@
     focus back after a turn itself, with `preventScroll`. %>
 <div id="turn_log">
   <%# A turn that failed -- a model that would not answer, a schema it ignored,
-      a character sheet cut off at its cap. The player is still standing where
-      they were, and gets the input back along with a line saying the turn did
+      a character sheet cut off at its cap. The persisted state is shown and
+      the player gets the input back along with a line saying the turn did
       not finish; the old SSE `error` event only stopped the cursor blinking and
       left no way on but a reload.
 
@@ -45,7 +48,7 @@
       logged turn should claim full-strength colour while it fills in. %>
   <%# `verdicts` is resolved once for the whole log rather than per entry -- the
       log is the entire playthrough, and the turn partial asks about every turn
-      in it. Read here rather than in the partial so all three callers of this
+      in it. Read here rather than in the partial so every caller of this
       partial pay for it once -- and empty when the instrument is off, so a game
       nobody is evaluating pays nothing for it. %>
   <% verdicts = Playthrough::Debug.enabled? ? playthrough.feedback_by_scene : {} %>
@@ -234,6 +237,7 @@
     <div class="ask" data-controller="slash"
          data-slash-menu-value="<%= Playthrough::SlashMenu.new(playthrough).to_json %>">
       <%= form_with url: playthrough_turns_path(playthrough) do |form| %>
+        <%= form.hidden_field :request_token, value: SecureRandom.uuid %>
         <%# Two targets on one field, and they belong to two controllers: `play`
             puts focus back here after a turn (see the note above), `slash`
             reads and completes what is in it. Targets are resolved by a live

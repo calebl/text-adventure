@@ -84,6 +84,8 @@ class EngineSweep::Walk
   private
 
   def walk(mechanics, step)
+    realization = before_realization(mechanics.playthrough.story, step)
+    started = mechanics.playthrough.story_now
     before = Playthrough::Drift.count
     struck = Playthrough::Blow.count
     # WHAT THE PLACE TOOK, counted the way the blows are and never with them:
@@ -91,12 +93,70 @@ class EngineSweep::Walk
     # attacker and must never open a fight), so the two are two numbers a script
     # asserts separately.
     paid = Playthrough::Toll.count
-    report = mechanics.run(step.typed)
+    browser = EngineSweep::BrowserTurn.new(mechanics) if step.browser
+    report = if browser
+      browser.run(step)
+    else
+      mechanics.with_choice(step.npc_action) { mechanics.run(step.typed) }
+    end
+    record_realization!(realization) if realization
     drifts = Playthrough::Drift.count - before
     blows = Playthrough::Blow.count - struck
     hazards = Playthrough::Toll.count - paid
+    elapsed_minutes = (mechanics.playthrough.story_now - started) / 60
 
-    failures(step, report, drifts: drifts, blows: blows, hazards: hazards)
+    failures(step, report, drifts: drifts, blows: blows, hazards: hazards,
+             elapsed_minutes: elapsed_minutes, shown: browser&.shown) +
+      arrival_cast_failures(mechanics.playthrough, step, report)
+  end
+
+  # A declared first-entry fixture may generate ONE named stub. Its newly born
+  # world rows join the invariant reference once, so subsequent turns must keep
+  # them exactly as they must keep seeded rows. Existing actors and furniture
+  # are never re-baselined, and an undeclared room still cannot be rewritten.
+  def before_realization(story, step)
+    name = step.browser&.fetch("realizes", nil)
+    return if name.nil?
+
+    room = story.locations.find_by!(name: name)
+    unless room.stub?
+      raise EngineSweep::InvalidScript, "#{step.label}: realizes must name a stub, got #{name.inspect}"
+    end
+    { room: room, characters: story.characters.pluck(:id), items: Item.in_story(story).templates.pluck(:id) }
+  end
+
+  def record_realization!(before)
+    room = before.fetch(:room).reload
+    expected_room = @loaded.fetch("locations").find { |row| row.fetch("name") == room.name }
+    expected_room["detail_level"] = room.detail_level
+    new_people = room.characters.where.not(id: before.fetch(:characters)).map do |character|
+      character.attributes.slice("fullname", "hostile", "x", "y").merge(
+        "location" => room.name,
+        "stats" => character.attributes.slice(*WorldSeed::Loader::STAT_KEYS)
+      )
+    end
+    @loaded["characters"] = Array(@loaded["characters"]) + new_people
+    new_items = room.items.templates.where.not(id: before.fetch(:items)).map { |item| item.attributes.slice("name", "x", "y") }
+    expected_room["items"] = Array(expected_room["items"]) + new_items
+  end
+
+  # Mechanics moves without asking for arrival prose. Read the generator's
+  # cast after a move anyway: otherwise an offline walk could correctly kill
+  # somebody and still miss the arrival pass offering that corpse as alive.
+  # Explicit `present:` expectations in scripts pin the actual people; this
+  # checks that the separate reader used for the arrival agrees with them.
+  def arrival_cast_failures(game, step, report)
+    return [] unless report.changed? && report.understood.to_s.start_with?("move ->")
+
+    state = report.state
+    expected = state.present + (state.condition&.dead? ? [] : [ state.character ].compact)
+    actual = Scene::Generator.new(state.location, playthrough: game).characters_present
+    return [] if expected.map(&:id).sort == actual.map(&:id).sort
+
+    unmet = EngineSweep::Expectation::Unmet.new(
+      key: "arrival cast", expected: expected.map(&:fullname), actual: actual.map(&:fullname)
+    )
+    [ EngineSweep::Result::Failure.new(script: script, step: step, unmet: unmet, state: state.to_s) ]
   end
 
   # THE RECORDS AFTER A RE-SEED, WITH NOTHING ELSE HAVING HAPPENED.
@@ -108,13 +168,14 @@ class EngineSweep::Walk
     failures(step, mechanics.read(note: note), drifts: 0)
   end
 
-  def failures(step, report, drifts:, blows: 0, hazards: 0)
-    step.expectation.check(report, drifts: drifts, blows: blows, hazards: hazards).map do |unmet|
+  def failures(step, report, drifts:, blows: 0, hazards: 0, elapsed_minutes: 0, shown: nil)
+    step.expectation.check(report, drifts: drifts, blows: blows, hazards: hazards,
+                           elapsed_minutes: elapsed_minutes, shown: shown).map do |unmet|
       EngineSweep::Result::Failure.new(script: script, step: step, unmet: unmet, state: report.state.to_s)
     end
   end
 
-  def engine_for(game) = Playthrough::Mechanics.new(game, model: false)
+  def engine_for(game) = EngineSweep::Conversation.new(game, model: false)
 
   # The same `WorldSeed::Loader` call `bin/rails db:seed` makes, over the copy
   # this walk has been playing. What it reconciled and what it warned about

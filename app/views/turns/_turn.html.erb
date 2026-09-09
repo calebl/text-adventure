@@ -17,6 +17,15 @@
       <p class="speaking">talking to <%= speakers.to_sentence %></p>
     <% end %>
     <div class="turn"><%= turn.description %></div>
+    <%# A renderer may omit a crossing injury even after receiving its facts.
+        These notices tell the player what the engine recorded, independently
+        of the prose. The opening Scene can be shared, so filter by game even
+        though the associations are preloaded for the whole log. %>
+    <% if playthrough %>
+      <% turn.tolls.select { |toll| toll.playthrough_id == playthrough.id }.sort_by(&:id).each do |toll| %>
+        <p class="notice" id="<%= dom_id(toll) %>"><%= toll.to_s %></p>
+      <% end %>
+    <% end %>
     <%# THE VERDICT ON THIS TURN, and half of the instrument's mark on the game.
         Gated on `Playthrough::Debug.enabled?` -- the same flag as the debug link
         and the machinery panel below, local by default -- so someone handed a

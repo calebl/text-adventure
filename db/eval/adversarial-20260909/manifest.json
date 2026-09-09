@@ -1,0 +1,20 @@
+{
+  "approval": "User approved live fixed-fictional-fixture evaluation on 2026-09-09, OpenRouter mistralai/mistral-medium-3.1, shared $3 ceiling.",
+  "before_source": "8dd1f5c3ebeea704771220a4257ff4e3aa7086d1",
+  "after_source": "93448adead431f46799573c6c8f13dd65c5b1ddb",
+  "pricing_source": "https://openrouter.ai/mistralai/mistral-medium-3.1",
+  "pricing_checked": "2026-09-09",
+  "displayed_usd_per_million": {
+    "input": 0.4,
+    "output": 2
+  },
+  "guard_bounds_usd_per_million": {
+    "input": 5,
+    "output": 20
+  },
+  "scripts": {
+    "arrival_eval.rb": "532ff970e8430333d677d2835cf0171226ca335a4840b7b4d87a61f6c2da1e6b",
+    "npc-agency-eval.rb": "2f599996cde2656c5f561fba282edb896a46b2d87f07216970762f54e4cac641",
+    "eval_budget.rb": "cff65abad2485429d8e055144744376ee8376572c8fa8ad000075595960a85d9"
+  }
+}

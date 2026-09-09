@@ -1,0 +1,43 @@
+# The real browser loop, with a failed provider at the rendering boundary.
+# Before recovery, the first step took the coin but skipped Maren's reply;
+# the arrival charged its crossing and left the party behind. Retrying then
+# charged twice. A form token follows the same command through redelivery.
+story: A Turn at the Gate
+steps:
+- id: a-pickup-outlives-its-renderer
+  type: /take red coin
+  browser: {token: pickup, fail: narration}
+  expect:
+    carrying: [red coin]
+    location: Market (realized)
+    blows: 1
+    hazards: 0
+    changed: true
+    resolved_by: grammar
+    note: completed
+- id: redelivery-does-not-take-another-turn
+  type: /take red coin
+  browser: {token: pickup}
+  expect:
+    carrying: [red coin]
+    blows: 0
+    hazards: 0
+    changed: false
+- id: a-charged-crossing-outlives-its-renderer
+  type: /move Courtyard
+  browser: {token: crossing, fail: arrival}
+  expect:
+    location: Courtyard (realized)
+    carrying: [red coin]
+    hazards: 1
+    blows: 1
+    changed: true
+    note: completed
+- id: redelivered-arrival-does-not-pay-again
+  type: /move Courtyard
+  browser: {token: crossing}
+  expect:
+    location: Courtyard (realized)
+    hazards: 0
+    blows: 0
+    changed: false

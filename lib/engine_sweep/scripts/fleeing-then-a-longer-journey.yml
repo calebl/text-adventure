@@ -1,0 +1,37 @@
+# The real browser loop prices two successive journeys after a fight. The
+# first includes adjacent travel plus the one round that closes on escape;
+# the second must read the courtyard's district-length edge, not look for an
+# edge from the market preserved in the fight's history. A failed renderer
+# keeps the test offline while exercising the actual arrival/time writers.
+story: A Turn at the Gate
+steps:
+- id: escape-the-market
+  type: /move Courtyard
+  browser: {token: escape, fail: arrival}
+  expect:
+    location: Courtyard (realized)
+    present: []
+    foes: []
+    blows: 1
+    hazards: 1
+    elapsed_minutes: 6
+    note: completed
+- id: cross-the-district-from-the-courtyard
+  type: /move Tower
+  browser: {token: long-walk, fail: arrival}
+  expect:
+    location: Tower (realized)
+    present: []
+    foes: []
+    blows: 0
+    hazards: 0
+    elapsed_minutes: 20
+    note: completed
+- id: repeating-the-delivery-costs-no-time
+  type: /move Tower
+  browser: {token: long-walk}
+  expect:
+    location: Tower (realized)
+    changed: false
+    blows: 0
+    elapsed_minutes: 0

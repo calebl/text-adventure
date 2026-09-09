@@ -65,6 +65,12 @@
 # classifier answer that triggers two of the three shapes.
 # `one-act-per-line.yml` walks what is reachable and names, shape by shape,
 # what is not and where that half is pinned instead.
+#
+# Explicit `browser:` steps also walk Playthrough::Turn with fixed provider
+# replies or an unavailable renderer. BrowserTurn asserts every call in order,
+# and reads real generation, fallback and submission records. A named `realizes`
+# fixture lets one stub grow its world rows; Walk then keeps those newly born
+# records under the same invariants as seeded ones. No live call is allowed.
 module EngineSweep
   # Raised when anything under a sweep tries to build an agent. Not rescued
   # anywhere: a sweep that quietly made a model call would be a different

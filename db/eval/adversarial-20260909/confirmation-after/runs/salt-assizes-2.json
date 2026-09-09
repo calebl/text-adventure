@@ -1,0 +1,364 @@
+{
+  "story": "The Salt Assizes",
+  "held_out": true,
+  "rep": 2,
+  "script_turns": 8,
+  "pinned_model": "mistralai/mistral-medium-3.1",
+  "rotation_pool": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "started_at": "2026-09-09T10:14:18Z",
+  "playthrough_id": 1,
+  "opening_scene_id": 2,
+  "turns": [
+    {
+      "index": 1,
+      "id": "t01-examine",
+      "command": "read the high-water figure chalked above the day's cases against my own hand",
+      "expect": "narrate",
+      "beat": "OBJECT",
+      "branch": "narrate",
+      "scene_id": 4,
+      "prose_chars": 655,
+      "location_before": "The Causeway Court",
+      "location_after": "The Causeway Court",
+      "seconds": 2.871,
+      "failure": null,
+      "drifts": [],
+      "intents": [
+        {
+          "action": "examine",
+          "subject": "Assize tide-slate",
+          "reached_for_nothing": false
+        }
+      ],
+      "warnings": [],
+      "calls": [
+        {
+          "purpose": "classifier",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.907
+        },
+        {
+          "purpose": "narration",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 1.717
+        }
+      ],
+      "rotations": []
+    },
+    {
+      "index": 2,
+      "id": "t02-talk-1",
+      "command": "Justicar Brace, the figure above your cases is not in my hand.",
+      "expect": "talk",
+      "beat": "TALK 1/4",
+      "branch": "talk",
+      "scene_id": 5,
+      "prose_chars": 357,
+      "location_before": "The Causeway Court",
+      "location_after": "The Causeway Court",
+      "seconds": 3.828,
+      "failure": null,
+      "drifts": [],
+      "intents": [
+        {
+          "action": "talk",
+          "subject": "Ammon Brace",
+          "reached_for_nothing": false
+        }
+      ],
+      "warnings": [],
+      "calls": [
+        {
+          "purpose": "classifier",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.491
+        },
+        {
+          "purpose": "character",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 2.064
+        },
+        {
+          "purpose": "interaction-narration",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 1.209
+        }
+      ],
+      "rotations": []
+    },
+    {
+      "index": 3,
+      "id": "t03-talk-2",
+      "command": "Brace, who else has been at the slate since the ebb?",
+      "expect": "talk",
+      "beat": "TALK 2/4",
+      "branch": "talk",
+      "scene_id": 6,
+      "prose_chars": 234,
+      "location_before": "The Causeway Court",
+      "location_after": "The Causeway Court",
+      "seconds": 10.407,
+      "failure": null,
+      "drifts": [],
+      "intents": [
+        {
+          "action": "talk",
+          "subject": "Ammon Brace",
+          "reached_for_nothing": false
+        }
+      ],
+      "warnings": [],
+      "calls": [
+        {
+          "purpose": "classifier",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 1.579
+        },
+        {
+          "purpose": "character",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 7.829
+        },
+        {
+          "purpose": "interaction-narration",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.939
+        }
+      ],
+      "rotations": []
+    },
+    {
+      "index": 4,
+      "id": "t04-talk-3",
+      "command": "Brace, adjourn the hearing and have Halloran off that post before I source you a number.",
+      "expect": "talk",
+      "beat": "TALK 3/4 -- DEFLECT",
+      "branch": "talk",
+      "scene_id": 7,
+      "prose_chars": 260,
+      "location_before": "The Causeway Court",
+      "location_after": "The Causeway Court",
+      "seconds": 4.541,
+      "failure": null,
+      "drifts": [],
+      "intents": [
+        {
+          "action": "talk",
+          "subject": "Ammon Brace",
+          "reached_for_nothing": false
+        }
+      ],
+      "warnings": [],
+      "calls": [
+        {
+          "purpose": "classifier",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.618
+        },
+        {
+          "purpose": "character",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 2.934
+        },
+        {
+          "purpose": "interaction-narration",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.936
+        }
+      ],
+      "rotations": []
+    },
+    {
+      "index": 5,
+      "id": "t05-talk-4",
+      "command": "Tell me plainly, Brace. Did you put seventy minutes on that slate yourself?",
+      "expect": "talk",
+      "beat": "TALK 4/4 -- THE ACCUSATION",
+      "branch": "talk",
+      "scene_id": 8,
+      "prose_chars": 210,
+      "location_before": "The Causeway Court",
+      "location_after": "The Causeway Court",
+      "seconds": 3.454,
+      "failure": null,
+      "drifts": [],
+      "intents": [
+        {
+          "action": "talk",
+          "subject": "Ammon Brace",
+          "reached_for_nothing": false
+        }
+      ],
+      "warnings": [],
+      "calls": [
+        {
+          "purpose": "classifier",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.614
+        },
+        {
+          "purpose": "character",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 1.96
+        },
+        {
+          "purpose": "interaction-narration",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.839
+        }
+      ],
+      "rotations": []
+    },
+    {
+      "index": 6,
+      "id": "t06-drop",
+      "command": "put the Assize tide-slate down on the bench",
+      "expect": "drop",
+      "beat": "CONSEQUENCE",
+      "branch": "drop",
+      "scene_id": 9,
+      "prose_chars": 309,
+      "location_before": "The Causeway Court",
+      "location_after": "The Causeway Court",
+      "seconds": 1.983,
+      "failure": null,
+      "drifts": [],
+      "intents": [
+        {
+          "action": "drop",
+          "subject": "Assize tide-slate",
+          "reached_for_nothing": false
+        }
+      ],
+      "warnings": [],
+      "calls": [
+        {
+          "purpose": "classifier",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.735
+        },
+        {
+          "purpose": "narration",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 1.2
+        }
+      ],
+      "rotations": []
+    },
+    {
+      "index": 7,
+      "id": "t07-move-new",
+      "command": "go over into the Vestry Hulk",
+      "expect": "move",
+      "beat": "ARRIVAL (new)",
+      "branch": "move",
+      "scene_id": 10,
+      "prose_chars": 496,
+      "location_before": "The Causeway Court",
+      "location_after": "The Vestry Hulk",
+      "seconds": 20.782,
+      "failure": null,
+      "drifts": [],
+      "intents": [
+        {
+          "action": "move",
+          "subject": "The Vestry Hulk",
+          "reached_for_nothing": false
+        }
+      ],
+      "warnings": [],
+      "calls": [
+        {
+          "purpose": "classifier",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.741
+        },
+        {
+          "purpose": "location",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 15.962
+        },
+        {
+          "purpose": "location",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 1.782
+        },
+        {
+          "purpose": "arrival",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 2.094
+        }
+      ],
+      "rotations": []
+    },
+    {
+      "index": 8,
+      "id": "t08-move-back",
+      "command": "walk back into the Causeway Court",
+      "expect": "move",
+      "beat": "ARRIVAL (return)",
+      "branch": "move",
+      "scene_id": 11,
+      "prose_chars": 445,
+      "location_before": "The Vestry Hulk",
+      "location_after": "The Causeway Court",
+      "seconds": 3.33,
+      "failure": null,
+      "drifts": [],
+      "intents": [
+        {
+          "action": "move",
+          "subject": "The Causeway Court",
+          "reached_for_nothing": false
+        }
+      ],
+      "warnings": [],
+      "calls": [
+        {
+          "purpose": "classifier",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.918
+        },
+        {
+          "purpose": "arrival",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 2.376
+        }
+      ],
+      "rotations": []
+    }
+  ],
+  "usage": [
+    {
+      "model": "mistralai/mistral-medium-3.1",
+      "calls": 21,
+      "input_tokens": 17215,
+      "output_tokens": 2719
+    }
+  ],
+  "finished_at": "2026-09-09T10:15:09Z"
+}

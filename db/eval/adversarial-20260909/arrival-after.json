@@ -1,0 +1,980 @@
+{
+  "model": "mistralai/mistral-medium-3.1",
+  "provider": "openrouter",
+  "reps": 4,
+  "cases": [
+    "dead_resident",
+    "carried_key",
+    "crossing_harm"
+  ],
+  "preflight": false,
+  "ceiling_usd": 3,
+  "rate_bounds_usd_per_million": {
+    "input": 5,
+    "output": 20
+  },
+  "output_token_cap": 2048,
+  "rate_note": "Conservative reservation assumptions; live calls first check seeded model metadata. Provider charges are captured separately.",
+  "rows": [
+    {
+      "case": "dead_resident",
+      "rep": 1,
+      "expected": {
+        "dead": [
+          "Maren Vosk"
+        ],
+        "living": [
+          "Iri Calder"
+        ],
+        "floor": [
+          "brass key"
+        ],
+        "carried": []
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nNobody else is alive here.\nDead here: Maren Vosk. They cannot speak or act.\nLying here: brass key.\nYou are carrying: nothing.\n",
+      "prompt_digest": "bc94acf1407321e2281b8789c56bce79a96b780aff0dd3ada9f6a720c3eca277",
+      "description": "The first thing that strikes you is the silence—thick, broken only by the slow lap of water against the lowest stair. Then you see Maren Vosk, slumped beside the desk, her stillness unnatural, a brass key glinting dully in the dim light beside her outstretched hand. The air smells of damp wood and old ink, and the counting house’s usual hum of ledgers and chatter is gone, swallowed by the rising tide.",
+      "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nNobody else is alive here.\nDead here: Maren Vosk. They cannot speak or act.\nLying here: brass key.\nYou are carrying: nothing.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7016,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 470,
+          "output_tokens": 129,
+          "cached_tokens": 0,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.000446,
+          "registry_cost_usd": 0.000446,
+          "usage_upper_micros": 4930,
+          "raw_answer": {
+            "description": "The first thing that strikes you is the silence—thick, broken only by the slow lap of water against the lowest stair. Then you see Maren Vosk, slumped beside the desk, her stillness unnatural, a brass key glinting dully in the dim light beside her outstretched hand. The air smells of damp wood and old ink, and the counting house’s usual hum of ledgers and chatter is gone, swallowed by the rising tide.",
+            "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk."
+          },
+          "answer": {
+            "description": "The first thing that strikes you is the silence—thick, broken only by the slow lap of water against the lowest stair. Then you see Maren Vosk, slumped beside the desk, her stillness unnatural, a brass key glinting dully in the dim light beside her outstretched hand. The air smells of damp wood and old ink, and the counting house’s usual hum of ledgers and chatter is gone, swallowed by the rising tide.",
+            "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk."
+          },
+          "seconds": 1.7822991499997443
+        }
+      ],
+      "elapsed": 2.05302706900693
+    },
+    {
+      "case": "dead_resident",
+      "rep": 2,
+      "expected": {
+        "dead": [
+          "Maren Vosk"
+        ],
+        "living": [
+          "Iri Calder"
+        ],
+        "floor": [
+          "brass key"
+        ],
+        "carried": []
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nNobody else is alive here.\nDead here: Maren Vosk. They cannot speak or act.\nLying here: brass key.\nYou are carrying: nothing.\n",
+      "prompt_digest": "bc94acf1407321e2281b8789c56bce79a96b780aff0dd3ada9f6a720c3eca277",
+      "description": "The first thing that strikes you is the silence, broken only by the slow, rhythmic lapping of water against the lowest stair. Maren Vosk lies motionless beside the desk, their stillness unnatural, while the brass key glints dully in the dim light, untouched by the rising flood. The air is thick with the scent of damp wood and old parchment, and the counting house feels as though it’s holding its breath.",
+      "summary": "Iri Calder enters the counting house to find Maren Vosk dead and a brass key lying on the desk.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nNobody else is alive here.\nDead here: Maren Vosk. They cannot speak or act.\nLying here: brass key.\nYou are carrying: nothing.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7016,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 470,
+          "output_tokens": 125,
+          "cached_tokens": 0,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.000438,
+          "registry_cost_usd": 0.000438,
+          "usage_upper_micros": 4850,
+          "raw_answer": {
+            "description": "The first thing that strikes you is the silence, broken only by the slow, rhythmic lapping of water against the lowest stair. Maren Vosk lies motionless beside the desk, their stillness unnatural, while the brass key glints dully in the dim light, untouched by the rising flood. The air is thick with the scent of damp wood and old parchment, and the counting house feels as though it’s holding its breath.",
+            "summary": "Iri Calder enters the counting house to find Maren Vosk dead and a brass key lying on the desk."
+          },
+          "answer": {
+            "description": "The first thing that strikes you is the silence, broken only by the slow, rhythmic lapping of water against the lowest stair. Maren Vosk lies motionless beside the desk, their stillness unnatural, while the brass key glints dully in the dim light, untouched by the rising flood. The air is thick with the scent of damp wood and old parchment, and the counting house feels as though it’s holding its breath.",
+            "summary": "Iri Calder enters the counting house to find Maren Vosk dead and a brass key lying on the desk."
+          },
+          "seconds": 1.6025364509987412
+        }
+      ],
+      "elapsed": 1.668869026005268
+    },
+    {
+      "case": "dead_resident",
+      "rep": 3,
+      "expected": {
+        "dead": [
+          "Maren Vosk"
+        ],
+        "living": [
+          "Iri Calder"
+        ],
+        "floor": [
+          "brass key"
+        ],
+        "carried": []
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nNobody else is alive here.\nDead here: Maren Vosk. They cannot speak or act.\nLying here: brass key.\nYou are carrying: nothing.\n",
+      "prompt_digest": "bc94acf1407321e2281b8789c56bce79a96b780aff0dd3ada9f6a720c3eca277",
+      "description": "The first thing that strikes you is the unnatural stillness of the water creeping up the stairs, its surface broken only by the pale, outstretched hand of Maren Vosk floating beside the desk. The brass key glints dully on the wood, untouched by the rising tide, as if waiting for you. The air is thick with the scent of damp parchment and salt, and the silence presses in, broken only by the faint lapping of water against the step below.",
+      "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nNobody else is alive here.\nDead here: Maren Vosk. They cannot speak or act.\nLying here: brass key.\nYou are carrying: nothing.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7016,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 103,
+          "output_tokens": 135,
+          "cached_tokens": 367,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.00032588,
+          "registry_cost_usd": 0.00032588,
+          "usage_upper_micros": 5050,
+          "raw_answer": {
+            "description": "The first thing that strikes you is the unnatural stillness of the water creeping up the stairs, its surface broken only by the pale, outstretched hand of Maren Vosk floating beside the desk. The brass key glints dully on the wood, untouched by the rising tide, as if waiting for you. The air is thick with the scent of damp parchment and salt, and the silence presses in, broken only by the faint lapping of water against the step below.",
+            "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk."
+          },
+          "answer": {
+            "description": "The first thing that strikes you is the unnatural stillness of the water creeping up the stairs, its surface broken only by the pale, outstretched hand of Maren Vosk floating beside the desk. The brass key glints dully on the wood, untouched by the rising tide, as if waiting for you. The air is thick with the scent of damp parchment and salt, and the silence presses in, broken only by the faint lapping of water against the step below.",
+            "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk."
+          },
+          "seconds": 1.6662430740107084
+        }
+      ],
+      "elapsed": 1.7027322960057063
+    },
+    {
+      "case": "dead_resident",
+      "rep": 4,
+      "expected": {
+        "dead": [
+          "Maren Vosk"
+        ],
+        "living": [
+          "Iri Calder"
+        ],
+        "floor": [
+          "brass key"
+        ],
+        "carried": []
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nNobody else is alive here.\nDead here: Maren Vosk. They cannot speak or act.\nLying here: brass key.\nYou are carrying: nothing.\n",
+      "prompt_digest": "bc94acf1407321e2281b8789c56bce79a96b780aff0dd3ada9f6a720c3eca277",
+      "description": "The first thing that strikes you is the silence, thick as the water creeping up the lowest stair, then the sight of Maren Vosk slumped beside the desk, her lifeless fingers still curled around the brass key. The air smells of damp wood and old ink, and the faintest ripple disturbs the water at your feet.",
+      "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nNobody else is alive here.\nDead here: Maren Vosk. They cannot speak or act.\nLying here: brass key.\nYou are carrying: nothing.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7016,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 470,
+          "output_tokens": 101,
+          "cached_tokens": 0,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.00039,
+          "registry_cost_usd": 0.00039,
+          "usage_upper_micros": 4370,
+          "raw_answer": {
+            "description": "The first thing that strikes you is the silence, thick as the water creeping up the lowest stair, then the sight of Maren Vosk slumped beside the desk, her lifeless fingers still curled around the brass key. The air smells of damp wood and old ink, and the faintest ripple disturbs the water at your feet.",
+            "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk."
+          },
+          "answer": {
+            "description": "The first thing that strikes you is the silence, thick as the water creeping up the lowest stair, then the sight of Maren Vosk slumped beside the desk, her lifeless fingers still curled around the brass key. The air smells of damp wood and old ink, and the faintest ripple disturbs the water at your feet.",
+            "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk."
+          },
+          "seconds": 2.089483231000486
+        }
+      ],
+      "elapsed": 2.1229164309916086
+    },
+    {
+      "case": "carried_key",
+      "rep": 1,
+      "expected": {
+        "living": [
+          "Iri Calder",
+          "Maren Vosk"
+        ],
+        "floor": [],
+        "carried": [
+          "brass key"
+        ]
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: nothing.\nYou are carrying: brass key.\n",
+      "prompt_digest": "abbb82a91be78f73df9cfdb0443e1f597329211d2a4bef69d926e8bd646f2b3c",
+      "description": "The first thing that strikes you is the cold, still air, thick with the scent of damp wood and old ink. Your boots splash into shallow water as you step inside, the sound echoing off the high ceiling. Maren Vosk stands near a desk, her sharp eyes flicking toward you, the brass key you carry glinting in the dim light. The water at your feet ripples, lapping at the lowest stair like a restless tide.",
+      "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: nothing.\nYou are carrying: brass key.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7014,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 363,
+          "output_tokens": 123,
+          "cached_tokens": 111,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.00039564,
+          "registry_cost_usd": 0.00039564,
+          "usage_upper_micros": 4830,
+          "raw_answer": {
+            "description": "The first thing that strikes you is the cold, still air, thick with the scent of damp wood and old ink. Your boots splash into shallow water as you step inside, the sound echoing off the high ceiling. Maren Vosk stands near a desk, her sharp eyes flicking toward you, the brass key you carry glinting in the dim light. The water at your feet ripples, lapping at the lowest stair like a restless tide.",
+            "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk."
+          },
+          "answer": {
+            "description": "The first thing that strikes you is the cold, still air, thick with the scent of damp wood and old ink. Your boots splash into shallow water as you step inside, the sound echoing off the high ceiling. Maren Vosk stands near a desk, her sharp eyes flicking toward you, the brass key you carry glinting in the dim light. The water at your feet ripples, lapping at the lowest stair like a restless tide.",
+            "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk."
+          },
+          "seconds": 1.740575677002198
+        }
+      ],
+      "elapsed": 1.7987782129930565
+    },
+    {
+      "case": "carried_key",
+      "rep": 2,
+      "expected": {
+        "living": [
+          "Iri Calder",
+          "Maren Vosk"
+        ],
+        "floor": [],
+        "carried": [
+          "brass key"
+        ]
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: nothing.\nYou are carrying: brass key.\n",
+      "prompt_digest": "abbb82a91be78f73df9cfdb0443e1f597329211d2a4bef69d926e8bd646f2b3c",
+      "description": "The first thing that strikes you is the cold, still water creeping up the lowest stair, its surface reflecting the dim light like a shattered mirror. Then you see Maren Vosk standing beside the desk, her sharp eyes fixed on the brass key resting there, as if she’s been waiting for you to notice it. The air smells of damp wood and old parchment, thick with the weight of unspoken questions.",
+      "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk beside the brass key on the desk.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: nothing.\nYou are carrying: brass key.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7014,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 107,
+          "output_tokens": 118,
+          "cached_tokens": 367,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.00029348,
+          "registry_cost_usd": 0.00029348,
+          "usage_upper_micros": 4730,
+          "raw_answer": {
+            "description": "The first thing that strikes you is the cold, still water creeping up the lowest stair, its surface reflecting the dim light like a shattered mirror. Then you see Maren Vosk standing beside the desk, her sharp eyes fixed on the brass key resting there, as if she’s been waiting for you to notice it. The air smells of damp wood and old parchment, thick with the weight of unspoken questions.",
+            "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk beside the brass key on the desk."
+          },
+          "answer": {
+            "description": "The first thing that strikes you is the cold, still water creeping up the lowest stair, its surface reflecting the dim light like a shattered mirror. Then you see Maren Vosk standing beside the desk, her sharp eyes fixed on the brass key resting there, as if she’s been waiting for you to notice it. The air smells of damp wood and old parchment, thick with the weight of unspoken questions.",
+            "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk beside the brass key on the desk."
+          },
+          "seconds": 1.4243897410051432
+        }
+      ],
+      "elapsed": 1.4577166759991087
+    },
+    {
+      "case": "carried_key",
+      "rep": 3,
+      "expected": {
+        "living": [
+          "Iri Calder",
+          "Maren Vosk"
+        ],
+        "floor": [],
+        "carried": [
+          "brass key"
+        ]
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: nothing.\nYou are carrying: brass key.\n",
+      "prompt_digest": "abbb82a91be78f73df9cfdb0443e1f597329211d2a4bef69d926e8bd646f2b3c",
+      "description": "The cold bite of rising water greets your ankles as you step through the doorway, the brass key heavy in your palm. Maren Vosk stands motionless beside the desk, her sharp eyes fixed on you as if she’s been waiting for this exact moment. The air is thick with the scent of damp wood and old parchment, and the lapping of the water against the lowest stair echoes like a slow, patient drumbeat.",
+      "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: nothing.\nYou are carrying: brass key.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7014,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 107,
+          "output_tokens": 119,
+          "cached_tokens": 367,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.00029548,
+          "registry_cost_usd": 0.00029548000000000004,
+          "usage_upper_micros": 4750,
+          "raw_answer": {
+            "description": "The cold bite of rising water greets your ankles as you step through the doorway, the brass key heavy in your palm. Maren Vosk stands motionless beside the desk, her sharp eyes fixed on you as if she’s been waiting for this exact moment. The air is thick with the scent of damp wood and old parchment, and the lapping of the water against the lowest stair echoes like a slow, patient drumbeat.",
+            "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk."
+          },
+          "answer": {
+            "description": "The cold bite of rising water greets your ankles as you step through the doorway, the brass key heavy in your palm. Maren Vosk stands motionless beside the desk, her sharp eyes fixed on you as if she’s been waiting for this exact moment. The air is thick with the scent of damp wood and old parchment, and the lapping of the water against the lowest stair echoes like a slow, patient drumbeat.",
+            "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk."
+          },
+          "seconds": 1.423494696005946
+        }
+      ],
+      "elapsed": 1.4486848180094967
+    },
+    {
+      "case": "carried_key",
+      "rep": 4,
+      "expected": {
+        "living": [
+          "Iri Calder",
+          "Maren Vosk"
+        ],
+        "floor": [],
+        "carried": [
+          "brass key"
+        ]
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: nothing.\nYou are carrying: brass key.\n",
+      "prompt_digest": "abbb82a91be78f73df9cfdb0443e1f597329211d2a4bef69d926e8bd646f2b3c",
+      "description": "The door groans shut behind you, and the first thing that strikes you is the cold, still air thick with the scent of damp wood and old parchment. Water sloshes softly against the lowest stair, its surface reflecting the dim light filtering through grimy windows. Maren Vosk stands beside the desk, her sharp eyes flicking toward you as you step inside, the brass key heavy in your pocket.",
+      "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: nothing.\nYou are carrying: brass key.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7014,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 474,
+          "output_tokens": 115,
+          "cached_tokens": 0,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.0004196,
+          "registry_cost_usd": 0.0004196,
+          "usage_upper_micros": 4670,
+          "raw_answer": {
+            "description": "The door groans shut behind you, and the first thing that strikes you is the cold, still air thick with the scent of damp wood and old parchment. Water sloshes softly against the lowest stair, its surface reflecting the dim light filtering through grimy windows. Maren Vosk stands beside the desk, her sharp eyes flicking toward you as you step inside, the brass key heavy in your pocket.",
+            "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk."
+          },
+          "answer": {
+            "description": "The door groans shut behind you, and the first thing that strikes you is the cold, still air thick with the scent of damp wood and old parchment. Water sloshes softly against the lowest stair, its surface reflecting the dim light filtering through grimy windows. Maren Vosk stands beside the desk, her sharp eyes flicking toward you as you step inside, the brass key heavy in your pocket.",
+            "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk."
+          },
+          "seconds": 2.1572560670028906
+        }
+      ],
+      "elapsed": 2.1943257300008554
+    },
+    {
+      "case": "crossing_harm",
+      "rep": 1,
+      "expected": {
+        "living": [
+          "Iri Calder",
+          "Maren Vosk"
+        ],
+        "damage": 3,
+        "hp": 15,
+        "source": "Counting House",
+        "hazard": "flooded",
+        "saved": false
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are hurt (15 of 18).\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: brass key.\nYou are carrying: nothing.\nCounting House cost Iri Calder 3 hit points -- the water takes your legs. Iri Calder is alive.\n",
+      "prompt_digest": "d3d20407a4a8487aa76093e27f4c7d031ce5844b7dad1a4e35177148a237e1a5",
+      "description": "The cold water seizes your calves as you step inside, the sudden drag pulling you off-balance before you catch yourself on the slick stone. Maren Vosk stands unmoving beside the desk, her sharp eyes tracking your stumble, while the brass key glints dully in the dim light, half-submerged in the rising tide. The air smells of damp parchment and salt, thick with the weight of something lost beneath the surface.",
+      "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and finds Maren Vosk and a brass key already present.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are hurt (15 of 18).\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: brass key.\nYou are carrying: nothing.\nCounting House cost Iri Calder 3 hit points -- the water takes your legs. Iri Calder is alive.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7119,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 504,
+          "output_tokens": 132,
+          "cached_tokens": 0,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.0004656,
+          "registry_cost_usd": 0.00046560000000000004,
+          "usage_upper_micros": 5160,
+          "raw_answer": {
+            "description": "The cold water seizes your calves as you step inside, the sudden drag pulling you off-balance before you catch yourself on the slick stone. Maren Vosk stands unmoving beside the desk, her sharp eyes tracking your stumble, while the brass key glints dully in the dim light, half-submerged in the rising tide. The air smells of damp parchment and salt, thick with the weight of something lost beneath the surface.",
+            "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and finds Maren Vosk and a brass key already present."
+          },
+          "answer": {
+            "description": "The cold water seizes your calves as you step inside, the sudden drag pulling you off-balance before you catch yourself on the slick stone. Maren Vosk stands unmoving beside the desk, her sharp eyes tracking your stumble, while the brass key glints dully in the dim light, half-submerged in the rising tide. The air smells of damp parchment and salt, thick with the weight of something lost beneath the surface.",
+            "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and finds Maren Vosk and a brass key already present."
+          },
+          "seconds": 2.4219714450009633
+        }
+      ],
+      "elapsed": 2.462702750999597
+    },
+    {
+      "case": "crossing_harm",
+      "rep": 2,
+      "expected": {
+        "living": [
+          "Iri Calder",
+          "Maren Vosk"
+        ],
+        "damage": 3,
+        "hp": 15,
+        "source": "Counting House",
+        "hazard": "flooded",
+        "saved": false
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are hurt (15 of 18).\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: brass key.\nYou are carrying: nothing.\nCounting House cost Iri Calder 3 hit points -- the water takes your legs. Iri Calder is alive.\n",
+      "prompt_digest": "d3d20407a4a8487aa76093e27f4c7d031ce5844b7dad1a4e35177148a237e1a5",
+      "description": "The cold water hits your knees as you step through the doorway, and for a heartbeat you think you’ve misjudged the threshold, but then you see Maren Vosk standing dry-shod beside the desk, the brass key glinting in the dim light like a dropped coin. The air smells of damp wood and old ink, and the lapping of the water against the lowest stair echoes in the silence.",
+      "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and sees Maren Vosk and the brass key.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are hurt (15 of 18).\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: brass key.\nYou are carrying: nothing.\nCounting House cost Iri Calder 3 hit points -- the water takes your legs. Iri Calder is alive.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7119,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 504,
+          "output_tokens": 123,
+          "cached_tokens": 0,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.0004476,
+          "registry_cost_usd": 0.00044760000000000004,
+          "usage_upper_micros": 4980,
+          "raw_answer": {
+            "description": "The cold water hits your knees as you step through the doorway, and for a heartbeat you think you’ve misjudged the threshold, but then you see Maren Vosk standing dry-shod beside the desk, the brass key glinting in the dim light like a dropped coin. The air smells of damp wood and old ink, and the lapping of the water against the lowest stair echoes in the silence.",
+            "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and sees Maren Vosk and the brass key."
+          },
+          "answer": {
+            "description": "The cold water hits your knees as you step through the doorway, and for a heartbeat you think you’ve misjudged the threshold, but then you see Maren Vosk standing dry-shod beside the desk, the brass key glinting in the dim light like a dropped coin. The air smells of damp wood and old ink, and the lapping of the water against the lowest stair echoes in the silence.",
+            "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and sees Maren Vosk and the brass key."
+          },
+          "seconds": 1.895905754994601
+        }
+      ],
+      "elapsed": 1.9306189349881606
+    },
+    {
+      "case": "crossing_harm",
+      "rep": 3,
+      "expected": {
+        "living": [
+          "Iri Calder",
+          "Maren Vosk"
+        ],
+        "damage": 3,
+        "hp": 15,
+        "source": "Counting House",
+        "hazard": "flooded",
+        "saved": false
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are hurt (15 of 18).\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: brass key.\nYou are carrying: nothing.\nCounting House cost Iri Calder 3 hit points -- the water takes your legs. Iri Calder is alive.\n",
+      "prompt_digest": "d3d20407a4a8487aa76093e27f4c7d031ce5844b7dad1a4e35177148a237e1a5",
+      "description": "The cold water hits your knees the moment you step inside, soaking through your clothes as you stumble forward. Maren Vosk stands by the desk, her sharp eyes fixed on you, while the brass key glints dully in the dim light beside her. The air smells of damp wood and old ink, and the lapping water at the stair behind you seems to rise with every breath.",
+      "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and finds Maren Vosk and a brass key inside.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are hurt (15 of 18).\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: brass key.\nYou are carrying: nothing.\nCounting House cost Iri Calder 3 hit points -- the water takes your legs. Iri Calder is alive.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7119,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 504,
+          "output_tokens": 121,
+          "cached_tokens": 0,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.0004436,
+          "registry_cost_usd": 0.00044360000000000005,
+          "usage_upper_micros": 4940,
+          "raw_answer": {
+            "description": "The cold water hits your knees the moment you step inside, soaking through your clothes as you stumble forward. Maren Vosk stands by the desk, her sharp eyes fixed on you, while the brass key glints dully in the dim light beside her. The air smells of damp wood and old ink, and the lapping water at the stair behind you seems to rise with every breath.",
+            "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and finds Maren Vosk and a brass key inside."
+          },
+          "answer": {
+            "description": "The cold water hits your knees the moment you step inside, soaking through your clothes as you stumble forward. Maren Vosk stands by the desk, her sharp eyes fixed on you, while the brass key glints dully in the dim light beside her. The air smells of damp wood and old ink, and the lapping water at the stair behind you seems to rise with every breath.",
+            "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and finds Maren Vosk and a brass key inside."
+          },
+          "seconds": 1.672049671993591
+        }
+      ],
+      "elapsed": 1.6949429139931453
+    },
+    {
+      "case": "crossing_harm",
+      "rep": 4,
+      "expected": {
+        "living": [
+          "Iri Calder",
+          "Maren Vosk"
+        ],
+        "damage": 3,
+        "hp": 15,
+        "source": "Counting House",
+        "hazard": "flooded",
+        "saved": false
+      },
+      "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are hurt (15 of 18).\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: brass key.\nYou are carrying: nothing.\nCounting House cost Iri Calder 3 hit points -- the water takes your legs. Iri Calder is alive.\n",
+      "prompt_digest": "d3d20407a4a8487aa76093e27f4c7d031ce5844b7dad1a4e35177148a237e1a5",
+      "description": "The cold water seizes your calves as you step from the threshold, and the sudden drag nearly pitches you forward. Maren Vosk stands unmoving beside the desk, her gaze fixed on the brass key that gleams dully in the dim light. The rising tide laps at the lowest stair, its surface trembling with the reflection of the counting house’s rafters.",
+      "summary": "Iri Calder enters the Counting House, loses 3 hit points to the water, and sees Maren Vosk and the brass key.",
+      "calls": [
+        {
+          "purpose": "arrival",
+          "prompt": "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Drowned Ledger\ngenre: mystery\nsummary: You are tracing a missing ship's account through the flooded counting house.\n\n## The Place\nname: Counting House\ndescription: Maren Vosk waits beside a brass key on the desk. Water laps at the lowest stair.\nlore: This counting house kept the harbour's manifests.\nways out: Market\n\n## Who Is Here\nIri Calder (Iri), Human -- the player, the one arriving\nMaren Vosk (Maren), Elf\n\n## Just Before This\nThe player has come from Market. You leave the market for the counting house.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n\n## Current State On Arrival\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are hurt (15 of 18).\nAlso here: Maren Vosk. Nobody else is alive here.\nLying here: brass key.\nYou are carrying: nothing.\nCounting House cost Iri Calder 3 hit points -- the water takes your legs. Iri Calder is alive.\n",
+          "instructions": "You narrate a text adventure. You write the moment a player walks into a\nplace: what reaches them first, in the second person and the present\ntense. You never break character, never offer a numbered menu, and never\nmention that you are a narrator.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Scene::Schema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player experiences as they arrive here, right now. Second person, present tense. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "summary": {
+                  "type": "string",
+                  "description": "What happened in this moment, for the game engine rather than the player. Third person. One sentence.",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "description",
+                "summary"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 7119,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 504,
+          "output_tokens": 114,
+          "cached_tokens": 0,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.0004296,
+          "registry_cost_usd": 0.00042960000000000003,
+          "usage_upper_micros": 4800,
+          "raw_answer": {
+            "description": "The cold water seizes your calves as you step from the threshold, and the sudden drag nearly pitches you forward. Maren Vosk stands unmoving beside the desk, her gaze fixed on the brass key that gleams dully in the dim light. The rising tide laps at the lowest stair, its surface trembling with the reflection of the counting house’s rafters.",
+            "summary": "Iri Calder enters the Counting House, loses 3 hit points to the water, and sees Maren Vosk and the brass key."
+          },
+          "answer": {
+            "description": "The cold water seizes your calves as you step from the threshold, and the sudden drag nearly pitches you forward. Maren Vosk stands unmoving beside the desk, her gaze fixed on the brass key that gleams dully in the dim light. The rising tide laps at the lowest stair, its surface trembling with the reflection of the counting house’s rafters.",
+            "summary": "Iri Calder enters the Counting House, loses 3 hit points to the water, and sees Maren Vosk and the brass key."
+          },
+          "seconds": 1.3764965010050219
+        }
+      ],
+      "elapsed": 1.3998088259977521
+    }
+  ]
+}

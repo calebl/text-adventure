@@ -1,0 +1,13 @@
+`/home/calebl` is not writable.
+Bundler will use `/tmp/bundler20260908-3-whs4h03' as your home directory temporarily.
+/home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/io-event-1.21.1/lib/IO_Event.so: warning: io_uring_queue_init() was available at compile time but failed at run time: Operation not permitted
+
+
+Run options: --seed 42345
+
+# Running:
+
+............................................
+
+Finished in 3.731500s, 11.7915 runs/s, 83.6125 assertions/s.
+44 runs, 312 assertions, 0 failures, 0 errors, 0 skips

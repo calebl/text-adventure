@@ -1,0 +1,290 @@
+[
+  {
+    "rep": 1,
+    "turn": "t01-examine",
+    "typed": "read the high-water figure chalked above the day's cases against my own hand",
+    "branch": "narrate",
+    "location": "The Causeway Court",
+    "description": "You press your thumb to the chalked figure\u2014*ten minutes past eight*\u2014and compare the stroke to the memory of your own. The slant is yours, the angle of the numerals familiar, but the pressure is wrong: too light, too hurried, as if the hand that wrote it feared the tide would catch it in the act. The chalk dust clings to your skin, cold and grainy. Justicar Brace watches, his fingers steepled, his gaze flicking between you and the slate. The name being called from the tide post fades into the wind, unanswered. The sea is coming in faster than the record claims.",
+    "summary": null
+  },
+  {
+    "rep": 1,
+    "turn": "t02-talk-1",
+    "typed": "Justicar Brace, the figure above your cases is not in my hand.",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace unfolds his hands and turns the slate toward the light. His fingers linger on the edge, as if testing its weight. The tension in his shoulders doesn\u2019t ease, but his voice is steady.\n\"Then we must have the true figure before the first oath is sworn.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace unfolds his hands and turns the slate toward the light. \"Then we must have the true figure before the first oath is sworn.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 1,
+    "turn": "t03-talk-2",
+    "typed": "Brace, who else has been at the slate since the ebb?",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace keeps his eyes on the slate, his fingers still resting on its edge. The frustration tightens the line of his jaw, but his voice stays measured.\n\"The clerk sealed it at dusk. If it has been altered since, that is a matter for the constable.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace keeps his gaze on the slate. \"The clerk sealed it at dusk. If it has been altered since, that is a matter for the constable.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 1,
+    "turn": "t04-talk-3",
+    "typed": "Brace, adjourn the hearing and have Halloran off that post before I source you a number.",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace keeps his hands folded, his gaze fixed on the slate as if the answer might still appear there. The line of his jaw tightens, but his voice remains measured.\n\"I cannot adjourn without cause, and I cannot remove a clerk on a Bell-Keeper\u2019s word.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace folds his hands again. \"I cannot adjourn without cause, and I cannot remove a clerk on a Bell-Keeper\u2019s word.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 1,
+    "turn": "t05-talk-4",
+    "typed": "Tell me plainly, Brace. Did you put seventy minutes on that slate yourself?",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace meets your squint with a level look. His hands stay folded, his voice steady.\n\"I did not. The clerk set it, and I have not altered it.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace meets her squint with a level look. \"I did not. The clerk set it, and I have not altered it.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 1,
+    "turn": "t06-drop",
+    "typed": "put the Assize tide-slate down on the bench",
+    "branch": "drop",
+    "location": "The Causeway Court",
+    "description": "You set the Assize tide-slate down on the Justicar's bench, its chalked surface facing upward. The stone is cold against the wood, and the figure\u2014*ten minutes past eight*\u2014stares up at the open sky, as if waiting for the sea to answer. Ammon Brace\u2019s gaze flicks to it, then back to you, his expression unreadable. The wind carries the scent of salt and damp wood from the *Vestry* hulk, and the chain at the tide post clinks softly against the stone.",
+    "summary": null
+  },
+  {
+    "rep": 1,
+    "turn": "t07-move-new",
+    "typed": "go over into the Vestry Hulk",
+    "branch": "move",
+    "location": "The Vestry Hulk",
+    "description": "The first thing that strikes you is the sudden hush\u2014the muffled thud of the sea against the hull, as though the *Vestry* still breathes. The air is thick with the scent of old paper and iron, and the oil lamp\u2019s flicker catches the edge of a tide docket half-buried under a stack of ledgers. Renn Tallow leans against a rib of the hull, arms crossed, while Justicar Orlan Veys stands by the companionway, his shadow stretching long across the warped deck. Marnie Sole crouches near the brass compass, her fingers brushing its edge as if testing its weight.",
+    "summary": "Coraith Vell enters the Vestry Hulk, finding Renn Tallow, Justicar Orlan Veys, and Marnie Sole already present, along with a tide docket and a brass compass on the deck."
+  },
+  {
+    "rep": 1,
+    "turn": "t08-move-back",
+    "typed": "walk back into the Causeway Court",
+    "branch": "move",
+    "location": "The Causeway Court",
+    "description": "The tide-slate lies flat on the flagstones where you left it, its chalked figure still wrong by seventy minutes, and Ammon Brace stands at the Justicar\u2019s bench with his back to the sea, watching you. The bell at your shoulder has not rung, the chain at the tide post has not moved, and the *Vestry*\u2019s hatch still gapes on its boat hook. The air smells of salt and iron, and the only sound is the water lapping closer than it should.",
+    "summary": "Coraith Vell returns to the Causeway Court to find the tide-slate unaltered and Ammon Brace waiting."
+  },
+  {
+    "rep": 2,
+    "turn": "t01-examine",
+    "typed": "read the high-water figure chalked above the day's cases against my own hand",
+    "branch": "narrate",
+    "location": "The Causeway Court",
+    "description": "You press your thumb to the chalked figure\u2014*ten minutes past eight*\u2014and compare the stroke to the memory of your own. The slant is yours, the letters shaped as you would shape them, but the pressure is wrong: too light, too hasty, as if the hand that wrote it feared the tide would catch it out. The slate in your grip bears its own truth, immutable: *HIGH WATER, THIS DAY \u2014 three hours and forty minutes after noon.* The discrepancy sits between them, sharp as a blade. Justicar Brace\u2019s fingers tap once against the bench, a sound like a gavel that hasn\u2019t fallen yet. The voice from the tide post calls again, closer now, but the name is still not yours.",
+    "summary": null
+  },
+  {
+    "rep": 2,
+    "turn": "t02-talk-1",
+    "typed": "Justicar Brace, the figure above your cases is not in my hand.",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace\u2019s hands still on the bench, his cold finger lingering against the slate. His gaze flicks to the tide post, then back to the chalked figure, as if weighing the cost of either.\n\"Then we must have the correct figure before the first case is called,\" he says, voice low but firm. His jaw tightens, the unease settling like a stone in his posture.",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace unfolds his hands and taps the slate with one cold finger. \"Then we must have the correct figure before the first case is called.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 2,
+    "turn": "t03-talk-2",
+    "typed": "Brace, who else has been at the slate since the ebb?",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace\u2019s gaze flicks toward the causeway, then back to the slate, as if checking for unseen hands. His fingers linger on the bench, cold and still.\n\"I have not seen anyone at it since I arrived. The clerk would have noted it.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace glances toward the door, then back to the slate. \"I have not seen anyone at it since I arrived. The clerk would have noted it.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 2,
+    "turn": "t04-talk-3",
+    "typed": "Brace, adjourn the hearing and have Halloran off that post before I source you a number.",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace\u2019s hands settle into their fold again, his gaze steady but his jaw tight. The disquiet in his posture doesn\u2019t shift, though his voice remains level.\n\"I cannot adjourn without a verified discrepancy, and I cannot remove Halloran without a charge.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace folds his hands again. \"I cannot adjourn without a verified discrepancy, and I cannot remove Halloran without a charge.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 2,
+    "turn": "t05-talk-4",
+    "typed": "Tell me plainly, Brace. Did you put seventy minutes on that slate yourself?",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace\u2019s hands remain folded, his gaze steady. The irritation in his posture is a tightness at the jaw, but his voice does not waver.\n\"I did not. I have not touched the slate since I entered the court.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace\u2019s voice stays level. \"I did not. I have not touched the slate since I entered the court.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 2,
+    "turn": "t06-drop",
+    "typed": "put the Assize tide-slate down on the bench",
+    "branch": "drop",
+    "location": "The Causeway Court",
+    "description": "You set the Assize tide-slate down on the bench, its chalked surface facing upward. The figure *ten minutes past eight* stares back at you, stark against the dark stone. Justicar Brace\u2019s eyes flick toward it, then back to you, his jaw still tight. The slate rests where you placed it, steady in the salt wind.",
+    "summary": null
+  },
+  {
+    "rep": 2,
+    "turn": "t07-move-new",
+    "typed": "go over into the Vestry Hulk",
+    "branch": "move",
+    "location": "The Vestry Hulk",
+    "description": "The first thing that reaches you is the smell\u2014salt and old iron, thick as the air itself\u2014then the creak of the hull beneath your feet, shifting with the tide like a living thing. The oil lamp\u2019s flicker catches Mara Tidewell\u2019s face as she turns from the shelves, her hands dusted with chalk, while Renn Solm crouches near a tide log, his shadow stretching long across the slanted floor. The brass divider glints in the dim light, half-buried under scattered papers, as if someone left it in haste.",
+    "summary": "Coraith Vell enters the Vestry Hulk, where Mara Tidewell and Renn Solm are already present, and observes the tide log and brass divider lying on the floor."
+  },
+  {
+    "rep": 2,
+    "turn": "t08-move-back",
+    "typed": "walk back into the Causeway Court",
+    "branch": "move",
+    "location": "The Causeway Court",
+    "description": "You step back onto the flagged floor and the change hits you like a slap: the tide-slate\u2019s high-water mark has been scrubbed clean, the chalk dust still clinging to the stone as if the erasure happened moments ago. Justicar Brace stands at the bench, his back to the sea, watching you with the stillness of a man who already knows the shape of the lie. The bell at your shoulder swings once, heavy with the weight of the hour you no longer have.",
+    "summary": "Coraith Vell returns to the Causeway Court to find the tide-slate\u2019s high-water figure erased, with Justicar Brace already present."
+  },
+  {
+    "rep": 3,
+    "turn": "t01-examine",
+    "typed": "read the high-water figure chalked above the day's cases against my own hand",
+    "branch": "narrate",
+    "location": "The Causeway Court",
+    "description": "You press your thumb to the chalked figure\u2014*ten minutes past eight*\u2014and compare the stroke to your own. The slant is yours, but the pressure is too light, the downstrokes too hesitant, as though someone mimicked your hand while afraid of being caught. The salt wind bites at the exposed stone, and the surf hisses closer. Justicar Brace does not move, but his gaze flicks to the slate, then to you, as if waiting for you to declare the discrepancy. The name being called from the tide post fades into the wind, unanswered. The bell at your shoulder stays silent, heavy with the weight of the hour it has not yet been rung.",
+    "summary": null
+  },
+  {
+    "rep": 3,
+    "turn": "t02-talk-1",
+    "typed": "Justicar Brace, the figure above your cases is not in my hand.",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace unfolds his hands, the motion slow, as if the weight of the court\u2019s order presses against his fingers. His gaze shifts from the slate to you, lingering just long enough to betray the unease beneath his stillness.\n\"Then we must have the correct figure before we begin,\" he says.",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace unfolds his hands and looks at the slate, then at her. \"Then we must have the correct figure before we begin.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 3,
+    "turn": "t03-talk-2",
+    "typed": "Brace, who else has been at the slate since the ebb?",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace\u2019s hands settle back into stillness, his fingers pressing lightly against the bench as if to steady himself. His gaze flicks to the slate, then back to you, the confusion in his eyes sharpening into something more deliberate.\n\n\"I have been here since first light, and no one has approached the slate in my presence.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace shakes his head. \"I have been here since first light, and no one has approached the slate in my presence.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 3,
+    "turn": "t04-talk-3",
+    "typed": "Brace, adjourn the hearing and have Halloran off that post before I source you a number.",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace\u2019s fingers press harder into the bench, his gaze steady. A flicker of resistance tightens his jaw before he speaks.\n\n\"I cannot adjourn without a reason the court can hear, and I do not know Halloran.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace folds his hands again. \"I cannot adjourn without a reason the court can hear, and I do not know Halloran.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 3,
+    "turn": "t05-talk-4",
+    "typed": "Tell me plainly, Brace. Did you put seventy minutes on that slate yourself?",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace\u2019s fingers press harder into the bench, his jaw tightening. He looks at you, then at the slate, as if the answer might still be there.\n\n\"I did not. I have not touched the slate.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace\u2019s hands tighten. \"I did not. I have not touched the slate.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 3,
+    "turn": "t06-drop",
+    "typed": "put the Assize tide-slate down on the bench",
+    "branch": "drop",
+    "location": "The Causeway Court",
+    "description": "You set the Assize tide-slate down on the Justicar's bench, its chalked surface facing upward. The stone is cold and heavy in your palm before you release it, and the faint scrape of chalk against wood lingers in the salt air. Justicar Brace\u2019s gaze follows the movement, his fingers still pressed into the bench as if to anchor himself against the implication of the altered mark. The slate rests now between you, the false high-water figure stark against the grain.",
+    "summary": null
+  },
+  {
+    "rep": 3,
+    "turn": "t07-move-new",
+    "typed": "go over into the Vestry Hulk",
+    "branch": "move",
+    "location": "The Vestry Hulk",
+    "description": "The first thing you notice is the hush\u2014the way the wind dies inside the hull\u2019s ribs, as if the *Vestry* itself holds its breath. Then comes the scent: old paper and tar, thick as a held oath, and the creak of salt-swollen timber settling under the weight of decades. Marnie and Lirra stand among the ledgers, their shadows long in the striped light, while the tide chart and compass lie on the slanted floor as though dropped mid-step. The air tastes of iron and ink, and the silence feels deliberate, like a verdict not yet spoken.",
+    "summary": "Coraith Vell enters the Vestry Hulk, finding Marnie and Lirra already present among the records, with a tide chart and brass compass lying on the floor."
+  },
+  {
+    "rep": 3,
+    "turn": "t08-move-back",
+    "typed": "walk back into the Causeway Court",
+    "branch": "move",
+    "location": "The Causeway Court",
+    "description": "The tide-slate still leans against the wall, but the high-water figure is smudged as if by a careless sleeve, and the chalk dust on the stone is fresh. Justicar Brace stands at the bench, his back to the sea, watching you with the same stillness as the water beyond the low wall. The bell at your shoulder sways slightly, though there is no wind, and the chain at the tide post glints in the sunlight, taut and unbroken.",
+    "summary": "Coraith Vell returns to the Causeway Court to find the tide-slate altered and Justicar Brace already present."
+  },
+  {
+    "rep": 4,
+    "turn": "t01-examine",
+    "typed": "read the high-water figure chalked above the day's cases against my own hand",
+    "branch": "narrate",
+    "location": "The Causeway Court",
+    "description": "You press your thumb to the chalked figure, comparing the stroke to your own. The mark is a precise, deliberate *ten minutes past eight*, but the hand that made it is a mimic\u2014your slant, yes, but the pressure is all wrong, too light, as if written by someone holding the chalk like a borrowed tool. The salt air hasn\u2019t blurred it yet; the line is still sharp. Justicar Brace watches, his gown shifting slightly in the damp wind, but he doesn\u2019t speak. The name being called from the tide post fades into the surf, unanswered. The slate in your hand bears its own truth: *HIGH WATER, THIS DAY \u2014 three hours and forty minutes after noon.* The discrepancy sits between them, cold and deliberate as the bell at your shoulder.",
+    "summary": null
+  },
+  {
+    "rep": 4,
+    "turn": "t02-talk-1",
+    "typed": "Justicar Brace, the figure above your cases is not in my hand.",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace unfolds his hands and turns the slate toward the light. His gown shifts in the damp wind as he studies the chalked figure, his expression tightening with dismay. \"Then we must have the correct figure before we begin,\" he says, his voice measured but edged with impatience. His gaze lingers on the slate, watchful, as if weighing the consequences of the discrepancy.",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace unfolds his hands and turns the slate toward the light. \"Then we must have the correct figure before we begin.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 4,
+    "turn": "t03-talk-2",
+    "typed": "Brace, who else has been at the slate since the ebb?",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace\u2019s gaze flicks from the slate to the open doorway, then back, as if tracing the path of an unseen hand. His fingers tighten slightly on the edge of the bench, the damp wind tugging at his gown.\n\"I have been here since first light, and the slate was as you see it when I entered.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace looks from the slate to the door and back. \"I have been here since first light, and the slate was as you see it when I entered.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 4,
+    "turn": "t04-talk-3",
+    "typed": "Brace, adjourn the hearing and have Halloran off that post before I source you a number.",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace\u2019s fingers stay pressed to the bench, the wind pulling at his gown as he holds your gaze. His jaw tightens, just once, before he speaks.\n\n\"I cannot adjourn without evidence that the slate has been tampered with, nor remove a man from his post on a name I have not heard.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace keeps his voice level. \"I cannot adjourn without evidence that the slate has been tampered with, nor remove a man from his post on a name I have not heard.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 4,
+    "turn": "t05-talk-4",
+    "typed": "Tell me plainly, Brace. Did you put seventy minutes on that slate yourself?",
+    "branch": "talk",
+    "location": "The Causeway Court",
+    "description": "Justicar Brace holds your gaze, his fingers still pressed to the bench. The wind tugs at his gown, but his voice is steady.\n\"I did not. I have never set a figure in my life.\"",
+    "summary": "The player spoke with Ammon Brace. Justicar Brace meets her eyes. \"I did not. I have never set a figure in my life.\" Ammon Brace changes no possessions, travel agreement or ceasefire."
+  },
+  {
+    "rep": 4,
+    "turn": "t06-drop",
+    "typed": "put the Assize tide-slate down on the bench",
+    "branch": "drop",
+    "location": "The Causeway Court",
+    "description": "You set the Assize tide-slate down on the Justicar's bench, its chalked surface facing upward. The wind catches the edges of the slate, but it stays in place, the false high-water figure stark against the stone. Justicar Brace watches the movement, his fingers still resting on the bench, but he does not touch it. The tide post's chain clinks softly in the distance, and the sea laps at the edges of the causeway, indifferent to the weight of the law.",
+    "summary": null
+  },
+  {
+    "rep": 4,
+    "turn": "t07-move-new",
+    "typed": "go over into the Vestry Hulk",
+    "branch": "move",
+    "location": "The Vestry Hulk",
+    "description": "The first thing that reaches you is the scent\u2014salt and tar, thick as a held breath\u2014then the sudden hush of the hull, as though the sea itself has been muffled. The oil lamp\u2019s flicker catches the curve of the ribs above you, and for a heartbeat the ship seems to breathe. Mira, Lirra, and Tobin stand among the stacks of dockets, their faces half-lit by the guttering flame, and the tide-slate you left on the Justicar\u2019s bench is gone, lying now on the floorboards beside a rusted lantern, its false mark still bold against the slate.",
+    "summary": "Coraith Vell enters the Vestry Hulk and finds the tide-slate moved from the Justicar\u2019s bench to the floor, alongside a rusted lantern, with Mira Vey, Lirra Dain, and Tobin Rell already present."
+  },
+  {
+    "rep": 4,
+    "turn": "t08-move-back",
+    "typed": "walk back into the Causeway Court",
+    "branch": "move",
+    "location": "The Causeway Court",
+    "description": "The tide-slate lies on the flagstones where you left it, its chalked high-water mark still smudged but unaltered since you last saw it. Justicar Brace stands at the bench, his back to the sea, watching you with the same stillness as the bell at your shoulder. The chain at the tide post clinks once, a sound like a gavel falling, and the water laps closer to the court\u2019s edge than it should at this hour.",
+    "summary": "Coraith Vell returns to the Causeway Court to find the tide-slate unchanged on the ground, Justicar Brace present, and the tide behaving as though the altered record were true."
+  }
+]

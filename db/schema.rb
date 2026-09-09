@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_155546) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_09_030346) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -70,8 +70,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_155546) do
 
   create_table "interactions", force: :cascade do |t|
     t.text "action"
+    t.text "action_fact"
+    t.string "action_status"
     t.integer "character_id", null: false
     t.datetime "created_at", null: false
+    t.string "engine_action"
     t.text "inner_resolution"
     t.integer "location_id"
     t.text "post_feeling"
@@ -162,6 +165,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_155546) do
     t.integer "depth"
     t.text "description"
     t.string "detail_level", default: "stub", null: false
+    t.json "generation_checkpoint"
     t.string "hazard"
     t.integer "hazard_die"
     t.datetime "last_protagonist_visit"
@@ -261,6 +265,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_155546) do
     t.index ["target_id"], name: "index_playthrough_blows_on_target_id"
   end
 
+  create_table "playthrough_commands", force: :cascade do |t|
+    t.text "command", null: false
+    t.datetime "created_at", null: false
+    t.string "error_kind"
+    t.integer "playthrough_id", null: false
+    t.json "refusal", default: {}, null: false
+    t.string "request_token", null: false
+    t.integer "result_scene_id"
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["playthrough_id", "request_token"], name: "index_playthrough_commands_on_playthrough_id_and_request_token", unique: true
+    t.index ["playthrough_id"], name: "index_playthrough_commands_on_playthrough_id"
+    t.index ["result_scene_id"], name: "index_playthrough_commands_on_result_scene_id"
+  end
+
   create_table "playthrough_drifts", force: :cascade do |t|
     t.string "action", null: false
     t.text "command", null: false
@@ -309,6 +328,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_155546) do
     t.index ["prose_prompt_digest"], name: "index_playthrough_feedbacks_on_prose_prompt_digest"
     t.index ["scene_id"], name: "index_playthrough_feedbacks_on_scene_id"
     t.index ["verdict"], name: "index_playthrough_feedbacks_on_verdict"
+  end
+
+  create_table "playthrough_npc_states", force: :cascade do |t|
+    t.boolean "ceasefire", default: false, null: false
+    t.integer "character_id", null: false
+    t.datetime "created_at", null: false
+    t.boolean "following", default: false, null: false
+    t.integer "location_id"
+    t.integer "peace_after_blow_id", default: 0, null: false
+    t.integer "playthrough_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id"], name: "index_playthrough_npc_states_on_character_id"
+    t.index ["location_id"], name: "index_playthrough_npc_states_on_location_id"
+    t.index ["playthrough_id", "character_id"], name: "idx_on_playthrough_id_character_id_008ae03862", unique: true
+    t.index ["playthrough_id"], name: "index_playthrough_npc_states_on_playthrough_id"
   end
 
   create_table "playthrough_overreaches", force: :cascade do |t|
@@ -443,6 +477,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_155546) do
     t.string "acted_on_type"
     t.datetime "created_at", null: false
     t.text "description"
+    t.boolean "engine_fallback", default: false, null: false
     t.boolean "is_opening", default: false, null: false
     t.integer "location_id", null: false
     t.integer "previous_scene_id"
@@ -560,6 +595,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_155546) do
   add_foreign_key "playthrough_blows", "locations"
   add_foreign_key "playthrough_blows", "playthroughs"
   add_foreign_key "playthrough_blows", "scenes"
+  add_foreign_key "playthrough_commands", "playthroughs"
+  add_foreign_key "playthrough_commands", "scenes", column: "result_scene_id"
   add_foreign_key "playthrough_drifts", "locations"
   add_foreign_key "playthrough_drifts", "playthroughs"
   add_foreign_key "playthrough_drifts", "scenes"
@@ -567,6 +604,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_155546) do
   add_foreign_key "playthrough_endings", "quest_outcomes"
   add_foreign_key "playthrough_feedbacks", "playthroughs"
   add_foreign_key "playthrough_feedbacks", "scenes"
+  add_foreign_key "playthrough_npc_states", "characters"
+  add_foreign_key "playthrough_npc_states", "locations"
+  add_foreign_key "playthrough_npc_states", "playthroughs"
   add_foreign_key "playthrough_overreaches", "locations"
   add_foreign_key "playthrough_overreaches", "playthroughs"
   add_foreign_key "playthrough_overreaches", "scenes"

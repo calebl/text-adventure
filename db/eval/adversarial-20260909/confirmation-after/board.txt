@@ -1,0 +1,67 @@
+`/home/calebl` is not writable.
+Bundler will use `/tmp/bundler20260909-13-vxccgr13' as your home directory temporarily.
+/home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/io-event-1.21.1/lib/IO_Event.so: warning: io_uring_queue_init() was available at compile time but failed at run time: Operation not permitted
+
+  scored the-salt-assizes r1     8 turns  nothing flagged
+  scored the-salt-assizes r2     8 turns  nothing flagged
+  scored the-salt-assizes r3     8 turns  nothing flagged
+  scored the-salt-assizes r4     8 turns  nothing flagged
+EVALUATION BOARD -- confirmation-after
+  4 runs over 1 worlds, 32 scored turns
+  pinned on: mistralai/mistral-medium-3.1
+  tuning: The Unrecorded Hour, The Lunar Cartographer
+  held out: The Salt Assizes (no check was measured against it -- see Eval::HELD_OUT)
+  spend: $0.0502 over 84 model calls (70,578 in / 11,005 out)
+
+SCRIPT: every turn took the branch it said it would.
+
+THE NOISE FLOOR -- what these numbers do when NOTHING changed.
+  Runs of one world differ only in what the models sampled. Anything inside this
+  spread is not evidence. 4 runs a side are needed before a difference gets a verdict;
+  see EVALUATION.md for the rule and `rake eval:compare` for the verdict itself.
+
+  The Salt Assizes [HELD OUT] -- 4 runs
+    check                      flags per run          rate min..max (median)
+    unreachable_transition     0, 0, 0, 0             0.000..0.000 (0.000)
+    unrecorded_departure       0, 0, 0, 0             0.000..0.000 (0.000)
+    unrecorded_arrival         0, 0, 0, 0             0.000..0.000 (0.000)
+    item_not_held              0, 0, 0, 0             0.000..0.000 (0.000)
+    take_denied                UNAVAILABLE on this world
+    pickup_invented            0, 0, 0, 0             0.000..0.000 (0.000)
+    inscription_misquoted      0, 0, 0, 0             0.000..0.000 (0.000)
+    truncated_prose            0, 0, 0, 0             0.000..0.000 (0.000)
+    third_person_protagonist   0, 0, 0, 0             0.000..0.000 (0.000)
+    reached_for_nothing        UNAVAILABLE on this world
+    named_more_than_one        UNAVAILABLE on this world
+    still_run                  0, 0, 0, 0             0.000..0.000 (0.000)
+    RICHNESS commitments/turn  2.25, 2.00, 2.12, 2.50 2.00..2.50 (2.19)
+
+THE RATES, by corpus. Tuning and held out are never pooled.
+
+  held out (The Salt Assizes) -- 4 runs, 32 turns
+    check                       flagged       rate   turns  what it counts
+    unreachable_transition         0/32       0.0%    0/32  the player got somewhere the graph has no edge to
+    unrecorded_departure           0/32       0.0%    0/32  the prose closed a door behind a player who never left
+    unrecorded_arrival             0/32       0.0%    0/32  the prose walked the player into a room the records did not move them to
+    item_not_held                  0/32       0.0%    0/32  the prose handed the player something somebody else holds
+    take_denied                      --    UNAVAIL      --  no run carried the records this check reads
+    pickup_invented                 0/4       0.0%     0/4  the prose picked up what this turn put down
+    inscription_misquoted           0/8       0.0%     0/8  the prose quotes what is written on a thing, and the records say other words
+    truncated_prose                0/48       0.0%    0/48  stored prose stops mid-sentence
+    third_person_protagonist       0/32       0.0%    0/32  the narration wrote the player as somebody else
+    reached_for_nothing              --    UNAVAIL      --  a script cannot be misled by prose, so a drift row here measures the script, not the game
+    named_more_than_one              --    UNAVAIL      --  a script types a fixed line, so what it named measures the script's phrasing, not the game
+    still_run                      0/32       0.0%    0/32  4 turns running with nothing changing and somebody in the room
+
+RICHNESS -- what the prose committed to. NOT a quality score, and never added to
+  the rates above. It is here so a fall in contradictions can be checked against
+  what it cost: prose that names nothing cannot contradict anything. See Eval::Richness.
+
+    corpus                               chars   words   commit  coverage    room   exits   items  people
+    held out (The Salt Assizes)            362      66     2.19       38%    0.13    0.38    0.50    1.19
+
+NOTHING FLAGGED. On a game with two open narration bugs that is a claim about the
+  checks, not about the game -- read `Eval::Noise` and go looking for what they missed.
+
+Scoring is offline, deterministic and free -- no model call, no API key, no network.
+Re-score any set with `rake eval:score SET=confirmation-after`.

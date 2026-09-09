@@ -350,7 +350,14 @@ class BaseAgent
   end
 
   def add_message(role:, content:)
-    chat.add_message(role: role, content: content)
+    # RubyLLM treats a content Hash as attachment paths. A restored structured
+    # answer is the same content_raw record as an ordinary schema response,
+    # with no token counts: replaying a receipt is not another paid answer.
+    if content.is_a?(Hash) || content.is_a?(Array)
+      chat.messages.create!(role: role, content_raw: content)
+    else
+      chat.add_message(role: role, content: content)
+    end
   end
 
   # STAMPS THIS AGENT'S MESSAGES WITH THE TURN THEY WERE EXCHANGED ON, so
@@ -431,7 +438,10 @@ class BaseAgent
     # PICKING A CONVERSATION UP IS WHERE IT GETS TRIMMED. RubyLLM rebuilds the
     # request out of every persisted message, so a chat that kept more history
     # than it means to send would send it -- see Chat#prune_history!.
-    conversation.prune_history! if resuming
+    # Location retries retain their accepted detail exchange until the world
+    # checkpoint completes. The NPC history budget must not discard that paid
+    # description before the exits call that depends on it.
+    conversation.prune_history! if resuming && conversation.purpose != "location"
     conversation.with_instructions(@instructions) if @instructions
     conversation.with_schema(@schema) if @schema
     conversation.with_temperature(@temperature) unless @temperature.nil?

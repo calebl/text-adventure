@@ -968,7 +968,8 @@ class Location::GeneratorTest < ActiveSupport::TestCase
       realize(location, FakeAgent.new(DETAIL, broken))
     end
 
-    assert location.reload.realized?
+    assert location.reload.stub?
+    assert_equal "exits_pending", location.generation_checkpoint.fetch("phase")
     assert_equal DETAIL["description"], location.description
   end
 
@@ -984,8 +985,7 @@ class Location::GeneratorTest < ActiveSupport::TestCase
     assert_equal 1, @story.locations.count
   end
 
-  # Recovering from that failure means finishing the exits, not realizing the
-  # room again -- realize! returns an already-realized location untouched.
+  # The explicit repair entry point follows the same checkpoint as re-entry.
   test "write_exits! finishes a room whose exits call failed" do
     location = stub_location(name: "The Drowned Ledger")
     broken = { "exits" => [ EXITS["exits"].first.merge("distance" => "80 meters") ] }

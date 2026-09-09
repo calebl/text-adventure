@@ -1,0 +1,40 @@
+{
+  "corpus_changed": false,
+  "scoring_protocol_changed": false,
+  "original_manifest": "manifest.json",
+  "helper_versions": [
+    {
+      "file": "eval-budget-original.rb",
+      "sha256": "cff65abad2485429d8e055144744376ee8376572c8fa8ad000075595960a85d9",
+      "used_for": [
+        "npc-before-instrumentation-failure.json",
+        "arrival-before.json",
+        "arrival-after.json"
+      ],
+      "issue": "Attempted JSON.parse on an empty streamed raw body; all 20 NPC narration calls became instrumentation failures after valid model output. The run completed before inspection. Its rows are preserved and its unknown reservations remain charged to the same ledger."
+    },
+    {
+      "file": "eval-budget-streaming-v1.rb",
+      "sha256": "07e4f22c8c5db7b6f8a374c102210e07913a364de6b89421412804775c251d5e",
+      "used_for": [
+        "npc-before.json"
+      ],
+      "change": "Treat empty/SSE raw response bodies as absent optional cost metadata; retain assembled response model and token counts. Offline regression verified."
+    },
+    {
+      "file": "eval-budget-streaming-v2.rb",
+      "sha256": "de67328e59adb47afdc2fc1cf68a49aa9737d30c4c44d39c79a86726c64af42d",
+      "used_for": [
+        "npc-after.json"
+      ],
+      "change": "Compute message token counts before optional raw JSON parsing; preserve malformed optional JSON as metadata rather than raising. Empty-body behavior is unchanged from v1; all baseline streamed calls used that behavior. Five offline tests/39 assertions pass."
+    }
+  ],
+  "npc_evaluator": {
+    "original_sha256": "2f599996cde2656c5f561fba282edb896a46b2d87f07216970762f54e4cac641",
+    "scored_runs_sha256": "de08e20aa2c0858c7a5bc570dd90f3bd72d63131f05567c069c32d248851949a",
+    "changes": "Enabled stdout flushing for progress and stop on non-model errors after storing the row. Cases, prompts, scoring inputs, repetitions and source arms unchanged."
+  },
+  "budget": "All failed and successful requests share /tmp/text-adventure-live-eval-20260909/budget.json; no ledger reset or refund of unknown reservations occurred.",
+  "exclusion": "npc-before-instrumentation-failure.json is not a model baseline: each narrator failed inside newly-added cost instrumentation. It is retained alongside the clean baseline for audit; no individual model answer was selected or replaced."
+}

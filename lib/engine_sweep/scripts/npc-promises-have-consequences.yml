@@ -1,0 +1,58 @@
+# Before NPC agency these same accepted decisions changed only the dialogue:
+# the key stayed held, a truce earned a riposte and a follower stayed behind.
+# Fixed choices stand in for the character call; all effects and ripostes are
+# the real engine. Another player's visit proves the world templates survived.
+story: A Conversation at the Gate
+steps:
+- type: talk to Maren
+  npc_action: ceasefire
+  expect:
+    changed: true
+    foes: []
+    blows: 0
+- type: talk to Maren
+  npc_action: 'give:brass key'
+  expect:
+    carrying: [brass key]
+    changed: true
+- type: talk to Maren
+  npc_action: follow
+  expect:
+    present: [Maren]
+    changed: true
+- type: go to Courtyard
+  expect:
+    location: Courtyard (realized)
+    present: [Maren]
+    foes: []
+    carrying: [brass key]
+- type: talk to Maren
+  npc_action: stop_following
+  expect:
+    changed: true
+- type: go to Market
+  expect:
+    present: []
+    carrying: [brass key]
+- player: second
+  type: talk to Maren
+  npc_action: none
+  expect:
+    present: [Maren]
+    foes: [Maren]
+    carrying: []
+    blows: 1
+- type: go to Courtyard
+  expect:
+    present: [Maren]
+    foes: []
+- type: attack Maren
+  expect:
+    foes: [Maren]
+    blows: 2
+- type: talk to Maren
+  npc_action: ceasefire
+  expect:
+    foes: []
+    blows: 0
+    note: Nobody was killed

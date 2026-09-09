@@ -1,0 +1,149 @@
+`/home/calebl` is not writable.
+Bundler will use `/tmp/bundler20260908-3-5h96wf3' as your home directory temporarily.
+/home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/io-event-1.21.1/lib/IO_Event.so: warning: io_uring_queue_init() was available at compile time but failed at run time: Operation not permitted
+
+
+Run options: --seed 21577
+
+# Running:
+
+.................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................F
+
+Failure:
+Playthrough::AdversarialFlowTest#test_an_invented_action_cannot_transfer_an_item_from_an_absent_character [test/models/playthrough/adversarial_flow_test.rb:69]:
+Expected: "rejected"
+  Actual: nil
+
+bin/rails test test/models/playthrough/adversarial_flow_test.rb:61
+
+F
+
+Failure:
+Playthrough::AdversarialFlowTest#test_a_gifted_item_and_follower_survive_a_failed_arrival_without_changing_another_game [test/models/playthrough/adversarial_flow_test.rb:36]:
+Expected #<ActiveRecord::Associations::CollectionProxy [#<Character id: 5, age: 25, appearance: "Young person with determined eyes and simple but p...", backstory: "An ordinary person thrust into extraordinary circu...", created_at: "2026-09-09 03:27:37.908428000 +0000", deliberately_absent: false, dexterity: 10, dislikes: "Cruelty, injustice, unnecessary conflict", fears: "Failing those who depend on them", fullname: "Iri Calder", hit_die: 8, hostile: false, is_companion: false, is_protagonist: true, level: 10, likes: "Adventure, justice, helping others", location_id: nil, nickname: "Iri", personality: "Courageous, curious, and kind-hearted despite faci...", race_id: 11, sex: "female", story_id: 5, strength: 12, updated_at: "2026-09-09 03:27:37.908428000 +0000", will: 14, x: nil, y: nil>]> to include #<Character id: 6, age: 40, appearance: "Average height with distinctive features and weath...", backstory: "A person with a mysterious past who has seen both ...", created_at: "2026-09-09 03:27:37.917491000 +0000", deliberately_absent: false, dexterity: 10, dislikes: "Cruelty, injustice, unnecessary conflict", fears: "Failing those who depend on them", fullname: "Maren Vosk", hit_die: 8, hostile: false, is_companion: false, is_protagonist: false, level: 10, likes: "Adventure, justice, helping others", location_id: 7, nickname: "Maren", personality: "Brave and determined with a strong moral compass", race_id: 9, sex: "female", story_id: 5, strength: 12, updated_at: "2026-09-09 03:27:37.917491000 +0000", will: 14, x: nil, y: nil>.
+
+bin/rails test test/models/playthrough/adversarial_flow_test.rb:22
+
+E
+
+Error:
+Playthrough::AdversarialFlowTest#test_a_failed_conversation_render_retains_the_validated_gift_and_completes_the_turn:
+RuntimeError: narrator unavailable
+    test/support/fake_agent.rb:51:in 'FakeAgent#ask'
+    app/agents/InteractionAgent.rb:89:in 'InteractionAgent#ask'
+    app/models/playthrough/turn.rb:612:in 'Playthrough::Turn#talk_to'
+    app/models/playthrough/turn.rb:211:in 'Playthrough::Turn#play_serially'
+    app/models/playthrough/turn.rb:114:in 'block in Playthrough::Turn#play'
+    lib/game_lock.rb:25:in 'block in GameLock.synchronize'
+    lib/game_lock.rb:21:in 'IO.open'
+    lib/game_lock.rb:21:in 'GameLock.synchronize'
+    app/models/playthrough/turn.rb:102:in 'Playthrough::Turn#play'
+    test/models/playthrough/adversarial_flow_test.rb:104:in 'block in Playthrough::AdversarialFlowTest#play'
+    test/models/playthrough/adversarial_flow_test.rb:103:in 'Playthrough::AdversarialFlowTest#play'
+    test/models/playthrough/adversarial_flow_test.rb:51:in 'block in <class:AdversarialFlowTest>'
+
+bin/rails test test/models/playthrough/adversarial_flow_test.rb:47
+
+...................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................F
+
+Failure:
+EngineSweepTest#test_every_stored_script_walks_the_engine_and_the_records_say_what_it_says [test/lib/engine_sweep_test.rb:29]:
+The engine sweep failed. Each finding below names the script, the step, the line
+that was typed, and what the records said instead:
+
+a-fight-the-player-wins: step 29 returning-does-not-revive-the-bell-keeper-or-restore-his-tally typed "go to the bell"
+  expected arrival cast: ["Isbet Marrow"]
+  the records say:      ["Isbet Marrow", "Marek Sollen"]
+  the step is for: the arrival reader is checked by Walk as well as mechanics; the old world cast would put Marek back here alive
+  The Bell of Saint Aravel [#16, realized]
+    exits       Grenn's Boarding House hallway [stub]
+    lying here  nothing to pick up
+    carrying    bell-rope tally [#14]
+    present     nobody else
+    foes        nobody is fighting you
+    provoked    nobody provoked
+    condition   unhurt
+    others      nobody else
+    sheet       level 3, d8, strength 11 dexterity 14 will 13
+    hazard      nothing here hurts you
+    hazards out every way out of here is free
+    story       this world has no arc
+    coming      1 due, 1 fired
+
+npc-promises-have-consequences: step 4 typed "go to Courtyard"
+  expected arrival cast: ["Maren", "Cal"]
+  the records say:      ["Cal"]
+  Courtyard [#11, realized]
+    exits       Market [realized]
+    lying here  nothing to pick up
+    carrying    brass key [#14]
+    present     Maren
+    foes        nobody is fighting you
+    provoked    nobody provoked
+    condition   unhurt
+    others      Maren unhurt
+    sheet       level 10, d8, strength 12 dexterity 12 will 12
+    hazard      nothing here hurts you
+    hazards out every way out of here is free
+    story       this world has no arc
+    coming      nothing is due in this world
+
+npc-promises-have-consequences: step 6 typed "go to Market"
+  expected arrival cast: ["Cal"]
+  the records say:      ["Cal", "Maren"]
+  Market [#10, realized]
+    exits       Courtyard [realized]
+    lying here  nothing to pick up
+    carrying    brass key [#14]
+    present     nobody else
+    foes        nobody is fighting you
+    provoked    nobody provoked
+    condition   unhurt
+    others      nobody else
+    sheet       level 10, d8, strength 12 dexterity 12 will 12
+    hazard      nothing here hurts you
+    hazards out every way out of here is free
+    story       this world has no arc
+    coming      nothing is due in this world
+
+npc-promises-have-consequences: step 8 typed "go to Courtyard"
+  expected arrival cast: ["Maren", "Cal"]
+  the records say:      ["Cal"]
+  Courtyard [#11, realized]
+    exits       Market [realized]
+    lying here  nothing to pick up
+    carrying    brass key [#14]
+    present     Maren
+    foes        nobody is fighting you
+    provoked    nobody provoked
+    condition   unhurt
+    others      Maren unhurt
+    sheet       level 10, d8, strength 12 dexterity 12 will 12
+    hazard      nothing here hurts you
+    hazards out every way out of here is free
+    story       this world has no arc
+    coming      nothing is due in this world
+
+
+bin/rails test test/lib/engine_sweep_test.rb:25
+
+......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................F
+
+Failure:
+Scene::GeneratorTest#test_a_playthrough_arrival_supplies_wounds_and_the_actual_crossing_result_before_claiming_it [test/models/scene/generator_test.rb:95]:
+Expected "## Universe Details\nphysics: Standard physics with magical exceptions allowing for spells and enchantments\ntechnology: Medieval level with magical enhancements\n\n## Story Details\ntitle: The Great Adventure\ngenre: fantasy\nsummary: An epic tale of good versus evil, friendship and sacrifice\n\n## The Place\nname: Location 499\ndescription: A mysterious place filled with wonder and potential adventure\nlore: Ancient tales speak of this place and the events that shaped its history\nways out: None written yet.\n\n## Who Is Here\nCharacter 425 (Nick1372), Elf -- the player, the one arriving\n\n## Just Before This\nNothing. This is where the story opens.\n\n## Instructions\n- The player has never been here. This is the first time they have set\n  foot in it\n- Narrate discovery: what catches them first on the way in, before they\n  have made sense of the rest\n- Address the player as \"you\", in the present tense\n- One paragraph. Do not re-describe the place item by item -- the\n  description above is already what is here, and your job is the moment\n  of coming into it\n- Anyone listed above is here; write them as already present, not as\n  arriving. Do not add a person who is not on that list\n- Do not name a way out that is not on the list above\n- Respect the stated length of each field\n" to include "You are hurt (5 of 8).".
+
+bin/rails test test/models/scene/generator_test.rb:86
+
+......................................F
+
+Failure:
+Scene::GeneratorTest#test_a_playthrough_arrival_supplies_the_living_cast_and_overrides_the_original_floor_contents [test/models/scene/generator_test.rb:76]:
+Expected #<ActiveRecord::Associations::CollectionProxy [#<Character id: 7, age: 29, appearance: "Average height with distinctive features and weath...", backstory: "A person with a mysterious past who has seen both ...", created_at: "2026-09-09 03:29:18.334094000 +0000", deliberately_absent: false, dexterity: 10, dislikes: "Cruelty, injustice, unnecessary conflict", fears: "Failing those who depend on them", fullname: "Character 433", hit_die: 8, hostile: false, is_companion: false, is_protagonist: true, level: 1, likes: "Adventure, justice, helping others", location_id: nil, nickname: "Nick1383", personality: "Brave and determined with a strong moral compass", race_id: 13, sex: "trans_man", story_id: 7, strength: 12, updated_at: "2026-09-09 03:29:18.334094000 +0000", will: 14, x: nil, y: nil>, #<Character id: 8, age: 34, appearance: "Average height with distinctive features and weath...", backstory: "A person with a mysterious past who has seen both ...", created_at: "2026-09-09 03:29:18.342268000 +0000", deliberately_absent: false, dexterity: 10, dislikes: "Cruelty, injustice, unnecessary conflict", fears: "Failing those who depend on them", fullname: "Maren Vosk", hit_die: 8, hostile: false, is_companion: false, is_protagonist: false, level: 1, likes: "Adventure, justice, helping others", location_id: 11, nickname: "Nick1384", personality: "Brave and determined with a strong moral compass", race_id: 13, sex: "female", story_id: 7, strength: 12, updated_at: "2026-09-09 03:29:18.342268000 +0000", will: 14, x: nil, y: nil>]> to not include #<Character id: 8, age: 34, appearance: "Average height with distinctive features and weath...", backstory: "A person with a mysterious past who has seen both ...", created_at: "2026-09-09 03:29:18.342268000 +0000", deliberately_absent: false, dexterity: 10, dislikes: "Cruelty, injustice, unnecessary conflict", fears: "Failing those who depend on them", fullname: "Maren Vosk", hit_die: 8, hostile: false, is_companion: false, is_protagonist: false, level: 1, likes: "Adventure, justice, helping others", location_id: 11, nickname: "Nick1384", personality: "Brave and determined with a strong moral compass", race_id: 13, sex: "female", story_id: 7, strength: 12, updated_at: "2026-09-09 03:29:18.342268000 +0000", will: 14, x: nil, y: nil>.
+
+bin/rails test test/models/scene/generator_test.rb:63
+
+......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+
+Finished in 147.961418s, 26.1420 runs/s, 144.1457 assertions/s.
+3868 runs, 21328 assertions, 5 failures, 1 errors, 0 skips

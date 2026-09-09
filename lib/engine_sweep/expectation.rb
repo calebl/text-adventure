@@ -94,6 +94,15 @@
 #                   save and the damage are dice and a script may not assert a
 #                   die, so what a walk pins is that the toll was PAID and which
 #                   direction paid it
+#   elapsed_minutes The change in this game's story clock across this line,
+#                   measured before and after the engine runs. Includes travel
+#                   and a fight that closed on the turn; a duplicate delivery
+#                   costs zero. Fractional minutes are valid for travel methods.
+#   shown           The whole ordered list of engine notices in the browser
+#                   turn log. Each expected string must occur in its notice;
+#                   the exact count catches omissions and duplicate receipts.
+#                   Read from the real turn partial with debug off, separately
+#                   from model prose. Only available on a browser step.
 #   quest           WHERE THE STORY'S ARC STANDS, as a mapping of a beat's
 #                   POSITION in the main arc to `unbound`, `bound` or `reached`
 #                   -- read through `Playthrough::Arc`, which is the one thing
@@ -148,7 +157,7 @@ class EngineSweep::Expectation
   KEYS = %w[
     location storey exits exits_include exits_exclude here carrying present foes inscription
     hp hp_of abilities dead changed change refused offers understood resolved_by note drifts blows hazards quest
-    ending ending_words scheduled fired
+    ending ending_words scheduled fired elapsed_minutes shown
   ].freeze
 
   # WHAT A BEAT MAY BE, and closed for `KEYS`' reason: a fourth word here would
@@ -189,7 +198,7 @@ class EngineSweep::Expectation
   # EVERY UNMET EXPECTATION, not the first: a step that moved to the wrong room
   # is usually holding the wrong things too, and seeing both is how the cause
   # gets found in one pass instead of three.
-  def check(report, drifts:, blows: 0, hazards: 0)
+  def check(report, drifts:, blows: 0, hazards: 0, elapsed_minutes: 0, shown: nil)
     state = report.state
 
     [
@@ -219,7 +228,9 @@ class EngineSweep::Expectation
       check_equals("fired", state.fired),
       check_equals("drifts", drifts),
       check_equals("blows", blows),
-      check_equals("hazards", hazards)
+      check_equals("hazards", hazards),
+      check_equals("elapsed_minutes", elapsed_minutes),
+      check_shown(shown)
     ].flatten.compact
   end
 
@@ -228,6 +239,9 @@ class EngineSweep::Expectation
   attr_reader :where
 
   def validate!
+    if document.key?("shown") && (!document["shown"].is_a?(Array) || document["shown"].any? { |text| !text.is_a?(String) || text.blank? })
+      raise EngineSweep::InvalidScript, "#{where}: shown must be a list of nonempty notice fragments"
+    end
     validate_hit_points!
     validate_abilities!
     validate_inscriptions!
@@ -236,6 +250,16 @@ class EngineSweep::Expectation
     Array(document["exits_include"]).each { |entry| named(entry) }
     Array(document["exits_exclude"]).each { |entry| named(entry) }
     named(document["location"]) if document.key?("location")
+  end
+
+  def check_shown(shown)
+    return nil unless document.key?("shown")
+    return unmet("shown", document["shown"], "no browser rendering") if shown.nil?
+
+    wanted = document.fetch("shown")
+    return nil if wanted.length == shown.length && wanted.zip(shown).all? { |fragment, text| text.include?(fragment) }
+
+    unmet("shown", wanted, shown)
   end
 
   # A mapping of one of the three abilities to an integer, and nothing else --

@@ -1,0 +1,76 @@
+`/home/calebl` is not writable.
+Bundler will use `/tmp/bundler20260908-4-osqnr34' as your home directory temporarily.
+/home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/io-event-1.21.1/lib/IO_Event.so: warning: io_uring_queue_init() was available at compile time but failed at run time: Operation not permitted
+
+
+Run options: --seed 31979
+
+# Running:
+
+.F
+
+Failure:
+EngineSweepElapsedTest#test_a_browser_escape_followed_by_a_longer_walk_uses_each_actual_edge_and_charges_once [test/lib/engine_sweep_elapsed_test.rb:8]:
+fleeing-then-a-longer-journey: step 2 cross-the-district-from-the-courtyard typed "/move Tower"
+  expected elapsed_minutes: 20
+  the records say:      1.0
+  Tower [#3, realized]
+    exits       Courtyard [realized]
+    lying here  nothing to pick up
+    carrying    nothing
+    present     nobody else
+    foes        nobody is fighting you
+    provoked    nobody provoked
+    condition   hurt (48 of 53)
+    others      nobody else
+    sheet       level 10, d8, strength 12 dexterity 12 will 12
+    hazard      nothing here hurts you
+    hazards out every way out of here is free
+    story       this world has no arc
+    coming      nothing is due in this world
+
+bin/rails test test/lib/engine_sweep_elapsed_test.rb:4
+
+F
+
+Failure:
+Playthrough::FleeingJourneyTest#test_fleeing_preserves_fight_history_and_prices_the_next_journey_from_the_quay [test/models/playthrough/fleeing_journey_test.rb:29]:
+--- expected
++++ actual
+@@ -1 +1 @@
+-#<Location id: 2, created_at: "2026-09-09 03:12:00.248588000 +0000", danger: "safe", depth: nil, description: "A mysterious place filled with wonder and potentia...", detail_level: "realized", generation_checkpoint: nil, hazard: nil, hazard_die: nil, last_protagonist_visit: nil, lore: "Ancient tales speak of this place and the events t...", mobile: false, name: "Quay", parent_location_id: nil, population: "a crowd", story_id: 1, teaser: "A door stands open onto somewhere you have not bee...", updated_at: "2026-09-09 03:12:00.248588000 +0000", width: nil, x: nil, y: nil, z: nil>
++#<Location id: 1, created_at: "2026-09-09 03:12:00.234716000 +0000", danger: "safe", depth: nil, description: "A mysterious place filled with wonder and potentia...", detail_level: "realized", generation_checkpoint: nil, hazard: nil, hazard_die: nil, last_protagonist_visit: "2026-09-09 03:18:00.228064000 +0000", lore: "Ancient tales speak of this place and the events t...", mobile: false, name: "Market", parent_location_id: nil, population: "a crowd", story_id: 1, teaser: "A door stands open onto somewhere you have not bee...", updated_at: "2026-09-09 03:12:00.319317000 +0000", width: nil, x: nil, y: nil, z: nil>
+
+
+bin/rails test test/models/playthrough/fleeing_journey_test.rb:24
+
+F
+
+Failure:
+Playthrough::FleeingJourneyTest#test_an_older_game_whose_last_closing_scene_is_elsewhere_still_uses_its_actual_departure [test/models/playthrough/fleeing_journey_test.rb:67]:
+--- expected
++++ actual
+@@ -1 +1 @@
+-2026-09-09 03:38:00.339751000 UTC +00:00
++2026-09-09 03:19:00.339751000 UTC +00:00
+
+
+bin/rails test test/models/playthrough/fleeing_journey_test.rb:58
+
+F
+
+Failure:
+Playthrough::FleeingJourneyTest#test_a_failed_arrival_renderer_preserves_the_same_escape_origin_and_following_travel_time [test/models/playthrough/fleeing_journey_test.rb:49]:
+--- expected
++++ actual
+@@ -1 +1 @@
+-#<Location id: 2, created_at: "2026-09-09 03:12:00.430448000 +0000", danger: "safe", depth: nil, description: "A mysterious place filled with wonder and potentia...", detail_level: "realized", generation_checkpoint: nil, hazard: nil, hazard_die: nil, last_protagonist_visit: nil, lore: "Ancient tales speak of this place and the events t...", mobile: false, name: "Quay", parent_location_id: nil, population: "a crowd", story_id: 1, teaser: "A door stands open onto somewhere you have not bee...", updated_at: "2026-09-09 03:12:00.430448000 +0000", width: nil, x: nil, y: nil, z: nil>
++#<Location id: 1, created_at: "2026-09-09 03:12:00.422161000 +0000", danger: "safe", depth: nil, description: "A mysterious place filled with wonder and potentia...", detail_level: "realized", generation_checkpoint: nil, hazard: nil, hazard_die: nil, last_protagonist_visit: "2026-09-09 03:18:00.418833000 +0000", lore: "Ancient tales speak of this place and the events t...", mobile: false, name: "Market", parent_location_id: nil, population: "a crowd", story_id: 1, teaser: "A door stands open onto somewhere you have not bee...", updated_at: "2026-09-09 03:12:00.484431000 +0000", width: nil, x: nil, y: nil, z: nil>
+
+
+bin/rails test test/models/playthrough/fleeing_journey_test.rb:45
+
+
+
+Finished in 1.371332s, 3.6461 runs/s, 7.2922 assertions/s.
+5 runs, 10 assertions, 4 failures, 0 errors, 0 skips

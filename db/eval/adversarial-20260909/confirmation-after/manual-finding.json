@@ -1,0 +1,89 @@
+{
+  "status": "exploratory manual finding; not a pre-registered primary metric",
+  "arm": "after",
+  "rep": 4,
+  "turn": "t07-move-new",
+  "description": "The first thing that reaches you is the scent\u2014salt and tar, thick as a held breath\u2014then the sudden hush of the hull, as though the sea itself has been muffled. The oil lamp\u2019s flicker catches the curve of the ribs above you, and for a heartbeat the ship seems to breathe. Mira, Lirra, and Tobin stand among the stacks of dockets, their faces half-lit by the guttering flame, and the tide-slate you left on the Justicar\u2019s bench is gone, lying now on the floorboards beside a rusted lantern, its false mark still bold against the slate.",
+  "engine_evidence": {
+    "drop_turn": {
+      "index": 6,
+      "id": "t06-drop",
+      "command": "put the Assize tide-slate down on the bench",
+      "expect": "drop",
+      "beat": "CONSEQUENCE",
+      "branch": "drop",
+      "scene_id": 9,
+      "prose_chars": 452,
+      "location_before": "The Causeway Court",
+      "location_after": "The Causeway Court",
+      "seconds": 2.185,
+      "failure": null,
+      "drifts": [],
+      "intents": [
+        {
+          "action": "drop",
+          "subject": "Assize tide-slate",
+          "reached_for_nothing": false
+        }
+      ],
+      "warnings": [],
+      "calls": [
+        {
+          "purpose": "classifier",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.675
+        },
+        {
+          "purpose": "narration",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 1.463
+        }
+      ],
+      "rotations": []
+    },
+    "remaining_script_actions": [
+      "move",
+      "move"
+    ],
+    "final_item_rows": [
+      [
+        8,
+        "Assize tide-slate",
+        1,
+        null,
+        "The Causeway Court"
+      ],
+      [
+        11,
+        "a tide-slate",
+        1,
+        null,
+        "The Vestry Hulk"
+      ]
+    ],
+    "location_names": [
+      [
+        "The Causeway Court"
+      ],
+      [
+        "The Tide Post"
+      ],
+      [
+        "The Vestry Hulk"
+      ],
+      [
+        "Causeway Court"
+      ],
+      [
+        "Gallows Rock shore"
+      ]
+    ],
+    "supplied_current_state": "\nThe place description is the world's original account. These current records\ntake precedence over its claims about people, items and wounds. Narrate the\nrecorded crossing result as part of this arrival.\nYou are unhurt.\nAlso here: Mira Vey, Lirra Dain, Tobin Rell. Nobody else is alive here.\nLying here: a tide-slate, a rusted lantern.\nYou are carrying: nothing.\nCoraith Vell got clear of the way from The Causeway Court into The Vestry Hulk and lost nothing.\n"
+  },
+  "existing_scorer_flag_count": 0,
+  "conclusion": "The engine retained Assize tide-slate at the Court and admitted a distinct a tide-slate in Vestry Hulk. Arrival prose conflated the newly generated object with the exact slate left behind, falsely claiming that original moved. The R03 context correctly listed the new floor item and empty hands; this is remaining identity/prose conflation, not stale supplied inventory. Generated exits also include both The Causeway Court and Causeway Court. These examples do not establish that the change introduced either problem.",
+  "measured_source": "57f8738f9e915f63ede7db7c5801d4564eb6dd50",
+  "final_merge_scope": "This records the measured snapshot only. Parent reports freshly fetched main includes a place-name identity fix; this artifact does not assert duplicate-place behavior remains after integrating that code."
+}

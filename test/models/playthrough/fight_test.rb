@@ -156,11 +156,36 @@ class Playthrough::FightTest < ActiveSupport::TestCase
     assert_equal @monster, fight.opponent
   end
 
-  test "the room is the one the first blow landed in and not where the party ended up" do
+  test "the fight retains its old room while the closing scene stands with the party" do
+    resident = create(:character, story: @story, location: @elsewhere)
     @turn.strike!(@protagonist, @monster, round: 1)
     @turn.stand_in!(@elsewhere)
 
     assert_equal @room, fight.room
-    assert_equal @room, fight.close!.location
+    scene = fight.close!
+
+    assert_equal @elsewhere, scene.location
+    assert_equal @game.reload.current_location, @game.current_scene.location
+    assert_includes scene.characters, resident
+    assert_not_includes scene.characters, @monster
+    assert_equal [ @room.id ], scene.blows.pluck(:location_id).uniq
+    assert_includes scene.description, "The fight in #{@room.name}"
+    assert_includes scene.summary, "A fight in #{@room.name}"
+  end
+
+  test "an escape closes after its arrival in the same scene chain and story clock" do
+    opening = create(:scene, story: @story, location: @room, story_timestamp: @story.start_time)
+    @game.update!(current_scene: opening)
+    @turn.strike!(@protagonist, @monster, round: 1)
+    arrival = create(:scene, story: @story, location: @elsewhere, previous_scene: opening,
+                            story_timestamp: opening.story_timestamp + 20.minutes)
+    @turn.stand_in!(@elsewhere, scene: arrival)
+
+    closing = fight.close!
+
+    assert_equal arrival, closing.previous_scene
+    assert_equal arrival.story_timestamp + Scene::TURN_MINUTES.fetch("action").minutes, closing.story_timestamp
+    assert_equal [ opening, arrival, closing ], @game.reload.scene_chain
+    assert_equal @elsewhere, closing.location
   end
 end

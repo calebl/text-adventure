@@ -1,0 +1,25 @@
+BEFORE confirmation-before (4 runs, mistralai/mistral-medium-3.1)
+AFTER  confirmation-after (4 runs, mistralai/mistral-medium-3.1)
+  Verdicts: REAL means the two sets separate under an exact rank test at p<=0.05.
+  NOISE means they do not, and the difference is no bigger than the spread the
+  unchanged runs already produced. INCONCLUSIVE means neither -- usually too few runs.
+
+  held out (The Salt Assizes)
+    check                              before          after      delta  verdict
+    unreachable_transition        0.000 (n=4)    0.000 (n=4)     +0.000  NOISE (inside the 0.000 the unchanged runs already spanned)
+    unrecorded_departure          0.000 (n=4)    0.000 (n=4)     +0.000  NOISE (inside the 0.000 the unchanged runs already spanned)
+    unrecorded_arrival            0.000 (n=4)    0.000 (n=4)     +0.000  NOISE (inside the 0.000 the unchanged runs already spanned)
+    item_not_held                 0.000 (n=4)    0.000 (n=4)     +0.000  NOISE (inside the 0.000 the unchanged runs already spanned)
+    take_denied                            --             --         --  INCONCLUSIVE
+    pickup_invented               0.000 (n=4)    0.000 (n=4)     +0.000  NOISE (inside the 0.000 the unchanged runs already spanned)
+    inscription_misquoted         0.000 (n=4)    0.000 (n=4)     +0.000  NOISE (inside the 0.000 the unchanged runs already spanned)
+    truncated_prose               0.000 (n=4)    0.000 (n=4)     +0.000  NOISE (inside the 0.000 the unchanged runs already spanned)
+    third_person_protagonist      0.000 (n=4)    0.000 (n=4)     +0.000  NOISE (inside the 0.000 the unchanged runs already spanned)
+    reached_for_nothing                    --             --         --  INCONCLUSIVE
+    named_more_than_one                    --             --         --  INCONCLUSIVE
+    still_run                     0.000 (n=4)    0.000 (n=4)     +0.000  NOISE (inside the 0.000 the unchanged runs already spanned)
+    RICHNESS commits/turn          2.38 (n=4)     2.19 (n=4)      -0.19  NOISE (inside the 0.500 the unchanged runs already spanned)
+    Richness did not move outside its own noise.
+
+Neither set is a baseline. Both are runs; re-run either and the numbers move --
+that is what the spreads above are for. See EVALUATION.md.

@@ -651,9 +651,9 @@ class Story::Repair
   end
   alias_method :repair_opening_location_stub, :repair_no_realized_location
 
-  # One model call. `write_exits!` is public for exactly this recovery: a room
-  # realized when the exits call failed is realized forever, and `realize!`
-  # returns it untouched.
+  # One model call for an older room marked realized before its exits failed.
+  # Such rows have no generation checkpoint, so `realize!` leaves their durable
+  # state untouched. New unfinished rooms resume from their checkpoint on entry.
   def repair_missing_exits(finding)
     location = finding.subject
     Location::Generator.new(location).write_exits!

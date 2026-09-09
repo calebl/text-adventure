@@ -48,6 +48,10 @@ class Location < ApplicationRecord
   # location leaves its cast nowhere, which is a state `Character` allows and
   # `rake game:doctor` reports.
   has_many :characters, dependent: :nullify
+  # A person's per-game whereabouts outlive a demolished room just as the
+  # world's character row does. Null means nowhere, never the original room.
+  has_many :npc_states, class_name: "Playthrough::NpcState", dependent: :nullify,
+                       inverse_of: :location
   has_many :playthroughs, foreign_key: :current_location_id, dependent: :nullify, inverse_of: :current_location
   # EVERY BLOW THROWN IN THIS ROOM. Destroyed with it, because
   # `playthrough_blows.location_id` is NOT NULL -- a fight happened SOMEWHERE
@@ -81,7 +85,10 @@ class Location < ApplicationRecord
   # is a name and a one-line teaser: it is created the moment a neighbouring
   # location names it as an exit, so "three doors lead out" always corresponds
   # to three real records the player can walk into. A *realized* location has
-  # been written out in full and is what the player actually reads.
+  # been written out in full and is what the player actually reads. A pending
+  # generation_checkpoint preserves paid detail and engine picks while it is
+  # still a stub; Location::Generator flips it only after admissions and exits
+  # have committed. Existing realized worlds carry no checkpoint.
   #
   # Scopes are off because Rails would define a class method named `stub`,
   # which shadows minitest's Object#stub across every test in the suite.
