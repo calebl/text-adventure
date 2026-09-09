@@ -64,6 +64,41 @@ class Lab::ExitsTest < ActiveSupport::TestCase
                "an answer that named nothing must not read as every one of them being a building"
   end
 
+  # THE BOUNDS ARE WHAT THE BENCH READS, and each of the four words has exactly
+  # one of them -- which is what lets `Eval::Realization::Scorer` judge a
+  # promoted case's label with one check rather than both, and what
+  # `#satisfied_by?` above is derived from rather than written beside.
+  test "each quantifier is one-sided, and the every-one floor takes the answer" do
+    { "none of them" => [ 0, nil ], "at most one" => [ 1, nil ],
+      "at least one" => [ nil, 1 ], "every one" => [ nil, 3 ] }.each do |name, (ceiling, floor)|
+      quantifier = Lab::Exits.quantifier(name)
+
+      assert_equal [ ceiling, floor ], [ quantifier.ceiling_over(3), quantifier.floor_over(3) ], name
+      assert_equal !ceiling.nil?, quantifier.bounded_above?, name
+      assert_equal !floor.nil?, quantifier.bounded_below?, name
+    end
+  end
+
+  # THE TWO WORDS THE CORPUS'S LABEL USED TO BE, and the mapping is pinned here
+  # because it is the whole compatibility story for a stored row and a case
+  # written before the captain's Call 6 of 2026-09-08. It is read off what
+  # `Eval::Realization::Scorer`'s two checks DID with a boolean: `false` was a
+  # ceiling of nought and `true` a floor of one.
+  test "the old booleans read as the two quantifiers they always were" do
+    assert_equal "none of them", Lab::Exits.quantifier_name(false)
+    assert_equal "at least one", Lab::Exits.quantifier_name(true)
+    assert_equal Lab::Exits.quantifier("every one"), Lab::Exits.quantifier_for("every one")
+  end
+
+  # AND `nil` IS NOT IN THAT TABLE, deliberately: it is *don't care*, which takes
+  # a case out of both inside checks' denominators, and mapping it to a word
+  # would manufacture a question nobody put.
+  test "no label is not a quantifier and a word off the list is not one either" do
+    assert_nil Lab::Exits.quantifier_for(nil)
+    assert_nil Lab::Exits.quantifier_name(nil)
+    assert_nil Lab::Exits.quantifier_for("some of them")
+  end
+
   test "an unknown quantifier is nil rather than a guess" do
     assert_nil Lab::Exits.quantifier("most of them")
     assert_nil Lab::Exits.quantifier(nil)

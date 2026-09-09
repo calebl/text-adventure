@@ -242,6 +242,83 @@ class Eval::Realization::CorpusTest < ActiveSupport::TestCase
     assert_equal %w[hazard inside], kase.declared.map(&:name)
   end
 
+  # THE INSIDE LABEL IS A QUANTIFIER SINCE THE CAPTAIN'S CALL 6 OF 2026-09-08,
+  # and the four words are the lab's own table rather than a list respelled here
+  # -- so a word added to `Lab::Exits::QUANTIFIERS` is accepted by the corpus with
+  # no edit.
+  test "each of the four quantifiers is read as itself" do
+    Lab::Exits::QUANTIFIER_NAMES.each do |name|
+      kase = Eval::Realization::Corpus::Case.new(id: "a", story: "b", room: "c", expects_inside: name)
+
+      assert_equal name, kase.expects_inside_quantifier
+      assert_equal Lab::Exits.quantifier(name), kase.inside_quantifier
+    end
+  end
+
+  # AND THE TWO BOOLEANS THE LABEL USED TO BE ARE STILL READ, AS THE TWO
+  # QUANTIFIERS THEY WERE -- which is the whole compatibility strategy, and it is
+  # asserted rather than described because a case written before the widening is
+  # a case somebody may still paste. `Lab::Exits::FROM_BOOLEAN` has why the
+  # mapping is these two and not two others: it is read off what the scorer's two
+  # checks DID with a boolean.
+  test "a case written with the old boolean is read as the quantifier it always meant" do
+    was_false = Eval::Realization::Corpus::Case.new(id: "a", story: "b", room: "c", expects_inside: false)
+    was_true = Eval::Realization::Corpus::Case.new(id: "a", story: "b", room: "c", expects_inside: true)
+
+    assert_equal "none of them", was_false.expects_inside_quantifier
+    assert_equal "at least one", was_true.expects_inside_quantifier
+    assert_nil Eval::Realization::Corpus::Case.new(id: "a", story: "b", room: "c").expects_inside_quantifier,
+               "a case with no label is out of both inside checks' denominators, and nil says so"
+  end
+
+  # SO RE-SPELLING A LABEL IS NOT A MEASUREMENT AND MUST NOT MOVE THE DIGEST:
+  # the digest folds the NORMALISED name, which is what lets the checked-in
+  # corpus be re-spelled without a second re-baseline on top of the widening's
+  # own.
+  test "a boolean label and the quantifier it means are one measurement and digest alike" do
+    corpus = Eval::Realization.corpus
+    booleans = with_cases(corpus) { |kase|
+      kase.expects_inside.nil? ? kase : kase.with(expects_inside: kase.expects_inside == "at least one")
+    }
+
+    assert booleans.cases.any? { |kase| [ true, false ].include?(kase.expects_inside) },
+           "the fixture corpus carries labels, or this test proves nothing"
+    assert_equal Eval::Realization.digest(corpus), Eval::Realization.digest(booleans)
+  end
+
+  # AND WIDENING WHAT A LABEL CAN SAY IS a measurement: a case moved from one
+  # quantifier to another decides which checks it may be judged on and how, so a
+  # comparison across the edit would credit the movement to the prompt.
+  test "changing a case's quantifier moves the digest" do
+    corpus = Eval::Realization.corpus
+    was = Eval::Realization.digest(corpus)
+
+    Lab::Exits::QUANTIFIER_NAMES.each do |name|
+      edited = with_cases(corpus) { |kase|
+        kase == corpus.cases.first ? kase.with(expects_inside: name) : kase
+      }
+
+      assert_not_equal was, Eval::Realization.digest(edited), name
+    end
+  end
+
+  test "a label that is not a quantifier is refused with the four words in the sentence" do
+    problems = problems_for(<<~YML)
+      cases:
+      - id: mislabelled
+        story: The Unrecorded Hour
+        room: The Long Hallway
+        reached_from: Ward Office 12
+        expects_new_ground: true
+        expects_inside: some of them
+        shape: corridor
+        why: a quantifier nothing can score reads on a board as the prompt failing
+    YML
+
+    assert problems.any? { |problem| problem.include?("some of them") }, problems.inspect
+    assert problems.any? { |problem| problem.include?("at most one") }, problems.inspect
+  end
+
   # THE VALIDATOR'S OWN CHECKS, each against a case written to trip it. A
   # validator nobody has seen fail is a validator nobody knows works.
   test "a case in a world this bench does not build rooms in is refused" do

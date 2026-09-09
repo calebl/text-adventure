@@ -41,9 +41,15 @@ class Lab::Exits::VantagesController < ApplicationController
     @alignment = Lab::Exits::Alignment.new(@vantages)
   end
 
+  # AND THE PROMOTION IS READ HERE AND IS FREE. `Lab::Exits::Promotion` emits
+  # text and writes nothing -- the corpus is a checked-in measurement input, so
+  # committing a case is a spend decision and therefore a person's
+  # (`Lab::Exits::Promotion`'s header) -- which is what makes it safe to build on
+  # a GET at all.
   def show
     @samples = @vantage.samples.newest_first
     @hit_rate = Lab::Exits::HitRate.new(@vantage, samples: @vantage.samples.in_draw_order)
+    @promotion = Lab::Exits::Promotion.new(@vantage)
   end
 
   def create
@@ -64,6 +70,7 @@ class Lab::Exits::VantagesController < ApplicationController
 
     @samples = @vantage.samples.newest_first
     @hit_rate = Lab::Exits::HitRate.new(@vantage, samples: @vantage.samples.in_draw_order)
+    @promotion = Lab::Exits::Promotion.new(@vantage)
     render :show, status: :unprocessable_content
   end
 

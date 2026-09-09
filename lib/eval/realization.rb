@@ -232,9 +232,14 @@ module Eval::Realization
   # either and the rates move; leave either out and the comparison would credit
   # the movement to the prompt. `expects_inside` is in it for exactly that
   # reason and it is the newest of them: it decides whether the two inside
-  # checks may be judged on a case at all. `Eval::Classifier.digest` carries its own label
-  # fields for the same reason. `why` is NOT in it -- rewriting the sentence
-  # that says why a case is here measures nothing new.
+  # checks may be judged on a case at all -- and it is folded NORMALISED
+  # (`Case#expects_inside_quantifier`), so the boolean a case was written with
+  # before the captain's Call 6 of 2026-09-08 and the quantifier it means digest
+  # alike. Re-spelling a label is not a measurement; widening what a label can
+  # SAY is, which is why this tree needed a new baseline for the widening itself.
+  # `Eval::Classifier.digest` carries its own label fields for the same reason.
+  # `why` is NOT in it -- rewriting the sentence that says why a case is here
+  # measures nothing new.
   #
   # AND A PROMOTED CASE'S OWN FIELDS ARE IN IT, ALL OF THEM. `teaser` is the
   # prompt's second sentence about the room and changing it changes the room that
@@ -249,7 +254,7 @@ module Eval::Realization
       corpus.cases.map { |kase|
         [ kase.id, kase.story, kase.room, kase.teaser, kase.reached_from, kase.danger, kase.inside,
           kase.population, kase.shape,
-          kase.expects_new_ground.inspect, kase.expects_inside.inspect,
+          kase.expects_new_ground.inspect, kase.expects_inside_quantifier.inspect,
           kase.expects_danger_at_least.inspect, kase.expectation_line,
           kase.also_reaches.join("|"),
           kase.absent.join("|"), kase.unwritten.join("|") ].join(" ")

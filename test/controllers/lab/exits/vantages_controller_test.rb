@@ -181,6 +181,61 @@ class Lab::Exits::VantagesControllerTest < ActionDispatch::IntegrationTest
 
   # AND THE `absent` LIST IS ESCAPED ON THIS PAGE TOO -- see the same test on
   # `Lab::Exits::SamplesControllerTest` for the defect both pages shipped with.
+  # THE WAY OUT OF THE LAB, ON THE PAGE. A GET, and it stays a GET honestly:
+  # `Lab::Exits::Promotion` emits text and writes nothing, so reading this panel
+  # cannot put the tree out of baseline as a side effect of somebody looking at
+  # it.
+  test "the page prints the vantage as a corpus case, with its absent list and its quantifier" do
+    vantage = create(:lab_exits_vantage, :with_places_off_the_books, :dangerous,
+                     :expecting_a_building, name: "Harbour Steps")
+    create(:lab_exits_sample, :one_building_and_open_ground, vantage: vantage)
+
+    get lab_exits_vantage_path(vantage)
+
+    assert_response :success
+    assert_select "h2", text: "promote it to the bench"
+    assert_select "pre", text: /- id: exits-harbour-steps/
+    assert_select "pre", text: /expects_inside: at least one/
+    assert_select "pre", text: /The Custom House/
+    assert_select "pre", text: /shape: #{Lab::Exits::Promotion::SHAPE}/
+    assert_select "code", text: /rake lab:exits:promote VANTAGE=#{vantage.id}/
+  end
+
+  test "an undrawn vantage is told to draw before it promotes" do
+    vantage = create(:lab_exits_vantage, :dangerous, :expecting_a_building)
+
+    get lab_exits_vantage_path(vantage)
+
+    assert_select ".warn", text: /No draw of this vantage has answered/
+  end
+
+  # AND THE PER-NAME RECORDS ARE NOT IN THE PRINTED CASE, which is the half of
+  # Call 4 that stays in the lab -- asserted here as well as on the emitter,
+  # because this panel is what somebody actually pastes from.
+  test "a typed per-place expectation is not in the case the page prints" do
+    vantage = create(:lab_exits_vantage, :dangerous, :expecting_a_building)
+    vantage.judge!("The Rust Market", expects: { "inside" => [ "a few rooms" ] })
+
+    get lab_exits_vantage_path(vantage)
+
+    assert_select "pre", text: /expects_inside: at least one/
+    assert_select "pre", text: /STAY IN THE LAB/
+    assert_select "pre", { text: /expects_exit_inside/, count: 0 }
+  end
+
+  # THE NAMES IN THAT PANEL ARE TYPED, TOO, so the escaping rule below covers the
+  # promotion as well: `html_safe` anywhere on the emitted case would be an
+  # unescaped attribute and `bin/brakeman --no-pager` says so.
+  test "a vantage whose name holds markup is escaped in the printed case" do
+    vantage = create(:lab_exits_vantage, :dangerous, :expecting_a_building,
+                     name: "<img src=x onerror=alert(3)>")
+
+    get lab_exits_vantage_path(vantage)
+
+    assert_response :success
+    assert_no_match(/<img src=x onerror/, response.body)
+  end
+
   test "a place taken off the books with markup in its name is escaped" do
     vantage = create(:lab_exits_vantage, absent: "<img src=x onerror=alert(2)>")
 

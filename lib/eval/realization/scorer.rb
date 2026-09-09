@@ -99,12 +99,13 @@ class Eval::Realization::Scorer
                                            "already held, so the engine reused the row and threw the " \
                                            "pick away -- judgeable only on a set that records what " \
                                            "the call opened",
-    inside_where_the_world_wanted_none: "a stub whose world plainly holds no building was given an inside " \
-                                        "on an exit that OPENED a place -- judgeable only on a case " \
-                                        "labelled `expects_inside: false` in a set that records what " \
-                                        "the call opened",
-    no_inside_where_the_world_wanted_one: "a stub whose world plainly holds a building gave none an inside " \
-                                          "-- judgeable only on a case labelled `expects_inside: true`",
+    inside_where_the_world_wanted_none: "MORE buildings OPENED than the case's `expects_inside` " \
+                                        "quantifier allows -- judgeable only on a case whose label has " \
+                                        "a ceiling (`none of them`, `at most one`), in a set that " \
+                                        "records what the call opened",
+    no_inside_where_the_world_wanted_one: "FEWER insides picked than the case's `expects_inside` " \
+                                          "quantifier asks for -- judgeable only on a case whose label " \
+                                          "has a floor (`at least one`, `every one`)",
     population_declined: "an exit named with no `population` pick at all, so the engine rolled a word " \
                          "for the place instead -- the field asks and nothing rests on the asking",
     people_short_of_the_pick: "a room asked for an exact number of people that came back with fewer, so " \
@@ -267,12 +268,25 @@ class Eval::Realization::Scorer
     def exit_names = exits.filter_map { |exit| exit["name"].presence }
     def asked_for_exits? = row["answers"].is_a?(Hash) && row["answers"].key?("exits")
 
-    # THE LABEL, AND WHETHER THERE IS ONE. `nil` takes the reading out of both
-    # inside checks' denominators, which is what a case that left the label out
-    # asked for -- and it is also what a set stored before the label existed
-    # reads, so such a set reports both checks unavailable rather than reporting
-    # a model failing a question nobody put to it.
+    # THE LABEL AS THE ROW CARRIES IT, and there are three spellings of it on
+    # disk: one of `Lab::Exits::QUANTIFIER_NAMES` on a row bought since the
+    # captain's Call 6 of 2026-09-08, `true` or `false` on one bought before it,
+    # and absent on a row whose case declared nothing.
+    #
+    # `nil` TAKES THE READING OUT OF BOTH INSIDE CHECKS' DENOMINATORS, which is
+    # what a case that left the label out asked for -- and it is also what a set
+    # stored before the label existed reads, so such a set reports both checks
+    # unavailable rather than reporting a model failing a question nobody put to
+    # it. That distinction is the one this pair of checks cannot afford to lose:
+    # an unavailable figure and a measured nought look the same in a column and
+    # mean opposite things.
     def expects_inside = facts["expects_inside"]
+
+    # AND THE LABEL AS THE ONE THING IT MEANS. `Lab::Exits.quantifier_for` is
+    # the single reader of a label in this repository, so a boolean row and a
+    # quantifier row are scored by the same arithmetic and this file holds no
+    # second answer to what `false` asked for.
+    def inside_quantifier = Lab::Exits.quantifier_for(expects_inside)
 
     # WHETHER THE DETAIL PROMPT OFFERED THIS ROOM THE PARAMETERS BLOCK -- true
     # for a building with no inside yet, false for every other room in the game
@@ -690,6 +704,7 @@ class Eval::Realization::Scorer
   # case and is LEFT OUT unless the answer is not a guess, so most cases are out
   # of both denominators: `Story::Audit#judgeable_for`'s rule, and the same one
   # `no_new_ground` stands on.
+  #
   # A PICK THE ENGINE THREW AWAY. `Location::Generator#connect_exit!` passes
   # `inside:` to `.create_stub!` and NOWHERE ELSE, so an exit that resolves to a
   # place the world already holds reuses that row and the pick has no effect on
@@ -740,23 +755,55 @@ class Eval::Realization::Scorer
   # THE PICK THAT WAS MADE AND DISCARDED IS NOT UNMEASURED, it is measured one
   # check up -- and keeping the two apart is the point: one is what the model
   # said, the other is what the game got.
+  #
+  # AND IT IS THE CEILING HALF OF THE LABEL SINCE THE CAPTAIN'S CALL 6 OF
+  # 2026-09-08, which made `expects_inside` a QUANTIFIER. `none of them` is a
+  # ceiling of nought, which is what `expects_inside: false` always meant, so a
+  # case labelled either way is judged exactly as it was before the widening;
+  # `at most one` is the same arithmetic one rung up. Each of the four words has
+  # exactly one of the two bounds (`Lab::Exits::Quantifier`), so exactly one of
+  # this pair is judgeable on any one case.
+  #
+  # THE TWO CHECKS KEEP THEIR NAMES, WHICH ARE THE BOOLEAN ERA'S WORDS FOR THE
+  # TWO DIRECTIONS, and that is deliberate rather than an oversight: a check key
+  # is what a stored set's figures are filed under, so renaming one would make
+  # every kept set read `not recorded` for a question it actually measured --
+  # `Eval::Realization::KeptSetTest`'s last test is about exactly that failure.
+  # The descriptions in `CHECKS` say what each really reads.
   def judge_inside_where_the_world_wanted_none
     flag_cases(:inside_where_the_world_wanted_none,
-               ->(r) { r.asked_for_exits? && r.expects_inside == false && r.records_new_places? }) do |reading|
+               ->(r) { r.asked_for_exits? && r.inside_quantifier&.bounded_above? && r.records_new_places? }) do |reading|
+      wanted = reading.inside_quantifier
       given = reading.exits.select { |exit| inside?(exit["inside"]) && reading.opened?(exit["name"].to_s) }
-      next nil if given.empty?
+      next nil if given.size <= wanted.ceiling_over(reading.exit_names.size)
 
       "opened #{given.map { |exit| "#{exit["name"]} (#{exit["inside"]})" }.join(", ")} " \
-        "in a world that plainly holds no building"
+        "in a world whose label says #{wanted.name} should be a building"
     end
   end
 
+  # AND THE FLOOR HALF, JUDGED ON THE PICKS THAT WERE MADE rather than on what
+  # reached the world, which is the asymmetry the check above documents from the
+  # other side: a discarded pick left a world that wanted no building still
+  # holding none, so convicting it reported a fault with no consequence -- but a
+  # world that wanted one and was OFFERED none was refused by the model and not
+  # by the engine, whatever the engine then did with the answer.
+  #
+  # SO A PROMOTED CASE'S RATE IS NOT `Lab::Exits::HitRate`'S RATE FOR THE SAME
+  # WORD, and a reader comparing them should expect them to differ: that file
+  # scores the quantifier on `insides_given` in both directions, because a lab
+  # is measuring what the model SAID about a vantage he typed. This bench is
+  # measuring what a game got. Two questions, one word, and neither is the other
+  # one's approximation.
   def judge_no_inside_where_the_world_wanted_one
     flag_cases(:no_inside_where_the_world_wanted_one,
-               ->(r) { r.asked_for_exits? && r.expects_inside == true && r.exit_names.any? }) do |reading|
-      next nil if reading.exits.any? { |exit| inside?(exit["inside"]) }
+               ->(r) { r.asked_for_exits? && r.inside_quantifier&.bounded_below? && r.exit_names.any? }) do |reading|
+      wanted = reading.inside_quantifier
+      given = reading.exits.count { |exit| inside?(exit["inside"]) }
+      next nil if given >= wanted.floor_over(reading.exit_names.size)
 
-      "gave an inside to none of #{reading.exit_names.join(", ")} in a world that plainly holds one"
+      "gave an inside to #{given.zero? ? "none" : given} of #{reading.exit_names.join(", ")} " \
+        "in a world whose label says #{wanted.name} should be a building"
     end
   end
 

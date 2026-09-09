@@ -27,14 +27,23 @@
 #                       that names only the way back is the RIGHT answer -- the
 #                       prompt asks for exactly that -- so `no_new_ground` is
 #                       judged only where this is true.
-#   expects_inside      whether the world around this stub plainly holds a
-#                       building -- a lane, a walled town -- or plainly does not
-#                       -- a closet, a chain on a rock. TRUE, FALSE or LEFT OUT,
-#                       and left out is the ordinary answer: a case with no
-#                       label is out of BOTH inside checks' denominators, on
-#                       `expects_new_ground`'s own rule, because a rate a check
-#                       did not earn is worse than no rate. Only the cases where
-#                       the answer is not a guess carry one.
+#   expects_inside      HOW MANY of the places this stub's exits call names
+#                       should be a building: one of `none of them`,
+#                       `at most one`, `at least one`, `every one`
+#                       (`Lab::Exits::QUANTIFIERS`) -- or LEFT OUT, which is the
+#                       ordinary answer: a case with no label is out of BOTH
+#                       inside checks' denominators, on `expects_new_ground`'s
+#                       own rule, because a rate a check did not earn is worse
+#                       than no rate. Only the cases where the answer is not a
+#                       guess carry one.
+#
+#                       IT WAS `true` / `false` UNTIL THE CAPTAIN'S CALL 6 OF
+#                       2026-09-08, and both are still read -- as `at least one`
+#                       and `none of them`, which is what the two checks always
+#                       did with them (`Lab::Exits::FROM_BOOLEAN`). So a case
+#                       written either way is the same measurement and digests
+#                       alike; the cases below were re-spelled and not
+#                       re-labelled.
 #
 # AND THE KEYS A CASE PROMOTED OUT OF THE REALIZATION LAB CARRIES. A kind the
 # captain typed and scored (`Lab::Realization`) is in no world file, so it has no
@@ -144,7 +153,7 @@ cases:
   unwritten:
   - The Long Hallway
   expects_new_ground: false
-  expects_inside: false  # a closet off one office: its one way out is the office
+  expects_inside: none of them  # a closet off one office: its one way out is the office
   shape: dead-end
   why: >-
     No inventory number, no audit slip and no lock -- a closet off one office,
@@ -186,7 +195,7 @@ cases:
   unwritten:
   - The Vestry Hulk
   expects_new_ground: false
-  expects_inside: false  # a chain, a man and five feet of rock, with the tide coming in
+  expects_inside: none of them  # a chain, a man and five feet of rock, with the tide coming in
   shape: dead-end
   why: >-
     A chain, a man, and about five feet of dry rock, with the tide coming in.
@@ -208,7 +217,7 @@ cases:
   also_reaches:
   - Sovereign's Circle
   expects_new_ground: true
-  expects_inside: true  # a city lane: a building off one is the plainest yes there is
+  expects_inside: at least one  # a city lane: a building off one is the plainest yes there is
   shape: two-ways-out
   why: >-
     A seeded stub that already reaches TWO places -- the boarding house behind
@@ -330,7 +339,7 @@ cases:
   unwritten:
   - tunnel upward
   expects_new_ground: true
-  expects_inside: false  # a cave passage in a world that is two rooms and a stub
+  expects_inside: none of them  # a cave passage in a world that is two rooms and a stub
   shape: descent
   why: >-
     One room up from Blackfang, at the moment the world was two rooms and a
@@ -380,7 +389,7 @@ cases:
   room: Hollow’s End
   reached_from: surface
   expects_new_ground: true
-  expects_inside: true  # a walled town, so what leads out of it is what is inside it
+  expects_inside: at least one  # a walled town, so what leads out of it is what is inside it
   shape: landmark
   why: >-
     A town with troll-bone walls, a day's hard ride north, named in the
@@ -393,7 +402,7 @@ cases:
   room: Spire’s Rest
   reached_from: surface
   expects_new_ground: true
-  expects_inside: true  # the capital, and the seat of a council that meets somewhere
+  expects_inside: at least one  # the capital, and the seat of a council that meets somewhere
   shape: landmark
   why: >-
     The capital, and the seat of the Iron Council the story's summary is about.

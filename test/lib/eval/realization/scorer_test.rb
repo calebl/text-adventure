@@ -822,6 +822,113 @@ class Eval::Realization::ScorerTest < ActiveSupport::TestCase
                     "the pick itself is still readable off the answer"
   end
 
+  # THE LABEL IS A QUANTIFIER SINCE THE CAPTAIN'S CALL 6 OF 2026-09-08, AND THE
+  # TWO SPELLINGS OF THE OLD BOOLEAN SCORE IDENTICALLY. That is the assertion the
+  # widening's compatibility rests on: a set bought before the change carries
+  # `false` on every row and must not start reading differently the day the
+  # corpus learned a new word.
+  test "a stored boolean label and the quantifier it means score the same" do
+    [ [ false, "none of them" ], [ true, "at least one" ] ].each do |boolean, word|
+      one = scored(facts: FACTS.merge("expects_inside" => boolean),
+                   exits: [ { "name" => "The Vestry Hulk", "inside" => "a few rooms" } ],
+                   after: after_opening("The Vestry Hulk"))
+      other = scored(facts: FACTS.merge("expects_inside" => word),
+                     exits: [ { "name" => "The Vestry Hulk", "inside" => "a few rooms" } ],
+                     after: after_opening("The Vestry Hulk"))
+
+      %i[inside_where_the_world_wanted_none no_inside_where_the_world_wanted_one].each do |check|
+        assert_equal other.judgeable_for(check), one.judgeable_for(check), "#{boolean} vs #{word}: #{check}"
+        assert_equal other.flagged_for(check).size, one.flagged_for(check).size,
+                     "#{boolean} vs #{word}: #{check}"
+      end
+    end
+  end
+
+  # `at most one` IS THE CEILING CHECK ONE RUNG UP, and the boundary is what is
+  # worth pinning: one building opened is the label satisfied, two is the defect.
+  test "a world that wanted at most one building is convicted only of the second" do
+    two = [ { "name" => "The Vestry Hulk", "inside" => "a few rooms" },
+            { "name" => "The Cellar Stair", "inside" => "one room" } ]
+    at_the_bound = scored(facts: FACTS.merge("expects_inside" => "at most one"),
+                          exits: two, after: after_opening("The Vestry Hulk"))
+    over = scored(facts: FACTS.merge("expects_inside" => "at most one"),
+                  exits: two, after: after_opening("The Vestry Hulk", "The Cellar Stair"))
+
+    assert_equal 1, at_the_bound.judgeable_for(:inside_where_the_world_wanted_none)
+    assert_empty at_the_bound.flagged_for(:inside_where_the_world_wanted_none),
+                 "one opened building is exactly what `at most one` allows"
+    assert_equal 1, over.flagged_for(:inside_where_the_world_wanted_none).size
+    assert_match(/at most one/, over.flagged_for(:inside_where_the_world_wanted_none).sole.evidence)
+  end
+
+  # THE FLOOR CHECK, AND IT IS JUDGED ON THE PICKS THAT WERE MADE RATHER THAN ON
+  # WHAT REACHED THE WORLD -- the asymmetry `#judge_no_inside_where_the_world_wanted_one`
+  # documents: a world that wanted a building and was OFFERED none was refused by
+  # the model, whatever the engine then did with the answer.
+  test "a world that wanted a building is convicted of an answer that picked none" do
+    none = scored(facts: FACTS.merge("expects_inside" => "at least one"),
+                  exits: [ { "name" => "The Vestry Hulk", "inside" => "no inside" } ],
+                  after: after_opening("The Vestry Hulk"))
+    discarded = scored(facts: FACTS.merge("expects_inside" => "at least one"),
+                       exits: [ { "name" => "The Supply Closet", "inside" => "a few rooms" } ],
+                       after: after_opening)
+
+    assert_equal 1, none.flagged_for(:no_inside_where_the_world_wanted_one).size
+    assert_match(/none of/, none.flagged_for(:no_inside_where_the_world_wanted_one).sole.evidence)
+    assert_empty discarded.flagged_for(:no_inside_where_the_world_wanted_one),
+                 "the model picked a building; that the engine dropped it is the check one row up"
+  end
+
+  # `every one` IS THE FLOOR THAT TAKES THE ANSWER, so the bound is a different
+  # number on every draw -- and an answer that named nothing has every one of
+  # nothing given an inside, which is why the denominator is gated on a name.
+  test "a world that wanted every one is convicted of the place it left out" do
+    all = scored(facts: FACTS.merge("expects_inside" => "every one"),
+                 exits: [ { "name" => "The Vestry Hulk", "inside" => "a few rooms" },
+                          { "name" => "The Cellar Stair", "inside" => "one room" } ],
+                 after: after_opening("The Vestry Hulk", "The Cellar Stair"))
+    one_short = scored(facts: FACTS.merge("expects_inside" => "every one"),
+                       exits: [ { "name" => "The Vestry Hulk", "inside" => "a few rooms" },
+                                { "name" => "The Cellar Stair", "inside" => "no inside" } ],
+                       after: after_opening("The Vestry Hulk", "The Cellar Stair"))
+    named_nothing = scored(facts: FACTS.merge("expects_inside" => "every one"), exits: [])
+
+    assert_empty all.flagged_for(:no_inside_where_the_world_wanted_one)
+    assert_equal 1, all.judgeable_for(:no_inside_where_the_world_wanted_one)
+    assert_equal 1, one_short.flagged_for(:no_inside_where_the_world_wanted_one).size
+    assert_match(/1 of/, one_short.flagged_for(:no_inside_where_the_world_wanted_one).sole.evidence)
+    assert_equal 0, named_nothing.judgeable_for(:no_inside_where_the_world_wanted_one),
+                 "an answer that named nothing is out of the denominator, not a hit"
+  end
+
+  # EACH OF THE FOUR WORDS HAS EXACTLY ONE BOUND, so exactly one of the two
+  # checks is judgeable on a case -- which is what keeps the pair from scoring
+  # one label twice.
+  test "a ceiling label is out of the floor check's denominator, and the reverse" do
+    exits = [ { "name" => "The Vestry Hulk", "inside" => "a few rooms" } ]
+    after = after_opening("The Vestry Hulk")
+
+    { "none of them" => [ 1, 0 ], "at most one" => [ 1, 0 ],
+      "at least one" => [ 0, 1 ], "every one" => [ 0, 1 ] }.each do |word, (ceiling, floor)|
+      scorer = scored(facts: FACTS.merge("expects_inside" => word), exits: exits, after: after)
+
+      assert_equal ceiling, scorer.judgeable_for(:inside_where_the_world_wanted_none), word
+      assert_equal floor, scorer.judgeable_for(:no_inside_where_the_world_wanted_one), word
+    end
+  end
+
+  # AND A CASE WITH NO LABEL IS OUT OF BOTH, which is the distinction this pair
+  # cannot afford to lose: an unavailable figure and a measured nought look the
+  # same in a column and mean opposite things.
+  test "a case with no label is judged by neither inside check" do
+    scorer = scored(exits: [ { "name" => "The Vestry Hulk", "inside" => "a few rooms" } ],
+                    after: after_opening("The Vestry Hulk"))
+
+    assert_equal 0, scorer.judgeable_for(:inside_where_the_world_wanted_none)
+    assert_equal 0, scorer.judgeable_for(:no_inside_where_the_world_wanted_one)
+    assert_nil scorer.reported["inside_where_the_world_wanted_none"]
+  end
+
   # THE ONE THING THE COMMENTS CANNOT HOLD: that the bench and the engine still
   # answer "is this the same place" the same way.
   #
