@@ -77,6 +77,13 @@ class Location::ExitsSchema < RubyLLM::Schema
       # quietly stop having buildings in it by nobody answering, which is why
       # `Eval::Realization::Scorer` measures `inside_declined` and prints
       # `insides_given` beside the two rates that would otherwise reward it.
+      #
+      # AND A PICK MADE IS NOT A PICK USED. `Location::Generator#connect_exit!`
+      # hands this field to `.create_stub!` and nowhere else, so answering it
+      # for a place the world already holds changes nothing at all -- the same
+      # fact `Lab::Exits::Sample#insides_reaching` counts on one draw, measured
+      # over a bench as `insides_reaching` beside `insides_given` and flagged
+      # per pick as `inside_on_a_place_that_already_exists`.
       string :inside,
              description: "NO INSIDE for almost everything you name. Anything else here makes the game " \
                           "build a whole floor plan of rooms there and send the player walking through " \
