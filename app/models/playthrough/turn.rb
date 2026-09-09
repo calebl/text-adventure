@@ -92,13 +92,10 @@ class Playthrough::Turn
   # the app's own rather than anything a model wrote. `NarrationJob` shows it
   # where `Playthrough::SafetyNotice` goes and for the same reason.
   def play(command, request_token: nil, on_start: nil, on_finish: nil, on_error: nil, &block)
-    deliver = lambda do |chunk|
-      block&.call(chunk)
-    rescue StandardError => e
-      # A consumer receives progress; it does not own the turn. An unavailable
-      # broadcast after a charged arrival cannot skip the world's response.
-      Rails.logger.warn { "Turn streaming failed: #{e.class}: #{e.message}" }
-    end
+    deliver = observer("streaming", block)
+    began = observer("start notice", on_start)
+    finished = observer("finish notice", on_finish)
+    failed = observer("failure notice", on_error)
     GameLock.synchronize("playthrough", playthrough.id) do
       # Another job may have completed while this one waited. Both the scene
       # chain and the classifier's closed sets must start from its result.
@@ -111,19 +108,48 @@ class Playthrough::Turn
         else
           accepted_up_to(mine).each_with_index do |row, already_played|
             forget_line_readers! if already_played.positive?
-            played = take_turn(row.command, on_start, on_finish, submission: row, &deliver)
+            played = take_turn(row.command, began, finished, submission: row, &deliver)
             outcome = played if row.id == mine.id
           end
         end
       else
-        outcome = take_turn(command, on_start, on_finish, &deliver)
+        outcome = take_turn(command, began, finished, &deliver)
       end
       outcome
     rescue StandardError => e
-      on_error&.call(e)
+      failed.call(e)
       raise
     end
   end
+
+  # A CONSUMER RECEIVES PROGRESS; IT DOES NOT OWN THE TURN, and every callback
+  # #play takes comes through here so that one statement holds for all of them.
+  # An unavailable broadcast after a charged arrival cannot skip the world's
+  # response -- and it cannot cost the player a line either.
+  #
+  # BOTH OTHER CALLBACKS COST ONE BEFORE THIS WAS THEIR RULE TOO. The pending
+  # page is broadcast from INSIDE `Command#execute!`, so an exception raised
+  # delivering it -- a render error, a busy cable database while another turn
+  # broadcasts -- marked a submission `failed` before its line had been played
+  # at all: the player read an internal-failure notice, a redelivery of that
+  # token raised `PreviouslyFailedError`, and the drain would not touch a row
+  # that was no longer pending. The final page is the same defect one row
+  # along: it raised out of the drain loop, so every line accepted behind the
+  # one that had just finished stayed pending.
+  #
+  # WHAT IS NOT SWALLOWED IS THE ENGINE. Only delivery is wrapped, so a real
+  # provider or engine failure still raises through #play, `Command#execute!`
+  # still records it against the submission, and `NarrationJob` still tells the
+  # player the truth about it -- including the setup notice and the crisis
+  # notice, which are engine outcomes and not delivery failures.
+  def observer(what, consumer)
+    lambda do |value|
+      consumer&.call(value)
+    rescue StandardError => e
+      Rails.logger.warn { "Turn #{what} failed: #{e.class}: #{e.message}" }
+    end
+  end
+  private :observer
 
   # EVERY LINE THIS GAME HAS ACCEPTED AND NOT YET PLAYED, oldest first, up to
   # and including this job's own.
@@ -170,14 +196,14 @@ class Playthrough::Turn
   def take_turn(line, on_start, on_finish, submission: nil, &block)
     @safety_notice = nil
     play = lambda do
-      on_start&.call(line)
+      on_start.call(line)
       play_serially(line, &block)
     end
     outcome = submission ? submission.execute!(&play) : play.call
     # The final broadcast is part of serialization too: an old worker must
     # not replace the page after the next command has started streaming.
     @safety_notice ||= outcome.safety_notice if outcome.is_a?(Scene)
-    on_finish&.call(outcome)
+    on_finish.call(outcome)
     outcome
   end
   private :take_turn

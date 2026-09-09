@@ -1,18 +1,19 @@
-# A player opens a stub whose exits answer names three ways out: the market it
-# already reaches, the old mill it does not, and the workshop itself under an
-# article. Only the first is a door this room will write -- and the other two
-# carry a travel method the engine will not accept.
+# A player opens a stub whose exits answer names three ways out and gets every
+# one of them wrong: the market it already reaches, the old mill it cannot open
+# onto, and the workshop itself under an article. NOT ONE OF THE THREE IS A ROW
+# THE ENGINE WRITES -- the market pair exists in both directions already -- and
+# all three carry a travel method `LocationConnection` will not accept.
 #
-# Before the labels were checked against what the engine actually writes, the
-# unusable pair failed the whole realization: the paid detail was already
-# committed and pinned, so the player was left outside a room that could be
-# refused the same way on every later entry. The room must open, keep the one
-# real door, and grow no door onto the mill.
+# So the room must open on the door it already had. While the labels were read
+# off the whole answer instead of off the rows being written, each of these
+# failed the realization the entry had already paid for: the detail was
+# committed and its prompt pinned, so the player was left outside a room that
+# could be refused the same way on every later entry.
 story: A Written Mill Beside a Stub
 steps:
 - id: an-unusable-label-on-a-door-nobody-writes
   type: /move Workshop
-  why: two of the three proposals are dropped, so neither label can fail the entry
+  why: no proposal becomes a row, so no label can fail the entry
   browser:
     token: open-the-workshop
     realizes: Workshop
@@ -26,11 +27,12 @@ steps:
     - purpose: location
       content:
         exits:
-        # The way back, which already exists: a no-op edge with a usable label.
+        # The way back. Both directions exist, so this writes nothing at all
+        # and the door keeps the labels it was written with.
         - name: Market
           teaser: A quiet square.
           distance: adjacent
-          travel_method: walking
+          travel_method: teleporting
         # Already written and not reachable from here, so never written.
         - name: Old Mill
           teaser: A shuttered mill.
