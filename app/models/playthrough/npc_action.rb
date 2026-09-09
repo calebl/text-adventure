@@ -49,7 +49,7 @@ class Playthrough::NpcAction
       fact = case choice
       when /\Agive:(\d+)\z/
         item = playthrough.items_held_by(character).find(Regexp.last_match(1))
-        item.update!(character: nil, location: nil, x: nil, y: nil)
+        item.update!(character: nil, location: nil, **Location::Placement.unplaced)
         "#{character.fullname} gave #{item.name} to #{playthrough.character.fullname}; the player now carries it."
       when "follow"
         state!.update!(following: true, location: playthrough.current_location)

@@ -3,7 +3,7 @@
   "revision": "Original review and measured baseline: 8dd1f5c. Fix branch: fix/npc-arrival-turn-integrity-20260908. Focused model candidate: 93448ade; sequential confirmation: 57f8738f, which adds the deterministic toll view without changing model input. These temporary candidate commits identify frozen evidence, and every measured number above stays labelled with the commit it was measured on. The branch is now rebased: 337f826 sits directly on main 2ef1a20, so the place-name identity handling and the exits lab and scorer work from main are carried rather than re-measured. The suite figure recorded for that rebase is archived below and describes 337f826, not any later head; the current head's suite, lint and CI results are the pull request's checks.",
   "candidate_revision": "93448adead431f46799573c6c8f13dd65c5b1ddb",
   "evaluation_permission_pending": false,
-  "limits": "Live results use one pinned model, four repetitions per arm and fixed fictional fixtures. They establish bounded behavior, not realistic psychology or complete prose grounding. Standard audit flags missed item-identity contradictions in both sequential arms. No scorer, corpus or older baseline was replaced; the prompt-bench adapter only preserves failed-call accounting when gameplay uses a factual fallback. Delivery status is whatever the pull request's own checks say; nothing on this page stands in for them.",
+  "limits": "Live results use one pinned model, four repetitions per arm and fixed fictional fixtures. They establish bounded behavior, not realistic psychology or complete prose grounding. Standard audit flags missed item-identity contradictions in both sequential arms. No scorer, corpus or older baseline was replaced; the prompt-bench adapter only preserves failed-call accounting when gameplay uses a factual fallback. The evaluation directory beside this report holds frozen portable mirrors so the page reads outside the repository; db/eval/adversarial-20260909 is the canonical stored evidence and the mirrors carry its bytes, with links pinned to commit e1c33e4 rather than to a branch that gets deleted. Delivery status is whatever the pull request's own checks say; nothing on this page stands in for them.",
   "checks": [
     {
       "name": "Integrated repository suite",
@@ -49,6 +49,11 @@
       "name": "Visible crossing outcomes",
       "result": "22 tests / 76 assertions passed. Actual debug-off page rendering, playthrough isolation, duplicate delivery, escaping, preloading and a browser-view engine sweep verify the persisted toll is displayed exactly once. This text is not counted as model prose.",
       "file": "toll-notice-focused-tests.log"
+    },
+    {
+      "name": "Submission acknowledgement in a browser",
+      "result": "Four cases captured in a real Chromium at e1c33e4 over an isolated worktree-local fixture, web process only on 127.0.0.1:3142 with no worker \u2014 so all four submissions were accepted and left pending, exactly the queued state the acknowledgement exists for. A typed line is echoed and the box cleared; a draft typed in the same tick as the submit survives and the echo is what was actually sent; a battle button is echoed and its hidden line stays armed; a response that lost the race to a page replace shows nothing. FIXTURE ONLY: no turn was played and no model was asked anything, so this says nothing about how the game narrates.",
+      "file": "evaluation/submission-receipt-browser-log.json"
     },
     {
       "name": "Job and browser delivery",
@@ -141,7 +146,7 @@
         "The failure notice no longer promises rollback. Fallback text is excluded from model-quality measurements.",
         "A missing key and a rejected key are both visible to the player and the operator; neither notice claims a turn that did not happen, and no provider secret reaches the page."
       ],
-      "remaining": "A worker killed during engine writes, or an unexpected engine/database failure, leaves an interrupted or failed command. It cannot replay automatically, but there is no automatic rollback or reconciliation. The UI does not independently recover a stranded worker, and the visible setup notice is a message rather than a recovery. If a predecessor fails while a job is playing an accepted queue, that job's own row stays pending for the next submission to drain. A predecessor left running by a killed worker is skipped rather than replayed or waited for, so a later accepted line plays past it and the earlier one is left visible and unplayed. Still no automatic reconciliation or rollback. Incomplete new location generation now resumes on a later entry (R06)."
+      "remaining": "A worker killed during engine writes, or an unexpected engine/database failure, leaves an interrupted or failed command. It cannot replay automatically, but there is no automatic rollback or reconciliation. The UI does not independently recover a stranded worker, and the visible setup notice is a message rather than a recovery. If a predecessor fails while a job is playing an accepted queue, that job's own row stays pending for the next submission to drain. A predecessor left running by a killed worker is skipped rather than replayed or waited for, and a later accepted line deliberately plays past it rather than being blocked behind a row nothing will finish. That row stays recorded with its completion unknown: the worker may have applied part of its effects before it died, nothing reconciles them, and the UI carries no marker saying so. Still no automatic reconciliation or rollback. Incomplete new location generation now resumes on a later entry (R06)."
     },
     "R05": {
       "status": "Verified",
@@ -154,7 +159,7 @@
         "A take accepted before a move, with the move\u2019s job delivered first, still takes the coin before leaving the room -- asserted by unit regression and by a player-walk sweep.",
         "Two ordinary lines drained by one job each classify against a clean chat, at the default retention and at TA_CHAT_KEEP_TURNS=0.",
         "The overtaken job\u2019s own delivery broadcasts nothing over the newer turn, while a duplicate delivery of the newest submission still refreshes its page.",
-        "An accepted submission is echoed and its input cleared immediately \u2014 checked in an actual browser against a queued job, for the typed box and for a battle button. It is guarded on the response\u2019s success, on the form still being on the page, and on the field still holding the line that was sent, so a draft typed while the POST was in flight survives and a response that lost the race to its turn\u2019s page shows nothing."
+        "An accepted submission is echoed and its input cleared immediately. Guarded on the response\u2019s success, on the form still being on the page, and on the field still holding the line that was sent, so a draft typed while the POST was in flight survives and a response that lost the race to its turn\u2019s page shows nothing. The suite pins the wiring the page hands the controller; the four behaviours were captured in a real Chromium over a fixture with no worker running, and the \u201cSubmission acknowledgement in a browser\u201d check records what it saw."
       ],
       "remaining": "The locking primitive assumes the app\u2019s local SQLite deployment. The accepted order is a guarantee about submissions whose workers are alive: a predecessor a dead worker left running is neither replayed nor waited for, and later lines play past it, so there is no ordering claim across an interrupted worker. Durable location checkpoints handle incomplete new rooms (R06); interrupted turn reconciliation remains the limit described in R04."
     },
