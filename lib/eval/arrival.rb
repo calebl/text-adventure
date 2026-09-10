@@ -4,8 +4,8 @@
 # Run/score/board/compare/digest use the same vocabulary as the dialogue bench.
 # The retained study supplies facts, not copied prompt builders. No prompt is
 # edited here. Semantic contradiction beyond placed facts, revisit recognition
-# quality and prose quality remain unmeasured. The stale main move set belongs
-# to the separate main re-baseline task.
+# quality and prose quality remain unmeasured. The ordinary main move set is
+# measured and re-baselined separately by Eval::Prompt.
 module Eval::Arrival
   CORPUS = Rails.root.join("test/fixtures/files/arrival_corpus.json")
   STUDY = Rails.root.join("db/eval/adversarial-20260909")

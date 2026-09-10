@@ -2138,7 +2138,7 @@ bundle exec rake eval:arrival_digest
 The kept set is `Eval::Arrival::BASELINE`. Its test rebuilds **every** request
 identity, including system, user, emitted schema and empty replay history, with
 no provider call. No digest is borrowed from the ordinary main move case; that
-set's stale scaffold is a separate re-baseline task.
+set is measured and re-baselined separately by `Eval::Prompt`.
 
 Description and summary have separate lexical checks, availability and rates.
 Fact-missing strict/inclusive readings are **word-cue proxies**, not the study's
