@@ -1,0 +1,10 @@
+{
+  "reason": "Correct edge hazard fixture",
+  "calls": 4,
+  "model": "mistralai/mistral-medium-3.1",
+  "estimated_usd": 0.0030432
+}
+pending_toll:1: recorded
+pending_toll:2: recorded
+pending_toll:3: recorded
+pending_toll:4: recorded

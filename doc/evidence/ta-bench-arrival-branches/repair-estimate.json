@@ -1,0 +1,6 @@
+{
+  "reason": "Correct edge hazard fixture",
+  "calls": 4,
+  "model": "mistralai/mistral-medium-3.1",
+  "estimated_usd": 0.0030432
+}
