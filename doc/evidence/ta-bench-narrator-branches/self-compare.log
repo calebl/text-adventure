@@ -1,0 +1,41 @@
+------------------------------------------------------------------------------
+PROMPT BENCH: prompt-branches-2026-09-10 -> prompt-branches-2026-09-10
+Exact rank test at p <= 0.05, 4 repetitions a side minimum.
+------------------------------------------------------------------------------
+prompt-branches-2026-09-10: mistralai/mistral-medium-3.1 | corpus 32791221dca0b007 | prompt 780ae0948949c3d9 | 4 reps
+prompt-branches-2026-09-10: mistralai/mistral-medium-3.1 | corpus 32791221dca0b007 | prompt 780ae0948949c3d9 | 4 reps
+Latencies are WARM-CACHE figures -- each arm's first call is timed apart and excluded.
+
+NOTE: the two sets record the SAME prompt digest, so this is the same prompt measured
+twice -- the null check. Everything below should read NOISE.
+
+MODEL  mistralai/mistral-medium-3.1
+  unrecorded_departure       0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  unrecorded_arrival         0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  item_not_held              0.000 -> 0.000  unchanged NOISE (inside the 0.111 the unchanged runs already spanned)
+  take_denied                0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  pickup_invented            0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  inscription_misquoted      0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  truncated_prose            0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  third_person_protagonist   0.000 -> 0.000  unchanged NOISE (inside the 0.111 the unchanged runs already spanned)
+  blow_contradicted          0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  toll_contradicted          0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  throw_contradicted         0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  body_contradicted          0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  beat_contradicted          0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  refusals                   0 -> 0  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  failures                   0 -> 0  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  omitted_fields             0 -> 0  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  cap_hits                   0 -> 0  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  latency_median             1.44s -> 1.44s  unchanged NOISE (inside the 0.173 the unchanged runs already spanned)
+  latency_p95                1.78s -> 1.78s  unchanged NOISE (inside the 0.292 the unchanged runs already spanned)
+  output_tokens              1116 -> 1116  reported  NOISE (inside the 71.000 the unchanged runs already spanned)
+  words                      89 -> 89  reported  NOISE (inside the 13.000 the unchanged runs already spanned)
+  commitments                2.388 -> 2.388  reported  NOISE (inside the 0.556 the unchanged runs already spanned)
+
+A REAL verdict on a CHECK is what means a prompt change worked. Read `commitments`
+beside it: a fall in every rate with a fall in that is prose that says less, which is
+the one way to improve these numbers without improving the game (Eval::Richness).
+Everything INCONCLUSIVE at these sample sizes means: not enough repetitions.
+Confirm a REAL verdict with `rake eval:run` before believing it.
+------------------------------------------------------------------------------

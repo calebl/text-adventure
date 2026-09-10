@@ -1,0 +1,68 @@
+# Pending narrator moments, built by Eval::Prompt::Branches::Stage from records.
+# No production seed, engine, schema or prompt content changes. The stale main
+# kept set belongs to ta-bench-rebaseline-stale. Truthfulness beyond the bounded
+# placed-fact predicates, natural next-beat fit and quality remain human-only.
+positions:
+- id: gate
+  story: The Iron Gate Descends
+  room: Iron Gate Chamber
+  cast:
+    Gorva the Wanderer: Iron Gate Chamber
+- id: cell
+  story: The Iron Gate Descends
+  room: the dry cell
+cases:
+- id: branches-next-beat
+  position: gate
+  typed: look around for evidence
+  act: other
+  shape: next_beat
+  why: An open hold-item step supplies only its next summary, never future steps or outcomes.
+- id: branches-combat
+  position: gate
+  typed: watch Gorva after the exchange
+  act: other
+  shape: combat
+  why: The first attack is already a blow; both sides have struck and remain alive in the open fight.
+- id: branches-toll
+  position: gate
+  typed: steady yourself after stumbling in the dark
+  act: other
+  shape: toll
+  why: An untold placed toll has cost the player's body hit points.
+- id: branches-saved-toll
+  position: gate
+  typed: look at the dark floor you crossed
+  act: other
+  shape: saved_toll
+  why: A saved toll explicitly cost nothing; prose must not add a wound.
+- id: branches-throw
+  position: gate
+  typed: throw the stone weight at Gorva
+  act: other
+  shape: throw
+  why: A seeded successful heavy throw moves the named object to the named target's feet and rolls its d8.
+- id: branches-recap
+  position: gate
+  typed: remember what you inspected
+  act: other
+  shape: recap
+  why: Fixed preceding scene records supply both recent prose and an earlier recap.
+- id: branches-wounded
+  position: gate
+  typed: examine your wounds
+  act: other
+  shape: wounded
+  why: Wounded player condition is a placed HP fact, with no pending blow or toll.
+- id: branches-dead-foe
+  position: gate
+  typed: look at Gorva's body
+  act: other
+  shape: dead_foe
+  why: A lethal recorded blow leaves a dead foe; prose cannot spare or revive him.
+- id: branches-plan
+  position: cell
+  typed: inspect the walls
+  act: other
+  shape: plan
+  why: The persisted room box and doors render plan_facts; wall truthfulness remains human-labelled.

@@ -80,6 +80,10 @@ class Eval::Prompt::Scorer
 
     scored = passages.select(&:scored?)
 
+    if Eval::Prompt::Branches::Predicates::CHECKS.key?(code.to_sym)
+      return scored.count { |passage| Eval::Prompt::Branches::Predicates.judgeable?(code, passage.facts) }
+    end
+
     case code.to_sym
     when :take_denied then scored.count { |passage| passage.act == "take" && passage.item.present? }
     when :pickup_invented then scored.count { |passage| passage.act == "drop" && passage.item.present? }
@@ -119,7 +123,16 @@ class Eval::Prompt::Scorer
 
   def check(passage)
     truncation(passage) + third_person(passage) + departure(passage) + arrival(passage) +
-      take(passage) + drop(passage) + inscription(passage) + custody(passage)
+      take(passage) + drop(passage) + inscription(passage) + custody(passage) + branches(passage)
+  end
+
+  def branches(passage)
+    Eval::Prompt::Branches::Predicates::CHECKS.flat_map do |code, description|
+      claims = Eval::Prompt::Branches::Predicates.claims(code, passage.text, passage.facts)
+      next [] if claims.empty?
+
+      [ flag(code, passage, description, claim: claims.join(" "), records: passage.facts) ]
+    end
   end
 
   def truncation(passage)

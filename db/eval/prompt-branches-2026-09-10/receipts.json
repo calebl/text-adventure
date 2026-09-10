@@ -1,0 +1,12 @@
+{
+  "model": "mistralai/mistral-medium-3.1",
+  "calls": 37,
+  "input_tokens": 22356,
+  "output_tokens": 4601,
+  "input_per_million": 0.4,
+  "output_per_million": 2.0,
+  "estimate_usd": 0.043837600000000004,
+  "actual_usd": 0.0181444,
+  "includes_warmup": true,
+  "authorized_usd": 2
+}

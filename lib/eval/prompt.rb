@@ -73,7 +73,8 @@ module Eval::Prompt
   # WHICH CORPUS A RUN MEANS, by name, because `rake eval:prompt CORPUS=ending`
   # has to be able to say so. `main` is the default everywhere, so every existing
   # caller and every stored set is unaffected.
-  CORPORA = { "main" => CORPUS, "ending" => ENDING_CORPUS }.freeze
+  BRANCHES_CORPUS = Rails.root.join("test/fixtures/files/prompt_branches_corpus.yml")
+  CORPORA = { "main" => CORPUS, "ending" => ENDING_CORPUS, "branches" => BRANCHES_CORPUS }.freeze
 
   # WHERE A STAGED WORLD IS READ FROM, IN ORDER, and the second root is what
   # makes an ending case possible at all.
@@ -215,7 +216,9 @@ module Eval::Prompt
   # THE CHECKS THIS BENCH SCORES, in `Story::Scoreboard::CHECKS` order so one
   # reading order serves every board in the repo. Everything not named
   # unavailable above.
-  def self.checks = Story::Scoreboard::CHECKS.keys - UNAVAILABLE_TO_A_CASE.keys
+  def self.check_labels = Story::Scoreboard::CHECKS.except(*UNAVAILABLE_TO_A_CASE.keys).merge(Branches::Predicates::CHECKS)
+
+  def self.checks = check_labels.keys
 
   # THE CASES, BY CORPUS NAME. `main` unless a caller says otherwise, so
   # everything that was reading `Eval::Prompt.corpus` reads exactly what it read

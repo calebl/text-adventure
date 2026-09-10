@@ -171,6 +171,13 @@ module Eval
     lib/tasks/genesis.rake
     test/fixtures/files/genesis_corpus.yml
     db/eval/genesis-before/genesis.json
+    lib/eval/prompt/branches.rb
+    lib/eval/prompt/branches/bench.rb
+    lib/eval/prompt/branches/predicates.rb
+    lib/eval/prompt/branches/stage.rb
+    test/fixtures/files/prompt_branches_corpus.yml
+    db/eval/prompt-branches-2026-09-10/prompt.json
+    db/eval/prompt-branches-2026-09-10/receipts.json
     lib/eval/realization.rb
     lib/eval/realization/admissions.rb
     lib/eval/realization/branches.rb

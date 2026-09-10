@@ -108,6 +108,7 @@ namespace :eval do
     puts format("  eval:genesis       %d cases x %d reps, allowance $%.3f",
                 Eval::Genesis.corpus.size, Eval::Noise::MIN_RUNS, Eval::Genesis.estimate)
     puts "Inscription: #{JSON.generate(Eval::Inscription.estimate)}"
+    puts PromptTasks.branches_estimate_line
   end
 
   desc "The files that constitute the measurement, with a digest of each -- the manifest a future improving agent leaves alone"
@@ -222,7 +223,7 @@ namespace :eval do
     abort error.message
   end
 
-  desc "Prompt message and schema request identities -- offline, no model call. CORPUS=main|ending"
+  desc "Prompt message and schema request identities -- offline, no model call. CORPUS=main|ending|branches"
   task prompt_digest: :environment do
     corpus = Eval::Prompt.corpus(PromptTasks.corpus_name)
     puts JSON.pretty_generate(Eval::Prompt::RequestVersion.offline(corpus).merge(corpus_digest: Eval::Prompt.digest(corpus)))
@@ -467,6 +468,12 @@ namespace :eval do
     # `Eval::Prompt::CORPORA`.
     def corpus_name = ENV["CORPUS"].presence || "main"
 
+    def branches_estimate_line
+      cases = Eval::Prompt.corpus("branches").cases
+      priced = Eval::Prompt.estimate(cases: cases, reps: default_reps, models: arms)
+      format("Narrator branches: %d cases x %d reps, about $%.4f (plus one warm-up).", cases.size, default_reps, priced)
+    end
+
     def available_sets
       found = (Dir.glob(Eval.root.join("*", Eval::Prompt::RESULTS)) +
                Dir.glob(Eval.kept_root.join("*", Eval::Prompt::RESULTS)))
@@ -499,7 +506,8 @@ namespace :eval do
 
       puts "Playing #{corpus.size} #{corpus_name} cases on #{arms.map(&:id).join(", ")}."
       puts
-      result = Eval::Prompt::Bench.new(corpus: corpus, arms: arms, reps: reps).run
+      bench = corpus_name == "branches" ? Eval::Prompt::Branches::Bench : Eval::Prompt::Bench
+      result = bench.new(corpus: corpus, arms: arms, reps: reps).run
 
       written = result.write!(Eval.set_path(set_name), name: set_name)
       puts

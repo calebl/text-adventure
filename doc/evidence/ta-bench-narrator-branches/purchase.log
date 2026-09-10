@@ -1,0 +1,74 @@
+ESTIMATE: 36 calls (9 cases x 4 reps x 1 model) over the branches corpus, about $0.043.
+Measured at 762 in / 440 out a narration, 1112 in / 158 out a arrival, 1662 in / 640 out a ending.
+Playing 9 branches cases on mistralai/mistral-medium-3.1.
+
+  mistralai/mistral-medium-3.1     rep 1   9 passages,  1 flagged, 1.4s median
+  mistralai/mistral-medium-3.1     rep 2   9 passages,  0 flagged, 1.6s median
+  mistralai/mistral-medium-3.1     rep 3   9 passages,  1 flagged, 1.4s median
+  mistralai/mistral-medium-3.1     rep 4   9 passages,  0 flagged, 1.5s median
+
+Wrote /home/calebl/.treehouse/text-adventure-b5f921/15/text-adventure/tmp/eval/prompt-branches-2026-09-10/prompt.json.
+
+------------------------------------------------------------------------------
+THE PROMPT BENCH -- 9 single-turn cases, 4 repetitions, 1 model
+corpus 32791221dca0b007   prompt 780ae0948949c3d9   instructions b7473fa259e8f5cf
+Every rate is min..max over the repetitions with the median in the middle. A
+difference smaller than that band is not a difference -- see EVALUATION.md.
+THE LATENCIES ARE WARM-CACHE FIGURES: each arm's first call is timed separately
+and excluded.
+------------------------------------------------------------------------------
+
+MODEL  mistralai/mistral-medium-3.1   (4 reps, 36 passages)
+
+  THE CHECKS -- flagged over the cases each one can be judged on
+  unrecorded_departure       0.000..0.000 (median 0.000)   0..0 of 9   the prose closed a door behind a player who never left
+  unrecorded_arrival         0.000..0.000 (median 0.000)   0..0 of 9   the prose walked the player into a room the records did not move them to
+  item_not_held              0.000..0.111 (median 0.000)   0..1 of 9   the prose handed the player something somebody else holds
+  take_denied                unavailable in this corpus   no case carries the records this check reads
+  pickup_invented            unavailable in this corpus   no case carries the records this check reads
+  inscription_misquoted      unavailable in this corpus   no case carries the records this check reads
+  truncated_prose            0.000..0.000 (median 0.000)   0..0 of 9   stored prose stops mid-sentence
+  third_person_protagonist   0.000..0.111 (median 0.000)   0..1 of 9   the narration wrote the player as somebody else
+  blow_contradicted          0.000..0.000 (median 0.000)   0..0 of 3   explicit blow numbers, participants, misses or invented combat mechanics
+  toll_contradicted          0.000..0.000 (median 0.000)   0..0 of 2   explicit toll damage or a wound despite a recorded save
+  throw_contradicted         0.000..0.000 (median 0.000)   0..0 of 1   explicit thrown object, target or result contradicts the recorded throw
+  body_contradicted          0.000..0.000 (median 0.000)   0..0 of 9   explicit remaining hit points or life/death contradicts a placed body
+  beat_contradicted          0.000..0.000 (median 0.000)   0..0 of 9   literal future-summary leak or explicit denial of the next beat
+
+  UNAVAILABLE TO A SINGLE TURN -- reported, never scored as clean
+  unreachable_transition     a case is one turn, and the one turn that moves walks an edge the records have
+  reached_for_nothing        a drift row needs the turn AFTER the narration, and a case has no next turn
+  named_more_than_one        a case types a fixed line, so what it named measures the corpus, not the game
+  still_run                  four turns of nothing needs four turns
+
+  BY WORLD -- flagged of judgeable, pooled over the repetitions
+    The Iron Gate Descends               36 passages   item_not_held 1/36, third_person_protagonist 1/36
+
+  RICHNESS -- what the prose COMMITTED TO, and it is never folded into the rates
+  words                            82..95       (median 89)   median words a passage -- length, and NOT a quality figure
+  commitments                2.000..2.556 (median 2.388)   mean rooms, exits, items and people the records know that the prose named
+
+  WHAT A STORED PASSAGE CANNOT SHOW
+  refusals                          0..0        (median 0)   calls the model declined to write (BaseAgent::RefusalError)
+  failures                          0..0        (median 0)   calls that failed outright (a count; the arm has no rotation)
+  omitted_fields                    0..0        (median 0)   required schema fields that came back absent -- schema'd passes only
+  cap_hits                          0..0        (median 0)   fields that arrived at their max_length, so the provider cut them off
+  latency_median                1.38s..1.55s    (median   1.44s)   seconds the median call took (CLOCK_MONOTONIC)
+  latency_p95                   1.59s..1.89s    (median   1.78s)   seconds the worst call in twenty took
+  output_tokens                  1079..1150     (median 1116)   output tokens over the pass -- what the prose cost to write
+  spend                      $0.0176 over 36 calls (21,700 in / 4,461 out)
+  first call                 1.77s   EXCLUDED from the figures above, so an outlier shows as one
+
+  FLAGGED -- 2 distinct (case, check) pairs, 2 readings
+    branches-combat                item_not_held            x1
+      typed:   "watch Gorva after the exchange"
+      says:    The signet ring glints in the mud where it lies, untouched between you.
+    branches-next-beat             third_person_protagonist x1
+      typed:   "look around for evidence"
+      says:    Gorva the Wanderer stands silent, his presence a shadow against the flickering fungal light, watching the tunnel’s depths with narrowed eyes.
+
+------------------------------------------------------------------------------
+Judge a prompt change against this with `rake eval:prompt_compare BEFORE= AFTER=`.
+Four repetitions a side is the arithmetic floor for a verdict -- Eval::Noise::MIN_RUNS.
+And confirm it with `rake eval:run`: one turn cannot see pacing or a world in motion.
+------------------------------------------------------------------------------
