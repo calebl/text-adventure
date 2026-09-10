@@ -1,14 +1,16 @@
-# THE REALIZATION LAB FROM THE COMMAND LINE, AND THE TWO THINGS IT IS FOR.
+# THE TWO LABS FROM THE COMMAND LINE, AND THE TWO THINGS EACH IS FOR.
 #
 #   rake lab:realization:draw KIND=<id> N=<count> YES=1
 #   rake lab:realization:promote KIND=<id>
+#   rake lab:exits:draw VANTAGE=<id> N=<count> YES=1
+#   rake lab:exits:promote VANTAGE=<id>
 #
-# THE SECOND ONE IS THE WAY OUT OF THE LAB. A kind established here is a kind he
-# has an opinion about; `promote` writes it out as an `Eval::Realization` corpus
-# case so the next prompt change is measured against that opinion, which is the
-# *"maintain alignment in the future"* half of his ask.
-# `Lab::Realization::Promotion` is the emitter and its header is why it prints
-# text rather than writing the file.
+# `promote` IS THE WAY OUT OF EITHER LAB. A kind or a vantage established here is
+# one he has an opinion about; `promote` writes it out as an `Eval::Realization`
+# corpus case so the next prompt change is measured against that opinion, which
+# is the *"maintain alignment in the future"* half of his ask.
+# `Lab::Realization::Promotion` and `Lab::Exits::Promotion` are the emitters and
+# their headers are why they print text rather than writing the file.
 #
 # WHY IT EXISTS, in the captain's own terms: *"I want to make sure it is picking
 # what I think it should MOST OF THE TIME."* Most of the time is a rate, a rate
@@ -56,10 +58,12 @@ namespace :lab do
   # `LabTasks`' own, because a draw for this lab IS a draw for that one read from
   # the other end (`Lab::Exits::Runner`).
   #
-  # THERE IS NO `promote` HERE YET, deliberately. Promoting a scored vantage into
-  # `Eval::Realization::Corpus` is the captain's Call 6 of 2026-09-08 and it moves
-  # the corpus digest, which puts the tree out of baseline until a set is bought
-  # -- so it is a slice of its own (`ta-exits-lab-promotion`) and not a line here.
+  # AND `promote` IS HERE NOW, which is the captain's Call 6 of 2026-09-08:
+  # a scored vantage becomes an `Eval::Realization` corpus case carrying its
+  # `absent` list and its quantifier. It prints and never writes, for
+  # `Lab::Exits::Promotion`'s reason -- committing a case moves
+  # `Eval::Realization.digest` and puts the tree out of baseline until a set is
+  # bought, which is a spend decision and therefore a person's.
   namespace :exits do
     desc "Draw one vantage N times through the exits lab's own runner. " \
          "Usage: rake lab:exits:draw VANTAGE=<id> N=10 YES=1"
@@ -70,6 +74,12 @@ namespace :lab do
     desc "Every vantage in the exits lab, with its id and how many draws it has -- offline, free"
     task vantages: :environment do
       LabTasks.list_vantages!
+    end
+
+    desc "A scored vantage, written out as a realization corpus case for you to read and commit -- " \
+         "offline, no model call, no key. Usage: rake lab:exits:promote VANTAGE=<id>"
+    task promote: :environment do
+      LabTasks.promote_vantage!
     end
   end
 end
@@ -189,6 +199,20 @@ module LabTasks
     puts promotion.to_yaml
   end
 
+  # A VANTAGE, AS A CORPUS CASE, PRINTED -- `#promote!`'s contract with one
+  # subject swapped, and it writes nothing for the same reason: the corpus is a
+  # checked-in measurement input, so committing a case is a spend decision.
+  #
+  # FREE. `draw_vantage!` above buys calls; this reads draws already bought.
+  def promote_vantage!
+    vantage = vantage_or_abort(verb: "promote")
+    promotion = Lab::Exits::Promotion.new(vantage)
+
+    puts vantage_preamble(vantage)
+    puts
+    puts promotion.to_yaml
+  end
+
   private
 
   # WHAT THE PERSON PASTING IT HAS TO KNOW, printed above the case rather than
@@ -203,6 +227,34 @@ module LabTasks
       # moved digest fails `Eval::Realization::KeptSetTest` until a new baseline set
       # is bought and `Eval::Realization::BASELINE` points at it. That is a spend
       # decision and it is the captain's, so the last step is a person reading a diff.
+      #
+      # Then, before you commit: `bin/rails test test/lib/eval/realization/corpus_test.rb`
+      # is the offline validator, and `rake eval:realization_digest` prints where the
+      # digest landed.
+    TEXT
+  end
+
+  # AND THE SAME FOR A VANTAGE, with the two things a promoted vantage adds to
+  # the warning: its `absent` list travels with it, and its SHAPE is new -- so
+  # the first one committed moves the prompt digest as well as the corpus digest
+  # (`Lab::Exits::Promotion::SHAPE`).
+  def vantage_preamble(vantage)
+    rate = vantage.hit_rate
+    <<~TEXT.rstrip
+      # #{vantage}: #{rate.drawn} drawn, #{rate.distinct_answers} distinct, #{rate.judged} judged,
+      # #{vantage.absent_names.size} off the books.
+      #
+      # PASTE THIS UNDER `cases:` IN test/fixtures/files/realization_corpus.yml YOURSELF.
+      # This task prints and never writes: every case in that file is folded into
+      # `Eval::Realization.digest`, so committing one moves the corpus digest, and a
+      # moved digest fails `Eval::Realization::KeptSetTest` until a new baseline set
+      # is bought and `Eval::Realization::BASELINE` points at it. That is a spend
+      # decision and it is the captain's, so the last step is a person reading a diff.
+      #
+      # AND `#{Lab::Exits::Promotion::SHAPE}` IS A SHAPE THE CORPUS DOES NOT HOLD YET, so the
+      # first of these committed also becomes a designated case and moves the PROMPT
+      # digest (Eval::Realization::Version). Say so in the PR, or the next reader will
+      # credit that movement to a prompt nobody touched.
       #
       # Then, before you commit: `bin/rails test test/lib/eval/realization/corpus_test.rb`
       # is the offline validator, and `rake eval:realization_digest` prints where the
@@ -225,9 +277,9 @@ module LabTasks
   # THE VANTAGE, BY THE ID THE PAGE PRINTS -- `#kind_or_abort`'s shape and its
   # reason: a missing or unknown id is a person's mistake and gets a sentence
   # naming the way to find the right one.
-  def vantage_or_abort
+  def vantage_or_abort(verb: "draw")
     id = ENV["VANTAGE"].presence or
-      abort "VANTAGE=<id> is the vantage to draw. `rake lab:exits:vantages` lists them, and the lab " \
+      abort "VANTAGE=<id> is the vantage to #{verb}. `rake lab:exits:vantages` lists them, and the lab " \
             "at /lab/exits is where one is typed."
 
     Lab::Exits::Vantage.find_by(id: id) or

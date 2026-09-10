@@ -182,6 +182,38 @@
 <h2>the places these draws named</h2>
 <%= render "lab/exits/vantages/places", vantage: @vantage, hit_rate: @hit_rate %>
 
+<h2>promote it to the bench</h2>
+<div class="panel">
+  <p class="note">
+    The <em>maintain alignment in the future</em> half: this vantage as an
+    <code>Eval::Realization</code> corpus case, carrying its
+    <code>absent</code> list and its quantifier, so the next prompt change is
+    measured against what you said. It is printed and never written &mdash;
+    committing a case moves <code>Eval::Realization.digest</code> and puts the
+    tree out of baseline until a new set is bought, which is a spend decision.
+  </p>
+  <% unless @promotion.evidenced? %>
+    <p class="warn">
+      No draw of this vantage has answered the exits call yet, so this case would
+      carry a claim the lab has no evidence for. Draw it first.
+    </p>
+  <% end %>
+  <%# ESCAPED, AND THAT IS LOAD-BEARING RATHER THAN INCIDENTAL. Every line below
+      is built from a world, a name, a teaser and an `absent` list a person
+      TYPED, so `html_safe` anywhere on this string is an unescaped attribute and
+      `bin/brakeman --no-pager` says so in a high-confidence warning -- which is
+      the defect the first lab's own CI run caught (`Lab::Exits`'s history). ERB
+      escapes by default; nothing here may opt out. %>
+  <pre class="scroll"><%= @promotion.to_yaml %></pre>
+  <p class="note">
+    <code>rake lab:exits:promote VANTAGE=<%= @vantage.id %></code> prints the
+    same case, and neither costs anything: both read draws already bought. Paste
+    it under <code>cases:</code> in
+    <code>test/fixtures/files/realization_corpus.yml</code> yourself, then
+    <code>rake eval:realization_digest</code> says where the digest landed.
+  </p>
+</div>
+
 <h2>the draws</h2>
 <% if @samples.empty? %>
   <p class="absent">(none yet)</p>

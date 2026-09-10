@@ -286,6 +286,47 @@ class LabTasksTest < ActiveSupport::TestCase
     assert_match "/lab/exits", printed
   end
 
+  # THE WAY OUT OF THE LAB, AND IT IS THE ONE EXITS COMMAND THAT IS FREE: it
+  # reads draws already bought and prints a corpus case. It writes nothing,
+  # because committing a case moves `Eval::Realization.digest` and puts the tree
+  # out of baseline until a set is bought -- a spend decision, and therefore a
+  # person's (`Lab::Exits::Promotion`'s header).
+  test "the exits promote task exists and prints a case without writing the corpus" do
+    vantage = create(:lab_exits_vantage, :with_places_off_the_books, :dangerous,
+                     :expecting_a_building, name: "Harbour Steps")
+    was = File.read(Eval::Realization::CORPUS)
+
+    assert Rake::Task.task_defined?("lab:exits:promote")
+    printed = capturing { with_env("VANTAGE" => vantage.id.to_s) { LabTasks.promote_vantage! } }
+
+    assert_match "- id: exits-harbour-steps", printed
+    assert_match "expects_inside: at least one", printed
+    assert_match "The Custom House", printed
+    assert_match Lab::Exits::Promotion::SHAPE, printed
+    assert_match "PASTE THIS UNDER `cases:`", printed
+    assert_match "moves the corpus digest", printed
+    assert_equal was, File.read(Eval::Realization::CORPUS), "this task prints and never writes"
+  end
+
+  # AND THE PREAMBLE CARRIES THE WARNING A READER WOULD OTHERWISE CREDIT TO A
+  # PROMPT NOBODY TOUCHED: an `exits-promoted` case is a shape the corpus does
+  # not hold, so the first one committed becomes a designated case and moves the
+  # PROMPT digest as well (`Eval::Realization::Version`).
+  test "the promote preamble says the new shape moves the prompt digest too" do
+    vantage = create(:lab_exits_vantage, :dangerous, :expecting_no_insides)
+    printed = capturing { with_env("VANTAGE" => vantage.id.to_s) { LabTasks.promote_vantage! } }
+
+    assert_match "IS A SHAPE THE CORPUS DOES NOT HOLD YET", printed
+    assert_match "PROMPT", printed
+  end
+
+  test "promoting refuses without a vantage and says how to find one" do
+    error = assert_raises(SystemExit) { LabTasks.promote_vantage! }
+
+    assert_match "VANTAGE=<id> is the vantage to promote", message_of(error)
+    assert_match "rake lab:exits:vantages", message_of(error)
+  end
+
   private
 
   def an_arm = Eval::Classifier::Arm.all([ BaseAgent::REMOTE_MODEL_IDS.first ]).first

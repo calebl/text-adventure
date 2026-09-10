@@ -50,6 +50,10 @@
 # case come from*, which is exactly what `why` is for. Nothing recomputes them
 # and nothing compares against them.
 class Lab::Realization::Promotion
+  # THE TWO YAML RULES, SHARED WITH `Lab::Exits::Promotion` rather than written
+  # twice -- see `Lab::CaseYaml`.
+  include Lab::CaseYaml
+
   # THE SHAPE A PROMOTED CASE IS GROUPED UNDER. `Lab::Realization::Runner::SHAPE`'s
   # reasoning, one step along: a lab draw is `lab`, so a case promoted out of the
   # lab says so too rather than masquerading as one of the corpus's own shapes --
@@ -90,7 +94,7 @@ class Lab::Realization::Promotion
     lines.concat(expectation_lines)
     lines << "  shape: #{SHAPE}"
     lines.concat(why_lines)
-    lines.concat(notes)
+    lines.concat(commented(notes))
     "#{lines.join("\n")}\n"
   end
 
@@ -100,17 +104,17 @@ class Lab::Realization::Promotion
     found = []
     if danger.nil?
       seen = drawn_dangers.presence&.join(", ") || "nothing drawn yet"
-      found << "  # ^ CHOOSE A DANGER and uncomment the line. This kind left it to the roll, so there " \
+      found << "^ CHOOSE A DANGER and uncomment the line. This kind left it to the roll, so there " \
                "is no reproducible value to read off its samples (#{seen}). A promoted case must " \
                "declare one, and the corpus validator refuses it until it does."
     end
     kind.unanswerable.each do |pick|
-      found << "  # `#{Eval::Realization::Corpus.expectation_key(pick)}` is left out: a " \
+      found << "`#{Eval::Realization::Corpus.expectation_key(pick)}` is left out: a " \
                "#{kind.place? ? "building" : "room"} is never asked this pick " \
                "(Lab::Realization::Kind#answerable?), so an expectation for it could never be earned."
     end
     if danger_floor_widens?
-      found << "  # `#{Eval::Realization::Corpus::DANGER_FLOOR_KEY}` WIDENS this kind's expectation: " \
+      found << "`#{Eval::Realization::Corpus::DANGER_FLOOR_KEY}` WIDENS this kind's expectation: " \
                "he allowed #{kind.expects("danger").join(", ")}, and a floor is every rung at or " \
                "above the quietest of them."
     end
@@ -227,18 +231,4 @@ class Lab::Realization::Promotion
 
     "His own verdicts over the set: #{rate.verdicts.map { |word, count| "#{count} #{word}" }.join(", ")}."
   end
-
-  # A BLOCK SCALAR FOR THE TWO LONG FIELDS, which is how every `why` in the
-  # corpus is already written -- and `>-` rather than `|` because a teaser and a
-  # `why` are prose and the line breaks are the file's, not the sentence's.
-  def folded(key, text)
-    return [] if text.blank?
-
-    [ "  #{key}: >-", *text.to_s.squish.scan(/.{1,88}(?:\s|$)/).map { |chunk| "    #{chunk.strip}" } ]
-  end
-
-  # QUOTED WHENEVER YAML WOULD READ IT AS ANYTHING BUT A STRING, which for a room
-  # somebody typed is more often than a reader expects: a name beginning with a
-  # `#`, holding a `:` or spelled `no` is a comment, a mapping and a boolean.
-  def scalar(value) = value.to_s.match?(/\A[A-Za-z][^:#]*\z/) ? value.to_s : value.to_s.inspect
 end

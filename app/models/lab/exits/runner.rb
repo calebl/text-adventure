@@ -80,12 +80,18 @@ class Lab::Exits::Runner < Lab::Realization::Runner
   # is flagged. On this lab that check is nearly the subject: an answer that
   # opened nothing is an answer whose every pick was discarded.
   #
-  # `expects_inside` IS LEFT OUT. It is the corpus's hand label for whether this
-  # stub's world plainly holds a building, which is a DIFFERENT claim from the
-  # vantage's own quantifier -- one is about the world, the other about what the
-  # answer should say. Leaving it nil takes the draw out of both of the scorer's
-  # inside checks' denominators, which is what a case with no label asks for, and
-  # keeps this lab's figures the only ones reading its own expectation.
+  # `expects_inside` IS LEFT OUT, AND IT IS STILL LEFT OUT NOW THAT THE CORPUS'S
+  # LABEL IS THE SAME QUANTIFIER (the captain's Call 6 of 2026-09-08). The reason
+  # changed and the decision did not: putting the vantage's quantifier on the
+  # ad-hoc case would give one word TWO readings of one draw, because
+  # `Lab::Exits::HitRate` scores it on `insides_given` and
+  # `Eval::Realization::Scorer`'s ceiling half scores it on the insides that
+  # OPENED a place -- and this page would then print two rates for one
+  # expectation with no way to tell which was which. Leaving it nil takes the
+  # draw out of both of the scorer's inside checks' denominators, which is what a
+  # case with no label asks for, and keeps this lab's figures the only ones
+  # reading its own expectation. `Lab::Exits::Promotion` is where the quantifier
+  # crosses over, deliberately and once.
   #
   # AND THE REST OF THE EXPECTATION IS NOT PUT ON IT EITHER, for the parent's
   # reason: `Lab::Exits::HitRate` scores it off the sample's stored row, offline

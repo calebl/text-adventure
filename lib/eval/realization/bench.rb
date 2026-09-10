@@ -260,12 +260,19 @@ class Eval::Realization::Bench
       "danger" => standing.location.danger,
       "danger_share" => standing.location.danger_share,
       "expects_new_ground" => kase.expects_new_ground?,
-      # THE HAND LABEL, AS THE CASE WROTE IT -- true, false or nil, and nil is
-      # the ordinary answer. It is the one thing in this bench that is not a
-      # record on both sides, because there is no record of what a world SHOULD
-      # have been; `Eval::Realization::Corpus`'s header says which cases carry
-      # one and why most do not.
-      "expects_inside" => kase.expects_inside,
+      # THE HAND LABEL, NORMALISED TO ONE OF `Lab::Exits::QUANTIFIER_NAMES` --
+      # or nil, which is the ordinary answer. It is the one thing in this bench
+      # that is not a record on both sides, because there is no record of what a
+      # world SHOULD have been; `Eval::Realization::Corpus`'s header says which
+      # cases carry one and why most do not.
+      #
+      # STORED AS THE WORD AND NOT AS THE BOOLEAN A CASE MAY HAVE WRITTEN, so a
+      # row bought from today on says what was asked for in the spelling the
+      # scorer reads. A row bought BEFORE the widening carries `true` or
+      # `false`, and `Eval::Realization::Scorer::Reading#inside_quantifier`
+      # reads those as the two quantifiers they were -- so a stored set scores
+      # identically either side of this change.
+      "expects_inside" => kase.expects_inside_quantifier,
       # THE WAY BACK, BY NAME. `reachable` is every neighbour the stub already
       # had, which on a multi-exit stub is not the same thing -- and the exits
       # prompt's dead-end sentence is about the place the player CAME FROM

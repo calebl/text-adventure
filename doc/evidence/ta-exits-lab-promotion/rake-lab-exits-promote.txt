@@ -1,0 +1,52 @@
+# Harbour Steps (The Quay House): 2 drawn, 2 distinct, 2 judged,
+# 2 off the books.
+#
+# PASTE THIS UNDER `cases:` IN test/fixtures/files/realization_corpus.yml YOURSELF.
+# This task prints and never writes: every case in that file is folded into
+# `Eval::Realization.digest`, so committing one moves the corpus digest, and a
+# moved digest fails `Eval::Realization::KeptSetTest` until a new baseline set
+# is bought and `Eval::Realization::BASELINE` points at it. That is a spend
+# decision and it is the captain's, so the last step is a person reading a diff.
+#
+# AND `exits-promoted` IS A SHAPE THE CORPUS DOES NOT HOLD YET, so the
+# first of these committed also becomes a designated case and moves the PROMPT
+# digest (Eval::Realization::Version). Say so in the PR, or the next reader will
+# credit that movement to a prompt nobody touched.
+#
+# Then, before you commit: `bin/rails test test/lib/eval/realization/corpus_test.rb`
+# is the offline validator, and `rake eval:realization_digest` prints where the
+# digest landed.
+
+# Promoted out of the exits lab on 2026-09-09. Read it, then commit it.
+- id: exits-harbour-steps
+  story: The Quay House
+  room: Harbour Steps
+  teaser: >-
+    Wet stone steps down to the tide line, the harbour wall running off both ways.
+  reached_from: The Quay
+  danger: uneasy
+  absent:
+  - The Custom House
+  - The Bonded Cellar
+  expects_new_ground: true
+  expects_inside: at least one
+  expects_exit_population:
+  - a person or two
+  shape: exits-promoted
+  why: >-
+    Typed in the exits lab as "Harbour Steps" and scored there. Drawn 2 times up to
+    2026-09-09, 2 of them different answers. Its "at least one" quantifier held on 1 of 2 of
+    the draws that answered, which is not established. Over every draw: 3 places named, 1
+    given an inside, 1 of those reaching the world. His own verdicts on the answers: 1 good,
+    1 bad; on the places: 1 good. The figures are the lab's provenance for this case and
+    nothing reads them.
+  # NOT ESTABLISHED: the quantifier has 1 of 2 behind it and Lab::Exits::MIN_DRAWS calls
+  #   30 draws established. The case is still a regression case for the claim; the claim
+  #   is just less well evidenced than the file's others.
+  # 1 typed per-place expectation and 1 judgement STAY IN THE LAB and are not in this
+  #   case. A bench label keyed on a name the model chose is a fact about what one model
+  #   said one month, not about the world -- Lab::Exits::Promotion's header carries the
+  #   measurement. The quantifier is what they were used to write.
+  # `expects_exit_population` is carried and digested, and nothing scores it yet -- the
+  #   figure over a case's `expects_*` block is the agreement half of the plan and is
+  #   filed apart (Eval::Realization::Corpus's header).

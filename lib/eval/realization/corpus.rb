@@ -107,13 +107,14 @@ class Eval::Realization::Corpus
   # THE KEY EACH PICK'S EXPECTATION IS DECLARED UNDER, and TWO OF THEM ARE NOT
   # `expects_<pick>` BECAUSE ONE NAME IS ALREADY TAKEN FOR A DIFFERENT CLAIM.
   #
-  # `expects_inside: true | false` is this file's own hand label: whether the
-  # world AROUND this stub plainly holds a building. The lab's `inside` pick is
-  # the band the model chose FOR EACH PLACE IT NAMED AS AN EXIT -- a different
-  # question about different rooms, and `Lab::Realization::Pick`'s header says in
-  # so many words that the two must not be confused when a kind is promoted. So
-  # the two per-exit picks are declared under `expects_exit_*`, which says whose
-  # pick it is in the key.
+  # `expects_inside` is this file's own hand label: HOW MANY of the places this
+  # stub's exits call names should be a building, as one of
+  # `Lab::Exits::QUANTIFIER_NAMES`. The lab's `inside` pick is the BAND the
+  # model chose for each place it named -- a different question with a different
+  # answer shape, and `Lab::Realization::Pick`'s header says in so many words
+  # that the two must not be confused when a kind is promoted. So the two
+  # per-exit picks are declared under `expects_exit_*`, which says whose pick it
+  # is in the key.
   EXIT_PICK_KEYS = { "inside" => "expects_exit_inside",
                      "population" => "expects_exit_population" }.freeze
 
@@ -175,6 +176,21 @@ class Eval::Realization::Corpus
     def opening_room? = reached_from.blank?
     def expects_new_ground? = expects_new_ground == true
     def held_out? = Eval::Realization.held_out?(story)
+
+    # THE INSIDE LABEL AS THE ONE THING IT MEANS, and `expects_inside` above is
+    # kept AS WRITTEN so the validator can quote a word it does not recognise.
+    # Everything that MEASURES reads these two instead:
+    # `Lab::Exits.quantifier_for` is the single reader of a label in this
+    # repository and it takes the four quantifier names and the two booleans the
+    # label used to be, so a case written before the widening is the same
+    # measurement it always was. Nil is *don't care*, which takes the case out
+    # of both inside checks' denominators.
+    def inside_quantifier = Lab::Exits.quantifier_for(expects_inside)
+
+    # THE NORMALISED NAME -- what the bench stores on a row and what
+    # `Eval::Realization.digest` folds, so `false` and `none of them` are one
+    # measurement written two ways rather than two cases.
+    def expects_inside_quantifier = inside_quantifier&.name
 
     # WHETHER THIS CASE CARRIES ITS ROOM RATHER THAN FINDING ONE. The `teaser`
     # is the whole of the test, because it is the one fact a world file cannot
@@ -313,9 +329,12 @@ class Eval::Realization::Corpus
         found << "#{kase.id}: a case needs `expects_new_ground: true|false` -- a dead end that names " \
                  "only the way back is a correct answer, and `no_new_ground` is unjudgeable without it"
       end
-      unless [ true, false, nil ].include?(kase.expects_inside)
-        found << "#{kase.id}: `expects_inside` is true, false or left out -- a case with no label is out " \
-                 "of both inside checks' denominators, and anything else is a label nothing can read"
+      if !kase.expects_inside.nil? && kase.inside_quantifier.nil?
+        found << "#{kase.id}: `expects_inside` is one of #{Lab::Exits::QUANTIFIER_NAMES.join(", ")} " \
+                 "-- or left out, which takes the case out of both inside checks' denominators. " \
+                 "#{kase.expects_inside.inspect} is a label nothing can read. (`true` and `false` are " \
+                 "still read, as the older spellings of " \
+                 "#{Lab::Exits::FROM_BOOLEAN.values.map(&:inspect).join(" and ")}.)"
       end
       if kase.danger.present? && !Location::DANGERS.key?(kase.danger)
         found << "#{kase.id}: danger #{kase.danger.inspect} is not one of #{Location::DANGERS.keys.join(", ")}"

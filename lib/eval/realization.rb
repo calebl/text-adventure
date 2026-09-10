@@ -74,18 +74,24 @@ module Eval::Realization
   # judge it is a FAILING TEST rather than a judgement nobody could make. Point
   # it at the after side once the change has been judged, and never before.
   #
-  # AND A CORPUS SCHEMA CHANGE RE-BASELINES IT TOO, WHICH IS THIS SET. Nothing in
-  # the prompts moved when `kind-to-corpus-after` was bought -- `prompt_digest`
-  # is the same on both sides of it, and `rake eval:realization_compare
-  # BEFORE=room-people-after AFTER=kind-to-corpus-after` reads every figure NOISE
-  # -- but the corpus grew the fields a case promoted out of `Lab::Realization`
-  # carries, and the digest folds every field that changes what was measured. So
-  # the old set stopped being a baseline for this tree while remaining a true
-  # reading of these prompts, which is exactly the state this constant exists to
-  # make visible. `room-people-after` is kept as history and is still the before
-  # side of the room-people change; the captain authorized the round on
-  # 2026-09-08.
-  BASELINE = "kind-to-corpus-after".freeze
+  # AND A CORPUS SCHEMA CHANGE RE-BASELINES IT TOO, WHICH IS THIS SET AND WAS THE
+  # ONE BEFORE IT. Nothing in the prompts moved either time -- `prompt_digest` is
+  # the same string across `room-people-after`, `kind-to-corpus-after` and this
+  # -- but the corpus first grew the fields a case promoted out of
+  # `Lab::Realization` carries, and then (the captain's Call 6 of 2026-09-08)
+  # widened `expects_inside` from a boolean to the four quantifiers of
+  # `Lab::Exits::QUANTIFIERS`, which is a change in what a case may CLAIM and so
+  # in what the two inside checks may be judged on. The digest folds every field
+  # that changes what was measured, so each time the old set stopped being a
+  # baseline for this tree while remaining a true reading of these prompts --
+  # exactly the state this constant exists to make visible.
+  #
+  # THE EARLIER SETS ARE KEPT AS HISTORY AND ARE NOT REWRITTEN. `room-people-after`
+  # is still the before side of the room-people change and `kind-to-corpus-after`
+  # the before side of this one; both were bought on the boolean label and
+  # `Eval::Realization::Scorer::Reading#inside_quantifier` reads it as the
+  # quantifier it always meant, so they score identically today.
+  BASELINE = "exits-quantifier-after".freeze
 
   # WHERE A CASE'S WORLD IS READ FROM, IN ORDER. The seeded worlds first, so a
   # case against `The Salt Assizes` measures the file every other instrument in
@@ -232,9 +238,14 @@ module Eval::Realization
   # either and the rates move; leave either out and the comparison would credit
   # the movement to the prompt. `expects_inside` is in it for exactly that
   # reason and it is the newest of them: it decides whether the two inside
-  # checks may be judged on a case at all. `Eval::Classifier.digest` carries its own label
-  # fields for the same reason. `why` is NOT in it -- rewriting the sentence
-  # that says why a case is here measures nothing new.
+  # checks may be judged on a case at all -- and it is folded NORMALISED
+  # (`Case#expects_inside_quantifier`), so the boolean a case was written with
+  # before the captain's Call 6 of 2026-09-08 and the quantifier it means digest
+  # alike. Re-spelling a label is not a measurement; widening what a label can
+  # SAY is, which is why this tree needed a new baseline for the widening itself.
+  # `Eval::Classifier.digest` carries its own label fields for the same reason.
+  # `why` is NOT in it -- rewriting the sentence that says why a case is here
+  # measures nothing new.
   #
   # AND A PROMOTED CASE'S OWN FIELDS ARE IN IT, ALL OF THEM. `teaser` is the
   # prompt's second sentence about the room and changing it changes the room that
@@ -249,7 +260,7 @@ module Eval::Realization
       corpus.cases.map { |kase|
         [ kase.id, kase.story, kase.room, kase.teaser, kase.reached_from, kase.danger, kase.inside,
           kase.population, kase.shape,
-          kase.expects_new_ground.inspect, kase.expects_inside.inspect,
+          kase.expects_new_ground.inspect, kase.expects_inside_quantifier.inspect,
           kase.expects_danger_at_least.inspect, kase.expectation_line,
           kase.also_reaches.join("|"),
           kase.absent.join("|"), kase.unwritten.join("|") ].join(" ")

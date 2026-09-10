@@ -105,9 +105,9 @@ module Lab::Exits
   # CANNOT SAY, stated because a reader will assume it: at least one of these
   # should be a building."* That is the claim a person actually holds about a
   # place before seeing it -- *a stretch of road in open country: none of them; a
-  # city lane: at least one* -- and it is the shape `Eval::Realization::Corpus`'s
-  # `expects_inside` label already has one level down, which is where a scored
-  # vantage is promoted to.
+  # city lane: at least one* -- and since the captain's Call 6 of 2026-09-08 it is
+  # the shape `Eval::Realization::Corpus`'s own `expects_inside` label has too,
+  # which is where a scored vantage is promoted to (`Lab::Exits::Promotion`).
   #
   # IT IS BEHAVIOUR AND SO IT IS A TABLE IN CODE. AGENTS.md's rule -- a world
   # supplies parameters, never behaviour -- so the vantage row stores the WORD
@@ -121,27 +121,102 @@ module Lab::Exits
   # that has emptied the game of buildings -- measured: the
   # `interior-entry-before` stored set has `insides_given` at 0.000 with every
   # inside check clean.
-  Quantifier = Data.define(:name, :allows) do
+  #
+  # STATED AS TWO BOUNDS AND NOT AS ONE PREDICATE, and the reason is the
+  # promotion. `Eval::Realization::Scorer` reads a promoted case's quantifier
+  # with TWO checks -- one for an answer that gave too many insides and one for
+  # an answer that gave too few -- and a lambda that can only answer *did the
+  # whole answer satisfy this* cannot be asked either question on its own. So
+  # the table states the ceiling and the floor, every reader derives its own
+  # question from them, and `#satisfied_by?` is derived here too rather than
+  # written a second time: the lab and the bench cannot come to different
+  # readings of one word.
+  #
+  # EVERY ONE OF THE FOUR IS ONE-SIDED, which is a property of these four words
+  # and not a rule of the shape: `none of them` and `at most one` are ceilings,
+  # `at least one` and `every one` are floors, so exactly one of the two checks
+  # is ever judgeable on a case. A word added here with both bounds would be
+  # judged by both, with no edit either side.
+  AS_MANY_AS_NAMED = :as_many_as_named
+
+  Quantifier = Data.define(:name, :ceiling, :floor) do
+    def initialize(name:, ceiling: nil, floor: nil)
+      super
+    end
+
+    def bounded_above? = !ceiling.nil?
+    def bounded_below? = !floor.nil?
+
+    # THE TWO BOUNDS AS NUMBERS, WHICH TAKES THE ANSWER: `every one` means as
+    # many insides as the answer named places, and that is not a number until
+    # there is an answer.
+    def ceiling_over(_named) = ceiling
+    def floor_over(named) = floor == AS_MANY_AS_NAMED ? named : floor
+
     # `insides` is how many of the named places were given a band that is not
     # `no inside`; `named` is how many places the answer named at all.
-    def satisfied_by?(insides:, named:) = allows.call(insides, named)
+    #
+    # THE `named.positive?` GUARD IS NOT PEDANTRY: an answer that named nothing
+    # has every one of nothing given an inside, and calling that a hit would
+    # score a failed call as agreement.
+    def satisfied_by?(insides:, named:)
+      return false if floor == AS_MANY_AS_NAMED && named.zero?
+
+      (ceiling.nil? || insides <= ceiling) && (floor.nil? || insides >= floor_over(named))
+    end
 
     def to_s = name
   end
 
   QUANTIFIERS = [
-    Quantifier.new(name: "none of them", allows: ->(insides, _named) { insides.zero? }),
-    Quantifier.new(name: "at most one", allows: ->(insides, _named) { insides <= 1 }),
-    Quantifier.new(name: "at least one", allows: ->(insides, _named) { insides.positive? }),
-    # `named.positive?` is not pedantry: an answer that named nothing has every
-    # one of nothing given an inside, and calling that a hit would score a
-    # failed call as agreement.
-    Quantifier.new(name: "every one", allows: ->(insides, named) { named.positive? && insides == named })
+    Quantifier.new(name: "none of them", ceiling: 0),
+    Quantifier.new(name: "at most one", ceiling: 1),
+    Quantifier.new(name: "at least one", floor: 1),
+    Quantifier.new(name: "every one", floor: AS_MANY_AS_NAMED)
   ].freeze
 
   QUANTIFIER_NAMES = QUANTIFIERS.map(&:name).freeze
 
   def self.quantifier(name) = QUANTIFIERS.find { |entry| entry.name == name.to_s }
+
+  # THE TWO WORDS `Eval::Realization::Corpus`'S `expects_inside` LABEL USED TO
+  # BE, and this is the whole of the compatibility strategy for the widening the
+  # captain's Call 6 of 2026-09-08 asked for.
+  #
+  # THE MAPPING IS READ OFF WHAT THE SCORER DOES WITH A BOOLEAN AND NOT OFF
+  # WHAT THE WORDS SOUND LIKE, which is the one way to get it right.
+  # `Eval::Realization::Scorer#judge_inside_where_the_world_wanted_none` was
+  # judgeable on `expects_inside == false` and flagged an answer that opened ANY
+  # building: a ceiling of nought, which is `none of them`.
+  # `#judge_no_inside_where_the_world_wanted_one` was judgeable on
+  # `expects_inside == true` and flagged an answer that gave an inside to NONE
+  # of the places it named: a floor of one, which is `at least one`. So the two
+  # booleans are two of the four quantifiers under an older spelling, and a
+  # stored row or a corpus case carrying one is read as the same measurement it
+  # always was rather than as a label nothing can score.
+  #
+  # A `nil` IS STILL *DON'T CARE* and is not in here: it takes a case out of
+  # both checks' denominators, and mapping it to a word would manufacture a
+  # question nobody put. `Eval::Realization::Scorer::Reading#expects_inside`'s
+  # header has why that distinction is load-bearing on a HISTORICAL row.
+  FROM_BOOLEAN = { true => "at least one", false => "none of them" }.freeze
+
+  # ONE LABEL, HOWEVER IT WAS SPELLED, AS A QUANTIFIER -- the one reader of an
+  # `expects_inside` label in this repository, so the corpus, the bench's stored
+  # facts and the scorer cannot disagree about what a case asked for. Nil for
+  # *don't care* and nil for a word this table has no rule for, which is what
+  # `Eval::Realization::Corpus`'s validator refuses a case for.
+  def self.quantifier_for(label)
+    return nil if label.nil?
+    return quantifier(FROM_BOOLEAN.fetch(label)) if [ true, false ].include?(label)
+
+    quantifier(label)
+  end
+
+  # AND ITS NAME, which is what a corpus digests and what the bench stores on a
+  # row: one spelling of one label, so a case written `false` and a case written
+  # `none of them` are the same measurement and digest alike.
+  def self.quantifier_name(label) = quantifier_for(label)&.name
 
   # THE TWO SHAPES A SET OF VANTAGES HAS TO HOLD BEFORE AN OVERALL FIGURE MEANS
   # ANYTHING -- `Alignment`'s refusal, named here because both ends read it.
