@@ -81,6 +81,62 @@ class Playthrough::TurnRecoveryTest < ActiveSupport::TestCase
     end
   end
 
+  # THE DRAIN'S TWO ANSWERS TO A FAILED PREDECESSOR. A line that failed at the
+  # classifier wrote nothing a later line owes a finish to, so the later line
+  # plays alone and the failure is left where the page can offer it. A line that
+  # failed AFTER taking something is finished first, because the closed sets the
+  # next line resolves against already include what it took.
+  test "a failure before any effect is stepped past and a failure after one is finished first" do
+    coin = lying_here(@game, @game.current_location, name: "red coin")
+    started = []
+    BaseAgent.stub(:new, FakeAgent.new(RuntimeError.new("classifier unavailable"))) do
+      assert_raises(RuntimeError) do
+        Playthrough::Turn.new(@game).play("open the ledger", request_token: "unread")
+      end
+    end
+    unread = @game.commands.find_by!(request_token: "unread")
+    assert_equal "failed", unread.status
+    assert_predicate unread, :recoverable?
+    assert_not_predicate unread, :blocks_later?
+
+    BaseAgent.stub(:new, FakeAgent.new("You take the red coin.")) do
+      Playthrough::Turn.new(@game.reload).play("/take red coin", request_token: "pickup",
+                                               on_start: ->(line) { started << line })
+    end
+    assert_equal [ "/take red coin" ], started, "an unread line is not replayed by the next one"
+    assert_equal "failed", unread.reload.status
+    assert_predicate unread, :overtaken?
+    assert_includes @game.reload.carried, coin
+
+    original = Playthrough::Command::Journal.method(:commit)
+    failing = lambda do |key, &work|
+      value = original.call(key, &work)
+      raise ActiveRecord::StatementInvalid, "database unavailable" if key == "narrated"
+      value
+    end
+    BaseAgent.stub(:new, FakeAgent.new("You put the red coin down.")) do
+      assert_raises(ActiveRecord::StatementInvalid) do
+        Playthrough::Command::Journal.stub(:commit, failing) do
+          Playthrough::Turn.new(@game.reload).play("/drop red coin", request_token: "putdown")
+        end
+      end
+    end
+    putdown = @game.commands.find_by!(request_token: "putdown")
+    assert_equal "failed", putdown.status
+    assert_predicate putdown, :blocks_later?
+    assert_equal putdown, Playthrough::Command.resume_target(@game)
+
+    started.clear
+    BaseAgent.stub(:new, FakeAgent.new("You take the red coin.")) do
+      Playthrough::Turn.new(@game.reload).play("/take red coin", request_token: "again",
+                                               on_start: ->(line) { started << line })
+    end
+    assert_equal [ "/drop red coin", "/take red coin" ], started, "a dropped coin is finished before it is taken again"
+    assert_equal %w[failed completed completed completed], @game.commands.order(:id).pluck(:status)
+    assert_equal %w[take drop take], @game.reload.scene_chain.drop(1).map(&:resolved_action)
+    assert_includes @game.carried, coin
+  end
+
   test "an arrival renderer failure completes its charged crossing and a redelivery cannot charge twice" do
     destination = create(:location, story: @game.story, name: "Quay")
     create(:location_connection, location: @game.current_location, connected_location: destination,

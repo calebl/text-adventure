@@ -124,20 +124,15 @@ class Scene::Narrator
     end
     raise BaseAgent::UnusableResponseError, "Narration was blank" if text.blank?
 
-    scene = Playthrough::Command::Journal.commit("narrated") do
+    # Only the supplied fact is shown by the fallback. Pending environmental
+    # events remain untold until a paragraph actually includes them.
+    Playthrough::Command::Journal.commit("narrated") do
       row = persist(text, fallback: fallback)
       row.narrated_toll_ids = [] if row && fallback
       row.safety_notice = safety_notice if row
       row.rendering_error = rendering_error if row
       row
     end
-    # Only the supplied fact is shown by the fallback. Pending environmental
-    # events remain untold until a paragraph actually includes them.
-    scene.narrated_toll_ids = [] if scene && fallback
-    scene.safety_notice = safety_notice if scene
-    scene.rendering_error = rendering_error if scene
-
-    scene
   end
 
   private

@@ -251,6 +251,55 @@ class NarrationJobTest < ActiveJob::TestCase
     end
   end
 
+  # THE ALERT AND THE NOTICE UNDER IT MUST NOT DISAGREE. The failure copy is one
+  # sentence for every failure, and the saved-command notice is what offers the
+  # action -- which is not always Resume. A row a pre-journal worker left
+  # `running` stops the next line's job in front of it, and the page it fails
+  # onto offers to keep the saved state, so the alert may not promise a Resume
+  # button that is not there.
+  test "a legacy interruption fails the later line onto a page that offers to keep its state" do
+    playthrough = create(:playthrough, :started)
+    legacy = create(:playthrough_command, playthrough: playthrough, status: "running", command: "/take red coin")
+    later = create(:playthrough_command, playthrough: playthrough, command: "/wait")
+
+    streams = capture_turbo_stream_broadcasts(playthrough) do
+      BaseAgent.stub(:new, ->(*) { flunk "nothing here may ask a model" }) do
+        NarrationJob.perform_now(playthrough.id, later.command, later.request_token)
+      end
+    end
+    page = Nokogiri::HTML.fragment(streams.last.to_html)
+
+    assert_equal Playthrough::TurnFailureNotice::MESSAGE, page.at_css("p.alert").text
+    assert_equal "running", legacy.reload.status
+    assert_equal "pending", later.reload.status
+    notice = page.at_css("[data-saved-turn]")
+    assert_includes notice.text, legacy.command
+    assert_equal [ "Keep saved state and continue" ], notice.css("button").map(&:text)
+    assert_equal Rails.application.routes.url_helpers.acknowledge_interruption_playthrough_turns_path(playthrough),
+                 notice.at_css("form")["action"]
+    assert_match "what do you do?", streams.last.to_html
+  end
+
+  # And a failure with nothing to resume renders no control at all: the same
+  # alert, then the log and the input, with no notice claiming a saved turn.
+  test "a redelivered failure with no receipts shows the alert and no saved-command notice" do
+    playthrough = create(:playthrough, :started)
+    failed = create(:playthrough_command, playthrough: playthrough, status: "failed", error_kind: "error")
+
+    streams = capture_turbo_stream_broadcasts(playthrough) do
+      BaseAgent.stub(:new, ->(*) { flunk "a failed delivery must not ask a model" }) do
+        NarrationJob.perform_now(playthrough.id, failed.command, failed.request_token)
+      end
+    end
+    page = Nokogiri::HTML.fragment(streams.last.to_html)
+
+    assert_equal Playthrough::TurnFailureNotice::MESSAGE, page.at_css("p.alert").text
+    assert_nil page.at_css("[data-saved-turn]")
+    assert_empty page.css("button").select { |button| button.text.match?(/resume|keep saved/i) }
+    assert_match "what do you do?", streams.last.to_html
+    assert_equal "failed", failed.reload.status
+  end
+
   # --- the one failure the reader CAN fix -----------------------------------
 
   # AN INSTALL WITH NO MODEL SAYS SO. A committed action still finishes on the

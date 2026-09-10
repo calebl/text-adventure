@@ -645,10 +645,7 @@ class Playthrough::Turn
       generator.generate!
     rescue StandardError => e
       Rails.logger.warn { "Arrival kept its engine outcome: #{e.class}: #{e.message}" }
-      fallback = generator.fallback!(error: e)
-      fallback.rendering_error = e if fallback.engine_fallback?
-      fallback.safety_notice = true if e.is_a?(BaseAgent::CrisisResponseError)
-      fallback
+      generator.fallback!(error: e)
     end
     Playthrough::Command::Journal.commit("moved") do
       stand_in!(destination, scene: scene)
@@ -753,8 +750,6 @@ class Playthrough::Turn
       scene
     end
 
-    scene.safety_notice = exchange.safety_notice
-    scene.rendering_error = exchange.rendering_error
     attribute_conversation!(agent, scene)
     scene
   end

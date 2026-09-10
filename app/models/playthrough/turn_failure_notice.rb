@@ -25,5 +25,5 @@
 module Playthrough::TurnFailureNotice
   MESSAGE = "Something went wrong on our side and that turn did not finish. " \
             "The log and your current possessions show what was saved. " \
-            "Use Resume saved turn to finish it before choosing your next action.".freeze
+            "Check them, and any saved-command notice below, before choosing your next action.".freeze
 end
