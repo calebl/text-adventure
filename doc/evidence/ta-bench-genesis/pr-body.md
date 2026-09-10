@@ -6,7 +6,7 @@ Scope: checks measure structural and record fidelity only. They cannot establish
 
 Spend: pre-purchase allowance **$0.5230208**; captured-token cost **$0.0600976**, below the authorized $2 cap. The set uses `Eval::Noise::MIN_RUNS` repetitions on pinned `mistralai/mistral-medium-3.1`, with no warm-up, rotation or provider retry. Nothing was left unbought. Costs use captured usage and recorded registry prices, with cached input charged at full price; these are not provider-invoice claims. Evidence: `doc/evidence/ta-bench-genesis/` and the per-call receipts in `db/eval/genesis-before/genesis.json`.
 
-The shared schema-digest instrument had not landed on fetched main, so the bench records all request components explicitly using canonical JSON. Request hashes before purchase and after implementation match. An enum-key/label scorer error found during the purchase was corrected and regression-tested by rescoring the same retained answers offline; no prompt changed and no second purchase was made.
+Rebased onto current main and adopted its shared `Eval::RequestIdentity.canonical` helper. Genesis retains its original full-length request hashes for compatibility with the kept set. Offline replay confirms the kept requests still match HEAD; the baseline and receipts are unchanged, with no additional purchase. An enum-key/label scorer error found during the purchase was corrected and regression-tested by rescoring the same retained answers offline; no prompt changed and no second purchase was made.
 
 Validation passed:
 - `bin/rails test` (includes engine sweeps)

@@ -1,0 +1,23 @@
+{
+  "first-screen": {
+    "story": "ee16efa4d94d7cb56e7752e60f9b8fce643fde0b30510af02bf4c0ae5ba17151",
+    "character": "31dd24b96d9b3d7b973db4c362feae25d2185b14461448314ce8cf2827f2eeb9",
+    "quest": "988ff73e0bb385dd10305213ae6d1ac2ac1dd257ab727cf930d0e485a3cfbbe2"
+  },
+  "universe": {
+    "physical": "b46d464dbb6188ea78a24078f7d953256c666eceb2bd56fb6e6885305a80ae3a",
+    "societal": "10057ce3a078de3951cddb4f4949f3686f50f0a2485944fbb70124f9f0ac3346"
+  },
+  "story": {
+    "story": "ee16efa4d94d7cb56e7752e60f9b8fce643fde0b30510af02bf4c0ae5ba17151"
+  },
+  "protagonist": {
+    "character": "cb15dce8a1a4c9c640262bc73bad4f1890cf96251b4e7588f1570b0a3bbb4094"
+  },
+  "duplicate-name": {
+    "retry": "7663b7755e756cddadf0ba6261a06dfe3fdcfb6df346d380f840a3002fc8582f"
+  },
+  "quest": {
+    "quest": "988ff73e0bb385dd10305213ae6d1ac2ac1dd257ab727cf930d0e485a3cfbbe2"
+  }
+}

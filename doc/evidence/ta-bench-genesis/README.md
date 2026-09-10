@@ -18,9 +18,11 @@ capture no longer asks that validator. No provider answer or receipt was edited.
 
 `digest-before.json` is the offline identity assembled before purchase.
 `KeptSetTest` checks every kept request against the live builders, including
-schemas and restored assistant messages. Main was fetched before purchase;
-the shared schema-digest instrument had not landed. This bench therefore uses
-explicit canonical JSON identity for all these inputs.
+schemas and restored assistant messages. The rebase adopts main’s shared
+`Eval::RequestIdentity.canonical` helper,
+retaining full-length request digests so the original kept set remains valid.
+`rebase-digest.json` and `rebase-identity.log` record the offline replay;
+`rebase-*.log` record validation after integration. No baseline was re-bought.
 
 `unit.log`, `test.log`, `rubocop.log`, `zeitwerk.log` and `brakeman.log` are the
 validation outputs. `null.log` compares the baseline with itself using the same

@@ -1,17 +1,11 @@
 # FULL REQUEST IDENTITY, PER CASE AND CALL. No prose or engine pick is scrubbed:
 # upstream assistant exchanges are fixed fixtures and belong to the request.
-# Until the shared schema-digest instrument lands this is explicit canonical
-# JSON over system, user, emitted schema and ordered history, all retained.
+# Shared request canonicalization covers system, user, emitted schema and
+# ordered history. Keep the original full-length digest so kept sets replay.
 module Eval::Genesis::Version
   extend self
 
-  def canonical(value)
-    case value
-    when Hash then value.stringify_keys.sort.to_h.transform_values { |child| canonical(child) }
-    when Array then value.map { |child| canonical(child) }
-    else value
-    end
-  end
+  def canonical(value) = Eval::RequestIdentity.canonical(value)
 
   def digest(value) = Digest::SHA256.hexdigest(JSON.generate(canonical(value)))
 
