@@ -12,7 +12,7 @@ import { Controller } from "@hotwired/stimulus"
 // comment there. Three of the four things below were found in a browser rather
 // than in the suite, and each one is a comment because losing it is silent.
 export default class extends Controller {
-  static targets = [ "command" ]
+  static targets = [ "command", "receipt" ]
 
   // ARMED FROM BOTH ENDS, and it has to be both -- measured, not assumed:
   //
@@ -28,6 +28,45 @@ export default class extends Controller {
   // dropping either one gets a case wrong.
   connect() {
     this.notePosition()
+  }
+
+  // WHAT AN ACCEPTED SUBMISSION LOOKS LIKE, and it has to look like something.
+  // The acknowledgement carries a fresh token and no page at all, and the
+  // pending page is broadcast by the job only once it owns the game's lock --
+  // so with the queue behind an unfinished turn the page did not change at all
+  // and the typed line just sat there, which is what makes a player retype.
+  //
+  // THE LINE COMES OFF THE PAYLOAD TURBO SENT, not off the field. Measured in a
+  // browser: `turbo:submit-start` does not fire synchronously inside
+  // `requestSubmit()`, so a draft typed in the same tick was already in the box
+  // by the time a handler there read it -- and this echoed the draft and then
+  // cleared it. `formSubmission.body` is what actually went to the server.
+  //
+  // Three guards, and each one is a way this could lie:
+  //
+  //   * only on `success`, so a submission the server did not take is never
+  //     echoed as though it had been;
+  //   * only while the form is still in the document, so a response that lost
+  //     the race to its own turn's page cannot put an echo under a finished
+  //     turn -- a `#turn_log` replace detaches the form this was submitted from;
+  //   * only if the field still holds what was sent, so a line typed while the
+  //     POST was in flight is left alone rather than wiped.
+  //
+  // A hidden field is a battle button's fixed line: it is echoed and never
+  // cleared, because clearing it would disarm the button.
+  acknowledgeSubmission(event) {
+    if (!event.detail?.success) return
+
+    const form = event.target
+    const line = event.detail.formSubmission?.body?.get?.("command")
+    if (!line || !document.contains(form)) return
+
+    const field = form.elements?.command
+    if (field && field.type !== "hidden" && field.value === line) field.value = ""
+    if (!this.hasReceiptTarget) return
+
+    this.receiptTarget.textContent = `> ${line}`
+    this.receiptTarget.hidden = false
   }
 
   // Follow the narration down, but only while the player is already reading the

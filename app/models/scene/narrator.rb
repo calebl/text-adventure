@@ -65,12 +65,13 @@ class Scene::Narrator
   # Streams the narration for `command`, yielding each chunk of text as it
   # arrives, and returns the persisted Scene.
   #
-  # The persist happens in an `ensure` so a turn that is cut off keeps whatever
-  # was written, rather than leaving the player to reload and retype. That used
-  # to be the browser's doing -- `ActionController::Live` raised
-  # ClientDisconnected and killed the generation. `NarrationJob` holds no
-  # connection, so a closed tab no longer reaches this at all; what is left for
-  # the `ensure` is a model that stops mid-sentence, which is why it stays.
+  # Persistence happens only after rendering has answered. If an engine fact
+  # was already committed, unusable or missing prose is replaced with the
+  # caller's factual `fallback_text`, and the rest of the turn still runs.
+  # The prompt's instructions are never used as player-facing fallback prose.
+  # Saving a partial scene in ensure
+  # while raising used to leave a taken item with no retaliation or elapsed
+  # time. A render with no committed fact can still fail without a scene.
   # `fact` is SOMETHING THE APP HAS ALREADY DONE, in its own words -- the row is
   # written and this is only the sentence about it (`Playthrough::Turn#take_item`).
   # It goes in as a statement rather than a request, because the narrator has no
@@ -85,46 +86,50 @@ class Scene::Narrator
   # `Playthrough::Moment::Handled` for the defect that is; a caller with no row
   # to name passes nothing and the lists read exactly as they always did.
   #
-  # A RESPONSE THE GAME WILL NOT KEEP IS NOT PERSISTED, which is the other half
-  # of `BaseAgent`'s refusal check. The `ensure` below saves whatever arrived,
-  # and that is right for a call that died mid-sentence and wrong for a model
-  # that declined: saving a refusal would put "I'm not going to narrate that"
-  # in the turn log as the scene, and a world that keeps what it generates
-  # would keep it. `BaseAgent::UnusableResponseError` is the one exception to
-  # the `ensure`, and it covers both a refusal that exhausted the rotation and a
-  # crisis response, which must not be kept for a different reason.
+  # A response the game will not keep is never persisted, including a partial
+  # stream from a failed attempt. A factual fallback is marked engine-authored
+  # so prose evaluation cannot count it as an improved model answer.
   #
-  # `keep` IS THE LAST ATTEMPT'S CONTENT, NOT THE STREAM. The block is handed
+  # PERSIST THE LAST ATTEMPT'S CONTENT, NOT THE STREAM. The block is handed
   # the chunks of every attempt -- `BaseAgent#ask` restarts the stream when it
   # rotates -- so the accumulated buffer holds a refusal AND its replacement
   # end to end, and saving that would file both as one scene. `response.content`
   # is what the model that actually answered wrote. (The player may still have
   # watched the first attempt arrive; the end-of-turn `#turn_log` replace is
   # what takes it off the page, since the log renders the persisted scene.)
-  def narrate(command, fact: nil, intent: nil, handled: nil, &block)
-    streamed = +""
-    keep = nil
-
+  def narrate(command, fact: nil, intent: nil, handled: nil, fallback_text: nil, &block)
+    fallback = false
     begin
-      keep = agent.ask(prompt_for(command, fact, intent, handled)) do |chunk|
+      text = agent.ask(prompt_for(command, fact, intent, handled)) do |chunk|
         part = chunk.content.to_s
         next if part.empty?
 
-        streamed << part
         block&.call(part)
       end.content.to_s
-    rescue BaseAgent::UnusableResponseError
-      raise
-    rescue
-      # Died mid-stream. Keep whatever prose arrived -- this is what the
-      # `ensure` has always been for.
-      keep = streamed
-      raise
-    ensure
-      @scene = persist(keep)
-    end
+    rescue StandardError => e
+      raise if fallback_text.blank?
 
-    @scene
+      Rails.logger.warn { "Narration kept its engine outcome: #{e.class}: #{e.message}" }
+      fallback = true
+      rendering_error = e
+      safety_notice = e.is_a?(BaseAgent::CrisisResponseError)
+      text = fallback_text
+    end
+    if text.blank? && fallback_text.present?
+      fallback = true
+      rendering_error = BaseAgent::UnusableResponseError.new("Narration was blank")
+      text = fallback_text
+    end
+    raise BaseAgent::UnusableResponseError, "Narration was blank" if text.blank?
+
+    scene = persist(text, fallback: fallback)
+    # Only the supplied fact is shown by the fallback. Pending environmental
+    # events remain untold until a paragraph actually includes them.
+    scene.narrated_toll_ids = [] if scene && fallback
+    scene.safety_notice = safety_notice if scene
+    scene.rendering_error = rendering_error if scene
+
+    scene
   end
 
   private
@@ -158,18 +163,26 @@ class Scene::Narrator
 
   # Blank narration is not worth a record -- that is a failed turn, and saving
   # it would fail the Scene description validation anyway.
-  def persist(text)
+  def persist(text, fallback: false)
     return if text.blank?
 
-    scene = Scene.create!(
-      story: playthrough.story,
-      location: playthrough.current_location,
-      previous_scene: playthrough.current_scene,
-      description: text,
-      story_timestamp: playthrough.story_time_after("action")
-    )
-    agent.attribute_to!(scene)
-    playthrough.update!(current_scene: scene)
+    scene = Scene.transaction do
+      row = Scene.create!(
+        story: playthrough.story,
+        location: playthrough.current_location,
+        previous_scene: playthrough.current_scene,
+        description: text,
+        engine_fallback: fallback,
+        story_timestamp: playthrough.story_time_after("action")
+      )
+      playthrough.update!(current_scene: row)
+      row
+    end
+    begin
+      agent.attribute_to!(scene)
+    rescue StandardError => e
+      Rails.logger.warn { "Narration attribution failed after persistence: #{e.class}: #{e.message}" }
+    end
     scene
   end
 end

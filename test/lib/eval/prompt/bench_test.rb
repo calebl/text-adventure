@@ -139,6 +139,19 @@ class Eval::Prompt::BenchTest < ActiveSupport::TestCase
     assert_nil row(pass, "a-take")["seconds"]
   end
 
+  test "completed engine fallbacks retain the provider error and supply no model passage or latency" do
+    pass = bench(RuntimeError.new("provider disconnected")).passes.sole
+
+    assert_equal 4, pass.failures
+    assert_equal 0, pass.scanned
+    %w[a-take a-drop a-move].each do |id|
+      failed = row(pass, id)
+      assert_equal "RuntimeError: provider disconnected", failed["error"]
+      assert_nil failed["text"], "the engine's factual replacement is not model prose"
+      assert_nil failed["seconds"], "failed calls keep the existing no-latency accounting"
+    end
+  end
+
   # WHAT A STORED PASSAGE CANNOT SHOW: a required field that never arrived, and
   # a field that arrived at its cap. Only a schema'd pass has either, so this is
   # the arrival's figure -- read off the provider's own JSON against the

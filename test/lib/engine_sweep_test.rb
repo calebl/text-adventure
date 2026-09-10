@@ -87,6 +87,31 @@ class EngineSweepTest < ActiveSupport::TestCase
     assert_instance_of BaseAgent, agent
   end
 
+  test "a browser failure fixture must reach the named renderer and cannot allow classifier calls" do
+    error = assert_raises(EngineSweep::ModelCalled) do
+      walk(<<~SCRIPT)
+        story: A Turn at the Gate
+        steps:
+        - type: pick up the red coin
+          browser: {token: pickup, fail: narration}
+      SCRIPT
+    end
+
+    assert_match "classifier", error.message
+    assert_instance_of BaseAgent, BaseAgent.new(purpose: "classifier")
+  end
+
+  test "an unknown browser failure cannot silently pass as a successful recovery" do
+    assert_raises(EngineSweep::InvalidScript) do
+      walk(<<~SCRIPT)
+        story: A Turn at the Gate
+        steps:
+        - type: /take red coin
+          browser: {token: pickup, fail: naration}
+      SCRIPT
+    end
+  end
+
   # A sweep leaves nothing behind. It loads its own copy of the world under a
   # title of its own and rolls the whole walk back, so running it against a
   # database somebody is playing in changes neither.

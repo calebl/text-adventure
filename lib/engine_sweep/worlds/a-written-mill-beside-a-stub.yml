@@ -1,0 +1,71 @@
+# A stub the player can open, and a room that is ALREADY WRITTEN and that the
+# stub cannot reach. That second room is the whole point of this world: the
+# exits answer for the workshop names it, and `Location::Generator` must drop
+# that one door without failing the realization the entry paid for.
+#
+# The mill hangs off the market rather than off the workshop, so the door the
+# model proposes between the workshop and the mill is an edge that did not
+# exist before -- which is the one #connect_exit! refuses for a written room.
+format: 2
+universe:
+  physics: Ordinary physics.
+  technology: Keys, locks and lanterns.
+  weapons: Wooden staves.
+  geographies: A market, its workshop and an old mill.
+  civilizations: A small trading town.
+  history: Traders built the market together.
+  economics: Goods traded for coins.
+  politics: A town council keeps the peace.
+  religion: The town keeps its own festivals.
+  races:
+  - name: Townsfolk
+    description: Ordinary people of the town.
+story:
+  title: A Written Mill Beside a Stub
+  genre: town adventure
+  start_time: '2026-09-08T12:00:00Z'
+  preface: A workshop and an old mill stand off the market.
+  summary: Cal opens the workshop beside the market.
+opening_scene:
+  location: Market
+  characters: [Cal]
+  description: You stand outside the workshop door.
+  summary: Cal arrives at the market.
+characters:
+- fullname: Cal
+  nickname: Cal
+  race: Townsfolk
+  age: 30
+  sex: male
+  is_protagonist: true
+  is_companion: false
+  backstory: A trader returning to the market.
+  personality: Patient and practical.
+  appearance: A travel-worn coat.
+  likes: A fair bargain.
+  dislikes: Needless arguments.
+  fears: Losing a friend.
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+locations:
+- name: Market
+  detail_level: realized
+  opening: true
+  description: A quiet square between the workshop and the mill road.
+  teaser: A market square.
+  lore: Traders meet here each morning.
+- name: Old Mill
+  detail_level: realized
+  description: A shuttered mill at the end of the mill road.
+  teaser: A shuttered mill.
+  lore: The mill ground the town's grain for a century.
+- name: Workshop
+  detail_level: stub
+  population: a crowd
+  teaser: A low door opens onto a workbench.
+connections:
+- between: [Market, Workshop]
+  distance: adjacent
+  travel_method: walking
+- between: [Market, Old Mill]
+  distance: across the district
+  travel_method: walking

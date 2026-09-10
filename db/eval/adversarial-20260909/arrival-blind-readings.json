@@ -1,0 +1,434 @@
+[
+  {
+    "id": "822c32ad",
+    "case": "dead_resident",
+    "expected": {
+      "dead": [
+        "Maren Vosk"
+      ],
+      "living": [
+        "Iri Calder"
+      ],
+      "floor": [
+        "brass key"
+      ],
+      "carried": []
+    },
+    "description": "The first thing that strikes you is the silence\u2014thick, broken only by the slow lap of water against the lowest stair. Then you see Maren Vosk, slumped beside the desk, her stillness unnatural, a brass key glinting dully in the dim light beside her outstretched hand. The air smells of damp wood and old ink, and the counting house\u2019s usual hum of ledgers and chatter is gone, swallowed by the rising tide.",
+    "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk.",
+    "error": null
+  },
+  {
+    "id": "b221e3ae",
+    "case": "carried_key",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "floor": [],
+      "carried": [
+        "brass key"
+      ]
+    },
+    "description": "The first thing that strikes you is the cold\u2014water seeps through your boots as you step onto the lowest stair, its surface slick and uneven. Maren Vosk stands motionless beside a brass key on the desk, her gaze fixed on you as if she\u2019s been waiting for this exact moment. The air smells of damp wood and old ink, and the faint lapping of water against the walls fills the silence between you.",
+    "summary": "Iri Calder enters the flooded counting house and sees Maren Vosk beside a brass key on the desk.",
+    "error": null
+  },
+  {
+    "id": "01c97fbf",
+    "case": "carried_key",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "floor": [],
+      "carried": [
+        "brass key"
+      ]
+    },
+    "description": "The cold bite of rising water greets your ankles as you step through the doorway, the brass key heavy in your palm. Maren Vosk stands motionless beside the desk, her sharp eyes fixed on you as if she\u2019s been waiting for this exact moment. The air is thick with the scent of damp wood and old parchment, and the lapping of the water against the lowest stair echoes like a slow, patient drumbeat.",
+    "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk.",
+    "error": null
+  },
+  {
+    "id": "48b020ce",
+    "case": "crossing_harm",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "damage": 3,
+      "hp": 15,
+      "source": "Counting House",
+      "hazard": "flooded",
+      "saved": false
+    },
+    "description": "The first thing that strikes you is the cold, still water creeping over your boots as you step inside, its surface broken only by the faint ripple of your movement. Then comes the scent of damp wood and old parchment, thick in the air, and the sight of Maren Vosk standing motionless beside a brass key glinting on the desk. The counting house feels suspended in time, the floodwater lapping at the lowest stair as if waiting for you to decide what to do next.",
+    "summary": "Iri Calder enters the flooded counting house and sees Maren Vosk beside a brass key on the desk, with water at the lowest stair.",
+    "error": null
+  },
+  {
+    "id": "9e0e40da",
+    "case": "crossing_harm",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "damage": 3,
+      "hp": 15,
+      "source": "Counting House",
+      "hazard": "flooded",
+      "saved": false
+    },
+    "description": "The cold water hits your knees as you step through the doorway, and for a heartbeat you think you\u2019ve misjudged the threshold, but then you see Maren Vosk standing dry-shod beside the desk, the brass key glinting in the dim light like a dropped coin. The air smells of damp wood and old ink, and the lapping of the water against the lowest stair echoes in the silence.",
+    "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and sees Maren Vosk and the brass key.",
+    "error": null
+  },
+  {
+    "id": "16096ffd",
+    "case": "crossing_harm",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "damage": 3,
+      "hp": 15,
+      "source": "Counting House",
+      "hazard": "flooded",
+      "saved": false
+    },
+    "description": "The cold water hits your knees the moment you step inside, soaking through your clothes as you stumble forward. Maren Vosk stands by the desk, her sharp eyes fixed on you, while the brass key glints dully in the dim light beside her. The air smells of damp wood and old ink, and the lapping water at the stair behind you seems to rise with every breath.",
+    "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and finds Maren Vosk and a brass key inside.",
+    "error": null
+  },
+  {
+    "id": "4d194704",
+    "case": "dead_resident",
+    "expected": {
+      "dead": [
+        "Maren Vosk"
+      ],
+      "living": [
+        "Iri Calder"
+      ],
+      "floor": [
+        "brass key"
+      ],
+      "carried": []
+    },
+    "description": "The first thing that strikes you is the cold bite of the water at your ankles, creeping up the lowest step as you push open the heavy oak door. The air inside is thick with the scent of damp parchment and old ink, and your eyes land on Maren Vosk standing beside a brass key that gleams dully on the desk, her presence as still as the rising flood around her.",
+    "summary": "Iri Calder enters the flooded counting house and sees Maren Vosk beside a brass key on the desk.",
+    "error": null
+  },
+  {
+    "id": "0c84828b",
+    "case": "dead_resident",
+    "expected": {
+      "dead": [
+        "Maren Vosk"
+      ],
+      "living": [
+        "Iri Calder"
+      ],
+      "floor": [
+        "brass key"
+      ],
+      "carried": []
+    },
+    "description": "The first thing that strikes you is the unnatural stillness of the water creeping up the stairs, its surface broken only by the pale, outstretched hand of Maren Vosk floating beside the desk. The brass key glints dully on the wood, untouched by the rising tide, as if waiting for you. The air is thick with the scent of damp parchment and salt, and the silence presses in, broken only by the faint lapping of water against the step below.",
+    "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk.",
+    "error": null
+  },
+  {
+    "id": "affe59cd",
+    "case": "dead_resident",
+    "expected": {
+      "dead": [
+        "Maren Vosk"
+      ],
+      "living": [
+        "Iri Calder"
+      ],
+      "floor": [
+        "brass key"
+      ],
+      "carried": []
+    },
+    "description": "The first thing that strikes you is the silence, broken only by the slow, rhythmic lapping of water against the lowest stair. Maren Vosk lies motionless beside the desk, their stillness unnatural, while the brass key glints dully in the dim light, untouched by the rising flood. The air is thick with the scent of damp wood and old parchment, and the counting house feels as though it\u2019s holding its breath.",
+    "summary": "Iri Calder enters the counting house to find Maren Vosk dead and a brass key lying on the desk.",
+    "error": null
+  },
+  {
+    "id": "ebbc1526",
+    "case": "carried_key",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "floor": [],
+      "carried": [
+        "brass key"
+      ]
+    },
+    "description": "The first thing that strikes you is the cold bite of water against your ankles as you step inside, the flood having claimed the lower floor. Then your eyes catch Maren Vosk standing rigid beside the desk, her gaze fixed on the brass key as if it holds the answer to the missing ledger. The air is thick with the scent of damp wood and ink, the silence broken only by the gentle lapping of water against the stairs.",
+    "summary": "Iri Calder enters the flooded counting house and sees Maren Vosk beside the desk with a brass key.",
+    "error": null
+  },
+  {
+    "id": "79e6f3da",
+    "case": "carried_key",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "floor": [],
+      "carried": [
+        "brass key"
+      ]
+    },
+    "description": "The first thing that strikes you is the cold\u2014water seeps through your boots as you step inside, the damp air thick with the scent of ink and salt. Maren Vosk stands motionless beside a brass key on the desk, her sharp eyes tracking your entrance. The lapping of water against the lowest stair echoes in the stillness, a quiet rhythm that feels almost deliberate.",
+    "summary": "Iri Calder enters the flooded counting house and notices Maren Vosk beside the brass key.",
+    "error": null
+  },
+  {
+    "id": "70a5f8db",
+    "case": "carried_key",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "floor": [],
+      "carried": [
+        "brass key"
+      ]
+    },
+    "description": "The first thing that strikes you is the cold, still air, thick with the scent of damp wood and old ink. Your boots splash into shallow water as you step inside, the sound echoing off the high ceiling. Maren Vosk stands near a desk, her sharp eyes flicking toward you, the brass key you carry glinting in the dim light. The water at your feet ripples, lapping at the lowest stair like a restless tide.",
+    "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk.",
+    "error": null
+  },
+  {
+    "id": "bbe17cb2",
+    "case": "crossing_harm",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "damage": 3,
+      "hp": 15,
+      "source": "Counting House",
+      "hazard": "flooded",
+      "saved": false
+    },
+    "description": "The first thing that strikes you is the cold\u2014water seeps through your boots as you step inside, the damp air thick with the scent of ink and salt. Maren Vosk stands motionless beside the desk, her sharp eyes tracking your entrance, while the brass key glints dully under the dim light filtering through the flooded room. The lapping of water against the lowest stair echoes softly, a rhythm that seems to pulse with the weight of unspoken ledgers and lost ships.",
+    "summary": "Iri Calder enters the counting house, encountering Maren Vosk and the flooded interior for the first time.",
+    "error": null
+  },
+  {
+    "id": "95eed595",
+    "case": "crossing_harm",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "damage": 3,
+      "hp": 15,
+      "source": "Counting House",
+      "hazard": "flooded",
+      "saved": false
+    },
+    "description": "The first thing that strikes you is the cold, the water seeping over your boots as you step inside, its surface trembling with the faintest ripple. Then comes the scent\u2014damp wood and ink, sharp with the tang of old parchment. Maren Vosk stands motionless beside the desk, her gaze fixed on the brass key as if it holds the answer to the room\u2019s silence. The air hums with the weight of unspoken numbers, the ledgers half-submerged like secrets too heavy to float.",
+    "summary": "Iri Calder enters the flooded counting house and sees Maren Vosk beside the brass key on the desk.",
+    "error": null
+  },
+  {
+    "id": "bbbacad7",
+    "case": "carried_key",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "floor": [],
+      "carried": [
+        "brass key"
+      ]
+    },
+    "description": "The door groans shut behind you, and the first thing that strikes you is the cold, still air thick with the scent of damp wood and old parchment. Water sloshes softly against the lowest stair, its surface reflecting the dim light filtering through grimy windows. Maren Vosk stands beside the desk, her sharp eyes flicking toward you as you step inside, the brass key heavy in your pocket.",
+    "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside the desk.",
+    "error": null
+  },
+  {
+    "id": "669765d0",
+    "case": "crossing_harm",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "damage": 3,
+      "hp": 15,
+      "source": "Counting House",
+      "hazard": "flooded",
+      "saved": false
+    },
+    "description": "The cold water seizes your calves as you step inside, the sudden drag pulling you off-balance before you catch yourself on the slick stone. Maren Vosk stands unmoving beside the desk, her sharp eyes tracking your stumble, while the brass key glints dully in the dim light, half-submerged in the rising tide. The air smells of damp parchment and salt, thick with the weight of something lost beneath the surface.",
+    "summary": "Iri Calder enters the flooded counting house, losing 3 hit points to the water, and finds Maren Vosk and a brass key already present.",
+    "error": null
+  },
+  {
+    "id": "a6c024b7",
+    "case": "crossing_harm",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "damage": 3,
+      "hp": 15,
+      "source": "Counting House",
+      "hazard": "flooded",
+      "saved": false
+    },
+    "description": "The first thing that strikes you is the cold\u2014water seeps into your boots as you step onto the lowest stair, its surface slick with the harbour\u2019s slow creep. Then comes the scent of damp wood and ink, and the quiet figure of Maren Vosk standing beside a brass key that glints on the desk, her presence as still as the rising tide. The air hums with the weight of unpaid ledgers, the silence broken only by the lap of water against the steps.",
+    "summary": "Iri Calder enters the flooded counting house and sees Maren Vosk beside a brass key on the desk.",
+    "error": null
+  },
+  {
+    "id": "718419d3",
+    "case": "dead_resident",
+    "expected": {
+      "dead": [
+        "Maren Vosk"
+      ],
+      "living": [
+        "Iri Calder"
+      ],
+      "floor": [
+        "brass key"
+      ],
+      "carried": []
+    },
+    "description": "The first thing that strikes you is the cold\u2014water seeps through your boots as you step inside, the damp air thick with the scent of ink and salt. Maren Vosk stands motionless beside a brass key on the desk, her sharp eyes tracking your entrance. The lapping of water against the lowest stair echoes in the silence, a slow, rhythmic pulse that seems to count the seconds since the flood claimed this place.",
+    "summary": "Iri Calder enters the flooded counting house, where Maren Vosk awaits beside a brass key on the desk.",
+    "error": null
+  },
+  {
+    "id": "02c90dce",
+    "case": "dead_resident",
+    "expected": {
+      "dead": [
+        "Maren Vosk"
+      ],
+      "living": [
+        "Iri Calder"
+      ],
+      "floor": [
+        "brass key"
+      ],
+      "carried": []
+    },
+    "description": "The first thing that strikes you is the silence, thick as the water creeping up the lowest stair, then the sight of Maren Vosk slumped beside the desk, her lifeless fingers still curled around the brass key. The air smells of damp wood and old ink, and the faintest ripple disturbs the water at your feet.",
+    "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk dead beside a brass key on the desk.",
+    "error": null
+  },
+  {
+    "id": "a6552098",
+    "case": "dead_resident",
+    "expected": {
+      "dead": [
+        "Maren Vosk"
+      ],
+      "living": [
+        "Iri Calder"
+      ],
+      "floor": [
+        "brass key"
+      ],
+      "carried": []
+    },
+    "description": "The first thing that strikes you is the cold\u2014water seeps through your boots as you step onto the lowest stair, its surface slick with damp. The air smells of salt and old parchment, and the brass key on the desk glints in the dim light, catching your eye before you notice Maren Vosk standing beside it, her sharp gaze already fixed on you. The counting house feels heavy with the weight of submerged ledgers, as if the flood has left its secrets just beneath the surface.",
+    "summary": "Iri Calder enters the flooded counting house and sees Maren Vosk beside a brass key on the desk.",
+    "error": null
+  },
+  {
+    "id": "caa9a748",
+    "case": "carried_key",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "floor": [],
+      "carried": [
+        "brass key"
+      ]
+    },
+    "description": "The first thing that strikes you is the cold, still water creeping up the lowest stair, its surface reflecting the dim light like a shattered mirror. Then you see Maren Vosk standing beside the desk, her sharp eyes fixed on the brass key resting there, as if she\u2019s been waiting for you to notice it. The air smells of damp wood and old parchment, thick with the weight of unspoken questions.",
+    "summary": "Iri Calder enters the flooded counting house and finds Maren Vosk beside the brass key on the desk.",
+    "error": null
+  },
+  {
+    "id": "33c40ddd",
+    "case": "carried_key",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "floor": [],
+      "carried": [
+        "brass key"
+      ]
+    },
+    "description": "The first thing that strikes you is the cold\u2014water seeps through your boots as you step onto the lowest stair, its chill creeping up your legs. The air smells of damp parchment and old ink, and the brass key on the desk glints faintly in the dim light. Maren Vosk stands beside it, her sharp eyes tracking your entrance with quiet expectation.",
+    "summary": "Iri Calder enters the flooded counting house, where Maren Vosk and a brass key await.",
+    "error": null
+  },
+  {
+    "id": "1ae56711",
+    "case": "crossing_harm",
+    "expected": {
+      "living": [
+        "Iri Calder",
+        "Maren Vosk"
+      ],
+      "damage": 3,
+      "hp": 15,
+      "source": "Counting House",
+      "hazard": "flooded",
+      "saved": false
+    },
+    "description": "The cold water seizes your calves as you step from the threshold, and the sudden drag nearly pitches you forward. Maren Vosk stands unmoving beside the desk, her gaze fixed on the brass key that gleams dully in the dim light. The rising tide laps at the lowest stair, its surface trembling with the reflection of the counting house\u2019s rafters.",
+    "summary": "Iri Calder enters the Counting House, loses 3 hit points to the water, and sees Maren Vosk and the brass key.",
+    "error": null
+  },
+  {
+    "id": "6b090597",
+    "case": "dead_resident",
+    "expected": {
+      "dead": [
+        "Maren Vosk"
+      ],
+      "living": [
+        "Iri Calder"
+      ],
+      "floor": [
+        "brass key"
+      ],
+      "carried": []
+    },
+    "description": "The first thing that strikes you is the cold\u2014water seeps through your boots as you step onto the lowest stair, its surface slick with the harbour\u2019s slow creep. Then comes the scent of damp parchment and brass, sharp and metallic, and the quiet figure of Maren Vosk standing beside the desk, her gaze steady as she waits. The brass key glints under the dim light, untouched by the rising tide, as if the flood itself respects its purpose.",
+    "summary": "Iri Calder enters the flooded counting house and sees Maren Vosk beside a brass key on the desk.",
+    "error": null
+  }
+]

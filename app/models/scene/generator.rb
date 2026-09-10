@@ -25,20 +25,23 @@ class Scene::Generator
   include SanitizesGeneratedText
   include ActionView::Helpers::DateHelper
 
-  attr_reader :location, :previous_scene, :story
+  attr_reader :location, :previous_scene, :origin, :story, :completed_scene
 
-  # `previous_scene` is the scene the player is coming from -- the linked-list
+  # `previous_scene` is the player's preceding moment -- the linked-list
   # link, not the last scene in this location. It is optional because the
   # story's opening arrival has nothing before it.
   #
   # `opening` marks the one arrival that belongs to the world: see .opening.
   #
-  # `playthrough` is only ever what the conversation gets FILED UNDER -- nothing
-  # about the arrival depends on it, which is why it is optional and why the
-  # world-building path (.opening, `rake game:new`) leaves it out. See Chat.
+  # `playthrough` supplies this game's origin and destination state as well
+  # as filing the conversation: living cast, bodies, inventory, wounds and the
+  # crossing. Older games can have a fight-closing scene in the room they
+  # escaped, so previous_scene is a history link and cannot override the
+  # party's actual whereabouts. World-building has no game and uses the link.
   def initialize(location, previous_scene: nil, opening: false, playthrough: nil)
     @location = location
     @previous_scene = previous_scene
+    @origin = playthrough ? playthrough.current_location : previous_scene&.location
     @opening = opening
     @playthrough = playthrough
     @story = location.story
@@ -87,20 +90,31 @@ class Scene::Generator
 
     answer = agent.with_schema(Scene::Schema).ask(arrival_prompt(returning, elapsed, cast)).content
 
-    scene = Scene.create!(
-      story: story,
-      location: location,
-      previous_scene: previous_scene,
-      characters: cast,
-      description: sanitize_string(answer["description"]),
-      summary: sanitize_string(answer["summary"]),
-      is_opening: opening?,
-      story_timestamp: at
-    )
+    scene = persist_arrival!(answer, cast: cast, at: at)
+    scene.narrated_toll_ids = arrival_context.toll_ids if arrival_context
 
     # The turn the exchange above belongs to only exists now, so the messages
     # are stamped with it here rather than by the caller. See BaseAgent#attribute_to!.
-    agent.attribute_to!(scene)
+    attribute_to(scene)
+    scene
+  end
+
+  # The journey already happened when its prose fails. This is the engine's
+  # account of the destination and crossing, with no further provider call.
+  # If saving succeeded and only attribution failed, reuse that scene so a
+  # caller's recovery cannot append the arrival twice.
+  def fallback!
+    return completed_scene if completed_scene
+    raise ArgumentError, "an arrival fallback needs a playthrough" unless @playthrough
+    raise ArgumentError, "cannot arrive in a stub" unless location.realized?
+
+    context = arrival_context
+    description = ([ "You arrive at #{location.name}." ] + context.facts).join(" ")
+    scene = persist_arrival!(
+      { "description" => description, "summary" => description },
+      cast: context.living, at: story_timestamp, engine_fallback: true
+    )
+    scene.narrated_toll_ids = context.toll_ids
     scene
   end
 
@@ -135,7 +149,7 @@ class Scene::Generator
   # there is rather than zero, because two scenes at the same story instant
   # would make "how long since you were here" answer nothing at all.
   def journey_minutes
-    edge = LocationConnection.find_by(location: previous_scene.location, connected_location: location)
+    edge = LocationConnection.find_by(location: origin, connected_location: location)
     return LocationConnection::DISTANCES.fetch("adjacent") if edge.nil?
 
     LocationConnection.travel_minutes(edge.distance, edge.travel_method) ||
@@ -172,6 +186,8 @@ class Scene::Generator
   # `characters` cannot hold that. This method is the one place the party and
   # the world's own people are added together.
   def characters_present
+    return arrival_context.living if arrival_context
+
     ([ story.protagonist ] + companions + Character.present_in(location).to_a).compact.uniq
   end
 
@@ -200,7 +216,7 @@ class Scene::Generator
   end
 
   def arrival_prompt(returning, elapsed, cast)
-    <<~PROMPT
+    prompt = <<~PROMPT
       ## Universe Details
       #{story.universe.prompt_details(:scene)}
       ## Story Details
@@ -231,9 +247,46 @@ class Scene::Generator
       - Do not name a way out that is not on the list above
       - Respect the stated length of each field
     PROMPT
+    return prompt unless arrival_context
+
+    prompt + <<~PROMPT
+
+      ## Current State On Arrival
+      The place description is the world's original account. These current records
+      take precedence over its claims about people, items and wounds. Narrate the
+      recorded crossing result as part of this arrival.
+      #{arrival_context.facts.join("\n")}
+    PROMPT
   end
 
   private
+
+  # The story has a complete arrival by this point. Filing its model messages
+  # is diagnostic bookkeeping; a failure there must not stop the move or make
+  # a caller append a second arrival as recovery.
+  def attribute_to(scene)
+    agent.attribute_to!(scene)
+  rescue StandardError => error
+    Rails.logger.warn("Arrival attribution failed: #{error.class}")
+  end
+
+  def arrival_context
+    @arrival_context ||= Scene::ArrivalContext.new(@playthrough, location: location) if @playthrough
+  end
+
+  def persist_arrival!(answer, cast:, at:, engine_fallback: false)
+    @completed_scene = Scene.create!(
+      story: story,
+      location: location,
+      previous_scene: previous_scene,
+      characters: cast,
+      description: sanitize_string(answer["description"]),
+      summary: sanitize_string(answer["summary"]),
+      is_opening: opening?,
+      story_timestamp: at,
+      **(engine_fallback ? { engine_fallback: true } : {})
+    )
+  end
 
   # The two shapes this generator exists to tell apart.
   def arrival_instructions(returning, elapsed)
@@ -268,7 +321,7 @@ class Scene::Generator
       character == story.protagonist ? "#{line} -- the player, the one arriving" : line
     end
 
-    lines.join("\n").presence || "Nobody but the player."
+    lines.join("\n").presence || (@playthrough ? "Nobody is alive here." : "Nobody but the player.")
   end
 
   def exit_names
@@ -281,7 +334,7 @@ class Scene::Generator
   def lead_in
     return "Nothing. This is where the story opens." if previous_scene.nil?
 
-    from = previous_scene.location
+    from = origin
     coming_from = from && from != location ? "The player has come from #{from.name}. " : ""
 
     "#{coming_from}#{previous_scene.summary.presence || previous_scene.description}"

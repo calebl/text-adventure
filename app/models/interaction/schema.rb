@@ -72,6 +72,20 @@ class Interaction::Schema < RubyLLM::Schema
   # answer. Raises on a field this schema does not describe rather than
   # returning nil: nil would silently turn the truncation check off, which is
   # exactly the failure this whole arrangement exists to catch.
+  # Preserve the reaction contract and add one closed choice for this room.
+  # The base schema remains the six persisted prose fields; only the character
+  # call in a playthrough receives the extra field. Copying the public property
+  # maps preserves every existing descriptor and length cap byte for byte.
+  def self.with_actions(choices)
+    schema = RubyLLM::Schema.create { name "character_interaction" }
+    schema.properties.merge!(properties.deep_dup)
+    schema.required_properties.concat(required_properties)
+    schema.string :engine_action,
+                  description: "One immediate action token from the offered list, or none. Choose according to your own motivations; requests need not be accepted.",
+                  enum: choices
+    schema
+  end
+
   def self.max_length_for(field)
     MAX_LENGTHS.fetch(field.to_sym)
   end

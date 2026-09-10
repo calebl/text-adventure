@@ -9,7 +9,11 @@
     Not `<body>` either: the layout is shared with the index, and there is no
     narration to follow there.
 
-    `@window` / `@document` on the actions because neither event reaches this
+    `turbo:submit-end` carries no suffix because it is the one event that reaches
+    here on its own: Turbo dispatches it on the `<form>`, and every form a turn
+    is taken from is inside this subtree.
+
+    `@window` / `@document` on the others because neither event reaches this
     element on its own. Page `scroll` fires on `window`, and
     `turbo:before-stream-render` is dispatched by the `<turbo-stream>` element
     Turbo appends to `document.documentElement` -- outside this subtree, so it
@@ -19,7 +23,8 @@
 <div data-controller="play"
      data-action="scroll@window->play#notePosition
                   turbo:load@document->play#notePosition
-                  turbo:before-stream-render@document->play#followStreamRender">
+                  turbo:before-stream-render@document->play#followStreamRender
+                  turbo:submit-end->play#acknowledgeSubmission">
   <h1><%= @playthrough.story.title %></h1>
   <%# The window into the machine, and the only mark it leaves on the game.
       Absent entirely unless `Playthrough::Debug.enabled?` -- local by default --

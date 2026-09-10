@@ -1,0 +1,62 @@
+{
+  "status": "exploratory manual finding; identified after baseline reading, not a pre-registered primary metric",
+  "arm": "before",
+  "rep": 2,
+  "turn": "t07-move-new",
+  "claim": "The tide-slate in your hands feels heavier here",
+  "engine_evidence": {
+    "drop_turn": {
+      "index": 6,
+      "id": "t06-drop",
+      "command": "put the Assize tide-slate down on the bench",
+      "expect": "drop",
+      "beat": "CONSEQUENCE",
+      "branch": "drop",
+      "scene_id": 9,
+      "prose_chars": 420,
+      "location_before": "The Causeway Court",
+      "location_after": "The Causeway Court",
+      "seconds": 2.53,
+      "failure": null,
+      "drifts": [],
+      "intents": [
+        {
+          "action": "drop",
+          "subject": "Assize tide-slate",
+          "reached_for_nothing": false
+        }
+      ],
+      "warnings": [],
+      "calls": [
+        {
+          "purpose": "classifier",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 0.902
+        },
+        {
+          "purpose": "narration",
+          "answered_by": "mistralai/mistral-medium-3.1",
+          "ok": true,
+          "seconds": 1.573
+        }
+      ],
+      "rotations": []
+    },
+    "remaining_script_actions": [
+      "move",
+      "move"
+    ],
+    "final_item_rows": [
+      [
+        8,
+        "Assize tide-slate",
+        1,
+        null,
+        "The Causeway Court"
+      ]
+    ]
+  },
+  "existing_scorer_flag_count": 0,
+  "conclusion": "The first arrival claims the dropped slate is carried. Existing standard audit missed this shorter reference to the tracked item. No scorer or corpus was changed."
+}

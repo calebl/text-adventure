@@ -215,7 +215,7 @@ class Playthrough::TurnConversationsTest < ActiveSupport::TestCase
 
   def reaction(action = "She sets down the crate.")
     OfflineExchange.reply(
-      Interaction::Schema.required_properties.to_h { |field| [ field.to_s, field == :action ? action : "#{field} value" ] }
+      Interaction::Schema.required_properties.to_h { |field| [ field.to_s, field == :action ? action : "#{field} value" ] }.merge("engine_action" => "none")
     )
   end
 

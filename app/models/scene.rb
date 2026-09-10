@@ -1,4 +1,14 @@
 class Scene < ApplicationRecord
+  # IDs actually supplied to this arrival's renderer. Nil belongs to the
+  # ordinary Moment path; an empty arrival list means no toll was presented.
+  # Turn claims only this set after the completed scene is available.
+  # The log entry displays claimed tolls as engine notices; supplying facts
+  # does not guarantee the renderer included them in its player-readable prose.
+  # rendering_error is an in-process receipt for a completed fallback, so the
+  # prompt bench can retain its original failed-call accounting. It is never
+  # player-facing prose, and no exception is stored in the world's records.
+  attr_accessor :narrated_toll_ids, :safety_notice, :rendering_error
+
   # THE READERS THAT WRITE A TURN, which is `Playthrough::Grammar::PATHS` minus
   # `engine_view`: `harm`, `check` and the read-outs write no `Scene` at all, so
   # a scene carrying that value is a defect and `rake game:doctor` names it
@@ -138,6 +148,8 @@ class Scene < ApplicationRecord
   # Interaction belongs to its character first and the scene only optionally.
   has_many :interactions, dependent: :nullify
   has_many :playthroughs, foreign_key: :current_scene_id, dependent: :nullify, inverse_of: :current_scene
+  has_many :commands, class_name: "Playthrough::Command", foreign_key: :result_scene_id,
+                      dependent: :nullify, inverse_of: :result_scene
   # Turns on which the player, having read THIS narration, reached for something
   # the records do not have. NULLIFIED rather than destroyed: the drift is the
   # measurement and the scene is only the suspect -- losing the prose must not
@@ -152,10 +164,9 @@ class Scene < ApplicationRecord
   # truth about it -- nothing has closed it. See `Playthrough::Fight`.
   has_many :blows, class_name: "Playthrough::Blow", dependent: :nullify,
                    inverse_of: :scene
-  # THE HAZARDS THIS SCENE'S PROSE CARRIED. NULLIFIED, on the blows' reasoning
-  # one line up: the toll is what the dice did and this Scene is only the
-  # paragraph that mentioned it. A toll with no scene reads as UNTOLD, which
-  # after the paragraph is gone is the truth about it -- nothing has said it.
+  # THE HAZARDS SHOWN WITH THIS SCENE'S LOG ENTRY. NULLIFIED, on the blows'
+  # reasoning one line up: the toll is what the dice did and this Scene is
+  # where its notice appears. A toll without a scene reads as UNTOLD again.
   has_many :tolls, class_name: "Playthrough::Toll", dependent: :nullify,
                    inverse_of: :scene
   # Judgements the player recorded on this turn. DESTROYED rather than nullified,
@@ -275,9 +286,11 @@ class Scene < ApplicationRecord
   # One of `ENGINE_AUTHORED`, and read off that list rather than derived from
   # the gap between `ACTIONS` and `INTENTS` -- see the constant for why a throw
   # is in the gap and is not engine copy. False for a turn with no action on
-  # record at all: an opening arrival is prose somebody generated.
+  # record at all: an opening arrival is prose somebody generated. A failed
+  # renderer keeps its original action identity and marks engine_fallback,
+  # because the engine's replacement words must not enter a model's score.
   def engine_authored?
-    ENGINE_AUTHORED.include?(recorded_action.to_s)
+    (has_attribute?(:engine_fallback) && engine_fallback?) || ENGINE_AUTHORED.include?(recorded_action.to_s)
   end
 
   # THE TWO COLUMNS, READ SAFELY, AND THE READERS EVERYTHING ELSE HERE USES.

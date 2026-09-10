@@ -1,0 +1,59 @@
+# Reasserting a seeded stub replaces the state an unfinished model response
+# described. The next visit must ask for fresh detail; silently reusing the old
+# exits checkpoint would skip the first expected call and fail this walk.
+story: The Unfinished Workshop
+steps:
+- id: leave-an-unfinished-response
+  type: /move Workshop
+  browser:
+    token: before-reseed
+    realizes: Workshop
+    raises: true
+    replies:
+    - purpose: location
+      content:
+        description: An unused workshop stands behind the gate.
+        lore: The workshop once served the market.
+        items: []
+        people: []
+    - purpose: location
+      unavailable: true
+  expect:
+    location: Market (realized)
+    exits: [Workshop (stub)]
+    changed: false
+    note: failed
+    elapsed_minutes: 0
+- id: the-file-reasserts-its-stub
+  reseed: true
+  expect:
+    location: Market (realized)
+    exits: [Workshop (stub)]
+    changed: false
+- id: fresh-detail-follows-the-seeded-state
+  type: /move Workshop
+  browser:
+    token: after-reseed
+    realizes: Workshop
+    replies:
+    - purpose: location
+      content:
+        description: A newly swept workshop stands behind the gate.
+        lore: The market keeps this workshop ready.
+        items: []
+        people: []
+    - purpose: location
+      content:
+        exits:
+        - name: Market
+          teaser: A quiet square.
+          distance: adjacent
+          travel_method: walking
+    - purpose: arrival
+      unavailable: true
+  expect:
+    location: Workshop (realized)
+    exits: [Market (realized)]
+    here: []
+    present: []
+    note: completed

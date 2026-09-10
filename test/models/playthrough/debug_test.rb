@@ -112,7 +112,7 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
   end
 
   # EVERY BRANCH RECORDS A CAST NOW -- `Playthrough::Turn#play` snapshots
-  # `Character.present_in` onto the turn beside `typed` -- so a narrated turn
+  # `Playthrough#cast_in` onto the turn beside `typed` -- so a narrated turn
   # with one is ordinary and the EMPTY one is what is worth saying. What the
   # view reports instead is a snapshot that no longer agrees with the records,
   # which is how somebody having moved since reads.
@@ -124,7 +124,7 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
 
     evidence = Playthrough::Debug.new(playthrough).latest_turn.evidence.join(" ")
 
-    assert_match(/cast recorded \(1\), snapshotted from Character.present_in/, evidence)
+    assert_match(/cast recorded \(1\), snapshotted from Playthrough#cast_in/, evidence)
     assert_match(/Grenn Ollivar is no longer in this room/, evidence)
   end
 
@@ -133,6 +133,23 @@ class Playthrough::DebugTest < ActiveSupport::TestCase
     next_scene(playthrough, minutes: 5)
 
     assert_match(/no cast recorded/, Playthrough::Debug.new(playthrough).latest_turn.evidence.join(" "))
+  end
+
+  test "a follower is reported present until this game's whereabouts change" do
+    playthrough = create(:playthrough, :in_scene)
+    home = create(:location, story: playthrough.story)
+    follower = create(:character, story: playthrough.story, location: home, fullname: "Aldis Vale")
+    state = playthrough.npc_states.create!(character: follower, location: playthrough.current_location, following: true)
+    scene = next_scene(playthrough, minutes: 5)
+    scene.characters = [ follower ]
+
+    evidence = -> { Playthrough::Debug.new(playthrough).latest_turn.evidence.join(" ") }
+    refute_match(/Aldis Vale is no longer in this room/, evidence.call)
+
+    state.update!(location: home, following: false)
+
+    assert_match(/Aldis Vale is no longer in this room/, evidence.call)
+    assert_equal home, follower.reload.location
   end
 
   # THE CLOSED SET, asked of the classifier itself rather than worked out

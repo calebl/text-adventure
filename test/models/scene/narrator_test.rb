@@ -53,9 +53,9 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     assert_equal first, second.previous_scene
   end
 
-  # The point of the ensure block: a browser that closes mid-stream kills the
-  # generation, and the player should still get back whatever was written.
-  test "keeps the partial narration when the consumer blows up mid-stream" do
+  # A partial stream is not a completed turn. The browser job survives client
+  # disconnects, and saving then raising skipped retaliation and time.
+  test "does not persist partial narration when the consumer blows up mid-stream" do
     playthrough = create(:playthrough, :started)
     agent = FakeAgent.new("One two three four five")
 
@@ -67,15 +67,17 @@ class Scene::NarratorTest < ActiveSupport::TestCase
       end
     end
 
-    assert_equal "One two three", playthrough.reload.current_scene.description.strip
+    assert_nil playthrough.reload.current_scene
   end
 
-  test "saves nothing when the model produced no text" do
+  test "blank rendering fails before the turn can advance without a scene" do
     playthrough = create(:playthrough, :started)
 
     assert_no_difference -> { Scene.count } do
-      BaseAgent.stub(:new, FakeAgent.new("")) do
-        Scene::Narrator.new(playthrough).narrate("go inside")
+      assert_raises(BaseAgent::UnusableResponseError) do
+        BaseAgent.stub(:new, FakeAgent.new("")) do
+          Scene::Narrator.new(playthrough).narrate("go inside")
+        end
       end
     end
 

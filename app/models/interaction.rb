@@ -16,6 +16,7 @@ class Interaction < ApplicationRecord
   validates :action, presence: true
   validates :post_feeling, presence: true
   validates :post_thought, presence: true
+  validates :action_status, inclusion: { in: %w[applied rejected none] }, allow_nil: true
 
   # DERIVED, not asked for. The exchange's one-line memory is already implied by
   # the fields that were paid for -- what was said to them, what they did about
@@ -44,6 +45,6 @@ class Interaction < ApplicationRecord
     return if summary.present?
 
     said = user_input.presence && %(the player said "#{user_input.to_s.truncate(80)}")
-    self.summary = [ said, action.presence, inner_resolution.presence ].compact.join(" -- ").presence
+    self.summary = [ said, action.presence, inner_resolution.presence, action_fact.presence ].compact.join(" -- ").presence
   end
 end

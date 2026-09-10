@@ -238,7 +238,7 @@ class InteractionAgentTest < ActiveSupport::TestCase
   # The narrator pass is prose the player watches arrive, which is the same
   # documented exception Scene::Narrator carries. The structured pass in front
   # of it must not reach the block.
-  test "a block streams the narration only" do
+  test "a block publishes only the verified narration" do
     chunks = []
 
     stub_agents(CHARACTER_RESPONSE, "Mira looks up at you.") do |agent|
@@ -246,7 +246,7 @@ class InteractionAgentTest < ActiveSupport::TestCase
     end
 
     assert_equal "Mira looks up at you.", chunks.join
-    assert_operator chunks.count, :>, 1
+    assert_equal 1, chunks.count
   end
 
   # --- the narrator prompt --------------------------------------------------

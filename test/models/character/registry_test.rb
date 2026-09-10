@@ -408,6 +408,22 @@ class Character::RegistryTest < ActiveSupport::TestCase
     end
   end
 
+  test "a required sheet field that sanitizes to nothing is refused without losing the remaining cast" do
+    Character::Registry::SHEET.each do |field|
+      assert_no_difference -> { Character.count } do
+        assert_empty registry.admit!([ sheet(fullname: "Neb Halloran").merge(field.to_s => "🙂") ])
+      end
+    end
+
+    people = registry.admit!([
+      sheet(fullname: "Neb Halloran").merge("personality" => "🙂"),
+      sheet(fullname: "Ammon Brace")
+    ])
+
+    assert_equal [ "Ammon Brace" ], people.map(&:fullname)
+    assert_predicate people.sole, :valid?
+  end
+
   # THE THREE CLOSED SETS A NAME MUST NOT COLLIDE WITH, and they are
   # `Item::Registry`'s three read from the other side: the classifier resolves a
   # typed line against the cast, the exits and what is lying here BY NAME, so

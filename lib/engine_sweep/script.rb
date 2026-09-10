@@ -52,6 +52,21 @@
 #
 # A step carries `type` or `reseed`, never both and never neither.
 #
+# `browser:` PLAYS ONE SUBMISSION THE WAY THE BROWSER DOES, with a token and
+# fixed provider answers, and `accepted_first` is what the player typed while
+# an earlier turn was still running -- accepted, enqueued, and not yet played.
+# The step then delivers the LATER job first, which is the race
+# `config/queue.yml`'s three worker threads make reachable:
+#
+#   - type: /move Courtyard
+#     browser:
+#       token: move
+#       accepted_first:
+#       - { token: pickup, type: /take red coin }
+#     expect:
+#       carrying: [red coin]        # the earlier line still played first
+#       location: Courtyard (realized)
+#
 # `reseed:` MAY NAME A DIFFERENT VERSION OF THE FILE, which is what lets the
 # walk reach the defect rather than only the rule. A rename is what the SECOND
 # version of a seed file says, and before `WorldSeed.natural_key` a renamed room
@@ -71,7 +86,10 @@ class EngineSweep::Script
   # Whose game a step with no `player` is typed into.
   DEFAULT_PLAYER = "first"
 
-  Step = Data.define(:index, :id, :typed, :why, :player, :reseed, :expectation) do
+  # npc_action supplies one fixed character choice on a talk turn. It replaces
+  # the model's decision, never the engine writer: Conversation applies it
+  # through the same NpcAction gate as InteractionAgent before the riposte.
+  Step = Data.define(:index, :id, :typed, :why, :player, :reseed, :npc_action, :browser, :expectation) do
     # How a step is named when it fails. The number is always there because a
     # script may type the same line twice on purpose.
     def label = "step #{index}#{" #{id}" if id.present?}#{" (#{player})" unless player == DEFAULT_PLAYER}"
@@ -107,7 +125,7 @@ class EngineSweep::Script
     rows.each_with_index.map do |row, offset|
       raise EngineSweep::InvalidScript, "#{path}: step #{offset + 1} is not a mapping" unless row.is_a?(Hash)
 
-      unknown = row.keys - %w[id type why player reseed expect]
+      unknown = row.keys - %w[id type why player reseed npc_action browser expect]
       raise EngineSweep::InvalidScript, "#{path}: step #{offset + 1} has unknown key(s) #{unknown.inspect}" if unknown.any?
 
       reseed = read_reseed(row["reseed"], "#{path}: step #{offset + 1}") if row.key?("reseed")
@@ -118,11 +136,68 @@ class EngineSweep::Script
       unless reseed || row.key?("type")
         raise EngineSweep::InvalidScript, "#{path}: step #{offset + 1} has no \"type\" and is not a `reseed`"
       end
+      if row.key?("npc_action") && (!row["npc_action"].is_a?(String) || row["npc_action"].blank? || reseed)
+        raise EngineSweep::InvalidScript, "#{path}: step #{offset + 1} npc_action must be a nonempty choice on a typed line"
+      end
+      browser = read_browser(row["browser"], "#{path}: step #{offset + 1}") if row.key?("browser")
+      if browser && (reseed || row.key?("npc_action"))
+        raise EngineSweep::InvalidScript, "#{path}: step #{offset + 1} browser cannot combine with reseed or npc_action"
+      end
 
       Step.new(index: offset + 1, id: row["id"], typed: row["type"], why: row["why"],
-               player: row["player"].presence || DEFAULT_PLAYER, reseed: reseed,
+               player: row["player"].presence || DEFAULT_PLAYER, reseed: reseed, npc_action: row["npc_action"], browser: browser,
                expectation: EngineSweep::Expectation.read(row["expect"], "#{path}: step #{offset + 1}"))
     end
+  end
+
+  # A browser submission with a failed renderer, a duplicate token, or ordered
+  # fixed provider replies. A realization walk can fail after its paid detail
+  # and assert its retry consumes only exits. `raises` means an unavailable
+  # provider interrupts the submission instead of producing an engine fallback.
+  #
+  # `accepted_first` is the lines the browser accepted BEFORE this one whose
+  # jobs have not been delivered yet -- what the player typed while a turn was
+  # running. It is the only way a walk can reach the case where a later job
+  # takes the lock first, which is the whole of what it exists for.
+  def self.read_browser(value, where)
+    unless value.is_a?(Hash) && (value.keys - %w[token fail replies raises realizes accepted_first]).empty? && value["token"].is_a?(String) && value["token"].present?
+      raise EngineSweep::InvalidScript, "#{where}: browser expects a token and optional fail: narration or arrival"
+    end
+    if value.key?("accepted_first")
+      unless value["accepted_first"].is_a?(Array) && value["accepted_first"].any?
+        raise EngineSweep::InvalidScript, "#{where}: browser accepted_first is a nonempty list of earlier submissions"
+      end
+      value["accepted_first"].each do |earlier|
+        unless earlier.is_a?(Hash) && (earlier.keys - %w[token type]).sort.empty? &&
+            earlier["token"].is_a?(String) && earlier["token"].present? &&
+            earlier["type"].is_a?(String) && earlier["type"].present?
+          raise EngineSweep::InvalidScript, "#{where}: browser accepted_first entry needs a token and a type"
+        end
+      end
+    end
+    unless value["fail"].nil? || %w[narration arrival].include?(value["fail"])
+      raise EngineSweep::InvalidScript, "#{where}: browser fail must be narration or arrival"
+    end
+    if value.key?("replies")
+      unless value["fail"].nil? && value["replies"].is_a?(Array)
+        raise EngineSweep::InvalidScript, "#{where}: browser replies is a list and cannot combine with fail"
+      end
+      value["replies"].each do |reply|
+        unless reply.is_a?(Hash) && (reply.keys - %w[purpose content unavailable]).empty? &&
+            %w[location narration arrival].include?(reply["purpose"]) &&
+            ((reply.key?("content") && !reply.key?("unavailable")) || (reply["unavailable"] == true && !reply.key?("content")))
+          raise EngineSweep::InvalidScript, "#{where}: browser reply needs a purpose and either content or unavailable: true"
+        end
+      end
+    end
+    if value.key?("raises") && (value["raises"] != true || !value["replies"]&.any? { |reply| reply["unavailable"] })
+      raise EngineSweep::InvalidScript, "#{where}: browser raises requires an unavailable reply"
+    end
+    if value.key?("realizes") && (!value["realizes"].is_a?(String) || value["realizes"].blank? ||
+        !value["replies"]&.any? { |reply| reply["purpose"] == "location" })
+      raise EngineSweep::InvalidScript, "#{where}: browser realizes names one room and requires a location reply"
+    end
+    value
   end
 
   # `true` for the same file again, or a mapping of what this load renames.
@@ -144,7 +219,7 @@ class EngineSweep::Script
     value
   end
 
-  private_class_method :fetch!, :read_steps, :read_reseed
+  private_class_method :fetch!, :read_steps, :read_reseed, :read_browser
 
   def initialize(path:, story:, steps:, why: nil)
     @path = path

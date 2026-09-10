@@ -382,50 +382,35 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_match(/Maren Vosk/, refusal.text)
   end
 
-  # Blank prose is not a turn -- Scene validates a description, and a record
-  # written from nothing is a turn the player cannot read.
-  test "a talk that narrated nothing keeps no records" do
+  # Once the character has decided, its receipt must survive a prose outage.
+  test "a talk with blank narration completes with an engine receipt" do
     stands_here("Maren Vosk")
 
-    assert_no_difference [ -> { Scene.count }, -> { Interaction.count } ] do
+    assert_difference [ -> { Scene.count }, -> { Interaction.count } ], 1 do
       scene, = play("hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, "")
-
-      assert_nil scene
+      assert_predicate scene, :engine_authored?
+      assert_equal scene, @playthrough.reload.current_scene
     end
   end
 
-  # THE TALK PATH IS WHERE THIS ACTUALLY HAPPENED, and it is the branch with the
-  # most to suppress: `#talk_to` writes a `Scene` the player reads AND an
-  # `Interaction` the character felt. A crisis response fails the narrator pass
-  # before either exists, so neither is written and the exception reaches
-  # `NarrationJob`, which shows the app's own message instead. See
-  # `Playthrough::SafetyNotice`.
-  test "a crisis response on the talk path keeps neither record" do
+  test "a crisis response after a character decision keeps safe facts and the notice" do
     stands_here("Maren Vosk")
-    standing_in = @playthrough.current_scene
+    scene, = play("tell her nobody would miss her", CLASSIFY.call("talk", "Maren Vosk"),
+                  REACTION, BaseAgent::CrisisResponseError)
 
-    assert_no_difference [ -> { Scene.count }, -> { Interaction.count } ] do
-      assert_raises(BaseAgent::CrisisResponseError) do
-        play("tell her nobody would miss her", CLASSIFY.call("talk", "Maren Vosk"),
-             REACTION, BaseAgent::CrisisResponseError)
-      end
-    end
-
-    assert_equal standing_in, @playthrough.reload.current_scene,
-                 "the player is still standing exactly where they were"
+    assert_predicate scene, :engine_authored?
+    assert scene.safety_notice
+    assert_equal scene, @playthrough.reload.current_scene
+    assert_equal 1, scene.interactions.count
   end
 
-  # An exhausted refusal on the same path, for the same reason and by the same
-  # route -- but it only gets here after `BaseAgent#ask` has tried every model,
-  # which is the difference the two error classes carry.
-  test "an exhausted refusal on the talk path keeps neither record" do
+  test "an exhausted narrator refusal after a decision completes with safe facts" do
     stands_here("Maren Vosk")
+    scene, = play("hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, BaseAgent::RefusalError)
 
-    assert_no_difference [ -> { Scene.count }, -> { Interaction.count } ] do
-      assert_raises(BaseAgent::RefusalError) do
-        play("hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, BaseAgent::RefusalError)
-      end
-    end
+    assert_predicate scene, :engine_authored?
+    assert_equal scene, @playthrough.reload.current_scene
+    assert_equal 1, scene.interactions.count
   end
 
   # --- the paths that fall through to the narrator -------------------------
@@ -872,32 +857,30 @@ class Playthrough::TurnTest < ActiveSupport::TestCase
     assert_nil opening.resolution
   end
 
-  test "a turn that produced no scene records nothing rather than raising" do
+  test "a blank conversation still produces a recorded turn" do
     stands_here("Maren Vosk")
 
     assert_nothing_raised do
       scene, = play("say hello", CLASSIFY.call("talk", "Maren Vosk"), REACTION, "")
 
-      assert_nil scene
+      assert_predicate scene, :engine_authored?
     end
   end
 
   # --- failure ------------------------------------------------------------
 
-  # A generator that raises is the documented contract. The loop must not
-  # swallow it into a half-move: the player has to still be where they were.
-  test "a failed arrival leaves the player where they were" do
-    connect("Drowned Vestibule", detail_level: "stub", description: nil, lore: nil)
-
-    assert_raises(RuntimeError) do
-      # Classification succeeds, realization succeeds, the arrival call has
-      # nothing queued.
-      play("go down", CLASSIFY.call("move", "Drowned Vestibule"), DETAIL, { "exits" => [] })
-    end
+  # A realized crossing is a committed action, even when its renderer fails.
+  # The engine supplies the arrival so its toll and the world's response are
+  # never left as a half-move that would charge again on retry.
+  test "a failed arrival renderer completes the move with factual words" do
+    destination = connect("Drowned Vestibule", detail_level: "stub", description: nil, lore: nil)
+    scene, = play("go down", CLASSIFY.call("move", "Drowned Vestibule"), DETAIL, { "exits" => [] })
 
     @playthrough.reload
-    assert_equal @here, @playthrough.current_location
-    assert_nil @playthrough.current_scene
+    assert_equal destination, @playthrough.current_location
+    assert_equal scene, @playthrough.current_scene
+    assert_predicate scene, :engine_authored?
+    assert_includes scene.description, destination.name
   end
 
   test "moving into a stub that realization left unrealized raises rather than narrating an empty room" do

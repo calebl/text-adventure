@@ -1,4 +1,8 @@
-# Talking to a character, in two passes.
+# Talking to a character, in two passes, with a verified effect between them.
+#
+# In a playthrough the character chooses one engine_action from a closed set
+# built by Playthrough::NpcAction. That gate applies or rejects it before the
+# narrator writes; the reaction and the engine receipt are persisted together.
 #
 # The first pass is the CHARACTER: it answers under `Interaction::Schema` with
 # what they thought, felt and did on either side of responding. The second is a
@@ -39,7 +43,10 @@ class InteractionAgent
   # player reads from one and the `Interaction` the character felt from the
   # other. Returning only the prose is why nothing in this app had ever created
   # an `Interaction` row.
-  Exchange = Data.define(:reaction, :narration)
+  Exchange = Data.define(:reaction, :narration, :effect, :fallback, :safety_notice, :rendering_error) do
+    def initialize(effect: nil, fallback: false, safety_notice: nil, rendering_error: nil, **rest) = super
+    def fallback? = fallback
+  end
 
   attr_reader :character, :playthrough, :character_instructions, :narrator_instructions
 
@@ -55,10 +62,11 @@ class InteractionAgent
 
   # Asks the character, then narrates their answer.
   #
-  # A block is streamed the narration and nothing else -- not the structured
+  # A block receives the verified narration and nothing else -- not the structured
   # pass in front of it -- and it is yielded TEXT rather than the chunk objects
   # RubyLLM hands back, which is the same block contract `Scene::Narrator#narrate`
-  # offers. The game loop forwards one block to both, so they have to agree.
+  # offers. Provider chunks are withheld until verification, because a failed
+  # attempt can be followed by a successful retry inside BaseAgent.
   def ask(user_input, &block)
     # THE SANITIZER RUNS INSIDE `BaseAgent#ask`, NOT AFTER IT, and that is the
     # whole of what `verify:` is for. `#reaction_fields` is where a field cut off
@@ -76,7 +84,7 @@ class InteractionAgent
     fields = nil
     reaction = character_agent.ask(
       character_prompt(user_input),
-      verify: ->(content) { fields = reaction_fields(content) }
+      verify: ->(content) { fields = verified_reaction_fields(content) }
     ).content
     Rails.logger.debug { "Character response: #{reaction}" }
 
@@ -85,13 +93,15 @@ class InteractionAgent
     # prose over whatever it is handed, so a fragment that gets this far is a
     # fragment no reader can ever see. Failing first costs one wasted call
     # instead of two and a turn the player has already read.
-    @narrator_instructions = narrator_prompt(user_input, reaction)
-    narration = narrator_agent.ask(@narrator_instructions) do |chunk|
-      part = chunk.content.to_s
-      block.call(part) if block && !part.empty?
-    end.content
+    # The engine applies only the selected member of its closed set, after
+    # checking the records again. Dialogue and private resolutions never write
+    # an effect. The narrator receives the resulting receipt, not a promise.
+    effect = npc_actions&.apply!(reaction.fetch("engine_action", Playthrough::NpcAction::NONE))
+    @narrator_instructions = narrator_prompt(user_input, reaction, effect: effect)
+    narration, fallback, safety_notice, rendering_error = narrate_exchange(effect, &block)
 
-    Exchange.new(reaction: fields, narration: narration.to_s)
+    Exchange.new(reaction: fields, narration: narration, effect: effect,
+                 fallback: fallback, safety_notice: safety_notice, rendering_error: rendering_error)
   end
 
   # THE ONE CONVERSATION IN THE APP THAT IS PICKED UP AGAIN. Every other agent
@@ -112,7 +122,9 @@ class InteractionAgent
       playthrough: playthrough,
       character: character,
       chat: Chat.conversation_with(character, playthrough)
-    ).with_instructions(character_instructions).with_schema(Interaction::Schema)
+    ).with_instructions(character_instructions).with_schema(
+      npc_actions ? Interaction::Schema.with_actions(npc_actions.choices.keys) : Interaction::Schema
+    )
   end
 
   # No instructions: everything the narrator needs is in the prompt, and the
@@ -148,13 +160,14 @@ class InteractionAgent
   # moment is `Playthrough::Moment#character_context`, in the user turn rather
   # than the instructions so a replayed exchange keeps the room it happened in.
   def character_prompt(user_input)
-    <<~INTERACTION_PROMPT
+    prompt = <<~INTERACTION_PROMPT
       #{moment_section}
       ## What #{addressee_name} says or does
       #{user_input}
 
       React as #{character.fullname}: what you think, feel, do and decide.
     INTERACTION_PROMPT
+    prompt + action_choices_section
   end
 
   # Named `narrator_prompt` rather than `narrator_instructions`: the reader on
@@ -177,12 +190,12 @@ class InteractionAgent
   # nudge on pronouns for anyone who is not a woman, and a model of avoiding the
   # name the instruction above it asks for. The example is the character's own
   # now, name and pronouns interpolated.
-  def narrator_prompt(user_input, character_response)
+  def narrator_prompt(user_input, character_response, effect: nil)
     fields = reaction_fields(character_response)
     name = character.nickname.presence || character.fullname
     forms = character.pronoun_forms
 
-    <<~NARRATOR_PROMPT
+    prompt = <<~NARRATOR_PROMPT
       #{narrator_moment_section}
       ## The exchange
       #{addressee_name} says or does: #{user_input}
@@ -221,9 +234,72 @@ class InteractionAgent
       Immediately #{name} shuts #{forms.determiner} eyes, apparently embarrassed by the noise #{forms.subject} just made.
 
     NARRATOR_PROMPT
+    prompt + effect_section(effect)
   end
 
   private
+
+  # Sanitization may turn a nonempty model field into an empty value. Validate
+  # the actual row we will keep before a character is allowed to change state;
+  # this runs inside BaseAgent's verify seam, so malformed answers can rotate.
+  def verified_reaction_fields(content)
+    fields = reaction_fields(content)
+    Interaction.new(fields.merge(character: character)).validate! if playthrough
+    fields
+  end
+
+  def npc_actions
+    @npc_actions ||= Playthrough::NpcAction.new(playthrough, character) if playthrough
+  end
+
+  def action_choices_section
+    return "" unless npc_actions
+
+    <<~ACTIONS
+
+      ## Immediate actions available to you
+      Choose one engine_action according to your own motivations and the exchange.
+      You may refuse a request by choosing none. Copy a token exactly:
+      #{npc_actions.choices.map { |token, meaning| "#{token}: #{meaning}" }.join("\n")}
+      Only the selected action changes possessions or agreements now. The other fields describe speech,
+      expression and private thought; do not describe an unselected transfer, journey or truce as completed.
+    ACTIONS
+  end
+
+  def effect_section(effect)
+    return "" unless effect
+
+    <<~EFFECT
+
+      ## What the engine actually applied
+      #{effect.fact}
+      This receipt is authoritative about possessions, accompanying the player and fighting.
+      If the reaction claims another such change, render that part as a proposal or intention,
+      never as a completed act. Do not add a transfer, a journey or a ceasefire to this receipt.
+    EFFECT
+  end
+
+  # The decision has already changed records. A prose outage must still finish
+  # this turn, and the fallback must contain only the engine's own receipt.
+  # Buffer this pass until it is verified so a refused or crisis-shaped partial
+  # response cannot reach the player before the safe replacement.
+  def narrate_exchange(effect)
+    # Stream at the provider boundary, but publish only its verified answer.
+    # BaseAgent may retry inside this call; chunks from abandoned attempts are
+    # therefore not a safe source of the response to publish.
+    narration = narrator_agent.ask(@narrator_instructions) { |_chunk| }.content.to_s
+    raise BaseAgent::SchemaIgnoredError, "The interaction narrator returned no prose" if narration.blank?
+
+    yield narration if block_given?
+    [ narration, false, nil, nil ]
+  rescue StandardError => error
+    raise unless effect
+
+    Rails.logger.warn { "Interaction narration failed after decision: #{error.class}: #{error.message}" }
+    fallback = "You speak with #{character.fullname}. #{effect.fact}"
+    yield fallback if block_given?
+    [ fallback, true, error.is_a?(BaseAgent::CrisisResponseError), error ]
+  end
 
   # The moment from the records, when there is a playthrough to read it from. A
   # caller holding only a character gets a character with no room, which is what

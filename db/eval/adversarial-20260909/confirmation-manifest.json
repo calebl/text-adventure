@@ -1,0 +1,21 @@
+{
+  "before_source": "8dd1f5c3ebeea704771220a4257ff4e3aa7086d1",
+  "after_source": "57f8738f9e915f63ede7db7c5801d4564eb6dd50",
+  "model": "mistralai/mistral-medium-3.1",
+  "story": "The Salt Assizes",
+  "turns": 8,
+  "reps_per_arm": 4,
+  "budget_ledger": "/tmp/text-adventure-live-eval-20260909/budget.json",
+  "files": {
+    ".lavish/adversarial-review-2026-09-08/pending/confirmation_eval.rb": "5f0ba841d9462c96faad27cba9256bb4186ff598b002f2607688fc9ee61ee3e7",
+    "db/eval/adversarial-20260909/confirmation-protocol.md": "ecf0656334349e50105a0a58d98a92a0c4b59a33221abd498394e158d135d238",
+    "script/eval_run.rb": "776be834c83fef71b4efb09686b83f96601b7af6b14cd4cda2af87af298d614c",
+    "lib/eval/run_set.rb": "89bc7f6cb62ed54b0c8e50436efc14449cd7ff37d3b41172ee8b883a90eb1ac4",
+    "lib/eval/comparison.rb": "3f0c951b68d2970269b602757b17fc4e629c4b24a9e778bc6717c347bb08a43a",
+    "lib/eval/noise.rb": "836e07954799af88358885d53750917a3f18875ad90659cc242ca1010df4b1f1",
+    "lib/eval/scripts/the-salt-assizes.yml": "4fc033c3858a63aa66ea048809d0af42b100d886b9197895724c138c6a6f0530"
+  },
+  "targeted_model_evaluation_after_source": "93448adead431f46799573c6c8f13dd65c5b1ddb",
+  "after_source_note": "Additional engine-owned crossing notices render recorded tolls separately from model prose. Parent verified no model-input changes since 93448ade. Updated before the first confirmation-after call.",
+  "initial_protocol_sha256": "802e121bf5fae042aec481d9e1910b9b2cf4c18ebf0eec04a9fee0f6253454d0"
+}

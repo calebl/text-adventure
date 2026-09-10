@@ -14,17 +14,18 @@ class Playthrough::TurnFailureNoticeTest < ActiveSupport::TestCase
     assert_no_match(/cap|schema|model|token|JSON|error|exception/i, MESSAGE)
   end
 
-  test "says the turn did not finish, and that the story is still there" do
+  test "says the turn did not finish and directs the player to what was actually saved" do
     assert_match(/did not finish/i, MESSAGE)
-    assert_match(/nothing was lost/i, MESSAGE)
-    assert_match(/where you left it/i, MESSAGE)
+    assert_match(/log and your current possessions/i, MESSAGE)
+    assert_match(/what was saved/i, MESSAGE)
+    assert_no_match(/nothing was lost|where you left it/i, MESSAGE)
   end
 
-  # It has to leave the player somewhere to go: the input comes back with it,
-  # and trying again is the thing that actually works, since the failure is
-  # usually one model having a bad turn.
-  test "tells the player they can try again" do
-    assert_match(/try again/i, MESSAGE)
+  # An unexpected failure may follow an engine write. Asking for the same
+  # action again without checking would invite repeating its effect.
+  test "asks the player to inspect the saved state before choosing the next action" do
+    assert_match(/check them before choosing your next action/i, MESSAGE)
+    assert_no_match(/try again/i, MESSAGE)
   end
 
   # Nothing the player typed caused this, so it does not read as their fault.

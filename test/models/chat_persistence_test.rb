@@ -161,6 +161,6 @@ class ChatPersistenceTest < ActiveSupport::TestCase
   private
 
   def reaction(action)
-    Interaction::Schema.required_properties.to_h { |field| [ field.to_s, "#{field}: #{action}" ] }
+    Interaction::Schema.required_properties.to_h { |field| [ field.to_s, "#{field}: #{action}" ] }.merge("engine_action" => "none")
   end
 end

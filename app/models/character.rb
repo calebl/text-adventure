@@ -6,6 +6,12 @@
 # ------------------------------------------------------------------------
 # WHEREABOUTS: ONE PLACE AT A TIME, AND THE APP OWNS IT.
 #
+# This column is the WORLD's initial whereabouts. Conversations can now change
+# one game's location and travel agreements through Playthrough::NpcState;
+# Playthrough#cast_in and #location_of resolve that layer before reading this
+# default. A follower and a corpse can therefore stay somewhere different in
+# one game without moving this row for every other player.
+#
 # `characters.location_id` is the `Item` shape applied to people, chosen by the
 # captain over making the scene cast authoritative. Before it, `Character`
 # belonged to a story and to the scenes it appeared in, and that was the whole
@@ -203,6 +209,8 @@ class Character < ApplicationRecord
   # header, and `Story::Doctor#whereabouts` for what each of those reads as.
   belongs_to :location, optional: true
   has_many :interactions, dependent: :destroy
+  has_many :npc_states, class_name: "Playthrough::NpcState", dependent: :destroy,
+                       inverse_of: :character
   has_many :items, dependent: :destroy
   has_and_belongs_to_many :scenes
   has_many :playthroughs, dependent: :nullify
@@ -529,11 +537,9 @@ class Character < ApplicationRecord
   # one seeded world see the clerk in the same corner, and neither can move
   # him. PER-PLAYTHROUGH MOVEMENT BELONGS BESIDE THE PER-PLAYTHROUGH VITALS --
   # `Playthrough::Vitals` is the worked example of one body's state in one game,
-  # and a `playthrough_characters` row carrying a room and a spot is the same
-  # shape -- and it is NOT BUILT HERE. Nothing asks for it: no mechanic in the
-  # app moves an NPC during a turn, so a per-game whereabouts would be a table
-  # with one writer and no reader. Whatever world mechanic first walks somebody
-  # across a room is what earns it.
+  # and Playthrough::NpcState now carries the game's room override. It does not
+  # carry a spot within that room: a follower's old world coordinates must not
+  # be projected onto a different room. This reader remains the WORLD's spot.
   #
   # THIS IS THE READER A LATER SLICE CALLS, like `Item#position`: nothing in the
   # play path reads a coordinate yet, and `Playthrough::Moment` is slice 3's

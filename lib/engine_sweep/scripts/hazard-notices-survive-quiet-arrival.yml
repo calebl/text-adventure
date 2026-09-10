@@ -1,0 +1,30 @@
+# The model leaves the crossing out of its description. The actual browser
+# entry must still show its engine receipt once, including after redelivery.
+# The die may save or hurt Cal; both outcomes name the same recorded doorway.
+story: A Turn at the Gate
+steps:
+- id: quiet-prose-still-shows-the-crossing
+  type: /move Courtyard
+  browser:
+    token: crossing-receipt
+    replies:
+    - purpose: arrival
+      content:
+        description: The sheltered courtyard opens before you.
+        summary: The player crosses the hazardous threshold.
+  expect:
+    location: Courtyard (realized)
+    hazards: 1
+    note: completed
+    shown:
+    - drop on the way from Market into Courtyard
+- id: one-receipt-after-redelivery
+  type: /move Courtyard
+  browser: {token: crossing-receipt}
+  expect:
+    location: Courtyard (realized)
+    changed: false
+    hazards: 0
+    elapsed_minutes: 0
+    shown:
+    - drop on the way from Market into Courtyard

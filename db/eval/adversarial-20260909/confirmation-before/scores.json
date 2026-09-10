@@ -1,0 +1,606 @@
+{
+  "name": "confirmation-before",
+  "recorded_at": "2026-09-09T10:09:12Z",
+  "runs": [
+    {
+      "story": "The Salt Assizes",
+      "held_out": true,
+      "rep": 1,
+      "turns": 8,
+      "scenes": 8,
+      "model": "mistralai/mistral-medium-3.1",
+      "readings": [
+        {
+          "code": "unreachable_transition",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "unrecorded_departure",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "unrecorded_arrival",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "item_not_held",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "take_denied",
+          "flagged": 0,
+          "judgeable": 0,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "pickup_invented",
+          "flagged": 0,
+          "judgeable": 1,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "inscription_misquoted",
+          "flagged": 0,
+          "judgeable": 2,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "truncated_prose",
+          "flagged": 0,
+          "judgeable": 12,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "third_person_protagonist",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "reached_for_nothing",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "named_more_than_one",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "still_run",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        }
+      ],
+      "findings": [],
+      "richness": {
+        "turns": 8,
+        "chars": 390,
+        "words": 69,
+        "commitments": 2.5,
+        "coverage": 0.45,
+        "room": 0.75,
+        "exits": 0.25,
+        "items": 0.25,
+        "characters": 1.25
+      },
+      "usage": [
+        {
+          "model": "mistralai/mistral-medium-3.1",
+          "calls": 21,
+          "input_tokens": 21273,
+          "output_tokens": 2858
+        }
+      ],
+      "failures": [],
+      "drifts": [],
+      "branches": {
+        "t01-examine": {
+          "expected": "narrate",
+          "took": "narrate"
+        },
+        "t02-talk-1": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t03-talk-2": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t04-talk-3": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t05-talk-4": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t06-drop": {
+          "expected": "drop",
+          "took": "drop"
+        },
+        "t07-move-new": {
+          "expected": "move",
+          "took": "move"
+        },
+        "t08-move-back": {
+          "expected": "move",
+          "took": "move"
+        }
+      }
+    },
+    {
+      "story": "The Salt Assizes",
+      "held_out": true,
+      "rep": 2,
+      "turns": 8,
+      "scenes": 8,
+      "model": "mistralai/mistral-medium-3.1",
+      "readings": [
+        {
+          "code": "unreachable_transition",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "unrecorded_departure",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "unrecorded_arrival",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "item_not_held",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "take_denied",
+          "flagged": 0,
+          "judgeable": 0,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "pickup_invented",
+          "flagged": 0,
+          "judgeable": 1,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "inscription_misquoted",
+          "flagged": 0,
+          "judgeable": 2,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "truncated_prose",
+          "flagged": 0,
+          "judgeable": 12,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "third_person_protagonist",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "reached_for_nothing",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "named_more_than_one",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "still_run",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        }
+      ],
+      "findings": [],
+      "richness": {
+        "turns": 8,
+        "chars": 377,
+        "words": 69,
+        "commitments": 2.375,
+        "coverage": 0.425,
+        "room": 0.0,
+        "exits": 0.5,
+        "items": 0.625,
+        "characters": 1.25
+      },
+      "usage": [
+        {
+          "model": "mistralai/mistral-medium-3.1",
+          "calls": 21,
+          "input_tokens": 16942,
+          "output_tokens": 2703
+        }
+      ],
+      "failures": [],
+      "drifts": [],
+      "branches": {
+        "t01-examine": {
+          "expected": "narrate",
+          "took": "narrate"
+        },
+        "t02-talk-1": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t03-talk-2": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t04-talk-3": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t05-talk-4": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t06-drop": {
+          "expected": "drop",
+          "took": "drop"
+        },
+        "t07-move-new": {
+          "expected": "move",
+          "took": "move"
+        },
+        "t08-move-back": {
+          "expected": "move",
+          "took": "move"
+        }
+      }
+    },
+    {
+      "story": "The Salt Assizes",
+      "held_out": true,
+      "rep": 3,
+      "turns": 8,
+      "scenes": 8,
+      "model": "mistralai/mistral-medium-3.1",
+      "readings": [
+        {
+          "code": "unreachable_transition",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "unrecorded_departure",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "unrecorded_arrival",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "item_not_held",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "take_denied",
+          "flagged": 0,
+          "judgeable": 0,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "pickup_invented",
+          "flagged": 0,
+          "judgeable": 1,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "inscription_misquoted",
+          "flagged": 0,
+          "judgeable": 2,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "truncated_prose",
+          "flagged": 0,
+          "judgeable": 12,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "third_person_protagonist",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "reached_for_nothing",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "named_more_than_one",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "still_run",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        }
+      ],
+      "findings": [],
+      "richness": {
+        "turns": 8,
+        "chars": 366,
+        "words": 65,
+        "commitments": 2.25,
+        "coverage": 0.4125,
+        "room": 0.25,
+        "exits": 0.5,
+        "items": 0.25,
+        "characters": 1.25
+      },
+      "usage": [
+        {
+          "model": "mistralai/mistral-medium-3.1",
+          "calls": 21,
+          "input_tokens": 16506,
+          "output_tokens": 2904
+        }
+      ],
+      "failures": [],
+      "drifts": [],
+      "branches": {
+        "t01-examine": {
+          "expected": "narrate",
+          "took": "narrate"
+        },
+        "t02-talk-1": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t03-talk-2": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t04-talk-3": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t05-talk-4": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t06-drop": {
+          "expected": "drop",
+          "took": "drop"
+        },
+        "t07-move-new": {
+          "expected": "move",
+          "took": "move"
+        },
+        "t08-move-back": {
+          "expected": "move",
+          "took": "move"
+        }
+      }
+    },
+    {
+      "story": "The Salt Assizes",
+      "held_out": true,
+      "rep": 4,
+      "turns": 8,
+      "scenes": 8,
+      "model": "mistralai/mistral-medium-3.1",
+      "readings": [
+        {
+          "code": "unreachable_transition",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "unrecorded_departure",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "unrecorded_arrival",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "item_not_held",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "take_denied",
+          "flagged": 0,
+          "judgeable": 0,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "pickup_invented",
+          "flagged": 0,
+          "judgeable": 1,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "inscription_misquoted",
+          "flagged": 0,
+          "judgeable": 2,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "truncated_prose",
+          "flagged": 0,
+          "judgeable": 12,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "third_person_protagonist",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        },
+        {
+          "code": "reached_for_nothing",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "named_more_than_one",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": false
+        },
+        {
+          "code": "still_run",
+          "flagged": 0,
+          "judgeable": 8,
+          "unjudged": 0,
+          "available": true
+        }
+      ],
+      "findings": [],
+      "richness": {
+        "turns": 8,
+        "chars": 411,
+        "words": 74,
+        "commitments": 2.375,
+        "coverage": 0.4417,
+        "room": 0.25,
+        "exits": 0.25,
+        "items": 0.75,
+        "characters": 1.125
+      },
+      "usage": [
+        {
+          "model": "mistralai/mistral-medium-3.1",
+          "calls": 21,
+          "input_tokens": 15821,
+          "output_tokens": 2829
+        }
+      ],
+      "failures": [],
+      "drifts": [],
+      "branches": {
+        "t01-examine": {
+          "expected": "narrate",
+          "took": "narrate"
+        },
+        "t02-talk-1": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t03-talk-2": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t04-talk-3": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t05-talk-4": {
+          "expected": "talk",
+          "took": "talk"
+        },
+        "t06-drop": {
+          "expected": "drop",
+          "took": "drop"
+        },
+        "t07-move-new": {
+          "expected": "move",
+          "took": "move"
+        },
+        "t08-move-back": {
+          "expected": "move",
+          "took": "move"
+        }
+      }
+    }
+  ]
+}

@@ -27,6 +27,38 @@ class NarrationJobTest < ActiveJob::TestCase
     streams.select { |s| s["action"] == "append" }
   end
 
+  test "the job creates the streaming target before any prose and restores the input last" do
+    playthrough = create(:playthrough, :started)
+    streams = play(playthrough, "open the ledger", NOT_A_MOVE, NARRATION)
+
+    assert_equal "replace", streams.first["action"]
+    assert_equal "turn_log", streams.first["target"]
+    assert_includes streams.first.to_html, 'id="stream"'
+    assert_includes streams.first.to_html, 'class="log streaming"'
+    assert_not_includes streams.first.to_html, "what do you do?"
+    assert_not_includes streams.first.to_html, "sheet battle"
+    assert streams[1...-1].all? { |stream| stream["action"] == "append" }
+    assert_equal "replace", streams.last["action"]
+    assert_includes streams.last.to_html, "what do you do?"
+  end
+
+  test "a duplicate job only refreshes the finished log without a new pending page" do
+    playthrough = create(:playthrough, :started)
+    BaseAgent.stub(:new, FakeAgent.new(NOT_A_MOVE, NARRATION)) do
+      NarrationJob.perform_now(playthrough.id, "open the ledger", "same-form")
+    end
+    streams = capture_turbo_stream_broadcasts(playthrough) do
+      BaseAgent.stub(:new, ->(*) { flunk "a redelivery cannot ask a model" }) do
+        NarrationJob.perform_now(playthrough.id, "open the ledger", "same-form")
+      end
+    end
+
+    assert_equal 1, streams.length
+    assert_equal "replace", streams.sole["action"]
+    assert_includes streams.sole.to_html, "what do you do?"
+    assert_not_includes streams.sole.to_html, 'id="stream"'
+  end
+
   test "narrates a turn, appends the prose, and persists it" do
     playthrough = create(:playthrough, :started)
 
@@ -217,6 +249,56 @@ class NarrationJobTest < ActiveJob::TestCase
       assert_no_match(/Bad Gateway/, html)
       assert_no_match(/FakeAgent/, html, "an internal message is not player-facing copy")
     end
+  end
+
+  # --- the one failure the reader CAN fix -----------------------------------
+
+  # AN INSTALL WITH NO MODEL SAYS SO. A committed action still finishes on the
+  # engine's own factual prose -- that is the whole of the recovery -- but the
+  # turn must not read as a working game whose narrator merely went quiet. This
+  # is the one reason a turn falls back that whoever is running the app can act
+  # on, so it is the one that names what to do.
+  test "an install with no model configured keeps its committed turn and says why the prose is plain" do
+    playthrough = create(:playthrough, :started)
+    item = lying_here(playthrough, playthrough.current_location, name: "red coin")
+
+    html = play(playthrough, "/take red coin", BaseAgent::NoModelConfiguredError).last.to_html
+
+    assert_includes playthrough.reload.carried, item, "the action was committed and stands"
+    assert_match Playthrough::SetupNotice::COMPLETED, html
+    assert_no_match Regexp.new(Regexp.escape(Playthrough::TurnFailureNotice::MESSAGE)), html,
+                    "the turn finished, so the vague internal-failure copy is the wrong one"
+    assert_match "what do you do?", html, "and the next line can follow"
+    assert_equal 1, playthrough.commands.count
+    assert_equal [ "completed" ], playthrough.commands.pluck(:status)
+  end
+
+  # THE SAME CONFIGURATION, A DIFFERENT SENTENCE. The classifier is the first
+  # call of an unslashed line, so nothing was read, nothing was written and no
+  # prose was produced -- telling this player the game described their turn in
+  # its own words would describe something that did not happen.
+  test "a turn that stopped at its first call names the configuration without claiming a turn" do
+    playthrough = create(:playthrough, :started)
+
+    html = play(playthrough, "open the ledger", BaseAgent::NoModelConfiguredError).last.to_html
+
+    assert_match Playthrough::SetupNotice::UNFINISHED, html
+    assert_match Playthrough::SetupNotice::WAYS_OUT, html
+    assert_no_match Regexp.new(Regexp.escape(Playthrough::SetupNotice::COMPLETED)), html,
+                    "nothing was narrated, so nothing may claim it was"
+    assert_nil playthrough.reload.current_scene
+  end
+
+  # A rejected key is the other failure another model cannot fix, and it reads
+  # the same -- without quoting what the provider said back.
+  test "a rejected key is named as configuration rather than logged and hidden" do
+    playthrough = create(:playthrough, :started)
+    rejected = BaseAgent::UnauthorizedProviderError.new("openrouter rejected our credentials (sk-live-secret)")
+
+    html = play(playthrough, "open the ledger", rejected).last.to_html
+
+    assert_match Playthrough::SetupNotice::UNFINISHED, html
+    assert_no_match(/sk-live-secret/, html, "the provider's own words are for the log")
   end
 
   # `html:` is inserted verbatim, so the narrator's own prose has to be escaped

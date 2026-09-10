@@ -327,9 +327,14 @@ class WorldSeed::Loader
       # `parent` IS EXCLUDED because it is a name and not a column: containment
       # is wired in `#load_containment!` after every room exists, since a file
       # may name a parent that is declared further down.
+      # A paid but unfinished realization describes the state this file is
+      # replacing. Cancel its receipt when reasserting a declared room, or a
+      # later entry could replay old generated detail over the author's world.
+      # Rooms this document does not declare retain their own progress.
       location.assign_attributes(
         attributes.except("opening", "items", "parent")
                   .merge("name" => written, "danger" => attributes["danger"].presence || Location::SAFE,
+                         "generation_checkpoint" => nil,
                          "population" => attributes["population"].presence,
                          "hazard" => attributes["hazard"].presence, "hazard_die" => attributes["hazard_die"])
                   .merge(Location::Box::COLUMNS.to_h { |column| [ column, attributes[column] ] })
