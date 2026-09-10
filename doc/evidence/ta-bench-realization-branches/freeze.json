@@ -1,0 +1,35 @@
+{
+  "source": "326ba04e3a074e52af483bce6de288d3411b3bec",
+  "files": [
+    {
+      "path": "app/agents/BaseAgent.rb",
+      "sha256": "5c76dc2701047e7fdc907d1aa2d73152a441bc888d28ad8197cc403686d625c0",
+      "unchanged": true
+    },
+    {
+      "path": "app/models/location/detail_schema.rb",
+      "sha256": "b2d06d634c74d722fd428335da4cdf4b501b7edb99c34463b2935e2220867592",
+      "unchanged": true
+    },
+    {
+      "path": "app/models/location/exits_schema.rb",
+      "sha256": "3f56590e38c1173381f5ec96964511931db80b43c0df9a42561aa23b3a74a7a8",
+      "unchanged": true
+    },
+    {
+      "path": "app/models/location/generator.rb",
+      "sha256": "256ca3d1f601f6b304a8479393dbb9dc77efe8feeeb167c921bcc76d90900f8d",
+      "unchanged": true
+    },
+    {
+      "path": "app/models/location/place_schema.rb",
+      "sha256": "dc880208195094e480e2d4ab672d1085370a6bfa73348c1ac8baa428f2fbeafd",
+      "unchanged": true
+    },
+    {
+      "path": "app/models/location/plan.rb",
+      "sha256": "3e197f6440c455ca4606e6964a2b5b3d721d690c9ba8db90b3891b0fa8b5ba12",
+      "unchanged": true
+    }
+  ]
+}

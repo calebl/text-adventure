@@ -83,13 +83,14 @@ class Eval::Realization::Result
     @metrics ||= Eval::Realization::Scorer::CHECKS.dup.merge(REPORTED_METRICS).merge(RUN_METRICS)
   end
 
-  # A FIGURE WHOSE DIRECTION OF IMPROVEMENT IS DOWN. Every check is a defect
-  # rate, and so are the four operational counts and the two latencies.
+  # Defect rates and operational costs have a downward direction. Optional
+  # request take-up is reported without calling either direction better.
   def self.lower_is_better
-    Eval::Realization.checks + %i[refusals failures omitted_fields cap_hits latency_median latency_p95]
+    (Eval::Realization.checks - Eval::Realization::Scorer::OBSERVATIONS) +
+      %i[refusals failures omitted_fields cap_hits latency_median latency_p95]
   end
 
-  NEUTRAL = (REPORTED_METRICS.keys + %i[output_tokens]).freeze
+  NEUTRAL = (REPORTED_METRICS.keys + %i[output_tokens] + Eval::Realization::Scorer::OBSERVATIONS).freeze
 
   COUNTED = %i[refusals failures omitted_fields cap_hits output_tokens].freeze
   SECONDS = %i[latency_median latency_p95].freeze

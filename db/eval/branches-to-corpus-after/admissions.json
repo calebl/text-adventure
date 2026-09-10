@@ -1,0 +1,78 @@
+{
+  "source_sha256": "ce24902a745119785b115f84da7a4400164d21f87eb6d88518c8e542d3b15206",
+  "model_calls": 0,
+  "admissions": [
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 1,
+      "admitted": false,
+      "final_bound": true
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 1,
+      "admitted": true,
+      "final_bound": true
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 1,
+      "admitted": true,
+      "final_bound": true
+    },
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 2,
+      "admitted": false,
+      "final_bound": true
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 2,
+      "admitted": true,
+      "final_bound": true
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 2,
+      "admitted": true,
+      "final_bound": true
+    },
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 3,
+      "admitted": false,
+      "final_bound": true
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 3,
+      "admitted": true,
+      "final_bound": true
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 3,
+      "admitted": true,
+      "final_bound": true
+    },
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 4,
+      "admitted": false,
+      "final_bound": true
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 4,
+      "admitted": true,
+      "final_bound": true
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 4,
+      "admitted": true,
+      "final_bound": true
+    }
+  ]
+}

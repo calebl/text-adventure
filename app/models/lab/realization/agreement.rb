@@ -119,6 +119,10 @@ class Lab::Realization::Agreement
   GRADED_BY_THE_WHOLE_SAMPLE = %i[parameters_declined parameters_the_engine_narrowed
                                   size_the_records_do_not_hold].freeze
 
+  # Optional target take-up is not a quality verdict. A good room may correctly
+  # leave the request for somewhere else, so no aspect grades this counter.
+  NOT_A_QUALITY_CHECK = Eval::Realization::Scorer::OBSERVATIONS
+
   TUNING = "tuning".freeze
   HELD_OUT = "held out".freeze
 
@@ -217,7 +221,12 @@ class Lab::Realization::Agreement
   # ticked grades no particular check and so appears in no denominator above --
   # but it is still a room he did not want that this loop said nothing about,
   # which is exactly what this list is for.
-  def missed = scorable.select { |sample| sample.verdict? && sample.verdict != "good" && sample.flags.empty? }
+  def missed
+    scorable.select do |sample|
+      sample.verdict? && sample.verdict != "good" &&
+        sample.flags.none? { |flag| !NOT_A_QUALITY_CHECK.include?(flag.code) }
+    end
+  end
 
   # WHETHER ANY CHECK IN THIS SET HAS ENOUGH ELIGIBLE VERDICTS TO REPORT. Asked
   # per check rather than over the set, because the denominators are per check
@@ -256,6 +265,7 @@ class Lab::Realization::Agreement
   # WHETHER HIS VERDICT ON THIS SAMPLE SAYS ANYTHING ABOUT THIS CHECK. The
   # class header is the argument; this is the whole of the rule.
   def eligible?(sample, code)
+    return false if NOT_A_QUALITY_CHECK.include?(code.to_sym)
     return false unless sample.verdict?
     return true if sample.verdict == "good"
     return true if sample.aspect?(WHOLE_SAMPLE)

@@ -1,0 +1,904 @@
+{
+  "request_identity": {
+    "version": 1,
+    "digest": "c5e2c7a2a58534f0"
+  },
+  "requests": {
+    "branch-quest-reach-location": {
+      "history": [],
+      "schema": {
+        "description": null,
+        "name": "Location::DetailSchema",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "description": "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.",
+              "maxLength": 1200,
+              "type": "string"
+            },
+            "items": {
+              "description": "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "description": {
+                    "description": "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "inscription": {
+                    "description": "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "readable": {
+                    "description": "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things.",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description",
+                  "readable"
+                ],
+                "type": "object"
+              },
+              "maxItems": 3,
+              "type": "array"
+            },
+            "lore": {
+              "description": "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.",
+              "maxLength": 900,
+              "type": "string"
+            },
+            "name": {
+              "description": "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",
+              "maxLength": 60,
+              "type": "string"
+            },
+            "people": {
+              "description": "The person who is in this place right now. Write the one the instructions describe.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "appearance": {
+                    "description": "What somebody walking in sees of them, consistent with the room you just wrote and with the race and age you were given for them. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  },
+                  "backstory": {
+                    "description": "Why they are in this place and what they want. Third person, by name. Two or three sentences.",
+                    "maxLength": 450,
+                    "type": "string"
+                  },
+                  "dislikes": {
+                    "description": "A comma separated list of 2 or 3 things they cannot stand.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fears": {
+                    "description": "A comma separated list of 1 or 2 things they are afraid of.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fullname": {
+                    "description": "Their full name, as a player would type it to speak to them. 2 or 3 words.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "likes": {
+                    "description": "A comma separated list of 2 or 3 things they enjoy.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "description": "What they are called to their face. 1 or 2 words.",
+                    "maxLength": 30,
+                    "type": "string"
+                  },
+                  "personality": {
+                    "description": "How they behave and how they treat a stranger. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fullname",
+                  "nickname",
+                  "appearance",
+                  "personality",
+                  "backstory",
+                  "likes",
+                  "dislikes",
+                  "fears"
+                ],
+                "type": "object"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "description",
+            "lore",
+            "people"
+          ],
+          "strict": true,
+          "type": "object"
+        }
+      },
+      "system": "You build the rooms of a text adventure one at a time. You write places a\nplayer can stand in and walk out of: concrete, specific, and consistent\nwith the world they belong to. Every exit you name is somewhere the player\ncould actually go.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "user": "## Universe Details\nphysics: Ordinary physics, and a tide that keeps to its table.\ntechnology: Rope, tar, lamp oil and a ledger.\ngeographies: One quay, one custom house standing on it, and the water at the end of both.\nraces: Harbourfolk\ncivilizations: A port that has never been anything else.\n\n\n## Story Details\ntitle: The Quay House\ngenre: harbour mystery\npreface: The custom house has been locked since noon and the seal on the door is broken.\nsummary: Somebody was inside the custom house when the whole quay says it was empty.\n\n## Where This Story Is Going\nnext: Recover the missing customs record.\nThis story needs a PLACE called \"the records room\", somewhere a player can walk to. There is no such place in this world yet.\nA room inside the customs house where the missing ledgers are kept.\nIf this room is a natural place for it, this is where it\ncomes from; if it is not, leave it and somewhere else will do. Do not bend\nthis room to fit it.\n\n\n## The Place\nname: The Custom House room 1\nteaser: A room inside The Custom House, 7 by 4 paces on storey 0.\n## Where This Room Is\nThe game's own records of this room, already decided and not yours to\nchange. Write the room around them: do not contradict a measurement, and\ndo not give it a way out this list does not have.\nThis room is 7 by 4 paces -- about 11 by 6 metres. It is on storey 0 of The Custom House, which is 14 by 10 paces across; storey 0 is the ground floor. Its ways out: a door in the east wall, to The Custom House room 2; a stair up to The Custom House room 5, on storey 1; a way out to The Quay, which is outside The Custom House. Those are every way out of this room.\n## Instructions\nWrite this place out in full.\n- The description is what the player reads on arrival. Address them as \"you\"\n- Describe what is here now, not the history -- the history is the lore\n- Stay consistent with the universe and with the teaser above\n- Respect the stated length of each field\n- NAME THIS ROOM. It is one room inside The Custom House. The player reads the room and\n  the place together -- \"the <your name> of The Custom House\" -- so name the ROOM only,\n  and never put the place's own name into it. A short noun phrase carrying the\n  article English wants on it, 2 to 4 words: \"the counting room\", \"the cold\n  store\", \"the harbourmaster's office\". Name it for what the floor plan above\n  says this room is and for what you have just described standing in it. Never\n  a comma in it\n\n## What Is Lying Here\nList AT MOST 3 portable things a player could pick up and carry away.\n- Nothing is the right answer for most rooms. An empty list is a complete answer\n- Only loose, portable things. Not the door, not the floor, not the machinery\n  bolted to it -- something a person could put in a pocket or under an arm\n- Each one must be consistent with the description you just wrote, and worth\n  the player noticing\n- If a thing has WRITING on it -- a note, a letter, a handbill, a label, a\n  docket, a page, a sign -- mark it readable and WRITE OUT WHAT IS WRITTEN\n  ON IT, exactly as it appears on the thing. The words themselves, not a\n  description of them, and short enough to finish -- a few words, a line,\n  or a few short lines. The game keeps those words and a player reading it\n  twice reads the same ones\n- Never name it after a person or after a place. Already spoken for in this story, so do not reuse: Nell Cawsand\n\n## Who Is Here\nWrite EXACTLY 1 person who is in this place right now.\n- Anyone you write is somebody the player can walk up to and talk to, so they\n  have to have a reason to be standing here and something they want\n- Do not write the player, and do not write somebody passing through\n- Never give them the name of a place, of a thing, or any name already\n  spoken for above\n\nWho they are is already decided. Write these people and do not change them:\n  the 1st is Harbourfolk, about 54, trans man\n"
+    },
+    "branch-quest-speak-to": {
+      "history": [],
+      "schema": {
+        "description": null,
+        "name": "Location::DetailSchema",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "description": "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.",
+              "maxLength": 1200,
+              "type": "string"
+            },
+            "items": {
+              "description": "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "description": {
+                    "description": "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "inscription": {
+                    "description": "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "readable": {
+                    "description": "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things.",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description",
+                  "readable"
+                ],
+                "type": "object"
+              },
+              "maxItems": 3,
+              "type": "array"
+            },
+            "lore": {
+              "description": "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.",
+              "maxLength": 900,
+              "type": "string"
+            },
+            "name": {
+              "description": "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",
+              "maxLength": 60,
+              "type": "string"
+            },
+            "people": {
+              "description": "The person who is in this place right now. Write the one the instructions describe.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "appearance": {
+                    "description": "What somebody walking in sees of them, consistent with the room you just wrote and with the race and age you were given for them. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  },
+                  "backstory": {
+                    "description": "Why they are in this place and what they want. Third person, by name. Two or three sentences.",
+                    "maxLength": 450,
+                    "type": "string"
+                  },
+                  "dislikes": {
+                    "description": "A comma separated list of 2 or 3 things they cannot stand.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fears": {
+                    "description": "A comma separated list of 1 or 2 things they are afraid of.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fullname": {
+                    "description": "Their full name, as a player would type it to speak to them. 2 or 3 words.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "likes": {
+                    "description": "A comma separated list of 2 or 3 things they enjoy.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "description": "What they are called to their face. 1 or 2 words.",
+                    "maxLength": 30,
+                    "type": "string"
+                  },
+                  "personality": {
+                    "description": "How they behave and how they treat a stranger. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fullname",
+                  "nickname",
+                  "appearance",
+                  "personality",
+                  "backstory",
+                  "likes",
+                  "dislikes",
+                  "fears"
+                ],
+                "type": "object"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "description",
+            "lore",
+            "people"
+          ],
+          "strict": true,
+          "type": "object"
+        }
+      },
+      "system": "You build the rooms of a text adventure one at a time. You write places a\nplayer can stand in and walk out of: concrete, specific, and consistent\nwith the world they belong to. Every exit you name is somewhere the player\ncould actually go.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "user": "## Universe Details\nphysics: Ordinary physics, and a tide that keeps to its table.\ntechnology: Rope, tar, lamp oil and a ledger.\ngeographies: One quay, one custom house standing on it, and the water at the end of both.\nraces: Harbourfolk\ncivilizations: A port that has never been anything else.\n\n\n## Story Details\ntitle: The Quay House\ngenre: harbour mystery\npreface: The custom house has been locked since noon and the seal on the door is broken.\nsummary: Somebody was inside the custom house when the whole quay says it was empty.\n\n## Where This Story Is Going\nnext: Recover the missing customs record.\nThis story needs a PERSON called \"Mara Quill\", standing somewhere a player can reach. There is nobody of that name in this world yet.\nThe customs archivist is sorting the missing ledgers in this room.\nIf this room is a natural place for it, this is where it\ncomes from; if it is not, leave it and somewhere else will do. Do not bend\nthis room to fit it.\n\n\n## The Place\nname: The Custom House room 1\nteaser: A room inside The Custom House, 7 by 4 paces on storey 0.\n## Where This Room Is\nThe game's own records of this room, already decided and not yours to\nchange. Write the room around them: do not contradict a measurement, and\ndo not give it a way out this list does not have.\nThis room is 7 by 4 paces -- about 11 by 6 metres. It is on storey 0 of The Custom House, which is 14 by 10 paces across; storey 0 is the ground floor. Its ways out: a door in the east wall, to The Custom House room 2; a stair up to The Custom House room 5, on storey 1; a way out to The Quay, which is outside The Custom House. Those are every way out of this room.\n## Instructions\nWrite this place out in full.\n- The description is what the player reads on arrival. Address them as \"you\"\n- Describe what is here now, not the history -- the history is the lore\n- Stay consistent with the universe and with the teaser above\n- Respect the stated length of each field\n- NAME THIS ROOM. It is one room inside The Custom House. The player reads the room and\n  the place together -- \"the <your name> of The Custom House\" -- so name the ROOM only,\n  and never put the place's own name into it. A short noun phrase carrying the\n  article English wants on it, 2 to 4 words: \"the counting room\", \"the cold\n  store\", \"the harbourmaster's office\". Name it for what the floor plan above\n  says this room is and for what you have just described standing in it. Never\n  a comma in it\n\n## What Is Lying Here\nList AT MOST 3 portable things a player could pick up and carry away.\n- Nothing is the right answer for most rooms. An empty list is a complete answer\n- Only loose, portable things. Not the door, not the floor, not the machinery\n  bolted to it -- something a person could put in a pocket or under an arm\n- Each one must be consistent with the description you just wrote, and worth\n  the player noticing\n- If a thing has WRITING on it -- a note, a letter, a handbill, a label, a\n  docket, a page, a sign -- mark it readable and WRITE OUT WHAT IS WRITTEN\n  ON IT, exactly as it appears on the thing. The words themselves, not a\n  description of them, and short enough to finish -- a few words, a line,\n  or a few short lines. The game keeps those words and a player reading it\n  twice reads the same ones\n- Never name it after a person or after a place. Already spoken for in this story, so do not reuse: Nell Cawsand\n\n## Who Is Here\nWrite EXACTLY 1 person who is in this place right now.\n- Anyone you write is somebody the player can walk up to and talk to, so they\n  have to have a reason to be standing here and something they want\n- Do not write the player, and do not write somebody passing through\n- Never give them the name of a place, of a thing, or any name already\n  spoken for above\n\nWho they are is already decided. Write these people and do not change them:\n  the 1st is Harbourfolk, about 54, non-binary\n"
+    },
+    "branch-quest-hold-item": {
+      "history": [],
+      "schema": {
+        "description": null,
+        "name": "Location::DetailSchema",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "description": "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.",
+              "maxLength": 1200,
+              "type": "string"
+            },
+            "items": {
+              "description": "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "description": {
+                    "description": "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "inscription": {
+                    "description": "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "readable": {
+                    "description": "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things.",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description",
+                  "readable"
+                ],
+                "type": "object"
+              },
+              "maxItems": 3,
+              "type": "array"
+            },
+            "lore": {
+              "description": "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.",
+              "maxLength": 900,
+              "type": "string"
+            },
+            "name": {
+              "description": "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",
+              "maxLength": 60,
+              "type": "string"
+            },
+            "people": {
+              "description": "The person who is in this place right now. Write the one the instructions describe.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "appearance": {
+                    "description": "What somebody walking in sees of them, consistent with the room you just wrote and with the race and age you were given for them. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  },
+                  "backstory": {
+                    "description": "Why they are in this place and what they want. Third person, by name. Two or three sentences.",
+                    "maxLength": 450,
+                    "type": "string"
+                  },
+                  "dislikes": {
+                    "description": "A comma separated list of 2 or 3 things they cannot stand.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fears": {
+                    "description": "A comma separated list of 1 or 2 things they are afraid of.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fullname": {
+                    "description": "Their full name, as a player would type it to speak to them. 2 or 3 words.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "likes": {
+                    "description": "A comma separated list of 2 or 3 things they enjoy.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "description": "What they are called to their face. 1 or 2 words.",
+                    "maxLength": 30,
+                    "type": "string"
+                  },
+                  "personality": {
+                    "description": "How they behave and how they treat a stranger. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fullname",
+                  "nickname",
+                  "appearance",
+                  "personality",
+                  "backstory",
+                  "likes",
+                  "dislikes",
+                  "fears"
+                ],
+                "type": "object"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "description",
+            "lore",
+            "people"
+          ],
+          "strict": true,
+          "type": "object"
+        }
+      },
+      "system": "You build the rooms of a text adventure one at a time. You write places a\nplayer can stand in and walk out of: concrete, specific, and consistent\nwith the world they belong to. Every exit you name is somewhere the player\ncould actually go.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "user": "## Universe Details\nphysics: Ordinary physics, and a tide that keeps to its table.\ntechnology: Rope, tar, lamp oil and a ledger.\ngeographies: One quay, one custom house standing on it, and the water at the end of both.\nraces: Harbourfolk\ncivilizations: A port that has never been anything else.\n\n\n## Story Details\ntitle: The Quay House\ngenre: harbour mystery\npreface: The custom house has been locked since noon and the seal on the door is broken.\nsummary: Somebody was inside the custom house when the whole quay says it was empty.\n\n## Where This Story Is Going\nnext: Recover the missing customs record.\nThis story needs a THING called \"the customs docket\", lying somewhere a player can pick it up. There is no such thing in this world yet.\nA portable docket on the desk records the missing cargo.\nIf this room is a natural place for it, this is where it\ncomes from; if it is not, leave it and somewhere else will do. Do not bend\nthis room to fit it.\n\n\n## The Place\nname: The Custom House room 1\nteaser: A room inside The Custom House, 7 by 4 paces on storey 0.\n## Where This Room Is\nThe game's own records of this room, already decided and not yours to\nchange. Write the room around them: do not contradict a measurement, and\ndo not give it a way out this list does not have.\nThis room is 7 by 4 paces -- about 11 by 6 metres. It is on storey 0 of The Custom House, which is 14 by 10 paces across; storey 0 is the ground floor. Its ways out: a door in the east wall, to The Custom House room 2; a stair up to The Custom House room 5, on storey 1; a way out to The Quay, which is outside The Custom House. Those are every way out of this room.\n## Instructions\nWrite this place out in full.\n- The description is what the player reads on arrival. Address them as \"you\"\n- Describe what is here now, not the history -- the history is the lore\n- Stay consistent with the universe and with the teaser above\n- Respect the stated length of each field\n- NAME THIS ROOM. It is one room inside The Custom House. The player reads the room and\n  the place together -- \"the <your name> of The Custom House\" -- so name the ROOM only,\n  and never put the place's own name into it. A short noun phrase carrying the\n  article English wants on it, 2 to 4 words: \"the counting room\", \"the cold\n  store\", \"the harbourmaster's office\". Name it for what the floor plan above\n  says this room is and for what you have just described standing in it. Never\n  a comma in it\n\n## What Is Lying Here\nList AT MOST 3 portable things a player could pick up and carry away.\n- Nothing is the right answer for most rooms. An empty list is a complete answer\n- Only loose, portable things. Not the door, not the floor, not the machinery\n  bolted to it -- something a person could put in a pocket or under an arm\n- Each one must be consistent with the description you just wrote, and worth\n  the player noticing\n- If a thing has WRITING on it -- a note, a letter, a handbill, a label, a\n  docket, a page, a sign -- mark it readable and WRITE OUT WHAT IS WRITTEN\n  ON IT, exactly as it appears on the thing. The words themselves, not a\n  description of them, and short enough to finish -- a few words, a line,\n  or a few short lines. The game keeps those words and a player reading it\n  twice reads the same ones\n- Never name it after a person or after a place. Already spoken for in this story, so do not reuse: Nell Cawsand\n\n## Who Is Here\nWrite EXACTLY 1 person who is in this place right now.\n- Anyone you write is somebody the player can walk up to and talk to, so they\n  have to have a reason to be standing here and something they want\n- Do not write the player, and do not write somebody passing through\n- Never give them the name of a place, of a thing, or any name already\n  spoken for above\n\nWho they are is already decided. Write these people and do not change them:\n  the 1st is Harbourfolk, about 70, trans woman\n"
+    },
+    "branch-named-siblings": {
+      "history": [],
+      "schema": {
+        "description": null,
+        "name": "Location::DetailSchema",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "description": "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.",
+              "maxLength": 1200,
+              "type": "string"
+            },
+            "items": {
+              "description": "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "description": {
+                    "description": "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "inscription": {
+                    "description": "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "readable": {
+                    "description": "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things.",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description",
+                  "readable"
+                ],
+                "type": "object"
+              },
+              "maxItems": 3,
+              "type": "array"
+            },
+            "lore": {
+              "description": "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.",
+              "maxLength": 900,
+              "type": "string"
+            },
+            "name": {
+              "description": "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",
+              "maxLength": 60,
+              "type": "string"
+            },
+            "people": {
+              "description": "The person who is in this place right now. Write the one the instructions describe.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "appearance": {
+                    "description": "What somebody walking in sees of them, consistent with the room you just wrote and with the race and age you were given for them. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  },
+                  "backstory": {
+                    "description": "Why they are in this place and what they want. Third person, by name. Two or three sentences.",
+                    "maxLength": 450,
+                    "type": "string"
+                  },
+                  "dislikes": {
+                    "description": "A comma separated list of 2 or 3 things they cannot stand.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fears": {
+                    "description": "A comma separated list of 1 or 2 things they are afraid of.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fullname": {
+                    "description": "Their full name, as a player would type it to speak to them. 2 or 3 words.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "likes": {
+                    "description": "A comma separated list of 2 or 3 things they enjoy.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "description": "What they are called to their face. 1 or 2 words.",
+                    "maxLength": 30,
+                    "type": "string"
+                  },
+                  "personality": {
+                    "description": "How they behave and how they treat a stranger. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fullname",
+                  "nickname",
+                  "appearance",
+                  "personality",
+                  "backstory",
+                  "likes",
+                  "dislikes",
+                  "fears"
+                ],
+                "type": "object"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "description",
+            "lore",
+            "people"
+          ],
+          "strict": true,
+          "type": "object"
+        }
+      },
+      "system": "You build the rooms of a text adventure one at a time. You write places a\nplayer can stand in and walk out of: concrete, specific, and consistent\nwith the world they belong to. Every exit you name is somewhere the player\ncould actually go.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "user": "## Universe Details\nphysics: Ordinary physics, and a tide that keeps to its table.\ntechnology: Rope, tar, lamp oil and a ledger.\ngeographies: One quay, one custom house standing on it, and the water at the end of both.\nraces: Harbourfolk\ncivilizations: A port that has never been anything else.\n\n\n## Story Details\ntitle: The Quay House\ngenre: harbour mystery\npreface: The custom house has been locked since noon and the seal on the door is broken.\nsummary: Somebody was inside the custom house when the whole quay says it was empty.\n\n\n## The Place\nname: The Custom House room 1\nteaser: A room inside The Custom House, 7 by 4 paces on storey 0.\n## Where This Room Is\nThe game's own records of this room, already decided and not yours to\nchange. Write the room around them: do not contradict a measurement, and\ndo not give it a way out this list does not have.\nThis room is 7 by 4 paces -- about 11 by 6 metres. It is on storey 0 of The Custom House, which is 14 by 10 paces across; storey 0 is the ground floor. Its ways out: a door in the east wall, to the counting room; a stair up to the upper landing, on storey 1; a way out to The Quay, which is outside The Custom House. Those are every way out of this room.\n## Instructions\nWrite this place out in full.\n- The description is what the player reads on arrival. Address them as \"you\"\n- Describe what is here now, not the history -- the history is the lore\n- Stay consistent with the universe and with the teaser above\n- Respect the stated length of each field\n- NAME THIS ROOM. It is one room inside The Custom House. The player reads the room and\n  the place together -- \"the <your name> of The Custom House\" -- so name the ROOM only,\n  and never put the place's own name into it. A short noun phrase carrying the\n  article English wants on it, 2 to 4 words: \"the counting room\", \"the cold\n  store\", \"the harbourmaster's office\". Name it for what the floor plan above\n  says this room is and for what you have just described standing in it. Never\n  a comma in it. Rooms of The Custom House that are already named, so do not reuse one: the counting room; the upper landing\n\n## What Is Lying Here\nList AT MOST 3 portable things a player could pick up and carry away.\n- Nothing is the right answer for most rooms. An empty list is a complete answer\n- Only loose, portable things. Not the door, not the floor, not the machinery\n  bolted to it -- something a person could put in a pocket or under an arm\n- Each one must be consistent with the description you just wrote, and worth\n  the player noticing\n- If a thing has WRITING on it -- a note, a letter, a handbill, a label, a\n  docket, a page, a sign -- mark it readable and WRITE OUT WHAT IS WRITTEN\n  ON IT, exactly as it appears on the thing. The words themselves, not a\n  description of them, and short enough to finish -- a few words, a line,\n  or a few short lines. The game keeps those words and a player reading it\n  twice reads the same ones\n- Never name it after a person or after a place. Already spoken for in this story, so do not reuse: Nell Cawsand\n\n## Who Is Here\nWrite EXACTLY 1 person who is in this place right now.\n- Anyone you write is somebody the player can walk up to and talk to, so they\n  have to have a reason to be standing here and something they want\n- Do not write the player, and do not write somebody passing through\n- Never give them the name of a place, of a thing, or any name already\n  spoken for above\n\nWho they are is already decided. Write these people and do not change them:\n  the 1st is Harbourfolk, about 63, male\n"
+    },
+    "branch-saturated-items": {
+      "history": [],
+      "schema": {
+        "description": null,
+        "name": "Location::DetailSchema",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "description": "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.",
+              "maxLength": 1200,
+              "type": "string"
+            },
+            "items": {
+              "description": "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "description": {
+                    "description": "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "inscription": {
+                    "description": "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "readable": {
+                    "description": "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things.",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description",
+                  "readable"
+                ],
+                "type": "object"
+              },
+              "maxItems": 3,
+              "type": "array"
+            },
+            "lore": {
+              "description": "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.",
+              "maxLength": 900,
+              "type": "string"
+            },
+            "name": {
+              "description": "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",
+              "maxLength": 60,
+              "type": "string"
+            },
+            "people": {
+              "description": "The person who is in this place right now. Write the one the instructions describe.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "appearance": {
+                    "description": "What somebody walking in sees of them, consistent with the room you just wrote and with the race and age you were given for them. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  },
+                  "backstory": {
+                    "description": "Why they are in this place and what they want. Third person, by name. Two or three sentences.",
+                    "maxLength": 450,
+                    "type": "string"
+                  },
+                  "dislikes": {
+                    "description": "A comma separated list of 2 or 3 things they cannot stand.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fears": {
+                    "description": "A comma separated list of 1 or 2 things they are afraid of.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fullname": {
+                    "description": "Their full name, as a player would type it to speak to them. 2 or 3 words.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "likes": {
+                    "description": "A comma separated list of 2 or 3 things they enjoy.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "description": "What they are called to their face. 1 or 2 words.",
+                    "maxLength": 30,
+                    "type": "string"
+                  },
+                  "personality": {
+                    "description": "How they behave and how they treat a stranger. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fullname",
+                  "nickname",
+                  "appearance",
+                  "personality",
+                  "backstory",
+                  "likes",
+                  "dislikes",
+                  "fears"
+                ],
+                "type": "object"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "description",
+            "lore",
+            "people"
+          ],
+          "strict": true,
+          "type": "object"
+        }
+      },
+      "system": "You build the rooms of a text adventure one at a time. You write places a\nplayer can stand in and walk out of: concrete, specific, and consistent\nwith the world they belong to. Every exit you name is somewhere the player\ncould actually go.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "user": "## Universe Details\nphysics: Ordinary physics, and a tide that keeps to its table.\ntechnology: Rope, tar, lamp oil and a ledger.\ngeographies: One quay, one custom house standing on it, and the water at the end of both.\nraces: Harbourfolk\ncivilizations: A port that has never been anything else.\n\n\n## Story Details\ntitle: The Quay House\ngenre: harbour mystery\npreface: The custom house has been locked since noon and the seal on the door is broken.\nsummary: Somebody was inside the custom house when the whole quay says it was empty.\n\n\n## The Place\nname: The Custom House room 1\nteaser: A room inside The Custom House, 7 by 4 paces on storey 0.\n## Where This Room Is\nThe game's own records of this room, already decided and not yours to\nchange. Write the room around them: do not contradict a measurement, and\ndo not give it a way out this list does not have.\nThis room is 7 by 4 paces -- about 11 by 6 metres. It is on storey 0 of The Custom House, which is 14 by 10 paces across; storey 0 is the ground floor. Its ways out: a door in the east wall, to The Custom House room 2; a stair up to The Custom House room 5, on storey 1; a way out to The Quay, which is outside The Custom House. Those are every way out of this room.\n## Instructions\nWrite this place out in full.\n- The description is what the player reads on arrival. Address them as \"you\"\n- Describe what is here now, not the history -- the history is the lore\n- Stay consistent with the universe and with the teaser above\n- Respect the stated length of each field\n- NAME THIS ROOM. It is one room inside The Custom House. The player reads the room and\n  the place together -- \"the <your name> of The Custom House\" -- so name the ROOM only,\n  and never put the place's own name into it. A short noun phrase carrying the\n  article English wants on it, 2 to 4 words: \"the counting room\", \"the cold\n  store\", \"the harbourmaster's office\". Name it for what the floor plan above\n  says this room is and for what you have just described standing in it. Never\n  a comma in it\n\nDo not list any items: this place already holds everything it can.\n\n## Who Is Here\nWrite EXACTLY 1 person who is in this place right now.\n- Anyone you write is somebody the player can walk up to and talk to, so they\n  have to have a reason to be standing here and something they want\n- Do not write the player, and do not write somebody passing through\n- Never give them the name of a place, of a thing, or any name already\n  spoken for above\n\nWho they are is already decided. Write these people and do not change them:\n  the 1st is Harbourfolk, about 70, female\n"
+    },
+    "branch-geometry-stairs": {
+      "history": [],
+      "schema": {
+        "description": null,
+        "name": "Location::DetailSchema",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "description": "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.",
+              "maxLength": 1200,
+              "type": "string"
+            },
+            "items": {
+              "description": "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "description": {
+                    "description": "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "inscription": {
+                    "description": "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.",
+                    "maxLength": 400,
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "readable": {
+                    "description": "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things.",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description",
+                  "readable"
+                ],
+                "type": "object"
+              },
+              "maxItems": 3,
+              "type": "array"
+            },
+            "lore": {
+              "description": "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.",
+              "maxLength": 900,
+              "type": "string"
+            },
+            "name": {
+              "description": "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",
+              "maxLength": 60,
+              "type": "string"
+            },
+            "people": {
+              "description": "People who are in this place right now.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "appearance": {
+                    "description": "What somebody walking in sees of them, consistent with the room you just wrote and with the race and age you were given for them. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  },
+                  "backstory": {
+                    "description": "Why they are in this place and what they want. Third person, by name. Two or three sentences.",
+                    "maxLength": 450,
+                    "type": "string"
+                  },
+                  "dislikes": {
+                    "description": "A comma separated list of 2 or 3 things they cannot stand.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fears": {
+                    "description": "A comma separated list of 1 or 2 things they are afraid of.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "fullname": {
+                    "description": "Their full name, as a player would type it to speak to them. 2 or 3 words.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "likes": {
+                    "description": "A comma separated list of 2 or 3 things they enjoy.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "nickname": {
+                    "description": "What they are called to their face. 1 or 2 words.",
+                    "maxLength": 30,
+                    "type": "string"
+                  },
+                  "personality": {
+                    "description": "How they behave and how they treat a stranger. One or two sentences.",
+                    "maxLength": 300,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "fullname",
+                  "nickname",
+                  "appearance",
+                  "personality",
+                  "backstory",
+                  "likes",
+                  "dislikes",
+                  "fears"
+                ],
+                "type": "object"
+              },
+              "maxItems": 3,
+              "type": "array"
+            }
+          },
+          "required": [
+            "description",
+            "lore"
+          ],
+          "strict": true,
+          "type": "object"
+        }
+      },
+      "system": "You build the rooms of a text adventure one at a time. You write places a\nplayer can stand in and walk out of: concrete, specific, and consistent\nwith the world they belong to. Every exit you name is somewhere the player\ncould actually go.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "user": "## Universe Details\nphysics: Ordinary physics, and a tide that keeps to its table.\ntechnology: Rope, tar, lamp oil and a ledger.\ngeographies: One quay, one custom house standing on it, and the water at the end of both.\nraces: Harbourfolk\ncivilizations: A port that has never been anything else.\n\n\n## Story Details\ntitle: The Quay House\ngenre: harbour mystery\npreface: The custom house has been locked since noon and the seal on the door is broken.\nsummary: Somebody was inside the custom house when the whole quay says it was empty.\n\n\n## The Place\nname: The Custom House room 1\nteaser: A room inside The Custom House, 7 by 4 paces on storey 0.\n## Where This Room Is\nThe game's own records of this room, already decided and not yours to\nchange. Write the room around them: do not contradict a measurement, and\ndo not give it a way out this list does not have.\nThis room is 7 by 4 paces -- about 11 by 6 metres. It is on storey 0 of The Custom House, which is 14 by 10 paces across; storey 0 is the ground floor. Its ways out: a door in the east wall, to The Custom House room 2; a stair up to The Custom House room 5, on storey 1; a way out to The Quay, which is outside The Custom House. Those are every way out of this room.\n## Instructions\nWrite this place out in full.\n- The description is what the player reads on arrival. Address them as \"you\"\n- Describe what is here now, not the history -- the history is the lore\n- Stay consistent with the universe and with the teaser above\n- Respect the stated length of each field\n- NAME THIS ROOM. It is one room inside The Custom House. The player reads the room and\n  the place together -- \"the <your name> of The Custom House\" -- so name the ROOM only,\n  and never put the place's own name into it. A short noun phrase carrying the\n  article English wants on it, 2 to 4 words: \"the counting room\", \"the cold\n  store\", \"the harbourmaster's office\". Name it for what the floor plan above\n  says this room is and for what you have just described standing in it. Never\n  a comma in it\n\n## What Is Lying Here\nList AT MOST 3 portable things a player could pick up and carry away.\n- Nothing is the right answer for most rooms. An empty list is a complete answer\n- Only loose, portable things. Not the door, not the floor, not the machinery\n  bolted to it -- something a person could put in a pocket or under an arm\n- Each one must be consistent with the description you just wrote, and worth\n  the player noticing\n- If a thing has WRITING on it -- a note, a letter, a handbill, a label, a\n  docket, a page, a sign -- mark it readable and WRITE OUT WHAT IS WRITTEN\n  ON IT, exactly as it appears on the thing. The words themselves, not a\n  description of them, and short enough to finish -- a few words, a line,\n  or a few short lines. The game keeps those words and a player reading it\n  twice reads the same ones\n- Never name it after a person or after a place. Already spoken for in this story, so do not reuse: Nell Cawsand\n\n## Who Is Here\nWrite NOBODY into this place. There is nobody here, and the description\nshould read like somewhere nobody is standing.\n"
+    },
+    "branch-restored-conversation": {
+      "history": [
+        {
+          "content": "## Universe Details\nphysics: Ordinary physics, and a tide that keeps to its table.\ntechnology: Rope, tar, lamp oil and a ledger.\ngeographies: One quay, one custom house standing on it, and the water at the end of both.\nraces: Harbourfolk\ncivilizations: A port that has never been anything else.\n\n\n## Story Details\ntitle: The Quay House\ngenre: harbour mystery\npreface: The custom house has been locked since noon and the seal on the door is broken.\nsummary: Somebody was inside the custom house when the whole quay says it was empty.\n\n\n## The Place\nname: The Quay\nteaser: The water at one end and the custom house at the other.\n\n## Instructions\nWrite this place out in full.\n- The description is what the player reads on arrival. Address them as \"you\"\n- Describe what is here now, not the history -- the history is the lore\n- Stay consistent with the universe and with the teaser above\n- Respect the stated length of each field\n\n## What Is Lying Here\nList AT MOST 3 portable things a player could pick up and carry away.\n- Nothing is the right answer for most rooms. An empty list is a complete answer\n- Only loose, portable things. Not the door, not the floor, not the machinery\n  bolted to it -- something a person could put in a pocket or under an arm\n- Each one must be consistent with the description you just wrote, and worth\n  the player noticing\n- If a thing has WRITING on it -- a note, a letter, a handbill, a label, a\n  docket, a page, a sign -- mark it readable and WRITE OUT WHAT IS WRITTEN\n  ON IT, exactly as it appears on the thing. The words themselves, not a\n  description of them, and short enough to finish -- a few words, a line,\n  or a few short lines. The game keeps those words and a player reading it\n  twice reads the same ones\n- Never name it after a person or after a place. Already spoken for in this story, so do not reuse: Nell Cawsand, seal ledger\n\n## Who Is Here\nWrite NOBODY into this place. There is nobody here, and the description\nshould read like somewhere nobody is standing.\n",
+          "role": "user"
+        },
+        {
+          "content": "{\"description\":\"A cobbled quay runs beside the customs house. Mooring posts line the water.\",\"lore\":\"Cargo is weighed here before it enters the customs house.\",\"people\":[],\"items\":[]}",
+          "role": "assistant"
+        }
+      ],
+      "schema": {
+        "description": null,
+        "name": "Location::ExitsSchema",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "exits": {
+              "description": "The places a player can reach directly from here.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "distance": {
+                    "description": "How far it is. Pick the closest of these; the exact wording does not matter.",
+                    "enum": [
+                      "adjacent",
+                      "a short walk",
+                      "across the district",
+                      "a long journey",
+                      "days away"
+                    ],
+                    "type": "string"
+                  },
+                  "inside": {
+                    "description": "NO INSIDE for almost everything you name. Anything else here makes the game build a whole floor plan of rooms there and send the player walking through them, so answer otherwise ONLY for a place that is a BUILDING somebody goes in at a door: an inn, a keep, a counting house, a warren. NO INSIDE for a road, a shore, a clearing, a bridge, a square, a cave mouth, a stair, a courtyard -- and for a room, an office or a hall, which are already somewhere you stand. When it really is a building, pick the size it would really be.",
+                    "enum": [
+                      "no inside",
+                      "one room",
+                      "a few rooms",
+                      "a warren of rooms"
+                    ],
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "The name of the place this exit leads to, as a player would refer to it. 1 to 4 words, no article.",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "population": {
+                    "description": "How many people are in that place. Pick the closest of these words. It is a word and never a number: the engine decides how many people that is.",
+                    "enum": [
+                      "nobody",
+                      "a person or two",
+                      "a crowd"
+                    ],
+                    "type": "string"
+                  },
+                  "teaser": {
+                    "description": "A one-line glimpse of what lies that way, enough to make the player choose it. Exactly one sentence.",
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "travel_method": {
+                    "description": "How the player covers that ground. Pick the closest of these. It must read correctly in both directions, because the way back is the same edge.",
+                    "enum": [
+                      "walking",
+                      "taking stairs",
+                      "climbing",
+                      "crawling",
+                      "swimming",
+                      "rowing",
+                      "riding"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "teaser",
+                  "distance",
+                  "travel_method",
+                  "population"
+                ],
+                "type": "object"
+              },
+              "maxItems": 4,
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "exits"
+          ],
+          "strict": true,
+          "type": "object"
+        }
+      },
+      "system": "You build the rooms of a text adventure one at a time. You write places a\nplayer can stand in and walk out of: concrete, specific, and consistent\nwith the world they belong to. Every exit you name is somewhere the player\ncould actually go.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+      "user": "Now list the ways out of The Quay.\n\nThis room has no ways out yet.\n\n## Places That Already Exist In This Story\nReuse a name from this list when an exit leads somewhere already known.\nOnly invent a name when the exit leads somewhere genuinely new.\nA place marked (already written) has had its own ways out written down\nalready, so naming it here would open a door it does not have: leave it\nout and name somewhere new instead.\nThe Custom House\nThe Bonded Cellar\n\n## Instructions\n- Name AT MOST 4 ways out. That is what is left of this\n  room's 4, not a target: fewer is a better answer than a door\n  nobody needed\n- Each exit is somewhere the player can reach directly from The Quay\n- One way out is a complete answer. A dead end, a cell, the bottom of a\n  shaft: if the only way out is back the place the player came from, list\n  that place and nothing else. Never invent a passage to reach a second\n- When there is more than one, give the player a reason to prefer one\n  over another\n- Do not list The Quay itself\n- Say which of them have an INSIDE, and say NO INSIDE for almost all of\n  them. Saying anything else makes the game build a whole floor plan of\n  rooms in that place and send the player walking through them, so it is\n  only ever right for a BUILDING somebody goes in at a door -- an inn, a\n  keep, a counting house, a warren. A road, a shore, a clearing, a bridge,\n  a square, a cave mouth, a stair, a courtyard: no inside. A room, an\n  office, a hall, a chamber: no inside either, because those are already\n  somewhere the player stands. Where it really is a building, pick the size\n  it would really be rather than the most interesting one\n- Distance and travel method must be consistent with the description you\n  just wrote, and must be true in both directions -- the way back is the\n  same edge\n- Say how populated each place is, in one of the words offered. A place is\n  peopled by what it is FOR: a market, a taproom, a guardhouse, a\n  workshop, a shrine somebody keeps -- somewhere with a reason for\n  somebody to be standing in it. A place is empty when nothing is asked of\n  anybody there: a cellar, a back stair, a stretch of road, a room that is\n  locked, a place the story has already emptied. Neither answer is the\n  safe one\n- Respect the stated length of each field\n"
+    }
+  }
+}

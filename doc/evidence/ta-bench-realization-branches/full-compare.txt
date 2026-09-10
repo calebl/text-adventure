@@ -1,0 +1,70 @@
+------------------------------------------------------------------------------
+REALIZATION BENCH: exits-quantifier-after -> branches-to-corpus-after
+Exact rank test at p <= 0.05, 4 repetitions a side minimum.
+------------------------------------------------------------------------------
+exits-quantifier-after: mistralai/mistral-medium-3.1 | corpus 8a06d8d919582e15 | prompt 08d08a01235d89d3 | 4 reps
+branches-to-corpus-after: mistralai/mistral-medium-3.1 | corpus de57509aa1da1a37 | prompt 08d08a01235d89d3 | 4 reps
+Latencies are WARM-CACHE figures -- each arm's first realization is timed apart and excluded.
+
+WARNING: THE TWO SETS BUILT DIFFERENT ROOMS (8a06d8d919582e15 vs de57509aa1da1a37).
+Whatever moved below may be the cases moving and not the prompt. Re-run one side.
+
+NOTE: the two sets record the SAME prompt digest, so this is the same prompt measured
+twice -- the null check. Everything below should read NOISE.
+
+MODEL  mistralai/mistral-medium-3.1
+  quest_target_not_admitted    0.000 -> 0.333  reported  INCONCLUSIVE
+  exit_into_a_written_room     0.000 -> 0.000  unchanged NOISE (inside the 0.023 the unchanged runs already spanned)
+  exit_already_reachable       0.287 -> 0.279  BETTER    NOISE (inside the 0.036 the unchanged runs already spanned)
+  exit_spelled_a_place_differently 0.200 -> 0.220  WORSE     NOISE (inside the 0.049 the unchanged runs already spanned)
+  exit_named_this_room         0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  exit_over_the_allowance      0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  no_new_ground                0.393 -> 0.433  WORSE     NOISE (inside the 0.200 the unchanged runs already spanned)
+  person_over_the_allowance    0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  item_over_the_allowance      0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  name_already_spoken_for      0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  proposal_refused             0.030 -> 0.020  BETTER    NOISE (inside the 0.029 the unchanged runs already spanned)
+  readable_without_words       0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  room_name_refused            0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  room_name_already_taken      0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  inside_declined              0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  inside_on_a_place_that_already_exists 0.765 -> 0.824  WORSE     NOISE (inside the 0.239 the unchanged runs already spanned)
+  inside_where_the_world_wanted_none 0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  no_inside_where_the_world_wanted_one 0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  population_declined          0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  people_short_of_the_pick     0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  parameters_declined          0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  parameters_the_engine_narrowed 0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  race_not_named               0.500 -> 1.000  WORSE     NOISE (inside the 1.000 the unchanged runs already spanned)
+  size_the_records_do_not_hold 0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  insides_given                0.380 -> 0.407  reported  NOISE (inside the 0.122 the unchanged runs already spanned)
+  insides_reaching             0.096 -> 0.069  reported  NOISE (inside the 0.120 the unchanged runs already spanned)
+  rooms_laid_out               17.00 -> 17.00  reported  NOISE (inside the 0.000 the unchanged runs already spanned)
+  storeys_below_ground         3.00 -> 3.00  reported  NOISE (inside the 0.000 the unchanged runs already spanned)
+  hazard_on_the_ground_floor   0.200 -> 0.200  reported  NOISE (inside the 0.000 the unchanged runs already spanned)
+  hazard_below_ground          0.750 -> 0.750  reported  NOISE (inside the 0.000 the unchanged runs already spanned)
+  populations_given            1.000 -> 1.000  reported  NOISE (inside the 0.000 the unchanged runs already spanned)
+  crowds_picked                0.699 -> 0.647  reported  NOISE (inside the 0.178 the unchanged runs already spanned)
+  people_named                 1.41 -> 1.24  reported  REAL (p=0.0286)
+  people_offered               1.41 -> 1.24  reported  REAL (p=0.0286)
+  people_take_up               1.000 -> 1.000  reported  NOISE (inside the 0.000 the unchanged runs already spanned)
+  items_named                  1.48 -> 1.29  reported  NOISE (inside the 0.455 the unchanged runs already spanned)
+  exits_named                  2.31 -> 2.26  reported  NOISE (inside the 0.222 the unchanged runs already spanned)
+  new_places_opened            0.53 -> 0.45  reported  NOISE (inside the 0.263 the unchanged runs already spanned)
+  new_places_named             0.92 -> 0.84  reported  NOISE (inside the 0.211 the unchanged runs already spanned)
+  exits_restating              0.621 -> 0.623  reported  NOISE (inside the 0.083 the unchanged runs already spanned)
+  refusals                     0 -> 0  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  failures                     0 -> 0  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  omitted_fields               0 -> 0  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  cap_hits                     2 -> 1  BETTER    NOISE (inside the 2.000 the unchanged runs already spanned)
+  latency_median               9.63s -> 5.87s  BETTER    REAL (p=0.0286)
+  latency_p95                  18.06s -> 11.68s  BETTER    REAL (p=0.0286)
+  output_tokens                18304 -> 21446  reported  REAL (p=0.0286)
+
+A REAL verdict on a CHECK is what means a prompt change worked. Read the reported counts
+beside it: a fall in every rate with a fall in `exits_named`, `new_places_opened` or
+`people_named` is a prompt that built emptier rooms, which is the one way to improve
+these numbers without improving the game (Eval::Realization::Scorer).
+Everything INCONCLUSIVE at these sample sizes means: not enough repetitions.
+Confirm a REAL verdict with `rake eval:run` before believing it.
+------------------------------------------------------------------------------

@@ -1,0 +1,16 @@
+The prompts in this tree, assembled and digested with no model call:
+  corpus        8a06d8d919582e15 (22 cases)
+  prompt        08d08a01235d89d3
+  instructions  d43b9ecd17181013
+    dangerous              897cb711d4769996
+    dead-end               b15f2b8359914849
+    descent                75bf4d155e76b6c9
+    interior-room          9396de36efd89146
+    landmark               cd3bff59432000ba
+    place                  d95b7c398a4def63
+    two-ways-out           88ef7bbeb894e754
+    unwritten-neighbour    31ea47d2685de347
+    written-neighbour      99a6663fa62b92f2
+
+exits-quantifier-after: corpus 8a06d8d919582e15 | prompt 08d08a01235d89d3
+It measured THESE prompts on THESE cases, so it is a baseline for this tree.

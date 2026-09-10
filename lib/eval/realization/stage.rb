@@ -359,7 +359,9 @@ class Eval::Realization::Stage
     unwrite!(story)
     stub = wind_back!(story)
 
-    Standing.new(kase: kase, story: story, location: stub, generator: Location::Generator.new(stub))
+    standing = Standing.new(kase: kase, story: story, location: stub, generator: Location::Generator.new(stub))
+    Eval::Realization::Branches.new(standing).stage! unless kase.staging.empty?
+    standing
   end
 
   private

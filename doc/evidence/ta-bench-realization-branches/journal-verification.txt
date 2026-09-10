@@ -1,0 +1,1 @@
+Every measured journal row equals its kept full reading; only the separately receipted warm-up is excluded.

@@ -165,11 +165,11 @@ class Eval::Realization::Corpus
   # when absent, on `expects_inside`'s rule.
   Case = Data.define(:id, :story, :room, :teaser, :reached_from, :also_reaches, :absent, :unwritten,
                      :danger, :inside, :population, :expects_new_ground, :expects_inside,
-                     :expects_danger_at_least, :expects, :shape, :why) do
+                     :expects_danger_at_least, :expects, :shape, :why, :staging) do
     def initialize(teaser: nil, reached_from: nil, also_reaches: [], absent: [], unwritten: [],
                    danger: nil, inside: nil, population: nil, expects_new_ground: nil,
                    expects_inside: nil, expects_danger_at_least: nil, expects: {}, shape: nil,
-                   why: nil, **rest)
+                   why: nil, staging: {}, **rest)
       super
     end
 
@@ -244,7 +244,7 @@ class Eval::Realization::Corpus
              population: row["population"],
              expects_new_ground: row["expects_new_ground"], expects_inside: row["expects_inside"],
              expects_danger_at_least: row[DANGER_FLOOR_KEY], expects: expects(row),
-             shape: row["shape"], why: row["why"])
+             shape: row["shape"], why: row["why"], staging: row.fetch("staging", {}))
   end
 
   # THE `expects_*` BLOCK, READ INTO ONE HASH. A single string is accepted as a
@@ -339,10 +339,23 @@ class Eval::Realization::Corpus
       if kase.danger.present? && !Location::DANGERS.key?(kase.danger)
         found << "#{kase.id}: danger #{kase.danger.inspect} is not one of #{Location::DANGERS.keys.join(", ")}"
       end
+      found.concat(staging_problems(kase))
       found.concat(stub_problems(kase))
       found.concat(expectation_problems(kase))
     end
 
+    found
+  end
+
+  # Branch fixtures declare only record surgery, never replacement prompts.
+  def staging_problems(kase)
+    return [ "#{kase.id}: staging must be a mapping" ] unless kase.staging.is_a?(Hash)
+
+    unknown = kase.staging.keys - %w[quest named_siblings saturated_items population retry_detail]
+    found = unknown.map { |key| "#{kase.id}: unknown staging key #{key}" }
+    if kase.staging["population"] && !Location::Population::LABELS.include?(kase.staging["population"])
+      found << "#{kase.id}: staging population must be an engine label"
+    end
     found
   end
 

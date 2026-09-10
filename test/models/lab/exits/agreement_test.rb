@@ -4,7 +4,7 @@ class Lab::Exits::AgreementTest < ActiveSupport::TestCase
   test "every scorer check and judgement aspect is explicitly filed" do
     agreement = Lab::Exits::Agreement
     assert_equal Eval::Realization.checks.sort,
-                 (agreement::AREAS.values.flatten + agreement::GRADED_BY_THE_WHOLE_SAMPLE).uniq.sort
+                 (agreement::AREAS.values.flatten + agreement::GRADED_BY_THE_WHOLE_SAMPLE + agreement::NOT_A_QUALITY_CHECK).uniq.sort
     assert_equal Lab::Exits::Judgement::ASPECTS.sort, agreement::AREAS.keys.sort
   end
 

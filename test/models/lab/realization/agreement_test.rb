@@ -9,9 +9,10 @@ class Lab::Realization::AgreementTest < ActiveSupport::TestCase
   # THE MAPPING HAS TO STAY COMPLETE. A check added to the scorer that nobody
   # files here would fall out of every denominator silently, which is exactly the
   # failure mode this instrument exists to prevent one level up.
-  test "every check is either named by an aspect or filed as graded by the whole sample" do
+  test "every check is filed by aspect whole sample or unavailable quality judgement" do
     filed = Lab::Realization::Agreement::AREAS.values.flatten.uniq +
-            Lab::Realization::Agreement::GRADED_BY_THE_WHOLE_SAMPLE
+            Lab::Realization::Agreement::GRADED_BY_THE_WHOLE_SAMPLE +
+            Lab::Realization::Agreement::NOT_A_QUALITY_CHECK
 
     assert_equal Eval::Realization.checks.sort, filed.uniq.sort
   end
@@ -26,6 +27,27 @@ class Lab::Realization::AgreementTest < ActiveSupport::TestCase
     stray = Lab::Realization::Agreement::AREAS.keys - Lab::Realization::Sample::ASPECTS
 
     assert_empty stray
+  end
+
+  test "a good room may leave an optional quest target unbound" do
+    sample = create(:lab_realization_sample, :a_room, verdict: "good")
+    row = sample.row.deep_dup
+    row["facts"]["quest_request"] = { "trigger_kind" => "hold_item" }
+    row["after"] = { "quest_admitted" => false }
+    sample.update!(row: row)
+    reading = tuning_set.reading(:quest_target_not_admitted)
+    assert_equal 1, reading.judgeable
+    assert_equal 0, reading.eligible
+    assert_empty reading.suspects
+  end
+
+  test "optional take-up does not conceal a prose verdict the checks missed" do
+    sample = create(:lab_realization_sample, verdict: "bad", aspects: "prose", row: {
+      "facts" => { "quest_request" => { "trigger_kind" => "hold_item" } },
+      "answers" => { "detail" => { "description" => "An empty room." } },
+      "after" => { "quest_admitted" => false }
+    })
+    assert_equal [ sample ], tuning_set.missed
   end
 
   # A VERDICT ONLY COUNTS TOWARDS A CHECK IF IT SAYS SOMETHING ABOUT IT. The
