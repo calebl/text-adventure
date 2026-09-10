@@ -1,0 +1,10 @@
+== 20260910025040 AddJournalToPlaythroughCommands: migrating ==================
+-- add_column(:playthrough_commands, :journal, :json, {default: {}, null: false})
+   -> 0.0354s
+== 20260910025040 AddJournalToPlaythroughCommands: migrated (0.0355s) =========
+
+== 20260910025040 AddJournalToPlaythroughCommands: migrating ==================
+-- add_column(:playthrough_commands, :journal, :json, {default: {}, null: false})
+   -> 0.0107s
+== 20260910025040 AddJournalToPlaythroughCommands: migrated (0.0108s) =========
+

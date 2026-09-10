@@ -1,0 +1,361 @@
+== 20260905100001 AddResolvedByToScenes: migrating ============================
+-- add_column(:scenes, :resolved_by, :string)
+   -> 0.0071s
+== 20260905100001 AddResolvedByToScenes: migrated (0.0071s) ===================
+
+== 20260905110000 AddProsePromptDigestToPlaythroughFeedbacks: migrating =======
+-- add_column(:playthrough_feedbacks, :prose_prompt_digest, :string)
+   -> 0.0047s
+-- add_index(:playthrough_feedbacks, :prose_prompt_digest)
+   -> 0.0012s
+== 20260905110000 AddProsePromptDigestToPlaythroughFeedbacks: migrated (0.0059s)
+
+== 20260905120000 AddMonstersToTheWorld: migrating ============================
+-- add_column(:races, :monstrous, :boolean, {default: false, null: false})
+   -> 0.0032s
+-- add_column(:characters, :hostile, :boolean, {default: false, null: false})
+   -> 0.0011s
+-- add_column(:locations, :danger, :string, {default: "safe", null: false})
+   -> 0.0013s
+-- add_index(:characters, [:location_id, :hostile])
+   -> 0.0008s
+== 20260905120000 AddMonstersToTheWorld: migrated (0.0074s) ===================
+
+== 20260905130000 RecordTheBlowsOfAFight: migrating ===========================
+-- create_table(:playthrough_blows)
+   -> 0.0173s
+-- add_index(:playthrough_blows, [:playthrough_id, :scene_id, :id], {name: "index_playthrough_blows_on_playthrough_and_scene"})
+   -> 0.0007s
+-- add_column(:playthrough_vitals, :provoked_at, :datetime)
+   -> 0.0056s
+== 20260905130000 RecordTheBlowsOfAFight: migrated (0.0246s) ==================
+
+== 20260905140000 TerrainAndEdgesHurt: migrating ==============================
+-- add_column(:locations, :hazard, :string)
+   -> 0.0023s
+-- add_column(:locations, :hazard_die, :integer)
+   -> 0.0016s
+-- add_column(:location_connections, :hazard, :string)
+   -> 0.0013s
+-- add_column(:location_connections, :hazard_die, :integer)
+   -> 0.0012s
+-- create_table(:playthrough_tolls)
+   -> 0.0180s
+-- add_index(:playthrough_tolls, [:playthrough_id, :scene_id, :id], {name: "index_playthrough_tolls_on_playthrough_and_scene"})
+   -> 0.0008s
+== 20260905140000 TerrainAndEdgesHurt: migrated (0.0263s) =====================
+
+== 20260905150000 AddBulkToItems: migrating ===================================
+-- add_column(:items, :bulk, :string, {default: "handy", null: false})
+   -> 0.0028s
+== 20260905150000 AddBulkToItems: migrated (0.0031s) ==========================
+
+== 20260906120000 ALocationGetsABox: migrating ================================
+-- add_column(:locations, :x, :integer)
+   -> 0.0023s
+-- add_column(:locations, :y, :integer)
+   -> 0.0013s
+-- add_column(:locations, :z, :integer)
+   -> 0.0024s
+-- add_column(:locations, :width, :integer)
+   -> 0.0013s
+-- add_column(:locations, :depth, :integer)
+   -> 0.0012s
+== 20260906120000 ALocationGetsABox: migrated (0.0092s) =======================
+
+== 20260906130000 AThingGetsAPosition: migrating ==============================
+-- add_column(:items, :x, :integer)
+   -> 0.0023s
+-- add_column(:items, :y, :integer)
+   -> 0.0012s
+-- add_column(:characters, :x, :integer)
+   -> 0.0012s
+-- add_column(:characters, :y, :integer)
+   -> 0.0012s
+== 20260906130000 AThingGetsAPosition: migrated (0.0059s) =====================
+
+== 20260907120000 AStoryRemembersHowItWasGenerated: migrating =================
+-- add_column(:stories, :generation_snapshot, :text)
+   -> 0.0032s
+== 20260907120000 AStoryRemembersHowItWasGenerated: migrated (0.0033s) ========
+
+== 20260907140000 APlaceGetsAPopulation: migrating ============================
+-- add_column(:locations, :population, :string)
+   -> 0.0046s
+== 20260907140000 APlaceGetsAPopulation: migrated (0.0049s) ===================
+
+== 20260907150000 AStoryGetsAnArc: migrating ==================================
+-- create_table(:quests)
+   -> 0.0086s
+-- add_index(:quests, [:story_id, :title], {unique: true})
+   -> 0.0030s
+-- create_table(:quest_steps)
+   -> 0.0041s
+-- add_index(:quest_steps, [:quest_id, :position], {unique: true})
+   -> 0.0008s
+-- create_table(:quest_outcomes)
+   -> 0.0028s
+-- add_index(:quest_outcomes, [:quest_id, :name], {unique: true})
+   -> 0.0013s
+-- create_table(:playthrough_beats)
+   -> 0.0036s
+-- add_index(:playthrough_beats, [:playthrough_id, :quest_step_id], {unique: true})
+   -> 0.0007s
+-- create_table(:playthrough_endings)
+   -> 0.0031s
+-- add_index(:playthrough_endings, [:playthrough_id, :quest_outcome_id], {unique: true})
+   -> 0.0025s
+-- change_column_null(:world_events, :world_mechanic_id, true)
+   -> 0.0777s
+-- add_column(:world_events, :source, :string)
+   -> 0.0015s
+-- add_column(:world_events, :playthrough_id, :integer)
+   -> 0.0013s
+-- add_index(:world_events, :playthrough_id)
+   -> 0.0017s
+-- execute("UPDATE world_events SET source = 'world_mechanic' WHERE source IS NULL")
+   -> 0.0022s
+-- change_column_null(:world_events, :source, false)
+   -> 0.0313s
+== 20260907150000 AStoryGetsAnArc: migrated (0.1494s) =========================
+
+== 20260908120000 AnEventGetsAnHourAndAQuestGetsMoreThanOneEnd: migrating =====
+-- add_column(:world_events, :scheduled_for, :datetime)
+   -> 0.0027s
+-- add_column(:world_events, :fired_at, :datetime)
+   -> 0.0014s
+-- add_index(:world_events, [:story_id, :scheduled_for])
+   -> 0.0008s
+-- add_column(:quest_outcomes, :condition, :string)
+   -> 0.0013s
+-- add_column(:quest_outcomes, :minutes, :integer)
+   -> 0.0022s
+-- add_column(:quest_outcomes, :ramification_summary, :text)
+   -> 0.0013s
+-- add_column(:quest_outcomes, :ramification_minutes, :integer)
+   -> 0.0038s
+== 20260908120000 AnEventGetsAnHourAndAQuestGetsMoreThanOneEnd: migrated (0.0139s)
+
+== 20260908155546 AKindOfPlaceAndTheSamplesOfIt: migrating ====================
+-- create_table(:lab_realization_kinds)
+   -> 0.0017s
+-- create_table(:lab_realization_samples)
+   -> 0.0017s
+== 20260908155546 AKindOfPlaceAndTheSamplesOfIt: migrated (0.0037s) ===========
+
+== 20260908203558 AVantageAndWhatItsExitsCallNamed: migrating =================
+-- create_table(:lab_exits_vantages)
+   -> 0.0018s
+-- create_table(:lab_exits_samples)
+   -> 0.0031s
+-- create_table(:lab_exits_judgements)
+   -> 0.0025s
+== 20260908203558 AVantageAndWhatItsExitsCallNamed: migrated (0.0076s) ========
+
+== 20260909023014 AddNpcAgencyToPlaythroughs: migrating =======================
+-- create_table(:playthrough_npc_states)
+   -> 0.0074s
+-- add_index(:playthrough_npc_states, [:playthrough_id, :character_id], {unique: true})
+   -> 0.0010s
+-- add_column(:interactions, :engine_action, :string)
+   -> 0.0027s
+-- add_column(:interactions, :action_status, :string)
+   -> 0.0017s
+-- add_column(:interactions, :action_fact, :text)
+   -> 0.0017s
+== 20260909023014 AddNpcAgencyToPlaythroughs: migrated (0.0150s) ==============
+
+== 20260909023028 AddTurnCommandsAndEngineFallbacks: migrating ================
+-- create_table(:playthrough_commands)
+   -> 0.0161s
+-- add_index(:playthrough_commands, [:playthrough_id, :request_token, :command], {unique: true, name: "index_playthrough_commands_on_submission"})
+   -> 0.0029s
+-- add_column(:scenes, :engine_fallback, :boolean, {null: false, default: false})
+   -> 0.0054s
+== 20260909023028 AddTurnCommandsAndEngineFallbacks: migrated (0.0260s) =======
+
+== 20260909030346 AddGenerationCheckpointToLocations: migrating ===============
+-- add_column(:locations, :generation_checkpoint, :json)
+   -> 0.0093s
+== 20260909030346 AddGenerationCheckpointToLocations: migrated (0.0095s) ======
+
+== 20260905100001 AddResolvedByToScenes: migrating ============================
+-- add_column(:scenes, :resolved_by, :string)
+   -> 0.0059s
+== 20260905100001 AddResolvedByToScenes: migrated (0.0060s) ===================
+
+== 20260905110000 AddProsePromptDigestToPlaythroughFeedbacks: migrating =======
+-- add_column(:playthrough_feedbacks, :prose_prompt_digest, :string)
+   -> 0.0057s
+-- add_index(:playthrough_feedbacks, :prose_prompt_digest)
+   -> 0.0013s
+== 20260905110000 AddProsePromptDigestToPlaythroughFeedbacks: migrated (0.0071s)
+
+== 20260905120000 AddMonstersToTheWorld: migrating ============================
+-- add_column(:races, :monstrous, :boolean, {default: false, null: false})
+   -> 0.0020s
+-- add_column(:characters, :hostile, :boolean, {default: false, null: false})
+   -> 0.0010s
+-- add_column(:locations, :danger, :string, {default: "safe", null: false})
+   -> 0.0015s
+-- add_index(:characters, [:location_id, :hostile])
+   -> 0.0006s
+== 20260905120000 AddMonstersToTheWorld: migrated (0.0054s) ===================
+
+== 20260905130000 RecordTheBlowsOfAFight: migrating ===========================
+-- create_table(:playthrough_blows)
+   -> 0.0086s
+-- add_index(:playthrough_blows, [:playthrough_id, :scene_id, :id], {name: "index_playthrough_blows_on_playthrough_and_scene"})
+   -> 0.0005s
+-- add_column(:playthrough_vitals, :provoked_at, :datetime)
+   -> 0.0013s
+== 20260905130000 RecordTheBlowsOfAFight: migrated (0.0106s) ==================
+
+== 20260905140000 TerrainAndEdgesHurt: migrating ==============================
+-- add_column(:locations, :hazard, :string)
+   -> 0.0022s
+-- add_column(:locations, :hazard_die, :integer)
+   -> 0.0014s
+-- add_column(:location_connections, :hazard, :string)
+   -> 0.0010s
+-- add_column(:location_connections, :hazard_die, :integer)
+   -> 0.0009s
+-- create_table(:playthrough_tolls)
+   -> 0.0048s
+-- add_index(:playthrough_tolls, [:playthrough_id, :scene_id, :id], {name: "index_playthrough_tolls_on_playthrough_and_scene"})
+   -> 0.0006s
+== 20260905140000 TerrainAndEdgesHurt: migrated (0.0110s) =====================
+
+== 20260905150000 AddBulkToItems: migrating ===================================
+-- add_column(:items, :bulk, :string, {default: "handy", null: false})
+   -> 0.0018s
+== 20260905150000 AddBulkToItems: migrated (0.0020s) ==========================
+
+== 20260906120000 ALocationGetsABox: migrating ================================
+-- add_column(:locations, :x, :integer)
+   -> 0.0017s
+-- add_column(:locations, :y, :integer)
+   -> 0.0009s
+-- add_column(:locations, :z, :integer)
+   -> 0.0017s
+-- add_column(:locations, :width, :integer)
+   -> 0.0009s
+-- add_column(:locations, :depth, :integer)
+   -> 0.0009s
+== 20260906120000 ALocationGetsABox: migrated (0.0062s) =======================
+
+== 20260906130000 AThingGetsAPosition: migrating ==============================
+-- add_column(:items, :x, :integer)
+   -> 0.0022s
+-- add_column(:items, :y, :integer)
+   -> 0.0010s
+-- add_column(:characters, :x, :integer)
+   -> 0.0010s
+-- add_column(:characters, :y, :integer)
+   -> 0.0010s
+== 20260906130000 AThingGetsAPosition: migrated (0.0054s) =====================
+
+== 20260907120000 AStoryRemembersHowItWasGenerated: migrating =================
+-- add_column(:stories, :generation_snapshot, :text)
+   -> 0.0019s
+== 20260907120000 AStoryRemembersHowItWasGenerated: migrated (0.0020s) ========
+
+== 20260907140000 APlaceGetsAPopulation: migrating ============================
+-- add_column(:locations, :population, :string)
+   -> 0.0017s
+== 20260907140000 APlaceGetsAPopulation: migrated (0.0017s) ===================
+
+== 20260907150000 AStoryGetsAnArc: migrating ==================================
+-- create_table(:quests)
+   -> 0.0044s
+-- add_index(:quests, [:story_id, :title], {unique: true})
+   -> 0.0010s
+-- create_table(:quest_steps)
+   -> 0.0048s
+-- add_index(:quest_steps, [:quest_id, :position], {unique: true})
+   -> 0.0009s
+-- create_table(:quest_outcomes)
+   -> 0.0022s
+-- add_index(:quest_outcomes, [:quest_id, :name], {unique: true})
+   -> 0.0006s
+-- create_table(:playthrough_beats)
+   -> 0.0039s
+-- add_index(:playthrough_beats, [:playthrough_id, :quest_step_id], {unique: true})
+   -> 0.0006s
+-- create_table(:playthrough_endings)
+   -> 0.0020s
+-- add_index(:playthrough_endings, [:playthrough_id, :quest_outcome_id], {unique: true})
+   -> 0.0006s
+-- change_column_null(:world_events, :world_mechanic_id, true)
+   -> 0.0306s
+-- add_column(:world_events, :source, :string)
+   -> 0.0011s
+-- add_column(:world_events, :playthrough_id, :integer)
+   -> 0.0010s
+-- add_index(:world_events, :playthrough_id)
+   -> 0.0006s
+-- execute("UPDATE world_events SET source = 'world_mechanic' WHERE source IS NULL")
+   -> 0.0007s
+-- change_column_null(:world_events, :source, false)
+   -> 0.0405s
+== 20260907150000 AStoryGetsAnArc: migrated (0.0962s) =========================
+
+== 20260908120000 AnEventGetsAnHourAndAQuestGetsMoreThanOneEnd: migrating =====
+-- add_column(:world_events, :scheduled_for, :datetime)
+   -> 0.0042s
+-- add_column(:world_events, :fired_at, :datetime)
+   -> 0.0020s
+-- add_index(:world_events, [:story_id, :scheduled_for])
+   -> 0.0013s
+-- add_column(:quest_outcomes, :condition, :string)
+   -> 0.0018s
+-- add_column(:quest_outcomes, :minutes, :integer)
+   -> 0.0020s
+-- add_column(:quest_outcomes, :ramification_summary, :text)
+   -> 0.0021s
+-- add_column(:quest_outcomes, :ramification_minutes, :integer)
+   -> 0.0021s
+== 20260908120000 AnEventGetsAnHourAndAQuestGetsMoreThanOneEnd: migrated (0.0158s)
+
+== 20260908155546 AKindOfPlaceAndTheSamplesOfIt: migrating ====================
+-- create_table(:lab_realization_kinds)
+   -> 0.0152s
+-- create_table(:lab_realization_samples)
+   -> 0.0027s
+== 20260908155546 AKindOfPlaceAndTheSamplesOfIt: migrated (0.0180s) ===========
+
+== 20260908203558 AVantageAndWhatItsExitsCallNamed: migrating =================
+-- create_table(:lab_exits_vantages)
+   -> 0.0045s
+-- create_table(:lab_exits_samples)
+   -> 0.0053s
+-- create_table(:lab_exits_judgements)
+   -> 0.0059s
+== 20260908203558 AVantageAndWhatItsExitsCallNamed: migrated (0.0159s) ========
+
+== 20260909023014 AddNpcAgencyToPlaythroughs: migrating =======================
+-- create_table(:playthrough_npc_states)
+   -> 0.0068s
+-- add_index(:playthrough_npc_states, [:playthrough_id, :character_id], {unique: true})
+   -> 0.0007s
+-- add_column(:interactions, :engine_action, :string)
+   -> 0.0014s
+-- add_column(:interactions, :action_status, :string)
+   -> 0.0021s
+-- add_column(:interactions, :action_fact, :text)
+   -> 0.0013s
+== 20260909023014 AddNpcAgencyToPlaythroughs: migrated (0.0126s) ==============
+
+== 20260909023028 AddTurnCommandsAndEngineFallbacks: migrating ================
+-- create_table(:playthrough_commands)
+   -> 0.0051s
+-- add_index(:playthrough_commands, [:playthrough_id, :request_token, :command], {unique: true, name: "index_playthrough_commands_on_submission"})
+   -> 0.0007s
+-- add_column(:scenes, :engine_fallback, :boolean, {null: false, default: false})
+   -> 0.0015s
+== 20260909023028 AddTurnCommandsAndEngineFallbacks: migrated (0.0074s) =======
+
+== 20260909030346 AddGenerationCheckpointToLocations: migrating ===============
+-- add_column(:locations, :generation_checkpoint, :json)
+   -> 0.0042s
+== 20260909030346 AddGenerationCheckpointToLocations: migrated (0.0042s) ======

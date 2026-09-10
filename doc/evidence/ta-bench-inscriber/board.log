@@ -1,0 +1,113 @@
+Inscription: mistralai/mistral-medium-3.1; v1:666515f4006a5926
+Receipted cost (cached input priced conservatively): $0.033451
+tuning:
+  failed: 0.000 / 0.000 / 0.111 / 0.000 (rates per rep)
+  empty: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  truncated_prose: unavailable / unavailable / unavailable / unavailable (rates per rep)
+  narration_framing: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  length_bound: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  description_repeated: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+held-out:
+  failed: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  empty: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  truncated_prose: unavailable / unavailable / unavailable / unavailable (rates per rep)
+  narration_framing: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  length_bound: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+  description_repeated: 0.000 / 0.000 / 0.000 / 0.000 (rates per rep)
+Fit/register/meaning are human judgements. Unavailable punctuation is not a clean finish.
+daybook-room rep 1: human_fit=unjudged; human_note=nil
+  "12 Oct. — Received: 347 dockets (Ward 7 transfer), 12 blank writs (Sealed Room, per req. 412-B). Issued: 298 dockets (standard), 1 blank writ (Marginalia clearance, ref. Perrin/12-4). Carried total: 1,842. Balance: 49 dockets, 11 writs. Notes: Rain delay on 7 transfer; tube 12-B jammed 14:00–14:15. Signed: [illegible initials]."
+daybook-holder rep 1: human_fit=unjudged; human_note=nil
+  "14 Sept. — 8:00–12:00: Docket 471-B (3 copies, carbon), 12:00–13:00: Lunch (unrecorded), 13:00–16:00: Ledger reconciliation (Ward 12, Q3), 16:00–17:00: — , 17:00–18:00: Supply audit prep. Totals carried forward."
+daybook-carried rep 1: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 Arrived, sealed prior day’s totals. 9:00-12:00 Docket 471-476 (cross-ref. Ward 7). 12:00-1:00 Lunch (15m). 1:00-4:00 Docket 477-482. 4:00-5:00 —. 5:00-6:00 Docket 483-485. Totals carried forward."
+index-room rep 1: human_fit=unjudged; human_note=nil
+  "14/03 – 47219\n15/03 – 47223\n16/03 – 47228\n17/03 – 47230\n18/03 – 47234\n19/03 – 47239\n20/03 – 47241\n21/03 – 47245\n22/03 – 47248\n23/03 – 47250\n24/03 – 47253\n25/03 – 47257\n26/03 – 47260\n27/03 – 47264\n28/03 – 47269\n29/03 – 47271\n30/03 – 47275\n31/03 – 47278\n01/04 – 47282\n02/04 – 47285\n03/04 – 47289\n04/04 – 47291"
+index-holder rep 1: human_fit=unjudged; human_note=nil
+  "12/3/1891 – 47219\n12/4/1891 – 47256\n12/5/1891 – 47288\n...\n14/6/1899 – 58112\n14/6/1899 – 58113"
+index-carried rep 1: human_fit=unjudged; human_note=nil
+  "14th Mar – 12/47\n18th Mar – 12/51\n22nd Mar – 12/54\n25th Mar – 12/58\n29th Mar – 12/62\n2nd Apr – 12/65\n5th Apr – 12/69\n8th Apr – 12/72\n11th Apr – 12/76\n15th Apr – 12/80\n19th Apr – 12/83\n22nd Apr – 12/87\n26th Apr – 12/91\n30th Apr – 12/94\n3rd May – 12/98\n7th May – 12/101\n10th May – 12/104\n14th May – 12/108\n17th May – 12/111"
+tally-room rep 1: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-holder rep 1: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-carried rep 1: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+slate-room rep 1: human_fit=unjudged; human_note=nil
+  "High water: 8:10\nNeb Halloran – wrecking\nM. Tallow – oyster theft\nP. Vey – salvage dispute"
+slate-holder rep 1: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+slate-carried rep 1: human_fit=unjudged; human_note=nil
+  "High water: ten past eight"
+daybook-room rep 2: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 to 12:00: Docket 47-B (re: Marginalia transfer, 3rd Ward). 12:00 to 1:00: Lunch. 1:00 to 4:00: Ledger reconciliation, Ward 12. 4:00 to 5:00: [ruled gap, totalled across]. 5:00 to 6:00: Supply requisition (ink, carbon, stamps). 6:00 to 7:00: Pending."
+daybook-holder rep 2: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 Arrived, lamp lit. 8:30–10:00 Docket 4711-4720 (batch). 10:15–12:00 Ledger cross-check, Wards 11-13. 12:00–1:00 Lunch. 1:15–3:45 Supply requisition (carbon, 3 reams; ink, 1 bottle; wax, 2 cakes). 4:00–5:00 [ruled gap, total carried across]. 5:15–6:30 Inspectorate prep. 6:30 Locked desk. Rain noted."
+daybook-carried rep 2: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 Arrived, checked seals on Ward 12 ledgers. 9:30 Issued writs for Marginalia transfer (3). 11:00 Lunch. 12:30 Filed corrections to Block 7 tenancy rolls. 2:00 Audited supply closet inventory (pending). 4:00 — 5:00 — 5:30 Closed daybook, total carried forward: 147. Rain noted."
+index-room rep 2: human_fit=unjudged; human_note=nil
+  "14/3 – 12-478\n18/3 – 12-481\n22/3 – 12-485\n25/3 – 12-489\n29/3 – 12-492\n1/4 – 12-496\n5/4 – 12-501\n8/4 – 12-504\n12/4 – 12-508\n15/4 – 12-511\n19/4 – 12-515\n22/4 – 12-519\n26/4 – 12-522\n30/4 – 12-526\n3/5 – 12-530\n7/5 – 12-534\n10/5 – 12-537\n14/5 – 12-541\n17/5 – 12-544"
+index-holder rep 2: human_fit=unjudged; human_note=nil
+  "12/4/—  R-471\n12/5/—  R-472\n12/6/—  R-473\n...\n15/6/—  R-501\n15/6/—  16:45"
+index-carried rep 2: human_fit=unjudged; human_note=nil
+  "14/3 – 4712\n15/3 – 8904\n16/3 – 1237\n17/3 – 5601\n18/3 – 3489\n19/3 – 7022\n20/3 – 1145\n21/3 – 6833\n22/3 – 2008\n23/3 – 9917\n24/3 – 4156"
+tally-room rep 2: human_fit=unjudged; human_note=nil
+  "29 years. Then silence."
+tally-holder rep 2: human_fit=unjudged; human_note=nil
+  "29 years, 8 months, 14 days. Then silence."
+tally-carried rep 2: human_fit=unjudged; human_note=nil
+  "29 years. Then silence."
+slate-room rep 2: human_fit=unjudged; human_note=nil
+  "High water: 8:10\nNeb Halloran - wrecking\nM. Vey - oyster theft\nT. Cole - false beacon"
+slate-holder rep 2: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+slate-carried rep 2: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+daybook-room rep 3: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00–12:00: Docket 471-B (re: Marginalia transfer, Ward 7). 12:00–13:00: Lunch. 13:00–16:00: Ledger reconciliation (Ward 12, Q3). 16:00–17:00: Supply requisition (ink, carbon). 17:00–18:00: Close files. Total: 471-B, Q3, req. #12-442."
+daybook-holder rep 3: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00–12:00: Dockets 471–489 (received, stamped, filed). 12:00–1:00: Lunch. 1:00–4:00: Cross-references for Ward 7 transfer (14 entries). 4:00–5:00: [ruled gap, totalled across]. 5:00–6:00: Inventory of supply closet (pending)."
+daybook-carried rep 3: human_fit=unjudged; human_note=nil
+  "Ward Office 12 – Daily Ledger\n\nDate: 14th of the Flood Moon\n\n08:00 – 09:00: Incoming dockets (12), filed. Running total: 47.\n09:00 – 10:00: Cross-referenced with Ward 11, discrepancies noted. Running total: 59.\n10:00 – 11:00: Supply requisition (ink, 3 bottles; paper, 2 reams). Running total: 72.\n11:00 – 12:00: Lunch.\n12:00 – 13:00: Audit prep, Ward 12 sub-ledgers. Running total: 88.\n13:00 – 14:00"
+index-room rep 3: human_fit=unjudged; human_note=nil
+  "14/03 – 87219\n15/03 – 87224\n16/03 – 87230\n17/03 – 87235\n18/03 – 87241\n19/03 – 87248\n20/03 – 87256\n21/03 – 87263\n22/03 – 87270\n23/03 – 87278\n24/03 – 87285\n25/03 – 87293\n26/03 – 87301\n27/03 – 87309\n28/03 – 87318\n29/03 – 87326\n30/03 – 87335\n31/03 – 87343\n01/04 – 87352\n02/04 – 87360\n03/04 – 87369\n04/04 – 87377\n05/04 – 87386\n06/04 – 87394"
+index-holder rep 3: human_fit=unjudged; human_note=nil
+  "12/4/—  R-714\n12/5/—  R-715\n12/6/—  R-716\n...\n13/10/— R-1128\n13/10/— 16:55"
+index-carried rep 3: human_fit=unjudged; human_note=nil
+  "14 Mar – 47219\n15 Mar – 47224\n16 Mar – 47230\n17 Mar – 47235\n18 Mar – 47241\n19 Mar – 47248\n20 Mar – 47256"
+tally-room rep 3: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-holder rep 3: human_fit=unjudged; human_note=nil
+  "29 years. No more."
+tally-carried rep 3: human_fit=unjudged; human_note=nil
+  "29 years. Then silence."
+slate-room rep 3: human_fit=unjudged; human_note=nil
+  "High water: 8:10\nNeb Halloran – wrecking\nM. Vey – salvage dispute\nT. Corve – oath dispute"
+slate-holder rep 3: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+slate-carried rep 3: human_fit=unjudged; human_note=nil
+  "High water: 8:10"
+daybook-room rep 4: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00 to 12:00: Docket 471-476, cross-referenced to Ward 7. 12:00 to 1:00: Lunch. 1:00 to 4:00: Ledger updates, carbon copies filed. 4:00 to 5:00: [ruled gap, total carried across]. 5:00 to 6:00: Pneumatic dispatch, Ward 14 query. Total entries: 12. Running balance: 847."
+daybook-holder rep 4: human_fit=unjudged; human_note=nil
+  "12 Oct. — 8:00–12:00: Docket 4711-4718 (6 entries, 2 amends). 12:00–13:00: Lunch. 13:00–16:00: Docket 4719-4724 (5 entries). 16:00–17:00: —. 17:00–18:30: Docket 4725-4727 (3 entries). Totals carried forward."
+daybook-carried rep 4: human_fit=unjudged; human_note=nil
+  "12 Oct. — Receipts: 427 (Perrin), 428-431 (self). Adjustments: none. Totals carried forward. 4:00–5:00: —. Totals carried forward. 5:00–6:00: 432-440 (self). End of day."
+index-room rep 4: human_fit=unjudged; human_note=nil
+  "14/03 – 12-4789\n18/03 – 12-4792\n22/03 – 12-4795\n25/03 – 12-4798\n29/03 – 12-4801\n02/04 – 12-4804\n05/04 – 12-4807\n08/04 – 12-4810\n11/04 – 12-4813\n15/04 – 12-4816"
+index-holder rep 4: human_fit=unjudged; human_note=nil
+  "14/3/1892 – 4719\n15/3/1892 – 4722\n16/3/1892 – 4725\n17/3/1892 – 4728\n18/3/1892 – 4731\n19/3/1892 – 4734\n20/3/1892 – 4737\n21/3/1892 – 4740\n22/3/1892 – 4743\n23/3/1892 – 4746\n24/3/1892 – 4749\n25/3/1892 – 4752\n26/3/1892 – 4755\n27/3/1892 – 4758\n28/3/1892 – 4761\n29/3/1892 – 4764\n30/3/1892 – 4767\n31/3/1892 – 4770"
+index-carried rep 4: human_fit=unjudged; human_note=nil
+  "14th, 3rd month – 12/47/9\n15th, 3rd month – 12/48/1\n16th, 3rd month – 12/49/5\n17th, 3rd month – 12/50/2\n18th, 3rd month – 12/51/8\n19th, 3rd month – 12/52/3\n20th, 3rd month – 12/53/7\n21st, 3rd month – 12/54/1\n22nd, 3rd month – 12/55/4\n23rd, 3rd month – 12/56/9\n24th, 3rd month – 12/57/2\n25th, 3rd month – 12/58/6\n26th, 3rd month – 12/59/0\n27th, 3rd month – 12/60/5\n28th, 3rd month – 12/61/1"
+tally-room rep 4: human_fit=unjudged; human_note=nil
+  "29 years, 8 months, 14 days. No more."
+tally-holder rep 4: human_fit=unjudged; human_note=nil
+  "29 years, 11 months, 4 days. No more."
+tally-carried rep 4: human_fit=unjudged; human_note=nil
+  "29 years, 11 months, 4 days. Then silence."
+slate-room rep 4: human_fit=unjudged; human_note=nil
+  "High water: 8:10\nNeb Halloran - wrecking, 7:40\nM. Trew - salvage dispute, 8:30\nP. Vey - oath breach, 9:00"
+slate-holder rep 4: human_fit=unjudged; human_note=nil
+  "High water: ten past eight"
+slate-carried rep 4: human_fit=unjudged; human_note=nil
+  "High water: 8:10"

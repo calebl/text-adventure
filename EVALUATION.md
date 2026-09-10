@@ -2070,3 +2070,47 @@ quest target names are free text in today's schemas, so no check pretends they
 must come from closed universe lists. The human-scored coherence lab remains a
 separate task. Prompt and schema edits still follow the before/after protocol
 above; a clean schema score does not authorize skipping it.
+## First-read inscriptions
+
+`rake eval:inscription SET=name` buys one `Item::Inscriber` call per fixed case,
+with `REPS` defaulting to `Eval::Noise::MIN_RUNS` and `EVAL_MODEL` selecting one
+pinned arm. Price first with `rake eval:inscription_estimate` or
+`rake eval:estimate`, after `rake ruby_llm:load_models` has populated the scratch
+registry. The estimator uses conservative byte-based token allowances; it is
+not a measured tokenizer. Runs refuse an existing set rather than overwriting
+receipts. Failed calls retain their returned usage before the app rewinds them;
+a missing receipt stops further spend.
+
+This is a sibling of the prompt bench because playing a read turn would buy
+both inscription and narration. Its fixture selects readable objects from the
+seeded worlds, fixing room, holder or party possession. The stage clears words
+only in its rolled-back copy, then calls the real writer and records both the
+raw answer and persisted inscription. Repeated reads and the template copy are
+engine behavior; later narration quoting the words belongs to the existing
+`inscription_misquoted` check, not this instrument.
+
+```bash
+rake eval:inscription_digest                         # no key or call
+rake eval:inscription_score SET=inscription-2026-09-10 # replay raw answers
+rake eval:inscription_board SET=inscription-2026-09-10
+rake eval:inscription_compare BEFORE=before AFTER=after
+```
+
+The kept set under `db/eval/` contains every answer and receipt. Its versioned
+`request_identity` and per-case identities cover system, user and emitted schema.
+Only surrogate IDs in `Item#whereabouts` are normalized; the actual prompt is
+also retained. Corpus identity includes the seed files. Comparison refuses
+changed corpora or models, prints request-identity movement, and uses
+`Eval::Noise` on per-repetition rates with tuning and held-out worlds apart.
+Use the same before/after protocol as the other benches; do not rebaseline until
+a change has been judged, including a possible `NOISE` verdict.
+
+Mechanical checks flag empty text, length overflow, verbatim description reuse,
+bounded reader-action/framing phrases, and unfinished sentence-like last lines.
+Labels, dates and tallies need no full stop, so endings without a finite-verb cue
+are **unavailable**, not clean. A regex cannot establish literalness or fit:
+letters may legitimately say “I” or “you”, and a framing phrase might itself be
+a fictional quotation. Read `Eval::Inscription::Scorer` for the precise limits.
+Each board reading exposes nullable `human_fit` and `human_note` fields for a
+future lab annotation pass; no lab page or automatic judgement of register,
+meaning, plausibility or world fit is built here.
