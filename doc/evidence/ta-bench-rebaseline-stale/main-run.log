@@ -1,0 +1,99 @@
+ESTIMATE: 360 calls (90 cases x 4 reps x 1 model) over the main corpus, about $0.406.
+Measured at 762 in / 440 out a narration, 1112 in / 158 out a arrival, 1662 in / 640 out a ending.
+Playing 90 main cases on mistralai/mistral-medium-3.1.
+
+  mistralai/mistral-medium-3.1     first call 1.9s (excluded from the figures below)
+  mistralai/mistral-medium-3.1     rep 1  90 passages,  7 flagged, 1.8s median
+  mistralai/mistral-medium-3.1     rep 2  90 passages,  5 flagged, 1.8s median
+  mistralai/mistral-medium-3.1     rep 3  90 passages,  6 flagged, 1.8s median
+  mistralai/mistral-medium-3.1     rep 4  90 passages,  7 flagged, 1.7s median
+
+Wrote /home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/tmp/eval/prompt-2026-09-10/prompt.json.
+
+schema request: v1:5cdebbccc74bc3c4
+------------------------------------------------------------------------------
+THE PROMPT BENCH -- 90 single-turn cases, 4 repetitions, 1 model
+corpus dfd1756a8f1f91b8   prompt 2257365e2b7606da   instructions be4e1bf387f97e80
+Every rate is min..max over the repetitions with the median in the middle. A
+difference smaller than that band is not a difference -- see EVALUATION.md.
+THE LATENCIES ARE WARM-CACHE FIGURES: each arm's first call is timed separately
+and excluded.
+------------------------------------------------------------------------------
+
+MODEL  mistralai/mistral-medium-3.1   (4 reps, 360 passages)
+
+  THE CHECKS -- flagged over the cases each one can be judged on
+  unrecorded_departure       0.000..0.000 (median 0.000)   0..0 of 90   the prose closed a door behind a player who never left
+  unrecorded_arrival         0.000..0.000 (median 0.000)   0..0 of 90   the prose walked the player into a room the records did not move them to
+  item_not_held              0.062..0.092 (median 0.077)   4..6 of 65   the prose handed the player something somebody else holds
+  take_denied                0.056..0.111 (median 0.056)   1..2 of 18   the prose said the player already had what this turn picked up
+  pickup_invented            0.000..0.000 (median 0.000)   0..0 of 18   the prose picked up what this turn put down
+  inscription_misquoted      0.000..0.000 (median 0.000)   0..0 of 43   the prose quotes what is written on a thing, and the records say other words
+  truncated_prose            0.000..0.000 (median 0.000)   0..0 of 90   stored prose stops mid-sentence
+  third_person_protagonist   0.000..0.000 (median 0.000)   0..0 of 90   the narration wrote the player as somebody else
+
+  UNAVAILABLE TO A SINGLE TURN -- reported, never scored as clean
+  unreachable_transition     a case is one turn, and the one turn that moves walks an edge the records have
+  reached_for_nothing        a drift row needs the turn AFTER the narration, and a case has no next turn
+  named_more_than_one        a case types a fixed line, so what it named measures the corpus, not the game
+  still_run                  four turns of nothing needs four turns
+
+  BY WORLD -- flagged of judgeable, pooled over the repetitions
+    The Salt Assizes         [HELD OUT]  100 passages   take_denied 5/16
+    The Unrecorded Hour                  260 passages   item_not_held 20/260
+
+  RICHNESS -- what the prose COMMITTED TO, and it is never folded into the rates
+  words                            94..98       (median 94.5)   median words a passage -- length, and NOT a quality figure
+  commitments                3.089..3.200 (median 3.172)   mean rooms, exits, items and people the records know that the prose named
+
+  WHAT A STORED PASSAGE CANNOT SHOW
+  refusals                          0..0        (median 0)   calls the model declined to write (BaseAgent::RefusalError)
+  failures                          0..0        (median 0)   calls that failed outright (a count; the arm has no rotation)
+  omitted_fields                    0..0        (median 0)   required schema fields that came back absent -- schema'd passes only
+  cap_hits                          0..1        (median 0)   fields that arrived at their max_length, so the provider cut them off
+  latency_median                1.74s..1.80s    (median   1.78s)   seconds the median call took (CLOCK_MONOTONIC)
+  latency_p95                   2.39s..2.71s    (median   2.49s)   seconds the worst call in twenty took
+  output_tokens                 12332..12672    (median 12547)   output tokens over the pass -- what the prose cost to write
+  spend                      $0.2160 over 360 calls (289,486 in / 50,098 out)
+  first call                 1.94s   EXCLUDED from the figures above, so an outlier shows as one
+
+  FLAGGED -- 11 distinct (case, check) pairs, 25 readings
+    take-index-plain               item_not_held            x4
+      typed:   "pick up the index"
+      says:    You reach behind the stack of blank ward forms and lift the copy-room apron.
+    take-slate-from-bench          take_denied              x4   [HELD OUT]
+      typed:   "take the slate off the justicar's bench"
+      says:    You reach for the Justicar's bench, but the Assize tide-slate is already in your hands—the one you just lifted from its place against the wall.
+    examine-apron-plain            item_not_held            x3
+      typed:   "look at the copy-room apron"
+      says:    You reach past the squared stack of blank forms and lift the copy-room apron free.
+    take-index-full-name           item_not_held            x3
+      typed:   "take Perrin's private index"
+      says:    You reach behind the stack of blank ward forms and lift the copy-room apron.
+    examine-stamp-plain            item_not_held            x2
+      typed:   "look at the ward stamp"
+      says:    You glance down at the ward stamp beside your daybook.
+    read-daybook-plain             item_not_held            x2
+      typed:   "examine your daybook, try to remember anything you can about the gap"
+      says:    You remember the stamp’s weight in your hand at 3:40, the scratch of the nib at 5:15, but between them there is only the shape of a silence, like a held breath.
+    read-index-quote-it            item_not_held            x2
+      typed:   "read out the last line of the index"
+      says:    You open the private index to the last entry and read aloud, your voice steady despite the weight of the words: *"This day, 4th hour — 1188/12 — amended.
+    take-apron-plain               item_not_held            x2
+      typed:   "pick up the apron"
+      says:    The private index tucked inside shifts, its edges pressing against your palm.
+    examine-stamp-ink              item_not_held            x1
+      typed:   "is the ink still wet on the stamp?"
+      says:    You lift your fingers from the daybook and touch the edge of the stamp.
+    take-anything-here             item_not_held            x1
+      typed:   "is there anything I can pickup?"
+      says:    The filing press is bolted down, and the daybook is already under your fingers.
+    take-slate-short               take_denied              x1   [HELD OUT]
+      typed:   "pick the slate back up"
+      says:    You already hold the Assize tide-slate, its weight familiar in your hands despite the alien pressure of the chalked figure.
+
+------------------------------------------------------------------------------
+Judge a prompt change against this with `rake eval:prompt_compare BEFORE= AFTER=`.
+Four repetitions a side is the arithmetic floor for a verdict -- Eval::Noise::MIN_RUNS.
+And confirm it with `rake eval:run`: one turn cannot see pacing or a world in motion.
+------------------------------------------------------------------------------

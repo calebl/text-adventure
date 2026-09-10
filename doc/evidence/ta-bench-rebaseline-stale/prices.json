@@ -1,0 +1,17 @@
+{
+  "model": "mistralai/mistral-medium-3.1",
+  "reps": 4,
+  "price": {
+    "model": "mistralai/mistral-medium-3.1",
+    "input_per_million": 0.4,
+    "output_per_million": 2.0
+  },
+  "main": 0.406176,
+  "classifier": 0.25601280000000004,
+  "ending": 0.038896,
+  "model_bounds": {
+    "context_window": 131072,
+    "max_output_tokens": 262144
+  },
+  "retries": 3
+}

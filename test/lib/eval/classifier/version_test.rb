@@ -6,6 +6,10 @@ class Eval::Classifier::VersionTest < ActiveSupport::TestCase
   test "identity is deterministic and notices instructions and closed labels" do
     before = Eval::Classifier::Version.offline
     assert_equal before, Eval::Classifier::Version.offline
+    details = Eval::Classifier::Version.offline_details
+    assert_equal before, details[:request_identity]
+    assert_predicate details[:prompt_digest], :present?
+    assert_predicate details[:instructions_digest], :present?
     stub_const(Playthrough::Classifier, :INSTRUCTIONS, Playthrough::Classifier::INSTRUCTIONS + " Changed.") do
       refute_equal before, Eval::Classifier::Version.offline
     end

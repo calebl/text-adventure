@@ -85,11 +85,16 @@ class Eval::Prompt::Board
              "than clean**:"
     Eval::Prompt::UNAVAILABLE_TO_A_CASE.each { |code, reason| found << "- `#{code}` — #{reason}" }
 
+    columns.select { |column| column.result.ending_requests }.each do |column|
+      evidence = column.result.ending_requests
+      found << "#{column.label}: ending scaffold stable=#{evidence.fetch('scaffold_stable')}, " \
+               "complete=#{evidence.fetch('complete')}; prelude retained verbatim and unstable."
+    end
     unstable = columns.reject { |column| column.result.prompt_stable }
     if unstable.any?
       found += [ "", "**#{unstable.map(&:label).uniq.join(", ")} recorded an UNSTABLE prompt**: one shape's " \
-                     "designated case sent two different prompts inside one run, so its facts were not " \
-                     "constant. See `Eval::Prompt::Version`." ]
+                     "designated case sent different full prompts inside one run. Ending scaffold evidence, when " \
+                     "present above, distinguishes fixed records from generated prelude variation. See `Eval::Prompt::Version`." ]
     end
 
     found

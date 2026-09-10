@@ -1,0 +1,37 @@
+339 labelled lines, 12 positions, no model call and no key.
+
+
+------------------------------------------------------------------------------
+THE OFFLINE FLOOR -- the same 339 lines through the fixed grammar
+(`Playthrough::Mechanics` with `model: false`), no model, no key, no spend. This is
+what a classifier call is bought against, and it is free.
+
+  right                    0.413
+    resolved          69   the grammar produced an answer the label accepts
+    refused           71   the grammar refused, and the label says the line earns a refusal
+    wrong              8   the grammar produced an answer the label does not accept -- silently
+    over_refused     178   the grammar refused a line the label says should have played
+    unparsed          13   no verb it knows and no exit by that name, so the whole grammar is printed
+
+  `refused` is GENEROUS to the grammar: it counts a refusal on a line the label
+  says earns one, and the grammar has no refusal KINDS to check -- its refusals are
+  strings it composes, not `Playthrough::Refusal` objects. So the floor can say
+  whether a line was refused and never which kind. It has no `also_named` at all.
+
+  BY SHAPE
+    articles-and-pronouns   11/27   0.407
+    attack                   6/16   0.375
+    drop                     4/18   0.222
+    examine                  5/17   0.294
+    examine-nothing          0/20   0.000
+    move                    22/42   0.524
+    other                    0/34   0.000
+    take                    13/23   0.565
+    talk                     7/54   0.130
+    two-names-one-set       23/32   0.719
+    two-sets                 2/9    0.222
+    unresolved-attack        6/6    1.000
+    unresolved-drop          8/8    1.000
+    unresolved-move         14/14   1.000
+    unresolved-take          9/9    1.000
+    unresolved-talk         10/10   1.000

@@ -103,15 +103,16 @@ class Eval::Prompt::Result
     answered != Eval::Classifier::Arm.parse(row["arm"]).model
   end
 
-  attr_reader :request_identity, :corpus_size, :corpus_digest, :prompt_digest, :prompt_shapes, :prompt_stable,
+  attr_reader :ending_requests, :request_identity, :corpus_size, :corpus_digest, :prompt_digest, :prompt_shapes, :prompt_stable,
               :instructions_digest, :arms, :reps, :passes, :warmups, :name, :recorded_at
 
   def initialize(corpus_size:, arms:, reps:, passes:, warmups: [], corpus_digest: nil, request_identity: nil,
                  prompt_digest: nil, prompt_shapes: {}, prompt_stable: true, instructions_digest: nil,
-                 instruction_passes: {}, name: nil, recorded_at: nil, answered_by: nil)
+                 instruction_passes: {}, ending_requests: nil, name: nil, recorded_at: nil, answered_by: nil)
     @corpus_size = corpus_size
     @corpus_digest = corpus_digest
     @request_identity = request_identity&.deep_stringify_keys
+    @ending_requests = ending_requests&.deep_stringify_keys
     @prompt_digest = prompt_digest
     @prompt_shapes = (prompt_shapes || {}).transform_keys(&:to_s)
     @prompt_stable = prompt_stable
@@ -160,6 +161,7 @@ class Eval::Prompt::Result
     document = JSON.parse(File.read(file))
     new(name: document["name"], recorded_at: document["recorded_at"],
         corpus_size: document["corpus_size"], corpus_digest: document["corpus_digest"], request_identity: document["request_identity"],
+        ending_requests: document["ending_requests"],
         prompt_digest: document["prompt_digest"], prompt_shapes: document["prompt_shapes"],
         prompt_stable: document.fetch("prompt_stable", true),
         instructions_digest: document["instructions_digest"],
@@ -186,6 +188,7 @@ class Eval::Prompt::Result
     kept = passes.map { |pass| Stored.new(pass.to_h.transform_keys(&:to_s).merge("readings" => [])) }
 
     self.class.new(name: name, recorded_at: recorded_at, corpus_size: corpus_size,
+                   ending_requests: ending_requests,
                    corpus_digest: corpus_digest, request_identity: request_identity, prompt_digest: prompt_digest,
                    prompt_shapes: prompt_shapes, prompt_stable: prompt_stable,
                    instructions_digest: instructions_digest, instruction_passes: instruction_passes,
@@ -220,6 +223,7 @@ class Eval::Prompt::Result
 
   def to_h
     { name: name, recorded_at: recorded_at || Time.current.utc.iso8601,
+      ending_requests: ending_requests,
       corpus_size: corpus_size, corpus_digest: corpus_digest, request_identity: request_identity,
       prompt_digest: prompt_digest, prompt_shapes: prompt_shapes, prompt_stable: prompt_stable,
       instructions_digest: instructions_digest, instruction_passes: instruction_passes,

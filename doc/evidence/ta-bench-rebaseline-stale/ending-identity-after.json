@@ -1,0 +1,11 @@
+{
+  "prompt_digest": "d9c09a08de85f43f",
+  "instructions_digest": "3c6036d8f8aa572a",
+  "request_identity": {
+    "version": 2,
+    "digest": "4afd2360632b8600",
+    "scope": "ending_scaffold",
+    "prelude_stable": false
+  },
+  "corpus_digest": "5dbf941afd799482"
+}

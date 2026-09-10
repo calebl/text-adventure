@@ -260,6 +260,38 @@ class Eval::Prompt::EndingKeptSetTest < ActiveSupport::TestCase
     end
   end
 
+  test "the current ending baseline certifies its scaffold and retains variable preludes" do
+    result = kept("prompt-ending-2026-09-10")
+    corpus = Eval::Prompt.corpus("ending")
+    current = Eval::Prompt::RequestVersion.offline(corpus)
+    assert_equal Eval::Prompt.digest(corpus), result.corpus_digest
+    assert_equal current[:request_identity], result.request_identity
+    assert_equal current[:instructions_digest], result.instructions_digest
+    assert_equal Eval::Noise::MIN_RUNS, result.reps
+    assert_equal [ ARM ], result.arms
+    assert_equal result.arms, result.answered_by
+    evidence = result.ending_requests
+    assert evidence.fetch("scaffold_stable")
+    assert evidence.fetch("complete")
+    assert_equal evidence, result.summary.ending_requests
+    rows = evidence.fetch("readings")
+    assert_equal corpus.size * result.reps, rows.size
+    grouped = rows.group_by { |row| row.fetch("id") }.sort.to_h
+    assert_equal corpus.cases.map(&:id).sort, grouped.keys
+    grouped.each_value do |readings|
+      assert_equal (1..result.reps).to_a, readings.map { |row| row.fetch("rep") }.sort
+      assert_equal 1, readings.map { |row| row.fetch("scaffold") }.uniq.size
+    end
+    scaffolds = grouped.transform_values { |readings| readings.first.fetch("scaffold") }
+    assert_equal result.request_identity, Eval::Prompt::EndingVersion.identity(scaffolds, corpus)
+    rows.each do |row|
+      assert_equal false, row.fetch("prelude_stable")
+      assert_includes row.fetch("prompt"), row.fetch("prelude").fetch("description")
+      assert_equal %w[description summary], row.fetch("prelude").keys.sort
+    end
+    assert_includes Eval::MEASUREMENT_FILES, "db/eval/prompt-ending-2026-09-10/prompt.json"
+  end
+
   private
 
   def kept(name) = (@kept ||= {})[name] ||= Eval::Prompt::Result.load(Eval.kept_root.join(name))

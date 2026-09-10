@@ -1,0 +1,16 @@
+Inspecting 1 file
+C
+
+Offenses:
+
+doc/evidence/ta-bench-rebaseline-stale/run.rb:30:27: C: [Corrected] Layout/SpaceInsideArrayLiteralBrackets: Use space inside array brackets.
+    bytes = JSON.generate([messages.map { |message| [message.role, message.content] }, prompt, to_llm.schema]).bytesize
+                          ^
+doc/evidence/ta-bench-rebaseline-stale/run.rb:30:53: C: [Corrected] Layout/SpaceInsideArrayLiteralBrackets: Use space inside array brackets.
+    bytes = JSON.generate([messages.map { |message| [message.role, message.content] }, prompt, to_llm.schema]).bytesize
+                                                    ^
+doc/evidence/ta-bench-rebaseline-stale/run.rb:48:30: C: [Corrected] Layout/SpaceInsideArrayLiteralBrackets: Use space inside array brackets.
+      row["accounted_usd"] = [usage[:provider_cost_usd], cost].compact.max || reserve
+                             ^
+
+1 file inspected, 3 offenses detected, 3 offenses corrected

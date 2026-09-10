@@ -1,0 +1,67 @@
+{
+  "limit_usd": 2.0,
+  "sets": {
+    "prompt-2026-09-10": {
+      "calls_including_warmup_and_preludes": 361,
+      "settled": 361,
+      "unknown_or_reserved": 0,
+      "registry_priced_usd": 0.21875552,
+      "registry_usage_upper_usd": 0.23782040000000002,
+      "provider_reported_usd": 0.03713408,
+      "provider_cost_available_calls": 48,
+      "accounted_usd": 0.23782040000000002,
+      "actual_models": [
+        "mistralai/mistral-medium-3.1"
+      ],
+      "tokens": {
+        "input_tokens": 290468,
+        "output_tokens": 50225,
+        "cached_tokens": 52958,
+        "cache_creation_tokens": 0,
+        "thinking_tokens": 0
+      }
+    },
+    "classifier-2026-09-10": {
+      "calls_including_warmup_and_preludes": 1357,
+      "settled": 1357,
+      "unknown_or_reserved": 0,
+      "registry_priced_usd": 0.27307076,
+      "registry_usage_upper_usd": 0.41396360000000004,
+      "provider_reported_usd": 0.27307076,
+      "provider_cost_available_calls": 1357,
+      "accounted_usd": 0.41396360000000004,
+      "actual_models": [
+        "mistralai/mistral-medium-3.1"
+      ],
+      "tokens": {
+        "input_tokens": 479460,
+        "output_tokens": 32816,
+        "cached_tokens": 391369,
+        "cache_creation_tokens": 0,
+        "thinking_tokens": 0
+      }
+    },
+    "prompt-ending-2026-09-10": {
+      "calls_including_warmup_and_preludes": 42,
+      "settled": 42,
+      "unknown_or_reserved": 0,
+      "registry_priced_usd": 0.02191736,
+      "registry_usage_upper_usd": 0.0227468,
+      "provider_reported_usd": 0.0030016,
+      "provider_cost_available_calls": 4,
+      "accounted_usd": 0.0227468,
+      "actual_models": [
+        "mistralai/mistral-medium-3.1"
+      ],
+      "tokens": {
+        "input_tokens": 35683,
+        "output_tokens": 3776,
+        "cached_tokens": 2304,
+        "cache_creation_tokens": 0,
+        "thinking_tokens": 0
+      }
+    }
+  },
+  "accounted_total_usd": 0.6745308,
+  "remaining_usd": 1.3254692000000001
+}

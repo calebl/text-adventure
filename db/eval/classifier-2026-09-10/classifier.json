@@ -1,0 +1,112 @@
+{
+  "name": "classifier-2026-09-10",
+  "recorded_at": "2026-09-10T17:29:15Z",
+  "corpus_size": 339,
+  "corpus_digest": "2155073129d29086",
+  "request_identity": {
+    "version": 1,
+    "digest": "022ef660ddd8547a"
+  },
+  "arms": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "reps": 4,
+  "concurrency": 2,
+  "answered_by": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "warmups": [
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "seconds": 1.038,
+      "residency": "not_local",
+      "error": null
+    }
+  ],
+  "passes": [
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 1,
+      "accuracy": 0.9469,
+      "intent_accuracy": 0.9853,
+      "strict_accuracy": 0.9435,
+      "refusal_agreement": 0.9541,
+      "closed_set_misses": 13,
+      "latency_median": 0.6626,
+      "latency_p95": 1.1845,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 27,
+      "also_fp": 0,
+      "also_fn": 5,
+      "also_omitted": 0,
+      "answered": 339,
+      "readings_count": 339,
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 2,
+      "accuracy": 0.941,
+      "intent_accuracy": 0.9853,
+      "strict_accuracy": 0.9399,
+      "refusal_agreement": 0.9505,
+      "closed_set_misses": 15,
+      "latency_median": 0.6091,
+      "latency_p95": 0.9896,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 28,
+      "also_fp": 1,
+      "also_fn": 4,
+      "also_omitted": 0,
+      "answered": 339,
+      "readings_count": 339,
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 3,
+      "accuracy": 0.9528,
+      "intent_accuracy": 0.9882,
+      "strict_accuracy": 0.947,
+      "refusal_agreement": 0.9576,
+      "closed_set_misses": 12,
+      "latency_median": 0.6167,
+      "latency_p95": 1.0013,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 28,
+      "also_fp": 0,
+      "also_fn": 4,
+      "also_omitted": 0,
+      "answered": 339,
+      "readings_count": 339,
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 4,
+      "accuracy": 0.941,
+      "intent_accuracy": 0.9823,
+      "strict_accuracy": 0.9364,
+      "refusal_agreement": 0.9505,
+      "closed_set_misses": 14,
+      "latency_median": 0.6004,
+      "latency_p95": 0.9947,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 27,
+      "also_fp": 0,
+      "also_fn": 5,
+      "also_omitted": 0,
+      "answered": 339,
+      "readings_count": 339,
+      "readings": []
+    }
+  ]
+}

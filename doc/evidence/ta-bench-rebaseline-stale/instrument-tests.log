@@ -1,0 +1,9 @@
+Running 28 tests in parallel using 2 processes
+Run options: --seed 27100
+
+# Running:
+
+............................
+
+Finished in 6.810198s, 4.1115 runs/s, 30.2488 assertions/s.
+28 runs, 206 assertions, 0 failures, 0 errors, 0 skips

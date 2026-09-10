@@ -143,9 +143,13 @@ bench's existing prompt mismatch policy (classifier: warning).
 
 The identity hashes rendered system/user messages and the emitted JSON schema,
 including descriptions, enums, required lists and nested bounds. It is a
-**designated request scaffold**, not a full conversation identity. Prompt cases
-use the lowest id per shape; ending uses fixed synthetic prelude prose solely
-for assembly. Realization uses the same designated cases, renders every
+**designated request scaffold**, not a full conversation identity. Main prompt cases
+use the lowest id per shape. Ending request v2 covers every ending case: the
+production builder is re-rendered with placeholders for the preceding scene's
+generated description and summary. The live prompt and both verbatim prelude
+fields are retained alongside that stable scaffold; legacy `prompt_stable`
+continues to report live variation. Historical ending identities remain v1,
+which used fixed synthetic prelude prose solely for assembly. Realization uses the same designated cases, renders every
 supported people count with fixed slot data, and retains the literal directions
 that the legacy line scrub erased. Classifier uses the lowest labelled line's
 staged position; seed-owned names and list sizes remain covered, while database
@@ -1085,6 +1089,36 @@ megabytes and renders a byte-identical table.
 bin/rails runner 'Eval::Prompt::Result.load(Eval.root.join("my-set")) \
   .summary.write!(Eval.kept_root.join("my-set"), name: "my-set")'
 ```
+
+### Current kept sets and historical comparisons
+
+`prompt-2026-09-10`, `classifier-2026-09-10` and
+`prompt-ending-2026-09-10` are the current before sides for future changes.
+They were refreshed under the captain's baseline-coverage order without editing
+prompts, schemas, corpus cases or seeded worlds. Older sets remain history.
+The main comparison spans pre-existing request drift, so its verdicts cannot
+attribute an effect to one prompt change. Recompute them with:
+
+```bash
+rake eval:prompt_compare BEFORE=prompt-2026-09-05 AFTER=prompt-2026-09-10
+rake eval:classifier_offline
+rake eval:prompt_digest CORPUS=ending
+```
+
+The classifier directory also keeps its offline floor. Ending's kept
+`ending_requests` records scaffold stability and completeness, every live
+request, and the generated prelude fields excluded from the stable digest.
+Its request identity certifies the scaffold, never identical generated prose.
+`EndingVersion` documents the dependency boundary and the tests exercise it.
+The generic prose checks still cannot assess whether an ending expresses its
+outcome faithfully or whether its prose is good.
+
+Task evidence and the reproducible receipt summary are under
+`doc/evidence/ta-bench-rebaseline-stale/`. The task runner disables transport
+retries to reserve each paid attempt against its ceiling; prompt text, schemas,
+sampling parameters and scoring are unchanged. Registry-priced usage and
+provider-reported charges are separate in the receipts, including warmups and
+ending preludes that the legacy scored-scene totals omit.
 
 ### The baseline of 2026-09-05
 

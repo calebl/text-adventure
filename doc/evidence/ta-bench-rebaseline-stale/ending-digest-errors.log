@@ -1,0 +1,39 @@
+rake aborted!
+ActiveRecord::StatementTimeout: SQLite3::BusyException: database is locked (ActiveRecord::StatementTimeout)
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/world_seed/loader.rb:250:in 'WorldSeed::Loader#load_universe!'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/world_seed/loader.rb:203:in 'block in WorldSeed::Loader#load!'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/world_seed/loader.rb:202:in 'WorldSeed::Loader#load!'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:218:in 'Eval::Classifier::Stage#load_world!'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:147:in 'Eval::Classifier::Stage#stand!'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:132:in 'block (2 levels) in Eval::Classifier::Stage.open'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:131:in 'Array#to_h'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:131:in 'block in Eval::Classifier::Stage.open'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/concurrency.rb:97:in 'Eval::Concurrency.rolled_back'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:130:in 'Eval::Classifier::Stage.open'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/prompt/request_version.rb:35:in 'block in Eval::Prompt::RequestVersion#offline'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/prompt/request_version.rb:33:in 'Array#each'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/prompt/request_version.rb:33:in 'Eval::Prompt::RequestVersion#offline'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:225:in 'block (2 levels) in <main>'
+/home/calebl/.local/share/mise/installs/ruby/3.4.10/bin/bundle:25:in 'Kernel#load'
+/home/calebl/.local/share/mise/installs/ruby/3.4.10/bin/bundle:25:in '<main>'
+
+Caused by:
+SQLite3::BusyException: database is locked (SQLite3::BusyException)
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/world_seed/loader.rb:250:in 'WorldSeed::Loader#load_universe!'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/world_seed/loader.rb:203:in 'block in WorldSeed::Loader#load!'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/world_seed/loader.rb:202:in 'WorldSeed::Loader#load!'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:218:in 'Eval::Classifier::Stage#load_world!'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:147:in 'Eval::Classifier::Stage#stand!'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:132:in 'block (2 levels) in Eval::Classifier::Stage.open'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:131:in 'Array#to_h'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:131:in 'block in Eval::Classifier::Stage.open'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/concurrency.rb:97:in 'Eval::Concurrency.rolled_back'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/classifier/stage.rb:130:in 'Eval::Classifier::Stage.open'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/prompt/request_version.rb:35:in 'block in Eval::Prompt::RequestVersion#offline'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/prompt/request_version.rb:33:in 'Array#each'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/eval/prompt/request_version.rb:33:in 'Eval::Prompt::RequestVersion#offline'
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:225:in 'block (2 levels) in <main>'
+/home/calebl/.local/share/mise/installs/ruby/3.4.10/bin/bundle:25:in 'Kernel#load'
+/home/calebl/.local/share/mise/installs/ruby/3.4.10/bin/bundle:25:in '<main>'
+Tasks: TOP => eval:prompt_digest
+(See full trace by running task with --trace)

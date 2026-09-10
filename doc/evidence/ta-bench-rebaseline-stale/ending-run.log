@@ -1,0 +1,69 @@
+ESTIMATE: 40 calls (5 cases x 4 reps x 1 model) over the ending corpus, about $0.039.
+Measured at 762 in / 440 out a narration, 1112 in / 158 out a arrival, 1662 in / 640 out a ending.
+Playing 5 ending cases on mistralai/mistral-medium-3.1.
+
+  mistralai/mistral-medium-3.1     first call 3.4s (excluded from the figures below)
+  mistralai/mistral-medium-3.1     rep 1   5 passages,  0 flagged, 3.1s median
+  mistralai/mistral-medium-3.1     rep 2   5 passages,  0 flagged, 2.7s median
+  mistralai/mistral-medium-3.1     rep 3   5 passages,  0 flagged, 2.8s median
+  mistralai/mistral-medium-3.1     rep 4   5 passages,  0 flagged, 2.9s median
+
+Wrote /home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/tmp/eval/prompt-ending-2026-09-10/prompt.json.
+
+schema request: v2:4afd2360632b8600
+------------------------------------------------------------------------------
+THE PROMPT BENCH -- 5 single-turn cases, 4 repetitions, 1 model
+corpus 5dbf941afd799482   prompt 19d1bc78d189437a   instructions 3c6036d8f8aa572a
+Every rate is min..max over the repetitions with the median in the middle. A
+difference smaller than that band is not a difference -- see EVALUATION.md.
+THE LATENCIES ARE WARM-CACHE FIGURES: each arm's first call is timed separately
+and excluded.
+ENDING scaffold stable: true; complete: true. Generated prelude is retained verbatim and unstable.
+
+WARNING: THE DESIGNATED CASE OF SOME SHAPE SENT TWO DIFFERENT PROMPTS IN THIS RUN.
+The ending scaffold stayed fixed; generated prelude prose varied. The full prompt is not reproducible.
+------------------------------------------------------------------------------
+
+MODEL  mistralai/mistral-medium-3.1   (4 reps, 20 passages)
+
+  THE CHECKS -- flagged over the cases each one can be judged on
+  unrecorded_departure       0.000..0.000 (median 0.000)   0..0 of 5   the prose closed a door behind a player who never left
+  unrecorded_arrival         0.000..0.000 (median 0.000)   0..0 of 5   the prose walked the player into a room the records did not move them to
+  item_not_held              0.000..0.000 (median 0.000)   0..0 of 5   the prose handed the player something somebody else holds
+  take_denied                0.000..0.000 (median 0.000)   0..0 of 1   the prose said the player already had what this turn picked up
+  pickup_invented            0.000..0.000 (median 0.000)   0..0 of 1   the prose picked up what this turn put down
+  inscription_misquoted      unavailable in this corpus   no case carries the records this check reads
+  truncated_prose            0.000..0.000 (median 0.000)   0..0 of 5   stored prose stops mid-sentence
+  third_person_protagonist   0.000..0.000 (median 0.000)   0..0 of 5   the narration wrote the player as somebody else
+
+  UNAVAILABLE TO A SINGLE TURN -- reported, never scored as clean
+  unreachable_transition     a case is one turn, and the one turn that moves walks an edge the records have
+  reached_for_nothing        a drift row needs the turn AFTER the narration, and a case has no next turn
+  named_more_than_one        a case types a fixed line, so what it named measures the corpus, not the game
+  still_run                  four turns of nothing needs four turns
+
+  BY WORLD -- flagged of judgeable, pooled over the repetitions
+    The Iron Gate Descends               20 passages   nothing flagged
+
+  RICHNESS -- what the prose COMMITTED TO, and it is never folded into the rates
+  words                            39..51       (median 46)   median words a passage -- length, and NOT a quality figure
+  commitments                2.000..2.600 (median 2.300)   mean rooms, exits, items and people the records know that the prose named
+
+  WHAT A STORED PASSAGE CANNOT SHOW
+  refusals                          0..0        (median 0)   calls the model declined to write (BaseAgent::RefusalError)
+  failures                          0..0        (median 0)   calls that failed outright (a count; the arm has no rotation)
+  omitted_fields                    0..0        (median 0)   required schema fields that came back absent -- schema'd passes only
+  cap_hits                          0..0        (median 0)   fields that arrived at their max_length, so the provider cut them off
+  latency_median                2.66s..3.10s    (median   2.82s)   seconds the median call took (CLOCK_MONOTONIC)
+  latency_p95                   3.40s..3.55s    (median   3.47s)   seconds the worst call in twenty took
+  output_tokens                   250..353      (median 309.5)   output tokens over the pass -- what the prose cost to write
+  spend                      $0.0095 over 20 calls (17,541 in / 1,222 out)
+  first call                 3.43s   EXCLUDED from the figures above, so an outlier shows as one
+
+  NOTHING FLAGGED. Every passage cleared every check this corpus can run.
+
+------------------------------------------------------------------------------
+Judge a prompt change against this with `rake eval:prompt_compare BEFORE= AFTER=`.
+Four repetitions a side is the arithmetic floor for a verdict -- Eval::Noise::MIN_RUNS.
+And confirm it with `rake eval:run`: one turn cannot see pacing or a world in motion.
+------------------------------------------------------------------------------
