@@ -26,6 +26,7 @@ Validation commands and output:
 - `bin/rake eval:inscription_score SET=inscription-2026-09-10`: `board.log`.
 - `bin/rake eval:manifest`: `manifest.log`.
 
-`Eval::RequestIdentity` is byte-identical to the helper read from
-`origin/fm/ta-bench-schema-digest`; this bench can run without the other changes
-on that branch. Production inscriber instructions and schema are unchanged.
+After rebasing on main, `Eval::RequestIdentity` and its tests use main's
+unchanged copies. Production inscriber instructions and schema are unchanged.
+The `rebase-*` logs record the repeated required gates and offline digest.
+The digest matches the original evidence; the kept set was not rebought.

@@ -76,7 +76,6 @@ module Eval
     lib/eval/inscription/bench.rb
     lib/eval/inscription/scorer.rb
     lib/eval/inscription/report.rb
-    lib/eval/request_identity.rb
     lib/tasks/inscription.rake
     test/fixtures/files/inscription_corpus.yml
     test/lib/eval/inscription/bench_test.rb
