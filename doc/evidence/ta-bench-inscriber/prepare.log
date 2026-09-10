@@ -8,7 +8,7 @@
    -> 0.0047s
 -- add_index(:playthrough_feedbacks, :prose_prompt_digest)
    -> 0.0012s
-== 20260905110000 AddProsePromptDigestToPlaythroughFeedbacks: migrated (0.0059s) 
+== 20260905110000 AddProsePromptDigestToPlaythroughFeedbacks: migrated (0.0059s)
 
 == 20260905120000 AddMonstersToTheWorld: migrating ============================
 -- add_column(:races, :monstrous, :boolean, {default: false, null: false})
@@ -134,7 +134,7 @@
    -> 0.0013s
 -- add_column(:quest_outcomes, :ramification_minutes, :integer)
    -> 0.0038s
-== 20260908120000 AnEventGetsAnHourAndAQuestGetsMoreThanOneEnd: migrated (0.0139s) 
+== 20260908120000 AnEventGetsAnHourAndAQuestGetsMoreThanOneEnd: migrated (0.0139s)
 
 == 20260908155546 AKindOfPlaceAndTheSamplesOfIt: migrating ====================
 -- create_table(:lab_realization_kinds)
@@ -189,7 +189,7 @@
    -> 0.0057s
 -- add_index(:playthrough_feedbacks, :prose_prompt_digest)
    -> 0.0013s
-== 20260905110000 AddProsePromptDigestToPlaythroughFeedbacks: migrated (0.0071s) 
+== 20260905110000 AddProsePromptDigestToPlaythroughFeedbacks: migrated (0.0071s)
 
 == 20260905120000 AddMonstersToTheWorld: migrating ============================
 -- add_column(:races, :monstrous, :boolean, {default: false, null: false})
@@ -315,7 +315,7 @@
    -> 0.0021s
 -- add_column(:quest_outcomes, :ramification_minutes, :integer)
    -> 0.0021s
-== 20260908120000 AnEventGetsAnHourAndAQuestGetsMoreThanOneEnd: migrated (0.0158s) 
+== 20260908120000 AnEventGetsAnHourAndAQuestGetsMoreThanOneEnd: migrated (0.0158s)
 
 == 20260908155546 AKindOfPlaceAndTheSamplesOfIt: migrating ====================
 -- create_table(:lab_realization_kinds)
@@ -359,4 +359,3 @@
 -- add_column(:locations, :generation_checkpoint, :json)
    -> 0.0042s
 == 20260909030346 AddGenerationCheckpointToLocations: migrated (0.0042s) ======
-
