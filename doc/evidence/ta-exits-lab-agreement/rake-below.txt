@@ -1,0 +1,84 @@
+------------------------------------------------------------------------------
+THE AGREEMENT -- the exits checks against the captain's own verdicts
+Offline and free: every figure below is read off samples already bought.
+
+AN ELIGIBLE VERDICT speaks to a check on a named place, counted once across
+its draws. Good speaks to every judgeable per-name check; weak/bad speaks
+through its aspects. shouldnt_exist speaks to every per-name check.
+Whole-answer and detail checks are unavailable to a name judgement.
+Below 30 eligible verdicts the counts are printed and no percentage is.
+Tuning and held out are two sets and are never pooled.
+------------------------------------------------------------------------------
+
+SET  tuning
+  2 samples, 2 names judged, 0 unjudged, 0 failed
+  verdicts: good 1, weak 0, bad 1
+
+  THE CHECKS -- agreed of eligible verdicts, with what the check fired on
+  exit_into_a_written_room               1 of 1 -- not established    fired on good 0, weak 0, bad 0   [2 judgeable]
+                                           an exit named a place already WRITTEN that this room cannot reach -- the prompt marks those and the engine drops the edge
+  exit_already_reachable                 1 of 1 -- not established    fired on good 0, weak 0, bad 0   [2 judgeable]
+                                           an exit named a place this room can already reach, which the prompt lists and says does not need naming again
+  exit_spelled_a_place_differently       unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           an exit named a place the world already held, spelled another way -- `WorldSeed.natural_key`'s reading of the same name, which the engine resolves and every check keyed on the written string cannot see
+  exit_named_this_room                   1 of 1 -- not established    fired on good 0, weak 0, bad 0   [2 judgeable]
+                                           an exit named the room it leads out of
+  exit_over_the_allowance                unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           more ways out than the prompt said were left
+  no_new_ground                          unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           a room the story points into whose every exit was a place the world already had
+  person_over_the_allowance              unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           more people than the prompt said this world had room for
+  item_over_the_allowance                unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           more things than the prompt said this room had room for
+  name_already_spoken_for                unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           a name the world had already given to somebody, somewhere or something
+  proposal_refused                       unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           a person or a thing the engine would not admit, so the room lost it
+  readable_without_words                 unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           a thing marked readable with nothing written on it, which costs a later round trip to Item::Inscriber
+  room_name_refused                      unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           a room asked to name itself that kept its placeholder, read off the room's own name afterwards -- judgeable only on a room the engine laid out
+  room_name_already_taken                unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           a proposed room name the world had already given to somewhere, somebody or something
+  inside_declined                        0 of 1 -- not established    fired on good 1, weak 0, bad 0   [2 judgeable]
+                                           an exit named with no `inside` pick at all, so the engine took the quietest option -- the field is optional and an absent one is a decision not made
+  inside_on_a_place_that_already_exists  no eligible verdict yet (1 judgeable, 0 eligible)
+                                           an inside pick on an exit that named a place the world already held, so the engine reused the row and threw the pick away -- judgeable only on a set that records what the call opened
+  inside_where_the_world_wanted_none     unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           MORE buildings OPENED than the case's `expects_inside` quantifier allows -- judgeable only on a case whose label has a ceiling (`none of them`, `at most one`), in a set that records what the call opened
+  no_inside_where_the_world_wanted_one   unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           FEWER insides picked than the case's `expects_inside` quantifier asks for -- judgeable only on a case whose label has a floor (`at least one`, `every one`)
+  population_declined                    1 of 1 -- not established    fired on good 0, weak 0, bad 0   [2 judgeable]
+                                           an exit named with no `population` pick at all, so the engine rolled a word for the place instead -- the field asks and nothing rests on the asking
+  people_short_of_the_pick               unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           a room asked for an exact number of people that came back with fewer, so the room the prose describes is emptier than the word somebody picked for it
+  parameters_declined                    unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           a building offered the `parameters` block that came back without one, so every pick fell to its quietest default
+  parameters_the_engine_narrowed         unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           a building whose picks the layout could not honour -- a warren on a footprint that holds one room, a depth the storeys do not reach
+  race_not_named                         unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           a person written for a MONSTROUS slot whose sheet never says the race -- a KEYWORD check, so it reads words rather than comparing records  [KEYWORD]
+  size_the_records_do_not_hold           unavailable -- no attributable evidence (0 judgeable, 0 eligible)
+                                           the description stated a size in paces, or a storey, that is not this room's -- a KEYWORD check, judgeable only on a room the engine laid out  [KEYWORD]
+
+  SUSPECTS -- a check that fired on a name he called good
+    sample #7 /lab/exits/samples/7 (Harbour Steps 1 in The Quay House)  Tide Flats -- inside_declined
+
+  MISSED -- a name he called weak or bad that no attributable check fired on
+    sample #8 /lab/exits/samples/8 (Harbour Steps 1 in The Quay House)  The Salt Chandlery -- bad -- teaser_wrong
+
+  PROSE -- kept, reported, never scored
+    1 of 2 judged names were faulted for teaser or name prose.
+    No check reads prose and none is going to -- see
+    Eval::Realization::UNAVAILABLE_TO_A_REALIZATION. This is ground truth for a check
+    that does not exist, and it is not an agreement figure.
+
+SET  held out   [The Salt Assizes -- reported apart, never pooled with the tuning worlds]
+  (nothing drawn in the held-out world yet)
+
+------------------------------------------------------------------------------
+A figure here is about the CHECKS and not about the prompt: it says whether a
+check agrees with him, not whether the generator is picking what he wants. That
+second question is the hit rate, per vantage, at /lab/exits.
+------------------------------------------------------------------------------

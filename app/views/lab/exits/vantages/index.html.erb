@@ -133,5 +133,21 @@
   </div>
 <% end %>
 
+<section id="agreement">
+<h2>the agreement</h2>
+<p class="note">
+  Whether the record checks agree with your per-name judgements. Each name counts
+  once across its draws. Good speaks to every judgeable per-name check; weak or bad
+  speaks through its aspects; shouldnt_exist speaks to all of them. A bare weak or
+  bad can still be a miss. Whole-answer and detail checks are unavailable here.
+  Below <%= Story::Scoreboard::MIN_VERDICTS %> eligible verdicts the fraction and
+  both denominators are shown, and no percentage is. Tuning and held out stay apart.
+  Offline and free: <code>rake eval:exits_alignment</code> prints the same evidence.
+</p>
+<% @agreement_sets.each do |set| %>
+  <%= render "lab/exits/vantages/agreement", set: set %>
+<% end %>
+</section>
+
 <h2>a new vantage</h2>
 <%= render "lab/exits/vantages/form", vantage: @vantage %>

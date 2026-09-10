@@ -1,0 +1,43 @@
+THE AGREEMENT
+
+Whether the record checks agree with your per-name judgements. Each name counts once across its draws. Good speaks to every judgeable per-name check; weak or bad speaks through its aspects; shouldnt_exist speaks to all of them. A bare weak or bad can still be a miss. Whole-answer and detail checks are unavailable here. Below 30 eligible verdicts the fraction and both denominators are shown, and no percentage is. Tuning and held out stay apart. Offline and free: rake eval:exits_alignment prints the same evidence.
+
+TUNING
+
+2 samples, 2 names judged, 0 names unjudged, 0 failed.  ·  GOOD 1  WEAK 0  BAD 1 
+
+CHECK	JUDGEABLE	ELIGIBLE	AGREEMENT	FIRED ON GOOD	WEAK	BAD
+exit into a written room	2	1	1 of 1 — not established	0	0	0
+exit already reachable	2	1	1 of 1 — not established	0	0	0
+exit spelled a place differently	0	0	(unavailable — no attributable evidence for a name judgement)
+exit named this room	2	1	1 of 1 — not established	0	0	0
+exit over the allowance	0	0	(unavailable — no attributable evidence for a name judgement)
+no new ground	0	0	(unavailable — no attributable evidence for a name judgement)
+person over the allowance	0	0	(unavailable — no attributable evidence for a name judgement)
+item over the allowance	0	0	(unavailable — no attributable evidence for a name judgement)
+name already spoken for	0	0	(unavailable — no attributable evidence for a name judgement)
+proposal refused	0	0	(unavailable — no attributable evidence for a name judgement)
+readable without words	0	0	(unavailable — no attributable evidence for a name judgement)
+room name refused	0	0	(unavailable — no attributable evidence for a name judgement)
+room name already taken	0	0	(unavailable — no attributable evidence for a name judgement)
+inside declined	2	1	0 of 1 — not established	1	0	0
+inside on a place that already exists	1	0	(no verdict yet says anything about this check)
+inside where the world wanted none	0	0	(unavailable — no attributable evidence for a name judgement)
+no inside where the world wanted one	0	0	(unavailable — no attributable evidence for a name judgement)
+population declined	2	1	1 of 1 — not established	0	0	0
+people short of the pick	0	0	(unavailable — no attributable evidence for a name judgement)
+parameters declined	0	0	(unavailable — no attributable evidence for a name judgement)
+parameters the engine narrowed	0	0	(unavailable — no attributable evidence for a name judgement)
+race not named [keyword]	0	0	(unavailable — no attributable evidence for a name judgement)
+size the records do not hold [keyword]	0	0	(unavailable — no attributable evidence for a name judgement)
+suspects — a check that fired on a name you called good
+sample #7 inside declined — Tide Flats
+missed — a name you called weak or bad that no attributable check fired on
+sample #8 BAD teaser_wrong — The Salt Chandlery
+prose — kept, reported, never scored
+
+1 of 2 judged names faulted for teaser or name prose. No check reads prose and none is going to (Eval::Realization::UNAVAILABLE_TO_A_REALIZATION), so this is ground truth for a check that does not exist — not an agreement figure.
+
+HELD OUT [THE SALT ASSIZES — APART, NEVER POOLED WITH THE TUNING WORLDS]
+
+(nothing drawn in the held-out world yet)

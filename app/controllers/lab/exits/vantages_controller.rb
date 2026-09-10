@@ -39,6 +39,7 @@ class Lab::Exits::VantagesController < ApplicationController
     # THE COUNTER-FIGURE AND THE REFUSAL BELONG TO THE SET, so they are read here
     # and never on one vantage's page -- `Lab::Exits::Alignment`'s header has why.
     @alignment = Lab::Exits::Alignment.new(@vantages)
+    @agreement_sets = Lab::Exits::Agreement.sets(@vantages)
   end
 
   # AND THE PROMOTION IS READ HERE AND IS FREE. `Lab::Exits::Promotion` emits
@@ -60,6 +61,7 @@ class Lab::Exits::VantagesController < ApplicationController
 
     @vantages = Lab::Exits::Vantage.newest_first.includes(:samples, :judgements)
     @alignment = Lab::Exits::Alignment.new(@vantages)
+    @agreement_sets = Lab::Exits::Agreement.sets(@vantages)
     render :index, status: :unprocessable_content
   end
 
