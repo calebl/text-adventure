@@ -98,6 +98,8 @@ class Scene::Narrator
   # watched the first attempt arrive; the end-of-turn `#turn_log` replace is
   # what takes it off the page, since the log renders the persisted scene.)
   def narrate(command, fact: nil, intent: nil, handled: nil, fallback_text: nil, &block)
+    return Playthrough::Command::Journal.read("narrated") if Playthrough::Command::Journal.saved?("narrated")
+
     fallback = false
     begin
       text = agent.ask(prompt_for(command, fact, intent, handled)) do |chunk|
@@ -122,14 +124,15 @@ class Scene::Narrator
     end
     raise BaseAgent::UnusableResponseError, "Narration was blank" if text.blank?
 
-    scene = persist(text, fallback: fallback)
     # Only the supplied fact is shown by the fallback. Pending environmental
     # events remain untold until a paragraph actually includes them.
-    scene.narrated_toll_ids = [] if scene && fallback
-    scene.safety_notice = safety_notice if scene
-    scene.rendering_error = rendering_error if scene
-
-    scene
+    Playthrough::Command::Journal.commit("narrated") do
+      row = persist(text, fallback: fallback)
+      row.narrated_toll_ids = [] if row && fallback
+      row.safety_notice = safety_notice if row
+      row.rendering_error = rendering_error if row
+      row
+    end
   end
 
   private

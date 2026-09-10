@@ -6,6 +6,7 @@
 # detail call fails a walk even when its second answer would look the same.
 class EngineSweep::BrowserTurn
   class RenderingUnavailable < StandardError; end
+  class WorkerStopped < Interrupt; end
 
   attr_reader :shown
 
@@ -56,14 +57,21 @@ class EngineSweep::BrowserTurn
     expected_calls = replies.map { |reply| reply.fetch("purpose") }
     raised = false
     outcome = without_provider(calls, replies: replies.dup) do
-      Playthrough::Turn.new(game).play(step.typed, request_token: step.browser.fetch("token"))
+      interrupt_after(step.browser["interrupt_after"]) do
+        Playthrough::Turn.new(game).play(step.typed, request_token: step.browser.fetch("token"))
+      end
+    rescue WorkerStopped
+      raise unless step.browser["interrupt_after"]
+
+      raised = true
+      nil
     rescue RenderingUnavailable
       raise unless step.browser["raises"]
 
       raised = true
       nil
     end
-    if step.browser["raises"] && !raised
+    if (step.browser["raises"] || step.browser["interrupt_after"]) && !raised
       raise EngineSweep::ModelCalled, "browser step expected an unavailable provider to interrupt submission"
     end
     unless calls == expected_calls
@@ -86,6 +94,23 @@ class EngineSweep::BrowserTurn
   end
 
   private
+
+  # Stop AFTER an atomic receipt, bypassing StandardError recovery as a killed
+  # worker does. The next script line runs a fresh Turn against the saved rows.
+  def interrupt_after(boundary)
+    return yield unless boundary
+
+    original = Playthrough::Command::Journal.method(:commit)
+    Playthrough::Command::Journal.define_singleton_method(:commit) do |key, &work|
+      result = original.call(key, &work)
+      raise WorkerStopped, "the sweep stopped the worker" if key == boundary
+
+      result
+    end
+    yield
+  ensure
+    Playthrough::Command::Journal.define_singleton_method(:commit, original) if original
+  end
 
   # Read the actual player-facing entries, with the debug instrument off. Only
   # the engine notices are asserted: model prose is still outside this sweep.

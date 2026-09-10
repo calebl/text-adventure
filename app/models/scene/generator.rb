@@ -77,6 +77,8 @@ class Scene::Generator
   # nothing to arrive in. Realize it first (`Location::Generator#realize!`,
   # which no-ops on an already realized location).
   def generate!
+    return Playthrough::Command::Journal.read("arrival") if Playthrough::Command::Journal.saved?("arrival")
+
     raise ArgumentError, "cannot narrate arriving in #{location.name.inspect}: it is still a stub" unless location.realized?
 
     # Read BEFORE the scene is created. `Scene#mark_location_visit` is an
@@ -90,8 +92,11 @@ class Scene::Generator
 
     answer = agent.with_schema(Scene::Schema).ask(arrival_prompt(returning, elapsed, cast)).content
 
-    scene = persist_arrival!(answer, cast: cast, at: at)
-    scene.narrated_toll_ids = arrival_context.toll_ids if arrival_context
+    scene = Playthrough::Command::Journal.commit("arrival") do
+      row = persist_arrival!(answer, cast: cast, at: at)
+      row.narrated_toll_ids = arrival_context.toll_ids if arrival_context
+      row
+    end
 
     # The turn the exchange above belongs to only exists now, so the messages
     # are stamped with it here rather than by the caller. See BaseAgent#attribute_to!.
@@ -103,19 +108,23 @@ class Scene::Generator
   # account of the destination and crossing, with no further provider call.
   # If saving succeeded and only attribution failed, reuse that scene so a
   # caller's recovery cannot append the arrival twice.
-  def fallback!
+  def fallback!(error: nil)
     return completed_scene if completed_scene
     raise ArgumentError, "an arrival fallback needs a playthrough" unless @playthrough
     raise ArgumentError, "cannot arrive in a stub" unless location.realized?
 
     context = arrival_context
     description = ([ "You arrive at #{location.name}." ] + context.facts).join(" ")
-    scene = persist_arrival!(
-      { "description" => description, "summary" => description },
-      cast: context.living, at: story_timestamp, engine_fallback: true
-    )
-    scene.narrated_toll_ids = context.toll_ids
-    scene
+    Playthrough::Command::Journal.commit("arrival") do
+      scene = persist_arrival!(
+        { "description" => description, "summary" => description },
+        cast: context.living, at: story_timestamp, engine_fallback: true
+      )
+      scene.narrated_toll_ids = context.toll_ids
+      scene.rendering_error = error
+      scene.safety_notice = true if error.is_a?(BaseAgent::CrisisResponseError)
+      scene
+    end
   end
 
   # WHEN IN THE STORY THIS ARRIVAL HAPPENS, and the one place the game turns a

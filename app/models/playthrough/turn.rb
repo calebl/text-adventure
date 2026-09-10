@@ -167,25 +167,15 @@ class Playthrough::Turn
   # case -- one line, nothing else pending -- this is the one row and the loop
   # below is exactly what it was.
   #
-  # A row that is no longer pending is answered alone: a redelivery replays its
-  # stored outcome and an interrupted one raises, which is `Command#execute!`'s
-  # business and not this method's. If a predecessor fails here the loop stops
-  # and this job's own row stays pending -- the next submission's job drains it,
-  # and the reconciliation limit is the one R04 already records.
-  #
-  # WHAT THIS ORDERS IS PENDING LIVE SUBMISSIONS, AND NOTHING ELSE. Only
-  # `pending` predecessors are drained, so a predecessor a dead worker left
-  # `running` -- SIGKILL, OOM, a deploy mid-turn -- is neither replayed nor
-  # waited for, and this line plays past it. Replaying it could repeat a
-  # half-finished effect (`Command#execute!`), and blocking every later line
-  # behind it would strand the game on a row nothing will ever finish, so it is
-  # skipped and left visible for reconciliation. Accepted order is therefore a
-  # guarantee about submissions whose workers are alive; across an interrupted
-  # worker there is none, which is the R04 boundary the intent keeps partial.
+  # Include interrupted predecessors: the same process lock proves their old
+  # worker no longer owns the turn. Their journals finish before a later line
+  # can change the closed sets. Legacy interrupted rows stop the drain visibly.
   def accepted_up_to(submission)
-    return [ submission ] unless submission.status == "pending"
+    return [ submission ] if submission.completed?
 
-    playthrough.commands.where(status: "pending").where("id <= ?", submission.id).order(:id).to_a
+    playthrough.commands.where.not(status: "completed").where("id <= ?", submission.id).order(:id).select do |row|
+      row.blocks_later? || row.id == submission.id
+    end
   end
   private :accepted_up_to
 
@@ -220,7 +210,10 @@ class Playthrough::Turn
     # nothing will ever change again, so the honest cost of typing into one is
     # nothing. `Playthrough::Refusal.over` derives WHY it finished -- a death or
     # a story that concluded -- off the records; see `Playthrough::EndNotice`.
-    return Playthrough::Refusal.over(playthrough: playthrough, typed: command) if playthrough.over?
+    ended = Playthrough::Command::Journal.commit("already_over") do
+      playthrough.over? ? Playthrough::Refusal.over(playthrough: playthrough, typed: command) : nil
+    end
+    return ended if ended
 
     # THE WORLD MOVES FIRST, and it moves whether or not anybody was watching.
     # Every boundary the story's clock has passed since the last turn is applied
@@ -228,7 +221,10 @@ class Playthrough::Turn
     # the classifier resolves against are tonight's exits and not last night's.
     # One `SELECT MAX` and one row per mechanic when nothing is due, which is
     # almost every turn; zero tokens either way. See WorldMechanic.
-    playthrough.story.catch_up_world!
+    Playthrough::Command::Journal.commit("world_clock") do
+      playthrough.story.catch_up_world!
+      nil
+    end
 
     # AND THIS GAME TAKES ITS SNAPSHOT OF WHERE IT IS STANDING, before the
     # closed sets are read. The world layer is the template and the playthrough
@@ -238,13 +234,16 @@ class Playthrough::Turn
     # first in a room -- and it is here rather than only on arrival because a
     # room can gain a template, or a person carrying one, long after the party
     # walked in. See `Item::Snapshot`.
-    Playthrough::Snapshot.new(playthrough).of_the_room!(playthrough.current_location)
+    Playthrough::Command::Journal.commit("starting_room") do
+      Playthrough::Snapshot.new(playthrough).of_the_room!(playthrough.current_location)
+      nil
+    end
 
     # THE LINE IS READ, BY THE GRAMMAR FIRST AND BY THE MODEL AFTER. See
     # `#read_line`: `typed` is the line with its slash taken off, and
     # `resolved_by` is which of the two answered.
     typed = Playthrough::Grammar.unslashed(command)
-    intent, resolved_by = read_line(command, typed)
+    intent, resolved_by = Playthrough::Command::Journal.remember("intent") { read_line(command, typed) }
 
     # THE LINE THE ENGINE WILL NOT PLAY, and it stops HERE -- in front of the
     # dispatch, so nothing moves, no `Scene` exists, `Location`'s visit stamp is
@@ -263,7 +262,7 @@ class Playthrough::Turn
     # front of the dispatch is what makes that impossible rather than merely
     # unlikely, and it is why the guards inside `#take_item`, `#drop_item` and
     # `#throw_at` are gone rather than corrected.
-    if (refusal = refusal_for(intent, typed))
+    if (refusal = Playthrough::Command::Journal.commit("refusal") { refusal_for(intent, typed) })
       playthrough.prune_conversations!
       return refusal
     end
@@ -271,14 +270,14 @@ class Playthrough::Turn
     # WHERE THE TURN BEGAN, and it is read before the dispatch for one reason:
     # a move puts the party somewhere else, and the foes in the room they LEFT
     # act before they go (`Playthrough::Riposte`). You turned your back.
-    from = playthrough.current_location
+    from = Playthrough::Command::Journal.commit("origin") { playthrough.current_location }
 
     # WHICH TURN OF A FIGHT THIS IS, read ONCE per turn and off a record. A
     # round is a turn (the captain's call C5), so the player's own blow and
     # every one of the riposte's carry the same number, and `Playthrough::Fight`
     # counts distinct rounds to work out what the fight cost in story time.
     fight = Playthrough::Fight.new(playthrough)
-    round = fight.next_round
+    round = Playthrough::Command::Journal.commit("round") { fight.next_round }
 
     scene = if intent.destination
       move_to(intent.destination, &block)
@@ -292,7 +291,11 @@ class Playthrough::Turn
       # nil: the exchange is `playthrough_blows` and ONE Scene closes the fight
       # (`Playthrough::Fight`). See that class for why a Scene per round is the
       # wrong shape.
-      intent.attack? ? strike_at(intent.speaker, round: round) : talk_to(intent.speaker, typed, &block)
+      if intent.attack?
+        Playthrough::Command::Journal.commit("attack") { strike_at(intent.speaker, round: round) }
+      else
+        talk_to(intent.speaker, typed, &block)
+      end
     elsif intent.item
       # THREE THINGS A LINE CAN DO TO ONE THING. The item is the resolved record
       # in every case; the action says which. Dispatching on the action here
@@ -342,8 +345,11 @@ class Playthrough::Turn
     # presence was said on 62% of turns. It is a DERIVED SNAPSHOT now: taken
     # from `Character.present_in` and never the source of it (see
     # `#cast_of`), so the direction the Tide Post defect ran in is reversed.
-    scene&.update!(typed: typed, characters: cast_of(scene), resolved_by: resolved_by,
-                   **resolution_for(intent))
+    Playthrough::Command::Journal.commit("scene_facts") do
+      scene&.update!(typed: typed, characters: cast_of(scene), resolved_by: resolved_by,
+                     **resolution_for(intent))
+      nil
+    end
     @safety_notice ||= scene&.safety_notice
 
     # AND WHAT THE WORLD ITSELF TOOK IS FILED UNDER THE TURN THAT TOLD THE
@@ -363,14 +369,17 @@ class Playthrough::Turn
     # is told by the NEXT turn's paragraph and claimed by the next turn's
     # scene -- which is exactly the shape `Playthrough::Riposte`'s blows already
     # have, because step 7 is after the prose in both cases.
-    claim_tolls!(scene)
+    Playthrough::Command::Journal.commit("told_tolls") { claim_tolls!(scene) }
 
     # AND THEN THE WORLD ANSWERS: every live foe in the room the turn began in
     # strikes once, in `id` order. It runs on EVERY line the engine played and
     # not only on an attack -- that is what makes a fight a fight, and it is the
     # captain's call C5 (a round is the turn). A refused line never reaches
     # here, because a refused line writes nothing.
-    Playthrough::Riposte.new(playthrough, turn: self).run!(location: from, round: round)
+    Playthrough::Command::Journal.commit("riposte") do
+      Playthrough::Riposte.new(playthrough, turn: self).run!(location: from, round: round)
+      nil
+    end
 
     # AND THE PLACE ITSELF GETS ITS TURN, beside the foes and after them, on the
     # same room the turn began in and on the same terms: every line the engine
@@ -380,7 +389,10 @@ class Playthrough::Turn
     # not before, so the fight's order is untouched by this: a blow that took
     # the last hit point ends the game, and `Playthrough::Hazards` writes
     # nothing into a game that is over.
-    Playthrough::Hazards.new(playthrough, turn: self).every_turn!(location: from)
+    Playthrough::Command::Journal.commit("room_hazard") do
+      Playthrough::Hazards.new(playthrough, turn: self).every_turn!(location: from)
+      nil
+    end
 
     # AND THEN THE STORY'S ARC IS READ AGAINST WHAT THIS TURN LEFT BEHIND. Four
     # record predicates, no model call and nothing written on almost every turn
@@ -395,7 +407,10 @@ class Playthrough::Turn
     # HERE, which is the same ruling the two lines above are under -- a refused
     # line writes nothing, so it cannot reach a beat.
     arc = Playthrough::Arc.new(playthrough)
-    arc.run!
+    conclusion = Playthrough::Command::Journal.commit("arc") do
+      arc.run!
+      arc.conclusion
+    end
 
     # AND ON THE ONE TURN THE ARC CONCLUDED, THE ENDING IS WRITTEN IN WORDS.
     # The engine has already decided it and already stored a sentence for it, so
@@ -409,12 +424,14 @@ class Playthrough::Turn
     # for the offline sweep as well (`Playthrough::Mechanics`), which makes no
     # model call at all; and the ending is written in a transaction, which is no
     # place to hold SQLite's one writer open across a provider round trip.
-    ending = arc.conclusion && Scene::Ending.new(playthrough).narrate!(arc.conclusion, &block)
+    ending = Playthrough::Command::Journal.remember("ending") do
+      conclusion && Scene::Ending.new(playthrough).narrate!(conclusion, &block)
+    end
 
     # AND A FIGHT THAT HAS ENDED IS CLOSED, with one `Scene` carrying what the
     # exchange cost in story time. Nil on every turn of every game that is not
     # in a fight, which is almost all of them.
-    closing = fight.close!
+    closing = Playthrough::Command::Journal.commit("fight_closed") { fight.close! }
 
     # THE CONVERSATIONS THIS TURN HAD, filed under the turn.
     #
@@ -583,6 +600,8 @@ class Playthrough::Turn
   # in a container. #walk_in! is where that happens and its header is why it
   # cannot happen any earlier.
   def move_to(destination, &block)
+    return Playthrough::Command::Journal.read("moved") if Playthrough::Command::Journal.saved?("moved")
+
     realizer = Location::Generator.new(destination, playthrough: playthrough)
     realizer.realize!
 
@@ -598,7 +617,10 @@ class Playthrough::Turn
     # written about a room the records say is empty for this game. A room that
     # was already realized copies whatever this playthrough has not seen yet,
     # which is how a second player walks into the office as it was generated.
-    Playthrough::Snapshot.new(playthrough).of_the_room!(destination)
+    Playthrough::Command::Journal.commit("destination_snapshot") do
+      Playthrough::Snapshot.new(playthrough).of_the_room!(destination)
+      nil
+    end
 
     # AND THE WALK IS PAID FOR: the one DIRECTED doorway row that was actually
     # walked, and then the room's own `on_arrival` hazard. Here -- after the
@@ -611,7 +633,10 @@ class Playthrough::Turn
     # direction. See `Playthrough::Hazards` -- and note that a hazard reaches
     # hit points through `#harm!` like everything else, so one that takes the
     # last one ends the game here, on arrival, exactly as a blow does.
-    Playthrough::Hazards.new(playthrough, turn: self).on_arrival!(destination, from: playthrough.current_location)
+    Playthrough::Command::Journal.commit("arrival_cost") do
+      Playthrough::Hazards.new(playthrough, turn: self).on_arrival!(destination, from: playthrough.current_location)
+      nil
+    end
 
     generator = Scene::Generator.new(
       destination, previous_scene: playthrough.current_scene, playthrough: playthrough
@@ -620,12 +645,12 @@ class Playthrough::Turn
       generator.generate!
     rescue StandardError => e
       Rails.logger.warn { "Arrival kept its engine outcome: #{e.class}: #{e.message}" }
-      fallback = generator.fallback!
-      fallback.rendering_error = e if fallback.engine_fallback?
-      fallback.safety_notice = true if e.is_a?(BaseAgent::CrisisResponseError)
-      fallback
+      generator.fallback!(error: e)
     end
-    stand_in!(destination, scene: scene)
+    Playthrough::Command::Journal.commit("moved") do
+      stand_in!(destination, scene: scene)
+      scene
+    end
 
     # Realizing the room is the most expensive thing this branch does -- two
     # calls, ~670 output tokens -- and it happens before there is a scene to file
@@ -692,34 +717,39 @@ class Playthrough::Turn
   # or blank model prose gets a factual receipt; the scene, interaction and
   # current-scene pointer are then saved together in a short transaction.
   def talk_to(character, command, &block)
+    return Playthrough::Command::Journal.read("talked") if Playthrough::Command::Journal.saved?("talked")
+
     agent = InteractionAgent.new(character, playthrough: playthrough)
     exchange = agent.ask(command, &block)
     return if exchange.narration.blank?
 
     scene = nil
-    Scene.transaction do
-      scene = Scene.create!(
-        story: playthrough.story,
-        location: playthrough.current_location,
-        previous_scene: playthrough.current_scene,
-        description: exchange.narration,
-        engine_fallback: exchange.fallback?,
-        summary: [ "The player spoke with #{character.fullname}.", exchange.reaction[:action], exchange.effect&.fact ].compact.join(" "),
-        story_timestamp: playthrough.story_time_after("conversation")
-      )
-      Interaction.create!(
-        **exchange.reaction,
-        **(exchange.effect&.attributes || {}),
-        character: character,
-        scene: scene,
-        location: playthrough.current_location,
-        user_input: command
-      )
-      playthrough.update!(current_scene: scene)
+    Playthrough::Command::Journal.commit("talked") do
+      Scene.transaction do
+        scene = Scene.create!(
+          story: playthrough.story,
+          location: playthrough.current_location,
+          previous_scene: playthrough.current_scene,
+          description: exchange.narration,
+          engine_fallback: exchange.fallback?,
+          summary: [ "The player spoke with #{character.fullname}.", exchange.reaction[:action], exchange.effect&.fact ].compact.join(" "),
+          story_timestamp: playthrough.story_time_after("conversation")
+        )
+        Interaction.create!(
+          **exchange.reaction,
+          **(exchange.effect&.attributes || {}),
+          character: character,
+          scene: scene,
+          location: playthrough.current_location,
+          user_input: command
+        )
+        playthrough.update!(current_scene: scene)
+      end
+      scene.safety_notice = exchange.safety_notice
+      scene.rendering_error = exchange.rendering_error
+      scene
     end
 
-    scene.safety_notice = exchange.safety_notice
-    scene.rendering_error = exchange.rendering_error
     attribute_conversation!(agent, scene)
     scene
   end
@@ -770,7 +800,7 @@ class Playthrough::Turn
     taker = playthrough.character
     from = playthrough.current_location
 
-    carry!(item)
+    Playthrough::Command::Journal.commit("take") { carry!(item) }
 
     Scene::Narrator.new(playthrough).narrate(
       command,
@@ -800,7 +830,7 @@ class Playthrough::Turn
     here = playthrough.current_location
     dropper = playthrough.character
 
-    put_down!(item)
+    Playthrough::Command::Journal.commit("drop") { put_down!(item) }
 
     Scene::Narrator.new(playthrough).narrate(
       command,
@@ -876,7 +906,9 @@ class Playthrough::Turn
   # repair rather than a game that cannot be played, and it stays narrated.
   def throw_at(intent, command, round:, &block)
     thrower = playthrough.character
-    outcome = throw_item!(intent.item, at: intent.at, round: round)
+    outcome = Playthrough::Command::Journal.commit("throw") do
+      throw_item!(intent.item, at: intent.at, round: round)
+    end
     return narrate(command, &block) if outcome.nil?
 
     Scene::Narrator.new(playthrough).narrate(

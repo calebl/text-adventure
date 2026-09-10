@@ -160,8 +160,11 @@ class EngineSweep::Script
   # running. It is the only way a walk can reach the case where a later job
   # takes the lock first, which is the whole of what it exists for.
   def self.read_browser(value, where)
-    unless value.is_a?(Hash) && (value.keys - %w[token fail replies raises realizes accepted_first]).empty? && value["token"].is_a?(String) && value["token"].present?
+    unless value.is_a?(Hash) && (value.keys - %w[token fail replies raises realizes accepted_first interrupt_after]).empty? && value["token"].is_a?(String) && value["token"].present?
       raise EngineSweep::InvalidScript, "#{where}: browser expects a token and optional fail: narration or arrival"
+    end
+    if value.key?("interrupt_after") && !%w[take arrival_cost narrated riposte].include?(value["interrupt_after"])
+      raise EngineSweep::InvalidScript, "#{where}: interrupt_after must name a supported committed turn boundary"
     end
     if value.key?("accepted_first")
       unless value["accepted_first"].is_a?(Array) && value["accepted_first"].any?

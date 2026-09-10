@@ -12,7 +12,7 @@ import { Controller } from "@hotwired/stimulus"
 // comment there. Three of the four things below were found in a browser rather
 // than in the suite, and each one is a comment because losing it is silent.
 export default class extends Controller {
-  static targets = [ "command", "receipt" ]
+  static targets = [ "command", "receipt", "recovery" ]
 
   // ARMED FROM BOTH ENDS, and it has to be both -- measured, not assumed:
   //
@@ -28,6 +28,32 @@ export default class extends Controller {
   // dropping either one gets a case wrong.
   connect() {
     this.notePosition()
+  }
+
+  disconnect() {
+    clearTimeout(this.recoveryTimer)
+  }
+
+  // A lost broadcast or a stopped worker must leave a way back to the saved
+  // command. This offers a read-only reload; elapsed time never declares the
+  // worker dead and never retries an action on its own.
+  scheduleRecovery() {
+    if (this.recoveryTimer) return
+
+    this.recoveryTimer = setTimeout(() => {
+      if (this.hasRecoveryTarget) this.recoveryTarget.hidden = false
+    }, 30000)
+  }
+
+  clearRecovery() {
+    clearTimeout(this.recoveryTimer)
+    this.recoveryTimer = null
+    if (this.hasRecoveryTarget) this.recoveryTarget.hidden = true
+  }
+
+  reloadSavedTurn(event) {
+    event.preventDefault()
+    window.location.reload()
   }
 
   // WHAT AN ACCEPTED SUBMISSION LOOKS LIKE, and it has to look like something.
@@ -61,6 +87,8 @@ export default class extends Controller {
     const line = event.detail.formSubmission?.body?.get?.("command")
     if (!line || !document.contains(form)) return
 
+    this.scheduleRecovery()
+
     const field = form.elements?.command
     if (field && field.type !== "hidden" && field.value === line) field.value = ""
     if (!this.hasReceiptTarget) return
@@ -92,6 +120,10 @@ export default class extends Controller {
 
     event.detail.render = async (streamElement) => {
       await render(streamElement)
+      if (streamElement.getAttribute("target") === "turn_log") {
+        if (this.element.querySelector("#stream")) this.scheduleRecovery()
+        else this.clearRecovery()
+      }
       this.follow()
       this.refocus()
     }

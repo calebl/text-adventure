@@ -18,9 +18,9 @@
 # `id` order rather than whichever job won the race.
 #
 # Execute only under GameLock's playthrough claim. Completed deliveries reuse
-# their outcome without touching the engine or making a model call. A worker
-# that disappears while running leaves a visible interrupted command; replaying
-# it could repeat a half-finished effect, so it is never silently replayed.
+# their outcome without touching the engine or making a model call. New turns
+# journal each committed effect and resume unfinished work after a worker dies.
+# Older running rows have no receipts and cannot be replayed safely.
 # Provider failures after a committed action instead finish with factual prose
 # (Scene::Narrator and Scene::Generator), including the world's response.
 class Playthrough::Command < ApplicationRecord
@@ -44,6 +44,32 @@ class Playthrough::Command < ApplicationRecord
 
   def completed? = status == "completed"
 
+  def recoverable?
+    journal["version"] == 1 && (status == "running" ||
+      (status == "failed" && error_kind != "crisis" && journal.fetch("steps", {}).any?))
+  end
+
+  # A handled error before any player effect is a failed attempt, so a new
+  # command may follow it. Once an effect landed, later commands owe it a finish.
+  # A dead worker's running row always retains its accepted place in the queue.
+  def blocks_later?
+    status.in?(%w[pending running]) || (recoverable? &&
+      (journal.fetch("steps", {}).keys & %w[take drop throw attack arrival_cost character_effect narrated talked outcome]).any?)
+  end
+
+  # Latest accepted unfinished line resumes its predecessors too. Reading this
+  # never claims a worker is dead: clicking Resume while it is alive simply
+  # queues a duplicate, which waits on GameLock and reuses the completed result.
+  def self.resume_target(playthrough)
+    rows = playthrough.commands.where(status: %w[pending running failed]).order(id: :desc).to_a
+    legacy = rows.reverse.find { |row| row.status == "running" && !row.recoverable? }
+    return legacy if legacy
+
+    rows.detect do |row|
+      (row.status.in?(%w[pending running]) || row.recoverable?) && !row.overtaken?
+    end
+  end
+
   # WHETHER THE GAME HAS ALREADY MOVED PAST THIS SUBMISSION, and the reason a
   # redelivery is not always harmless.
   #
@@ -61,7 +87,7 @@ class Playthrough::Command < ApplicationRecord
   # keeps a legitimate redelivery of the current line -- its refusal, its
   # crisis notice -- refreshing the page accurately.
   def overtaken?
-    return false if status == "pending"
+    return false if blocks_later?
 
     playthrough.commands.where("id > ?", id).where.not(status: "pending").exists?
   end
@@ -74,6 +100,7 @@ class Playthrough::Command < ApplicationRecord
     if refusal.blank?
       scene = result_scene
       scene.safety_notice = true if scene && error_kind == "crisis"
+      scene.rendering_error = BaseAgent::NoModelConfiguredError.new if scene && error_kind == "setup"
       return scene
     end
 
@@ -82,18 +109,19 @@ class Playthrough::Command < ApplicationRecord
 
   def execute!
     return outcome if completed?
-    raise InterruptedError, "A previous worker stopped during this turn" if status == "running"
-    if status == "failed"
+    raise InterruptedError, "A previous worker stopped during this turn" if status == "running" && !recoverable?
+    if status == "failed" && !recoverable?
       raise BaseAgent::CrisisResponseError if error_kind == "crisis"
 
       raise PreviouslyFailedError, "This submission has already failed"
     end
 
-    update!(status: "running")
+    update!(status: "running", journal: journal.presence || { "version" => 1, "steps" => {} })
     begin
-      result = yield
-      attributes = { status: "completed" }
+      result = Journal.with(self) { Journal.remember("outcome") { yield } }
+      attributes = { status: "completed", error_kind: nil }
       attributes[:result_scene] = result if result.is_a?(Scene)
+      attributes[:error_kind] = "setup" if result.is_a?(Scene) && Playthrough::SetupNotice.for(result.rendering_error)
       attributes[:error_kind] = "crisis" if result.is_a?(Scene) && result.safety_notice
       if result.is_a?(Playthrough::Refusal)
         attributes[:refusal] = { kind: result.kind, typed: result.typed, fact: result.fact, offer: result.offer }

@@ -22,10 +22,16 @@ class Playthrough::TurnFailureNoticeTest < ActiveSupport::TestCase
   end
 
   # An unexpected failure may follow an engine write. Asking for the same
-  # action again without checking would invite repeating its effect.
+  # action again without checking would invite repeating its effect. Which
+  # control the player gets -- Resume, or keeping a legacy row's saved state,
+  # or none -- is the saved-command notice's business, so this copy names no
+  # button: the same sentence is shown for every failure and only some of them
+  # render one.
   test "asks the player to inspect the saved state before choosing the next action" do
-    assert_match(/check them before choosing your next action/i, MESSAGE)
-    assert_no_match(/try again/i, MESSAGE)
+    assert_match(/check them/i, MESSAGE)
+    assert_match(/saved-command notice/i, MESSAGE)
+    assert_match(/before choosing your next action/i, MESSAGE)
+    assert_no_match(/resume saved turn|keep saved state|try again/i, MESSAGE)
   end
 
   # Nothing the player typed caused this, so it does not read as their fault.

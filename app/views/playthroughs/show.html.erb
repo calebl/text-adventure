@@ -53,6 +53,11 @@
   <%= render "playthroughs/turn_log", playthrough: @playthrough, command: nil,
                                       autofocus: true %>
 
+  <p data-play-target="recovery" hidden>
+    <%= link_to "Check saved turn", playthrough_path(@playthrough, anchor: "bottom"),
+                data: { action: "play#reloadSavedTurn" } %>
+  </p>
+
   <%# Where the player left off. A plain reload and the index's Resume link both
       aim at `#bottom`, so the browser puts the newest turn on screen with no
       script involved. A brand new playthrough is the deliberate exception:
