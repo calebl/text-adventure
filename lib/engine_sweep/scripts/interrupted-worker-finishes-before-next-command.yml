@@ -1,0 +1,47 @@
+# Walk the gap ordinary provider failures cannot exercise: the process stops
+# after taking a thing or paying a crossing. The next job must finish its
+# predecessor before reading a new line, and no cost may be paid twice.
+story: A Turn at the Gate
+steps:
+- id: worker-stops-with-coin-in-hand
+  type: /take red coin
+  browser: {token: pickup, interrupt_after: take}
+  expect:
+    carrying: [red coin]
+    location: Market (realized)
+    blows: 0
+    changed: false
+    note: running
+- id: later-command-finishes-pickup-then-pays-crossing
+  type: /move Courtyard
+  browser:
+    token: crossing
+    interrupt_after: arrival_cost
+    replies:
+    - {purpose: narration, content: "You pick up the red coin."}
+  expect:
+    carrying: [red coin]
+    location: Market (realized)
+    blows: 1
+    hazards: 1
+    changed: true
+    note: running
+- id: resume-crossing-without-paying-twice
+  type: /move Courtyard
+  browser: {token: crossing, fail: arrival}
+  expect:
+    location: Courtyard (realized)
+    carrying: [red coin]
+    blows: 1
+    hazards: 0
+    changed: true
+    note: completed
+- id: a-duplicate-does-nothing
+  type: /move Courtyard
+  browser: {token: crossing}
+  expect:
+    location: Courtyard (realized)
+    carrying: [red coin]
+    blows: 0
+    hazards: 0
+    changed: false

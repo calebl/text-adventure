@@ -1,6 +1,24 @@
 require "test_helper"
 
 class PlaythroughsControllerTest < ActionDispatch::IntegrationTest
+  test "reloading exposes the original unfinished submission and resuming keeps its token" do
+    game = create(:playthrough, :started)
+    submission = create(:playthrough_command, playthrough: game, status: "running",
+                       journal: { "version" => 1, "steps" => {} })
+    get playthrough_path(game)
+    assert_response :success
+    assert_select "[data-saved-turn] form" do
+      assert_select "input[name=command][value=?]", submission.command
+      assert_select "input[name=request_token][value=?]", submission.request_token
+      assert_select "button", text: "Resume saved turn"
+    end
+    assert_no_difference -> { Playthrough::Command.count } do
+      assert_enqueued_with(job: NarrationJob, args: [ game.id, submission.command, submission.request_token ]) do
+        post playthrough_turns_path(game), params: { command: submission.command, request_token: submission.request_token }
+      end
+    end
+  end
+
   test "index lists the generated stories" do
     story = create(:story)
 

@@ -8,7 +8,9 @@ Rails.application.routes.draw do
   resources :playthroughs, only: [ :index, :create, :show ] do
     # A turn is enqueued here and broadcast back over Action Cable by
     # NarrationJob, so there is no streaming endpoint to route to any more.
-    resources :turns, only: [ :create ]
+    resources :turns, only: [ :create ] do
+      post :acknowledge_interruption, on: :collection
+    end
 
     # THE CAPTAIN'S VERDICT ON ONE TURN, addressed by the turn rather than by a
     # row id -- there is at most one per (playthrough, scene), so recording and

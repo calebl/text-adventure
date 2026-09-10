@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_09_030346) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_10_025040) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -308,6 +308,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_030346) do
     t.text "command", null: false
     t.datetime "created_at", null: false
     t.string "error_kind"
+    t.json "journal", default: {}, null: false
     t.integer "playthrough_id", null: false
     t.json "refusal", default: {}, null: false
     t.string "request_token", null: false

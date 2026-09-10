@@ -1,4 +1,19 @@
 class TurnsController < ApplicationController
+  # Pre-journal workers left no evidence from which to replay safely. Only an
+  # explicit player acknowledgement may close that old interruption, retaining
+  # every saved effect. Taking the same lock waits for any still-live worker;
+  # it cannot discard a new recoverable command or a completed turn.
+  def acknowledge_interruption
+    playthrough = Playthrough.find(params[:playthrough_id])
+    GameLock.synchronize("playthrough", playthrough.id) do
+      submission = playthrough.commands.find(params[:command_id])
+      if submission.status == "running" && submission.journal.blank?
+        submission.update!(status: "failed", error_kind: "interruption_acknowledged")
+      end
+    end
+    redirect_to playthrough_path(playthrough, anchor: "bottom"), status: :see_other
+  end
+
   # Takes the player's typed command, hands the turn to a background job, and
   # acknowledges the submission immediately. The job broadcasts the pending
   # page, prose and final page in order while it owns the turn's process lock.

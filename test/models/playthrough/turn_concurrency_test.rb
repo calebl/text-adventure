@@ -113,6 +113,43 @@ class Playthrough::TurnConcurrencyTest < ActiveSupport::TestCase
     assert_predicate location, :realized?
   end
 
+  test "a killed worker resumes its committed pickup before a later command" do
+    coin = lying_here(@game, @game.current_location, name: "red coin")
+    entered, signal = pipe
+    resume, _release = pipe
+    first = worker do
+      agent = FakeAgent.new("You take the red coin.")
+      original = agent.method(:ask)
+      agent.define_singleton_method(:ask) do |*args, **kwargs, &block|
+        signal.write("1")
+        resume.read(1)
+        original.call(*args, **kwargs, &block)
+      end
+      BaseAgent.stub(:new, agent) do
+        Playthrough::Turn.new(Playthrough.find(@game.id)).play("/take red coin", request_token: "killed")
+      end
+    end
+    assert_equal "1", read(entered)
+    assert_includes @game.carried, coin
+    Process.kill("KILL", first)
+    _, status = Timeout.timeout(10) { Process.wait2(first) }
+    @children.delete(first)
+    assert_equal Signal.list.fetch("KILL"), status.termsig
+    assert_equal "running", @game.commands.find_by!(request_token: "killed").status
+
+    # A different game can write while the killed turn was rendering; recovery
+    # also has to reacquire the kernel lock, not an expiring application lease.
+    started = []
+    BaseAgent.stub(:new, FakeAgent.new("You take the red coin.", "You put down the red coin.")) do
+      Playthrough::Turn.new(@game.reload).play("/drop red coin", request_token: "later",
+                                              on_start: ->(line) { started << line })
+    end
+    assert_equal [ "/take red coin", "/drop red coin" ], started
+    assert_equal %w[completed completed], @game.commands.order(:id).pluck(:status)
+    assert_equal %w[take drop], @game.scene_chain.drop(1).map(&:resolved_action)
+    assert_equal @game.current_location, coin.reload.location
+  end
+
   private
 
   def pipe

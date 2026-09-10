@@ -4,6 +4,42 @@ require "turbo/broadcastable/test_helper"
 class TurnsControllerTest < ActionDispatch::IntegrationTest
   include Turbo::Broadcastable::TestHelper
 
+  test "only an acknowledged legacy interruption unblocks later play and keeps saved effects" do
+    game = create(:playthrough, :started)
+    coin = lying_here(game, game.current_location, name: "red coin")
+    coin.update!(location: nil)
+    old = create(:playthrough_command, playthrough: game, status: "running")
+    later = create(:playthrough_command, playthrough: game, command: "/drop red coin")
+    assert_raises(Playthrough::Command::InterruptedError) do
+      Playthrough::Turn.new(game).play(later.command, request_token: later.request_token)
+    end
+    assert_equal "pending", later.reload.status
+    assert_includes game.carried, coin
+    post acknowledge_interruption_playthrough_turns_path(game), params: { command_id: old.id }
+    assert_redirected_to playthrough_path(game, anchor: "bottom")
+    assert_equal "interruption_acknowledged", old.reload.error_kind
+    assert_equal "failed", old.status
+    assert_includes game.carried, coin
+    BaseAgent.stub(:new, FakeAgent.new("You put down the red coin.")) do
+      Playthrough::Turn.new(game).play(later.command, request_token: later.request_token)
+    end
+    assert_equal game.current_location, coin.reload.location
+    assert_predicate later.reload, :completed?
+  end
+
+  test "legacy acknowledgement cannot discard a recoverable turn or another game's command" do
+    game = create(:playthrough)
+    recoverable = create(:playthrough_command, playthrough: game, status: "running",
+                         journal: { "version" => 1, "steps" => {} })
+    post acknowledge_interruption_playthrough_turns_path(game), params: { command_id: recoverable.id }
+    assert_equal "running", recoverable.reload.status
+
+    other = create(:playthrough_command, status: "running")
+    post acknowledge_interruption_playthrough_turns_path(game), params: { command_id: other.id }
+    assert_response :not_found
+    assert_equal "running", other.reload.status
+  end
+
   test "create hands the turn to a job rather than running it in the request" do
     playthrough = create(:playthrough)
 

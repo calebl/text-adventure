@@ -47,6 +47,22 @@
     <p class="alert"><%= error %></p>
   <% end %>
 
+  <% if command.nil? && (unfinished = Playthrough::Command.resume_target(playthrough)) %>
+    <div class="notice" data-saved-turn>
+      <p>Your command is saved but has not finished: <q><%= unfinished.command %></q>.</p>
+      <% if unfinished.status == "running" && !unfinished.recoverable? %>
+        <p>This older turn cannot be resumed safely. You can keep its saved effects and continue; the unfinished action will not be replayed.</p>
+        <% if unfinished.journal.blank? %>
+          <%= button_to "Keep saved state and continue", acknowledge_interruption_playthrough_turns_path(playthrough),
+                        params: { command_id: unfinished.id } %>
+        <% end %>
+      <% else %>
+        <%= button_to "Resume saved turn", playthrough_turns_path(playthrough),
+                      params: { command: unfinished.command, request_token: unfinished.request_token } %>
+      <% end %>
+    </div>
+  <% end %>
+
   <%# One wrapper, so the stylesheet can dim every logged turn but the last one.
       `streaming` says the newest turn is not in the log at all -- it is the
       #stream div below, which is what the player is actually reading -- so no

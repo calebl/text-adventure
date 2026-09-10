@@ -81,11 +81,14 @@ class InteractionAgent
     # attempt's fields are overwritten by the retry's, and a call that never
     # succeeds raises rather than returning -- so `fields` is only ever read
     # after an attempt that passed the check.
-    fields = nil
-    reaction = character_agent.ask(
-      character_prompt(user_input),
-      verify: ->(content) { fields = verified_reaction_fields(content) }
-    ).content
+    reaction, fields = Playthrough::Command::Journal.remember("character_answer") do
+      verified = nil
+      answer = character_agent.ask(
+        character_prompt(user_input),
+        verify: ->(content) { verified = verified_reaction_fields(content) }
+      ).content
+      [ answer, verified ]
+    end
     Rails.logger.debug { "Character response: #{reaction}" }
 
     # AND BEFORE THE NARRATOR PASS, deliberately: the check above has already
@@ -96,7 +99,9 @@ class InteractionAgent
     # The engine applies only the selected member of its closed set, after
     # checking the records again. Dialogue and private resolutions never write
     # an effect. The narrator receives the resulting receipt, not a promise.
-    effect = npc_actions&.apply!(reaction.fetch("engine_action", Playthrough::NpcAction::NONE))
+    effect = Playthrough::Command::Journal.commit("character_effect") do
+      npc_actions&.apply!(reaction.fetch("engine_action", Playthrough::NpcAction::NONE))
+    end
     @narrator_instructions = narrator_prompt(user_input, reaction, effect: effect)
     narration, fallback, safety_notice, rendering_error = narrate_exchange(effect, &block)
 

@@ -124,11 +124,16 @@ class Scene::Ending
   # IT RETURNS THE SCENE ON EVERY PATH, and that is the API rather than an
   # accident: the caller has an ending to show whatever this call did.
   def narrate!(conclusion, &block)
+    return Playthrough::Command::Journal.read("ending_scene") if Playthrough::Command::Journal.saved?("ending_scene")
+
     scene = conclusion.scene
     prose = ask(conclusion, &block)
     return scene if prose.blank?
 
-    scene.update!(description: prose, resolved_action: Scene::NARRATED_ENDING)
+    Playthrough::Command::Journal.commit("ending_scene") do
+      scene.update!(description: prose, resolved_action: Scene::NARRATED_ENDING)
+      scene
+    end
     agent.attribute_to!(scene)
     scene
   end

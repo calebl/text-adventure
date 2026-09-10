@@ -21,10 +21,11 @@ class Playthrough::TurnFailureNoticeTest < ActiveSupport::TestCase
     assert_no_match(/nothing was lost|where you left it/i, MESSAGE)
   end
 
-  # An unexpected failure may follow an engine write. Asking for the same
-  # action again without checking would invite repeating its effect.
-  test "asks the player to inspect the saved state before choosing the next action" do
-    assert_match(/check them before choosing your next action/i, MESSAGE)
+  # Resume retains the original submission and its effects. A newly typed
+  # command is a separate action, so the notice points to the recovery control.
+  test "asks the player to resume the saved turn before choosing the next action" do
+    assert_match(/resume saved turn/i, MESSAGE)
+    assert_match(/before choosing your next action/i, MESSAGE)
     assert_no_match(/try again/i, MESSAGE)
   end
 
