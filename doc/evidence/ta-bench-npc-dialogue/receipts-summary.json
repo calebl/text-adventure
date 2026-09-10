@@ -1,0 +1,17 @@
+{
+  "estimate_usd": 0.03266928,
+  "registry_usage_usd": 0.03263544,
+  "provider_reported_partial_usd": 0.020205439999999998,
+  "conservative_accounted_usd": 0.172346,
+  "unknown_reservations_usd": 0.0,
+  "calls": 72,
+  "rows": 36,
+  "repetitions": 4,
+  "unbought_cases": [],
+  "state_misses": [
+    "stay-behind:1",
+    "stay-behind:2",
+    "stay-behind:3",
+    "stay-behind:4"
+  ]
+}

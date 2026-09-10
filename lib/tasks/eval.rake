@@ -104,6 +104,7 @@ namespace :eval do
     # what a baseline actually costs.
     puts "THE BENCHES, each at its own defaults on #{Eval::Cost.default_model}:"
     puts RealizationTasks.estimate_line
+    puts "DIALOGUE (character + narrated exchange): #{Eval::Dialogue.estimate.to_json}"
   end
 
   desc "The files that constitute the measurement, with a digest of each -- the manifest a future improving agent leaves alone"
