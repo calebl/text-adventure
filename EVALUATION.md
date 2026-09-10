@@ -1993,3 +1993,46 @@ shape from preserved usage against the current registry. Receipts distinguish
 registry-priced usage, partial provider-reported billing and conservative budget
 accounting. The task estimate, ledger and validation logs are under
 `doc/evidence/ta-bench-npc-dialogue/`.
+## Genesis: fixed world-creation boundaries
+
+`Eval::Genesis` measures record fidelity at universe, story, protagonist and
+quest generation, including the character duplicate-name follow-up. The cases
+in `test/fixtures/files/genesis_corpus.yml` use the exported Iron Gate world's
+upstream facts. The first-screen case visits its genesis boundaries in order;
+room realization and arrival stay with their existing instruments. Generated
+answers do not become the next producer's inputs: society and the duplicate
+retry replay fixed assistant exchanges, so each repetition measures the same
+request. `Eval::Genesis::Stage` owns these boundaries and the seeded engine picks.
+
+```bash
+rake ruby_llm:load_models              # price registry, offline
+rake eval:estimate                    # includes genesis; does not buy calls
+rake eval:genesis_digest              # every case: system, user, history, schema
+rake eval:genesis SET=genesis-before MODEL=mistralai/mistral-medium-3.1
+rake eval:genesis_score SET=genesis-before
+rake eval:genesis_board SETS=genesis-before
+rake eval:genesis_compare BEFORE=genesis-before AFTER=my-after
+```
+
+The default repetitions are `Eval::Noise::MIN_RUNS`, and the purchase guard is
+`Eval::Genesis::Bench::SPEND_CEILING`. The estimator conservatively allows a token
+per serialized request byte and schema-bounded output; it is an allowance, not
+a measured historical average. The output limit is recorded with each call.
+The pinned arm has neither model rotation nor provider retries. Every call is
+retained, including the first; no unreported warm-up is bought.
+
+`Eval::Genesis::BASELINE` names the kept set. Unlike realization's compact
+summaries, genesis keeps raw answers, requests, schemas, engine facts and token
+receipts so schema failures can be rescored offline. Costs use the prices
+recorded at purchase, with cached input charged conservatively at full price;
+they are token-accounted costs, not provider invoice claims. Each check has its
+own judgeable denominator. Missing receipts and failed calls are reported beside
+the defect rates; incomplete sets cannot produce a comparison.
+
+These checks do **not** measure believability, identity fidelity in prose,
+opener coherence or quest quality. Character attributes can be compared with
+the engine's picks; a race implied in backstory cannot. Story place names and
+quest target names are free text in today's schemas, so no check pretends they
+must come from closed universe lists. The human-scored coherence lab remains a
+separate task. Prompt and schema edits still follow the before/after protocol
+above; a clean schema score does not authorize skipping it.

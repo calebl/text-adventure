@@ -1,0 +1,17 @@
+Genesis: mistralai/mistral-medium-3.1 — record fidelity only
+Cost at recorded registry prices: $0.060098; missing receipts: 0
+Failures per pass: [0, 0, 0, 0]
+| Check | Flagged / judgeable | Per-pass range |
+| --- | --- | --- |
+| required_fields | 0 / 36 | 0.0–0.0 |
+| outside_schema | 0 / 36 | 0.0–0.0 |
+| schema_shape | 0 / 36 | 0.0–0.0 |
+| engine_owned | 0 / 12 | 0.0–0.0 |
+| race_outside_universe | 0 / 12 | 0.0–0.0 |
+| name_taken | 0 / 12 | 0.0–0.0 |
+| retry_not_distinct | 0 / 4 | 0.0–0.0 |
+| quest_bounds | 0 / 8 | 0.0–0.0 |
+| quest_default | 0 / 8 | 0.0–0.0 |
+| quest_labels | 0 / 8 | 0.0–0.0 |
+| quest_admission | 0 / 8 | 0.0–0.0 |
+Believability, prose identity fidelity, opener coherence and quest quality: unavailable; human lab required.

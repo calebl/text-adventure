@@ -1,0 +1,24 @@
+- id: first-screen
+  producer: first_screen
+  seed: 410
+  why: The frozen Iron Gate opening, protagonist and arc boundaries in creation order; upstream answers stay fixed.
+- id: universe
+  producer: universe
+  seed: 411
+  why: Physical foundations and society, with the kept physical exchange replayed before society.
+- id: story
+  producer: story
+  seed: 412
+  why: An opener against the complete fixed universe.
+- id: protagonist
+  producer: character
+  seed: 413
+  why: A player sheet with race, age, sex and body decided by the seeded engine.
+- id: duplicate-name
+  producer: retry
+  seed: 414
+  why: Replay a fixed colliding sheet and ask the actual retry prompt for a distinct name.
+- id: quest
+  producer: quest
+  seed: 415
+  why: An arc against a fixed opening and protagonist, before any room realization.

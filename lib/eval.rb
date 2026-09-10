@@ -117,6 +117,18 @@ module Eval
     lib/eval/prompt/result.rb
     lib/eval/prompt/scorer.rb
     lib/eval/prompt/version.rb
+    lib/eval/genesis.rb
+    lib/eval/genesis/bench.rb
+    lib/eval/genesis/board.rb
+    lib/eval/genesis/comparison.rb
+    lib/eval/genesis/corpus.rb
+    lib/eval/genesis/result.rb
+    lib/eval/genesis/scorer.rb
+    lib/eval/genesis/stage.rb
+    lib/eval/genesis/version.rb
+    lib/tasks/genesis.rake
+    test/fixtures/files/genesis_corpus.yml
+    db/eval/genesis-before/genesis.json
     lib/eval/realization.rb
     lib/eval/realization/admissions.rb
     lib/eval/realization/branches.rb

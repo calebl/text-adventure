@@ -1,0 +1,14 @@
+{
+  "estimate_usd": 0.5230208,
+  "token_accounted_cost_usd": 0.0600976,
+  "allowance_usd": 0.5230208000000001,
+  "calls": 36,
+  "model_ids": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "input_tokens": 18938,
+  "output_tokens": 19820,
+  "missing_receipts": 0,
+  "source": "db/eval/genesis-before/genesis.json",
+  "cost_basis": "Captured provider token usage at recorded registry prices; cached input charged at full input price."
+}

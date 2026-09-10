@@ -105,6 +105,8 @@ namespace :eval do
     puts "THE BENCHES, each at its own defaults on #{Eval::Cost.default_model}:"
     puts RealizationTasks.estimate_line
     puts "DIALOGUE (character + narrated exchange): #{Eval::Dialogue.estimate.to_json}"
+    puts format("  eval:genesis       %d cases x %d reps, allowance $%.3f",
+                Eval::Genesis.corpus.size, Eval::Noise::MIN_RUNS, Eval::Genesis.estimate)
   end
 
   desc "The files that constitute the measurement, with a digest of each -- the manifest a future improving agent leaves alone"
