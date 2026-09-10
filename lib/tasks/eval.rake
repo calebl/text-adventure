@@ -223,7 +223,7 @@ namespace :eval do
     abort error.message
   end
 
-  desc "Prompt message and schema request identities -- offline, no model call. CORPUS=main|ending"
+  desc "Prompt message and schema request identities -- offline, no model call. CORPUS=main|ending|branches"
   task prompt_digest: :environment do
     corpus = Eval::Prompt.corpus(PromptTasks.corpus_name)
     puts JSON.pretty_generate(Eval::Prompt::RequestVersion.offline(corpus).merge(corpus_digest: Eval::Prompt.digest(corpus)))

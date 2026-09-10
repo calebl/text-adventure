@@ -171,7 +171,6 @@ module Eval
     lib/tasks/genesis.rake
     test/fixtures/files/genesis_corpus.yml
     db/eval/genesis-before/genesis.json
-    lib/eval/request_identity.rb
     lib/eval/prompt/branches.rb
     lib/eval/prompt/branches/bench.rb
     lib/eval/prompt/branches/predicates.rb

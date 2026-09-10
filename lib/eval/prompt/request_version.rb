@@ -28,7 +28,9 @@ module Eval::Prompt::RequestVersion
 
   def offline(corpus = Eval::Prompt.corpus)
     BaseAgent.prepend(Capture) unless BaseAgent.ancestors.include?(Capture)
-    bench = Eval::Prompt::Bench.new(corpus: corpus, io: nil)
+    # Pending branch moments need their producer stager, not an extra Turn#play.
+    bench_class = corpus.path.to_s == Eval::Prompt::BRANCHES_CORPUS.to_s ? Eval::Prompt::Branches::Bench : Eval::Prompt::Bench
+    bench = bench_class.new(corpus: corpus, io: nil)
     designated = corpus.cases.group_by { |kase| kase.shape.to_s }.sort.to_h
                        .transform_values { |cases| cases.min_by(&:id) }
     ending = corpus.cases.all?(&:ending?)

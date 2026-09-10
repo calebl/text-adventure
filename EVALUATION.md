@@ -2175,7 +2175,7 @@ bin/rails eval:prompt CORPUS=branches MODELS=mistralai/mistral-medium-3.1 SET=my
 bin/rails eval:prompt_score SET=my-branches
 bin/rails eval:prompt_board SETS=my-branches
 bin/rails eval:prompt_compare BEFORE=prompt-branches-2026-09-10 AFTER=my-branches
-bin/rails runner 'puts JSON.pretty_generate(Eval::Prompt::Branches.identity)'
+bin/rails eval:prompt_digest CORPUS=branches SET=prompt-branches-2026-09-10
 ```
 
 The lowest case ID in each shape designates the assembled request. Its system

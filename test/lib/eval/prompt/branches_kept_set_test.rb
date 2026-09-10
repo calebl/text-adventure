@@ -4,6 +4,9 @@ class Eval::Prompt::BranchesKeptSetTest < ActiveSupport::TestCase
   test "kept requests and placed facts still match HEAD without buying calls" do
     captured = Eval::Prompt::Branches.capture
     assert_equal Eval::Prompt::Branches.identity(captured), kept.request_identity
+    shared = Eval::Prompt::RequestVersion.offline(Eval::Prompt.corpus("branches"))
+    assert_equal kept.request_identity, shared.fetch(:request_identity)
+    assert_equal kept.prompt_digest, shared.fetch(:prompt_digest)
     assert_equal Eval::Prompt.digest(Eval::Prompt.corpus("branches")), kept.corpus_digest
     assert_equal Eval::Noise::MIN_RUNS, kept.reps
     assert_equal [ "mistralai/mistral-medium-3.1" ], kept.arms
