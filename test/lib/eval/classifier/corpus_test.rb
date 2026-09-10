@@ -111,6 +111,36 @@ class Eval::Classifier::CorpusTest < ActiveSupport::TestCase
     assert_match(/out-of-reach: target "copy-room apron" is not in the closed set a take reads against/, problems.first)
   end
 
+  test "physical labels bind complete choices and reject an unavailable recipient" do
+    corpus = Eval::Classifier.corpus.subset { |line| line.id == "use-offer-daybook-perrin" }
+    assert_empty EngineSweep.without_a_model { corpus.problems }
+
+    wrong = corpus.lines.sole.with(target: "Offer Ward Office 12 daybook to Neb Halloran; they may refuse")
+    invalid = Eval::Classifier::Corpus.new(path: "test", positions: corpus.positions, lines: [ wrong ])
+    problems = EngineSweep.without_a_model { invalid.problems }
+
+    assert_equal 1, problems.size
+    assert_match(/is not in the closed set a use reads against/, problems.sole)
+  end
+
+  test "physical answer labels survive different staged record identities" do
+    positions = Eval::Classifier.corpus.positions.select { |position| %w[office office-with-perrin].include?(position.id) }
+    EngineSweep.without_a_model do
+      Eval::Classifier::Stage.open(positions) do |stages|
+        choices = stages.values.map do |standing|
+          standing.offered_for(:use).find { |choice| choice.recipient&.fullname == "Halkett Rowe" }
+        end
+        assert_equal 2, choices.map(&:token).uniq.size, "each staged world owns different item and recipient rows"
+        answers = choices.map do |choice|
+          intent = Playthrough::Classifier::Intent.new(action: :use, physical: choice)
+          Eval::Classifier::Corpus::Answer.from_intent(intent)
+        end
+        assert_equal [ "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse" ], answers.map(&:target).uniq
+        assert answers.first.same_as?(answers.last)
+      end
+    end
+  end
+
   test "a stated refusal that the label does not imply is caught" do
     broken = written(<<~YML)
       positions:

@@ -53,7 +53,7 @@ class Item::TemplateRefresh
   # somebody's floor because a world file was edited. It comes down ONCE, at
   # first contact (`Item::Snapshot`, and `Item::NOT_COPIED`'s note), and never
   # again.
-  FROM_THE_TEMPLATE = %w[readable inscription description bulk].freeze
+  FROM_THE_TEMPLATE = %w[readable inscription description bulk use_kind combustible].freeze
 
   # One copy that lags, and by which columns. `touched` is what makes it a
   # report rather than a repair.

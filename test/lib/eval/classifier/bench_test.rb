@@ -96,6 +96,27 @@ class Eval::Classifier::BenchTest < ActiveSupport::TestCase
     assert_in_delta 1.0, pass.intent_accuracy, 0.001, "every branch was still right"
   end
 
+  test "physical choice tokens score their item and recipient rather than only their subject" do
+    corpus = Eval::Classifier.corpus.subset { |line| line.id == "use-offer-daybook-perrin" }
+    bench = Eval::Classifier::Bench.new(corpus: corpus, arms: [ "fake/model" ], reps: 1, io: nil)
+    arm = Eval::Classifier::Arm.parse("fake/model")
+
+    Eval::Classifier::Stage.open(corpus.positions) do |stages|
+      standing = stages.fetch(corpus.lines.sole.position)
+      readings = %w[Perrin Halkett].map do |recipient|
+        choice = standing.offered_for(:use).find { |offer| offer.recipient.fullname.start_with?(recipient) }
+        agent = FakeAgent.new({ "intent" => "use", "target" => choice.token, "also_named" => "nothing" })
+        BaseAgent.stub(:new, agent) { bench.send(:read, corpus.lines.sole, standing, arm, 1) }
+      end
+
+      assert_predicate readings.first, :right?, readings.first.error
+      assert_equal corpus.lines.sole.target, readings.first.answer.target
+      assert_predicate readings.last, :closed_set_miss?, "the same item offered to the wrong person is a wrong target"
+      assert_equal "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse", readings.last.answer.target
+      assert_not_includes readings.first.answer.target, "use:"
+    end
+  end
+
   test "a wrong branch is not counted as a closed-set miss" do
     pass = bench(perfect.merge("an-other" => { "intent" => "move", "target" => "The Long Hallway" })).passes.sole
     reading = pass.readings.find { |row| row.id == "an-other" }

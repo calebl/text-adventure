@@ -64,6 +64,15 @@ class Eval::Classifier::Corpus
   Answer = Data.define(:intent, :target, :also_named) do
     def initialize(target: nil, also_named: nil, **rest) = super
 
+    # A physical target is the whole offered attempt, including its recipient
+    # or tool. Comparing only its subject would score two different gifts as
+    # identical; storing its token would bind a fixture to temporary row IDs.
+    def self.from_intent(intent)
+      new(intent: intent.action,
+          target: Playthrough::Classifier.label_for(intent.physical || intent.subject),
+          also_named: Playthrough::Classifier.label_for(intent.also_named))
+    end
+
     def named = [ target, also_named ].compact.map { |name| name.to_s.downcase }.sort
 
     def same_as?(other) = intent == other.intent && named == other.named

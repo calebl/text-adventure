@@ -14,6 +14,10 @@
 #
 # `time_to_travel` is derived from the other two rather than decided at all.
 class LocationConnection < ApplicationRecord
+  # These describe the world's original doorway. Opening it writes only this
+  # game's Passage rows; neither this edge nor its reverse moves or disappears.
+  BARRIERS = %w[open keyed jammed].freeze
+
   # How far, in nominal minutes of walking. The labels are what a player reads,
   # so they are phrases rather than symbols.
   DISTANCES = {
@@ -59,6 +63,8 @@ class LocationConnection < ApplicationRecord
   }.freeze
 
   belongs_to :location
+  belongs_to :key_template, class_name: "Item", optional: true
+  has_many :passages, class_name: "Playthrough::Passage", dependent: :destroy
   belongs_to :connected_location, class_name: "Location"
   # EVERY TOLL PAID WALKING THIS WAY. NULLIFIED rather than destroyed, and it is
   # the one place the two hazard tables answer differently: a doorway can be
@@ -71,6 +77,9 @@ class LocationConnection < ApplicationRecord
                    inverse_of: :location_connection
 
   before_validation :derive_time_to_travel
+
+  validates :barrier, inclusion: { in: BARRIERS }
+  validate :a_key_belongs_to_this_door
 
   validates :distance, presence: true, inclusion: { in: DISTANCES.keys }
   validates :travel_method, presence: true, inclusion: { in: TRAVEL_METHODS.keys }
@@ -123,9 +132,28 @@ class LocationConnection < ApplicationRecord
     end
   end
 
+  # The barrier belongs to the world; opening it belongs to one game.
+  def open_for?(playthrough)
+    return false unless playthrough && location.story_id == playthrough.story_id &&
+                        connected_location.story_id == playthrough.story_id
+
+    barrier == "open" || passages.where(playthrough: playthrough).exists?
+  end
+
+  def a_key_belongs_to_this_door
+    if barrier == "keyed"
+      unless location && key_template&.template? && key_template.use_kind == "key" &&
+             Item.in_story(location.story).templates.exists?(id: key_template.id)
+        errors.add(:key_template, "must be a key template in this world")
+      end
+    elsif key_template
+      errors.add(:key_template, "belongs only to a keyed door")
+    end
+  end
+
   # WHAT WALKING THIS WAY DOES TO YOU, as the table entry rather than as the
-  # key -- the one reader, so nothing else fetches out of `HAZARDS`. Nil for the
-  # ordinary doorway, which is every doorway in every world but one.
+  # key -- the one reader, so nothing else fetches out of `HAZARDS`. Nil for an
+  # ordinary doorway.
   def hazard_entry = HAZARDS[hazard]
 
   def hazardous? = !hazard_entry.nil? && hazard_die.present?

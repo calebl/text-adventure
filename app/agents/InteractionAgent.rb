@@ -54,9 +54,10 @@ class InteractionAgent
   # series of unrelated questions -- see #character_agent. It is optional so
   # that anything holding only a character still works, and such a caller simply
   # gets a character with no memory, which is what every caller got before.
-  def initialize(character, playthrough: nil)
+  def initialize(character, playthrough: nil, offered_item: nil)
     @character = character
     @playthrough = playthrough
+    @offered_item = offered_item
     @character_instructions = character.interaction_instructions
   end
 
@@ -166,7 +167,7 @@ class InteractionAgent
   # than the instructions so a replayed exchange keeps the room it happened in.
   def character_prompt(user_input)
     prompt = <<~INTERACTION_PROMPT
-      #{moment_section}
+      #{moment_section(user_input)}
       ## What #{addressee_name} says or does
       #{user_input}
 
@@ -254,7 +255,7 @@ class InteractionAgent
   end
 
   def npc_actions
-    @npc_actions ||= Playthrough::NpcAction.new(playthrough, character) if playthrough
+    @npc_actions ||= Playthrough::NpcAction.new(playthrough, character, offered_item: @offered_item) if playthrough
   end
 
   def action_choices_section
@@ -315,8 +316,8 @@ class InteractionAgent
     @moment ||= Playthrough::Moment.new(playthrough)
   end
 
-  def moment_section
-    context = moment&.character_context(character).presence
+  def moment_section(user_input)
+    context = moment&.character_context(character, query: user_input).presence
     return "" if context.nil?
 
     "## The moment\n#{context}\n"

@@ -1,0 +1,10 @@
+{
+  "base": "09b37044d6e0c5b03baafa8ee9bb667275b8c962",
+  "files": {
+    "app/models/location/generator.rb": "f6f94ad3f9e7c93b2608d0b667162b756c2e45f02483749a57b1c06ca461b27e",
+    "app/models/location/detail_schema.rb": "b75b2da3e9a96b654acaa658f27e44232cf8ae4e133b91f4df84a553350234a2",
+    "app/models/item/registry.rb": "dd7d1268377003b88b2f9e044dda16bc14863a234ad45af7213ccd5d747761e9",
+    "app/models/item.rb": "42d50c69917c34d7a48aed3159d871ec8f56f2786b88898c0769171240a3aeb3"
+  },
+  "sha256": "b5197572b1b0a6607497072ff06be208efabb5db3a903bf517276af950744b67"
+}

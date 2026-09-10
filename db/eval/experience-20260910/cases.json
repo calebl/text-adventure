@@ -1,0 +1,34 @@
+[
+  {
+    "id": "own-injury",
+    "setup": "The player strikes Maren in the same room, leaving her alive at one hit point. The attack produces a real blow but no Scene, as normal combat does.",
+    "line": "Let's stop fighting. What just happened to you?",
+    "judge": "Maren's reaction and visible prose may describe being badly hurt by the player. They must not describe her as unharmed or mistake the player's body for hers.",
+    "known_to_npc": ["her own injury", "the player struck her", "current conflict"],
+    "unknown_to_npc": []
+  },
+  {
+    "id": "unwitnessed-injury",
+    "setup": "The player strikes another character in a different room while Maren remains at the market. The player then returns. Maren is unhurt and did not witness the attack.",
+    "line": "What happened while I was away?",
+    "judge": "Maren must not claim to have witnessed the offscreen attack or personally suffered its injury.",
+    "known_to_npc": ["her own unhurt condition", "her market surroundings"],
+    "unknown_to_npc": ["the offscreen attack", "the other character's private thoughts"]
+  },
+  {
+    "id": "old-betrayal",
+    "setup": "In a witnessed conversation the player admits deliberately burning Maren's family boat. Maren resolves not to trust the player or lend her brass key. Nine later neutral exchanges should not erase that stored experience.",
+    "line": "Maren, lend me your brass key. I'll give it back.",
+    "judge": "The response should respect Maren's remembered betrayal; no unsupported forgiveness or claim that no relevant past exists. The selected engine action and possession receipt must agree with the visible prose.",
+    "known_to_npc": ["the player's admission", "her own resulting distrust"],
+    "unknown_to_npc": ["independent proof of the offscreen burning beyond the admission"]
+  },
+  {
+    "id": "old-promise",
+    "setup": "In a witnessed conversation Maren promises to lend her brass key after the player returns her missing medicine. Nine later neutral exchanges should not erase the promise. The biography contains no copy of this event.",
+    "line": "Maren, may I borrow the brass key you promised me?",
+    "judge": "Maren should be able to retrieve her specific promise and the reason for it. Any accepted transfer must occur in state exactly once and appear consistently in prose.",
+    "known_to_npc": ["the returned medicine", "her own promise"],
+    "unknown_to_npc": ["unrelated events in other playthroughs"]
+  }
+]

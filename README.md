@@ -136,6 +136,42 @@ There is still no Node, no `package.json` and no build step. `propshaft` serves
 the module names itself, and foreman is a process runner rather than a build
 step — deliberately outside the Gemfile, installed on demand by `bin/dev`.
 
+### Use things and open passages
+
+Describe your attempt in ordinary text, or use a slash command to select it
+directly. The available actions come from the items you carry, the people
+present, and the room's actual doorways. These examples require the named
+things and their corresponding physical profiles in your world:
+
+| command | what it does |
+| --- | --- |
+| `/consume healing draught` | Consume a carried dose and restore hit points up to your maximum. `/eat` and `/drink` also select consumption; ordinary food and drink do not heal wounds. |
+| `/offer brass key to Maren` | Ask the character to accept a carried item. They may refuse; ownership changes only if they accept. `/give` is an alias. |
+| `/burn letter with tinderbox` | Destroy a combustible item you carry or that lies in this room, using a carried firestarter. |
+| `/unlock Storeroom with brass key` | Open a keyed doorway using its matching key. |
+| `/pick Storeroom with lockpicks` | Try a dexterity check against a keyed doorway. |
+| `/pry Loft with iron lever` | Try a strength check against a jammed doorway using a carried lever. |
+| `/force Loft` | Try to force a jammed doorway with a penalized strength check. |
+
+Opening a doorway leaves you in the room. Use a separate `/move Storeroom` to
+cross it. A failed check leaves the barrier closed; a successful opening applies
+in both directions in your game. Other playthroughs keep their own locks, and a
+moving city's doorway keeps its lock and your opening when its destination moves.
+Keys and opening tools remain in your hands.
+
+Consumption and burning spend that game's copy permanently. Revisiting or
+re-seeding the room cannot provide another dose or restore a burned letter;
+another playthrough starts with its own intact copy. Offering an item transfers
+ownership if accepted; it does not consume or apply the item for the recipient.
+
+Newly generated items receive closed physical profiles. Existing items remain
+`ordinary` until a profile is explicitly supplied; a name or description that
+mentions medicine does not create a healing effect. Healing amounts come from
+`Item::HEALING_POINTS`. Door barriers and their matching keys are authored in
+seed files; generation currently creates open passages. See the
+[physical item parameters](db/seeds/worlds/README.md#use_kind-and-combustible-physical-parameters)
+and [door barriers](db/seeds/worlds/README.md#barrier-and-key_template-a-doorways-initial-state).
+
 ## Play the mechanics on their own
 
 `rake game:mechanics` walks a world with **the narration switched off and
@@ -800,7 +836,7 @@ So `items` holds **two layers**, and `playthrough_id` is which layer a row is in
 | layer | what it is | who writes it |
 | --- | --- | --- |
 | **the world's own row** — a *template*, `playthrough_id` nil | what a room or a person was seeded or generated with. Lying in a room, or in one of the world's people's hands, and those are its only two places | `WorldSeed::Loader`, `Item::Registry`. Exported by `WorldSeed::Exporter`, counted by the caps, and **never touched by anybody playing** |
-| **one game's own copy** — an *instance*, `playthrough_id` set | that playthrough's copy of a template, placed by `location_id` (lying in a room, in that game), `character_id` (in that person's hands, in that game), or **neither, which is the party's own hands** | `Item::Snapshot` only, and it creates nothing that is not a copy of a template |
+| **one game's own copy** — an *instance*, `playthrough_id` set | that playthrough's copy of a template, placed by `location_id` (lying in a room, in that game), `character_id` (in that person's hands, in that game), or **neither, which is the party's own hands for an intact copy**; spent copies remain as tombstones | `Item::Snapshot` creates it from a template; the engine changes that game's state |
 
 **The playthrough layer is the only one play ever reads.** The classifier's
 closed sets, `Playthrough::Turn#carry!` / `#put_down!` / `#read_item`,
@@ -817,6 +853,11 @@ the same rule with one stated exception: it lands in the **party's** hands,
 because the protagonist is the player. `items.template_id` is the durable link,
 so the guard is per template rather than per room — which is what stops a room
 the party emptied being refurnished the next time they walk back in.
+
+Consumed and burned copies keep their `template_id` and gain a spent
+`disposition`. These tombstones count as existing copies for the snapshot,
+while possession and floor readers exclude them. The world template stays
+intact; metadata refreshes do not reset a game's disposition.
 
 A copy carries **every column but which room it is in and whose it is**
 (`Item::NOT_COPIED`), so the next column added to `items` comes along without

@@ -51,7 +51,9 @@ class Playthrough::IntentSchema
   # fixed grammar reads it offline (`Playthrough::Grammar#read_throw`), which is
   # the captain's call C6, and a schema that could express it is its own design
   # question rather than a seventh word.
-  INTENTS = %w[move talk examine take drop attack other].freeze
+  # `use` names one closed PhysicalAction token, including the real tool and
+  # target bound by the app. It adds no model-facing argument field.
+  INTENTS = %w[move talk examine take drop attack use other].freeze
 
   # The answer for "the player did not name anything on either list". Needed
   # because `strict` schemas make every property required, so `target` has to

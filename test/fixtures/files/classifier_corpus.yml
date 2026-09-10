@@ -33,6 +33,11 @@
 #      two readings carries `also_accept`, and the board reports how many there
 #      are -- a bench that marked a defensible answer wrong would be measuring
 #      its own labelling.
+#   5. A `use` target names the whole offered physical attempt, including its
+#      recipient or tool. The validator binds that label to actual choices;
+#      temporary database IDs and `use:` tokens do not belong in this file.
+#      Adding this intent changes the corpus digest. Earlier classifier results
+#      remain historical; they are not matched comparisons against these lines.
 #
 # WHERE THE LINES CAME FROM. Three sources, and none of them invented whole:
 #
@@ -2729,14 +2734,14 @@ lines:
 - id: real-give-him-the-index
   position: office
   typed: give him the index
-  intent: drop
+  intent: use
   refusal: unresolved
-  shape: unresolved-drop
+  shape: unresolved-use
   why: >-
     REAL, AND `nothing` IS RIGHT: at that point in his game the index was not in
     his hands. Replayed against a position whose carried set is the daybook
-    alone, so the same answer is the same answer -- and the tempting wrong one
-    (the daybook) is right there in the set
+    alone. Giving is now an offer to a recipient rather than a drop on the floor;
+    the requested item still cannot be offered, even though the daybook can
 
 - id: real-go-the-stacks
   position: office
@@ -3890,3 +3895,36 @@ lines:
     is what pins that the reading follows what was NAMED and not the verb, which
     is the captain's own objection of 2026-09-05 about `move the lamp off the
     desk` applied to the new word
+
+# PHYSICAL ATTEMPTS: complete choices, with human-readable recipient identity.
+- id: use-offer-daybook-rowe
+  position: office
+  typed: give the daybook to Halkett Rowe
+  intent: use
+  target: Offer Ward Office 12 daybook to Halkett Rowe; they may refuse
+  shape: use-offer
+  why: the daybook is carried and Rowe is present; an offer lets him decide whether to accept
+
+- id: use-offer-daybook-perrin
+  position: office-with-perrin
+  typed: offer the daybook to Perrin Lasco
+  intent: use
+  target: Offer Ward Office 12 daybook to Perrin Lasco; they may refuse
+  shape: use-offer
+  why: the same carried item can be offered to either of two people, so recipient identity matters
+
+- id: use-offer-apron-rowe
+  position: office-carrying-three
+  typed: offer the copy-room apron to Halkett Rowe
+  intent: use
+  target: Offer copy-room apron to Halkett Rowe; they may refuse
+  shape: use-offer
+  why: three carried items can be offered to Rowe; choosing the daybook would be the wrong item
+
+- id: unresolved-use-absent-recipient
+  position: closet
+  typed: offer the daybook to Perrin Lasco
+  intent: use
+  refusal: unresolved
+  shape: unresolved-use
+  why: the daybook is carried but nobody is present in the closet to receive an offer

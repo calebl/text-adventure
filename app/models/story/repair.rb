@@ -179,12 +179,21 @@ class Story::Repair
   # LocationConnection rather than copied.
   def repair_one_way_connection(finding)
     row = finding.subject
-    LocationConnection.create!(
-      location: row.connected_location,
-      connected_location: row.location,
-      distance: row.distance,
-      travel_method: row.travel_method
-    )
+    LocationConnection.transaction do
+      reverse = LocationConnection.create!(
+        location: row.connected_location,
+        connected_location: row.location,
+        distance: row.distance,
+        travel_method: row.travel_method,
+        barrier: row.barrier,
+        key_template: row.key_template
+      )
+      # Opening a doorway is per game and applies both ways. Preserve when,
+      # how and with what it was opened; the repair is not a new opening.
+      row.passages.each do |receipt|
+        reverse.passages.create!(receipt.attributes.except("id", "location_connection_id", "created_at", "updated_at"))
+      end
+    end
     "wrote the way back from #{row.connected_location.name} to #{row.location.name}"
   end
 
@@ -595,10 +604,9 @@ class Story::Repair
 
   # THE LEFTOVER OF A RENAMED ITEM. `Story::Doctor` raises this `safe` only
   # where a checked-in file declares one item under the pair's natural key, the
-  # row it names exists, and nothing refers to the others -- no party carrying
-  # one, no turn log recording a take of one. The loader has already written
-  # the file's description, place and inscription onto the row the file names,
-  # so what is left is a row nothing in the world points at.
+  # row it names exists, and every copy and key reference can survive the fold.
+  # Copies keep their ids and dispositions, including consumed tombstones. A
+  # direct turn on a template or two copies in one game remains manual.
   def repair_duplicate_items(finding)
     survivor = finding.subject
     key = WorldSeed.natural_key(survivor.name)
@@ -610,11 +618,20 @@ class Story::Repair
     leftovers = doctor.duplicate_item_rows(key) - [ survivor ]
     raise ArgumentError, "there is only one #{name.inspect} now, so there is nothing to fold" if leftovers.empty?
 
-    handled = leftovers.reject { |item| doctor.untouched?(item) }
-    raise ArgumentError, "#{handled.map(&:name).join(", ")} #{handled.one? ? "has" : "have"} been handled by a player, so #{handled.one? ? "it is" : "they are"} theirs" if handled.any?
-
     removed = leftovers.map { |item| "##{item.id} #{item.name.inspect} (#{item.whereabouts})" }
-    leftovers.each(&:destroy!)
+    Item.transaction do
+      unless doctor.foldable_items?(survivor, leftovers)
+        raise ArgumentError, "the duplicate items have conflicting playthrough histories or key references; reconcile them by hand"
+      end
+
+      leftovers.each do |item|
+        # A consumed copy is still this game's copy. Orphaning it would let
+        # the next room snapshot create an intact replacement from survivor.
+        item.copies.update_all(template_id: survivor.id)
+        LocationConnection.where(key_template: item).update_all(key_template_id: survivor.id)
+        item.destroy!
+      end
+    end
 
     "removed #{removed.join(", ")}, which #{seed_file} calls #{name.inspect} and ##{survivor.id} already is"
   end

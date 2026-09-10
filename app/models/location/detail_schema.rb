@@ -162,6 +162,8 @@ class Location::DetailSchema < RubyLLM::Schema
       object do
         string :name, description: "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.", max_length: 60
         string :description, description: "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.", max_length: 400
+        string :use_kind, enum: Item::USE_KINDS, description: "The engine's physical profile: ordinary unless it is food, a drink, a healing dose, a firestarter, a prying lever, lockpicks, or a key. Choose healing only for an actual restorative dose allowed by this world. Profiles supply behavior from code, never from the description."
+        boolean :combustible, description: "True only if this portable thing can be destroyed by an ordinary carried firestarter: dry paper, cloth or wood. False for stone, metal, liquids, or anything uncertain."
         boolean :readable, description: "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things."
         string :inscription, description: "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.", required: false, max_length: Item::INSCRIPTION_LIMIT
       end

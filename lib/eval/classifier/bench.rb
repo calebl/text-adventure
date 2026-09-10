@@ -85,8 +85,8 @@ class Eval::Classifier::Bench
   # WHAT ONE LINE CAME BACK AS, next to what it should have been.
   #
   # `action`, `target` and `also_named` are the classifier's answer as NAMES --
-  # `Playthrough::Classifier.label_for` of the records it resolved -- because
-  # the corpus holds names and a record cannot be compared to one directly.
+  # `Corpus::Answer.from_intent` names the resolved record or whole physical
+  # attempt, because the corpus holds names rather than database-specific tokens.
   # `answered_by` is the model that really answered.
   #
   # `raw` is THE PROVIDER'S OWN JSON, read back off `messages.content_raw` --
@@ -441,11 +441,7 @@ class Eval::Classifier::Bench
       Reading.new(line: line, arm: arm.id, rep: rep, error: nil, seconds: elapsed,
                   answered_by: classifier.agent.current_model[:model],
                   raw: raw_answer(classifier),
-                  answer: Eval::Classifier::Corpus::Answer.new(
-                    intent: intent.action,
-                    target: Playthrough::Classifier.label_for(intent.subject),
-                    also_named: Playthrough::Classifier.label_for(intent.also_named)
-                  ))
+                  answer: Eval::Classifier::Corpus::Answer.from_intent(intent))
     rescue StandardError => error
       # A FAILED CALL HAS NO LATENCY, deliberately: how long it took to fail is
       # a fact about the failure and not about how fast this model answers, and

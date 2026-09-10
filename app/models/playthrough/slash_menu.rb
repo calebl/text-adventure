@@ -2,17 +2,17 @@
 #
 # THE CAPTAIN'S RULING OF 2026-09-04, EVENING: *"support a slash prefix
 # autocomplete in the text box, and resolve those and verb-prefixed lines offline
-# then fallback to the model."* This is the first half of it -- the six verbs a
+# then fallback to the model."* This is the first half of it -- the verbs a
 # `/` offers, and after a verb the closed set that verb resolves against -- and
 # since his ruling of 2026-09-05, *"I think we should only auto accept the slash
 # commands"*, it is the whole surface of the offline path: what the box completes
 # to is exactly what the grammar reads.
 #
-# IT INVENTS NOTHING AND QUERIES NOTHING NEW. The verbs are
-# `Playthrough::Grammar::RESOLVING`, so the box cannot offer a word the grammar
-# does not read; the names are `Playthrough::Classifier#offered_for`, which is
-# the same closed set the model is offered and the same one a typed name is
-# matched against. Three ways of saying a thing and one list behind all of them.
+# IT INVENTS NOTHING. Core verbs come from `Playthrough::Grammar::RESOLVING`,
+# and physical verbs from the current `Playthrough::PhysicalAction` choices.
+# Their names and compound arguments are the same closed sets the classifier
+# is offered and the grammar resolves. The menu cannot invent an item, tool,
+# recipient or doorway that either reader would be unable to bind.
 #
 # AND SINCE THE CAPTAIN'S RULING OF 2026-09-05 -- *"I think we should only auto
 # accept the slash commands"* -- THIS MENU IS THE WHOLE OF THE OFFLINE PATH'S
@@ -33,6 +33,17 @@
 # `check`): those are `rake game:mechanics`'s instruments and the browser has no
 # engine view.
 class Playthrough::SlashMenu
+  # Compound physical attempts have one completion containing both names. The
+  # app built that pair; the browser does not infer tools or recipients.
+  PHYSICAL_HINTS = {
+    "consume" => "eat or drink something you carry",
+    "offer" => "offer something; its recipient may refuse",
+    "burn" => "burn a combustible thing with a firestarter",
+    "unlock" => "open a locked passage with its key",
+    "pick" => "try a lock with lockpicks",
+    "pry" => "try a jammed passage with a lever",
+    "force" => "try to force a jammed passage"
+  }.freeze
   # ONE LINE ABOUT EACH VERB, for the menu row. Short enough to sit beside the
   # word; the closed set underneath it is the real explanation.
   HINTS = {
@@ -68,9 +79,12 @@ class Playthrough::SlashMenu
   # types rather than by the action it resolves to, because the word is what the
   # box completes and what the grammar reads back.
   def to_h
+    physical = classifier.physical_actions.group_by(&:kind)
     {
-      verbs: Playthrough::Grammar::RESOLVING.keys.map { |word| { word: word, hint: HINTS[word] } },
-      targets: Playthrough::Grammar::RESOLVING.to_h { |word, action| [ word, names_for(action) ] }
+      verbs: Playthrough::Grammar::RESOLVING.keys.map { |word| { word: word, hint: HINTS[word] } } +
+        physical.keys.map { |word| { word: word, hint: PHYSICAL_HINTS.fetch(word) } },
+      targets: Playthrough::Grammar::RESOLVING.to_h { |word, action| [ word, names_for(action) ] }.merge(
+        physical.transform_values { |choices| choices.map(&:argument).uniq })
     }
   end
 

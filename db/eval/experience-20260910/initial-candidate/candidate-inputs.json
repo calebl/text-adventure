@@ -1,0 +1,16 @@
+{
+  "base": "0696d409260b0c1b921d617a714e8428f94477ff",
+  "digest": "b0d7a0a32bf07660869872200979db50c7b45ded918873fa0de4a379d0f49bf1",
+  "files": {
+    "app/models/playthrough/memory.rb": "63589df268981efd27498a2d44308eda76f0cc78256ffaff0227bd08db01464b",
+    "app/models/playthrough/moment.rb": "0880413a5a32d6e3d9e1d6ed1ceeed7c247c894043ce251af1b570a629d5f72e",
+    "app/agents/InteractionAgent.rb": "c011f6f9d302544095658f8b505dcaa41b28591047528b20ba8063419b6dc181"
+  },
+  "followup": "After the verdict, deduplication was narrowed to identical statements plus resolutions, so different admissions with the same generic resolution survive. Offline replay reproduced all 16 measured character requests byte for byte. The fixture file received only Ruby array-spacing formatting.",
+  "current_files": {
+    "app/models/playthrough/memory.rb": "59b9d8d3bd27b0f2654bd685376512ae8fb149fd6238e1cc81e595d8a1e78964",
+    "app/models/playthrough/moment.rb": "0880413a5a32d6e3d9e1d6ed1ceeed7c247c894043ce251af1b570a629d5f72e",
+    "app/agents/InteractionAgent.rb": "c011f6f9d302544095658f8b505dcaa41b28591047528b20ba8063419b6dc181"
+  },
+  "current_fixture_sha256": "f328133b52cbd6d32049a1113c8ca56e152719ecc9b8c6c6658b00c9b24e02ee"
+}

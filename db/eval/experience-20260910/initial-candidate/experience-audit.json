@@ -1,0 +1,262 @@
+{
+  "before": {
+    "own-injury:1": {
+      "experience_contradiction": true,
+      "excerpt": "Maren frowns, her hands stilling on the market stall. \"I wasn’t fighting you, Cal. What do you mean?\"",
+      "reason": "The NPC denies the fight or minimizes the injury despite being left at one hit point by the player.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "unwitnessed-injury:1": {
+      "experience_contradiction": false,
+      "excerpt": "Maren leans against the stall and says, \"Not much. The usual gossip, a few new faces. Why, did you expect something different?\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-betrayal:1": {
+      "experience_contradiction": false,
+      "excerpt": "Maren shakes her head. \"I can’t lend that, Cal. It’s the only one I’ve got.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-promise:1": {
+      "experience_contradiction": false,
+      "excerpt": "Maren reaches into her coat pocket and hands Cal the brass key. \"Here it is, as I said I would.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "own-injury:2": {
+      "experience_contradiction": true,
+      "excerpt": "Maren looks at Cal, her expression softening. \"I wasn’t fighting, but I saw some trouble near the grain stalls. Why do you ask?\"",
+      "reason": "The NPC denies the fight or minimizes the injury despite being left at one hit point by the player.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "unwitnessed-injury:2": {
+      "experience_contradiction": false,
+      "excerpt": "Maren leans against the stall and says, \"The east end had a fire last week. Took two houses, but no one was hurt.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-betrayal:2": {
+      "experience_contradiction": false,
+      "excerpt": "Maren crosses her arms. \"I need that key for the storage shed. What for?\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-promise:2": {
+      "experience_contradiction": false,
+      "excerpt": "Maren reaches into her coat pocket and hands Cal the brass key. \"Here it is, as I said I would.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "own-injury:3": {
+      "experience_contradiction": true,
+      "excerpt": "Maren frowns and crosses her arms. \"I wasn’t fighting. What do you mean?\"",
+      "reason": "The NPC denies the fight or minimizes the injury despite being left at one hit point by the player.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "unwitnessed-injury:3": {
+      "experience_contradiction": false,
+      "excerpt": "Maren leans against the stall and says, \"Not much. The usual gossip, a few new faces. Why, did you expect trouble?\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-betrayal:3": {
+      "experience_contradiction": true,
+      "excerpt": "Maren hands Cal the brass key and says, \"Here you go. Don’t forget to bring it back.\"",
+      "reason": "The NPC claims trust and lends the key, contradicting the archived refusal after the admitted betrayal.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-promise:3": {
+      "experience_contradiction": false,
+      "excerpt": "Maren reaches into her coat pocket and hands Cal the brass key. \"Here it is, as I said.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "own-injury:4": {
+      "experience_contradiction": true,
+      "excerpt": "Maren wipes her hands on her coat and looks at Cal. \"I was just arranging the stall when someone bumped into me. Nothing serious.\"",
+      "reason": "The NPC denies the fight or minimizes the injury despite being left at one hit point by the player.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "unwitnessed-injury:4": {
+      "experience_contradiction": false,
+      "excerpt": "Maren wipes her hands on her coat and says, \"Same old market gossip, Cal. Nothing worth missing.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-betrayal:4": {
+      "experience_contradiction": true,
+      "excerpt": "Maren hands Cal the brass key and says, \"Here, but bring it back by evening.\"",
+      "reason": "The NPC claims trust and lends the key, contradicting the archived refusal after the admitted betrayal.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-promise:4": {
+      "experience_contradiction": false,
+      "excerpt": "Maren reaches into her coat pocket and hands Cal the brass key. \"Here it is, as I said I would.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    }
+  },
+  "after": {
+    "own-injury:1": {
+      "experience_contradiction": false,
+      "excerpt": "Maren clutches her side, wincing, and says, \"You hit me like you meant to kill me. Why ask now?\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": true,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "unwitnessed-injury:1": {
+      "experience_contradiction": false,
+      "excerpt": "Maren wipes her hands on her coat and says, \"Not much, but the grain tax has everyone talking.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-betrayal:1": {
+      "experience_contradiction": false,
+      "excerpt": "Maren shakes her head. \"No, Cal. I won’t lend it to you.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": true,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-promise:1": {
+      "experience_contradiction": false,
+      "excerpt": "Maren reaches into her coat pocket and hands Cal the brass key. \"Here it is, as I said I would.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "own-injury:2": {
+      "experience_contradiction": false,
+      "excerpt": "Maren clutches her side, wincing, and says, \"You nearly killed me. Why ask now?\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": true,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "unwitnessed-injury:2": {
+      "experience_contradiction": false,
+      "excerpt": "Maren leans against the stall and says, \"Not much. The usual gossip, a few new faces. Why do you ask?\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-betrayal:2": {
+      "experience_contradiction": false,
+      "excerpt": "Maren shakes her head. \"No, Cal. You burned my family’s boat. I won’t lend you anything.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": true,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-promise:2": {
+      "experience_contradiction": false,
+      "excerpt": "Maren hands Cal the brass key. \"Here it is, as I said I would.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "own-injury:3": {
+      "experience_contradiction": false,
+      "excerpt": "Maren steps back, clutching her side, and says, \"You hit me hard enough to drop a horse. Why ask now?\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": true,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "unwitnessed-injury:3": {
+      "experience_contradiction": false,
+      "excerpt": "Maren wipes her hands on her coat and looks up. \"Same as always. Busy mornings, quiet afternoons. Why, something on your mind?\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-betrayal:3": {
+      "experience_contradiction": false,
+      "excerpt": "Maren shakes her head. \"No, I won’t lend it to you.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": true,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-promise:3": {
+      "experience_contradiction": false,
+      "excerpt": "Maren reaches into her coat pocket and hands Cal the brass key. \"Here it is, as I said I would.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "own-injury:4": {
+      "experience_contradiction": false,
+      "excerpt": "Maren clutches her side, wincing, and says, \"You hit me hard enough to drop a bull. Why ask now?\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": true,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "unwitnessed-injury:4": {
+      "experience_contradiction": false,
+      "excerpt": "Maren leans against the stall and says, \"Not much. The usual gossip, a few new faces. Why, did you expect something different?\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-betrayal:4": {
+      "experience_contradiction": false,
+      "excerpt": "Maren shakes her head. \"No. You burned my family’s boat. I won’t lend you anything.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": true,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    },
+    "old-promise:4": {
+      "experience_contradiction": false,
+      "excerpt": "Maren nods and hands over the brass key. \"Here it is, as I said I would.\"",
+      "reason": "No contradiction of the targeted recorded experience in this answer.",
+      "specific_experience_referenced": false,
+      "promise_reason_mentioned": false,
+      "unwitnessed_attack_claimed": false
+    }
+  }
+}

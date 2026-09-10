@@ -1,0 +1,15 @@
+{
+  "base": "09b37044d6e0c5b03baafa8ee9bb667275b8c962",
+  "files": {
+    "app/models/playthrough/classifier.rb": "f2a6557a9cad61c039a97f764defe401d9cd934346d5689e9fe2421f5cfdc99e",
+    "app/models/playthrough/intent_schema.rb": "53adcb2fbe19f47b19b06ebcf4bef14f46d2f3fc887d5cfbb3f684977a711fd2",
+    "app/models/playthrough/physical_action.rb": "67e44d7aaa1ce3b8c0a32cf0d5024089350007dc25bca22f1a82d57f0af3aaf7",
+    "app/models/playthrough/turn.rb": "18cdc7c3bbdc1d468e3cf5de54342396eec29c10b79d3ed6a8ab547bd8f7a5c7",
+    "app/models/playthrough/npc_action.rb": "080304dccee536b5ad2c3fe78c54a8d38ac90cd361fa477d7d477c918ee5f67b",
+    "app/agents/InteractionAgent.rb": "6f51b5d1e599a7278d635782fdf16f6663fba48a0c3357cd730459c3b3265e28",
+    "app/models/playthrough/passage.rb": "fd6569fd0865b710a1280d526db197b2a12511acb18b62cf35f17fc49d3b895e",
+    "app/models/item.rb": "42d50c69917c34d7a48aed3159d871ec8f56f2786b88898c0769171240a3aeb3",
+    "app/models/location_connection.rb": "9740e69c51e845faaca9c278bed499df1cb74c64b18bf14cd500af5e134a0442"
+  },
+  "sha256": "7ccfc142b4f15cf1b25116391497ed6b8dcebd2a4c2adf389da47645ae85bcce"
+}

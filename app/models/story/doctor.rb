@@ -220,6 +220,19 @@ class Story::Doctor
     item.playthrough_id.nil? && !Scene.where(acted_on: item).exists?
   end
 
+  # A duplicate template can be folded without losing the game's own item only
+  # when each game has at most one copy across the whole group. The copy keeps
+  # its id and disposition and changes only which template it names. Two copies
+  # in one game are two histories; choosing which survives is a manual repair.
+  # A door's key is another reference that must survive the fold.
+  def foldable_items?(survivor, leftovers)
+    return false unless leftovers.all? { |item| untouched?(item) }
+    return false if Item.where(template: [ survivor, *leftovers ]).group(:playthrough_id).having("COUNT(*) > 1").exists?
+    return false if survivor.use_kind != "key" && LocationConnection.where(key_template: leftovers).exists?
+
+    true
+  end
+
   # EVERY LOCATION OF THE STORY STILL REACHABLE FROM EVERY OTHER WITH THIS ONE
   # EDGE GONE, checked the same way `WorldMechanic::ShuffleConnections#connected?`
   # checks its own arrangements: a breadth-first walk over a few dozen nodes.
@@ -617,6 +630,13 @@ class Story::Doctor
                           "#{edge}: the two directions disagree (#{rows.map { |r| "#{r.distance} #{r.travel_method}" }.uniq.join(" vs ")}); " \
                           "the same edge is walked both ways, so one of them is wrong",
                           :safe, subject: row)
+    end
+
+    if rows.map { |candidate| [ candidate.barrier, candidate.key_template_id ] }.uniq.size > 1
+      findings << finding(:connection_barriers_disagree, :warning,
+                          "#{edge}: the directions disagree about the barrier or its key; nothing on record " \
+                          "chooses which lock is correct, so reconcile the doorway by hand",
+                          :manual, subject: row)
     end
 
     # Reported once per EDGE rather than once per row: both rows of an edge
@@ -1066,10 +1086,12 @@ class Story::Doctor
     findings.concat(items_in_several_places(items))
     findings.concat(shared_inventory(templates))
     findings.concat(copies_without_a_template(items))
+    # Fold proven duplicate templates before a missing-copy repair can create
+    # a second instance of the same object beside a consumed tombstone.
+    findings.concat(duplicate_items(templates))
     findings.concat(missing_copies)
     findings.concat(copies_lagging_their_template)
     findings.concat(touched_copies_lagging)
-    findings.concat(duplicate_items(templates))
     findings.concat(rooms_over_the_item_cap)
     findings.concat(items_colliding_with_a_name(templates))
     findings.concat(items_with_an_unknown_bulk(items))
@@ -1294,13 +1316,12 @@ class Story::Doctor
   # the layer split) -- asking the question of the templates answers it for
   # every kind of copy at once, including the ones a party dropped in a room.
   #
-  # SAFE ONLY WHEN THE FILE NAMES ONE OF THEM AND NOBODY HAS TOUCHED THE REST.
+  # SAFE ONLY WHEN THE FILE NAMES ONE OF THEM AND THEIR COPIES CAN BE KEPT.
   # The file declares one item under that key, and the loader has already
   # written the file's own description, place and inscription onto the row it
-  # named -- so what is left over is a row nothing refers to, and
-  # `rake game:repair` removes it. A leftover a turn log records taking, or one
-  # some game still holds a copy of, is somebody's and no fold of it is honest:
-  # `manual`.
+  # named. A leftover's copies keep their identities and dispositions by
+  # naming that canonical template instead. A direct turn on the template or
+  # multiple copies in one game prevents an automatic fold: `manual`.
   def duplicate_items(templates)
     templates.group_by { |item| WorldSeed.natural_key(item.name) }.filter_map do |key, group|
       next if group.one? || key.blank?
@@ -1308,7 +1329,7 @@ class Story::Doctor
       seeded = seeded_item_names[key]
       survivor = group.detect { |item| item.name == seeded }
       leftovers = survivor ? group - [ survivor ] : []
-      remedy = survivor && leftovers.all? { |item| untouched?(item) } ? :safe : :manual
+      remedy = survivor && foldable_items?(survivor, leftovers) ? :safe : :manual
 
       finding(:duplicate_items, :warning,
               "#{group.size} of the world's own items are one thing to a re-seed " \
@@ -1324,10 +1345,12 @@ class Story::Doctor
   # them inside the interpolation was worse than reading them here.
   def duplicate_item_verdict(seeded, leftovers, remedy)
     if remedy == :safe
-      ". #{seed_basename} declares one, #{seeded.inspect}, and nothing refers to the " \
-        "#{leftovers.one? ? "other row" : "#{leftovers.size} other rows"}"
-    elsif seeded.present?
+      ". #{seed_basename} declares one, #{seeded.inspect}; the " \
+        "#{leftovers.one? ? "other template" : "#{leftovers.size} other templates"} can be folded while preserving every game copy"
+    elsif seeded.present? && leftovers.any? { |item| !untouched?(item) }
       ". #{seed_basename} declares #{seeded.inspect}, and a player has handled one of the others, so it is theirs"
+    elsif seeded.present?
+      ". #{seed_basename} declares #{seeded.inspect}, but the histories or key references cannot be combined safely"
     else
       ". No checked-in file declares any of them, so which one is the world's is not on record"
     end

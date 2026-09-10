@@ -1,0 +1,9 @@
+{
+  "result": "16 revised character requests matched byte for byte after preparing and seeding a fresh isolated database; no model calls",
+  "command": "RAILS_ENV=test DATABASE_URL=sqlite3:/tmp/experience-replay.sqlite3 bin/rails runner db/eval/experience-20260910/replay_prompts.rb",
+  "source_files": {
+    "app/models/playthrough/memory.rb": "ca5fafe9c9df33f743ebcf1db41a0074bf18bb4b5f47ab89f0099a7dc95a6c7f",
+    "app/models/playthrough/moment.rb": "dc759a1804f21f5e1dcc885cf2f24fd6d647fb9c78bcfe7d755960152f3f1fbd",
+    "app/agents/InteractionAgent.rb": "6f51b5d1e599a7278d635782fdf16f6663fba48a0c3357cd730459c3b3265e28"
+  }
+}

@@ -7,9 +7,10 @@
 # interruption. Offline mechanics and world generation have no journal.
 class Playthrough::Command::Journal
   DATA_TYPES = %w[Playthrough::Classifier::Intent Playthrough::NpcAction::Result
-                  Playthrough::Turn::Throw Character::Check Playthrough::Arc::Concluded].freeze
+                  Playthrough::Turn::Throw Character::Check Playthrough::Arc::Concluded
+                  Playthrough::PhysicalAction::Choice Playthrough::PhysicalAction::Result].freeze
   RECORD_TYPES = %w[Scene Location Character Item Playthrough::Blow Playthrough::Toll
-                    Playthrough::Ending Quest::Outcome].freeze
+                    Playthrough::Ending Quest::Outcome LocationConnection].freeze
 
   def self.with(command)
     previous = Thread.current[:turn_journal]

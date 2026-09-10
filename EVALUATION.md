@@ -41,6 +41,25 @@ wider than most improvements anybody claims.
 
 ---
 
+## Conversations with durable experience
+
+The generic single-turn prompt bench excludes `talk`, which has two model
+passes. The matched NPC experience corpus in
+[`db/eval/experience-20260910`](db/eval/experience-20260910/README.md) stores both
+passes, the actual engine receipt, and attributed memory fixtures. Its README
+owns the measured results, limitations, and offline replay command. Use this
+corpus when changing `InteractionAgent`'s memory or injury context; inspect and
+store a new baseline first when a change needs a feature these fixtures lack.
+
+## Physical actions and generated item profiles
+
+[`db/eval/physical-20260910`](db/eval/physical-20260910/README.md) retains matched
+physical-action runs, targeted generation profiles, manual annotations and an
+offline `Eval::Noise` comparison. Its README separates actual effects, prose
+contradictions and temporal mistakes, including the first candidate's failed
+narration and the revised result. These fixed fixtures complement the broader
+realization bench; they do not establish general realism.
+
 ## The one command
 
 ```bash

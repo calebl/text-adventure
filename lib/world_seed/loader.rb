@@ -204,8 +204,9 @@ class WorldSeed::Loader
       story = load_story!(universe)
       locations = load_locations!(story)
       load_containment!(locations)
-      load_connections!(story, locations)
       load_characters!(story, universe)
+      # A keyed passage may name a floor item or someone's starting key.
+      load_connections!(story, locations)
       load_mechanics!(story)
       # AFTER THE GRAPH AND THE CAST, because every step names one of them by
       # natural key and binding is a lookup -- an arc loaded first would come
@@ -432,6 +433,9 @@ class WorldSeed::Loader
   def write_edge!(edge)
     attributes = edge.fetch(:attributes)
     values = attributes.slice("distance", "travel_method")
+    values["barrier"] = attributes["barrier"].presence || "open"
+    values["key_template"] = find_item(@story, attributes["key_template"]) if attributes["key_template"].present?
+    values["key_template"] ||= nil
     hazard_from = attributes["hazard_from"].presence
 
     [ [ edge[:from], edge[:to] ], [ edge[:to], edge[:from] ] ].each do |(origin, destination)|
@@ -667,6 +671,9 @@ class WorldSeed::Loader
       # every checked-in world is (`Location::Spot`).
       item.assign_attributes(
         attributes.merge("name" => name, "bulk" => attributes["bulk"].presence || Item::HANDY,
+                         "use_kind" => attributes["use_kind"].presence || "ordinary",
+                         "combustible" => attributes["combustible"] == true,
+                         "disposition" => "intact",
                          playthrough: nil, template: nil, **place)
                   .merge(Location::Spot::COLUMNS.to_h { |column| [ column, attributes[column] ] })
       )
@@ -967,6 +974,7 @@ class WorldSeed::Loader
 
     validate_inscriptions!
     validate_bulks!
+    validate_physical_parameters!
     validate_dangers!
     validate_populations!
     validate_hazards!
@@ -1603,6 +1611,35 @@ class WorldSeed::Loader
   # the fault never loads either way; the record's error names a column and this
   # one names the FILE and the ITEM, which is what somebody editing YAML needs.
   # Same reason the inscriptions, the stats and the dangers are checked here.
+  def validate_physical_parameters!
+    items = (character_documents + location_documents).flat_map { |owner| Array(owner["items"]) }
+    items.each do |item|
+      if item["use_kind"].present? && !Item::USE_KINDS.include?(item["use_kind"])
+        raise InvalidWorld, "#{where}: item #{item['name'].inspect} has an unknown use_kind"
+      end
+      if item.key?("combustible") && ![ true, false ].include?(item["combustible"])
+        raise InvalidWorld, "#{where}: item #{item['name'].inspect} needs a boolean combustible value"
+      end
+      if item["disposition"].present? && item["disposition"] != "intact"
+        raise InvalidWorld, "#{where}: a world template cannot be consumed or burned"
+      end
+    end
+    connection_documents.each do |edge|
+      barrier = edge["barrier"].presence || "open"
+      raise InvalidWorld, "#{where}: unknown passage barrier #{barrier.inspect}" unless LocationConnection::BARRIERS.include?(barrier)
+
+      key = edge["key_template"]
+      matching = items.find { |item| WorldSeed.natural_key(item["name"]) == WorldSeed.natural_key(key) } if key.present?
+      if barrier == "keyed"
+        unless matching && matching["use_kind"] == "key"
+          raise InvalidWorld, "#{where}: a keyed passage must name a declared item with use_kind: key"
+        end
+      elsif key.present?
+        raise InvalidWorld, "#{where}: only a keyed passage can name a key_template"
+      end
+    end
+  end
+
   def validate_bulks!
     (character_documents + location_documents).each do |owner|
       Array(owner["items"]).each do |item|

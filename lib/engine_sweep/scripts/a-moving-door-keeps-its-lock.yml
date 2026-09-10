@@ -1,0 +1,56 @@
+# Browser turns advance story time and run the real world mechanic. Opening
+# belongs to a doorway in one game, while the city's new endpoints affect both.
+# Two hourly swaps restore the initial graph for doors_unchanged; the intermediate
+# exit expectations prove the actual shuffle ran both times.
+story: A Lock in the Moving City
+steps:
+- id: open-the-door-before-midnight
+  type: /unlock West Yard with workshop key
+  browser: {token: unlock, fail: narration}
+  expect:
+    location: Mobile Workshop (realized)
+    carrying: [workshop key]
+    elapsed_minutes: 5
+    refused: false
+- id: the-moved-door-is-still-locked-in-another-game
+  player: second
+  type: /move East Yard
+  browser: {token: first-swap-blocked}
+  expect:
+    location: Mobile Workshop (realized)
+    exits: [Mobile Gallery (realized), East Yard (realized)]
+    refused: true
+    offers: locked
+    elapsed_minutes: 0
+- id: the-original-opening-follows-the-door
+  type: /move East Yard
+  browser: {token: cross-moved-door, fail: arrival}
+  expect:
+    location: East Yard (realized)
+    exits: [Mobile Workshop (realized)]
+    refused: false
+    elapsed_minutes: 1
+- id: the-return-direction-keeps-the-opening-too
+  type: /move Mobile Workshop
+  browser: {token: return-moved-door, fail: arrival}
+  expect:
+    location: Mobile Workshop (realized)
+    refused: false
+    elapsed_minutes: 1
+- id: the-bridge-crosses-the-next-hour
+  type: /move Mobile Gallery
+  browser: {token: bridge, fail: arrival}
+  expect:
+    location: Mobile Gallery (realized)
+    refused: false
+    elapsed_minutes: 60
+- id: a-second-swap-still-does-not-unlock-the-other-game
+  player: second
+  type: /move West Yard
+  browser: {token: second-swap-blocked}
+  expect:
+    location: Mobile Workshop (realized)
+    exits: [Mobile Gallery (realized), West Yard (realized)]
+    refused: true
+    offers: locked
+    elapsed_minutes: 0

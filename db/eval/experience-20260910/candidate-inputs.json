@@ -1,0 +1,10 @@
+{
+  "base": "09b37044d6e0c5b03baafa8ee9bb667275b8c962",
+  "files": {
+    "app/models/playthrough/memory.rb": "ca5fafe9c9df33f743ebcf1db41a0074bf18bb4b5f47ab89f0099a7dc95a6c7f",
+    "app/models/playthrough/moment.rb": "dc759a1804f21f5e1dcc885cf2f24fd6d647fb9c78bcfe7d755960152f3f1fbd",
+    "app/agents/InteractionAgent.rb": "6f51b5d1e599a7278d635782fdf16f6663fba48a0c3357cd730459c3b3265e28",
+    "app/models/playthrough/npc_action.rb": "080304dccee536b5ad2c3fe78c54a8d38ac90cd361fa477d7d477c918ee5f67b"
+  },
+  "sha256": "6b70a943cf50b28b732fbb3143e23e6189cd4eae678faa5dc580757e0a36e851"
+}

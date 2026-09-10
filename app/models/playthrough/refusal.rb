@@ -175,7 +175,8 @@ class Playthrough::Refusal
     # ITS OWN SENTENCE AND NOT `talk`'S, though the closed set is the same one.
     # The player swung at somebody; being told the line "did not resolve to
     # anybody who is here" reads as an answer to a different line.
-    attack: "That did not resolve to anybody here to swing at."
+    attack: "That did not resolve to anybody here to swing at.",
+    use: "That did not resolve to an available physical action with these items and doorways."
   }.freeze
 
   EMPTY = {
@@ -183,7 +184,8 @@ class Playthrough::Refusal
     talk: "There is nobody here to talk to.",
     take: "There is nothing lying here to pick up.",
     drop: "You are carrying nothing, so there is nothing to put down.",
-    attack: "There is nobody here to fight."
+    attack: "There is nobody here to fight.",
+    use: "These items and doorways offer no matching physical action."
   }.freeze
 
   NOTHING_MATCHED = "That resolved to nothing.".freeze
@@ -230,7 +232,8 @@ class Playthrough::Refusal
     # THE SAME SENTENCE AS A `talk`'S, because it is the same list read back and
     # the app does not keep a narrower one of people you may hit -- the captain's
     # ruling of 2026-09-05, *"anyone can be attacked"*.
-    attack: "Here with you: %s."
+    attack: "Here with you: %s.",
+    use: "Available attempts: %s."
   }.freeze
 
   # Said on every shape, because on every shape it is the thing the player most

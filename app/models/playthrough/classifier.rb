@@ -52,10 +52,12 @@ class Playthrough::Classifier
   # schema stays THREE FIELDS, which is the captain's call C6, and it is why
   # widening the closed enum by `attack` in slice 8 did not widen it by `throw`
   # too. `Playthrough::Grammar#read_throw` is the only writer.
-  Intent = Data.define(:action, :destination, :speaker, :item, :at, :also_named, :unknown_action) do
+  # `physical` binds one closed attempt token to its engine-owned records.
+  # It is internal only: the model still returns intent, target, also_named.
+  Intent = Data.define(:action, :destination, :speaker, :item, :at, :also_named, :unknown_action, :physical) do
     # Defaulted so a caller naming only what it resolved reads the way it
     # means -- `Intent.new(action: :other)` is a turn that reached for nothing.
-    def initialize(destination: nil, speaker: nil, item: nil, at: nil, also_named: nil, unknown_action: nil, **rest) = super
+    def initialize(destination: nil, speaker: nil, item: nil, at: nil, also_named: nil, unknown_action: nil, physical: nil, **rest) = super
 
     def move? = action == :move
     def talk? = action == :talk
@@ -92,7 +94,7 @@ class Playthrough::Classifier
     # not what it was aimed at, because the thing is the record that moves (the
     # shape `take` and `drop` already have). What it was aimed at is `#at`, and
     # what the throw COST is a `Playthrough::Blow` row.
-    def subject = destination || speaker || item
+    def subject = physical&.subject || destination || speaker || item
 
     # THE OVERREACH CASE. The line named two things the closed sets both know,
     # and one act is all a turn is. It used to do the first and say which one it
@@ -152,7 +154,16 @@ class Playthrough::Classifier
       take    - they are picking something up
       drop    - they are putting down, leaving or giving up something they carry
       attack  - they are trying to hurt someone who is here
+      use     - consume an item, offer it to someone, burn it, or open a barrier
       other   - anything else
+
+    For `use`, select the exact token of ONE listed Physical Action. Its
+    objects and tools form a single attempt, not extra acts. Offering an item
+    is `use`, even in spoken words; the recipient can refuse. Opening a gate
+    is `use`, not `move`: crossing it is a later action. Drinking and eating
+    consume the item. If no listed physical action matches, answer `use` with
+    `nothing`; do not substitute a move, a drop, a conversation or `other`.
+    An unrelated observation, waiting or musing is still `other`.
 
     Then pick what they aimed it at from the lists you are given, copied
     exactly: a way out for `move`, a person for `talk` or `attack`, a thing
@@ -197,7 +208,7 @@ class Playthrough::Classifier
 
     answer = agent
       .with_schema(Playthrough::IntentSchema.for(
-        exit_names(exits) + cast_names(cast) + item_names(items) + item_names(carried)
+        exit_names(exits) + cast_names(cast) + item_names(items) + item_names(carried) + physical_actions.map(&:token)
       ))
       .ask(command_prompt(command, exits, cast, items, carried))
       .content
@@ -302,6 +313,7 @@ class Playthrough::Classifier
     # A separate, narrower set of "people you may hit" would be the app deciding
     # who is a legitimate target, which is a different game.
     when :attack then characters_here
+    when :use then physical_actions
     else []
     end
   end
@@ -337,6 +349,8 @@ class Playthrough::Classifier
   # prose is where the wandering is wanted.
   TEMPERATURE = 0.0
 
+  def physical_actions = Playthrough::PhysicalAction.new(playthrough).choices
+
   def command_prompt(command, exits, cast, items = [], carried = [])
     <<~PROMPT
       ## Where The Player Is
@@ -353,6 +367,9 @@ class Playthrough::Classifier
 
       ## What The Player Is Carrying
       #{item_list(carried, empty: "Nothing. The player is carrying nothing at all.")}
+
+      ## Physical Actions (token: one attempt)
+      #{physical_actions.map { |choice| "#{choice.token}: #{choice.name}" }.presence&.join("\n") || "None are available."}
 
       ## The Player Types
       #{command}
@@ -386,6 +403,16 @@ class Playthrough::Classifier
     # around it. An out-of-table answer that named `nothing` loses nothing by
     # being read as `other`, and is.
     return Intent.new(action: action, unknown_action: intent.to_s) if !known && named_something?(name)
+
+    if action == :use
+      choices = physical_actions
+      found = choices.find { |choice| choice.token == name }
+      extra = choices.find { |choice| choice.token == also && choice != found }
+      extra_record = extra&.subject || (exits + cast + items + carried).find do |record|
+        self.class.label_for(record) == also && !found&.records&.include?(record)
+      end
+      return Intent.new(action: action, physical: found, also_named: extra_record)
+    end
 
     # The closed set this action resolves against, the matcher that reads a
     # name out of it, and which of the Intent's slots the record lands in.
@@ -486,7 +513,8 @@ class Playthrough::Classifier
     connection = LocationConnection.find_by(location: playthrough.current_location, connected_location: exit)
     return "" if connection.nil?
 
-    " (#{connection.distance}, #{connection.travel_method})"
+    barrier = connection.open_for?(playthrough) ? "" : "; #{connection.barrier == 'keyed' ? 'locked' : 'jammed'}, open before crossing"
+    " (#{connection.distance}, #{connection.travel_method}#{barrier})"
   end
 
   def cast_list(cast)

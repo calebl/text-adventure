@@ -47,7 +47,7 @@ One file is one universe and one story. Keys are written in this order:
 | `opening_scene` | the narrated moment the story starts in — see below                     |
 | `characters`    | one entry each, `race` by name, optional `location` (or `absent`) + a position in it (`x`, `y`), optional `hostile`, optional `stats`, and `items` |
 | `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `population`; optional `hazard` + `hazard_die`; optional `parent` + a box (`x`, `y`, `z`, `width`, `depth`); `items`, each with an optional position (`x`, `y`) |
-| `connections`   | one entry per edge, as an unordered `between: [a, b]` pair; optional `hazard` + `hazard_die` + `hazard_from` |
+| `connections`   | one entry per edge, as an unordered `between: [a, b]` pair; optional `barrier` (`key_template` for `keyed`); optional `hazard` + `hazard_die` + `hazard_from` |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
 
 Prose is stored in a `|-` block scalar: one paragraph is one physical line, so
@@ -261,6 +261,56 @@ it — see the `x` and `y` section further down.
 `properties` is a JSON string, stored verbatim and read back by
 `Item#properties_hash`. Entries are exported sorted by name, so keep them that
 way in the file or a re-export will reorder them.
+
+#### `use_kind` and `combustible`: physical parameters
+
+An item supplies parameters to `Playthrough::PhysicalAction`; its name,
+description and `properties` never execute behavior. For example:
+
+```yaml
+  items:
+  - name: healing draught
+    description: A sealed bottle containing one restorative dose.
+    properties: '{}'
+    use_kind: healing
+  - name: letter
+    description: A folded sheet of dry paper.
+    properties: '{}'
+    combustible: true
+```
+
+`use_kind` is a closed value from `Item::USE_KINDS`:
+
+| value | engine behavior |
+| --- | --- |
+| `ordinary` | No consumption or tool action; the item can still be carried, offered, or used by other applicable mechanics. |
+| `food`, `drink` | A carried copy can be consumed without healing wounds. |
+| `healing` | Consuming a carried copy restores up to `Item::HEALING_POINTS`, capped by the player's maximum hit points. |
+| `firestarter` | A carried tool can burn a combustible item in the player's hands or on the current room's floor. |
+| `lever` | A carried tool permits a strength check to pry a jammed doorway open. |
+| `lockpick` | A carried tool permits a dexterity check to open a keyed doorway. |
+| `key` | A carried copy opens the doorway whose `key_template` names its world template. |
+
+`combustible` is a boolean, independent of `use_kind`; it permits destruction
+by a carried firestarter. Omitted values load as `use_kind: ordinary` and
+`combustible: false`, and the exporter omits those defaults. Existing ordinary
+items acquire no new behavior from their prose: supply the profile explicitly
+in the seed file. Re-seeding writes the declared values onto world templates;
+`Item::TemplateRefresh` can update untouched copies and reports copies a turn
+has already acted on.
+
+New room generation supplies these same closed item parameters through
+`Location::DetailSchema` and `Item::Registry`. It does not retrofit items in
+already-realized rooms. A seed file may declare the profiles directly, including
+on the protagonist's starting inventory.
+
+An offer is a conversation: the recipient may refuse, and only acceptance
+transfers the game copy. Offering medicine does not consume it or heal the
+recipient. Consumption and burning instead set that copy's `disposition` to
+`consumed` or `burned` and remove it from possession readers. The row remains
+linked to its template as a tombstone, so a later snapshot cannot respawn it.
+Seed templates stay `intact`; the loader refuses spent dispositions in a world
+file, and reseeding or metadata refresh does not restore a spent game copy.
 
 #### `readable` and `inscription`: what is written on a thing
 
@@ -903,6 +953,42 @@ an asymmetric graph the model does not support.
 If the database ever holds only one direction of an edge, `rake game:export`
 says so in its warnings and loading the file writes the missing row.
 
+#### `barrier` and `key_template`: a doorway's initial state
+
+`barrier` is a closed value from `LocationConnection::BARRIERS`: `open` (the
+default), `keyed`, or `jammed`. A keyed doorway must name an item declared in
+this same world with `use_kind: key`:
+
+```yaml
+connections:
+- between: [Workshop, Storeroom]
+  distance: adjacent
+  travel_method: walking
+  barrier: keyed
+  key_template: brass key
+- between: [Storeroom, Loft]
+  distance: adjacent
+  travel_method: taking stairs
+  barrier: jammed
+```
+
+`key_template` is the item's name, resolved by the loader's natural-key rules,
+never a database id or a playthrough copy. The key may be declared under a room
+or a character. Only `keyed` accepts a `key_template`; missing, foreign or
+non-key items are refused. Barriers are authored in seed files; the location
+generator currently writes open passages and does not invent locks or key links.
+
+The loader writes the barrier and key on both directed rows. `/unlock` with
+the matching carried key opens that doorway; `/pick` uses lockpicks and a
+dexterity check. `/pry` with a lever or `/force` with a penalized strength check
+can open a jammed doorway. Opening does not move the player: `/move` is a
+separate turn, and a closed barrier rejects movement.
+
+Opening writes `Playthrough::Passage` receipts for that game in both directions.
+The world's initial barrier stays fixed, other games keep their own locks, and
+opening tools are not consumed. The moving-city mechanic preserves the
+doorway's key, barrier and game openings while changing its endpoints.
+
 ### What is not exported
 
 `Playthrough`s, `last_protagonist_visit`, the `WorldEvent` **log**, a mechanic's
@@ -915,6 +1001,11 @@ is not. `rake game:export` says out loud how many it left behind,
 so nothing is dropped silently — and it warns loudly when a story has *no*
 opening arrival, because the loader refuses such a file rather than producing a
 world that opens on a room description.
+
+Game item copies, including consumed or burned tombstones, and
+`Playthrough::Passage` opening receipts are also progress. Export and fork keep
+the world templates' physical profiles and initial barriers, so a fresh game
+receives intact items and its own closed doors.
 
 Conversation history is on that list **deliberately, not by omission**. A
 `Chat` is what one player said to one character on one playthrough, plus the
@@ -1030,7 +1121,7 @@ shapes**, each with a `safe` repair where the answer is derivable from the file
 | finding | what it means | when it is `safe` |
 | --- | --- | --- |
 | `duplicate_locations` | two rows that are one room to a re-seed | the file declares one of the names and only one row has anybody's history in it — the fold moves the other row's items, cast and doorways over and removes what is left |
-| `duplicate_items` | two rows that are one item | the file names one of them and nothing refers to the others |
+| `duplicate_items` | two rows that are one item | the file names the canonical template, each game has at most one copy across the group, and copy histories and key references can be preserved |
 | `mobile_doorway_re_asserted` | the file's own doorway is back on record after a night had moved it | closing it leaves the mobile room the arity the file gives it and strands nothing |
 
 For a clean rebuild rather than a reconciliation, `rake 'game:delete[<id>]'`

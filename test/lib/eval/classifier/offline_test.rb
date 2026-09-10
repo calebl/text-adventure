@@ -58,10 +58,27 @@ class Eval::Classifier::OfflineTest < ActiveSupport::TestCase
   # A reach that finds nothing is refused correctly by a grammar with no model
   # at all, which is exactly why `rake game:sweep` can assert refusals offline.
   test "the floor refuses a reach that finds nothing, every time" do
-    %w[unresolved-move unresolved-talk unresolved-take unresolved-drop].each do |shape|
+    %w[unresolved-move unresolved-talk unresolved-take unresolved-drop unresolved-use].each do |shape|
       assert_in_delta 1.0, @floor.by_shape.fetch(shape)[:rate], 0.001,
                       "#{shape} is the engine half of the ruling and needs no model"
     end
+  end
+
+  test "physical offers score the complete choice without acting on it" do
+    offers = @floor.readings.select { |reading| reading.shape == "use-offer" }
+
+    assert_equal 3, offers.size
+    assert offers.all?(&:right?), offers.map(&:to_h).inspect
+    assert offers.all? { |reading| reading.got.include?("they may refuse") },
+           "the target includes the recipient and the conditional offer, not only the item"
+  end
+
+  test "an unresolved physical intent counts the refusal the engine would actually return" do
+    reading = @floor.readings.find { |row| row.id == "real-give-him-the-index" }
+
+    assert_equal :refused, reading.outcome
+    assert_equal :use, reading.line.intent
+    assert_match(/did not resolve to an available physical action/, reading.got)
   end
 
   test "it makes no model call, guarded rather than intended" do

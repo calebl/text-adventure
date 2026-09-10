@@ -13,8 +13,8 @@ class EngineSweep::BrowserTurn
   class Agent
     Response = Struct.new(:content)
 
-    def initialize(purpose, calls, replies)
-      @purpose, @calls, @replies = purpose, calls, replies
+    def initialize(purpose, calls, replies, prompt_failures)
+      @purpose, @calls, @replies, @prompt_failures = purpose, calls, replies, prompt_failures
     end
 
     def with_instructions(*) = self
@@ -24,15 +24,27 @@ class EngineSweep::BrowserTurn
     def recorded_chat = nil
     def add_message(**) = nil
 
-    def ask(*)
+    def ask(prompt, verify: nil, **)
       @calls << @purpose
       expected = @replies.shift
       unless expected && @purpose == expected.fetch("purpose")
         raise EngineSweep::ModelCalled, "browser step unexpectedly called #{@purpose.inspect}"
       end
+      # These assertions inspect the generated request delivered at the real
+      # agent boundary. A canned answer alone cannot prove the NPC was informed.
+      # Keep failures until after the turn: narration may legitimately rescue a
+      # provider exception, but it must never hide a broken sweep assertion.
+      Array(expected["prompt_includes"]).each do |text|
+        @prompt_failures << "#{@purpose} prompt omitted #{text.inspect}" unless prompt.include?(text)
+      end
+      Array(expected["prompt_excludes"]).each do |text|
+        @prompt_failures << "#{@purpose} prompt disclosed #{text.inspect}" if prompt.include?(text)
+      end
       raise RenderingUnavailable, "the sweep's provider is unavailable" if expected["unavailable"]
 
-      Response.new(expected.fetch("content"))
+      content = expected.fetch("content")
+      verify.call(content) if verify
+      Response.new(content)
     end
   end
 
@@ -51,12 +63,13 @@ class EngineSweep::BrowserTurn
       Playthrough::Command.accept!(game, queued.fetch("type"), queued.fetch("token"))
     end
     calls = []
+    prompt_failures = []
     replies = step.browser["replies"] || [ step.browser["fail"] ].compact.map do |purpose|
       { "purpose" => purpose, "unavailable" => true }
     end
     expected_calls = replies.map { |reply| reply.fetch("purpose") }
     raised = false
-    outcome = without_provider(calls, replies: replies.dup) do
+    outcome = without_provider(calls, replies: replies.dup, prompt_failures: prompt_failures) do
       interrupt_after(step.browser["interrupt_after"]) do
         Playthrough::Turn.new(game).play(step.typed, request_token: step.browser.fetch("token"))
       end
@@ -74,6 +87,8 @@ class EngineSweep::BrowserTurn
     if (step.browser["raises"] || step.browser["interrupt_after"]) && !raised
       raise EngineSweep::ModelCalled, "browser step expected an unavailable provider to interrupt submission"
     end
+    raise EngineSweep::ModelCalled, prompt_failures.join("; ") if prompt_failures.any?
+
     unless calls == expected_calls
       raise EngineSweep::ModelCalled, "browser step expected #{expected_calls.inspect} rendering calls, got #{calls.inspect}"
     end
@@ -124,10 +139,10 @@ class EngineSweep::BrowserTurn
     Playthrough::Debug.define_singleton_method(:enabled?, original)
   end
 
-  def without_provider(calls, replies:)
+  def without_provider(calls, replies:, prompt_failures:)
     original = BaseAgent.method(:new)
     BaseAgent.singleton_class.send(:define_method, :new) do |*_args, **options|
-      Agent.new(options[:purpose], calls, replies)
+      Agent.new(options[:purpose], calls, replies, prompt_failures)
     end
     yield
   ensure
