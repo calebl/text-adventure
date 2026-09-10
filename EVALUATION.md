@@ -2164,9 +2164,9 @@ uses the engine's record writers and seeded picks, then asks `Scene::Narrator`
 once. This producer instrument deliberately does not run an additional game
 turn: an attack is already a blow, and these cases ask about records awaiting
 prose. The main and ending corpora retain their identities and kept files.
-The stale main request baseline is the separate `ta-bench-rebaseline-stale`
-follow-up. This instrument changes no production prompt, schema, engine or seed
-content.
+The main request baseline was refreshed separately by `ta-bench-rebaseline-stale`;
+these branch cases retain their own measured set. This instrument changes no
+production prompt, schema, engine or seed content.
 
 ```bash
 bin/rails ruby_llm:load_models
