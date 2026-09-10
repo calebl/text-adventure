@@ -82,6 +82,18 @@ module Eval
     lib/eval.rb
     lib/eval/request_identity.rb
     lib/eval/classifier/version.rb
+    doc/evidence/ta-bench-rebaseline-stale/run.rb
+    doc/evidence/ta-bench-rebaseline-stale/price.rb
+    doc/evidence/ta-bench-rebaseline-stale/summarize.py
+    doc/evidence/ta-bench-rebaseline-stale/receipts.json
+    db/eval/prompt-2026-09-10/prompt.json
+    db/eval/prompt-2026-09-10/receipts.json
+    db/eval/classifier-2026-09-10/classifier.json
+    db/eval/classifier-2026-09-10/receipts.json
+    db/eval/classifier-2026-09-10/offline.json
+    db/eval/prompt-ending-2026-09-10/prompt.json
+    db/eval/prompt-ending-2026-09-10/receipts.json
+    lib/eval/prompt/ending_version.rb
     lib/eval/prompt/request_version.rb
     lib/eval/realization/request_version.rb
     lib/eval/board.rb

@@ -125,7 +125,8 @@ class Eval::Prompt::Bench
   # nobody reads.
   Reading = Data.define(:kase, :arm, :rep, :story, :pass, :text, :facts, :seconds,
                         :input_tokens, :output_tokens, :calls, :answered_by,
-                        :instructions, :prompt, :missing_fields, :cap_hits, :error) do
+                        :instructions, :prompt, :missing_fields, :cap_hits, :error, :ending_request) do
+    def initialize(ending_request: nil, **attributes) = super
     def id = kase.id
     def shape = kase.shape
     def act = kase.act
@@ -169,7 +170,7 @@ class Eval::Prompt::Bench
         typed: kase.typed, target: kase.target, pass:, text:, facts:,
         seconds: seconds&.round(4), input_tokens:, output_tokens:, calls:,
         answered_by:, instructions_digest: Playthrough::PromptVersion.of(instructions),
-        prompt:, missing_fields:, cap_hits:, error: }
+        prompt:, missing_fields:, cap_hits:, error:, ending_request: }
     end
   end
 
@@ -219,9 +220,11 @@ class Eval::Prompt::Bench
       end
     end
 
+    ending = corpus.cases.all?(&:ending?) ? Eval::Prompt::EndingVersion.of(passes, corpus) : {}
     Eval::Prompt::Result.new(
       corpus_size: corpus.size, corpus_digest: Eval::Prompt.digest(corpus),
-      request_identity: request_identity,
+      request_identity: ending.fetch(:request_identity, request_identity),
+      ending_requests: ending[:ending_requests],
       arms: arms.map(&:id), reps: reps, passes: passes.map(&:stored), warmups: warmups,
       **Eval::Prompt::Version.of(passes)
     )
@@ -282,7 +285,11 @@ class Eval::Prompt::Bench
 
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     begin
-      scene = turn.play(kase.typed)
+      scene, ending_request = if kase.ending?
+        Eval::Prompt::EndingVersion.capture { turn.play(kase.typed) }
+      else
+        [ turn.play(kase.typed), nil ]
+      end
       # Recovery now completes engine effects despite an unavailable renderer.
       # Adapt that receipt to the existing failed-call row; engine-authored
       # fallback words must never become model prose or change refusal counts.
@@ -313,7 +320,7 @@ class Eval::Prompt::Bench
         seconds: elapsed, input_tokens: receipts[:input_tokens], output_tokens: receipts[:output_tokens],
         calls: receipts[:calls], answered_by: receipts[:answered_by],
         instructions: receipts[:instructions], prompt: receipts[:prompt],
-        missing_fields: receipts[:missing_fields], cap_hits: receipts[:cap_hits], error: nil
+        missing_fields: receipts[:missing_fields], cap_hits: receipts[:cap_hits], error: nil, ending_request: ending_request
       )
     rescue StandardError => error
       # A FAILED CALL HAS NO LATENCY, deliberately: how long it took to fail is

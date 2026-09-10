@@ -1,0 +1,74 @@
+{
+  "prompt-2026-09-05": {
+    "file": "db/eval/prompt-2026-09-05/prompt.json",
+    "sha256": "04e7f6bb7bd1d7f96817586977ea944b75b6043da24109cb1dfea0d71740d07e",
+    "corpus_digest": "dfd1756a8f1f91b8",
+    "prompt_digest": "0ffc0228b538ac73",
+    "instructions_digest": "be4e1bf387f97e80",
+    "request_identity": null,
+    "prompt_stable": true
+  },
+  "classifier-remote": {
+    "file": "db/eval/classifier-remote/classifier.json",
+    "sha256": "8fa1cbcf49fbf08cdab1686a1c7ce007ecc102fc62cde4d6bb98e6cf31427f89",
+    "corpus_digest": "33591b8ff9b42d87",
+    "prompt_digest": null,
+    "instructions_digest": null,
+    "request_identity": null,
+    "prompt_stable": null
+  },
+  "classifier-mistral-small": {
+    "file": "db/eval/classifier-mistral-small/classifier.json",
+    "sha256": "6bc5935f24375ae60d7e804c3316e9c18d6db4450fa5d900bdb58b5fd17ec9c9",
+    "corpus_digest": "33591b8ff9b42d87",
+    "prompt_digest": null,
+    "instructions_digest": null,
+    "request_identity": null,
+    "prompt_stable": null
+  },
+  "classifier-gemini-flash-lite": {
+    "file": "db/eval/classifier-gemini-flash-lite/classifier.json",
+    "sha256": "e0e30d5770d7b09a85fc98f0b5bd9f6786185ae472dac93fc7a65e08ba715c5b",
+    "corpus_digest": "33591b8ff9b42d87",
+    "prompt_digest": null,
+    "instructions_digest": null,
+    "request_identity": null,
+    "prompt_stable": null
+  },
+  "prompt-ending-after-2026-09-08": {
+    "file": "db/eval/prompt-ending-after-2026-09-08/prompt.json",
+    "sha256": "e09b8985e83d1dacc5820088e57156f20fcf48449ec9f142112e8171f00d9f6b",
+    "corpus_digest": "5dbf941afd799482",
+    "prompt_digest": "d6cd44e8eaaefa48",
+    "instructions_digest": "3c6036d8f8aa572a",
+    "request_identity": null,
+    "prompt_stable": false
+  },
+  "prompt-ending-before-2026-09-08": {
+    "file": "db/eval/prompt-ending-before-2026-09-08/prompt.json",
+    "sha256": "609f5612e5ed32592e3b127b7b39bffde23eeb9883a7c594a674d369c56b081d",
+    "corpus_digest": "5dbf941afd799482",
+    "prompt_digest": "6d35949466333c25",
+    "instructions_digest": "be4e1bf387f97e80",
+    "request_identity": null,
+    "prompt_stable": true
+  },
+  "prompt-ending-after-2026-09-08-2": {
+    "file": "db/eval/prompt-ending-after-2026-09-08-2/prompt.json",
+    "sha256": "2881c9f1f3842f2ec3dd66adf26f01bf671fd42a2127851b1a60ece5ac8d5bd9",
+    "corpus_digest": "5dbf941afd799482",
+    "prompt_digest": "f6c3aab0415369b9",
+    "instructions_digest": "3c6036d8f8aa572a",
+    "request_identity": null,
+    "prompt_stable": false
+  },
+  "prompt-ending-before-2026-09-08-2": {
+    "file": "db/eval/prompt-ending-before-2026-09-08-2/prompt.json",
+    "sha256": "d1ed90bf776d54c0dc22a428a8329815a9d0b376595d66d490b77d4f6f1ce224",
+    "corpus_digest": "5dbf941afd799482",
+    "prompt_digest": "6d35949466333c25",
+    "instructions_digest": "be4e1bf387f97e80",
+    "request_identity": null,
+    "prompt_stable": true
+  }
+}

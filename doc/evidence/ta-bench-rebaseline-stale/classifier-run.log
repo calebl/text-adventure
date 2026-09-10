@@ -1,0 +1,209 @@
+ESTIMATE: 1356 calls (339 lines x 4 reps x 1 model), about $0.256. Measured at 372 in / 20 out a call.
+Replaying 339 lines on mistralai/mistral-medium-3.1, 2 calls in flight (CONCURRENCY=).
+
+  mistralai/mistral-medium-3.1 first call 1.0s (excluded from the figures below)
+  mistralai/mistral-medium-3.1 rep 1 321/339 right (0.947), 13 misses, 0.66s median / 1.18s p95
+  mistralai/mistral-medium-3.1 rep 2 319/339 right (0.941), 15 misses, 0.61s median / 0.99s p95
+  mistralai/mistral-medium-3.1 rep 3 323/339 right (0.953), 12 misses, 0.62s median / 1.00s p95
+  mistralai/mistral-medium-3.1 rep 4 319/339 right (0.941), 14 misses, 0.60s median / 0.99s p95
+
+Wrote /home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/db/eval/classifier-2026-09-10/classifier.json.
+
+schema request: v1:022ef660ddd8547a
+------------------------------------------------------------------------------
+THE CLASSIFIER BENCH -- 339 labelled lines, 4 repetitions, 1 model
+Every rate is min..max over the repetitions with the median in the middle. A
+difference smaller than that band is not a difference -- see EVALUATION.md.
+THE LATENCIES ARE WARM-CACHE FIGURES: every arm's first call is timed separately
+and excluded, because on a local model it is mostly the model being loaded.
+AND THEY ARE AT 2 CALLS IN FLIGHT: past about eight the provider queues and a
+latency becomes queueing time. The other figures are unaffected -- EVALUATION.md.
+------------------------------------------------------------------------------
+
+MODEL  mistralai/mistral-medium-3.1   (4 reps, 1356 readings)
+
+  strict_accuracy      0.936..0.947 (median 0.942)   the whole answer right, over unarguable lines
+  accuracy             0.941..0.953 (median 0.944)   the whole answer right, over every line
+  intent_accuracy      0.982..0.988 (median 0.985)   the intent right, whatever it landed on
+  refusal_agreement    0.951..0.958 (median 0.952)   the refusal the line earns, over unarguable lines
+  closed_set_misses     12..15  (median 13.5)   right intent, wrong record (a count, not a rate)
+  latency_median         0.60s..0.66  s (median   0.61s)   seconds the median call took (CLOCK_MONOTONIC)
+  latency_p95            0.99s..1.18  s (median   1.00s)   seconds the worst call in twenty took
+  failures               0..0   (median 0)   calls that failed outright (a count; the arm has no rotation)
+  cost                 $0.2560 over 1356 calls
+  first call           1.04s   EXCLUDED from the figures above, so an outlier shows as one
+  answered             1356 of 1356   every call answered
+
+  ACCURACY PER INTENT -- of the lines labelled with each, how many came back whole
+    move      272/272  whole 1.000    branch right 1.000
+    talk      290/312  whole 0.929    branch right 0.981
+    examine   170/180  whole 0.944    branch right 0.978
+    take      194/224  whole 0.866    branch right 0.991
+    drop      128/132  whole 0.970    branch right 1.000
+    attack     96/100  whole 0.960    branch right 0.960
+    other     132/136  whole 0.971    branch right 0.971
+
+  BY SHAPE -- what the line is in the corpus for
+    articles-and-pronouns   91/108  0.843
+    attack                  60/64   0.938
+    drop                    72/72   1.000
+    examine                 67/68   0.985
+    examine-nothing         75/80   0.938
+    move                   168/168  1.000
+    other                  132/136  0.971
+    take                    88/92   0.957
+    talk                   209/216  0.968
+    two-names-one-set      112/128  0.875
+    two-sets                36/36   1.000
+    unresolved-attack       24/24   1.000
+    unresolved-drop         28/32   0.875
+    unresolved-move         56/56   1.000
+    unresolved-take         30/36   0.833
+    unresolved-talk         34/40   0.850
+
+  also_named -- the field the ruling of 2026-09-04 hangs on (PR 102 finding F4)
+    positives in the corpus  128 of 1356 readings
+    precision                0.991   (110 right of 111 answered)
+    recall                   0.859   (110 found of 128 there)
+    omission rate            0.000   (0 of 1356 answers came back with the required field absent or null)
+
+  REFUSAL KIND -- what the engine would say, out of Playthrough::Refusal
+    agreement                0.953   (over the 1132 unarguable readings)
+    none                     799/828  0.965
+    named_more_than_one      112/120  0.933
+    unresolved               168/184  0.913
+
+  MISSED -- 22 distinct lines, 74 readings (first 20)
+    grammar-mine                     CLOSED-SET MISS x4
+      typed:    "pick up mine"
+      expected: take -> ward stamp
+      got:      take -> nothing
+    grammar-misspelling              CLOSED-SET MISS x4
+      typed:    "talk to Halket Row"
+      expected: talk -> Halkett Rowe
+      got:      talk -> nothing
+    grammar-plural                   CLOSED-SET MISS x4
+      typed:    "take the aprons"
+      expected: take -> copy-room apron
+      got:      take -> nothing
+    grammar-that-one                 CLOSED-SET MISS x4
+      typed:    "take that one on the lowest shelf"
+      expected: take -> Perrin's private index
+      got:      take -> nothing
+    real-give-him-the-index          CLOSED-SET MISS x4
+      typed:    "give him the index"
+      expected: drop -> nothing
+      got:      drop -> Ward Office 12 daybook
+    real-laugh-at-joke               CLOSED-SET MISS x4
+      typed:    "laugh at the joke you made"
+      expected: talk -> Grenn Ollivar
+      got:      talk -> nothing
+    take-apron-folded                CLOSED-SET MISS x4
+      typed:    "take the folded thing behind the blank forms"
+      expected: take -> copy-room apron
+      got:      take -> nothing
+    two-names-examine-closet-fragments CLOSED-SET MISS x4
+      typed:    "compare the index against my daybook"
+      expected: examine -> Perrin's private index (and Ward Office 12 daybook)
+      got:      examine -> Perrin's private index
+    two-names-take-all               CLOSED-SET MISS x4
+      typed:    "take all of it"
+      expected: take -> ward stamp (and Ward Office 12 daybook)
+      got:      take -> Ward Office 12 daybook (and filing press)
+    two-names-take-the-lot           CLOSED-SET MISS x4
+      typed:    "take the lot"
+      expected: take -> ward stamp (and Ward Office 12 daybook)
+      got:      take -> Ward Office 12 daybook (and filing press)
+    two-names-talk-perrin            CLOSED-SET MISS x4
+      typed:    "Perrin, tell Rowe what you found in the amendments"
+      expected: talk -> Perrin Lasco (and Halkett Rowe)
+      got:      talk -> Perrin Lasco
+    unresolved-take-blank-writ       CLOSED-SET MISS x4
+      typed:    "take a blank writ out of the press"
+      expected: take -> nothing
+      got:      take -> filing press
+    talk-rowe-say-nothing            CLOSED-SET MISS x3
+      typed:    "say nothing and wait for him to speak first"
+      expected: talk -> Halkett Rowe | other -> nothing
+      got:      talk -> nothing
+    examine-stamp-ink                CLOSED-SET MISS x1
+      typed:    "look at how wet the ink still is on the pad"
+      expected: examine -> ward stamp
+      got:      examine -> nothing
+    grammar-her-talk                 CLOSED-SET MISS x1
+      typed:    "speak to her"
+      expected: talk -> Neb Halloran
+      got:      talk -> nothing
+    real-what-is-on-my-desk          CLOSED-SET MISS x1
+      typed:    "what is on my desk?"
+      expected: examine -> nothing | other -> nothing
+      got:      examine -> filing press (and ward stamp)
+    attack-neb-court-both            wrong branch   x4
+      typed:    "go for Neb"
+      expected: attack -> Neb Halloran
+      got:      move -> nothing
+    grammar-double-negative          wrong branch   x4
+      typed:    "do not take the stamp"
+      expected: other -> nothing
+      got:      take -> ward stamp
+    script-lc-t19                    wrong branch   x4
+      typed:    "look up at the Celestial Spire from the lane and take its bearing"
+      expected: examine -> nothing | move -> nothing
+      got:      other -> nothing
+    unresolved-talk-landlord         wrong branch   x4
+      typed:    "ask my landlord for another week"
+      expected: talk -> nothing
+      got:      other -> nothing
+
+------------------------------------------------------------------------------
+CONFUSION -- rows are the labelled intent, columns what came back. Every arm and
+repetition pooled, because this is a shape and not a rate.
+
+                 move    talk examine    take    drop  attack   other
+    move          266       .       2       4       .       .       .
+    talk            .     294       4       .       .       .      14
+    examine         .       .     164       .       .       .      16
+    take            .       .       4     218       .       .       2
+    drop            .       .       .       .     132       .       .
+    attack          4       .       .       .       .      96       .
+    other           .       4       9       4       .       .     119
+
+------------------------------------------------------------------------------
+THE OFFLINE FLOOR -- the same 339 lines through the fixed grammar
+(`Playthrough::Mechanics` with `model: false`), no model, no key, no spend. This is
+what a classifier call is bought against, and it is free.
+
+  right                    0.413
+    resolved          69   the grammar produced an answer the label accepts
+    refused           71   the grammar refused, and the label says the line earns a refusal
+    wrong              8   the grammar produced an answer the label does not accept -- silently
+    over_refused     178   the grammar refused a line the label says should have played
+    unparsed          13   no verb it knows and no exit by that name, so the whole grammar is printed
+
+  `refused` is GENEROUS to the grammar: it counts a refusal on a line the label
+  says earns one, and the grammar has no refusal KINDS to check -- its refusals are
+  strings it composes, not `Playthrough::Refusal` objects. So the floor can say
+  whether a line was refused and never which kind. It has no `also_named` at all.
+
+  BY SHAPE
+    articles-and-pronouns   11/27   0.407
+    attack                   6/16   0.375
+    drop                     4/18   0.222
+    examine                  5/17   0.294
+    examine-nothing          0/20   0.000
+    move                    22/42   0.524
+    other                    0/34   0.000
+    take                    13/23   0.565
+    talk                     7/54   0.130
+    two-names-one-set       23/32   0.719
+    two-sets                 2/9    0.222
+    unresolved-attack        6/6    1.000
+    unresolved-drop          8/8    1.000
+    unresolved-move         14/14   1.000
+    unresolved-take          9/9    1.000
+    unresolved-talk         10/10   1.000
+
+------------------------------------------------------------------------------
+Judge a prompt change against this with `rake eval:classifier_compare BEFORE= AFTER=`.
+Four repetitions a side is the arithmetic floor for a verdict -- Eval::Noise::MIN_RUNS.
+------------------------------------------------------------------------------

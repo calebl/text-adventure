@@ -229,7 +229,7 @@ namespace :eval do
 
   desc "Classifier corpus and schema request identities -- offline, no model call"
   task classifier_digest: :environment do
-    puts JSON.pretty_generate(corpus_digest: Eval::Classifier.digest, request_identity: Eval::Classifier::Version.offline)
+    puts JSON.pretty_generate(Eval::Classifier::Version.offline_details.merge(corpus_digest: Eval::Classifier.digest))
   end
 
   desc "Realization message and schema request identities -- offline, no model call. SET=<name>"

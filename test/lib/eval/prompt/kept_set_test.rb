@@ -12,7 +12,7 @@ require "test_helper"
 # never paid for a call. The one exception is the cost row, which reads the
 # `models` registry and degrades to `unpriced` rather than failing.
 class Eval::Prompt::KeptSetTest < ActiveSupport::TestCase
-  BASELINE = "prompt-2026-09-05".freeze
+  BASELINE = "prompt-2026-09-10".freeze
 
   ARM = "mistralai/mistral-medium-3.1".freeze
 
@@ -22,9 +22,9 @@ class Eval::Prompt::KeptSetTest < ActiveSupport::TestCase
     assert_equal BASELINE, result.name
     assert_equal [ ARM ], result.arms, "a set that does not say which model produced it is not a set"
     assert_equal [ ARM ], result.answered_by, "answered_by is the check on arms, and the pinning has to have held"
-    assert_equal 4, result.reps, "four is Eval::Noise::MIN_RUNS -- fewer cannot be given a verdict"
+    assert_equal Eval::Noise::MIN_RUNS, result.reps, "four is Eval::Noise::MIN_RUNS -- fewer cannot be given a verdict"
     assert_equal Eval::Prompt.corpus.size, result.corpus_size
-    assert_match(/\A2026-09-0/, result.recorded_at.to_s, "the date belongs in the file, not the filename")
+    assert_match(/\A2026-09-/, result.recorded_at.to_s, "the date belongs in the file, not the filename")
     assert result.prompt_stable, "one case sending two prompts would make every figure in it suspect"
   end
 
@@ -46,19 +46,23 @@ class Eval::Prompt::KeptSetTest < ActiveSupport::TestCase
                  "the narrator's instructions moved since the baseline was taken, so this is a baseline " \
                  "for a prompt the app no longer sends -- re-run it"
     assert_predicate result.instruction_passes["arrival"], :present?
-    assert_predicate result.prompt_digest, :present?
+    current = Eval::Prompt::RequestVersion.offline
+    assert_equal current[:prompt_digest], result.prompt_digest
+    assert_equal current[:instructions_digest], result.instructions_digest
+    assert_equal current[:request_identity], result.request_identity
   end
 
   # THE DEFECT THIS BENCH WAS BUILT FOR, on the record. `ta-take-drop-narration`
   # is judged against exactly this number, so a change to it that is not a
   # deliberate re-baseline is a failing test.
   test "the baseline reproduces the take/drop defect the bench was built for" do
-    spread = kept.spread(:take_denied, arm: ARM)
+    historical = Eval::Prompt::Result.load(Eval.kept_root.join("prompt-2026-09-05"))
+    spread = historical.spread(:take_denied, arm: ARM)
 
     assert_operator spread.median, :>, 0.5,
                     "the narration denied the pickup on most takes -- that is what this baseline is for"
-    assert_equal 18, kept.passes.first.judgeable["take_denied"], "18 take cases, and every one judgeable"
-    assert_equal 18, kept.passes.first.judgeable["pickup_invented"]
+    assert_equal 18, historical.passes.first.judgeable["take_denied"], "18 take cases, and every one judgeable"
+    assert_equal 18, historical.passes.first.judgeable["pickup_invented"]
   end
 
   # A KEPT SET IS A SUMMARY: the rows are dropped so it can live in the repo,

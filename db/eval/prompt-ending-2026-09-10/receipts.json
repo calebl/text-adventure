@@ -1,0 +1,22 @@
+{
+  "source": "doc/evidence/ta-bench-rebaseline-stale/receipts.json",
+  "transport_retries": 0,
+  "calls_including_warmup_and_preludes": 42,
+  "settled": 42,
+  "unknown_or_reserved": 0,
+  "registry_priced_usd": 0.02191736,
+  "registry_usage_upper_usd": 0.0227468,
+  "provider_reported_usd": 0.0030016,
+  "provider_cost_available_calls": 4,
+  "accounted_usd": 0.0227468,
+  "actual_models": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "tokens": {
+    "input_tokens": 35683,
+    "output_tokens": 3776,
+    "cached_tokens": 2304,
+    "cache_creation_tokens": 0,
+    "thinking_tokens": 0
+  }
+}

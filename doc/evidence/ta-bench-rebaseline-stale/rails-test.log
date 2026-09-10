@@ -1,0 +1,74 @@
+Running 4331 tests in parallel using 2 processes
+Run options: --seed 46055
+
+# Running:
+
+......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................../home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:289: warning: already initialized constant RealizationTasks::SPEND_CEILING
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:289: warning: previous definition of SPEND_CEILING was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:443: warning: already initialized constant PromptTasks::SPEND_CEILING
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:443: warning: previous definition of SPEND_CEILING was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:542: warning: already initialized constant ClassifierTasks::SPEND_CEILING
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:542: warning: previous definition of SPEND_CEILING was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:662: warning: already initialized constant EvalTasks::DEFAULT_REPS
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:662: warning: previous definition of DEFAULT_REPS was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:663: warning: already initialized constant EvalTasks::SPEND_CEILING
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:663: warning: previous definition of SPEND_CEILING was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:674: warning: already initialized constant EvalTasks::RUN_TIMEOUT
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:674: warning: previous definition of RUN_TIMEOUT was here
+./home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:714: warning: already initialized constant Helpers::MECHANICS_QUIT
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:714: warning: previous definition of MECHANICS_QUIT was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:776: warning: already initialized constant Helpers::REMEDY_LABELS
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:776: warning: previous definition of REMEDY_LABELS was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:845: warning: already initialized constant Helpers::SCORE_MARKS
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:845: warning: previous definition of SCORE_MARKS was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/lab.rake:99: warning: already initialized constant LabTasks::SPEND_CEILING
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/lab.rake:99: warning: previous definition of SPEND_CEILING was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/lab.rake:107: warning: already initialized constant LabTasks::CONFIRMATION
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/lab.rake:107: warning: previous definition of CONFIRMATION was here
+...........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................This spends money, so it wants YES=1 as well. Re-run with YES=1.
+.  The Quay House has no place called "Nowhere At All"
+.There is no vantage "999999". `rake lab:exits:vantages` lists the ones there are.
+.VANTAGE=<id> is the vantage to promote. `rake lab:exits:vantages` lists them, and the lab at /lab/exits is where one is typed.
+.../home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:289: warning: already initialized constant RealizationTasks::SPEND_CEILING
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:289: warning: previous definition of SPEND_CEILING was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:443: warning: already initialized constant PromptTasks::SPEND_CEILING
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:443: warning: previous definition of SPEND_CEILING was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:542: warning: already initialized constant ClassifierTasks::SPEND_CEILING
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:542: warning: previous definition of SPEND_CEILING was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:662: warning: already initialized constant EvalTasks::DEFAULT_REPS
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:662: warning: previous definition of DEFAULT_REPS was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:663: warning: already initialized constant EvalTasks::SPEND_CEILING
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:663: warning: previous definition of SPEND_CEILING was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:674: warning: already initialized constant EvalTasks::RUN_TIMEOUT
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/eval.rake:674: warning: previous definition of RUN_TIMEOUT was here
+That is over the $0.25 this task will spend at all. Lower N.
+./home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:714: warning: already initialized constant Helpers::MECHANICS_QUIT
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:714: warning: previous definition of MECHANICS_QUIT was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:776: warning: already initialized constant Helpers::REMEDY_LABELS
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:776: warning: previous definition of REMEDY_LABELS was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:845: warning: already initialized constant Helpers::SCORE_MARKS
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/game.rake:845: warning: previous definition of SCORE_MARKS was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/lab.rake:99: warning: already initialized constant LabTasks::SPEND_CEILING
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/lab.rake:99: warning: previous definition of SPEND_CEILING was here
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/lab.rake:107: warning: already initialized constant LabTasks::CONFIRMATION
+/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/lib/tasks/lab.rake:107: warning: previous definition of CONFIRMATION was here
+Test is missing assertions: `test_an_ordinary_look_at_a_kind_is_well_inside_the_ceiling` /home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/test/lib/tasks/lab_tasks_test.rb:103
+.This spends money, so it wants YES=1 as well. Re-run with YES=1.
+..The lab must not draw in the test environment.
+.VANTAGE=<id> is the vantage to draw. `rake lab:exits:vantages` lists them, and the lab at /lab/exits is where one is typed.
+.There is no kind "999999". `rake lab:realization:kinds` lists the ones there are.
+..That is over the $0.25 this task will spend at all. Lower N.
+.KIND=<id> is the kind to draw. `rake lab:realization:kinds` lists them, and the lab at /lab/kinds is where one is typed.
+...This spends money, so it wants YES=1 as well. Re-run with YES=1.
+.Test is missing assertions: `test_an_ordinary_look_at_a_vantage_is_well_inside_the_ceiling` /home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/test/lib/tasks/lab_tasks_test.rb:220
+.The lab must not draw in the test environment.
+..N=<count> is how many draws. 30 is what Lab::Realization::MIN_DRAWS calls established.
+.N="0" is not a count. It wants a whole number above zero.
+N="-2" is not a count. It wants a whole number above zero.
+N="some" is not a count. It wants a whole number above zero.
+..  The Quay House has no place called "Nowhere At All"
+.N=<count> is how many draws. 30 is what Lab::Realization::MIN_DRAWS calls established.
+.............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+
+Finished in 107.840641s, 40.1611 runs/s, 233.9563 assertions/s.
+4331 runs, 25230 assertions, 0 failures, 0 errors, 0 skips

@@ -1,0 +1,3545 @@
+{
+  "corpus_digest": "2155073129d29086",
+  "floor": {
+    "size": 339,
+    "accuracy": 0.413,
+    "outcomes": {
+      "resolved": 69,
+      "refused": 71,
+      "wrong": 8,
+      "over_refused": 178,
+      "unparsed": 13
+    },
+    "by_shape": {
+      "move": {
+        "size": 42,
+        "right": 22,
+        "rate": 0.5238095238095238
+      },
+      "talk": {
+        "size": 54,
+        "right": 7,
+        "rate": 0.12962962962962962
+      },
+      "take": {
+        "size": 23,
+        "right": 13,
+        "rate": 0.5652173913043478
+      },
+      "drop": {
+        "size": 18,
+        "right": 4,
+        "rate": 0.2222222222222222
+      },
+      "examine": {
+        "size": 17,
+        "right": 5,
+        "rate": 0.29411764705882354
+      },
+      "examine-nothing": {
+        "size": 20,
+        "right": 0,
+        "rate": 0.0
+      },
+      "other": {
+        "size": 34,
+        "right": 0,
+        "rate": 0.0
+      },
+      "unresolved-move": {
+        "size": 14,
+        "right": 14,
+        "rate": 1.0
+      },
+      "unresolved-talk": {
+        "size": 10,
+        "right": 10,
+        "rate": 1.0
+      },
+      "unresolved-take": {
+        "size": 9,
+        "right": 9,
+        "rate": 1.0
+      },
+      "unresolved-drop": {
+        "size": 8,
+        "right": 8,
+        "rate": 1.0
+      },
+      "two-names-one-set": {
+        "size": 32,
+        "right": 23,
+        "rate": 0.71875
+      },
+      "two-sets": {
+        "size": 9,
+        "right": 2,
+        "rate": 0.2222222222222222
+      },
+      "articles-and-pronouns": {
+        "size": 27,
+        "right": 11,
+        "rate": 0.4074074074074074
+      },
+      "attack": {
+        "size": 16,
+        "right": 6,
+        "rate": 0.375
+      },
+      "unresolved-attack": {
+        "size": 6,
+        "right": 6,
+        "rate": 1.0
+      }
+    },
+    "readings": [
+      {
+        "id": "move-hallway-plain",
+        "shape": "move",
+        "typed": "go to The Long Hallway",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Long Hallway"
+        ],
+        "got": "move -> The Long Hallway"
+      },
+      {
+        "id": "move-hallway-script",
+        "shape": "move",
+        "typed": "go out into the long hallway",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Long Hallway"
+        ],
+        "got": "move -> The Long Hallway"
+      },
+      {
+        "id": "move-hallway-door",
+        "shape": "move",
+        "typed": "step through the door into the hallway",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> The Long Hallway"
+        ],
+        "got": "I do not understand \"step\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "move-hallway-fragment",
+        "shape": "move",
+        "typed": "hallway",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Long Hallway"
+        ],
+        "got": "move -> The Long Hallway"
+      },
+      {
+        "id": "move-hallway-follow",
+        "shape": "move",
+        "typed": "follow the sound of the closing doors down the hallway",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> The Long Hallway"
+        ],
+        "got": "I do not understand \"follow\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "move-closet-script",
+        "shape": "move",
+        "typed": "open the narrow door and step into the supply closet",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Supply Closet"
+        ],
+        "got": "move -> The Supply Closet"
+      },
+      {
+        "id": "move-closet-plain",
+        "shape": "move",
+        "typed": "go into the supply closet",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Supply Closet"
+        ],
+        "got": "move -> The Supply Closet"
+      },
+      {
+        "id": "move-closet-behind-me",
+        "shape": "move",
+        "typed": "turn around and open the closet at my back",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> The Supply Closet"
+        ],
+        "got": "I do not understand \"turn\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "move-closet-audit",
+        "shape": "move",
+        "typed": "I am going to inventory that closet myself",
+        "outcome": "unparsed",
+        "expected": [
+          "move -> The Supply Closet",
+          "other -> nothing"
+        ],
+        "got": null
+      },
+      {
+        "id": "move-back-to-office",
+        "shape": "move",
+        "typed": "step back out into Ward Office 12",
+        "outcome": "resolved",
+        "expected": [
+          "move -> Ward Office 12"
+        ],
+        "got": "move -> Ward Office 12"
+      },
+      {
+        "id": "move-back-plain",
+        "shape": "move",
+        "typed": "go back to the office",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Ward Office 12"
+        ],
+        "got": "there is no way out called \"back to the office\". There is: Ward Office 12"
+      },
+      {
+        "id": "move-back-out",
+        "shape": "move",
+        "typed": "out",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Ward Office 12"
+        ],
+        "got": "I do not understand \"out\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "move-back-script-2",
+        "shape": "move",
+        "typed": "walk back into Ward Office 12",
+        "outcome": "resolved",
+        "expected": [
+          "move -> Ward Office 12"
+        ],
+        "got": "move -> Ward Office 12"
+      },
+      {
+        "id": "move-back-shut",
+        "shape": "move",
+        "typed": "pull the door shut behind me and go back to my desk",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Ward Office 12"
+        ],
+        "got": "I do not understand \"pull\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "move-tide-post",
+        "shape": "move",
+        "typed": "go to The Tide Post",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Tide Post"
+        ],
+        "got": "move -> The Tide Post"
+      },
+      {
+        "id": "move-tide-post-along",
+        "shape": "move",
+        "typed": "walk along the causeway to the tide post",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Tide Post"
+        ],
+        "got": "move -> The Tide Post"
+      },
+      {
+        "id": "move-vestry-stub",
+        "shape": "move",
+        "typed": "go aboard the Vestry Hulk",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Vestry Hulk"
+        ],
+        "got": "move -> The Vestry Hulk"
+      },
+      {
+        "id": "move-vestry-fragment",
+        "shape": "move",
+        "typed": "the hulk",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Vestry Hulk"
+        ],
+        "got": "move -> The Vestry Hulk"
+      },
+      {
+        "id": "move-court-back",
+        "shape": "move",
+        "typed": "back to the Causeway Court",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Causeway Court"
+        ],
+        "got": "move -> The Causeway Court"
+      },
+      {
+        "id": "move-court-court",
+        "shape": "move",
+        "typed": "return to court before the tide turns",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> The Causeway Court"
+        ],
+        "got": "I do not understand \"return\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "move-lane",
+        "shape": "move",
+        "typed": "go out to Mournwell Lane",
+        "outcome": "resolved",
+        "expected": [
+          "move -> Mournwell Lane"
+        ],
+        "got": "move -> Mournwell Lane"
+      },
+      {
+        "id": "move-lane-climb",
+        "shape": "move",
+        "typed": "climb out of the window down into the lane",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Mournwell Lane"
+        ],
+        "got": "I do not understand \"climb\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "move-hallway-lc",
+        "shape": "move",
+        "typed": "go into the hallway",
+        "outcome": "resolved",
+        "expected": [
+          "move -> Grenn's Boarding House hallway"
+        ],
+        "got": "move -> Grenn's Boarding House hallway"
+      },
+      {
+        "id": "move-rooftops",
+        "shape": "move",
+        "typed": "get up onto the Larkspur Quarter rooftops",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Larkspur Quarter rooftops"
+        ],
+        "got": "there is no thing lying here called \"up onto the Larkspur Quarter rooftops\". There is: nothing"
+      },
+      {
+        "id": "move-rooftops-fragment",
+        "shape": "move",
+        "typed": "up onto the roofs",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Larkspur Quarter rooftops"
+        ],
+        "got": "I do not understand \"up\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "move-third-stair",
+        "shape": "move",
+        "typed": "down the stairs, past the third one from the bottom that creaks",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Grenn's Boarding House hallway",
+          "move -> Mournwell Lane"
+        ],
+        "got": "I do not understand \"down\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-rowe-fullname",
+        "shape": "talk",
+        "typed": "talk to Halkett Rowe",
+        "outcome": "resolved",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "talk -> Halkett Rowe"
+      },
+      {
+        "id": "talk-rowe-nickname",
+        "shape": "talk",
+        "typed": "talk to Sub-Inspector Rowe",
+        "outcome": "resolved",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "talk -> Halkett Rowe"
+      },
+      {
+        "id": "talk-rowe-surname",
+        "shape": "talk",
+        "typed": "Rowe, what happened to the desk across from mine?",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"Rowe,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-rowe-early",
+        "shape": "talk",
+        "typed": "Sub-Inspector Rowe, you are forty minutes early.",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"Sub-Inspector\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-rowe-demand",
+        "shape": "talk",
+        "typed": "Rowe, I want the supporting file for the boundary amendment. Hand it over and I will read it out to you, line by line.",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"Rowe,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-rowe-lie",
+        "shape": "talk",
+        "typed": "Tell me plainly, Rowe. Did you read Perrin Lasco's file before you signed it?",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"Tell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-rowe-ask",
+        "shape": "talk",
+        "typed": "ask him about the hour missing out of my daybook",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "there is no person here called \"him about the hour missing out of my daybook\". There is: Halkett Rowe"
+      },
+      {
+        "id": "talk-rowe-greet",
+        "shape": "talk",
+        "typed": "good evening, sub-inspector",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"good\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-rowe-say-nothing",
+        "shape": "talk",
+        "typed": "say nothing and wait for him to speak first",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe",
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"say\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-brace-fullname",
+        "shape": "talk",
+        "typed": "talk to Ammon Brace",
+        "outcome": "resolved",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "talk -> Ammon Brace"
+      },
+      {
+        "id": "talk-brace-nickname",
+        "shape": "talk",
+        "typed": "talk to Justicar Brace",
+        "outcome": "resolved",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "talk -> Ammon Brace"
+      },
+      {
+        "id": "talk-brace-address",
+        "shape": "talk",
+        "typed": "Justicar, the tide-slate does not agree with the court record.",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "I do not understand \"Justicar,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-brace-plea",
+        "shape": "talk",
+        "typed": "ask Brace to stand the hearing down until the water drops",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "there is no person here called \"Brace to stand the hearing down until the water drops\". There is: Ammon Brace"
+      },
+      {
+        "id": "talk-neb-nickname",
+        "shape": "talk",
+        "typed": "talk to Neb",
+        "outcome": "resolved",
+        "expected": [
+          "talk -> Neb Halloran"
+        ],
+        "got": "talk -> Neb Halloran"
+      },
+      {
+        "id": "talk-neb-fullname",
+        "shape": "talk",
+        "typed": "ask Neb Halloran who moved the chain on the post",
+        "outcome": "resolved",
+        "expected": [
+          "talk -> Neb Halloran"
+        ],
+        "got": "talk -> Neb Halloran"
+      },
+      {
+        "id": "talk-neb-pronoun",
+        "shape": "talk",
+        "typed": "ask her what the water did last night",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Neb Halloran"
+        ],
+        "got": "there is no person here called \"her what the water did last night\". There is: Neb Halloran"
+      },
+      {
+        "id": "talk-grenn-nickname",
+        "shape": "talk",
+        "typed": "talk to Old Grenn",
+        "outcome": "resolved",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "talk -> Grenn Ollivar"
+      },
+      {
+        "id": "talk-grenn-real",
+        "shape": "talk",
+        "typed": "tell him now is not a good time",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"tell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-grenn-ask-lantern",
+        "shape": "talk",
+        "typed": "Grenn, what do you know about the lantern that weeps",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"Grenn,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-grenn-rent",
+        "shape": "talk",
+        "typed": "apologise to my landlord for the rent",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"apologise\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "take-stamp-plain",
+        "shape": "take",
+        "typed": "take the ward stamp",
+        "outcome": "resolved",
+        "expected": [
+          "take -> ward stamp"
+        ],
+        "got": "take -> ward stamp"
+      },
+      {
+        "id": "take-stamp-pickup",
+        "shape": "take",
+        "typed": "pick up my ward stamp",
+        "outcome": "resolved",
+        "expected": [
+          "take -> ward stamp"
+        ],
+        "got": "take -> ward stamp"
+      },
+      {
+        "id": "take-stamp-pocket",
+        "shape": "take",
+        "typed": "put the stamp in my pocket before he sees the ink is wet",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> ward stamp"
+        ],
+        "got": "I do not understand \"put\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "take-stamp-fragment",
+        "shape": "take",
+        "typed": "stamp",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> ward stamp",
+          "examine -> ward stamp"
+        ],
+        "got": "I do not understand \"stamp\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "take-index-plain",
+        "shape": "take",
+        "typed": "take Perrin's private index",
+        "outcome": "resolved",
+        "expected": [
+          "take -> Perrin's private index"
+        ],
+        "got": "take -> Perrin's private index"
+      },
+      {
+        "id": "take-index-fragment",
+        "shape": "take",
+        "typed": "take the index",
+        "outcome": "resolved",
+        "expected": [
+          "take -> Perrin's private index"
+        ],
+        "got": "take -> Perrin's private index"
+      },
+      {
+        "id": "take-index-shelf",
+        "shape": "take",
+        "typed": "get the slim index off the lowest shelf",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> Perrin's private index"
+        ],
+        "got": "there is no thing lying here called \"the slim index off the lowest shelf\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "take-index-two-columns",
+        "shape": "take",
+        "typed": "take the thing with the dates on the left and the file numbers on the right",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> Perrin's private index"
+        ],
+        "got": "there is no thing lying here called \"the thing with the dates on the left and the file numbers on the right\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "take-apron-plain",
+        "shape": "take",
+        "typed": "take the copy-room apron",
+        "outcome": "resolved",
+        "expected": [
+          "take -> copy-room apron"
+        ],
+        "got": "take -> copy-room apron"
+      },
+      {
+        "id": "take-apron-fragment",
+        "shape": "take",
+        "typed": "pick up the apron",
+        "outcome": "resolved",
+        "expected": [
+          "take -> copy-room apron"
+        ],
+        "got": "take -> copy-room apron"
+      },
+      {
+        "id": "take-apron-folded",
+        "shape": "take",
+        "typed": "take the folded thing behind the blank forms",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> copy-room apron"
+        ],
+        "got": "there is no thing lying here called \"the folded thing behind the blank forms\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "take-daybook-off-floor",
+        "shape": "take",
+        "typed": "pick up the Ward Office 12 daybook",
+        "outcome": "resolved",
+        "expected": [
+          "take -> Ward Office 12 daybook"
+        ],
+        "got": "take -> Ward Office 12 daybook"
+      },
+      {
+        "id": "take-daybook-fragment",
+        "shape": "take",
+        "typed": "take my daybook back",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> Ward Office 12 daybook"
+        ],
+        "got": "there is no thing lying here called \"my daybook back\". There is: Ward Office 12 daybook, filing press, ward stamp"
+      },
+      {
+        "id": "take-slate-plain",
+        "shape": "take",
+        "typed": "take the Assize tide-slate",
+        "outcome": "resolved",
+        "expected": [
+          "take -> Assize tide-slate"
+        ],
+        "got": "take -> Assize tide-slate"
+      },
+      {
+        "id": "take-slate-fragment",
+        "shape": "take",
+        "typed": "take the tide-slate",
+        "outcome": "resolved",
+        "expected": [
+          "take -> Assize tide-slate"
+        ],
+        "got": "take -> Assize tide-slate"
+      },
+      {
+        "id": "take-slate-pronoun",
+        "shape": "take",
+        "typed": "pick it up again",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> Assize tide-slate"
+        ],
+        "got": "I do not understand \"pick\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "take-slate-bench",
+        "shape": "take",
+        "typed": "lift the slate off the bench before the water reaches it",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> Assize tide-slate"
+        ],
+        "got": "I do not understand \"lift\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "drop-daybook-script",
+        "shape": "drop",
+        "typed": "put the Ward Office 12 daybook down on the desk",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Ward Office 12 daybook"
+        ],
+        "got": "I do not understand \"put\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "drop-daybook-fragment",
+        "shape": "drop",
+        "typed": "drop the daybook",
+        "outcome": "resolved",
+        "expected": [
+          "drop -> Ward Office 12 daybook"
+        ],
+        "got": "drop -> Ward Office 12 daybook"
+      },
+      {
+        "id": "drop-daybook-hand-over",
+        "shape": "drop",
+        "typed": "hand the daybook to Rowe and let him read the gap himself",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Ward Office 12 daybook",
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"hand\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "drop-daybook-leave",
+        "shape": "drop",
+        "typed": "leave the daybook open on the desk where he can see it",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Ward Office 12 daybook"
+        ],
+        "got": "there is no thing you are carrying called \"the daybook open on the desk where he can see it\". There is: Ward Office 12 daybook"
+      },
+      {
+        "id": "drop-index",
+        "shape": "drop",
+        "typed": "drop Perrin's private index",
+        "outcome": "resolved",
+        "expected": [
+          "drop -> Perrin's private index"
+        ],
+        "got": "drop -> Perrin's private index"
+      },
+      {
+        "id": "drop-index-fragment",
+        "shape": "drop",
+        "typed": "put the index down on my desk",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Perrin's private index"
+        ],
+        "got": "I do not understand \"put\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "drop-apron-fragment",
+        "shape": "drop",
+        "typed": "drop the apron",
+        "outcome": "resolved",
+        "expected": [
+          "drop -> copy-room apron"
+        ],
+        "got": "drop -> copy-room apron"
+      },
+      {
+        "id": "drop-daybook-of-three",
+        "shape": "drop",
+        "typed": "set the daybook down and nothing else",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Ward Office 12 daybook"
+        ],
+        "got": "I do not understand \"set\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "drop-slate-script",
+        "shape": "drop",
+        "typed": "put the Assize tide-slate down on the bench",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Assize tide-slate"
+        ],
+        "got": "I do not understand \"put\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "drop-slate-fragment",
+        "shape": "drop",
+        "typed": "put the slate down",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Assize tide-slate"
+        ],
+        "got": "I do not understand \"put\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "drop-slate-pronoun",
+        "shape": "drop",
+        "typed": "set it down where the Justicar can read it",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Assize tide-slate"
+        ],
+        "got": "I do not understand \"set\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "drop-slate-give",
+        "shape": "drop",
+        "typed": "give the tide-slate to Neb",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Assize tide-slate",
+          "talk -> Neb Halloran"
+        ],
+        "got": "I do not understand \"give\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "examine-daybook-read",
+        "shape": "examine",
+        "typed": "read the Ward Office 12 daybook",
+        "outcome": "resolved",
+        "expected": [
+          "examine -> Ward Office 12 daybook"
+        ],
+        "got": "examine -> Ward Office 12 daybook"
+      },
+      {
+        "id": "examine-daybook-gap",
+        "shape": "examine",
+        "typed": "look closely at the ruled gap between four and five in my daybook",
+        "outcome": "unparsed",
+        "expected": [
+          "examine -> Ward Office 12 daybook"
+        ],
+        "got": null
+      },
+      {
+        "id": "examine-daybook-entries",
+        "shape": "examine",
+        "typed": "read back the last entries before the gap",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Ward Office 12 daybook"
+        ],
+        "got": "there is no thing here or in your hands called \"back the last entries before the gap\". There is: filing press, ward stamp, Ward Office 12 daybook"
+      },
+      {
+        "id": "examine-stamp",
+        "shape": "examine",
+        "typed": "examine the ward stamp",
+        "outcome": "resolved",
+        "expected": [
+          "examine -> ward stamp"
+        ],
+        "got": "examine -> ward stamp"
+      },
+      {
+        "id": "examine-stamp-ink",
+        "shape": "examine",
+        "typed": "look at how wet the ink still is on the pad",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> ward stamp"
+        ],
+        "got": "there is no thing here or in your hands called \"how wet the ink still is on the pad\". There is: filing press, ward stamp, Ward Office 12 daybook"
+      },
+      {
+        "id": "examine-index-read",
+        "shape": "examine",
+        "typed": "read Perrin's private index",
+        "outcome": "resolved",
+        "expected": [
+          "examine -> Perrin's private index"
+        ],
+        "got": "examine -> Perrin's private index"
+      },
+      {
+        "id": "examine-index-columns",
+        "shape": "examine",
+        "typed": "read the two columns in the private index on the lowest shelf",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Perrin's private index"
+        ],
+        "got": "there is no thing here or in your hands called \"the two columns in the private index on the lowest shelf\". There is: Perrin's private index, copy-room apron, Ward Office 12 daybook"
+      },
+      {
+        "id": "examine-index-fragment",
+        "shape": "examine",
+        "typed": "what does the index say",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Perrin's private index"
+        ],
+        "got": "I do not understand \"what\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "examine-apron",
+        "shape": "examine",
+        "typed": "look at the apron",
+        "outcome": "resolved",
+        "expected": [
+          "examine -> copy-room apron"
+        ],
+        "got": "examine -> copy-room apron"
+      },
+      {
+        "id": "examine-daybook-in-closet",
+        "shape": "examine",
+        "typed": "read my own daybook again",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Ward Office 12 daybook"
+        ],
+        "got": "there is no thing here or in your hands called \"my own daybook again\". There is: Perrin's private index, copy-room apron, Ward Office 12 daybook"
+      },
+      {
+        "id": "examine-slate",
+        "shape": "examine",
+        "typed": "read the Assize tide-slate",
+        "outcome": "resolved",
+        "expected": [
+          "examine -> Assize tide-slate"
+        ],
+        "got": "examine -> Assize tide-slate"
+      },
+      {
+        "id": "examine-slate-chalk",
+        "shape": "examine",
+        "typed": "look at the chalked figure on the slate",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Assize tide-slate"
+        ],
+        "got": "there is no thing here or in your hands called \"the chalked figure on the slate\". There is: Assize tide-slate"
+      },
+      {
+        "id": "examine-slate-floor",
+        "shape": "examine",
+        "typed": "crouch down and read what is chalked on the slate",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Assize tide-slate"
+        ],
+        "got": "I do not understand \"crouch\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "examine-nothing-window",
+        "shape": "examine-nothing",
+        "typed": "look out of the window at the rain coming off the levee",
+        "outcome": "unparsed",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": null
+      },
+      {
+        "id": "examine-nothing-desk",
+        "shape": "examine-nothing",
+        "typed": "look at the desk across from mine, cleared to the wood",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"the desk across from mine, cleared to the wood\". There is: filing press, ward stamp, Ward Office 12 daybook"
+      },
+      {
+        "id": "examine-nothing-tube",
+        "shape": "examine-nothing",
+        "typed": "examine the pneumatic tube on the wall",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"the pneumatic tube on the wall\". There is: filing press, ward stamp, Ward Office 12 daybook"
+      },
+      {
+        "id": "examine-nothing-rowe",
+        "shape": "examine-nothing",
+        "typed": "look at Rowe's face for anything at all",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"Rowe's face for anything at all\". There is: filing press, ward stamp, Ward Office 12 daybook"
+      },
+      {
+        "id": "examine-nothing-shelves",
+        "shape": "examine-nothing",
+        "typed": "look along the shelves for anything with a ward mark on it",
+        "outcome": "unparsed",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": null
+      },
+      {
+        "id": "examine-nothing-back-wall",
+        "shape": "examine-nothing",
+        "typed": "examine the plaster on the back wall",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"the plaster on the back wall\". There is: Perrin's private index, copy-room apron, Ward Office 12 daybook"
+      },
+      {
+        "id": "examine-nothing-empty-hands",
+        "shape": "examine-nothing",
+        "typed": "look at my own hands",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"my own hands\". There is: nothing"
+      },
+      {
+        "id": "examine-nothing-boots",
+        "shape": "examine-nothing",
+        "typed": "look at the boots by the door and the dark iridescence dried on them",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"the boots by the door and the dark iridescence dried on them\". There is: nothing"
+      },
+      {
+        "id": "examine-nothing-satchel",
+        "shape": "examine-nothing",
+        "typed": "examine the field note in the satchel",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"the field note in the satchel\". There is: nothing"
+      },
+      {
+        "id": "examine-nothing-chain",
+        "shape": "examine-nothing",
+        "typed": "look at the chain on the tide post",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"the chain on the tide post\". There is: Assize tide-slate"
+      },
+      {
+        "id": "other-wait",
+        "shape": "other",
+        "typed": "wait",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"wait\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-wait-long",
+        "shape": "other",
+        "typed": "wait for him to say something first",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"wait\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-keep-going",
+        "shape": "other",
+        "typed": "keep doing what you are doing",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"keep\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-think",
+        "shape": "other",
+        "typed": "think about what could have carried a total across a gap",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"think\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-listen",
+        "shape": "other",
+        "typed": "listen to the doors closing down the hallway",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "examine -> nothing"
+        ],
+        "got": "I do not understand \"listen\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-smell",
+        "shape": "other",
+        "typed": "smell the wax and the old ink",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "examine -> nothing"
+        ],
+        "got": "I do not understand \"smell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-count",
+        "shape": "other",
+        "typed": "count the tins of sealing wax",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "examine -> nothing"
+        ],
+        "got": "I do not understand \"count\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-shout",
+        "shape": "other",
+        "typed": "shout for anybody at all",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "talk -> nothing"
+        ],
+        "got": "I do not understand \"shout\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-pray",
+        "shape": "other",
+        "typed": "pray to the Fair Copy that the water holds",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"pray\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-sing",
+        "shape": "other",
+        "typed": "sing the tide-count under my breath",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"sing\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-write",
+        "shape": "other",
+        "typed": "write the missing hour into the gap in my own hand",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "examine -> Ward Office 12 daybook"
+        ],
+        "got": "I do not understand \"write\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-impossible",
+        "shape": "other",
+        "typed": "reach into the gap in the ledger and pull the missing hour back out of it with my bare hands",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "examine -> Ward Office 12 daybook"
+        ],
+        "got": "I do not understand \"reach\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-sleep",
+        "shape": "other",
+        "typed": "go back to sleep",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "move -> nothing"
+        ],
+        "got": "there is no way out called \"back to sleep\". There is: Mournwell Lane, Grenn's Boarding House hallway, Larkspur Quarter rooftops"
+      },
+      {
+        "id": "other-remember",
+        "shape": "other",
+        "typed": "try to remember where I was last night",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"try\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-nonsense",
+        "shape": "other",
+        "typed": "asdf",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"asdf\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-empty-question",
+        "shape": "other",
+        "typed": "what time is it",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"what\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "unresolved-move-sealed-room",
+        "shape": "unresolved-move",
+        "typed": "go up to the Sealed Room",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "there is no way out called \"up to the Sealed Room\". There is: The Supply Closet, The Long Hallway"
+      },
+      {
+        "id": "unresolved-move-courtyard",
+        "shape": "unresolved-move",
+        "typed": "cross the courtyard",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "I do not understand \"cross\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "unresolved-move-basement",
+        "shape": "unresolved-move",
+        "typed": "go down to the basements below the flood line",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "there is no way out called \"down to the basements below the flood line\". There is: Ward Office 12"
+      },
+      {
+        "id": "unresolved-move-other-world",
+        "shape": "unresolved-move",
+        "typed": "go to The Tide Post",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "there is no way out called \"to The Tide Post\". There is: The Supply Closet, The Long Hallway"
+      },
+      {
+        "id": "unresolved-move-spire",
+        "shape": "unresolved-move",
+        "typed": "climb the Celestial Spire",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "I do not understand \"climb\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "unresolved-move-bell",
+        "shape": "unresolved-move",
+        "typed": "go to the Bell of Saint Aravel",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "there is no way out called \"to the Bell of Saint Aravel\". There is: The Causeway Court"
+      },
+      {
+        "id": "unresolved-move-window",
+        "shape": "unresolved-move",
+        "typed": "go out through the skylight",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing",
+          "move -> Larkspur Quarter rooftops"
+        ],
+        "got": "there is no way out called \"out through the skylight\". There is: Mournwell Lane, Grenn's Boarding House hallway, Larkspur Quarter rooftops"
+      },
+      {
+        "id": "unresolved-talk-perrin",
+        "shape": "unresolved-talk",
+        "typed": "talk to Perrin Lasco",
+        "outcome": "refused",
+        "expected": [
+          "talk -> nothing"
+        ],
+        "got": "there is no person here called \"to Perrin Lasco\". There is: Halkett Rowe"
+      },
+      {
+        "id": "unresolved-talk-inspectorate",
+        "shape": "unresolved-talk",
+        "typed": "talk to the rest of the Inspectorate",
+        "outcome": "refused",
+        "expected": [
+          "talk -> nothing"
+        ],
+        "got": "there is no person here called \"to the rest of the Inspectorate\". There is: Halkett Rowe"
+      },
+      {
+        "id": "unresolved-talk-nobody-here",
+        "shape": "unresolved-talk",
+        "typed": "talk to whoever swept this floor",
+        "outcome": "refused",
+        "expected": [
+          "talk -> nothing"
+        ],
+        "got": "there is no person here called \"to whoever swept this floor\". There is: nothing"
+      },
+      {
+        "id": "unresolved-talk-grenn-in-court",
+        "shape": "unresolved-talk",
+        "typed": "talk to Old Grenn",
+        "outcome": "refused",
+        "expected": [
+          "talk -> nothing"
+        ],
+        "got": "there is no person here called \"to Old Grenn\". There is: Ammon Brace"
+      },
+      {
+        "id": "unresolved-talk-neb-in-court",
+        "shape": "unresolved-talk",
+        "typed": "ask Neb what the water did",
+        "outcome": "refused",
+        "expected": [
+          "talk -> nothing"
+        ],
+        "got": "there is no person here called \"Neb what the water did\". There is: Ammon Brace"
+      },
+      {
+        "id": "unresolved-talk-landlord",
+        "shape": "unresolved-talk",
+        "typed": "ask my landlord for another week",
+        "outcome": "refused",
+        "expected": [
+          "talk -> nothing"
+        ],
+        "got": "there is no person here called \"my landlord for another week\". There is: Ammon Brace"
+      },
+      {
+        "id": "unresolved-take-empty-floor",
+        "shape": "unresolved-take",
+        "typed": "take the private index",
+        "outcome": "refused",
+        "expected": [
+          "take -> nothing"
+        ],
+        "got": "there is no thing lying here called \"the private index\". There is: nothing"
+      },
+      {
+        "id": "unresolved-take-carried",
+        "shape": "unresolved-take",
+        "typed": "pick up the Assize tide-slate",
+        "outcome": "refused",
+        "expected": [
+          "take -> nothing"
+        ],
+        "got": "there is no thing lying here called \"the Assize tide-slate\". There is: nothing"
+      },
+      {
+        "id": "unresolved-take-nibs",
+        "shape": "unresolved-take",
+        "typed": "take a box of nibs",
+        "outcome": "refused",
+        "expected": [
+          "take -> nothing"
+        ],
+        "got": "there is no thing lying here called \"a box of nibs\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "unresolved-take-tide-slate",
+        "shape": "unresolved-take",
+        "typed": "take the tide-slate",
+        "outcome": "refused",
+        "expected": [
+          "take -> nothing"
+        ],
+        "got": "there is no thing lying here called \"the tide-slate\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "unresolved-take-blank-writ",
+        "shape": "unresolved-take",
+        "typed": "take a blank writ out of the press",
+        "outcome": "refused",
+        "expected": [
+          "take -> nothing"
+        ],
+        "got": "there is no thing lying here called \"a blank writ out of the press\". There is: filing press, ward stamp"
+      },
+      {
+        "id": "unresolved-drop-empty-hands",
+        "shape": "unresolved-drop",
+        "typed": "drop the Ward Office 12 daybook",
+        "outcome": "refused",
+        "expected": [
+          "drop -> nothing"
+        ],
+        "got": "there is no thing you are carrying called \"the Ward Office 12 daybook\". There is: nothing"
+      },
+      {
+        "id": "unresolved-drop-not-carried",
+        "shape": "unresolved-drop",
+        "typed": "drop the ward stamp",
+        "outcome": "refused",
+        "expected": [
+          "drop -> nothing"
+        ],
+        "got": "there is no thing you are carrying called \"the ward stamp\". There is: Ward Office 12 daybook"
+      },
+      {
+        "id": "unresolved-drop-apron",
+        "shape": "unresolved-drop",
+        "typed": "drop the copy-room apron",
+        "outcome": "refused",
+        "expected": [
+          "drop -> nothing"
+        ],
+        "got": "there is no thing you are carrying called \"the copy-room apron\". There is: Ward Office 12 daybook"
+      },
+      {
+        "id": "unresolved-drop-slate",
+        "shape": "unresolved-drop",
+        "typed": "put the tide-slate down",
+        "outcome": "refused",
+        "expected": [
+          "drop -> nothing"
+        ],
+        "got": "I do not understand \"put\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "unresolved-drop-coat",
+        "shape": "unresolved-drop",
+        "typed": "drop my coat on the floor",
+        "outcome": "refused",
+        "expected": [
+          "drop -> nothing"
+        ],
+        "got": "there is no thing you are carrying called \"my coat on the floor\". There is: nothing"
+      },
+      {
+        "id": "two-names-take-office",
+        "shape": "two-names-one-set",
+        "typed": "take the ward stamp and the daybook",
+        "outcome": "wrong",
+        "expected": [
+          "take -> ward stamp (and Ward Office 12 daybook)"
+        ],
+        "got": "take -> ward stamp"
+      },
+      {
+        "id": "two-names-take-office-full",
+        "shape": "two-names-one-set",
+        "typed": "pick up the ward stamp and the Ward Office 12 daybook",
+        "outcome": "refused",
+        "expected": [
+          "take -> ward stamp (and Ward Office 12 daybook)"
+        ],
+        "got": "\"the ward stamp and the Ward Office 12 daybook\" matches more than one thing lying here: Ward Office 12 daybook, ward stamp"
+      },
+      {
+        "id": "two-names-take-closet",
+        "shape": "two-names-one-set",
+        "typed": "take Perrin's private index and copy-room apron",
+        "outcome": "refused",
+        "expected": [
+          "take -> Perrin's private index (and copy-room apron)"
+        ],
+        "got": "\"Perrin's private index and copy-room apron\" matches more than one thing lying here: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "two-names-take-closet-fragments",
+        "shape": "two-names-one-set",
+        "typed": "take the index and the apron",
+        "outcome": "refused",
+        "expected": [
+          "take -> Perrin's private index (and copy-room apron)"
+        ],
+        "got": "there is no thing lying here called \"the index and the apron\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "two-names-take-both",
+        "shape": "two-names-one-set",
+        "typed": "take both",
+        "outcome": "refused",
+        "expected": [
+          "take -> Perrin's private index (and copy-room apron)"
+        ],
+        "got": "there is no thing lying here called \"both\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "two-names-take-everything",
+        "shape": "two-names-one-set",
+        "typed": "take everything on that shelf",
+        "outcome": "refused",
+        "expected": [
+          "take -> Perrin's private index (and copy-room apron)"
+        ],
+        "got": "there is no thing lying here called \"everything on that shelf\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "two-names-take-the-lot",
+        "shape": "two-names-one-set",
+        "typed": "take the lot",
+        "outcome": "refused",
+        "expected": [
+          "take -> ward stamp (and Ward Office 12 daybook)"
+        ],
+        "got": "there is no thing lying here called \"the lot\". There is: Ward Office 12 daybook, filing press, ward stamp"
+      },
+      {
+        "id": "two-names-drop-three",
+        "shape": "two-names-one-set",
+        "typed": "drop the index and the apron",
+        "outcome": "refused",
+        "expected": [
+          "drop -> Perrin's private index (and copy-room apron)"
+        ],
+        "got": "there is no thing you are carrying called \"the index and the apron\". There is: Ward Office 12 daybook, Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "two-names-drop-all-three",
+        "shape": "two-names-one-set",
+        "typed": "put everything I am carrying down on the desk",
+        "outcome": "refused",
+        "expected": [
+          "drop -> Perrin's private index (and copy-room apron)",
+          "drop -> Perrin's private index (and Ward Office 12 daybook)",
+          "drop -> copy-room apron (and Ward Office 12 daybook)"
+        ],
+        "got": "I do not understand \"put\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "two-names-drop-daybook-apron",
+        "shape": "two-names-one-set",
+        "typed": "leave the daybook and the apron here",
+        "outcome": "refused",
+        "expected": [
+          "drop -> copy-room apron (and Ward Office 12 daybook)"
+        ],
+        "got": "there is no thing you are carrying called \"the daybook and the apron here\". There is: Ward Office 12 daybook, Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "two-names-drop-closet",
+        "shape": "two-names-one-set",
+        "typed": "drop the index and the daybook",
+        "outcome": "refused",
+        "expected": [
+          "drop -> Perrin's private index (and Ward Office 12 daybook)"
+        ],
+        "got": "there is no thing you are carrying called \"the index and the daybook\". There is: Ward Office 12 daybook, Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "two-names-talk-two-people",
+        "shape": "two-names-one-set",
+        "typed": "ask Rowe and Perrin what happened at four o'clock",
+        "outcome": "wrong",
+        "expected": [
+          "talk -> Perrin Lasco (and Halkett Rowe)"
+        ],
+        "got": "talk -> Perrin Lasco"
+      },
+      {
+        "id": "two-names-talk-perrin",
+        "shape": "two-names-one-set",
+        "typed": "Perrin, tell Rowe what you found in the amendments",
+        "outcome": "refused",
+        "expected": [
+          "talk -> Perrin Lasco (and Halkett Rowe)"
+        ],
+        "got": "I do not understand \"Perrin,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "two-names-talk-both",
+        "shape": "two-names-one-set",
+        "typed": "talk to both of them",
+        "outcome": "refused",
+        "expected": [
+          "talk -> Perrin Lasco (and Halkett Rowe)"
+        ],
+        "got": "there is no person here called \"to both of them\". There is: Perrin Lasco, Halkett Rowe"
+      },
+      {
+        "id": "two-names-talk-court",
+        "shape": "two-names-one-set",
+        "typed": "ask Justicar Brace and Neb about the chain",
+        "outcome": "refused",
+        "expected": [
+          "talk -> Ammon Brace (and Neb Halloran)"
+        ],
+        "got": "\"Justicar Brace and Neb about the chain\" matches more than one person here: Ammon Brace, Neb Halloran"
+      },
+      {
+        "id": "two-names-talk-court-full",
+        "shape": "two-names-one-set",
+        "typed": "talk to Ammon Brace and Neb Halloran",
+        "outcome": "refused",
+        "expected": [
+          "talk -> Ammon Brace (and Neb Halloran)"
+        ],
+        "got": "\"to Ammon Brace and Neb Halloran\" matches more than one person here: Ammon Brace, Neb Halloran"
+      },
+      {
+        "id": "two-names-move-office",
+        "shape": "two-names-one-set",
+        "typed": "go into the supply closet and then out into the hallway",
+        "outcome": "wrong",
+        "expected": [
+          "move -> The Supply Closet (and The Long Hallway)"
+        ],
+        "got": "move -> The Supply Closet"
+      },
+      {
+        "id": "two-names-move-court",
+        "shape": "two-names-one-set",
+        "typed": "go to the Tide Post and then aboard the Vestry Hulk",
+        "outcome": "wrong",
+        "expected": [
+          "move -> The Tide Post (and The Vestry Hulk)"
+        ],
+        "got": "move -> The Vestry Hulk"
+      },
+      {
+        "id": "two-names-move-room-3",
+        "shape": "two-names-one-set",
+        "typed": "go out to Mournwell Lane or up onto the Larkspur Quarter rooftops",
+        "outcome": "refused",
+        "expected": [
+          "move -> Mournwell Lane (and Larkspur Quarter rooftops)"
+        ],
+        "got": "\"out to Mournwell Lane or up onto the Larkspur Quarter rooftops\" matches more than one way out: Mournwell Lane, Larkspur Quarter rooftops"
+      },
+      {
+        "id": "two-names-examine-office",
+        "shape": "two-names-one-set",
+        "typed": "look at the ward stamp and the daybook side by side",
+        "outcome": "wrong",
+        "expected": [
+          "examine -> ward stamp (and Ward Office 12 daybook)"
+        ],
+        "got": "examine -> ward stamp"
+      },
+      {
+        "id": "two-names-examine-closet",
+        "shape": "two-names-one-set",
+        "typed": "read Perrin's private index and Ward Office 12 daybook",
+        "outcome": "refused",
+        "expected": [
+          "examine -> Perrin's private index (and Ward Office 12 daybook)"
+        ],
+        "got": "\"Perrin's private index and Ward Office 12 daybook\" matches more than one thing here or in your hands: Perrin's private index, Ward Office 12 daybook"
+      },
+      {
+        "id": "two-names-examine-closet-fragments",
+        "shape": "two-names-one-set",
+        "typed": "compare the index against my daybook",
+        "outcome": "refused",
+        "expected": [
+          "examine -> Perrin's private index (and Ward Office 12 daybook)"
+        ],
+        "got": "I do not understand \"compare\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "two-names-examine-court",
+        "shape": "two-names-one-set",
+        "typed": "read the slate and then look at the bench it was on",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Assize tide-slate"
+        ],
+        "got": "there is no thing here or in your hands called \"the slate and then look at the bench it was on\". There is: Assize tide-slate"
+      },
+      {
+        "id": "two-sets-take-stamp-daybook",
+        "shape": "two-sets",
+        "typed": "take the ward stamp and the daybook",
+        "outcome": "resolved",
+        "expected": [
+          "take -> ward stamp"
+        ],
+        "got": "take -> ward stamp"
+      },
+      {
+        "id": "two-sets-drop-daybook-stamp",
+        "shape": "two-sets",
+        "typed": "put the daybook down and pick up the stamp",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Ward Office 12 daybook",
+          "take -> ward stamp"
+        ],
+        "got": "I do not understand \"put\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "two-sets-take-index-daybook",
+        "shape": "two-sets",
+        "typed": "take the index and read my daybook",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> Perrin's private index",
+          "examine -> Ward Office 12 daybook"
+        ],
+        "got": "there is no thing lying here called \"the index and read my daybook\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "two-sets-talk-and-move",
+        "shape": "two-sets",
+        "typed": "tell Rowe I am going into the closet",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe",
+          "move -> The Supply Closet"
+        ],
+        "got": "I do not understand \"tell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "two-sets-take-and-move",
+        "shape": "two-sets",
+        "typed": "pick up the slate and carry it to the Tide Post",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> Assize tide-slate",
+          "move -> The Tide Post"
+        ],
+        "got": "there is no thing lying here called \"the slate and carry it to the Tide Post\". There is: Assize tide-slate"
+      },
+      {
+        "id": "two-sets-talk-and-take",
+        "shape": "two-sets",
+        "typed": "ask the Justicar to let me take the slate up again",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace",
+          "take -> Assize tide-slate"
+        ],
+        "got": "there is no person here called \"the Justicar to let me take the slate up again\". There is: Ammon Brace"
+      },
+      {
+        "id": "two-sets-move-and-talk",
+        "shape": "two-sets",
+        "typed": "go back to the court and tell Brace what Neb said",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> The Causeway Court"
+        ],
+        "got": "there is no way out called \"back to the court and tell Brace what Neb said\". There is: The Causeway Court"
+      },
+      {
+        "id": "grammar-the-only",
+        "shape": "articles-and-pronouns",
+        "typed": "the closet",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Supply Closet"
+        ],
+        "got": "move -> The Supply Closet"
+      },
+      {
+        "id": "grammar-to-the-into",
+        "shape": "articles-and-pronouns",
+        "typed": "to the closet",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Supply Closet"
+        ],
+        "got": "move -> The Supply Closet"
+      },
+      {
+        "id": "grammar-it-take",
+        "shape": "articles-and-pronouns",
+        "typed": "take it",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> Assize tide-slate"
+        ],
+        "got": "there is no thing lying here called \"it\". There is: Assize tide-slate"
+      },
+      {
+        "id": "grammar-it-drop",
+        "shape": "articles-and-pronouns",
+        "typed": "drop it",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Assize tide-slate"
+        ],
+        "got": "there is no thing you are carrying called \"it\". There is: Assize tide-slate"
+      },
+      {
+        "id": "grammar-them-two",
+        "shape": "articles-and-pronouns",
+        "typed": "take them",
+        "outcome": "refused",
+        "expected": [
+          "take -> Perrin's private index (and copy-room apron)"
+        ],
+        "got": "there is no thing lying here called \"them\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "grammar-him-talk",
+        "shape": "articles-and-pronouns",
+        "typed": "talk to him",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "there is no person here called \"to him\". There is: Halkett Rowe"
+      },
+      {
+        "id": "grammar-her-talk",
+        "shape": "articles-and-pronouns",
+        "typed": "speak to her",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Neb Halloran"
+        ],
+        "got": "there is no person here called \"to her\". There is: Neb Halloran"
+      },
+      {
+        "id": "grammar-that-one",
+        "shape": "articles-and-pronouns",
+        "typed": "take that one on the lowest shelf",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> Perrin's private index"
+        ],
+        "got": "there is no thing lying here called \"that one on the lowest shelf\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "grammar-mine",
+        "shape": "articles-and-pronouns",
+        "typed": "pick up mine",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> ward stamp"
+        ],
+        "got": "there is no thing lying here called \"mine\". There is: filing press, ward stamp"
+      },
+      {
+        "id": "grammar-a-an",
+        "shape": "articles-and-pronouns",
+        "typed": "take a daybook",
+        "outcome": "resolved",
+        "expected": [
+          "take -> Ward Office 12 daybook"
+        ],
+        "got": "take -> Ward Office 12 daybook"
+      },
+      {
+        "id": "grammar-trailing-punctuation",
+        "shape": "articles-and-pronouns",
+        "typed": "take the ward stamp!",
+        "outcome": "resolved",
+        "expected": [
+          "take -> ward stamp"
+        ],
+        "got": "take -> ward stamp"
+      },
+      {
+        "id": "grammar-extra-spaces",
+        "shape": "articles-and-pronouns",
+        "typed": "   go    to   the   supply   closet   ",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Supply Closet"
+        ],
+        "got": "move -> The Supply Closet"
+      },
+      {
+        "id": "grammar-capitals",
+        "shape": "articles-and-pronouns",
+        "typed": "TAKE THE WARD STAMP",
+        "outcome": "resolved",
+        "expected": [
+          "take -> ward stamp"
+        ],
+        "got": "take -> ward stamp"
+      },
+      {
+        "id": "grammar-hyphen",
+        "shape": "articles-and-pronouns",
+        "typed": "read the tide slate",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Assize tide-slate"
+        ],
+        "got": "there is no thing here or in your hands called \"the tide slate\". There is: Assize tide-slate"
+      },
+      {
+        "id": "grammar-plural",
+        "shape": "articles-and-pronouns",
+        "typed": "take the aprons",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> copy-room apron"
+        ],
+        "got": "there is no thing lying here called \"the aprons\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "grammar-misspelling",
+        "shape": "articles-and-pronouns",
+        "typed": "talk to Halket Row",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "there is no person here called \"to Halket Row\". There is: Halkett Rowe"
+      },
+      {
+        "id": "grammar-possessive-name",
+        "shape": "articles-and-pronouns",
+        "typed": "read Vance's daybook",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Ward Office 12 daybook"
+        ],
+        "got": "there is no thing here or in your hands called \"Vance's daybook\". There is: filing press, ward stamp, Ward Office 12 daybook"
+      },
+      {
+        "id": "grammar-name-only-place",
+        "shape": "articles-and-pronouns",
+        "typed": "Mournwell Lane",
+        "outcome": "resolved",
+        "expected": [
+          "move -> Mournwell Lane"
+        ],
+        "got": "move -> Mournwell Lane"
+      },
+      {
+        "id": "grammar-nickname-only",
+        "shape": "articles-and-pronouns",
+        "typed": "Old Grenn",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar",
+          "examine -> nothing"
+        ],
+        "got": "I do not understand \"Old\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-ask-about-perrin",
+        "shape": "talk",
+        "typed": "ask him what happened to Perrin",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "there is no person here called \"him what happened to Perrin\". There is: Halkett Rowe"
+      },
+      {
+        "id": "real-ask-why-early",
+        "shape": "talk",
+        "typed": "ask him why he is early",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "there is no person here called \"him why he is early\". There is: Halkett Rowe"
+      },
+      {
+        "id": "real-tell-him-come-back",
+        "shape": "talk",
+        "typed": "tell him you can't close out your daybook until 7 so he will have to come back",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"tell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-say-of-course",
+        "shape": "talk",
+        "typed": "say: of course",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"say:\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-ask-can-i-go",
+        "shape": "talk",
+        "typed": "ask: do you still me for something or can I go?",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"ask:\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-tell-halkett",
+        "shape": "talk",
+        "typed": "tell Halkett what you think of him",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"tell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-tell-him-only-wanted",
+        "shape": "talk",
+        "typed": "tell him you only wanted to see it",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"tell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-look-up-annoyed",
+        "shape": "talk",
+        "typed": "look up at him, annoyed at being interrupted",
+        "outcome": "unparsed",
+        "expected": [
+          "talk -> Grenn Ollivar",
+          "examine -> nothing"
+        ],
+        "got": null
+      },
+      {
+        "id": "real-laugh-at-joke",
+        "shape": "talk",
+        "typed": "laugh at the joke you made",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"laugh\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-does-he-need-anything",
+        "shape": "talk",
+        "typed": "does he need anything else? I'm trying to work",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"does\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-go-to-the-bell",
+        "shape": "unresolved-move",
+        "typed": "go to the bell",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "there is no way out called \"to the bell\". There is: Mournwell Lane, Grenn's Boarding House hallway, Larkspur Quarter rooftops"
+      },
+      {
+        "id": "real-tell-him-pay",
+        "shape": "talk",
+        "typed": "tell him you will pay him as soon as you can",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"tell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-agree-to-terms",
+        "shape": "talk",
+        "typed": "agree to his terms",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar",
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"agree\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-that-makes-no-sense",
+        "shape": "talk",
+        "typed": "that doesn't even make sense",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar",
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"that\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-what-are-you-talking-about",
+        "shape": "talk",
+        "typed": "what are you even talking about? everywhere shifts under foot",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar",
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"what\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-get-out-onto-rooftops",
+        "shape": "move",
+        "typed": "get out onto the rooftops",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Larkspur Quarter rooftops"
+        ],
+        "got": "there is no thing lying here called \"out onto the rooftops\". There is: nothing"
+      },
+      {
+        "id": "real-go-out-to-rooftops",
+        "shape": "move",
+        "typed": "go out to the rooftops",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Larkspur Quarter rooftops"
+        ],
+        "got": "there is no way out called \"out to the rooftops\". There is: Mournwell Lane, Grenn's Boarding House hallway, Larkspur Quarter rooftops"
+      },
+      {
+        "id": "real-go-out-onto-rooftops",
+        "shape": "move",
+        "typed": "go out onto the rooftops",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Larkspur Quarter rooftops"
+        ],
+        "got": "there is no way out called \"out onto the rooftops\". There is: Mournwell Lane, Grenn's Boarding House hallway, Larkspur Quarter rooftops"
+      },
+      {
+        "id": "real-go-to-mornwell-lane",
+        "shape": "move",
+        "typed": "go to mornwell lane",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Mournwell Lane"
+        ],
+        "got": "there is no way out called \"to mornwell lane\". There is: Mournwell Lane, Grenn's Boarding House hallway, Larkspur Quarter rooftops"
+      },
+      {
+        "id": "real-go-to-supply-closet",
+        "shape": "move",
+        "typed": "go to the supply closet",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Supply Closet"
+        ],
+        "got": "move -> The Supply Closet"
+      },
+      {
+        "id": "real-go-to-closet",
+        "shape": "move",
+        "typed": "go to the closet",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Supply Closet"
+        ],
+        "got": "move -> The Supply Closet"
+      },
+      {
+        "id": "real-go-to-hallway",
+        "shape": "move",
+        "typed": "go to the hallway",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Long Hallway"
+        ],
+        "got": "move -> The Long Hallway"
+      },
+      {
+        "id": "real-walk-out-into-hallway",
+        "shape": "move",
+        "typed": "walk out into the long hallway",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Long Hallway"
+        ],
+        "got": "move -> The Long Hallway"
+      },
+      {
+        "id": "real-standup-pickup-walk-out",
+        "shape": "two-sets",
+        "typed": "standup, pickup your daybook and walk out into the long hallway",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Long Hallway",
+          "take -> Ward Office 12 daybook"
+        ],
+        "got": "move -> The Long Hallway"
+      },
+      {
+        "id": "real-go-back-into-office",
+        "shape": "move",
+        "typed": "go back into the office. how much time do I have before he comes back?",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Ward Office 12"
+        ],
+        "got": "there is no way out called \"back into the office. how much time do I have before he comes back?\". There is: Ward Office 12"
+      },
+      {
+        "id": "real-go-back-inside",
+        "shape": "move",
+        "typed": "go back inside",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Grenn's Boarding House hallway",
+          "other -> nothing"
+        ],
+        "got": "there is no way out called \"back inside\". There is: Mournwell Lane, Grenn's Boarding House hallway, Larkspur Quarter rooftops"
+      },
+      {
+        "id": "real-pickup-your-daybook",
+        "shape": "take",
+        "typed": "pick up your daybook",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> Ward Office 12 daybook"
+        ],
+        "got": "there is no thing lying here called \"your daybook\". There is: Ward Office 12 daybook, filing press, ward stamp"
+      },
+      {
+        "id": "real-pickup-the-daybook",
+        "shape": "take",
+        "typed": "pick up the daybook",
+        "outcome": "resolved",
+        "expected": [
+          "take -> Ward Office 12 daybook"
+        ],
+        "got": "take -> Ward Office 12 daybook"
+      },
+      {
+        "id": "real-pickup-the-stamp",
+        "shape": "take",
+        "typed": "pickup the stamp",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> ward stamp"
+        ],
+        "got": "I do not understand \"pickup\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-pick-up-the-index",
+        "shape": "take",
+        "typed": "pick up the index",
+        "outcome": "resolved",
+        "expected": [
+          "take -> Perrin's private index"
+        ],
+        "got": "take -> Perrin's private index"
+      },
+      {
+        "id": "real-close-and-put-down",
+        "shape": "drop",
+        "typed": "close the daybook and put it down",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Ward Office 12 daybook"
+        ],
+        "got": "I do not understand \"close\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-give-him-your-daybook",
+        "shape": "drop",
+        "typed": "give him your daybook",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Ward Office 12 daybook"
+        ],
+        "got": "I do not understand \"give\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-examine-your-daybook",
+        "shape": "examine",
+        "typed": "examine your daybook, try to remember anything you can about the gap",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Ward Office 12 daybook"
+        ],
+        "got": "there is no thing here or in your hands called \"your daybook, try to remember anything you can about the gap\". There is: filing press, ward stamp, Ward Office 12 daybook"
+      },
+      {
+        "id": "real-read-the-note-again",
+        "shape": "examine",
+        "typed": "read the index again",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Perrin's private index"
+        ],
+        "got": "there is no thing here or in your hands called \"the index again\". There is: Perrin's private index, copy-room apron, Ward Office 12 daybook"
+      },
+      {
+        "id": "real-examine-rest-of-desk",
+        "shape": "examine-nothing",
+        "typed": "examine the rest of your desk",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"the rest of your desk\". There is: filing press, ward stamp, Ward Office 12 daybook"
+      },
+      {
+        "id": "real-what-is-on-my-desk",
+        "shape": "examine-nothing",
+        "typed": "what is on my desk?",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"what\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-look-around",
+        "shape": "examine-nothing",
+        "typed": "look around",
+        "outcome": "unparsed",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": null
+      },
+      {
+        "id": "real-anything-to-pickup",
+        "shape": "other",
+        "typed": "is there anything I can pickup?",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "take -> Perrin's private index (and copy-room apron)"
+        ],
+        "got": "I do not understand \"is\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-get-up-close-door",
+        "shape": "other",
+        "typed": "get up and close your door",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "move -> nothing"
+        ],
+        "got": "there is no thing lying here called \"up and close your door\". There is: nothing"
+      },
+      {
+        "id": "real-wait-for-him-to-leave",
+        "shape": "other",
+        "typed": "wait for him to leave",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"wait\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-tap-foot",
+        "shape": "other",
+        "typed": "tap your foot impatiently",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"tap\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-consider-daybook-gap",
+        "shape": "other",
+        "typed": "consider what will happen if you present your daybook with a gap",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "examine -> Ward Office 12 daybook"
+        ],
+        "got": "I do not understand \"consider\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-check-what-time",
+        "shape": "other",
+        "typed": "check what time it is",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "\"what\" is not one of the three abilities. There is: strength, dexterity, will"
+      },
+      {
+        "id": "real-correct-high-water",
+        "shape": "other",
+        "typed": "correct the high water time",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "examine -> Assize tide-slate"
+        ],
+        "got": "I do not understand \"correct\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-say-hello-to-iz",
+        "shape": "unresolved-talk",
+        "typed": "say hello to Iz",
+        "outcome": "refused",
+        "expected": [
+          "talk -> nothing"
+        ],
+        "got": "I do not understand \"say\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-take-seal-from-rowe",
+        "shape": "unresolved-take",
+        "typed": "take the inspectorate seal from rowe",
+        "outcome": "refused",
+        "expected": [
+          "take -> nothing"
+        ],
+        "got": "there is no thing lying here called \"the inspectorate seal from rowe\". There is: filing press, ward stamp"
+      },
+      {
+        "id": "real-give-him-the-index",
+        "shape": "unresolved-drop",
+        "typed": "give him the index",
+        "outcome": "refused",
+        "expected": [
+          "drop -> nothing"
+        ],
+        "got": "I do not understand \"give\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "real-go-the-stacks",
+        "shape": "unresolved-move",
+        "typed": "go the stacks",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "there is no way out called \"the stacks\". There is: The Supply Closet, The Long Hallway"
+      },
+      {
+        "id": "script-sa-t01",
+        "shape": "examine",
+        "typed": "read the high-water figure chalked above the day's cases against my own hand",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Assize tide-slate",
+          "examine -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"the high-water figure chalked above the day's cases against my own hand\". There is: Assize tide-slate"
+      },
+      {
+        "id": "script-sa-t02",
+        "shape": "talk",
+        "typed": "Justicar Brace, the figure above your cases is not in my hand.",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "I do not understand \"Justicar\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-sa-t03",
+        "shape": "talk",
+        "typed": "Brace, who else has been at the slate since the ebb?",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "I do not understand \"Brace,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-sa-t04",
+        "shape": "talk",
+        "typed": "Brace, adjourn the hearing and have Halloran off that post before I source you a number.",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "I do not understand \"Brace,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-sa-t05",
+        "shape": "talk",
+        "typed": "Tell me plainly, Brace. Did you put seventy minutes on that slate yourself?",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "I do not understand \"Tell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-sa-t07",
+        "shape": "move",
+        "typed": "go over into the Vestry Hulk",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Vestry Hulk"
+        ],
+        "got": "move -> The Vestry Hulk"
+      },
+      {
+        "id": "script-sa-t08",
+        "shape": "unresolved-move",
+        "typed": "walk back into the Causeway Court",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "there is no way out called \"back into the Causeway Court\". There is: The Tide Post, The Vestry Hulk"
+      },
+      {
+        "id": "script-sa-t11",
+        "shape": "move",
+        "typed": "walk out to the Tide Post",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Tide Post"
+        ],
+        "got": "move -> The Tide Post"
+      },
+      {
+        "id": "script-sa-t12",
+        "shape": "examine-nothing",
+        "typed": "look at the stain band on the iron post and count the hand's width above the wet",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"the stain band on the iron post and count the hand's width above the wet\". There is: Assize tide-slate"
+      },
+      {
+        "id": "script-sa-t14",
+        "shape": "talk",
+        "typed": "Brace, read me the case above the figure and tell me whose fee it is.",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "I do not understand \"Brace,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-sa-t16",
+        "shape": "talk",
+        "typed": "Brace, the water does not wait on a signature. Rise the court.",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "I do not understand \"Brace,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-sa-t18",
+        "shape": "examine-nothing",
+        "typed": "look for the court's own papers in the wreck",
+        "outcome": "unparsed",
+        "expected": [
+          "examine -> nothing",
+          "other -> nothing"
+        ],
+        "got": null
+      },
+      {
+        "id": "script-sa-t10",
+        "shape": "other",
+        "typed": "hold the water off the rock with my bare hands until the hearing is finished",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"hold\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-lc-t01",
+        "shape": "examine-nothing",
+        "typed": "look closely at the fresh field note in the satchel that I do not remember writing",
+        "outcome": "unparsed",
+        "expected": [
+          "examine -> nothing"
+        ],
+        "got": null
+      },
+      {
+        "id": "script-lc-t02",
+        "shape": "talk",
+        "typed": "Grenn, you were awake when I came in last night. What hour was it?",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"Grenn,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-lc-t03",
+        "shape": "talk",
+        "typed": "Grenn, whose hand was it that pushed a folded paper into mine?",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"Grenn,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-lc-t04",
+        "shape": "talk",
+        "typed": "Grenn, tell me who you let in after the tenth bell, and do not tell me you were asleep.",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"Grenn,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-lc-t05",
+        "shape": "talk",
+        "typed": "Tell me plainly, Grenn. Did somebody pay you to leave the front door unbolted last night?",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"Tell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-lc-t06",
+        "shape": "examine-nothing",
+        "typed": "look at the satchel on the floor and everything that is in it",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing"
+        ],
+        "got": "there is no thing here or in your hands called \"the satchel on the floor and everything that is in it\". There is: nothing"
+      },
+      {
+        "id": "script-lc-t07",
+        "shape": "move",
+        "typed": "go down the stairs and out into Mournwell Lane",
+        "outcome": "resolved",
+        "expected": [
+          "move -> Mournwell Lane"
+        ],
+        "got": "move -> Mournwell Lane"
+      },
+      {
+        "id": "script-lc-t09",
+        "shape": "other",
+        "typed": "reach out of the window and pull the moon down close enough to read the writing on its underside",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "examine -> nothing"
+        ],
+        "got": "I do not understand \"reach\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-lc-t10",
+        "shape": "move",
+        "typed": "climb out onto the Larkspur Quarter rooftops",
+        "outcome": "resolved",
+        "expected": [
+          "move -> Larkspur Quarter rooftops"
+        ],
+        "got": "move -> Larkspur Quarter rooftops"
+      },
+      {
+        "id": "script-lc-t12",
+        "shape": "talk",
+        "typed": "Grenn, tell me what the quarter was joined to last night.",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"Grenn,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-lc-t14",
+        "shape": "move",
+        "typed": "go out into the boarding house hallway",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> Grenn's Boarding House hallway"
+        ],
+        "got": "there is no way out called \"out into the boarding house hallway\". There is: Mournwell Lane, Grenn's Boarding House hallway, Larkspur Quarter rooftops"
+      },
+      {
+        "id": "script-lc-t15",
+        "shape": "other",
+        "typed": "listen at the doors along the hallway and count them",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "examine -> nothing"
+        ],
+        "got": "I do not understand \"listen\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-lc-t17",
+        "shape": "talk",
+        "typed": "Grenn, I am not asking again. Who was on the stairs?",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"Grenn,\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-lc-t19",
+        "shape": "examine-nothing",
+        "typed": "look up at the Celestial Spire from the lane and take its bearing",
+        "outcome": "unparsed",
+        "expected": [
+          "examine -> nothing",
+          "move -> nothing"
+        ],
+        "got": null
+      },
+      {
+        "id": "script-lc-t20",
+        "shape": "other",
+        "typed": "hold the quarter still with my hands until midnight has gone past",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"hold\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "script-uh-t20-take",
+        "shape": "take",
+        "typed": "take the ward stamp off the desk before he asks about it",
+        "outcome": "resolved",
+        "expected": [
+          "take -> ward stamp"
+        ],
+        "got": "take -> ward stamp"
+      },
+      {
+        "id": "unresolved-move-levee",
+        "shape": "unresolved-move",
+        "typed": "go out past the levee to the flood plains",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "there is no way out called \"out past the levee to the flood plains\". There is: The Supply Closet, The Long Hallway"
+      },
+      {
+        "id": "unresolved-move-copy-room",
+        "shape": "unresolved-move",
+        "typed": "go through to the copy room",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "there is no way out called \"through to the copy room\". There is: Ward Office 12"
+      },
+      {
+        "id": "unresolved-move-stairs",
+        "shape": "unresolved-move",
+        "typed": "take the stairs down to the courtyard",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "there is no thing lying here called \"the stairs down to the courtyard\". There is: filing press, ward stamp"
+      },
+      {
+        "id": "unresolved-move-desk",
+        "shape": "unresolved-move",
+        "typed": "go and sit at Perrin's desk",
+        "outcome": "refused",
+        "expected": [
+          "move -> nothing"
+        ],
+        "got": "there is no way out called \"and sit at Perrin's desk\". There is: The Supply Closet, The Long Hallway"
+      },
+      {
+        "id": "unresolved-talk-sealed-room",
+        "shape": "unresolved-talk",
+        "typed": "talk to whoever is in the Sealed Room",
+        "outcome": "refused",
+        "expected": [
+          "talk -> nothing"
+        ],
+        "got": "there is no person here called \"to whoever is in the Sealed Room\". There is: Halkett Rowe"
+      },
+      {
+        "id": "unresolved-talk-vance",
+        "shape": "unresolved-talk",
+        "typed": "talk to Odile Vance",
+        "outcome": "refused",
+        "expected": [
+          "talk -> nothing"
+        ],
+        "got": "there is no person here called \"to Odile Vance\". There is: Halkett Rowe"
+      },
+      {
+        "id": "unresolved-talk-empty-room-3",
+        "shape": "unresolved-talk",
+        "typed": "ask Rowe what he wants",
+        "outcome": "refused",
+        "expected": [
+          "talk -> nothing"
+        ],
+        "got": "there is no person here called \"Rowe what he wants\". There is: nothing"
+      },
+      {
+        "id": "unresolved-take-shelf",
+        "shape": "unresolved-take",
+        "typed": "take the ward paper off the shelf",
+        "outcome": "refused",
+        "expected": [
+          "take -> nothing"
+        ],
+        "got": "there is no thing lying here called \"the ward paper off the shelf\". There is: nothing"
+      },
+      {
+        "id": "unresolved-take-seal",
+        "shape": "unresolved-take",
+        "typed": "take Brace's seal of office",
+        "outcome": "refused",
+        "expected": [
+          "take -> nothing"
+        ],
+        "got": "there is no thing lying here called \"Brace's seal of office\". There is: nothing"
+      },
+      {
+        "id": "unresolved-take-window",
+        "shape": "unresolved-take",
+        "typed": "take the field note out of the satchel",
+        "outcome": "refused",
+        "expected": [
+          "take -> nothing"
+        ],
+        "got": "there is no thing lying here called \"the field note out of the satchel\". There is: nothing"
+      },
+      {
+        "id": "unresolved-drop-stamp-in-closet",
+        "shape": "unresolved-drop",
+        "typed": "put the ward stamp down here",
+        "outcome": "refused",
+        "expected": [
+          "drop -> nothing"
+        ],
+        "got": "I do not understand \"put\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "unresolved-drop-apron-of-three",
+        "shape": "unresolved-drop",
+        "typed": "drop the copy-room apron",
+        "outcome": "refused",
+        "expected": [
+          "drop -> nothing"
+        ],
+        "got": "there is no thing you are carrying called \"the copy-room apron\". There is: nothing"
+      },
+      {
+        "id": "two-names-take-stamp-daybook-full",
+        "shape": "two-names-one-set",
+        "typed": "take both the stamp and the daybook off the desk",
+        "outcome": "refused",
+        "expected": [
+          "take -> ward stamp (and Ward Office 12 daybook)"
+        ],
+        "got": "there is no thing lying here called \"both the stamp and the daybook off the desk\". There is: Ward Office 12 daybook, filing press, ward stamp"
+      },
+      {
+        "id": "two-names-take-all",
+        "shape": "two-names-one-set",
+        "typed": "take all of it",
+        "outcome": "refused",
+        "expected": [
+          "take -> ward stamp (and Ward Office 12 daybook)"
+        ],
+        "got": "there is no thing lying here called \"all of it\". There is: Ward Office 12 daybook, filing press, ward stamp"
+      },
+      {
+        "id": "two-names-drop-both",
+        "shape": "two-names-one-set",
+        "typed": "drop both the index and the apron on the desk",
+        "outcome": "refused",
+        "expected": [
+          "drop -> Perrin's private index (and copy-room apron)"
+        ],
+        "got": "there is no thing you are carrying called \"both the index and the apron on the desk\". There is: Ward Office 12 daybook, Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "two-names-move-closet-hallway",
+        "shape": "two-names-one-set",
+        "typed": "check the closet and then the hallway",
+        "outcome": "refused",
+        "expected": [
+          "move -> The Supply Closet (and The Long Hallway)",
+          "examine -> nothing"
+        ],
+        "got": "\"the\" is not one of the three abilities. There is: strength, dexterity, will"
+      },
+      {
+        "id": "two-names-examine-three",
+        "shape": "two-names-one-set",
+        "typed": "read the index and the daybook against each other",
+        "outcome": "refused",
+        "expected": [
+          "examine -> Perrin's private index (and Ward Office 12 daybook)"
+        ],
+        "got": "there is no thing here or in your hands called \"the index and the daybook against each other\". There is: filing press, ward stamp, Ward Office 12 daybook, Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "two-names-talk-court-and",
+        "shape": "two-names-one-set",
+        "typed": "talk to Brace and then to Neb",
+        "outcome": "wrong",
+        "expected": [
+          "talk -> Ammon Brace (and Neb Halloran)"
+        ],
+        "got": "talk -> Neb Halloran"
+      },
+      {
+        "id": "grammar-numbers",
+        "shape": "articles-and-pronouns",
+        "typed": "read ward office 12 daybook",
+        "outcome": "resolved",
+        "expected": [
+          "examine -> Ward Office 12 daybook"
+        ],
+        "got": "examine -> Ward Office 12 daybook"
+      },
+      {
+        "id": "grammar-word-order",
+        "shape": "articles-and-pronouns",
+        "typed": "the index, take it",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> Perrin's private index"
+        ],
+        "got": "I do not understand \"the\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "grammar-double-negative",
+        "shape": "other",
+        "typed": "do not take the stamp",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"do\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "grammar-conditional",
+        "shape": "articles-and-pronouns",
+        "typed": "if the closet is unlocked, go in",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> The Supply Closet"
+        ],
+        "got": "I do not understand \"if\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "grammar-question-move",
+        "shape": "articles-and-pronouns",
+        "typed": "can I get into the supply closet from here?",
+        "outcome": "resolved",
+        "expected": [
+          "move -> The Supply Closet",
+          "other -> nothing"
+        ],
+        "got": "move -> The Supply Closet"
+      },
+      {
+        "id": "grammar-i-would-like",
+        "shape": "articles-and-pronouns",
+        "typed": "I would like to take the apron please",
+        "outcome": "unparsed",
+        "expected": [
+          "take -> copy-room apron"
+        ],
+        "got": null
+      },
+      {
+        "id": "grammar-and-nothing-else",
+        "shape": "two-sets",
+        "typed": "take the apron and nothing else",
+        "outcome": "over_refused",
+        "expected": [
+          "take -> copy-room apron"
+        ],
+        "got": "there is no thing lying here called \"the apron and nothing else\". There is: Perrin's private index, copy-room apron"
+      },
+      {
+        "id": "grammar-repeat",
+        "shape": "other",
+        "typed": "again",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"again\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "grammar-empty-ish",
+        "shape": "other",
+        "typed": "...",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"...\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "grammar-two-word-verb",
+        "shape": "articles-and-pronouns",
+        "typed": "pick up stamp",
+        "outcome": "resolved",
+        "expected": [
+          "take -> ward stamp"
+        ],
+        "got": "take -> ward stamp"
+      },
+      {
+        "id": "grammar-yell-name",
+        "shape": "articles-and-pronouns",
+        "typed": "Neb!",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Neb Halloran"
+        ],
+        "got": "I do not understand \"Neb!\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "grammar-titles-only",
+        "shape": "articles-and-pronouns",
+        "typed": "your honour",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "I do not understand \"your\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "drop-slate-tide-post",
+        "shape": "drop",
+        "typed": "drop the Assize tide-slate",
+        "outcome": "resolved",
+        "expected": [
+          "drop -> Assize tide-slate"
+        ],
+        "got": "drop -> Assize tide-slate"
+      },
+      {
+        "id": "drop-slate-post",
+        "shape": "drop",
+        "typed": "hang the slate on the post and leave it there",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> Assize tide-slate"
+        ],
+        "got": "I do not understand \"hang\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "drop-daybook-in-hallway",
+        "shape": "drop",
+        "typed": "I do not want to be holding the index when he reads it",
+        "outcome": "unparsed",
+        "expected": [
+          "drop -> Perrin's private index",
+          "other -> nothing"
+        ],
+        "got": null
+      },
+      {
+        "id": "drop-apron-closet",
+        "shape": "drop",
+        "typed": "put the apron back where it was",
+        "outcome": "over_refused",
+        "expected": [
+          "drop -> copy-room apron"
+        ],
+        "got": "I do not understand \"put\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "examine-slate-both",
+        "shape": "examine",
+        "typed": "read the slate again in front of them",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> Assize tide-slate"
+        ],
+        "got": "there is no thing here or in your hands called \"the slate again in front of them\". There is: Assize tide-slate"
+      },
+      {
+        "id": "take-stamp-with-perrin",
+        "shape": "take",
+        "typed": "take the stamp",
+        "outcome": "resolved",
+        "expected": [
+          "take -> ward stamp"
+        ],
+        "got": "take -> ward stamp"
+      },
+      {
+        "id": "other-both-of-them",
+        "shape": "other",
+        "typed": "watch both of them without saying anything",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "examine -> nothing"
+        ],
+        "got": "I do not understand \"watch\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "attack-ringer-plain",
+        "shape": "attack",
+        "typed": "attack the Ringer",
+        "outcome": "resolved",
+        "expected": [
+          "attack -> Marek Sollen"
+        ],
+        "got": "attack -> Marek Sollen"
+      },
+      {
+        "id": "attack-ringer-fullname",
+        "shape": "attack",
+        "typed": "attack Marek Sollen",
+        "outcome": "resolved",
+        "expected": [
+          "attack -> Marek Sollen"
+        ],
+        "got": "attack -> Marek Sollen"
+      },
+      {
+        "id": "attack-ringer-pronoun",
+        "shape": "attack",
+        "typed": "hit him",
+        "outcome": "over_refused",
+        "expected": [
+          "attack -> Marek Sollen"
+        ],
+        "got": "there is no person here called \"him\". There is: Marek Sollen"
+      },
+      {
+        "id": "attack-ringer-swing",
+        "shape": "attack",
+        "typed": "swing at the Ringer with everything I have",
+        "outcome": "over_refused",
+        "expected": [
+          "attack -> Marek Sollen"
+        ],
+        "got": "I do not understand \"swing\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "attack-ringer-go-for",
+        "shape": "attack",
+        "typed": "go for him before he can reach the rope",
+        "outcome": "over_refused",
+        "expected": [
+          "attack -> Marek Sollen"
+        ],
+        "got": "there is no way out called \"for him before he can reach the rope\". There is: Grenn's Boarding House hallway"
+      },
+      {
+        "id": "attack-ringer-kick",
+        "shape": "attack",
+        "typed": "kick him while he is turned away",
+        "outcome": "over_refused",
+        "expected": [
+          "attack -> Marek Sollen"
+        ],
+        "got": "I do not understand \"kick\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "attack-ringer-set-about",
+        "shape": "attack",
+        "typed": "set about the Ringer",
+        "outcome": "over_refused",
+        "expected": [
+          "attack -> Marek Sollen"
+        ],
+        "got": "I do not understand \"set\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "attack-rowe-full",
+        "shape": "attack",
+        "typed": "attack Halkett Rowe",
+        "outcome": "resolved",
+        "expected": [
+          "attack -> Halkett Rowe"
+        ],
+        "got": "attack -> Halkett Rowe"
+      },
+      {
+        "id": "attack-rowe-nickname",
+        "shape": "attack",
+        "typed": "hit Rowe",
+        "outcome": "resolved",
+        "expected": [
+          "attack -> Halkett Rowe"
+        ],
+        "got": "attack -> Halkett Rowe"
+      },
+      {
+        "id": "attack-rowe-punch",
+        "shape": "attack",
+        "typed": "punch him in the mouth",
+        "outcome": "over_refused",
+        "expected": [
+          "attack -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"punch\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "attack-brace-strike",
+        "shape": "attack",
+        "typed": "strike the Justicar",
+        "outcome": "resolved",
+        "expected": [
+          "attack -> Ammon Brace"
+        ],
+        "got": "attack -> Ammon Brace"
+      },
+      {
+        "id": "attack-brace-lunge",
+        "shape": "attack",
+        "typed": "lunge at Ammon Brace across the bench",
+        "outcome": "over_refused",
+        "expected": [
+          "attack -> Ammon Brace"
+        ],
+        "got": "I do not understand \"lunge\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "attack-neb-post",
+        "shape": "attack",
+        "typed": "hit Neb with my fist",
+        "outcome": "resolved",
+        "expected": [
+          "attack -> Neb Halloran"
+        ],
+        "got": "attack -> Neb Halloran"
+      },
+      {
+        "id": "attack-grenn-grab",
+        "shape": "attack",
+        "typed": "grab Grenn by the collar and hit him",
+        "outcome": "over_refused",
+        "expected": [
+          "attack -> Grenn Ollivar"
+        ],
+        "got": "there is no thing lying here called \"Grenn by the collar and hit him\". There is: nothing"
+      },
+      {
+        "id": "attack-neb-court-both",
+        "shape": "attack",
+        "typed": "go for Neb",
+        "outcome": "over_refused",
+        "expected": [
+          "attack -> Neb Halloran"
+        ],
+        "got": "there is no way out called \"for Neb\". There is: The Tide Post, The Vestry Hulk"
+      },
+      {
+        "id": "attack-perrin-swing",
+        "shape": "attack",
+        "typed": "take a swing at Perrin",
+        "outcome": "over_refused",
+        "expected": [
+          "attack -> Perrin Lasco"
+        ],
+        "got": "there is no thing lying here called \"a swing at Perrin\". There is: filing press, ward stamp"
+      },
+      {
+        "id": "unresolved-attack-perrin",
+        "shape": "unresolved-attack",
+        "typed": "attack Perrin Lasco",
+        "outcome": "refused",
+        "expected": [
+          "attack -> nothing"
+        ],
+        "got": "there is no person here called \"Perrin Lasco\". There is: Halkett Rowe"
+      },
+      {
+        "id": "unresolved-attack-hound",
+        "shape": "unresolved-attack",
+        "typed": "hit the hound",
+        "outcome": "refused",
+        "expected": [
+          "attack -> nothing"
+        ],
+        "got": "there is no person here called \"the hound\". There is: Grenn Ollivar"
+      },
+      {
+        "id": "unresolved-attack-empty-room",
+        "shape": "unresolved-attack",
+        "typed": "hit whoever swept this floor",
+        "outcome": "refused",
+        "expected": [
+          "attack -> nothing"
+        ],
+        "got": "there is no person here called \"whoever swept this floor\". There is: nothing"
+      },
+      {
+        "id": "unresolved-attack-neb-in-court",
+        "shape": "unresolved-attack",
+        "typed": "swing at Neb",
+        "outcome": "refused",
+        "expected": [
+          "attack -> nothing"
+        ],
+        "got": "I do not understand \"swing\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "unresolved-attack-grenn-in-court",
+        "shape": "unresolved-attack",
+        "typed": "hit Old Grenn",
+        "outcome": "refused",
+        "expected": [
+          "attack -> nothing"
+        ],
+        "got": "there is no person here called \"Old Grenn\". There is: Ammon Brace"
+      },
+      {
+        "id": "unresolved-attack-inspectorate",
+        "shape": "unresolved-attack",
+        "typed": "take a swing at the rest of the Inspectorate",
+        "outcome": "refused",
+        "expected": [
+          "attack -> nothing"
+        ],
+        "got": "there is no thing lying here called \"a swing at the rest of the Inspectorate\". There is: filing press, ward stamp"
+      },
+      {
+        "id": "two-names-attack-court",
+        "shape": "two-names-one-set",
+        "typed": "hit Neb and then the Justicar",
+        "outcome": "wrong",
+        "expected": [
+          "attack -> Ammon Brace (and Neb Halloran)"
+        ],
+        "got": "attack -> Neb Halloran"
+      },
+      {
+        "id": "two-names-attack-office",
+        "shape": "two-names-one-set",
+        "typed": "attack Perrin and Rowe both",
+        "outcome": "wrong",
+        "expected": [
+          "attack -> Perrin Lasco (and Halkett Rowe)"
+        ],
+        "got": "attack -> Perrin Lasco"
+      },
+      {
+        "id": "two-names-attack-both",
+        "shape": "two-names-one-set",
+        "typed": "swing at both of them",
+        "outcome": "refused",
+        "expected": [
+          "attack -> Ammon Brace (and Neb Halloran)"
+        ],
+        "got": "I do not understand \"swing\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-not-attack-threat-arm",
+        "shape": "talk",
+        "typed": "tell me who signed it or I will break your arm",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"tell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-not-attack-threaten",
+        "shape": "talk",
+        "typed": "threaten him",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "I do not understand \"threaten\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-not-attack-warning",
+        "shape": "talk",
+        "typed": "I am warning you, Neb",
+        "outcome": "unparsed",
+        "expected": [
+          "talk -> Neb Halloran"
+        ],
+        "got": null
+      },
+      {
+        "id": "talk-not-attack-back-off",
+        "shape": "talk",
+        "typed": "tell him to back off",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Marek Sollen"
+        ],
+        "got": "I do not understand \"tell\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-not-attack-shout",
+        "shape": "talk",
+        "typed": "shout at Grenn about the rent",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Grenn Ollivar"
+        ],
+        "got": "I do not understand \"shout\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-not-attack-accuse",
+        "shape": "talk",
+        "typed": "accuse Rowe of signing it himself",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Halkett Rowe"
+        ],
+        "got": "I do not understand \"accuse\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-not-attack-demand",
+        "shape": "talk",
+        "typed": "demand that the Justicar stand down",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Ammon Brace"
+        ],
+        "got": "I do not understand \"demand\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "talk-not-attack-addressed",
+        "shape": "talk",
+        "typed": "what are you doing up here?",
+        "outcome": "over_refused",
+        "expected": [
+          "talk -> Marek Sollen"
+        ],
+        "got": "I do not understand \"what\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "examine-not-attack-look-over",
+        "shape": "examine-nothing",
+        "typed": "look him over before I decide",
+        "outcome": "unparsed",
+        "expected": [
+          "examine -> nothing"
+        ],
+        "got": null
+      },
+      {
+        "id": "examine-not-attack-size-up",
+        "shape": "examine-nothing",
+        "typed": "size up Neb's reach before anything happens",
+        "outcome": "over_refused",
+        "expected": [
+          "examine -> nothing"
+        ],
+        "got": "I do not understand \"size\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-not-attack-fists",
+        "shape": "other",
+        "typed": "clench my fists",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"clench\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-not-attack-brace-myself",
+        "shape": "other",
+        "typed": "brace myself for what he does next",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing"
+        ],
+        "got": "I do not understand \"brace\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "other-not-attack-punch-wall",
+        "shape": "other",
+        "typed": "punch the wall",
+        "outcome": "over_refused",
+        "expected": [
+          "other -> nothing",
+          "attack -> nothing"
+        ],
+        "got": "I do not understand \"punch\". The no-model grammar is fixed:"
+      },
+      {
+        "id": "move-go-for-the-hallway",
+        "shape": "move",
+        "typed": "go for the hallway",
+        "outcome": "over_refused",
+        "expected": [
+          "move -> The Long Hallway"
+        ],
+        "got": "there is no way out called \"for the hallway\". There is: The Supply Closet, The Long Hallway"
+      }
+    ]
+  }
+}

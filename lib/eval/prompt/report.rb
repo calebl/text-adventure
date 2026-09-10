@@ -60,11 +60,19 @@ class Eval::Prompt::Report
     say "difference smaller than that band is not a difference -- see EVALUATION.md."
     say "THE LATENCIES ARE WARM-CACHE FIGURES: each arm's first call is timed separately"
     say "and excluded."
+    if result.ending_requests
+      say "ENDING scaffold stable: #{result.ending_requests.fetch("scaffold_stable")}; " \
+          "complete: #{result.ending_requests.fetch("complete")}. Generated prelude is retained verbatim and unstable."
+    end
     unless result.prompt_stable
       say
       say "WARNING: THE DESIGNATED CASE OF SOME SHAPE SENT TWO DIFFERENT PROMPTS IN THIS RUN."
-      say "The facts a case is built on are supposed to be constant. Until that is explained,"
-      say "every figure below is measuring something that moved. See Eval::Prompt::Version."
+      if result.ending_requests&.fetch("scaffold_stable") && result.ending_requests.fetch("complete")
+        say "The ending scaffold stayed fixed; generated prelude prose varied. The full prompt is not reproducible."
+      else
+        say "The facts a case is built on are supposed to be constant. Until that is explained,"
+        say "every figure below is measuring something that moved. See Eval::Prompt::Version."
+      end
     end
     say RULE
   end

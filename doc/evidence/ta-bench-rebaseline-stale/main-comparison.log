@@ -1,0 +1,37 @@
+------------------------------------------------------------------------------
+PROMPT BENCH: prompt-2026-09-05 -> prompt-2026-09-10
+Exact rank test at p <= 0.05, 4 repetitions a side minimum.
+------------------------------------------------------------------------------
+schema request: no schema identity recorded
+prompt-2026-09-05: mistralai/mistral-medium-3.1 | corpus dfd1756a8f1f91b8 | prompt 0ffc0228b538ac73 | 4 reps
+schema request: v1:5cdebbccc74bc3c4
+prompt-2026-09-10: mistralai/mistral-medium-3.1 | corpus dfd1756a8f1f91b8 | prompt 2257365e2b7606da | 4 reps
+Latencies are WARM-CACHE figures -- each arm's first call is timed apart and excluded.
+
+This is a PROMPT comparison on one model: 0ffc0228b538ac73 -> 2257365e2b7606da.
+
+MODEL  mistralai/mistral-medium-3.1
+  unrecorded_departure       0.000 -> 0.000  unchanged NOISE (inside the 0.011 the unchanged runs already spanned)
+  unrecorded_arrival         0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  item_not_held              0.062 -> 0.077  WORSE     NOISE (inside the 0.031 the unchanged runs already spanned)
+  take_denied                0.778 -> 0.056  BETTER    REAL (p=0.0286)
+  pickup_invented            0.111 -> 0.000  BETTER    REAL (p=0.0286)
+  inscription_misquoted      0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  truncated_prose            0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  third_person_protagonist   0.000 -> 0.000  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  refusals                   0 -> 0  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  failures                   0 -> 0  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  omitted_fields             0 -> 0  unchanged NOISE (inside the 0.000 the unchanged runs already spanned)
+  cap_hits                   0 -> 0  unchanged NOISE (inside the 1.000 the unchanged runs already spanned)
+  latency_median             1.44s -> 1.78s  WORSE     REAL (p=0.0286)
+  latency_p95                1.95s -> 2.49s  WORSE     REAL (p=0.0286)
+  output_tokens              12241 -> 12547  reported  NOISE (inside the 340.000 the unchanged runs already spanned)
+  words                      94 -> 94  reported  NOISE (inside the 4.000 the unchanged runs already spanned)
+  commitments                3.111 -> 3.172  reported  NOISE (inside the 0.188 the unchanged runs already spanned)
+
+A REAL verdict on a CHECK is what means a prompt change worked. Read `commitments`
+beside it: a fall in every rate with a fall in that is prose that says less, which is
+the one way to improve these numbers without improving the game (Eval::Richness).
+Everything INCONCLUSIVE at these sample sizes means: not enough repetitions.
+Confirm a REAL verdict with `rake eval:run` before believing it.
+------------------------------------------------------------------------------

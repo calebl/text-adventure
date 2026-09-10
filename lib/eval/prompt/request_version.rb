@@ -1,7 +1,7 @@
 # Run the real turn to its request boundary, inside rolled-back staging.
-# No provider conversation is built. Ending preludes use fixed synthetic prose
-# solely to render the ending scaffold; this is never scored as model output.
-# This deliberately does not certify equality of generated ending history.
+# No provider conversation is built. Synthetic ending preludes only reach the
+# request boundary; EndingVersion replaces their fields to identify the stable
+# scaffold. Legacy digests still use the synthetic assembly, never scored prose.
 module Eval::Prompt::RequestVersion
   extend self
 
@@ -28,23 +28,33 @@ module Eval::Prompt::RequestVersion
 
   def offline(corpus = Eval::Prompt.corpus)
     BaseAgent.prepend(Capture) unless BaseAgent.ancestors.include?(Capture)
-    requests = {}
     bench = Eval::Prompt::Bench.new(corpus: corpus, io: nil)
-    corpus.cases.group_by { |kase| kase.shape.to_s }.sort.each do |shape, cases|
-      kase = cases.min_by(&:id)
+    designated = corpus.cases.group_by { |kase| kase.shape.to_s }.sort.to_h
+                       .transform_values { |cases| cases.min_by(&:id) }
+    ending = corpus.cases.all?(&:ending?)
+    cases = ending ? corpus.cases.sort_by(&:id) : designated.values
+    captured = cases.to_h do |kase|
+      request = nil
       Eval::Classifier::Stage.open([ corpus.position(kase.position) ],
                                    label: Eval::Prompt::Corpus::STAGE_LABEL, retitle: true,
                                    roots: Eval::Prompt::WORLD_ROOTS) do |stages|
         request = capture(kase) do
           bench.send(:play_case, kase, stages.fetch(kase.position), Eval::Classifier::Arm.parse("offline"), 0)
         end
-        raise "No designated request captured for #{kase.id}" unless request
-        requests[shape] = request
       end
+      raise "No designated request captured for #{kase.id}" unless request
+      [ kase.id, request ]
     end
+    requests = designated.transform_values { |kase| captured.fetch(kase.id) }
     legacy = { prompt_digest: Eval::Prompt::Version.digest(requests.map { |shape, request| "#{shape}\n#{request[:user]}" }),
                instructions_digest: Eval::Prompt::Version.digest(requests.values.map { |request| request[:system] }.uniq.sort) }
-    legacy.merge(request_identity: Eval::RequestIdentity.of(requests))
+    identity = if ending
+      scaffolds = captured.transform_values { |request| request.fetch(:ending_scaffold) }
+      Eval::Prompt::EndingVersion.identity(scaffolds, corpus)
+    else
+      Eval::RequestIdentity.of(requests.transform_values { |request| request.except(:ending_scaffold) })
+    end
+    legacy.merge(request_identity: identity)
   end
 
   def capture(kase)
@@ -52,11 +62,17 @@ module Eval::Prompt::RequestVersion
     catch(:eval_request_captured) do
       Thread.current[KEY] = lambda do |agent, prompt, block|
         if !kase.ending? || agent.purpose == "ending"
-          throw :eval_request_captured, Eval::RequestIdentity.request(agent.instructions, prompt, agent.schema)
+          request = Eval::RequestIdentity.request(agent.instructions, prompt, agent.schema)
+          request[:ending_scaffold] = Eval::Prompt::EndingVersion.current.fetch(:scaffold) if kase.ending?
+          throw :eval_request_captured, request
         end
-        raise "Unexpected structured ending prelude" if agent.schema
-        block&.call(Response.new(PRELUDE))
-        Response.new(PRELUDE)
+        if agent.schema
+          raise "Unexpected structured ending prelude" unless agent.purpose == "arrival" && agent.schema == Scene::Schema
+          Response.new({ "description" => PRELUDE, "summary" => PRELUDE })
+        else
+          block&.call(Response.new(PRELUDE))
+          Response.new(PRELUDE)
+        end
       end
       yield
       nil

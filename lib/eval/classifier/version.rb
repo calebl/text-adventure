@@ -6,6 +6,17 @@ module Eval::Classifier::Version
   extend self
 
   def offline(corpus = Eval::Classifier.corpus)
+    Eval::RequestIdentity.of(requests(corpus))
+  end
+
+  def offline_details(corpus = Eval::Classifier.corpus)
+    sent = requests(corpus)
+    { request_identity: Eval::RequestIdentity.of(sent),
+      instructions_digest: Eval::Prompt::Version.digest(sent.values.map { |request| request[:system] }),
+      prompt_digest: Eval::Prompt::Version.digest(sent.values.map { |request| request[:user] }) }
+  end
+
+  def requests(corpus = Eval::Classifier.corpus)
     line = corpus.lines.min_by(&:id)
     request = nil
     EngineSweep.without_a_model do
@@ -22,6 +33,6 @@ module Eval::Classifier::Version
         )
       end
     end
-    Eval::RequestIdentity.of(line.id => request)
+    { line.id => request }
   end
 end

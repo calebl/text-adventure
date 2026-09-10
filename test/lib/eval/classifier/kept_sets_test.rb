@@ -136,6 +136,23 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     end
   end
 
+  test "the current single arm baseline matches the corpus and schema request" do
+    result = load_kept("classifier-2026-09-10")
+    assert_equal Eval::Classifier.digest, result.corpus_digest
+    assert_equal Eval::Classifier.corpus.size, result.corpus_size
+    assert_equal Eval::Classifier::Version.offline, result.request_identity
+    assert_equal [ BaseAgent::REMOTE_MODEL_IDS.first ], result.arms
+    assert_equal result.arms, result.answered_by
+    assert_equal Eval::Noise::MIN_RUNS, result.reps
+    assert_includes Eval::MEASUREMENT_FILES, "db/eval/classifier-2026-09-10/classifier.json"
+  end
+
+  test "the current classifier floor can be recomputed offline" do
+    floor = JSON.parse(Eval.kept_root.join("classifier-2026-09-10/offline.json").read)
+    assert_equal Eval::Classifier.digest, floor.fetch("corpus_digest")
+    assert_equal JSON.parse(Eval::Classifier::Offline.new.summary.to_h.to_json), floor.fetch("floor")
+  end
+
   private
     # Loaded from the KEPT root explicitly rather than through `Eval.set_path`,
     # because this test is about the checked-in files: resolved by name it would

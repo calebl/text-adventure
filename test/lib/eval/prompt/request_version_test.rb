@@ -17,5 +17,7 @@ class Eval::Prompt::RequestVersionTest < ActiveSupport::TestCase
     corpus = Eval::Prompt.corpus("ending")
     assert_equal Eval::Prompt::RequestVersion.offline(corpus), Eval::Prompt::RequestVersion.offline(corpus)
     assert_nil Thread.current[Eval::Prompt::RequestVersion::KEY]
+    assert_nil Thread.current[Eval::Prompt::EndingVersion::KEY]
+    assert_nil Thread.current[Eval::Prompt::EndingVersion::FIELDS_KEY]
   end
 end
