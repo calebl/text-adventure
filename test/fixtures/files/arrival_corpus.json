@@ -1,0 +1,14 @@
+{
+  "cases": [
+    {"id":"dead_resident", "why":"Study: durable prose names a resident killed only in this game.", "state":"dead", "facts":["body"]},
+    {"id":"carried_key", "why":"Study: durable desk key is already carried in this game.", "state":"carried", "facts":["key"]},
+    {"id":"crossing_harm", "why":"Study: crossing hurt the protagonist before arrival.", "state":"crossing", "facts":["toll"]},
+    {"id":"opening_empty", "why":"Generated opening with protagonist, no history and a seeded empty cast.", "opening":true, "name":"Harbour Office", "facts":[]},
+    {"id":"opening_cast", "why":"Generated opening with protagonist and seeded resident cast.", "opening":true, "name":"Quiet Landing", "facts":[]},
+    {"id":"returning", "why":"Stored visit with elapsed story time renders recognition instructions.", "state":"returning", "facts":[]},
+    {"id":"wounded_resident", "why":"Living resident has a per-game wound.", "state":"wounded", "facts":["wound"]},
+    {"id":"floor_and_carried", "why":"Floor ledger and already-carried brass key are distinct copies.", "state":"inventory", "facts":["key","floor"]},
+    {"id":"no_exits", "why":"Destination has no outgoing edges: fallback wording.", "state":"no_exits", "facts":[]},
+    {"id":"pending_toll", "why":"An untold directed crossing toll reaches Moment#one_toll.", "state":"toll", "facts":["toll"]}
+  ]
+}

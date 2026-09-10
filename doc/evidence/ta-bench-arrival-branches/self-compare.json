@@ -1,0 +1,508 @@
+[
+  {
+    "metric": "description.unusable",
+    "code": "description.unusable",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "description.unrecorded_arrival",
+    "code": "description.unrecorded_arrival",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "description.item_not_held",
+    "code": "description.item_not_held",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "description.truncated_prose",
+    "code": "description.truncated_prose",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "description.third_person_protagonist",
+    "code": "description.third_person_protagonist",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "description.sentence_count_outside_schema",
+    "code": "description.sentence_count_outside_schema",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.1,
+      "median": 0.1,
+      "range": 0.1
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.1,
+      "median": 0.1,
+      "range": 0.1
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.1
+  },
+  {
+    "metric": "description.second_person_cue_missing",
+    "code": "description.second_person_cue_missing",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "description.past_tense_cue",
+    "code": "description.past_tense_cue",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "description.multiple_paragraphs",
+    "code": "description.multiple_paragraphs",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "description.fact_missing_strict",
+    "code": "description.fact_missing_strict",
+    "before": {
+      "runs": 4,
+      "min": 0.5,
+      "max": 0.6666666666666666,
+      "median": 0.5833333333333333,
+      "range": 0.16666666666666663
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.5,
+      "max": 0.6666666666666666,
+      "median": 0.5833333333333333,
+      "range": 0.16666666666666663
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.16666666666666663
+  },
+  {
+    "metric": "description.fact_missing_inclusive",
+    "code": "description.fact_missing_inclusive",
+    "before": {
+      "runs": 4,
+      "min": 0.16666666666666666,
+      "max": 0.6666666666666666,
+      "median": 0.41666666666666663,
+      "range": 0.5
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.16666666666666666,
+      "max": 0.6666666666666666,
+      "median": 0.41666666666666663,
+      "range": 0.5
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.5
+  },
+  {
+    "metric": "summary.unusable",
+    "code": "summary.unusable",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "summary.unrecorded_arrival",
+    "code": "summary.unrecorded_arrival",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "summary.item_not_held",
+    "code": "summary.item_not_held",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "summary.truncated_prose",
+    "code": "summary.truncated_prose",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "summary.sentence_count_outside_schema",
+    "code": "summary.sentence_count_outside_schema",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "summary.third_person_cue_missing",
+    "code": "summary.third_person_cue_missing",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "summary.fact_missing_strict",
+    "code": "summary.fact_missing_strict",
+    "before": {
+      "runs": 4,
+      "min": 0.3333333333333333,
+      "max": 0.3333333333333333,
+      "median": 0.3333333333333333,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.3333333333333333,
+      "max": 0.3333333333333333,
+      "median": 0.3333333333333333,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "summary.fact_missing_inclusive",
+    "code": "summary.fact_missing_inclusive",
+    "before": {
+      "runs": 4,
+      "min": 0.3333333333333333,
+      "max": 0.3333333333333333,
+      "median": 0.3333333333333333,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.3333333333333333,
+      "max": 0.3333333333333333,
+      "median": 0.3333333333333333,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "description.unrecorded_departure",
+    "code": "description.unrecorded_departure",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "summary.unrecorded_departure",
+    "code": "summary.unrecorded_departure",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  {
+    "metric": "description.revisit_cue_missing",
+    "code": "description.revisit_cue_missing",
+    "before": {
+      "runs": 4,
+      "min": 1.0,
+      "max": 1.0,
+      "median": 1.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 1.0,
+      "max": 1.0,
+      "median": 1.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  }
+]

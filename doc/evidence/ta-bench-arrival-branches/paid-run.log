@@ -1,0 +1,51 @@
+{
+  "model": "mistralai/mistral-medium-3.1",
+  "cases": 10,
+  "reps": 4,
+  "calls": 40,
+  "input_per_case": 1112,
+  "output_per_case": 158,
+  "estimated_usd": 0.030432,
+  "input_per_million": 0.4,
+  "output_per_million": 2.0
+}
+dead_resident:1 recorded
+carried_key:1 recorded
+crossing_harm:1 recorded
+opening_empty:1 recorded
+opening_cast:1 recorded
+returning:1 recorded
+wounded_resident:1 recorded
+floor_and_carried:1 recorded
+no_exits:1 recorded
+pending_toll:1 recorded
+dead_resident:2 recorded
+carried_key:2 recorded
+crossing_harm:2 recorded
+opening_empty:2 recorded
+opening_cast:2 recorded
+returning:2 recorded
+wounded_resident:2 recorded
+floor_and_carried:2 recorded
+no_exits:2 recorded
+pending_toll:2 recorded
+dead_resident:3 recorded
+carried_key:3 recorded
+crossing_harm:3 recorded
+opening_empty:3 recorded
+opening_cast:3 recorded
+returning:3 recorded
+wounded_resident:3 recorded
+floor_and_carried:3 recorded
+no_exits:3 recorded
+pending_toll:3 recorded
+dead_resident:4 recorded
+carried_key:4 recorded
+crossing_harm:4 recorded
+opening_empty:4 recorded
+opening_cast:4 recorded
+returning:4 recorded
+wounded_resident:4 recorded
+floor_and_carried:4 recorded
+no_exits:4 recorded
+pending_toll:4 recorded

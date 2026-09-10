@@ -2114,3 +2114,44 @@ a fictional quotation. Read `Eval::Inscription::Scorer` for the precise limits.
 Each board reading exposes nullable `human_fit` and `human_note` fields for a
 future lab annotation pass; no lab page or automatic judgement of register,
 meaning, plausibility or world fit is built here.
+
+## Fixed arrival branches
+
+`eval:arrival` stages destination records and buys one `Scene::Generator` call
+per case. `test/fixtures/files/arrival_corpus.json` names the study cases and
+opening, returning, wound, inventory, no-exit and pending-toll branches. Openings
+have a protagonist and seeded population; an empty opening has no other people.
+`Eval::Arrival::Stage` explains why this is a sibling of the ordinary turn bench.
+
+```bash
+DATABASE_URL=sqlite3:tmp/arrival/bench.sqlite3 bin/rails db:prepare
+DATABASE_URL=sqlite3:tmp/arrival/bench.sqlite3 bundle exec rake ruby_llm:load_models
+DATABASE_URL=sqlite3:tmp/arrival/bench.sqlite3 bundle exec rake eval:estimate
+DATABASE_URL=sqlite3:tmp/arrival/bench.sqlite3 EVAL_LIVE=1 \
+  EVAL_BUDGET_FILE=tmp/arrival/budget.json SET=my-arrival bundle exec rake eval:arrival
+bundle exec rake eval:arrival_score SET=arrival-branches
+bundle exec rake eval:arrival_board SET=arrival-branches
+bundle exec rake eval:arrival_compare BEFORE=arrival-branches AFTER=my-arrival
+bundle exec rake eval:arrival_digest
+```
+
+The kept set is `Eval::Arrival::BASELINE`. Its test rebuilds **every** request
+identity, including system, user, emitted schema and empty replay history, with
+no provider call. No digest is borrowed from the ordinary main move case; that
+set is measured and re-baselined separately by `Eval::Prompt`.
+
+Description and summary have separate lexical checks, availability and rates.
+Fact-missing strict/inclusive readings are **word-cue proxies**, not the study's
+semantic judgments. `Eval::Arrival::Scorer` states each limit; its tests replay
+precision and misses against the retained independent annotations. The board
+prints both study readers beside those historical readings. New responses have
+no annotation unless a reader supplies `ANNOTATIONS=path.json`: an object keyed
+by the board's `response_identity`, with separate `description` and `summary`
+objects holding contradiction, required-fact acknowledgment and rationale.
+Labels never transfer merely because case names match. The original study
+readers' provenance is retained; no new judge model is called.
+
+Neither the regexes nor the corpus measure general semantic contradiction,
+recognition quality on a revisit or prose quality. A clean lexical reading is
+not evidence of those properties. Receipts include all attempts; superseded
+fixture readings, when present, contribute to spend and not to baseline scores.

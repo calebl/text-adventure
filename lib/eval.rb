@@ -82,6 +82,26 @@ module Eval
     test/lib/eval/inscription/scorer_test.rb
     test/lib/eval/inscription/kept_set_test.rb
     db/eval/inscription-2026-09-10/inscription.json
+    lib/eval/arrival.rb
+    lib/eval/arrival/bench.rb
+    lib/eval/arrival/budget.rb
+    lib/eval/arrival/result.rb
+    lib/eval/arrival/scorer.rb
+    lib/eval/arrival/stage.rb
+    lib/tasks/arrival.rake
+    test/fixtures/files/arrival_corpus.json
+    test/lib/eval/arrival/budget_test.rb
+    test/lib/eval/arrival/kept_set_test.rb
+    test/lib/eval/arrival/result_test.rb
+    test/lib/eval/arrival/scorer_test.rb
+    test/lib/eval/arrival/stage_test.rb
+    db/eval/arrival-branches/arrival.json
+    db/eval/adversarial-20260909/arrival-before.json
+    db/eval/adversarial-20260909/arrival-after.json
+    db/eval/adversarial-20260909/arrival-reading-key.json
+    db/eval/adversarial-20260909/arrival-independent-annotations.json
+    db/eval/adversarial-20260909/arrival-root-annotations.json
+    db/eval/adversarial-20260909/arrival-protocol.md
     app/models/story/audit.rb
     app/models/story/audit/prose.rb
     app/models/story/scoreboard.rb

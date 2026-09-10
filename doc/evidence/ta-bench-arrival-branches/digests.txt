@@ -1,0 +1,10 @@
+dead_resident v1:a3b7efef2e569c51
+carried_key v1:ff89a78253bd175c
+crossing_harm v1:04ed8fd67c8a2b03
+opening_empty v1:bda979ca657e86c0
+opening_cast v1:4f332d81b0550fd7
+returning v1:417ba4fb66c2c3d6
+wounded_resident v1:105101dc7748ae13
+floor_and_carried v1:5ad3af72c389f740
+no_exits v1:637213facec9a3e0
+pending_toll v1:d4c3d99f2d56ff22

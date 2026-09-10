@@ -1,0 +1,22 @@
+{
+  "description.strict": {
+    "total": 24,
+    "false_missing": 0,
+    "missed_missing": 1
+  },
+  "description.inclusive": {
+    "total": 24,
+    "false_missing": 0,
+    "missed_missing": 3
+  },
+  "summary.strict": {
+    "total": 24,
+    "false_missing": 0,
+    "missed_missing": 0
+  },
+  "summary.inclusive": {
+    "total": 24,
+    "false_missing": 1,
+    "missed_missing": 0
+  }
+}

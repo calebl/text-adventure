@@ -1,0 +1,6 @@
+Arrival baseline: {"model":"mistralai/mistral-medium-3.1","cases":10,"reps":4,"calls":40,"input_per_case":1112,"output_per_case":158,"estimated_usd":0.030432,"input_per_million":0.4,"output_per_million":2.0}
+15 runs x 20 turns = 300 turns, ~540,000 tokens in / 90,000 out, on mistralai/mistral-medium-3.1: about $0.40
+Measured, not modelled: 1800 in / 300 out per turn, from 12 real whole-run transcripts. See Eval::Cost.
+
+THE BENCHES, each at its own defaults on mistralai/mistral-medium-3.1:
+  eval:realization   22 cases x 4 reps x 2 calls = 176 calls, about $0.207
