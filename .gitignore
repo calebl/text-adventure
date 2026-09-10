@@ -10,6 +10,9 @@
 # Ignore all environment files.
 /.env*
 
+# Ignore local Lavish review artifacts.
+/.lavish/
+
 # Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*
