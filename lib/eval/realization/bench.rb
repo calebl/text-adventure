@@ -151,6 +151,7 @@ class Eval::Realization::Bench
   # as a failure and the pass keeps going: a provider dropping one call in a
   # hundred must not cost the whole run.
   def run
+    request_identity = Eval::Realization::RequestVersion.offline(corpus)
     passes = []
     warmups = []
 
@@ -163,6 +164,7 @@ class Eval::Realization::Bench
 
     Eval::Realization::Result.new(
       corpus_size: corpus.size, corpus_digest: Eval::Realization.digest(corpus),
+      request_identity: request_identity,
       arms: arms.map(&:id), reps: reps, passes: passes.map(&:stored), warmups: warmups,
       **Eval::Realization::Version.of(passes)
     )

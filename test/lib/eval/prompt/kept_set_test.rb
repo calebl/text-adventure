@@ -110,6 +110,20 @@ class Eval::Prompt::KeptSetTest < ActiveSupport::TestCase
     assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{BASELINE}/#{Eval::Prompt::RESULTS}"
   end
 
+  test "schema identity is optional historical evidence and survives loading" do
+    Dir.glob(Eval.kept_root.join("*", Eval::Prompt::RESULTS)).each do |file|
+      recorded = JSON.parse(File.read(file))["request_identity"]
+      result = Eval::Prompt::Result.load(File.dirname(file))
+      if recorded
+        assert_equal recorded, result.request_identity
+        assert_equal recorded, result.summary.request_identity
+      else
+        assert_nil result.request_identity
+        assert_equal "no schema identity recorded", Eval::RequestIdentity.label(result.request_identity)
+      end
+    end
+  end
+
   private
 
   def kept = @kept ||= Eval::Prompt::Result.load(Eval.kept_root.join(BASELINE))

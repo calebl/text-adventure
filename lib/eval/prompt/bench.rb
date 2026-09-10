@@ -208,6 +208,7 @@ class Eval::Prompt::Bench
   # failure and the pass keeps going: a provider dropping one call in a hundred
   # must not cost the whole run.
   def run
+    request_identity = Eval::Prompt::RequestVersion.offline(corpus)[:request_identity]
     passes = []
     warmups = []
 
@@ -220,6 +221,7 @@ class Eval::Prompt::Bench
 
     Eval::Prompt::Result.new(
       corpus_size: corpus.size, corpus_digest: Eval::Prompt.digest(corpus),
+      request_identity: request_identity,
       arms: arms.map(&:id), reps: reps, passes: passes.map(&:stored), warmups: warmups,
       **Eval::Prompt::Version.of(passes)
     )

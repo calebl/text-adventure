@@ -51,6 +51,7 @@ class Eval::Realization::Report
   private
 
   def heading
+    say "schema request: #{Eval::RequestIdentity.label(result.request_identity)}"
     say RULE
     say "THE REALIZATION BENCH -- #{result.corpus_size} stubs, #{result.reps} repetitions, " \
         "#{result.arms.size} model#{"s" unless result.arms.one?}"

@@ -66,12 +66,13 @@ class Eval::Classifier::Result
   # two, and `Eval::Classifier::Comparison` suppresses exactly those two.
   SERIAL = 1
 
-  attr_reader :corpus_size, :corpus_digest, :arms, :reps, :passes, :warmups, :name, :recorded_at, :concurrency
+  attr_reader :request_identity, :corpus_size, :corpus_digest, :arms, :reps, :passes, :warmups, :name, :recorded_at, :concurrency
 
-  def initialize(corpus_size:, arms:, reps:, passes:, warmups: [], corpus_digest: nil,
+  def initialize(corpus_size:, arms:, reps:, passes:, warmups: [], corpus_digest: nil, request_identity: nil,
                  name: nil, recorded_at: nil, answered_by: nil, concurrency: SERIAL)
     @corpus_size = corpus_size
     @corpus_digest = corpus_digest
+    @request_identity = request_identity&.deep_stringify_keys
     @arms = arms
     @reps = reps
     @concurrency = (concurrency || SERIAL).to_i
@@ -114,7 +115,7 @@ class Eval::Classifier::Result
 
     document = JSON.parse(File.read(file))
     new(name: document["name"], recorded_at: document["recorded_at"],
-        corpus_size: document["corpus_size"], corpus_digest: document["corpus_digest"],
+        corpus_size: document["corpus_size"], corpus_digest: document["corpus_digest"], request_identity: document["request_identity"],
         arms: document.fetch("arms"), reps: document["reps"],
         concurrency: document["concurrency"] || SERIAL,
         warmups: document["warmups"].to_a, answered_by: document["answered_by"],
@@ -145,7 +146,7 @@ class Eval::Classifier::Result
     end
 
     self.class.new(name: name, recorded_at: recorded_at, corpus_size: corpus_size,
-                   corpus_digest: corpus_digest, arms: arms, reps: reps, warmups: warmups,
+                   corpus_digest: corpus_digest, request_identity: request_identity, arms: arms, reps: reps, warmups: warmups,
                    answered_by: answered_by, concurrency: concurrency, passes: kept)
   end
 
@@ -188,7 +189,7 @@ class Eval::Classifier::Result
 
   def to_h
     { name: name, recorded_at: recorded_at || Time.current.utc.iso8601,
-      corpus_size: corpus_size, corpus_digest: corpus_digest, arms: arms, reps: reps,
+      corpus_size: corpus_size, corpus_digest: corpus_digest, request_identity: request_identity, arms: arms, reps: reps,
       concurrency: concurrency, answered_by: answered_by, warmups: warmups,
       passes: passes.map(&:to_h) }
   end

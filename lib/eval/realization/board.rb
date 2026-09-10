@@ -65,7 +65,8 @@ class Eval::Realization::Board
   # versions are comparable and are the whole point, so that one is stated
   # rather than warned about.
   def warnings
-    found = []
+    identities = columns.filter_map { |column| column.result.request_identity }.uniq
+    found = identities.size > 1 ? [ "NOTE: these sets recorded different schema request identities." ] : []
     digests = columns.map { |column| column.result.corpus_digest }.uniq
 
     if digests.size > 1
@@ -126,7 +127,8 @@ class Eval::Realization::Board
     end
 
     def body
-      rows = { "set" => ->(column) { "`#{column.set}`" },
+      rows = { "schema request" => ->(column) { Eval::RequestIdentity.label(column.result.request_identity) },
+               "set" => ->(column) { "`#{column.set}`" },
                "prompt version" => ->(column) { "`#{column.result.prompt_digest || "unrecorded"}`" },
                "corpus" => ->(column) { "`#{column.result.corpus_digest || "unrecorded"}`" },
                "reps × cases" => ->(column) { "#{column.result.reps} × #{column.result.corpus_size}" } }
