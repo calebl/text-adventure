@@ -114,6 +114,96 @@ class Lab::KindsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to lab_kinds_path
   end
 
+  # ------------------------------------------------------------------ the board
+  #
+  # THE AGREEMENT ON THE BOARD, and what it prints in each of the three states a
+  # reader can find it in: nothing drawn, drawn but below the threshold, and
+  # established. `Lab::Realization::Agreement`'s own test holds the arithmetic;
+  # what is asserted here is that the page never shows a figure the counts do not
+  # support.
+  test "the board carries the agreement for both sets and says what an eligible verdict is" do
+    get lab_kinds_path
+
+    assert_response :success
+    assert_select "h2", text: "the agreement"
+    assert_select "h3", text: /#{Lab::Realization::Agreement::TUNING}/
+    assert_select "h3", text: /#{Lab::Realization::Agreement::HELD_OUT}/
+    assert_select "p", text: /ELIGIBLE verdict/
+    assert_select "body", text: /#{Story::Scoreboard::MIN_VERDICTS} eligible verdicts/
+  end
+
+  test "with nothing drawn the board offers no agreement figure at all" do
+    get lab_kinds_path
+
+    assert_select "body", text: /nothing drawn in the tuning worlds yet/
+    assert_select "body", text: /nothing drawn in the held-out world yet/
+    assert_select "table td", text: /%/, count: 0
+  end
+
+  test "below the threshold the board prints the fraction and never a percentage" do
+    kind = create(:lab_realization_kind, :a_building)
+    3.times { create(:lab_realization_sample, :a_building, kind: kind, verdict: "good") }
+
+    get lab_kinds_path
+
+    assert_select "td", text: /3 of 3/
+    assert_select "td span.absent", text: /not established/
+    assert_select "td", text: /100\.0%/, count: 0
+  end
+
+  test "at the threshold the board publishes the percentage" do
+    kind = create(:lab_realization_kind, :a_building)
+    Story::Scoreboard::MIN_VERDICTS.times do
+      create(:lab_realization_sample, :a_building, kind: kind, verdict: "good")
+    end
+
+    get lab_kinds_path
+
+    assert_select "td", text: /#{Story::Scoreboard::MIN_VERDICTS} of #{Story::Scoreboard::MIN_VERDICTS}/
+    assert_select "td", text: /100\.0%/
+    assert_select "td span.absent", text: /not established/, count: 0
+  end
+
+  # A CHECK WITH NOTHING TO READ ON IS SAID TO BE UNAVAILABLE, never scored as
+  # clean -- the one number this instrument must not print.
+  test "a check nothing gave anything to read is unavailable on the board" do
+    kind = create(:lab_realization_kind, :a_building)
+    create(:lab_realization_sample, :a_building, kind: kind, verdict: "good")
+
+    get lab_kinds_path
+
+    assert_select "td.absent", text: /nothing drawn gave this check anything to read/
+  end
+
+  # THE DISAGREEMENTS ARE OPENABLE. A count is a complaint; the sample page
+  # carries the prompt as sent, which is what tells a wrong check from a right
+  # one.
+  test "a suspect and a miss are both listed with a link to the sample" do
+    room = create(:lab_realization_kind)
+    building = create(:lab_realization_kind, :a_building)
+    suspect = create(:lab_realization_sample, :a_room, kind: room, verdict: "good")
+    missed = create(:lab_realization_sample, :a_building, kind: building, verdict: "bad")
+
+    get lab_kinds_path
+
+    assert_select "h4", text: /suspects/
+    assert_select "ul.evidence a[href=?]", lab_sample_path(suspect), text: "sample ##{suspect.id}"
+    assert_select "h4", text: /missed/
+    assert_select "ul.evidence a[href=?]", lab_sample_path(missed), text: "sample ##{missed.id}"
+  end
+
+  # HELD OUT IS ITS OWN SET ON THE PAGE TOO, and the samples in it never top the
+  # tuning set up.
+  test "a held out sample is counted in the held out set and not in the tuning one" do
+    held = create(:lab_realization_kind, :a_building, world: Eval::HELD_OUT)
+    create(:lab_realization_sample, :a_building, kind: held, verdict: "good")
+
+    get lab_kinds_path
+
+    assert_select "body", text: /nothing drawn in the tuning worlds yet/
+    assert_select "span.warn", text: /#{Eval::HELD_OUT}.*apart, never pooled/
+  end
+
   # THE GATE IS IN THE CONTROLLER AND NOT ON THE LINK. This app has no auth at
   # all, and this is the one instrument page that can be made to spend money.
   test "every lab page is not found with the instrument off" do
