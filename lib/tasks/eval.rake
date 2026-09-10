@@ -230,6 +230,12 @@ namespace :eval do
     Lab::Realization::Agreement::Report.new(Lab::Realization::Agreement.sets).print
   end
 
+  desc "Whether the exits checks agree with the captain's own lab verdicts -- offline, free, " \
+       "no model call, no key. Usage: rake eval:exits_alignment"
+  task exits_alignment: :environment do
+    Lab::Exits::Agreement::Report.new(Lab::Exits::Agreement.sets).print
+  end
+
   desc "Every realization bench set on disk as one table. Usage: rake eval:realization_board SETS=a,b"
   task realization_board: :environment do
     Eval::Realization::Board.for_sets(ENV["SETS"].presence&.split(",")&.map(&:strip)).print

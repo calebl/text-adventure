@@ -1,0 +1,40 @@
+{
+  "empty": {
+    "links": [],
+    "clip": {
+      "x": 104.5,
+      "y": 605.609375,
+      "width": 1216,
+      "height": 246.359375,
+      "scale": 1
+    },
+    "passed": true
+  },
+  "below": {
+    "links": [
+      "http://127.0.0.1:3193/lab/exits/samples/7",
+      "http://127.0.0.1:3193/lab/exits/samples/8"
+    ],
+    "clip": {
+      "x": 104.5,
+      "y": 660.984375,
+      "width": 1216,
+      "height": 1135.234375,
+      "scale": 1
+    },
+    "passed": true
+  },
+  "established": {
+    "links": [
+      "http://127.0.0.1:3193/lab/exits/samples/39"
+    ],
+    "clip": {
+      "x": 104.5,
+      "y": 1470.984375,
+      "width": 1216,
+      "height": 2024.109375,
+      "scale": 1
+    },
+    "passed": true
+  }
+}

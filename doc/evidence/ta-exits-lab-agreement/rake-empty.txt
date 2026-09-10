@@ -1,0 +1,23 @@
+------------------------------------------------------------------------------
+THE AGREEMENT -- the exits checks against the captain's own verdicts
+Offline and free: every figure below is read off samples already bought.
+
+AN ELIGIBLE VERDICT speaks to a check on a named place, counted once across
+its draws. Good speaks to every judgeable per-name check; weak/bad speaks
+through its aspects. shouldnt_exist speaks to every per-name check.
+Whole-answer and detail checks are unavailable to a name judgement.
+Below 30 eligible verdicts the counts are printed and no percentage is.
+Tuning and held out are two sets and are never pooled.
+------------------------------------------------------------------------------
+
+SET  tuning
+  (nothing drawn in these worlds yet)
+
+SET  held out   [The Salt Assizes -- reported apart, never pooled with the tuning worlds]
+  (nothing drawn in the held-out world yet)
+
+------------------------------------------------------------------------------
+A figure here is about the CHECKS and not about the prompt: it says whether a
+check agrees with him, not whether the generator is picking what he wants. That
+second question is the hit rate, per vantage, at /lab/exits.
+------------------------------------------------------------------------------
