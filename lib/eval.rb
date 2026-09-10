@@ -93,6 +93,17 @@ module Eval
     lib/eval/classifier/stage.rb
     lib/eval/comparison.rb
     lib/eval/concurrency.rb
+    lib/eval/dialogue.rb
+    lib/eval/dialogue/bench.rb
+    lib/eval/dialogue/budget.rb
+    lib/eval/dialogue/result.rb
+    lib/eval/dialogue/stage.rb
+    lib/eval/dialogue/version.rb
+    lib/tasks/dialogue.rake
+    test/fixtures/files/dialogue_corpus.json
+    db/eval/dialogue-2026-09-10/dialogue.json
+    db/eval/adversarial-20260909/npc-protocol.md
+    db/eval/adversarial-20260909/npc-after.json
     lib/eval/prompt.rb
     lib/eval/prompt/bench.rb
     lib/eval/prompt/board.rb

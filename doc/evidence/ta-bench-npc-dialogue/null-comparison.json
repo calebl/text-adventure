@@ -1,0 +1,93 @@
+{
+  "state_failure": {
+    "code": "state_failure",
+    "before": {
+      "runs": 4,
+      "min": 0.1111111111111111,
+      "max": 0.1111111111111111,
+      "median": 0.1111111111111111,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.1111111111111111,
+      "max": 0.1111111111111111,
+      "median": 0.1111111111111111,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  "exchange_failure": {
+    "code": "exchange_failure",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0
+  },
+  "contradiction": {
+    "outcome": "unavailable"
+  },
+  "reaction_words": {
+    "code": "reaction_words",
+    "before": {
+      "runs": 4,
+      "min": 53.333333333333336,
+      "max": 59.888888888888886,
+      "median": 56.44444444444444,
+      "range": 6.55555555555555
+    },
+    "after": {
+      "runs": 4,
+      "min": 53.333333333333336,
+      "max": 59.888888888888886,
+      "median": 56.44444444444444,
+      "range": 6.55555555555555
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 6.55555555555555
+  },
+  "narration_words": {
+    "code": "narration_words",
+    "before": {
+      "runs": 4,
+      "min": 33.666666666666664,
+      "max": 39.333333333333336,
+      "median": 36.05555555555556,
+      "range": 5.666666666666671
+    },
+    "after": {
+      "runs": 4,
+      "min": 33.666666666666664,
+      "max": 39.333333333333336,
+      "median": 36.05555555555556,
+      "range": 5.666666666666671
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 5.666666666666671
+  }
+}

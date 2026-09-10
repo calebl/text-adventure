@@ -1917,3 +1917,57 @@ name) measured and killed at 7 and 3 flags of dialogue. Its stated miss is
 larger than most — three live read narrations, two of which quote the record
 inside quote marks, and it detected neither. See
 `test/models/story/audit/inscription_test.rb`.
+
+## The dialogue bench
+
+`Eval::Dialogue` promotes the fictional NPC study under
+`db/eval/adversarial-20260909` into a standing, reproducible bench. The corpus
+keeps its owned key, door, ceasefire, entrusted-key refusal and absent-crown
+situations, then covers staying behind, a stale offered gift, a real move with a
+follower, and an attack after a truce. Its stager header documents reconstruction
+differences from the original study, whose evaluator source was not shipped.
+
+```bash
+# Use a scratch database for both pricing and replay:
+export DATABASE_URL=sqlite3:tmp/dialogue.sqlite3
+rake db:prepare ruby_llm:load_models
+rake eval:estimate
+EVAL_LIVE=1 \
+  EVAL_BUDGET_FILE=tmp/dialogue-budget.json SET=my-dialogue rake eval:dialogue
+rake eval:dialogue_score SET=dialogue-2026-09-10
+rake eval:dialogue_board SET=dialogue-2026-09-10 ANNOTATIONS=path/to/annotations.json
+rake eval:dialogue_compare BEFORE=dialogue-2026-09-10 AFTER=my-dialogue
+rake eval:dialogue_digest SET=dialogue-2026-09-10
+```
+
+Run, score, board, compare and digest use the same named-set vocabulary as the
+other benches. This sibling preserves `eval:prompt`'s exclusion of talk: a
+character pass changes records before its narrated-exchange pass, and both
+requests need identity. The kept set retains full requests, raw answers, actual
+models and token/cost receipts. `dialogue_digest` replays each stored reaction
+through today's request builders and engine gate, then compares system, user,
+emitted schema and replayed history byte for byte. Different live reactions
+produce different narrator requests; replaying the same saved reaction makes
+that comparison meaningful. `KeptSetTest` performs it offline in CI.
+
+State checks and failures are reported per repetition; comparison uses
+`Eval::Noise`. The default repetitions are `Eval::Noise::MIN_RUNS`. Word counts
+measure length only. Contradiction judgments use the original
+[`npc-protocol.md`](db/eval/adversarial-20260909/npc-protocol.md) and remain a
+human input, beside state checks. Each annotation is keyed `case-id:rep` and
+contains `contradiction` (boolean), `reason`, and `narration_digest` (SHA256 of the
+displayed narration); a positive also requires `excerpt`, present in that prose.
+`BEFORE_ANNOTATIONS` and `AFTER_ANNOTATIONS` supply those files to comparison.
+Missing judgments are **unavailable**, never clean or an automated judge result.
+Judge against the stored `immediate` facts: a subsequent attack does not make a
+correctly narrated truce a contradiction. `facts` records the later engine state.
+
+This bench does not measure voice, memory fidelity across turns, long-term
+character behavior, or personality. A stored exchange exercises replay identity,
+not memory quality. Paid runs use the study's pinned model and spending policy;
+`Eval::Dialogue::Budget` reserves before each request, keeps unknown charges,
+and stops at its declared ceiling. `Eval::Dialogue.estimate` prices the two-pass
+shape from preserved usage against the current registry. Receipts distinguish
+registry-priced usage, partial provider-reported billing and conservative budget
+accounting. The task estimate, ledger and validation logs are under
+`doc/evidence/ta-bench-npc-dialogue/`.
