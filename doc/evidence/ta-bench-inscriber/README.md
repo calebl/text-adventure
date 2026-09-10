@@ -30,3 +30,9 @@ After rebasing on main, `Eval::RequestIdentity` and its tests use main's
 unchanged copies. Production inscriber instructions and schema are unchanged.
 The `rebase-*` logs record the repeated required gates and offline digest.
 The digest matches the original evidence; the kept set was not rebought.
+
+The subsequent rebase preserves main's genesis bench and refreshed baseline
+sets. Per Firstmate's focused validation instruction, the `rebase-2-*` evidence
+records `bin/rails test test/lib/eval`, RuboCop, Zeitwerk, manifest, and an
+unchanged inscription digest. No calls were bought. Firstmate monitors CI's
+full test suite after the push.
