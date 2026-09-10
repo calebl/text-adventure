@@ -1,0 +1,13 @@
+First-read inscription generation had no standing output benchmark. `Eval::Inscription` now exercises the real writer against seeded readable items at fixed room, holder, and party whereabouts, buying exactly one pinned call per case. It retains raw output, persisted words, template words, failures, requests, and token receipts for offline replay.
+
+The sibling shape keeps this second-call path out of the narrated-turn bench. Commands use the existing inscription / score / board / compare / digest vocabulary; `eval:estimate` prices it without buying. The kept set has 12 cases × `Eval::Noise::MIN_RUNS` (4) on `mistralai/mistral-medium-3.1`. Comparisons use the existing noise verdicts, keep tuning and held-out worlds apart, and reject incomplete sets or changed corpora/models. Measurement files and a KeptSetTest pin the corpus and request identities.
+
+Checks read nonempty text, schema length overflow, verbatim description reuse, bounded narration framings, and sentence-like unfinished endings. Letters can legitimately use first/second person; labels and tallies need no punctuation. Regexes cannot establish literalness, register, coherence, or world fit. The board exposes nullable `human_fit` / `human_note` fields for later human lab annotation; **no new lab page** is built. Later narration quoting the words remains the existing audit's job.
+
+The request identity follows https://github.com/calebl/text-adventure/pull/177: system + user + emitted JSON schema, versioned and canonicalized. Its helper is copied byte-for-byte, so this PR has **no merge dependency** on that PR's other changes. Only surrogate database IDs in whereabouts are normalized; actual prompts are retained beside the identity.
+
+Price before buying: loaded the scratch model registry first; the stored conservative estimate was **$0.1675344**. Receipted spend was **$0.0334512**, within the authorized $2 cap. All cases were bought; no omissions or rebuy. One output reached the inscription cap and the production verifier rejected it; the answer and cost remain in the set as a failed call. Evidence, including estimate, receipts and logs, is under `doc/evidence/ta-bench-inscriber/`.
+
+No production prompt text, schema descriptions/enums, engine behavior, migration, UI, or seed content changed. No post-update action is required.
+
+Validation: `bin/rails test` passed (4,259 tests, including engine sweep); the final comparison guard also passed the focused inscription suite. `bundle exec rubocop`, `bin/rails zeitwerk:check`, and `bin/brakeman --no-pager` passed. Offline estimate, digest, board, self-compare and manifest commands passed. The self-compare is a plumbing check, not a separately bought null set; unjudgeable endings remain inconclusive.

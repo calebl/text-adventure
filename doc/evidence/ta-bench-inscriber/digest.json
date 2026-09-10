@@ -1,0 +1,56 @@
+{
+  "request_identity": {
+    "version": 1,
+    "digest": "666515f4006a5926"
+  },
+  "cases": {
+    "daybook-room": {
+      "version": 1,
+      "digest": "5a24c290fe8ec35d"
+    },
+    "daybook-holder": {
+      "version": 1,
+      "digest": "073ad8717d88b4ad"
+    },
+    "daybook-carried": {
+      "version": 1,
+      "digest": "d17e97d8020d63e6"
+    },
+    "index-room": {
+      "version": 1,
+      "digest": "96a09035f566e3d0"
+    },
+    "index-holder": {
+      "version": 1,
+      "digest": "c2bfe834491eecc9"
+    },
+    "index-carried": {
+      "version": 1,
+      "digest": "8d2ae672aad189de"
+    },
+    "tally-room": {
+      "version": 1,
+      "digest": "01649e9ab87ceeeb"
+    },
+    "tally-holder": {
+      "version": 1,
+      "digest": "bf21abf5c3667c27"
+    },
+    "tally-carried": {
+      "version": 1,
+      "digest": "bc932dcbbd79362e"
+    },
+    "slate-room": {
+      "version": 1,
+      "digest": "195d11e91503784b"
+    },
+    "slate-holder": {
+      "version": 1,
+      "digest": "1abb68ab97cb34f3"
+    },
+    "slate-carried": {
+      "version": 1,
+      "digest": "7305a65eda2131a1"
+    }
+  }
+}

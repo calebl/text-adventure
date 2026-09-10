@@ -1,0 +1,24 @@
+# Seeded readable objects, each at three fixed, legal whereabouts. Words are
+# cleared only inside the rolled-back stage to exercise first contact again.
+items:
+  - id: daybook
+    story: The Unrecorded Hour
+    room: Ward Office 12
+    item: Ward Office 12 daybook
+    holder: Odile Vance
+  - id: index
+    story: The Unrecorded Hour
+    room: The Supply Closet
+    item: Perrin's private index
+    holder: Perrin Lasco
+  - id: tally
+    story: The Lunar Cartographer
+    room: Grenn's Boarding House, Room 3
+    item: bell-rope tally
+    holder: Marek Sollen
+  - id: slate
+    story: The Salt Assizes
+    room: The Causeway Court
+    item: Assize tide-slate
+    holder: Coraith Vell
+whereabouts: [room, holder, carried]

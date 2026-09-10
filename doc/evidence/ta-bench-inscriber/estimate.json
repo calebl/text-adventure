@@ -1,0 +1,13 @@
+{
+  "model": "mistralai/mistral-medium-3.1",
+  "reps": 4,
+  "cases": 12,
+  "input_tokens": 298836,
+  "output_tokens": 24000,
+  "dollars": 0.16753440000000003,
+  "price": {
+    "model": "mistralai/mistral-medium-3.1",
+    "input_per_million": 0.4,
+    "output_per_million": 2.0
+  }
+}

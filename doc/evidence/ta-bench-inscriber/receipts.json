@@ -1,0 +1,12 @@
+{
+  "estimate_dollars": 0.16753440000000003,
+  "receipted_dollars": 0.0334512,
+  "calls": 48,
+  "cases": 12,
+  "reps": 4,
+  "failed_calls": 1,
+  "input_tokens": 55734,
+  "output_tokens": 4412,
+  "cached_tokens": 5834,
+  "unbought_cases": []
+}

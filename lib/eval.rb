@@ -72,6 +72,17 @@ module Eval
   # a rule instead: a change to that file re-baselines the ending sets, and
   # `Eval::Prompt::EndingKeptSetTest`'s digest assertion is what says so.
   MEASUREMENT_FILES = %w[
+    lib/eval/inscription.rb
+    lib/eval/inscription/bench.rb
+    lib/eval/inscription/scorer.rb
+    lib/eval/inscription/report.rb
+    lib/eval/request_identity.rb
+    lib/tasks/inscription.rake
+    test/fixtures/files/inscription_corpus.yml
+    test/lib/eval/inscription/bench_test.rb
+    test/lib/eval/inscription/scorer_test.rb
+    test/lib/eval/inscription/kept_set_test.rb
+    db/eval/inscription-2026-09-10/inscription.json
     app/models/story/audit.rb
     app/models/story/audit/prose.rb
     app/models/story/scoreboard.rb
