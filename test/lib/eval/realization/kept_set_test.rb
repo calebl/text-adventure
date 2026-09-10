@@ -64,6 +64,10 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
   # compared is what `Location::Generator` would send TODAY. No key, no network,
   # no spend.
   test "the baseline measured the prompts this tree would send" do
+    if kept.request_identity
+      assert_equal Eval::Realization::RequestVersion.offline, kept.request_identity,
+                   "the schema request moved; retain this before side and judge an after side"
+    end
     assert_equal Eval::Realization::Version.offline[:prompt_digest], kept.prompt_digest,
                  "the realization prompts moved since the baseline was taken -- buy an after side and " \
                  "point Eval::Realization::BASELINE at it, or put the prompt back"
@@ -179,6 +183,20 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
 
   test "the manifest names the baseline, so deleting it is a failing test" do
     assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{BASELINE}/#{Eval::Realization::RESULTS}"
+  end
+
+  test "schema identity is optional historical evidence and survives loading" do
+    Dir.glob(Eval.kept_root.join("*", Eval::Realization::RESULTS)).each do |file|
+      recorded = JSON.parse(File.read(file))["request_identity"]
+      result = Eval::Realization::Result.load(File.dirname(file))
+      if recorded
+        assert_equal recorded, result.request_identity
+        assert_equal recorded, result.summary.request_identity
+      else
+        assert_nil result.request_identity
+        assert_equal "no schema identity recorded", Eval::RequestIdentity.label(result.request_identity)
+      end
+    end
   end
 
   private

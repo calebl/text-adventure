@@ -131,6 +131,11 @@ class Eval::Classifier::Comparison
     say "CLASSIFIER BENCH: #{before.name} -> #{after.name}"
     say "Exact rank test at p <= #{Eval::Noise::ALPHA}, #{Eval::Noise::MIN_RUNS} repetitions a side minimum."
     say Eval::Classifier::Report::RULE
+    say "schema request before: #{Eval::RequestIdentity.label(before.request_identity)}"
+    say "schema request after: #{Eval::RequestIdentity.label(after.request_identity)}"
+    if Eval::RequestIdentity.changed?(before.request_identity, after.request_identity)
+      say "WARNING: THE TWO SETS RECORDED DIFFERENT SCHEMA REQUEST IDENTITIES."
+    end
     say "#{before.name} measured #{before.arms.join(", ")}#{" on corpus #{before.corpus_digest}" if before.corpus_digest}"
     say "#{after.name} measured #{after.arms.join(", ")}#{" on corpus #{after.corpus_digest}" if after.corpus_digest}"
     say "Latencies are WARM-CACHE figures -- each arm's first call is timed apart and excluded -- " \

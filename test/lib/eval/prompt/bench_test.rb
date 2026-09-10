@@ -204,8 +204,13 @@ class Eval::Prompt::BenchTest < ActiveSupport::TestCase
                   instructions: args.first).tap { |agent| agents << agent }
     end
 
-    BaseAgent.stub(:new, stub) do
-      Eval::Prompt::Bench.new(corpus: @corpus, arms: [ "fake/model" ], reps: 1, io: nil).run
+    # The separate request instrument runs real builders; this test double
+    # records paid-call receipts and cannot capture BaseAgent's ask boundary.
+    identity = Eval::Prompt::RequestVersion.offline(@corpus)
+    Eval::Prompt::RequestVersion.stub(:offline, identity) do
+      BaseAgent.stub(:new, stub) do
+        Eval::Prompt::Bench.new(corpus: @corpus, arms: [ "fake/model" ], reps: 1, io: nil).run
+      end
     end
   end
 

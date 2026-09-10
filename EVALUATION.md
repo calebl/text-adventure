@@ -132,6 +132,28 @@ population -- renders EMPTY for every case in a corpus whose worlds have none of
 it, and the after side is the before side bought twice.
 
 So before planning any spend, prove the prompt actually moves:
+New prompt, realization and classifier sets also record `request_identity`,
+a versioned digest beside the legacy fields. Compute it without a key or a
+model call with `rake eval:prompt_digest` (`CORPUS=ending` for the ending
+scaffold), `rake eval:realization_digest`, or `rake eval:classifier_digest`.
+The boards, scores and comparisons print it. A historical set without the
+field says **no schema identity recorded**: it remains a valid before side,
+with no invented claim about its old schema. A recorded mismatch follows the
+bench's existing prompt mismatch policy (classifier: warning).
+
+The identity hashes rendered system/user messages and the emitted JSON schema,
+including descriptions, enums, required lists and nested bounds. It is a
+**designated request scaffold**, not a full conversation identity. Prompt cases
+use the lowest id per shape; ending uses fixed synthetic prelude prose solely
+for assembly. Realization uses the same designated cases, renders every
+supported people count with fixed slot data, and retains the literal directions
+that the legacy line scrub erased. Classifier uses the lowest labelled line's
+staged position; seed-owned names and list sizes remain covered, while database
+ids and unrelated rolls never enter its request. Generated assistant detail
+before exits, generated ending prelude variations, and undesignated branches
+are outside this identity. No schema baseline can be recovered for older sets
+that never recorded one; re-buying remains a separate measurement task.
+
 `rake eval:realization_digest` is free, offline and keyless and says whether the
 prompts this tree would send are the ones a stored set measured. For the prompt
 bench, digest the narration context over the corpus the same way. Two things

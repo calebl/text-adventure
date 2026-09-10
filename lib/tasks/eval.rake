@@ -218,8 +218,18 @@ namespace :eval do
     abort error.message
   end
 
-  desc "Which prompts this tree would send, as the realization bench's own digests -- offline, no model " \
-       "call, no key. Usage: rake eval:realization_digest [SET=<name>]"
+  desc "Prompt message and schema request identities -- offline, no model call. CORPUS=main|ending"
+  task prompt_digest: :environment do
+    corpus = Eval::Prompt.corpus(PromptTasks.corpus_name)
+    puts JSON.pretty_generate(Eval::Prompt::RequestVersion.offline(corpus).merge(corpus_digest: Eval::Prompt.digest(corpus)))
+  end
+
+  desc "Classifier corpus and schema request identities -- offline, no model call"
+  task classifier_digest: :environment do
+    puts JSON.pretty_generate(corpus_digest: Eval::Classifier.digest, request_identity: Eval::Classifier::Version.offline)
+  end
+
+  desc "Realization message and schema request identities -- offline, no model call. SET=<name>"
   task realization_digest: :environment do
     RealizationTasks.digest!
   end
@@ -324,7 +334,8 @@ namespace :eval do
     # IT COMPARES AGAINST THE CHECKED-IN BASELINE BY DEFAULT, which is the set
     # the answer is nearly always wanted about. `SET=<name>` asks it of another.
     def digest!
-      here = Eval::Realization::Version.offline
+      here = Eval::Realization::Version.offline.merge(request_identity: Eval::Realization::RequestVersion.offline)
+      puts "schema request: #{Eval::RequestIdentity.label(here[:request_identity])}"
       puts "The prompts in this tree, assembled and digested with no model call:"
       puts format("  corpus        %s (%d cases)", Eval::Realization.digest, Eval::Realization.corpus.size)
       puts format("  prompt        %s", here[:prompt_digest])
@@ -337,10 +348,15 @@ namespace :eval do
 
     def compare_to(name, here)
       stored = Eval::Realization::Result.load(Eval.set_path(name))
+      puts "schema request: #{Eval::RequestIdentity.label(stored.request_identity)}"
       puts "#{name}: corpus #{stored.corpus_digest || "unrecorded"} | prompt #{stored.prompt_digest || "unrecorded"}"
 
+      if Eval::RequestIdentity.changed?(stored.request_identity, here[:request_identity])
+        puts "The recorded schema request identity differs: this remains a BEFORE side, not a current schema baseline."
+      end
+
       if stored.prompt_digest == here[:prompt_digest] && stored.corpus_digest == Eval::Realization.digest
-        puts "It measured THESE prompts on THESE cases, so it is a baseline for this tree."
+        puts "Its legacy message and corpus identities match this tree; schema coverage is reported separately."
       else
         puts "It did NOT measure these prompts on these cases. It is the BEFORE side of whatever moved, " \
              "and a change judged against it needs an after side bought at this digest."

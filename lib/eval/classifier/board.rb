@@ -85,16 +85,19 @@ class Eval::Classifier::Board
   # place in the world to forget that.
   def warnings
     digests = columns.map { |column| column.result.corpus_digest }.uniq
-    return [] if digests.size <= 1
+    identities = columns.filter_map { |column| column.result.request_identity }.uniq
+    schema_warning = identities.size > 1 ? [ "WARNING: these sets recorded different schema request identities." ] : []
+    return schema_warning if digests.size <= 1
 
-    [ "", "**READ WITH CARE: these sets were not scored on the same corpus** (digests " \
+    schema_warning + [ "", "**READ WITH CARE: these sets were not scored on the same corpus** (digests " \
           "#{digests.map { |digest| "`#{digest}`" }.join(", ")}), so a difference between " \
           "columns may be a difference in the labels." ]
   end
 
   private
     def body
-      rows = { "set" => ->(column) { "`#{column.set}`" },
+      rows = { "schema request" => ->(column) { Eval::RequestIdentity.label(column.result.request_identity) },
+               "set" => ->(column) { "`#{column.set}`" },
                "reps × lines" => ->(column) { "#{column.result.reps} × #{column.result.corpus_size}" },
                # PRINTED BESIDE THE LATENCY COLUMNS BECAUSE IT IS THE ONLY THING
                # ON THE BOARD THAT MOVES THEM. A serial set reads 1; two columns

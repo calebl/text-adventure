@@ -80,6 +80,10 @@ module Eval
     app/models/story/scoreboard/corpus.rb
     app/models/story/scoreboard/transitions.rb
     lib/eval.rb
+    lib/eval/request_identity.rb
+    lib/eval/classifier/version.rb
+    lib/eval/prompt/request_version.rb
+    lib/eval/realization/request_version.rb
     lib/eval/board.rb
     lib/eval/classifier.rb
     lib/eval/classifier/arm.rb

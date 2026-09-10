@@ -50,6 +50,7 @@ class Eval::Prompt::Report
   private
 
   def heading
+    say "schema request: #{Eval::RequestIdentity.label(result.request_identity)}"
     say RULE
     say "THE PROMPT BENCH -- #{result.corpus_size} single-turn cases, #{result.reps} repetitions, " \
         "#{result.arms.size} model#{"s" unless result.arms.one?}"

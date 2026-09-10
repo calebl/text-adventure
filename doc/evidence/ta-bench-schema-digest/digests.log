@@ -1,0 +1,34 @@
+{
+  "prompt_digest": "2257365e2b7606da",
+  "instructions_digest": "be4e1bf387f97e80",
+  "request_identity": {
+    "version": 1,
+    "digest": "5cdebbccc74bc3c4"
+  },
+  "corpus_digest": "dfd1756a8f1f91b8"
+}
+{
+  "corpus_digest": "2155073129d29086",
+  "request_identity": {
+    "version": 1,
+    "digest": "022ef660ddd8547a"
+  }
+}
+schema request: v1:f614dc5a6edbcefd
+The prompts in this tree, assembled and digested with no model call:
+  corpus        8a06d8d919582e15 (22 cases)
+  prompt        08d08a01235d89d3
+  instructions  d43b9ecd17181013
+    dangerous              897cb711d4769996
+    dead-end               b15f2b8359914849
+    descent                75bf4d155e76b6c9
+    interior-room          9396de36efd89146
+    landmark               cd3bff59432000ba
+    place                  d95b7c398a4def63
+    two-ways-out           88ef7bbeb894e754
+    unwritten-neighbour    31ea47d2685de347
+    written-neighbour      99a6663fa62b92f2
+
+schema request: no schema identity recorded
+exits-quantifier-after: corpus 8a06d8d919582e15 | prompt 08d08a01235d89d3
+Its legacy message and corpus identities match this tree; schema coverage is reported separately.

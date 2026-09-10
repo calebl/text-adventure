@@ -348,6 +348,7 @@ class Eval::Classifier::Bench
   # `Playthrough::Overreach` rows a pass writes do not accumulate underneath the
   # next one.
   def run
+    request_identity = nil
     passes = []
     warmups = []
 
@@ -355,6 +356,7 @@ class Eval::Classifier::Bench
     io&.puts "WARNING: #{advice}" if advice
 
     self.class.exclusive(arms.map(&:id).join(", ")) do
+      request_identity = Eval::Classifier::Version.offline(corpus)
       Eval.without_provider_retries do
         arms.each do |arm|
           arm.pinned do
@@ -368,6 +370,7 @@ class Eval::Classifier::Bench
     end
 
     Eval::Classifier::Result.new(corpus_size: corpus.size, corpus_digest: Eval::Classifier.digest(corpus),
+      request_identity: request_identity,
                                  arms: arms.map(&:id), reps: reps, passes: passes, warmups: warmups,
                                  concurrency: concurrency)
   end

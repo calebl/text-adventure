@@ -1,0 +1,9 @@
+{
+  "task": "ta-bench-schema-digest",
+  "estimated_usd": 0,
+  "actual_usd": 0,
+  "model_calls": 0,
+  "pricing": "Not requested: this task only assembles requests offline and runs tests with fake model responses.",
+  "kept_sets_bought": [],
+  "rebaseline_owner": "ta-bench-rebaseline-stale"
+}

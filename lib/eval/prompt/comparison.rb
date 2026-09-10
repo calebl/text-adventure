@@ -75,6 +75,8 @@ class Eval::Prompt::Comparison
   def cross_model? = pairs.any? { |left, right| left != right }
 
   def cross_prompt?
+    return true if Eval::RequestIdentity.changed?(before.request_identity, after.request_identity)
+
     before.prompt_digest.present? && after.prompt_digest.present? &&
       before.prompt_digest != after.prompt_digest
   end
@@ -119,6 +121,7 @@ class Eval::Prompt::Comparison
   private
 
   def provenance(set)
+    say "schema request: #{Eval::RequestIdentity.label(set.request_identity)}"
     say "#{set.name}: #{set.arms.join(", ")} | corpus #{set.corpus_digest || "unrecorded"} | " \
         "prompt #{set.prompt_digest || "unrecorded"} | #{set.reps} reps"
   end

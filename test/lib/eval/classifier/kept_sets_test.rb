@@ -122,6 +122,20 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     end
   end
 
+  test "schema identity is optional historical evidence and survives loading" do
+    Dir.glob(Eval.kept_root.join("*", Eval::Classifier::RESULTS)).each do |file|
+      recorded = JSON.parse(File.read(file))["request_identity"]
+      result = Eval::Classifier::Result.load(File.dirname(file))
+      if recorded
+        assert_equal recorded, result.request_identity
+        assert_equal recorded, result.summary.request_identity
+      else
+        assert_nil result.request_identity
+        assert_equal "no schema identity recorded", Eval::RequestIdentity.label(result.request_identity)
+      end
+    end
+  end
+
   private
     # Loaded from the KEPT root explicitly rather than through `Eval.set_path`,
     # because this test is about the checked-in files: resolved by name it would

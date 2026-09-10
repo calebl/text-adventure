@@ -1,3 +1,7 @@
+# Legacy identities below are frozen for kept-set compatibility. Their broad
+# scrub is NOT used by RequestVersion, which fixes only rolled inputs before
+# rendering and retains all direction wording in the schema-aware identity.
+#
 # WHICH PROMPT BUILT THIS SET, as two digests and one guard.
 #
 # THE PROBLEM IT SOLVES is `Eval::Prompt::Version`'s: this bench exists to judge

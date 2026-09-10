@@ -103,6 +103,7 @@ class Eval::Classifier::Report
   private
 
   def heading
+    say "schema request: #{Eval::RequestIdentity.label(result.request_identity)}"
     say RULE
     say "THE CLASSIFIER BENCH -- #{result.corpus_size} labelled lines, #{result.reps} repetitions, " \
         "#{result.arms.size} model#{"s" unless result.arms.one?}"
