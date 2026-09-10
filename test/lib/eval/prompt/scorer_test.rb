@@ -121,7 +121,7 @@ class Eval::Prompt::ScorerTest < ActiveSupport::TestCase
   end
 
   test "every check the scoreboard has is either scored or named unavailable" do
-    assert_equal Story::Scoreboard::CHECKS.keys.sort,
+    assert_equal (Story::Scoreboard::CHECKS.keys + Eval::Prompt::Branches::Predicates::CHECKS.keys).sort,
                  (Eval::Prompt.checks + Eval::Prompt::UNAVAILABLE_TO_A_CASE.keys).sort,
                  "a check that is neither would be silently dropped"
   end

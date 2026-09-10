@@ -110,7 +110,7 @@ class Eval::Prompt::Report
       flagged = result.for_arm(arm).map { |pass| pass.flagged[code.to_s].to_i }
       say format("  %-26s %s   %d..%d of %d   %s", code, band(code, spread),
                  flagged.min, flagged.max, Eval.median(judgeable).round,
-                 Story::Scoreboard::CHECKS.fetch(code))
+                 Eval::Prompt.check_labels.fetch(code))
     end
   end
 

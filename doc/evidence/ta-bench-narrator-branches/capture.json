@@ -1,0 +1,382 @@
+{
+  "combat": {
+    "request": {
+      "system": "You are the narrator of a text adventure. Write in the second person,\npresent tense, addressing the player as \"you\". Describe what happens in\nresponse to what they did, in one or two short paragraphs of prose.\n\nNever break character, never offer the player a numbered menu, and never\nmention that you are an AI or a narrator. The ways out of here, the people\npresent and what the player carries are listed in the prompt: do not add a\nway out, a person or a possession that is not on those lists. If the\nplayer tries something impossible, narrate the failure rather than\nrefusing.\n",
+      "user": "Story: The Iron Gate Descends (dark fantasy)\n\nPremise: A Durnish knight, clad in heavy blackened plate, stands at the threshold of the goblin caves beneath the Ashen Spire, having just forced open an iron gate. The prince’s signet ring, discovered in the mud, confirms his passage into the tunnels. The air is thick with the scent of damp earth and the faint glow of fungi, while the distant sound of movement hints at unseen dangers ahead. The Church’s decree to retrieve the prince or die trying weighs heavily, but the immediate threat is the darkness itself.\n\nThe player is in Iron Gate Chamber: The iron gate lies half-buried in the stone floor, its jagged teeth glinting dully in the pale glow of bioluminescent fungi clinging to the cavern walls. The air is thick with the scent of damp earth and rust, the taste of iron sharp on your tongue. The tunnel ahead yawns black and slick with moisture, the faint sound of skittering claws echoing from its depths. Your boot sinks slightly into the muddy threshold, where a single, deep groove cuts across the stone—fresh, as if something heavy was dragged through. The dim light flickers, casting long, wavering shadows that seem to crawl along the obsidian walls.\n\nWays out of here: tunnel upward, obsidian maw. There are no others.\n\nThe player is Veythra the Silent.\n\nVeythra the Silent is badly hurt (4 of 8).\n\nThe story is asking for: Take the signet ring that proves he came this way.\n\nAlso here: Gorva the Wanderer (Gorva). Nobody else is present.\n\nGorva the Wanderer is hurt (5 of 6) and is fighting you.\n\nBlows landed, recorded by the game: Veythra the Silent struck Gorva the Wanderer for 1 hit point. Gorva the Wanderer is alive. Gorva the Wanderer struck Veythra the Silent for 4 hit points. Veythra the Silent is alive. Those are the numbers and they do not change. Do not decide who lives, who dies, or how much anything hurt.\n\nLying here, and takeable: iron key, prince's signet ring.\n\nThe player is carrying: nothing.\n\nWhat just happened: The first thing that hits you is the stench of wet iron and old blood, thick enough to coat your throat. Then comes the cold—damp, seeping through the seams of your armor as your boot crunches on something brittle in the mud. The air hums faintly, a vibration in your teeth, and the dim glow of the fungi pulses like a slow, dying heartbeat against the black stone. The gate’s jagged teeth yawn behind you, but the tunnel ahead swallows the light whole, leaving only the sound of something shifting in the dark.\n\n\nThe player types: watch Gorva after the exchange\n\nNarrate what happens.\n",
+      "schema": null
+    },
+    "facts": {
+      "branch": "combat",
+      "bodies": [
+        {
+          "name": "Veythra the Silent",
+          "player": true,
+          "hp": 4,
+          "max": 8
+        },
+        {
+          "name": "Gorva the Wanderer",
+          "player": false,
+          "hp": 5,
+          "max": 6
+        }
+      ],
+      "blows": [
+        {
+          "attacker": "Veythra the Silent",
+          "target": "Gorva the Wanderer",
+          "damage": 1,
+          "hp_after": 5,
+          "round": 1,
+          "die": 8
+        },
+        {
+          "attacker": "Gorva the Wanderer",
+          "target": "Veythra the Silent",
+          "damage": 4,
+          "hp_after": 4,
+          "round": 1,
+          "die": 6
+        }
+      ],
+      "tolls": [],
+      "throw": null,
+      "next_beat": "Take the signet ring that proves he came this way.",
+      "withheld": [
+        "Get inside the warren where the Blackfang keep what they take.",
+        "Find the cell they are keeping him in.",
+        "The prince is found alive in the dry cell, and the iron gate opens outward at last.",
+        "The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted."
+      ],
+      "recap": null,
+      "plan": null
+    }
+  },
+  "dead_foe": {
+    "request": {
+      "system": "You are the narrator of a text adventure. Write in the second person,\npresent tense, addressing the player as \"you\". Describe what happens in\nresponse to what they did, in one or two short paragraphs of prose.\n\nNever break character, never offer the player a numbered menu, and never\nmention that you are an AI or a narrator. The ways out of here, the people\npresent and what the player carries are listed in the prompt: do not add a\nway out, a person or a possession that is not on those lists. If the\nplayer tries something impossible, narrate the failure rather than\nrefusing.\n",
+      "user": "Story: The Iron Gate Descends (dark fantasy)\n\nPremise: A Durnish knight, clad in heavy blackened plate, stands at the threshold of the goblin caves beneath the Ashen Spire, having just forced open an iron gate. The prince’s signet ring, discovered in the mud, confirms his passage into the tunnels. The air is thick with the scent of damp earth and the faint glow of fungi, while the distant sound of movement hints at unseen dangers ahead. The Church’s decree to retrieve the prince or die trying weighs heavily, but the immediate threat is the darkness itself.\n\nThe player is in Iron Gate Chamber: The iron gate lies half-buried in the stone floor, its jagged teeth glinting dully in the pale glow of bioluminescent fungi clinging to the cavern walls. The air is thick with the scent of damp earth and rust, the taste of iron sharp on your tongue. The tunnel ahead yawns black and slick with moisture, the faint sound of skittering claws echoing from its depths. Your boot sinks slightly into the muddy threshold, where a single, deep groove cuts across the stone—fresh, as if something heavy was dragged through. The dim light flickers, casting long, wavering shadows that seem to crawl along the obsidian walls.\n\nWays out of here: tunnel upward, obsidian maw. There are no others.\n\nThe player is Veythra the Silent.\n\nVeythra the Silent is unhurt.\n\nThe story is asking for: Take the signet ring that proves he came this way.\n\nNobody else is here.\n\nBlows landed, recorded by the game: Veythra the Silent struck Gorva the Wanderer for 1 hit point. Gorva the Wanderer is dead: that was the blow that killed them. Those are the numbers and they do not change. Do not decide who lives, who dies, or how much anything hurt.\n\nLying here, and takeable: iron key, prince's signet ring.\n\nThe player is carrying: nothing.\n\nWhat just happened: The first thing that hits you is the stench of wet iron and old blood, thick enough to coat your throat. Then comes the cold—damp, seeping through the seams of your armor as your boot crunches on something brittle in the mud. The air hums faintly, a vibration in your teeth, and the dim glow of the fungi pulses like a slow, dying heartbeat against the black stone. The gate’s jagged teeth yawn behind you, but the tunnel ahead swallows the light whole, leaving only the sound of something shifting in the dark.\n\n\nThe player types: look at Gorva's body\n\nNarrate what happens.\n",
+      "schema": null
+    },
+    "facts": {
+      "branch": "dead_foe",
+      "bodies": [
+        {
+          "name": "Veythra the Silent",
+          "player": true,
+          "hp": 8,
+          "max": 8
+        },
+        {
+          "name": "Gorva the Wanderer",
+          "player": false,
+          "hp": 0,
+          "max": 6
+        }
+      ],
+      "blows": [
+        {
+          "attacker": "Veythra the Silent",
+          "target": "Gorva the Wanderer",
+          "damage": 1,
+          "hp_after": 0,
+          "round": 1,
+          "die": 8
+        }
+      ],
+      "tolls": [],
+      "throw": null,
+      "next_beat": "Take the signet ring that proves he came this way.",
+      "withheld": [
+        "Get inside the warren where the Blackfang keep what they take.",
+        "Find the cell they are keeping him in.",
+        "The prince is found alive in the dry cell, and the iron gate opens outward at last.",
+        "The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted."
+      ],
+      "recap": null,
+      "plan": null
+    }
+  },
+  "next_beat": {
+    "request": {
+      "system": "You are the narrator of a text adventure. Write in the second person,\npresent tense, addressing the player as \"you\". Describe what happens in\nresponse to what they did, in one or two short paragraphs of prose.\n\nNever break character, never offer the player a numbered menu, and never\nmention that you are an AI or a narrator. The ways out of here, the people\npresent and what the player carries are listed in the prompt: do not add a\nway out, a person or a possession that is not on those lists. If the\nplayer tries something impossible, narrate the failure rather than\nrefusing.\n",
+      "user": "Story: The Iron Gate Descends (dark fantasy)\n\nPremise: A Durnish knight, clad in heavy blackened plate, stands at the threshold of the goblin caves beneath the Ashen Spire, having just forced open an iron gate. The prince’s signet ring, discovered in the mud, confirms his passage into the tunnels. The air is thick with the scent of damp earth and the faint glow of fungi, while the distant sound of movement hints at unseen dangers ahead. The Church’s decree to retrieve the prince or die trying weighs heavily, but the immediate threat is the darkness itself.\n\nThe player is in Iron Gate Chamber: The iron gate lies half-buried in the stone floor, its jagged teeth glinting dully in the pale glow of bioluminescent fungi clinging to the cavern walls. The air is thick with the scent of damp earth and rust, the taste of iron sharp on your tongue. The tunnel ahead yawns black and slick with moisture, the faint sound of skittering claws echoing from its depths. Your boot sinks slightly into the muddy threshold, where a single, deep groove cuts across the stone—fresh, as if something heavy was dragged through. The dim light flickers, casting long, wavering shadows that seem to crawl along the obsidian walls.\n\nWays out of here: tunnel upward, obsidian maw. There are no others.\n\nThe player is Veythra the Silent.\n\nVeythra the Silent is unhurt.\n\nThe story is asking for: Take the signet ring that proves he came this way.\n\nAlso here: Gorva the Wanderer (Gorva). Nobody else is present.\n\nLying here, and takeable: iron key, prince's signet ring.\n\nThe player is carrying: nothing.\n\nWhat just happened: The first thing that hits you is the stench of wet iron and old blood, thick enough to coat your throat. Then comes the cold—damp, seeping through the seams of your armor as your boot crunches on something brittle in the mud. The air hums faintly, a vibration in your teeth, and the dim glow of the fungi pulses like a slow, dying heartbeat against the black stone. The gate’s jagged teeth yawn behind you, but the tunnel ahead swallows the light whole, leaving only the sound of something shifting in the dark.\n\n\nThe player types: look around for evidence\n\nNarrate what happens.\n",
+      "schema": null
+    },
+    "facts": {
+      "branch": "next_beat",
+      "bodies": [
+        {
+          "name": "Veythra the Silent",
+          "player": true,
+          "hp": 8,
+          "max": 8
+        },
+        {
+          "name": "Gorva the Wanderer",
+          "player": false,
+          "hp": 6,
+          "max": 6
+        }
+      ],
+      "blows": [],
+      "tolls": [],
+      "throw": null,
+      "next_beat": "Take the signet ring that proves he came this way.",
+      "withheld": [
+        "Get inside the warren where the Blackfang keep what they take.",
+        "Find the cell they are keeping him in.",
+        "The prince is found alive in the dry cell, and the iron gate opens outward at last.",
+        "The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted."
+      ],
+      "recap": null,
+      "plan": null
+    }
+  },
+  "plan": {
+    "request": {
+      "system": "You are the narrator of a text adventure. Write in the second person,\npresent tense, addressing the player as \"you\". Describe what happens in\nresponse to what they did, in one or two short paragraphs of prose.\n\nNever break character, never offer the player a numbered menu, and never\nmention that you are an AI or a narrator. The ways out of here, the people\npresent and what the player carries are listed in the prompt: do not add a\nway out, a person or a possession that is not on those lists. If the\nplayer tries something impossible, narrate the failure rather than\nrefusing.\n",
+      "user": "Story: The Iron Gate Descends (dark fantasy)\n\nPremise: A Durnish knight, clad in heavy blackened plate, stands at the threshold of the goblin caves beneath the Ashen Spire, having just forced open an iron gate. The prince’s signet ring, discovered in the mud, confirms his passage into the tunnels. The air is thick with the scent of damp earth and the faint glow of fungi, while the distant sound of movement hints at unseen dangers ahead. The Church’s decree to retrieve the prince or die trying weighs heavily, but the immediate threat is the darkness itself.\n\nThe player is in the dry cell: The warren's far corner, 6 by 4 paces of dry obsidian on storey 0, and the only room down here whose walls have been scraped clear of the fungi — grey patches of bare stone, and just enough of a glow left to see by. A door in the north wall goes back through to the room the guards keep, and the one in the west wall is the way you came; nothing else opens anywhere. The stone is scored with rows of short marks cut by something blunter than a blade, and a chain runs from a ring hammered into the east wall to a shackle lying open on the floor. The floor is dry, which nothing else beneath the Spire is. Against the far wall, where the light gives out, a young man in the rags of Council blue sits with his back to the stone and his hands loose in his lap, watching the doorway as though he has watched it every hour he has been awake.\n\nWays out of here: Blackfang Warren room 2, Blackfang Warren room 4. There are no others.\n\nThis room is 6 by 4 paces -- about 9 by 6 metres. It is on storey 0 of Blackfang Warren, which is 12 by 9 paces across; storey 0 is the ground floor. Its ways out: a door in the north wall, to Blackfang Warren room 4; a door in the west wall, to Blackfang Warren room 2. Those are every way out of this room, and no other wall of it holds a door.\n\nThe player is Veythra the Silent.\n\nVeythra the Silent is unhurt.\n\nThe story is asking for: Take the signet ring that proves he came this way.\n\nAlso here: Prince Aurel Durn (Aurel). Nobody else is present.\n\nLying here, and takeable: nothing.\n\nThe player is carrying: nothing.\n\nWhat just happened: The first thing that hits you is the stench of wet iron and old blood, thick enough to coat your throat. Then comes the cold—damp, seeping through the seams of your armor as your boot crunches on something brittle in the mud. The air hums faintly, a vibration in your teeth, and the dim glow of the fungi pulses like a slow, dying heartbeat against the black stone. The gate’s jagged teeth yawn behind you, but the tunnel ahead swallows the light whole, leaving only the sound of something shifting in the dark.\n\n\nThe player types: inspect the walls\n\nNarrate what happens.\n",
+      "schema": null
+    },
+    "facts": {
+      "branch": "plan",
+      "bodies": [
+        {
+          "name": "Veythra the Silent",
+          "player": true,
+          "hp": 8,
+          "max": 8
+        },
+        {
+          "name": "Prince Aurel Durn",
+          "player": false,
+          "hp": 6,
+          "max": 6
+        }
+      ],
+      "blows": [],
+      "tolls": [],
+      "throw": null,
+      "next_beat": "Take the signet ring that proves he came this way.",
+      "withheld": [
+        "Get inside the warren where the Blackfang keep what they take.",
+        "Find the cell they are keeping him in.",
+        "The prince is found alive in the dry cell, and the iron gate opens outward at last.",
+        "The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted."
+      ],
+      "recap": null,
+      "plan": "This room is 6 by 4 paces -- about 9 by 6 metres. It is on storey 0 of Blackfang Warren, which is 12 by 9 paces across; storey 0 is the ground floor. Its ways out: a door in the north wall, to Blackfang Warren room 4; a door in the west wall, to Blackfang Warren room 2. Those are every way out of this room, and no other wall of it holds a door."
+    }
+  },
+  "recap": {
+    "request": {
+      "system": "You are the narrator of a text adventure. Write in the second person,\npresent tense, addressing the player as \"you\". Describe what happens in\nresponse to what they did, in one or two short paragraphs of prose.\n\nNever break character, never offer the player a numbered menu, and never\nmention that you are an AI or a narrator. The ways out of here, the people\npresent and what the player carries are listed in the prompt: do not add a\nway out, a person or a possession that is not on those lists. If the\nplayer tries something impossible, narrate the failure rather than\nrefusing.\n",
+      "user": "Story: The Iron Gate Descends (dark fantasy)\n\nPremise: A Durnish knight, clad in heavy blackened plate, stands at the threshold of the goblin caves beneath the Ashen Spire, having just forced open an iron gate. The prince’s signet ring, discovered in the mud, confirms his passage into the tunnels. The air is thick with the scent of damp earth and the faint glow of fungi, while the distant sound of movement hints at unseen dangers ahead. The Church’s decree to retrieve the prince or die trying weighs heavily, but the immediate threat is the darkness itself.\n\nThe player is in Iron Gate Chamber: The iron gate lies half-buried in the stone floor, its jagged teeth glinting dully in the pale glow of bioluminescent fungi clinging to the cavern walls. The air is thick with the scent of damp earth and rust, the taste of iron sharp on your tongue. The tunnel ahead yawns black and slick with moisture, the faint sound of skittering claws echoing from its depths. Your boot sinks slightly into the muddy threshold, where a single, deep groove cuts across the stone—fresh, as if something heavy was dragged through. The dim light flickers, casting long, wavering shadows that seem to crawl along the obsidian walls.\n\nWays out of here: tunnel upward, obsidian maw. There are no others.\n\nThe player is Veythra the Silent.\n\nVeythra the Silent is unhurt.\n\nThe story is asking for: Take the signet ring that proves he came this way.\n\nAlso here: Gorva the Wanderer (Gorva). Nobody else is present.\n\nLying here, and takeable: iron key, prince's signet ring.\n\nThe player is carrying: nothing.\n\nWhat just happened: You listen to the gate creak overhead.\n\nEarlier, in order:\nThe player steps into the Iron Gate Chamber, encountering the sensory overload of the cavern’s atmosphere and the immediate presence of the tunnel ahead.\nYou inspect the ring in the mud without lifting it.\n\n\nThe player types: remember what you inspected\n\nNarrate what happens.\n",
+      "schema": null
+    },
+    "facts": {
+      "branch": "recap",
+      "bodies": [
+        {
+          "name": "Veythra the Silent",
+          "player": true,
+          "hp": 8,
+          "max": 8
+        },
+        {
+          "name": "Gorva the Wanderer",
+          "player": false,
+          "hp": 6,
+          "max": 6
+        }
+      ],
+      "blows": [],
+      "tolls": [],
+      "throw": null,
+      "next_beat": "Take the signet ring that proves he came this way.",
+      "withheld": [
+        "Get inside the warren where the Blackfang keep what they take.",
+        "Find the cell they are keeping him in.",
+        "The prince is found alive in the dry cell, and the iron gate opens outward at last.",
+        "The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted."
+      ],
+      "recap": "The player steps into the Iron Gate Chamber, encountering the sensory overload of the cavern’s atmosphere and the immediate presence of the tunnel ahead.\nYou inspect the ring in the mud without lifting it.",
+      "plan": null
+    }
+  },
+  "saved_toll": {
+    "request": {
+      "system": "You are the narrator of a text adventure. Write in the second person,\npresent tense, addressing the player as \"you\". Describe what happens in\nresponse to what they did, in one or two short paragraphs of prose.\n\nNever break character, never offer the player a numbered menu, and never\nmention that you are an AI or a narrator. The ways out of here, the people\npresent and what the player carries are listed in the prompt: do not add a\nway out, a person or a possession that is not on those lists. If the\nplayer tries something impossible, narrate the failure rather than\nrefusing.\n",
+      "user": "Story: The Iron Gate Descends (dark fantasy)\n\nPremise: A Durnish knight, clad in heavy blackened plate, stands at the threshold of the goblin caves beneath the Ashen Spire, having just forced open an iron gate. The prince’s signet ring, discovered in the mud, confirms his passage into the tunnels. The air is thick with the scent of damp earth and the faint glow of fungi, while the distant sound of movement hints at unseen dangers ahead. The Church’s decree to retrieve the prince or die trying weighs heavily, but the immediate threat is the darkness itself.\n\nThe player is in Iron Gate Chamber: The iron gate lies half-buried in the stone floor, its jagged teeth glinting dully in the pale glow of bioluminescent fungi clinging to the cavern walls. The air is thick with the scent of damp earth and rust, the taste of iron sharp on your tongue. The tunnel ahead yawns black and slick with moisture, the faint sound of skittering claws echoing from its depths. Your boot sinks slightly into the muddy threshold, where a single, deep groove cuts across the stone—fresh, as if something heavy was dragged through. The dim light flickers, casting long, wavering shadows that seem to crawl along the obsidian walls.\n\nWays out of here: tunnel upward, obsidian maw. There are no others.\n\nThe player is Veythra the Silent.\n\nVeythra the Silent is unhurt.\n\nThe story is asking for: Take the signet ring that proves he came this way.\n\nAlso here: Gorva the Wanderer (Gorva). Nobody else is present.\n\nThe place itself, recorded by the game: Veythra the Silent got clear of Iron Gate Chamber and lost nothing. Those are the numbers and they do not change. Do not decide how much anything hurt, and do not write a wound the game did not record.\n\nLying here, and takeable: iron key, prince's signet ring.\n\nThe player is carrying: nothing.\n\nWhat just happened: The first thing that hits you is the stench of wet iron and old blood, thick enough to coat your throat. Then comes the cold—damp, seeping through the seams of your armor as your boot crunches on something brittle in the mud. The air hums faintly, a vibration in your teeth, and the dim glow of the fungi pulses like a slow, dying heartbeat against the black stone. The gate’s jagged teeth yawn behind you, but the tunnel ahead swallows the light whole, leaving only the sound of something shifting in the dark.\n\n\nThe player types: look at the dark floor you crossed\n\nNarrate what happens.\n",
+      "schema": null
+    },
+    "facts": {
+      "branch": "saved_toll",
+      "bodies": [
+        {
+          "name": "Veythra the Silent",
+          "player": true,
+          "hp": 8,
+          "max": 8
+        },
+        {
+          "name": "Gorva the Wanderer",
+          "player": false,
+          "hp": 6,
+          "max": 6
+        }
+      ],
+      "blows": [],
+      "tolls": [
+        {
+          "name": "Veythra the Silent",
+          "where": "Iron Gate Chamber",
+          "damage": 0,
+          "hp_after": 8,
+          "saved": true
+        }
+      ],
+      "throw": null,
+      "next_beat": "Take the signet ring that proves he came this way.",
+      "withheld": [
+        "Get inside the warren where the Blackfang keep what they take.",
+        "Find the cell they are keeping him in.",
+        "The prince is found alive in the dry cell, and the iron gate opens outward at last.",
+        "The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted."
+      ],
+      "recap": null,
+      "plan": null
+    }
+  },
+  "throw": {
+    "request": {
+      "system": "You are the narrator of a text adventure. Write in the second person,\npresent tense, addressing the player as \"you\". Describe what happens in\nresponse to what they did, in one or two short paragraphs of prose.\n\nNever break character, never offer the player a numbered menu, and never\nmention that you are an AI or a narrator. The ways out of here, the people\npresent and what the player carries are listed in the prompt: do not add a\nway out, a person or a possession that is not on those lists. If the\nplayer tries something impossible, narrate the failure rather than\nrefusing.\n",
+      "user": "Story: The Iron Gate Descends (dark fantasy)\n\nPremise: A Durnish knight, clad in heavy blackened plate, stands at the threshold of the goblin caves beneath the Ashen Spire, having just forced open an iron gate. The prince’s signet ring, discovered in the mud, confirms his passage into the tunnels. The air is thick with the scent of damp earth and the faint glow of fungi, while the distant sound of movement hints at unseen dangers ahead. The Church’s decree to retrieve the prince or die trying weighs heavily, but the immediate threat is the darkness itself.\n\nThe player is in Iron Gate Chamber: The iron gate lies half-buried in the stone floor, its jagged teeth glinting dully in the pale glow of bioluminescent fungi clinging to the cavern walls. The air is thick with the scent of damp earth and rust, the taste of iron sharp on your tongue. The tunnel ahead yawns black and slick with moisture, the faint sound of skittering claws echoing from its depths. Your boot sinks slightly into the muddy threshold, where a single, deep groove cuts across the stone—fresh, as if something heavy was dragged through. The dim light flickers, casting long, wavering shadows that seem to crawl along the obsidian walls.\n\nWays out of here: tunnel upward, obsidian maw. There are no others.\n\nThe player is Veythra the Silent.\n\nVeythra the Silent is unhurt.\n\nThe story is asking for: Take the signet ring that proves he came this way.\n\nAlso here: Gorva the Wanderer (Gorva). Nobody else is present.\n\nGorva the Wanderer is badly hurt (2 of 6) and is fighting you.\n\nBlows landed, recorded by the game: Veythra the Silent struck Gorva the Wanderer for 4 hit points. Gorva the Wanderer is alive. Those are the numbers and they do not change. Do not decide who lives, who dies, or how much anything hurt.\n\nLying here, and takeable: iron key, prince's signet ring, stone weight.\n\nThe player is carrying: nothing.\n\nWhat just happened: The first thing that hits you is the stench of wet iron and old blood, thick enough to coat your throat. Then comes the cold—damp, seeping through the seams of your armor as your boot crunches on something brittle in the mud. The air hums faintly, a vibration in your teeth, and the dim glow of the fungi pulses like a slow, dying heartbeat against the black stone. The gate’s jagged teeth yawn behind you, but the tunnel ahead swallows the light whole, leaving only the sound of something shifting in the dark.\n\nWhat has ALREADY happened, recorded by the game: Veythra the Silent threw the stone weight at Gorva the Wanderer and it hit them. The stone weight is NO LONGER CARRIED: it is lying on the floor at Gorva the Wanderer's feet, where it stays until somebody picks it up.\nNarrate it as done. Do not contradict it and do not undo it.\n\n\nThe player types: throw the stone weight at Gorva\n\nNarrate what happens.\n",
+      "schema": null
+    },
+    "facts": {
+      "branch": "throw",
+      "bodies": [
+        {
+          "name": "Veythra the Silent",
+          "player": true,
+          "hp": 8,
+          "max": 8
+        },
+        {
+          "name": "Gorva the Wanderer",
+          "player": false,
+          "hp": 2,
+          "max": 6
+        }
+      ],
+      "blows": [
+        {
+          "attacker": "Veythra the Silent",
+          "target": "Gorva the Wanderer",
+          "damage": 4,
+          "hp_after": 2,
+          "round": 1,
+          "die": 8
+        }
+      ],
+      "tolls": [],
+      "throw": {
+        "item": "stone weight",
+        "target": "Gorva the Wanderer",
+        "kind": "struck",
+        "die": 8
+      },
+      "next_beat": "Take the signet ring that proves he came this way.",
+      "withheld": [
+        "Get inside the warren where the Blackfang keep what they take.",
+        "Find the cell they are keeping him in.",
+        "The prince is found alive in the dry cell, and the iron gate opens outward at last.",
+        "The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted."
+      ],
+      "recap": null,
+      "plan": null
+    }
+  },
+  "toll": {
+    "request": {
+      "system": "You are the narrator of a text adventure. Write in the second person,\npresent tense, addressing the player as \"you\". Describe what happens in\nresponse to what they did, in one or two short paragraphs of prose.\n\nNever break character, never offer the player a numbered menu, and never\nmention that you are an AI or a narrator. The ways out of here, the people\npresent and what the player carries are listed in the prompt: do not add a\nway out, a person or a possession that is not on those lists. If the\nplayer tries something impossible, narrate the failure rather than\nrefusing.\n",
+      "user": "Story: The Iron Gate Descends (dark fantasy)\n\nPremise: A Durnish knight, clad in heavy blackened plate, stands at the threshold of the goblin caves beneath the Ashen Spire, having just forced open an iron gate. The prince’s signet ring, discovered in the mud, confirms his passage into the tunnels. The air is thick with the scent of damp earth and the faint glow of fungi, while the distant sound of movement hints at unseen dangers ahead. The Church’s decree to retrieve the prince or die trying weighs heavily, but the immediate threat is the darkness itself.\n\nThe player is in Iron Gate Chamber: The iron gate lies half-buried in the stone floor, its jagged teeth glinting dully in the pale glow of bioluminescent fungi clinging to the cavern walls. The air is thick with the scent of damp earth and rust, the taste of iron sharp on your tongue. The tunnel ahead yawns black and slick with moisture, the faint sound of skittering claws echoing from its depths. Your boot sinks slightly into the muddy threshold, where a single, deep groove cuts across the stone—fresh, as if something heavy was dragged through. The dim light flickers, casting long, wavering shadows that seem to crawl along the obsidian walls.\n\nWays out of here: tunnel upward, obsidian maw. There are no others.\n\nThe player is Veythra the Silent.\n\nVeythra the Silent is hurt (7 of 8).\n\nThe story is asking for: Take the signet ring that proves he came this way.\n\nAlso here: Gorva the Wanderer (Gorva). Nobody else is present.\n\nThe place itself, recorded by the game: Iron Gate Chamber cost Veythra the Silent 1 hit point -- you go down in the dark. Veythra the Silent is alive. Those are the numbers and they do not change. Do not decide how much anything hurt, and do not write a wound the game did not record.\n\nLying here, and takeable: iron key, prince's signet ring.\n\nThe player is carrying: nothing.\n\nWhat just happened: The first thing that hits you is the stench of wet iron and old blood, thick enough to coat your throat. Then comes the cold—damp, seeping through the seams of your armor as your boot crunches on something brittle in the mud. The air hums faintly, a vibration in your teeth, and the dim glow of the fungi pulses like a slow, dying heartbeat against the black stone. The gate’s jagged teeth yawn behind you, but the tunnel ahead swallows the light whole, leaving only the sound of something shifting in the dark.\n\n\nThe player types: steady yourself after stumbling in the dark\n\nNarrate what happens.\n",
+      "schema": null
+    },
+    "facts": {
+      "branch": "toll",
+      "bodies": [
+        {
+          "name": "Veythra the Silent",
+          "player": true,
+          "hp": 7,
+          "max": 8
+        },
+        {
+          "name": "Gorva the Wanderer",
+          "player": false,
+          "hp": 6,
+          "max": 6
+        }
+      ],
+      "blows": [],
+      "tolls": [
+        {
+          "name": "Veythra the Silent",
+          "where": "Iron Gate Chamber",
+          "damage": 1,
+          "hp_after": 7,
+          "saved": false
+        }
+      ],
+      "throw": null,
+      "next_beat": "Take the signet ring that proves he came this way.",
+      "withheld": [
+        "Get inside the warren where the Blackfang keep what they take.",
+        "Find the cell they are keeping him in.",
+        "The prince is found alive in the dry cell, and the iron gate opens outward at last.",
+        "The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted."
+      ],
+      "recap": null,
+      "plan": null
+    }
+  },
+  "wounded": {
+    "request": {
+      "system": "You are the narrator of a text adventure. Write in the second person,\npresent tense, addressing the player as \"you\". Describe what happens in\nresponse to what they did, in one or two short paragraphs of prose.\n\nNever break character, never offer the player a numbered menu, and never\nmention that you are an AI or a narrator. The ways out of here, the people\npresent and what the player carries are listed in the prompt: do not add a\nway out, a person or a possession that is not on those lists. If the\nplayer tries something impossible, narrate the failure rather than\nrefusing.\n",
+      "user": "Story: The Iron Gate Descends (dark fantasy)\n\nPremise: A Durnish knight, clad in heavy blackened plate, stands at the threshold of the goblin caves beneath the Ashen Spire, having just forced open an iron gate. The prince’s signet ring, discovered in the mud, confirms his passage into the tunnels. The air is thick with the scent of damp earth and the faint glow of fungi, while the distant sound of movement hints at unseen dangers ahead. The Church’s decree to retrieve the prince or die trying weighs heavily, but the immediate threat is the darkness itself.\n\nThe player is in Iron Gate Chamber: The iron gate lies half-buried in the stone floor, its jagged teeth glinting dully in the pale glow of bioluminescent fungi clinging to the cavern walls. The air is thick with the scent of damp earth and rust, the taste of iron sharp on your tongue. The tunnel ahead yawns black and slick with moisture, the faint sound of skittering claws echoing from its depths. Your boot sinks slightly into the muddy threshold, where a single, deep groove cuts across the stone—fresh, as if something heavy was dragged through. The dim light flickers, casting long, wavering shadows that seem to crawl along the obsidian walls.\n\nWays out of here: tunnel upward, obsidian maw. There are no others.\n\nThe player is Veythra the Silent.\n\nVeythra the Silent is hurt (5 of 8).\n\nThe story is asking for: Take the signet ring that proves he came this way.\n\nAlso here: Gorva the Wanderer (Gorva). Nobody else is present.\n\nLying here, and takeable: iron key, prince's signet ring.\n\nThe player is carrying: nothing.\n\nWhat just happened: The first thing that hits you is the stench of wet iron and old blood, thick enough to coat your throat. Then comes the cold—damp, seeping through the seams of your armor as your boot crunches on something brittle in the mud. The air hums faintly, a vibration in your teeth, and the dim glow of the fungi pulses like a slow, dying heartbeat against the black stone. The gate’s jagged teeth yawn behind you, but the tunnel ahead swallows the light whole, leaving only the sound of something shifting in the dark.\n\n\nThe player types: examine your wounds\n\nNarrate what happens.\n",
+      "schema": null
+    },
+    "facts": {
+      "branch": "wounded",
+      "bodies": [
+        {
+          "name": "Veythra the Silent",
+          "player": true,
+          "hp": 5,
+          "max": 8
+        },
+        {
+          "name": "Gorva the Wanderer",
+          "player": false,
+          "hp": 6,
+          "max": 6
+        }
+      ],
+      "blows": [],
+      "tolls": [],
+      "throw": null,
+      "next_beat": "Take the signet ring that proves he came this way.",
+      "withheld": [
+        "Get inside the warren where the Blackfang keep what they take.",
+        "Find the cell they are keeping him in.",
+        "The prince is found alive in the dry cell, and the iron gate opens outward at last.",
+        "The cell is opened and the prince is already cold; the decree is answered, and not the way anybody wanted."
+      ],
+      "recap": null,
+      "plan": null
+    }
+  }
+}

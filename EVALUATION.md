@@ -2155,3 +2155,49 @@ Neither the regexes nor the corpus measure general semantic contradiction,
 recognition quality on a revisit or prose quality. A clean lexical reading is
 not evidence of those properties. Receipts include all attempts; superseded
 fixture readings, when present, contribute to spend and not to baseline scores.
+
+## Conditional narrator moments
+
+`CORPUS=branches` stages the pending moments in
+`test/fixtures/files/prompt_branches_corpus.yml`. `Eval::Prompt::Branches::Stage`
+uses the engine's record writers and seeded picks, then asks `Scene::Narrator`
+once. This producer instrument deliberately does not run an additional game
+turn: an attack is already a blow, and these cases ask about records awaiting
+prose. The main and ending corpora retain their identities and kept files.
+The stale main request baseline is the separate `ta-bench-rebaseline-stale`
+follow-up. This instrument changes no production prompt, schema, engine or seed
+content.
+
+```bash
+bin/rails ruby_llm:load_models
+bin/rails eval:estimate
+bin/rails eval:prompt CORPUS=branches MODELS=mistralai/mistral-medium-3.1 SET=my-branches
+bin/rails eval:prompt_score SET=my-branches
+bin/rails eval:prompt_board SETS=my-branches
+bin/rails eval:prompt_compare BEFORE=prompt-branches-2026-09-10 AFTER=my-branches
+bin/rails runner 'puts JSON.pretty_generate(Eval::Prompt::Branches.identity)'
+```
+
+The lowest case ID in each shape designates the assembled request. Its system
+message, user message and null streaming schema form a versioned
+`request_identity`, using the shared `Eval::RequestIdentity` format. Kept-set
+tests reconstruct these requests offline and compare them with every paid
+repetition. The full readings survive in the kept set, including placed facts,
+raw prose, prompts and token receipts; the warm-up has its own receipt and is
+excluded from the figures. The evidence directory's `receipts.rb` recomputes the
+purchase total from retained tokens and the prices recorded before buying.
+
+The added predicates detect bounded explicit contradictions of blows, tolls,
+throws, HP/life/death and the next quest beat, alongside the existing generic
+checks where judgeable. They abstain on quoted, hypothetical and negated clauses.
+Exact future-summary leakage is detectable; paraphrased leaks are not. Missing
+acknowledgement is not counted as a contradiction. The predicate tests retain
+clean controls and contradictory examples; a clean rate does not establish
+semantic truthfulness.
+
+Each branch reading has nullable `human.truthfulness`, `human.next_beat_fit`
+and `human.quality` fields. Unlabelled truthfulness appears as **unlabelled
+(human-only)** on the board, never as a clean score. A human may label
+truthfulness true/false and retain fit/quality judgements in those fields;
+truthfulness beyond the placed explicit facts, natural fit of a beat, geometry
+semantics and overall quality remain human-only. There is no new lab page.

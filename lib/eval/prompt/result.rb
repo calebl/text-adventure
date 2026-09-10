@@ -34,7 +34,7 @@ class Eval::Prompt::Result
   }.freeze
 
   def self.metrics
-    @metrics ||= Eval::Prompt.checks.index_with { |code| Story::Scoreboard::CHECKS.fetch(code) }
+    @metrics ||= Eval::Prompt.checks.index_with { |code| Eval::Prompt.check_labels.fetch(code) }
                                     .merge(RUN_METRICS)
   end
 

@@ -1,0 +1,16 @@
+{
+  "model": "mistralai/mistral-medium-3.1",
+  "reps": 4,
+  "cases": 9,
+  "calls_including_warmup": 37,
+  "input_per_million": 0.4,
+  "output_per_million": 2.0,
+  "estimate_usd": 0.042652800000000005,
+  "warmup_estimate_usd": 0.0011848,
+  "conservative_allowance_usd": 0.1936812,
+  "authorized_usd": 2,
+  "request_identity": {
+    "version": 1,
+    "digest": "881e79c529e5cd18"
+  }
+}

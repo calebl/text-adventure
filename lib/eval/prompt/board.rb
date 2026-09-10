@@ -113,6 +113,7 @@ class Eval::Prompt::Board
       rows.merge(
         "`words` (richness)" => ->(column) { band(column, :words) },
         "`commitments` (richness)" => ->(column) { band(column, :commitments) },
+        "human truthfulness" => ->(column) { human(column) },
         "refusals" => ->(column) { band(column, :refusals) },
         "failed calls" => ->(column) { band(column, :failures) },
         "omitted fields" => ->(column) { band(column, :omitted_fields) },
@@ -123,6 +124,16 @@ class Eval::Prompt::Board
         "cost per 1,000 narrations" => ->(column) { cost(column) },
         "rotations" => ->(column) { rotations(column) }
       )
+    end
+
+    def human(column)
+      rows = column.passes.flat_map(&:rows).select { |row| row.dig("facts", "branch") }
+      return "unavailable" if rows.empty?
+
+      labels = rows.map { |row| row.dig("human", "truthfulness") }.select { |label| label == true || label == false }
+      return "unlabelled (human-only)" if labels.empty?
+
+      "#{labels.size}/#{rows.size} labelled; #{labels.count(false)} contradicted"
     end
 
     def row(label, cells) = "| #{([ label ] + cells).join(" | ")} |"

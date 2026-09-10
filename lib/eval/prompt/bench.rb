@@ -170,7 +170,9 @@ class Eval::Prompt::Bench
         typed: kase.typed, target: kase.target, pass:, text:, facts:,
         seconds: seconds&.round(4), input_tokens:, output_tokens:, calls:,
         answered_by:, instructions_digest: Playthrough::PromptVersion.of(instructions),
-        prompt:, missing_fields:, cap_hits:, error:, ending_request: }
+        prompt:, missing_fields:, cap_hits:, error:, ending_request: }.tap do |row|
+          row[:human] = { "truthfulness" => nil, "next_beat_fit" => nil, "quality" => nil } if facts.key?("branch")
+        end
     end
   end
 
