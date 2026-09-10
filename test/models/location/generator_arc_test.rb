@@ -1,23 +1,9 @@
 require "test_helper"
 
-# THE ONE BLOCK THE GENERATOR IS TOLD ABOUT THE ARC, and the record-only checks
-# that judge it -- because `rake eval:realization` provably cannot, today.
-#
-# WHY THE BENCH CANNOT JUDGE IT. Its corpus stages five worlds -- The Iron Gate
-# Descends (the frozen fixture copy), The Lunar Cartographer, The Quay House,
-# The Salt Assizes and The Unrecorded Hour -- and NOT ONE of them carries a
-# `quests:` block. So `#arc_block` is empty for all twenty-two cases and the
-# prompt is byte-for-byte what it was: measured, not assumed --
-# `rake eval:realization_digest` reads the same `08d08a01235d89d3` before and
-# after this change, which is why `room-people-after` is still a baseline for
-# this tree. `#the_bench_worlds_send_an_unchanged_prompt` below is that fact as
-# a test, and it FAILS the day one of them gains an arc -- which is the day a
-# round can be bought and has to be.
-#
-# SO WHAT IS ASSERTED HERE IS EVERY BRANCH OF THE BLOCK, on records: that it
-# names the right kind of thing in the vocabulary of the seam that can supply
-# it, that it is silent for every world that has no arc, that it never carries
-# the conclusion, and that it does not follow one player around.
+# The arc block's vocabulary and absent-arc behavior. Realization branch cases
+# now measure nonempty requests through Eval::Realization::Branches. The seed
+# files themselves remain arc-free, preserving the historical cases; the branch
+# fixtures supply fixed unbound beats without changing those worlds on disk.
 class Location::GeneratorArcTest < ActiveSupport::TestCase
   def setup
     @story = create(:story)
@@ -32,10 +18,8 @@ class Location::GeneratorArcTest < ActiveSupport::TestCase
     assert_not_includes context, "Where This Story Is Going"
   end
 
-  # THE MEASUREMENT THAT REPLACED A BENCH ROUND. Every world the realization
-  # corpus stages, asked whether it has an arc. While none does, the block
-  # cannot render in the bench and the stored baseline stays a before side; the
-  # day one does, this fails and says what to do about it.
+  # Branch staging owns the added requests. A quest added to a seed file would
+  # also change the historical cases, which this guard deliberately keeps apart.
   test "the bench worlds send an unchanged prompt" do
     staged = YAML.safe_load_file(Eval::Realization::CORPUS, permitted_classes: [ Date, Time ])
                  .fetch("cases").map { |kase| kase.fetch("story") }.uniq

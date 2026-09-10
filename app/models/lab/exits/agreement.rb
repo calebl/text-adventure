@@ -53,6 +53,8 @@ class Lab::Exits::Agreement
     "teaser_wrong" => [],
     "shouldnt_exist" => %i[exit_into_a_written_room exit_already_reachable exit_named_this_room]
   }.freeze
+  # Optional quest take-up cannot be graded by a verdict on an exit name.
+  NOT_A_QUALITY_CHECK = Lab::Realization::Agreement::NOT_A_QUALITY_CHECK
   WHOLE_SAMPLE = "shouldnt_exist".freeze
   GRADED_BY_THE_WHOLE_SAMPLE = %i[
     exit_over_the_allowance no_new_ground person_over_the_allowance item_over_the_allowance

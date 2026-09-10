@@ -187,7 +187,11 @@ class Eval::Realization::Bench
   # reading disagree about a call they both watched. So the seam is here, at the
   # narrowest point that is a whole realization.
   def build(kase, standing, arm, rep)
+    requested_step = standing.generator.send(:open_step)
     facts = facts_before(kase, standing)
+    standing.generator.singleton_class.prepend(Eval::Realization::BranchRequests::Capture)
+    standing.generator.singleton_class.prepend(Eval::Realization::Admissions::Capture)
+    standing.generator.measured_quest_step = requested_step
     before = standing.story.locations.pluck(:name)
 
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
@@ -199,11 +203,13 @@ class Eval::Realization::Bench
     end
     elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
 
-    receipts = receipts_for(standing.generator)
+    receipts = receipts_for(standing.generator, retrying: kase.staging.key?("retry_detail"))
+    facts["requests"] = standing.generator.measured_requests || []
+    facts["request_identity"] = Eval::Realization::BranchRequests.identity(facts["requests"])
 
     Reading.new(
       kase: kase, arm: arm.id, rep: rep, facts: facts,
-      answers: receipts[:answers], after: after(standing, before),
+      answers: receipts[:answers], after: after(standing, before, requested_step: requested_step),
       # A FAILED CALL HAS NO LATENCY, deliberately: how long it took to fail is
       # a fact about the failure and not about how fast this model answers.
       seconds: (elapsed if error.nil?),
@@ -257,7 +263,9 @@ class Eval::Realization::Bench
   # reads them off the same registries and the same scopes the prompt does, so a
   # checker cannot be scoring against a list the prompt never carried.
   def facts_before(kase, standing)
-    { "room" => standing.location.name,
+    { "quest_request" => standing.generator.send(:open_step)&.attributes&.slice("trigger_kind", "target_name", "summary", "teaser"),
+      "retry" => kase.staging.key?("retry_detail"),
+      "room" => standing.location.name,
       "teaser" => standing.location.teaser,
       "danger" => standing.location.danger,
       "danger_share" => standing.location.danger_share,
@@ -318,7 +326,7 @@ class Eval::Realization::Bench
   # WHAT THE REGISTRIES MADE OF THE ANSWER. The half no reading of the JSON
   # could give: a name refused, a cap reached, a person already standing
   # somewhere else. Read off the records the way the game reads them.
-  def after(standing, before)
+  def after(standing, before, requested_step: nil)
     room = standing.location.reload
     # WHAT THE ROOM IS CALLED AFTERWARDS, which is the only way to see what
     # `Location::RoomName` did with the proposal: it refuses on five separate
@@ -326,7 +334,11 @@ class Eval::Realization::Bench
     # decision in the scorer would be a second implementation of the one thing
     # that owns it. `Scorer#judge_room_name_refused` reads this against
     # `facts["room"]` and nothing else.
-    { "name" => room.name,
+    requested_step&.reload
+    { "quest_admitted" => standing.generator.measured_quest_admission,
+      "quest_bound" => requested_step&.bound?,
+      "quest_target_type" => requested_step&.target_type,
+      "name" => room.name,
       # THE BUILDING THE PICKS PRODUCED, or an empty list for every room that is
       # not one. It is the only record of what the parameters did: none of them
       # has a column, so the rooms the layout wrote ARE the answer
@@ -346,7 +358,7 @@ class Eval::Realization::Bench
   # WHAT THE TWO CALLS COST AND WHAT THEY WERE TOLD, off the conversation the
   # generator left behind -- `BaseAgent#recorded_chat`, which is the app's own
   # handle on it rather than a query this class invented.
-  def receipts_for(generator)
+  def receipts_for(generator, retrying: false)
     chat = generator.agent.recorded_chat
     return { answers: {}, calls: 0, input_tokens: 0, output_tokens: 0, prompts: {},
              missing_fields: [], cap_hits: [] } if chat.nil?
@@ -354,7 +366,11 @@ class Eval::Realization::Bench
     messages = chat.messages.includes(:model).order(:id).to_a
     answered = messages.select { |message| message.role.to_s == "assistant" }
     asked = messages.select { |message| message.role.to_s == "user" }
-    named = Eval::Realization::CALLS.first(answered.size)
+    if retrying
+      answered = answered.drop(1)
+      asked = asked.drop(1)
+    end
+    named = (retrying ? [ "exits" ] : Eval::Realization::CALLS).first(answered.size)
 
     { answers: named.each_with_index.to_h { |call, index| [ call, raw_answer(answered[index]) ] }.compact,
       prompts: named.each_with_index.to_h { |call, index| [ call, asked[index]&.content ] }.compact,

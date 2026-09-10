@@ -35,7 +35,7 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
     assert_equal [ ARM ], result.arms, "a set that does not say which model produced it is not a set"
     assert_equal [ ARM ], result.answered_by, "answered_by is the check on arms, and the pinning has to have held"
     assert_equal Eval::Noise::MIN_RUNS, result.reps, "fewer repetitions than the floor cannot be given a verdict"
-    assert_match(/\A2026-09-0/, result.recorded_at.to_s, "the date belongs in the file, not the filename")
+    assert_match(/\A\d{4}-\d{2}-\d{2}T/, result.recorded_at.to_s, "the date belongs in the file, not the filename")
     assert result.prompt_stable, "one case sending two prompts would make every figure in it suspect"
     assert_predicate result.prompt_digest, :present?
     assert_predicate result.instructions_digest, :present?
@@ -172,6 +172,56 @@ class Eval::Realization::KeptSetTest < ActiveSupport::TestCase
                       "no case in this set carries a ceiling quantifier, so it is not a baseline for that check"
       assert_operator pass.judgeable["no_inside_where_the_world_wanted_one"].to_i, :>, 0,
                       "no case in this set carries a floor quantifier, so it is not a baseline for that check"
+    end
+  end
+
+  test "branch requests match HEAD and the paid first requests without changing historical sets" do
+    document = JSON.parse(File.read(Eval.kept_root.join(BASELINE, "requests.json")))
+    requests = Eval::Realization::BranchRequests.offline
+    assert_equal requests, document.fetch("requests")
+    assert_equal Eval::Realization::BranchRequests.identity(requests), document.fetch("request_identity")
+    rows = full_rows
+    requests.each do |id, request|
+      bought = rows.select { |row| row.fetch("id") == id }
+      assert_equal Eval::Noise::MIN_RUNS, bought.size
+      bought.each do |row|
+        assert_nil row["error"], "#{id}: #{row['error']}"
+        assert_equal request, row.fetch("facts").fetch("requests").first
+      end
+    end
+  end
+
+  test "branch receipts include warmup and price every purchased answer within authorization" do
+    receipt = JSON.parse(File.read(Eval.kept_root.join(BASELINE, "receipts.json")))
+    assert_operator receipt.fetch("actual"), :>, 0
+    assert_operator receipt.fetch("actual"), :<=, 2
+    assert_in_delta receipt.fetch("receipts").sum { |row| row.fetch("dollars") } +
+                    receipt.fetch("previous_attempt").fetch("actual"), receipt.fetch("actual")
+    assert_equal 1, receipt.fetch("receipts").count { |row| row.fetch("warmup") }
+    assert receipt.fetch("receipts").all? { |row| row.fetch("model") == ARM }
+    retries = full_rows.select { |row| row.dig("facts", "retry") }
+    assert_equal Eval::Noise::MIN_RUNS, retries.size
+    assert retries.all? { |row| row.fetch("answers").keys == [ "exits" ] && row.fetch("calls") == 1 }
+  end
+
+  test "the kept summary is recomputed from the full receipts" do
+    kept.passes.each do |pass|
+      rows = full_rows.select { |row| row.fetch("rep") == pass.rep && row.fetch("arm") == pass.arm }
+      recomputed = Eval::Realization::Result.figures_of(rows)
+      recomputed.each { |key, value| assert_equal value, pass.figures.fetch(key), key }
+    end
+  end
+
+  test "quest receipts distinguish model admission from deadline placement" do
+    rows = full_rows.select { |row| row.dig("facts", "quest_request") }
+    rows.each do |row|
+      assert_equal Eval::Realization::Admissions.replay(row), row.fetch("after").fetch("quest_admitted")
+    end
+  end
+
+  def full_rows
+    @full_rows ||= Zlib::GzipReader.open(Eval.kept_root.join(BASELINE, "readings.json.gz")) do |file|
+      JSON.parse(file.read).fetch("passes").flat_map { |pass| pass.fetch("readings") }
     end
   end
 

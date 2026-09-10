@@ -112,6 +112,9 @@
 module Eval::Realization::Version
   extend self
 
+  # Legacy designation stays fixed when branch fixtures are added. BranchRequests
+  # identities cover their full requests separately, including restored history.
+
   # THE ROLLED LINE, as `Location::Generator#slot_details` writes it:
   # `  the 1st is Shorefolk, about 44, woman`. Anchored to the start of the line
   # and to the ordinal so that nothing else in a prompt can match it.
@@ -179,7 +182,7 @@ module Eval::Realization::Version
   # that shape. Asked of the CORPUS rather than of readings, because there are
   # no readings without a run.
   def designated_cases(corpus)
-    corpus.cases.group_by { |kase| kase.shape.to_s }
+    corpus.cases.reject { |kase| kase.staging.present? }.group_by { |kase| kase.shape.to_s }
           .transform_values { |scoped| scoped.min_by(&:id) }.sort.to_h
   end
 
@@ -208,7 +211,7 @@ module Eval::Realization::Version
   # in the file so that reordering the corpus does not silently change the
   # version. Both calls' prompts are joined, in the order the app sends them.
   def designated(readings)
-    readings.reject { |reading| reading.prompts.blank? }
+    readings.reject { |reading| reading.prompts.blank? || reading.kase.staging.present? }
             .group_by { |reading| reading.shape.to_s }
             .transform_values { |scoped|
               chosen = scoped.map(&:id).min

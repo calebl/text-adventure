@@ -1,0 +1,15 @@
+{
+  "model": "mistralai/mistral-medium-3.1",
+  "price": {
+    "model": "mistralai/mistral-medium-3.1",
+    "input_per_million": 0.4,
+    "output_per_million": 2.0
+  },
+  "estimate": 0.27338880000000004,
+  "registry": {
+    "context_window": 131072,
+    "max_output_tokens": 262144
+  },
+  "corpus": "de57509aa1da1a37",
+  "reps": 4
+}

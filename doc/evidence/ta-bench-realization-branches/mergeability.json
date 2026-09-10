@@ -1,0 +1,17 @@
+[
+  {
+    "branch": "fm/ta-bench-schema-digest",
+    "sibling_commit": "6be4f0ef0f767845511ad20e099231a3c0829350",
+    "clean_merge": true
+  },
+  {
+    "branch": "fm/ta-bench-npc-dialogue",
+    "sibling_commit": "6ac72b59352d4a57e56c56fef007c3c209c90e29",
+    "clean_merge": true
+  },
+  {
+    "branch": "fm/ta-bench-genesis",
+    "sibling_commit": "9408ec452d3076c1d7d0ad38ce4c0a0391463060",
+    "clean_merge": true
+  }
+]

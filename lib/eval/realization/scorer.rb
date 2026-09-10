@@ -67,11 +67,16 @@
 # `exit_already_reachable`'s denominator rather than flagging it. A prompt item
 # that resolves the contradiction should re-baseline and then delete the gate.
 class Eval::Realization::Scorer
+  # Optional request take-up is an observation, not a quality defect.
+  # Reports and lab agreement use this same classification.
+  OBSERVATIONS = %i[quest_target_not_admitted].freeze
+
   # THE CHECKS, IN TRUST ORDER: the exits the engine itself refuses first,
   # because those have a cost the records can prove; then the allowances, which
   # are a number the prompt stated; then the names; then `KEYWORD_CHECKS`, last,
   # because those are the ones that read words.
   CHECKS = {
+    quest_target_not_admitted: "an optional target proposal was not admitted before the engine deadline fallback; take-up, not natural fit",
     exit_into_a_written_room: "an exit named a place already WRITTEN that this room cannot reach -- " \
                               "the prompt marks those and the engine drops the edge",
     exit_already_reachable: "an exit named a place this room can already reach, which the prompt " \
@@ -154,7 +159,7 @@ class Eval::Realization::Scorer
     def story = row["story"]
     def held_out? = Eval::Realization.held_out?(story)
     def failed? = !row["error"].nil?
-    def scored? = !failed? && detail.present?
+    def scored? = !failed? && (detail.present? || exits_answer.present?)
     def error = row["error"]
     def calls = row["calls"].to_i
 
@@ -895,15 +900,23 @@ class Eval::Realization::Scorer
   # --------------------------------------------------------- the cast and the floor
 
   def judge_person_over_the_allowance
-    flag_cases(:person_over_the_allowance, ->(_r) { true }) do |reading|
+    flag_cases(:person_over_the_allowance, ->(r) { !r.facts["retry"] }) do |reading|
       next nil unless reading.people.size > reading.people_allowance
 
       "named #{reading.people.size} people where the prompt allowed #{reading.people_allowance}"
     end
   end
 
+  # Optional request take-up, not a claim that leaving it for another room is
+  # wrong. Admission binding owns both the natural-key match and target kind.
+  def judge_quest_target_not_admitted
+    flag_cases(:quest_target_not_admitted, ->(r) { r.facts["quest_request"].present? && r.after.key?("quest_admitted") }) do |reading|
+      "the requested target remains unbound" unless reading.after["quest_admitted"]
+    end
+  end
+
   def judge_item_over_the_allowance
-    flag_cases(:item_over_the_allowance, ->(_r) { true }) do |reading|
+    flag_cases(:item_over_the_allowance, ->(r) { !r.facts["retry"] }) do |reading|
       next nil unless reading.items.size > reading.item_allowance
 
       "named #{reading.items.size} things where the prompt allowed #{reading.item_allowance}"

@@ -118,6 +118,9 @@ module Eval
     lib/eval/prompt/scorer.rb
     lib/eval/prompt/version.rb
     lib/eval/realization.rb
+    lib/eval/realization/admissions.rb
+    lib/eval/realization/branches.rb
+    lib/eval/realization/branch_requests.rb
     lib/eval/realization/bench.rb
     lib/eval/realization/board.rb
     lib/eval/realization/comparison.rb
@@ -161,6 +164,11 @@ module Eval
     db/eval/room-people-after/realization.json
     db/eval/kind-to-corpus-after/realization.json
     db/eval/exits-quantifier-after/realization.json
+    db/eval/branches-to-corpus-after/realization.json
+    db/eval/branches-to-corpus-after/readings.json.gz
+    db/eval/branches-to-corpus-after/requests.json
+    db/eval/branches-to-corpus-after/receipts.json
+    db/eval/branches-to-corpus-after/admissions.json
     db/eval/null-2026-09-07/realization.json
   ].freeze
 

@@ -1,0 +1,151 @@
+hour-long-hallway rep=0 calls=2 error=nil
+  mistralai/mistral-medium-3.1     first call 11.0s (excluded from the figures below)
+  mistralai/mistral-medium-3.1     rep 1 hour-long-hallway rep=1 calls=2 error=nil
+hour-long-hallway-early rep=1 calls=2 error=nil
+hour-supply-closet rep=1 calls=2 error=nil
+assizes-vestry-hulk rep=1 calls=2 error=nil
+assizes-vestry-hulk-early rep=1 calls=2 error=nil
+assizes-tide-post rep=1 calls=2 error=nil
+lunar-mournwell-lane rep=1 calls=2 error=nil
+lunar-larkspur-rooftops rep=1 calls=2 error=nil
+lunar-boarding-house-hallway rep=1 calls=2 error=nil
+lunar-celestial-spire rep=1 calls=2 error=nil
+lunar-bell-of-saint-aravel rep=1 calls=2 error=nil
+lunar-sovereigns-circle rep=1 calls=2 error=nil
+iron-gate-blackfang-deep rep=1 calls=2 error=nil
+iron-gate-obsidian-maw rep=1 calls=2 error=nil
+iron-gate-tunnel-upward rep=1 calls=2 error=nil
+iron-gate-surface rep=1 calls=2 error=nil
+iron-gate-hollows-end rep=1 calls=2 error=nil
+iron-gate-spires-rest rep=1 calls=2 error=nil
+iron-gate-blackfang-warren rep=1 calls=1 error=nil
+quay-entry-room rep=1 calls=1 error=nil
+quay-dangerous-back-room rep=1 calls=1 error=nil
+quay-upper-floor-room rep=1 calls=1 error=nil
+branch-quest-reach-location rep=1 calls=1 error=nil
+branch-quest-speak-to rep=1 calls=1 error=nil
+branch-quest-hold-item rep=1 calls=1 error=nil
+branch-named-siblings rep=1 calls=1 error=nil
+branch-saturated-items rep=1 calls=1 error=nil
+branch-geometry-stairs rep=1 calls=1 error=nil
+branch-restored-conversation rep=1 calls=1 error=nil
+ 28 rooms, 50 flagged, 6.4s median
+  mistralai/mistral-medium-3.1     rep 2 hour-long-hallway rep=2 calls=2 error=nil
+hour-long-hallway-early rep=2 calls=2 error=nil
+hour-supply-closet rep=2 calls=2 error=nil
+assizes-vestry-hulk rep=2 calls=2 error=nil
+assizes-vestry-hulk-early rep=2 calls=2 error=nil
+assizes-tide-post rep=2 calls=2 error=nil
+lunar-mournwell-lane rep=2 calls=2 error=nil
+lunar-larkspur-rooftops rep=2 calls=2 error=nil
+lunar-boarding-house-hallway rep=2 calls=2 error=nil
+lunar-celestial-spire rep=2 calls=2 error=nil
+lunar-bell-of-saint-aravel rep=2 calls=2 error=nil
+lunar-sovereigns-circle rep=2 calls=2 error=nil
+iron-gate-blackfang-deep rep=2 calls=2 error=nil
+iron-gate-obsidian-maw rep=2 calls=2 error=nil
+iron-gate-tunnel-upward rep=2 calls=2 error=nil
+iron-gate-surface rep=2 calls=2 error=nil
+iron-gate-hollows-end rep=2 calls=2 error=nil
+iron-gate-spires-rest rep=2 calls=2 error=nil
+iron-gate-blackfang-warren rep=2 calls=1 error=nil
+quay-entry-room rep=2 calls=1 error=nil
+quay-dangerous-back-room rep=2 calls=1 error=nil
+quay-upper-floor-room rep=2 calls=1 error=nil
+branch-quest-reach-location rep=2 calls=1 error=nil
+branch-quest-speak-to rep=2 calls=1 error=nil
+branch-quest-hold-item rep=2 calls=1 error=nil
+branch-named-siblings rep=2 calls=1 error=nil
+branch-saturated-items rep=2 calls=1 error=nil
+branch-geometry-stairs rep=2 calls=1 error=nil
+branch-restored-conversation rep=2 calls=1 error=nil
+ 28 rooms, 41 flagged, 5.8s median
+  mistralai/mistral-medium-3.1     rep 3 hour-long-hallway rep=3 calls=2 error=nil
+hour-long-hallway-early rep=3 calls=2 error=nil
+hour-supply-closet rep=3 calls=2 error=nil
+assizes-vestry-hulk rep=3 calls=2 error=nil
+assizes-vestry-hulk-early rep=3 calls=2 error=nil
+assizes-tide-post rep=3 calls=2 error=nil
+lunar-mournwell-lane rep=3 calls=2 error=nil
+lunar-larkspur-rooftops rep=3 calls=2 error=nil
+lunar-boarding-house-hallway rep=3 calls=2 error=nil
+lunar-celestial-spire rep=3 calls=2 error=nil
+lunar-bell-of-saint-aravel rep=3 calls=2 error=nil
+lunar-sovereigns-circle rep=3 calls=2 error=nil
+iron-gate-blackfang-deep rep=3 calls=2 error=nil
+iron-gate-obsidian-maw rep=3 calls=2 error=nil
+iron-gate-tunnel-upward rep=3 calls=2 error=nil
+iron-gate-surface rep=3 calls=2 error=nil
+iron-gate-hollows-end rep=3 calls=2 error=nil
+iron-gate-spires-rest rep=3 calls=2 error=nil
+iron-gate-blackfang-warren rep=3 calls=1 error=nil
+quay-entry-room rep=3 calls=1 error=nil
+quay-dangerous-back-room rep=3 calls=1 error=nil
+quay-upper-floor-room rep=3 calls=1 error=nil
+branch-quest-reach-location rep=3 calls=1 error=nil
+branch-quest-speak-to rep=3 calls=1 error=nil
+branch-quest-hold-item rep=3 calls=1 error=nil
+branch-named-siblings rep=3 calls=1 error=nil
+branch-saturated-items rep=3 calls=1 error=nil
+branch-geometry-stairs rep=3 calls=1 error=nil
+branch-restored-conversation rep=3 calls=1 error=nil
+ 28 rooms, 42 flagged, 5.3s median
+  mistralai/mistral-medium-3.1     rep 4 hour-long-hallway rep=4 calls=2 error=nil
+hour-long-hallway-early rep=4 calls=2 error=nil
+hour-supply-closet rep=4 calls=2 error=nil
+assizes-vestry-hulk rep=4 calls=2 error=nil
+assizes-vestry-hulk-early rep=4 calls=2 error=nil
+assizes-tide-post rep=4 calls=2 error=nil
+lunar-mournwell-lane rep=4 calls=2 error=nil
+lunar-larkspur-rooftops rep=4 calls=2 error=nil
+lunar-boarding-house-hallway rep=4 calls=2 error=nil
+lunar-celestial-spire rep=4 calls=2 error=nil
+lunar-bell-of-saint-aravel rep=4 calls=2 error=nil
+lunar-sovereigns-circle rep=4 calls=2 error=nil
+iron-gate-blackfang-deep rep=4 calls=2 error=nil
+iron-gate-obsidian-maw rep=4 calls=2 error=nil
+iron-gate-tunnel-upward rep=4 calls=2 error=nil
+iron-gate-surface rep=4 calls=2 error=nil
+iron-gate-hollows-end rep=4 calls=2 error=nil
+iron-gate-spires-rest rep=4 calls=2 error=nil
+iron-gate-blackfang-warren rep=4 calls=1 error=nil
+quay-entry-room rep=4 calls=1 error=nil
+quay-dangerous-back-room rep=4 calls=1 error=nil
+quay-upper-floor-room rep=4 calls=1 error=nil
+branch-quest-reach-location rep=4 calls=1 error=nil
+branch-quest-speak-to rep=4 calls=1 error=nil
+branch-quest-hold-item rep=4 calls=1 error=nil
+branch-named-siblings rep=4 calls=1 error=nil
+branch-saturated-items rep=4 calls=1 error=nil
+branch-geometry-stairs rep=4 calls=1 error=nil
+branch-restored-conversation rep=4 calls=1 error=nil
+/home/calebl/.treehouse/text-adventure-b5f921/14/text-adventure/lib/eval/realization/result.rb:93:in '<class:Result>': uninitialized constant Eval::Realization::Scorer::OBSERVATIONS (NameError)
+
+  NEUTRAL = (REPORTED_METRICS.keys + %i[output_tokens] + Eval::Realization::Scorer::OBSERVATIONS).freeze
+                                                                                  ^^^^^^^^^^^^^^
+	from /home/calebl/.treehouse/text-adventure-b5f921/14/text-adventure/lib/eval/realization/result.rb:20:in '<main>'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/3.4.0/bundled_gems.rb:82:in 'Kernel.require'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/3.4.0/bundled_gems.rb:82:in 'block (2 levels) in Kernel#replace_require'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/bootsnap-1.25.0/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:33:in 'Kernel#require'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/zeitwerk-2.8.3/lib/zeitwerk/core_ext/kernel.rb:26:in 'Kernel#require'
+	from /home/calebl/.treehouse/text-adventure-b5f921/14/text-adventure/lib/eval/realization/bench.rb:164:in 'Eval::Realization::Bench#run'
+	from /home/calebl/.treehouse/text-adventure-b5f921/14/text-adventure/doc/evidence/ta-bench-realization-branches/buy.rb:37:in '<main>'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/railties-8.1.3.1/lib/rails/commands/runner/runner_command.rb:44:in 'Kernel.load'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/railties-8.1.3.1/lib/rails/commands/runner/runner_command.rb:44:in 'block in Rails::Command::RunnerCommand#perform'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/activesupport-8.1.3.1/lib/active_support/execution_wrapper.rb:91:in 'ActiveSupport::ExecutionWrapper.wrap'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/railties-8.1.3.1/lib/rails/commands/runner/runner_command.rb:70:in 'Rails::Command::RunnerCommand#conditional_executor'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/railties-8.1.3.1/lib/rails/commands/runner/runner_command.rb:43:in 'Rails::Command::RunnerCommand#perform'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/thor-1.5.0/lib/thor/command.rb:28:in 'Thor::Command#run'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/thor-1.5.0/lib/thor/invocation.rb:127:in 'Thor::Invocation#invoke_command'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/railties-8.1.3.1/lib/rails/command/base.rb:176:in 'Rails::Command::Base#invoke_command'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/thor-1.5.0/lib/thor.rb:538:in 'Thor.dispatch'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/railties-8.1.3.1/lib/rails/command/base.rb:71:in 'Rails::Command::Base.perform'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/railties-8.1.3.1/lib/rails/command.rb:65:in 'block in Rails::Command.invoke'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/railties-8.1.3.1/lib/rails/command.rb:143:in 'Rails::Command.with_argv'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/railties-8.1.3.1/lib/rails/command.rb:63:in 'Rails::Command.invoke'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/railties-8.1.3.1/lib/rails/commands.rb:18:in '<main>'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/3.4.0/bundled_gems.rb:82:in 'Kernel.require'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/3.4.0/bundled_gems.rb:82:in 'block (2 levels) in Kernel#replace_require'
+	from /home/calebl/.local/share/mise/installs/ruby/3.4.10/lib/ruby/gems/3.4.0/gems/bootsnap-1.25.0/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:33:in 'Kernel#require'
+	from bin/rails:4:in '<main>'
+ 28 rooms, 42 flagged, 5.9s median

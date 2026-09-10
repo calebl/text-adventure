@@ -307,6 +307,15 @@ namespace :eval do
       (sample = ENV["SAMPLE_CASES"].presence) ? found.sample(sample) : found
     end
 
+    # Branch identity is a separate gate from legacy and shared-schema identity.
+    def branch_current?(name, here)
+      request_file = [ Eval.set_path(name).join("requests.json"), Eval.kept_root.join(name, "requests.json") ].find(&:exist?)
+      matches = request_file && JSON.parse(File.read(request_file))["request_identity"] == here[:branch_request_identity]
+      puts "#{name} branch requests: #{request_file ? (matches ? "match" : "CHANGED") : "not recorded"}."
+      puts "This remains a BEFORE side for the branch requests." unless matches
+      matches
+    end
+
     def available_sets
       found = (Dir.glob(Eval.root.join("*", Eval::Realization::RESULTS)) +
                Dir.glob(Eval.kept_root.join("*", Eval::Realization::RESULTS)))
@@ -342,9 +351,13 @@ namespace :eval do
       puts format("  prompt        %s", here[:prompt_digest])
       puts format("  instructions  %s", here[:instructions_digest])
       here[:prompt_shapes].each { |shape, one| puts format("    %-22s %s", shape, one) }
+      branches = Eval::Realization::BranchRequests.offline
+      here[:branch_request_identity] = Eval::Realization::BranchRequests.identity(branches)
+      puts "  branch requests #{here[:branch_request_identity].to_json}"
       puts
 
-      compare_to(ENV["SET"].presence || Eval::Realization::BASELINE, here)
+      name = ENV["SET"].presence || Eval::Realization::BASELINE
+      compare_to(name, here) if branch_current?(name, here)
     end
 
     def compare_to(name, here)
@@ -388,9 +401,11 @@ namespace :eval do
 
       puts "Building #{found.size} rooms on #{arms.map(&:id).join(", ")}."
       puts
+      branch_requests = Eval::Realization::BranchRequests.offline(found)
       result = Eval::Realization::Bench.new(corpus: found, arms: arms, reps: reps).run
 
       written = result.write!(Eval.set_path(set_name), name: set_name)
+      Eval::Realization::BranchRequests.write!(Eval.set_path(set_name), branch_requests)
       puts
       puts "Wrote #{written}."
       puts

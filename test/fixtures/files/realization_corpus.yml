@@ -506,3 +506,114 @@ cases:
     number it was handed. Two doors, both to rooms on its own storey, and no
     stair -- so the only way the prose can reach the ground floor is by
     inventing one.
+
+# Conditional branch fixtures. Legacy prompt designation remains on the older
+# cases; BranchRequests records these complete requests without scrubbing words.
+
+- id: branch-quest-reach-location
+  story: The Quay House
+  room: The Custom House room 1
+  reached_from: The Quay
+  expects_new_ground: false
+  shape: interior-room
+  staging:
+    quest:
+      trigger_kind: reach_location
+      target_name: the records room
+      summary: Recover the missing customs record.
+      teaser: A room inside the customs house where the missing ledgers are kept.
+  why: >-
+    The unbound next beat requests a target in an existing interior room.
+    The check reads the engine's admission binding, never natural fit.
+
+- id: branch-quest-speak-to
+  story: The Quay House
+  room: The Custom House room 1
+  reached_from: The Quay
+  expects_new_ground: false
+  shape: interior-room
+  staging:
+    quest:
+      trigger_kind: speak_to
+      target_name: Mara Quill
+      summary: Recover the missing customs record.
+      teaser: The customs archivist is sorting the missing ledgers in this room.
+  why: >-
+    The unbound next beat requests a target in an existing interior room.
+    The check reads the engine's admission binding, never natural fit.
+
+- id: branch-quest-hold-item
+  story: The Quay House
+  room: The Custom House room 1
+  reached_from: The Quay
+  expects_new_ground: false
+  shape: interior-room
+  staging:
+    quest:
+      trigger_kind: hold_item
+      target_name: the customs docket
+      summary: Recover the missing customs record.
+      teaser: A portable docket on the desk records the missing cargo.
+  why: >-
+    The unbound next beat requests a target in an existing interior room.
+    The check reads the engine's admission binding, never natural fit.
+
+- id: branch-named-siblings
+  story: The Quay House
+  room: The Custom House room 1
+  reached_from: The Quay
+  expects_new_ground: false
+  shape: interior-room
+  staging:
+    named_siblings:
+    - room: The Custom House room 2
+      name: the counting room
+    - room: The Custom House room 5
+      name: the upper landing
+  why: >-
+    The exclusion sentence names siblings admitted through RoomName.
+    Existing room-name checks read the proposal against those records.
+
+- id: branch-saturated-items
+  story: The Quay House
+  room: The Custom House room 1
+  reached_from: The Quay
+  expects_new_ground: false
+  shape: interior-room
+  staging:
+    saturated_items: true
+  why: >-
+    World templates already fill the room allowance. The fallback instruction
+    renders and item_over_the_allowance reads the answer; proposal_refused
+    reads any items actually proposed, with no invented denominator if none are.
+
+- id: branch-geometry-stairs
+  story: The Quay House
+  room: The Custom House room 1
+  reached_from: The Quay
+  expects_new_ground: false
+  shape: interior-room
+  staging:
+    population: nobody
+  why: >-
+    The exported engine plan supplies an east-wall door, a stair with a bearing
+    to the upper floor, and an exterior way out. Full request identity detects
+    their wording. Wall-specific door prose remains the geometry lab's judgement.
+
+- id: branch-restored-conversation
+  story: The Quay House
+  room: The Quay
+  expects_new_ground: true
+  shape: restored-conversation
+  staging:
+    population: nobody
+    retry_detail:
+      description: A cobbled quay runs beside the customs house. Mooring posts line the water.
+      lore: Cargo is weighed here before it enters the customs house.
+      people: []
+      items: []
+  why: >-
+    An accepted detail fixture is checkpointed and applied through the engine.
+    With its old chat absent, Generator restores the structured exchange before
+    buying only exits. Existing checks read that resumed exits answer; replayed
+    detail is retained as input and excluded from paid-answer scoring.
