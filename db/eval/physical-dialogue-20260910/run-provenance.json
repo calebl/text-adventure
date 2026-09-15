@@ -1,0 +1,46 @@
+{
+  "completed_at": "2026-09-15T19:31:31Z",
+  "source_commit": "cd24458e83bbc5901d1cf7beaa9c82f26027564e",
+  "model": "mistralai/mistral-medium-3.1",
+  "corpus_sha256": "ab81a46be7bc735df9001a22d2dac1f27f47272f3d559c5392066c27db384d19",
+  "before": {
+    "set": "dialogue-2026-09-10",
+    "sha256": "d0fabad525d21f0b33ecccfb3bd0f04acb50dd7c1c67ce89d327c60886c0c101"
+  },
+  "after_sha256": "f68386c086ad2c45596c1bbe9490979b543092ca17e72a46e62d8514255ae7d4",
+  "preflight_sha256": "f74ba20e9d304583037e5317e25f2f5b174d16b91ce343b8cc0dfcfc60162d4c",
+  "protocol_sha256": "91f04a8c4489f49e50214145c7de778cf52fee28c777921c980e7b804d635e42",
+  "request_samples_sha256": "81a9fec0ac9a6f9fa0f0157a97157812b0cce5aacc52201bb1fe53f90f821317",
+  "payload_gate_sha256": "b562da2dbb804774c4c5fb3557769d6601591d0312bd79318b2e61f56d1d53ca",
+  "execution": {
+    "repetitions": 4,
+    "cases": 9,
+    "calls_per_reading": 2,
+    "readings": 36,
+    "calls": 72,
+    "concurrency": 1,
+    "resumed": true
+  },
+  "interrupted_attempts": [
+    {
+      "case": "give-owned-key",
+      "rep": 1,
+      "reason": "isolated-database payload gate refusal",
+      "provider_calls": 0
+    },
+    {
+      "case": "honor-ceasefire",
+      "rep": 4,
+      "reason": "shared $4.15 reservation ceiling",
+      "provider_calls": 0
+    }
+  ],
+  "offline_comparison": "Eval::Dialogue::Result#compare with the existing Eval::Noise exact rank test",
+  "request_identity": "Preflight rebuilt all 36 prior readings. Only the first InteractionAgent request changed; second-pass requests and replayed engine facts were identical.",
+  "limitations": [
+    "The task-accounted amount is the shared helper's conservative accounting, not the registry-priced cost.",
+    "Provider-reported cost is partial because only 36 of 72 streamed responses exposed it.",
+    "Contradiction is unavailable without signed prose-digested annotations.",
+    "This corpus does not contain durable-experience or physical offered-item cases."
+  ]
+}

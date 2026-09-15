@@ -1,0 +1,16 @@
+{
+  "calls_including_warmup": 1373,
+  "readings_including_warmup": 1373,
+  "actual_models": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "state_counts": {
+    "settled": 1373
+  },
+  "study_accounted_usd": 0.366033,
+  "registry_priced_usd": 0.3654524,
+  "provider_reported_usd": 0.3654524,
+  "provider_cost_available_calls": 1373,
+  "shared_limit_usd": 4.15,
+  "shared_accounted_at_export_usd": 3.912935
+}

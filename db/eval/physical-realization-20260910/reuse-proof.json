@@ -1,0 +1,10 @@
+{
+  "model_calls": 0,
+  "ledger_writes": 0,
+  "legacy_measured_readings": 88,
+  "current_system_prompt_schema_equal": true,
+  "recorded_admissions_equal": true,
+  "restored_cast_slots": "from each paid reading; no new demographic draw",
+  "command": "RAILS_ENV=test DATABASE_URL=sqlite3:/tmp/physical-realization-replay-20260910.sqlite3 LEGACY_ONLY=1 bin/rails runner db/eval/physical-realization-20260910/replay.rb",
+  "completed_at": "2026-09-10T18:56:06.403601+00:00"
+}

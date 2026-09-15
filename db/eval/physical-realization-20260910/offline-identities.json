@@ -1,0 +1,23 @@
+{
+  "source": "dac765bfcf14675ebaa65e6c57d70517fafb67e1370b0e40740a1a9132d27916",
+  "request_identity": {
+    "version": 1,
+    "digest": "e29ef60c86aa8ae6"
+  },
+  "legacy": {
+    "prompt_digest": "d3cb3cb6f7d21a1c",
+    "prompt_shapes": {
+      "dangerous": "e4318be7e3de5e33",
+      "dead-end": "aa0bd0adbde6eef0",
+      "descent": "59f7209877ecd3ca",
+      "interior-room": "59b87b127c132d6c",
+      "landmark": "8dd21f076dfc35a4",
+      "place": "d95b7c398a4def63",
+      "two-ways-out": "f3b1a97fef3ad5a8",
+      "unwritten-neighbour": "4619278fbd0683e7",
+      "written-neighbour": "b0e2ede2782c60ce"
+    },
+    "instructions_digest": "d43b9ecd17181013"
+  },
+  "origin": "Derived offline from unchanged generator inputs; not claimed recorded by the old bench."
+}

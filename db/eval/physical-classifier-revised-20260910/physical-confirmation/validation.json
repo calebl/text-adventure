@@ -1,0 +1,41 @@
+{
+  "provider_calls": 0,
+  "after_artifact_exists": false,
+  "source_files_verified": 214,
+  "requests_sha256": "bea5c8f6cd22c2b966fb211d34a1eae254e86ce77cd4b4aee6d84eb9001c80ab",
+  "baseline_digests_unchanged": true,
+  "live_database_counts": {
+    "universes": 0,
+    "stories": 0,
+    "playthroughs": 0,
+    "characters": 0,
+    "items": 0,
+    "chats": 0,
+    "messages": 0,
+    "models": 1166
+  },
+  "offline_full_turn_replay": {
+    "turns": 28,
+    "requests": 60,
+    "actual_live_payload_gate": true,
+    "identical_engine_states_and_outcomes": true
+  },
+  "gate_tests": {
+    "runs": 5,
+    "assertions": 22,
+    "failures": 0,
+    "errors": 0
+  },
+  "gate_test_command": "DATABASE_URL=sqlite3:/tmp/ta-physical-classifier-revised-20260910-gate.sqlite3 PARALLEL_WORKERS=1 bin/rails test db/eval/physical-classifier-revised-20260910/physical-confirmation/gate_check.rb",
+  "live_guard_replay_command": "RAILS_ENV=test PHYSICAL_GATE_CHECK=1 DATABASE_URL=sqlite3:/tmp/ta-physical-classifier-revised-20260910-preflight.sqlite3 bin/rails runner db/eval/physical-classifier-revised-20260910/physical-confirmation/preflight.rb",
+  "rubocop": {
+    "files": 4,
+    "offenses": 0
+  },
+  "note": "Replay databases were cloned from the empty schema/model-registry live database. Each replay needs a fresh isolated database and a new /tmp preflight output path; the original evaluator refuses overwrites.",
+  "shared_ledger_unchanged_across_final_offline_gate_check": {
+    "sha256": "bf675877c35377ee5bd82ab929257e73585ad66b3f6da6b9ab12518be92f89c9",
+    "entries": 2161,
+    "accounted_micros": 3219165
+  }
+}

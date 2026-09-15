@@ -18,13 +18,13 @@
 #   engine a player types into -- that a person's name is not read as a way out,
 #   and that a thing on the floor is throwable without a `take` first.
 #
-#   THAT AN IMMOVABLE THING IS REFUSED AND COSTS NOTHING. The one outcome that
-#   needs no die: `Item::BULK` has no penalty for `immovable`, so the engine
-#   says so, throws nothing, moves no row and spends no story time. It is a
-#   `Playthrough::Refusal` and not a fumble, which is the distinction that
-#   class's header draws -- and it is asserted here with the whole read-out
-#   under it, so "nothing changed" is a claim about the records and not about a
-#   sentence.
+#   THAT AN IMMOVABLE THING IS REFUSED AND COSTS NOTHING, whether the player
+#   asks to take it or throw it. `Item::BULK` has no penalty for `immovable`, so
+#   the engine says so, moves no row and spends no story time. A throw rolls no
+#   die. Both are a `Playthrough::Refusal` and not a fumble, which is the
+#   distinction that class's header draws -- and they are asserted here with
+#   the whole read-out under them, so "nothing changed" is a claim about the
+#   records and not about a sentence.
 #
 #   THAT A THROW WRITES THROUGH THE ENGINE'S OWN WRITERS AND COSTS NO MODEL
 #   CALL. `EngineSweep` replaces `BaseAgent.new` with something that raises for
@@ -141,6 +141,21 @@ steps:
     here: [ward stamp, filing press]
     carrying: [Ward Office 12 daybook]
     present: [Halkett Rowe]
+    hp: 18
+    blows: 0
+
+- id: the-immovable-thing-cannot-enter-inventory
+  type: take the filing press
+  why: the same world fact gates an ordinary take before the inventory writer runs
+  expect:
+    understood: take -> filing press
+    refused: true
+    offers:
+    - filing press is immovable and does not move for anybody
+    - cannot be picked up
+    changed: false
+    here: [ward stamp, filing press]
+    carrying: [Ward Office 12 daybook]
     hp: 18
     blows: 0
 

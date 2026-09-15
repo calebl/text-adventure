@@ -1,0 +1,41 @@
+{
+  "status": "prepared; provider execution awaits explicit destination/payload approval",
+  "provider": "openrouter",
+  "model": "mistralai/mistral-medium-3.1",
+  "requests": 344,
+  "repetitions": 4,
+  "calls_including_warmup": 1373,
+  "concurrency": 2,
+  "requests_sha256": "8079c34a0038bdca030f8d19969eb31a5299196df13caea514c45f8d45ba1df0",
+  "changed_request_fields_vs_initial": [
+    "system",
+    "history"
+  ],
+  "unchanged_request_fields_vs_initial": [
+    "user",
+    "schema"
+  ],
+  "all_actual_record_ids_unchanged": true,
+  "matched_before": "../physical-classifier-20260910/classifier.json",
+  "historical_before": "../physical-classifier-20260910/historical-before-full.json.gz",
+  "unchanged_historical_cases": 334,
+  "budget_ledger": "/tmp/text-adventure-live-eval-20260909/budget.json",
+  "shared_limit_usd": 4,
+  "shared_accounted_usd_at_preflight": 3.219165,
+  "max_per_call_reservation_usd": 0.105075,
+  "max_two_call_reservations_usd": 0.21015,
+  "anticipated_study_usd": [
+    0.35,
+    0.4
+  ],
+  "estimate_basis": "Initial1373 calls cost0.318219; revised system grew387characters. An estimate only; every call remains guarded by the original shared ledger.",
+  "source_head_at_preflight": "cd24458e83bbc5901d1cf7beaa9c82f26027564e",
+  "sha256": {
+    "protocol.json": "8a64f37b52c1a49210ed9a6d211ec7e97c020faf92e5f4203b82861053b9839a",
+    "requests.json.gz": "5fbc31c3c63858f1a9b4f65f232a76d4d176ffcf5b0d271bf019ce22d7dc023e",
+    "source/classifier.rb.txt": "4a7bfc36581c527f82ea522b609096f8ba9015bb00866b604e115ce184807b76",
+    "source/classifier_corpus.yml": "16be10c6b3c996595cb74d37400b8ef6b95605c0389563091c1a77738572e239",
+    "evaluate.rb": "f1ed94e0792215710df3ac2c34bce8efcdb0adf2ee578e9be06b3f8c5d7d5809",
+    "verify.rb": "7896e056e3ffe531da7bc1d5e17ed156d9c3c8c761cda2e7425288e02981a45e"
+  }
+}

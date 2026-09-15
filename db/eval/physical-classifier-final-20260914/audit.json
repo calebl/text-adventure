@@ -1,0 +1,590 @@
+{
+  "historical_source": "/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/tmp/eval/classifier-2026-09-10/classifier.json",
+  "source_discovered_in": "doc/evidence/ta-bench-rebaseline-stale/classifier-run.log",
+  "historical_sha256": "678a0107b9a86fb469c629b2f53ac2909574d72f9a10d3f21f3605de66bc5829",
+  "historical_full_metrics_match_kept_summary": true,
+  "excluded_label_ids": [
+    "drop-daybook-hand-over",
+    "drop-slate-give",
+    "move-closet-behind-me",
+    "real-give-him-the-index",
+    "real-give-him-your-daybook"
+  ],
+  "unchanged_cases": 334,
+  "before_unarguable_cases": [
+    280,
+    280,
+    280,
+    280
+  ],
+  "after_unarguable_cases": [
+    280,
+    280,
+    280,
+    280
+  ],
+  "before_values": {
+    "strict_accuracy": [
+      0.9464285714285714,
+      0.9428571428571428,
+      0.95,
+      0.9392857142857143
+    ],
+    "accuracy": [
+      0.9491017964071856,
+      0.9431137724550899,
+      0.9550898203592815,
+      0.9431137724550899
+    ],
+    "intent_accuracy": [
+      0.9850299401197605,
+      0.9850299401197605,
+      0.9880239520958084,
+      0.9820359281437125
+    ],
+    "refusal_agreement": [
+      0.9571428571428572,
+      0.9535714285714286,
+      0.9607142857142857,
+      0.9535714285714286
+    ],
+    "closed_set_misses": [
+      12,
+      14,
+      11,
+      13
+    ],
+    "failures": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "after_values": {
+    "strict_accuracy": [
+      0.95,
+      0.9535714285714286,
+      0.95,
+      0.9535714285714286
+    ],
+    "accuracy": [
+      0.9491017964071856,
+      0.9550898203592815,
+      0.9491017964071856,
+      0.9520958083832335
+    ],
+    "intent_accuracy": [
+      0.9910179640718563,
+      0.9910179640718563,
+      0.9880239520958084,
+      0.9910179640718563
+    ],
+    "refusal_agreement": [
+      0.9571428571428572,
+      0.9607142857142857,
+      0.9607142857142857,
+      0.9607142857142857
+    ],
+    "closed_set_misses": [
+      14,
+      12,
+      13,
+      13
+    ],
+    "failures": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "suppressed_metrics": [
+    "latency_median",
+    "latency_p95"
+  ],
+  "unchanged_verdicts": [
+    {
+      "metric": "strict_accuracy",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "strict_accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.9392857142857143,
+          "max": 0.95,
+          "median": 0.9446428571428571,
+          "range": 0.010714285714285676
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.95,
+          "max": 0.9535714285714286,
+          "median": 0.9517857142857142,
+          "range": 0.0035714285714286698
+        },
+        "delta": 0.0071,
+        "p_value": 0.085714,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.010714285714285676
+      }
+    },
+    {
+      "metric": "accuracy",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.9431137724550899,
+          "max": 0.9550898203592815,
+          "median": 0.9461077844311377,
+          "range": 0.0119760479041916
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9491017964071856,
+          "max": 0.9550898203592815,
+          "median": 0.9505988023952096,
+          "range": 0.005988023952095856
+        },
+        "delta": 0.0045,
+        "p_value": 0.4,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0119760479041916
+      }
+    },
+    {
+      "metric": "intent_accuracy",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "intent_accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.9820359281437125,
+          "max": 0.9880239520958084,
+          "median": 0.9850299401197605,
+          "range": 0.005988023952095856
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9880239520958084,
+          "max": 0.9910179640718563,
+          "median": 0.9910179640718563,
+          "range": 0.0029940119760478723
+        },
+        "delta": 0.006,
+        "p_value": 0.057143,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.005988023952095856
+      }
+    },
+    {
+      "metric": "refusal_agreement",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "refusal_agreement",
+        "before": {
+          "runs": 4,
+          "min": 0.9535714285714286,
+          "max": 0.9607142857142857,
+          "median": 0.9553571428571429,
+          "range": 0.0071428571428571175
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9571428571428572,
+          "max": 0.9607142857142857,
+          "median": 0.9607142857142857,
+          "range": 0.0035714285714285587
+        },
+        "delta": 0.0054,
+        "p_value": 0.257143,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0071428571428571175
+      }
+    },
+    {
+      "metric": "closed_set_misses",
+      "direction": "WORSE",
+      "verdict": {
+        "code": "closed_set_misses",
+        "before": {
+          "runs": 4,
+          "min": 11.0,
+          "max": 14.0,
+          "median": 12.5,
+          "range": 3.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 12.0,
+          "max": 14.0,
+          "median": 13.0,
+          "range": 2.0
+        },
+        "delta": 0.5,
+        "p_value": 0.771429,
+        "exact": true,
+        "outcome": "noise",
+        "band": 3.0
+      }
+    },
+    {
+      "metric": "failures",
+      "direction": "unchanged",
+      "verdict": {
+        "code": "failures",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0
+      }
+    }
+  ],
+  "current_label_misses": [
+    {
+      "id": "attack-neb-court-both",
+      "typed": "go for Neb",
+      "current_expected": [
+        "attack -> Neb Halloran"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "move -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "move -> nothing": 4
+      }
+    },
+    {
+      "id": "grammar-mine",
+      "typed": "pick up mine",
+      "current_expected": [
+        "take -> ward stamp"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> nothing": 4
+      }
+    },
+    {
+      "id": "grammar-misspelling",
+      "typed": "talk to Halket Row",
+      "current_expected": [
+        "talk -> Halkett Rowe"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "talk -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "talk -> nothing": 4
+      }
+    },
+    {
+      "id": "grammar-that-one",
+      "typed": "take that one on the lowest shelf",
+      "current_expected": [
+        "take -> Perrin's private index"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> nothing": 4
+      }
+    },
+    {
+      "id": "real-get-up-close-door",
+      "typed": "get up and close your door",
+      "current_expected": [
+        "other -> nothing",
+        "move -> nothing"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "use -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 4,
+      "before_answers": {
+        "other -> nothing": 4
+      }
+    },
+    {
+      "id": "real-laugh-at-joke",
+      "typed": "laugh at the joke you made",
+      "current_expected": [
+        "talk -> Grenn Ollivar"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "talk -> nothing": 3,
+        "other -> nothing": 1
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "talk -> nothing": 4
+      }
+    },
+    {
+      "id": "script-lc-t19",
+      "typed": "look up at the Celestial Spire from the lane and take its bearing",
+      "current_expected": [
+        "examine -> nothing",
+        "move -> nothing"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "other -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "other -> nothing": 4
+      }
+    },
+    {
+      "id": "take-apron-folded",
+      "typed": "take the folded thing behind the blank forms",
+      "current_expected": [
+        "take -> copy-room apron"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> nothing": 4
+      }
+    },
+    {
+      "id": "take-index-two-columns",
+      "typed": "take the thing with the dates on the left and the file numbers on the right",
+      "current_expected": [
+        "take -> Perrin's private index"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 4,
+      "before_answers": {
+        "take -> Perrin's private index": 4
+      }
+    },
+    {
+      "id": "two-names-examine-closet-fragments",
+      "typed": "compare the index against my daybook",
+      "current_expected": [
+        "examine -> Perrin's private index (and Ward Office 12 daybook)"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "examine -> Perrin's private index": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "examine -> Perrin's private index": 4
+      }
+    },
+    {
+      "id": "two-names-take-all",
+      "typed": "take all of it",
+      "current_expected": [
+        "take -> ward stamp (and Ward Office 12 daybook)"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> Ward Office 12 daybook (and filing press)": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> Ward Office 12 daybook (and filing press)": 4
+      }
+    },
+    {
+      "id": "two-names-take-the-lot",
+      "typed": "take the lot",
+      "current_expected": [
+        "take -> ward stamp (and Ward Office 12 daybook)"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> Ward Office 12 daybook (and filing press)": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> Ward Office 12 daybook (and filing press)": 4
+      }
+    },
+    {
+      "id": "two-names-talk-perrin",
+      "typed": "Perrin, tell Rowe what you found in the amendments",
+      "current_expected": [
+        "talk -> Perrin Lasco (and Halkett Rowe)"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "talk -> Perrin Lasco": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "talk -> Perrin Lasco": 4
+      }
+    },
+    {
+      "id": "unresolved-take-blank-writ",
+      "typed": "take a blank writ out of the press",
+      "current_expected": [
+        "take -> nothing"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> filing press": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> filing press": 4
+      }
+    },
+    {
+      "id": "move-third-stair",
+      "typed": "down the stairs, past the third one from the bottom that creaks",
+      "current_expected": [
+        "move -> Grenn's Boarding House hallway",
+        "move -> Mournwell Lane"
+      ],
+      "current_misses": 3,
+      "current_wrong_answers": {
+        "move -> nothing": 3
+      },
+      "label_changed": false,
+      "before_right": 4,
+      "before_answers": {
+        "move -> Grenn's Boarding House hallway": 4
+      }
+    },
+    {
+      "id": "real-say-of-course",
+      "typed": "say: of course",
+      "current_expected": [
+        "talk -> Halkett Rowe"
+      ],
+      "current_misses": 2,
+      "current_wrong_answers": {
+        "talk -> nothing": 2
+      },
+      "label_changed": false,
+      "before_right": 4,
+      "before_answers": {
+        "talk -> Halkett Rowe": 4
+      }
+    },
+    {
+      "id": "grammar-plural",
+      "typed": "take the aprons",
+      "current_expected": [
+        "take -> copy-room apron"
+      ],
+      "current_misses": 1,
+      "current_wrong_answers": {
+        "take -> nothing": 1
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> nothing": 4
+      }
+    },
+    {
+      "id": "take-slate-fragment",
+      "typed": "take the tide-slate",
+      "current_expected": [
+        "take -> Assize tide-slate"
+      ],
+      "current_misses": 1,
+      "current_wrong_answers": {
+        "take -> nothing": 1
+      },
+      "label_changed": false,
+      "before_right": 4,
+      "before_answers": {
+        "take -> Assize tide-slate": 4
+      }
+    },
+    {
+      "id": "talk-not-attack-demand",
+      "typed": "demand that the Justicar stand down",
+      "current_expected": [
+        "talk -> Ammon Brace"
+      ],
+      "current_misses": 1,
+      "current_wrong_answers": {
+        "talk -> nothing": 1
+      },
+      "label_changed": false,
+      "before_right": 4,
+      "before_answers": {
+        "talk -> Ammon Brace": 4
+      }
+    },
+    {
+      "id": "two-names-move-office",
+      "typed": "go into the supply closet and then out into the hallway",
+      "current_expected": [
+        "move -> The Supply Closet (and The Long Hallway)"
+      ],
+      "current_misses": 1,
+      "current_wrong_answers": {
+        "move -> The Supply Closet": 1
+      },
+      "label_changed": false,
+      "before_right": 4,
+      "before_answers": {
+        "move -> The Supply Closet (and The Long Hallway)": 4
+      }
+    }
+  ]
+}

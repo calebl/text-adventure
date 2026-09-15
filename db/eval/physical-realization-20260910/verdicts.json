@@ -1,0 +1,1083 @@
+[
+  {
+    "code": "quest_target_not_admitted",
+    "before": {
+      "runs": 4,
+      "min": 0.3333,
+      "max": 0.3333,
+      "median": 0.3333,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.3333,
+      "max": 0.3333,
+      "median": 0.3333,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "reported"
+  },
+  {
+    "code": "exit_into_a_written_room",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0233,
+      "median": 0.0,
+      "range": 0.0233
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0233,
+    "direction": "unchanged"
+  },
+  {
+    "code": "exit_already_reachable",
+    "before": {
+      "runs": 4,
+      "min": 0.25,
+      "max": 0.2857,
+      "median": 0.2791,
+      "range": 0.03570000000000001
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.2609,
+      "max": 0.3111,
+      "median": 0.27590000000000003,
+      "range": 0.05019999999999997
+    },
+    "delta": -0.0032,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.05019999999999997,
+    "direction": "BETTER"
+  },
+  {
+    "code": "exit_spelled_a_place_differently",
+    "before": {
+      "runs": 4,
+      "min": 0.2,
+      "max": 0.2424,
+      "median": 0.2205,
+      "range": 0.04239999999999999
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.1818,
+      "max": 0.2424,
+      "median": 0.20185,
+      "range": 0.060600000000000015
+    },
+    "delta": -0.0187,
+    "p_value": 0.371429,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.060600000000000015,
+    "direction": "BETTER"
+  },
+  {
+    "code": "exit_named_this_room",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "exit_over_the_allowance",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "no_new_ground",
+    "before": {
+      "runs": 4,
+      "min": 0.3333,
+      "max": 0.5333,
+      "median": 0.43335,
+      "range": 0.2
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.2667,
+      "max": 0.5333,
+      "median": 0.4,
+      "range": 0.2666
+    },
+    "delta": -0.0333,
+    "p_value": 0.8,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.2666,
+    "direction": "BETTER"
+  },
+  {
+    "code": "person_over_the_allowance",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "item_over_the_allowance",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "name_already_spoken_for",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0093,
+      "median": 0.0,
+      "range": 0.0093
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0093,
+    "direction": "unchanged"
+  },
+  {
+    "code": "proposal_refused",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0294,
+      "median": 0.0201,
+      "range": 0.0294
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0125,
+      "max": 0.04,
+      "median": 0.02675,
+      "range": 0.0275
+    },
+    "delta": 0.0067,
+    "p_value": 0.685714,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0294,
+    "direction": "WORSE"
+  },
+  {
+    "code": "readable_without_words",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "room_name_refused",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "room_name_already_taken",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "inside_declined",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "inside_on_a_place_that_already_exists",
+    "before": {
+      "runs": 4,
+      "min": 0.65,
+      "max": 0.8889,
+      "median": 0.8235,
+      "range": 0.2389
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.75,
+      "max": 0.7895,
+      "median": 0.76985,
+      "range": 0.03949999999999998
+    },
+    "delta": -0.0536,
+    "p_value": 0.285714,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.2389,
+    "direction": "BETTER"
+  },
+  {
+    "code": "inside_where_the_world_wanted_none",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "no_inside_where_the_world_wanted_one",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "population_declined",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "people_short_of_the_pick",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "parameters_declined",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "parameters_the_engine_narrowed",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "race_not_named",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 1.0,
+      "median": 1.0,
+      "range": 1.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 1.0,
+      "max": 1.0,
+      "median": 1.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 1.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "size_the_records_do_not_hold",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "insides_given",
+    "before": {
+      "runs": 4,
+      "min": 0.38636363636363635,
+      "max": 0.47619047619047616,
+      "median": 0.4069767441860465,
+      "range": 0.08982683982683981
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.34782608695652173,
+      "max": 0.4666666666666667,
+      "median": 0.42045454545454547,
+      "range": 0.11884057971014494
+    },
+    "delta": 0.0135,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.11884057971014494,
+    "direction": "reported"
+  },
+  {
+    "code": "insides_reaching",
+    "before": {
+      "runs": 4,
+      "min": 0.046511627906976744,
+      "max": 0.16666666666666666,
+      "median": 0.06897463002114165,
+      "range": 0.12015503875968991
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.08695652173913043,
+      "max": 0.1111111111111111,
+      "median": 0.09090909090909091,
+      "range": 0.024154589371980673
+    },
+    "delta": 0.0219,
+    "p_value": 0.314286,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.12015503875968991,
+    "direction": "reported"
+  },
+  {
+    "code": "rooms_laid_out",
+    "before": {
+      "runs": 4,
+      "min": 17.0,
+      "max": 17.0,
+      "median": 17.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 5.0,
+      "max": 17.0,
+      "median": 17.0,
+      "range": 12.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 12.0,
+    "direction": "reported"
+  },
+  {
+    "code": "storeys_below_ground",
+    "before": {
+      "runs": 4,
+      "min": 3.0,
+      "max": 3.0,
+      "median": 3.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 3.0,
+      "median": 3.0,
+      "range": 3.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 3.0,
+    "direction": "reported"
+  },
+  {
+    "code": "hazard_on_the_ground_floor",
+    "before": {
+      "runs": 4,
+      "min": 0.2,
+      "max": 0.2,
+      "median": 0.2,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.2,
+      "max": 0.4,
+      "median": 0.2,
+      "range": 0.2
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.2,
+    "direction": "reported"
+  },
+  {
+    "code": "hazard_below_ground",
+    "before": {
+      "runs": 4,
+      "min": 0.75,
+      "max": 0.75,
+      "median": 0.75,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.75,
+      "median": 0.75,
+      "range": 0.75
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.75,
+    "direction": "reported"
+  },
+  {
+    "code": "populations_given",
+    "before": {
+      "runs": 4,
+      "min": 1.0,
+      "max": 1.0,
+      "median": 1.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 1.0,
+      "max": 1.0,
+      "median": 1.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "reported"
+  },
+  {
+    "code": "crowds_picked",
+    "before": {
+      "runs": 4,
+      "min": 0.6046511627906976,
+      "max": 0.6818181818181818,
+      "median": 0.6467331118493909,
+      "range": 0.07716701902748413
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.6222222222222222,
+      "max": 0.6590909090909091,
+      "median": 0.6447628458498024,
+      "range": 0.03686868686868683
+    },
+    "delta": -0.002,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.07716701902748413,
+    "direction": "reported"
+  },
+  {
+    "code": "people_named",
+    "before": {
+      "runs": 4,
+      "min": 1.2413793103448276,
+      "max": 1.2413793103448276,
+      "median": 1.2413793103448276,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 1.2413793103448276,
+      "max": 1.2413793103448276,
+      "median": 1.2413793103448276,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "reported"
+  },
+  {
+    "code": "people_offered",
+    "before": {
+      "runs": 4,
+      "min": 1.2413793103448276,
+      "max": 1.2413793103448276,
+      "median": 1.2413793103448276,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 1.2413793103448276,
+      "max": 1.2413793103448276,
+      "median": 1.2413793103448276,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "reported"
+  },
+  {
+    "code": "people_take_up",
+    "before": {
+      "runs": 4,
+      "min": 1.0,
+      "max": 1.0,
+      "median": 1.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 1.0,
+      "max": 1.0,
+      "median": 1.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "reported"
+  },
+  {
+    "code": "items_named",
+    "before": {
+      "runs": 4,
+      "min": 1.103448275862069,
+      "max": 1.3448275862068966,
+      "median": 1.293103448275862,
+      "range": 0.24137931034482762
+    },
+    "after": {
+      "runs": 4,
+      "min": 1.206896551724138,
+      "max": 1.5172413793103448,
+      "median": 1.4137931034482758,
+      "range": 0.31034482758620685
+    },
+    "delta": 0.1207,
+    "p_value": 0.228571,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.31034482758620685,
+    "direction": "reported"
+  },
+  {
+    "code": "exits_named",
+    "before": {
+      "runs": 4,
+      "min": 2.210526315789474,
+      "max": 2.3157894736842106,
+      "median": 2.263157894736842,
+      "range": 0.10526315789473673
+    },
+    "after": {
+      "runs": 4,
+      "min": 2.3157894736842106,
+      "max": 2.4210526315789473,
+      "median": 2.3421052631578947,
+      "range": 0.10526315789473673
+    },
+    "delta": 0.0789,
+    "p_value": 0.085714,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.10526315789473673,
+    "direction": "reported"
+  },
+  {
+    "code": "new_places_opened",
+    "before": {
+      "runs": 4,
+      "min": 0.3684210526315789,
+      "max": 0.631578947368421,
+      "median": 0.4473684210526315,
+      "range": 0.2631578947368421
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.42105263157894735,
+      "max": 0.6842105263157895,
+      "median": 0.6052631578947368,
+      "range": 0.26315789473684215
+    },
+    "delta": 0.1579,
+    "p_value": 0.342857,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.26315789473684215,
+    "direction": "reported"
+  },
+  {
+    "code": "new_places_named",
+    "before": {
+      "runs": 4,
+      "min": 0.7894736842105263,
+      "max": 1.0,
+      "median": 0.8421052631578947,
+      "range": 0.21052631578947367
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.8421052631578947,
+      "max": 1.0,
+      "median": 0.9736842105263157,
+      "range": 0.1578947368421053
+    },
+    "delta": 0.1316,
+    "p_value": 0.314286,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.21052631578947367,
+    "direction": "reported"
+  },
+  {
+    "code": "exits_restating",
+    "before": {
+      "runs": 4,
+      "min": 0.5681818181818182,
+      "max": 0.6511627906976745,
+      "median": 0.6232004429678848,
+      "range": 0.08298097251585623
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.5681818181818182,
+      "max": 0.6444444444444445,
+      "median": 0.5889328063241107,
+      "range": 0.07626262626262625
+    },
+    "delta": -0.0343,
+    "p_value": 0.4,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.08298097251585623,
+    "direction": "reported"
+  },
+  {
+    "code": "refusals",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "failures",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "omitted_fields",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "range": 0.0
+    },
+    "delta": 0.0,
+    "p_value": 1.0,
+    "exact": true,
+    "outcome": "noise",
+    "band": 0.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "cap_hits",
+    "before": {
+      "runs": 4,
+      "min": 0.0,
+      "max": 2.0,
+      "median": 1.5,
+      "range": 2.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 1.0,
+      "max": 4.0,
+      "median": 1.5,
+      "range": 3.0
+    },
+    "delta": 0.0,
+    "p_value": 0.714286,
+    "exact": true,
+    "outcome": "noise",
+    "band": 3.0,
+    "direction": "unchanged"
+  },
+  {
+    "code": "latency_median",
+    "before": {
+      "runs": 4,
+      "min": 5.6723,
+      "max": 6.5716,
+      "median": 5.87385,
+      "range": 0.8993000000000002
+    },
+    "after": {
+      "runs": 4,
+      "min": 5.9722,
+      "max": 9.046,
+      "median": 6.538399999999999,
+      "range": 3.0737999999999994
+    },
+    "delta": 0.6645,
+    "p_value": 0.114286,
+    "exact": true,
+    "outcome": "noise",
+    "band": 3.0737999999999994,
+    "direction": "WORSE"
+  },
+  {
+    "code": "latency_p95",
+    "before": {
+      "runs": 4,
+      "min": 11.4482,
+      "max": 13.1619,
+      "median": 11.675,
+      "range": 1.7136999999999993
+    },
+    "after": {
+      "runs": 4,
+      "min": 11.525,
+      "max": 18.9364,
+      "median": 12.3017,
+      "range": 7.411399999999999
+    },
+    "delta": 0.6267,
+    "p_value": 0.485714,
+    "exact": true,
+    "outcome": "noise",
+    "band": 7.411399999999999,
+    "direction": "WORSE"
+  },
+  {
+    "code": "output_tokens",
+    "before": {
+      "runs": 4,
+      "min": 20872.0,
+      "max": 21541.0,
+      "median": 21446.0,
+      "range": 669.0
+    },
+    "after": {
+      "runs": 4,
+      "min": 21996.0,
+      "max": 22820.0,
+      "median": 22357.0,
+      "range": 824.0
+    },
+    "delta": 911.0,
+    "p_value": 0.028571,
+    "exact": true,
+    "outcome": "real",
+    "band": 824.0,
+    "direction": "reported"
+  }
+]

@@ -1,0 +1,58 @@
+{
+  "audit_type": "Manual reading of every final-confirmation turn against its persisted before/after state, interaction receipt and full model receipts; arm identity visible",
+  "source": {
+    "path": "physical-after.json",
+    "sha256": "07cbd81462eabda04558c506760006de384c362354094790d1bdb63328a6ff8e"
+  },
+  "definitions": {
+    "expected_recorded_outcome_missing": "The case's required outcome is absent from persisted state or the engine receipt. A valid failed strength check and the explicit unsupported stone-burning refusal satisfy their case expectations.",
+    "direct_prose_state_contradiction": "A definite player-readable claim conflicts with persisted state or an engine receipt. Silence and unsupported color are not contradictions. A claimed retained or dropped container is a contradiction when no such item remains carried or on the floor.",
+    "direct_core_physical_outcome_contradiction": "The requested target effect is narrated as occurring but disagrees with its recorded consumption, healing, ownership, passage or burn result.",
+    "current_action_treated_as_earlier_completed_attempt": "The response recasts this fresh command as a distinct earlier completed action.",
+    "wrong_target_selected": "The classifier chose a different item, person, passage or action from the one the player named.",
+    "engine_record_mismatch": "The resulting persisted state disagrees with the closed action and engine receipt that were actually applied."
+  },
+  "defaults": {
+    "expected_recorded_outcome_missing": false,
+    "direct_prose_state_contradiction": false,
+    "direct_core_physical_outcome_contradiction": false,
+    "current_action_treated_as_earlier_completed_attempt": false,
+    "wrong_target_selected": false,
+    "engine_record_mismatch": false
+  },
+  "rows": [
+    {"label":"drink-healing-draught:1","evidence_sha256":"818e1eeb57fc2a83d14ff0e75793c047fcf9eeb662f7ea0f58d6ef61a4fb62b5","categories":[],"reason":"The consume token, 8 HP recovery, consumed disposition and empty carried inventory agree. The prose performs the current drink and does not retain a container."},
+    {"label":"offer-requested-apple:1","evidence_sha256":"abefbddecc80a080bf7d9d928527e8ebebf0432acd37c19e7d84d10bdc7d2775","categories":[],"reason":"The exact apple offer is selected. Maren accepts it, the applied interaction receipt records that choice and ownership transfers to her."},
+    {"label":"refuse-apple:1","evidence_sha256":"2f09c37496cf1f198c6161a66bc2a3eaf229fd8e5259842828b5aed305a9bcfd","categories":[],"reason":"The exact apple offer is selected. Maren's distrust produces a closed-set refusal and the intact apple remains with the player."},
+    {"label":"unlock-with-key:1","evidence_sha256":"2a0e4e5c6615120f0fd43092242557bb4b5c8bf5c78433b94ee9abdcf2544051","categories":[],"reason":"The key unlock token opens both passage directions, retains the key and leaves the player in Market. The prose opens the gate without crossing it."},
+    {"label":"pry-jammed-gate:1","evidence_sha256":"fc30b5571f5eacde416e0c7003b4039f974e9295a8c6ad09694e636b96d5a124","categories":["unrecorded_dropped_tool"],"direct_prose_state_contradiction":true,"evidence_quote":"The lever slips from your grip, clanging against the stone","reason":"The strength check fails and both passages correctly remain closed, but the prose puts the lever on the ground while persisted inventory still carries it."},
+    {"label":"burn-paper:1","evidence_sha256":"abb94299f8258b4d36a1bcc4ca1e872b24839e4072eaac3f54b23d8a42b76ad1","categories":[],"reason":"The exact burn token records the note burned and unavailable while retaining the tinderbox. The prose agrees."},
+    {"label":"cannot-burn-stone:1","evidence_sha256":"73b9a454b38a8944e808c0d4fbf849ed89a0574c2bc8239702d203139ea8dc69","categories":[],"reason":"No burn action exists for stone, so the classifier returns use/nothing and the engine explicitly refuses without changing either item."},
+    {"label":"drink-healing-draught:2","evidence_sha256":"94fd837daf3ce7180c583c77cf1ebdbff15c690c548863071915ef496056ff06","categories":["unrecorded_floor_container"],"direct_prose_state_contradiction":true,"evidence_quote":"The vial is now empty, discarded at your feet","reason":"Consumption and 8 HP recovery are recorded correctly, but the prose places an empty vial on the floor while the floor and carried inventory are both empty."},
+    {"label":"offer-requested-apple:2","evidence_sha256":"00cf394ede5409f302612f126bfe743316e122d234822dee884a10a656a9a092","categories":[],"reason":"The exact apple offer is selected and the acceptance prose, interaction receipt and NPC ownership agree."},
+    {"label":"refuse-apple:2","evidence_sha256":"8a28d73a25aa2fc77d38d8324650509b805ff05014cc6c8b230f1f51cc0f4e93","categories":[],"reason":"The exact apple offer is selected. Maren refuses for the supplied distrust motive and ownership does not change."},
+    {"label":"unlock-with-key:2","evidence_sha256":"314626c9abc82930eb2903ec87367170a9d9754de5b12dac634d56f6afcd404b","categories":[],"reason":"The exact key and passage are selected. Both directions open, the key remains carried and the player does not cross."},
+    {"label":"pry-jammed-gate:2","evidence_sha256":"f7a8841247e30aad80400acfb9c0c02e225bf28d831a3a607bfb701018cec318","categories":[],"reason":"The recorded strength check fails. The passages stay closed, the lever stays carried and the narration describes that failed current attempt."},
+    {"label":"burn-paper:2","evidence_sha256":"1658ebc6a8324a4ed158d166a01ac3711efd9d317049e84b761016cbd2b74fec","categories":[],"reason":"The exact note and tinderbox are selected; the note's burned tombstone, unavailable ownership and narration agree."},
+    {"label":"cannot-burn-stone:2","evidence_sha256":"79f9816b78cdae3e2224e7ebbc37b595e25505eeb016d4c22761a9ccb6ebda91","categories":[],"reason":"The unsupported stone-burning attempt is refused as use/nothing and both real items remain intact and carried."},
+    {"label":"drink-healing-draught:3","evidence_sha256":"7f89f0ddc55514f7b0ffafe13d93332f6a2de1681689715f9e2fbd7193129e44","categories":[],"reason":"The current drink consumes the draught and restores exactly 8 HP. Saying the empty vial disappears from the player's grasp agrees with no retained item."},
+    {"label":"offer-requested-apple:3","evidence_sha256":"c50836a96e458dfc369e7934db4fee23c8468a277ce823dab599dddc1bcf447f","categories":[],"reason":"Maren chooses the exact accept token and the apple moves from the player's inventory to hers in both receipt and prose."},
+    {"label":"refuse-apple:3","evidence_sha256":"d4f216ef68d1cff8dd21bc2688de5f367780d2c6fda02ffecc604b1c3e9a7473","categories":[],"reason":"Maren's closed-set refusal follows her supplied experience; the action receipt and unchanged ownership agree with the prose."},
+    {"label":"unlock-with-key:3","evidence_sha256":"c8a62cc1ac4506f56151388405b4dbc57b2702e78062aa275e999cd67be240de","categories":[],"reason":"The key opens both passage records while the player remains in Market and retains it. The prose exposes the way without crossing."},
+    {"label":"pry-jammed-gate:3","evidence_sha256":"6157817675783753b5a0cfba2ea120396958a21f05e5079294865b7262d97a81","categories":[],"reason":"The strength check succeeds, both directions open and the lever stays carried. The prose describes clearance for passage without claiming the player crossed."},
+    {"label":"burn-paper:3","evidence_sha256":"d185395495a5447e9a6b55bf7cec3e335fc2d03ec1bcea6fc9d37ddd68afebf2","categories":[],"reason":"The burn receipt, burned note tombstone, retained tinderbox and prose all agree."},
+    {"label":"cannot-burn-stone:3","evidence_sha256":"6e167fd93ba035fb26e65e57669be2b9673893950f88333bdec4af93b433130e","categories":[],"reason":"The classifier does not substitute an offered item for the unavailable burn. The refusal leaves the stone and tinderbox unchanged."},
+    {"label":"drink-healing-draught:4","evidence_sha256":"507b82101c6d0a45a03a8246b28f1603b7133d0b58de92c79477edc48046ab73","categories":["unrecorded_retained_container"],"direct_prose_state_contradiction":true,"evidence_quote":"as you lower the empty vial","reason":"The engine consumes the draught and restores 8 HP, but lowering an empty vial asserts a retained container while carried inventory is empty."},
+    {"label":"offer-requested-apple:4","evidence_sha256":"0185dc8aa11a5741360db42bff66cc38f38033ebf604372a2de301a10b08a81c","categories":[],"reason":"The exact carried apple is accepted and transferred to Maren; the model action, applied receipt, state and prose agree."},
+    {"label":"refuse-apple:4","evidence_sha256":"f2b1b09bd28417317694317b43c290c1438074dbc09a5d4f7d1b86a359dee5cc","categories":[],"reason":"The exact offer is selected. Maren refuses from her stated distrust and the player retains the apple."},
+    {"label":"unlock-with-key:4","evidence_sha256":"0378c74d0e22b3cec31897b9807ba6575acf087720f983cdc1d2d63f440e7e15","categories":[],"reason":"The passage opens in both directions, the key remains carried and the player stays in Market. 'Clear to pass' describes access rather than a crossing."},
+    {"label":"pry-jammed-gate:4","evidence_sha256":"4584f0d4a8d891e34ebdb2da977d6a6d02b351000be3306921884a67a789dbb7","categories":[],"reason":"The successful strength check opens both passage rows while retaining location and tool; the narration agrees and does not claim a crossing."},
+    {"label":"burn-paper:4","evidence_sha256":"eccf32dcafd44045f416243bcee081f35429771a78e0b9643de442460a91f85d","categories":[],"reason":"The exact note burns, becomes unavailable and leaves a tombstone while the tinderbox stays carried. The prose agrees."},
+    {"label":"cannot-burn-stone:4","evidence_sha256":"7632e774a65e943c509cedcedb0d030a7e4f1d7b0fd3f0c67f836833db2e2993","categories":[],"reason":"The unavailable burn remains use/nothing, no alternate target is substituted and the explicit refusal matches unchanged state."}
+  ],
+  "limitations": [
+    "The audit was read with the arm identity visible and is not blinded.",
+    "The strict container rubric treats a narrated empty vial as a real item claim because this engine persists item copies and floor placement; it does not count that as a contradiction of the core consumed-and-healed outcome.",
+    "Four repetitions of seven fixed fixtures on one model do not establish general physical realism."
+  ]
+}

@@ -1,0 +1,649 @@
+{
+  "comparison_type": "same model and seven-case corpus; initial engine baseline and prior revised prompt compared with the final classifier prompt",
+  "arms": {
+    "initial_baseline": {
+      "samples": 28,
+      "repetitions": {
+        "1": {
+          "expected_recorded_outcome_missing": 0.7142857142857143,
+          "direct_core_physical_outcome_contradiction": 0.42857142857142855,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.2857142857142857
+        },
+        "2": {
+          "expected_recorded_outcome_missing": 0.7142857142857143,
+          "direct_core_physical_outcome_contradiction": 0.42857142857142855,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.14285714285714285
+        },
+        "3": {
+          "expected_recorded_outcome_missing": 0.7142857142857143,
+          "direct_core_physical_outcome_contradiction": 0.42857142857142855,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.2857142857142857
+        },
+        "4": {
+          "expected_recorded_outcome_missing": 0.7142857142857143,
+          "direct_core_physical_outcome_contradiction": 0.42857142857142855,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.2857142857142857
+        }
+      },
+      "counts": {
+        "expected_recorded_outcome_missing": 20,
+        "direct_core_physical_outcome_contradiction": 12,
+        "current_action_treated_as_earlier_completed_attempt": 0,
+        "incidental_contradiction": 7
+      },
+      "cases": {
+        "drink-healing-draught": {
+          "expected_recorded_outcome_missing": 4,
+          "direct_core_physical_outcome_contradiction": 4,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0
+        },
+        "offer-requested-apple": {
+          "expected_recorded_outcome_missing": 4,
+          "direct_core_physical_outcome_contradiction": 4,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0
+        },
+        "refuse-apple": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0
+        },
+        "unlock-with-key": {
+          "expected_recorded_outcome_missing": 4,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 4
+        },
+        "pry-jammed-gate": {
+          "expected_recorded_outcome_missing": 4,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 3
+        },
+        "burn-paper": {
+          "expected_recorded_outcome_missing": 4,
+          "direct_core_physical_outcome_contradiction": 4,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0
+        },
+        "cannot-burn-stone": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0
+        }
+      }
+    },
+    "prior_revised": {
+      "samples": 28,
+      "repetitions": {
+        "1": {
+          "expected_recorded_outcome_missing": 0.0,
+          "direct_core_physical_outcome_contradiction": 0.0,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.14285714285714285,
+          "wrong_target_selected": 0.0,
+          "engine_record_mismatch": 0.0
+        },
+        "2": {
+          "expected_recorded_outcome_missing": 0.0,
+          "direct_core_physical_outcome_contradiction": 0.0,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.0,
+          "wrong_target_selected": 0.0,
+          "engine_record_mismatch": 0.0
+        },
+        "3": {
+          "expected_recorded_outcome_missing": 0.0,
+          "direct_core_physical_outcome_contradiction": 0.0,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.14285714285714285,
+          "wrong_target_selected": 0.0,
+          "engine_record_mismatch": 0.0
+        },
+        "4": {
+          "expected_recorded_outcome_missing": 0.0,
+          "direct_core_physical_outcome_contradiction": 0.0,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.14285714285714285,
+          "wrong_target_selected": 0.0,
+          "engine_record_mismatch": 0.0
+        }
+      },
+      "counts": {
+        "expected_recorded_outcome_missing": 0,
+        "direct_core_physical_outcome_contradiction": 0,
+        "current_action_treated_as_earlier_completed_attempt": 0,
+        "incidental_contradiction": 3,
+        "wrong_target_selected": 0,
+        "engine_record_mismatch": 0
+      },
+      "cases": {
+        "drink-healing-draught": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 3,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "offer-requested-apple": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "refuse-apple": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "unlock-with-key": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "pry-jammed-gate": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "burn-paper": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "cannot-burn-stone": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        }
+      }
+    },
+    "final_classifier": {
+      "samples": 28,
+      "repetitions": {
+        "1": {
+          "expected_recorded_outcome_missing": 0.0,
+          "direct_core_physical_outcome_contradiction": 0.0,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.14285714285714285,
+          "wrong_target_selected": 0.0,
+          "engine_record_mismatch": 0.0
+        },
+        "2": {
+          "expected_recorded_outcome_missing": 0.0,
+          "direct_core_physical_outcome_contradiction": 0.0,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.14285714285714285,
+          "wrong_target_selected": 0.0,
+          "engine_record_mismatch": 0.0
+        },
+        "3": {
+          "expected_recorded_outcome_missing": 0.0,
+          "direct_core_physical_outcome_contradiction": 0.0,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.0,
+          "wrong_target_selected": 0.0,
+          "engine_record_mismatch": 0.0
+        },
+        "4": {
+          "expected_recorded_outcome_missing": 0.0,
+          "direct_core_physical_outcome_contradiction": 0.0,
+          "current_action_treated_as_earlier_completed_attempt": 0.0,
+          "incidental_contradiction": 0.14285714285714285,
+          "wrong_target_selected": 0.0,
+          "engine_record_mismatch": 0.0
+        }
+      },
+      "counts": {
+        "expected_recorded_outcome_missing": 0,
+        "direct_core_physical_outcome_contradiction": 0,
+        "current_action_treated_as_earlier_completed_attempt": 0,
+        "incidental_contradiction": 3,
+        "wrong_target_selected": 0,
+        "engine_record_mismatch": 0
+      },
+      "cases": {
+        "drink-healing-draught": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 2,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "offer-requested-apple": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "refuse-apple": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "unlock-with-key": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "pry-jammed-gate": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 1,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "burn-paper": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        },
+        "cannot-burn-stone": {
+          "expected_recorded_outcome_missing": 0,
+          "direct_core_physical_outcome_contradiction": 0,
+          "current_action_treated_as_earlier_completed_attempt": 0,
+          "incidental_contradiction": 0,
+          "wrong_target_selected": 0,
+          "engine_record_mismatch": 0
+        }
+      }
+    }
+  },
+  "verdicts": {
+    "initial_baseline_to_final": [
+      {
+        "code": "expected_recorded_outcome_missing",
+        "before": {
+          "runs": 4,
+          "min": 0.7142857142857143,
+          "max": 0.7142857142857143,
+          "median": 0.7142857142857143,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": -0.7143,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.0,
+        "before_rates": [
+          0.7142857142857143,
+          0.7142857142857143,
+          0.7142857142857143,
+          0.7142857142857143
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "direct_core_physical_outcome_contradiction",
+        "before": {
+          "runs": 4,
+          "min": 0.42857142857142855,
+          "max": 0.42857142857142855,
+          "median": 0.42857142857142855,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": -0.4286,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.0,
+        "before_rates": [
+          0.42857142857142855,
+          0.42857142857142855,
+          0.42857142857142855,
+          0.42857142857142855
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "current_action_treated_as_earlier_completed_attempt",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0,
+        "before_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "incidental_contradiction",
+        "before": {
+          "runs": 4,
+          "min": 0.14285714285714285,
+          "max": 0.2857142857142857,
+          "median": 0.2857142857142857,
+          "range": 0.14285714285714285
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.14285714285714285,
+          "median": 0.14285714285714285,
+          "range": 0.14285714285714285
+        },
+        "delta": -0.1429,
+        "p_value": 0.114286,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.14285714285714285,
+        "before_rates": [
+          0.2857142857142857,
+          0.14285714285714285,
+          0.2857142857142857,
+          0.2857142857142857
+        ],
+        "after_rates": [
+          0.14285714285714285,
+          0.14285714285714285,
+          0.0,
+          0.14285714285714285
+        ]
+      }
+    ],
+    "prior_revised_to_final": [
+      {
+        "code": "expected_recorded_outcome_missing",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0,
+        "before_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "direct_core_physical_outcome_contradiction",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0,
+        "before_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "current_action_treated_as_earlier_completed_attempt",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0,
+        "before_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "incidental_contradiction",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.14285714285714285,
+          "median": 0.14285714285714285,
+          "range": 0.14285714285714285
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.14285714285714285,
+          "median": 0.14285714285714285,
+          "range": 0.14285714285714285
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.14285714285714285,
+        "before_rates": [
+          0.14285714285714285,
+          0.0,
+          0.14285714285714285,
+          0.14285714285714285
+        ],
+        "after_rates": [
+          0.14285714285714285,
+          0.14285714285714285,
+          0.0,
+          0.14285714285714285
+        ]
+      },
+      {
+        "code": "wrong_target_selected",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0,
+        "before_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "engine_record_mismatch",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0,
+        "before_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  "findings": [
+    "All 28 final turns selected the intended supported target or explicitly refused the unsupported stone burn; no wrong-target selection reached state.",
+    "All 28 engine records satisfied their fixture expectations, including two failed and two successful persisted pry checks.",
+    "Core effect contradictions remained 0/28. Three incidental inventory contradictions remained: empty vial claims in drink repetitions 2 and 4, and a dropped-lever claim in pry repetition 1.",
+    "Compared with the prior revised arm, total incidental contradictions stayed 3/28 and merely moved between repetitions; every measured difference is NOISE."
+  ],
+  "limitations": [
+    "The audit was read with the arm identity visible and is not blinded.",
+    "The strict container rubric treats a narrated empty vial as a real item claim because this engine persists item copies and floor placement; it does not count that as a contradiction of the core consumed-and-healed outcome.",
+    "Four repetitions of seven fixed fixtures on one model do not establish general physical realism.",
+    "The initial baseline predates engine-owned physical actions, so wrong-target and engine-record-mismatch rates are compared only between the prior revised and final arms.",
+    "Several exploratory comparisons are shown without a multiple-comparison correction."
+  ]
+}

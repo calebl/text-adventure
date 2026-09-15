@@ -1,0 +1,37 @@
+{
+  "source": {
+    "path": "physical-after.json",
+    "sha256": "07cbd81462eabda04558c506760006de384c362354094790d1bdb63328a6ff8e"
+  },
+  "calls": 60,
+  "purposes": {
+    "classifier": 28,
+    "narration": 16,
+    "character": 8,
+    "interaction-narration": 8
+  },
+  "actual_models": {
+    "mistralai/mistral-medium-3.1": 60
+  },
+  "providers": {
+    "openrouter": 60
+  },
+  "provider_cost_reported_calls": 36,
+  "provider_cost_missing_calls": 24,
+  "provider_cost_reported_usd": 0.0178904,
+  "registry_cost_usd": 0.02565,
+  "input_tokens": 47060,
+  "output_tokens": 3413,
+  "cached_tokens": 0,
+  "call_receipts_sha256": "0f22447bdc2e0d63c2638f3ab24277fd5470252a3e7c1db17b86d203d0e56b61",
+  "accounting": {
+    "method": "The shared ledger charged provider-reported cost where present and the admitted reservation upper bound for streamed calls whose provider omitted cost metadata.",
+    "settled_entries": 60,
+    "reserved_entries": 0,
+    "accounted_usd": 0.106813,
+    "selected_ledger_entries_sha256": "2432da230d6c0f32e008feaa080859500559d307febf01df46cd204a8302c6ff",
+    "cumulative_ceiling_usd": 5.0,
+    "shared_accounted_usd_after_arm": 4.19184,
+    "authorization": "yes, just raise it to $5"
+  }
+}

@@ -60,6 +60,16 @@ contradictions and temporal mistakes, including the first candidate's failed
 narration and the revised result. These fixed fixtures complement the broader
 realization bench; they do not establish general realism.
 
+Changes to physical-intent routing also need the full classifier corpus. The
+[initial classifier study](db/eval/physical-classifier-20260910/README.md)
+found a real intent regression on unrelated commands despite successful targeted
+physical fixtures. Keep the full per-line answers so comparisons can exclude
+explicitly amended labels and measure unchanged cases independently. An old
+label that treated handing an item to an NPC as a floor drop cannot judge the
+new offer branch; changing that label does not excuse errors on reading,
+putting down or movement. Preserve failed candidates as evidence before trying
+another prompt.
+
 ## The one command
 
 ```bash
@@ -1111,10 +1121,12 @@ bin/rails runner 'Eval::Prompt::Result.load(Eval.root.join("my-set")) \
 
 ### Current kept sets and historical comparisons
 
-`prompt-2026-09-10`, `classifier-2026-09-10` and
+`prompt-2026-09-10`, `physical-classifier-final-20260914` and
 `prompt-ending-2026-09-10` are the current before sides for future changes.
-They were refreshed under the captain's baseline-coverage order without editing
-prompts, schemas, corpus cases or seeded worlds. Older sets remain history.
+The classifier set is the judged R02 prompt: it prevents the demonstrated
+wrong-record substitutions, with aggregate metrics inside noise versus the
+prior baseline and a documented increase in conservative refusals versus its
+intermediate candidate. Older sets remain history.
 The main comparison spans pre-existing request drift, so its verdicts cannot
 attribute an effect to one prompt change. Recompute them with:
 
@@ -1131,6 +1143,12 @@ Its request identity certifies the scaffold, never identical generated prose.
 `EndingVersion` documents the dependency boundary and the tests exercise it.
 The generic prose checks still cannot assess whether an ending expresses its
 outcome faithfully or whether its prose is good.
+
+`physical-realization-20260910` is the current room-generation baseline. Its
+behavioral checks were all noise versus `branches-to-corpus-after`; median
+output tokens rose from 21,446 to 22,357 per full pass (REAL, p=.028571).
+`physical-dialogue-20260910` is the current dialogue baseline; every available
+matched metric was noise, and contradiction remains explicitly unavailable.
 
 Task evidence and the reproducible receipt summary are under
 `doc/evidence/ta-bench-rebaseline-stale/`. The task runner disables transport
@@ -2009,10 +2027,10 @@ rake db:prepare ruby_llm:load_models
 rake eval:estimate
 EVAL_LIVE=1 \
   EVAL_BUDGET_FILE=tmp/dialogue-budget.json SET=my-dialogue rake eval:dialogue
-rake eval:dialogue_score SET=dialogue-2026-09-10
-rake eval:dialogue_board SET=dialogue-2026-09-10 ANNOTATIONS=path/to/annotations.json
-rake eval:dialogue_compare BEFORE=dialogue-2026-09-10 AFTER=my-dialogue
-rake eval:dialogue_digest SET=dialogue-2026-09-10
+rake eval:dialogue_score SET=physical-dialogue-20260910
+rake eval:dialogue_board SET=physical-dialogue-20260910 ANNOTATIONS=path/to/annotations.json
+rake eval:dialogue_compare BEFORE=physical-dialogue-20260910 AFTER=my-dialogue
+rake eval:dialogue_digest SET=physical-dialogue-20260910
 ```
 
 Run, score, board, compare and digest use the same named-set vocabulary as the

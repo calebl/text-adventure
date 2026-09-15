@@ -13,8 +13,8 @@
 # is this -- the app's own words, built out of records it is already holding,
 # for no model call beyond the classifier that had already run.
 #
-# SIX SHAPES, TOLD APART BECAUSE THEY ARE DIFFERENT FACTS -- three about the
-# LINE, one about a THING the line named, and two about the game it was typed
+# THE SHAPES, TOLD APART BECAUSE THEY ARE DIFFERENT FACTS -- three about the
+# LINE, one about a THING the line named, and three about the game it was typed
 # into:
 #
 #   :named_more_than_one  it named two things the records really have, and a
@@ -29,7 +29,7 @@
 #                         does.
 #   :immovable            IT NAMED A THING THAT DOES NOT MOVE. The one refusal
 #                         shape that is a fact about a record rather than about
-#                         the reading: a `throw` of something whose
+#                         the reading: a `take` or `throw` of something whose
 #                         `Item::BULK` carries no penalty. No die is thrown,
 #                         nothing happens and no story time is spent, which is
 #                         what makes it a refusal instead of the FUMBLE a failed
@@ -256,7 +256,7 @@ class Playthrough::Refusal
     return named_more_than_one(intent, typed: typed) if intent.named_more_than_one?
     return unresolved(intent, typed: typed, offered: offered) if intent.reached_for_nothing?
     return unreadable(typed: typed) if intent.unreadable?
-    return immovable(intent, typed: typed) if intent.throws_the_immovable?
+    return immovable(intent, typed: typed) if intent.moves_the_immovable?
 
     nil
   end
@@ -339,19 +339,23 @@ class Playthrough::Refusal
   end
 
   # A THING THAT DOES NOT MOVE FOR ANYBODY. The item is named and so is what
-  # made it unliftable, because the answer a player needs is which of the things
-  # in their hands they CAN throw -- and `Item::BULK`'s labels are the whole of
-  # that vocabulary.
+  # made it unliftable, because the answer a player needs is why the resolved
+  # thing stayed where the records put it -- and `Item::BULK`'s labels are the
+  # whole of that vocabulary.
   #
   # No `offer`: what else is being carried is not the answer, and the closed set
   # for a throw is two sets rather than one. The engine says why this thing
   # stayed put and stops.
   def self.immovable(intent, typed:)
     item = intent.item
+    attempt = if intent.throw?
+      "it cannot be picked up and thrown at all, so no die was thrown for it"
+    else
+      "it cannot be picked up"
+    end
 
     new(kind: :immovable, typed: typed,
-        fact: "The #{item.name} is #{item.bulk} and does not move for anybody: it cannot be picked up " \
-              "and thrown at all, so no die was thrown for it.")
+        fact: "The #{item.name} is #{item.bulk} and does not move for anybody: #{attempt}.")
   end
 
   def self.unresolved(intent, typed:, offered: [])
@@ -406,7 +410,7 @@ class Playthrough::Refusal
   end
 
   # WHETHER THIS IS A LINE THE ENGINE WOULD NOT PLAY, or a GAME that is over.
-  # The three reading shapes leave the player standing where they were with
+  # The reading shapes leave the player standing where they were with
   # another line to type; `GAME_OVER` does not, so neither answer ends with
   # `UNCHANGED` -- "nothing has changed" is an invitation to try again, and
   # there is nothing to try.

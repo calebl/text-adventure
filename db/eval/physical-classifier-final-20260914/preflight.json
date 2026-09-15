@@ -1,0 +1,40 @@
+{
+  "status": "prepared offline; no provider calls made",
+  "provider": "openrouter",
+  "model": "mistralai/mistral-medium-3.1",
+  "requests": 344,
+  "repetitions": 4,
+  "calls_including_warmup": 1373,
+  "concurrency": 1,
+  "requests_sha256": "74fc57a4c9fc6464e8c1011790caf2a22561f83c107598b7e8108e7f85e41908",
+  "changed_request_fields_vs_revised": [
+    "system",
+    "history"
+  ],
+  "unchanged_request_fields_vs_revised": [
+    "user",
+    "schema"
+  ],
+  "all_actual_record_ids_unchanged": true,
+  "matched_before": "../physical-classifier-revised-20260910/classifier.json",
+  "historical_before": "../physical-classifier-20260910/historical-before-full.json.gz",
+  "unchanged_historical_cases": 334,
+  "budget_ledger": "/tmp/text-adventure-live-eval-20260909/budget.json",
+  "shared_limit_usd": 4,
+  "shared_accounted_usd_at_preflight": 3.651513,
+  "max_per_call_reservation_usd": 0.112245,
+  "revised_actual_accounted_usd": 0.296616,
+  "revised_serialized_request_bytes": 2842781,
+  "final_serialized_request_bytes": 3336077,
+  "estimated_study_usd": 0.348087,
+  "estimate_basis": "Revised actual1373-call accounted cost scaled by aggregate serialized payload bytes. Caching/output variance can move the cost; this is not a budget authorization or guarantee. The original shared ledger remains authoritative.",
+  "source_head_at_preflight": "cd24458e83bbc5901d1cf7beaa9c82f26027564e",
+  "sha256": {
+    "protocol.json": "1cf5ad96df300a41023439d9cb602fbf64e5fdeb0473ae0bef65582262a73c9d",
+    "requests.json.gz": "e74c1897cd721c7cc3791d61d4f9a01fedeb89f6cb20a4dacbef5e0d42041f76",
+    "source/classifier.rb.txt": "8d189a4a37bf0d6a8207c7b171b54161e50d05dc68a00de971fa8831db14e757",
+    "source/classifier_corpus.yml": "16be10c6b3c996595cb74d37400b8ef6b95605c0389563091c1a77738572e239",
+    "evaluate.rb": "16a125c4ae589c53e2d1d9f7b4daba8e1aebc91af3105a8105b184a81df4df68",
+    "verify.rb": "502b99a9eb6f2b14bd63fe175669c83e8069b6155960d65e03379c47e8d6a54c"
+  }
+}

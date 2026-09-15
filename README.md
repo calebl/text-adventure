@@ -1232,24 +1232,6 @@ check.
   carries only where it is now — nothing records where it has been, so a check
   on an item's movement has to infer it. `Story::Audit`'s `item_not_held` says
   so at its own definition.
-- **Nobody new gets created while you walk.** Where a character stands is a
-  record now — `characters.location_id`, and `Character.present_in(location)` is
-  the closed set `talk` resolves against — but the only writers are the world
-  file, `Character::Registry` placing somebody who is nowhere, and an explicit
-  `Character#move_to!`. So a room the file did not put anybody in has nobody in
-  it, and the `talk` branch is unreachable there. Populating a generated room
-  with people is `ta-narrator-memory`: a `Character` is nine validated fields and
-  a model call of its own, which is a world-population feature rather than a
-  whereabouts one.
-- **A talk turn keeps no `Scene` and no `Interaction` until both of its calls
-  land.** `Scene::Narrator` persists partial prose in an `ensure`; `talk_to` has
-  no equivalent, so a `talk` turn that fails halfway writes neither record. The
-  job makes this much rarer -- a closed tab no longer aborts anything -- without
-  closing it: a model that fails mid-turn still loses the exchange.
-  The character's own `Chat` is the exception, and deliberately not the fix: it
-  keeps the exchange, because it was a real question really answered, so the
-  next turn continues from a reply the player never got to read. Better than a
-  character contradicting themselves, and worth revisiting if it ever shows.
 - **A turn in flight is not re-joinable.** Reopen the page mid-narration and the
   log is what was persisted; the prose written so far is in the job's buffer and
   nowhere else. The finished turn arrives over the cable when it lands, because

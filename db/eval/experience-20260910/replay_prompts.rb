@@ -2,6 +2,13 @@ require "json"
 require_relative "fixtures"
 require Rails.root.join("db/eval/adversarial-20260909/eval-budget-streaming-v2")
 ReviewEvalBudget.assert_isolated_database!
+raise "Replay requires the test environment" unless Rails.env.test?
+# The fixtures restore historical Chat rows; RubyLLM validates their provider
+# configuration even though nothing is sent. Use an inert configuration and
+# block the provider boundary so replay works without a real API key.
+RubyLLM.config.openrouter_api_key = "offline-request-replay"
+RubyLLM.config.openrouter_api_base = "http://127.0.0.1:1"
+Chat.define_method(:ask) { |*| raise ReviewEvalBudget::Halt, "Prompt replay attempted a provider call" }
 
 source = JSON.parse(File.read(File.join(__dir__, "experience-after.json")))
 # The revised candidate used a fresh prepared and seeded database.

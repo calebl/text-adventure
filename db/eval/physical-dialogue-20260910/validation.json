@@ -1,0 +1,51 @@
+{
+  "offline_guards": {
+    "command": "DATABASE_URL=sqlite3:/tmp/ta-dialogue-guards-20260910.sqlite3 PARALLEL_WORKERS=1 bin/rails test test/lib/eval/prompt/kept_set_test.rb test/lib/eval/prompt/ending_kept_set_test.rb test/lib/eval/genesis/kept_set_test.rb test/models/playthrough/prompt_version_test.rb",
+    "tests": 43,
+    "assertions": 484,
+    "failures": 0,
+    "errors": 0
+  },
+  "payload_gate": {
+    "command": "DATABASE_URL=sqlite3:/tmp/ta-dialogue-guards-20260910.sqlite3 PARALLEL_WORKERS=1 bin/rails test db/eval/physical-dialogue-20260910/payload_gate_check.rb",
+    "tests": 6,
+    "assertions": 42,
+    "failures": 0,
+    "errors": 0
+  },
+  "provider_calls": 72,
+  "finalization": {
+    "comparison": "Eval::Dialogue::Result#compare over four complete repetitions per side",
+    "after_rows_reviewed": 36,
+    "after_rows_retained": 36,
+    "call_errors": 0,
+    "fallbacks": 0,
+    "actual_models": [
+      "mistralai/mistral-medium-3.1"
+    ],
+    "contradiction": "unavailable",
+    "promoted_kept_set": {
+      "command": "PARALLEL_WORKERS=1 bin/rails test test/lib/eval/dialogue/kept_set_test.rb",
+      "tests": 3,
+      "assertions": 299,
+      "failures": 0,
+      "errors": 0
+    },
+    "offline_digest": {
+      "command": "RAILS_ENV=test rake eval:dialogue_digest SET=physical-dialogue-20260910",
+      "mismatches": []
+    },
+    "dialogue_suite": {
+      "command": "PARALLEL_WORKERS=1 bin/rails test test/lib/eval/dialogue",
+      "tests": 14,
+      "assertions": 377,
+      "failures": 0,
+      "errors": 0
+    },
+    "ruby_style": {
+      "command": "RUBOCOP_CACHE_ROOT=/tmp/ta-rubocop-cache bundle exec rubocop lib/eval/dialogue.rb test/lib/eval/dialogue/kept_set_test.rb db/eval/physical-dialogue-20260910/payload_gate.rb db/eval/physical-dialogue-20260910/payload_gate_check.rb db/eval/physical-dialogue-20260910/preflight.rb db/eval/physical-dialogue-20260910/run.rb",
+      "files": 6,
+      "offenses": 0
+    }
+  }
+}

@@ -73,6 +73,20 @@ class Playthrough::TurnRoutingTest < ActiveSupport::TestCase
     assert_equal @playthrough, @stamp.reload.playthrough
   end
 
+  test "a slashed take of an immovable item is refused before dispatch" do
+    press = create(:item, :lying, :immovable, playthrough: @playthrough, location: @office, name: "filing press")
+    before = @story.clock
+
+    outcome, agent = play("/take filing press")
+
+    assert_instance_of Playthrough::Refusal, outcome
+    assert_equal :immovable, outcome.kind
+    assert_empty agent.prompts
+    assert_equal @office, press.reload.location
+    assert_nil press.character
+    assert_equal before, @story.reload.clock
+  end
+
   test "the slash is stripped before the line is recorded" do
     scene, = play("/take ward stamp", "You lift the brass stamp.")
 

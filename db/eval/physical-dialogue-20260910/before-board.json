@@ -1,0 +1,439 @@
+{
+  "model": "mistralai/mistral-medium-3.1",
+  "corpus_digest": "ab81a46be7bc735df9001a22d2dac1f27f47272f3d559c5392066c27db384d19",
+  "passes": [
+    {
+      "rep": 1,
+      "state_failure": 0.1111111111111111,
+      "exchange_failure": 0.0,
+      "contradiction": null,
+      "reaction_words": 59.888888888888886,
+      "narration_words": 33.666666666666664,
+      "judged": 0,
+      "cases": 9
+    },
+    {
+      "rep": 2,
+      "state_failure": 0.1111111111111111,
+      "exchange_failure": 0.0,
+      "contradiction": null,
+      "reaction_words": 53.333333333333336,
+      "narration_words": 36.666666666666664,
+      "judged": 0,
+      "cases": 9
+    },
+    {
+      "rep": 3,
+      "state_failure": 0.1111111111111111,
+      "exchange_failure": 0.0,
+      "contradiction": null,
+      "reaction_words": 56.22222222222222,
+      "narration_words": 39.333333333333336,
+      "judged": 0,
+      "cases": 9
+    },
+    {
+      "rep": 4,
+      "state_failure": 0.1111111111111111,
+      "exchange_failure": 0.0,
+      "contradiction": null,
+      "reaction_words": 56.666666666666664,
+      "narration_words": 35.44444444444444,
+      "judged": 0,
+      "cases": 9
+    }
+  ],
+  "checks": [
+    {
+      "id": "give-owned-key",
+      "rep": 1,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 1,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 1,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 1,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 1,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "stay-behind",
+      "rep": 1,
+      "checks": {
+        "carries_key": true,
+        "following": false,
+        "foe": true,
+        "npc_room": false,
+        "player_room": true
+      },
+      "human": null
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 1,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "status": true,
+        "key_on_floor": true
+      },
+      "human": null
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 1,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "npc_room": true,
+        "player_room": true
+      },
+      "human": null
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 1,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "peace_before_attack": true
+      },
+      "human": null
+    },
+    {
+      "id": "give-owned-key",
+      "rep": 2,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 2,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 2,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 2,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 2,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "stay-behind",
+      "rep": 2,
+      "checks": {
+        "carries_key": true,
+        "following": false,
+        "foe": true,
+        "npc_room": false,
+        "player_room": true
+      },
+      "human": null
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 2,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "status": true,
+        "key_on_floor": true
+      },
+      "human": null
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 2,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "npc_room": true,
+        "player_room": true
+      },
+      "human": null
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 2,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "peace_before_attack": true
+      },
+      "human": null
+    },
+    {
+      "id": "give-owned-key",
+      "rep": 3,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 3,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 3,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 3,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 3,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "stay-behind",
+      "rep": 3,
+      "checks": {
+        "carries_key": true,
+        "following": false,
+        "foe": true,
+        "npc_room": false,
+        "player_room": true
+      },
+      "human": null
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 3,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "status": true,
+        "key_on_floor": true
+      },
+      "human": null
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 3,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "npc_room": true,
+        "player_room": true
+      },
+      "human": null
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 3,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "peace_before_attack": true
+      },
+      "human": null
+    },
+    {
+      "id": "give-owned-key",
+      "rep": 4,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 4,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 4,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 4,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 4,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true
+      },
+      "human": null
+    },
+    {
+      "id": "stay-behind",
+      "rep": 4,
+      "checks": {
+        "carries_key": true,
+        "following": false,
+        "foe": true,
+        "npc_room": false,
+        "player_room": true
+      },
+      "human": null
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 4,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "status": true,
+        "key_on_floor": true
+      },
+      "human": null
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 4,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "npc_room": true,
+        "player_room": true
+      },
+      "human": null
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 4,
+      "checks": {
+        "carries_key": true,
+        "following": true,
+        "foe": true,
+        "peace_before_attack": true
+      },
+      "human": null
+    }
+  ],
+  "registry_usage_usd": 0.03263544,
+  "provider_reported_partial_usd": 0.020205439999999998,
+  "limits": "Voice, memory fidelity, long-term behavior and personality are unmeasured. Missing human annotations are unavailable, never clean."
+}

@@ -1,0 +1,106 @@
+{
+  "provider_calls": 60,
+  "new_arm_ledger_entries": 60,
+  "after_artifact_exists": true,
+  "source_files_verified": 216,
+  "source_sha256": "f7ce9378a7bdb548ee2ec15dc487ddb3dee56619b4cc1be5a2e0354ff1369209",
+  "requests_sha256": "b0602e59569f6fb235914ce3af9bb365fb94e70d7d1d4923d74561e1b0de6e68",
+  "prior_evidence_files_verified": 27,
+  "prior_evidence_files_changed": [],
+  "live_database_counts_before_run": {
+    "universes": 0,
+    "stories": 0,
+    "locations": 0,
+    "playthroughs": 0,
+    "characters": 0,
+    "items": 0,
+    "chats": 0,
+    "messages": 0,
+    "models": 1166
+  },
+  "live_database_counts_after_run": {
+    "universes": 28,
+    "stories": 28,
+    "locations": 56,
+    "playthroughs": 28,
+    "characters": 56,
+    "items": 72,
+    "chats": 60,
+    "messages": 172,
+    "models": 1166,
+    "scenes": 52,
+    "interactions": 8,
+    "playthrough_commands": 28,
+    "playthrough_passages": 12
+  },
+  "offline_full_turn_replay": {
+    "turns": 28,
+    "requests": 60,
+    "actual_live_payload_gate": true,
+    "identical_engine_states_and_outcomes": true
+  },
+  "request_changes_vs_revised": [
+    {
+      "purpose": "classifier",
+      "changed_fields": [
+        "instructions",
+        "history"
+      ],
+      "count": 28
+    },
+    {
+      "purpose": "narration",
+      "changed_fields": [],
+      "count": 16
+    },
+    {
+      "purpose": "character",
+      "changed_fields": [],
+      "count": 8
+    },
+    {
+      "purpose": "interaction-narration",
+      "changed_fields": [],
+      "count": 8
+    }
+  ],
+  "gate_tests": {
+    "runs": 5,
+    "assertions": 22,
+    "failures": 0,
+    "errors": 0
+  },
+  "gate_test_command": "RAILS_ENV=test DATABASE_URL=sqlite3:/tmp/ta-physical-classifier-final-20260915-test.sqlite3 PARALLEL_WORKERS=1 bin/rails test db/eval/physical-classifier-final-20260914/physical-confirmation/gate_check.rb",
+  "live_guard_replay_command": "RAILS_ENV=test PHYSICAL_GATE_CHECK=1 DATABASE_URL=sqlite3:/tmp/ta-physical-classifier-final-20260915-gate.sqlite3 PHYSICAL_REPLAY_OUT=/tmp/physical-final-confirmation-20260915/gate-results.json bin/rails runner db/eval/physical-classifier-final-20260914/physical-confirmation/preflight.rb",
+  "rubocop": {
+    "files": 5,
+    "offenses": 0
+  },
+  "live_full_turn_run": {
+    "turns": 28,
+    "requests": 60,
+    "errors": 0,
+    "fallbacks": 0,
+    "model_rotations": 0,
+    "wrong_targets": 0,
+    "engine_record_mismatches": 0,
+    "settled_ledger_entries": 60,
+    "reserved_ledger_entries": 0,
+    "accounted_usd": 0.106813,
+    "physical_after_sha256": "07cbd81462eabda04558c506760006de384c362354094790d1bdb63328a6ff8e"
+  },
+  "finalization": {
+    "offline": true,
+    "manual_rows": 28,
+    "core_contradictions": 0,
+    "incidental_contradictions": 3,
+    "comparison_command": "bundle exec ruby db/eval/physical-classifier-final-20260914/physical-confirmation/finalize.rb"
+  },
+  "shared_ceiling_usd": 5.0,
+  "shared_accounted_usd_before_arm": 4.085027,
+  "shared_accounted_usd_after_arm": 4.19184,
+  "shared_remaining_usd_after_arm": 0.80816,
+  "largest_inspected_reservation_usd": 0.11018,
+  "authorization": "yes, just raise it to $5",
+  "post_run_source_change": "After physical-after.json was frozen, an engine-only guard was added to refuse taking an immovable item. The historical preflight and result source digests are intentionally unchanged."
+}

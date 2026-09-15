@@ -1,0 +1,17 @@
+{
+  "completed_at": "2026-09-15T02:33:15Z",
+  "legacy_measured_readings": 88,
+  "original_warmups": 1,
+  "new_branch_readings": 28,
+  "original_source": "b5197572b1b0a6607497072ff06be208efabb5db3a903bf517276af950744b67",
+  "current_source": "dac765bfcf14675ebaa65e6c57d70517fafb67e1370b0e40740a1a9132d27916",
+  "derived_evidence": "Legacy full requests are reconstructed from retained paid prompts, system messages, emitted schemas and structured answers. Message#extract_content deterministically serializes the prior assistant answer with JSON.generate. Replay verifies current prompt/schema and every recorded admission for all old readings.",
+  "offline_identity": "The schema-aware scaffold fingerprint was assembled offline after the benchmark instrumentation landed. It is not claimed to have been recorded by the older run.",
+  "first_branch_stop": "The first new reading passed the pre-send allowlist and was paid/saved. An in-memory symbol/string post-call comparison stopped the runner. Parsed evidence matched exactly; only post-call canonicalization changed before resuming without buying it again.",
+  "limitations": [
+    "Different corpus sizes are compared separately: preserved legacy22 and current29, never relabeled as one corpus.",
+    "The broader realization rubric does not score physical item profile correctness; the targeted physical corpus supplies that evidence.",
+    "Some legacy cast inputs are random but recorded. Offline execution replay restores their recorded slots rather than drawing different people.",
+    "The run resumed after a budget pause. Per-reading latencies and the original warmup are retained; no speed improvement is inferred from the pause."
+  ]
+}

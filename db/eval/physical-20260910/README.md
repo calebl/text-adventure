@@ -111,6 +111,26 @@ rates and the exact verdicts. Repetitions, not individual turns or objects, are
 the comparison samples. Multiple exploratory comparisons are shown without a
 multiple-comparison correction.
 
+`replay.rb` also runs all 28 candidate turns through the current engine, returning
+the saved provider answers only after the emitted system/user/schema request
+matches its receipt. All 60 requests, resulting states and rendered outcomes
+matched after integration onto main `b25eaa5`, before the subsequent classifier
+correction. That classifier is preserved in
+`../physical-classifier-20260910/source/classifier.rb.txt`. A newer classifier
+prompt intentionally fails this replay until its own physical confirmation is
+measured; the stored output is not relabeled as a later candidate. This is an
+offline integration check, not another model measurement. Run it against the
+measured source with a fresh prepared and seeded test database under `/tmp`:
+
+```bash
+RAILS_ENV=test DATABASE_URL=sqlite3:/tmp/physical-replay.sqlite3 bin/rails db:prepare db:seed
+RAILS_ENV=test DATABASE_URL=sqlite3:/tmp/physical-replay.sqlite3 bin/rails runner db/eval/physical-20260910/replay.rb
+```
+
+The replay substitutes `Chat#ask`, uses an inert provider configuration, and
+requires no API key. Use a new database path for another replay: the fixture IDs
+are part of the recorded closed-set choices and the turns retain their records.
+
 `evaluate.rb`, `cases.json`, and `fixtures.rb` are the unchanged live physical
 harness. `generation/evaluate.rb` is the unchanged live generation harness.
 Executing either live harness spends money and is separate from offline replay.

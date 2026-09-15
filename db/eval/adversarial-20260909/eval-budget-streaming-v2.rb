@@ -14,9 +14,9 @@ require "bigdecimal"
 module ReviewEvalBudget
   MODEL = "mistralai/mistral-medium-3.1".freeze
   PROVIDER = "openrouter".freeze
-  # Raised from $3 to $4 with the user's approval on 2026-09-10. Continue the
-  # existing ledger: earlier settled and unknown charges still count.
-  LIMIT_MICROS = 4_000_000
+  # Raised from $4.15 to $5 with the user's approval on 2026-09-15. Continue
+  # the existing ledger: earlier settled and unknown charges still count.
+  LIMIT_MICROS = 5_000_000
   INPUT_RATE = 5
   OUTPUT_RATE = 20
   MAX_INPUT_BYTES = 65_536

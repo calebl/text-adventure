@@ -11,10 +11,18 @@ class Eval::RebaselineReceiptsTest < ActiveSupport::TestCase
     assert_equal SETS.sort, grouped.keys.sort
     assert_operator ledger.fetch("calls").sum { |row| row.fetch("accounted_usd") }, :<=, ledger.fetch("limit_usd")
     assert_equal 2.0, ledger.fetch("limit_usd")
+    # These receipts belong to frozen historical sets. A later corpus can add
+    # lines without retroactively adding calls to an already purchased run.
+    measured = SETS.to_h do |name|
+      filename = name.start_with?("classifier-") ? "classifier.json" : "prompt.json"
+      result = JSON.parse(Eval.kept_root.join(name, filename).read)
+      assert_equal Eval::Noise::MIN_RUNS, result.fetch("reps")
+      [ name, result.fetch("corpus_size") * result.fetch("reps") + 1 ]
+    end
     expected_calls = {
-      SETS[0] => Eval::Prompt.corpus.size * Eval::Noise::MIN_RUNS + 1,
-      SETS[1] => Eval::Classifier.corpus.size * Eval::Noise::MIN_RUNS + 1,
-      SETS[2] => (Eval::Prompt.corpus("ending").size * Eval::Noise::MIN_RUNS + 1) * 2
+      SETS[0] => measured.fetch(SETS[0]),
+      SETS[1] => measured.fetch(SETS[1]),
+      SETS[2] => measured.fetch(SETS[2]) * 2
     }
     SETS.each do |name|
       file = "db/eval/#{name}/receipts.json"

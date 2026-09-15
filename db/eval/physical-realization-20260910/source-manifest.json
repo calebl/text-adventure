@@ -1,0 +1,32 @@
+{
+  "head": "cd24458e83bbc5901d1cf7beaa9c82f26027564e",
+  "main": "b25eaa5d5df55399090e4828f9618f0ff43f7c8c",
+  "files": {
+    "app/models/location/generator.rb": "f6f94ad3f9e7c93b2608d0b667162b756c2e45f02483749a57b1c06ca461b27e",
+    "app/models/location/detail_schema.rb": "b75b2da3e9a96b654acaa658f27e44232cf8ae4e133b91f4df84a553350234a2",
+    "app/models/location/exits_schema.rb": "3f56590e38c1173381f5ec96964511931db80b43c0df9a42561aa23b3a74a7a8",
+    "app/models/location/place_schema.rb": "dc880208195094e480e2d4ab672d1085370a6bfa73348c1ac8baa428f2fbeafd",
+    "app/models/item/registry.rb": "dd7d1268377003b88b2f9e044dda16bc14863a234ad45af7213ccd5d747761e9",
+    "app/models/item.rb": "fe8a30707cde48e57b1f9268655e33fe85eb346ae494c4c1cb9f7557b8aef86d",
+    "app/models/message.rb": "61322adfbe71fcf80780fcb6e3281d1da46a805538bda5dda710588fb60d0b47",
+    "app/agents/BaseAgent.rb": "5c76dc2701047e7fdc907d1aa2d73152a441bc888d28ad8197cc403686d625c0",
+    "lib/eval/realization/bench.rb": "ce3838c1bb971d2f01d85579c4bfecedb917cf97a012c1ac102731b42f8fff23",
+    "lib/eval/realization/stage.rb": "dc5c7a0b13ef1a554921cf2138b57e0d33d90b3f4f8a7c40f0a7235868f965d5",
+    "lib/eval/realization/branches.rb": "5ec9f03723b2eff0e0afd09d212833de7eb2050a43f77c488f7bb73c50595278",
+    "lib/eval/realization/branch_requests.rb": "ad351f6cab4e5f9bfabc7ce2c38d4918f5ae0a31a4bc1b30923082f7a00f51b0",
+    "lib/eval/realization/request_version.rb": "b6fedbb3d790a42c2eb18524107df786c947e5ac06227a66350c2d38e6c51abe",
+    "test/fixtures/files/realization_corpus.yml": "9ba68ae02eca84d99b4b10cc1b7e93abeabda3640dbd9caeba521bf588470b5f",
+    "Gemfile.lock": "08c261bdbb71ae7069f948042b8070cb8722f90d317ebe84f7f06a8a1023e3bb"
+  },
+  "legacy_files": {
+    "legacy/provider-readings.jsonl.gz": "2ffdd61016cdceaef02d42666807bfaca2c6bb57945936552e93124fa4f115f5",
+    "legacy/full-result.json.gz": "25b9a27dc81e896400d9bae048c2d8071bd2bebe6165275e5347f1d2d68718ba",
+    "legacy/comparison.txt": "4c9370858e4c51fc9fe049f33f01146e078bc9e3aa5803b01229ae84b2646c7e",
+    "legacy/realization.json": "e8d2826e9caabea14d7705be5eb7aabd05c261db7c4523b1ea52f22f35ed5a86",
+    "legacy/source-manifest.json": "da4df14be7da10febb7a091c05ab5d3498e79a47dd60122bf5c785031a0f5d0e",
+    "legacy/corpus.yml": "5ee88c1aa764dcafab6d0b2a1c2afcf890c1756c5f144c49ad6fd1868eae97e2"
+  },
+  "legacy_source": "b5197572b1b0a6607497072ff06be208efabb5db3a903bf517276af950744b67",
+  "legacy_item_source_difference": "Only header comments clarify the meaning of spent copies. Runtime Item constants, validation, and scopes are unchanged.",
+  "source_sha256": "dac765bfcf14675ebaa65e6c57d70517fafb67e1370b0e40740a1a9132d27916"
+}

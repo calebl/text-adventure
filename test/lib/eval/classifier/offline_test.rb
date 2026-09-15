@@ -65,7 +65,9 @@ class Eval::Classifier::OfflineTest < ActiveSupport::TestCase
   end
 
   test "physical offers score the complete choice without acting on it" do
-    offers = @floor.readings.select { |reading| reading.shape == "use-offer" }
+    # Pin the explicit offer forms this grammar supports. Newly corrected
+    # historical paraphrases share the shape but still need a model to read.
+    offers = @floor.readings.select { |reading| reading.id.start_with?("use-offer-") }
 
     assert_equal 3, offers.size
     assert offers.all?(&:right?), offers.map(&:to_h).inspect

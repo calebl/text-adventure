@@ -23,6 +23,7 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # deleting one is a failing test rather than a table that quietly loses a
   # column.
   BASELINE = %w[classifier-remote classifier-mistral-small classifier-gemini-flash-lite].freeze
+  CURRENT = "physical-classifier-final-20260914".freeze
 
   # Every arm the baseline measured, and the figures the PR body and
   # EVALUATION.md quote for it. If a checked-in file is ever regenerated, this
@@ -137,20 +138,51 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   end
 
   test "the current single arm baseline matches the corpus and schema request" do
-    result = load_kept("classifier-2026-09-10")
+    result = load_kept(CURRENT)
     assert_equal Eval::Classifier.digest, result.corpus_digest
     assert_equal Eval::Classifier.corpus.size, result.corpus_size
     assert_equal Eval::Classifier::Version.offline, result.request_identity
     assert_equal [ BaseAgent::REMOTE_MODEL_IDS.first ], result.arms
     assert_equal result.arms, result.answered_by
     assert_equal Eval::Noise::MIN_RUNS, result.reps
-    assert_includes Eval::MEASUREMENT_FILES, "db/eval/classifier-2026-09-10/classifier.json"
+    assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{CURRENT}/classifier.json"
   end
 
   test "the current classifier floor can be recomputed offline" do
-    floor = JSON.parse(Eval.kept_root.join("classifier-2026-09-10/offline.json").read)
+    floor = JSON.parse(Eval.kept_root.join(CURRENT, "offline.json").read)
     assert_equal Eval::Classifier.digest, floor.fetch("corpus_digest")
     assert_equal JSON.parse(Eval::Classifier::Offline.new.summary.to_h.to_json), floor.fetch("floor")
+  end
+
+  test "the initial physical candidate keeps every exact request and its single model receipt" do
+    require "zlib"
+    directory = Eval.kept_root.join("physical-classifier-20260910")
+    requests = Zlib::GzipReader.open(directory.join("requests.json.gz")) { |file| JSON.parse(file.read) }
+    rows = Zlib::GzipReader.open(directory.join("readings.jsonl.gz")) { |file| file.each_line.map { |line| JSON.parse(line) } }
+    cases = Eval::Classifier::Corpus.load(directory.join("source/classifier_corpus.yml")).lines.map(&:id)
+    expected = (1..Eval::Noise::MIN_RUNS).flat_map { |rep| cases.map { |id| [ rep, id ] } } + [ [ 0, cases.first ] ]
+    assert_equal expected.sort, rows.map { |row| row.values_at("rep", "id") }.sort
+    mismatches = rows.filter_map do |row|
+      key = row["rep"].zero? ? "0:#{row['id']}" : row["id"]
+      calls = row.fetch("calls")
+      next if row.fetch("request") == requests.fetch(key) && calls.one? &&
+              calls.first.fetch("purpose") == "classifier" &&
+              calls.first.fetch("actual_model") == BaseAgent::REMOTE_MODEL_IDS.first
+      [ row["rep"], row["id"] ]
+    end
+    assert_empty mismatches, "every retained reading must have its exact preflight payload and one approved-model call"
+  end
+
+  test "the initial candidate keeps its measured regression and exact source snapshots" do
+    require Rails.root.join("db/eval/physical-classifier-20260910/audit")
+    directory = Eval.kept_root.join("physical-classifier-20260910")
+    frozen = JSON.parse(directory.join("initial-candidate.json").read)
+    frozen.fetch("sha256").each do |relative, sha256|
+      assert_equal sha256, Digest::SHA256.file(directory.join(relative)).hexdigest, relative
+    end
+    expected = JSON.parse(directory.join("audit.json").read)
+    actual = EngineSweep.without_a_model { PhysicalClassifierStudy::Audit.run(root: directory) }
+    assert_equal expected, JSON.parse(JSON.generate(actual))
   end
 
   private
