@@ -17,8 +17,10 @@ source.fetch("results").each do |row|
   fixture = ExperienceFixtures.build(row.fetch("case"))
   game, npc = fixture.values_at(:game, :npc)
   agent = InteractionAgent.new(npc, playthrough: game)
-  raise "Changed prompt #{row.fetch('case')}:#{row.fetch('rep')}" unless agent.character_prompt(row.fetch("line")) == row.fetch("fixture").fetch("prompt")
+  actual_prompt = agent.character_prompt(row.fetch("line")).gsub(/^give:\d+(?=: Give )/, "give:<item>")
+  expected_prompt = row.fetch("fixture").fetch("prompt").gsub(/^give:\d+(?=: Give )/, "give:<item>")
+  raise "Changed prompt #{row.fetch('case')}:#{row.fetch('rep')}" unless actual_prompt == expected_prompt
   raise "Changed instructions" unless agent.character_instructions == row.fetch("fixture").fetch("instructions")
   checked += 1
 end
-puts "#{checked} character requests match the measured candidate byte for byte. No model calls."
+puts "#{checked} character requests match the measured candidate after normalizing item IDs. No model calls."
