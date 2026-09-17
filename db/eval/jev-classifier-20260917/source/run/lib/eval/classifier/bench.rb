@@ -265,41 +265,36 @@ class Eval::Classifier::Bench
     # trust. Actual usage comes from each provider receipt, never an estimate.
     def jev_evidence
       measured = scored.select { |reading| !reading.confidence.nil? }
-      evidenced = readings.select { |reading| reading.usage || reading.billed_cost }
-      return nil if measured.empty? && evidenced.empty?
+      return nil if measured.empty?
 
       confidences = measured.map(&:confidence).sort
-      floors = if measured.any?
-        Eval::Classifier::JevAgent::CONFIDENCE_FLOORS.to_h do |floor|
-          covered = measured.select { |reading| reading.confidence >= floor }
-          wrong = covered.count { |reading| !reading.right? }
-          [ format("%.1f", floor), {
-            coverage: covered.size.fdiv(measured.size).round(4), covered: covered.size,
-            wrong:, wrong_rate: covered.empty? ? 0.0 : wrong.fdiv(covered.size).round(4)
-          } ]
-        end
+      floors = Eval::Classifier::JevAgent::CONFIDENCE_FLOORS.to_h do |floor|
+        covered = measured.select { |reading| reading.confidence >= floor }
+        wrong = covered.count { |reading| !reading.right? }
+        [ format("%.1f", floor), {
+          coverage: covered.size.fdiv(measured.size).round(4), covered: covered.size,
+          wrong:, wrong_rate: covered.empty? ? 0.0 : wrong.fdiv(covered.size).round(4)
+        } ]
       end
       fallback_floor = Eval::Classifier::JevAgent::FALLBACK_FLOOR
       low = measured.count { |reading| reading.confidence < fallback_floor }
-      usage = evidenced.each_with_object({ "input_tokens" => 0, "output_tokens" => 0 }) do |reading, total|
+      usage = measured.each_with_object({ "input_tokens" => 0, "output_tokens" => 0 }) do |reading, total|
         total["input_tokens"] += reading.usage.to_h.fetch("input_tokens", 0)
         total["output_tokens"] += reading.usage.to_h.fetch("output_tokens", 0)
       end
-      confidence = if measured.any?
-        {
+
+      {
+        confidence: {
           min: confidences.first.round(4), p25: quantile(confidences, 0.25).round(4),
           median: Eval.median(confidences).round(4), p75: quantile(confidences, 0.75).round(4),
           p95: quantile(confidences, 0.95).round(4), max: confidences.last.round(4)
-        }
-      end
-
-      {
-        confidence:, floors:, low_confidence_fallbacks: low,
-        low_confidence_fallback_rate: measured.any? ? low.fdiv(measured.size).round(4) : nil,
+        },
+        floors:, low_confidence_fallbacks: low,
+        low_confidence_fallback_rate: low.fdiv(measured.size).round(4),
         deployment_fallbacks: low + failures,
         deployment_fallback_rate: (low + failures).fdiv(readings.size).round(4),
-        usage:, billed_cost: evidenced.sum { |reading| reading.billed_cost.to_f }.round(8)
-      }.compact
+        usage:, billed_cost: measured.sum { |reading| reading.billed_cost.to_f }.round(8)
+      }
     end
 
     def to_h = { arm:, rep:, accuracy: accuracy.round(4), intent_accuracy: intent_accuracy.round(4),
@@ -501,11 +496,9 @@ class Eval::Classifier::Bench
     classifier = Playthrough::Classifier.new(Playthrough.find(standing.playthrough.id))
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-    jev_agent = nil
     begin
       if arm.jev?
-        jev_agent = Eval::Classifier::JevAgent.new(classifier: classifier)
-        result = jev_agent.classify(line.typed)
+        result = Eval::Classifier::JevAgent.new(classifier: classifier).classify(line.typed)
         elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
         return Reading.new(line: line, arm: arm.id, rep: rep, error: nil, seconds: elapsed,
                            answered_by: arm.model, answer: result.answer, raw: result.raw,
@@ -527,9 +520,7 @@ class Eval::Classifier::Bench
       # folding it into the median would make a flaky arm look slow instead of
       # flaky. The failure count and its error classes are the figure for it.
       Reading.new(line: line, arm: arm.id, rep: rep, answer: nil, answered_by: nil, raw: nil,
-                  seconds: nil, error: "#{error.class}: #{error.message}",
-                  usage: jev_agent&.recorded_usage, billed_cost: jev_agent&.recorded_billed_cost,
-                  request: jev_agent&.recorded_request, receipt: jev_agent&.recorded_receipt)
+                  seconds: nil, error: "#{error.class}: #{error.message}")
     end
   end
 

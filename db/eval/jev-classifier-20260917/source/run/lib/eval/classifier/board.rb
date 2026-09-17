@@ -201,7 +201,7 @@ class Eval::Classifier::Board
     end
 
     def confidence_distribution(column)
-      evidence = confidence_evidence(column)
+      evidence = column.result.jev_evidence(column.arm)
       return "--" if evidence.empty?
 
       %w[min p25 median p75 p95 max].map do |key|
@@ -211,7 +211,7 @@ class Eval::Classifier::Board
     end
 
     def confidence_coverage(column)
-      evidence = confidence_evidence(column)
+      evidence = column.result.jev_evidence(column.arm)
       return "--" if evidence.empty?
 
       Eval::Classifier::JevAgent::CONFIDENCE_FLOORS.map do |floor|
@@ -222,7 +222,7 @@ class Eval::Classifier::Board
     end
 
     def wrong_high_confidence(column)
-      evidence = confidence_evidence(column)
+      evidence = column.result.jev_evidence(column.arm)
       return "--" if evidence.empty?
 
       values = evidence.map do |row|
@@ -232,15 +232,11 @@ class Eval::Classifier::Board
     end
 
     def low_confidence_fallback(column)
-      evidence = confidence_evidence(column)
+      evidence = column.result.jev_evidence(column.arm)
       return "--" if evidence.empty?
 
       rates = evidence.map { |row| indifferent(row, "low_confidence_fallback_rate").to_f }
       format_rate_band(rates)
-    end
-
-    def confidence_evidence(column)
-      column.result.jev_evidence(column.arm).select { |row| indifferent(row, "confidence") }
     end
 
     def actual_billed_cost(column)

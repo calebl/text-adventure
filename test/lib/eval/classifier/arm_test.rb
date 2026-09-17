@@ -36,6 +36,23 @@ class Eval::Classifier::ArmTest < ActiveSupport::TestCase
                  Eval::Classifier::Arm.parse("minimax/minimax-m3").model_options)
   end
 
+  test "a Typesafe spec selects the explicit bench adapter and never enters the RubyLLM rotation" do
+    arm = Eval::Classifier::Arm.parse("typesafe:jev-latest")
+    was = BaseAgent.default_model_options
+
+    assert_predicate arm, :jev?
+    assert_not_predicate arm, :local?
+    assert_equal :typesafe, arm.provider
+    assert_equal "typesafe:jev-latest", arm.id
+    assert_raises(Eval::Classifier::Arm::UnknownProvider) { arm.model_options }
+    arm.pinned { assert_equal was, BaseAgent.default_model_options }
+    assert_in_delta 0.042, arm.price.input_per_million
+    assert_in_delta 0.0, arm.price.output_per_million
+    assert_raises(Eval::Classifier::Arm::UnknownProvider) do
+      Eval::Classifier::Arm.parse("typesafe:not-jev")
+    end
+  end
+
   test "a provider nobody has heard of is refused rather than read as a model name" do
     assert_raises(Eval::Classifier::Arm::UnknownProvider) do
       Eval::Classifier::Arm.new(provider: :vertex, model: "gemini")

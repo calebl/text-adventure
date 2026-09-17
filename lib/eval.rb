@@ -121,6 +121,12 @@ module Eval
     db/eval/classifier-2026-09-10/classifier.json
     db/eval/classifier-2026-09-10/receipts.json
     db/eval/classifier-2026-09-10/offline.json
+    db/eval/jev-classifier-20260917/classifier.json
+    db/eval/jev-classifier-20260917/full-result.json.gz
+    db/eval/jev-classifier-20260917/jev-receipts.jsonl.gz
+    db/eval/jev-classifier-20260917/offline.json
+    db/eval/jev-classifier-20260917/run.json
+    db/eval/jev-classifier-20260917/source/classifier_corpus.yml
     db/eval/prompt-ending-2026-09-10/prompt.json
     db/eval/prompt-ending-2026-09-10/receipts.json
     lib/eval/prompt/ending_version.rb
@@ -131,6 +137,7 @@ module Eval
     lib/eval/classifier/arm.rb
     lib/eval/classifier/board.rb
     lib/eval/classifier/bench.rb
+    lib/eval/classifier/jev_agent.rb
     lib/eval/classifier/comparison.rb
     lib/eval/classifier/corpus.rb
     lib/eval/classifier/offline.rb
@@ -221,6 +228,9 @@ module Eval
     test/fixtures/files/whole_run_corpus.json
     test/fixtures/files/transition_corpus.json
     test/fixtures/files/classifier_corpus.yml
+    test/lib/eval/classifier/jev_agent_test.rb
+    test/lib/eval/classifier/jev_kept_set_test.rb
+    test/lib/eval/classifier/jev_result_test.rb
     test/fixtures/files/prompt_corpus.yml
     test/fixtures/files/prompt_ending_corpus.yml
     test/fixtures/files/realization_corpus.yml

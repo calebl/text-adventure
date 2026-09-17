@@ -1,0 +1,47 @@
+{
+  "recorded_at": "2026-09-17T19:32:25Z",
+  "run_source_sha256": {
+    "lib/eval/classifier/jev_agent.rb": "7625062456c14754e9511842695ea45642353832e97523b51260848fd7b7f053",
+    "lib/eval/classifier/arm.rb": "22d4f3cea828bd62b290b83fdf3b841e2c10d351b4d546d2d170da4e6c448e69",
+    "lib/eval/classifier/bench.rb": "7eb1afc91506a1135daaf8527409dd08c8791d7972b546a4f7774560f4ed714a",
+    "lib/eval/classifier/result.rb": "314fbf9d4d19479f79ae44001d8ceb462c1a8a2d5cebc6cf4e0336e60c0b5742",
+    "lib/eval/classifier/board.rb": "4403feebc3c558afdc2b34ee67790c4eef7c397af452a32e9914a003db17a441",
+    "lib/eval/classifier/report.rb": "7498129fbf48c6b88ac8d3bebc569b9a725a97488df7164085c21d3745ce8497",
+    "lib/eval/classifier.rb": "e973ea0a8a84ea036fa276c597adb8b372d75daf6124cf3e506179c956170239",
+    "lib/tasks/eval.rake": "eae1aaee0ca6496a52ab978c88606746bdd2ca1848b848e1f4a70cb5169d79a1"
+  },
+  "corpus_size": 343,
+  "corpus_digest": "abc2535c473693d9",
+  "concurrency": 2,
+  "reps": 4,
+  "arms": [
+    "typesafe:jev-latest",
+    "mistralai/mistral-medium-3.1"
+  ],
+  "jev_model_requested": "jev-latest",
+  "jev_price_source": "https://typesafe.ai/ ($42 per billion input tokens; output free; accessed 2026-09-17)",
+  "jev_actual_usage_including_warmup": {
+    "input_tokens": 3580581,
+    "output_tokens": 377269
+  },
+  "jev_actual_billed_cost_usd": 0.1503844,
+  "jev_calls_in_matched_run": 1373,
+  "jev_calls_before_matched_run": 347,
+  "jev_total_calls_under_task_budget": 1720,
+  "jev_task_call_budget": 1750,
+  "artifacts": {
+    "classifier.json": "compact summary read by board/compare",
+    "jev-receipts.jsonl.gz": "one exact request and provider response per Jev warm-up/reading",
+    "full-result.json.gz": "all per-line scored rows for both matched arms",
+    "source/classifier_corpus.yml": "labels measured by this run",
+    "offline.json": "same corpus through fixed grammar"
+  },
+  "run_source_archive": "source/run",
+  "artifact_sha256": {
+    "classifier.json": "bce34e6ea7db568088eb59af9923bee41dacc17c73993c5d23991b577c15faa3",
+    "full-result.json.gz": "b28b8403f2a205cfa1b2a835b438d2254d61ad400120d88ef2a34a759ce65f70",
+    "jev-receipts.jsonl.gz": "8606dd4780825cd765e89bdf3c785787234aa232a7c91ed0a26bccdf3e569e6c",
+    "offline.json": "f1085dc890f59d13ead9585201fc24e40afe2834cc52fb4169dde00f318d17ea",
+    "source/classifier_corpus.yml": "16be10c6b3c996595cb74d37400b8ef6b95605c0389563091c1a77738572e239"
+  }
+}

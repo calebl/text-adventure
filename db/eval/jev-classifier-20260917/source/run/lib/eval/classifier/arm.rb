@@ -115,9 +115,6 @@ class Eval::Classifier::Arm
 
     @provider = provider.to_sym
     @model = model.to_s.strip
-    if @provider == :typesafe && @model != Eval::Classifier::JevAgent::MODEL
-      raise UnknownProvider, "typesafe only provides the #{Eval::Classifier::JevAgent::ARM_ID} benchmark arm"
-    end
     @provider_params = provider_params.to_h
     if @provider_params.any? && !local?
       raise UnknownProvider, "provider params are only for a local arm; #{id} is hosted, and changing " \

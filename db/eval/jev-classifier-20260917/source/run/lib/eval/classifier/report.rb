@@ -172,7 +172,7 @@ class Eval::Classifier::Report
     total = answered + failures
 
     cost = if parsed.local?
-      "nothing -- a local model on the operator's own hardware, and slow"
+      "nothing -- a local model on the captain's own hardware, and slow"
     elsif parsed.jev? && result.jev_evidence(arm).any?
       usage = result.actual_usage(arm)
       "#{format('$%.6f', result.actual_billed_cost(arm))} ACTUAL, warm-up included " \
@@ -210,7 +210,7 @@ class Eval::Classifier::Report
   end
 
   def jev_confidence(arm)
-    evidence = result.jev_evidence(arm).select { |row| indifferent_value(row, "confidence") }
+    evidence = result.jev_evidence(arm)
     return if evidence.empty?
 
     say

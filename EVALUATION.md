@@ -320,7 +320,7 @@ not there or the model failed to see a door that is.
 and a wrong `also_named` refuses a line that should have played. So:
 
 ```bash
-rake eval:classifier                    # 339 labelled lines x 4 reps x 2 models, ~$0.44
+rake eval:classifier                    # 343 labelled lines x 4 reps x 2 models, ~$0.45
 rake eval:classifier_offline            # the same corpus with NO model -- free, and in CI
 rake eval:classifier_omission           # the also_named omission rate alone (~30 lines)
 rake eval:classifier_compare BEFORE=a AFTER=b
@@ -329,7 +329,7 @@ rake eval:classifier_compare BEFORE=a AFTER=b
 | knob | what it does |
 | --- | --- |
 | `REPS=4` | repetitions. **Four is the default because four is `Eval::Noise::MIN_RUNS`** — a run taken at the default can actually be judged later |
-| `MODELS=a,b` | **the arm selector.** Names exactly which models the run measures; the app's rotation is not consulted. A bare id is OpenRouter, `ollama:qwen3:8b` names the provider. Defaults to `BaseAgent::REMOTE_MODEL_IDS`, which is what a player gets |
+| `MODELS=a,b` | **the arm selector.** Names exactly which models the run measures; the app's rotation is not consulted. A bare id is OpenRouter, `ollama:qwen3:8b` names the provider, and `typesafe:jev-latest` names the benchmark-only System One adapter. Defaults to `BaseAgent::REMOTE_MODEL_IDS`, which is what a player gets |
 | `SET=name` | where the numbers land (`tmp/eval/<set>/classifier.json`). Defaults to a timestamp |
 | `SAMPLE=20` | how many missed lines the board prints in full |
 | `YES=1` | spend past the $0.50 ceiling |
@@ -360,7 +360,7 @@ expected and what came back — the same rule `rake game:score` follows.
 
 ### The corpus
 
-`test/fixtures/files/classifier_corpus.yml` — **339 hand-labelled lines across
+`test/fixtures/files/classifier_corpus.yml` — **343 hand-labelled lines across
 12 positions in the three seeded worlds.** YAML rather than JSON like its four
 siblings, because every line carries a `why` and three hundred of those in JSON
 is a file nobody audits. It grew by 39 in combat slice 8, when `attack` became
@@ -389,7 +389,7 @@ resolves to a record in the supply closet and to nothing in the office.
    and compares. Two readings of one line have to agree.
 4. **What neither can check** is whether the label is the right reading of the
    English. That is the hand-verification, line by line, and `why` states it.
-   **56 of the 339 lines carry `also_accept`** — a second answer the bench
+   **54 of the 343 lines carry `also_accept`** — a second answer the bench
    counts as correct — because their English really does admit two readings, and
    the headline rate excludes them.
 
@@ -414,14 +414,17 @@ people in one room is reachable at all).
 ### Speed, and the arm selector
 
 **An arm is one model with nothing behind it.** `MODELS=` names it —
-`mistralai/mistral-medium-3.1`, or `ollama:qwen3:8b` for one of the captain's
-local models — and `Eval::Classifier::Arm#pinned` replaces
+`mistralai/mistral-medium-3.1`, `ollama:qwen3:8b` for an operator-owned local
+model, or `typesafe:jev-latest` for the benchmark-only System One
+adapter — and `Eval::Classifier::Arm#pinned` replaces
 `BaseAgent.default_model_options` for the length of that arm's passes. Nothing
 in `app/` changes: `REMOTE_MODEL_IDS` is untouched, `OPENROUTER_MODEL` is not
 read, and `TA_LOCAL_MODELS` still defaults to off — it gates the *app's*
 rotation, and an arm **replaces** the rotation rather than joining it.
 
-A local spec may carry a **`+nothink`** suffix, which is the one thing an arm
+The Typesafe arm reads `TYPESAFE_API_KEY` from the bench process environment;
+it is not part of `BaseAgent::REMOTE_MODEL_IDS`, and no file under `app/`
+references its adapter. A local spec may carry a **`+nothink`** suffix, which is the one thing an arm
 changes about the request itself and the reason it is spelled out in the label:
 see *A local model, and the reasoning block in front of the answer* below.
 
@@ -637,6 +640,103 @@ arm selector, the latency machinery and the seam are all in and green, so
 `MODELS=ollama:qwen3:4b+nothink REPS=4` is one command away on a machine that
 can carry it.
 
+### The Jev System One arm — measured, benchmark-only
+
+`MODELS=typesafe:jev-latest` selects `Eval::Classifier::JevAgent`, a
+`BaseAgent` subclass under `lib/eval/` which speaks Typesafe's System One API.
+It is **not a live model option**: no runtime file under `app/` may reference
+it, `Playthrough::Turn` and `Playthrough::Classifier` keep their existing live
+route, and an observable classifier test guards that boundary. This arm answers
+whether Jev is worth a later runtime proposal; it cannot itself route a player's
+turn.
+
+System One offers typed questions evaluated in parallel and isolation, and its
+documented composition pattern allows application code to combine their answers.
+This arm nevertheless uses one complete, opaque `(intent, target, also_named)`
+tuple because the parallel encodings measured on 2026-09-18 were materially
+worse: twelve-question composition reached only **0.892..0.895 all-line
+accuracy** against the tuple's **0.924..0.933**, and no tested parallel
+second-record mechanism approached the tuple's **1.000 precision / 0.914
+recall** as a one-line-one-act detector (the alternatives measured
+0.696 / 0.625, 0.737 / 0.328, and 0.872 / 0.906 precision / recall). Every
+record in a tuple comes from `Playthrough::Classifier#offered_for`; pairs of
+distinct records preserve the two-name refusal detector. Dropping `also_named`
+was rejected because it would make the commonest overreach invisible. The
+adapter refuses more than **64 tuples before making a call**. The vendor schema
+publishes no maximum; 64 is the app's request-size guard. The current corpus produces
+11..61 tuples, and the kept receipts prove System One accepted the 61-option
+shape.
+
+The matched run is kept at `db/eval/jev-classifier-20260917`. Both arms ran in
+one process on corpus `abc2535c473693d9`, four contiguous repetitions, at two
+calls in flight. Every rate is `min..max (median)`:
+
+| figure | `typesafe:jev-latest` | `mistralai/mistral-medium-3.1` |
+| --- | --- | --- |
+| strict accuracy | 0.934..0.941 (**0.936**) | 0.938..0.948 (**0.945**) |
+| accuracy | 0.924..0.933 (**0.926**) | 0.939..0.948 (**0.946**) |
+| intent accuracy | 0.971..0.974 (**0.972**) | 0.988..0.991 (**0.991**) |
+| refusal agreement | 0.969..0.976 (**0.974**) | 0.952..0.958 (**0.953**) |
+| closed-set misses | 14..16 (**16**) | 15..17 (**15.5**) |
+| `also_named` precision | **1.000** (117/117) | **1.000** (108/108) |
+| `also_named` recall | **0.914** (117/128) | 0.844 (108/128) |
+| median latency | **0.36s** | 0.61..0.71s (**0.65s**) |
+| p95 latency | 0.47..0.48s (**0.48s**) | 0.99..1.25s (**1.07s**) |
+| failed calls | **0** | **0** |
+| cost / 1,000 | **$0.1095**, kept receipts | **$0.3316** one-pass representative play / $0.23511 cache-warmed four-pass, provider receipts |
+
+The exact-rank comparison says Jev's lower median and p95, lower overall
+accuracy, lower intent accuracy, and higher refusal agreement are **REAL** at
+`p=0.0286`. The strict-accuracy reduction and half-miss increase are inside the
+runs' noise bands. That clears the speed test and the refusal test, but it does
+**not clear the runtime acceptance bar**: overall and intent accuracy are
+materially worse, and closed-set misses did not decrease.
+
+Confidence does not rescue the tail. Jev's per-pass confidence distribution
+had median 0.95..0.96 and p95 1.0. At the working floor of 0.6, coverage was
+0.904..0.913 and **14..17 wrong choices per pass still cleared the floor**;
+8.8%..9.6% of lines would fall back. Because fallback is sequential, more than
+one turn in twenty would wait for Jev *and then* the current classifier, so the
+deployed p95 would return to roughly the current path rather than retain the
+0.48s raw-arm p95. At floor 0.9, coverage falls to 0.644..0.665 and 3..4 wrong
+choices per pass still clear it. Confidence is useful evidence, not a correctness
+gate.
+
+The provider receipts report **3,580,581 billable input tokens and 377,269 free
+output tokens**, warm-up included. At Typesafe's published $42 per billion input
+tokens, the actual matched Jev bill is **$0.150384** for 1,373 calls, or
+**$0.1095 per 1,000 calls**.
+
+Mistral was remeasured on 2026-09-18 on the same corpus digest
+`abc2535c473693d9`, revision and concurrency, with provider usage and cost on
+every call. The one-pass run cost **$0.11406984 for 344 calls**, or **$0.3316 per
+1,000**. The cache-warmed four-pass run cost **$0.322805 for 1,373 calls**, or
+**$0.23511 per 1,000**; provider cache reads covered 883,306 of 1,435,898 prompt
+tokens. Real play is represented by the one-pass figure because every turn's
+prompt differs and therefore receives less cache benefit. Against that honest
+like-for-like figure, Jev is about **3× cheaper**, not twice as cheap.
+
+The kept set contains:
+
+- `classifier.json` — compact figures for `classifier_board` and
+  `classifier_compare`;
+- `jev-receipts.jsonl.gz` — every exact key-free request and provider response;
+- `full-result.json.gz` — every scored row for both matched arms;
+- `source/classifier_corpus.yml` and `offline.json` — the labels and free floor;
+- `source/run/` — the exact adapter and scoring source used for the paid run;
+- `run.json` — source-snapshot and artifact digests, plus call budget,
+  receipt-summed usage and billed cost.
+
+Failures remain measurements, not refusals. A missing key aborts before the
+run. Timeout, no network, non-JSON, non-200, malformed probabilities and an
+over-limit tuple set raise; `Bench#read` records that line as a failure and
+continues. When the provider returned a response, the failed reading retains its
+key-free request and exact receipt plus recorded usage and cost when available,
+so failure does not hide billable work. A future runtime experiment would have to
+fall back to the current classifier for each of those and for below-floor
+confidence. It must not turn any of them into `Playthrough::Refusal`, and this
+benchmark does not authorize such an experiment.
+
 ### The baseline of 2026-09-04 — four hosted models, 4,800 calls
 
 **These three sets are checked in**, under `db/eval/`, and this table is printed
@@ -744,14 +844,18 @@ run's own output.
 ```bash
 # keeping a set, which is a decision and not a side effect of running one
 bin/rails runner 'Eval::Classifier::Result.load(Eval.root.join("my-set")) \
-  .summary.write!(Eval.kept_root.join("my-set"), name: "my-set")'
+  .write_summary!(Eval.kept_root.join("my-set"), name: "my-set")'
 ``` It is `classifier.json` and not `scores.json` because one set can
 legitimately hold both a prose run and a bench, and two files of one name
 cannot.
 
-The file holds **every reading of every pass**, not just the rates, so a change
-to how a rate is defined does not need the calls paid for again — the same rule
-that keeps the prose loop's run databases. It records:
+The working file under `tmp/eval` holds **every reading of every pass**, not
+just the rates, so a change to how a rate is defined does not need the calls
+paid for again — the same rule that keeps the prose loop's run databases. The
+Jev kept set is the deliberate exception to the usual summary-only archive:
+`full-result.json.gz` and `jev-receipts.jsonl.gz` retain every scored row and
+exact System One receipt because confidence and billed usage must remain
+rescorable. The working file records:
 
 | field | why |
 | --- | --- |
@@ -807,7 +911,7 @@ with `database is locked`.** Run one at a time.
 
 ### The offline floor
 
-`rake eval:classifier_offline` runs the same 339 lines through
+`rake eval:classifier_offline` runs the current labelled corpus through
 `Playthrough::Grammar`, the fixed grammar `Playthrough::Mechanics` uses with
 `model: false` — no key, no network, no spend, and it runs in `bin/rails test`.
 **It is what a classifier call is bought against**, and the answer is a number
@@ -818,8 +922,10 @@ wrong reason — the grammar has no refusal *kinds*), `wrong` (an answer the lab
 does not accept, produced silently), `over_refused` (a line it refused that
 should have played) and `unparsed`.
 
-**Measured 2026-09-05: 140 of 339 right (0.413), and 178 of the 199 failures are
-over-refusals** (127 of 300, 0.423, on the pre-slice-8 corpus). It gets every
+**Measured 2026-09-17 on the current corpus: 146 of 343 right (0.426), and 176
+of the 197 failures are over-refusals.** The preceding 339-line snapshot was
+140 right (0.413), with 178 of 199 failures over-refusals; the pre-slice-8
+300-line corpus was 127 right (0.423). It gets every
 reach-that-finds-nothing right — including an attack that finds nobody — and *none* of the
 `other` or `examine-nothing` lines — a fixed grammar has no word for an ordinary
 remark, so it refuses every one.
@@ -834,15 +940,15 @@ RESOLVED a record and defers a line still joining two things together
 having**: this one is what the grammar CAN do, and the one below is what the
 loop actually takes of it.
 
-| through `#reading_first`, every line in slash form | n |
+| through `#reading_first`, every line in slash form (339-line 2026-09-05 snapshot) | n |
 | --- | --- |
 | resolves offline, and the label accepts it | **65 of 339 (19.2%)** |
 | resolves offline, and the label does not | **0** |
 | falls back to `Playthrough::Classifier` | 274 of 339 (80.8%) |
 
-**Typed as they stand, with no slash: 0 of 339** — the captain's ruling of
-2026-09-05, *"I think we should only auto accept the slash commands"*, as a
-number. Nothing changes for a player who never types one. By shape the slashed
+**On that same snapshot, typed as they stand with no slash: 0 of 339.** The
+slash-input rule auto-accepts only explicit slash commands, so nothing changes
+for a player who never types one. By shape the slashed
 form answers `move` 20/42,
 `take` 13/23, `articles-and-pronouns` 10/27, `talk` 7/54, `attack` 6/16, `examine` 5/17 and
 `drop` 4/18 — and **nothing at all** of `other`, `examine-nothing`, `two-sets`,
@@ -893,10 +999,10 @@ per-playthrough, position staging stopped snapshotting, and the validator
 failed the build** rather than the bench quietly measuring empty floors.
 
 **Re-run the paid hosted arms before merging** when any of these change. A pass
-is 339 lines × `REPS=4` = 1,356 calls an arm, at 372 tokens in and 20 out
-(`Eval::Classifier::PER_CALL`): **$0.19 per 1,000 calls on
+is currently 343 lines × `REPS=4` = 1,372 calls an arm, at 372 tokens in and
+20 out (`Eval::Classifier::PER_CALL`) for a chat arm: **$0.19 per 1,000 calls on
 `mistral-medium-3.1`, $0.14 on `minimax-m3`, so both shipped models at the
-default is about $0.44** — the 300-line `classifier-remote` set cost $0.389 and
+default is about $0.45** — the 300-line `classifier-remote` set cost $0.389 and
 the 339-line slice 8 pair cost $0.389 and $0.440.
 
 1. **The prompt.** `Playthrough::Classifier::INSTRUCTIONS` or
@@ -1965,7 +2071,7 @@ script/eval_run.rb                   the harness
 db/eval_baseline.json                the line the next run moves against
 test/fixtures/files/*_corpus.json    the passages the checks were measured on
 lib/eval/classifier*                 the classifier bench
-test/fixtures/files/classifier_corpus.yml   the 339 labelled lines
+test/fixtures/files/classifier_corpus.yml   the 343 labelled lines
 lib/eval/realization*                the realization bench
 test/fixtures/files/realization_corpus.yml  the stubs it builds
 test/fixtures/files/worlds/*.yml     the generated world it builds them in

@@ -12,8 +12,8 @@
 # classes is how they stop agreeing.
 #
 # THIS CLASS HAS AN INSTRUMENT NOW, and it is the only place to read what it
-# gets right: `rake eval:classifier` replays 339 hand-labelled typed lines
-# through it against fixed seeded positions and reports an accuracy per intent,
+# gets right: `rake eval:classifier` replays the hand-labelled corpus through
+# it against fixed seeded positions and reports an accuracy per intent,
 # the closed-set misses, `also_named` precision and recall and refusal-kind
 # agreement, each with its band across repetitions. `rake eval:classifier_offline`
 # is the same corpus with no model at all -- what a call here is bought against.

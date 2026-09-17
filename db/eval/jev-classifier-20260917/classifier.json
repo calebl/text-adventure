@@ -1,0 +1,503 @@
+{
+  "name": "jev-classifier-20260917",
+  "recorded_at": "2026-09-17T19:32:25Z",
+  "corpus_size": 343,
+  "corpus_digest": "abc2535c473693d9",
+  "request_identity": {
+    "version": 2,
+    "digest": "8cab930ca8f08d00",
+    "scope": "known_physical_token_bindings"
+  },
+  "arms": [
+    "typesafe:jev-latest",
+    "mistralai/mistral-medium-3.1"
+  ],
+  "reps": 4,
+  "concurrency": 2,
+  "answered_by": [
+    "jev-latest",
+    "mistralai/mistral-medium-3.1"
+  ],
+  "warmups": [
+    {
+      "arm": "typesafe:jev-latest",
+      "seconds": 0.3637,
+      "residency": "not_local",
+      "usage": {
+        "input_tokens": 2881,
+        "output_tokens": 329
+      },
+      "billed_cost": 0.000121002,
+      "request": {
+        "model": "jev-latest",
+        "state": {
+          "instructions": "You read one line of a text adventure player's input and say what they were\ntrying to do. You do not narrate, you do not answer the player, and you do\nnot decide whether they succeed.\n\nFirst pick the intent from the action requested, even if its target is\nunavailable. Then resolve that target. Pick the intent that fits best:\n  move    - they are going somewhere else\n  talk    - they are speaking to someone who is here\n  examine - they are looking at something more closely\n  take    - they are picking something up\n  drop    - they are putting down, leaving or giving up something they carry\n  attack  - they are trying to hurt someone who is here\n  use     - consume an item, offer it to someone, burn it, or open a barrier\n  other   - anything else\n\nThen pick what they aimed it at from the lists you are given, copied\nexactly: a way out for `move`, a person for `talk` or `attack`, a thing\nlying here for `take`, a thing they are carrying for `drop`, and for\n`examine` a thing on either of those two lists -- looking at something works\nwhether it is in their hands or on the floor in front of them. `other` has\ntarget `nothing`. If the requested target is absent from the appropriate\nlist, keep the requested intent and answer `nothing`. Never substitute\nanother available item, person or destination for the one requested.\nMatch conservatively: a place mentioned in scenery is not one of the ways\nout, and a relationship, title or role is not a different listed person.\nDo not infer that an available record is what the player meant merely\nbecause it seems related. For example, a request to go to an unlisted room\nremains `move` with `nothing`, and a request to speak to an absent landlord\nremains `talk` with `nothing`.\n\nOnly for an intent of `use`, select the exact token of ONE listed Physical\nAction whose action, object, recipient and tool match the request. Its\nobjects and tools form a single attempt, not extra acts. If none matches,\nanswer `use` with `nothing`, even when another physical action is available.\nThis token rule applies only to consuming, offering, burning and opening\nbarriers. Reading is `examine`. Putting an item on the ground or a fixture,\nor leaving it there, is `drop`. Neither needs a Physical Action token.\nOffering an item the player carries is `use`, even in spoken words; the\nrecipient can refuse. Do not replace an absent named offered item with a\ndifferent carried item. Asking someone for their item is `talk`. Opening a\ngate, door or other barrier is `use`; crossing it is a separate `move`.\nWords that only orient the player, such as turning around to face a door,\ndo not ask to cross it. If the named barrier is already open and therefore\nhas no listed Physical Action, answer `use` with `nothing`. Drinking and\neating consume the item. An unrelated observation, waiting or musing is\n`other`.\n\n`talk` and `attack` read the SAME list of people, so what tells them apart\nis only what the player is doing to that person. Hitting, punching, kicking,\nswinging or lunging at somebody, grabbing them to hurt them, drawing on them\nor setting about them is `attack`. Speech other than an offer to hand over\na carried item is `talk`, however angry it is -- and a THREAT IS SAID:\n\"tell me or I break your arm\",\n\"I am warning you\", \"back off\" are `talk`, because the player has not\ntouched anybody yet. Looking somebody over is `examine`, and `examine` never\nresolves to a person, so it answers `nothing`.\n\nA word that means ALL of them -- \"everything\", \"all\", \"the lot\", \"both\" --\nis naming what is on the list rather than something missing from it, so it\nis not `nothing`. Answer with the first thing on the list the action reads\nagainst, and put one more in `also_named`: a turn does one thing, and the\ngame says out loud what it left undone.\n",
+          "situation": "## Where The Player Is\nWard Office 12\n\n## Ways Out\n- The Supply Closet (adjacent, walking)\n- The Long Hallway (adjacent, walking)\n\n## Who Is Here\n- Halkett Rowe (Sub-Inspector Rowe)\n\n## What Is Lying Here\n- filing press\n- ward stamp\n\n## What The Player Is Carrying\n- Ward Office 12 daybook\n\n## Physical Actions (token: one attempt)\nuse:offer:13:12:0:0: Offer Ward Office 12 daybook to Halkett Rowe; they may refuse\n\n## The Player Types\ngo to The Long Hallway\n"
+        },
+        "questions": {
+          "reading": {
+            "type": "choice",
+            "instructions": "Choose the ONE engine-valid complete interpretation that best reads the player line. The opaque key has no meaning; judge its criterion. Keep the requested intent when its target is absent, and never substitute an available record.",
+            "criteria": {
+              "choice_001": "The player is trying to `move`, but the thing named is absent from that action's exact engine-supplied set. Choose `move` with `nothing`; do not substitute.",
+              "choice_002": "The line requests `move` aimed at exactly the engine-supplied choice `The Supply Closet`, and names no second record for that act.",
+              "choice_003": "The line requests `move` aimed at exactly the engine-supplied choice `The Long Hallway`, and names no second record for that act.",
+              "choice_004": "The line requests `move` and explicitly names BOTH `The Supply Closet` and `The Long Hallway` from that action's engine-supplied set. This is one act naming two distinct records.",
+              "choice_005": "The player is trying to `talk`, but the thing named is absent from that action's exact engine-supplied set. Choose `talk` with `nothing`; do not substitute.",
+              "choice_006": "The line requests `talk` aimed at exactly the engine-supplied choice `Halkett Rowe`, and names no second record for that act.",
+              "choice_007": "The player is trying to `examine`, but the thing named is absent from that action's exact engine-supplied set. Choose `examine` with `nothing`; do not substitute.",
+              "choice_008": "The line requests `examine` aimed at exactly the engine-supplied choice `filing press`, and names no second record for that act.",
+              "choice_009": "The line requests `examine` aimed at exactly the engine-supplied choice `ward stamp`, and names no second record for that act.",
+              "choice_010": "The line requests `examine` aimed at exactly the engine-supplied choice `Ward Office 12 daybook`, and names no second record for that act.",
+              "choice_011": "The line requests `examine` and explicitly names BOTH `filing press` and `ward stamp` from that action's engine-supplied set. This is one act naming two distinct records.",
+              "choice_012": "The line requests `examine` and explicitly names BOTH `filing press` and `Ward Office 12 daybook` from that action's engine-supplied set. This is one act naming two distinct records.",
+              "choice_013": "The line requests `examine` and explicitly names BOTH `ward stamp` and `Ward Office 12 daybook` from that action's engine-supplied set. This is one act naming two distinct records.",
+              "choice_014": "The player is trying to `take`, but the thing named is absent from that action's exact engine-supplied set. Choose `take` with `nothing`; do not substitute.",
+              "choice_015": "The line requests `take` aimed at exactly the engine-supplied choice `filing press`, and names no second record for that act.",
+              "choice_016": "The line requests `take` aimed at exactly the engine-supplied choice `ward stamp`, and names no second record for that act.",
+              "choice_017": "The line requests `take` and explicitly names BOTH `filing press` and `ward stamp` from that action's engine-supplied set. This is one act naming two distinct records.",
+              "choice_018": "The player is trying to `drop`, but the thing named is absent from that action's exact engine-supplied set. Choose `drop` with `nothing`; do not substitute.",
+              "choice_019": "The line requests `drop` aimed at exactly the engine-supplied choice `Ward Office 12 daybook`, and names no second record for that act.",
+              "choice_020": "The player is trying to `attack`, but the thing named is absent from that action's exact engine-supplied set. Choose `attack` with `nothing`; do not substitute.",
+              "choice_021": "The line requests `attack` aimed at exactly the engine-supplied choice `Halkett Rowe`, and names no second record for that act.",
+              "choice_022": "The player is trying to `use`, but the thing named is absent from that action's exact engine-supplied set. Choose `use` with `nothing`; do not substitute.",
+              "choice_023": "The line requests `use` aimed at exactly the engine-supplied choice `Offer Ward Office 12 daybook to Halkett Rowe; they may refuse`, and names no second record for that act.",
+              "choice_024": "The line requests `use` and explicitly names BOTH `Offer Ward Office 12 daybook to Halkett Rowe; they may refuse` and `The Supply Closet` from that action's engine-supplied set. This is one act naming two distinct records.",
+              "choice_025": "The line requests `use` and explicitly names BOTH `Offer Ward Office 12 daybook to Halkett Rowe; they may refuse` and `The Long Hallway` from that action's engine-supplied set. This is one act naming two distinct records.",
+              "choice_026": "The line requests `use` and explicitly names BOTH `Offer Ward Office 12 daybook to Halkett Rowe; they may refuse` and `filing press` from that action's engine-supplied set. This is one act naming two distinct records.",
+              "choice_027": "The line requests `use` and explicitly names BOTH `Offer Ward Office 12 daybook to Halkett Rowe; they may refuse` and `ward stamp` from that action's engine-supplied set. This is one act naming two distinct records.",
+              "choice_028": "The line requests none of the listed engine actions; classify it as `other` with no target."
+            }
+          }
+        }
+      },
+      "receipt": {
+        "status": 200,
+        "request_id": "req_01a0b0cf79f97f1c975f1d13d169c382",
+        "body": {
+          "model": "jev-1.13.0",
+          "answers": {
+            "reading": {
+              "type": "choice",
+              "choice": "choice_003",
+              "confidence": 1.0,
+              "probabilities": {
+                "choice_002": 0.0,
+                "choice_006": 0.0,
+                "choice_007": 0.0,
+                "choice_022": 0.0,
+                "choice_016": 0.0,
+                "choice_005": 0.0,
+                "choice_012": 0.0,
+                "choice_026": 0.0,
+                "choice_025": 0.0,
+                "choice_027": 0.0,
+                "choice_019": 0.0,
+                "choice_024": 0.0,
+                "choice_028": 0.0,
+                "choice_020": 0.0,
+                "choice_011": 0.0,
+                "choice_001": 0.0,
+                "choice_021": 0.0,
+                "choice_015": 0.0,
+                "choice_013": 0.0,
+                "choice_004": 0.0,
+                "choice_009": 0.0,
+                "choice_017": 0.0,
+                "choice_003": 1.0,
+                "choice_010": 0.0,
+                "choice_023": 0.0,
+                "choice_018": 0.0,
+                "choice_014": 0.0,
+                "choice_008": 0.0
+              }
+            }
+          },
+          "usage": {
+            "input_tokens": 2881,
+            "output_tokens": 329
+          }
+        }
+      }
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "seconds": 1.0856,
+      "residency": "not_local"
+    }
+  ],
+  "passes": [
+    {
+      "arm": "typesafe:jev-latest",
+      "rep": 1,
+      "accuracy": 0.9242,
+      "intent_accuracy": 0.9708,
+      "strict_accuracy": 0.9343,
+      "refusal_agreement": 0.9689,
+      "closed_set_misses": 16,
+      "latency_median": 0.3596,
+      "latency_p95": 0.4836,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 29,
+      "also_fp": 0,
+      "also_fn": 3,
+      "also_omitted": 0,
+      "answered": 343,
+      "readings_count": 343,
+      "jev": {
+        "confidence": {
+          "min": 0.32,
+          "p25": 0.83,
+          "median": 0.96,
+          "p75": 0.99,
+          "p95": 1.0,
+          "max": 1.0
+        },
+        "floors": {
+          "0.5": {
+            "coverage": 0.9534,
+            "covered": 327,
+            "wrong": 17,
+            "wrong_rate": 0.052
+          },
+          "0.6": {
+            "coverage": 0.9067,
+            "covered": 311,
+            "wrong": 14,
+            "wrong_rate": 0.045
+          },
+          "0.7": {
+            "coverage": 0.8455,
+            "covered": 290,
+            "wrong": 11,
+            "wrong_rate": 0.0379
+          },
+          "0.8": {
+            "coverage": 0.7813,
+            "covered": 268,
+            "wrong": 8,
+            "wrong_rate": 0.0299
+          },
+          "0.9": {
+            "coverage": 0.6647,
+            "covered": 228,
+            "wrong": 4,
+            "wrong_rate": 0.0175
+          }
+        },
+        "low_confidence_fallbacks": 32,
+        "low_confidence_fallback_rate": 0.0933,
+        "deployment_fallbacks": 32,
+        "deployment_fallback_rate": 0.0933,
+        "usage": {
+          "input_tokens": 894425,
+          "output_tokens": 94235
+        },
+        "billed_cost": 0.03756585
+      },
+      "readings": []
+    },
+    {
+      "arm": "typesafe:jev-latest",
+      "rep": 2,
+      "accuracy": 0.9329,
+      "intent_accuracy": 0.9738,
+      "strict_accuracy": 0.9412,
+      "refusal_agreement": 0.9758,
+      "closed_set_misses": 14,
+      "latency_median": 0.3622,
+      "latency_p95": 0.4672,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 30,
+      "also_fp": 0,
+      "also_fn": 2,
+      "also_omitted": 0,
+      "answered": 343,
+      "readings_count": 343,
+      "jev": {
+        "confidence": {
+          "min": 0.33,
+          "p25": 0.82,
+          "median": 0.96,
+          "p75": 0.99,
+          "p95": 1.0,
+          "max": 1.0
+        },
+        "floors": {
+          "0.5": {
+            "coverage": 0.9592,
+            "covered": 329,
+            "wrong": 20,
+            "wrong_rate": 0.0608
+          },
+          "0.6": {
+            "coverage": 0.9125,
+            "covered": 313,
+            "wrong": 17,
+            "wrong_rate": 0.0543
+          },
+          "0.7": {
+            "coverage": 0.8659,
+            "covered": 297,
+            "wrong": 12,
+            "wrong_rate": 0.0404
+          },
+          "0.8": {
+            "coverage": 0.7901,
+            "covered": 271,
+            "wrong": 8,
+            "wrong_rate": 0.0295
+          },
+          "0.9": {
+            "coverage": 0.6589,
+            "covered": 226,
+            "wrong": 3,
+            "wrong_rate": 0.0133
+          }
+        },
+        "low_confidence_fallbacks": 30,
+        "low_confidence_fallback_rate": 0.0875,
+        "deployment_fallbacks": 30,
+        "deployment_fallback_rate": 0.0875,
+        "usage": {
+          "input_tokens": 894425,
+          "output_tokens": 94235
+        },
+        "billed_cost": 0.03756585
+      },
+      "readings": []
+    },
+    {
+      "arm": "typesafe:jev-latest",
+      "rep": 3,
+      "accuracy": 0.9242,
+      "intent_accuracy": 0.9708,
+      "strict_accuracy": 0.9343,
+      "refusal_agreement": 0.9758,
+      "closed_set_misses": 16,
+      "latency_median": 0.3631,
+      "latency_p95": 0.4825,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 29,
+      "also_fp": 0,
+      "also_fn": 3,
+      "also_omitted": 0,
+      "answered": 343,
+      "readings_count": 343,
+      "jev": {
+        "confidence": {
+          "min": 0.34,
+          "p25": 0.83,
+          "median": 0.95,
+          "p75": 0.99,
+          "p95": 1.0,
+          "max": 1.0
+        },
+        "floors": {
+          "0.5": {
+            "coverage": 0.9592,
+            "covered": 329,
+            "wrong": 20,
+            "wrong_rate": 0.0608
+          },
+          "0.6": {
+            "coverage": 0.9096,
+            "covered": 312,
+            "wrong": 17,
+            "wrong_rate": 0.0545
+          },
+          "0.7": {
+            "coverage": 0.8484,
+            "covered": 291,
+            "wrong": 13,
+            "wrong_rate": 0.0447
+          },
+          "0.8": {
+            "coverage": 0.7813,
+            "covered": 268,
+            "wrong": 8,
+            "wrong_rate": 0.0299
+          },
+          "0.9": {
+            "coverage": 0.6443,
+            "covered": 221,
+            "wrong": 4,
+            "wrong_rate": 0.0181
+          }
+        },
+        "low_confidence_fallbacks": 31,
+        "low_confidence_fallback_rate": 0.0904,
+        "deployment_fallbacks": 31,
+        "deployment_fallback_rate": 0.0904,
+        "usage": {
+          "input_tokens": 894425,
+          "output_tokens": 94235
+        },
+        "billed_cost": 0.03756585
+      },
+      "readings": []
+    },
+    {
+      "arm": "typesafe:jev-latest",
+      "rep": 4,
+      "accuracy": 0.9271,
+      "intent_accuracy": 0.9738,
+      "strict_accuracy": 0.9377,
+      "refusal_agreement": 0.9723,
+      "closed_set_misses": 16,
+      "latency_median": 0.3585,
+      "latency_p95": 0.4692,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 29,
+      "also_fp": 0,
+      "also_fn": 3,
+      "also_omitted": 0,
+      "answered": 343,
+      "readings_count": 343,
+      "jev": {
+        "confidence": {
+          "min": 0.33,
+          "p25": 0.84,
+          "median": 0.95,
+          "p75": 0.99,
+          "p95": 1.0,
+          "max": 1.0
+        },
+        "floors": {
+          "0.5": {
+            "coverage": 0.9592,
+            "covered": 329,
+            "wrong": 20,
+            "wrong_rate": 0.0608
+          },
+          "0.6": {
+            "coverage": 0.9038,
+            "covered": 310,
+            "wrong": 16,
+            "wrong_rate": 0.0516
+          },
+          "0.7": {
+            "coverage": 0.8542,
+            "covered": 293,
+            "wrong": 11,
+            "wrong_rate": 0.0375
+          },
+          "0.8": {
+            "coverage": 0.7755,
+            "covered": 266,
+            "wrong": 9,
+            "wrong_rate": 0.0338
+          },
+          "0.9": {
+            "coverage": 0.6589,
+            "covered": 226,
+            "wrong": 4,
+            "wrong_rate": 0.0177
+          }
+        },
+        "low_confidence_fallbacks": 33,
+        "low_confidence_fallback_rate": 0.0962,
+        "deployment_fallbacks": 33,
+        "deployment_fallback_rate": 0.0962,
+        "usage": {
+          "input_tokens": 894425,
+          "output_tokens": 94235
+        },
+        "billed_cost": 0.03756585
+      },
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 1,
+      "accuracy": 0.9475,
+      "intent_accuracy": 0.9913,
+      "strict_accuracy": 0.9481,
+      "refusal_agreement": 0.9585,
+      "closed_set_misses": 15,
+      "latency_median": 0.7066,
+      "latency_p95": 1.2545,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 27,
+      "also_fp": 0,
+      "also_fn": 5,
+      "also_omitted": 0,
+      "answered": 343,
+      "readings_count": 343,
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 2,
+      "accuracy": 0.9446,
+      "intent_accuracy": 0.9913,
+      "strict_accuracy": 0.9446,
+      "refusal_agreement": 0.9516,
+      "closed_set_misses": 16,
+      "latency_median": 0.6505,
+      "latency_p95": 1.1445,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 27,
+      "also_fp": 0,
+      "also_fn": 5,
+      "also_omitted": 0,
+      "answered": 343,
+      "readings_count": 343,
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 3,
+      "accuracy": 0.9475,
+      "intent_accuracy": 0.9913,
+      "strict_accuracy": 0.9446,
+      "refusal_agreement": 0.9516,
+      "closed_set_misses": 15,
+      "latency_median": 0.6527,
+      "latency_p95": 0.9978,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 27,
+      "also_fp": 0,
+      "also_fn": 5,
+      "also_omitted": 0,
+      "answered": 343,
+      "readings_count": 343,
+      "readings": []
+    },
+    {
+      "arm": "mistralai/mistral-medium-3.1",
+      "rep": 4,
+      "accuracy": 0.9388,
+      "intent_accuracy": 0.9883,
+      "strict_accuracy": 0.9377,
+      "refusal_agreement": 0.955,
+      "closed_set_misses": 17,
+      "latency_median": 0.6086,
+      "latency_p95": 0.9873,
+      "failures": 0,
+      "rotations": 0,
+      "failures_by_class": {},
+      "also_tp": 27,
+      "also_fp": 0,
+      "also_fn": 5,
+      "also_omitted": 0,
+      "answered": 343,
+      "readings_count": 343,
+      "readings": []
+    }
+  ]
+}
