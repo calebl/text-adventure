@@ -82,8 +82,11 @@ class Scene::Narrator
   # `fact` is SOMETHING THE APP HAS ALREADY DONE, in its own words -- the row is
   # written and this is only the sentence about it (`Playthrough::Turn#take_item`).
   # It goes in as a statement rather than a request, because the narrator has no
-  # say in whether it is true. If the prose contradicts it the record still
-  # stands, which is the point; `Story::Audit` is what notices.
+  # say in whether it is true. It is also persisted as `Scene#engine_fact`: a
+  # verifier needs the exact receipt this prose was written against, not a later
+  # reconstruction from records that may since have moved. If the prose
+  # contradicts it the record still stands, which is the point; `Story::Audit`
+  # is what notices.
   #
   # `handled` IS THE ROW THAT MOVED, and it is the other half of the same
   # sentence: the fact says what the turn DID and this says which line of the
@@ -134,7 +137,7 @@ class Scene::Narrator
     # Only the supplied fact is shown by the fallback. Pending environmental
     # events remain untold until a paragraph actually includes them.
     Playthrough::Command::Journal.commit("narrated") do
-      row = persist(text, fallback: fallback)
+      row = persist(text, fallback: fallback, engine_fact: fact)
       row.narrated_toll_ids = [] if row && fallback
       row.safety_notice = safety_notice if row
       row.rendering_error = rendering_error if row
@@ -173,7 +176,7 @@ class Scene::Narrator
 
   # Blank narration is not worth a record -- that is a failed turn, and saving
   # it would fail the Scene description validation anyway.
-  def persist(text, fallback: false)
+  def persist(text, fallback: false, engine_fact: nil)
     return if text.blank?
 
     scene = Scene.transaction do
@@ -182,6 +185,7 @@ class Scene::Narrator
         location: playthrough.current_location,
         previous_scene: playthrough.current_scene,
         description: text,
+        engine_fact: engine_fact,
         engine_fallback: fallback,
         story_timestamp: playthrough.story_time_after("action")
       )

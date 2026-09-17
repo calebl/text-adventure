@@ -2,8 +2,9 @@
 #
 # The captain's words, 2026-09-05: *"having to switch over to debug mode is too
 # slow and I can't compare the two side by side."* So the prompt a turn was
-# written from and the state it was played in are fetched a TURN AT A TIME,
-# into a Turbo Frame beside that turn's prose, rather than precomputed for the
+# written from, its durable engine fact and the state it was played in are
+# fetched a TURN AT A TIME, into a Turbo Frame beside that turn's prose, rather
+# than precomputed for the
 # whole log. `#turn_log` is replaced by a Turbo Stream at the end of every turn
 # and the log is the entire playthrough, so a panel per turn built on every
 # render would put forty of these on the wire for one typed line.
@@ -19,7 +20,7 @@
 # reaches it. This app has no auth at all: a playthrough URL is the whole of a
 # player's credentials, so an endpoint standing behind a hidden control is an
 # endpoint anybody with the link can read -- and what it answers with is the
-# prompt text.
+# prompt text and engine fact.
 #
 # TWO LAYOUTS, and the second is the no-JavaScript case. A Turbo Frame request
 # wants the frame and nothing else; a plain request -- the placeholder link

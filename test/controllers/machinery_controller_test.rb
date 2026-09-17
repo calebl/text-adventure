@@ -11,6 +11,7 @@ class MachineryControllerTest < ActionDispatch::IntegrationTest
     create(:item, playthrough: playthrough,
                   character: scene.characters.find { |who| who != playthrough.character },
                   name: "A tide slate")
+    scene.update!(engine_fact: "You consumed the draught.\nIt is gone from your possessions.")
     exchange_on(scene, purpose: "narration", instructions: "You are the narrator.")
     exchange_on(scene, purpose: "classifier", instructions: "Classify the line.")
 
@@ -30,13 +31,25 @@ class MachineryControllerTest < ActionDispatch::IntegrationTest
     assert_match "A brass ledger", response.body
     assert_match "A tide slate", response.body
 
-    # And the prompt half, with the classifier under its own heading.
+    # And the durable engine receipt and prompt half, with the classifier under
+    # its own heading.
+    assert_select "h2", text: "what the engine recorded"
+    assert_select ".engine-fact", text: /You consumed the draught.*It is gone from your possessions/m
     assert_select "h2", text: "what the narrator was given"
     assert_select "h2", text: "what the classifier was given"
     assert_match "You are the narrator.", response.body
     assert_match "Classify the line.", response.body
     assert_select ".tag.purpose", text: "narration"
     assert_select ".tag.purpose", text: "classifier"
+  end
+
+  test "show states when older prose has no durable engine receipt" do
+    playthrough, scene = played_turn
+
+    get playthrough_machinery_path(playthrough, scene)
+
+    assert_response :success
+    assert_select ".absent", text: /no engine fact was recorded for this prose/
   end
 
   # WHICH VERSION OF THE INSTRUCTIONS WROTE IT -- the same digest

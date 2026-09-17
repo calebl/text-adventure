@@ -17,6 +17,27 @@ class Scene::NarratorTest < ActiveSupport::TestCase
     assert_equal scene, playthrough.reload.current_scene
   end
 
+  test "persists the exact engine fact the prose was written against" do
+    playthrough = create(:playthrough, :started)
+    fact = "You consumed the draught. It is gone from your possessions."
+
+    scene = BaseAgent.stub(:new, FakeAgent.new("You drink the draught.")) do
+      Scene::Narrator.new(playthrough).narrate("drink it", fact: fact, fallback_text: fact)
+    end
+
+    assert_equal fact, scene.engine_fact
+  end
+
+  test "a turn with no engine fact stores none" do
+    playthrough = create(:playthrough, :started)
+
+    scene = BaseAgent.stub(:new, FakeAgent.new("You wait.")) do
+      Scene::Narrator.new(playthrough).narrate("wait")
+    end
+
+    assert_nil scene.engine_fact
+  end
+
   test "asks unschema'd -- streaming and structured output are incompatible" do
     playthrough = create(:playthrough, :started)
     agent = FakeAgent.new("You step into the hall.")

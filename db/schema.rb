@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_10_041334) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_17_133823) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -537,6 +537,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_041334) do
     t.string "acted_on_type"
     t.datetime "created_at", null: false
     t.text "description"
+    t.text "engine_fact"
     t.boolean "engine_fallback", default: false, null: false
     t.boolean "is_opening", default: false, null: false
     t.integer "location_id", null: false

@@ -40,6 +40,7 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
     assert scene.engine_authored?
     assert_includes scene.description, "You arrive at The Drowned Ledger."
     assert_includes scene.description, "#{pending.damage} hit points"
+    assert_includes scene.engine_fact, "#{pending.damage} hit points"
     assert_equal [ pending.id ], scene.narrated_toll_ids
     assert_nil pending.reload.scene_id
     assert_no_difference "Scene.count" do
@@ -79,6 +80,8 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
     assert_includes prompt, "Lying here: nothing."
     assert_includes prompt, "You are carrying: brass key."
     assert_includes prompt, "take precedence"
+    assert_includes scene.engine_fact, "Dead here: Maren Vosk. They cannot speak or act."
+    assert_includes scene.engine_fact, "You are carrying: brass key."
     assert_equal destination, person.reload.location
     assert_equal destination, key.template.reload.location
   end
@@ -95,14 +98,16 @@ class Scene::GeneratorTest < ActiveSupport::TestCase
     assert_includes agent.prompts.last, "You are #{game.condition.in_words}."
     assert_includes agent.prompts.last, "#{destination.name} cost #{game.character.fullname} 3 hit points"
     assert_equal [ toll.id ], scene.narrated_toll_ids
+    assert_includes scene.engine_fact, "#{destination.name} cost #{game.character.fullname} 3 hit points"
     assert_nil toll.reload.scene_id
   end
 
   test "world opening generation carries no playthrough-only state" do
-    _scene, agent = generate(realized_location)
+    scene, agent = generate(realized_location)
 
     assert_not_includes agent.prompts.last, "## Current State On Arrival"
     assert_not_includes agent.prompts.last, "You are carrying:"
+    assert_nil scene.engine_fact
   end
 
   # --- what lands in the record -------------------------------------------

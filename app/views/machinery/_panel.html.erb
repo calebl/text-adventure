@@ -1,6 +1,7 @@
 <%# locals: (machinery:) %>
-<%# THE MACHINERY BEHIND ONE TURN: the state it was played in, and the prompt it
-    was written from. Read beside that turn's prose -- the captain's ask of
+<%# THE MACHINERY BEHIND ONE TURN: the state it was played in, the durable
+    engine fact, and the prompt it was written from. Read beside that turn's
+    prose -- the captain's ask of
     2026-09-05 -- so it is built out of what the play page already has (`.sheet`,
     `.sheet-line`, `.sheet-note`) rather than out of the debug page's own
     vocabulary. The reading experience is `ta-api-iface`'s stage and inventing a
@@ -85,6 +86,19 @@
     rather than the thing being compared.
     --------------------------------------------------------------------------- %>
 <div class="sheet">
+  <%# THE RECEIPT, SEPARATE FROM THE PROMPT. The prompt may contain this text,
+      but extracting it back out would make the debug view trust prompt prose
+      for the same fact it exists to compare. This is the engine-owned column
+      frozen on the Scene when the writer received it. %>
+  <h2>what the engine recorded</h2>
+  <% if machinery.engine_fact.present? %>
+    <div class="engine-fact"><%= simple_format(machinery.engine_fact) %></div>
+  <% else %>
+    <p class="sheet-note">
+      <%= debug_value(nil, absent: "no engine fact was recorded for this prose") %>
+    </p>
+  <% end %>
+
   <h2>what the narrator was given</h2>
 
   <% if machinery.prose_conversations.any? %>
