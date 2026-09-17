@@ -167,6 +167,7 @@ class Item::Registry
     # realization on its way through `Playthrough::Turn#move_to`.
     item = location.items.create!(name: name, description: description, character: nil,
                                   playthrough: nil, template: nil,
+                                  **physical_profile(attributes),
                                   **writing_on(name, attributes))
     place!(item)
     # AND IF THE STORY'S ARC WAS WAITING FOR A THING BY THIS NAME, IT NOW HAS
@@ -175,6 +176,14 @@ class Item::Registry
     # what did. A world with no arc pays one `exists?` and stops.
     Quest::Binder.bind!(item)
     item
+  end
+
+  # Unknown labels and non-boolean flags grant no powers. Older cached detail
+  # answers have neither field and remain valid ordinary items on recovery.
+  def physical_profile(attributes)
+    kind = attributes["use_kind"]
+    { use_kind: Item::USE_KINDS.include?(kind) ? kind : "ordinary",
+      combustible: attributes["combustible"] == true }
   end
 
   # AND WHERE IN THE ROOM IT IS LYING, which the ENGINE decides and no model is

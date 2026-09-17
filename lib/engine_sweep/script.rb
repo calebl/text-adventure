@@ -163,7 +163,7 @@ class EngineSweep::Script
     unless value.is_a?(Hash) && (value.keys - %w[token fail replies raises realizes accepted_first interrupt_after]).empty? && value["token"].is_a?(String) && value["token"].present?
       raise EngineSweep::InvalidScript, "#{where}: browser expects a token and optional fail: narration or arrival"
     end
-    if value.key?("interrupt_after") && !%w[take arrival_cost narrated riposte].include?(value["interrupt_after"])
+    if value.key?("interrupt_after") && !%w[take arrival_cost physical_effect narrated riposte].include?(value["interrupt_after"])
       raise EngineSweep::InvalidScript, "#{where}: interrupt_after must name a supported committed turn boundary"
     end
     if value.key?("accepted_first")
@@ -186,10 +186,16 @@ class EngineSweep::Script
         raise EngineSweep::InvalidScript, "#{where}: browser replies is a list and cannot combine with fail"
       end
       value["replies"].each do |reply|
-        unless reply.is_a?(Hash) && (reply.keys - %w[purpose content unavailable]).empty? &&
-            %w[location narration arrival].include?(reply["purpose"]) &&
+        unless reply.is_a?(Hash) && (reply.keys - %w[purpose content unavailable prompt_includes prompt_excludes]).empty? &&
+            %w[location narration arrival character interaction-narration].include?(reply["purpose"]) &&
             ((reply.key?("content") && !reply.key?("unavailable")) || (reply["unavailable"] == true && !reply.key?("content")))
           raise EngineSweep::InvalidScript, "#{where}: browser reply needs a purpose and either content or unavailable: true"
+        end
+        %w[prompt_includes prompt_excludes].each do |key|
+          next unless reply.key?(key)
+          unless reply[key].is_a?(Array) && reply[key].all? { |text| text.is_a?(String) && text.present? }
+            raise EngineSweep::InvalidScript, "#{where}: #{key} must contain nonempty text fragments"
+          end
         end
       end
     end

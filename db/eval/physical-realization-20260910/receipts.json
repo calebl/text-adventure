@@ -1,0 +1,2241 @@
+{
+  "price_basis": "Provider-reported dollars where present, otherwise pinned registry-priced token usage. Conservative shared-ledger accounting is separate.",
+  "previous_attempt": {
+    "actual": 0.00209308,
+    "reason": "Paid partial realization abandoned at the earlier cap; its completed replacement is counted among measured readings.",
+    "receipts": [
+      {
+        "id": "5f9ec5e1-caac-461b-a113-cd731fb9d8fb",
+        "label": "physical-realization:after:lunar-mournwell-lane:4:location",
+        "state": "settled",
+        "input_cap": 16599,
+        "output_cap": 2048,
+        "reserved_micros": 123955,
+        "accounted_micros": 2094,
+        "receipt": {
+          "purpose": "location",
+          "prompt": "## Universe Details\nphysics: This world adheres to standard physical laws, with one exception: the city of Nocturnis, built on the ruins of an ancient war, rearranges itself every night due to the residual magical energy from the Great War. This energy, called Nocturna, is harnessed from the moon and causes buildings, streets, and landmarks to shift and change. The effects of Nocturna are limited to the city boundaries, and its influence wanes during the day, allowing the city to remain static until nightfall. Nocturna does not affect living beings directly, but prolonged exposure can cause disorientation and memory loss. The city's rearrangement follows certain patterns, often influenced by the phases of the moon, but these patterns are complex and not fully understood.\ntechnology: Technology in this world is a blend of pre-war remnants and post-war innovations. The Great War, which ended 75 years ago, left behind advanced but often broken or dangerous technology. The current society has managed to salvage and repurpose some of this tech, but much of it remains beyond their understanding. Most people rely on steam-powered machinery and simple electronics. The city of Nocturnis has a unique technology called Lunar Compasses, which are devices that can predict the city's nightly rearrangements with about 60% accuracy. These compasses are highly sought after but require rare moonstones to function.\ngeographies: The world is dominated by the ever-changing city of Nocturnis, surrounded by a vast, desolate landscape known as the Scorch. The Scorch is a reminder of the Great War, a wasteland where little life thrives. To the north lies the Crystal Peaks, a mountain range rich in moonstones. To the east, the Verdant Expanse is a vast forest that has begun to reclaim the land. Within Nocturnis, notable landmarks include the Ever-Shifting Bazaar, a marketplace that changes location and layout every night, and the Celestial Spire, a tower that remains static despite the city's rearrangements. The city is divided into districts, each with its unique characteristics, such as the Industrial Quarter, the Residential Loop, and the Sovereign's Circle.\nraces: Crystal Dwarves, Lunar Sovereigns, Nocturna-Blighted, Scorch Nomads, Verdant Folk\ncivilizations: The city of Nocturnis is the center of civilization, ruled by the Lunar Sovereigns who control the supply of moonstones and advanced technology. The Sovereigns live in the opulent Sovereign's Circle, while the rest of the population resides in the ever-changing districts. The Scorch Nomads roam the wasteland, trading scavenged pre-war technology and resources with the Verdant Folk and Crystal Dwarves. The Verdant Folk live in harmony with nature in the Verdant Expanse, while the Crystal Dwarves mine moonstones in the Crystal Peaks. Tensions exist between the Lunar Sovereigns and the other factions due to the Sovereigns' control of resources and technology, as well as their secretive and hierarchical nature.\n\n\n## Story Details\ntitle: The Lunar Cartographer\ngenre: Fantasy\npreface: The apartment smells of boiled cabbage and lamp oil. A fine dust of plaster drifts down from the ceiling where the building groans, settling itself into its new configuration for the night. You sit at the oak table by the window, watching motes swirl in the amber light of your kerosene lamp. Across the scarred wood, a half-finished map of Nocturnis spreads out like a rumor you can't quite believe. The Larkspur Quarter, where you woke this morning, has already migrated two blocks north by your last bearings. The Bell of Saint Aravel chimes once in the distance—11 p.m., or close enough. Outside the open window, the cobblestones of Mournwell Lane breathe with a faint, silvery luminescence, rearranging themselves with the patience of something that has done this for seventy-five years. Your landlord, old Grenn, has left a note under your door demanding the overdue rent by morning, or he'll have your table and your instruments out in the lane by noon. The map is worth more than the rent. Both are due before the city forgets where it put this building.\nsummary: The player is a cartographer hired by the Lunar Sovereigns to map the nightly rearrangements of the city of Nocturnis, where buildings, streets, and landmarks shift with the moon's phases due to residual magical energy called Nocturna. As they work, they uncover conspiracies within the Sovereigns, encounter the displaced peoples of the Scorch Nomads and Verdant Folk, and grapple with the disorienting effects of prolonged exposure to Nocturna, which causes memory loss. The game's tone is grounded, atmospheric, and focused on mystery and survival in a world that refuses to stay still.\n\n\n## The Place\nname: Mournwell Lane\nteaser: Step out and eavesdrop on the lane while you still know where it runs.\n\n## Instructions\nWrite this place out in full.\n- The description is what the player reads on arrival. Address them as \"you\"\n- Describe what is here now, not the history -- the history is the lore\n- Stay consistent with the universe and with the teaser above\n- Respect the stated length of each field\n\n## What Is Lying Here\nList AT MOST 3 portable things a player could pick up and carry away.\n- Nothing is the right answer for most rooms. An empty list is a complete answer\n- Only loose, portable things. Not the door, not the floor, not the machinery\n  bolted to it -- something a person could put in a pocket or under an arm\n- Each one must be consistent with the description you just wrote, and worth\n  the player noticing\n- Pick its use_kind from the supplied physical profiles. Ordinary is the\n  default. Food and drink can be consumed without healing; healing is only\n  a restorative dose this world permits. Firestarters burn combustible\n  objects, levers pry jammed passages, lockpicks try locks, and a key only\n  opens a passage explicitly matched to it. Mark combustible only when an\n  ordinary firestarter can destroy the object. The engine owns the effects\n  and their amounts; its description cannot grant extra powers\n- If a thing has WRITING on it -- a note, a letter, a handbill, a label, a\n  docket, a page, a sign -- mark it readable and WRITE OUT WHAT IS WRITTEN\n  ON IT, exactly as it appears on the thing. The words themselves, not a\n  description of them, and short enough to finish -- a few words, a line,\n  or a few short lines. The game keeps those words and a player reading it\n  twice reads the same ones\n- Never name it after a person or after a place. Already spoken for in this story, so do not reuse: Isbet Marrow, Grenn Ollivar, Marek Sollen, bell-rope tally\n\n## Who Is Here\nWrite EXACTLY 2 people who are in this place right now.\n- Anyone you write is somebody the player can walk up to and talk to, so they\n  have to have a reason to be standing here and something they want\n- Do not write the player, and do not write somebody passing through\n- Never give them the name of a place, of a thing, or any name already\n  spoken for above\n\nWho they are is already decided. Write these people and do not change them:\n  the 1st is Lunar Sovereigns, about 20, female\n  the 2nd is Crystal Dwarves, about 61, non-binary\n",
+          "instructions": "You build the rooms of a text adventure one at a time. You write places a\nplayer can stand in and walk out of: concrete, specific, and consistent\nwith the world they belong to. Every exit you name is somewhere the player\ncould actually go.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Location::DetailSchema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.",
+                  "maxLength": 1200
+                },
+                "lore": {
+                  "type": "string",
+                  "description": "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "name": {
+                  "type": "string",
+                  "description": "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",
+                  "maxLength": 60
+                },
+                "items": {
+                  "type": "array",
+                  "description": "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.",
+                        "maxLength": 60
+                      },
+                      "description": {
+                        "type": "string",
+                        "description": "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.",
+                        "maxLength": 400
+                      },
+                      "use_kind": {
+                        "type": "string",
+                        "enum": [
+                          "ordinary",
+                          "food",
+                          "drink",
+                          "healing",
+                          "firestarter",
+                          "lever",
+                          "lockpick",
+                          "key"
+                        ],
+                        "description": "The engine's physical profile: ordinary unless it is food, a drink, a healing dose, a firestarter, a prying lever, lockpicks, or a key. Choose healing only for an actual restorative dose allowed by this world. Profiles supply behavior from code, never from the description."
+                      },
+                      "combustible": {
+                        "type": "boolean",
+                        "description": "True only if this portable thing can be destroyed by an ordinary carried firestarter: dry paper, cloth or wood. False for stone, metal, liquids, or anything uncertain."
+                      },
+                      "readable": {
+                        "type": "boolean",
+                        "description": "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things."
+                      },
+                      "inscription": {
+                        "type": "string",
+                        "description": "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.",
+                        "maxLength": 400
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "description",
+                      "use_kind",
+                      "combustible",
+                      "readable"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "maxItems": 3
+                },
+                "people": {
+                  "type": "array",
+                  "description": "The 2 people who are in this place right now. Write all 2 the instructions describe, in the order they are given there.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "fullname": {
+                        "type": "string",
+                        "description": "Their full name, as a player would type it to speak to them. 2 or 3 words.",
+                        "maxLength": 60
+                      },
+                      "nickname": {
+                        "type": "string",
+                        "description": "What they are called to their face. 1 or 2 words.",
+                        "maxLength": 30
+                      },
+                      "appearance": {
+                        "type": "string",
+                        "description": "What somebody walking in sees of them, consistent with the room you just wrote and with the race and age you were given for them. One or two sentences.",
+                        "maxLength": 300
+                      },
+                      "personality": {
+                        "type": "string",
+                        "description": "How they behave and how they treat a stranger. One or two sentences.",
+                        "maxLength": 300
+                      },
+                      "backstory": {
+                        "type": "string",
+                        "description": "Why they are in this place and what they want. Third person, by name. Two or three sentences.",
+                        "maxLength": 450
+                      },
+                      "likes": {
+                        "type": "string",
+                        "description": "A comma separated list of 2 or 3 things they enjoy.",
+                        "maxLength": 160
+                      },
+                      "dislikes": {
+                        "type": "string",
+                        "description": "A comma separated list of 2 or 3 things they cannot stand.",
+                        "maxLength": 160
+                      },
+                      "fears": {
+                        "type": "string",
+                        "description": "A comma separated list of 1 or 2 things they are afraid of.",
+                        "maxLength": 160
+                      }
+                    },
+                    "required": [
+                      "fullname",
+                      "nickname",
+                      "appearance",
+                      "personality",
+                      "backstory",
+                      "likes",
+                      "dislikes",
+                      "fears"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              },
+              "required": [
+                "description",
+                "lore",
+                "people"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 16599,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "input_tokens": 71,
+          "output_tokens": 999,
+          "cached_tokens": 1667,
+          "cache_creation_tokens": 0,
+          "thinking_tokens": 0,
+          "actual_model": "mistralai/mistral-medium-3.1",
+          "provider_cost_usd": 0.00209308,
+          "provider_cost_metadata_error": null,
+          "registry_cost_usd": 0.00209308,
+          "usage_upper_micros": 28670,
+          "raw_answer": {
+            "description": "You step onto Mournwell Lane, where the cobblestones shimmer faintly with a silvery glow, shifting subtly beneath your feet like a slow, living thing. The air is thick with the scent of damp stone and the faint metallic tang of old magic. A single flickering gas lamp casts long, wavering shadows against the mismatched facades of the buildings lining the lane, their bricks and timbers rearranged yet again by the night’s Nocturna. The hum of distant machinery mixes with the occasional clink of glass from a dimly lit tavern doorway, its sign creaking in the breeze. The lane itself curves ahead, but you can’t trust its direction for long.",
+            "lore": "Mournwell Lane is one of Nocturnis’ oldest thoroughfares, its stones laid by pre-war masons who never anticipated their work would one day dance to the moon’s whim. The lane’s name comes from the mournful chime of the Bell of Saint Aravel, which once stood at its end before Nocturna carried it away. Now, it serves as a transient artery for the city’s ever-shifting layout, a place where merchants, scavengers, and the desperate gather to trade or whisper secrets before the next rearrangement. The Sovereigns monitor it closely, as its unpredictable nature makes it a hotspot for smugglers and rebels.",
+            "items": [
+              {
+                "name": "a chipped moonstone",
+                "description": "A small, pale blue fragment of moonstone, its surface rough and uneven, glowing faintly in the dark. It’s cool to the touch and hums with residual Nocturna.",
+                "use_kind": "ordinary",
+                "combustible": false,
+                "readable": false
+              },
+              {
+                "name": "a crumpled handbill",
+                "description": "A sheet of cheap paper, its edges frayed, advertising a meeting for those 'tired of the Sovereigns’ lies.' The ink is smudged but legible.",
+                "use_kind": "ordinary",
+                "combustible": true,
+                "readable": true,
+                "inscription": "Tonight at the Blind Owl. Midnight. Bring proof of your grievance."
+              }
+            ],
+            "people": [
+              {
+                "fullname": "Seraphine Veyne",
+                "nickname": "Sera",
+                "appearance": "A tall, slender woman with silver-streaked black hair tied in a tight braid, her pale skin marked with faint, glowing sigils of the Sovereigns. She wears a high-collared coat of deep violet, embroidered with lunar motifs, and her sharp eyes scan the lane with practiced vigilance.",
+                "personality": "Seraphine is cold and calculating, speaking in measured tones that betray little emotion. She treats strangers with polite but distant curiosity, always assessing their worth or threat.",
+                "backstory": "Seraphine Veyne is a junior envoy of the Lunar Sovereigns, sent to monitor the lane for signs of rebellion or unauthorized use of Nocturna. She resents the assignment, seeing it as beneath her station, but knows disobedience would cost her the favor she’s spent years cultivating. She’s here to ensure the city’s secrets stay buried.",
+                "likes": "order, efficiency, moonstone tea",
+                "dislikes": "chaos, disrespect, the Scorch Nomads",
+                "fears": "being forgotten, failure"
+              },
+              {
+                "fullname": "Tobin Ironside",
+                "nickname": "Tobin",
+                "appearance": "A stout, broad-shouldered dwarf with a thick, braided beard streaked with gray, their face lined with years of hard labor. They wear a heavy leather apron over a tunic of muted brown, and their hands are calloused, gripping a satchel of tools.",
+                "personality": "Tobin is gruff but not unkind, with a dry wit and little patience for nonsense. They speak bluntly but fairly, and their loyalty is to their craft above all else.",
+                "backstory": "Tobin Ironside is a retired Crystal Dwarf miner, now working as a stone-mason in Nocturnis. They came to the city decades ago to sell moonstones but stayed after realizing the Sovereigns’ control over the trade left them with little choice. Tonight, they’re inspecting the lane’s shifting stones, muttering about the 'foolishness of building on magic.'",
+                "likes": "honest work, strong ale, a well-laid stone",
+                "dislikes": "laziness, the Sovereigns' taxes, damp boots",
+                "fears": "being trapped underground"
+              }
+            ]
+          },
+          "answer": {
+            "description": "You step onto Mournwell Lane, where the cobblestones shimmer faintly with a silvery glow, shifting subtly beneath your feet like a slow, living thing. The air is thick with the scent of damp stone and the faint metallic tang of old magic. A single flickering gas lamp casts long, wavering shadows against the mismatched facades of the buildings lining the lane, their bricks and timbers rearranged yet again by the night’s Nocturna. The hum of distant machinery mixes with the occasional clink of glass from a dimly lit tavern doorway, its sign creaking in the breeze. The lane itself curves ahead, but you can’t trust its direction for long.",
+            "lore": "Mournwell Lane is one of Nocturnis’ oldest thoroughfares, its stones laid by pre-war masons who never anticipated their work would one day dance to the moon’s whim. The lane’s name comes from the mournful chime of the Bell of Saint Aravel, which once stood at its end before Nocturna carried it away. Now, it serves as a transient artery for the city’s ever-shifting layout, a place where merchants, scavengers, and the desperate gather to trade or whisper secrets before the next rearrangement. The Sovereigns monitor it closely, as its unpredictable nature makes it a hotspot for smugglers and rebels.",
+            "items": [
+              {
+                "name": "a chipped moonstone",
+                "description": "A small, pale blue fragment of moonstone, its surface rough and uneven, glowing faintly in the dark. It’s cool to the touch and hums with residual Nocturna.",
+                "use_kind": "ordinary",
+                "combustible": false,
+                "readable": false
+              },
+              {
+                "name": "a crumpled handbill",
+                "description": "A sheet of cheap paper, its edges frayed, advertising a meeting for those 'tired of the Sovereigns’ lies.' The ink is smudged but legible.",
+                "use_kind": "ordinary",
+                "combustible": true,
+                "readable": true,
+                "inscription": "Tonight at the Blind Owl. Midnight. Bring proof of your grievance."
+              }
+            ],
+            "people": [
+              {
+                "fullname": "Seraphine Veyne",
+                "nickname": "Sera",
+                "appearance": "A tall, slender woman with silver-streaked black hair tied in a tight braid, her pale skin marked with faint, glowing sigils of the Sovereigns. She wears a high-collared coat of deep violet, embroidered with lunar motifs, and her sharp eyes scan the lane with practiced vigilance.",
+                "personality": "Seraphine is cold and calculating, speaking in measured tones that betray little emotion. She treats strangers with polite but distant curiosity, always assessing their worth or threat.",
+                "backstory": "Seraphine Veyne is a junior envoy of the Lunar Sovereigns, sent to monitor the lane for signs of rebellion or unauthorized use of Nocturna. She resents the assignment, seeing it as beneath her station, but knows disobedience would cost her the favor she’s spent years cultivating. She’s here to ensure the city’s secrets stay buried.",
+                "likes": "order, efficiency, moonstone tea",
+                "dislikes": "chaos, disrespect, the Scorch Nomads",
+                "fears": "being forgotten, failure"
+              },
+              {
+                "fullname": "Tobin Ironside",
+                "nickname": "Tobin",
+                "appearance": "A stout, broad-shouldered dwarf with a thick, braided beard streaked with gray, their face lined with years of hard labor. They wear a heavy leather apron over a tunic of muted brown, and their hands are calloused, gripping a satchel of tools.",
+                "personality": "Tobin is gruff but not unkind, with a dry wit and little patience for nonsense. They speak bluntly but fairly, and their loyalty is to their craft above all else.",
+                "backstory": "Tobin Ironside is a retired Crystal Dwarf miner, now working as a stone-mason in Nocturnis. They came to the city decades ago to sell moonstones but stayed after realizing the Sovereigns’ control over the trade left them with little choice. Tonight, they’re inspecting the lane’s shifting stones, muttering about the 'foolishness of building on magic.'",
+                "likes": "honest work, strong ale, a well-laid stone",
+                "dislikes": "laziness, the Sovereigns' taxes, damp boots",
+                "fears": "being trapped underground"
+              }
+            ]
+          },
+          "seconds": 7.604422047996195
+        }
+      }
+    ]
+  },
+  "current_actual": 0.26368724,
+  "actual": 0.26578032,
+  "receipts": [
+    {
+      "id": "hour-long-hallway",
+      "rep": 0,
+      "warmup": true,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3851,
+      "output_tokens": 1373,
+      "calls": 2,
+      "dollars": 0.00432944,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4330,
+      "ledger_ids": [
+        "95b6e5fb-93e9-45b6-8c94-4c956cd75c31",
+        "7a6ed62d-dfe2-4837-b8a1-fa6431d42065"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1908,
+      "output_tokens": 1375,
+      "calls": 2,
+      "dollars": 0.00363316,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3634,
+      "ledger_ids": [
+        "e1b721e8-ace5-4615-a34a-6509155d3cfc",
+        "85be3560-f583-4b3c-82f8-5331813a29cb"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway-early",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1737,
+      "output_tokens": 1187,
+      "calls": 2,
+      "dollars": 0.00318876,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3190,
+      "ledger_ids": [
+        "f3fb4266-585b-4933-9fb4-42cf8fe7c4f5",
+        "3efa8d2c-1563-41a2-869a-73bf04856da4"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-supply-closet",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2892,
+      "output_tokens": 614,
+      "calls": 2,
+      "dollars": 0.00242784,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2429,
+      "ledger_ids": [
+        "e44c9845-00af-4c66-aad5-83c15c4e3c25",
+        "117adc73-0d74-497a-982b-7ba30156f5f6"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3781,
+      "output_tokens": 1345,
+      "calls": 2,
+      "dollars": 0.00424556,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4247,
+      "ledger_ids": [
+        "73299681-733d-41dc-abba-7198409b0e4c",
+        "ba007b62-3f40-4cdf-97b0-80a0615fe6e1"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk-early",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1902,
+      "output_tokens": 1281,
+      "calls": 2,
+      "dollars": 0.0034376399999999996,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3439,
+      "ledger_ids": [
+        "7b1d03da-bcbe-454c-99db-5bf827e8723c",
+        "eb5986db-4c5a-4614-89db-4e9856e0a273"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-tide-post",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3352,
+      "output_tokens": 956,
+      "calls": 2,
+      "dollars": 0.0032958400000000004,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3297,
+      "ledger_ids": [
+        "2e4dc8e6-747f-4c2d-a103-305475b56328",
+        "788c2b85-c2cc-4b2f-abfb-19172f50bec8"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-mournwell-lane",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3736,
+      "output_tokens": 992,
+      "calls": 2,
+      "dollars": 0.00352668,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3527,
+      "ledger_ids": [
+        "fb14d7b7-e256-4e77-bc80-f9fddcd427a6",
+        "6ea7952f-638a-433d-bb6e-ad51614661a7"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-larkspur-rooftops",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3064,
+      "output_tokens": 565,
+      "calls": 2,
+      "dollars": 0.0024050399999999998,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2406,
+      "ledger_ids": [
+        "bd05113b-8295-41ca-be5e-0e1fe91aa208",
+        "725948bd-2469-4e82-ad25-232b0bf94fb7"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-boarding-house-hallway",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1983,
+      "output_tokens": 506,
+      "calls": 2,
+      "dollars": 0.0018955999999999999,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1897,
+      "ledger_ids": [
+        "df8cedda-51a0-4432-a596-8ea03afd9a5d",
+        "6c2489c5-4319-4e82-a86a-80cd7ff0bd77"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-celestial-spire",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1991,
+      "output_tokens": 510,
+      "calls": 2,
+      "dollars": 0.0019068000000000002,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1908,
+      "ledger_ids": [
+        "ad80b9a1-2edb-4959-907e-88749ff8cc0e",
+        "920de307-ab89-4a20-bfc5-2d295ace9ca2"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-bell-of-saint-aravel",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2943,
+      "output_tokens": 1223,
+      "calls": 2,
+      "dollars": 0.00371244,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3714,
+      "ledger_ids": [
+        "ef73771f-f7a5-4a61-8f79-82e35712e58c",
+        "fc56611c-c393-4109-b494-be6b6f410590"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-sovereigns-circle",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2744,
+      "output_tokens": 1005,
+      "calls": 2,
+      "dollars": 0.00319684,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3198,
+      "ledger_ids": [
+        "4ced7927-2be2-4dc3-a55d-189a4fa2dc8a",
+        "76d8c619-702b-4bbe-8ac9-ac2d1bce73fb"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-deep",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2694,
+      "output_tokens": 615,
+      "calls": 2,
+      "dollars": 0.00235192,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2353,
+      "ledger_ids": [
+        "10c75d67-ab61-4971-9f7c-e42bd51e0c4d",
+        "66b1bd47-3d7d-4b8b-b12e-688e67e509ba"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-obsidian-maw",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3118,
+      "output_tokens": 840,
+      "calls": 2,
+      "dollars": 0.00297024,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2971,
+      "ledger_ids": [
+        "ee6a9fd7-04e7-4da5-9aae-7cf306bc669d",
+        "c6b87c9a-c932-403e-ba01-f2f3077f71a9"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-tunnel-upward",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3300,
+      "output_tokens": 886,
+      "calls": 2,
+      "dollars": 0.0031351599999999997,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3137,
+      "ledger_ids": [
+        "b8fbe6c4-f6c4-489c-a736-cdc7573b21c1",
+        "1d6e002c-19d2-47fd-a587-2fc0cc75b2e3"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-surface",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2338,
+      "output_tokens": 795,
+      "calls": 2,
+      "dollars": 0.00259952,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2600,
+      "ledger_ids": [
+        "d8089f99-a202-4f45-a641-639624575b5f",
+        "fd309950-5255-4b72-ae01-b6c00e6d479b"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-hollows-end",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1903,
+      "output_tokens": 504,
+      "calls": 2,
+      "dollars": 0.00184424,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1845,
+      "ledger_ids": [
+        "639d8f59-b921-40f0-b9f0-c7767b645b3f",
+        "d3f4e87f-692a-43c2-af98-4169346aab5c"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-spires-rest",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2697,
+      "output_tokens": 1056,
+      "calls": 2,
+      "dollars": 0.00326468,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3266,
+      "ledger_ids": [
+        "9f466caa-5cd5-416c-856a-7e82b3bb4bb3",
+        "60f938d7-17e3-4070-9381-c34a007c45fb"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-warren",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1319,
+      "output_tokens": 315,
+      "calls": 1,
+      "dollars": 0.0011576,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1158,
+      "ledger_ids": [
+        "3d11f0dc-fe5a-4263-bdab-aeb4dfc14da6"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-entry-room",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1097,
+      "output_tokens": 821,
+      "calls": 1,
+      "dollars": 0.00208092,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2081,
+      "ledger_ids": [
+        "5569fe59-5ad1-4f78-8062-60547db41aef"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-dangerous-back-room",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 966,
+      "output_tokens": 777,
+      "calls": 1,
+      "dollars": 0.00194564,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1946,
+      "ledger_ids": [
+        "106d89cc-e8dd-4318-b48f-e3d29d67db4f"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-upper-floor-room",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1063,
+      "output_tokens": 555,
+      "calls": 1,
+      "dollars": 0.00153576,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1536,
+      "ledger_ids": [
+        "e1801186-3b32-4537-ba66-07fc128d6023"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1833,
+      "output_tokens": 1280,
+      "calls": 2,
+      "dollars": 0.00341316,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3414,
+      "ledger_ids": [
+        "0d42951f-ce77-44e9-ad63-5964ef4b0621",
+        "c1064ab0-0770-4621-88ef-24342683ed8c"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway-early",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1776,
+      "output_tokens": 1207,
+      "calls": 2,
+      "dollars": 0.00324436,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3245,
+      "ledger_ids": [
+        "ddf84944-e446-4b4a-bf7b-c82c4212fb5e",
+        "8e774ae8-c95e-4972-87c1-355de6409726"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-supply-closet",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1009,
+      "output_tokens": 556,
+      "calls": 2,
+      "dollars": 0.0016316,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1633,
+      "ledger_ids": [
+        "d8981bff-9635-455a-b7a8-c26b8dd82c03",
+        "d21dc711-9e75-4315-9b02-f7af86ffb945"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1960,
+      "output_tokens": 1324,
+      "calls": 2,
+      "dollars": 0.00354684,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3548,
+      "ledger_ids": [
+        "7d7f3eef-bfd8-40f8-8070-9597c25f33ad",
+        "667b3d72-da16-456d-b768-5a409abe05c4"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk-early",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1903,
+      "output_tokens": 1291,
+      "calls": 2,
+      "dollars": 0.00345804,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3459,
+      "ledger_ids": [
+        "03e36913-af77-4e8e-b0d9-87f56434d542",
+        "154e434b-1ed8-4c6a-8040-b18e79352edd"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-tide-post",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1620,
+      "output_tokens": 1015,
+      "calls": 2,
+      "dollars": 0.00279284,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2794,
+      "ledger_ids": [
+        "60fb9162-53fa-4dea-b47e-1b3b24f0079e",
+        "5124755f-ca74-45b9-ab97-9e084bec705e"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-mournwell-lane",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1837,
+      "output_tokens": 1142,
+      "calls": 2,
+      "dollars": 0.003149,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3150,
+      "ledger_ids": [
+        "783b5489-62cb-4b29-8989-4f3e83733ba6",
+        "51e09a26-5ec4-43e9-a30d-ca860977d764"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-larkspur-rooftops",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1207,
+      "output_tokens": 621,
+      "calls": 2,
+      "dollars": 0.00185104,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1852,
+      "ledger_ids": [
+        "44314e86-3398-4dea-9eb9-5f4f048fab50",
+        "5370d503-2413-4e9e-9b57-401b1012d5f0"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-boarding-house-hallway",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1104,
+      "output_tokens": 509,
+      "calls": 2,
+      "dollars": 0.00158584,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1587,
+      "ledger_ids": [
+        "0aa95944-52a9-4e12-91cb-2689c5a606cd",
+        "9e7e5f4f-c2a5-49c2-9b7f-ef3bf0865364"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-celestial-spire",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1261,
+      "output_tokens": 691,
+      "calls": 2,
+      "dollars": 0.00201264,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2013,
+      "ledger_ids": [
+        "a549cadf-ad47-41ef-9df0-f81536b0c478",
+        "0af6dd7d-b96f-4fd2-ae73-f4fb036289ac"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-bell-of-saint-aravel",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1811,
+      "output_tokens": 1177,
+      "calls": 2,
+      "dollars": 0.0032086,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3210,
+      "ledger_ids": [
+        "374e7765-eb11-4f35-8682-1b282dd2d658",
+        "662915a7-6a1e-4795-b6ad-19ee3f9e2e46"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-sovereigns-circle",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1850,
+      "output_tokens": 1156,
+      "calls": 2,
+      "dollars": 0.0031822,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3183,
+      "ledger_ids": [
+        "9844a09d-3892-4dfb-8deb-2bff4c51ca1e",
+        "7745806d-2d37-4ce1-8c80-675f8f300432"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-deep",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1147,
+      "output_tokens": 609,
+      "calls": 2,
+      "dollars": 0.0017825599999999999,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1784,
+      "ledger_ids": [
+        "8d02fbb3-680f-48b1-b284-900fc00dd5bc",
+        "8cb94c76-342a-4167-ae72-6093eb30d39e"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-obsidian-maw",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1381,
+      "output_tokens": 861,
+      "calls": 2,
+      "dollars": 0.00238968,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2391,
+      "ledger_ids": [
+        "69cbfbc7-1110-4b0b-9574-0c7f5eb42a47",
+        "75a2425b-0bc4-46ef-b47b-d2e62a68735e"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-tunnel-upward",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1470,
+      "output_tokens": 779,
+      "calls": 2,
+      "dollars": 0.00226084,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2262,
+      "ledger_ids": [
+        "f986c025-2300-4eca-a8b5-62742d0068bc",
+        "127a113c-ebf5-411d-b958-5c53db18a3f2"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-surface",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1302,
+      "output_tokens": 778,
+      "calls": 2,
+      "dollars": 0.00219208,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2193,
+      "ledger_ids": [
+        "d9b0990a-fd29-4d0f-a2d6-c1cf45550eee",
+        "7abe20ea-1aad-491c-80db-95c061d986e3"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-hollows-end",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1139,
+      "output_tokens": 503,
+      "calls": 2,
+      "dollars": 0.0015673599999999998,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1568,
+      "ledger_ids": [
+        "0e0faa8c-5e5a-446d-a514-efb8ef3136ab",
+        "1cbbe23e-7dfd-4b8c-b4c9-56e05ef570f2"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-spires-rest",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1602,
+      "output_tokens": 985,
+      "calls": 2,
+      "dollars": 0.00272564,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2727,
+      "ledger_ids": [
+        "ddd27dd3-7b06-4a42-a364-9c629befd35b",
+        "546c0e73-d9cb-4535-8699-ea2bd6a2d1fe"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-warren",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1319,
+      "output_tokens": 282,
+      "calls": 1,
+      "dollars": 0.0010916,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1092,
+      "ledger_ids": [
+        "40c978b6-ad94-4c77-aa18-427cedb43cfa"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-entry-room",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 72,
+      "output_tokens": 887,
+      "calls": 1,
+      "dollars": 0.00184388,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1844,
+      "ledger_ids": [
+        "92b67ab0-8f0b-4ac8-9f96-cd1f0f9c688d"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-dangerous-back-room",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 69,
+      "output_tokens": 807,
+      "calls": 1,
+      "dollars": 0.00168268,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1683,
+      "ledger_ids": [
+        "955c3e68-8efd-4ffd-9711-b7e1a18d4efa"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-upper-floor-room",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 41,
+      "output_tokens": 605,
+      "calls": 1,
+      "dollars": 0.00126792,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1268,
+      "ledger_ids": [
+        "fa0a15d1-c21f-4e56-9231-c11f85ffbe36"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1665,
+      "output_tokens": 1089,
+      "calls": 2,
+      "dollars": 0.00296396,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2965,
+      "ledger_ids": [
+        "afc585bc-5b78-4785-b38e-6ba42b48a81a",
+        "933dbc47-5ad4-4a46-811f-09424c013483"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway-early",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1843,
+      "output_tokens": 1272,
+      "calls": 2,
+      "dollars": 0.0034011600000000003,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3402,
+      "ledger_ids": [
+        "c54e1873-fd7a-4474-be90-e7482eb00a8c",
+        "260b23f3-a5ed-4642-9f98-ae8149ef98cb"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-supply-closet",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1063,
+      "output_tokens": 613,
+      "calls": 2,
+      "dollars": 0.0017672,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1768,
+      "ledger_ids": [
+        "7cc664e9-579c-4bd0-99b2-43bbce5851b8",
+        "2bcfe67d-4cc7-4eb4-a95b-cc77f0ae84a0"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2040,
+      "output_tokens": 1398,
+      "calls": 2,
+      "dollars": 0.00372684,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3728,
+      "ledger_ids": [
+        "4644b0ca-8b90-43c3-a220-5d13800c42e6",
+        "98d29481-5a97-4a0d-a787-6b36f497b3bb"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk-early",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2053,
+      "output_tokens": 1427,
+      "calls": 2,
+      "dollars": 0.0037900399999999997,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3791,
+      "ledger_ids": [
+        "d64f0aee-03e8-4eb6-9b50-5d21a593bbdc",
+        "427f15bf-2491-464f-b522-6e02858a0566"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-tide-post",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1634,
+      "output_tokens": 1037,
+      "calls": 2,
+      "dollars": 0.00284244,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2843,
+      "ledger_ids": [
+        "61c26c34-ecd2-4b58-a5f1-25954267f1e6",
+        "82b36477-67d3-493e-9dac-9acd429f53ff"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-mournwell-lane",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1824,
+      "output_tokens": 1131,
+      "calls": 2,
+      "dollars": 0.0031218,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3123,
+      "ledger_ids": [
+        "91bd4779-e405-4dce-af3e-808fd7703d51",
+        "453f3086-9318-4fa0-b31e-14e512b6b9ae"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-larkspur-rooftops",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1186,
+      "output_tokens": 602,
+      "calls": 2,
+      "dollars": 0.0018046400000000002,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1806,
+      "ledger_ids": [
+        "99aa3e43-64bc-4540-b3ff-e0a72f5ab3ba",
+        "5e436224-1cb2-4082-b398-051673f78f1f"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-boarding-house-hallway",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1233,
+      "output_tokens": 665,
+      "calls": 2,
+      "dollars": 0.0019494400000000002,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1951,
+      "ledger_ids": [
+        "21f084c5-46e9-40b9-8687-8ab111874028",
+        "784cb27e-31a3-4667-8270-5cb1bf932540"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-celestial-spire",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1176,
+      "output_tokens": 664,
+      "calls": 2,
+      "dollars": 0.00192464,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1925,
+      "ledger_ids": [
+        "0218c17b-0816-4d40-b617-f0b5fe60a7da",
+        "4915d170-9692-461e-a7af-81ceca6060e0"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-bell-of-saint-aravel",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1861,
+      "output_tokens": 1172,
+      "calls": 2,
+      "dollars": 0.0032186,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3219,
+      "ledger_ids": [
+        "729156e8-7437-4fc6-a208-53db35a1ea04",
+        "d4ea3921-d52a-46ef-aacc-06a6a77249c4"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-sovereigns-circle",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1674,
+      "output_tokens": 951,
+      "calls": 2,
+      "dollars": 0.0027018,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2703,
+      "ledger_ids": [
+        "fcd06265-84d2-4be3-ae0d-e9e6cc53b959",
+        "f392d198-b068-42ce-8a32-c34eb48e9b92"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-deep",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1080,
+      "output_tokens": 534,
+      "calls": 2,
+      "dollars": 0.00160576,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1607,
+      "ledger_ids": [
+        "4a275e2d-876c-4d99-a3d9-c75422113c1c",
+        "faa19b85-5914-4f2d-a17f-3f6409b436cd"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-obsidian-maw",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1368,
+      "output_tokens": 901,
+      "calls": 2,
+      "dollars": 0.00246448,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2465,
+      "ledger_ids": [
+        "1cf52cd9-51c2-4330-8bb6-31be4277c913",
+        "7042901d-4290-4dfd-a76b-fc23448d52bf"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-tunnel-upward",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1685,
+      "output_tokens": 1070,
+      "calls": 2,
+      "dollars": 0.00292884,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2930,
+      "ledger_ids": [
+        "b1e50e96-b2b2-41f9-928c-1f2d05b7f12e",
+        "e7424de0-059d-42b8-b3d7-d2b9ece4dbd6"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-surface",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1411,
+      "output_tokens": 895,
+      "calls": 2,
+      "dollars": 0.00246968,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2471,
+      "ledger_ids": [
+        "210151b9-f3fc-4c82-b783-73b2e6ea5448",
+        "e87c083b-0856-4ed2-8178-49a95258cff1"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-hollows-end",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1099,
+      "output_tokens": 465,
+      "calls": 2,
+      "dollars": 0.00147536,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1476,
+      "ledger_ids": [
+        "ecbdab37-993b-4a96-be4e-a191f0e972a0",
+        "a7a28292-e106-47e5-9d81-c8b3032d2fe6"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-spires-rest",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1652,
+      "output_tokens": 1041,
+      "calls": 2,
+      "dollars": 0.00285764,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2859,
+      "ledger_ids": [
+        "f21fba08-9d4f-496c-a012-0515f30b137f",
+        "b916f736-b74c-4d96-8af3-c9f5eff50df4"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-warren",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1319,
+      "output_tokens": 315,
+      "calls": 1,
+      "dollars": 0.0011576,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1158,
+      "ledger_ids": [
+        "5e312e7e-0666-4853-89db-dad0d3e6a037"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-entry-room",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1098,
+      "output_tokens": 786,
+      "calls": 1,
+      "dollars": 0.0020112,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2012,
+      "ledger_ids": [
+        "22d53052-f207-40c3-b1ca-80cc2f156fcd"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-dangerous-back-room",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1096,
+      "output_tokens": 805,
+      "calls": 1,
+      "dollars": 0.0020484,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2049,
+      "ledger_ids": [
+        "c90dd6ae-9c21-4ceb-b2af-82cbea837975"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-upper-floor-room",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1077,
+      "output_tokens": 662,
+      "calls": 1,
+      "dollars": 0.0017548,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1755,
+      "ledger_ids": [
+        "cc16ad6a-e67c-4b53-ae74-7741ae69c205"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3413,
+      "output_tokens": 1294,
+      "calls": 2,
+      "dollars": 0.0040116,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4013,
+      "ledger_ids": [
+        "5eec2681-afd6-44d0-95bf-0a8da62e9a19",
+        "ac213425-4013-4a49-aa12-5c19cdeafbc1"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway-early",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1827,
+      "output_tokens": 1268,
+      "calls": 2,
+      "dollars": 0.00338676,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3388,
+      "ledger_ids": [
+        "8f2f6564-018b-4ec3-945e-6972016b22bc",
+        "12537c59-11f7-4b23-8970-5510346ae93b"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-supply-closet",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1066,
+      "output_tokens": 546,
+      "calls": 2,
+      "dollars": 0.0016343999999999998,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1635,
+      "ledger_ids": [
+        "5f34102c-6d64-495c-8515-3868a4acc274",
+        "f15fbcdd-9d2f-4888-acee-eda4f02bc0a1"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1956,
+      "output_tokens": 1309,
+      "calls": 2,
+      "dollars": 0.00351524,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3516,
+      "ledger_ids": [
+        "2353ed36-e591-4f41-98f8-53cedec288a5",
+        "85f9e6fb-0691-4df2-acd2-5d370254ec7e"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk-early",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2044,
+      "output_tokens": 1403,
+      "calls": 2,
+      "dollars": 0.00373844,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3739,
+      "ledger_ids": [
+        "bc75b1dd-b1ab-4449-b020-03b37fbe4d12",
+        "7604dc62-6550-4cfd-8c21-7fb3aceb43e7"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-tide-post",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1664,
+      "output_tokens": 1067,
+      "calls": 2,
+      "dollars": 0.00291444,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2915,
+      "ledger_ids": [
+        "3474904a-fcd1-4d5c-a867-0f826085666d",
+        "c8493b74-4c2e-49d6-8d89-d54c325fe739"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-mournwell-lane",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 4953,
+      "output_tokens": 1003,
+      "calls": 2,
+      "dollars": 0.0039872,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3988,
+      "ledger_ids": [
+        "8b5c5d35-061a-492a-acf0-0e8c17ead41b",
+        "9198305a-059e-480d-bd60-493057141bb0"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-larkspur-rooftops",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3245,
+      "output_tokens": 580,
+      "calls": 2,
+      "dollars": 0.00250104,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2502,
+      "ledger_ids": [
+        "b05a0a66-bf49-4134-848a-6c2c8fa2a5ff",
+        "fc384242-a007-410c-8b0c-e983567f76c9"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-boarding-house-hallway",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2182,
+      "output_tokens": 567,
+      "calls": 2,
+      "dollars": 0.00209208,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2093,
+      "ledger_ids": [
+        "5b60c37f-f0fd-492c-a97c-f038d5581fa4",
+        "ab73cba8-ff3b-4aa2-b0b2-0e0691c18afa"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-celestial-spire",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2144,
+      "output_tokens": 541,
+      "calls": 2,
+      "dollars": 0.0020248799999999997,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2026,
+      "ledger_ids": [
+        "27fdb125-7d30-4c48-9d98-86372844c122",
+        "0212267b-e774-4f0c-ab58-d091c09727bf"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-bell-of-saint-aravel",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2946,
+      "output_tokens": 1162,
+      "calls": 2,
+      "dollars": 0.00358652,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3588,
+      "ledger_ids": [
+        "bc73894c-7783-4fed-807c-8549bee6f648",
+        "ab66d3b1-7362-4683-99cc-53991477674d"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-sovereigns-circle",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2889,
+      "output_tokens": 1017,
+      "calls": 2,
+      "dollars": 0.00327372,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3275,
+      "ledger_ids": [
+        "2f915711-8e91-4869-a1e1-086c5bd8901e",
+        "bf62eac1-e5c3-46a9-aec5-5b3ce6e980bc"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-deep",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3670,
+      "output_tokens": 569,
+      "calls": 2,
+      "dollars": 0.00260936,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2611,
+      "ledger_ids": [
+        "2373a20c-fb17-4ae2-8f97-e32606ff1a25",
+        "18bd7cbf-2113-4304-9282-897b214b37ad"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-obsidian-maw",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3423,
+      "output_tokens": 825,
+      "calls": 2,
+      "dollars": 0.003052,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3053,
+      "ledger_ids": [
+        "b8534a41-389f-41a2-b201-599ef8007a7f",
+        "93ca6462-d616-4aa2-be19-99e0d938d4ab"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-tunnel-upward",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3616,
+      "output_tokens": 954,
+      "calls": 2,
+      "dollars": 0.00338732,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3388,
+      "ledger_ids": [
+        "a6f4e68e-6812-41f3-87bf-6e917c352705",
+        "2e6cabd8-9805-42af-beb8-5c467126e60a"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-surface",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2691,
+      "output_tokens": 889,
+      "calls": 2,
+      "dollars": 0.00291848,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2919,
+      "ledger_ids": [
+        "09e06f8d-8a58-4aee-a18d-77e0216bcd1a",
+        "8b5e25ed-e67b-4076-b0b7-a372df671e83"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-hollows-end",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2293,
+      "output_tokens": 654,
+      "calls": 2,
+      "dollars": 0.00229,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2291,
+      "ledger_ids": [
+        "fc54bd50-6ccf-4303-b7fb-e57e85d4014c",
+        "41c53ca4-78ba-431a-a91f-720947501de5"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-spires-rest",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2874,
+      "output_tokens": 985,
+      "calls": 2,
+      "dollars": 0.00318324,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3185,
+      "ledger_ids": [
+        "a4a07c34-11b3-4f6e-94cd-44193e3f8f7f",
+        "d9914cd8-514f-474b-a245-d6cff24e10d7"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-warren",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1319,
+      "output_tokens": 282,
+      "calls": 1,
+      "dollars": 0.0010916,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1092,
+      "ledger_ids": [
+        "60bc669d-9f21-42a7-906c-0b40effc0635"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-entry-room",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1095,
+      "output_tokens": 812,
+      "calls": 1,
+      "dollars": 0.00206212,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2063,
+      "ledger_ids": [
+        "4c475493-ea6c-423c-bd05-fbdfb48154c3"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-dangerous-back-room",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 965,
+      "output_tokens": 904,
+      "calls": 1,
+      "dollars": 0.00219924,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2200,
+      "ledger_ids": [
+        "6f1a3d8e-fdad-4730-b4db-d684236df0d9"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-upper-floor-room",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1065,
+      "output_tokens": 514,
+      "calls": 1,
+      "dollars": 0.00145456,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1455,
+      "ledger_ids": [
+        "c4249917-2d66-4fe2-8e86-f8d24a40fd79"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1182,
+      "output_tokens": 618,
+      "calls": 1,
+      "dollars": 0.0017088,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1709,
+      "ledger_ids": [
+        "c9efc30d-36ef-4316-85e5-eccfb741b0c5"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1186,
+      "output_tokens": 594,
+      "calls": 1,
+      "dollars": 0.0016624,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1663,
+      "ledger_ids": [
+        "636bd5e0-5997-4282-9bb1-e48ef9a32933"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1041,
+      "output_tokens": 535,
+      "calls": 1,
+      "dollars": 0.00149208,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1493,
+      "ledger_ids": [
+        "18d7f4bf-42f0-418c-99cb-7e31acfc93f4"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-named-siblings",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 957,
+      "output_tokens": 631,
+      "calls": 1,
+      "dollars": 0.00165048,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1651,
+      "ledger_ids": [
+        "dac4c0cb-31f8-4513-9b30-209913254dcc"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-saturated-items",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 740,
+      "output_tokens": 438,
+      "calls": 1,
+      "dollars": 0.001172,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1172,
+      "ledger_ids": [
+        "6200bfbc-0cd2-40bf-ae00-0f6eaa69b191"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-geometry-stairs",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 986,
+      "output_tokens": 335,
+      "calls": 1,
+      "dollars": 0.0010644,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1065,
+      "ledger_ids": [
+        "6e397268-3fbb-4535-a8ca-6ee1502bf317"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-restored-conversation",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1312,
+      "output_tokens": 122,
+      "calls": 1,
+      "dollars": 0.0007688,
+      "provider_cost_missing": 0,
+      "accounted_micros": 769,
+      "ledger_ids": [
+        "8169a9f1-5352-4735-a2e9-eeae580bebca"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1040,
+      "output_tokens": 469,
+      "calls": 1,
+      "dollars": 0.00135968,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1360,
+      "ledger_ids": [
+        "3ed6cd0b-52bf-49b4-9084-35a9e97ad75d"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 20,
+      "output_tokens": 609,
+      "calls": 1,
+      "dollars": 0.00127264,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1273,
+      "ledger_ids": [
+        "65a07d3c-3160-4e16-b6ae-b659abc97e00"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 17,
+      "output_tokens": 520,
+      "calls": 1,
+      "dollars": 0.00109344,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1094,
+      "ledger_ids": [
+        "f1f46f10-6e9b-4c99-aaf2-4c6d58493eb6"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-named-siblings",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 61,
+      "output_tokens": 574,
+      "calls": 1,
+      "dollars": 0.00121392,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1214,
+      "ledger_ids": [
+        "2f561597-37de-4869-b747-d4d664b56b28"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-saturated-items",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 740,
+      "output_tokens": 474,
+      "calls": 1,
+      "dollars": 0.001244,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1244,
+      "ledger_ids": [
+        "26e40b33-e315-4df5-8fa5-25dbe3feef15"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-geometry-stairs",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 58,
+      "output_tokens": 300,
+      "calls": 1,
+      "dollars": 0.00066032,
+      "provider_cost_missing": 0,
+      "accounted_micros": 661,
+      "ledger_ids": [
+        "03303b23-bd81-4ad0-916f-4478aa190046"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-restored-conversation",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1312,
+      "output_tokens": 112,
+      "calls": 1,
+      "dollars": 0.0007488,
+      "provider_cost_missing": 0,
+      "accounted_micros": 749,
+      "ledger_ids": [
+        "36a17bed-4d0c-47f6-8051-06c177c0eb96"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 16,
+      "output_tokens": 568,
+      "calls": 1,
+      "dollars": 0.00118904,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1190,
+      "ledger_ids": [
+        "29400a5f-6a5d-448e-8bd1-8b865a349b47"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 20,
+      "output_tokens": 613,
+      "calls": 1,
+      "dollars": 0.00128064,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1281,
+      "ledger_ids": [
+        "c7e2dfd4-7c40-481c-bfad-ced1466be591"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 17,
+      "output_tokens": 544,
+      "calls": 1,
+      "dollars": 0.00114144,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1142,
+      "ledger_ids": [
+        "473a5c78-3426-4e0c-a16c-190dabce9635"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-named-siblings",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 61,
+      "output_tokens": 607,
+      "calls": 1,
+      "dollars": 0.00127992,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1280,
+      "ledger_ids": [
+        "0464933a-a0e4-4061-861b-ad2d0c96a695"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-saturated-items",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 740,
+      "output_tokens": 477,
+      "calls": 1,
+      "dollars": 0.00125,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1250,
+      "ledger_ids": [
+        "356f87dc-8732-4277-b715-ea0689d37d1c"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-geometry-stairs",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 58,
+      "output_tokens": 406,
+      "calls": 1,
+      "dollars": 0.00087232,
+      "provider_cost_missing": 0,
+      "accounted_micros": 873,
+      "ledger_ids": [
+        "787e9b79-e6a9-4f3d-bab0-dd2ae3cd424e"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-restored-conversation",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1312,
+      "output_tokens": 110,
+      "calls": 1,
+      "dollars": 0.0007448,
+      "provider_cost_missing": 0,
+      "accounted_micros": 745,
+      "ledger_ids": [
+        "0a2ad38b-b2fe-4d3c-bd68-6b637ac6d9be"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 16,
+      "output_tokens": 595,
+      "calls": 1,
+      "dollars": 0.00124304,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1244,
+      "ledger_ids": [
+        "c570b632-4464-4723-bbb9-d0fc56ae0895"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 20,
+      "output_tokens": 667,
+      "calls": 1,
+      "dollars": 0.00138864,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1389,
+      "ledger_ids": [
+        "93338e72-7155-4be9-81c2-f64d582b4ab8"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 17,
+      "output_tokens": 608,
+      "calls": 1,
+      "dollars": 0.00126944,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1270,
+      "ledger_ids": [
+        "0a35a6b7-95d8-42b1-93b1-5e1ca746ed00"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-named-siblings",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 61,
+      "output_tokens": 574,
+      "calls": 1,
+      "dollars": 0.00121392,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1214,
+      "ledger_ids": [
+        "f3747582-3df7-469f-aefb-45778f9bcf01"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-saturated-items",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 598,
+      "output_tokens": 491,
+      "calls": 1,
+      "dollars": 0.00122688,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1227,
+      "ledger_ids": [
+        "c2b4db8d-debe-4067-979c-fd28285b5c53"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-geometry-stairs",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 58,
+      "output_tokens": 399,
+      "calls": 1,
+      "dollars": 0.00085832,
+      "provider_cost_missing": 0,
+      "accounted_micros": 859,
+      "ledger_ids": [
+        "76f1587c-14ae-4717-a381-9d3b16c8da79"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-restored-conversation",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1312,
+      "output_tokens": 112,
+      "calls": 1,
+      "dollars": 0.0007488,
+      "provider_cost_missing": 0,
+      "accounted_micros": 749,
+      "ledger_ids": [
+        "dac21082-3d34-4f4c-8a81-224f76476b03"
+      ],
+      "error": null
+    }
+  ],
+  "shared_authorization": {
+    "limit_micros": 4000000,
+    "authorizations": [
+      {
+        "previous_limit_micros": 3000000,
+        "limit_micros": 4000000,
+        "user_instruction": "yes, you can raise the cap to $4",
+        "recorded_at": "2026-09-10T18:33:32.414796+00:00",
+        "previous_ledger_sha256": "5c37daed5560f49856cb6b5450848930ce967ba6ba3f2a9224e97b15c814a7d8"
+      }
+    ],
+    "entries": 3561,
+    "accounted_micros": 3546902,
+    "note": "This is a read-only snapshot of the cumulative ledger, which also covers other evaluation programs. No prior charge was cleared."
+  }
+}

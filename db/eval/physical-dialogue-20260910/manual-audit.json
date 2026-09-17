@@ -1,0 +1,220 @@
+{
+  "audit_type": "Manual reading of all retained after reactions, narrations, engine effects and immediate/follow-up facts; arm identity visible; not a formal contradiction annotation set",
+  "sources": {
+    "db/eval/dialogue-2026-09-10/dialogue.json": "d0fabad525d21f0b33ecccfb3bd0f04acb50dd7c1c67ce89d327c60886c0c101",
+    "db/eval/physical-dialogue-20260910/dialogue.json": "f68386c086ad2c45596c1bbe9490979b543092ca17e72a46e62d8514255ae7d4"
+  },
+  "coverage": {
+    "after_rows_reviewed": 36,
+    "after_rows_retained": 36,
+    "repetitions": 4,
+    "cases": 9
+  },
+  "action_distribution_matches_before": true,
+  "state_failure_rows": {
+    "before": [
+      "stay-behind:1",
+      "stay-behind:2",
+      "stay-behind:3",
+      "stay-behind:4"
+    ],
+    "after": [
+      "stay-behind:1",
+      "stay-behind:2",
+      "stay-behind:3",
+      "stay-behind:4"
+    ]
+  },
+  "reviewed_rows": [
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 1,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 2,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 3,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 4,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 1,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 2,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 3,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 4,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 1,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 2,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 3,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 4,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "give-owned-key",
+      "rep": 1,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "give-owned-key",
+      "rep": 2,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "give-owned-key",
+      "rep": 3,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "give-owned-key",
+      "rep": 4,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 1,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 2,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 3,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 4,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 1,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 2,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 3,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 4,
+      "assessment": "no regression observed"
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 1,
+      "assessment": "known unscored prose/state mismatch: both reaction and narration claim the key transfer that the engine rejected because the key was already on the floor"
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 2,
+      "assessment": "known unscored prose/state mismatch: both reaction and narration claim the key transfer that the engine rejected because the key was already on the floor"
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 3,
+      "assessment": "known unscored prose/state mismatch: both reaction and narration claim the key transfer that the engine rejected because the key was already on the floor"
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 4,
+      "assessment": "known unscored prose/state mismatch: both reaction and narration claim the key transfer that the engine rejected because the key was already on the floor"
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 1,
+      "assessment": "immediate ceasefire is correct; the fixture's later attack restores hostility and does not retroactively contradict the truce"
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 2,
+      "assessment": "immediate ceasefire is correct; the fixture's later attack restores hostility and does not retroactively contradict the truce"
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 3,
+      "assessment": "immediate ceasefire is correct; the fixture's later attack restores hostility and does not retroactively contradict the truce"
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 4,
+      "assessment": "immediate ceasefire is correct; the fixture's later attack restores hostility and does not retroactively contradict the truce"
+    },
+    {
+      "id": "stay-behind",
+      "rep": 1,
+      "assessment": "known requested-state miss: the NPC refuses to stop following because of her existing promise and therefore follows through the later move"
+    },
+    {
+      "id": "stay-behind",
+      "rep": 2,
+      "assessment": "known requested-state miss: the NPC refuses to stop following because of her existing promise and therefore follows through the later move"
+    },
+    {
+      "id": "stay-behind",
+      "rep": 3,
+      "assessment": "known requested-state miss: the NPC refuses to stop following because of her existing promise and therefore follows through the later move"
+    },
+    {
+      "id": "stay-behind",
+      "rep": 4,
+      "assessment": "known requested-state miss: the NPC refuses to stop following because of her existing promise and therefore follows through the later move"
+    }
+  ],
+  "bounded_findings": [
+    "All 36 after exchanges completed with the pinned model, without a fallback or call error. The eight non-staying cases reached every declared state in every repetition.",
+    "The action/effect distribution for every case is identical to the matched before arm. No new state or agency regression was observed.",
+    "Stay-behind remains a requested-state miss in all four repetitions: the NPC chooses none rather than stop_following, consistently citing the promise to travel together. The resulting follower move is the engine consequence of that motivated refusal.",
+    "Reject-stale-gift remains a visible prose/state mismatch in all four repetitions: the proposed give action is rejected because the key is already on the floor, while reaction and narration say the key is handed over. The same behavior occurs in all four baseline repetitions.",
+    "Renewed-fighting narrates the immediate accepted truce correctly. Its later scripted attack restores hostility; that later fact does not contradict the preceding exchange.",
+    "No signed, prose-digested human annotation set was supplied. The formal contradiction metric therefore remains unavailable; this audit does not relabel it as zero.",
+    "The corpus has no durable-experience fixture and does not measure memory fidelity across turns, voice, personality, physical item use or general realism."
+  ],
+  "promotion_decision": "Promote as the kept request-identity baseline. The new first-pass prompt includes the NPC's condition; all declared metrics with available measurements are noise, state/action distributions are unchanged, and the manual audit found no new regression. Historical evidence and both known weaknesses remain retained."
+}

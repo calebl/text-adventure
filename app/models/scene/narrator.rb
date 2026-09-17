@@ -55,7 +55,14 @@ class Scene::Narrator
   # nothing arrives with a `fact:` instead (`Playthrough::Turn#reach_fact`).
   DOING = {
     examine: "The player is looking more closely at something that is here. " \
-             "Describe it. Nothing changes hands, nobody arrives and nobody leaves."
+             "Describe it. Nothing changes hands, nobody arrives and nobody leaves.",
+    # The physical-action corpus caught the same state/event confusion as the
+    # pickup corpus: a consumed item is absent because THIS turn consumed it.
+    # Keep this clarification on physical turns so other measured inputs stay
+    # unchanged. The receipt still owns state; this sentence owns no guarantee.
+    use: "The physical result above belongs to this exact typed command. " \
+         "Narrate the attempt and its immediate result now. The post-action inventory " \
+         "is why a consumed or burned item is absent; do not portray this command as a redundant repeat."
   }.freeze
 
   def initialize(playthrough)

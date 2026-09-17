@@ -1,0 +1,179 @@
+{
+  "before": "physical-classifier-revised-20260910",
+  "after": "physical-classifier-final-20260914",
+  "corpus_digest": "abc2535c473693d9",
+  "before_request_identity": {
+    "version": 2,
+    "digest": "ddb96ae133382e3c",
+    "scope": "known_physical_token_bindings"
+  },
+  "after_request_identity": {
+    "version": 2,
+    "digest": "8cab930ca8f08d00",
+    "scope": "known_physical_token_bindings"
+  },
+  "before_concurrency": 2,
+  "after_concurrency": 1,
+  "suppressed_metrics": [
+    "latency_median",
+    "latency_p95"
+  ],
+  "verdicts": [
+    {
+      "metric": "strict_accuracy",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "strict_accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.9516,
+          "max": 0.955,
+          "median": 0.9516,
+          "range": 0.0033999999999999586
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9516,
+          "max": 0.955,
+          "median": 0.9533,
+          "range": 0.0033999999999999586
+        },
+        "delta": 0.0017,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0033999999999999586
+      }
+    },
+    {
+      "metric": "accuracy",
+      "direction": "WORSE",
+      "verdict": {
+        "code": "accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.9563,
+          "max": 0.9592,
+          "median": 0.9563,
+          "range": 0.0029000000000000137
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9504,
+          "max": 0.9563,
+          "median": 0.9519,
+          "range": 0.005900000000000016
+        },
+        "delta": -0.0044,
+        "p_value": 0.114286,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.005900000000000016
+      }
+    },
+    {
+      "metric": "intent_accuracy",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "intent_accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.9883,
+          "max": 0.9883,
+          "median": 0.9883,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9883,
+          "max": 0.9913,
+          "median": 0.9913,
+          "range": 0.0030000000000000027
+        },
+        "delta": 0.003,
+        "p_value": 0.142857,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0030000000000000027
+      }
+    },
+    {
+      "metric": "refusal_agreement",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "refusal_agreement",
+        "before": {
+          "runs": 4,
+          "min": 0.9585,
+          "max": 0.9619,
+          "median": 0.9585,
+          "range": 0.0033999999999999586
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9585,
+          "max": 0.9619,
+          "median": 0.9619,
+          "range": 0.0033999999999999586
+        },
+        "delta": 0.0034,
+        "p_value": 0.485714,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0033999999999999586
+      }
+    },
+    {
+      "metric": "closed_set_misses",
+      "direction": "WORSE",
+      "verdict": {
+        "code": "closed_set_misses",
+        "before": {
+          "runs": 4,
+          "min": 10.0,
+          "max": 11.0,
+          "median": 11.0,
+          "range": 1.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 12.0,
+          "max": 14.0,
+          "median": 13.0,
+          "range": 2.0
+        },
+        "delta": 2.0,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 2.0
+      }
+    },
+    {
+      "metric": "failures",
+      "direction": "unchanged",
+      "verdict": {
+        "code": "failures",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0
+      }
+    }
+  ]
+}

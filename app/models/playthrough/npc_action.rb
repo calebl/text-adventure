@@ -13,17 +13,21 @@ class Playthrough::NpcAction
     def applied? = status == "applied"
   end
 
-  attr_reader :playthrough, :character
+  attr_reader :playthrough, :character, :offered_item
 
-  def initialize(playthrough, character)
+  def initialize(playthrough, character, offered_item: nil)
     @playthrough = playthrough
     @character = character
+    @offered_item = offered_item
   end
 
   def choices
     available = { NONE => "Speak without transferring anything or changing an agreement." }
     return available unless present?
 
+    if offered_item && playthrough.carried.exists?(id: offered_item.id)
+      available["accept:#{offered_item.id}"] = "Accept the offered #{offered_item.name} from #{playthrough.character.fullname}; it becomes yours."
+    end
     playthrough.items_held_by(character).each do |item|
       available["give:#{item.id}"] = "Give #{item.name} to #{playthrough.character.fullname}." if playthrough.character
     end
@@ -47,6 +51,10 @@ class Playthrough::NpcAction
       end
 
       fact = case choice
+      when /\Aaccept:(\d+)\z/
+        item = playthrough.carried.find(Regexp.last_match(1))
+        item.update!(character: character, location: nil, **Location::Placement.unplaced)
+        "#{character.fullname} accepted #{item.name}; the player no longer carries it and #{character.fullname} now holds it."
       when /\Agive:(\d+)\z/
         item = playthrough.items_held_by(character).find(Regexp.last_match(1))
         item.update!(character: nil, location: nil, **Location::Placement.unplaced)

@@ -59,6 +59,15 @@ class Playthrough::RefusalTest < ActiveSupport::TestCase
     assert_match(/Nothing has changed/, refusal.text)
   end
 
+  test "taking something immovable is refused before it can enter inventory" do
+    refusal = Playthrough::Refusal.for(intent(:take, item: @press), typed: "take the filing press")
+
+    assert_equal :immovable, refusal.kind
+    assert_match(/filing press is immovable and does not move for anybody/, refusal.text)
+    assert_match(/cannot be picked up/, refusal.text)
+    assert_no_match(/die/, refusal.text)
+  end
+
   test "a throw of something that does move earns no refusal at all" do
     handy = create(:item, name: "Ward Office 12 daybook", location: @here, character: nil)
 

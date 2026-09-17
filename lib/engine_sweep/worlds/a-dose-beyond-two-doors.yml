@@ -1,0 +1,101 @@
+# A finite fixture for physical consequences: food, one healing dose, a key
+# which opens a real barrier, and a jammed way whose force check cannot pass.
+# Cal's strength 3 is valid; forcing applies a penalty of 4, so this walk
+# never depends on the d20 or on the database's row ids.
+format: 2
+universe:
+  physics: Ordinary physics.
+  technology: Keys, locks and hand tools.
+  weapons: Wooden staves.
+  geographies: A workshop, yard and storerooms.
+  civilizations: A small trading town.
+  history: Traders built the workshop together.
+  economics: Goods traded for coins.
+  politics: A town council keeps the peace.
+  religion: The town keeps its own festivals.
+  races:
+  - name: Townsfolk
+    description: Ordinary people of the town.
+story:
+  title: A Dose Beyond Two Doors
+  genre: town adventure
+  start_time: '2026-09-10T12:00:00Z'
+  preface: Supplies wait beside a locked storeroom and a jammed loft door.
+  summary: Cal can use the supplies and open a way through the workshop.
+opening_scene:
+  location: Workshop
+  characters: [Cal]
+  description: You stand beside the workbench and the locked storeroom door.
+  summary: Cal enters the workshop.
+characters:
+- fullname: Cal
+  nickname: Cal
+  race: Townsfolk
+  age: 30
+  sex: male
+  is_protagonist: true
+  is_companion: false
+  backstory: A trader returning for supplies.
+  personality: Patient and practical.
+  appearance: A travel-worn coat.
+  likes: Well-kept tools.
+  dislikes: Waste.
+  fears: Losing needed supplies.
+  stats: {level: 3, hit_die: 8, strength: 3, dexterity: 12, will: 12}
+  items:
+  - name: travel ration
+    description: A single wrapped portion of bread and cheese.
+    properties: '{}'
+    use_kind: food
+locations:
+- name: Workshop
+  detail_level: realized
+  population: nobody
+  opening: true
+  description: A quiet workroom beside a yard and a locked storeroom.
+  teaser: A workshop with supplies.
+  lore: Traders mend their tools here.
+  items:
+  - name: healing draught
+    description: A sealed bottle holding one dose of medicine.
+    properties: '{}'
+    use_kind: healing
+  - name: brass key
+    description: The brass key to the storeroom.
+    properties: '{}'
+    use_kind: key
+  - name: iron lever
+    description: A sturdy iron tool for prying.
+    properties: '{}'
+    use_kind: lever
+- name: Yard
+  detail_level: realized
+  population: nobody
+  description: A sheltered yard beside the workshop.
+  teaser: A sheltered yard.
+  lore: Deliveries arrive here each morning.
+- name: Storeroom
+  detail_level: realized
+  population: nobody
+  description: An empty storeroom beneath a loft with a jammed door.
+  teaser: A locked storeroom.
+  lore: The brass key opens its workshop door.
+- name: Loft
+  detail_level: realized
+  population: nobody
+  description: An empty loft above the storeroom.
+  teaser: A loft behind a jammed door.
+  lore: Its door swelled during a wet winter.
+connections:
+- between: [Workshop, Yard]
+  distance: adjacent
+  travel_method: walking
+- between: [Workshop, Storeroom]
+  distance: adjacent
+  travel_method: walking
+  barrier: keyed
+  key_template: brass key
+- between: [Storeroom, Loft]
+  distance: a short walk
+  travel_method: taking stairs
+  barrier: jammed

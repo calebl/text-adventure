@@ -39,7 +39,10 @@
 # with a `kind` -- the ambiguity refusal, the "there is no X called Y" refusal
 # and the whole-grammar refusal all come back as prose. So the offline floor can
 # report WHETHER a line was refused and never WHICH KIND, and refusal-kind
-# agreement is a model-only figure. It also has no `also_named`: nothing in a
+# agreement is a model-only figure. Physical attempts can also return an
+# unresolved Intent; apply the same refusal gate as Mechanics before counting
+# that as a played answer. The resulting refusal stays in the existing count,
+# without claiming a new refusal-kind measurement. It also has no `also_named`: nothing in a
 # fixed grammar produces one, which is why `one-act-per-line.yml` reaches the
 # two-name refusal by the ambiguity rule instead and says so.
 #
@@ -93,19 +96,24 @@ class Eval::Classifier::Offline
     reading = mechanics.send(:parse, line.typed)
 
     if reading.intent
-      answer = Eval::Classifier::Corpus::Answer.new(
-        intent: reading.intent.action,
-        target: Playthrough::Classifier.label_for(reading.intent.subject),
-        also_named: Playthrough::Classifier.label_for(reading.intent.also_named)
-      )
+      if reading.intent.refused?
+        refusal = Playthrough::Refusal.for(reading.intent, typed: line.typed,
+                                          offered: standing.offered_for(reading.intent.action))
+        return refused(line, refusal.to_s)
+      end
+
+      answer = Eval::Classifier::Corpus::Answer.from_intent(reading.intent)
       outcome = line.accepts?(answer) ? :resolved : :wrong
       return Reading.new(line: line, outcome: outcome, got: answer.to_s)
     end
 
     return Reading.new(line: line, outcome: :unparsed, got: nil) if reading.refusal.blank?
 
-    outcome = line.refused? ? :refused : :over_refused
-    Reading.new(line: line, outcome: outcome, got: reading.refusal.to_s)
+    refused(line, reading.refusal.to_s)
+  end
+
+  def refused(line, explanation)
+    Reading.new(line: line, outcome: line.refused? ? :refused : :over_refused, got: explanation)
   end
 
   # THE FLOOR AS A NUMBER, printed beside the model's by `Eval::Classifier::Report`.

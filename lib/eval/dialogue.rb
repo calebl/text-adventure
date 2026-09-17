@@ -11,6 +11,7 @@ module Eval::Dialogue
   CORPUS = Rails.root.join("test/fixtures/files/dialogue_corpus.json")
   STUDY = Rails.root.join("db/eval/adversarial-20260909")
   RESULTS = "dialogue.json".freeze
+  BASELINE = "physical-dialogue-20260910".freeze
 
   def self.cases = JSON.parse(CORPUS.read).fetch("cases")
   def self.model = JSON.parse(STUDY.join("npc-after.json").read).fetch("model")

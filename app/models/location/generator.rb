@@ -847,6 +847,13 @@ class Location::Generator
         bolted to it -- something a person could put in a pocket or under an arm
       - Each one must be consistent with the description you just wrote, and worth
         the player noticing
+      - Pick its use_kind from the supplied physical profiles. Ordinary is the
+        default. Food and drink can be consumed without healing; healing is only
+        a restorative dose this world permits. Firestarters burn combustible
+        objects, levers pry jammed passages, lockpicks try locks, and a key only
+        opens a passage explicitly matched to it. Mark combustible only when an
+        ordinary firestarter can destroy the object. The engine owns the effects
+        and their amounts; its description cannot grant extra powers
       - If a thing has WRITING on it -- a note, a letter, a handbill, a label, a
         docket, a page, a sign -- mark it readable and WRITE OUT WHAT IS WRITTEN
         ON IT, exactly as it appears on the thing. The words themselves, not a

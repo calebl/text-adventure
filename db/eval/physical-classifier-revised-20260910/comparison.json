@@ -1,0 +1,439 @@
+{
+  "before": "classifier-2026-09-10",
+  "after": "physical-classifier-revised-20260910/historical-339",
+  "before_corpus_digest": "2155073129d29086",
+  "after_corpus_digest": "2155073129d29086",
+  "before_request_identity": {
+    "version": 1,
+    "digest": "022ef660ddd8547a"
+  },
+  "after_request_identity": {
+    "version": 2,
+    "digest": "ddb96ae133382e3c",
+    "scope": "known_physical_token_bindings"
+  },
+  "before_concurrency": 2,
+  "after_concurrency": 2,
+  "suppressed_metrics": [],
+  "verdicts": [
+    {
+      "metric": "strict_accuracy",
+      "verdict": {
+        "code": "strict_accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.9364,
+          "max": 0.947,
+          "median": 0.9417,
+          "range": 0.010599999999999943
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.947,
+          "max": 0.9505,
+          "median": 0.9505,
+          "range": 0.0035000000000000586
+        },
+        "delta": 0.0088,
+        "p_value": 0.057143,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.010599999999999943
+      }
+    },
+    {
+      "metric": "accuracy",
+      "verdict": {
+        "code": "accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.941,
+          "max": 0.9528,
+          "median": 0.94395,
+          "range": 0.011800000000000033
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9469,
+          "max": 0.9499,
+          "median": 0.9499,
+          "range": 0.0030000000000000027
+        },
+        "delta": 0.006,
+        "p_value": 0.428571,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.011800000000000033
+      }
+    },
+    {
+      "metric": "intent_accuracy",
+      "verdict": {
+        "code": "intent_accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.9823,
+          "max": 0.9882,
+          "median": 0.9853,
+          "range": 0.005900000000000016
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9794,
+          "max": 0.9794,
+          "median": 0.9794,
+          "range": 0.0
+        },
+        "delta": -0.0059,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.005900000000000016
+      }
+    },
+    {
+      "metric": "refusal_agreement",
+      "verdict": {
+        "code": "refusal_agreement",
+        "before": {
+          "runs": 4,
+          "min": 0.9505,
+          "max": 0.9576,
+          "median": 0.9522999999999999,
+          "range": 0.007099999999999995
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9611,
+          "max": 0.9647,
+          "median": 0.9611,
+          "range": 0.0036000000000000476
+        },
+        "delta": 0.0088,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.007099999999999995
+      }
+    },
+    {
+      "metric": "closed_set_misses",
+      "verdict": {
+        "code": "closed_set_misses",
+        "before": {
+          "runs": 4,
+          "min": 12.0,
+          "max": 15.0,
+          "median": 13.5,
+          "range": 3.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 10.0,
+          "max": 11.0,
+          "median": 10.0,
+          "range": 1.0
+        },
+        "delta": -3.5,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 3.0
+      }
+    },
+    {
+      "metric": "latency_median",
+      "verdict": {
+        "code": "latency_median",
+        "before": {
+          "runs": 4,
+          "min": 0.6004,
+          "max": 0.6626,
+          "median": 0.6129,
+          "range": 0.06219999999999992
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9009,
+          "max": 1.0656,
+          "median": 0.98695,
+          "range": 0.16470000000000007
+        },
+        "delta": 0.3741,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.16470000000000007
+      }
+    },
+    {
+      "metric": "latency_p95",
+      "verdict": {
+        "code": "latency_p95",
+        "before": {
+          "runs": 4,
+          "min": 0.9896,
+          "max": 1.1845,
+          "median": 0.998,
+          "range": 0.19490000000000007
+        },
+        "after": {
+          "runs": 4,
+          "min": 1.218,
+          "max": 1.3933,
+          "median": 1.31195,
+          "range": 0.1753
+        },
+        "delta": 0.3139,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.19490000000000007
+      }
+    },
+    {
+      "metric": "failures",
+      "verdict": {
+        "code": "failures",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0
+      }
+    }
+  ],
+  "label_changes": [
+    {
+      "id": "move-closet-behind-me",
+      "historical_answers": [
+        "move -> The Supply Closet"
+      ],
+      "current_answers": [
+        "use -> nothing"
+      ],
+      "current_got": [
+        {
+          "rep": 1,
+          "answer": {
+            "intent": "move",
+            "target": "The Supply Closet",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 2,
+          "answer": {
+            "intent": "move",
+            "target": "The Supply Closet",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 3,
+          "answer": {
+            "intent": "move",
+            "target": "The Supply Closet",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 4,
+          "answer": {
+            "intent": "move",
+            "target": "The Supply Closet",
+            "also_named": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "drop-daybook-hand-over",
+      "historical_answers": [
+        "drop -> Ward Office 12 daybook",
+        "talk -> Halkett Rowe"
+      ],
+      "current_answers": [
+        "use -> Offer Ward Office 12 daybook to Halkett Rowe; they may refuse"
+      ],
+      "current_got": [
+        {
+          "rep": 1,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 2,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 3,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 4,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+            "also_named": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "drop-slate-give",
+      "historical_answers": [
+        "drop -> Assize tide-slate",
+        "talk -> Neb Halloran"
+      ],
+      "current_answers": [
+        "use -> Offer Assize tide-slate to Neb Halloran; they may refuse"
+      ],
+      "current_got": [
+        {
+          "rep": 1,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Assize tide-slate to Neb Halloran; they may refuse",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 2,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Assize tide-slate to Neb Halloran; they may refuse",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 3,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Assize tide-slate to Neb Halloran; they may refuse",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 4,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Assize tide-slate to Neb Halloran; they may refuse",
+            "also_named": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "real-give-him-your-daybook",
+      "historical_answers": [
+        "drop -> Ward Office 12 daybook"
+      ],
+      "current_answers": [
+        "use -> Offer Ward Office 12 daybook to Halkett Rowe; they may refuse"
+      ],
+      "current_got": [
+        {
+          "rep": 1,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 2,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 3,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 4,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+            "also_named": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "real-give-him-the-index",
+      "historical_answers": [
+        "drop -> nothing"
+      ],
+      "current_answers": [
+        "use -> nothing"
+      ],
+      "current_got": [
+        {
+          "rep": 1,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+            "also_named": null
+          }
+        },
+        {
+          "rep": 2,
+          "answer": {
+            "intent": "use",
+            "target": null,
+            "also_named": null
+          }
+        },
+        {
+          "rep": 3,
+          "answer": {
+            "intent": "use",
+            "target": null,
+            "also_named": null
+          }
+        },
+        {
+          "rep": 4,
+          "answer": {
+            "intent": "use",
+            "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+            "also_named": null
+          }
+        }
+      ]
+    }
+  ]
+}

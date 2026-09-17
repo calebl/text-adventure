@@ -1,0 +1,11 @@
+# Matched dialogue follow-up protocol
+
+This follow-up measures the unchanged nine-case `dialogue_corpus.json` against the stored `dialogue-2026-09-10` baseline, using four complete repetitions per side and `mistralai/mistral-medium-3.1` via OpenRouter only. The after side uses the actual `InteractionAgent`, existing fixed Stage, engine validation, follow-up movement/attack and existing Result scorer. No corpus, scorer or model-facing application source is edited for this run.
+
+Before reading after responses, the declared metrics are the existing `Eval::Dialogue::Result` metrics: per-repetition requested-state failure rate, exchange failure rate, reaction word count and displayed narration word count. `Result#compare` supplies the exact `Eval::Noise` verdict. A state miss means a fixture's declared expected outcome was not reached; a motivated NPC refusal may cause such a miss without being an engine defect. Immediate conversation facts remain separate from later move/attack facts.
+
+No human contradiction annotations have been supplied. Contradiction is unavailable, never zero by default. No new model judge or manual score is substituted. This corpus measures bounded dialogue actions and request identity; it does not establish memory fidelity across turns, physical item use, voice, personality or general realism. It does not contain the physical offered-apple path.
+
+The live adapter uses the existing shared ReviewEvalBudget helper and the authorized $4 combined ledger, retaining previous charges and unknown reservations. It does not install Dialogue::Budget, create another allowance or bypass reservations. Each call has the pinned model, no provider fallback, conservative token/rate caps and actual returned usage. Each completed reading is stored immediately; a resumed invocation skips only already-completed case/repetition pairs. Interrupted or failed attempts remain identified rather than silently replaced.
+
+Re-baselining is allowed only after all four after repetitions are stored and compared. The historical before artifact remains unchanged. Before spending, offline replay identifies the request changes; unrelated prompt/ending/genesis/arrival request guards are checked without model calls.

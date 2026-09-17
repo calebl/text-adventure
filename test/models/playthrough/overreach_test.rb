@@ -62,7 +62,12 @@ class Playthrough::OverreachTest < ActiveSupport::TestCase
 
     assert_not_nil record(action: "attack"), "two people hit on one line is two acts like any other"
 
-    assert_equal %w[move talk take drop attack examine], Playthrough::Overreach::ACTIONS
+    physical = record(action: "use", command: "burn the index and the apron")
+    assert_predicate physical, :persisted?, "two physical subjects must retain their overreach receipt"
+    assert_equal [ "use", "Perrin's private index", "copy-room apron" ],
+                 [ physical.reload.action, physical.acted, physical.unacted ]
+
+    assert_equal %w[move talk take drop attack use examine], Playthrough::Overreach::ACTIONS
     assert_equal Playthrough::Drift::ACTIONS + %w[examine], Playthrough::Overreach::ACTIONS
     assert_not_includes Playthrough::Drift::ACTIONS, "examine"
     assert_includes Playthrough::Drift::ACTIONS, "attack",

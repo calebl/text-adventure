@@ -279,7 +279,9 @@ class Playthrough::Turn
     fight = Playthrough::Fight.new(playthrough)
     round = Playthrough::Command::Journal.commit("round") { fight.next_round }
 
-    scene = if intent.destination
+    scene = if intent.physical
+      use_physical(intent.physical, typed, &block)
+    elsif intent.destination
       move_to(intent.destination, &block)
     elsif intent.speaker
       # TWO THINGS A LINE CAN DO TO ONE PERSON, dispatched on the action the way
@@ -546,7 +548,7 @@ class Playthrough::Turn
   # reach the classifier the way they always did.
   def read_line(command, typed)
     reading = grammar.reading_first(command)
-    return [ reading.intent, "grammar" ] if reading&.resolved?
+    return [ reading.intent, "grammar" ] if reading&.resolved? || reading&.intent&.action == :use
 
     [ classifier.classify(typed), "model" ]
   end
@@ -572,7 +574,27 @@ class Playthrough::Turn
       return Playthrough::Refusal.for(intent, typed: command, offered: classifier.offered_for(intent.action))
     end
 
+    destination = intent.destination || (intent.at if intent.throw? && intent.at.is_a?(Location))
+    if destination
+      edge = LocationConnection.find_by(location: playthrough.current_location, connected_location: destination)
+      if edge && !edge.open_for?(playthrough)
+        return Playthrough::Refusal.new(kind: :unplayable, typed: command,
+          fact: "The way to #{destination.name} is #{edge.barrier == 'keyed' ? 'locked' : 'jammed'}. Open it before crossing or throwing anything through it.")
+      end
+    end
     Playthrough::Refusal.unplayable(intent, playthrough: playthrough, typed: command)
+  end
+
+  def use_physical(choice, command, &block)
+    if choice.kind == "offer"
+      return talk_to(choice.recipient, command, offered_item: choice.item, &block)
+    end
+
+    result = Playthrough::Command::Journal.commit("physical_effect") do
+      Playthrough::PhysicalAction.new(playthrough).apply!(choice)
+    end
+    Scene::Narrator.new(playthrough).narrate(command, fact: result.fact, intent: :use,
+      fallback_text: result.fact, &block)
   end
 
   # THE LOAD-OR-GENERATE SEAM. Everything the project is about is these four
@@ -716,10 +738,10 @@ class Playthrough::Turn
   # The character decision is validated and applied before rendering. Failed
   # or blank model prose gets a factual receipt; the scene, interaction and
   # current-scene pointer are then saved together in a short transaction.
-  def talk_to(character, command, &block)
+  def talk_to(character, command, offered_item: nil, &block)
     return Playthrough::Command::Journal.read("talked") if Playthrough::Command::Journal.saved?("talked")
 
-    agent = InteractionAgent.new(character, playthrough: playthrough)
+    agent = InteractionAgent.new(character, playthrough: playthrough, offered_item: offered_item)
     exchange = agent.ask(command, &block)
     return if exchange.narration.blank?
 

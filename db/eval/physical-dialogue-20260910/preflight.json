@@ -1,0 +1,322 @@
+{
+  "before_sha256": "d0fabad525d21f0b33ecccfb3bd0f04acb50dd7c1c67ce89d327c60886c0c101",
+  "corpus_sha256": "ab81a46be7bc735df9001a22d2dac1f27f47272f3d559c5392066c27db384d19",
+  "source_commit": "cd24458e83bbc5901d1cf7beaa9c82f26027564e",
+  "model": "mistralai/mistral-medium-3.1",
+  "estimate": {
+    "model": "mistralai/mistral-medium-3.1",
+    "cases": 9,
+    "reps": 4,
+    "calls": 72,
+    "input_per_case": 1413.7,
+    "output_per_case": 171.0,
+    "estimated_usd": 0.03266928,
+    "input_per_million": 0.4,
+    "output_per_million": 2.0
+  },
+  "request_samples_sha256": "81a9fec0ac9a6f9fa0f0157a97157812b0cce5aacc52201bb1fe53f90f821317",
+  "payload_gate_sha256": "b562da2dbb804774c4c5fb3557769d6601591d0312bd79318b2e61f56d1d53ca",
+  "source": {
+    "app/agents/InteractionAgent.rb": "6f51b5d1e599a7278d635782fdf16f6663fba48a0c3357cd730459c3b3265e28",
+    "app/models/playthrough/memory.rb": "ca5fafe9c9df33f743ebcf1db41a0074bf18bb4b5f47ab89f0099a7dc95a6c7f",
+    "app/models/playthrough/moment.rb": "dc759a1804f21f5e1dcc885cf2f24fd6d647fb9c78bcfe7d755960152f3f1fbd",
+    "app/models/playthrough/npc_action.rb": "080304dccee536b5ad2c3fe78c54a8d38ac90cd361fa477d7d477c918ee5f67b",
+    "lib/eval/dialogue.rb": "6fbaedb039014ebe03e6c62b88ae632d381ae51b2c820307e051bdcf0da2eeab",
+    "lib/eval/dialogue/bench.rb": "744d0d31b7b3995cfcd81eaee75f53f012b766c9b59d2bf94ad108c4221d6084",
+    "lib/eval/dialogue/stage.rb": "b0c667c4385bfb75611ab1efd73af3496566a180cbbdb67da6d540f27fa90251",
+    "lib/eval/dialogue/result.rb": "3b499ede67f36de150d40ebc50ffe2f82a25f112b3c0cc39126fc505d8fe5f67",
+    "lib/eval/dialogue/version.rb": "05a37655e8aaa0a3e4c001374ef0258cda5154bca7084c3a941b39bec12a0ac2",
+    "test/fixtures/files/dialogue_corpus.json": "ab81a46be7bc735df9001a22d2dac1f27f47272f3d559c5392066c27db384d19",
+    "db/eval/adversarial-20260909/eval-budget-streaming-v2.rb": "31a2ea4badcbf68111c6a54e044902a58ca38bdd79aebed5f5bf9eef8263dcb7"
+  },
+  "changes": [
+    {
+      "id": "give-owned-key",
+      "rep": 1,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 1,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 1,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 1,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 1,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "stay-behind",
+      "rep": 1,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 1,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 1,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 1,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "give-owned-key",
+      "rep": 2,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 2,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 2,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 2,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 2,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "stay-behind",
+      "rep": 2,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 2,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 2,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 2,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "give-owned-key",
+      "rep": 3,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 3,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 3,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 3,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 3,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "stay-behind",
+      "rep": 3,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 3,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 3,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 3,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "give-owned-key",
+      "rep": 4,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "follow-through-door",
+      "rep": 4,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "honor-ceasefire",
+      "rep": 4,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "refuse-trusted-key",
+      "rep": 4,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "cannot-give-absent-item",
+      "rep": 4,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "stay-behind",
+      "rep": 4,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "reject-stale-gift",
+      "rep": 4,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "follow-across-move",
+      "rep": 4,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    },
+    {
+      "id": "renewed-fighting",
+      "rep": 4,
+      "changed_passes": [
+        1
+      ],
+      "facts_unchanged": true
+    }
+  ]
+}

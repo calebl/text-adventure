@@ -1,0 +1,97 @@
+{
+  "reason": "Four label-only corrections from semantic review before inspecting outcome tallies. Three handovers are offers; opening alone cannot authorize crossing. Original main339 labels remain untouched in the historical projection. No provider request or staged position changed; no repurchase.",
+  "changes": {
+    "move-closet-behind-me": {
+      "at_purchase": {
+        "id": "move-closet-behind-me",
+        "position": "office",
+        "typed": "turn around and open the closet at my back",
+        "intent": "move",
+        "target": "The Supply Closet",
+        "shape": "move",
+        "why": "the room named by where it is rather than by its name -- the arrival paragraph's own phrasing"
+      },
+      "current": {
+        "id": "move-closet-behind-me",
+        "position": "office",
+        "typed": "turn around and open the closet at my back",
+        "intent": "use",
+        "refusal": "unresolved",
+        "shape": "unresolved-use",
+        "why": "Opening alone does not ask to cross. This seeded doorway is already open, so no closed physical opening choice is available; refuse the attempt without substituting a move into the closet"
+      }
+    },
+    "drop-daybook-hand-over": {
+      "at_purchase": {
+        "id": "drop-daybook-hand-over",
+        "position": "office",
+        "typed": "hand the daybook to Rowe and let him read the gap himself",
+        "intent": "drop",
+        "target": "Ward Office 12 daybook",
+        "shape": "drop",
+        "why": "GIVING SOMETHING UP IS A DROP, which is the intent table's own word for it (\"putting down, leaving or giving up\"). It also names Rowe, who is in the CAST and not in the carried set, so a `drop` cannot see him -- one act, and the cross-set gap again",
+        "also_accept": [
+          {
+            "intent": "talk",
+            "target": "Halkett Rowe"
+          }
+        ]
+      },
+      "current": {
+        "id": "drop-daybook-hand-over",
+        "position": "office",
+        "typed": "hand the daybook to Rowe and let him read the gap himself",
+        "intent": "use",
+        "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+        "shape": "use-offer",
+        "why": "Handing a carried object to somebody is now one offered physical action. Rowe is present and can choose whether to accept; neither a floor drop nor ordinary conversation performs the requested offer"
+      }
+    },
+    "drop-slate-give": {
+      "at_purchase": {
+        "id": "drop-slate-give",
+        "position": "tide-post",
+        "typed": "give the tide-slate to Neb",
+        "intent": "drop",
+        "target": "Assize tide-slate",
+        "shape": "drop",
+        "why": "GIVING IT TO SOMEBODY, which the intent table calls a drop and which the app plays as one: `Playthrough::Turn#put_down!` puts it on the floor, because no record says how handing a thing to a person goes. Neb is in the cast and invisible to a `drop`'s closed set",
+        "also_accept": [
+          {
+            "intent": "talk",
+            "target": "Neb Halloran"
+          }
+        ]
+      },
+      "current": {
+        "id": "drop-slate-give",
+        "position": "tide-post",
+        "typed": "give the tide-slate to Neb",
+        "intent": "use",
+        "target": "Offer Assize tide-slate to Neb Halloran; they may refuse",
+        "shape": "use-offer",
+        "why": "Giving to the present Neb is an offer of the carried slate. The engine now binds both records and lets Neb decide whether to accept; it does not put the slate on the floor"
+      }
+    },
+    "real-give-him-your-daybook": {
+      "at_purchase": {
+        "id": "real-give-him-your-daybook",
+        "position": "office",
+        "typed": "give him your daybook",
+        "intent": "drop",
+        "target": "Ward Office 12 daybook",
+        "shape": "drop",
+        "why": "real; the stored answer was `drop` / \"Ward Office 12 daybook\", which is the intent table's own reading of giving something up. It names him by pronoun, and a `drop` cannot see the cast"
+      },
+      "current": {
+        "id": "real-give-him-your-daybook",
+        "position": "office",
+        "typed": "give him your daybook",
+        "intent": "use",
+        "target": "Offer Ward Office 12 daybook to Halkett Rowe; they may refuse",
+        "shape": "use-offer",
+        "why": "The historical answer was drop, before offers existed. The only person here is Rowe, so the pronoun binds the carried daybook's offer to him; whether he accepts remains his own decision"
+      }
+    }
+  }
+}

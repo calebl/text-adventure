@@ -1,0 +1,929 @@
+{
+  "physical": {
+    "before": {
+      "source": "f4ea18466ca92d12aaed05d501c6d7540ef51ff8005659a16d6c9841922ff72e",
+      "corpus": "c6171d0ba6dfba9463a8e58874b5e69f8f2b313ce55496f432397ce0ac1dea64",
+      "fixtures": "b5de3af7346a9532f3ab9fb4733c664d39f05725a795459f5cbf0677abfacd9f",
+      "audit_arm": "before",
+      "samples": 28,
+      "repetitions": {
+        "1": {
+          "expected_effect_missing": 0.7142857142857143,
+          "core_contradiction": 0.42857142857142855,
+          "temporal_error": 0.0,
+          "incidental_contradiction": 0.2857142857142857,
+          "incidental_contradiction_including_ambiguities": 0.2857142857142857
+        },
+        "2": {
+          "expected_effect_missing": 0.7142857142857143,
+          "core_contradiction": 0.42857142857142855,
+          "temporal_error": 0.0,
+          "incidental_contradiction": 0.14285714285714285,
+          "incidental_contradiction_including_ambiguities": 0.14285714285714285
+        },
+        "3": {
+          "expected_effect_missing": 0.7142857142857143,
+          "core_contradiction": 0.42857142857142855,
+          "temporal_error": 0.0,
+          "incidental_contradiction": 0.2857142857142857,
+          "incidental_contradiction_including_ambiguities": 0.2857142857142857
+        },
+        "4": {
+          "expected_effect_missing": 0.7142857142857143,
+          "core_contradiction": 0.42857142857142855,
+          "temporal_error": 0.0,
+          "incidental_contradiction": 0.2857142857142857,
+          "incidental_contradiction_including_ambiguities": 0.2857142857142857
+        }
+      },
+      "counts": {
+        "expected_effect_missing": 20,
+        "core_contradiction": 12,
+        "temporal_error": 0,
+        "incidental_contradiction": 7,
+        "incidental_contradiction_including_ambiguities": 7
+      },
+      "ambiguities": [],
+      "excluding_friendly_acceptance": {
+        "samples": 24,
+        "repetitions": {
+          "1": {
+            "expected_effect_missing": 0.6666666666666666
+          },
+          "2": {
+            "expected_effect_missing": 0.6666666666666666
+          },
+          "3": {
+            "expected_effect_missing": 0.6666666666666666
+          },
+          "4": {
+            "expected_effect_missing": 0.6666666666666666
+          }
+        }
+      },
+      "cases": {
+        "drink-healing-draught": {
+          "expected_effect_missing": 4,
+          "core_contradiction": 4,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "offer-requested-apple": {
+          "expected_effect_missing": 4,
+          "core_contradiction": 4,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "refuse-apple": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "unlock-with-key": {
+          "expected_effect_missing": 4,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 4,
+          "incidental_contradiction_including_ambiguities": 4
+        },
+        "pry-jammed-gate": {
+          "expected_effect_missing": 4,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 3,
+          "incidental_contradiction_including_ambiguities": 3
+        },
+        "burn-paper": {
+          "expected_effect_missing": 4,
+          "core_contradiction": 4,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "cannot-burn-stone": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        }
+      },
+      "calls": 64,
+      "models": [
+        "mistralai/mistral-medium-3.1"
+      ]
+    },
+    "after": {
+      "source": "ca49c59f6aeb8722ab6c2336e656f98191d087da2a0f1e43594dfbfb7c360dab",
+      "corpus": "c6171d0ba6dfba9463a8e58874b5e69f8f2b313ce55496f432397ce0ac1dea64",
+      "fixtures": "b5de3af7346a9532f3ab9fb4733c664d39f05725a795459f5cbf0677abfacd9f",
+      "audit_arm": "revised",
+      "samples": 28,
+      "repetitions": {
+        "1": {
+          "expected_effect_missing": 0.0,
+          "core_contradiction": 0.0,
+          "temporal_error": 0.0,
+          "incidental_contradiction": 0.14285714285714285,
+          "incidental_contradiction_including_ambiguities": 0.14285714285714285
+        },
+        "2": {
+          "expected_effect_missing": 0.0,
+          "core_contradiction": 0.0,
+          "temporal_error": 0.0,
+          "incidental_contradiction": 0.0,
+          "incidental_contradiction_including_ambiguities": 0.0
+        },
+        "3": {
+          "expected_effect_missing": 0.0,
+          "core_contradiction": 0.0,
+          "temporal_error": 0.0,
+          "incidental_contradiction": 0.14285714285714285,
+          "incidental_contradiction_including_ambiguities": 0.14285714285714285
+        },
+        "4": {
+          "expected_effect_missing": 0.0,
+          "core_contradiction": 0.0,
+          "temporal_error": 0.0,
+          "incidental_contradiction": 0.14285714285714285,
+          "incidental_contradiction_including_ambiguities": 0.14285714285714285
+        }
+      },
+      "counts": {
+        "expected_effect_missing": 0,
+        "core_contradiction": 0,
+        "temporal_error": 0,
+        "incidental_contradiction": 3,
+        "incidental_contradiction_including_ambiguities": 3
+      },
+      "ambiguities": [],
+      "excluding_friendly_acceptance": {
+        "samples": 24,
+        "repetitions": {
+          "1": {
+            "expected_effect_missing": 0.0
+          },
+          "2": {
+            "expected_effect_missing": 0.0
+          },
+          "3": {
+            "expected_effect_missing": 0.0
+          },
+          "4": {
+            "expected_effect_missing": 0.0
+          }
+        }
+      },
+      "cases": {
+        "drink-healing-draught": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 3,
+          "incidental_contradiction_including_ambiguities": 3
+        },
+        "offer-requested-apple": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "refuse-apple": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "unlock-with-key": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "pry-jammed-gate": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "burn-paper": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "cannot-burn-stone": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        }
+      },
+      "calls": 60,
+      "models": [
+        "mistralai/mistral-medium-3.1"
+      ]
+    },
+    "initial_candidate": {
+      "source": "7ccfc142b4f15cf1b25116391497ed6b8dcebd2a4c2adf389da47645ae85bcce",
+      "corpus": "c6171d0ba6dfba9463a8e58874b5e69f8f2b313ce55496f432397ce0ac1dea64",
+      "fixtures": "b5de3af7346a9532f3ab9fb4733c664d39f05725a795459f5cbf0677abfacd9f",
+      "audit_arm": "after",
+      "samples": 28,
+      "repetitions": {
+        "1": {
+          "expected_effect_missing": 0.0,
+          "core_contradiction": 0.0,
+          "temporal_error": 0.2857142857142857,
+          "incidental_contradiction": 0.0,
+          "incidental_contradiction_including_ambiguities": 0.0
+        },
+        "2": {
+          "expected_effect_missing": 0.0,
+          "core_contradiction": 0.0,
+          "temporal_error": 0.2857142857142857,
+          "incidental_contradiction": 0.14285714285714285,
+          "incidental_contradiction_including_ambiguities": 0.14285714285714285
+        },
+        "3": {
+          "expected_effect_missing": 0.0,
+          "core_contradiction": 0.0,
+          "temporal_error": 0.2857142857142857,
+          "incidental_contradiction": 0.0,
+          "incidental_contradiction_including_ambiguities": 0.0
+        },
+        "4": {
+          "expected_effect_missing": 0.0,
+          "core_contradiction": 0.0,
+          "temporal_error": 0.2857142857142857,
+          "incidental_contradiction": 0.0,
+          "incidental_contradiction_including_ambiguities": 0.14285714285714285
+        }
+      },
+      "counts": {
+        "expected_effect_missing": 0,
+        "core_contradiction": 0,
+        "temporal_error": 8,
+        "incidental_contradiction": 1,
+        "incidental_contradiction_including_ambiguities": 2
+      },
+      "ambiguities": [
+        "unlock-with-key:4"
+      ],
+      "excluding_friendly_acceptance": {
+        "samples": 24,
+        "repetitions": {
+          "1": {
+            "expected_effect_missing": 0.0
+          },
+          "2": {
+            "expected_effect_missing": 0.0
+          },
+          "3": {
+            "expected_effect_missing": 0.0
+          },
+          "4": {
+            "expected_effect_missing": 0.0
+          }
+        }
+      },
+      "cases": {
+        "drink-healing-draught": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 4,
+          "incidental_contradiction": 1,
+          "incidental_contradiction_including_ambiguities": 1
+        },
+        "offer-requested-apple": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "refuse-apple": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "unlock-with-key": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 1
+        },
+        "pry-jammed-gate": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "burn-paper": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 4,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        },
+        "cannot-burn-stone": {
+          "expected_effect_missing": 0,
+          "core_contradiction": 0,
+          "temporal_error": 0,
+          "incidental_contradiction": 0,
+          "incidental_contradiction_including_ambiguities": 0
+        }
+      },
+      "calls": 60,
+      "models": [
+        "mistralai/mistral-medium-3.1"
+      ]
+    }
+  },
+  "generation": {
+    "before": {
+      "source": "f4ea18466ca92d12aaed05d501c6d7540ef51ff8005659a16d6c9841922ff72e",
+      "corpus": "f16bf5504ca932b3108cb8ce287d32489c2008190139e9550f199944aee38d1a",
+      "harness": "de38d480195702b7f03f73ee8d95d6ad7c73f548d9d0276000733256556498e0",
+      "room_samples": 12,
+      "target_objects": 24,
+      "repetitions": {
+        "1": {
+          "complete_profile_incorrect": 0.8333333333333334,
+          "use_kind_incorrect": 0.6666666666666666,
+          "combustible_incorrect": 0.16666666666666666
+        },
+        "2": {
+          "complete_profile_incorrect": 0.8333333333333334,
+          "use_kind_incorrect": 0.6666666666666666,
+          "combustible_incorrect": 0.3333333333333333
+        },
+        "3": {
+          "complete_profile_incorrect": 0.8333333333333334,
+          "use_kind_incorrect": 0.6666666666666666,
+          "combustible_incorrect": 0.3333333333333333
+        },
+        "4": {
+          "complete_profile_incorrect": 0.8333333333333334,
+          "use_kind_incorrect": 0.6666666666666666,
+          "combustible_incorrect": 0.16666666666666666
+        }
+      },
+      "correct": {
+        "complete_profile": 4,
+        "use_kind": 8,
+        "combustible": 18
+      },
+      "all_generated_objects": 24
+    },
+    "after": {
+      "source": "b5197572b1b0a6607497072ff06be208efabb5db3a903bf517276af950744b67",
+      "corpus": "f16bf5504ca932b3108cb8ce287d32489c2008190139e9550f199944aee38d1a",
+      "harness": "de38d480195702b7f03f73ee8d95d6ad7c73f548d9d0276000733256556498e0",
+      "room_samples": 12,
+      "target_objects": 24,
+      "repetitions": {
+        "1": {
+          "complete_profile_incorrect": 0.0,
+          "use_kind_incorrect": 0.0,
+          "combustible_incorrect": 0.0
+        },
+        "2": {
+          "complete_profile_incorrect": 0.0,
+          "use_kind_incorrect": 0.0,
+          "combustible_incorrect": 0.0
+        },
+        "3": {
+          "complete_profile_incorrect": 0.0,
+          "use_kind_incorrect": 0.0,
+          "combustible_incorrect": 0.0
+        },
+        "4": {
+          "complete_profile_incorrect": 0.0,
+          "use_kind_incorrect": 0.0,
+          "combustible_incorrect": 0.0
+        }
+      },
+      "correct": {
+        "complete_profile": 24,
+        "use_kind": 24,
+        "combustible": 24
+      },
+      "all_generated_objects": 25
+    }
+  },
+  "verdicts": {
+    "physical": [
+      {
+        "code": "expected_effect_missing",
+        "before": {
+          "runs": 4,
+          "min": 0.7142857142857143,
+          "max": 0.7142857142857143,
+          "median": 0.7142857142857143,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": -0.7143,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.0,
+        "before_rates": [
+          0.7142857142857143,
+          0.7142857142857143,
+          0.7142857142857143,
+          0.7142857142857143
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "core_contradiction",
+        "before": {
+          "runs": 4,
+          "min": 0.42857142857142855,
+          "max": 0.42857142857142855,
+          "median": 0.42857142857142855,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": -0.4286,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.0,
+        "before_rates": [
+          0.42857142857142855,
+          0.42857142857142855,
+          0.42857142857142855,
+          0.42857142857142855
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "temporal_error",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0,
+        "before_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "incidental_contradiction",
+        "before": {
+          "runs": 4,
+          "min": 0.14285714285714285,
+          "max": 0.2857142857142857,
+          "median": 0.2857142857142857,
+          "range": 0.14285714285714285
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.14285714285714285,
+          "median": 0.14285714285714285,
+          "range": 0.14285714285714285
+        },
+        "delta": -0.1429,
+        "p_value": 0.114286,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.14285714285714285,
+        "before_rates": [
+          0.2857142857142857,
+          0.14285714285714285,
+          0.2857142857142857,
+          0.2857142857142857
+        ],
+        "after_rates": [
+          0.14285714285714285,
+          0.0,
+          0.14285714285714285,
+          0.14285714285714285
+        ]
+      },
+      {
+        "code": "incidental_contradiction_including_ambiguities",
+        "before": {
+          "runs": 4,
+          "min": 0.14285714285714285,
+          "max": 0.2857142857142857,
+          "median": 0.2857142857142857,
+          "range": 0.14285714285714285
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.14285714285714285,
+          "median": 0.14285714285714285,
+          "range": 0.14285714285714285
+        },
+        "delta": -0.1429,
+        "p_value": 0.114286,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.14285714285714285,
+        "before_rates": [
+          0.2857142857142857,
+          0.14285714285714285,
+          0.2857142857142857,
+          0.2857142857142857
+        ],
+        "after_rates": [
+          0.14285714285714285,
+          0.0,
+          0.14285714285714285,
+          0.14285714285714285
+        ]
+      }
+    ],
+    "physical_excluding_friendly_acceptance": [
+      {
+        "code": "expected_effect_missing",
+        "before": {
+          "runs": 4,
+          "min": 0.6666666666666666,
+          "max": 0.6666666666666666,
+          "median": 0.6666666666666666,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": -0.6667,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.0,
+        "before_rates": [
+          0.6666666666666666,
+          0.6666666666666666,
+          0.6666666666666666,
+          0.6666666666666666
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "generation": [
+      {
+        "code": "complete_profile_incorrect",
+        "before": {
+          "runs": 4,
+          "min": 0.8333333333333334,
+          "max": 0.8333333333333334,
+          "median": 0.8333333333333334,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": -0.8333,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.0,
+        "before_rates": [
+          0.8333333333333334,
+          0.8333333333333334,
+          0.8333333333333334,
+          0.8333333333333334
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "use_kind_incorrect",
+        "before": {
+          "runs": 4,
+          "min": 0.6666666666666666,
+          "max": 0.6666666666666666,
+          "median": 0.6666666666666666,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": -0.6667,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.0,
+        "before_rates": [
+          0.6666666666666666,
+          0.6666666666666666,
+          0.6666666666666666,
+          0.6666666666666666
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "combustible_incorrect",
+        "before": {
+          "runs": 4,
+          "min": 0.16666666666666666,
+          "max": 0.3333333333333333,
+          "median": 0.25,
+          "range": 0.16666666666666666
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": -0.25,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.16666666666666666,
+        "before_rates": [
+          0.16666666666666666,
+          0.3333333333333333,
+          0.3333333333333333,
+          0.16666666666666666
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "initial_candidate_vs_revised": [
+      {
+        "code": "expected_effect_missing",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0,
+        "before_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "core_contradiction",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0,
+        "before_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "temporal_error",
+        "before": {
+          "runs": 4,
+          "min": 0.2857142857142857,
+          "max": 0.2857142857142857,
+          "median": 0.2857142857142857,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": -0.2857,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.0,
+        "before_rates": [
+          0.2857142857142857,
+          0.2857142857142857,
+          0.2857142857142857,
+          0.2857142857142857
+        ],
+        "after_rates": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "code": "incidental_contradiction",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.14285714285714285,
+          "median": 0.0,
+          "range": 0.14285714285714285
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.14285714285714285,
+          "median": 0.14285714285714285,
+          "range": 0.14285714285714285
+        },
+        "delta": 0.1429,
+        "p_value": 0.485714,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.14285714285714285,
+        "before_rates": [
+          0.0,
+          0.14285714285714285,
+          0.0,
+          0.0
+        ],
+        "after_rates": [
+          0.14285714285714285,
+          0.0,
+          0.14285714285714285,
+          0.14285714285714285
+        ]
+      },
+      {
+        "code": "incidental_contradiction_including_ambiguities",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.14285714285714285,
+          "median": 0.07142857142857142,
+          "range": 0.14285714285714285
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.14285714285714285,
+          "median": 0.14285714285714285,
+          "range": 0.14285714285714285
+        },
+        "delta": 0.0714,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.14285714285714285,
+        "before_rates": [
+          0.0,
+          0.14285714285714285,
+          0.0,
+          0.14285714285714285
+        ],
+        "after_rates": [
+          0.14285714285714285,
+          0.0,
+          0.14285714285714285,
+          0.14285714285714285
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Required recorded outcomes are missing in 20/28 before, 0/28 initial after and 0/28 revised samples. Four baseline misses are the separately identified friendly-acceptance expectation; excluding those gives 16/24, 0/24, 0/24.",
+    "Direct target-effect contradictions are 12/28 before, 0/28 initial after, 0/28 revised. The broader state rubric also captures seven baseline NPC location contradictions, one initial after retained empty vessel (plus one ambiguous cast idiom), and three revised empty-vial possession/floor assertions.",
+    "Temporal errors are 0/28 before, 8/28 initial after, 0/28 revised. Every initial candidate drink/burn response recasts the current command as a distinct earlier completed act; every revised response performs the present action. Correct physical effects are preserved in both candidate arms.",
+    "Revised drink reps 1/3/4 leave an unrecorded empty vial in hand/on floor. Rep 2 instead has the vial disappear: no absence contradiction, but no supplied reason for vanishing glass. These residual container realism issues remain separate from correct consumption and healing; permitting untracked incidental containers would exclude the broader container-state count.",
+    "Both candidate pry arms have checks 17 and 18 fail against 12, and checks 12 and 2 pass. Both directed passages and retained Market position honor every saved receipt.",
+    "All six expected generation objects appear in every repetition. Complete target profiles improve from 4/24 before to 24/24 after; use_kind correctness 8/24 to 24/24 and combustible correctness 18/24 to 24/24. Baseline schema lacked the physical fields, so its defaults demonstrate absent affordances rather than directly supplied bad model enums. No third generation arm was evaluated.",
+    "No source/corpus/scorer changes or provider calls were made for this audit. All 84 physical and 24 generation outputs were read; SQLite supplemental evidence used mode=ro. Arm labels were visible. These fixed-fixture descriptive counts are not a significance claim or a test of long-term psychology.",
+    "Manual labels were read with arm names visible; comparison replays those judgments and does not independently judge prose.",
+    "Incidental counts exclude core effect contradictions. Their lower bound counts confirmed conflicts; upper bound also counts the one ambiguous initial-candidate cast phrase, with seven cases retained in every denominator.",
+    "Friendly acceptance is a fixture expectation, not an engine-validity requirement; its exclusion is also compared.",
+    "Generation target profiles are six specified object types in three seeded teasers, not general room-generation realism. Baseline profile fields were unavailable and defaulted to ordinary/false.",
+    "Four repetitions of one model on these fixtures do not establish general realism. Several comparisons are exploratory; no multiple-comparison correction is applied."
+  ]
+}

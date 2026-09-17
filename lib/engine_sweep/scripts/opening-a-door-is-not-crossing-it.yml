@@ -1,0 +1,86 @@
+# Opening changes this game's passage rows, then a separate move crosses.
+# The return trip proves both directed rows opened; a second game proves the
+# barrier did not disappear from the world. Force fails for every d20 here:
+# the fixture's valid strength 3 is below its force penalty of 4.
+story: A Dose Beyond Two Doors
+steps:
+- id: a-locked-door-rejects-movement
+  type: /move Storeroom
+  browser: {token: blocked}
+  expect:
+    location: Workshop (realized)
+    carrying: [travel ration]
+    refused: true
+    offers: locked
+    changed: false
+    elapsed_minutes: 0
+- id: collect-the-matching-key
+  type: /take brass key
+  browser: {token: key, fail: narration}
+  expect:
+    location: Workshop (realized)
+    carrying: [travel ration, brass key]
+    here: [healing draught, iron lever]
+- id: the-key-opens-without-moving-or-being-spent
+  type: /unlock Storeroom with brass key
+  browser: {token: unlock, fail: narration}
+  expect:
+    location: Workshop (realized)
+    carrying: [travel ration, brass key]
+    changed: true
+    refused: false
+    note: completed
+- id: an-open-door-admits-a-later-move
+  type: /move Storeroom
+  browser: {token: enter, fail: arrival}
+  expect:
+    location: Storeroom (realized)
+    carrying: [travel ration, brass key]
+    changed: true
+    refused: false
+- id: a-jammed-door-still-blocks-onward-travel
+  type: /move Loft
+  browser: {token: jammed}
+  expect:
+    location: Storeroom (realized)
+    refused: true
+    offers: jammed
+    changed: false
+    elapsed_minutes: 0
+- id: a-failed-force-attempt-keeps-the-barrier
+  type: /force Loft
+  browser: {token: force, fail: narration}
+  expect:
+    location: Storeroom (realized)
+    carrying: [travel ration, brass key]
+    changed: true
+    refused: false
+    note: completed
+- id: failed-force-does-not-open-a-route
+  type: /move Loft
+  browser: {token: still-jammed}
+  expect:
+    location: Storeroom (realized)
+    refused: true
+    offers: jammed
+    changed: false
+    elapsed_minutes: 0
+- id: the-original-door-is-open-in-reverse
+  type: /move Workshop
+  browser: {token: return, fail: arrival}
+  expect:
+    location: Workshop (realized)
+    carrying: [travel ration, brass key]
+    refused: false
+- id: another-game-finds-the-same-door-locked
+  player: second
+  type: /move Storeroom
+  browser: {token: other-blocked}
+  expect:
+    location: Workshop (realized)
+    carrying: [travel ration]
+    here: [healing draught, brass key, iron lever]
+    refused: true
+    offers: locked
+    changed: false
+    elapsed_minutes: 0

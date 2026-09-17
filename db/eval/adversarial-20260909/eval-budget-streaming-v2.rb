@@ -14,7 +14,9 @@ require "bigdecimal"
 module ReviewEvalBudget
   MODEL = "mistralai/mistral-medium-3.1".freeze
   PROVIDER = "openrouter".freeze
-  LIMIT_MICROS = 3_000_000
+  # Raised from $4.15 to $5 with the user's approval on 2026-09-15. Continue
+  # the existing ledger: earlier settled and unknown charges still count.
+  LIMIT_MICROS = 5_000_000
   INPUT_RATE = 5
   OUTPUT_RATE = 20
   MAX_INPUT_BYTES = 65_536
@@ -39,7 +41,9 @@ module ReviewEvalBudget
       token = SecureRandom.uuid
       edit do |data|
         charged = data.fetch("entries").sum { |entry| entry.fetch("accounted_micros") }
-        raise Halt, "Shared $3 evaluation budget cannot reserve the next call" if charged + reservation > LIMIT_MICROS
+        if charged + reservation > LIMIT_MICROS
+          raise Halt, format("Shared $%.2f evaluation budget cannot reserve the next call", LIMIT_MICROS.fdiv(1_000_000))
+        end
         data["entries"] << { "id" => token, "label" => label, "state" => "reserved",
                              "input_cap" => input_cap, "output_cap" => output_cap,
                              "reserved_micros" => reservation, "accounted_micros" => reservation }

@@ -46,7 +46,7 @@ class Playthrough::Drift < ApplicationRecord
   # could not produce a row now can. Re-read both instruments' baselines rather
   # than comparing across the change: `rake game:score` and `Story::Audit`'s
   # `reached_for_nothing` / `named_more_than_one` rates both count these rows.
-  ACTIONS = %w[move talk take drop attack].freeze
+  ACTIONS = %w[move talk take drop attack use].freeze
 
   belongs_to :playthrough
   belongs_to :scene, optional: true

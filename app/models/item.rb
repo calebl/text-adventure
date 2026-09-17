@@ -18,6 +18,8 @@
 #   copy of a template, made at first contact by `Item::Snapshot`. Its place is
 #   `location_id` (lying in a room, in that game), `character_id` (in that
 #   person's hands, in that game) or NEITHER, which is the party's own hands.
+#   That last reading requires `disposition: intact`: a consumed or burned
+#   copy has neither holder nor floor and remains only to prevent respawning.
 #   THIS IS THE ONLY LAYER PLAY EVER READS OR WRITES: `Playthrough::Classifier`'s
 #   closed sets, `Playthrough::Turn#carry!` / `#put_down!` / `#read_item`,
 #   `Playthrough::Moment`, `Playthrough::Refusal`'s lists and the
@@ -36,7 +38,7 @@
 # WHAT THE SHAPE COSTS, stated rather than discovered. Under the old rule an
 # item was in exactly one of three places, never two and never NONE, and "none"
 # was a real defect -- a row no closed set could ever offer. For an INSTANCE
-# "none" is now a place: the party's hands. So the "never none" leg survives on
+# "none" is now a place while intact: the party's hands. So the "never none" leg survives on
 # templates only, and a bug that nulled an instance's `location_id` would make
 # it look carried rather than look broken. Two shapes were considered and
 # rejected for costing more than that:
@@ -119,6 +121,18 @@
 # `BULK` is the closed table, `THROWN_DAMAGE` the second table on the same key,
 # and `Playthrough::Turn#throw_item!` the one writer that reads them.
 class Item < ApplicationRecord
+  # World parameters for the physical-action engine. A profile selects a fixed
+  # operation in Playthrough::PhysicalAction; description and properties never
+  # execute behavior. Food and water are consumed without healing a wound.
+  USE_KINDS = %w[ordinary food drink healing firestarter lever lockpick key].freeze
+  HEALING_POINTS = 8
+  CONSUMABLES = %w[food drink healing].freeze
+
+  # A spent copy stays linked to its template. Deleting it would let Snapshot
+  # manufacture a fresh copy on the next visit. Only a playthrough instance may
+  # leave the intact state; templates always describe the world's initial item.
+  DISPOSITIONS = %w[intact consumed burned].freeze
+
   # HOW MANY CHARACTERS A THING CAN HAVE WRITTEN ON IT. What a player reads off
   # an object in one turn -- a note, a docket line, a sign, a page of an index --
   # and not a chapter. It is the cap `Item::InscriptionSchema` and
@@ -193,6 +207,9 @@ class Item < ApplicationRecord
   # already carries (`item_with_an_unknown_bulk`, clamped back to `HANDY`)
   # rather than this guessing which of the four was meant.
   validates :bulk, presence: true, inclusion: { in: BULK.keys }
+  validates :use_kind, inclusion: { in: USE_KINDS }
+  validates :disposition, inclusion: { in: DISPOSITIONS }
+  validate :only_a_game_can_spend_an_item
   validate :in_exactly_one_place
   validate :a_template_is_a_template
   validate :inscription_requires_readable
@@ -217,7 +234,7 @@ class Item < ApplicationRecord
   # that person's possessions. Layer-agnostic on purpose, because both layers
   # use it: `Story#starting_inventory` narrows it to templates and
   # `Playthrough#items_held_by` to one game.
-  scope :for_character, ->(character) { where(character: character) }
+  scope :for_character, ->(character) { available.where(character: character) }
   scope :by_name, ->(name) { where(name: name) }
 
   # LYING IN A ROOM: no hands on it. Layer-agnostic for the same reason --
@@ -228,10 +245,10 @@ class Item < ApplicationRecord
   # Items in somebody's hands are excluded on purpose -- taking something off a
   # person is a different act with somebody on the other side of it, and there
   # is no record of how they feel about it.
-  scope :lying_in, ->(location) { where(location: location, character_id: nil) }
+  scope :lying_in, ->(location) { available.where(location: location, character_id: nil) }
 
   # Held by one of the world's own people, anywhere in any story.
-  scope :held, -> { where.not(character_id: nil) }
+  scope :held, -> { available.where.not(character_id: nil) }
 
   # ROWS THAT SAY WHERE IN A ROOM THEY ARE -- the set the two instruments sweep
   # (`Story::Doctor`'s geometry findings and
@@ -250,7 +267,8 @@ class Item < ApplicationRecord
   # empty is what the party's hands ARE, so this is the query that says so once.
   # Read through `Playthrough#carried` rather than here -- one reader, for the
   # same reason `Character.present_in` has one.
-  scope :in_hand, -> { where(character_id: nil, location_id: nil) }
+  scope :available, -> { where(disposition: "intact") }
+  scope :in_hand, -> { available.where(character_id: nil, location_id: nil) }
 
   # Carried by any of these parties, which is the union `Story::Audit` and
   # `Eval::Richness` want when they have a story and no playthrough to narrow to.
@@ -291,9 +309,9 @@ class Item < ApplicationRecord
 
   def instance? = occupies?(:playthrough_id)
 
-  def held? = occupies?(:character_id)
+  def held? = intact? && occupies?(:character_id)
 
-  def lying? = !held? && occupies?(:location_id)
+  def lying? = intact? && !held? && occupies?(:location_id)
 
   # WHERE IN THE ROOM IT IS LYING, or NIL for a thing that is unplaced -- which
   # is every row in every database today, everything in a room with no box, and
@@ -311,7 +329,7 @@ class Item < ApplicationRecord
   # THE PARTY OF ONE PLAYTHROUGH HAS IT IN ITS HANDS. All three columns, because
   # the party is the ABSENCE of a room and a holder inside a game -- which is
   # exactly why a template can never be carried and this returns false for one.
-  def carried? = instance? && !held? && !occupies?(:location_id)
+  def carried? = intact? && instance? && !held? && !occupies?(:location_id)
 
   # WHAT THROWING THIS COSTS THE THROWER'S STRENGTH, out of `BULK`. NIL IS NOT
   # A BIG NUMBER, it is the absence of a throw: `Playthrough::Turn#throw_item!`
@@ -322,6 +340,10 @@ class Item < ApplicationRecord
   # word that is not one of the four came from somewhere that is not the engine,
   # and the safe reading of it is that the thing does not move. `rake
   # game:doctor` names the row.
+  def intact? = disposition == "intact"
+  def consumable? = CONSUMABLES.include?(use_kind)
+  def healing_points = use_kind == "healing" ? HEALING_POINTS : 0
+
   def bulk_penalty = BULK[bulk]
 
   # Whether this thing can leave a pair of hands at all.
@@ -433,6 +455,15 @@ class Item < ApplicationRecord
   # deliberately: what is written on a note is a fact about the note, so every
   # place and both layers keep it, and the copy `Item::Snapshot` makes copies the
   # words with everything else.
+  def only_a_game_can_spend_an_item
+    return if intact?
+
+    errors.add(:disposition, "may change only in a playthrough") unless instance?
+    if character_id.present? || location_id.present? || x.present? || y.present?
+      errors.add(:disposition, "cannot leave a spent item in someone's hands or on a floor")
+    end
+  end
+
   def inscription_requires_readable
     return if inscription.blank? || readable?
 

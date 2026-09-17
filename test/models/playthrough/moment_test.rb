@@ -206,7 +206,8 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
     Playthrough::Turn.new(@playthrough).harm!(@protagonist, 3)
     somebody = create(:character, story: @story, location: @here, fullname: "Maren Vosk")
 
-    assert_no_match(/hurt|hit point/, moment.character_context(somebody))
+    assert_no_match(/Iri Calder is (?:hurt|badly hurt)|Iri Calder.*hit point/, moment.character_context(somebody))
+    assert_includes moment.character_context(somebody), "Your own condition: unhurt."
   end
 
   def connect(name)
@@ -503,9 +504,9 @@ class Playthrough::MomentTest < ActiveSupport::TestCase
 
     context = moment.character_context(maren, replayed: 2)
 
-    assert_match(/What you have already concluded about Iri Calder/, context)
-    assert_match(/- I will hear this stranger out\./, context)
-    assert_match(/- She is lying about the ledger\./, context)
+    assert_match(/Your recollections of earlier exchanges with Iri Calder/, context)
+    assert_match(/You then concluded: "I will hear this stranger out\./, context)
+    assert_match(/You then concluded: "She is lying about the ledger\./, context)
     assert_no_match(/cellar again/, context, "the last two exchanges are replayed verbatim already")
     assert_no_match(/not the rent/, context)
 

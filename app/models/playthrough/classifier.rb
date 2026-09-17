@@ -52,10 +52,12 @@ class Playthrough::Classifier
   # schema stays THREE FIELDS, which is the captain's call C6, and it is why
   # widening the closed enum by `attack` in slice 8 did not widen it by `throw`
   # too. `Playthrough::Grammar#read_throw` is the only writer.
-  Intent = Data.define(:action, :destination, :speaker, :item, :at, :also_named, :unknown_action) do
+  # `physical` binds one closed attempt token to its engine-owned records.
+  # It is internal only: the model still returns intent, target, also_named.
+  Intent = Data.define(:action, :destination, :speaker, :item, :at, :also_named, :unknown_action, :physical) do
     # Defaulted so a caller naming only what it resolved reads the way it
     # means -- `Intent.new(action: :other)` is a turn that reached for nothing.
-    def initialize(destination: nil, speaker: nil, item: nil, at: nil, also_named: nil, unknown_action: nil, **rest) = super
+    def initialize(destination: nil, speaker: nil, item: nil, at: nil, also_named: nil, unknown_action: nil, physical: nil, **rest) = super
 
     def move? = action == :move
     def talk? = action == :talk
@@ -92,7 +94,7 @@ class Playthrough::Classifier
     # not what it was aimed at, because the thing is the record that moves (the
     # shape `take` and `drop` already have). What it was aimed at is `#at`, and
     # what the throw COST is a `Playthrough::Blow` row.
-    def subject = destination || speaker || item
+    def subject = physical&.subject || destination || speaker || item
 
     # THE OVERREACH CASE. The line named two things the closed sets both know,
     # and one act is all a turn is. It used to do the first and say which one it
@@ -118,57 +120,92 @@ class Playthrough::Classifier
     def unreadable? = !unknown_action.nil?
 
     # WHETHER THE ENGINE WILL PLAY THIS LINE AT ALL, and the captain's ruling of
-    # 2026-09-04 is these three predicates in this order. A refused line does
+    # 2026-09-04 is these predicates in this order. A refused line does
     # nothing: `Playthrough::Turn#play` stops before any branch and
     # `Playthrough::Mechanics#act` before any write, and the player is answered
     # by `Playthrough::Refusal` -- the app's own words, no narrator, no model
     # call. Read that class's header for the shapes and for what is deliberately
     # NOT refused.
-    # THE LINE THAT NAMED A THING THAT DOES NOT MOVE. A throw of something whose
-    # `Item::BULK` has no penalty in it is not a hard throw, it is not a throw:
-    # no die is rolled, no row moves and no story time is spent, which is
-    # exactly the shape of a line the engine will not play. It is a fact about
-    # the OBJECT rather than about the reading, which is why it is its own
-    # predicate and its own `Playthrough::Refusal` shape.
+    # THE LINE THAT NAMED A THING THAT DOES NOT MOVE. Taking or throwing
+    # something whose `Item::BULK` has no penalty in it is not a hard lift: it
+    # does not move. No die is rolled, no row moves and no story time is spent,
+    # which is exactly the shape of a line the engine will not play. It is a
+    # fact about the OBJECT rather than about the reading, which is why it is
+    # its own predicate and its own `Playthrough::Refusal` shape.
     #
     # An unknown bulk lands here too, because `Item#bulk_penalty` answers nil
     # for a key the engine has no table for -- the safe reading of a word that
     # came from somewhere other than the engine is that the thing does not move.
     # `rake game:doctor` names the row (`item_with_an_unknown_bulk`).
     def throws_the_immovable? = throw? && !item.nil? && !item.throwable?
+    def takes_the_immovable? = take? && !item.nil? && !item.throwable?
+    def moves_the_immovable? = throws_the_immovable? || takes_the_immovable?
 
-    def refused? = named_more_than_one? || reached_for_nothing? || unreadable? || throws_the_immovable?
+    def refused? = named_more_than_one? || reached_for_nothing? || unreadable? || moves_the_immovable?
   end
 
+  # Resolve the requested intent before asking whether a physical token fits.
+  # The initial physical-action candidate made that rule sound universal: it
+  # refused reading and putting down, and substituted available targets for
+  # absent ones. The unchanged-case comparison and original requests are kept
+  # in db/eval/physical-classifier-20260910. The first correction improved the
+  # aggregate but still substituted a related exit, person or item, and treated
+  # facing an open doorway as crossing it; its measured requests are kept in
+  # db/eval/physical-classifier-revised-20260910 as this edit's direct baseline.
   INSTRUCTIONS = <<~PROMPT.freeze
     You read one line of a text adventure player's input and say what they were
     trying to do. You do not narrate, you do not answer the player, and you do
     not decide whether they succeed.
 
-    Pick the intent that fits best:
+    First pick the intent from the action requested, even if its target is
+    unavailable. Then resolve that target. Pick the intent that fits best:
       move    - they are going somewhere else
       talk    - they are speaking to someone who is here
       examine - they are looking at something more closely
       take    - they are picking something up
       drop    - they are putting down, leaving or giving up something they carry
       attack  - they are trying to hurt someone who is here
+      use     - consume an item, offer it to someone, burn it, or open a barrier
       other   - anything else
 
     Then pick what they aimed it at from the lists you are given, copied
     exactly: a way out for `move`, a person for `talk` or `attack`, a thing
     lying here for `take`, a thing they are carrying for `drop`, and for
     `examine` a thing on either of those two lists -- looking at something works
-    whether it is in their hands or on the floor in front of them. If the intent
-    is none of those, or they named a place, a person or a thing that is not on
-    those lists, answer `nothing`. Do not answer with a place they cannot reach
-    from here, a person who is not here, something that is not lying in this
-    room, or something they are not carrying.
+    whether it is in their hands or on the floor in front of them. `other` has
+    target `nothing`. If the requested target is absent from the appropriate
+    list, keep the requested intent and answer `nothing`. Never substitute
+    another available item, person or destination for the one requested.
+    Match conservatively: a place mentioned in scenery is not one of the ways
+    out, and a relationship, title or role is not a different listed person.
+    Do not infer that an available record is what the player meant merely
+    because it seems related. For example, a request to go to an unlisted room
+    remains `move` with `nothing`, and a request to speak to an absent landlord
+    remains `talk` with `nothing`.
+
+    Only for an intent of `use`, select the exact token of ONE listed Physical
+    Action whose action, object, recipient and tool match the request. Its
+    objects and tools form a single attempt, not extra acts. If none matches,
+    answer `use` with `nothing`, even when another physical action is available.
+    This token rule applies only to consuming, offering, burning and opening
+    barriers. Reading is `examine`. Putting an item on the ground or a fixture,
+    or leaving it there, is `drop`. Neither needs a Physical Action token.
+    Offering an item the player carries is `use`, even in spoken words; the
+    recipient can refuse. Do not replace an absent named offered item with a
+    different carried item. Asking someone for their item is `talk`. Opening a
+    gate, door or other barrier is `use`; crossing it is a separate `move`.
+    Words that only orient the player, such as turning around to face a door,
+    do not ask to cross it. If the named barrier is already open and therefore
+    has no listed Physical Action, answer `use` with `nothing`. Drinking and
+    eating consume the item. An unrelated observation, waiting or musing is
+    `other`.
 
     `talk` and `attack` read the SAME list of people, so what tells them apart
     is only what the player is doing to that person. Hitting, punching, kicking,
     swinging or lunging at somebody, grabbing them to hurt them, drawing on them
-    or setting about them is `attack`. Anything they SAY to somebody is `talk`,
-    however angry it is -- and a THREAT IS SAID: "tell me or I break your arm",
+    or setting about them is `attack`. Speech other than an offer to hand over
+    a carried item is `talk`, however angry it is -- and a THREAT IS SAID:
+    "tell me or I break your arm",
     "I am warning you", "back off" are `talk`, because the player has not
     touched anybody yet. Looking somebody over is `examine`, and `examine` never
     resolves to a person, so it answers `nothing`.
@@ -197,7 +234,7 @@ class Playthrough::Classifier
 
     answer = agent
       .with_schema(Playthrough::IntentSchema.for(
-        exit_names(exits) + cast_names(cast) + item_names(items) + item_names(carried)
+        exit_names(exits) + cast_names(cast) + item_names(items) + item_names(carried) + physical_actions.map(&:token)
       ))
       .ask(command_prompt(command, exits, cast, items, carried))
       .content
@@ -302,6 +339,7 @@ class Playthrough::Classifier
     # A separate, narrower set of "people you may hit" would be the app deciding
     # who is a legitimate target, which is a different game.
     when :attack then characters_here
+    when :use then physical_actions
     else []
     end
   end
@@ -337,6 +375,8 @@ class Playthrough::Classifier
   # prose is where the wandering is wanted.
   TEMPERATURE = 0.0
 
+  def physical_actions = Playthrough::PhysicalAction.new(playthrough).choices
+
   def command_prompt(command, exits, cast, items = [], carried = [])
     <<~PROMPT
       ## Where The Player Is
@@ -353,6 +393,9 @@ class Playthrough::Classifier
 
       ## What The Player Is Carrying
       #{item_list(carried, empty: "Nothing. The player is carrying nothing at all.")}
+
+      ## Physical Actions (token: one attempt)
+      #{physical_actions.map { |choice| "#{choice.token}: #{choice.name}" }.presence&.join("\n") || "None are available."}
 
       ## The Player Types
       #{command}
@@ -386,6 +429,16 @@ class Playthrough::Classifier
     # around it. An out-of-table answer that named `nothing` loses nothing by
     # being read as `other`, and is.
     return Intent.new(action: action, unknown_action: intent.to_s) if !known && named_something?(name)
+
+    if action == :use
+      choices = physical_actions
+      found = choices.find { |choice| choice.token == name }
+      extra = choices.find { |choice| choice.token == also && choice != found }
+      extra_record = extra&.subject || (exits + cast + items + carried).find do |record|
+        self.class.label_for(record) == also && !found&.records&.include?(record)
+      end
+      return Intent.new(action: action, physical: found, also_named: extra_record)
+    end
 
     # The closed set this action resolves against, the matcher that reads a
     # name out of it, and which of the Intent's slots the record lands in.
@@ -486,7 +539,8 @@ class Playthrough::Classifier
     connection = LocationConnection.find_by(location: playthrough.current_location, connected_location: exit)
     return "" if connection.nil?
 
-    " (#{connection.distance}, #{connection.travel_method})"
+    barrier = connection.open_for?(playthrough) ? "" : "; #{connection.barrier == 'keyed' ? 'locked' : 'jammed'}, open before crossing"
+    " (#{connection.distance}, #{connection.travel_method}#{barrier})"
   end
 
   def cast_list(cast)

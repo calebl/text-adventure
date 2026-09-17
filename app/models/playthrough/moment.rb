@@ -29,9 +29,16 @@ class Playthrough::Moment
   # conversation's cost flat.
   CONCLUSIONS_BUDGET = 400
 
-  # How many exchanges back it will even look, on top of the ones the durable
-  # chat already replays verbatim. The budget is the real limit.
+  # How many distinct older recollections to consider for the prompt after
+  # searching the full archive. The text budgets below are the final limits.
   CONCLUSIONS = 6
+
+  # Attributed recollections include the player's words and any engine receipt
+  # as well as the old resolution. Bound those complete entries separately from
+  # the bare-resolution reader. The experience corpus measures this addition;
+  # it does not widen the durable chat's verbatim replay.
+  MEMORIES_BUDGET = 1_200
+  PERSONAL_BLOWS = 3
 
   # WHAT CHANGED HANDS THIS TURN, AS DISTINCT FROM WHAT IS.
   #
@@ -243,7 +250,7 @@ class Playthrough::Moment
   # deliberately: a moment belongs to the turn it happened in, and a replayed
   # exchange should carry the room it happened in rather than the one the
   # player has since walked to.
-  def character_context(character, replayed: Chat::HISTORY_EXCHANGES)
+  def character_context(character, replayed: Chat::HISTORY_EXCHANGES, query: nil)
     lines = []
     lines << "Where you are: #{location.name}." if location
     lines << "The time is about #{time_of_day}."
@@ -251,17 +258,19 @@ class Playthrough::Moment
     company = others.reject { |other| other == character }
     lines << "Also here, besides the two of you: #{name_list(company)}." if company.any?
 
-    if (attempt = last_attempt)
-      lines << attempt
+    lines.concat(personal_facts(character))
+
+    # A location now shared is not evidence that they witnessed the previous
+    # turn. The scene's persisted cast is the receipt of who was present then.
+    if witnessed_current_scene?(character)
+      lines << last_attempt if last_attempt
+      lines << last_reading if last_reading
     end
 
-    if (reading = last_reading)
-      lines << reading
-    end
-
-    if (concluded = conclusions(character, replayed: replayed)).any? && protagonist
-      lines << "What you have already concluded about #{protagonist.fullname}, earlier in this conversation:\n" +
-               concluded.map { |sentence| "- #{sentence}" }.join("\n")
+    if (remembered = recollections(character, replayed: replayed, query: query)).any? && protagonist
+      lines << "Your recollections of earlier exchanges with #{protagonist.fullname}. " \
+               "These are what you heard and believed then, not independent proof of the speaker's claims:\n" +
+               remembered.map { |sentence| "- #{sentence}" }.join("\n")
     end
 
     lines.join("\n")
@@ -280,22 +289,59 @@ class Playthrough::Moment
   #
   # `replayed` is how many of the most recent exchanges the chat is already
   # sending verbatim, so they are skipped here rather than paid for twice.
-  def conclusions(character, replayed: Chat::HISTORY_EXCHANGES)
-    rows = Interaction.where(character: character, scene_id: playthrough.scene_chain.map(&:id)).chronological.to_a
-    replayed = [ replayed.to_i, 0 ].max
-    rows = rows[0...-replayed] || [] if replayed.positive?
-
-    room = CONCLUSIONS_BUDGET
-    kept = []
-    rows.last(CONCLUSIONS).reverse_each do |row|
-      sentence = (row.inner_resolution.presence || row.action).to_s.strip
-      next if sentence.blank? || sentence.length > room
-
-      room -= sentence.length
-      kept.unshift(sentence)
+  def conclusions(character, replayed: Chat::HISTORY_EXCHANGES, query: nil)
+    memory = Playthrough::Memory.new(playthrough, character)
+    under_memory_budget(memory.recall(query: query, replayed: replayed), CONCLUSIONS_BUDGET) do |row|
+      memory.resolution(row)
     end
+  end
 
-    kept
+  def recollections(character, replayed: Chat::HISTORY_EXCHANGES, query: nil)
+    memory = Playthrough::Memory.new(playthrough, character)
+    under_memory_budget(memory.recall(query: query, replayed: replayed), MEMORIES_BUDGET) do |row|
+      memory.recollection(row)
+    end
+  end
+
+  # State and events this character directly experienced, never global history.
+  # The present condition remains true after a ceasefire; the agreement says
+  # whether the old blows still constitute a fight, not whether they happened.
+  def personal_facts(character)
+    return [] unless playthrough.cast_in(location).include?(character)
+
+    lines = []
+    own_body = playthrough.vitals_for(character)
+    lines << "Your own condition: #{own_body.in_words}." if own_body
+    return lines unless protagonist
+
+    if playthrough.foes_in(location).include?(character)
+      lines << "You are currently fighting #{protagonist.fullname}."
+    elsif playthrough.npc_states.find_by(character: character)&.ceasefire_holds?
+      lines << "You have a ceasefire with #{protagonist.fullname}; it still holds."
+    end
+    experienced = playthrough.blows.where(attacker: character).or(playthrough.blows.where(target: character))
+    experienced.order(id: :desc).limit(PERSONAL_BLOWS).to_a.reverse_each do |blow|
+      lines << "You experienced this recorded blow: #{blow.attacker.fullname} struck #{blow.target.fullname} " \
+               "for #{blow.damage} hit points in #{blow.location.name}. This is a past event; your condition above is current."
+    end
+    lines
+  end
+
+  def witnessed_current_scene?(character)
+    scene = playthrough.current_scene
+    scene && scene.characters.exists?(id: character.id)
+  end
+
+  def under_memory_budget(rows, budget)
+    kept = []
+    rows.each do |row|
+      text = yield row
+      next if text.blank? || text.length > budget
+
+      budget -= text.length
+      kept << [ row.id, text ]
+    end
+    kept.sort_by(&:first).map(&:last)
   end
 
   # The people the records put in this room besides the player -- the same

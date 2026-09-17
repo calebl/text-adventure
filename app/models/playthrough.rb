@@ -5,6 +5,7 @@
 class Playthrough < ApplicationRecord
   belongs_to :story
   belongs_to :character, optional: true
+  has_many :passages, class_name: "Playthrough::Passage", dependent: :destroy
   belongs_to :current_location, class_name: "Location", optional: true
   belongs_to :current_scene, class_name: "Scene", optional: true
 

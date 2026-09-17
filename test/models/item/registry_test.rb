@@ -39,6 +39,19 @@ class Item::RegistryTest < ActiveSupport::TestCase
     assert_equal "Her own ward stamp, the ink still wet.", item.description
   end
 
+  test "physical profiles are closed parameters and missing or invalid values grant no powers" do
+    rows = admit(candidate("healing draught").merge("use_kind" => "healing", "combustible" => false),
+                 candidate("paper scrap").merge("use_kind" => "ordinary", "combustible" => true))
+    assert_equal %w[healing ordinary], rows.map(&:use_kind)
+    assert_equal [ false, true ], rows.map(&:combustible?)
+    assert_equal [ Item::HEALING_POINTS, 0 ], rows.map(&:healing_points)
+
+    other_room = create(:location, story: @story)
+    rows = admit(candidate("old receipt"), candidate("strange stone").merge("use_kind" => "heal_everyone", "combustible" => "true"), location: other_room)
+    assert_equal %w[ordinary ordinary], rows.map(&:use_kind)
+    assert_equal [ false, false ], rows.map(&:combustible?)
+  end
+
   # An empty list and an absent one both mean the same thing, and a room
   # containing nothing is the ordinary case. See Location::DetailSchema.
   test "an empty answer furnishes nothing and raises nothing" do

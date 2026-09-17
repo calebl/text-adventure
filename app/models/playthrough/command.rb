@@ -54,7 +54,7 @@ class Playthrough::Command < ApplicationRecord
   # A dead worker's running row always retains its accepted place in the queue.
   def blocks_later?
     status.in?(%w[pending running]) || (recoverable? &&
-      (journal.fetch("steps", {}).keys & %w[take drop throw attack arrival_cost character_effect narrated talked outcome]).any?)
+      (journal.fetch("steps", {}).keys & %w[take drop throw attack arrival_cost physical_effect character_effect narrated talked outcome]).any?)
   end
 
   # Latest accepted unfinished line resumes its predecessors too. Reading this

@@ -1,0 +1,20 @@
+{
+  "result_sha256": "f68386c086ad2c45596c1bbe9490979b543092ca17e72a46e62d8514255ae7d4",
+  "readings": 36,
+  "calls": 72,
+  "actual_models": [
+    "mistralai/mistral-medium-3.1"
+  ],
+  "input_tokens": 51091,
+  "output_tokens": 6244,
+  "cached_tokens": 1366,
+  "state_counts": {
+    "settled": 72
+  },
+  "registry_priced_usd": 0.03297904,
+  "provider_reported_partial_usd": 0.02035784,
+  "provider_cost_available_calls": 36,
+  "task_accounted_usd": 0.172092,
+  "shared_limit_usd": 5,
+  "shared_accounted_at_completion_usd": 4.085027
+}

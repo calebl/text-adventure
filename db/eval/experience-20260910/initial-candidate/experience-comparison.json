@@ -1,0 +1,197 @@
+{
+  "arms": {
+    "before": {
+      "source": "0696d409260b0c1b921d617a714e8428f94477ff",
+      "corpus": "22b00a611e2ec41c3efea15c2a44fc8f2637b6f02dcc00533e751d3fb2ccbbb8",
+      "fixtures": "3cb29d3cf1863b09f523b914adec75f0ca096c6c4cf29f0228641accdf5dc7c2",
+      "repetitions": {
+        "1": {
+          "experience_contradiction": 0.25,
+          "narration_words": 40.0,
+          "reaction_words": 57.0
+        },
+        "2": {
+          "experience_contradiction": 0.25,
+          "narration_words": 46.5,
+          "reaction_words": 61.75
+        },
+        "3": {
+          "experience_contradiction": 0.5,
+          "narration_words": 37.25,
+          "reaction_words": 54.75
+        },
+        "4": {
+          "experience_contradiction": 0.5,
+          "narration_words": 35.75,
+          "reaction_words": 57.75
+        }
+      },
+      "contradictions": 6,
+      "cases": {
+        "own-injury": {
+          "contradictions": 4,
+          "key_given": 0,
+          "specific_experience_references": 0
+        },
+        "unwitnessed-injury": {
+          "contradictions": 0,
+          "key_given": 0,
+          "specific_experience_references": 0
+        },
+        "old-betrayal": {
+          "contradictions": 2,
+          "key_given": 2,
+          "specific_experience_references": 0
+        },
+        "old-promise": {
+          "contradictions": 0,
+          "key_given": 4,
+          "specific_experience_references": 0
+        }
+      },
+      "calls": 32,
+      "model_ids": [
+        "mistralai/mistral-medium-3.1"
+      ],
+      "input_tokens": 25497,
+      "output_tokens": 2871,
+      "provider_cost_usd": 0.009562,
+      "provider_cost_missing": 16,
+      "conservative_usage_usd": 0.184905
+    },
+    "after": {
+      "source": "0696d409+b0d7a0a32bf07660869872200979db50c7b45ded918873fa0de4a379d0f49bf1",
+      "corpus": "22b00a611e2ec41c3efea15c2a44fc8f2637b6f02dcc00533e751d3fb2ccbbb8",
+      "fixtures": "3cb29d3cf1863b09f523b914adec75f0ca096c6c4cf29f0228641accdf5dc7c2",
+      "repetitions": {
+        "1": {
+          "experience_contradiction": 0.0,
+          "narration_words": 45.0,
+          "reaction_words": 58.0
+        },
+        "2": {
+          "experience_contradiction": 0.0,
+          "narration_words": 41.5,
+          "reaction_words": 58.0
+        },
+        "3": {
+          "experience_contradiction": 0.0,
+          "narration_words": 38.25,
+          "reaction_words": 59.25
+        },
+        "4": {
+          "experience_contradiction": 0.0,
+          "narration_words": 36.0,
+          "reaction_words": 57.0
+        }
+      },
+      "contradictions": 0,
+      "cases": {
+        "own-injury": {
+          "contradictions": 0,
+          "key_given": 0,
+          "specific_experience_references": 4
+        },
+        "unwitnessed-injury": {
+          "contradictions": 0,
+          "key_given": 0,
+          "specific_experience_references": 0
+        },
+        "old-betrayal": {
+          "contradictions": 0,
+          "key_given": 0,
+          "specific_experience_references": 4
+        },
+        "old-promise": {
+          "contradictions": 0,
+          "key_given": 4,
+          "specific_experience_references": 0
+        }
+      },
+      "calls": 32,
+      "model_ids": [
+        "mistralai/mistral-medium-3.1"
+      ],
+      "input_tokens": 26106,
+      "output_tokens": 2914,
+      "provider_cost_usd": 0.00983,
+      "provider_cost_missing": 16,
+      "conservative_usage_usd": 0.18881
+    }
+  },
+  "verdicts": [
+    {
+      "code": "experience_contradiction",
+      "before": {
+        "runs": 4,
+        "min": 0.25,
+        "max": 0.5,
+        "median": 0.375,
+        "range": 0.25
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": -0.375,
+      "p_value": 0.028571,
+      "exact": true,
+      "outcome": "real",
+      "band": 0.25
+    },
+    {
+      "code": "narration_words",
+      "before": {
+        "runs": 4,
+        "min": 35.75,
+        "max": 46.5,
+        "median": 38.625,
+        "range": 10.75
+      },
+      "after": {
+        "runs": 4,
+        "min": 36.0,
+        "max": 45.0,
+        "median": 39.875,
+        "range": 9.0
+      },
+      "delta": 1.25,
+      "p_value": 0.885714,
+      "exact": true,
+      "outcome": "noise",
+      "band": 10.75
+    },
+    {
+      "code": "reaction_words",
+      "before": {
+        "runs": 4,
+        "min": 54.75,
+        "max": 61.75,
+        "median": 57.375,
+        "range": 7.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 57.0,
+        "max": 59.25,
+        "median": 58.0,
+        "range": 2.25
+      },
+      "delta": 0.625,
+      "p_value": 0.485714,
+      "exact": true,
+      "outcome": "noise",
+      "band": 7.0
+    }
+  ],
+  "limitations": [
+    "Manual judgments were not blinded; all raw outputs and labels are retained.",
+    "The promise request reminds the NPC of the promise; both arms lend the key, and neither names the medicine. No improvement is claimed for that case.",
+    "Neither arm claims to witness the remote attack. Both invent some unrelated local news; this is outside the targeted experience contradiction metric and remains a prose-verification concern.",
+    "Lexical retrieval can miss paraphrases. Recollections are attributed beliefs and do not authorize state changes.",
+    "Four repetitions of these fixtures do not establish general NPC realism."
+  ]
+}

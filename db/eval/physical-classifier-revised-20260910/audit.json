@@ -1,0 +1,597 @@
+{
+  "historical_source": "/home/calebl/.treehouse/text-adventure-b5f921/1/text-adventure/tmp/eval/classifier-2026-09-10/classifier.json",
+  "source_discovered_in": "doc/evidence/ta-bench-rebaseline-stale/classifier-run.log",
+  "historical_sha256": "678a0107b9a86fb469c629b2f53ac2909574d72f9a10d3f21f3605de66bc5829",
+  "historical_full_metrics_match_kept_summary": true,
+  "excluded_label_ids": [
+    "drop-daybook-hand-over",
+    "drop-slate-give",
+    "move-closet-behind-me",
+    "real-give-him-the-index",
+    "real-give-him-your-daybook"
+  ],
+  "unchanged_cases": 334,
+  "before_unarguable_cases": [
+    280,
+    280,
+    280,
+    280
+  ],
+  "after_unarguable_cases": [
+    280,
+    280,
+    280,
+    280
+  ],
+  "before_values": {
+    "strict_accuracy": [
+      0.9464285714285714,
+      0.9428571428571428,
+      0.95,
+      0.9392857142857143
+    ],
+    "accuracy": [
+      0.9491017964071856,
+      0.9431137724550899,
+      0.9550898203592815,
+      0.9431137724550899
+    ],
+    "intent_accuracy": [
+      0.9850299401197605,
+      0.9850299401197605,
+      0.9880239520958084,
+      0.9820359281437125
+    ],
+    "refusal_agreement": [
+      0.9571428571428572,
+      0.9535714285714286,
+      0.9607142857142857,
+      0.9535714285714286
+    ],
+    "closed_set_misses": [
+      12,
+      14,
+      11,
+      13
+    ],
+    "latency_median": [
+      0.6627,
+      0.60955,
+      0.6172,
+      0.59775
+    ],
+    "latency_p95": [
+      1.1845,
+      0.9896,
+      1.0013,
+      0.9947
+    ],
+    "failures": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "after_values": {
+    "strict_accuracy": [
+      0.9571428571428572,
+      0.9535714285714286,
+      0.9571428571428572,
+      0.9571428571428572
+    ],
+    "accuracy": [
+      0.9610778443113772,
+      0.9580838323353293,
+      0.9610778443113772,
+      0.9610778443113772
+    ],
+    "intent_accuracy": [
+      0.9910179640718563,
+      0.9910179640718563,
+      0.9910179640718563,
+      0.9910179640718563
+    ],
+    "refusal_agreement": [
+      0.9642857142857143,
+      0.9607142857142857,
+      0.9642857142857143,
+      0.9642857142857143
+    ],
+    "closed_set_misses": [
+      10,
+      11,
+      10,
+      10
+    ],
+    "latency_median": [
+      0.9045208485331386,
+      0.9514738619909622,
+      1.020797130477149,
+      1.0647211674950086
+    ],
+    "latency_p95": [
+      1.2180085739819333,
+      1.275689134025015,
+      1.3377153250621632,
+      1.3731612649280578
+    ],
+    "failures": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "suppressed_metrics": [],
+  "unchanged_verdicts": [
+    {
+      "metric": "strict_accuracy",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "strict_accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.9392857142857143,
+          "max": 0.95,
+          "median": 0.9446428571428571,
+          "range": 0.010714285714285676
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9535714285714286,
+          "max": 0.9571428571428572,
+          "median": 0.9571428571428572,
+          "range": 0.0035714285714285587
+        },
+        "delta": 0.0125,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.010714285714285676
+      }
+    },
+    {
+      "metric": "accuracy",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.9431137724550899,
+          "max": 0.9550898203592815,
+          "median": 0.9461077844311377,
+          "range": 0.0119760479041916
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9580838323353293,
+          "max": 0.9610778443113772,
+          "median": 0.9610778443113772,
+          "range": 0.0029940119760478723
+        },
+        "delta": 0.015,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.0119760479041916
+      }
+    },
+    {
+      "metric": "intent_accuracy",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "intent_accuracy",
+        "before": {
+          "runs": 4,
+          "min": 0.9820359281437125,
+          "max": 0.9880239520958084,
+          "median": 0.9850299401197605,
+          "range": 0.005988023952095856
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9910179640718563,
+          "max": 0.9910179640718563,
+          "median": 0.9910179640718563,
+          "range": 0.0
+        },
+        "delta": 0.006,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.005988023952095856
+      }
+    },
+    {
+      "metric": "refusal_agreement",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "refusal_agreement",
+        "before": {
+          "runs": 4,
+          "min": 0.9535714285714286,
+          "max": 0.9607142857142857,
+          "median": 0.9553571428571429,
+          "range": 0.0071428571428571175
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9607142857142857,
+          "max": 0.9642857142857143,
+          "median": 0.9642857142857143,
+          "range": 0.0035714285714285587
+        },
+        "delta": 0.0089,
+        "p_value": 0.057143,
+        "exact": true,
+        "outcome": "inconclusive",
+        "band": 0.0071428571428571175
+      }
+    },
+    {
+      "metric": "closed_set_misses",
+      "direction": "BETTER",
+      "verdict": {
+        "code": "closed_set_misses",
+        "before": {
+          "runs": 4,
+          "min": 11.0,
+          "max": 14.0,
+          "median": 12.5,
+          "range": 3.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 10.0,
+          "max": 11.0,
+          "median": 10.0,
+          "range": 1.0
+        },
+        "delta": -2.5,
+        "p_value": 0.057143,
+        "exact": true,
+        "outcome": "noise",
+        "band": 3.0
+      }
+    },
+    {
+      "metric": "latency_median",
+      "direction": "WORSE",
+      "verdict": {
+        "code": "latency_median",
+        "before": {
+          "runs": 4,
+          "min": 0.59775,
+          "max": 0.6627,
+          "median": 0.613375,
+          "range": 0.06494999999999995
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.9045208485331386,
+          "max": 1.0647211674950086,
+          "median": 0.9861354962340556,
+          "range": 0.16020031896186993
+        },
+        "delta": 0.3728,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.16020031896186993
+      }
+    },
+    {
+      "metric": "latency_p95",
+      "direction": "WORSE",
+      "verdict": {
+        "code": "latency_p95",
+        "before": {
+          "runs": 4,
+          "min": 0.9896,
+          "max": 1.1845,
+          "median": 0.998,
+          "range": 0.19490000000000007
+        },
+        "after": {
+          "runs": 4,
+          "min": 1.2180085739819333,
+          "max": 1.3731612649280578,
+          "median": 1.306702229543589,
+          "range": 0.1551526909461245
+        },
+        "delta": 0.3087,
+        "p_value": 0.028571,
+        "exact": true,
+        "outcome": "real",
+        "band": 0.19490000000000007
+      }
+    },
+    {
+      "metric": "failures",
+      "direction": "unchanged",
+      "verdict": {
+        "code": "failures",
+        "before": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "after": {
+          "runs": 4,
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "range": 0.0
+        },
+        "delta": 0.0,
+        "p_value": 1.0,
+        "exact": true,
+        "outcome": "noise",
+        "band": 0.0
+      }
+    }
+  ],
+  "current_label_misses": [
+    {
+      "id": "attack-neb-court-both",
+      "typed": "go for Neb",
+      "current_expected": [
+        "attack -> Neb Halloran"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "move -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "move -> nothing": 4
+      }
+    },
+    {
+      "id": "grammar-mine",
+      "typed": "pick up mine",
+      "current_expected": [
+        "take -> ward stamp"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> nothing": 4
+      }
+    },
+    {
+      "id": "grammar-that-one",
+      "typed": "take that one on the lowest shelf",
+      "current_expected": [
+        "take -> Perrin's private index"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> nothing": 4
+      }
+    },
+    {
+      "id": "move-closet-behind-me",
+      "typed": "turn around and open the closet at my back",
+      "current_expected": [
+        "use -> nothing"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "move -> The Supply Closet": 4
+      },
+      "label_changed": true,
+      "before_right": 4,
+      "before_answers": {
+        "move -> The Supply Closet": 4
+      }
+    },
+    {
+      "id": "real-take-seal-from-rowe",
+      "typed": "take the inspectorate seal from rowe",
+      "current_expected": [
+        "take -> nothing"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "talk -> Halkett Rowe": 4
+      },
+      "label_changed": false,
+      "before_right": 2,
+      "before_answers": {
+        "take -> nothing": 2,
+        "other -> nothing": 2
+      }
+    },
+    {
+      "id": "script-lc-t19",
+      "typed": "look up at the Celestial Spire from the lane and take its bearing",
+      "current_expected": [
+        "examine -> nothing",
+        "move -> nothing"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "other -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "other -> nothing": 4
+      }
+    },
+    {
+      "id": "take-apron-folded",
+      "typed": "take the folded thing behind the blank forms",
+      "current_expected": [
+        "take -> copy-room apron"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> nothing": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> nothing": 4
+      }
+    },
+    {
+      "id": "two-names-examine-closet-fragments",
+      "typed": "compare the index against my daybook",
+      "current_expected": [
+        "examine -> Perrin's private index (and Ward Office 12 daybook)"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "examine -> Perrin's private index": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "examine -> Perrin's private index": 4
+      }
+    },
+    {
+      "id": "two-names-take-all",
+      "typed": "take all of it",
+      "current_expected": [
+        "take -> ward stamp (and Ward Office 12 daybook)"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> Ward Office 12 daybook (and filing press)": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> Ward Office 12 daybook (and filing press)": 4
+      }
+    },
+    {
+      "id": "two-names-take-the-lot",
+      "typed": "take the lot",
+      "current_expected": [
+        "take -> ward stamp (and Ward Office 12 daybook)"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> Ward Office 12 daybook (and filing press)": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> Ward Office 12 daybook (and filing press)": 4
+      }
+    },
+    {
+      "id": "two-names-talk-perrin",
+      "typed": "Perrin, tell Rowe what you found in the amendments",
+      "current_expected": [
+        "talk -> Perrin Lasco (and Halkett Rowe)"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "talk -> Perrin Lasco": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "talk -> Perrin Lasco": 4
+      }
+    },
+    {
+      "id": "unresolved-move-copy-room",
+      "typed": "go through to the copy room",
+      "current_expected": [
+        "move -> nothing"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "move -> Ward Office 12": 4
+      },
+      "label_changed": false,
+      "before_right": 4,
+      "before_answers": {
+        "move -> nothing": 4
+      }
+    },
+    {
+      "id": "unresolved-take-blank-writ",
+      "typed": "take a blank writ out of the press",
+      "current_expected": [
+        "take -> nothing"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "take -> filing press": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> filing press": 4
+      }
+    },
+    {
+      "id": "unresolved-talk-landlord",
+      "typed": "ask my landlord for another week",
+      "current_expected": [
+        "talk -> nothing"
+      ],
+      "current_misses": 4,
+      "current_wrong_answers": {
+        "talk -> Ammon Brace": 4
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "other -> nothing": 4
+      }
+    },
+    {
+      "id": "real-give-him-the-index",
+      "typed": "give him the index",
+      "current_expected": [
+        "use -> nothing"
+      ],
+      "current_misses": 2,
+      "current_wrong_answers": {
+        "use -> Offer Ward Office 12 daybook to Halkett Rowe; they may refuse": 2
+      },
+      "label_changed": true,
+      "before_right": 0,
+      "before_answers": {
+        "drop -> Ward Office 12 daybook": 4
+      }
+    },
+    {
+      "id": "grammar-plural",
+      "typed": "take the aprons",
+      "current_expected": [
+        "take -> copy-room apron"
+      ],
+      "current_misses": 1,
+      "current_wrong_answers": {
+        "take -> nothing": 1
+      },
+      "label_changed": false,
+      "before_right": 0,
+      "before_answers": {
+        "take -> nothing": 4
+      }
+    }
+  ]
+}

@@ -568,6 +568,8 @@ class WorldSeed::Exporter
       # back as -- the same "omitted rather than written out" rule
       # `locations.danger` and the flags above it follow.
       document["bulk"] = item.bulk unless item.bulk == Item::HANDY
+      document["use_kind"] = item.use_kind unless item.use_kind == "ordinary"
+      document["combustible"] = true if item.combustible?
       # WHERE IN THE ROOM IT IS LYING, on the same terms as a character's pair
       # one method up. An item exported under a CHARACTER never has one -- a
       # thing in a pair of hands is in no room to be placed in
@@ -709,6 +711,8 @@ class WorldSeed::Exporter
     warn_about(row, rows, names)
 
     document = { "between" => names, "distance" => row.distance, "travel_method" => row.travel_method }
+    document["barrier"] = row.barrier unless row.barrier == "open"
+    document["key_template"] = row.key_template.name if row.key_template
     document.merge(hazard_document(rows))
   end
 
@@ -740,7 +744,7 @@ class WorldSeed::Exporter
 
     if rows.one?
       @warnings << "#{edge}: only one direction exists in the database; loading this file writes both."
-    elsif rows.map { |candidate| [ candidate.distance, candidate.travel_method ] }.uniq.size > 1
+    elsif rows.map { |candidate| [ candidate.distance, candidate.travel_method, candidate.barrier, candidate.key_template_id ] }.uniq.size > 1
       @warnings << "#{edge}: the two directions disagree; exported the values on #{row.location.name}'s row."
     end
 

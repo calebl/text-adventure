@@ -1,0 +1,23 @@
+{
+  "state": "complete and replay-verified",
+  "complete": true,
+  "expected_branch_readings": 28,
+  "saved_valid_branch_readings": 28,
+  "remaining_branch_readings": 0,
+  "baseline_pointer_changed": true,
+  "branch_evidence_sha256": "60eb9fa10e7fbab24eaa6efbaa7835ab83d288df0d061974aa694a592d361b27",
+  "combined_readings_sha256": "0fa28cc0ee145ec87020535a894d813aa4b29c2c99b106af37acb2644b63b17a",
+  "result_sha256": "d4a38705d2bbfe35bda21c1a6253b0c1f44e9e510360d68b35780b270cb3fda9",
+  "comparison_sha256": "a4d95e537d382dd5c03696e704ba3c987951d49d799a31273e8ebd3d71165229",
+  "verdicts_sha256": "13c2209b39e52b9beac50015f1c2c7f706d1629ab64be6b724aa113d86e8d30e",
+  "offline_replay_verified": true,
+  "cost_snapshot": {
+    "paid_calls_including_abandoned": 191,
+    "provider_or_registry_usd": 0.26578032,
+    "accounted_usd": 0.265874,
+    "new_branch_paid_calls": 28,
+    "new_branch_provider_or_registry_usd": 0.03281896,
+    "shared_limit_usd_at_finalization": 4.0,
+    "shared_accounted_usd_at_finalization": 3.546902
+  }
+}

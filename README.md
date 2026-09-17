@@ -136,6 +136,42 @@ There is still no Node, no `package.json` and no build step. `propshaft` serves
 the module names itself, and foreman is a process runner rather than a build
 step — deliberately outside the Gemfile, installed on demand by `bin/dev`.
 
+### Use things and open passages
+
+Describe your attempt in ordinary text, or use a slash command to select it
+directly. The available actions come from the items you carry, the people
+present, and the room's actual doorways. These examples require the named
+things and their corresponding physical profiles in your world:
+
+| command | what it does |
+| --- | --- |
+| `/consume healing draught` | Consume a carried dose and restore hit points up to your maximum. `/eat` and `/drink` also select consumption; ordinary food and drink do not heal wounds. |
+| `/offer brass key to Maren` | Ask the character to accept a carried item. They may refuse; ownership changes only if they accept. `/give` is an alias. |
+| `/burn letter with tinderbox` | Destroy a combustible item you carry or that lies in this room, using a carried firestarter. |
+| `/unlock Storeroom with brass key` | Open a keyed doorway using its matching key. |
+| `/pick Storeroom with lockpicks` | Try a dexterity check against a keyed doorway. |
+| `/pry Loft with iron lever` | Try a strength check against a jammed doorway using a carried lever. |
+| `/force Loft` | Try to force a jammed doorway with a penalized strength check. |
+
+Opening a doorway leaves you in the room. Use a separate `/move Storeroom` to
+cross it. A failed check leaves the barrier closed; a successful opening applies
+in both directions in your game. Other playthroughs keep their own locks, and a
+moving city's doorway keeps its lock and your opening when its destination moves.
+Keys and opening tools remain in your hands.
+
+Consumption and burning spend that game's copy permanently. Revisiting or
+re-seeding the room cannot provide another dose or restore a burned letter;
+another playthrough starts with its own intact copy. Offering an item transfers
+ownership if accepted; it does not consume or apply the item for the recipient.
+
+Newly generated items receive closed physical profiles. Existing items remain
+`ordinary` until a profile is explicitly supplied; a name or description that
+mentions medicine does not create a healing effect. Healing amounts come from
+`Item::HEALING_POINTS`. Door barriers and their matching keys are authored in
+seed files; generation currently creates open passages. See the
+[physical item parameters](db/seeds/worlds/README.md#use_kind-and-combustible-physical-parameters)
+and [door barriers](db/seeds/worlds/README.md#barrier-and-key_template-a-doorways-initial-state).
+
 ## Play the mechanics on their own
 
 `rake game:mechanics` walks a world with **the narration switched off and
@@ -481,27 +517,29 @@ flowchart TD
     W0 --> G0
     G0 -->|"no slash: anything a player types"| C1
     G0 -->|"yes"| G1
-    G1["Read it with the FIXED GRAMMAR, no model call<br/>the verb off a closed table, the noun off the SAME<br/>closed set the classifier would have been offered"]
-    G1 --> G2{"did it resolve a record,<br/>and does the line join nothing else on?"}
-    G2 -->|"no: a noun it could not place,<br/>or two things on one line"| C1
+    G1["Read it with the FIXED GRAMMAR, no model call<br/>the verb off a closed table, the noun off the SAME<br/>closed set the classifier would have been offered<br/>physical verbs bind a whole engine-built attempt"]
+    G1 --> G2{"did it resolve a record or physical attempt,<br/>and does the line join nothing else on?"}
+    G2 -->|"no: an ordinary noun it could not place,<br/>or two things on one line"| C1
+    G2 -->|"no: a physical slash command<br/>whose whole attempt is unavailable"| R
     G2 -->|"yes: resolved_by = grammar"| R
 
     subgraph CL["Playthrough::Classifier#classify -- resolved_by = model"]
-        C1["Build the candidates FROM RECORDS<br/>the room's exits, who is standing in it,<br/>what is lying here, what the player carries"]
-        C2["MODEL CALL, schema'd<br/>Playthrough::IntentSchema<br/>intent: move / talk / examine / take / drop / other<br/>target: an enum of ONLY those names"]
-        C3["Resolve the answer back to a RECORD<br/>an unresolvable target leaves it nil<br/>AND writes a Playthrough::Drift row"]
+        C1["Build the candidates FROM RECORDS<br/>the room's exits, who is standing in it,<br/>what is lying here, what the player carries,<br/>and complete physical attempts possible now"]
+        C2["MODEL CALL, schema'd<br/>Playthrough::IntentSchema<br/>intent: move / talk / examine / take / drop / attack / use / other<br/>target: an enum of ONLY those names and physical tokens"]
+        C3["Resolve the answer back to a RECORD or closed choice<br/>an unresolvable target leaves it nil<br/>AND writes a Playthrough::Drift row"]
         C1 --> C2 --> C3
     end
 
-    C3 --> R{"Will the engine play this line at all?<br/>two acts on one line, a reach that found nothing,<br/>or an answer the app cannot read"}
+    C3 --> R{"Will the engine play this line at all?<br/>two acts, a reach that found nothing, an unreadable answer,<br/>an immovable item, or a still-closed passage"}
     R -->|"no"| X1
-    R -->|"yes"| D{"Dispatch on the resolved RECORD,<br/>never on the intent label"}
+    R -->|"yes"| D{"Dispatch on the resolved RECORD or closed choice,<br/>never on the intent label alone"}
 
-    X1["Playthrough::Refusal, NO MODEL CALL<br/>the engine's own sentence out of the closed set<br/>no write, no Scene, no story time, no narrator<br/>the counter row is already taken"]
+    X1["Playthrough::Refusal, NO MODEL CALL<br/>the engine's own sentence out of the closed set<br/>no write, no Scene, no story time, no narrator<br/>a model-read refusal keeps its counter row"]
 
     D -->|"a Location"| M1
     D -->|"a Character"| T1
     D -->|"an Item"| I1
+    D -->|"a PhysicalAction choice"| P1
     D -->|"other, or a look at nothing"| N1
 
     subgraph MV["move: the load-or-generate seam"]
@@ -522,13 +560,19 @@ flowchart TD
     end
 
     subgraph TK["talk: InteractionAgent, two passes"]
-        T1["MODEL CALL, schema'd<br/>Interaction::Schema, the character answers<br/>as themselves: thought, felt, did"]
-        T1 --> T2["MODEL CALL, unschema'd, STREAMS<br/>a second pass turns that into prose"]
-        T2 --> T3{"narration blank?"}
-        T3 -->|"yes"| T4["Nothing persisted. A record written from<br/>nothing is a turn nobody can read"]
-        T3 -->|"no"| T5["Scene.create!, the moment the player reads<br/>characters = protagonist + who they spoke to,<br/>so the NEXT turn here knows who is present<br/>summary built in Ruby, not asked for"]
-        T5 --> T6["Interaction.create!<br/>six fields plus user_input and a derived summary<br/>inner_resolution is the one the narrator is NOT told<br/>the player never sees any of it"]
+        T1["MODEL CALL, schema'd<br/>Interaction::Schema, the character answers<br/>from bounded personal experience and chooses<br/>one immediate action from an engine-built set"]
+        T1 --> TE["Playthrough::NpcAction, NO MODEL CALL<br/>rebuilds the set, applies or rejects the choice,<br/>and returns the authoritative receipt"]
+        TE --> T2["MODEL CALL, unschema'd, buffered<br/>a second pass turns the reaction and receipt into prose<br/>failure keeps a factual engine fallback"]
+        T2 --> T5["Scene.create!, the moment the player reads<br/>cast copied from who is actually present<br/>summary built in Ruby, not asked for"]
+        T5 --> T6["Interaction.create!<br/>structured reaction plus user_input, derived summary<br/>and the engine receipt; private resolution stays hidden"]
         T6 --> T7["playthrough.update! scene"]
+    end
+
+    subgraph PH["consume / offer / burn / open: the engine owns the effect"]
+        P1{"offer to a character?"}
+        P1 -->|"yes: acceptance is theirs"| T1
+        P1 -->|"no"| P2["Playthrough::PhysicalAction, NO MODEL CALL<br/>rebuilds the attempt from current records<br/>then spends an item, rolls a check, or opens<br/>both directions for this playthrough"]
+        P2 --> P3["MODEL CALL, unschema'd, STREAMS<br/>the narrator receives the engine receipt<br/>failure keeps that receipt as factual prose"]
     end
 
     subgraph IT["take / drop / read: the app owns the row, then says so"]
@@ -544,9 +588,9 @@ flowchart TD
     end
 
     I3 --> A0
+    P3 --> A0
     M8 --> A0
     T7 --> A0
-    T4 --> A0
     N3 --> A0
 
     A0["Playthrough::Arc#run!, NO MODEL CALL<br/>four record predicates against the story's own arc:<br/>standing in the room, the interaction this turn wrote,<br/>this game's copy in the party's hands, the clock<br/>a beat REACHED is a playthrough_beats row, and the<br/>arc itself is never written by a typed line"]
@@ -564,10 +608,10 @@ flowchart TD
     classDef gap fill:#7c2d12,stroke:#fdba74,stroke-width:2px,color:#ffffff
     classDef io fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#ffffff
 
-    class C2,M3,M4,M6,T1,T2,I2,N2,A3 llm
-    class W0,C1,C3,G1,M1,M3N,M3A,M3B,M3C,M5,M7,M8,T5,T6,T7,I1,I3,N3,X1,A0,A2 rec
-    class N1,T4 gap
-    class IN,SSE,OUT,OUT2,D,R,G0,G2,T3,A1 io
+    class C2,M3,M4,M6,T1,T2,P3,I2,N2,A3 llm
+    class W0,C1,C3,G1,M1,M3N,M3A,M3B,M3C,M5,M7,M8,TE,T5,T6,T7,P2,I1,I3,N3,X1,A0,A2 rec
+    class N1 gap
+    class IN,SSE,OUT,OUT2,D,R,G0,G2,P1,A1 io
 ```
 
 **The two teal boxes at the bottom are the arc, and they are teal for the
@@ -594,9 +638,9 @@ anything. **The stored sentence is what an offline walk reaches**, because
 gets asserted with no model in the room
 (`lib/engine_sweep/scripts/an-ending-with-words.yml`).
 
-The two orange boxes are the honest ones. The narration box is where the
-classifications with nothing more specific to do end up; the blank branch of
-`talk` is a turn that produced nothing and kept nothing.
+The orange box is the honest one. It is where classifications with nothing more
+specific to do end up; every engine-owned effect now has factual fallback prose
+after the engine commits its receipt.
 
 **The refusal branch is teal, and that is the point of it.** *One line, one
 act* — the captain's ruling of 2026-09-04:
@@ -606,12 +650,13 @@ act* — the captain's ruling of 2026-09-04:
 > trying to do, then we should refuse and ask for clarification. This can all be
 > in the mechanics and doesn't need to go through narration."*
 
-So four shapes stop in front of the dispatch and no model is asked to write
+So five shapes stop in front of the dispatch and no model is asked to write
 them: a line naming two things the records both have, a reach the closed sets
 cannot answer, a classifier answer outside the intent table that still named
-a record, and a `throw` of something the world says is **immovable** — the one
-shape that is a fact about a record rather than about the reading, and the only
-one that has nothing to do with the classifier. A *look* is in the first of those
+a record, a `take` or `throw` of something the world says is **immovable**, and
+an attempt to cross or throw through a passage the game still has closed. The
+last two shapes are facts about records rather than about the reading, and have
+nothing to do with the classifier. A *look* is in the first of those
 and never the second — since a look
 resolves a record it can name two things, and it was never reaching for one it
 could miss, so "read the note and the index" is refused and "look at the sky"
@@ -620,10 +665,12 @@ both front ends read it — the browser gets the sentence plus what *is* here,
 `rake game:mechanics` gets the sentence and prints the records underneath as it
 always did. A refused line writes nothing at all: no row moves, no `Scene`
 exists, `Location#last_protagonist_visit` is untouched and `Story#clock` does
-not advance, because nothing happened. What it *does* leave is the measurement —
-the `Playthrough::Overreach` or `Playthrough::Drift` row, taken inside
-`Playthrough::Classifier#classify` before the loop asks whether it will play the
-line. The ruling changed what a turn does, not what is counted.
+not advance, because nothing happened. A refusal read by the classifier still
+leaves its measurement — the `Playthrough::Overreach` or
+`Playthrough::Drift` row is taken inside `Playthrough::Classifier#classify`
+before the loop asks whether it will play the line. A slash command resolved by
+the fixed grammar makes no classifier call and writes neither counter. The
+ruling changed what a model-read turn does, not what the classifier counts.
 
 The branch it replaced was `Playthrough::Turn#reach_fact`, which told the
 narrator that a failed reach had changed nothing and let it write the turn
@@ -800,7 +847,7 @@ So `items` holds **two layers**, and `playthrough_id` is which layer a row is in
 | layer | what it is | who writes it |
 | --- | --- | --- |
 | **the world's own row** — a *template*, `playthrough_id` nil | what a room or a person was seeded or generated with. Lying in a room, or in one of the world's people's hands, and those are its only two places | `WorldSeed::Loader`, `Item::Registry`. Exported by `WorldSeed::Exporter`, counted by the caps, and **never touched by anybody playing** |
-| **one game's own copy** — an *instance*, `playthrough_id` set | that playthrough's copy of a template, placed by `location_id` (lying in a room, in that game), `character_id` (in that person's hands, in that game), or **neither, which is the party's own hands** | `Item::Snapshot` only, and it creates nothing that is not a copy of a template |
+| **one game's own copy** — an *instance*, `playthrough_id` set | that playthrough's copy of a template, placed by `location_id` (lying in a room, in that game), `character_id` (in that person's hands, in that game), or **neither, which is the party's own hands for an intact copy**; spent copies remain as tombstones | `Item::Snapshot` creates it from a template; the engine changes that game's state |
 
 **The playthrough layer is the only one play ever reads.** The classifier's
 closed sets, `Playthrough::Turn#carry!` / `#put_down!` / `#read_item`,
@@ -817,6 +864,11 @@ the same rule with one stated exception: it lands in the **party's** hands,
 because the protagonist is the player. `items.template_id` is the durable link,
 so the guard is per template rather than per room — which is what stops a room
 the party emptied being refurnished the next time they walk back in.
+
+Consumed and burned copies keep their `template_id` and gain a spent
+`disposition`. These tombstones count as existing copies for the snapshot,
+while possession and floor readers exclude them. The world template stays
+intact; metadata refreshes do not reset a game's disposition.
 
 A copy carries **every column but which room it is in and whose it is**
 (`Item::NOT_COPIED`), so the next column added to `items` comes along without
@@ -1000,12 +1052,22 @@ and the narrator rebuild their context out of records on every turn, so there is
 nothing in last turn's exchange worth replaying, and their chats are kept only
 as the audit trail the debug view reads.
 
+When an exchange falls out of the verbatim chat window, it remains part of that
+character's bounded personal experience. The next conversation can carry
+attributed recollections selected from that character's own interactions in this
+playthrough, together with their condition, recent blows and any current
+ceasefire. Selection is lexical against the present line and the character's
+possessions, so a paraphrase with no shared terms can still be missed. Another
+character's private reaction, another playthrough and narrator prose are never
+sources of personal memory.
+
 Both are **bounded**, because the local models run on CPU in a 4,096-token
 window and this is a SQLite file on a laptop:
 
 | bound | what it does |
 | --- | --- |
 | `Chat::HISTORY_EXCHANGES` | how much of a character conversation is replayed. Trimming means deleting — RubyLLM rebuilds the request out of every persisted message. Nothing is lost: every exchange is an `Interaction` row, in full, forever. |
+| `Playthrough::Moment::MEMORIES_BUDGET` | how much attributed personal experience beyond the verbatim chat window reaches a character prompt. `Playthrough::Memory` selects from the full interaction archive before this character budget is applied. |
 | `Chat::KEEP_TURNS` | how many turns of audit trail are kept. **Unset by default, meaning keep everything** — measured at ~4 KB a turn on disk, so a 1,000-turn game costs ~4 MB against the 912 KB `models` registry that ships with the app. Set `TA_CHAT_KEEP_TURNS` to opt into a cap; then the older one-shot conversations are pruned at the end of every turn, the `Scene` stays and the receipts go. |
 | `Playthrough::RECAP_BUDGET` | how much of the playthrough the narrator prompt carries, in characters. |
 
@@ -1191,24 +1253,6 @@ check.
   carries only where it is now — nothing records where it has been, so a check
   on an item's movement has to infer it. `Story::Audit`'s `item_not_held` says
   so at its own definition.
-- **Nobody new gets created while you walk.** Where a character stands is a
-  record now — `characters.location_id`, and `Character.present_in(location)` is
-  the closed set `talk` resolves against — but the only writers are the world
-  file, `Character::Registry` placing somebody who is nowhere, and an explicit
-  `Character#move_to!`. So a room the file did not put anybody in has nobody in
-  it, and the `talk` branch is unreachable there. Populating a generated room
-  with people is `ta-narrator-memory`: a `Character` is nine validated fields and
-  a model call of its own, which is a world-population feature rather than a
-  whereabouts one.
-- **A talk turn keeps no `Scene` and no `Interaction` until both of its calls
-  land.** `Scene::Narrator` persists partial prose in an `ensure`; `talk_to` has
-  no equivalent, so a `talk` turn that fails halfway writes neither record. The
-  job makes this much rarer -- a closed tab no longer aborts anything -- without
-  closing it: a model that fails mid-turn still loses the exchange.
-  The character's own `Chat` is the exception, and deliberately not the fix: it
-  keeps the exchange, because it was a real question really answered, so the
-  next turn continues from a reply the player never got to read. Better than a
-  character contradicting themselves, and worth revisiting if it ever shows.
 - **A turn in flight is not re-joinable.** Reopen the page mid-narration and the
   log is what was persisted; the prose written so far is in the job's buffer and
   nowhere else. The finished turn arrives over the cable when it lands, because

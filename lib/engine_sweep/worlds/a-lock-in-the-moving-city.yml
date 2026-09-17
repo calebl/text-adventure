@@ -1,0 +1,93 @@
+# Exactly two movable doorways exchange their fixed endpoints every hour.
+# The rooms remain connected through their mobile bridge. Two hourly moves
+# restore the original graph, independently of the world's database id.
+format: 2
+universe:
+  physics: Ordinary physics except that the city's streets move every hour.
+  technology: Keys, locks and hand tools.
+  weapons: Wooden staves.
+  geographies: Two moving workshops between two fixed yards.
+  civilizations: A small trading town.
+  history: Traders learned to keep their keys through every rearrangement.
+  economics: Goods traded for coins.
+  politics: A town council keeps the peace.
+  religion: The town keeps its own festivals.
+  races:
+  - name: Townsfolk
+    description: Ordinary people of the town.
+story:
+  title: A Lock in the Moving City
+  genre: town adventure
+  start_time: '2026-09-10T23:55:00Z'
+  preface: You carry the key to a doorway whose far end moves with the city.
+  summary: Cal opens a door before the streets rearrange.
+opening_scene:
+  location: Mobile Workshop
+  characters: [Cal]
+  description: You stand beside the locked door in the moving workshop.
+  summary: Cal enters the workshop.
+characters:
+- fullname: Cal
+  nickname: Cal
+  race: Townsfolk
+  age: 30
+  sex: male
+  is_protagonist: true
+  is_companion: false
+  backstory: A trader returning for supplies.
+  personality: Patient and practical.
+  appearance: A travel-worn coat.
+  likes: Well-kept tools.
+  dislikes: Waste.
+  fears: Losing needed supplies.
+  stats: {level: 3, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+  items:
+  - name: workshop key
+    description: The key to the mobile workshop's outer door.
+    properties: '{}'
+    use_kind: key
+locations:
+- name: Mobile Workshop
+  detail_level: realized
+  population: nobody
+  opening: true
+  mobile: true
+  description: A moving workshop beside a locked outer door.
+  teaser: A workshop that moves.
+  lore: Its lock stays with its doorway as the city moves.
+- name: Mobile Gallery
+  detail_level: realized
+  population: nobody
+  mobile: true
+  description: A moving gallery at the other end of a long climbing bridge.
+  teaser: A gallery that moves.
+  lore: Its bridge remains joined to the workshop.
+- name: West Yard
+  detail_level: realized
+  population: nobody
+  description: A fixed yard in the west of the city.
+  teaser: A western yard.
+  lore: The yard stays where it was built.
+- name: East Yard
+  detail_level: realized
+  population: nobody
+  description: A fixed yard in the east of the city.
+  teaser: An eastern yard.
+  lore: The yard stays where it was built.
+connections:
+- between: [Mobile Workshop, Mobile Gallery]
+  distance: across the district
+  travel_method: climbing
+- between: [Mobile Workshop, West Yard]
+  distance: adjacent
+  travel_method: walking
+  barrier: keyed
+  key_template: workshop key
+- between: [Mobile Gallery, East Yard]
+  distance: adjacent
+  travel_method: walking
+mechanics:
+- name: The hourly rearrangement
+  kind: shuffle_connections
+  cadence: hourly
+  description: The two outer doorways exchange their fixed destinations each hour.

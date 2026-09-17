@@ -199,7 +199,9 @@ class Location::DetailSchemaTest < ActiveSupport::TestCase
 
     assert_equal "array", items["type"]
     assert_equal Item::Registry::MAX_PER_ROOM, items["maxItems"]
-    assert_equal %w[name description readable inscription], items.dig("items", "properties").keys
+    assert_equal %w[name description use_kind combustible readable inscription], items.dig("items", "properties").keys
+    assert_equal Item::USE_KINDS, items.dig("items", "properties", "use_kind", "enum")
+    assert_equal "boolean", items.dig("items", "properties", "combustible", "type")
   end
 
   test "an item names itself and says what it is, both bounded" do

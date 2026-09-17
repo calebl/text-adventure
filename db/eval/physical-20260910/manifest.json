@@ -1,0 +1,104 @@
+{
+  "description": "Unmodified raw outputs, manual annotations, live harnesses, and source manifests. The revised physical arm is the canonical after; the audit retains its original arm names.",
+  "physical_arms": {
+    "before": {
+      "raw": "physical-before.json",
+      "audit_arm": "before",
+      "source_manifest": "before-inputs.json"
+    },
+    "after": {
+      "raw": "physical-after.json",
+      "audit_arm": "revised",
+      "source_manifest": "after-inputs.json"
+    },
+    "initial_candidate": {
+      "raw": "initial-candidate/physical-after.json",
+      "audit_arm": "after",
+      "source_manifest": "initial-candidate/after-inputs.json"
+    }
+  },
+  "generation_arms": {
+    "before": {
+      "raw": "generation/generation-before.json",
+      "audit_arm": "before",
+      "source_manifest": "before-inputs.json"
+    },
+    "after": {
+      "raw": "generation/generation-after.json",
+      "audit_arm": "after",
+      "source_manifest": "generation/after-inputs.json"
+    }
+  },
+  "files": {
+    "physical-before.json": {
+      "original_path": "/tmp/ta-physical-stage/physical-before.json",
+      "sha256": "93b9478bbae25822756733c9b8ec38dfe0e86bec018e2975ef31aa67b1496e79",
+      "bytes": 456244
+    },
+    "physical-after.json": {
+      "original_path": "/tmp/ta-physical-stage/physical-revised.json",
+      "sha256": "5351dcd6486cf9adbf828bcec75727e2aefef719d8c69f3492ac85e87fa0ccc0",
+      "bytes": 484965
+    },
+    "initial-candidate/physical-after.json": {
+      "original_path": "/tmp/ta-physical-stage/physical-after.json",
+      "sha256": "4f50d60ca9b6cde613b623aac66a9d99e64c352829b80d4ea0108be6e890fe8f",
+      "bytes": 481967
+    },
+    "manual-audit.json": {
+      "original_path": "/tmp/ta-physical-stage/manual-audit.json",
+      "sha256": "3aef6eae702040faba8c07a48b410b15785ef9172724428ebf44902e65ff4731",
+      "bytes": 451493
+    },
+    "evaluate.rb": {
+      "original_path": "/tmp/ta-physical-stage/evaluate.rb",
+      "sha256": "3f95c9627dd0aa3e6e0f5636629e6f8a243cd572a1c4177b98fd1006cc66b4aa",
+      "bytes": 2629
+    },
+    "cases.json": {
+      "original_path": "/tmp/ta-physical-stage/cases.json",
+      "sha256": "84b7ac897108b5227cc21a3860ef6c0cf93a050196c7558cd2922ecc01f5f92f",
+      "bytes": 1486
+    },
+    "fixtures.rb": {
+      "original_path": "/tmp/ta-physical-stage/fixtures.rb",
+      "sha256": "b5de3af7346a9532f3ab9fb4733c664d39f05725a795459f5cbf0677abfacd9f",
+      "bytes": 4496
+    },
+    "before-inputs.json": {
+      "original_path": "/tmp/ta-physical-stage/before-inputs.json",
+      "sha256": "01f5072f8f0d35dafd17227ee16828455791477c014007f1298062c440313b91",
+      "bytes": 31699
+    },
+    "after-inputs.json": {
+      "original_path": "/tmp/ta-physical-stage/revised-inputs.json",
+      "sha256": "d2bd5c3182620e88fc18ed47944d0d95aaab2f9d96a84772cd32b6e985f8050a",
+      "bytes": 1237
+    },
+    "initial-candidate/after-inputs.json": {
+      "original_path": "/tmp/ta-physical-stage/after-inputs.json",
+      "sha256": "23fb19f588abd12c619aa000d1daf218796bc189e43686d52c97e96c8fd50abe",
+      "bytes": 1133
+    },
+    "generation/evaluate.rb": {
+      "original_path": "/tmp/ta-generation-stage/evaluate.rb",
+      "sha256": "de38d480195702b7f03f73ee8d95d6ad7c73f548d9d0276000733256556498e0",
+      "bytes": 2979
+    },
+    "generation/generation-before.json": {
+      "original_path": "/tmp/ta-generation-stage/generation-before.json",
+      "sha256": "cb64741030864671dabae435e961597d7d4d9d9a27082cda325b5aa0e6470cf6",
+      "bytes": 269878
+    },
+    "generation/generation-after.json": {
+      "original_path": "/tmp/ta-generation-stage/generation-after.json",
+      "sha256": "e5efa7e8bddd391d3550185cf800a7eeb07ba15efaf714f68b359d282c716159",
+      "bytes": 312781
+    },
+    "generation/after-inputs.json": {
+      "original_path": "/tmp/ta-generation-stage/after-inputs.json",
+      "sha256": "da4df14be7da10febb7a091c05ab5d3498e79a47dd60122bf5c785031a0f5d0e",
+      "bytes": 570
+    }
+  }
+}

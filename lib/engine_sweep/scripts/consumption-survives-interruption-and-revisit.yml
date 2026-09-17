@@ -1,0 +1,107 @@
+# The engine-view wound sets a declared starting condition, as in the combat
+# sweeps. Every physical action and journey then uses the real browser Turn.
+# The worker stops after the dose and its receipt commit. A later move must
+# finish that drink first, without healing twice or recreating the bottle.
+story: A Dose Beyond Two Doors
+steps:
+- id: an-injury-before-using-supplies
+  type: harm 15
+  expect:
+    location: Workshop (realized)
+    carrying: [travel ration]
+    here: [healing draught, brass key, iron lever]
+    hp: 3
+    dead: false
+- id: food-is-spent-without-healing-a-wound
+  type: /consume travel ration
+  browser: {token: meal, fail: narration}
+  expect:
+    carrying: []
+    hp: 3
+    changed: true
+    note: completed
+- id: take-the-only-dose
+  type: /take healing draught
+  browser: {token: pickup, fail: narration}
+  expect:
+    carrying: [healing draught]
+    here: [brass key, iron lever]
+    hp: 3
+- id: worker-stops-after-drinking
+  type: /drink healing draught
+  browser: {token: dose, interrupt_after: physical_effect}
+  expect:
+    carrying: []
+    here: [brass key, iron lever]
+    hp: 11
+    changed: false
+    elapsed_minutes: 0
+    note: running
+- id: a-later-move-finishes-the-drink-before-leaving
+  type: /move Yard
+  browser:
+    token: leave
+    replies:
+    - purpose: narration
+      content: You finish the draught and put away its empty wrapping.
+      prompt_includes: [You recovered 8 hit points.]
+    - purpose: arrival
+      content:
+        description: You enter the sheltered yard.
+        summary: Cal moves into the yard.
+  expect:
+    location: Yard (realized)
+    carrying: []
+    here: []
+    hp: 11
+    note: completed
+- id: returning-does-not-refill-the-bottle
+  type: /move Workshop
+  browser:
+    token: return
+    replies:
+    - purpose: arrival
+      content:
+        description: You return to the workshop.
+        summary: Cal returns to the workshop.
+  expect:
+    location: Workshop (realized)
+    carrying: []
+    here: [brass key, iron lever]
+    hp: 11
+- id: the-used-dose-cannot-be-picked-up-again
+  type: /take healing draught
+  why: the no-model grammar refuses the absent floor item; an unresolved browser take would consult the classifier
+  expect:
+    carrying: []
+    here: [brass key, iron lever]
+    hp: 11
+    refused: true
+    changed: false
+    elapsed_minutes: 0
+- id: a-new-command-cannot-drink-the-spent-dose
+  type: /drink healing draught
+  browser: {token: drink-again}
+  expect:
+    carrying: []
+    hp: 11
+    refused: true
+    changed: false
+    elapsed_minutes: 0
+- id: redelivering-the-original-drink-is-free
+  type: /drink healing draught
+  browser: {token: dose}
+  expect:
+    location: Workshop (realized)
+    carrying: []
+    hp: 11
+    changed: false
+    elapsed_minutes: 0
+- id: another-game-keeps-its-own-supplies-and-health
+  player: second
+  type: look
+  expect:
+    location: Workshop (realized)
+    carrying: [travel ration]
+    here: [healing draught, brass key, iron lever]
+    hp: 18

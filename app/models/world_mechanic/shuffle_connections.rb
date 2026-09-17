@@ -200,7 +200,8 @@ class WorldMechanic::ShuffleConnections
   # Rows are DELETED and rewritten rather than updated in place: the affected
   # endpoints are a permutation of each other, so updating one at a time would
   # transiently collide with the unique index on (location, connected_location).
-  # Removing all of them first cannot.
+  # Removing all of them first cannot. Reuse each directed row's id: an accepted
+  # command may journal that doorway while another game moves its far end.
   def apply!(edges, arrangement, at)
     moves = edges.each_with_index.filter_map do |edge, index|
       next if edge.connected_location_id == arrangement[index]
@@ -215,29 +216,50 @@ class WorldMechanic::ShuffleConnections
     # Joins the caller's transaction when there is one (`WorldMechanic#catch_up!`
     # opens one per boundary) and opens its own when `run!` is called directly.
     ActiveRecord::Base.transaction do
+      # Deleting an edge cascades its Passage rows. Capture both directions
+      # before deleting ANY edge: a door keeps its lock and every game's own
+      # opening receipt when the city moves the far end of it.
+      states = moves.to_h { |move| [ move[:edge].id, doorway_state(move[:edge]) ] }
       moves.each { |move| remove_edge(move[:edge].location_id, move[:from]) }
-      moves.each { |move| write_edge(move[:edge], move[:to]) }
+      moves.each { |move| write_edge(move[:edge], move[:to], states.fetch(move[:edge].id)) }
 
       record!(moves, at)
     end
   end
 
   def remove_edge(location_id, connected_location_id)
-    LocationConnection.where(location_id: location_id, connected_location_id: connected_location_id)
-                      .or(LocationConnection.where(location_id: connected_location_id, connected_location_id: location_id))
-                      .delete_all
+    rows = LocationConnection.where(location_id: location_id, connected_location_id: connected_location_id)
+                             .or(LocationConnection.where(location_id: connected_location_id, connected_location_id: location_id))
+    # The id follows the doorway, but a historic toll happened at its OLD
+    # endpoints. Keep the receipt and its recorded arrival location, following
+    # LocationConnection's nullify contract; reading tonight's edge would move
+    # yesterday's injury. This also satisfies the restrictive toll foreign key.
+    Playthrough::Toll.where(location_connection: rows).update_all(location_connection_id: nil)
+    rows.delete_all
   end
 
-  # The edge keeps its own `distance` and `travel_method`: how far it is from
-  # this doorway to whatever the city has put at the end of it is a property of
-  # the doorway, not of tonight's neighbour. Both directions, as everywhere
-  # else -- LocationConnection's tables are direction-neutral so the same values
-  # are correct on the way back.
-  def write_edge(edge, connected_location_id)
-    values = { distance: edge.distance, travel_method: edge.travel_method }
+  # The doorway's parameters and openings travel with it, not with tonight's
+  # neighbour. Keep each direction's hazard independently. A missing reverse
+  # has no recorded hazard; its barrier and openings follow the existing side,
+  # exactly as the safe one-way repair does.
+  def doorway_state(edge)
+    reverse = LocationConnection.find_by(location_id: edge.connected_location_id, connected_location_id: edge.location_id)
+    [ edge, reverse ].map do |row|
+      source = row || edge
+      values = source.attributes.slice("id", "created_at", "distance", "travel_method", "barrier", "key_template_id", "hazard", "hazard_die")
+      values = values.except("id", "created_at").merge("hazard" => nil, "hazard_die" => nil) unless row
+      openings = source.passages.map do |receipt|
+        attributes = receipt.attributes.except("location_connection_id")
+        row ? attributes : attributes.except("id")
+      end
+      { values: values, openings: openings }
+    end
+  end
 
-    [ [ edge.location_id, connected_location_id ], [ connected_location_id, edge.location_id ] ].each do |from, to|
-      LocationConnection.create!(location_id: from, connected_location_id: to, **values)
+  def write_edge(edge, connected_location_id, states)
+    [ [ edge.location_id, connected_location_id ], [ connected_location_id, edge.location_id ] ].zip(states).each do |(from, to), state|
+      connection = LocationConnection.create!(location_id: from, connected_location_id: to, **state.fetch(:values))
+      state.fetch(:openings).each { |attributes| connection.passages.create!(attributes) }
     end
   end
 

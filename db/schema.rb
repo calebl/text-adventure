@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_10_025040) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_10_041334) do
   create_table "characters", force: :cascade do |t|
     t.integer "age"
     t.text "appearance"
@@ -93,8 +93,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_025040) do
   create_table "items", force: :cascade do |t|
     t.string "bulk", default: "handy", null: false
     t.integer "character_id"
+    t.boolean "combustible", default: false, null: false
     t.datetime "created_at", null: false
     t.text "description"
+    t.string "disposition", default: "intact", null: false
     t.text "inscription"
     t.integer "location_id"
     t.string "name"
@@ -103,6 +105,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_025040) do
     t.boolean "readable", default: false, null: false
     t.integer "template_id"
     t.datetime "updated_at", null: false
+    t.string "use_kind", default: "ordinary", null: false
     t.integer "x"
     t.integer "y"
     t.index ["character_id"], name: "index_items_on_character_id"
@@ -184,16 +187,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_025040) do
   end
 
   create_table "location_connections", force: :cascade do |t|
+    t.string "barrier", default: "open", null: false
     t.integer "connected_location_id", null: false
     t.datetime "created_at", null: false
     t.text "distance"
     t.string "hazard"
     t.integer "hazard_die"
+    t.integer "key_template_id"
     t.integer "location_id", null: false
     t.text "time_to_travel"
     t.text "travel_method"
     t.datetime "updated_at", null: false
     t.index ["connected_location_id"], name: "index_location_connections_on_connected_location_id"
+    t.index ["key_template_id"], name: "index_location_connections_on_key_template_id"
     t.index ["location_id", "connected_location_id"], name: "idx_on_location_id_connected_location_id_a0efda2bf6", unique: true
     t.index ["location_id"], name: "index_location_connections_on_location_id"
   end
@@ -401,6 +407,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_025040) do
     t.index ["playthrough_id", "story_timestamp"], name: "idx_on_playthrough_id_story_timestamp_b54cd36315"
     t.index ["playthrough_id"], name: "index_playthrough_overreaches_on_playthrough_id"
     t.index ["scene_id"], name: "index_playthrough_overreaches_on_scene_id"
+  end
+
+  create_table "playthrough_passages", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "location_connection_id", null: false
+    t.string "means", null: false
+    t.datetime "opened_at", null: false
+    t.integer "opened_by_item_id"
+    t.integer "playthrough_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_connection_id"], name: "index_playthrough_passages_on_location_connection_id"
+    t.index ["opened_by_item_id"], name: "index_playthrough_passages_on_opened_by_item_id"
+    t.index ["playthrough_id", "location_connection_id"], name: "idx_on_playthrough_id_location_connection_id_6d3a29d910", unique: true
+    t.index ["playthrough_id"], name: "index_playthrough_passages_on_playthrough_id"
   end
 
   create_table "playthrough_tolls", force: :cascade do |t|
@@ -621,6 +641,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_025040) do
   add_foreign_key "lab_exits_judgements", "lab_exits_vantages", column: "vantage_id"
   add_foreign_key "lab_exits_samples", "lab_exits_vantages", column: "vantage_id"
   add_foreign_key "lab_realization_samples", "lab_realization_kinds", column: "kind_id"
+  add_foreign_key "location_connections", "items", column: "key_template_id", on_delete: :nullify
   add_foreign_key "location_connections", "locations"
   add_foreign_key "location_connections", "locations", column: "connected_location_id"
   add_foreign_key "locations", "locations", column: "parent_location_id"
@@ -652,6 +673,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_025040) do
   add_foreign_key "playthrough_overreaches", "locations"
   add_foreign_key "playthrough_overreaches", "playthroughs"
   add_foreign_key "playthrough_overreaches", "scenes"
+  add_foreign_key "playthrough_passages", "items", column: "opened_by_item_id", on_delete: :nullify
+  add_foreign_key "playthrough_passages", "location_connections", on_delete: :cascade
+  add_foreign_key "playthrough_passages", "playthroughs", on_delete: :cascade
   add_foreign_key "playthrough_tolls", "characters"
   add_foreign_key "playthrough_tolls", "location_connections"
   add_foreign_key "playthrough_tolls", "locations"

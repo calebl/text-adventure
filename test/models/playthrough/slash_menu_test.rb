@@ -21,8 +21,8 @@ class Playthrough::SlashMenuTest < ActiveSupport::TestCase
 
   def menu = Playthrough::SlashMenu.new(@playthrough).to_h
 
-  test "it offers the six verbs that resolve a record and no others" do
-    assert_equal %w[go talk take drop inspect attack], menu[:verbs].map { |verb| verb[:word] }
+  test "it offers the ordinary verbs and the physical attempts available here" do
+    assert_equal %w[go talk take drop inspect attack offer], menu[:verbs].map { |verb| verb[:word] }
     assert(menu[:verbs].all? { |verb| verb[:hint].present? })
   end
 
@@ -102,7 +102,23 @@ class Playthrough::SlashMenuTest < ActiveSupport::TestCase
   test "it serializes to the JSON the form carries" do
     parsed = JSON.parse(Playthrough::SlashMenu.new(@playthrough).to_json)
 
-    assert_equal %w[go talk take drop inspect attack], parsed["verbs"].map { |verb| verb["word"] }
+    assert_equal %w[go talk take drop inspect attack offer], parsed["verbs"].map { |verb| verb["word"] }
     assert_equal [ "ward stamp" ], parsed["targets"]["take"]
+  end
+
+  test "physical completions resolve both actual objects and disappear after the item is spent" do
+    @daybook.update!(use_kind: "food")
+    grammar = Playthrough::Grammar.new(@playthrough)
+    assert_equal [ "Ward Office 12 daybook to Halkett Rowe" ], menu[:targets]["offer"]
+    menu[:targets].slice("consume", "offer").each do |verb, arguments|
+      arguments.each do |argument|
+        reading = grammar.reading_first("/#{verb} #{argument}")
+        assert_predicate reading, :resolved?
+        assert_equal @daybook, reading.intent.physical.item
+      end
+    end
+    @daybook.update!(disposition: "consumed")
+    assert_not_includes menu[:verbs].map { |row| row[:word] }, "consume"
+    assert_not_includes menu[:verbs].map { |row| row[:word] }, "offer"
   end
 end

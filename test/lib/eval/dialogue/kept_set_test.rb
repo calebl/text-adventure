@@ -4,9 +4,7 @@ require "test_helper"
 # provider. A future prompt/schema/receipt/history edit must fail this guard
 # until evaluated; changing a hash alone cannot make replay agree.
 class Eval::Dialogue::KeptSetTest < ActiveSupport::TestCase
-  BASELINE = "dialogue-2026-09-10".freeze
-
-  def kept = Eval::Dialogue::Result.load(Eval.kept_root.join(BASELINE))
+  def kept = Eval::Dialogue::Result.load(Eval.kept_root.join(Eval::Dialogue::BASELINE))
 
   test "the standing set contains every repetition on the approved model" do
     result = kept
@@ -36,9 +34,11 @@ class Eval::Dialogue::KeptSetTest < ActiveSupport::TestCase
 
   test "receipts fit the authorized cap and annotations remain explicitly unavailable" do
     data = kept.data
-    charged = data.fetch("budget").fetch("entries").sum { |e| e.fetch("accounted_micros") }
-    assert_operator charged, :<=, Eval::Dialogue::Budget::LIMIT_MICROS
+    budget = data.fetch("budget")
+    charged = budget.fetch("entries").sum { |e| e.fetch("accounted_micros") }
+    assert_equal charged, budget.fetch("task_accounted_micros")
+    assert_operator charged, :<=, budget.fetch("limit_micros")
     assert kept.passes.all? { |p| p["contradiction"].nil? }
-    assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{BASELINE}/#{Eval::Dialogue::RESULTS}"
+    assert_includes Eval::MEASUREMENT_FILES, "db/eval/#{Eval::Dialogue::BASELINE}/#{Eval::Dialogue::RESULTS}"
   end
 end

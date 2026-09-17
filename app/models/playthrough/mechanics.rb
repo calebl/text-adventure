@@ -68,9 +68,11 @@
 #
 # WHAT IT WRITES is `playthroughs.current_location_id` and `items.playthrough_id`
 # / `items.location_id`, through `Playthrough::Turn#move_to`, `#stand_in!`,
-# `#carry!`, `#put_down!` and `#throw_item!` -- the same statements the narrated
-# loop moves the world with. A mechanics mode with its own copy of the line that
-# moves the player would be testing itself.
+# `#carry!`, `#put_down!` and `#throw_item!`, plus `PhysicalAction#apply!` for
+# consumption, burning and opening passages -- the same statements the narrated
+# loop moves the world with. Offers require a character's acceptance, so they
+# follow `talk` here: no dialogue is generated and no item is transferred.
+# A mechanics mode with its own copy of a writer would be testing itself.
 #
 # WHAT IT IS NOT is `rake game:play`, which is still ruled out. It renders no
 # prose and duplicates no part of the loop; the moment it grew a narrator it
@@ -96,7 +98,7 @@ class Playthrough::Mechanics
     "against the exits, the cast, what is lying here and what you are carrying,",
     "and the line above each read-out says what it resolved to.",
     "",
-    "move, take, drop and throw change the world and are shown as a diff.",
+    "move, take, drop, throw and physical uses change the world and are shown as a diff.",
     "examine of a thing with writing on it prints what is written, out of the",
     "records. talk, and a look at anything else, are prose -- this mode says so",
     "and changes nothing.",
@@ -284,6 +286,7 @@ class Playthrough::Mechanics
   # command, and the console says so and keeps going. Everything the player can
   # get wrong is a refusal carrying what would have worked.
   def run(command)
+    @engine_refused = false
     # THE GAME BEING OVER COMES BEFORE EVERYTHING, exactly as it does in
     # `Playthrough::Turn#play` and out of the same `Playthrough::Refusal`, so
     # this mode and the browser cannot come to disagree about whether a
@@ -361,15 +364,15 @@ class Playthrough::Mechanics
   # makes a fight a fight, and it is why a walk can assert that looking at the
   # ceiling costs hit points. A REFUSED LINE IS NOT ONE: *"a refused line writes
   # nothing"* is the captain's ruling of 2026-09-04, and a foe acting would
-  # write something. It reads `Playthrough::Classifier::Intent#refused?` -- the
-  # ENGINE's ruling -- rather than this mode's own report, because `talk` is
+  # write something. It reads the intent and the shared engine gate's refusal
+  # rather than this mode's own report, because `talk` is
   # refused here as prose and a hound does not care that this mode writes none.
   #
   # The report is rebuilt on fresh state, because the read-out printed under a
   # line has to be the records after everything that line caused.
   def answered_by_the_world(report, reading, from:)
     intent = reading.intent
-    return report if intent.nil? || intent.refused?
+    return report if intent.nil? || intent.refused? || @engine_refused
 
     blows = Playthrough::Riposte.new(playthrough, turn: turn).run!(location: from, round: round)
 
@@ -608,10 +611,11 @@ class Playthrough::Mechanics
     return engine_view if engine_view
 
     # AND THE LINE THE GRAMMAR CAN ANSWER ON ITS OWN, for no call at all. Only a
-    # reading that resolved a record is taken: a refusal here is a name the
-    # grammar could not place, which is exactly what the model is bought for.
+    # reading that resolved a record is taken, except an unavailable physical
+    # attempt: as in Turn, a slashed use names a closed choice and a missing
+    # tool or target must be refused rather than reinterpreted by the model.
     offline = grammar.reading_first(command)
-    return offline if offline&.resolved?
+    return offline if offline&.resolved? || offline&.intent&.action == :use
 
     intent = classifier.classify(Playthrough::Grammar.unslashed(command))
     Playthrough::Grammar::Reading.new(intent: intent, understood: describe(intent), resolved_by: "model")
@@ -660,7 +664,9 @@ class Playthrough::Mechanics
       return refuse_line(refusal, understood)
     end
 
-    if intent.destination
+    if intent.physical
+      physical(intent.physical, understood)
+    elsif intent.destination
       move(intent.destination, command, understood, resolved_by)
     elsif intent.speaker
       person_branch(intent, understood)
@@ -669,6 +675,21 @@ class Playthrough::Mechanics
     else
       nothing(intent, understood)
     end
+  end
+
+  # Physical attempts use the same writer as Turn without its narration. A
+  # failed ability check is a played turn with no diff; an unavailable choice
+  # is a refusal and must not let the world answer. Offering something is a
+  # conversation, so this mode cannot decide that its recipient accepted it.
+  def physical(choice, understood)
+    return talk(choice.recipient, understood) if choice.kind == "offer"
+
+    result = Playthrough::PhysicalAction.new(playthrough).apply!(choice)
+    return change(result.fact, understood) if result.status == "applied"
+    return read(note: [ result.fact ], understood: understood) if result.status == "failed"
+
+    @engine_refused = true
+    refuse(result.fact, understood: understood)
   end
 
   # THE TWO THINGS A LINE CAN DO TO ONE PERSON, dispatched on the action the way
@@ -787,24 +808,22 @@ class Playthrough::Mechanics
   # this mode, so a refusal that also listed what is here would say it twice.
   # The browser, which has no read-out, reads `#text`.
   def refuse_line(refusal, understood)
+    # A resolved intent can still fail the engine's gate (for example, a
+    # locked doorway). Report#refused? also covers prose-only branches, which
+    # DO spend a turn, so keep this engine ruling separate from presentation.
+    @engine_refused = true
     refuse([ refusal.reason, ROW_WRITTEN[refusal.kind] ].compact.join(" "), understood: understood)
   end
 
-  # THE REFUSAL THIS LINE EARNS HERE, and it is `Playthrough::Turn#refusal_for`
-  # word for word, on purpose: the reading first, the game second. This mode
+  # THE REFUSAL THIS LINE EARNS HERE comes from `Playthrough::Turn#refusal_for`:
+  # the reading first, the game and its closed passages second. This mode
   # used to compose its own sentences for the acts a game with no protagonist
   # and no room cannot perform -- `#take`, `#drop` and `#throw_it`
   # each carried one -- so `rake game:mechanics` correctly refused a `take` that
   # the browser answered with invented prose. One author of what the engine says
   # is the rule (`Playthrough::Refusal`'s header), and the two modes disagreeing
   # about a line is exactly what it exists to prevent.
-  def refusal_for(intent, command)
-    if intent.refused?
-      return Playthrough::Refusal.for(intent, typed: command, offered: classifier.offered_for(intent.action))
-    end
-
-    Playthrough::Refusal.unplayable(intent, playthrough: playthrough, typed: command)
-  end
+  def refusal_for(intent, command) = turn.refusal_for(intent, command)
 
   # MOVING, and with a model in the loop this is `Playthrough::Turn#move_to`
   # whole: the stub is realized, the arrival is written, the visit is stamped

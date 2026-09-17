@@ -1,0 +1,9 @@
+[
+  {"id":"drink-healing-draught","line":"I drink the healing draught.","expect":"The draught is consumed once and the player regains the fixed healing amount, capped at maximum HP."},
+  {"id":"offer-requested-apple","line":"Maren, here is the red apple you asked me to bring. I offer it to you.","expect":"Maren can choose to accept the real carried apple; an accepted offer transfers it to her, not the floor."},
+  {"id":"refuse-apple","line":"Maren, take this red apple from me.","expect":"Maren's explicit distrust can produce refusal; the apple stays with the player unless she independently accepts the offered closed action."},
+  {"id":"unlock-with-key","line":"I unlock the gate to the Courtyard with the brass key.","expect":"The matching carried key opens this game's doorway in both directions. The player does not move and the key is not consumed."},
+  {"id":"pry-jammed-gate","line":"I use the iron lever to pry open the jammed gate to the Courtyard.","expect":"The engine resolves its own strength check. A failed check leaves the gate closed; a successful check opens this game's doorway."},
+  {"id":"burn-paper","line":"I use the tinderbox to burn the folded note.","expect":"The real combustible note is burned and cannot be re-snapshotted; the tinderbox remains carried."},
+  {"id":"cannot-burn-stone","line":"I use the tinderbox to burn the smooth stone.","expect":"A noncombustible object does not burn or disappear; an unsupported attempt is stated explicitly."}
+]

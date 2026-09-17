@@ -1,11 +1,15 @@
 require "test_helper"
 
 class Eval::Realization::BranchesTest < ActiveSupport::TestCase
-  test "branch staging renders requests while the legacy prompt and system identities stay fixed" do
-    legacy = Eval::Realization::Version.offline
-    assert_equal "08d08a01235d89d3", legacy[:prompt_digest]
-    assert_equal "d43b9ecd17181013", legacy[:instructions_digest]
-    assert_not_equal "8a06d8d919582e15", Eval::Realization.digest
+  test "branch staging renders requests without changing the ordinary scaffold identity" do
+    corpus = Eval::Realization.corpus
+    ordinary = Eval::Realization::Corpus.new(
+      path: corpus.path, cases: corpus.cases.reject { |kase| kase.staging.present? })
+
+    # This checks the instrumentation; KeptSetTest checks the purchased baseline.
+    assert_operator ordinary.size, :<, corpus.size
+    assert_equal Eval::Realization::Version.offline(ordinary), Eval::Realization::Version.offline(corpus)
+    assert_not_equal Eval::Realization.digest(ordinary), Eval::Realization.digest(corpus)
 
     requests = Eval::Realization::BranchRequests.offline
     assert_equal requests, Eval::Realization::BranchRequests.offline

@@ -1,0 +1,20 @@
+{
+  "stage": "initial-candidate",
+  "baseline_promotion": "held: unchanged334 intent accuracy regressed; see audit.json",
+  "source_head_at_freeze": "cd24458e83bbc5901d1cf7beaa9c82f26027564e",
+  "note": "The paid manifest stores all source hashes. This freeze adds exact classifier source and post-purchase label-only amendments; requests and raw answers are unchanged. Any revised candidate must use a separate package.",
+  "sha256": {
+    "classifier.json": "7055832acd5dd9dbfd7b7b9fa03e9ec0e4d1e128968a2901a75fe537d46626b1",
+    "historical-339/classifier.json": "c0e8f506f4cb982527688fe0a4a07189508c157ae8f53daab5b25ed0d35ef55f",
+    "offline.json": "f1085dc890f59d13ead9585201fc24e40afe2834cc52fb4169dde00f318d17ea",
+    "protocol.json": "5811fc27fe3e900e5658097e06fc8ffc30ff14326e5b0238c5bf8fa2801603e8",
+    "readings.jsonl.gz": "544cca803dab860ee35abdd8f6db48f804027c697fe1c99188e6ae866597f8aa",
+    "requests.json.gz": "694db12b458c3733ccbd21f26a7f8db6bde26b35c279d125176dceac900203fd",
+    "comparison.json": "32b96f0aaf10feb439c90f3e760ab4921e5397cf076a07d94b300fa462fe38ae",
+    "label-amendments.json": "c1043e165b6f8bf1b58551538514bc1997272ceffadd3d7c320753f1f89d5bf1",
+    "historical-339-corpus.yml": "9f6f26f1659ca92e22ece80d7e0bd8988821c27cd5da3294272b27a8359efbc7",
+    "historical-before-full.json.gz": "ae9b04a8559c4512505a4efbb4b95d2be110a0e217c994c790af34d47ed30699",
+    "source/classifier.rb.txt": "be6f2240f73343ba113af4292aa55e7721e977dceed0598186cd257bce943818",
+    "source/classifier_corpus.yml": "16be10c6b3c996595cb74d37400b8ef6b95605c0389563091c1a77738572e239"
+  }
+}

@@ -1,0 +1,100 @@
+# Mechanics must execute the same physical writers as the browser. No step
+# supplies browser replies: a valid physical choice once silently fell through
+# this offline dispatch, while locked moves and throws crossed the barrier.
+story: A Dose Beyond Two Doors
+steps:
+- id: begin-with-a-wound
+  type: harm 15
+  expect:
+    hp: 3
+    carrying: [travel ration]
+- id: eat-without-a-narrator
+  type: /consume travel ration
+  expect:
+    changed: true
+    refused: false
+    carrying: []
+    hp: 3
+- id: take-the-dose
+  type: /take healing draught
+  expect:
+    carrying: [healing draught]
+- id: drink-without-a-narrator
+  type: /drink healing draught
+  expect:
+    changed: true
+    refused: false
+    carrying: []
+    here: [brass key, iron lever]
+    hp: 11
+- id: the-dose-is-spent
+  type: /drink healing draught
+  expect:
+    changed: false
+    refused: true
+    carrying: []
+    hp: 11
+- id: take-the-key
+  type: /take brass key
+  expect:
+    carrying: [brass key]
+- id: the-locked-door-rejects-a-throw
+  type: /throw brass key at Storeroom
+  expect:
+    refused: true
+    changed: false
+    carrying: [brass key]
+    offers: locked
+- id: the-locked-door-rejects-movement
+  type: /move Storeroom
+  expect:
+    location: Workshop (realized)
+    refused: true
+    changed: false
+    offers: locked
+- id: unlock-without-a-narrator
+  type: /unlock Storeroom with brass key
+  expect:
+    location: Workshop (realized)
+    changed: true
+    refused: false
+    carrying: [brass key]
+- id: cross-the-open-door
+  type: /move Storeroom
+  expect:
+    location: Storeroom (realized)
+    changed: true
+    refused: false
+- id: strength-three-cannot-force-the-jammed-door
+  type: /force Loft
+  expect:
+    location: Storeroom (realized)
+    changed: false
+    refused: false
+    note: The way remains closed
+- id: the-failed-attempt-did-not-open-it
+  type: /move Loft
+  expect:
+    location: Storeroom (realized)
+    changed: false
+    refused: true
+    offers: jammed
+- id: the-open-door-permits-a-return
+  type: /move Workshop
+  expect:
+    location: Workshop (realized)
+    carrying: [brass key]
+    here: [iron lever]
+    hp: 11
+    changed: true
+- id: a-second-game-keeps-its-supplies-and-locked-door
+  player: second
+  type: /move Storeroom
+  expect:
+    location: Workshop (realized)
+    carrying: [travel ration]
+    here: [healing draught, brass key, iron lever]
+    hp: 18
+    changed: false
+    refused: true
+    offers: locked

@@ -1,0 +1,9 @@
+{
+  "scope": "R08 four cases, four repetitions per arm, two passes per case; revised candidate",
+  "calls": 64,
+  "accounted_usd": 0.171476,
+  "initial_candidate_calls": 32,
+  "initial_candidate_accounted_usd": 0.085984,
+  "shared_limit_usd": 3.0,
+  "note": "Conservative accounting includes usage bounds when provider billing was unavailable; this is not a billing total. The initial candidate is historical and its cost remains in the shared ledger. Other authorized experiments use the same allowance; this file is the R08 subtotal."
+}

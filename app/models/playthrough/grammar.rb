@@ -103,6 +103,9 @@ class Playthrough::Grammar
     # the closed enum cannot express a throw and the engine reads it here
     # instead (the captain's call C6).
     "throw" => :throw, "hurl" => :throw, "toss" => :throw,
+    "consume" => :consume, "drink" => :consume, "eat" => :consume,
+    "offer" => :offer, "give" => :offer, "burn" => :burn,
+    "unlock" => :unlock, "pick" => :pick, "pry" => :pry, "force" => :force,
     "help" => :help
   }.freeze
 
@@ -451,7 +454,7 @@ class Playthrough::Grammar
   # room's own name as a second act.
   def joins_two_acts?(command, intent)
     rest = normalize(self.class.unslashed(command))
-    [ intent.subject, intent.at ].compact.each do |record|
+    (intent.physical ? intent.physical.records : [ intent.subject, intent.at ].compact).each do |record|
       names_of(record).each { |name| rest = rest.gsub(normalize(name), " ") }
     end
 
@@ -503,10 +506,34 @@ class Playthrough::Grammar
     when :check then read_check(argument)
     when :attack then read_attack(argument)
     when :throw then read_throw(argument)
+    when :consume, :offer, :burn, :unlock, :pick, :pry, :force
+      read_physical(VERBS.fetch(verb).to_s, argument)
     else resolve(classifier.exits_here, text).found? ? read_move(text) : unknown(text)
     end
 
     reading.with(resolved_by: path_for(verb, reading))
+  end
+
+  # A slash opts into this exact grammar. Both halves still resolve against
+  # the same table of attempts the classifier sees; ordinary English never
+  # enters here before the model.
+  def read_physical(kind, argument)
+    choices = classifier.physical_actions.select { |choice| choice.kind == kind }
+    separator = kind == "offer" ? /\s+to\s+/i : /\s+with\s+/i
+    target, tool_or_recipient = argument.split(separator, 2)
+    primary = resolve(choices.map(&:subject).uniq, target).record
+    choices.select! { |choice| choice.subject == primary } if primary
+    choices.clear unless primary
+    if tool_or_recipient
+      second = resolve(choices.map { |choice| kind == "offer" ? choice.recipient : choice.tool }.compact.uniq, tool_or_recipient).record
+      choices.select! { |choice| (kind == "offer" ? choice.recipient : choice.tool) == second } if second
+      choices.clear unless second
+    elsif kind == "offer"
+      choices.clear
+    end
+    found = choices.one? ? choices.first : nil
+    intent = Playthrough::Classifier::Intent.new(action: :use, physical: found)
+    Reading.new(intent: intent, understood: self.class.describe(intent))
   end
 
   # WHICH READER ANSWERED, and the rule is about what the reading DID rather
