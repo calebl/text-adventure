@@ -753,6 +753,7 @@ class Playthrough::Turn
           location: playthrough.current_location,
           previous_scene: playthrough.current_scene,
           description: exchange.narration,
+          engine_fact: exchange.effect&.fact,
           engine_fallback: exchange.fallback?,
           summary: [ "The player spoke with #{character.fullname}.", exchange.reaction[:action], exchange.effect&.fact ].compact.join(" "),
           story_timestamp: playthrough.story_time_after("conversation")

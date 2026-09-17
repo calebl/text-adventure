@@ -366,6 +366,7 @@ class Playthrough::Arc
       previous_scene: playthrough.current_scene,
       description: outcome.summary,
       summary: outcome.summary,
+      engine_fact: outcome.summary,
       story_timestamp: at,
       resolved_action: "conclude"
     )

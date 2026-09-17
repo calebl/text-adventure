@@ -17,6 +17,12 @@
 # (`test/models/playthrough/debug_test.rb`) and `Playthrough::MachineryTest`
 # makes the same assertion about this.
 #
+# THE ENGINE RECEIPT SITS WITH THE PROMPT, not in the state half. New scenes
+# freeze the exact app-owned fact their prose writer received, so a later audit
+# and the person opening this panel compare the paragraph with the same record.
+# Older prose states that no receipt was recorded rather than reconstructing one
+# from rows that may since have moved.
+#
 # THE STATE HALF IS FIVE THINGS AND NOT SIX. The captain's scope, given after
 # the task was written: the story time, who was in the room, what was lying in
 # it, what the player was carrying, and what each person present was carrying.
@@ -65,6 +71,11 @@ class Playthrough::Machinery
   # ------------------------------------------------------------------------
   # THE PROMPT HALF: what the models were given and what came back.
   # ------------------------------------------------------------------------
+
+  # THE APP'S OWN ACCOUNT SUPPLIED TO THE PROSE WRITER, frozen on the Scene at
+  # render time. Unlike the item rows below, this is historical: later movement
+  # cannot rewrite what the narrator was told this turn had done.
+  def engine_fact = scene.engine_fact
 
   # Every conversation this turn paid for, in the order the loop made the calls.
   def conversations = turn.conversations

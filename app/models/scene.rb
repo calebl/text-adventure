@@ -1,4 +1,12 @@
 class Scene < ApplicationRecord
+  # `engine_fact` is the durable receipt the app supplied to this scene's prose
+  # writer. It is nil when the engine had no recorded outcome to state, and on
+  # the world's shared opening arrival. Keep the exact text rather than
+  # reconstructing it: inventory, bodies and whereabouts can all change after
+  # the scene, while prose verification asks what was true when it was written.
+  # The narrator may omit or contradict this field; it can never alter it.
+  # `Story::Audit` owns comparisons between the two.
+  #
   # IDs actually supplied to this arrival's renderer. Nil belongs to the
   # ordinary Moment path; an empty arrival list means no toll was presented.
   # Turn claims only this set after the completed scene is available.

@@ -91,6 +91,14 @@ class Playthrough::MachineryTest < ActiveSupport::TestCase
   # THE PROMPT HALF, read off the same records the debug page reads.
   # ------------------------------------------------------------------------
 
+  test "the engine receipt is the historical fact frozen on the scene" do
+    playthrough, scene = played_turn
+    scene.update!(engine_fact: "You opened the gate and stayed here.")
+
+    assert_equal "You opened the gate and stayed here.",
+                 Playthrough::Machinery.new(playthrough, scene).engine_fact
+  end
+
   # THE PROSE CALL FIRST AND THE CLASSIFIER SECOND, which is the opposite of the
   # order the loop made them in: the passage is being compared against the
   # prompt that produced it, and the classification is context for that.

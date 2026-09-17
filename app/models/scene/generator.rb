@@ -93,7 +93,7 @@ class Scene::Generator
     answer = agent.with_schema(Scene::Schema).ask(arrival_prompt(returning, elapsed, cast)).content
 
     scene = Playthrough::Command::Journal.commit("arrival") do
-      row = persist_arrival!(answer, cast: cast, at: at)
+      row = persist_arrival!(answer, cast: cast, at: at, engine_fact: arrival_engine_fact)
       row.narrated_toll_ids = arrival_context.toll_ids if arrival_context
       row
     end
@@ -118,7 +118,8 @@ class Scene::Generator
     Playthrough::Command::Journal.commit("arrival") do
       scene = persist_arrival!(
         { "description" => description, "summary" => description },
-        cast: context.living, at: story_timestamp, engine_fallback: true
+        cast: context.living, at: story_timestamp, engine_fallback: true,
+        engine_fact: arrival_engine_fact
       )
       scene.narrated_toll_ids = context.toll_ids
       scene.rendering_error = error
@@ -283,7 +284,15 @@ class Scene::Generator
     @arrival_context ||= Scene::ArrivalContext.new(@playthrough, location: location) if @playthrough
   end
 
-  def persist_arrival!(answer, cast:, at:, engine_fallback: false)
+  # The exact destination receipt handed to the arrival writer. A Location's
+  # durable description and the playthrough's live state can diverge later, so
+  # prose verification must not try to reconstruct this snapshot after the
+  # player has moved another item or person.
+  def arrival_engine_fact
+    arrival_context&.facts&.join("\n")
+  end
+
+  def persist_arrival!(answer, cast:, at:, engine_fallback: false, engine_fact: nil)
     @completed_scene = Scene.create!(
       story: story,
       location: location,
@@ -291,6 +300,7 @@ class Scene::Generator
       characters: cast,
       description: sanitize_string(answer["description"]),
       summary: sanitize_string(answer["summary"]),
+      engine_fact: engine_fact,
       is_opening: opening?,
       story_timestamp: at,
       **(engine_fallback ? { engine_fallback: true } : {})

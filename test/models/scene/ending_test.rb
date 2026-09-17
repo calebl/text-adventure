@@ -58,6 +58,7 @@ class Scene::EndingTest < ActiveSupport::TestCase
     scene = narrate(conclude!, "The gate grinds up and the daylight takes him.")
 
     assert_equal @outcome.summary, scene.summary
+    assert_equal @outcome.summary, scene.engine_fact
     assert_equal @outcome.summary, Scene.recap_line(scene),
                  "a turn's one line of memory is the engine's fact, not the prose about it"
   end

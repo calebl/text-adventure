@@ -44,6 +44,7 @@ class Playthrough::TurnConversationsTest < ActiveSupport::TestCase
     purposes = scene.messages.map { |message| message.chat.purpose }.uniq.sort
 
     assert_equal [ "character", "classifier", "interaction-narration" ], purposes
+    assert_equal "Grenn Ollivar changes no possessions, travel agreement or ceasefire.", scene.engine_fact
   end
 
   # THE CONSUMER THAT WAS WAITING. Both numbers live on `RubyLLM::Message` and
