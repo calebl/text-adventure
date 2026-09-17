@@ -555,7 +555,7 @@ flowchart TD
         M4 --> M5
         M5["Read FROM RECORDS, before anything is created<br/>last_protagonist_visit: discovery or return<br/>Character.present_in: who is here"]
         M5 --> M6["MODEL CALL, schema'd<br/>Scene::Schema, the arrival paragraph<br/>Cannot stream: a schema'd call emits JSON"]
-        M6 --> M7["Scene.create!<br/>its after_create stamps the visit, which is<br/>what makes the NEXT arrival read as a return"]
+        M6 --> M7["Scene.create!<br/>freezes the playthrough arrival facts beside the prose;<br/>its after_create stamps the visit, which is<br/>what makes the NEXT arrival read as a return"]
         M7 --> M8["playthrough.update! location AND scene<br/>only now, so a failed arrival leaves<br/>the player where they were"]
     end
 
@@ -563,7 +563,7 @@ flowchart TD
         T1["MODEL CALL, schema'd<br/>Interaction::Schema, the character answers<br/>from bounded personal experience and chooses<br/>one immediate action from an engine-built set"]
         T1 --> TE["Playthrough::NpcAction, NO MODEL CALL<br/>rebuilds the set, applies or rejects the choice,<br/>and returns the authoritative receipt"]
         TE --> T2["MODEL CALL, unschema'd, buffered<br/>a second pass turns the reaction and receipt into prose<br/>failure keeps a factual engine fallback"]
-        T2 --> T5["Scene.create!, the moment the player reads<br/>cast copied from who is actually present<br/>summary built in Ruby, not asked for"]
+        T2 --> T5["Scene.create!, the moment the player reads<br/>engine receipt frozen beside the prose<br/>cast copied from who is actually present<br/>summary built in Ruby, not asked for"]
         T5 --> T6["Interaction.create!<br/>structured reaction plus user_input, derived summary<br/>and the engine receipt; private resolution stays hidden"]
         T6 --> T7["playthrough.update! scene"]
     end
@@ -578,13 +578,13 @@ flowchart TD
     subgraph IT["take / drop / read: the app owns the row, then says so"]
         I1["An examine of a READABLE thing is answered from the records<br/>(Item#inscription, handed to the narrator verbatim).<br/>Otherwise THIS GAME'S OWN COPY moves FIRST<br/>take: into the party's hands. drop: into this room<br/>out of the closed set the classifier resolved against<br/>the world's own row never moves"]
         I1 --> I2["MODEL CALL, unschema'd, STREAMS<br/>the narrator is TOLD what already happened<br/>and writes the sentence about it"]
-        I2 --> I3["Scene persisted by the narrator, as any other<br/>A narration that forgets the item, or invents one,<br/>cannot change who holds what"]
+        I2 --> I3["Scene persisted with the exact engine fact it received<br/>A narration that forgets the item, or invents one,<br/>cannot change who holds what"]
     end
 
     subgraph NR["everything else: Scene::Narrator answers the raw command"]
         N1["Reached by other, and by a look at something with<br/>nothing written on it -- lines that ask for no record<br/>or for one the app does not answer from. A move that<br/>did not resolve, a talk with nobody here and a take or<br/>drop of what the records lack are REFUSED instead"]
         N1 --> N2["MODEL CALL, unschema'd, STREAMS<br/>the one documented streaming exception"]
-        N2 --> N3["Persists in an ensure, and sets the scene itself<br/>Nobody has to be watching: the job outlives the tab<br/>Never touches the location: moving is not its job"]
+        N2 --> N3["Persists the completed response and sets the scene itself<br/>Nobody has to be watching: the job outlives the tab<br/>Never touches the location: moving is not its job"]
     end
 
     I3 --> A0
@@ -596,7 +596,7 @@ flowchart TD
     A0["Playthrough::Arc#run!, NO MODEL CALL<br/>four record predicates against the story's own arc:<br/>standing in the room, the interaction this turn wrote,<br/>this game's copy in the party's hands, the clock<br/>a beat REACHED is a playthrough_beats row, and the<br/>arc itself is never written by a typed line"]
     A0 --> A1{"every beat of the main arc reached?"}
     A1 -->|"no: almost every turn"| OUT
-    A1 -->|"yes"| A2["The ending, and the ENGINE decides the game is over<br/>the reached Quest::Outcome, playthroughs.ended_at,<br/>and ONE Scene carrying the stored sentence already:<br/>resolved_action = conclude, engine copy, and the<br/>FALLBACK from here on -- there is no path on which<br/>the closing Scene has no words"]
+    A1 -->|"yes"| A2["The ending, and the ENGINE decides the game is over<br/>the reached Quest::Outcome, playthroughs.ended_at,<br/>and ONE Scene carrying the stored sentence already<br/>as both fallback copy and durable engine fact:<br/>resolved_action = conclude -- there is no path on which<br/>the closing Scene has no words"]
     A2 --> A3["MODEL CALL, unschema'd, STREAMS<br/>Scene::Ending, TOLD the reached outcome's sentence<br/>and asked to write it. The paragraph replaces the<br/>description of that same Scene and relabels it<br/>ending -- so Story::Audit reads it as the prose it is.<br/>A refusal, a timeout or a half sentence keeps the<br/>engine's, and the game is over either way"]
     A3 --> OUT
 
@@ -1068,7 +1068,7 @@ window and this is a SQLite file on a laptop:
 | --- | --- |
 | `Chat::HISTORY_EXCHANGES` | how much of a character conversation is replayed. Trimming means deleting — RubyLLM rebuilds the request out of every persisted message. Nothing is lost: every exchange is an `Interaction` row, in full, forever. |
 | `Playthrough::Moment::MEMORIES_BUDGET` | how much attributed personal experience beyond the verbatim chat window reaches a character prompt. `Playthrough::Memory` selects from the full interaction archive before this character budget is applied. |
-| `Chat::KEEP_TURNS` | how many turns of audit trail are kept. **Unset by default, meaning keep everything** — measured at ~4 KB a turn on disk, so a 1,000-turn game costs ~4 MB against the 912 KB `models` registry that ships with the app. Set `TA_CHAT_KEEP_TURNS` to opt into a cap; then the older one-shot conversations are pruned at the end of every turn, the `Scene` stays and the receipts go. |
+| `Chat::KEEP_TURNS` | how many turns of model-call audit trail are kept. **Unset by default, meaning keep everything** — measured at ~4 KB a turn on disk, so a 1,000-turn game costs ~4 MB against the 912 KB `models` registry that ships with the app. Set `TA_CHAT_KEEP_TURNS` to opt into a cap; then the older one-shot conversations are pruned at the end of every turn. The `Scene` and its durable engine fact stay; only the model-call receipts go. |
 | `Playthrough::RECAP_BUDGET` | how much of the playthrough the narrator prompt carries, in characters. |
 
 That last one is what lets a long game stay inside the window. The narrator used
@@ -1248,11 +1248,12 @@ check.
 
 - **`examine` is classified and then narrated like anything else.** It is told
   apart so the branch exists when there is something for it to do.
-- **The one thing an item still cannot do is have a history.** `Item::Registry`
+- **An item still does not have a complete location history.** `Item::Registry`
   writes rows at room realization and `take` / `drop` move them, but the row
-  carries only where it is now — nothing records where it has been, so a check
-  on an item's movement has to infer it. `Story::Audit`'s `item_not_held` says
-  so at its own definition.
+  carries only where it is now. A narrated engine outcome now freezes the exact
+  fact supplied to its prose in `Scene#engine_fact`; that receipt does not turn
+  the item row into a history of every place it has been. `Story::Audit`'s
+  `item_not_held` says what the current check can establish.
 - **A turn in flight is not re-joinable.** Reopen the page mid-narration and the
   log is what was persisted; the prose written so far is in the job's buffer and
   nowhere else. The finished turn arrives over the cable when it lands, because
