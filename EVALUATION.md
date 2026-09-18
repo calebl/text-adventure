@@ -17,8 +17,7 @@ without a verdict that can say *noise*.
 
 ## The rule this whole file exists to serve
 
-The captain's ruling of 2026-09-06: **always have a baseline for evaluating a
-prompt before deciding to change it.**
+**Always have a baseline for evaluating a prompt before deciding to change it.**
 
 It is not advice about rigour, it is the order of operations. Before editing
 `Scene::Narrator::INSTRUCTIONS`, `Character#interaction_instructions`,
@@ -38,6 +37,23 @@ model is handed:
 A prompt change with no before is not a change anybody can defend, and this
 file's opening paragraph is why: the spread of an unchanged configuration is
 wider than most improvements anybody claims.
+
+### Historical vocabulary allowlist
+
+Some recorded measurements contain superseded process wording or literal tool
+paths. Those bytes identify what actually ran; rewriting them would make the
+evidence claim it measured different input. Vocabulary checks therefore allow
+existing matches only in:
+
+- `db/eval/physical-classifier-20260910/historical-339-corpus.yml`;
+- `db/eval/physical-classifier-20260910/source/{classifier.rb.txt,classifier_corpus.yml}`;
+- `db/eval/physical-classifier-revised-20260910/source/{classifier.rb.txt,classifier_corpus.yml}`;
+- `db/eval/physical-classifier-final-20260914/source/{classifier.rb.txt,classifier_corpus.yml}`;
+- `db/eval/physical-realization-20260910/legacy/corpus.yml`; and
+- `db/eval/adversarial-20260909/{README.md,confirmation-manifest.json}`.
+
+This exception preserves provenance, not preferred wording. It does not permit
+new matches, renamed copies or edits to the recorded bytes.
 
 ---
 
@@ -310,13 +326,13 @@ engine *acts* on.
 `Playthrough::Classifier` runs on every turn and turns a typed line into a
 branch and a record: a `move` writes `playthroughs.current_location_id`, a
 `take` moves an `items` row, a `talk` picks which character prompt gets built.
-Until 2026-09-04 nothing scored whether it was right. `Playthrough::Drift` and
-`Playthrough::Overreach` count its misses *indirectly* and **neither knows the
-answer** — a drift row is written whether the player reached for a door that is
-not there or the model failed to see a door that is.
+Without the classifier bench, nothing scored whether it was right.
+`Playthrough::Drift` and `Playthrough::Overreach` count its misses *indirectly*
+and **neither knows the answer** — a drift row is written whether the player
+reached for a door that is not there or the model failed to see a door that is.
 
-**The ruling of 2026-09-04 made that gap cost the player something.** Since
-`Playthrough::Refusal` shipped, a wrong resolution is a refusal somebody reads
+**That gap costs the player something.** A wrong resolution is a refusal
+somebody reads
 and a wrong `also_named` refuses a line that should have played. So:
 
 ```bash
@@ -394,10 +410,10 @@ resolves to a record in the supply closet and to nothing in the office.
    the headline rate excludes them.
 
 Where the lines came from: **the 61 stored classifier conversations in the
-captain's own database** (`chats.purpose = "classifier"`, kept since PR 97 —
+development database** (`chats.purpose = "classifier"`, kept since PR 97 —
 what a person really typed, with the room and the sets the model was really
-shown), **the 60 turns of the `rake eval:run` scripts**, and the shapes the
-ruling made load-bearing and nothing yet types. `unreadable` is deliberately
+shown), **the 60 turns of the `rake eval:run` scripts**, and load-bearing
+shapes that no one had yet typed. `unreadable` is deliberately
 absent: it is an `intent` outside the closed enum, so no typed line can provoke
 it.
 
@@ -414,8 +430,8 @@ people in one room is reachable at all).
 ### Speed, and the arm selector
 
 **An arm is one model with nothing behind it.** `MODELS=` names it —
-`mistralai/mistral-medium-3.1`, or `ollama:qwen3:8b` for one of the captain's
-local models — and `Eval::Classifier::Arm#pinned` replaces
+`mistralai/mistral-medium-3.1`, or `ollama:qwen3:8b` for a local model — and
+`Eval::Classifier::Arm#pinned` replaces
 `BaseAgent.default_model_options` for the length of that arm's passes. Nothing
 in `app/` changes: `REMOTE_MODEL_IDS` is untouched, `OPENROUTER_MODEL` is not
 read, and `TA_LOCAL_MODELS` still defaults to off — it gates the *app's*
@@ -569,8 +585,8 @@ is too high.
 
 ### A local model, and the reasoning block in front of the answer
 
-**There is no local bench set, on the captain's direction of 2026-09-04: this
-machine is not powerful enough to run one.** What is below is a handful of spot
+**There is no local bench set: this machine is not powerful enough to run
+one.** What is below is a handful of spot
 single-call measurements and the machinery that makes the run possible later on
 hardware that can carry it. Read every figure here as one call, not as a bench
 result — a bench result is four repetitions of the whole corpus with a band, and none
@@ -679,8 +695,8 @@ single number means the four repetitions agreed exactly.
 **`also_named` is a precision/recall trade and the four sit all over it.**
 `mistral-medium` and `gemini-flash-lite` miss a second name (the engine plays
 half a line); `minimax` invents one 28 times in 132; `mistral-small` invents one
-**89 times in 199**, and since the ruling of 2026-09-04 each of those is a
-refusal the player reads for no reason. The shipped first model gets the safe
+**89 times in 199**, and each of those is a refusal the player reads for no
+reason. The shipped first model gets the safe
 direction.
 
 **Read `latency_p95` beside `latency_median`, because they do not rank the same
@@ -713,10 +729,9 @@ Overlapping bands, independent runs.
 
 ### The set, and comparing two of them after the fact
 
-**The captain's instruction of 2026-09-04:** *"store every classifier bench run
-as a named set with a durable scores artifact… a set should record which model
-produced it, and comparing model A's set against model B's set must work from
-the stored scores alone."*
+**Every classifier bench run is a named set with a durable scores artifact.**
+The set records which model produced it, and comparisons work from the stored
+scores alone.
 
 Same convention as the prose loop. `SET=<name>`, defaulting to
 `classifier-<timestamp>`; the durable artifact is
@@ -768,8 +783,8 @@ rake eval:classifier SET=arm-minimax MODELS=minimax/minimax-m3
 rake eval:classifier_compare BEFORE=arm-mistral AFTER=arm-minimax
 ```
 
-**Every set on disk as one table** — the cross-model comparison the captain
-asked for, and the check on this whole convention, because it reads
+**Every set on disk as one table** — the cross-model comparison and the check
+on this whole convention, because it reads
 `tmp/eval/<set>/classifier.json` and nothing else. No database, no key, no
 corpus:
 
@@ -840,9 +855,9 @@ loop actually takes of it.
 | resolves offline, and the label does not | **0** |
 | falls back to `Playthrough::Classifier` | 274 of 339 (80.8%) |
 
-**Typed as they stand, with no slash: 0 of 339** — the captain's ruling of
-2026-09-05, *"I think we should only auto accept the slash commands"*, as a
-number. Nothing changes for a player who never types one. By shape the slashed
+**Typed as they stand, with no slash: 0 of 339.** Only slash-prefixed commands
+are accepted by the offline reader, so nothing changes for a player who never
+types one. By shape the slashed
 form answers `move` 20/42,
 `take` 13/23, `articles-and-pronouns` 10/27, `talk` 7/54, `attack` 6/16, `examine` 5/17 and
 `drop` 4/18 — and **nothing at all** of `other`, `examine-nothing`, `two-sets`,
@@ -913,7 +928,7 @@ the 339-line slice 8 pair cost $0.389 and $0.440.
    *`ta-slash-input` is the worked example of (2), and it is here because the
    answer was "no paid re-run".* The router it added sends a line to
    `Playthrough::Grammar` instead of the model **only when the player prefixes
-   it with `/`** (the captain's ruling of 2026-09-05). Every line typed without
+   it with `/`**. Every line typed without
    one still reaches the classifier: **0 of the 300 corpus lines change hands as
    they stand**, so the population the hosted arms were measured on is unchanged
    and the checked-in sets still describe this code. What is owed is a
@@ -946,14 +961,8 @@ sets alone.
 ## The prompt bench
 
 The classifier bench measures the call the engine ACTS on. This measures the
-call the player READS, and it is the instrument the standing rule was waiting
-for: **no narration or prompt change lands until there is a testing method he
-trusts.**
-
-**The captain's words, 2026-09-04:** *"could we not build a small set of prompts
-and responses? ... a more targeted set of test cases where we are feeding the
-narrator facts and seeing how it handles them that would not require multiple
-turns."*
+call the player READS, and it is the instrument the standing rule requires:
+**no narration or prompt change lands until there is a testing method for it.**
 
 Until now the only way to judge a prompt-shaped change was `rake eval:run` —
 twenty-turn scripted runs across three worlds, dollars a comparison, four runs a
@@ -1007,7 +1016,7 @@ either bench takes: one call, against a database somebody may be mid-game in.
 
 `test/fixtures/files/prompt_corpus.yml` — **90 hand-verified cases across 10
 positions in two seeded worlds**, and the typed lines are real: the 76 typed
-turns in the captain's own database, the 119 take and drop turns of
+turns in the development database, the 119 take and drop turns of
 `transition_corpus.json`, and the `rake eval:run` scripts.
 
 `The Lunar Cartographer` is **excluded** and the reason is mechanical:
@@ -1069,8 +1078,8 @@ digests** and they cover different amounts:
   `Playthrough::PromptVersion.narration_instructions`, and it covers the
   instruction block and nothing else. What `Playthrough::Feedback` freezes on a
   verdict is the WIDER `Playthrough::PromptVersion.narration` — the instruction
-  block plus the per-turn scaffold — so a bench set and the captain's own
-  verdicts group by the same version as far as the instructions go, and
+  block plus the per-turn scaffold — so a bench set and the recorded verdicts
+  group by the same version as far as the instructions go, and
   `prompt_digest` is what answers the rest.
 - **`prompt_digest`** — **the whole prompt, byte for byte, for one designated
   case per shape** (the lowest case id of that shape). It covers everything the
@@ -1252,7 +1261,7 @@ no prose** (`Eval::Prompt::Result#summary` drops the readings so the pair can
 live in the repo), so `rake eval:prompt_score` reprints the rates that were
 computed while the calls were being paid for and *cannot recompute them*. A
 check fix therefore cannot re-score the figure it invalidated — it can only be
-re-bought, which the captain authorized and which is the `-2` pair. The
+re-bought, which is why the `-2` pair exists. The
 2026-09-08 pair stays on disk as history and stays in `Eval::MEASUREMENT_FILES`;
 `Eval::Prompt::EndingKeptSetTest` is what labels it as history and asserts that
 both after sides sent byte-identical `ending` instructions, so the only
@@ -1349,9 +1358,8 @@ block is the one that arrived with the instrument already there.
 
 **The one number anybody had was a hand count**: 36% of a generated world's exits
 named a place the story already had, and its deepest room wrote its ways out and
-every one led back up (`data/ta-quest-progress-scout/report.md` D5, confirmed by
-`data/ta-neohack-scout/report.md` §3.2). A hand count is not a baseline — it
-cannot be re-run, it has no band, and no prompt change can be judged against it.
+every one led back up. A hand count is not a baseline — it cannot be re-run, it
+has no band, and no prompt change can be judged against it.
 
 ```bash
 rake eval:realization                        # 21 stubs x 4 reps x 2 calls x 1 model, ~$0.20
@@ -1434,9 +1442,9 @@ checks are:
 | `room_name_already_taken` | a proposed room name the world had already given to somewhere, somebody or something — the one refusal above that is a set comparison, against the same closed list of names `name_already_spoken_for` reads. The evidence says whether the prompt had shown it |
 | `inside_declined` | an exit named with no `inside` pick at all. The field is **optional**, so an absent one is a legal answer and the engine takes `no inside` — which means the ordinary way for a world to end up with no buildings in it is not a model saying no, it is a model saying nothing. Judgeable on every exit of every case that made an exits call |
 | `inside_on_a_place_that_already_exists` | an inside pick on an exit that named a place the world already held, so `Location::Generator#connect_exit!` reused that row and **threw the pick away** — it hands `inside:` to `.create_stub!` and nowhere else. A record on both sides: `facts["places"]` is what the world held and `after["new_places"]` is what the call opened, and BOTH halves are needed — before the duplicate-place fix of 2026-09-08 an article variant did open a second row, so a historical pick of that shape reached the world (badly) and is not flagged. Judgeable on every inside pick of a set that records what a call opened |
-| `inside_where_the_world_wanted_none` / `no_inside_where_the_world_wanted_one` | the pick against the case's **hand label**, `expects_inside`, both ways round. Since the captain's Call 6 of 2026-09-08 that label is a **quantifier** — one of `none of them`, `at most one`, `at least one`, `every one` (`Lab::Exits::QUANTIFIERS`) — so the first of the pair is the CEILING half (an answer that opened more buildings than the label allows) and the second the FLOOR half (an answer that picked fewer insides than it asks for). Each of the four words has exactly one of the two bounds, so exactly one check is judgeable on a case. **The two names are the boolean era's words for the two directions and are deliberately unchanged**: a check key is what a stored set's figures are filed under, and renaming one would make every kept set read `not recorded` for a question it did measure. A row stored before the widening carries `true` or `false` and is read as `at least one` and `none of them`, which is exactly what the two checks always did with them (`Lab::Exits::FROM_BOOLEAN`) — so a stored set scores identically either side of the change. The one pair of checks in this bench that is not a record on both sides: there is no record of what a world *should* have been. **Most cases carry no label and are out of both denominators** — `expects_new_ground`'s rule, and `Eval::Realization::Corpus`'s header says which cases carry one. The ceiling half is judged on the insides that **opened a place**, not on the picks made: a pick the engine discarded left a world that wanted no building still holding none, and convicting it was reporting a fault with no consequence. What the model said is measured one row up. **So a promoted vantage's rate here is not `Lab::Exits::HitRate`'s rate for the same word** — that scores both directions on the picks given, because a lab measures what the model said and a bench what the game got |
-| `population_declined` | an exit named with no `population` word at all, so the engine rolled one for the place. **`inside_declined`'s figure one field over**: the field asks and nothing rests on the asking (`Location::ExitsSchema`), so the ordinary way for the 2026-09-07 ruling to come to nothing is not a model answering `nobody` but a model answering nothing. `populations_given` and `crowds_picked` are printed beside it, because a model that picked `nobody` everywhere would have made the pick honestly and emptied the world anyway |
-| `people_short_of_the_pick` | a room asked for an exact number of people that came back with fewer — the defect the ruling was made for, read against a real provider rather than against the JSON schema. Judgeable only where people were asked for, so a room the pick called empty is out of the denominator rather than counted a success |
+| `inside_where_the_world_wanted_none` / `no_inside_where_the_world_wanted_one` | the pick against the case's **hand label**, `expects_inside`, both ways round. That label is a **quantifier** — one of `none of them`, `at most one`, `at least one`, `every one` (`Lab::Exits::QUANTIFIERS`) — so the first of the pair is the CEILING half (an answer that opened more buildings than the label allows) and the second the FLOOR half (an answer that picked fewer insides than it asks for). Each of the four words has exactly one of the two bounds, so exactly one check is judgeable on a case. **The two names are the boolean era's words for the two directions and are deliberately unchanged**: a check key is what a stored set's figures are filed under, and renaming one would make every kept set read `not recorded` for a question it did measure. A row stored before the widening carries `true` or `false` and is read as `at least one` and `none of them`, which is exactly what the two checks always did with them (`Lab::Exits::FROM_BOOLEAN`) — so a stored set scores identically either side of the change. The one pair of checks in this bench that is not a record on both sides: there is no record of what a world *should* have been. **Most cases carry no label and are out of both denominators** — `expects_new_ground`'s rule, and `Eval::Realization::Corpus`'s header says which cases carry one. The ceiling half is judged on the insides that **opened a place**, not on the picks made: a pick the engine discarded left a world that wanted no building still holding none, and convicting it was reporting a fault with no consequence. What the model said is measured one row up. **So a promoted vantage's rate here is not `Lab::Exits::HitRate`'s rate for the same word** — that scores both directions on the picks given, because a lab measures what the model said and a bench what the game got |
+| `population_declined` | an exit named with no `population` word at all, so the engine rolled one for the place. **`inside_declined`'s figure one field over**: the field asks and nothing rests on the asking (`Location::ExitsSchema`), so the ordinary way for a population pick to come to nothing is not a model answering `nobody` but a model answering nothing. `populations_given` and `crowds_picked` are printed beside it, because a model that picked `nobody` everywhere would have made the pick honestly and emptied the world anyway |
+| `people_short_of_the_pick` | a room asked for an exact number of people that came back with fewer — the defect the exact population pick addresses, read against a real provider rather than against the JSON schema. Judgeable only where people were asked for, so a room the pick called empty is out of the denominator rather than counted a success |
 | `parameters_declined` | a building offered the `parameters` block that came back without one, so every pick fell to its quietest default. Judgeable only on a `place` case, which is a stub carrying a footprint and no rooms |
 | `parameters_the_engine_narrowed` | a building whose picks the layout could not honour — a warren on a footprint that holds one room, a depth the storeys do not reach. **Read off the rows the layout wrote**, because none of the picks has a column. Only the two picks that CAN fail to arrive are checked: danger, gradient and hazard are rates, so a place that picked `dangerous` and rolled quiet rooms was unlucky and not narrowed |
 | `race_not_named` | **a KEYWORD check** — see below |
@@ -1459,8 +1467,8 @@ engine threw away, and it is not small — on the surviving row-bearing set
 `tmp/eval/interior-entry-after-2` the medians are 0.314 given against 0.129
 reaching. It is `unavailable` on a set stored before the rows recorded what a
 call opened, and never 0.000. Then
-`hazard_below_ground` against `hazard_on_the_ground_floor` is the captain's own
-figure for the gradient, the only one that reads whether it did anything at all.
+`hazard_below_ground` against `hazard_on_the_ground_floor` is the figure for the
+gradient, the only one that reads whether it did anything at all.
 Both are off the rows; neither is ever folded into a rate.
 
 **The two name checks report `unavailable` on a set stored before the naming ask
@@ -1564,7 +1572,7 @@ room really brought into existence. The second is a reading of the answer, and
 so a room that named more places than it had room for opened fewer than it
 named.
 
-`exits_restating` — the scout's 36% — is **reported and not scored**, because
+`exits_restating` — the original 36% hand count — is **reported and not scored**, because
 the prompt asks for reuse when an exit leads somewhere already known. The three
 narrower shapes above it are the defects.
 
@@ -1630,9 +1638,9 @@ are Kernel's own generator — and the third keys on `story_id` and `location.id
 which a staged copy re-issues on every load. So those lines legitimately differ
 between two repetitions of one case.
 
-**And so is the count the people block asks for**, since the captain's ruling of
-2026-09-07: the narrator picks how populated a place is from a closed list and
-the engine rolls the count inside that word's band
+**And so is the count the people block asks for:** the narrator picks how
+populated a place is from a closed list and the engine rolls the count inside
+that word's band
 (`Location::Population`). A room a seed file left silent about carries no word,
 so the label is rolled too — and although it is seeded on the room's NAME
 rather than on its id, precisely so that a staged copy of a world keeps it, the
@@ -1711,8 +1719,8 @@ has had one.
 `db/eval/kind-to-corpus-after/` is what `Eval::Realization::BASELINE` names now,
 and it is the one kind of re-baseline this file had not yet had an example of:
 **no prompt moved at all.** What moved was the corpus SCHEMA — a case may now
-carry the stub the captain typed in `Lab::Realization` and his `expects_*` block
-with it, and `Eval::Realization.digest` folds every field that changes what was
+carry the stub typed in `Lab::Realization` and its `expects_*` block with it,
+and `Eval::Realization.digest` folds every field that changes what was
 measured. So the same twenty-two cases in the same worlds produced a new corpus
 digest, `Eval::Realization::KeptSetTest` began failing, and the set that had been
 the baseline stopped being one for this tree while remaining a true reading of
@@ -1790,10 +1798,9 @@ rather than reaching a provider. Each script loads its own copy of a seeded worl
 and rolls it back, so it can be run against a database somebody is mid-game in.
 
 **A script can now say WHICH READER answered a line** (`resolved_by:`), which
-matters because since the captain's ruling of 2026-09-04 (evening) the browser
-reads a slashed or verb-first line with that same grammar before it spends a
-classifier call. `model` is unreachable in a walk by construction, so what a
-script pins is `grammar` and `engine_view` —
+matters because the browser reads a slashed or verb-first line with that same
+grammar before spending a classifier call. `model` is unreachable in a walk by
+construction, so what a script pins is `grammar` and `engine_view` —
 `lib/engine_sweep/scripts/a-slash-in-front-of-the-line.yml` is the walk, and its
 claim is an equivalence: a slashed line and its plain twin leave the same
 records. **The offline half of the classifier bench is unaffected** by that
@@ -1869,13 +1876,13 @@ a person, that convention needs teeth; today it does not have them.
 ## The frozen corpus, and how it grows
 
 `test/fixtures/files/eval_corpus.json` is the regression line: real passages out
-of the captain's own playthroughs with the records around them written down,
+of recorded playthroughs with the records around them written down,
 plus the 24 lab narrations, checked in so they need no database.
 `Story::Scoreboard::Corpus` reads it and its header says what a passage carries
 and which checks it therefore cannot answer.
 
 **`rake game:corpus` is the only thing that writes it.** It reads this machine's
-database, takes every turn the captain has judged and the turns either side of
+database, takes every judged turn and the turns either side of
 it, derives the facts beside each passage through `Story::Audit`'s own readers,
 and merges by scene: a row already there has its verdict and note brought up to
 date, a row that is not is appended, and nothing is ever removed. `DRY_RUN=1`
@@ -1983,8 +1990,8 @@ off-limits" without somebody having to work out which they are.
 The same bar every existing check cleared, and PR 99 killed five plausible
 candidates against it:
 
-1. **A complaint behind it.** Every check here answers an error the captain named
-   while playing, in his own words.
+1. **A demonstrated defect behind it.** Every check here answers an error found
+   during play.
 2. **A measured false-positive rate on real prose**, in a test, not in a commit
    message. The corpora are `eval_corpus.json` (grown by `rake game:corpus`;
    the count is pinned in `Story::Scoreboard::CorpusTest`),
@@ -2004,7 +2011,7 @@ loose.
 
 `inscription_misquoted` is the most recent one through this, and it is the
 worked example of a check that clears the bar on precision and admits to poor
-recall: 0 flags over all 367 real passages, the captain's own narration as the
+recall: 0 flags over all 367 real passages, one recorded narration as the
 positive case, and two plausible widenings (`says` as a cue; the item's own
 name) measured and killed at 7 and 3 flags of dialogue. Its stated miss is
 larger than most — three live read narrations, two of which quote the record

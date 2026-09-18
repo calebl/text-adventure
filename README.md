@@ -359,8 +359,8 @@ mechanics mode with its own copy of the line that moves the player would be
 testing itself.
 
 It starts a **fresh playthrough** each session rather than editing whichever one
-was last played, and since the captain's ruling of 2026-09-04 that means it sees
-**the world as it was written**: it takes its own copy of every room it walks
+was last played, so it sees **the world as it was written**: it takes its own
+copy of every room it walks
 into, so nothing it picks up or puts down is visible to the browser and nothing
 another game did is visible to it. What stays shared is the world itself — the
 rooms, the exits, the cast, and the world's own rows lying in them.
@@ -489,12 +489,8 @@ answers badly must not be able to move the player, so every branch below is
 taken on a record the app is holding, never on a label a model wrote.
 
 **A slashed line is read by the grammar first and by the model second.** The
-captain's ruling of 2026-09-04, evening: *"support a slash prefix autocomplete in
-the text box, and resolve those and verb-prefixed lines offline then fallback to
-the model"* — narrowed the next day, after he objected that *"a line beginning
-with `move`"* might be *"move the lamp off the desk"*, to
-***"I think we should only auto accept the slash commands."*** So **the `/` is
-the whole of the claim**: a line carrying one goes to `Playthrough::Grammar` — a
+**`/` is the whole of the claim**: a line carrying one goes to
+`Playthrough::Grammar` — a
 closed verb table and a name matched against **the same closed set the
 classifier would have been offered** — and reaches `Playthrough::Classifier` only
 when that could not place the noun; **a line without one is not claimed at all,
@@ -630,9 +626,9 @@ which is the railroad by the back door.
 and it is a rendering rather than a decision.** By the time it runs the outcome
 is selected, the playthrough is ended and the closing `Scene` already carries the
 outcome's own sentence — so the call is handed a fact and asked for prose, and
-every way it can fail leaves the sentence standing (`Scene::Ending`, the captain's
-Call 5 of 2026-09-06: *the narrator writes a real ending, told the conclusion*).
-The objection above is spent by then: there is no next turn to be written toward
+every way it can fail leaves the sentence standing (`Scene::Ending`). The
+narrator renders a recorded conclusion; it never chooses one. The objection
+above is spent by then: there is no next turn to be written toward
 anything. **The stored sentence is what an offline walk reaches**, because
 `rake game:sweep` makes no call at all — which is how *a game ends with words*
 gets asserted with no model in the room
@@ -642,15 +638,12 @@ The orange box is the honest one. It is where classifications with nothing more
 specific to do end up; every engine-owned effect now has factual fallback prose
 after the engine commits its receipt.
 
-**The refusal branch is teal, and that is the point of it.** *One line, one
-act* — the captain's ruling of 2026-09-04:
+**The refusal branch is teal, and that is the point of it. One line, one act:**
+a line that attempts more than one act is refused rather than partly executed,
+and an unresolved act asks for clarification. The mechanics write those
+responses without asking the narrator.
 
-> *"If someone tries to do two things or more at a time, we should refuse and
-> prompt the player to pick only 1 thing. Or if we can't determine what they are
-> trying to do, then we should refuse and ask for clarification. This can all be
-> in the mechanics and doesn't need to go through narration."*
-
-So five shapes stop in front of the dispatch and no model is asked to write
+Five shapes stop in front of the dispatch and no model is asked to write
 them: a line naming two things the records both have, a reach the closed sets
 cannot answer, a classifier answer outside the intent table that still named
 a record, a `take` or `throw` of something the world says is **immovable**, and
@@ -670,7 +663,8 @@ leaves its measurement — the `Playthrough::Overreach` or
 `Playthrough::Drift` row is taken inside `Playthrough::Classifier#classify`
 before the loop asks whether it will play the line. A slash command resolved by
 the fixed grammar makes no classifier call and writes neither counter. The
-ruling changed what a model-read turn does, not what the classifier counts.
+refusal rule changes what a model-read turn does, not what the classifier
+counts.
 
 The branch it replaced was `Playthrough::Turn#reach_fact`, which told the
 narrator that a failed reach had changed nothing and let it write the turn
@@ -741,12 +735,11 @@ A note, a letter, a sign, a docket, a label: **what is written on it is a
 record.** `items.readable` says a thing has words on it and `items.inscription`
 holds them, bounded at 400 characters.
 
-The captain's own turn is why. He typed *"pickup the note. what does it say?"*
-and the narrator answered *"Midnight. The Bell. They know about the maps."* —
-invented on the spot, kept nowhere, and free to be something different the next
-time he unfolded it. In his words: *"when an item is a note or piece of paper,
-etc that has writing on it, we need to store that writing so it is permanently
-held in the game state."*
+A recorded turn exposed the gap: the player typed *"pickup the note. what does
+it say?"* and the narrator answered *"Midnight. The Bell. They know about the
+maps."* — invented on the spot, kept nowhere, and free to be something different
+the next time the note was unfolded. Writing on an item therefore belongs in
+the durable game state.
 
 The words are written in exactly two places and read everywhere:
 
@@ -777,7 +770,7 @@ times, and no model in the loop at all.
 what is written on a thing whose words the records hold, and quotes it
 differently. Measured for false positives on all 367 real passages in the four
 corpora — 92 of them quote somebody, and it flags none of them — with the
-captain's own narration as the positive case. See
+recorded narration as the positive case. See
 `test/models/story/audit/inscription_test.rb`.
 
 `Item.lying_in` is unchanged, so the closed set `take` resolves against picks
@@ -837,10 +830,9 @@ that a world's premise character is not where the world says.
 
 ### The world is the template, the playthrough owns the instances
 
-The captain's ruling of 2026-09-04: *"each play through should have its own copy
-of items. If a location is generated with items in it, that should become the
-initial snapshot that any playthrough uses but what happens to the items after
-that should be managed by the playthrough."*
+Each playthrough owns its copies of items. A location's generated items are the
+initial snapshot; everything that happens to them afterward belongs to that
+playthrough.
 
 So `items` holds **two layers**, and `playthrough_id` is which layer a row is in.
 
@@ -875,8 +867,8 @@ A copy carries **every column but which room it is in and whose it is**
 anybody remembering it — which is exactly what did not happen to `readable` and
 `inscription` when they landed. *Where in that room* it is lying is one of the
 columns that comes along, deliberately: a template's `x` and `y` are the initial
-snapshot the ruling is about, so a copy of a chair standing by the window is a
-chair standing by the window, and from then on the copy moves on its own and the
+snapshot this mechanism preserves, so a copy of a chair standing by the window
+is a chair standing by the window. From then on the copy moves on its own and the
 world's row never does — `Item::NOT_COPIED`'s own note has the argument.
 
 **A room one party has emptied is still furnished for the next player**, and
@@ -904,10 +896,9 @@ answer, and `Character::Registry` turns the sheets into rows placed in the room
 it just described. Still the same call the furniture rides on; still not a
 narrator tool and not a scan of prose.
 
-**How many, the narrator picks and the engine rolls.** The captain's ruling of
-2026-09-07 — *"The narrarator should get to decide how populated a room should
-be"* — as a closed-list pick: the exits call of the room next door answers one
-word per exit out of `Location::Population::LABELS`, the word is kept on
+**How many, the narrator picks and the engine rolls.** The narrator chooses a
+population band from a closed list: the exits call of the room next door answers
+one word per exit out of `Location::Population::LABELS`, the word is kept on
 `locations.population`, and the engine rolls the exact count inside that word's
 band when somebody walks in. The model never writes a number, and a room nobody
 picked a word for — the opening room, a room of a laid-out interior, a seeded
@@ -952,8 +943,8 @@ room realized. On the same room of the same world, the detail call came back at
 **789 output tokens with two complete people in it against 396 with `people`
 suppressed** — about 197 tokens a person, against a schema cap of ~400. Most
 rooms pay only the +173, because the prompt asks for nobody. Both figures were
-measured under the ceiling the 2026-09-07 ruling replaced, so the *share* of
-rooms paying only the +173 is now whatever the narrator's picks come to; the
+measured under the former ceiling, so the *share* of rooms paying only the +173
+is now whatever the narrator's picks come to; the
 per-person cost is unchanged.
 
 The first live realization under this schema is also why the caps are what they
@@ -1228,7 +1219,7 @@ before it starts. Scoring is free, offline and deterministic.
 
 
 **Two corpora, reported separately and never added together.** The local
-database is what was actually played -- true, and the only corpus the captain's
+database is what was actually played -- true, and the only corpus the recorded
 `good` / `weak` / `bad` verdicts attach to -- but it is small and it drifts.
 `test/fixtures/files/eval_corpus.json` is 92 real passages frozen in the repo,
 so it needs no database and gives the same answer on every machine; a check that
@@ -1241,8 +1232,7 @@ asked (`SAVE=1`).
 error that is objectively present or absent; none of them reads prose for taste.
 `Story::Scoreboard::CorpusTest` pins the measurement: **19 flags over 92 real
 passages, zero false positives, and zero flags on the 24 lab narrations** -- and
-the three turns the captain marked while playing are each caught by a different
-check.
+the three turns marked during play are each caught by a different check.
 
 ### What the loop does not do yet
 

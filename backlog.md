@@ -51,8 +51,8 @@
 - [ ] ta-take-drop-narration - The narration erases the take and invents the pickup (repo: text-adventure) (kind: ship) (priority: 1) (since 2026-09-03)
   The narration erases the take and invents the pickup, and no check can see it.
 
-  FOUND by reading a clean held-out run end to end -- the captain's accuracy pass
-  on `The Salt Assizes`, which the board scored at zero flags. The board was right
+  FOUND by reading a clean held-out run of `The Salt Assizes` end to end. The
+  board scored it at zero flags and was right
   about every check it has. It missed this entirely.
 
   WHAT HAPPENS. On a turn the app resolves as `take`, the prose says the player
@@ -116,7 +116,7 @@
   NOT IN SCOPE: how items come to exist (`ta-item-registry`).
 
   ITEM 2 HAS LANDED (2026-09-03, `ta-narrator-invents-exit`), and it is the half
-  that was blocking measurement rather than the half the captain feels. What
+  that was blocking measurement rather than the prose defect above. What
   shipped: `scenes.resolved_action` and `scenes.acted_on` -- what the turn DID,
   written by `Playthrough::Turn#play` beside `typed` -- and the two checks that
   read a narration against it, `take_denied` and `pickup_invented`. The
@@ -130,7 +130,7 @@
   ITEMS 1 AND 3 ARE STILL OPEN, and both checks are available to a scripted
   sweep, so the prose fix can now be judged the way this entry asks.
 
-- [ ] ta-character-whereabouts - Nothing records where a character is (repo: text-adventure) (kind: scout) (priority: 2) (since 2026-09-03)
+- [ ] ta-character-whereabouts - Nothing records where a character is (repo: text-adventure) (kind: investigation) (priority: 2) (since 2026-09-03)
   Nothing records where a character is, so half the presence claims in the prose
   cannot be checked -- or kept.
 
