@@ -194,11 +194,11 @@ class Eval::Realization::Board
     # WHAT A THOUSAND ROOMS COST ON THIS ARM -- the figure that decides whether a
     # model is worth building worlds on, priced on
     # `Eval::Realization::PER_CALL`, measured over the real realization calls in
-    # the captain's own database rather than modelled. Both calls, because a
+    # the recorded development data rather than modelled. Both calls, because a
     # room costs both.
     def cost(column)
       arm = Eval::Classifier::Arm.parse(column.arm)
-      return "free (the captain's own hardware)" if arm.local?
+      return "free (the local hardware)" if arm.local?
       return "unpriced -- the registry has no row" if arm.price == Eval::Cost::UNKNOWN
 
       input = Eval::Realization::CALLS.sum { |call| Eval::Realization::PER_CALL.fetch(call)[:input] }

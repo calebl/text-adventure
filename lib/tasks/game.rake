@@ -18,7 +18,7 @@ namespace :game do
     # it works in: the protagonist, then the story's ARC, then the opening room
     # realized with whatever cast the realization writes into it, then the
     # opening arrival narrated LAST so its `## Who Is Here` block carries both.
-    # `Story::FirstScreen` is where that order lives and why -- the captain's
+    # `Story::FirstScreen` is where that order lives and why -- the maintainer's
     # ruling of 2026-09-05, *"the generation task should create the protagonist
     # along with any characters that are in the opening scene."*
     #
@@ -26,7 +26,7 @@ namespace :game do
     # calls, of which ONE is new.
     #   1  Character::Generator for the protagonist  (~2,700 in / ~400 out)
     #   1  Quest::Generator for the story's arc                             NEW
-    #      -- the captain's Call 3 of 2026-09-06, one separate call per world.
+    #      -- the documented requirement 3 of 2026-09-06, one separate call per world.
     #      It writes rows in `quests` and nowhere else: no place, no person, no
     #      thing, and every target NULL. Nothing per room, nothing per turn.
     #   2  Location::Generator for the opening room  (~1,900 in / ~670 out) --
@@ -72,7 +72,7 @@ namespace :game do
   end
 
   # FORKING A STORY SO IT CAN BE PLAYED FROM THE BEGINNING AGAIN, which is the
-  # captain's request of 2026-09-07 and his choice of the two shapes offered:
+  # documented requirement of 2026-09-07 and his choice of the two shapes offered:
   # *"for the story reset, I want to fork."*
   #
   # NOTHING IT DOES TOUCHES THE ORIGINAL. It reads one story's generation-time
@@ -210,7 +210,7 @@ namespace :game do
 
   # RE-ASSERTING THE CHECKED-IN WORLDS OVER THE DATABASE YOU ALREADY HAVE, which
   # is the half of `bin/rails db:seed` that is not the RubyLLM registry. A world
-  # here outlives its seed FILE exactly as it outlives its schema: the captain
+  # here outlives its seed FILE exactly as it outlives its schema: the maintainer
   # seeded The Salt Assizes one evening and a PR edited the file the next
   # morning, and nothing he ran after pulling ever looked at it again.
   #
@@ -347,7 +347,7 @@ namespace :game do
     dry = ENV["DRY_RUN"].present?
 
     puts "THE WORLD IS THE TEMPLATE AND THE PLAYTHROUGH OWNS THE INSTANCES."
-    puts "Before the captain's ruling of 2026-09-04 there was one layer and every game shared"
+    puts "Before the documented requirement of 2026-09-04 there was one layer and every game shared"
     puts "it: a party that picked the ward stamp up took it out of the room for every other"
     puts "play of that world. This puts the world's own rows back where the turn log says they"
     puts "were taken from, hands each row a take records to the player who took it, and gives"
@@ -467,7 +467,7 @@ namespace :game do
     puts "`characters.level` and `characters.hit_die` are written from now on -- by a seed file, by"
     puts "Character::Registry and by Character::Generator. This rolls one for every character older"
     puts "than the columns, because the engine is the only author those numbers ever had (the"
-    puts "captain's ruling of 2026-09-04). Deterministic, so this dry run's numbers are the ones a"
+    puts "documented requirement of 2026-09-04). Deterministic, so this dry run's numbers are the ones a"
     puts "real run writes. Offline, no model call."
     puts "DRY RUN: nothing is written." if dry
     puts
@@ -1057,7 +1057,7 @@ namespace :game do
     # advising `create_character`, which was the right advice only because the
     # task made none; now it made both, so the closing lines report them
     # instead -- and they report an EMPTY opening room out loud, because a
-    # world whose first screen has nobody in it is a thing the captain should
+    # world whose first screen has nobody in it is a thing the the game should
     # not have to run the doctor to find out.
     def self.first_screen_lines(first_screen)
       lines = []

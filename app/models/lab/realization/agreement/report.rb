@@ -45,7 +45,7 @@ class Lab::Realization::Agreement::Report
 
   def heading
     say RULE
-    say "THE AGREEMENT -- the realization checks against the captain's own verdicts"
+    say "THE AGREEMENT -- the realization checks against the recorded evaluator verdicts"
     say "Offline and free: every figure below is read off samples already bought."
     say
     say "AN ELIGIBLE VERDICT IS ONE THAT SPEAKS TO THE CHECK. A sample called `good`"

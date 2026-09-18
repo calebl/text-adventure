@@ -27,7 +27,7 @@
 #   WHAT PROSE CANNOT SHOW  refusals, omitted fields, fields cut off at their
 #                         cap, failures by class, latency, tokens, spend.
 #   THE FLAGGED PASSAGES  with what was typed and the offending sentence, on
-#                         `rake game:score`'s rule: the captain's attention goes
+#                         `rake game:score`'s rule: the evaluation goes
 #                         only to what a check caught.
 class Eval::Prompt::Report
   DEFAULT_SAMPLE = 12
@@ -170,7 +170,7 @@ class Eval::Prompt::Report
     input = passes.sum(&:input_tokens)
     output = passes.sum(&:output_tokens)
     say format("  %-26s %s", "spend",
-               parsed.local? ? "nothing -- a local model on the captain's own hardware" :
+               parsed.local? ? "nothing -- a local model on the local hardware" :
                  format("$%.4f over %d calls (%s in / %s out)",
                         parsed.price.of(input, output), passes.sum { |pass| pass.rows.size },
                         input.to_fs(:delimited), output.to_fs(:delimited)))

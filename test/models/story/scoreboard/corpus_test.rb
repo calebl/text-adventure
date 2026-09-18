@@ -2,7 +2,7 @@ require "test_helper"
 
 # THE PRECISION OF THE CHECKS, MEASURED ON REAL PASSAGES AND PINNED HERE.
 #
-# `test/fixtures/files/eval_corpus.json` is real prose out of the captain's own
+# `test/fixtures/files/eval_corpus.json` is real prose out of the maintainer's own
 # database with the records around it written down, plus the 24 narrations
 # `narration_corpus.json` already holds, which two remote models wrote against
 # six commands designed to break a world's laws. Nothing in it was written for
@@ -15,7 +15,7 @@ require "test_helper"
 #   flags raised                          29
 #   false positives                        0   -- every one read and signed for below
 #   passages from the lab sweep flagged    0   -- the hardest negative case there is
-#   turns the captain judged              43   -- 7 of them caught
+#   turns the maintainer judged              43   -- 7 of them caught
 #
 # WHAT THE REFRESH OF 2026-09-07 ADDED, and it is the whole reason the counts
 # above are not the ones this file was born with: 57 passages, taken from his
@@ -108,7 +108,7 @@ class Story::Scoreboard::CorpusTest < ActiveSupport::TestCase
   # carries the state around the prose and never the change the turn made. It
   # is answered on `Story::Scoreboard::Transitions`, and that split is pinned
   # below. `Story::Scoreboard#missed_verdicts` is where a reader sees the rest.
-  test "the turns the captain judged that a check catches, each by the check the error belongs to" do
+  test "the turns the maintainer judged that a check catches, each by the check the error belongs to" do
     judged = @corpus.passages.select { |passage| passage.verdict.present? }
     by_label = @corpus.flags.group_by { |flag| flag.scene.label }
 
@@ -132,7 +132,7 @@ class Story::Scoreboard::CorpusTest < ActiveSupport::TestCase
   # NOTHING A CHECK CATCHES IS A TURN HE LIKED. The figure that would discredit
   # the board outright, pinned on its own so it cannot be lost inside the map
   # above: every verdict on a flagged turn is `bad` or `weak`.
-  test "no check fires on a turn the captain called good" do
+  test "no check fires on a turn the maintainer called good" do
     flagged = @corpus.flags.map(&:scene).uniq.select { |passage| passage.verdict.present? }
 
     assert_equal({ "bad" => 6, "weak" => 1 }, flagged.map(&:verdict).tally)
@@ -269,7 +269,7 @@ class Story::Scoreboard::CorpusTest < ActiveSupport::TestCase
   end
 
   # THE THRESHOLD, RE-DERIVED RATHER THAN TRUSTED. `Story::Audit::STILL_RUN` is
-  # 4 because 4 is the LONGEST run that still catches the one turn the captain
+  # 4 because 4 is the LONGEST run that still catches the one turn the maintainer
   # marked `weak` with *"this has stretch on too long"*. Five catches nothing;
   # three and two catch it along with four and eight unlabelled turns. If a
   # change makes a different threshold the right answer, this fails and the

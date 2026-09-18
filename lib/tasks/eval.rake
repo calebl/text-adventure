@@ -31,7 +31,7 @@
 #   rake eval:realization_compare  two sets, with a verdict per figure
 #
 # AND ONE THAT MEASURES THOSE CHECKS RATHER THAN THE PROMPT: whether they agree
-# with the captain's own verdicts on the samples he judged in the realization lab.
+# with the recorded evaluator verdicts on the samples he judged in the realization lab.
 # It reads the database and no stored set, which is why it is here rather than
 # beside the three above -- `Lab::Realization::Agreement` has the design:
 #
@@ -239,13 +239,13 @@ namespace :eval do
     RealizationTasks.digest!
   end
 
-  desc "Whether the realization checks agree with the captain's own lab verdicts -- offline, free, " \
+  desc "Whether the realization checks agree with the recorded evaluator verdicts -- offline, free, " \
        "no model call, no key. Usage: rake eval:realization_alignment"
   task realization_alignment: :environment do
     Lab::Realization::Agreement::Report.new(Lab::Realization::Agreement.sets).print
   end
 
-  desc "Whether the exits checks agree with the captain's own lab verdicts -- offline, free, " \
+  desc "Whether the exits checks agree with the recorded evaluator verdicts -- offline, free, " \
        "no model call, no key. Usage: rake eval:exits_alignment"
   task exits_alignment: :environment do
     Lab::Exits::Agreement::Report.new(Lab::Exits::Agreement.sets).print
@@ -289,7 +289,7 @@ namespace :eval do
     # A realization bench run is cents -- two calls a case, the whole corpus,
     # four repetitions, and `#estimate_line` prices it rather than this comment
     # -- so the ceiling is low and the estimate is printed first anyway: the
-    # captain's rule for `eval:run` applies to anything that spends.
+    # documented requirement for `eval:run` applies to anything that spends.
     SPEND_CEILING = 1.00
 
     def reps = (ENV["REPS"].presence || default_reps).to_i
@@ -340,7 +340,7 @@ namespace :eval do
     end
 
     # WHICH PROMPTS THIS TREE WOULD SEND, AND WHETHER A STORED SET STILL
-    # MEASURES THEM. The cheap gate in front of the captain's standing rule of
+    # MEASURES THEM. The cheap gate in front of the documented requirement of
     # 2026-09-06: a prompt change is judged against a baseline, and this is what
     # says whether the baseline on disk is one -- for nothing, with no key and
     # no network (`Eval::Realization::Version.offline`).
@@ -442,7 +442,7 @@ namespace :eval do
     def default_reps = Eval::Noise::MIN_RUNS
 
     # A prompt bench run is cents -- about $0.40 at the defaults -- so the
-    # ceiling is low and the estimate is printed first anyway: the captain's
+    # ceiling is low and the estimate is printed first anyway: the maintainer's
     # rule for `eval:run` applies to anything that spends.
     SPEND_CEILING = 1.00
 
@@ -549,12 +549,12 @@ namespace :eval do
 
     # A bench run is cents, not dollars -- 339 lines x 4 reps x 2 models is about
     # $0.44 -- so the ceiling is low and the estimate is still printed first: the
-    # captain's rule for `eval:run` applies to anything that spends.
+    # documented requirement for `eval:run` applies to anything that spends.
     SPEND_CEILING = 0.50
 
     def reps = (ENV["REPS"].presence || default_reps).to_i
 
-    # THE EXPLICIT ARM SELECTOR, on the captain's instruction of 2026-09-04:
+    # THE EXPLICIT ARM SELECTOR, on the documented requirement of 2026-09-04:
     # `MODELS=` names exactly which models a run measures and the app's rotation
     # is not consulted at all. A bare id is OpenRouter; `ollama:qwen3:8b` names
     # the provider, because an ollama tag has a colon in it.
@@ -652,7 +652,7 @@ namespace :eval do
     end
 
     # A KEY IS ONLY NEEDED FOR A HOSTED ARM. A run of nothing but local models
-    # asks the captain's own daemon and needs no key at all, so demanding one
+    # asks the maintainer's own daemon and needs no key at all, so demanding one
     # would refuse a free measurement.
     def abort_without_a_key(arms)
       if arms.any? { |arm| !arm.local? } && ENV["OPENROUTER_API_KEY"].blank?

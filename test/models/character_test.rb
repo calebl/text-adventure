@@ -80,7 +80,7 @@ class CharacterTest < ActiveSupport::TestCase
     assert_raises(KeyError) { @character.pronouns }
   end
 
-  # The captain's rule, and the point of splitting `transgender` in two: a trans
+  # The documented requirement, and the point of splitting `transgender` in two: a trans
   # woman is a woman and a trans man is a man, so each takes exactly what any
   # other woman or man takes.
   test "a trans woman and a trans man take the same pronouns as any other woman or man" do
@@ -239,7 +239,7 @@ class CharacterTest < ActiveSupport::TestCase
   end
 
   # Two people in one story cannot share a full name -- a player has no other
-  # handle on who they are talking to. The captain saw two characters
+  # handle on who they are talking to. The maintainer saw two characters
   # introduced under the same name and this is the record-level guard.
   test "rejects a second character with the same full name in the same story" do
     first = create(:character, fullname: "Ember Lacroix")
@@ -526,7 +526,7 @@ class CharacterTest < ActiveSupport::TestCase
   # Two integers and one formula, and the formula is the whole of what the app
   # derives from them. It gains NO ability term now that there are abilities:
   # there is no constitution among the three, `will` is nerve rather than
-  # stamina, and the body's capacity is the hit die -- the captain's ruling of
+  # stamina, and the body's capacity is the hit die -- the documented requirement of
   # 2026-09-04.
 
   test "a level 1 body holds its whole hit die" do
@@ -583,10 +583,10 @@ class CharacterTest < ActiveSupport::TestCase
 
   # --- the three abilities ---------------------------------------------------
   #
-  # The captain's ruling of 2026-09-04, evening: *"let's go with the 3
+  # The documented requirement of 2026-09-04, evening: *"let's go with the 3
   # abilities"* -- strength, dexterity, will, and exactly those three.
 
-  test "there are exactly three abilities and they are the captain's three" do
+  test "there are exactly three abilities and they are the three documented abilities" do
     assert_equal %i[strength dexterity will], Character::ABILITIES
   end
 
@@ -729,7 +729,7 @@ class CharacterTest < ActiveSupport::TestCase
   # ------------------------------------------------------------------------
   # HOSTILE: A MONSTER IS AN ORDINARY PERSON WITH ONE COLUMN SET.
   #
-  # The captain's ruling of 2026-09-04 -- *"a universe should be able to have
+  # The documented requirement of 2026-09-04 -- *"a universe should be able to have
   # monsters as well as characters"* -- answered with a flag on this class
   # rather than an STI subtype or a second table, on `locations.mobile`'s own
   # argument. Nothing here fights: what is asserted is that the column exists on

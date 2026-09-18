@@ -175,12 +175,12 @@ class Eval::Prompt::Board
 
     # WHAT A THOUSAND NARRATED TURNS COST ON THIS ARM -- the figure that decides
     # whether a model is worth playing on, priced on `Eval::Prompt::PER_CALL`,
-    # measured over the real prose calls in the captain's own database rather
+    # measured over the real prose calls in the recorded development data rather
     # than modelled. The narration pass, because it is the one a player waits
     # for on nearly every turn.
     def cost(column)
       price = Eval::Classifier::Arm.parse(column.arm).price
-      return "free (the captain's own hardware)" if Eval::Classifier::Arm.parse(column.arm).local?
+      return "free (the local hardware)" if Eval::Classifier::Arm.parse(column.arm).local?
       return "unpriced -- the registry has no row" if price == Eval::Cost::UNKNOWN
 
       per = Eval::Prompt::PER_CALL.fetch("narration")

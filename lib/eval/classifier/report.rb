@@ -20,7 +20,7 @@
 #                         accurate" and "every `other` came back as `examine`"
 #                         are the same rate and different bugs.
 #   CLOSED-SET MISSES     right branch, wrong record. Counted and LISTED, on the
-#                         same rule `Story::Scoreboard` follows: the captain's
+#                         same rule `Story::Scoreboard` follows: the maintainer's
 #                         attention goes only to what a check caught.
 #   `also_named`          precision and recall, because it is a DETECTOR --
 #                         PR 102's finding F4 -- and a detector has two ways to
@@ -171,7 +171,7 @@ class Eval::Classifier::Report
     total = answered + failures
 
     say format("  %-20s %s", "cost", parsed.local? ?
-      "nothing -- a local model on the captain's own hardware, and slow" :
+      "nothing -- a local model on the local hardware, and slow" :
       "#{format("$%.4f", parsed.price.of(Eval::Classifier::PER_CALL[:input] * total,
                                          Eval::Classifier::PER_CALL[:output] * total))} over #{total} calls")
     cold = result.warmup(arm)
