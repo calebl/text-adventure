@@ -2,7 +2,7 @@ require "test_helper"
 
 # `inscription_misquoted`, MEASURED THE WAY EVERY OTHER CHECK HERE WAS.
 #
-# THE COMPLAINT BEHIND IT is the captain's, and it is the reason
+# THE COMPLAINT BEHIND IT is the maintainer's, and it is the reason
 # `items.inscription` exists at all. Playthrough 15, scene 77 of his own game:
 # he typed *"pickup the note. what does it say?"* and the narrator answered
 #
@@ -39,16 +39,16 @@ require "test_helper"
 # because a cue list that quietly regrows them is the check turning into the
 # thing it was built not to be.
 #
-# THE POSITIVE CASE IS THE CAPTAIN'S OWN NARRATION, with the record put
+# THE POSITIVE CASE IS THE MAINTAINER'S OWN NARRATION, with the record put
 # underneath it -- the `Story::Audit::ArrivalTest` pattern, and the strongest
 # form of it available: real prose, from the turn that prompted the work.
 class Story::Audit::InscriptionTest < ActiveSupport::TestCase
   Prose = Story::Audit::Prose
 
-  # PLAYTHROUGH 15, SCENE 77, word for word. Read out of the captain's own
+  # PLAYTHROUGH 15, SCENE 77, word for word. Read out of the maintainer's own
   # database and frozen here, because it is the only real narration in the
   # project that quotes a piece of writing.
-  CAPTAINS_NOTE = <<~PROSE.strip.freeze
+  RECORDED_NOTE_PASSAGE = <<~PROSE.strip.freeze
     You already hold the folded note in your hand, its edges slightly crumpled from where you picked it up. Unfolding it carefully, you squint at the smudged ink in the dim gaslight. The words are hurried, as if written in haste: *"Midnight. The Bell. They know about the maps."* The handwriting is unfamiliar, but the urgency in the scrawl is unmistakable. The paper trembles slightly in your grip, or perhaps that’s just the Nocturna humming through the walls, making the very air feel unstable.
   PROSE
 
@@ -78,11 +78,11 @@ class Story::Audit::InscriptionTest < ActiveSupport::TestCase
     assert_equal 98, quoting, "the corpora moved; re-measure before trusting the one below"
   end
 
-  # THE ONE READING IN 424 IS THE CAPTAIN'S OWN NOTE, which the corpus refresh
+  # THE ONE READING IN 424 IS THE MAINTAINER'S OWN NOTE, which the corpus refresh
   # of 2026-09-07 brought in as `lunar/scene-77`. Every other passage is
   # dialogue, description or a legal document being handed over, and the cue
   # rule refuses all of it.
-  test "the only passage in 424 that reads as a quotation of something written is the captain's own note" do
+  test "the only passage in 424 that reads as a quotation of something written is the recorded note" do
     read = self.class.passages.flat_map do |(file, label, text)|
       Prose.inscription_quotes(text).map { |quote| "#{file} #{label}: #{quote.text.inspect}" }
     end
@@ -116,8 +116,8 @@ class Story::Audit::InscriptionTest < ActiveSupport::TestCase
 
   # --- the reading half -----------------------------------------------------
 
-  test "the captain's own narration reads as a quotation of something written" do
-    quotes = Prose.inscription_quotes(CAPTAINS_NOTE)
+  test "the recorded player narration reads as a quotation of something written" do
+    quotes = Prose.inscription_quotes(RECORDED_NOTE_PASSAGE)
 
     assert_equal [ INVENTED ], quotes.map(&:text)
   end
@@ -159,10 +159,10 @@ class Story::Audit::InscriptionTest < ActiveSupport::TestCase
 
   # --- the check, against real records --------------------------------------
 
-  # THE POSITIVE CASE. The captain's real narration, over a note whose words the
+  # THE POSITIVE CASE. The maintainer's real narration, over a note whose words the
   # records now hold -- and they are not the ones the paragraph quotes.
-  test "the captain's turn flags once the note has words on record" do
-    audit = audit_over(CAPTAINS_NOTE, inscription: "Come to the west stair before the third bell. Burn this.")
+  test "the recorded player turn flags once the note has words on record" do
+    audit = audit_over(RECORDED_NOTE_PASSAGE, inscription: "Come to the west stair before the third bell. Burn this.")
     flags = audit.flags.select { |flag| flag.code == :inscription_misquoted }
 
     assert_equal 1, flags.size
@@ -174,7 +174,7 @@ class Story::Audit::InscriptionTest < ActiveSupport::TestCase
   # note that really does say that. A check that fired on both would be
   # measuring the quotation marks.
   test "the same narration is clean when the record says the same words" do
-    audit = audit_over(CAPTAINS_NOTE, inscription: INVENTED)
+    audit = audit_over(RECORDED_NOTE_PASSAGE, inscription: INVENTED)
 
     assert_equal [], audit.flags.select { |flag| flag.code == :inscription_misquoted }
   end
@@ -182,7 +182,7 @@ class Story::Audit::InscriptionTest < ActiveSupport::TestCase
   # The check reads a record, so a thing nobody has written words for cannot be
   # judged -- and is not counted in the denominator either.
   test "a readable thing with no words on record is not judged" do
-    audit = audit_over(CAPTAINS_NOTE, inscription: nil)
+    audit = audit_over(RECORDED_NOTE_PASSAGE, inscription: nil)
 
     assert_equal [], audit.flags.select { |flag| flag.code == :inscription_misquoted }
     assert_equal 0, audit.judgeable_for(:inscription_misquoted)
@@ -190,8 +190,8 @@ class Story::Audit::InscriptionTest < ActiveSupport::TestCase
 
   # It was a `take` that produced the complaint, not an examine. Scoping this to
   # reads would have excluded the turn it was built for.
-  test "a take of a readable thing is judged, because the captain's turn was one" do
-    audit = audit_over(CAPTAINS_NOTE, inscription: "Burn this.", action: "take")
+  test "a take of a readable thing is judged, because the recorded player turn was one" do
+    audit = audit_over(RECORDED_NOTE_PASSAGE, inscription: "Burn this.", action: "take")
 
     assert_equal 1, audit.flags.count { |flag| flag.code == :inscription_misquoted }
     assert_equal 1, audit.judgeable_for(:inscription_misquoted)
@@ -200,7 +200,7 @@ class Story::Audit::InscriptionTest < ActiveSupport::TestCase
   test "a turn that acted on nothing is not judged" do
     story = world
     scene = create(:scene, story: story, location: story.locations.first,
-                   description: CAPTAINS_NOTE, typed: "look around", resolved_action: "other", acted_on: nil)
+                   description: RECORDED_NOTE_PASSAGE, typed: "look around", resolved_action: "other", acted_on: nil)
 
     audit = Story::Audit.new(story, scenes: Scene.where(id: scene.id))
 

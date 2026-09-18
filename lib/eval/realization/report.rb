@@ -28,7 +28,7 @@
 #   WHAT AN ANSWER CANNOT SHOW  refusals, omitted fields, fields cut off at
 #                         their cap, failures by class, latency, tokens, spend.
 #   THE FLAGGED ROOMS     with the name that caused it, on `rake game:score`'s
-#                         rule: the captain's attention goes only to what a
+#                         rule: the the evaluation goes only to what a
 #                         check caught.
 class Eval::Realization::Report
   DEFAULT_SAMPLE = 12
@@ -178,7 +178,7 @@ class Eval::Realization::Report
     input = passes.sum(&:input_tokens)
     output = passes.sum(&:output_tokens)
     say format("  %-28s %s", "spend",
-               parsed.local? ? "nothing -- a local model on the captain's own hardware" :
+               parsed.local? ? "nothing -- a local model on the local hardware" :
                  format("$%.4f over %d realizations (%s in / %s out)",
                         parsed.price.of(input, output), passes.sum { |pass| pass.rows.size },
                         input.to_fs(:delimited), output.to_fs(:delimited)))

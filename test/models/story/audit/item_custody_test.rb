@@ -43,7 +43,7 @@ require "test_helper"
 # grammar is a measured constant` pins the figures so the trade can be re-taken
 # deliberately.
 #
-# WHAT SURVIVES is the captain's own `ta-narrator-invents-exit` sighting --
+# WHAT SURVIVES is the maintainer's own `ta-narrator-invents-exit` sighting --
 # *"losing the location of the ledger when it is put down and picked up"* --
 # caught on the turn after the drop.
 class Story::Audit::ItemCustodyTest < ActiveSupport::TestCase
@@ -101,7 +101,7 @@ class Story::Audit::ItemCustodyTest < ActiveSupport::TestCase
   # between "daybook" and "under your hand" and its window is 60.
   SACRIFICED = "lies waiting under your hand".freeze
 
-  test "the flags that survive are the captain's own sighting" do
+  test "the flags that survive are the recorded sighting" do
     strict = positions.reject { |row| row[:held] }
                       .select { |row| claims?(row[:text], "daybook", custody_only: row[:lying_in] == row[:room]) }
 
@@ -151,7 +151,7 @@ class Story::Audit::ItemCustodyTest < ActiveSupport::TestCase
   #
   # The on-the-person grammar matches in either order over a 60-character
   # window, and once Ward Office 12 held a ward stamp as well as a daybook, the
-  # captain's own sighting flagged twice:
+  # recorded sighting flagged twice:
   #
   #   "Your daybook lies open under your hand with the stamp beside it."
   #

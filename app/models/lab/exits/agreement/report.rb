@@ -22,7 +22,7 @@ class Lab::Exits::Agreement::Report
 
   def heading
     say RULE
-    say "THE AGREEMENT -- the exits checks against the captain's own verdicts"
+    say "THE AGREEMENT -- the exits checks against the recorded evaluator verdicts"
     say "Offline and free: every figure below is read off samples already bought."
     say
     say "AN ELIGIBLE VERDICT speaks to a check on a named place, counted once across"

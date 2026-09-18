@@ -19,7 +19,7 @@ class Lab::Exits::VantagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "select[name='vantage[world]'] option", text: vantage.world
   end
 
-  test "the alias the captain asked for reaches the same page" do
+  test "the alias the maintainer asked for reaches the same page" do
     get lab_exits_path
 
     assert_response :success
@@ -93,7 +93,7 @@ class Lab::Exits::VantagesControllerTest < ActionDispatch::IntegrationTest
   end
 
   # THE REFUSAL, ON THE PAGE. A one-sided set gets a sentence and no figure --
-  # the captain's Call 5, and the guard against the dominant strategy the exits
+  # the documented requirement 5, and the guard against the dominant strategy the exits
   # prompt itself invites.
   test "the index refuses an overall figure while the set is one-sided" do
     vantage = create(:lab_exits_vantage, :expecting_no_insides)
@@ -247,7 +247,7 @@ class Lab::Exits::VantagesControllerTest < ActionDispatch::IntegrationTest
 
   # THE GATE. This app has no auth at all, so an endpoint behind a hidden link is
   # an endpoint anybody with the link can read -- and this one can be made to
-  # spend the captain's money.
+  # spend the the model budget.
   test "every page is behind the debug flag" do
     vantage = create(:lab_exits_vantage)
 

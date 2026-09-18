@@ -1,6 +1,6 @@
 # EVERY BENCH SET ON DISK AS ONE TABLE, ACROSS MODELS.
 #
-# THE CAPTAIN'S INSTRUCTION OF 2026-09-04: *"produce one cross-model table
+# THE MAINTAINER'S INSTRUCTION OF 2026-09-04: *"produce one cross-model table
 # covering mistral, minimax and the three local models on accuracy, also_named
 # precision/recall, closed-set misses, latency, failures."* This is the thing
 # that prints it, so the table in a PR body is reproducible rather than
@@ -179,10 +179,10 @@ class Eval::Classifier::Board
     # WHAT A THOUSAND CLASSIFIER CALLS COST ON THIS ARM, which is the figure that
     # makes a cheaper model worth asking about at all: priced on
     # `Eval::Classifier::PER_CALL`, measured over the 61 real classifier calls in
-    # the captain's own database rather than modelled.
+    # the recorded development data rather than modelled.
     def cost(column)
       price = Eval::Classifier::Arm.parse(column.arm).price
-      return "free (the captain's own hardware)" if column.local?
+      return "free (the local hardware)" if column.local?
       return "unpriced -- the registry has no row" if price == Eval::Cost::UNKNOWN
 
       per_call = Eval::Classifier::PER_CALL

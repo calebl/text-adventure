@@ -46,6 +46,7 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     assert_select "svg.map-graph .nodes .place", 3
     assert_select "svg.map-graph rect.node.here", 0
     assert_match "nobody is playing this one", response.body
+    assert_match "worlds are, and what every", response.body
   end
 
   # THE CHECKED-IN INTERIOR, loaded from the one file in the repository that has

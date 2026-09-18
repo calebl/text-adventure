@@ -38,7 +38,7 @@ class Eval::Realization::Result
     storeys_below_ground: "mean floors a building was laid out below its ground floor -- the parameter " \
                           "that exists to make \"down\" expressible is worthless if it always comes back none",
     hazard_on_the_ground_floor: "rooms carrying a hazard, on storey 0",
-    hazard_below_ground: "the same share below ground -- the captain's own figure, and the ONLY one that " \
+    hazard_below_ground: "the same share below ground -- the recorded benchmark figure, and the ONLY one that " \
                          "reads whether the gradient did anything at all: it is the two ends of the slope, " \
                          "off the rows the layout wrote",
     populations_given: "exits given a population word, over exits named -- `insides_given`'s figure one " \
@@ -62,7 +62,7 @@ class Eval::Realization::Result
     new_places_named: "mean names the ANSWER gave that the world did not have -- not the same figure as " \
                       "the one above it: write_exits! stops connecting at the allowance, so a room that " \
                       "named five and was allowed three opened three",
-    exits_restating: "exits that named a place the story already had -- the scout's figure, and " \
+    exits_restating: "exits that named a place the story already had -- the investigation's figure, and " \
                      "NOT a defect on its own: the prompt asks for reuse when an exit leads somewhere known"
   }.freeze
 
