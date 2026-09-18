@@ -13,7 +13,7 @@ complete, because those go stale silently and a reader cannot tell. Where you
 need a number, the constant is named here and the number is read from it.
 
 There is no status file and no roadmap in this repo: the code is the record of
-what is built, and the task queue lives in firstmate.
+what is built, and the task queue is managed outside this repository.
 
 *Where the decisions live* below is the index — question, then the file that owns
 the answer.
@@ -42,12 +42,10 @@ write the world layer.
 
 ## The standing constraint: the game engine is the source of truth
 
-The captain's ruling, and it governs design decisions across the whole project:
+This constraint governs design decisions across the whole project:
 
-> *"I would rather not depend on the narrator doing what we tell it to do. We
-> should prompt it with rules if that makes it more likely that it will follow
-> them though and save on tokens. But I think we ultimately need a verification
-> process."*
+> **Do not depend on the narrator obeying its prompt.** Prompt it with the
+> world's rules to improve the odds and save tokens, then verify its output.
 
 **Nothing may depend on the narrator obeying its prompt.** Both halves, not one:
 **inform and verify.** Prompt the narrator with the world's laws — cheap, and it
@@ -64,14 +62,10 @@ the app act.* `Playthrough::Classifier` is the worked example — it is a model
 call, so it can be **wrong**, but its answer is a closed enum built from the
 room's real exits and cast, so it cannot be **out of bounds**.
 
-The full audit of every planned piece of work against this constraint is in
-`data/ta-direction/report.md` §0.1 (firstmate repo).
-
 ## A prompt is not changed without a baseline to judge it against
 
-The captain's ruling of 2026-09-06, and it is the other rule that stands over
-everything: **always have a baseline for evaluating a prompt before deciding to
-change it.**
+The other rule that stands over everything: **always have a baseline for
+evaluating a prompt before deciding to change it.**
 
 Generated prose is model output, and two identical runs disagree by more than
 most claimed improvements — [EVALUATION.md](EVALUATION.md) opens with the
@@ -92,6 +86,10 @@ else a model is handed:
    — `rake eval:prompt_compare` / `rake eval:compare`, four runs a side minimum.
 3. **Re-baseline only once the change is judged.**
 
+Frozen measurement evidence under `db/eval/` may retain historical source text
+and tool paths byte for byte. Vocabulary checks must allow those recorded bytes
+rather than rewriting a snapshot and falsifying what ran.
+
 [EVALUATION.md](EVALUATION.md) is the protocol, in full. A prompt change shipped
 without a baseline is a change nobody can defend — and a plausible-sounding
 prompt fix has more than once been measured moving the wrong number, which is the
@@ -106,11 +104,11 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
   a schema and token streaming are mutually exclusive; its header says so and
   says not to "fix" it.
 - **Genuinely zero build step.** `propshaft` + `importmap-rails` +
-  `turbo-rails`; no Node, no `package.json`, no watch process. A hard constraint
-  from the captain — `jsbundling-rails`, `cssbundling-rails`, esbuild, Vite and
-  any npm dependency are explicitly refused. **If something appears to need one,
-  that is a reason to reconsider the something; stop and ask.**
-- **Do not bind port 3000.** The captain runs his own long-lived server there.
+  `turbo-rails`; no Node, no `package.json`, no watch process.
+  `jsbundling-rails`, `cssbundling-rails`, esbuild, Vite and any npm dependency
+  are explicitly refused. **If something appears to need one, that is a reason
+  to reconsider the something; stop and ask.**
+- **Do not bind port 3000.** A long-lived development server may already use it.
   `PORT=3142 bin/dev` moves the whole formation; check a port is free before
   taking it, and never kill anything to free one.
 - **An engine change earns a sweep script, not only a unit test.** A unit test
@@ -179,9 +177,9 @@ Read the header of the file named, not a summary of it.
 | Who writes the last paragraph, and what a game gets when the model will not | `app/models/scene/ending.rb` |
 | Where narration contradicts the records | `app/models/story/audit.rb` |
 | The scoreboard, its corpora and its baseline | `app/models/story/scoreboard.rb` |
-| Where a kind of place is typed, drawn and scored against what he expects | `app/models/lab/realization.rb` |
-| Where the ways out of a place are drawn and counted against what he expects | `app/models/lab/exits.rb` |
-| How a kind or a vantage he scored becomes a bench case, and why the file is not written for him | `app/models/lab/realization/promotion.rb`, `lab/exits/promotion.rb` |
+| Where a kind of place is typed, drawn and scored against its expected shape | `app/models/lab/realization.rb` |
+| Where the ways out of a place are drawn and counted against their expected shape | `app/models/lab/exits.rb` |
+| How a scored kind or vantage becomes a bench case, and why promotion never rewrites the source | `app/models/lab/realization/promotion.rb`, `lab/exits/promotion.rb` |
 | What a corpus case may claim about the inside pick, and who reads that claim | `lib/eval/realization/corpus.rb`, `app/models/lab/exits.rb` |
 | Re-seeding a world somebody has played | `lib/world_seed/loader.rb`, `item/template_refresh.rb` |
 | Playing a story again from its beginning | `app/models/story/snapshot.rb`, `story/fork.rb` |
@@ -208,11 +206,10 @@ bin/brakeman --no-pager    # CI fails on a warning; a new view is where they com
   the RubyLLM `acts_as` migration that table **is** the model registry — RubyLLM
   resolves names out of it and does not fall back to the one the gem ships with,
   so an empty table resolves nothing. Offline; no API key.
-- **The local rotation is OFF by default and needs `TA_LOCAL_MODELS=1`.** The
-  captain's ruling, 2026-09-03: *"if we are still falling back to local models,
-  let's stop doing that for now."* A local fallback does not fail, it ANSWERS —
-  slowly, from a small-context CPU model — and every measurement downstream
-  quietly becomes about a different model. With no key and no opt-in there is no
+- **The local rotation is OFF by default and needs `TA_LOCAL_MODELS=1`.** A
+  local fallback does not fail, it ANSWERS — slowly, from a small-context CPU
+  model — and every measurement downstream quietly becomes about a different
+  model. With no key and no opt-in there is no
   model at all, and `BaseAgent::NoModelConfiguredError` says so in a sentence
   naming both ways out.
 - With `TA_LOCAL_MODELS=1`, `ollama serve` must run; keep
