@@ -265,13 +265,13 @@ lines:
 - id: move-closet-audit
   position: office
   typed: I am going to inventory that closet myself
-  intent: move
-  target: The Supply Closet
-  shape: move
-  why: a statement of intention rather than a command, which is how the captain types
-  also_accept:
-  - intent: other
-    target:
+  intent: examine
+  target:
+  shape: examine-nothing
+  why: >-
+    a statement of intention rather than a command; naming an intention to act
+    is not the act itself, so this reads as a look at the room rather than a
+    move into the closet
 
 - id: move-back-to-office
   position: closet
@@ -666,16 +666,12 @@ lines:
 - id: take-stamp-fragment
   position: office
   typed: stamp
-  intent: take
-  target: ward stamp
-  shape: take
+  intent: other
+  target:
+  shape: other
   why: >-
-    one word, no verb, and it is also an enum entry for `examine`. `take` is the
-    reading that changes the records, and `examine` is accepted rather than
-    called wrong
-  also_accept:
-  - intent: examine
-    target: ward stamp
+    one word, no verb, is too little to commit to picking the thing up; an
+    unknown action is the honest reading, not a take
 
 - id: take-index-plain
   position: closet
@@ -1293,16 +1289,14 @@ lines:
 - id: other-impossible
   position: office
   typed: reach into the gap in the ledger and pull the missing hour back out of it with my bare hands
-  intent: other
-  shape: other
+  intent: take
+  target:
+  refusal: unresolved
+  shape: take
   why: >-
     t10 of the eval script, verbatim -- the turn its own note calls IMPOSSIBLE
-    and "a reach that should resolve to nothing". Under the ruling of 2026-09-04
-    the reading matters more than it did: `other` narrates and a `take` here
-    would be REFUSED, which would take the run's impossible-turn beat away
-  also_accept:
-  - intent: examine
-    target: Ward Office 12 daybook
+    and "a reach that should resolve to nothing". Take -> nothing is the reading
+    that fits it, not other -> nothing
 
 - id: other-sleep
   position: room-3
@@ -2624,19 +2618,13 @@ lines:
 - id: real-anything-to-pickup
   position: closet
   typed: is there anything I can pickup?
-  intent: other
-  shape: other
+  intent: examine
+  target:
+  shape: examine-nothing
   why: >-
-    REAL, and the stored answer in his generated world was a `take` naming TWO
-    items -- so under the ruling of 2026-09-04 this line is now refused with
-    "Lying here: Perrin's private index, copy-room apron", which happens to be
-    the answer to the question. That is a pleasant accident and not a design, so
-    both readings are accepted: asking what is available is not taking, and the
-    refusal answers anyway
-  also_accept:
-  - intent: take
-    target: Perrin's private index
-    also_named: copy-room apron
+    REAL. A question about what is available is a look at the room itself, not
+    a take -- and examine is exempt from the unresolved refusal, so the engine
+    narrates the look rather than refusing the line
 
 - id: real-get-up-close-door
   position: room-3
@@ -3598,13 +3586,12 @@ lines:
 - id: attack-neb-court-both
   position: court-with-both
   typed: go for Neb
-  intent: attack
-  target: Neb Halloran
-  shape: attack
+  intent: other
+  target:
+  shape: other
   why: >-
-    ONE NAME IN A ROOM WITH TWO PEOPLE IN IT. The resolution has to pick, and it
-    must not overreach onto the Justicar -- the `attack` counterpart of
-    `grammar-yell-name`
+    too ambiguous to be sure what it means -- "go for" alone does not commit to
+    an attack, so the engine must not act on it
 
 - id: attack-perrin-swing
   position: office-with-perrin

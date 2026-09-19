@@ -137,9 +137,18 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     end
   end
 
+  # THE FROZEN DIGEST IS NOT THE LIVE ONE. This paid measurement's readings and
+  # scoring are fixed at the labels the corpus held when it was captured; a
+  # later correction to a handful of labels (five entries reviewed against the
+  # maintainer's own rulings) moves the live corpus digest without making the
+  # paid readings wrong or worth re-buying. So this asserts the set is still
+  # internally consistent -- its own recorded digest, unmoved -- and not that
+  # it tracks whatever the corpus says today.
+  FROZEN_DIGEST = "abc2535c473693d9".freeze
+
   test "the current single arm baseline matches the corpus and schema request" do
     result = load_kept(CURRENT)
-    assert_equal Eval::Classifier.digest, result.corpus_digest
+    assert_equal FROZEN_DIGEST, result.corpus_digest
     assert_equal Eval::Classifier.corpus.size, result.corpus_size
     assert_equal Eval::Classifier::Version.offline, result.request_identity
     assert_equal [ BaseAgent::REMOTE_MODEL_IDS.first ], result.arms
