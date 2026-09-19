@@ -1,0 +1,33 @@
+{
+  "completed_at": "2026-09-19T23:04:22Z",
+  "producer_commit": "8e6d7e2d9b1e01e184c265dc6aa00fd1abf83a24",
+  "source_manifest_sha256": "ab5c323a9bd6adde13ee59f1ea9d633162debf9be26a69d8cb18cf8ba6af3801",
+  "repetitions": 4,
+  "cases": 29,
+  "successful_readings": 117,
+  "provider_calls": 190,
+  "interrupted_attempts": [
+    {
+      "id": "hour-long-hallway",
+      "rep": 0,
+      "error": "RubyLLM::RateLimitError: Provider returned error"
+    }
+  ],
+  "estimate_usd": 0.27338880000000004,
+  "allocation_usd": {
+    "realization": 0.27338880000000004,
+    "dialogue": 0.03266928,
+    "task_ceiling": 1.5
+  },
+  "actual_usd": 0.324783,
+  "package_scripts": {
+    "run.rb": "0f5716791e6632b1455a06b3d679959c0e3ed35a672db339857fe5a8c4276048",
+    "payload_gate.rb": "9247590498fe171157fe40cf7c4b87350569bdd542edcca88d295ff0b10a3bd9",
+    "finalize.rb": "ac2363dd1ddb23ca941a9f6ca69e22ce069bda81ae515fdadda2160dec4911d3"
+  },
+  "limitations": [
+    "The broad realization rubric does not score whether the four desire fields are coherent or dramatically useful.",
+    "The OpenRouter credit delta is an account-level bracket, not task attribution.",
+    "A rate-limited zero-receipt warm-up remains conservatively reserved and is not silently refunded."
+  ]
+}

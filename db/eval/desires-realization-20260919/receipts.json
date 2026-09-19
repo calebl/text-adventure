@@ -1,0 +1,2202 @@
+{
+  "price_basis": "Provider-reported dollars where present, otherwise the registry price retained on the same call. Conservative budget accounting is separate.",
+  "previous_attempt": {
+    "actual": 0.0,
+    "reason": "The first warm-up received a provider rate-limit response with no usage receipt. Its conservative unknown reservation remains charged.",
+    "receipts": [
+      {
+        "id": "1cba3b31-5aad-44b0-b378-feb77f5189d1",
+        "label": "desires-realization-20260919:hour-long-hallway:0:location",
+        "state": "unknown",
+        "input_cap": 19896,
+        "output_cap": 2048,
+        "reserved_micros": 140440,
+        "accounted_micros": 140440,
+        "receipt": {
+          "purpose": "location",
+          "prompt": "## Universe Details\nphysics: Standard physical laws hold, with one exception: in the city of Ambry and the wards around it, a thing that is not written down stops being reliably itself. The effect is slow and dull rather than dramatic. An unrecorded corridor will, over a season, start to run a few feet short. An unregistered tool loses its temper and its edge. A person whose file is closed is not struck down; they are simply harder to remember, then harder to see, then gone from the accounts of everyone who knew them, until the only evidence they existed is what somebody wrote. Nothing about this is reversible by force. It is reversible by paperwork, which is why the Registry rules here.\ntechnology: Roughly late nineteenth century, and skewed hard toward anything that copies or preserves. Ambry has pneumatic tube post between every ward office, carbon paper, wax cylinders, a functioning telegraph and no electricity in the residential wards. Presses, seals, indelible inks and lamp-lit copy rooms are the industry the city actually runs on. There are no engines to speak of outside the pumping stations, because an engine that is not maintained on a filed schedule stops working in ways engineers find distressing rather than interesting.\ngeographies: Ambry sits in a wide river delta that floods twice a year. The Registry occupies the whole of the high ground: eleven storeys of ward offices, copy rooms and stacks, built in rings around a courtyard nobody has permission to cross. Below it the Middle Wards spread out in numbered blocks, each one a warren of tenements and copying shops. Beyond the levee are the flood plains, unsurveyed and therefore unrecorded, where the Unwritten live in houses that move with the water. The Registry's own basements run four floors below the flood line and are dry, which nobody has ever satisfactorily explained.\nraces: Copyists' Line, Ledger-Kept, Marginalia, Unwritten\ncivilizations: One city, one institution, and a functional caste order underneath it. The Registry employs one adult in six and files the rest. Above the clerks sit the Inspectorate, who audit; above them the Sealed Room, which nobody in this story has seen. Below everyone are the Marginalia, whose records were damaged or amended and who consequently take the work that ought not be remembered. Out past the levee the Unwritten trade fish, salt and salvage into a city that will not put their names on a receipt. Everyone in Ambry is polite, and everyone counts the days since their file was last touched.\n\n\n## Story Details\ntitle: The Unrecorded Hour\ngenre: bureaucratic mystery\npreface: The stamp is still in your hand and the ink is still wet, and there is an hour missing out of the middle of your own daybook. Not a blank line: a clean, ruled gap between four and five o'clock, in your handwriting, with the running total carried straight across it as though nothing needed to be entered at all. You have worked Ward Office 12 for eleven years and you have never carried a total across a gap in your life. Rain is coming off the levee and going sideways past the window. Somewhere down the long hallway a door closes, and then another, nearer -- the Inspectorate does its rounds at seven and it is twenty past six. Perrin's desk across the room has been cleared to the wood, and you cannot remember when, or by whom, or -- and this is the part that has your hands cold -- whether there was ever anybody sitting at it. There is one thing in this office nobody has audited in eleven years, and its door is behind you.\nsummary: The player is a ward clerk in Ambry who finds an hour cut out of their own daybook and the desk opposite theirs cleared of a colleague they can no longer quite remember. Working out what happened in that hour means going through the Registry's own paperwork against it: the supply closet nobody has inventoried, the long hallway with the Inspectorate coming up it, and eventually the question of who has blank writs and why one was spent on a Marginalia clerk in Ward Office 12. The tone is dry, close and procedural, and the horror is entirely administrative.\n\n\n## The Place\nname: The Long Hallway\nteaser: Doors closing one after another, and shoes you can already hear.\n\n## Instructions\nWrite this place out in full.\n- The description is what the player reads on arrival. Address them as \"you\"\n- Describe what is here now, not the history -- the history is the lore\n- Stay consistent with the universe and with the teaser above\n- Respect the stated length of each field\n\n## What Is Lying Here\nList AT MOST 3 portable things a player could pick up and carry away.\n- Nothing is the right answer for most rooms. An empty list is a complete answer\n- Only loose, portable things. Not the door, not the floor, not the machinery\n  bolted to it -- something a person could put in a pocket or under an arm\n- Each one must be consistent with the description you just wrote, and worth\n  the player noticing\n- Pick its use_kind from the supplied physical profiles. Ordinary is the\n  default. Food and drink can be consumed without healing; healing is only\n  a restorative dose this world permits. Firestarters burn combustible\n  objects, levers pry jammed passages, lockpicks try locks, and a key only\n  opens a passage explicitly matched to it. Mark combustible only when an\n  ordinary firestarter can destroy the object. The engine owns the effects\n  and their amounts; its description cannot grant extra powers\n- If a thing has WRITING on it -- a note, a letter, a handbill, a label, a\n  docket, a page, a sign -- mark it readable and WRITE OUT WHAT IS WRITTEN\n  ON IT, exactly as it appears on the thing. The words themselves, not a\n  description of them, and short enough to finish -- a few words, a line,\n  or a few short lines. The game keeps those words and a player reading it\n  twice reads the same ones\n- Never name it after a person or after a place. Already spoken for in this story, so do not reuse: Odile Vance, Perrin Lasco, Halkett Rowe, filing press, ward stamp, Perrin's private index, copy-room apron, Ward Office 12 daybook\n\n## Who Is Here\nWrite EXACTLY 3 people who are in this place right now.\n- Anyone you write is somebody the player can walk up to and talk to, so they\n  have to have a reason to be standing here and something they want\n- Do not write the player, and do not write somebody passing through\n- Never give them the name of a place, of a thing, or any name already\n  spoken for above\n\nWho they are is already decided. Write these people and do not change them:\n  the 1st is Copyists' Line, about 37, trans man\n  the 2nd is Unwritten, about 51, non-binary\n  the 3rd is Unwritten, about 74, male\n\n## Their Four Objects of Desire\n\nWrite four things this person is after and pick two labels for them. Work from\neverything above -- their backstory, what they like and dislike, what they are\nafraid of, how old they are, how strong their will is, and where they are\nstanding.\n\nThe two labels are picked from this list and nothing else:\n\n  keep     They are holding on to something they already have.\n  obtain   They are trying to get hold of something they do not have.\n  reach    They are trying to get to a particular place.\n  attend   They are trying to stay near a particular person.\n  avoid    They are trying to get away from a person or a place.\n  withhold They are trying to stop somebody else getting something.\n  offer    They are trying to put something into somebody else's hands.\n\nRules:\n- Every one of the four names something to move TOWARD. A field that only says\n  what they want to stop or escape is not finished. Say what is on the other\n  side of it.\n- Write them so an ordinary act in a room could serve one: picking something\n  up, handing something over, walking out, staying put, standing near\n  somebody. Do not write a desire nobody could act on in a room.\n- Keep them consistent with the fears and dislikes above. A fear is usually the\n  shadow of one of these four and should read that way.\n- The conscious desire and the unrecognized need must not be the same thing\n  said twice.\n- Write in the third person, by name.\n- Do not resolve any of them, and do not say how the story ends.\n- Respect the stated length of each field.\n- Each person in this room gets their own four. Two people in one room must not\n  want the same thing in the same words.\n- At least one of them should want something that is in this room or one step\n  out of it.\n",
+          "instructions": "You build the rooms of a text adventure one at a time. You write places a\nplayer can stand in and walk out of: concrete, specific, and consistent\nwith the world they belong to. Every exit you name is somewhere the player\ncould actually go.\n\nDO NOT INCLUDE EMOJIS IN YOUR RESPONSE.\n",
+          "schema": {
+            "name": "Location::DetailSchema",
+            "description": null,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "What the player sees, hears and smells standing in this place right now. Describe THIS place only -- not what neighbours it, not what is visible out of a window or across the way, because the world around it can move. Second person. One paragraph, 4 to 6 sentences.",
+                  "maxLength": 1200
+                },
+                "lore": {
+                  "type": "string",
+                  "description": "What this place is, who made it and what happened here. Written for the game engine rather than the player. One paragraph, 3 to 5 sentences.",
+                  "maxLength": 900
+                },
+                "name": {
+                  "type": "string",
+                  "description": "What this room is called -- ONLY when the instructions above ask you to name it. Leave this out entirely otherwise. A short noun phrase a player would type to walk into it, carrying the article English wants on it: \"the counting room\". Never the name of the building it is in, never a name this story has already given to a room, a person or a thing, and never a comma.",
+                  "maxLength": 60
+                },
+                "items": {
+                  "type": "array",
+                  "description": "Portable things lying loose in this place that a player could pick up and carry away. Empty is the right answer for most rooms.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "What the thing is called, as a player would type it to pick it up. A short noun phrase, 1 to 4 words, lower case unless it is a proper name. Never the name of a person or of a place.",
+                        "maxLength": 60
+                      },
+                      "description": {
+                        "type": "string",
+                        "description": "What it is and what state it is in, consistent with the description of the room you just wrote. One or two sentences.",
+                        "maxLength": 400
+                      },
+                      "use_kind": {
+                        "type": "string",
+                        "enum": [
+                          "ordinary",
+                          "food",
+                          "drink",
+                          "healing",
+                          "firestarter",
+                          "lever",
+                          "lockpick",
+                          "key"
+                        ],
+                        "description": "The engine's physical profile: ordinary unless it is food, a drink, a healing dose, a firestarter, a prying lever, lockpicks, or a key. Choose healing only for an actual restorative dose allowed by this world. Profiles supply behavior from code, never from the description."
+                      },
+                      "combustible": {
+                        "type": "boolean",
+                        "description": "True only if this portable thing can be destroyed by an ordinary carried firestarter: dry paper, cloth or wood. False for stone, metal, liquids, or anything uncertain."
+                      },
+                      "readable": {
+                        "type": "boolean",
+                        "description": "True only if this thing has WRITING on it that a player could read: a note, a letter, a label, a docket, a page, a sign, an inscription. False for everything else, which is most things."
+                      },
+                      "inscription": {
+                        "type": "string",
+                        "description": "The words written on it, exactly as they appear, and only when `readable` is true. Write what is actually on the thing -- what a player would read off it -- not a description of it. A few words, a line, or a few short lines; well under the limit, and finished rather than trailing off. Leave this out entirely when nothing is written on it.",
+                        "maxLength": 400
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "description",
+                      "use_kind",
+                      "combustible",
+                      "readable"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "maxItems": 3
+                },
+                "people": {
+                  "type": "array",
+                  "description": "The 3 people who are in this place right now. Write all 3 the instructions describe, in the order they are given there.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "fullname": {
+                        "type": "string",
+                        "description": "Their full name, as a player would type it to speak to them. 2 or 3 words.",
+                        "maxLength": 60
+                      },
+                      "nickname": {
+                        "type": "string",
+                        "description": "What they are called to their face. 1 or 2 words.",
+                        "maxLength": 30
+                      },
+                      "appearance": {
+                        "type": "string",
+                        "description": "What somebody walking in sees of them, consistent with the room you just wrote and with the race and age you were given for them. One or two sentences.",
+                        "maxLength": 300
+                      },
+                      "personality": {
+                        "type": "string",
+                        "description": "How they behave and how they treat a stranger. One or two sentences.",
+                        "maxLength": 300
+                      },
+                      "backstory": {
+                        "type": "string",
+                        "description": "Why they are in this place and what they want. Third person, by name. Two or three sentences.",
+                        "maxLength": 450
+                      },
+                      "likes": {
+                        "type": "string",
+                        "description": "A comma separated list of 2 or 3 things they enjoy.",
+                        "maxLength": 160
+                      },
+                      "dislikes": {
+                        "type": "string",
+                        "description": "A comma separated list of 2 or 3 things they cannot stand.",
+                        "maxLength": 160
+                      },
+                      "fears": {
+                        "type": "string",
+                        "description": "A comma separated list of 1 or 2 things they are afraid of.",
+                        "maxLength": 160
+                      },
+                      "conscious_desire": {
+                        "type": "string",
+                        "description": "What this person would say if somebody asked them what they want, today, in this story. Specific, and reachable by somebody standing in a room in this world. Name something to move TOWARD, never something to stop or escape. One sentence, third person, by name.",
+                        "maxLength": 180
+                      },
+                      "unconscious_desire": {
+                        "type": "string",
+                        "description": "What they are actually pursuing and would deny if you said it to them. It sits at an angle to the conscious desire rather than agreeing with it: the conscious desire is the reason they give themselves, and this is what keeps them going when that reason runs out. One sentence, third person, by name.",
+                        "maxLength": 180
+                      },
+                      "recognized_need": {
+                        "type": "string",
+                        "description": "Something they know they must do whether they want to or not, and may resent. A real obligation this world imposes on them -- their work, their family, their debt, their oath, their body -- and one that can get in the way of the conscious desire. One sentence, third person, by name.",
+                        "maxLength": 180
+                      },
+                      "unrecognized_need": {
+                        "type": "string",
+                        "description": "What they need and cannot see, not even unconsciously. A reader should be able to see it from the backstory above while they cannot. If they never do it, pursuing the conscious desire ruins them. It must not be the conscious desire said twice. One sentence, third person, by name.",
+                        "maxLength": 180
+                      },
+                      "desire_pursuit": {
+                        "type": "string",
+                        "enum": [
+                          "keep",
+                          "obtain",
+                          "reach",
+                          "attend",
+                          "avoid",
+                          "withhold",
+                          "offer"
+                        ],
+                        "description": "Which listed shape the CONSCIOUS DESIRE has -- the one that fits the act they would take tomorrow morning."
+                      },
+                      "need_pursuit": {
+                        "type": "string",
+                        "enum": [
+                          "keep",
+                          "obtain",
+                          "reach",
+                          "attend",
+                          "avoid",
+                          "withhold",
+                          "offer"
+                        ],
+                        "description": "Which listed shape the UNRECOGNIZED NEED has. It may be the same label as the one above; the more interesting answer is usually a different one."
+                      }
+                    },
+                    "required": [
+                      "fullname",
+                      "nickname",
+                      "appearance",
+                      "personality",
+                      "backstory",
+                      "likes",
+                      "dislikes",
+                      "fears",
+                      "conscious_desire",
+                      "unconscious_desire",
+                      "recognized_need",
+                      "unrecognized_need",
+                      "desire_pursuit",
+                      "need_pursuit"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                }
+              },
+              "required": [
+                "description",
+                "lore",
+                "people"
+              ],
+              "additionalProperties": false,
+              "strict": true
+            }
+          },
+          "requested_model": "mistralai/mistral-medium-3.1",
+          "provider": "openrouter",
+          "input_cap": 19896,
+          "output_cap": 2048,
+          "registry_rates": {
+            "input_per_million": 0.4,
+            "output_per_million": 2,
+            "cache_read_input_per_million": 0.04
+          },
+          "error": "RubyLLM::RateLimitError",
+          "error_message": "Provider returned error",
+          "seconds": 0.27028843900188804
+        }
+      }
+    ]
+  },
+  "current_actual": 0.324783,
+  "actual": 0.324783,
+  "receipts": [
+    {
+      "id": "hour-long-hallway",
+      "rep": 0,
+      "warmup": true,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 6111,
+      "output_tokens": 1762,
+      "calls": 2,
+      "dollars": 0.0059684000000000004,
+      "provider_cost_missing": 0,
+      "accounted_micros": 5969,
+      "ledger_ids": [
+        "2adae219-d308-4a0f-8e43-3af45dbd5024",
+        "345a5fdd-b8b5-4ef0-aa14-71552ec6f063"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3233,
+      "output_tokens": 1865,
+      "calls": 2,
+      "dollars": 0.00514236,
+      "provider_cost_missing": 0,
+      "accounted_micros": 5143,
+      "ledger_ids": [
+        "e6a457ff-c775-49b7-bcab-b13f31ef4f0b",
+        "f36a8343-a600-4351-aea7-5477939f5c91"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3007,
+      "output_tokens": 1630,
+      "calls": 2,
+      "dollars": 0.0045819599999999995,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4583,
+      "ledger_ids": [
+        "8073c193-1d7e-4571-b6bd-941787e27f12",
+        "1dc5ce00-f603-44fc-9b94-58d97af2e0c9"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3075,
+      "output_tokens": 1667,
+      "calls": 2,
+      "dollars": 0.0046831600000000004,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4684,
+      "ledger_ids": [
+        "1849151b-9218-4e36-ac38-5ae5137cd34c",
+        "c9432adb-3fb5-4d37-b01f-491719db5431"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3089,
+      "output_tokens": 1706,
+      "calls": 2,
+      "dollars": 0.00476676,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4767,
+      "ledger_ids": [
+        "5aa5ec2e-1004-481c-85f5-4fd6999dd2a2",
+        "94e8b3d4-3b47-47f6-a894-33d51b595e57"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway-early",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2883,
+      "output_tokens": 1503,
+      "calls": 2,
+      "dollars": 0.00427836,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4279,
+      "ledger_ids": [
+        "afd292d6-9594-497e-8ab6-1de37687adff",
+        "117644b3-2b84-4d94-9d5c-df263cc130eb"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway-early",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3174,
+      "output_tokens": 1803,
+      "calls": 2,
+      "dollars": 0.00499476,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4996,
+      "ledger_ids": [
+        "49f15c96-3f1b-436e-8ae7-3c5daa09af8b",
+        "3e103e8b-3b30-4552-ac11-3622abeb41ee"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway-early",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3110,
+      "output_tokens": 1756,
+      "calls": 2,
+      "dollars": 0.00487516,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4876,
+      "ledger_ids": [
+        "602b1781-422f-486b-bc7f-d011e56a4d16",
+        "263b0cc9-611d-414c-b217-cad058bb223d"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-long-hallway-early",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3070,
+      "output_tokens": 1711,
+      "calls": 2,
+      "dollars": 0.00476916,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4770,
+      "ledger_ids": [
+        "b5a49492-4fdc-4b48-aca9-15942f057702",
+        "f281cd13-5a22-4d79-a744-eca4699ab346"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-supply-closet",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2915,
+      "output_tokens": 505,
+      "calls": 2,
+      "dollars": 0.00221392,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2215,
+      "ledger_ids": [
+        "af8e6069-aec4-4c9e-9cd7-3cabff90c2a4",
+        "56ac74f7-0ad2-4a10-94ea-07504b970e77"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-supply-closet",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1097,
+      "output_tokens": 566,
+      "calls": 2,
+      "dollars": 0.001686,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1687,
+      "ledger_ids": [
+        "aeab040f-cb8b-4491-8d4b-b18e4effefbe",
+        "1c28251f-9e5b-4a54-9f0c-4f3e21d5f4f9"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-supply-closet",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 984,
+      "output_tokens": 497,
+      "calls": 2,
+      "dollars": 0.0015027999999999999,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1504,
+      "ledger_ids": [
+        "455bf4bc-3dad-4c2e-a526-b9583715baac",
+        "ba189936-d196-4b89-83be-0650384f7a22"
+      ],
+      "error": null
+    },
+    {
+      "id": "hour-supply-closet",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1084,
+      "output_tokens": 602,
+      "calls": 2,
+      "dollars": 0.0017528,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1754,
+      "ledger_ids": [
+        "9aa895af-c624-470c-b9d1-c942168e9690",
+        "82734879-8b23-4e9b-9953-ba11038198e7"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 6019,
+      "output_tokens": 1779,
+      "calls": 2,
+      "dollars": 0.0059676799999999995,
+      "provider_cost_missing": 0,
+      "accounted_micros": 5968,
+      "ledger_ids": [
+        "bbd1a424-23fb-4c12-b638-24ba95297494",
+        "905f90ec-e739-4101-bd1f-873458fd8ad6"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3191,
+      "output_tokens": 1727,
+      "calls": 2,
+      "dollars": 0.00484444,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4845,
+      "ledger_ids": [
+        "a4f61478-51f0-4857-a38c-c78ea765ffac",
+        "0e20e192-170f-4f82-a3b5-871785d92a28"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3299,
+      "output_tokens": 1839,
+      "calls": 2,
+      "dollars": 0.00511164,
+      "provider_cost_missing": 0,
+      "accounted_micros": 5113,
+      "ledger_ids": [
+        "b8a4752f-aaf6-4c74-9142-2c68c0dd8f13",
+        "4168bbc2-9a17-4beb-9d3f-3d3c5103271a"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3274,
+      "output_tokens": 1831,
+      "calls": 2,
+      "dollars": 0.00508564,
+      "provider_cost_missing": 0,
+      "accounted_micros": 5086,
+      "ledger_ids": [
+        "53074bf3-5fb7-49bc-9674-661607c03cd7",
+        "804f1f68-3baa-481b-a507-67a5246d9559"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk-early",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3124,
+      "output_tokens": 1673,
+      "calls": 2,
+      "dollars": 0.004709639999999999,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4710,
+      "ledger_ids": [
+        "479fb7f7-46f1-4ce8-bdec-8484c67c7b3d",
+        "1c1fd272-3a9f-4c7b-ade4-b27d42848f39"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk-early",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3291,
+      "output_tokens": 1846,
+      "calls": 2,
+      "dollars": 0.00512244,
+      "provider_cost_missing": 0,
+      "accounted_micros": 5123,
+      "ledger_ids": [
+        "e4cb2396-79be-44a7-9bbf-9180290e18bb",
+        "5bb65d09-7704-4d09-9389-678839c8c7ef"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk-early",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3142,
+      "output_tokens": 1759,
+      "calls": 2,
+      "dollars": 0.00488884,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4890,
+      "ledger_ids": [
+        "0a272214-99aa-4f8d-ac2f-c62a81b9c694",
+        "3dd28986-0350-4b5a-83e3-38827617db1d"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-vestry-hulk-early",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3144,
+      "output_tokens": 1716,
+      "calls": 2,
+      "dollars": 0.00480364,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4804,
+      "ledger_ids": [
+        "e8650d68-92ec-47a0-98ab-25abf34eb469",
+        "589f3c4a-251c-4dce-a133-7fb4bb654f85"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-tide-post",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 4735,
+      "output_tokens": 1295,
+      "calls": 2,
+      "dollars": 0.0045168,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4517,
+      "ledger_ids": [
+        "99c5503a-ab15-47b9-91bf-84e60aa46393",
+        "5975e4b1-deb0-4d23-aa1c-ab91a7ccb935"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-tide-post",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2837,
+      "output_tokens": 1415,
+      "calls": 2,
+      "dollars": 0.00407884,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4080,
+      "ledger_ids": [
+        "9af4a208-f78f-4369-9faf-3c794143653e",
+        "b9ea7ce5-7f55-4540-88c4-4c986753bdf9"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-tide-post",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2699,
+      "output_tokens": 1271,
+      "calls": 2,
+      "dollars": 0.00373564,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3737,
+      "ledger_ids": [
+        "78d8bea0-10e1-45af-bece-c59aa34a0e81",
+        "2e2e60c7-0874-4002-a90a-470caebca545"
+      ],
+      "error": null
+    },
+    {
+      "id": "assizes-tide-post",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2755,
+      "output_tokens": 1329,
+      "calls": 2,
+      "dollars": 0.00387404,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3875,
+      "ledger_ids": [
+        "d864c83e-09d4-4e81-a01d-39ed4e21803e",
+        "097781a9-1805-4911-a40c-8363f538cc8c"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-mournwell-lane",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 6085,
+      "output_tokens": 1399,
+      "calls": 2,
+      "dollars": 0.00523408,
+      "provider_cost_missing": 0,
+      "accounted_micros": 5235,
+      "ledger_ids": [
+        "7d6be5be-bc0b-4225-a332-84649829b11d",
+        "a438d402-e73c-4605-99cd-83160ad5f45f"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-mournwell-lane",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3050,
+      "output_tokens": 1547,
+      "calls": 2,
+      "dollars": 0.0044434,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4444,
+      "ledger_ids": [
+        "18784f17-b0d0-4c9f-bbc4-71acd45328d6",
+        "9213ac18-2eac-4ed6-937d-9416d77beb8b"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-mournwell-lane",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3095,
+      "output_tokens": 1599,
+      "calls": 2,
+      "dollars": 0.0045654,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4566,
+      "ledger_ids": [
+        "4aae5c92-c49f-4ace-861c-9d0112def313",
+        "a5ba245b-f120-4cb4-8bca-92dd13efbddd"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-mournwell-lane",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2910,
+      "output_tokens": 1392,
+      "calls": 2,
+      "dollars": 0.0040774,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4079,
+      "ledger_ids": [
+        "28ca248d-8ba6-4279-bcf8-2b7dbeb26a29",
+        "42826c90-7de9-4678-897d-ba33eb1bbab1"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-larkspur-rooftops",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3233,
+      "output_tokens": 575,
+      "calls": 2,
+      "dollars": 0.00248672,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2488,
+      "ledger_ids": [
+        "58e271c5-c962-4a68-97ca-85784eec8877",
+        "6aca9667-8e8c-417c-b7b3-8b6d46ed833b"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-larkspur-rooftops",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1203,
+      "output_tokens": 601,
+      "calls": 2,
+      "dollars": 0.00180864,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1810,
+      "ledger_ids": [
+        "126dd504-29cc-4d40-9a5a-6e2f8e9cdbe8",
+        "0e4bf227-c336-4eec-82f6-e6547380e553"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-larkspur-rooftops",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1167,
+      "output_tokens": 568,
+      "calls": 2,
+      "dollars": 0.00172824,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1729,
+      "ledger_ids": [
+        "1f31c96c-e0e1-4dd4-84c2-0ff3873adff3",
+        "695b726e-5045-44a8-8fc0-6353d80006cb"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-larkspur-rooftops",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1250,
+      "output_tokens": 643,
+      "calls": 2,
+      "dollars": 0.00191144,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1913,
+      "ledger_ids": [
+        "0903abac-29cc-49b9-aa4a-a57dab966581",
+        "600a26c5-3e2a-4119-a397-b029d158650c"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-boarding-house-hallway",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2126,
+      "output_tokens": 499,
+      "calls": 2,
+      "dollars": 0.00193288,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1934,
+      "ledger_ids": [
+        "ef8f0742-0128-4f7b-8062-576b0f6d87b2",
+        "ce04c35d-8a92-44cf-b9c1-584bf9af1c79"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-boarding-house-hallway",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1087,
+      "output_tokens": 476,
+      "calls": 2,
+      "dollars": 0.00151224,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1513,
+      "ledger_ids": [
+        "c2135da1-e55a-4093-84b2-0554758dfd30",
+        "eca9dc5f-012a-48be-859a-dfc90a12c1d2"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-boarding-house-hallway",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1144,
+      "output_tokens": 536,
+      "calls": 2,
+      "dollars": 0.00165504,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1656,
+      "ledger_ids": [
+        "84f8e624-f4a7-4549-af3e-cdc58377c83a",
+        "3ec8e158-b489-44c1-99f6-4c58570eb994"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-boarding-house-hallway",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1200,
+      "output_tokens": 602,
+      "calls": 2,
+      "dollars": 0.00180944,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1811,
+      "ledger_ids": [
+        "faee27fa-e5b3-4d6e-a818-086b4d759e37",
+        "728fd01d-d238-4436-99c0-51bb832d4e70"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-celestial-spire",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2337,
+      "output_tokens": 784,
+      "calls": 2,
+      "dollars": 0.00258728,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2589,
+      "ledger_ids": [
+        "41ce55e3-5fd9-49ca-9944-af81da897e57",
+        "39b87dbb-af47-42a5-9ab8-fe746b8dc96f"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-celestial-spire",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1269,
+      "output_tokens": 680,
+      "calls": 2,
+      "dollars": 0.0019930399999999997,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1994,
+      "ledger_ids": [
+        "cb0860e2-8552-4c73-8ee3-18c77fcb471f",
+        "3cf9f1aa-e56a-4302-818b-c100fa45a76d"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-celestial-spire",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1134,
+      "output_tokens": 528,
+      "calls": 2,
+      "dollars": 0.00163504,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1636,
+      "ledger_ids": [
+        "94aa9e0a-e2c6-4cb2-ae6a-c73a055faae6",
+        "2669c6a7-6e58-49f6-87a8-bb4b0164771b"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-celestial-spire",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1188,
+      "output_tokens": 595,
+      "calls": 2,
+      "dollars": 0.00179064,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1791,
+      "ledger_ids": [
+        "6c2ef78f-9914-4a0f-b7d9-8487734a575c",
+        "3091c49a-e91b-41b4-9fec-20238cda07d6"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-bell-of-saint-aravel",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 4035,
+      "output_tokens": 1360,
+      "calls": 2,
+      "dollars": 0.004417320000000001,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4418,
+      "ledger_ids": [
+        "9ac8d98a-5e17-40b9-9d5a-942d4727b7dc",
+        "6164dde3-9b2d-4cf2-a430-6cfd5b64dbb5"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-bell-of-saint-aravel",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2875,
+      "output_tokens": 1373,
+      "calls": 2,
+      "dollars": 0.0040254,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4026,
+      "ledger_ids": [
+        "8c61be49-e75e-4edd-9657-be7035adf8c6",
+        "13526146-b2ba-4305-8fd6-1fdd24d02566"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-bell-of-saint-aravel",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2849,
+      "output_tokens": 1347,
+      "calls": 2,
+      "dollars": 0.003963,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3964,
+      "ledger_ids": [
+        "1e4a6e47-737f-4a28-8bb9-547a19088fd7",
+        "3990bf15-5e77-411a-a896-c0dc51efe3d3"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-bell-of-saint-aravel",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2911,
+      "output_tokens": 1468,
+      "calls": 2,
+      "dollars": 0.004229800000000001,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4231,
+      "ledger_ids": [
+        "32339a9c-1993-4f22-80f3-26a09ea9a7b1",
+        "044d1512-4def-4604-91ae-8f41680a6026"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-sovereigns-circle",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 4026,
+      "output_tokens": 1338,
+      "calls": 2,
+      "dollars": 0.00436972,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4371,
+      "ledger_ids": [
+        "bd677329-ae43-4706-9b7c-ae2661a8d41b",
+        "91367d24-f470-4973-9d93-42feeef5f7e6"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-sovereigns-circle",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2859,
+      "output_tokens": 1330,
+      "calls": 2,
+      "dollars": 0.003933,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3934,
+      "ledger_ids": [
+        "4d8c8816-a576-4d5b-9786-6b1b8916c7c8",
+        "5f90d229-bf57-454c-ada5-eda479b1269a"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-sovereigns-circle",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2950,
+      "output_tokens": 1637,
+      "calls": 2,
+      "dollars": 0.0045885200000000004,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4590,
+      "ledger_ids": [
+        "c4908fa7-ff95-4374-a26a-8f59e737b22c",
+        "48bda782-6a62-4c74-9a85-b6566274db84"
+      ],
+      "error": null
+    },
+    {
+      "id": "lunar-sovereigns-circle",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2993,
+      "output_tokens": 1478,
+      "calls": 2,
+      "dollars": 0.0042826,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4284,
+      "ledger_ids": [
+        "750e013b-5053-4eb8-b04f-c4b7a617ae2a",
+        "314e8e94-b530-4bc7-8235-cd2ded15a007"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-deep",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3710,
+      "output_tokens": 594,
+      "calls": 2,
+      "dollars": 0.00267456,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2676,
+      "ledger_ids": [
+        "2679e66a-adc7-42ac-bd62-2504a690a622",
+        "3292d495-34d9-4914-bc1b-00dd024d9b6e"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-deep",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1154,
+      "output_tokens": 613,
+      "calls": 2,
+      "dollars": 0.00179256,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1793,
+      "ledger_ids": [
+        "08fcee3c-1540-441f-bd00-d8c19860799a",
+        "3de4f6b4-2247-4679-94e3-df02ef349b48"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-deep",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1168,
+      "output_tokens": 615,
+      "calls": 2,
+      "dollars": 0.0018021600000000001,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1803,
+      "ledger_ids": [
+        "5390fe58-b495-4978-ac8f-d124a00150f9",
+        "1da9654c-55ee-47e4-a312-8b15344fc483"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-deep",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1136,
+      "output_tokens": 577,
+      "calls": 2,
+      "dollars": 0.0017133600000000001,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1714,
+      "ledger_ids": [
+        "8997f620-e7a1-4525-a3be-c99d7eecaeab",
+        "1bb62af3-f441-447f-8d54-f319902ef59e"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-obsidian-maw",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 4243,
+      "output_tokens": 948,
+      "calls": 2,
+      "dollars": 0.003626,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3627,
+      "ledger_ids": [
+        "d7dffb7d-4b76-47e3-b10d-a77d57d832b6",
+        "eb084587-fb3b-435b-ba29-6b21436b8b67"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-obsidian-maw",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2252,
+      "output_tokens": 997,
+      "calls": 2,
+      "dollars": 0.00300928,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3010,
+      "ledger_ids": [
+        "fe7781ac-924b-4d97-9ed7-62c41adc049f",
+        "008855df-7ef7-43c8-a00e-6449a001d853"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-obsidian-maw",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2202,
+      "output_tokens": 952,
+      "calls": 2,
+      "dollars": 0.00289928,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2900,
+      "ledger_ids": [
+        "af657420-bd81-4447-9543-4f2933798cbc",
+        "f92b2b16-9800-480c-9423-b500d543af32"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-obsidian-maw",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2220,
+      "output_tokens": 969,
+      "calls": 2,
+      "dollars": 0.00294048,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2941,
+      "ledger_ids": [
+        "f352a4e6-ed02-42c5-871a-e9d4fc5117ca",
+        "406173e5-3f61-4ec9-974a-5e18061ed0c1"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-tunnel-upward",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 4832,
+      "output_tokens": 1382,
+      "calls": 2,
+      "dollars": 0.0047296000000000005,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4731,
+      "ledger_ids": [
+        "586bfcb7-5019-4902-8794-a1e810abe6cb",
+        "69b5b99e-4e72-445c-a1d0-a9c2f90edf4f"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-tunnel-upward",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2618,
+      "output_tokens": 1198,
+      "calls": 2,
+      "dollars": 0.0035572399999999997,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3558,
+      "ledger_ids": [
+        "ec3e2d28-d1d1-43ad-bad2-1f157dbf41bc",
+        "f3a127a6-e6b1-4dd6-9f8c-e35bf4e7ae19"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-tunnel-upward",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2802,
+      "output_tokens": 1378,
+      "calls": 2,
+      "dollars": 0.00399084,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3992,
+      "ledger_ids": [
+        "7bb6d997-6d8d-491d-a7b6-f7f09f142060",
+        "8cf0e43f-c8ec-4755-b180-a77065f6393f"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-tunnel-upward",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2636,
+      "output_tokens": 1201,
+      "calls": 2,
+      "dollars": 0.00357044,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3572,
+      "ledger_ids": [
+        "369500ef-e075-44c8-a59f-e6d3e529dd86",
+        "68c78921-1937-47d7-835f-e6b54cab7cbb"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-surface",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3298,
+      "output_tokens": 888,
+      "calls": 2,
+      "dollars": 0.0031636,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3164,
+      "ledger_ids": [
+        "9337836c-de2a-4e33-9342-cc36e5ddb790",
+        "d1a928da-9f9e-4412-9b61-49287ce34e4d"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-surface",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2272,
+      "output_tokens": 1027,
+      "calls": 2,
+      "dollars": 0.00307728,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3079,
+      "ledger_ids": [
+        "42496472-c316-4576-a876-1efdb4f09354",
+        "137622f3-a338-4efd-b93f-8fa8a94a6222"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-surface",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2283,
+      "output_tokens": 976,
+      "calls": 2,
+      "dollars": 0.00297968,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2981,
+      "ledger_ids": [
+        "92dd5333-8f9c-4ca6-9e91-4b3cbd5df486",
+        "fb60a763-b1dc-48af-ba83-8bc9e6948c9b"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-surface",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2165,
+      "output_tokens": 844,
+      "calls": 2,
+      "dollars": 0.00266848,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2669,
+      "ledger_ids": [
+        "802354da-c24c-4ddc-bec6-4b4ee4994d9c",
+        "d353ffa0-e831-4b03-b6fd-ce0ea5911c50"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-hollows-end",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2171,
+      "output_tokens": 495,
+      "calls": 2,
+      "dollars": 0.0019223999999999999,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1923,
+      "ledger_ids": [
+        "20d2325f-1878-445d-ac27-fc0660f2b3ac",
+        "07c5c1a3-9bbf-4aaa-875d-ad1f02064d48"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-hollows-end",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1273,
+      "output_tokens": 627,
+      "calls": 2,
+      "dollars": 0.00186816,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1869,
+      "ledger_ids": [
+        "538dac88-883e-414f-a6b2-2a71641bd9db",
+        "b2e8357e-acb0-41be-9c33-7cc1d5576dfe"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-hollows-end",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1202,
+      "output_tokens": 551,
+      "calls": 2,
+      "dollars": 0.00168776,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1689,
+      "ledger_ids": [
+        "3209e39d-9cd8-439d-9739-70a9efdcb7c2",
+        "ea306f71-3383-43d0-8acd-adccef81c67c"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-hollows-end",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1245,
+      "output_tokens": 606,
+      "calls": 2,
+      "dollars": 0.00181496,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1816,
+      "ledger_ids": [
+        "7364bf35-692b-428c-882a-044beb0c7376",
+        "d3508e2a-878e-4ef3-9cbd-08a0cceccab4"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-spires-rest",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 3902,
+      "output_tokens": 1303,
+      "calls": 2,
+      "dollars": 0.00423476,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4236,
+      "ledger_ids": [
+        "2ec53d14-fa35-438b-b2cb-0ee2c05963fb",
+        "65a52af3-0437-4037-a111-059078d4e8a7"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-spires-rest",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2789,
+      "output_tokens": 1339,
+      "calls": 2,
+      "dollars": 0.0039076399999999996,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3909,
+      "ledger_ids": [
+        "ae2a7b08-daa9-4e9a-85dd-4993690462ef",
+        "91309a23-fa56-4704-846b-982c8486370b"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-spires-rest",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2740,
+      "output_tokens": 1317,
+      "calls": 2,
+      "dollars": 0.00384404,
+      "provider_cost_missing": 0,
+      "accounted_micros": 3845,
+      "ledger_ids": [
+        "cdfff5c0-6cd3-4378-9de8-d55ec72acee1",
+        "aa8eb010-92e4-4a2e-b025-0c42cc03ac65"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-spires-rest",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 2960,
+      "output_tokens": 1544,
+      "calls": 2,
+      "dollars": 0.00438604,
+      "provider_cost_missing": 0,
+      "accounted_micros": 4387,
+      "ledger_ids": [
+        "4568c8dd-1a45-4279-90b6-be886b2b90c4",
+        "c79dc546-777b-4842-8c11-d1961c08a3eb"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-warren",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1319,
+      "output_tokens": 326,
+      "calls": 1,
+      "dollars": 0.0011796,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1180,
+      "ledger_ids": [
+        "afbd4a61-3b15-4766-bd4c-d3b0fecfb3ee"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-warren",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1319,
+      "output_tokens": 331,
+      "calls": 1,
+      "dollars": 0.0011896,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1190,
+      "ledger_ids": [
+        "1ef78483-14de-4458-ad0b-4734e4fab4b5"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-warren",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1319,
+      "output_tokens": 327,
+      "calls": 1,
+      "dollars": 0.0011816,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1182,
+      "ledger_ids": [
+        "3554ca37-3c3d-4cf3-a8ee-f9570f6371ae"
+      ],
+      "error": null
+    },
+    {
+      "id": "iron-gate-blackfang-warren",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1319,
+      "output_tokens": 381,
+      "calls": 1,
+      "dollars": 0.0012896,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1290,
+      "ledger_ids": [
+        "7a25123f-9143-407a-85b0-5b11d7be5f2b"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-entry-room",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1507,
+      "output_tokens": 1071,
+      "calls": 1,
+      "dollars": 0.0027448,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2745,
+      "ledger_ids": [
+        "9df0c596-ad2a-43ef-842b-6a9342ae49fd"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-entry-room",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 501,
+      "output_tokens": 1096,
+      "calls": 1,
+      "dollars": 0.00243268,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2433,
+      "ledger_ids": [
+        "af8baafa-13c4-4c18-99d0-ce87826df658"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-entry-room",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 501,
+      "output_tokens": 1049,
+      "calls": 1,
+      "dollars": 0.00233868,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2339,
+      "ledger_ids": [
+        "aeaf1fe8-836d-4b3a-ae40-4ddc7e8402b8"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-entry-room",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 499,
+      "output_tokens": 1038,
+      "calls": 1,
+      "dollars": 0.00231588,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2316,
+      "ledger_ids": [
+        "7bd62f86-4d6a-4ef0-9b92-7b5aa4565172"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-dangerous-back-room",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1396,
+      "output_tokens": 1085,
+      "calls": 1,
+      "dollars": 0.00273284,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2733,
+      "ledger_ids": [
+        "4ba20c3e-5bba-43a2-87ff-58aa155da966"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-dangerous-back-room",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 496,
+      "output_tokens": 1035,
+      "calls": 1,
+      "dollars": 0.00230868,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2309,
+      "ledger_ids": [
+        "f49eb4c5-1bb5-4a13-975c-076c87c847c6"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-dangerous-back-room",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 496,
+      "output_tokens": 1140,
+      "calls": 1,
+      "dollars": 0.00251868,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2519,
+      "ledger_ids": [
+        "e235d6f2-d381-45df-8cae-e01d5a05b92a"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-dangerous-back-room",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 497,
+      "output_tokens": 1070,
+      "calls": 1,
+      "dollars": 0.00237908,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2380,
+      "ledger_ids": [
+        "e45a5c82-1697-41a5-b015-352de7360d94"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-upper-floor-room",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1436,
+      "output_tokens": 722,
+      "calls": 1,
+      "dollars": 0.0020184,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2019,
+      "ledger_ids": [
+        "0980653b-9fe7-4a1b-ae92-37981119ef72"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-upper-floor-room",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 417,
+      "output_tokens": 725,
+      "calls": 1,
+      "dollars": 0.00165752,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1658,
+      "ledger_ids": [
+        "143e1c03-7eba-4d50-a09a-2b1ae855a7b6"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-upper-floor-room",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 416,
+      "output_tokens": 762,
+      "calls": 1,
+      "dollars": 0.00173112,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1732,
+      "ledger_ids": [
+        "dcbcad0d-522d-4f7c-ad9b-6a7bb1ce953f"
+      ],
+      "error": null
+    },
+    {
+      "id": "quay-upper-floor-room",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 416,
+      "output_tokens": 710,
+      "calls": 1,
+      "dollars": 0.00162712,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1628,
+      "ledger_ids": [
+        "03a2e30b-7aa9-4d3b-a43b-c9ddf8d99a1b"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1417,
+      "output_tokens": 748,
+      "calls": 1,
+      "dollars": 0.00206768,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2068,
+      "ledger_ids": [
+        "8603ae2d-2705-4315-a186-e95c93ccdb57"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 9,
+      "output_tokens": 697,
+      "calls": 1,
+      "dollars": 0.0014588,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1459,
+      "ledger_ids": [
+        "738cb19e-803c-4ca9-b177-3e8fbdb433af"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 9,
+      "output_tokens": 804,
+      "calls": 1,
+      "dollars": 0.0016728,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1673,
+      "ledger_ids": [
+        "7e1557be-5b07-4b78-bd52-7a87d16239fd"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-reach-location",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 9,
+      "output_tokens": 753,
+      "calls": 1,
+      "dollars": 0.0015708,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1571,
+      "ledger_ids": [
+        "bafe3f57-eada-425f-990e-e45e98b6f10c"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1421,
+      "output_tokens": 762,
+      "calls": 1,
+      "dollars": 0.00209728,
+      "provider_cost_missing": 0,
+      "accounted_micros": 2098,
+      "ledger_ids": [
+        "f3309c19-39dc-430e-b264-5d14500b8d80"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 13,
+      "output_tokens": 687,
+      "calls": 1,
+      "dollars": 0.0014404,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1441,
+      "ledger_ids": [
+        "047b75bb-60c5-4bc1-b963-3992ff1774c9"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 13,
+      "output_tokens": 796,
+      "calls": 1,
+      "dollars": 0.0016584,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1659,
+      "ledger_ids": [
+        "067a2bb5-5d38-4a12-b1cc-aaf82b3e77e0"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-speak-to",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 13,
+      "output_tokens": 757,
+      "calls": 1,
+      "dollars": 0.0015804,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1581,
+      "ledger_ids": [
+        "31a6b1d2-22eb-43ad-b33e-40b5fa5524cf"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1418,
+      "output_tokens": 682,
+      "calls": 1,
+      "dollars": 0.00193608,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1937,
+      "ledger_ids": [
+        "dbe71fe8-e353-4588-b63d-a6d497b90ba4"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 10,
+      "output_tokens": 698,
+      "calls": 1,
+      "dollars": 0.0014612,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1462,
+      "ledger_ids": [
+        "a51adb44-bd53-40f5-9715-ee441c576848"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 10,
+      "output_tokens": 683,
+      "calls": 1,
+      "dollars": 0.0014312,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1432,
+      "ledger_ids": [
+        "f65936e2-b573-446e-9891-2afc0e151468"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-quest-hold-item",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 10,
+      "output_tokens": 675,
+      "calls": 1,
+      "dollars": 0.0014152,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1416,
+      "ledger_ids": [
+        "9b351203-3a95-4b5e-8238-20c627f894dc"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-named-siblings",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1334,
+      "output_tokens": 699,
+      "calls": 1,
+      "dollars": 0.00193648,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1937,
+      "ledger_ids": [
+        "17cb6afe-d844-49fc-8123-692fdcc4aa02"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-named-siblings",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 54,
+      "output_tokens": 612,
+      "calls": 1,
+      "dollars": 0.00130168,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1302,
+      "ledger_ids": [
+        "3c0ba894-3d09-43ab-80a6-46a449044f55"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-named-siblings",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 54,
+      "output_tokens": 702,
+      "calls": 1,
+      "dollars": 0.00148168,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1482,
+      "ledger_ids": [
+        "6f178210-840b-491a-b955-354a65898514"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-named-siblings",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 54,
+      "output_tokens": 755,
+      "calls": 1,
+      "dollars": 0.00158768,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1588,
+      "ledger_ids": [
+        "9984f5cc-44b6-4c86-b972-94e7d8d069e9"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-saturated-items",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 847,
+      "output_tokens": 630,
+      "calls": 1,
+      "dollars": 0.0016088,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1609,
+      "ledger_ids": [
+        "e3f85003-2406-4b11-8541-31a43c6278b8"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-saturated-items",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 79,
+      "output_tokens": 644,
+      "calls": 1,
+      "dollars": 0.00136032,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1361,
+      "ledger_ids": [
+        "cc51a089-fd7c-4ab3-a921-ae1d96b0419e"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-saturated-items",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 79,
+      "output_tokens": 622,
+      "calls": 1,
+      "dollars": 0.00131632,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1317,
+      "ledger_ids": [
+        "55d0e03a-694b-442e-bd67-4027368b6fc3"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-saturated-items",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 79,
+      "output_tokens": 594,
+      "calls": 1,
+      "dollars": 0.00126032,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1261,
+      "ledger_ids": [
+        "57003f29-b406-4104-afff-c5cbbcb9f856"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-geometry-stairs",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 974,
+      "output_tokens": 435,
+      "calls": 1,
+      "dollars": 0.00126008,
+      "provider_cost_missing": 0,
+      "accounted_micros": 1261,
+      "ledger_ids": [
+        "9f1213da-9f06-452a-a9c4-f22bce86654d"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-geometry-stairs",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 78,
+      "output_tokens": 320,
+      "calls": 1,
+      "dollars": 0.00070752,
+      "provider_cost_missing": 0,
+      "accounted_micros": 708,
+      "ledger_ids": [
+        "d01cf59f-5777-4392-9934-24e68f9872b1"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-geometry-stairs",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 78,
+      "output_tokens": 435,
+      "calls": 1,
+      "dollars": 0.00093752,
+      "provider_cost_missing": 0,
+      "accounted_micros": 938,
+      "ledger_ids": [
+        "3a80c2ed-616c-4513-961e-67208a067baf"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-geometry-stairs",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 78,
+      "output_tokens": 351,
+      "calls": 1,
+      "dollars": 0.00076952,
+      "provider_cost_missing": 0,
+      "accounted_micros": 770,
+      "ledger_ids": [
+        "a69ab425-054d-46f4-99bb-7207992b31fa"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-restored-conversation",
+      "rep": 1,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1312,
+      "output_tokens": 108,
+      "calls": 1,
+      "dollars": 0.0007408,
+      "provider_cost_missing": 0,
+      "accounted_micros": 741,
+      "ledger_ids": [
+        "6eea120f-38a9-4787-9dad-c8de8f95831b"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-restored-conversation",
+      "rep": 2,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1312,
+      "output_tokens": 109,
+      "calls": 1,
+      "dollars": 0.0007428,
+      "provider_cost_missing": 0,
+      "accounted_micros": 743,
+      "ledger_ids": [
+        "9a3309df-ae74-4b73-8170-89cffdf87c39"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-restored-conversation",
+      "rep": 3,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1312,
+      "output_tokens": 122,
+      "calls": 1,
+      "dollars": 0.0007688,
+      "provider_cost_missing": 0,
+      "accounted_micros": 769,
+      "ledger_ids": [
+        "dc101746-887a-4ea1-b072-fcb6bc3a66ee"
+      ],
+      "error": null
+    },
+    {
+      "id": "branch-restored-conversation",
+      "rep": 4,
+      "warmup": false,
+      "model": "mistralai/mistral-medium-3.1",
+      "input_tokens": 1312,
+      "output_tokens": 123,
+      "calls": 1,
+      "dollars": 0.0007708,
+      "provider_cost_missing": 0,
+      "accounted_micros": 771,
+      "ledger_ids": [
+        "38f34a8c-35cc-4182-8133-179e503c2a16"
+      ],
+      "error": null
+    }
+  ],
+  "authorization": {
+    "limit_micros": 1500000,
+    "accounted_micros": 465313,
+    "settled_entries": 190,
+    "unknown_entries": 1
+  },
+  "openrouter_credits": {
+    "before": {
+      "total_credits": 63,
+      "total_usage": 56.317174195
+    },
+    "after": {
+      "total_credits": 63,
+      "total_usage": 56.636519435
+    },
+    "usage_delta": 0.319345239999997,
+    "note": "OpenRouter account totals bracket the run but may include concurrent account use; per-call receipts are the task attribution."
+  }
+}
