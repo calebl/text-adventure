@@ -495,10 +495,21 @@ closed verb table and a name matched against **the same closed set the
 classifier would have been offered** — and reaches `Playthrough::Classifier` only
 when that could not place the noun; **a line without one is not claimed at all,
 whatever it begins with**, and costs exactly what it always did.
-`scenes.resolved_by` records which of the two answered. The slash is input syntax
+`scenes.resolved_by` records which reader answered. The slash is input syntax
 and is stripped before the line is read, so `Scene#typed` and every instrument
 that reads it go on seeing ordinary English; the browser's box writes it
 (`Playthrough::SlashMenu`), which makes the shortcut opt-in and visible.
+
+**The key is the switch, and there is no feature flag.** Where
+`TYPESAFE_API_KEY` is in this environment, a line that reaches the classifier
+is read first by `Playthrough::Classifier::Cascade` — one System One request,
+composed into an `Intent` by the engine and never trusted as one. Where the key
+is absent there is no cascade at all: the classifier is byte for byte what it
+has always been, which is what every test run and every keyless checkout
+exercises. See `Playthrough::Classifier::PATHS`, the header of
+`Playthrough::Classifier::Cascade` for the two thresholds and their
+provenance, and `EVALUATION.md` -> The classifier bench -> Measuring the
+cascade for the failure policy and the kept set.
 
 ```mermaid
 flowchart TD
@@ -519,11 +530,18 @@ flowchart TD
     G2 -->|"no: a physical slash command<br/>whose whole attempt is unavailable"| R
     G2 -->|"yes: resolved_by = grammar"| R
 
-    subgraph CL["Playthrough::Classifier#classify -- resolved_by = model"]
+    subgraph CL["Playthrough::Classifier#classify"]
         C1["Build the candidates FROM RECORDS<br/>the room's exits, who is standing in it,<br/>what is lying here, what the player carries,<br/>and complete physical attempts possible now"]
+        CK{"SystemOneAgent.configured?<br/>is TYPESAFE_API_KEY in this environment?"}
+        C1 --> CK
+        CK -->|"no: resolved_by = model, byte for byte today's path"| C2
+        CK -->|"yes"| CS["MODEL CALL, typed questions, not a chat<br/>Playthrough::Classifier::Cascade -- one System One<br/>request, 6-11 Choice/Noul questions built from<br/>THIS position's own #offered_for sets"]
+        CS --> CG{"named_more_than_one &gt;= 0.5,<br/>or target_present &lt; 0.15,<br/>or the request could not be believed?"}
+        CG -->|"no: resolved_by = typed_model<br/>ENGINE COMPOSES the Intent -- no second model call"| C3
+        CG -->|"yes: resolved_by = typed_model_escalated<br/>(a flag fired) or typed_model_unavailable<br/>(missing key, timeout, bad body, out-of-list choice)"| C2
         C2["MODEL CALL, schema'd<br/>Playthrough::IntentSchema<br/>intent: move / talk / examine / take / drop / attack / use / other<br/>target: an enum of ONLY those names and physical tokens"]
         C3["Resolve the answer back to a RECORD or closed choice<br/>an unresolvable target leaves it nil<br/>AND writes a Playthrough::Drift row"]
-        C1 --> C2 --> C3
+        C2 --> C3
     end
 
     C3 --> R{"Will the engine play this line at all?<br/>two acts, a reach that found nothing, an unreadable answer,<br/>an immovable item, or a still-closed passage"}
