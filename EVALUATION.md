@@ -1232,11 +1232,12 @@ Its request identity certifies the scaffold, never identical generated prose.
 The generic prose checks still cannot assess whether an ending expresses its
 outcome faithfully or whether its prose is good.
 
-`physical-realization-20260910` is the current room-generation baseline. Its
-behavioral checks were all noise versus `branches-to-corpus-after`; median
-output tokens rose from 21,446 to 22,357 per full pass (REAL, p=.028571).
-`physical-dialogue-20260910` is the current dialogue baseline; every available
-matched metric was noise, and contradiction remains explicitly unavailable.
+`desires-realization-20260919` is the current room-generation baseline. Its
+behavioral checks were all noise versus `physical-realization-20260910`; median
+output tokens rose from 22,357 to 27,885 per full pass (REAL, p=.028571).
+`desires-dialogue-20260919` is the current dialogue baseline; every available
+metric was noise versus `physical-dialogue-20260910`, and contradiction remains
+explicitly unavailable. Both older packages remain checked-in before sides.
 
 Task evidence and the reproducible receipt summary are under
 `doc/evidence/ta-bench-rebaseline-stale/`. The task runner disables transport

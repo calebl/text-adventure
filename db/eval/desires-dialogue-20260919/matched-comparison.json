@@ -1,0 +1,96 @@
+{
+  "orientation": "desires-before -> desires-dialogue-20260919",
+  "verdicts": {
+    "state_failure": {
+      "code": "state_failure",
+      "before": {
+        "runs": 4,
+        "min": 0.1111111111111111,
+        "max": 0.1111111111111111,
+        "median": 0.1111111111111111,
+        "range": 0.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.1111111111111111,
+        "max": 0.1111111111111111,
+        "median": 0.1111111111111111,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.0
+    },
+    "exchange_failure": {
+      "code": "exchange_failure",
+      "before": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.1111111111111111,
+        "median": 0.0,
+        "range": 0.1111111111111111
+      },
+      "after": {
+        "runs": 4,
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "range": 0.0
+      },
+      "delta": 0.0,
+      "p_value": 1.0,
+      "exact": true,
+      "outcome": "noise",
+      "band": 0.1111111111111111
+    },
+    "contradiction": {
+      "outcome": "unavailable"
+    },
+    "reaction_words": {
+      "code": "reaction_words",
+      "before": {
+        "runs": 4,
+        "min": 53.77777777777778,
+        "max": 57.666666666666664,
+        "median": 55.77777777777778,
+        "range": 3.8888888888888857
+      },
+      "after": {
+        "runs": 4,
+        "min": 54.0,
+        "max": 57.44444444444444,
+        "median": 55.05555555555556,
+        "range": 3.444444444444443
+      },
+      "delta": -0.7222,
+      "p_value": 0.885714,
+      "exact": true,
+      "outcome": "noise",
+      "band": 3.8888888888888857
+    },
+    "narration_words": {
+      "code": "narration_words",
+      "before": {
+        "runs": 4,
+        "min": 33.333333333333336,
+        "max": 37.333333333333336,
+        "median": 35.66666666666667,
+        "range": 4.0
+      },
+      "after": {
+        "runs": 4,
+        "min": 33.111111111111114,
+        "max": 36.111111111111114,
+        "median": 34.611111111111114,
+        "range": 3.0
+      },
+      "delta": -1.0556,
+      "p_value": 0.685714,
+      "exact": true,
+      "outcome": "noise",
+      "band": 4.0
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "completed_at": "2026-09-19T21:43:39Z",
+  "promoted_at": "2026-09-19T23:11:04Z",
+  "producer_commit": "8e6d7e2d9b1e01e184c265dc6aa00fd1abf83a24",
+  "source_measurement_sha256": "ae0dc63a1655d271d5d44f18cfb3a6904d00e05037cf171dc070aab245afc389",
+  "repetitions": 4,
+  "cases": 9,
+  "readings": 36,
+  "calls": 72,
+  "reused_paid_readings": true,
+  "new_model_calls": 0,
+  "limitations": [
+    "Contradiction remains unavailable because this recording has no signed human annotations.",
+    "This corpus does not measure voice, memory fidelity across turns, long-term behavior or general realism.",
+    "Promotion adds provenance around unchanged paid readings; it is not a second independent sample."
+  ]
+}

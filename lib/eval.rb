@@ -397,6 +397,32 @@ module Eval
     db/eval/physical-realization-20260910/source-manifest.json
     db/eval/physical-realization-20260910/support.rb
     db/eval/physical-realization-20260910/verdicts.json
+    db/eval/desires-realization-20260919/README.md
+    db/eval/desires-realization-20260919/comparison.txt
+    db/eval/desires-realization-20260919/finalize.rb
+    db/eval/desires-realization-20260919/matched-verdicts.json
+    db/eval/desires-realization-20260919/payload_gate.rb
+    db/eval/desires-realization-20260919/provider-readings.jsonl.gz
+    db/eval/desires-realization-20260919/readings.json.gz
+    db/eval/desires-realization-20260919/realization.json
+    db/eval/desires-realization-20260919/receipts.json
+    db/eval/desires-realization-20260919/replay.rb
+    db/eval/desires-realization-20260919/requests.json
+    db/eval/desires-realization-20260919/run-provenance.json
+    db/eval/desires-realization-20260919/run.rb
+    db/eval/desires-realization-20260919/source-manifest.json
+    db/eval/desires-realization-20260919/verdicts.json
+    db/eval/desires-dialogue-20260919/README.md
+    db/eval/desires-dialogue-20260919/after-board.json
+    db/eval/desires-dialogue-20260919/before-board.json
+    db/eval/desires-dialogue-20260919/comparison.json
+    db/eval/desires-dialogue-20260919/dialogue.json
+    db/eval/desires-dialogue-20260919/finalize.rb
+    db/eval/desires-dialogue-20260919/matched-comparison.json
+    db/eval/desires-dialogue-20260919/receipts.json
+    db/eval/desires-dialogue-20260919/replay.rb
+    db/eval/desires-dialogue-20260919/run-provenance.json
+    db/eval/desires-dialogue-20260919/source-manifest.json
   ].freeze
 
   # CHECKS A SCRIPTED RUN CANNOT ANSWER, AND WHY -- reported unavailable rather
