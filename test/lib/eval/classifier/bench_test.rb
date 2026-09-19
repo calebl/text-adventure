@@ -117,6 +117,33 @@ class Eval::Classifier::BenchTest < ActiveSupport::TestCase
     end
   end
 
+  # THE POPULATION SHAPE C CLAIMS TO MOVE, counted the way `Playthrough::Drift`
+  # counts it: a closed-set action (`move`, `talk`, `take`, `drop`, `attack`,
+  # `use`) that resolved to no record at all -- whether the model named
+  # something this room does not have (out of set AND, since the intent was
+  # still right, a closed-set miss too) or correctly saw nothing there
+  # (out of set, and no miss). The two counters overlap on the first shape and
+  # diverge on the second, which is the whole reason they are two counters.
+  test "an out-of-set answer is counted separately from a closed-set miss, and a resolved line is neither" do
+    pass = bench(perfect).passes.sole
+
+    resolved = pass.readings.find { |row| row.id == "a-take" }
+    assert_predicate resolved, :right?
+    assert_not resolved.out_of_set?, "a resolved take named something this room actually has"
+
+    genuinely_absent = pass.readings.find { |row| row.id == "a-reach" }
+    assert_predicate genuinely_absent, :right?, "the label expects nothing, and the model correctly answered nothing"
+    assert genuinely_absent.out_of_set?, "a take that resolved to no record is the drift population regardless of why"
+    assert_not genuinely_absent.closed_set_miss?, "the branch AND the record were both right, so this is not a miss"
+
+    cross_room_name = bench(perfect.merge("a-take" => { "intent" => "take", "target" => "Perrin's private index" }))
+                        .passes.sole.readings.find { |row| row.id == "a-take" }
+    assert cross_room_name.closed_set_miss?, "the right branch, naming a record another room's floor holds"
+    assert cross_room_name.out_of_set?, "and this room's own set has nothing that name resolves to either"
+
+    assert_equal 1, pass.out_of_set
+  end
+
   test "a wrong branch is not counted as a closed-set miss" do
     pass = bench(perfect.merge("an-other" => { "intent" => "move", "target" => "The Long Hallway" })).passes.sole
     reading = pass.readings.find { |row| row.id == "an-other" }

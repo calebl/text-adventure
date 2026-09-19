@@ -103,15 +103,16 @@ class Eval::Classifier::Bench
   # the schema build and the resolution back to records -- which is what a turn
   # actually waits for, and both are microseconds beside a provider round trip.
   Reading = Data.define(:line, :arm, :rep, :answer, :answered_by, :raw, :seconds, :error, :resolved_by,
-                        :target_present, :named_more_than_one) do
+                        :target_present, :named_more_than_one, :out_of_set) do
     # `resolved_by`, `target_present` AND `named_more_than_one` DEFAULT TO NIL,
     # so every call site that predates the cascade -- and every fixture in this
     # test suite -- keeps working with no change. They are only ever non-nil
     # on a `cascade: true` bench run, and the two Noul readings are nil even
     # then on a `typed_model_unavailable` line, which never got an answer to
-    # read them off.
-    def initialize(resolved_by: nil, target_present: nil, named_more_than_one: nil, **rest) =
-      super(resolved_by:, target_present:, named_more_than_one:, **rest)
+    # read them off. `out_of_set` DEFAULTS TO NIL THE SAME WAY, for a fixture
+    # or an old reading built before the counter existed.
+    def initialize(resolved_by: nil, target_present: nil, named_more_than_one: nil, out_of_set: nil, **rest) =
+      super(resolved_by:, target_present:, named_more_than_one:, out_of_set:, **rest)
 
     def id = line.id
     def shape = line.shape
@@ -136,6 +137,16 @@ class Eval::Classifier::Bench
     # counting on its own -- it means the model named something in the set that
     # is not what the line named, or named `nothing` where a record was there.
     def closed_set_miss? = intent_right? && !right?
+
+    # THE POPULATION SHAPE C CLAIMS TO MOVE, DISTINCT FROM `#closed_set_miss?`.
+    # That is a WITHIN-set error -- the right branch, a record the same set
+    # holds but not the one meant. This is an answer that named something on NO
+    # list at all: a target that resolved to nil, counted the exact way
+    # `Playthrough::Drift` counts it in the app (`Intent#reached_for_nothing?`
+    # -- the same closed-set actions, the same "reached and found nothing"
+    # test), read straight off the resolved `Intent` at `#read` time rather
+    # than re-derived from the corpus label. See `Eval::Classifier::Bench#read`.
+    def out_of_set? = !failed? && !!out_of_set
 
     def refusal_right? = !failed? && line.refusals.include?(answer.refusal)
 
@@ -237,6 +248,12 @@ class Eval::Classifier::Bench
     def refusal_agreement = rate(unarguable.count(&:refusal_right?), unarguable.size)
     def closed_set_misses = scored.count(&:closed_set_miss?)
 
+    # `respond_to?` GUARDED, so `PhysicalClassifierStudy::Audit::HistoricalReading`
+    # (a frozen replay's own reading shape, predating this counter) still
+    # builds a `Pass` -- it simply has none of this population to count, rather
+    # than raising on a method it was never given.
+    def out_of_set = scored.count { |reading| reading.respond_to?(:out_of_set?) && reading.out_of_set? }
+
     def rate(part, whole) = whole.zero? ? 0.0 : part.fdiv(whole)
 
     # ONE ROW PER LINE, AS THE PERSISTED FILE HOLDS IT. `Eval::Classifier::Report`
@@ -267,7 +284,7 @@ class Eval::Classifier::Bench
 
     def to_h = { arm:, rep:, accuracy: accuracy.round(4), intent_accuracy: intent_accuracy.round(4),
                  strict_accuracy: strict_accuracy.round(4), refusal_agreement: refusal_agreement.round(4),
-                 closed_set_misses:, latency_median: latency_median.round(4),
+                 closed_set_misses:, out_of_set:, latency_median: latency_median.round(4),
                  latency_p95: latency_p95.round(4), failures:,
                  rotations:, failures_by_class: failures_by_class,
                  **also_counts, resolved_by_counts:, readings: rows }
@@ -279,7 +296,7 @@ class Eval::Classifier::Bench
         expected_intent: line.intent, got_intent: reading.intent,
         expected_refusals: line.refusals, got_refusal: reading.refusal,
         right: reading.right?, intent_right: reading.intent_right?,
-        closed_set_miss: reading.closed_set_miss?,
+        closed_set_miss: reading.closed_set_miss?, out_of_set: reading.out_of_set?,
         refusal_right: reading.refusal_right?, arguable: reading.arguable?,
         also_expected: reading.also_expected?, also_answered: reading.also_answered?,
         also_tp: reading.also_true_positive?, also_fp: reading.also_false_positive?,
@@ -475,6 +492,7 @@ class Eval::Classifier::Bench
     # turn does. See `#initialize`.
     classifier = Playthrough::Classifier.new(Playthrough.find(standing.playthrough.id),
                                              system_one: @cascade ? nil : false)
+    prepare_agent!(classifier, arm)
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
     begin
@@ -485,6 +503,7 @@ class Eval::Classifier::Bench
                   answered_by: classifier.agent.current_model[:model],
                   raw: raw_answer(classifier), resolved_by: classifier.resolved_by,
                   target_present: classifier.target_present, named_more_than_one: classifier.named_more_than_one,
+                  out_of_set: intent.reached_for_nothing?,
                   answer: Eval::Classifier::Corpus::Answer.from_intent(intent))
     rescue StandardError => error
       # A FAILED CALL HAS NO LATENCY, deliberately: how long it took to fail is
@@ -495,6 +514,27 @@ class Eval::Classifier::Bench
                   seconds: nil, error: "#{error.class}: #{error.message}", resolved_by: classifier.resolved_by,
                   target_present: classifier.target_present, named_more_than_one: classifier.named_more_than_one)
     end
+  end
+
+  # THE ONLY PLACE A TOOL ARM DIFFERS FROM A SCHEMA ARM: before the one model
+  # call this line makes, swap `classifier`'s memoized agent for an
+  # `Eval::Classifier::ToolAgent` built for this arm's shape -- the exact
+  # substitution `Eval::Classifier::Version::CaptureAgent` already does for an
+  # offline capture, here driving a real call instead of throwing one away.
+  # `#classify` and every resolution rule downstream of it run UNCHANGED: the
+  # substituted agent answers `.with_schema(schema).ask(prompt).content` with
+  # the same shape `Playthrough::Classifier#ask_the_model` already expects,
+  # whichever envelope it crossed the wire in. A schema arm does nothing here
+  # at all.
+  def prepare_agent!(classifier, arm)
+    return if arm.shape == :schema
+
+    original = classifier.agent
+    tool_agent = Eval::Classifier::ToolAgent.new(shape: arm.shape, classifier: classifier,
+                                                 purpose: original.purpose, playthrough: classifier.playthrough)
+                   .with_instructions(original.instructions)
+                   .with_temperature(Playthrough::Classifier::TEMPERATURE)
+    classifier.instance_variable_set(:@agent, tool_agent)
   end
 
   # THE PROVIDER'S OWN JSON for the call just made. `#recorded_chat` is the

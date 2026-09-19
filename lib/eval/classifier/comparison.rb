@@ -113,9 +113,23 @@ class Eval::Classifier::Comparison
   # caveat.
   SUPPRESSED_BY_CONCURRENCY = %i[latency_median latency_p95].freeze
 
+  # `METRICS` ONLY, DELIBERATELY -- NOT `COMPARABLE_METRICS`. Two frozen
+  # historical studies under `db/eval` (`physical-classifier-revised-20260910`,
+  # `physical-classifier-final-20260914`) call `#verdicts`/`#judged_metrics` on
+  # this class and were characterized against the eight-metric list; widening
+  # it here would silently change what they replay. `out_of_set` is printed
+  # separately below instead -- see `#additional_verdicts` and `#print`.
   def judged_metrics
     keys = Eval::Classifier::Result::METRICS.keys
     comparable_latency? ? keys : keys - SUPPRESSED_BY_CONCURRENCY
+  end
+
+  def additional_verdicts(arm, against: arm)
+    Eval::Classifier::Result::ADDITIONAL_METRICS.each_key.map do |metric|
+      Row.new(arm: arm, metric: metric,
+              verdict: Eval::Noise.compare(metric, before.values(metric, arm: against),
+                                           after.values(metric, arm: arm)))
+    end
   end
 
   def verdicts(arm, against: arm)
@@ -170,7 +184,7 @@ class Eval::Classifier::Comparison
     pairs.each do |against, arm|
       say
       say(against == arm ? "MODEL  #{arm}" : "MODEL  #{against} (before)  ->  #{arm} (after)")
-      verdicts(arm, against: against).each do |row|
+      (verdicts(arm, against: against) + additional_verdicts(arm, against: against)).each do |row|
         verdict = row.verdict
         say format("  %-20s %s -> %s  %-8s %s", row.metric,
                    figure(row.metric, verdict.before.median), figure(row.metric, verdict.after.median),

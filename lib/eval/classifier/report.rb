@@ -126,7 +126,7 @@ class Eval::Classifier::Report
         "(#{passes.size} rep#{"s" unless passes.size == 1}, #{rows.size} readings)"
     say
 
-    Eval::Classifier::Result::METRICS.each do |metric, meaning|
+    Eval::Classifier::Result::COMPARABLE_METRICS.each do |metric, meaning|
       spread = result.spread(metric, arm: arm)
       say format("  %-20s %s   %s", metric, band(metric, spread), meaning)
     end

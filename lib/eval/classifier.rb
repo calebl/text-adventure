@@ -101,13 +101,23 @@ module Eval::Classifier
   # affordable at all.
   PER_CALL = { input: 372, output: 20 }.freeze
 
+  # WHAT A TOOL SHAPE ADDS TO THE 372 INPUT TOKENS ABOVE, so an estimate for a
+  # `+tool`/`+tools` arm is not silently priced as the schema arm. Taken from
+  # the offline render in `data/ta-tool-calls-scout/report.md` §5 -- 145 bytes
+  # for shape B and 8,280 for shape C on a twelve-record room -- at roughly 4
+  # bytes/token, which is what the report's own "~2,000 prompt tokens a turn"
+  # figure for shape C comes from. Measured, not modelled; re-read after a
+  # trim of the tool descriptions, which this pass does not do.
+  SHAPE_EXTRA_INPUT_TOKENS = { schema: 0, tool: 40, tools: 2100 }.freeze
+
   # `models` is `Eval::Classifier::Arm`s, and each one prices itself -- a local
   # arm costs nothing, which is why `Arm#price` answers for it rather than this
   # method asking the registry about a model the registry has never heard of.
   def self.estimate(lines:, reps:, models:)
     calls = lines * reps
     Arm.all(models).sum do |arm|
-      arm.price.of(calls * PER_CALL[:input], calls * PER_CALL[:output])
+      input = PER_CALL[:input] + SHAPE_EXTRA_INPUT_TOKENS.fetch(arm.shape, 0)
+      arm.price.of(calls * input, calls * PER_CALL[:output])
     end
   end
 end

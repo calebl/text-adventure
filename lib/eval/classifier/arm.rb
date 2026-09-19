@@ -80,38 +80,72 @@ class Eval::Classifier::Arm
   # naming part of the model, and an ollama tag can hold neither.
   NOTHINK_SUFFIX = "+nothink".freeze
 
-  attr_reader :provider, :model, :provider_params
+  # THE REQUEST SHAPE AXIS, added for the tool-call bench arm (the maintainer's
+  # decision on the investigation at `data/ta-tool-calls-scout/report.md`):
+  # every existing arm measures `:schema`, `Playthrough::Classifier`'s own
+  # `response_format` call, unchanged. `:tool` (the report's shape B / Version
+  # A) wraps the identical closed set in ONE forced `RubyLLM::Tool` -- the
+  # control, which should read like the schema arm or the harness is wrong.
+  # `:tools` (shape C / Version B) is one tool per intent, each carrying only
+  # its own target set, `tool_choice: "required"` -- the shape whose whole
+  # claim is driving an out-of-list target to zero. Neither shape is ever
+  # reached by a live turn: `Eval::Classifier::ToolShapes` and
+  # `Eval::Classifier::ToolAgent` build them only for a bench pass.
+  SHAPES = %i[schema tool tools].freeze
+
+  TOOL_SUFFIX = "+tool".freeze
+  TOOLS_SUFFIX = "+tools".freeze
+
+  attr_reader :provider, :model, :provider_params, :shape
 
   # `"ollama:qwen3:8b"` -> ollama, `qwen3:8b`. Anything with no known provider
   # prefix is OpenRouter, which is what the app's own ids are.
   # `"ollama:qwen3:8b+nothink"` asks for `NO_THINKING` as well.
+  # `"mistralai/mistral-medium-3.1+tool"` / `"+tools"` asks for a tool shape --
+  # read off the end BEFORE `+nothink`, so a spec may carry both (`+tools`
+  # checked first: the two suffixes never collide, since `"...+tools"` does not
+  # end with the five characters of `"+tool"`).
   def self.parse(spec)
     text = spec.to_s.strip
     nothink = text.end_with?(NOTHINK_SUFFIX)
     text = text.delete_suffix(NOTHINK_SUFFIX) if nothink
-    prefix, rest = text.split(":", 2)
     params = nothink ? NO_THINKING : {}
 
-    if rest.present? && PROVIDERS.include?(prefix.to_sym)
-      return new(provider: prefix.to_sym, model: rest, provider_params: params)
+    shape = :schema
+    if text.end_with?(TOOLS_SUFFIX)
+      shape = :tools
+      text = text.delete_suffix(TOOLS_SUFFIX)
+    elsif text.end_with?(TOOL_SUFFIX)
+      shape = :tool
+      text = text.delete_suffix(TOOL_SUFFIX)
     end
 
-    new(provider: :openrouter, model: text, provider_params: params)
+    prefix, rest = text.split(":", 2)
+
+    if rest.present? && PROVIDERS.include?(prefix.to_sym)
+      return new(provider: prefix.to_sym, model: rest, provider_params: params, shape: shape)
+    end
+
+    new(provider: :openrouter, model: text, provider_params: params, shape: shape)
   end
 
   # Accepts specs OR arms, so a caller that already has arms does not have to
   # remember which it is holding.
   def self.all(specs) = Array(specs).map { |spec| spec.is_a?(self) ? spec : parse(spec) }
 
-  def initialize(provider:, model:, provider_params: {})
+  def initialize(provider:, model:, provider_params: {}, shape: :schema)
     unless PROVIDERS.include?(provider.to_sym)
       raise UnknownProvider, "#{provider.inspect} is not one of #{PROVIDERS.inspect}"
     end
     raise UnknownProvider, "an arm needs a model" if model.to_s.strip.empty?
+    unless SHAPES.include?(shape.to_sym)
+      raise UnknownProvider, "#{shape.inspect} is not one of #{SHAPES.inspect}"
+    end
 
     @provider = provider.to_sym
     @model = model.to_s.strip
     @provider_params = provider_params.to_h
+    @shape = shape.to_sym
     if @provider_params.any? && !local?
       raise UnknownProvider, "provider params are only for a local arm; #{id} is hosted, and changing " \
                              "the shape of a remote request is not what the seam is for"
@@ -120,12 +154,24 @@ class Eval::Classifier::Arm
 
   # THE NAME A SET RECORDS AND A BOARD PRINTS. A local model keeps its provider
   # in the label, because `qwen3:8b` and a hosted model of the same name would
-  # otherwise be one row in a cross-model table -- and an arm with the thinking
-  # off keeps that in the label too, for the same reason: it is a different
-  # measurement of the same model.
-  def id = [ local? ? "#{provider}:#{model}" : model, thinking_off? ? NOTHINK_SUFFIX : nil ].compact.join
+  # otherwise be one row in a cross-model table -- an arm with the thinking off
+  # keeps that in the label too, and a tool-shaped arm keeps its suffix, all for
+  # the same reason: each is a different measurement of the same model.
+  def id = [ local? ? "#{provider}:#{model}" : model, shape_suffix, thinking_off? ? NOTHINK_SUFFIX : nil ]
+             .compact.join
+
+  def shape_suffix
+    case shape
+    when :tool then TOOL_SUFFIX
+    when :tools then TOOLS_SUFFIX
+    end
+  end
 
   def thinking_off? = provider_params == NO_THINKING
+
+  def shape_schema? = shape == :schema
+  def shape_tool? = shape == :tool
+  def shape_tools? = shape == :tools
 
   def local? = provider == :ollama
 
@@ -137,10 +183,10 @@ class Eval::Classifier::Arm
 
   def ==(other)
     other.is_a?(self.class) && other.provider == provider && other.model == model &&
-      other.provider_params == provider_params
+      other.provider_params == provider_params && other.shape == shape
   end
   alias eql? ==
-  def hash = [ provider, model, provider_params ].hash
+  def hash = [ provider, model, provider_params, shape ].hash
 
   # WHAT IT COSTS PER CALL. A local model costs nothing -- it is the captain's
   # own hardware and his own electricity -- and saying "unpriced" for it would

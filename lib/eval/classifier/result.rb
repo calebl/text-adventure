@@ -41,14 +41,32 @@ class Eval::Classifier::Result
     failures: "calls that failed outright (a count; the arm has no rotation)"
   }.freeze
 
+  # ADDED BESIDE `METRICS` RATHER THAN INSIDE IT, ON PURPOSE.
+  # `PhysicalClassifierStudy::Audit` (`db/eval/physical-classifier-20260910/audit.rb`,
+  # a frozen snapshot never edited in place) iterates `METRICS.each_key` and
+  # `.fetch`es every one off a kept JSON summary captured before this counter
+  # existed -- putting `out_of_set` inside `METRICS` would raise a `KeyError`
+  # there on a baseline that can never grow the field. `out_of_set` is measured
+  # and compared exactly like the eight above -- see
+  # `Eval::Classifier::Bench::Reading#out_of_set?` for what it counts and why it
+  # is not `closed_set_misses` -- it is just never asked of a baseline older
+  # than it.
+  ADDITIONAL_METRICS = {
+    out_of_set: "a target or also_named named on no list at all (a count, not a rate)"
+  }.freeze
+
+  # WHAT A LIVE REPORT PRINTS AND `rake eval:classifier_compare` JUDGES.
+  # `METRICS` alone is what a frozen historical replay may still assume.
+  COMPARABLE_METRICS = METRICS.merge(ADDITIONAL_METRICS).freeze
+
   # A FIGURE WHOSE DIRECTION OF IMPROVEMENT IS DOWN. Stated because
   # `Eval::Noise::Verdict#improved?` reads a negative delta as an improvement,
   # which is right for a defect count or a latency and wrong for an accuracy.
-  LOWER_IS_BETTER = %i[closed_set_misses latency_median latency_p95 failures].freeze
+  LOWER_IS_BETTER = %i[closed_set_misses out_of_set latency_median latency_p95 failures].freeze
 
   # FIGURES THAT ARE COUNTS OR SECONDS RATHER THAN RATES, so a board formats
   # them as what they are.
-  COUNTED = %i[closed_set_misses failures].freeze
+  COUNTED = %i[closed_set_misses out_of_set failures].freeze
   SECONDS = %i[latency_median latency_p95].freeze
 
   # HOW MANY CALLS OF ONE ARM WERE IN FLIGHT WHEN THIS SET WAS TAKEN, and the
@@ -245,6 +263,13 @@ class Eval::Classifier::Result
     def resolved_by_counts = (row["resolved_by_counts"] || {}).to_h
 
     Eval::Classifier::Result::METRICS.each_key do |metric|
+      define_method(metric) { row[metric.to_s] }
+    end
+
+    # `ADDITIONAL_METRICS` READ SEPARATELY, so a row written before
+    # `out_of_set` existed answers `nil` -- "not recorded" on the board -- and
+    # not a `KeyError` or a false zero.
+    Eval::Classifier::Result::ADDITIONAL_METRICS.each_key do |metric|
       define_method(metric) { row[metric.to_s] }
     end
 
