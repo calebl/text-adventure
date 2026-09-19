@@ -63,11 +63,26 @@ class Playthrough::Classifier::State
   # The state object as it is sent: one entry per record, plus where the player
   # is standing and the line they typed. Keys are the ones the questions'
   # criteria are keyed by and the ones `#record_for` resolves back.
+  #
+  # THE SHAPE HERE IS THE MEASURED ARM'S SHAPE, DOWN TO THE KEY ORDER, and that
+  # is a rule rather than a tidiness: every figure the cascade rests on was read
+  # off a state built exactly like this, and a state that differs from it is a
+  # request nothing has measured. `Playthrough::Classifier::StateTest` compares
+  # a staged position against the arm's own stored request byte for byte. Three
+  # things it pins that are easy to change without noticing:
+  #
+  #   * `player_action` is LAST, after every record block;
+  #   * EVERY BLOCK IS SENT, an empty one as an empty map rather than left out.
+  #     A block that is present and empty says "there is nothing of this kind
+  #     here"; a block that is absent says nothing at all, and the reader has to
+  #     infer the absence. The question over an empty block is still not asked
+  #     -- that is `Request`'s decision and it reads `#keys_for`, not this;
+  #   * `valid_intents` lead with the block's OWN intent.
   def to_h
-    GROUPS.each_with_object(base) do |group, state|
-      entries = entries_for(group)
-      state[group.key] = entries if entries.any?
-    end
+    state = { "location" => location }
+    GROUPS.each { |group| state[group.key] = entries_for(group) }
+    state["player_action"] = command.to_s
+    state
   end
 
   # WHAT AN ANSWER'S KEY MEANS. `nothing` -- and anything this position never
@@ -103,12 +118,7 @@ class Playthrough::Classifier::State
 
   private
 
-  def base
-    {
-      "location" => classifier.playthrough.current_location&.name || "Nowhere in particular.",
-      "player_action" => command.to_s
-    }
-  end
+  def location = classifier.playthrough.current_location&.name || "Nowhere in particular."
 
   def entries_for(group)
     offered(group.intent).each_with_index.to_h do |record, offset|
@@ -120,8 +130,20 @@ class Playthrough::Classifier::State
     entry = { "kind" => group.kind, "name" => label_for(record) }
     nickname = record.respond_to?(:nickname) ? record.nickname.to_s.strip : ""
     entry["aliases"] = [ nickname ] if nickname.present? && nickname != entry["name"]
-    entry["valid_intents"] = intents_for(record)
+    entry["valid_intents"] = listed_intents(record, group)
     entry
+  end
+
+  # THE BLOCK'S OWN INTENT FIRST, then the rest in enum order. `#intents_for` is
+  # the derivation and answers in `Playthrough::IntentSchema::INTENTS` order,
+  # which puts `examine` ahead of `take` and ahead of `drop` -- so a thing lying
+  # in the room would be listed as something to look at before something to pick
+  # up. The arm was measured the other way round, leading with the intent that
+  # DEFINES the block the record is in, and this restores that. The set is
+  # identical either way; only the order is the measured thing.
+  def listed_intents(record, group)
+    own = group.intent.to_s
+    ([ own ] + intents_for(record)).uniq
   end
 
   # key => record, built once from the same groups the state is, so what a
