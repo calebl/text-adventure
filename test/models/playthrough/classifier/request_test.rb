@@ -6,9 +6,15 @@ require "test_helper"
 # records is not sent at all, and that the criteria are keyed by the same keys
 # the state uses and the composition resolves.
 #
-# The one piece of WORDING this file pins is `examine`, because it is the ship's
-# one deliberate prompt change and it has to be the same sentence in both
-# readers -- see `Playthrough::Classifier::INSTRUCTIONS`.
+# AND THE WORDING ITSELF IS PINNED AGAINST THE ARM THAT WAS SCORED, at the
+# bottom of this file, because it once quietly was not: the shipped
+# `also_named` and per-action target sentences were an earlier revision of
+# themselves and nothing was comparing them to anything.
+# `test/fixtures/files/scored_classifier_request.json` is the design of record's
+# own stored request -- the collective-word arm with the presence question
+# appended, for the position `ask Rowe and Perrin what happened at four
+# o'clock` was sent in -- and `#the_scored_position` rebuilds that position out
+# of records so the two can be compared string by string.
 class Playthrough::Classifier::RequestTest < ActiveSupport::TestCase
   def setup
     @story = create(:story)
@@ -122,7 +128,7 @@ class Playthrough::Classifier::RequestTest < ActiveSupport::TestCase
     a_full_position
 
     assert_includes questions["target_take"]["instructions"],
-                    "When the line requests several fitting records, choose one of them; `also_named` handles another."
+                    "answer with one of them, never `#{Playthrough::IntentSchema::NOTHING}`; `also_named` handles another."
   end
 
   test "every target question is asked under its own premise" do
@@ -137,5 +143,77 @@ class Playthrough::Classifier::RequestTest < ActiveSupport::TestCase
   test "the id a target answer is read from is one definition" do
     assert_equal "target_examine", Playthrough::Classifier::Request.target_id(:examine)
     assert_equal "target_examine", Playthrough::Classifier::Request.target_id("examine")
+  end
+
+  # --- the request against the arm that was scored --------------------------
+  #
+  # THE FIXTURE IS EVIDENCE, NOT A GOLDEN FILE TO REGENERATE. It is the request
+  # the design of record was measured on, kept byte for byte; a sentence here
+  # that no longer matches it means the prompt has changed, and a prompt change
+  # is a measured change -- `EVALUATION.md`. Updating the fixture to match new
+  # code would be the one thing that makes it worthless.
+
+  SCORED_REQUEST_FIXTURE = "scored_classifier_request.json".freeze
+
+  def scored_request
+    JSON.parse(file_fixture(SCORED_REQUEST_FIXTURE).read)
+  end
+
+  # The position `ask Rowe and Perrin what happened at four o'clock` was sent
+  # in: two ways out, two people with one alias each, two things lying here, one
+  # carried, and therefore two complete offer attempts.
+  def the_scored_position
+    hallway = create(:location, story: @story, name: "The Long Hallway")
+    create(:location_connection, location: @here, connected_location: hallway)
+    create(:character, story: @story, location: @here, fullname: "Halkett Rowe", nickname: "Sub-Inspector Rowe")
+    lying_here(@playthrough, @here, name: "ward stamp")
+  end
+
+  # THE ONE DIFFERENCE THAT IS ALLOWED, and it is named rather than tolerated:
+  # `examine` gained "or looking around the place in general" as this ship's one
+  # deliberate prompt change, and it has its own baseline either side of it
+  # (`db/eval/classifier-examine-before-20260918` and
+  # `classifier-examine-wording-20260918`). Anything else differing is drift.
+  EXAMINE_EDIT = [ "without moving or taking it.", "without moving or taking it, or looking around the place in general." ].freeze
+
+  test "every instruction string is the text of the arm the design of record was scored on" do
+    a_full_position
+    the_scored_position
+    scored = scored_request.fetch("questions")
+    asked = questions("ask Rowe and Perrin what happened at four o'clock")
+
+    assert_equal scored.keys, asked.keys, "the questions asked are not the questions that were scored"
+    scored.each do |id, question|
+      assert_equal question.fetch("instructions"), asked.fetch(id)["instructions"],
+                   "#{id}'s instructions are not the scored arm's -- a prompt change needs a baseline either side"
+    end
+  end
+
+  test "nothing else in the request differs from the scored arm but the one deliberate examine edit" do
+    a_full_position
+    the_scored_position
+    scored = scored_request.fetch("questions")
+    asked = questions("ask Rowe and Perrin what happened at four o'clock")
+
+    scored.each do |id, question|
+      assert_equal question.fetch("type"), asked.fetch(id)["type"]
+      wanted = question.fetch("criteria")
+      wanted = wanted.merge("examine" => wanted.fetch("examine").sub(*EXAMINE_EDIT)) if id == "intent"
+      assert_equal wanted, asked.fetch(id)["criteria"],
+                   "#{id}'s criteria are not the scored arm's"
+    end
+  end
+
+  # WHAT THE COLLECTIVE-WORD PASS BOUGHT, in the two sentences it bought it
+  # with. Named here so a later edit that drops them has to argue with a test
+  # rather than with a paragraph.
+  test "both questions name the collective words and the and-then continuation" do
+    a_full_position
+
+    [ questions["target_take"]["instructions"], questions["also_named"]["instructions"] ].each do |text|
+      assert_includes text, "all of it"
+      assert_includes text, "`and then`"
+    end
+    assert_includes questions["target_take"]["instructions"], "never `#{Playthrough::IntentSchema::NOTHING}`"
   end
 end
