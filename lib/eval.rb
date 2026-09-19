@@ -186,6 +186,16 @@ module Eval
     lib/tasks/genesis.rake
     test/fixtures/files/genesis_corpus.yml
     db/eval/genesis-before/genesis.json
+    db/eval/desires-before/genesis.json
+    db/eval/desires-before/dialogue.json
+    db/eval/desires-before/realization.json
+    db/eval/desires-before/requests.json
+    db/eval/desires-before/README.md
+    db/eval/desires-after/genesis.json
+    db/eval/desires-after/dialogue.json
+    db/eval/desires-after/realization.json
+    db/eval/desires-after/requests.json
+    db/eval/desires-after/README.md
     lib/eval/prompt/branches.rb
     lib/eval/prompt/branches/bench.rb
     lib/eval/prompt/branches/predicates.rb

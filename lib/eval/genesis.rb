@@ -8,7 +8,7 @@ module Eval::Genesis
   CORPUS = Rails.root.join("test/fixtures/files/genesis_corpus.yml")
   WORLD = Rails.root.join("test/fixtures/files/worlds/the-iron-gate-descends.yml")
   RESULTS = "genesis.json".freeze
-  BASELINE = "genesis-before".freeze
+  BASELINE = "desires-after".freeze
 
   def self.corpus = Corpus.load
   def self.digest(corpus = self.corpus) = Version.digest([ corpus.cases.map(&:to_h), WorldSeed.parse(File.read(WORLD)) ])
