@@ -348,7 +348,78 @@ rake eval:classifier_compare BEFORE=a AFTER=b
 | `MODELS=a,b` | **the arm selector.** Names exactly which models the run measures; the app's rotation is not consulted. A bare id is OpenRouter, `ollama:qwen3:8b` names the provider. Defaults to `BaseAgent::REMOTE_MODEL_IDS`, which is what a player gets |
 | `SET=name` | where the numbers land (`tmp/eval/<set>/classifier.json`). Defaults to a timestamp |
 | `SAMPLE=20` | how many missed lines the board prints in full |
+| `CASCADE=1` | **measure the typed-line cascade, not the model call alone.** See below |
 | `YES=1` | spend past the $0.50 ceiling |
+
+### Measuring the cascade, and what a cascade set must carry
+
+Every set above pins the reader OFF (`system_one: false`), so the figures are
+the Mistral call alone whatever the maintainer has in their shell — without that
+pin, a shell holding `TYPESAFE_API_KEY` would quietly score a different reader
+against the corpus and the board would print an arm's name over another reader's
+answers.
+
+`CASCADE=1` lifts that pin to "the environment decides", which is what a live
+turn gets. It does **not** name a different arm: the arm is still the escalation
+target, so a cascade set and the kept Mistral-alone set pair on that arm and
+`rake eval:classifier_compare` judges them with nothing else to wire up. The
+`cascade` field on the set is the only thing that tells them apart, and the
+board labels the column `(cascade)` so a cross-model table cannot show two
+identical headers over two different things. The task refuses to start without
+the key, because a cascade run with no key measures the Mistral-only path and
+files itself under the cascade's name.
+
+**A cascade set keeps its per-line rows, and no other kept classifier set does.**
+Each row carries `resolved_by` and the two probabilities the cascade acted on,
+`target_present` and `named_more_than_one`. This is not a preference: the
+questions a cascade raises are *which flag fired on which lines*, and four
+aggregate numbers a side can never answer one. `Result#summary(keep_rows: true)`
+is the escape hatch that keeps them.
+
+**Two things a cascade set cannot tell you, stated so they are not assumed:**
+
+* `request_identity` describes the **model call** — the instructions, prompt and
+  schema `Playthrough::Classifier` sends. The System One request is not in that
+  digest, so two cascade sets taken either side of a change to
+  `Playthrough::Classifier::Request` carry the *same* identity. The set's own
+  README is what records the change; the digest cannot.
+* the **spend** printed for a cascade run is the escalation provider's only. A
+  line the cascade composed never reached the arm, so the run prices the calls
+  it actually made and says how many it left out — but the System One request
+  every line pays for has no row in the cost registry and no receipt here.
+
+**And the STATE is as much of the request as the wording is.** The measured
+shape is a key order, an empty block sent as an empty map, and an intent list
+that leads with its block's own intent —
+`Playthrough::Classifier::State`'s header states all three and
+`Playthrough::Classifier::StateTest` compares a staged position against the
+arm's own stored request byte for byte. That comparison is free, and it is the
+first thing to run when a cascade reading disagrees with a stored one.
+
+The worked example is three sets, in order:
+
+| set | wording | state | whole-answer | escalation |
+|---|---|---|---|---|
+| `classifier-cascade-before-20260919` | shipped | shipped | .9184–.9271 | .1720–.1895 |
+| `classifier-cascade-restored-20260919` | restored | shipped | .9184–.9300 | .1749–.1808 |
+| `classifier-cascade-state-20260919` | restored | restored | **.9388–.9417** | **.2536–.2653** |
+
+The wording change alone was **NOISE on every figure**; the state change was
+**REAL** on accuracy, refusal agreement and closed-set misses. Two lessons in
+that, both cheap to forget:
+
+* **a per-line correlation is not a measurement.** The second set's rows pointed
+  at the state and a correlation over the three dozen divergent lines *failed to
+  convict it* — 13 of 24 sat in positions with no missing key at all. The
+  four-repetition run convicted it. Read the second set's README for the shape
+  of that mistake.
+* **the second-name count cannot judge the `also_named` wording.** 117 of the
+  128 readings whose label carries a second name escalate, so the cascade's own
+  `also_named` answer is read on about one line in twelve of the ones that
+  question was measured on.
+
+`classifier-cascade-state-20260919` is the cascade's kept set; read its README
+before changing anything about the cascade.
 
 ### What it measures
 

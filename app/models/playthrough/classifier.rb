@@ -293,6 +293,16 @@ class Playthrough::Classifier
   # it, both to write `scenes.resolved_by`.
   attr_reader :resolved_by
 
+  # THE CASCADE'S OWN TWO NOUL READINGS FOR THE LAST LINE, if the cascade ran
+  # at all -- nil on a keyless environment and nil on `typed_model_unavailable`
+  # (the provider never answered, so there is no reading). Read-only, the same
+  # way `#resolved_by` is: a bench needs to see WHAT the flags read, not only
+  # which path a line took, to reconcile a composition question line by line.
+  # Nothing here is acted on by the engine, which reads only `Cascade#path`
+  # and the composed `Intent`.
+  def target_present = @cascade&.target_present
+  def named_more_than_one = @cascade&.named_more_than_one
+
   # `system_one` HAS THREE POSITIONS, and the third is the one worth explaining.
   #
   #   nil      the environment decides, which is the shipped behaviour:
@@ -514,9 +524,9 @@ class Playthrough::Classifier
       return nil
     end
 
-    cascade = Playthrough::Classifier::Cascade.new(self, agent: @system_one)
-    intent = cascade.read(command)
-    @resolved_by = cascade.path
+    @cascade = Playthrough::Classifier::Cascade.new(self, agent: @system_one)
+    intent = @cascade.read(command)
+    @resolved_by = @cascade.path
     intent
   end
 

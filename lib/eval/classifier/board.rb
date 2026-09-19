@@ -37,7 +37,11 @@ class Eval::Classifier::Board
 
   Column = Data.define(:set, :result, :arm) do
     def local? = Eval::Classifier::Arm.parse(arm).local?
-    def label = "`#{arm}`#{" *(local)*" if local?}"
+    # A CASCADE SET NAMES THE SAME ARM AS THE KEPT MISTRAL-ALONE SET -- the
+    # escalation target is unchanged -- so the label says which reader was in
+    # front of it, or a cross-model table would show two identical column
+    # headers for two different things measured.
+    def label = "`#{arm}`#{" (cascade)" if result.cascade}#{" *(local)*" if local?}"
     # READ AS COUNTS AND NEVER AS ROWS, so a checked-in SUMMARY set -- which has
     # no rows on purpose -- prints the same table as the whole run it came from.
     # `Stored#also_counts` answers from the field when the field is there and by
@@ -116,7 +120,8 @@ class Eval::Classifier::Board
         "first call (cold, excluded)" => ->(column) { cold(column) },
         "cost per 1,000 calls" => ->(column) { cost(column) },
         "failed calls" => ->(column) { band(column, :failures) },
-        "rotations" => ->(column) { rotations(column) }
+        "rotations" => ->(column) { rotations(column) },
+        "escalation rate" => ->(column) { resolved_by(column) }
       )
     end
 
@@ -205,5 +210,22 @@ class Eval::Classifier::Board
       return "0 of #{column.calls}" if count.zero?
 
       "**#{count} of #{column.calls} -- another model answered**"
+    end
+
+    # `typed_model_escalated` OVER EVERY LINE THAT REACHED A MODEL AT ALL --
+    # the same denominator `scenes.resolved_by` reads in production, and "--"
+    # for a set that pinned the reader off, which is every set that is not a
+    # `cascade:` run. `Playthrough::Classifier::PATHS` is the closed list of
+    # values this is reading off.
+    def resolved_by(column)
+      return "-- (Mistral-only run, no cascade)" unless column.result.cascade
+
+      counts = column.result.resolved_by_counts(column.arm)
+      total = counts.values.sum
+      return "not recorded" if total.zero?
+
+      escalated = counts["typed_model_escalated"].to_i
+      unavailable = counts["typed_model_unavailable"].to_i
+      format("%.3f escalated (%d of %d), %d unavailable", escalated.fdiv(total), escalated, total, unavailable)
     end
 end

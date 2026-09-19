@@ -26,11 +26,25 @@
 # CONSTRUCTION rather than by an answer -- which is cheaper and also stricter
 # than asking a question whose only honest option is `nothing`.
 #
-# THE WORDING IS MEASURED TEXT. Every sentence below was sent, repeatedly, and
-# scored on the hand-labelled corpus; `EVALUATION.md` is the protocol and
-# `rake eval:classifier_compare` is the verdict. Do not improve a sentence here
-# without a stored baseline either side of the edit -- a plausible-sounding
-# prompt fix has more than once been measured moving the wrong number.
+# THE WORDING IS THE MEASURED ARM'S WORDING, AND THAT IS THE RULE. Every
+# sentence below is the text of the arm the design of record was chosen on --
+# the collective-word pass, with the presence question appended -- and
+# `test/fixtures/files/scored_classifier_request.json` is that arm's own stored
+# request, kept in the repository so the claim is checkable rather than
+# remembered. `RequestTest` builds the position that request was sent for and
+# compares every instruction string against it.
+#
+# SO CHANGING A SENTENCE HERE IS A PROMPT CHANGE AND NEEDS A BASELINE EITHER
+# SIDE OF IT -- `EVALUATION.md` is the protocol, `rake eval:classifier CASCADE=1`
+# takes the reading and `rake eval:classifier_compare` gives the verdict. That
+# rule is written here because it was broken here: the `also_named` and
+# per-action target sentences shipped as an EARLIER revision of themselves, the
+# text of the arm three loop iterations before the scored one, and nothing
+# caught it because nothing was comparing them. The fixture and the test are
+# what now do.
+#
+# A plausible-sounding prompt fix has more than once been measured moving the
+# wrong number, which is why the rule is a rule and not a preference.
 #
 # THE ONE DELIBERATE EDIT IN THIS SHIP is `examine`, which now says "or looking
 # around the place in general". It said only "something", an object, while a
@@ -61,18 +75,28 @@ class Playthrough::Classifier::Request
   # copies of a matching rule drift, and the drift would be invisible because
   # each question is answered alone.
   #
-  # "When the line requests several fitting records, choose one of them;
-  # `also_named` handles another" is LOAD-BEARING and was measured missing: the
+  # "`also_named` handles another" is LOAD-BEARING and was measured missing: the
   # first drafting of the per-action questions dropped it, and 11 lines were lost
   # to collective phrasings with no single record to point at -- about the size
   # of the whole gap to the incumbent.
+  #
+  # AND THE COLLECTIVE WORDS ARE NAMED RATHER THAN IMPLIED, for the same reason
+  # one iteration further on: told only that several fitting records may be
+  # named, the reader answered `nothing` to `take everything on that shelf` and
+  # its like. Naming the words, the `and then` continuation, and saying never
+  # `nothing` where fitting records are listed is what recovered those lines --
+  # and `also_named` below carries the matching sentence so the two questions
+  # describe the same set. Neither sentence is a paraphrase of the other's
+  # intent; they are the strings that were sent.
   TARGET_INSTRUCTIONS =
     "Which single listed record are they aiming that at? Match direct names, listed aliases, " \
     "ordinary shortened references, direct address, and an unambiguous pronoun when context " \
-    "identifies one record. When the line requests several fitting records, choose one of them; " \
-    "`also_named` handles another. Choose `#{NOTHING}` when the record they are asking for is " \
-    "absent from this list. Never substitute a merely related record for an absent one. Answer " \
-    "this question on its own; do not decide whether this is what the player is actually doing.".freeze
+    "identifies one record. When the line names several fitting records, or covers them with a " \
+    "collective word (`everything`, `all of it`, `the lot`, `them`, `both`, `each`) or an `and " \
+    "then` continuation, answer with one of them, never `#{NOTHING}`; `also_named` handles " \
+    "another. Choose `#{NOTHING}` only when the record they are asking for is absent from this " \
+    "list. Never substitute a merely related record for an absent one. Answer this question on " \
+    "its own; do not decide whether this is what the player is actually doing.".freeze
 
   # THE PREMISE EACH TARGET QUESTION IS ASKED UNDER, and the answer it gives when
   # the list holds nothing the line asked for. Speculative by design: every one
@@ -102,10 +126,12 @@ class Playthrough::Classifier::Request
     "explicitly name or unambiguously include at least two distinct records from that intent's " \
     "appropriate state list? If so, choose one listed record distinct from the likely main " \
     "target; for an ordinary two-record request, choose the other record rather than " \
-    "`#{NOTHING}`. Words such as `both`, `all`, `everything`, `the lot`, `them`, or `both of " \
-    "them` include the fitting records in the corresponding list. Choose `#{NOTHING}` when fewer " \
-    "than two fitting records are requested. Objects, tools, and recipients already bound inside " \
-    "one complete `physical_actions` attempt are not a second act.".freeze
+    "`#{NOTHING}`. Words such as `both`, `all`, `everything`, `all of it`, `the lot`, `them`, or " \
+    "`each`, and a second record added with `and then`, include every fitting record in the " \
+    "corresponding list; the main target takes one of them and you name another. Choose " \
+    "`#{NOTHING}` when fewer than two fitting records are requested. Objects, tools, and " \
+    "recipients already bound inside one complete `physical_actions` attempt are not a second " \
+    "act.".freeze
 
   ALSO_NAMED_NOTHING =
     "No appropriate listed record is named, or the requested target is absent from the " \

@@ -334,4 +334,57 @@ class Playthrough::Classifier::CascadeTest < ActiveSupport::TestCase
     assert_in_delta 0.15, Playthrough::Classifier::Cascade::PRESENCE_THRESHOLD, 0.0001
     assert_in_delta 0.5, Playthrough::Classifier::Cascade::TWO_NAME_THRESHOLD, 0.0001
   end
+
+  # --- the two Noul readings, kept beside the path ---------------------------
+  #
+  # A bench cannot reconcile a composition question from `#path` alone -- it
+  # says WHICH way a line went, not WHAT the two flags actually read. These
+  # exist for that, read-only: nothing here changes `#compose`'s decision.
+
+  test "a composed line keeps both Noul readings, off the classifier and off the cascade itself" do
+    intent, cascade = read({ "intent" => "take", "target_take" => "available_item_2",
+                             "named_more_than_one" => 0.02, "target_present" => 0.91 })
+
+    assert_not_nil intent
+    assert_in_delta 0.91, cascade.target_present, 0.0001
+    assert_in_delta 0.02, cascade.named_more_than_one, 0.0001
+  end
+
+  test "the owning classifier can read the same two Noul readings after a call reaches it" do
+    agent = FakeSystemOne.new(CLEAR.merge("intent" => "take", "target_take" => "available_item_2",
+                                          "named_more_than_one" => 0.02, "target_present" => 0.91))
+    classifier = Playthrough::Classifier.new(@playthrough, system_one: agent)
+    classifier.classify("take the ward stamp")
+
+    assert_in_delta 0.91, classifier.target_present, 0.0001
+    assert_in_delta 0.02, classifier.named_more_than_one, 0.0001
+  end
+
+  test "an escalated line still keeps both Noul readings -- the flag that fired is one of them" do
+    intent, cascade = read({ "intent" => "take", "target_take" => "available_item_2",
+                             "named_more_than_one" => 0.87, "target_present" => 0.91 })
+
+    assert_nil intent
+    assert_equal "typed_model_escalated", cascade.path
+    assert_in_delta 0.87, cascade.named_more_than_one, 0.0001
+  end
+
+  test "a line the provider never answered has no Noul readings to keep" do
+    cascade = Playthrough::Classifier::Cascade.new(
+      @classifier, agent: FakeSystemOne.new(SystemOneAgent::Unavailable.new("timed out"))
+    )
+
+    assert_nil cascade.read("take the ward stamp")
+    assert_nil cascade.target_present
+    assert_nil cascade.named_more_than_one
+  end
+
+  test "a classifier that never ran the cascade at all has no Noul readings" do
+    classifier = Playthrough::Classifier.new(@playthrough, system_one: false)
+    agent = FakeAgent.new({ "intent" => "take", "target" => "ward stamp", "also_named" => "nothing" })
+    BaseAgent.stub(:new, agent) { classifier.classify("take the ward stamp") }
+
+    assert_nil classifier.target_present
+    assert_nil classifier.named_more_than_one
+  end
 end

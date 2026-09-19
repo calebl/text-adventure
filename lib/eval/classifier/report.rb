@@ -156,6 +156,28 @@ class Eval::Classifier::Report
     format("%.3f..%.3f (median %.3f)", spread.min, spread.max, spread.median)
   end
 
+  # HOW MANY OF THIS ARM'S READINGS WERE ACTUALLY CALLS TO IT. On every set but
+  # a cascade run they are the same number and this is `total` unchanged. On a
+  # cascade run they are not: a line the cascade composed never reached the arm
+  # at all, so pricing every reading as an arm call overstated the bill by
+  # about five times -- and a run reporting five times its own spend is a run
+  # nobody can budget the next one from. `Playthrough::Classifier::PATHS` names
+  # the one path that IS an arm call on a cascade set.
+  #
+  # The System One request every line pays for is NOT priced here and cannot be:
+  # the registry has no row for that provider. The rake task says so before the
+  # run, and a cascade set's own README carries the receipt.
+  # Subtracted rather than added up, because `composed` is the ONE path that is
+  # not an arm call: `model` (the reader pinned off), `typed_model_escalated`
+  # and `typed_model_unavailable` all made one.
+  COMPOSED = "typed_model".freeze
+
+  def billed(arm, total) = total - result.resolved_by_counts(arm).fetch(COMPOSED, 0)
+
+  def billed_note(arm, total)
+    billed(arm, total) == total ? "" : " -- the #{total - billed(arm, total)} the cascade composed never reached it"
+  end
+
   def counted?(metric) = Eval::Classifier::Result::COUNTED.include?(metric)
   def seconds?(metric) = Eval::Classifier::Result::SECONDS.include?(metric)
 
@@ -172,8 +194,9 @@ class Eval::Classifier::Report
 
     say format("  %-20s %s", "cost", parsed.local? ?
       "nothing -- a local model on the local hardware, and slow" :
-      "#{format("$%.4f", parsed.price.of(Eval::Classifier::PER_CALL[:input] * total,
-                                         Eval::Classifier::PER_CALL[:output] * total))} over #{total} calls")
+      "#{format("$%.4f", parsed.price.of(Eval::Classifier::PER_CALL[:input] * billed(arm, total),
+                                         Eval::Classifier::PER_CALL[:output] * billed(arm, total)))} " \
+      "over #{billed(arm, total)} calls#{billed_note(arm, total)}")
     cold = result.warmup(arm)
     if cold
       say format("  %-20s %s   %s", "first call",

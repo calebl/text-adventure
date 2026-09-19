@@ -221,6 +221,33 @@ class Eval::Classifier::BenchTest < ActiveSupport::TestCase
     assert_match(/RuntimeError\s+1/, printed)
   end
 
+  # A CASCADE RUN IS PRICED OVER THE CALLS IT ACTUALLY MADE. A line the cascade
+  # composed never reached the arm, so pricing every reading as an arm call
+  # reported about five times the real bill -- and a spend figure nobody can
+  # budget the next run from is worse than none.
+  test "a cascade run prices the calls that reached the arm and says what it left out" do
+    live = bench(perfect)
+    pass = live.passes.sole
+    composed = pass.readings.first(3).map { |reading| reading.with(resolved_by: "typed_model") }
+    escalated = pass.readings.drop(3).map { |reading| reading.with(resolved_by: "typed_model_escalated") }
+    result = Eval::Classifier::Result.new(
+      corpus_size: live.corpus_size, arms: live.arms, reps: 1, cascade: true, warmups: live.warmups,
+      passes: [ Eval::Classifier::Bench::Pass.new(arm: live.arms.sole, rep: 1, readings: composed + escalated) ]
+    )
+    out = StringIO.new
+    Eval::Classifier::Report.new(result, io: out).print
+
+    assert_match(/cost\s+\$[\d.]+ over 2 calls -- the 3 the cascade composed never reached it/, out.string)
+    assert_match(/answered\s+5 of 5/, out.string, "every line still answered -- by one reader or the other")
+  end
+
+  test "a run with the reader pinned off prices every reading, as it always has" do
+    out = StringIO.new
+    Eval::Classifier::Report.new(bench(perfect), io: out).print
+
+    assert_match(/cost\s+\$[\d.]+ over 5 calls\n/, out.string)
+  end
+
   test "a local arm is labelled and its cost is stated as nothing" do
     agent = ByLine.new(perfect, @corpus)
     result = BaseAgent.stub(:new, ->(**_options) { agent }) do

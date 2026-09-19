@@ -30,35 +30,53 @@
 # WHAT ESCALATION IS NOT. It is not a failure and not a refusal: the line is
 # read by the reader that reads that shape of line better.
 #
-# WHAT IT HAS ACTUALLY MEASURED, AND IT IS BEHIND THE INCUMBENT. The figures
-# this file once quoted were a SIMULATION over stored readings. Run as it ships,
-# four repetitions on the same 343 lines, it reads .9242-.9300 whole-answer
-# against .9329-.9359 for the same Mistral call alone, with 17-18 closed-set
-# misses against 15-16 and 25 of 32 second names against 27. Those bands do not
-# overlap and the cascade is the lower one. The case for it today is latency and
-# about half the bill; it is a measured LOSS on accuracy, and must not be sold
-# as anything else until that is closed.
+# WHAT IT HAS ACTUALLY MEASURED, AND IT IS NOW AHEAD OF THE INCUMBENT. The
+# figures this file once quoted were a SIMULATION over stored readings, and the
+# first run as it shipped came in two points BELOW the model call alone. That
+# was a defect in the request, not a property of the cascade. With the request
+# restored -- both halves of it -- four repetitions on the same 343 lines read
+# .9388-.9417 whole-answer against .9329-.9359 for the same model call alone,
+# with 12-13 closed-set misses against 15-16 and 27-28 of 32 second names
+# against 27. `rake eval:classifier_compare` calls that REAL on accuracy,
+# refusal agreement and closed-set misses.
+# `db/eval/classifier-cascade-state-20260919` is the reading, with its rows.
 #
-# WHERE THAT LOSS IS NOT. It is not this class. The arm the design of record was
-# chosen on kept every provider answer it was given, and replaying those
-# answers -- 278 lines a repetition, four repetitions -- through the composition
-# below escalates 90, 90, 91 and 93, which is the simulation line for line. Both
-# flags are read off the answer before anything is resolved, a composed line
-# keeps its second name, and an escalated line takes the model call's whole
-# answer. Each of those three is pinned by a test that fails when it is untrue;
-# see `Playthrough::Classifier::CascadeTest` and `Playthrough::ClassifierPathsTest`.
+# THE ONE FIGURE THAT IS REAL WORSE IS P95 LATENCY, and it is worse by
+# construction: an escalated line makes two calls in sequence and about a
+# quarter of the lines escalate. The MEDIAN turn got faster (0.41s against
+# 0.55s) and the worst turn in twenty got slower (1.29s against 0.96s). That is
+# the trade this class is, and it must be stated that way rather than averaged.
 #
-# WHERE SOME OF IT IS. The `also_named` and `target_<action>` wording in
-# `Playthrough::Classifier::Request` is an EARLIER revision than the arm the
-# design of record was scored on -- it is the text of the arm two iterations
-# before it, with the presence question appended. On the stored readings that
-# earlier text finds 24 of 32 second names where the scored text finds 28-30,
-# and the shipped set reads 25. Restoring it is a prompt change and needs a
-# baseline either side, so it is not done here; EVALUATION.md is the protocol.
-# The remaining gap -- the shipped set escalates about 62 lines a repetition
-# where the readings above escalate about 90 -- is NOT explained by anything in
-# this file, and settling it needs the per-line readings a cascade bench pass
-# does not yet keep.
+# WHAT THE GAP TURNED OUT TO BE, because the answer is the useful part. The
+# shipped cascade escalated about 61 lines a repetition where the arm the design
+# of record was chosen on escalates 90-93. Three things it was NOT, each ruled
+# out by a measurement rather than by argument:
+#
+#   * NOT THIS CLASS. Replaying the scored arm's own stored answers through the
+#     composition below escalates 90, 90, 91, 93 -- the simulation line for
+#     line. Pinned by `Playthrough::Classifier::CascadeTest` and
+#     `Playthrough::ClassifierPathsTest`.
+#   * NOT A CODE-FIRST GATE. The scored arm settled 65 of the 343 lines in code
+#     before it sent anything. On those same 65 lines this class escalated ZERO,
+#     in every repetition -- so the denominators already agreed.
+#   * NOT THE REQUEST WORDING. It WAS an earlier revision and it has been
+#     restored, and that reading was NOISE on every figure.
+#
+# IT WAS THE STATE. `Playthrough::Classifier::State` differed from the measured
+# state in three ways -- `player_action` second rather than last, an empty block
+# left out rather than sent empty, and `valid_intents` in enum order rather than
+# leading with the block's own intent. Correcting them makes all twelve staged
+# positions byte-identical to the arm's stored requests, and takes the
+# escalation rate from 60-62 to 87-91. That file's header now carries the rule;
+# `Playthrough::Classifier::StateTest` compares a staged position byte for byte.
+#
+# WHY A WORDING CHANGE TO `also_named` CANNOT BE JUDGED BY THE SECOND-NAME
+# COUNT ALONE, which is the thing that made the diagnosis hard. 117 of the 128
+# readings whose label carries a second name ESCALATE -- the two-name flag sends
+# them to the model call -- so this class's own `also_named` answer is read on
+# about one line in twelve of the ones that question was measured on. Restoring
+# its wording moved the count by nothing; restoring the state moved it from
+# 24-25 to 27-28, because the flag started firing where it was supposed to.
 #
 # NOTHING HERE CAN BLOCK A TURN. Every way the provider can fail is
 # `SystemOneAgent::Unavailable`, and every one of them lands on the same line as
@@ -89,6 +107,15 @@ class Playthrough::Classifier::Cascade
   # run. One of `Playthrough::Classifier::PATHS`, never `model` -- that value
   # means this class did not run at all.
   attr_reader :path
+
+  # THE TWO NOUL READINGS THEMSELVES, kept beside `#path` rather than only
+  # acted on. Nil until `#read` has run, and nil forever on a line the
+  # provider never answered (`typed_model_unavailable`) -- there is no reading
+  # to keep in that case. Read-only: nothing here changes what `#compose`
+  # decides. `Eval::Classifier::Bench` is the reason this exists -- a bench
+  # that could only see WHICH path a line took and not WHAT the two flags
+  # actually read could never reconcile a composition question line by line.
+  attr_reader :target_present, :named_more_than_one
 
   # `agent` is the seam a test and the offline engine sweep stand a fixture in
   # at. Nil is the real provider.
@@ -125,8 +152,11 @@ class Playthrough::Classifier::Cascade
   def compose(state, answers)
     action = answers.choice("intent").to_sym
     presence = answers.noul("target_present")
+    two_name = answers.noul("named_more_than_one")
+    @target_present = presence
+    @named_more_than_one = two_name
 
-    if escalate?(presence: presence, two_name: answers.noul("named_more_than_one"))
+    if escalate?(presence: presence, two_name: two_name)
       @path = "typed_model_escalated"
       return nil
     end

@@ -98,12 +98,63 @@ class Playthrough::Classifier::StateTest < ActiveSupport::TestCase
     assert_equal "ask Rowe what happened at four o'clock", built["player_action"]
   end
 
-  test "an empty group is left out rather than sent empty" do
+  # AN EMPTY BLOCK IS SENT, AS AN EMPTY MAP. This file once asserted the
+  # opposite, and the opposite was never measured: every reading the cascade
+  # rests on came off a state that sent all five blocks whatever was in them.
+  # A block that is present and empty says "there is nothing of this kind here";
+  # an absent block says nothing and leaves the absence to be inferred. The
+  # QUESTION over an empty block is still not asked -- that is
+  # `Playthrough::Classifier::Request`'s decision, and it reads `#keys_for`
+  # rather than this.
+  test "an empty group is sent as an empty map rather than left out" do
     built = state.to_h
 
     Playthrough::Classifier::State::GROUPS.each do |group|
-      assert_not built.key?(group.key), "#{group.key} was sent for a bare room"
+      assert_equal({}, built[group.key], "#{group.key} was left out of a bare room instead of sent empty")
     end
+    assert_not Playthrough::Classifier::Request.new(state).to_h.key?("target_take"),
+               "an empty block must still not be asked a question"
+  end
+
+  test "player_action comes last, after every record block" do
+    a_full_position
+
+    assert_equal "player_action", state.to_h.keys.last
+  end
+
+  # --- byte for byte against the arm that was scored ------------------------
+  #
+  # THE FIXTURE IS THE REQUEST THE DESIGN OF RECORD WAS MEASURED ON, kept whole.
+  # The state is half of that request and is as much a measured thing as the
+  # wording is: a block order, an empty block, an intent list order. This test
+  # is what caught all three drifting, and it is the reason the fixture is in
+  # the repository rather than in somebody's notes.
+
+  def the_scored_position
+    a_full_position
+    @rowe.update!(nickname: "Sub-Inspector Rowe")
+    hallway = create(:location, story: @story, name: "The Long Hallway")
+    create(:location_connection, location: @here, connected_location: hallway)
+  end
+
+  test "a staged position is the state the arm was scored on, byte for byte" do
+    the_scored_position
+    scored = JSON.parse(file_fixture("scored_classifier_request.json").read).fetch("state")
+    built = state(scored.fetch("player_action")).to_h
+
+    assert_equal scored.to_json, built.to_json,
+                 "the state is half the request and every figure was read off this shape"
+  end
+
+  test "every block leads with its own intent, which is the order that was measured" do
+    the_scored_position
+    built = state.to_h
+
+    assert_equal %w[take examine], built.dig("available_items", "available_item_1", "valid_intents")
+    assert_equal %w[drop examine], built.dig("player_items", "player_item_1", "valid_intents")
+    assert_equal %w[talk attack], built.dig("other_characters", "person_1", "valid_intents")
+    assert_equal %w[move], built.dig("ways_out", "way_1", "valid_intents")
+    assert_equal %w[use], built.dig("physical_actions", "attempt_1", "valid_intents")
   end
 
   test "each group says what kind of record it holds" do

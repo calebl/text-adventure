@@ -582,6 +582,27 @@ namespace :eval do
       found.any? ? "Bench runs: #{found.join(", ")}." : "There are no classifier bench runs yet -- run `rake eval:classifier` first."
     end
 
+    # CASCADE=1 measures `Playthrough::Classifier::Cascade` in front of the
+    # arm instead of pinning it off -- the same reader a live turn gets where
+    # `TYPESAFE_API_KEY` is in the environment. There is no separate arm or
+    # provider for it: the arm named is still the escalation target
+    # (`MODELS=`, default `mistralai/mistral-medium-3.1`), so
+    # `rake eval:classifier_compare` pairs a cascade set against the kept
+    # Mistral-alone set on that arm with nothing else to wire up. Requires the
+    # key for the reason its own name states -- a cascade run with no key would
+    # silently measure the Mistral-only path and record itself as the cascade,
+    # which is exactly the kind of mistake this bench exists to make loud
+    # instead of quiet.
+    def cascade? = ENV["CASCADE"] == "1"
+
+    def abort_without_a_cascade_key
+      return unless cascade?
+
+      abort "CASCADE=1 needs #{SystemOneAgent::API_KEY_VARIABLE} in the environment -- without it there is no " \
+            "cascade to measure and this run would silently score the Mistral-only path under the cascade's " \
+            "name." unless SystemOneAgent.configured?
+    end
+
     def run!
       corpus = Eval::Classifier.corpus
       problems = corpus.problems
@@ -595,7 +616,12 @@ namespace :eval do
                   Eval::Classifier::PER_CALL[:input], Eval::Classifier::PER_CALL[:output])
       puts "Local arms (#{arms.select(&:local?).map(&:id).join(", ")}) cost nothing and are not in that figure; " \
            "they are slow instead." if arms.any?(&:local?)
+      if cascade?
+        puts "CASCADE=1: every line also pays for a System One request, unpriced by the registry above -- " \
+             "read the receipted total off this run's own output, not the estimate."
+      end
       abort_without_a_key(arms)
+      abort_without_a_cascade_key
       if priced > SPEND_CEILING && ENV["YES"] != "1"
         abort "That is over the $#{format("%.2f", SPEND_CEILING)} this task will spend unattended. " \
               "Re-run with YES=1, or lower REPS."
@@ -608,7 +634,7 @@ namespace :eval do
       puts "A local arm always runs one at a time; see EVALUATION.md -> Concurrency." if arms.any?(&:local?)
       puts "WARNING: #{advice}" if advice
       puts
-      result = Eval::Classifier::Bench.new(corpus: corpus, arms: arms, reps: reps).run
+      result = Eval::Classifier::Bench.new(corpus: corpus, arms: arms, reps: reps, cascade: cascade?).run
 
       directory = Eval.set_path(set_name)
       written = result.write!(directory, name: set_name)
