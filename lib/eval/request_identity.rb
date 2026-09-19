@@ -9,16 +9,18 @@ module Eval::RequestIdentity
   VERSION = 1
   MISSING = "no schema identity recorded".freeze
 
-  # `tools`/`tool_choice` ARE OPTIONAL AND ABSENT BY DEFAULT, so a schema'd
-  # request's identity is byte-for-byte what it always was -- `.compact` drops
-  # them along with a nil `schema`, which is also what lets a tool-shaped
-  # request (no `response_format` at all) carry no `schema` key rather than a
-  # misleading nil one. See `Eval::Classifier::ToolShapes` for what builds
-  # `tools` and `Eval::Classifier::Version::CaptureAgent` for what calls this
-  # with them.
+  # `schema` KEEPS ITS OWN KEY EVEN WHEN NIL -- an unschema'd call
+  # (`Scene::Narrator`, and every other caller that passes `nil` here on
+  # purpose) has always recorded `"schema" => nil` as part of its identity, and
+  # every kept digest under `db/eval` was taken against that shape. `tools`/
+  # `tool_choice` are the only optional keys: absent by default, so a
+  # schema'd OR unschema'd request's identity is byte-for-byte what it always
+  # was, and only actually present for a tool-shaped request -- see
+  # `Eval::Classifier::ToolShapes` for what builds `tools` and
+  # `Eval::Classifier::Version::CaptureAgent` for what calls this with them.
   def request(instructions, prompt, schema, tools: nil, tool_choice: nil)
-    { system: instructions, user: prompt, schema: schema&.new&.to_json_schema,
-      tools: tools, tool_choice: tool_choice }.compact
+    { system: instructions, user: prompt, schema: schema&.new&.to_json_schema }
+      .merge({ tools: tools, tool_choice: tool_choice }.compact)
   end
 
   def of(requests)
