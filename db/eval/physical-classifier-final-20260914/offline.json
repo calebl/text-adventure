@@ -1,25 +1,30 @@
 {
-  "corpus_digest": "abc2535c473693d9",
+  "corpus_digest": "a259e93e6b865af1",
   "floor": {
     "size": 343,
-    "accuracy": 0.4257,
+    "accuracy": 0.4286,
     "outcomes": {
       "resolved": 73,
-      "refused": 73,
+      "refused": 74,
       "wrong": 8,
-      "over_refused": 176,
+      "over_refused": 175,
       "unparsed": 13
     },
     "by_shape": {
       "move": {
-        "size": 41,
+        "size": 40,
         "right": 22,
-        "rate": 0.5365853658536586
+        "rate": 0.55
       },
       "unresolved-use": {
         "size": 3,
         "right": 3,
         "rate": 1.0
+      },
+      "examine-nothing": {
+        "size": 22,
+        "right": 0,
+        "rate": 0.0
       },
       "talk": {
         "size": 54,
@@ -28,8 +33,13 @@
       },
       "take": {
         "size": 23,
-        "right": 13,
-        "rate": 0.5652173913043478
+        "right": 14,
+        "rate": 0.6086956521739131
+      },
+      "other": {
+        "size": 34,
+        "right": 0,
+        "rate": 0.0
       },
       "drop": {
         "size": 15,
@@ -45,16 +55,6 @@
         "size": 17,
         "right": 5,
         "rate": 0.29411764705882354
-      },
-      "examine-nothing": {
-        "size": 20,
-        "right": 0,
-        "rate": 0.0
-      },
-      "other": {
-        "size": 34,
-        "right": 0,
-        "rate": 0.0
       },
       "unresolved-move": {
         "size": 14,
@@ -92,9 +92,9 @@
         "rate": 0.4074074074074074
       },
       "attack": {
-        "size": 16,
+        "size": 15,
         "right": 6,
-        "rate": 0.375
+        "rate": 0.4
       },
       "unresolved-attack": {
         "size": 6,
@@ -185,12 +185,11 @@
       },
       {
         "id": "move-closet-audit",
-        "shape": "move",
+        "shape": "examine-nothing",
         "typed": "I am going to inventory that closet myself",
         "outcome": "unparsed",
         "expected": [
-          "move -> The Supply Closet",
-          "other -> nothing"
+          "examine -> nothing"
         ],
         "got": null
       },
@@ -598,12 +597,11 @@
       },
       {
         "id": "take-stamp-fragment",
-        "shape": "take",
+        "shape": "other",
         "typed": "stamp",
         "outcome": "over_refused",
         "expected": [
-          "take -> ward stamp",
-          "examine -> ward stamp"
+          "other -> nothing"
         ],
         "got": "I do not understand \"stamp\". The no-model grammar is fixed:"
       },
@@ -1214,12 +1212,11 @@
       },
       {
         "id": "other-impossible",
-        "shape": "other",
+        "shape": "take",
         "typed": "reach into the gap in the ledger and pull the missing hour back out of it with my bare hands",
-        "outcome": "over_refused",
+        "outcome": "refused",
         "expected": [
-          "other -> nothing",
-          "examine -> Ward Office 12 daybook"
+          "take -> nothing"
         ],
         "got": "I do not understand \"reach\". The no-model grammar is fixed:"
       },
@@ -2374,12 +2371,11 @@
       },
       {
         "id": "real-anything-to-pickup",
-        "shape": "other",
+        "shape": "examine-nothing",
         "typed": "is there anything I can pickup?",
         "outcome": "over_refused",
         "expected": [
-          "other -> nothing",
-          "take -> Perrin's private index (and copy-room apron)"
+          "examine -> nothing"
         ],
         "got": "I do not understand \"is\". The no-model grammar is fixed:"
       },
@@ -3299,11 +3295,11 @@
       },
       {
         "id": "attack-neb-court-both",
-        "shape": "attack",
+        "shape": "other",
         "typed": "go for Neb",
         "outcome": "over_refused",
         "expected": [
-          "attack -> Neb Halloran"
+          "other -> nothing"
         ],
         "got": "there is no way out called \"for Neb\". There is: The Tide Post, The Vestry Hulk"
       },
