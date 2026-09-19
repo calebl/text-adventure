@@ -348,7 +348,51 @@ rake eval:classifier_compare BEFORE=a AFTER=b
 | `MODELS=a,b` | **the arm selector.** Names exactly which models the run measures; the app's rotation is not consulted. A bare id is OpenRouter, `ollama:qwen3:8b` names the provider. Defaults to `BaseAgent::REMOTE_MODEL_IDS`, which is what a player gets |
 | `SET=name` | where the numbers land (`tmp/eval/<set>/classifier.json`). Defaults to a timestamp |
 | `SAMPLE=20` | how many missed lines the board prints in full |
+| `CASCADE=1` | **measure the typed-line cascade, not the model call alone.** See below |
 | `YES=1` | spend past the $0.50 ceiling |
+
+### Measuring the cascade, and what a cascade set must carry
+
+Every set above pins the reader OFF (`system_one: false`), so the figures are
+the Mistral call alone whatever the maintainer has in their shell — without that
+pin, a shell holding `TYPESAFE_API_KEY` would quietly score a different reader
+against the corpus and the board would print an arm's name over another reader's
+answers.
+
+`CASCADE=1` lifts that pin to "the environment decides", which is what a live
+turn gets. It does **not** name a different arm: the arm is still the escalation
+target, so a cascade set and the kept Mistral-alone set pair on that arm and
+`rake eval:classifier_compare` judges them with nothing else to wire up. The
+`cascade` field on the set is the only thing that tells them apart, and the
+board labels the column `(cascade)` so a cross-model table cannot show two
+identical headers over two different things. The task refuses to start without
+the key, because a cascade run with no key measures the Mistral-only path and
+files itself under the cascade's name.
+
+**A cascade set keeps its per-line rows, and no other kept classifier set does.**
+Each row carries `resolved_by` and the two probabilities the cascade acted on,
+`target_present` and `named_more_than_one`. This is not a preference: the
+questions a cascade raises are *which flag fired on which lines*, and four
+aggregate numbers a side can never answer one. `Result#summary(keep_rows: true)`
+is the escape hatch that keeps them.
+
+**Two things a cascade set cannot tell you, stated so they are not assumed:**
+
+* `request_identity` describes the **model call** — the instructions, prompt and
+  schema `Playthrough::Classifier` sends. The System One request is not in that
+  digest, so two cascade sets taken either side of a change to
+  `Playthrough::Classifier::Request` carry the *same* identity. The set's own
+  README is what records the change; the digest cannot.
+* the **spend** printed for a cascade run is the escalation provider's only. A
+  line the cascade composed never reached the arm, so the run prices the calls
+  it actually made and says how many it left out — but the System One request
+  every line pays for has no row in the cost registry and no receipt here.
+
+The worked pair is `db/eval/classifier-cascade-before-20260919` and
+`db/eval/classifier-cascade-restored-20260919`: the same run either side of
+restoring `Playthrough::Classifier::Request` to the wording the arm was scored
+on. The verdict was NOISE, and the rows are what say *why* — read the after
+side's README before changing anything about the cascade.
 
 ### What it measures
 

@@ -32,33 +32,45 @@
 #
 # WHAT IT HAS ACTUALLY MEASURED, AND IT IS BEHIND THE INCUMBENT. The figures
 # this file once quoted were a SIMULATION over stored readings. Run as it ships,
-# four repetitions on the same 343 lines, it reads .9242-.9300 whole-answer
-# against .9329-.9359 for the same Mistral call alone, with 17-18 closed-set
-# misses against 15-16 and 25 of 32 second names against 27. Those bands do not
-# overlap and the cascade is the lower one. The case for it today is latency and
-# about half the bill; it is a measured LOSS on accuracy, and must not be sold
-# as anything else until that is closed.
+# four repetitions on the same 343 lines, it reads .9184-.9300 whole-answer
+# against .9329-.9359 for the same Mistral call alone, with 16-20 closed-set
+# misses against 15-16 and 24-25 of 32 second names against 27. The cascade is
+# the lower one. The case for it today is latency and about half the bill; it is
+# a measured LOSS on accuracy, and must not be sold as anything else until that
+# is closed. `db/eval/classifier-cascade-restored-20260919` is the reading, with
+# its rows.
 #
-# WHERE THAT LOSS IS NOT. It is not this class. The arm the design of record was
-# chosen on kept every provider answer it was given, and replaying those
-# answers -- 278 lines a repetition, four repetitions -- through the composition
-# below escalates 90, 90, 91 and 93, which is the simulation line for line. Both
-# flags are read off the answer before anything is resolved, a composed line
-# keeps its second name, and an escalated line takes the model call's whole
-# answer. Each of those three is pinned by a test that fails when it is untrue;
-# see `Playthrough::Classifier::CascadeTest` and `Playthrough::ClassifierPathsTest`.
+# WHERE THAT LOSS IS NOT, AND THIS LIST IS NOW THREE THINGS LONG.
 #
-# WHERE SOME OF IT IS. The `also_named` and `target_<action>` wording in
-# `Playthrough::Classifier::Request` is an EARLIER revision than the arm the
-# design of record was scored on -- it is the text of the arm two iterations
-# before it, with the presence question appended. On the stored readings that
-# earlier text finds 24 of 32 second names where the scored text finds 28-30,
-# and the shipped set reads 25. Restoring it is a prompt change and needs a
-# baseline either side, so it is not done here; EVALUATION.md is the protocol.
-# The remaining gap -- the shipped set escalates about 62 lines a repetition
-# where the readings above escalate about 90 -- is NOT explained by anything in
-# this file, and settling it needs the per-line readings a cascade bench pass
-# does not yet keep.
+#   * NOT THIS CLASS. The arm the design of record was chosen on kept every
+#     provider answer it was given, and replaying those answers -- 278 lines a
+#     repetition, four repetitions -- through the composition below escalates
+#     90, 90, 91 and 93, which is the simulation line for line. Both flags are
+#     read off the answer before anything is resolved, a composed line keeps its
+#     second name, and an escalated line takes the model call's whole answer.
+#     Each is pinned by a test; see `Playthrough::Classifier::CascadeTest` and
+#     `Playthrough::ClassifierPathsTest`.
+#   * NOT THE REQUEST WORDING, measured either side. It WAS an earlier revision
+#     of the scored arm's text and it has been restored -- and the reading moved
+#     nothing: NOISE on every figure, with the second-name count unchanged at
+#     24-25. The rows say why, and it is a fact about this class rather than
+#     about the wording: 92 of the 128 two-name readings ESCALATE, so they never
+#     use the `also_named` answer the wording governs at all.
+#   * NOT A CODE-FIRST GATE. The scored arm settled 65 of the 343 lines in code
+#     before it sent anything. On those same 65 lines this class escalates ZERO,
+#     in every repetition of both sides -- so the two denominators already agree
+#     and the gap is not the gate's.
+#
+# WHERE IT IS LIKELY TO BE. On the 278 lines the scored arm sent, it escalates
+# 90-93 and this one escalates 59-65. The readings themselves sit differently at
+# the cuts: 33 lines escalate there and not here, all within about 0.12 of a
+# threshold, and they are `unresolved-*` lines whose `target_present` reads
+# 0.07-0.15 there and 0.15-0.29 here, plus two-name lines whose
+# `named_more_than_one` reads 0.51-0.62 there and 0.30-0.45 here. With the
+# wording identical and the composition pinned, the one remaining difference in
+# the request is the STATE: `Playthrough::Classifier::State` orders
+# `valid_intents` the other way round and sends an empty list as null rather
+# than as an empty map. That is where the next reading of this belongs.
 #
 # NOTHING HERE CAN BLOCK A TURN. Every way the provider can fail is
 # `SystemOneAgent::Unavailable`, and every one of them lands on the same line as
