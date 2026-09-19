@@ -30,47 +30,53 @@
 # WHAT ESCALATION IS NOT. It is not a failure and not a refusal: the line is
 # read by the reader that reads that shape of line better.
 #
-# WHAT IT HAS ACTUALLY MEASURED, AND IT IS BEHIND THE INCUMBENT. The figures
-# this file once quoted were a SIMULATION over stored readings. Run as it ships,
-# four repetitions on the same 343 lines, it reads .9184-.9300 whole-answer
-# against .9329-.9359 for the same Mistral call alone, with 16-20 closed-set
-# misses against 15-16 and 24-25 of 32 second names against 27. The cascade is
-# the lower one. The case for it today is latency and about half the bill; it is
-# a measured LOSS on accuracy, and must not be sold as anything else until that
-# is closed. `db/eval/classifier-cascade-restored-20260919` is the reading, with
-# its rows.
+# WHAT IT HAS ACTUALLY MEASURED, AND IT IS NOW AHEAD OF THE INCUMBENT. The
+# figures this file once quoted were a SIMULATION over stored readings, and the
+# first run as it shipped came in two points BELOW the model call alone. That
+# was a defect in the request, not a property of the cascade. With the request
+# restored -- both halves of it -- four repetitions on the same 343 lines read
+# .9388-.9417 whole-answer against .9329-.9359 for the same model call alone,
+# with 12-13 closed-set misses against 15-16 and 27-28 of 32 second names
+# against 27. `rake eval:classifier_compare` calls that REAL on accuracy,
+# refusal agreement and closed-set misses.
+# `db/eval/classifier-cascade-state-20260919` is the reading, with its rows.
 #
-# WHERE THAT LOSS IS NOT, AND THIS LIST IS NOW THREE THINGS LONG.
+# THE ONE FIGURE THAT IS REAL WORSE IS P95 LATENCY, and it is worse by
+# construction: an escalated line makes two calls in sequence and about a
+# quarter of the lines escalate. The MEDIAN turn got faster (0.41s against
+# 0.55s) and the worst turn in twenty got slower (1.29s against 0.96s). That is
+# the trade this class is, and it must be stated that way rather than averaged.
 #
-#   * NOT THIS CLASS. The arm the design of record was chosen on kept every
-#     provider answer it was given, and replaying those answers -- 278 lines a
-#     repetition, four repetitions -- through the composition below escalates
-#     90, 90, 91 and 93, which is the simulation line for line. Both flags are
-#     read off the answer before anything is resolved, a composed line keeps its
-#     second name, and an escalated line takes the model call's whole answer.
-#     Each is pinned by a test; see `Playthrough::Classifier::CascadeTest` and
+# WHAT THE GAP TURNED OUT TO BE, because the answer is the useful part. The
+# shipped cascade escalated about 61 lines a repetition where the arm the design
+# of record was chosen on escalates 90-93. Three things it was NOT, each ruled
+# out by a measurement rather than by argument:
+#
+#   * NOT THIS CLASS. Replaying the scored arm's own stored answers through the
+#     composition below escalates 90, 90, 91, 93 -- the simulation line for
+#     line. Pinned by `Playthrough::Classifier::CascadeTest` and
 #     `Playthrough::ClassifierPathsTest`.
-#   * NOT THE REQUEST WORDING, measured either side. It WAS an earlier revision
-#     of the scored arm's text and it has been restored -- and the reading moved
-#     nothing: NOISE on every figure, with the second-name count unchanged at
-#     24-25. The rows say why, and it is a fact about this class rather than
-#     about the wording: 92 of the 128 two-name readings ESCALATE, so they never
-#     use the `also_named` answer the wording governs at all.
 #   * NOT A CODE-FIRST GATE. The scored arm settled 65 of the 343 lines in code
-#     before it sent anything. On those same 65 lines this class escalates ZERO,
-#     in every repetition of both sides -- so the two denominators already agree
-#     and the gap is not the gate's.
+#     before it sent anything. On those same 65 lines this class escalated ZERO,
+#     in every repetition -- so the denominators already agreed.
+#   * NOT THE REQUEST WORDING. It WAS an earlier revision and it has been
+#     restored, and that reading was NOISE on every figure.
 #
-# WHERE IT IS LIKELY TO BE. On the 278 lines the scored arm sent, it escalates
-# 90-93 and this one escalates 59-65. The readings themselves sit differently at
-# the cuts: 33 lines escalate there and not here, all within about 0.12 of a
-# threshold, and they are `unresolved-*` lines whose `target_present` reads
-# 0.07-0.15 there and 0.15-0.29 here, plus two-name lines whose
-# `named_more_than_one` reads 0.51-0.62 there and 0.30-0.45 here. With the
-# wording identical and the composition pinned, the one remaining difference in
-# the request is the STATE: `Playthrough::Classifier::State` orders
-# `valid_intents` the other way round and sends an empty list as null rather
-# than as an empty map. That is where the next reading of this belongs.
+# IT WAS THE STATE. `Playthrough::Classifier::State` differed from the measured
+# state in three ways -- `player_action` second rather than last, an empty block
+# left out rather than sent empty, and `valid_intents` in enum order rather than
+# leading with the block's own intent. Correcting them makes all twelve staged
+# positions byte-identical to the arm's stored requests, and takes the
+# escalation rate from 60-62 to 87-91. That file's header now carries the rule;
+# `Playthrough::Classifier::StateTest` compares a staged position byte for byte.
+#
+# WHY A WORDING CHANGE TO `also_named` CANNOT BE JUDGED BY THE SECOND-NAME
+# COUNT ALONE, which is the thing that made the diagnosis hard. 117 of the 128
+# readings whose label carries a second name ESCALATE -- the two-name flag sends
+# them to the model call -- so this class's own `also_named` answer is read on
+# about one line in twelve of the ones that question was measured on. Restoring
+# its wording moved the count by nothing; restoring the state moved it from
+# 24-25 to 27-28, because the flag started firing where it was supposed to.
 #
 # NOTHING HERE CAN BLOCK A TURN. Every way the provider can fail is
 # `SystemOneAgent::Unavailable`, and every one of them lands on the same line as

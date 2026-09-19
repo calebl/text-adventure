@@ -1,4 +1,13 @@
-# The cascade, on the request wording the arm was actually scored on
+# The cascade, with the request WORDING restored and the state not yet
+
+> **Superseded as a baseline by `classifier-cascade-state-20260919`,** which
+> restored the other half of the request. This set is kept because it is the
+> after side of the wording change and the before side of the state change, and
+> a change with no stored baseline either side of it is a change nobody can
+> defend. Its own diagnosis below — "the readings sit differently at the cuts,
+> and the state is the one thing left" — turned out to be right, and the
+> correlation test in it turned out to be underpowered. Both are left standing
+> as written.
 
 The **after** side of the request-wording restoration, and the reason the pair
 exists: the shipped `also_named` and per-action target sentences were an earlier
@@ -107,9 +116,19 @@ differs from the state the scored arm sent in two ways and no others:
    `["examine","take"]` and `["examine","drop"]`. 14 lists across the positions.
 2. **An empty list is sent as `null` rather than `{}`** — 18 of them.
 
-Neither is proven to move a Noul. Both are in every request, and nothing else
-is. The state builder is where the next reading of this question belongs; it was
-out of scope for the change this pair measures.
+Neither is proven to move a Noul — and the per-line correlation test does not
+implicate either: of the 24 presence-family lines, 13 sit in positions that omit
+no key at all, and the two-name family includes lines over people and over ways
+out, whose `valid_intents` never moved. **So the rows pointed at the state and
+the rows could not convict it.**
+
+The run convicted it. A third difference was found on a full byte-for-byte pass
+that this comparison had masked — `player_action` was sent second rather than
+last — and with all three corrected the reading moves REAL on accuracy, refusal
+agreement and closed-set misses, and the escalation rate goes to 87–91.
+`classifier-cascade-state-20260919` is that reading. The lesson worth keeping:
+a per-line correlation over a few dozen lines was not powerful enough to find
+this, and the four-repetition run was.
 
 ## Against the bands it was to be judged on
 
@@ -120,8 +139,12 @@ out of scope for the change this pair measures.
 | the kept **Mistral-alone** row (`classifier-examine-wording-20260918`) | .9329–.9359 |
 
 **This set does not reach the simulation's band and does not reach the
-Mistral-alone row.** It is below both, as the shipped set was, and the residual
-gap is the one described above. Both sets are kept as evidence for that reason.
+Mistral-alone row.** It is below both, as the shipped set was.
+
+**The set that does is `classifier-cascade-state-20260919`**, taken after the
+three state differences below were corrected: .9388–.9417 whole-answer, 12–13
+misses, 87–91 escalations a repetition. The suspicion at the end of this file
+was right; what it could not do was prove it, and the run is what did.
 
 ## Spend
 

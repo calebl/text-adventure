@@ -331,6 +331,9 @@ module Eval
     db/eval/classifier-cascade-restored-20260919/classifier.json
     db/eval/classifier-cascade-restored-20260919/offline.json
     db/eval/classifier-cascade-restored-20260919/README.md
+    db/eval/classifier-cascade-state-20260919/classifier.json
+    db/eval/classifier-cascade-state-20260919/offline.json
+    db/eval/classifier-cascade-state-20260919/README.md
     db/eval/physical-classifier-final-20260914/audit.json
     db/eval/physical-classifier-final-20260914/classifier.json
     db/eval/physical-classifier-final-20260914/comparison.json

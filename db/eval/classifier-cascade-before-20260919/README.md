@@ -9,7 +9,10 @@ cascade is judged against.
 The wording it was taken on is the one that shipped: the `also_named` and
 per-action target sentences of an earlier revision of the arm the design of
 record was scored on. `classifier-cascade-restored-20260919` beside this file is
-the same run with those eight sentences restored.
+the same run with those eight sentences restored — and it reads the same, which
+is what sent the diagnosis on to the STATE.
+`classifier-cascade-state-20260919` is where that ended up and is the cascade's
+kept set; read its README for what was actually wrong.
 
 ## The figures
 

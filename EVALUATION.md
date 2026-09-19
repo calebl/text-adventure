@@ -388,11 +388,38 @@ is the escape hatch that keeps them.
   it actually made and says how many it left out — but the System One request
   every line pays for has no row in the cost registry and no receipt here.
 
-The worked pair is `db/eval/classifier-cascade-before-20260919` and
-`db/eval/classifier-cascade-restored-20260919`: the same run either side of
-restoring `Playthrough::Classifier::Request` to the wording the arm was scored
-on. The verdict was NOISE, and the rows are what say *why* — read the after
-side's README before changing anything about the cascade.
+**And the STATE is as much of the request as the wording is.** The measured
+shape is a key order, an empty block sent as an empty map, and an intent list
+that leads with its block's own intent —
+`Playthrough::Classifier::State`'s header states all three and
+`Playthrough::Classifier::StateTest` compares a staged position against the
+arm's own stored request byte for byte. That comparison is free, and it is the
+first thing to run when a cascade reading disagrees with a stored one.
+
+The worked example is three sets, in order:
+
+| set | wording | state | whole-answer | escalation |
+|---|---|---|---|---|
+| `classifier-cascade-before-20260919` | shipped | shipped | .9184–.9271 | .1720–.1895 |
+| `classifier-cascade-restored-20260919` | restored | shipped | .9184–.9300 | .1749–.1808 |
+| `classifier-cascade-state-20260919` | restored | restored | **.9388–.9417** | **.2536–.2653** |
+
+The wording change alone was **NOISE on every figure**; the state change was
+**REAL** on accuracy, refusal agreement and closed-set misses. Two lessons in
+that, both cheap to forget:
+
+* **a per-line correlation is not a measurement.** The second set's rows pointed
+  at the state and a correlation over the three dozen divergent lines *failed to
+  convict it* — 13 of 24 sat in positions with no missing key at all. The
+  four-repetition run convicted it. Read the second set's README for the shape
+  of that mistake.
+* **the second-name count cannot judge the `also_named` wording.** 117 of the
+  128 readings whose label carries a second name escalate, so the cascade's own
+  `also_named` answer is read on about one line in twelve of the ones that
+  question was measured on.
+
+`classifier-cascade-state-20260919` is the cascade's kept set; read its README
+before changing anything about the cascade.
 
 ### What it measures
 

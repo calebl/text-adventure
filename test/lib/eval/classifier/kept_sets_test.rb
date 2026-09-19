@@ -169,7 +169,13 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # provider entry.
   CASCADE_BEFORE = "classifier-cascade-before-20260919".freeze
   CASCADE_AFTER = "classifier-cascade-restored-20260919".freeze
-  CASCADE_SETS = [ CASCADE_BEFORE, CASCADE_AFTER ].freeze
+
+  # THE CASCADE'S KEPT SET -- the request restored in both halves, wording and
+  # state. The two above are its baselines and are kept for that reason: the
+  # wording change is judged by the first pair and the state change by the
+  # second, and neither is defensible without the side before it.
+  CASCADE_KEPT = "classifier-cascade-state-20260919".freeze
+  CASCADE_SETS = [ CASCADE_BEFORE, CASCADE_AFTER, CASCADE_KEPT ].freeze
 
   test "both cascade sets are cascade runs of the same arm, corpus and schema as the kept Mistral row" do
     CASCADE_SETS.each do |set|
@@ -237,7 +243,7 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   end
 
   test "the cascade sides can be judged against each other with no key and no calls" do
-    comparison = Eval::Classifier::Comparison.new(load_kept(CASCADE_BEFORE), load_kept(CASCADE_AFTER))
+    comparison = Eval::Classifier::Comparison.new(load_kept(CASCADE_AFTER), load_kept(CASCADE_KEPT))
 
     assert_not comparison.cross_model?, "one arm measured twice, not two models"
     assert comparison.comparable_corpus?
@@ -246,8 +252,37 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     rows.each { |row| assert(row.verdict.real? || row.verdict.noise? || row.verdict.inconclusive?) }
   end
 
+  # THE CASCADE IS AHEAD OF THE MODEL CALL ALONE, and it is asserted rather than
+  # only written down because it is the claim the whole design rests on and it
+  # was FALSE until the state was restored. A later change that puts the cascade
+  # back behind the incumbent has to argue with this.
+  test "the kept cascade set reads ahead of the kept model-alone row it is judged against" do
+    cascade = load_kept(CASCADE_KEPT)
+    alone = load_kept(CURRENT)
+    arm = BaseAgent::REMOTE_MODEL_IDS.first
+
+    assert_operator cascade.values(:accuracy, arm: arm).min, :>, alone.values(:accuracy, arm: arm).max,
+                    "the bands must not overlap, or this is not a reading anybody can act on"
+    assert_operator cascade.values(:closed_set_misses, arm: arm).max, :<,
+                    alone.values(:closed_set_misses, arm: arm).min
+  end
+
+  # THE OPEN QUESTION THE THREE SETS WERE BOUGHT TO ANSWER. The arm the design
+  # of record was chosen on escalates 90-93 lines a repetition; the cascade
+  # shipped escalating about 61, and the restored state is what closed it.
+  test "the kept cascade set escalates at the rate the design of record was chosen at" do
+    counts = load_kept(CASCADE_KEPT).resolved_by_counts(BaseAgent::REMOTE_MODEL_IDS.first)
+    escalated = counts.fetch("typed_model_escalated")
+    per_rep = escalated.fdiv(Eval::Noise::MIN_RUNS)
+
+    assert_in_delta 90, per_rep, 6, "the scored arm escalates 90-93 a repetition and this set must be of that size"
+    assert_operator per_rep, :>, load_kept(CASCADE_AFTER)
+      .resolved_by_counts(BaseAgent::REMOTE_MODEL_IDS.first)
+      .fetch("typed_model_escalated").fdiv(Eval::Noise::MIN_RUNS)
+  end
+
   test "the board labels a cascade column apart from the Mistral-alone one it shares an arm with" do
-    board = Eval::Classifier::Board.new([ [ CURRENT, load_kept(CURRENT) ], [ CASCADE_AFTER, load_kept(CASCADE_AFTER) ] ])
+    board = Eval::Classifier::Board.new([ [ CURRENT, load_kept(CURRENT) ], [ CASCADE_KEPT, load_kept(CASCADE_KEPT) ] ])
     printed = board.lines.join("\n")
 
     assert_equal 2, board.columns.size, "two columns for one arm measured two ways"
