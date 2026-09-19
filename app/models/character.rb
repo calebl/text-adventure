@@ -399,6 +399,107 @@ class Character < ApplicationRecord
   validates :dislikes, presence: true
   validates :fears, presence: true
 
+  # ------------------------------------------------------------------------
+  # THE FOUR OBJECTS OF DESIRE, AND THE TWO LABELS THE ENGINE READS.
+  #
+  # `backstory` has carried "their motivations and their goals" since the first
+  # character generator, and it carries them in a 1,200-character paragraph
+  # that no branch, tally or predicate can read. These six columns are the part
+  # the engine needs, lifted out of that paragraph and typed.
+  #
+  #   conscious_desire    the sentence they would say if you asked them what
+  #                       they want
+  #   unconscious_desire  what they are in fact pursuing, and would deny
+  #   recognized_need     the obligation they hold themselves to
+  #   unrecognized_need   what they cannot see and must come to
+  #
+  # THE FOUR ARE PROSE AND NOTHING IN THE APP EVER PARSES ONE. They are
+  # interpolated into `#interaction_instructions` -- the character speaking as
+  # themselves, which is the one prompt they belong in -- and stored, and that
+  # is the whole of what happens to them. No code matches on them, and the
+  # narrator is never told any of them (see `Playthrough::Moment`: it is told
+  # what somebody DID, never why, and never what anybody wants).
+  #
+  # THE TWO LABELS ARE THE ONLY THING A BRANCH SEES, and what a label DOES is
+  # `Playthrough::Volition::Weights`, a table in code. A model that answers
+  # `obtain` has not told the engine what to do; it has told the engine which
+  # column of that table to read. This is the project's rule that a world
+  # supplies parameters and never behaviour, said about a person -- the same
+  # terms `locations.danger` and `locations.population` are on.
+  #
+  # NULLABLE, ALL SIX, ON THE STAT BLOCK'S OWN TERMS. A database older than the
+  # columns is a real state: `rake game:doctor` reports it
+  # (`character_without_desires`) and `rake game:backfill_desires` fills it in.
+  # A `presence: true` here would invalidate every character written before
+  # today, which is the failure `#a_stat_block_is_whole` was written to avoid
+  # one table over.
+  #
+  # THE PROSE FIELDS ARE LENGTH-CHECKED AND THE LABELS ARE LIST-CHECKED, which
+  # is the same pair of rules the body is under: a length the generators are
+  # also given (`Character::Schema`, `Character::Registry::PERSON_LIMITS`), so
+  # the bound the model is handed and the bound the row is checked against
+  # cannot disagree; and a list no answer outside it can be stored under.
+  # ------------------------------------------------------------------------
+
+  # THE FOUR, NAMED ONCE so that every reader -- the schema, the registry, the
+  # doctor, the backfill and the seed exporter -- asks this constant rather
+  # than writing the list out again.
+  DESIRES = %i[conscious_desire unconscious_desire recognized_need unrecognized_need].freeze
+
+  # AND THE TWO. Separate from `DESIRES` because they are a different kind of
+  # value under a different rule, and every reader wants one list or the other
+  # rather than a six-long list it has to split.
+  PURSUIT_COLUMNS = %i[desire_pursuit need_pursuit].freeze
+
+  # HOW LONG ONE OF THE FOUR MAY BE. One sentence, at the ~150-characters-a-
+  # sentence ratio `Character::Schema` already uses (400 for two or three, 1,200
+  # for four to six), with room for a long name and a clause.
+  DESIRE_LIMIT = 220
+
+  # THE SHAPE OF A DESIRE, IN ACT TERMS, AND THE CLOSED LIST A MODEL PICKS FROM.
+  #
+  # Seven, and seven because each one maps onto tokens the engine can actually
+  # build for a turn (`wait`, `move:`, `take:`, `give:`, `follow`,
+  # `stop_following`). A label is not an instruction; it is which column of
+  # `Playthrough::Volition::Weights` the roll reads.
+  #
+  # THE TEXT BESIDE EACH ONE IS THE PROMPT'S, not the engine's: it is what the
+  # generators hand a model so the pick means the same thing at both generation
+  # boundaries. What the label does is in the weight table and nowhere else.
+  PURSUITS = {
+    "keep" => "They are holding on to something they already have.",
+    "obtain" => "They are trying to get hold of something they do not have.",
+    "reach" => "They are trying to get to a particular place.",
+    "attend" => "They are trying to stay near a particular person.",
+    "avoid" => "They are trying to get away from a person or a place.",
+    "withhold" => "They are trying to stop somebody else getting something.",
+    "offer" => "They are trying to put something into somebody else's hands."
+  }.freeze
+
+  PURSUIT_NAMES = PURSUITS.keys.freeze
+
+  DESIRES.each do |field|
+    validates field, length: { maximum: DESIRE_LIMIT }, allow_nil: true
+  end
+  PURSUIT_COLUMNS.each do |field|
+    validates field, inclusion: { in: PURSUIT_NAMES }, allow_nil: true
+  end
+
+  # WHETHER THIS PERSON HAS THE FOUR AT ALL, and it asks about the FOUR rather
+  # than about all six -- `#pursuits?` is the separate question below.
+  #
+  # A PREDICATE OF ITS OWN, AND IT MUST NOT WIDEN, which is the lesson
+  # `#stat_block?` carries in this file already: a reader that gates behaviour
+  # on "has everything" stops answering the moment a seventh column lands, and
+  # every row in the database goes quietly false in the window before its
+  # backfill. Two facts, two predicates.
+  def desires? = DESIRES.all? { |field| public_send(field).present? }
+
+  # WHETHER THE ENGINE HAS A LABEL TO WEIGHT A ROLL WITH. Separate from
+  # `#desires?` because the engine reads only these two and a character could
+  # legitimately be given a pursuit by hand with no prose behind it.
+  def pursuits? = desire_pursuit.present? && need_pursuit.present?
+
   # The stored value rather than the enum key -- "trans woman", not
   # "trans_woman" -- so anything that interpolates it reads as English.
   def sex_label
@@ -449,7 +550,7 @@ class Character < ApplicationRecord
       likes: #{likes}
       dislikes: #{dislikes}
       fears: #{fears}
-      #{addressee_section}
+      #{desire_section}#{addressee_section}
       If someone asks you a question, you should respond as if you are the character. NEVER BREAK CHARACTER.
 
       ## Voice
@@ -800,6 +901,40 @@ class Character < ApplicationRecord
   #
   # Blank when the story has no protagonist (a world can be seeded without one,
   # see `Playthrough::Turn`) and when this character IS the protagonist.
+  # THE FOUR OBJECTS OF DESIRE, ON THE SHEET, UNDER `fears`.
+  #
+  # THIS PASS AND NO OTHER. The character pass is the character speaking as
+  # themselves, and a sheet is exactly what it is for -- so what this person
+  # wants belongs here in the same way their backstory and their fears do.
+  # `Playthrough::Moment#narration_context` is told what somebody DID and is
+  # never told any of this: the narrator writes to the player, and a narrator
+  # that knew what everybody in the room was after would write toward it.
+  #
+  # THE TWO LABELS ARE NOT HERE, deliberately. They are the ENGINE's parameter,
+  # they mean nothing to the person holding them, and a sheet line saying
+  # "desire_pursuit: obtain" would be asking somebody to play a table entry.
+  #
+  # AND IT IS THE *INFORM* HALF AND GUARANTEES NOTHING. Telling somebody what
+  # they want raises the odds that they answer like it; nothing in the game
+  # rests on their doing so, and what they actually DO on a turn is
+  # `Playthrough::Volition`, decided off records by the engine.
+  #
+  # EMPTY FOR SOMEBODY WHO HAS NONE, which is every character written before
+  # the columns existed and every character a world file leaves without them.
+  # The block simply is not there, and the prompt those conversations send is
+  # unchanged byte for byte -- the same rule the plan facts and the arc line in
+  # `Playthrough::Moment` are under.
+  def desire_section
+    return "" unless desires?
+
+    <<~DESIRES
+      what you want, and would say out loud: #{conscious_desire}
+      what you are really after, and would deny: #{unconscious_desire}
+      what you know you must do, whether you want to or not: #{recognized_need}
+      what you need and cannot see: #{unrecognized_need}
+    DESIRES
+  end
+
   def addressee_section
     them = story&.protagonist
     return "" if them.nil? || them == self

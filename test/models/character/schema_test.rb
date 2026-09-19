@@ -20,15 +20,38 @@ class Character::SchemaTest < ActiveSupport::TestCase
     "likes" => 200,
     "dislikes" => 200,
     "fears" => 200,
-    "backstory" => 1200
+    "backstory" => 1200,
+    "conscious_desire" => Character::DESIRE_LIMIT,
+    "unconscious_desire" => Character::DESIRE_LIMIT,
+    "recognized_need" => Character::DESIRE_LIMIT,
+    "unrecognized_need" => Character::DESIRE_LIMIT
   }.freeze
 
-  test "describes exactly the eight generated fields, in order" do
-    assert_equal EXPECTED_LENGTHS.keys, schema_properties(SCHEMA).keys
+  # THE TWO PICKS, WHICH ARE NOT LENGTHS. `desire_pursuit` and `need_pursuit`
+  # are `enum:` fields over `Character::PURSUITS`, so an answer outside the
+  # list is structurally impossible rather than checked afterwards -- and an
+  # enum has no length, which is why they are held apart from the table above
+  # rather than given a cap that would mean nothing.
+  ENUMS = { "desire_pursuit" => Character::PURSUIT_NAMES,
+            "need_pursuit" => Character::PURSUIT_NAMES }.freeze
+
+  FIELDS = (EXPECTED_LENGTHS.keys + ENUMS.keys).freeze
+
+  test "describes exactly the generated fields, in order" do
+    assert_equal FIELDS, schema_properties(SCHEMA).keys
   end
 
   test "every field is required" do
-    assert_equal EXPECTED_LENGTHS.keys, schema_required(SCHEMA)
+    assert_equal FIELDS, schema_required(SCHEMA)
+  end
+
+  test "each closed pick is an enum over the pursuits table, and carries no length" do
+    ENUMS.each do |field, values|
+      property = schema_properties(SCHEMA).fetch(field)
+
+      assert_equal values, property["enum"]
+      assert_nil property["maxLength"], "an enum has no length to cap"
+    end
   end
 
   test "forbids fields the character sheet has no column for" do
@@ -49,14 +72,19 @@ class Character::SchemaTest < ActiveSupport::TestCase
     end
   end
 
+  # AN ENUM IS BOUNDED BY ITS LIST, which is a stronger bound than a length --
+  # so the question this asks is "is this field bounded at all", and a field
+  # with neither a cap nor a closed list is the one that fails.
   test "no field is left unbounded" do
-    unbounded = schema_properties(SCHEMA).reject { |_, property| property["maxLength"].present? }
+    unbounded = schema_properties(SCHEMA).reject do |_, property|
+      property["maxLength"].present? || property["enum"].present?
+    end
 
-    assert_empty unbounded.keys, "character fields must be length-capped"
+    assert_empty unbounded.keys, "character fields must be length-capped or drawn from a closed list"
   end
 
   test "every field states its length in words, sentences or list items" do
-    schema_properties(SCHEMA).each do |name, property|
+    schema_properties(SCHEMA).except(*ENUMS.keys).each do |name, property|
       assert_match(/word|sentence|paragraph|list of/i, property["description"],
                    "#{SCHEMA}##{name} needs a stated length")
     end

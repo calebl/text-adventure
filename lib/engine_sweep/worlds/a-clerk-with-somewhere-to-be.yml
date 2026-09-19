@@ -1,0 +1,99 @@
+# A PEACEFUL PERSON WITH A REASON TO WALK OUT, AND THE ROOM TO WALK INTO.
+#
+# Built for `Playthrough::Volition`: Bell wants to get somewhere
+# (`desire_pursuit: reach`), which is the row of the weight table that pulls
+# hardest toward `move:`, and the office has exactly one way out. So the walk
+# that asserts somebody left is asserting the mechanism rather than a
+# coincidence, and `cast_unmoved` is asserting that the WORLD's copy of Bell
+# never moved while it happened.
+#
+# NOBODY HERE IS HOSTILE, deliberately. A foe is acted for by
+# `Playthrough::Riposte` and gets no volition at all, so a world with one in
+# the room would be testing the exclusion rather than the act.
+format: 2
+universe:
+  physics: Ordinary physics.
+  technology: Ledgers, lamps and locked doors.
+  weapons: Nothing anybody carries.
+  geographies: A records office and the landing outside it.
+  civilizations: A town that keeps its paperwork.
+  history: The office has stood since the town did.
+  economics: Fees, receipts and arrears.
+  politics: A clerk of works answers to a council.
+  religion: The town keeps a quiet calendar.
+  races:
+  - name: Townsfolk
+    description: Ordinary people of the town.
+story:
+  title: A Clerk With Somewhere To Be
+  genre: town adventure
+  start_time: '2026-09-19T09:00:00Z'
+  preface: The office is warm and somebody else is already looking at the door.
+  summary: Wick came for a receipt; Bell is due upstairs and the day is going.
+opening_scene:
+  location: The Records Office
+  characters: [Wick, Bell]
+  description: You are standing at the counter of the records office. Bell is behind it, already half turned toward the landing.
+  summary: Wick comes to the records office counter and finds Bell on her way out.
+characters:
+- fullname: Wick
+  nickname: Wick
+  race: Townsfolk
+  age: 34
+  sex: male
+  is_protagonist: true
+  is_companion: false
+  backstory: A tenant who has come for a receipt and will not leave without one.
+  personality: Patient and stubborn in equal measure.
+  appearance: A wet coat and a folded paper.
+  likes: A receipt with a date on it.
+  dislikes: Being asked to come back tomorrow.
+  fears: Paying twice for the same thing.
+  conscious_desire: Wick wants a dated receipt for the quarter's rent, in his hand, before the office closes.
+  unconscious_desire: Wick wants somebody behind that counter to know his name without being told it.
+  recognized_need: Wick needs to keep every receipt he has ever been given, because it is the only argument he has.
+  unrecognized_need: Wick needs to say out loud that he cannot pay next quarter, to somebody who can do something about it.
+  desire_pursuit: obtain
+  need_pursuit: offer
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+- fullname: Bell
+  nickname: Bell
+  race: Townsfolk
+  location: The Records Office
+  age: 41
+  sex: female
+  is_protagonist: false
+  is_companion: false
+  backstory: A clerk of works who is due on the landing and has been due there for an hour.
+  personality: Brisk, decent, and already thinking about the next room.
+  appearance: An office coat and a ring of keys she keeps turning over.
+  likes: A morning that runs to time.
+  dislikes: Being caught on the stairs.
+  fears: Being the one who held everybody up.
+  conscious_desire: Bell wants to be up on the landing where the survey is waiting, before the hour goes and the whole morning goes with it.
+  unconscious_desire: Bell wants one person in this building to say the delay was never hers.
+  recognized_need: Bell needs to answer whoever is at the counter first, because that is what the counter is for.
+  unrecognized_need: Bell needs to stand still long enough to hear what the person at the counter actually came to say.
+  desire_pursuit: reach
+  need_pursuit: attend
+  stats: {level: 10, hit_die: 8, strength: 12, dexterity: 12, will: 12}
+locations:
+- name: The Records Office
+  detail_level: realized
+  opening: true
+  description: A counter, a wall of ledgers, and a door to the landing that nobody has shut all morning.
+  teaser: A counter and a wall of ledgers.
+  lore: The office has kept the town's receipts since the town had any.
+  items:
+  - name: quarter receipt
+    description: A ruled slip with the quarter's date and no signature on it yet.
+    properties: '{}'
+- name: The Landing
+  detail_level: realized
+  description: A half-landing with a survey spread on a trestle and a window going grey.
+  teaser: A half-landing and a trestle table.
+  lore: The survey has been spread on this trestle for three weeks.
+connections:
+- between: [The Records Office, The Landing]
+  distance: adjacent
+  travel_method: walking

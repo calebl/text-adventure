@@ -93,6 +93,11 @@ class EngineSweep::Walk
     # attacker and must never open a fight), so the two are two numbers a script
     # asserts separately.
     paid = Playthrough::Toll.count
+    # AND HOW MANY PEOPLE IN THE ROOM GOT A TURN, counted the way the blows and
+    # the tolls are and never with either: a volition is neither a blow nor a
+    # toll, and a script asserts the three separately.
+    decided = Playthrough::Volition::Record.count
+    acted = Playthrough::Volition::Record.applied.count
     browser = EngineSweep::BrowserTurn.new(mechanics) if step.browser
     report = if browser
       browser.run(step)
@@ -103,10 +108,13 @@ class EngineSweep::Walk
     drifts = Playthrough::Drift.count - before
     blows = Playthrough::Blow.count - struck
     hazards = Playthrough::Toll.count - paid
+    volitions = Playthrough::Volition::Record.count - decided
+    acts = Playthrough::Volition::Record.applied.count - acted
     elapsed_minutes = (mechanics.playthrough.story_now - started) / 60
 
     failures(step, report, drifts: drifts, blows: blows, hazards: hazards,
-             elapsed_minutes: elapsed_minutes, shown: browser&.shown) +
+             elapsed_minutes: elapsed_minutes, shown: browser&.shown,
+             volitions: volitions, acts: acts) +
       arrival_cast_failures(mechanics.playthrough, step, report)
   end
 
@@ -168,8 +176,10 @@ class EngineSweep::Walk
     failures(step, mechanics.read(note: note), drifts: 0)
   end
 
-  def failures(step, report, drifts:, blows: 0, hazards: 0, elapsed_minutes: 0, shown: nil)
+  def failures(step, report, drifts:, blows: 0, hazards: 0, elapsed_minutes: 0, shown: nil,
+               volitions: 0, acts: 0)
     step.expectation.check(report, drifts: drifts, blows: blows, hazards: hazards,
+                           volitions: volitions, acts: acts,
                            elapsed_minutes: elapsed_minutes, shown: shown).map do |unmet|
       EngineSweep::Result::Failure.new(script: script, step: step, unmet: unmet, state: report.state.to_s)
     end

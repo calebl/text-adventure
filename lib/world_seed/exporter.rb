@@ -46,6 +46,11 @@ class WorldSeed::Exporter
     backstory personality appearance likes dislikes fears
   ].freeze
 
+  # THE SIX DESIRE COLUMNS, read off `Character` rather than written out again
+  # so that a label added to `Character::PURSUITS` or a seventh column does not
+  # have to be remembered here.
+  DESIRE_FIELDS = (Character::DESIRES + Character::PURSUIT_COLUMNS).freeze
+
   attr_reader :story
 
   def initialize(story)
@@ -442,6 +447,22 @@ class WorldSeed::Exporter
       # so in `#warnings`.
       document["stats"] = stats_document(character) if character.stat_block? && character.abilities?
       CHARACTER_FIELDS.each { |field| document[field.to_s] = value(character.public_send(field)) }
+      # WHAT THIS PERSON IS AFTER, and OMITTED RATHER THAN WRITTEN OUT when
+      # they have none -- which is `hostile`, `absent` and `opening`'s rule in
+      # this file, and the right one here for a stronger reason: a database
+      # older than the columns, or one halfway through
+      # `rake game:backfill_desires`, would otherwise export six nulls and
+      # re-seed them over a file somebody had filled in by hand.
+      #
+      # PER KEY AND NOT ALL-OR-NOTHING, unlike `stats` above. The five stat
+      # keys are one body and the loader refuses a partial one; these six are
+      # six independent facts, `Character` validates each on its own, and a
+      # person who has the four sentences but no label is a state the file can
+      # honestly hold.
+      DESIRE_FIELDS.each do |field|
+        written = character.public_send(field)
+        document[field.to_s] = value(written) if written.present?
+      end
       items = items_document(character)
       document["items"] = items if items.any?
       document

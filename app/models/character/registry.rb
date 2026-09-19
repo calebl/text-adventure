@@ -131,10 +131,25 @@ class Character::Registry
   # (400 for two or three sentences, 1,200 for four to six). They stay well
   # under that schema's, because this one rides on a call the room is already
   # paying for.
+  #
+  # THE FOUR DESIRES ARE 180 AND NOT `Character::DESIRE_LIMIT`'s 220, on this
+  # table's own ratio: one sentence, where `likes` is 160 for a short list and
+  # `appearance` is 300 for two sentences. They are shorter here than on the
+  # whole-sheet path for the reason every length here is shorter -- that call
+  # pays for itself and this one rides on the room's description.
+  #
+  # `desire_pursuit` AND `need_pursuit` ARE NOT IN THIS TABLE, and their
+  # absence is load-bearing rather than an omission: they are enums, an enum
+  # has no length, and `#field` reads this table to decide what to sanitize
+  # under a cap. Adding them would put a truncation check on a value that
+  # cannot be truncated. `#create_one` assigns them separately and `Character`
+  # refuses one outside `PURSUITS`.
   PERSON_LIMITS = {
     fullname: 60, nickname: 30,
     appearance: 300, personality: 300, backstory: 450,
-    likes: 160, dislikes: 160, fears: 160
+    likes: 160, dislikes: 160, fears: 160,
+    conscious_desire: 180, unconscious_desire: 180,
+    recognized_need: 180, unrecognized_need: 180
   }.freeze
 
   # HOW MANY PEOPLE THE ENGINE WILL PLACE IN ONE ROOM, in total and not per
@@ -432,7 +447,22 @@ class Character::Registry
       # nothing in the realization prompt mentions one, so there is nothing here
       # for a model to have answered. See `Character::StatBlock`.
       **Character::StatBlock.for_new(story, sequence: slot),
-      **fields.slice(*SHEET)
+      **fields.slice(*SHEET),
+      # WHAT THIS PERSON IS AFTER, out of the same answer the sheet came in.
+      # The four prose fields are already sanitized under `PERSON_LIMITS` by
+      # `#fields` above -- they are keys of that table, so nothing here had to
+      # remember them -- and the two labels are read off the answer and left
+      # for `Character` to refuse if they are outside `PURSUITS`.
+      #
+      # ABSENT IS NOT A REFUSAL, which is the one way this differs from `SHEET`
+      # above. `#creation_refusal` turns down a sheet missing an appearance,
+      # because somebody with no appearance is somebody nobody can be shown; a
+      # person with no stated desire simply waits without one, exactly as a
+      # person with no stat block does, and `rake game:doctor` reports it. A
+      # realization that threw away a room's paid description over a missing
+      # want would be the failure every refusal in this class avoids.
+      **fields.slice(*Character::DESIRES),
+      **pursuits(attributes)
     ).then { |person| place!(person) }
   rescue SanitizesGeneratedText::TruncatedTextError => e
     # A HALF-WRITTEN PERSON IS WORSE THAN NO PERSON, and refusing one is what
@@ -469,6 +499,19 @@ class Character::Registry
   # `SanitizesGeneratedText`.
   def field(attributes, name)
     sanitize_string(attributes[name.to_s].to_s, max_length: PERSON_LIMITS.fetch(name))
+  end
+
+  # THE TWO LABELS OFF A PROPOSED SHEET, and `nil` for one the answer did not
+  # carry. Not `#field`'s job: that method sanitizes under a cap read out of
+  # `PERSON_LIMITS`, and an enum has no cap to read.
+  #
+  # An empty string is stored as nil rather than as "", because "" is not one
+  # of `Character::PURSUITS` and a blank is the honest record of a label
+  # nobody picked -- the same reading `#create_one` gives `nickname`.
+  def pursuits(attributes)
+    Character::PURSUIT_COLUMNS.to_h do |name|
+      [ name, sanitize_string(attributes[name.to_s].to_s).presence ]
+    end
   end
 
   # The one place that says no to a NEW person, and it says which no. Ordered

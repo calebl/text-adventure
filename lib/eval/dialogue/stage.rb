@@ -75,7 +75,28 @@ class Eval::Dialogue::Stage
       personality: "Courageous, curious, and kind-hearted despite facing many challenges",
       appearance: "Average height with distinctive features and weathered clothing",
       likes: "Adventure, justice, helping others", dislikes: "Cruelty, injustice, unnecessary conflict",
-      fears: "Failing those who depend on them", level: 1, hit_die: 8, strength: 12, dexterity: 10, will: 14 }
+      fears: "Failing those who depend on them",
+      # THE FOUR OBJECTS OF DESIRE, ON THE STAGED SHEET, AND THEY HAVE TO BE
+      # HERE OR THIS BENCH IS BLIND TO THE BLOCK IT IS MEANT TO MEASURE.
+      # `Character#interaction_instructions` emits nothing at all for somebody
+      # who has none, so a staged character without them would send the prompt
+      # this bench sent before the feature existed and every figure would come
+      # back unchanged for a reason that has nothing to do with the prompt.
+      #
+      # FIXED TEXT, NEVER GENERATED, which is the rule every other value on
+      # this sheet is under: a staged fact a model wrote is a measurement of
+      # that model rather than of the one being measured.
+      conscious_desire: "To be paid what they are owed before the week is out",
+      unconscious_desire: "To be asked their opinion by somebody who waits for the answer",
+      recognized_need: "To keep their word, because it is the only thing they have never broken",
+      unrecognized_need: "To walk into the one room they have been going around for years",
+      # AND NOT `desire_pursuit` / `need_pursuit`, deliberately. Those two are
+      # not in `Character#interaction_instructions` at all -- they are the
+      # engine's parameter for `Playthrough::Volition`, not prompt text -- so
+      # staging them would buy this bench nothing and would let the staged NPC
+      # walk out of the room between the two passes, which is a different
+      # end-state from the one each case declares.
+      level: 1, hit_die: 8, strength: 12, dexterity: 10, will: 14 }
   end
 
   # An offered gift goes stale while the request is in flight. This is a

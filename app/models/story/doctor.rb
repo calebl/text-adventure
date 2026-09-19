@@ -72,6 +72,7 @@ class Story::Doctor
       *item_rows,
       *stat_blocks,
       *abilities,
+      *desires,
       *hostility,
       *hazards,
       *geometry,
@@ -1431,6 +1432,67 @@ class Story::Doctor
               "(level #{character.level.inspect}, hit die #{character.hit_die.inspect}), so the engine has no maximum " \
               "for their body and no playthrough can record anything happening to them",
               :safe, subject: character)
+    end
+  end
+
+  # ------------------------------------------------------------------------
+  # SOMEBODY THE WORLD HAS NOT SAID WHAT THEY WANT.
+  #
+  # `Character::DESIRES` are what `Playthrough::Volition` reads through
+  # `characters.desire_pursuit` -- so a character without them still acts, and
+  # acts out of `Playthrough::Volition::Weights::NO_PURSUIT`: they mostly stand
+  # still. That is a working world and the reason none of this is `fatal`. What
+  # it is not is the world anybody wrote: it is every character written before
+  # the columns existed, and the finding is how they are found.
+  #
+  # REPORTED SEPARATELY FROM THE STAT BLOCK AND THE ABILITIES, and for exactly
+  # the reason those two are separate from each other: `Character#desires?` is
+  # its own predicate, the facts do not merge, and a finding that reported a
+  # missing want under the heading "stat block" would send a reader to the
+  # wrong table.
+  #
+  # `:generate` AND NOT `:safe`, WHICH IS WHERE THIS PARTS COMPANY WITH
+  # `#stat_blocks` ABOVE, and it is worth saying why because the two findings
+  # otherwise look alike. A hit die is `:safe` because the ENGINE is the sole
+  # author of that number and the roll is the only thing that was ever going to
+  # decide it -- rolling one is not inventing world data. A conscious desire is
+  # the opposite case: nothing on record implies one, no die can produce one,
+  # and the only author there has ever been is a model. Writing one costs a
+  # call and an API key, which is exactly what `REMEDIES` means by `generate`
+  # and exactly why the backfill is `rake game:backfill_desires` rather than a
+  # step in `Update::REGISTRY` -- `Update::Step.model_calls?` forbids a
+  # post-update step that makes one.
+  #
+  # THE FOUR AND NOT THE SIX. `#pursuits?` is the engine's half and is silent
+  # here on purpose: a world file is allowed to hand somebody a label with no
+  # prose behind it, and the two labels are how a world opts into
+  # `Playthrough::Volition` at all rather than something every world owes.
+  #
+  # AND IT IS SILENT FOR A WORLD THAT HAS NOT STARTED, which is the half that
+  # keeps this check honest under the doctor's own contract -- *every check
+  # mirrors a precondition the play path really has*. Since somebody with no
+  # pursuit simply never acts (`Playthrough::Volition::Weights.row_for`), a
+  # world where NOBODY has desires has no precondition broken: it is every
+  # world written before the columns existed, and it plays exactly as it always
+  # did. What is really wrong is a world HALFWAY -- some of the cast written
+  # and some left out, which is what a backfill that partly failed leaves
+  # behind, and what makes one room's people act while the next room's stand
+  # there. `rake game:backfill_desires` is the instrument for the other case:
+  # its dry run lists everybody who has none, for every story, and costs
+  # nothing to read.
+  # ------------------------------------------------------------------------
+  def desires
+    cast = story.characters.order(:id).to_a
+    return [] unless cast.any?(&:desires?)
+
+    cast.filter_map do |character|
+      next if character.desires?
+
+      missing = Character::DESIRES.count { |field| character.public_send(field).blank? }
+      finding(:character_without_desires, :warning,
+              "#{character.fullname} is missing #{missing} of the four things a person is after, so the engine " \
+              "has nothing to weight what they do on a turn and they will mostly stand still",
+              :generate, subject: character)
     end
   end
 

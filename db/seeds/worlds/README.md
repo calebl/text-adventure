@@ -45,7 +45,7 @@ One file is one universe and one story. Keys are written in this order:
 | `universe`      | the nine prompt fields, plus `races` (name, description, optional `monstrous`) |
 | `story`         | title, genre, `start_time`, preface, summary                            |
 | `opening_scene` | the narrated moment the story starts in — see below                     |
-| `characters`    | one entry each, `race` by name, optional `location` (or `absent`) + a position in it (`x`, `y`), optional `hostile`, optional `stats`, and `items` |
+| `characters`    | one entry each, `race` by name, optional `location` (or `absent`) + a position in it (`x`, `y`), optional `hostile`, optional `stats`, optional `conscious_desire` / `unconscious_desire` / `recognized_need` / `unrecognized_need` / `desire_pursuit` / `need_pursuit`, and `items` |
 | `locations`     | every location, realized or stub; one marked `opening: true`; optional `danger`; optional `population`; optional `hazard` + `hazard_die`; optional `parent` + a box (`x`, `y`, `z`, `width`, `depth`); `items`, each with an optional position (`x`, `y`) |
 | `connections`   | one entry per edge, as an unordered `between: [a, b]` pair; optional `barrier` (`key_template` for `keyed`); optional `hazard` + `hazard_die` + `hazard_from` |
 | `mechanics`     | optional — the world's own laws, on the story's clock; see below        |
@@ -528,7 +528,8 @@ characters:
   location: The Bell of Saint Aravel
   hostile: true
   stats: { level: 1, hit_die: 10, strength: 14, dexterity: 8, will: 3 }
-  # ... and the same nine fields everybody else has
+  # ... and the same nine fields everybody else has, and the same six optional
+  # ones: a monster wants something too
 
 locations:
 - name: The Bell of Saint Aravel
@@ -550,6 +551,28 @@ locations:
   afraid of, because a monster you can talk to is a feature. The file is the
   decision, so it may also hold a *tame* beast of a monstrous race, or a hostile
   person of a people.
+- **The four objects of desire are optional, and none of the three worlds
+  checked in here writes them yet.** `conscious_desire` is what this person
+  would say if you asked them what they want; `unconscious_desire` is what they are actually after and
+  would deny; `recognized_need` is the obligation they hold themselves to; and
+  `unrecognized_need` is what they cannot see. One sentence each, third person,
+  and each one has to name something to move **toward** -- "stop being afraid"
+  is not an object of desire because there is no act in a room that satisfies
+  it. They are capped at `Character::DESIRE_LIMIT` characters and the loader
+  refuses a longer one.
+- **`desire_pursuit` and `need_pursuit` are the shape of two of those four, in
+  act terms**, and they are the only part of the six the engine ever branches
+  on. One of `keep`, `obtain`, `reach`, `attend`, `avoid`, `withhold`, `offer`
+  (`Character::PURSUITS`) -- and what a label DOES is a table in code
+  (`Playthrough::Volition::Weights`), which is this format's standing rule that
+  a world supplies parameters and never behaviour. A file that names a label
+  outside the list is refused.
+- **A character the file leaves without them still plays.** They are weighted
+  by `Playthrough::Volition::Weights::NO_PURSUIT` and mostly stand still, which
+  is the honest answer for somebody the world has stated no goal for.
+  `rake game:doctor` reports them (`character_without_desires`) and
+  `rake game:backfill_desires` writes them -- a model call, so it is opt-in and
+  dry-run by default.
 - **A hostile character needs `stats`.** The loader refuses one without: a fight
   is arithmetic over `Character#max_hp`, and a foe with no body can be neither
   hurt nor hurt back. `rake game:doctor` reports one an older database carries

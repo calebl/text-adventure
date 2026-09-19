@@ -1013,6 +1013,7 @@ class WorldSeed::Loader
 
       validate_stats!(attributes)
       validate_hostility!(attributes)
+      validate_desires!(attributes)
 
       next if standing.blank? || names.any? { |name| name.casecmp?(standing) }
 
@@ -1257,6 +1258,42 @@ class WorldSeed::Loader
 
     raise InvalidWorld, "#{where}: character #{attributes.fetch("fullname").inspect} is `hostile: true` with no " \
                         "`stats` -- a foe needs a body, because a fight is arithmetic over its hit points"
+  end
+
+  # WHAT THIS PERSON IS AFTER, CHECKED THE WAY THE STATS ARE.
+  #
+  # SIX INDEPENDENT KEYS AND NOT AN ALL-OR-NOTHING BLOCK, which is where this
+  # parts company with `#validate_stats!`. The five stat keys are one body and
+  # half a body is a row `Character` refuses to save; these six are six facts,
+  # each nullable on its own, and a file that gives somebody the four sentences
+  # and no label is holding a true and loadable thing. What a file may NOT do
+  # is give somebody a label the engine has no column of its table for, or a
+  # sentence longer than the generators are allowed to write -- both of those
+  # are editing slips that would otherwise surface as a validation error three
+  # records later.
+  #
+  # THE PROSE LIMIT IS THE WHOLE-SHEET GENERATOR'S and not the realization
+  # path's: a hand-authored world is written by a person with room to think,
+  # and holding a file to the tighter bound a room's own call is under would be
+  # enforcing an economy the file does not pay.
+  def validate_desires!(attributes)
+    who = attributes.fetch("fullname").inspect
+
+    Character::DESIRES.each do |field|
+      written = attributes[field.to_s]
+      next if written.blank? || written.to_s.length <= Character::DESIRE_LIMIT
+
+      raise InvalidWorld, "#{where}: character #{who} has a `#{field}` of #{written.to_s.length} characters; " \
+                          "one of the four is one sentence and the limit is #{Character::DESIRE_LIMIT}"
+    end
+
+    Character::PURSUIT_COLUMNS.each do |field|
+      written = attributes[field.to_s]
+      next if written.blank? || Character::PURSUIT_NAMES.include?(written)
+
+      raise InvalidWorld, "#{where}: character #{who} has `#{field}: #{written.inspect}`; " \
+                          "it is one of #{Character::PURSUIT_NAMES.join(", ")}, and what each one does is a table in code"
+    end
   end
 
   # A DANGER THE ENGINE HAS NO TABLE FOR. `Location::DANGERS` is the closed set

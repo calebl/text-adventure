@@ -1,0 +1,44 @@
+# A PERSON WHO IS NOT FIGHTING YOU ACTS WHILE YOU ARE DOING SOMETHING ELSE.
+#
+# Before `Playthrough::Volition`, a peaceful character standing in a room was
+# inert: nothing in the game moved between two typed lines except a hostile
+# swing. This is the walk that asserts it does not have to be typed at any
+# more, and the walk that pins the three rules the slot is under.
+#
+# WHAT EACH STEP IS FOR:
+#
+#   1  An engine read-out evaluates nothing. `stats` prints the records and is
+#      not a line the world answers, so nobody in the room gets a turn --
+#      `volitions: 0`, which is the number that tells "nobody acted" apart
+#      from "the slot never ran".
+#   2  A refused line writes nothing. Same two numbers, for the ruling rather
+#      than for the instrument: a line the engine will not play is a line
+#      nothing may act on.
+#   3  A played line gives everybody in the room a turn. Bell is the only
+#      person in it with the player, so `volitions: 1` -- and that number is
+#      true whatever the die came up, which is why it is the one asserted.
+#   4  And the player walks out, which is the case the slot is hardest to get
+#      right: a volition runs on the room the turn BEGAN in, not the room the
+#      player ends it in.
+#
+# WHAT IS DELIBERATELY NOT ASSERTED: which token Bell took. It is a weighted
+# die off this game's own seed (`Playthrough::Volition::Weights`), and a step
+# that pinned its face would be pinning the table's arithmetic rather than the
+# mechanism -- and would have to be re-pinned every time a weight moved. What
+# the script asserts is that the slot RAN, on the right lines and on the right
+# room; what it did is the weight table's own tests.
+#
+# WHAT THE WHOLE SCRIPT IS FOR, and it is the part no step says out loud:
+# `EngineSweep::Invariants` runs over the world this leaves behind, and three
+# of its sentences are about exactly this. `cast_unmoved` asserts that whatever
+# Bell did, `characters.location_id` is still what the file says -- a walk
+# writes this game's own whereabouts and never the world's.
+# `volitions_moved_what_they_named` asserts that every receipt written here
+# agrees with the records it claims to have moved. And `desires_unmoved`
+# asserts that nothing anybody typed changed what anybody wants.
+story: A Clerk With Somewhere To Be
+steps:
+- {"type": "stats", "expect": {"volitions": 0, "acts": 0, "present": ["Bell"]}}
+- {"type": "take the moon", "expect": {"refused": true, "volitions": 0, "acts": 0}}
+- {"type": "take the quarter receipt", "expect": {"volitions": 1, "carrying": ["quarter receipt"]}}
+- {"type": "go to The Landing", "expect": {"location": "The Landing (realized)"}}

@@ -19,4 +19,23 @@ class Character::Schema < RubyLLM::Schema
   string :dislikes, description: "What the character cannot stand. A comma separated list of 3 to 5 items.", max_length: 200
   string :fears, description: "What the character is afraid of. A comma separated list of 2 to 4 items.", max_length: 200
   string :backstory, description: "The character's life before the story, their motivations and their goals. One paragraph, 4 to 6 sentences.", max_length: 1200
+  # THE FOUR OBJECTS OF DESIRE AND THE TWO LABELS, on the same call. Six more
+  # fields on an answer to a ~2,700-token prompt that already carries the
+  # universe, the story and this person's whole sheet -- no second call, and
+  # the model is elaborating on the backstory it has just written rather than
+  # guessing at a stranger.
+  #
+  # THE DESCRIPTIONS ARE `Character::Desires`' AND NOT WRITTEN AGAIN HERE, for
+  # `Character::Registry::PERSON_LIMITS`' reason one file over: the realization
+  # path asks for the same six, and two generators with two definitions of a
+  # conscious desire would make one world disagree with itself.
+  string :conscious_desire, description: Character::Desires::CONSCIOUS, max_length: Character::DESIRE_LIMIT
+  string :unconscious_desire, description: Character::Desires::UNCONSCIOUS, max_length: Character::DESIRE_LIMIT
+  string :recognized_need, description: Character::Desires::RECOGNIZED, max_length: Character::DESIRE_LIMIT
+  string :unrecognized_need, description: Character::Desires::UNRECOGNIZED, max_length: Character::DESIRE_LIMIT
+  # AN `enum:` AND NOT A CHECK AFTERWARDS, which is `Item::USE_KINDS`' rule on
+  # `Location::DetailSchema`: an out-of-list answer is structurally impossible
+  # rather than caught. An enum has no length, so neither carries a cap.
+  string :desire_pursuit, enum: Character::PURSUIT_NAMES, description: Character::Desires::DESIRE_PURSUIT
+  string :need_pursuit, enum: Character::PURSUIT_NAMES, description: Character::Desires::NEED_PURSUIT
 end

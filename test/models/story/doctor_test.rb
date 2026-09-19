@@ -2191,4 +2191,64 @@ class Story::DoctorTest < ActiveSupport::TestCase
                                    thing_positioned_in_a_room_with_no_box
                                    thing_outside_the_room_it_is_in]
   end
+  # ------------------------------------------------------------------------
+  # SOMEBODY THE WORLD HAS NOT SAID WHAT THEY WANT.
+  #
+  # It is a WARNING because the world still plays: a character with no
+  # pursuit is weighted by `Playthrough::Volition::Weights::NO_PURSUIT` and
+  # mostly stands still. It is `:generate` and not `:safe` because nothing on
+  # record implies a conscious desire and no die can produce one -- the only
+  # author there has ever been is a model, which is why the repair is
+  # `rake game:backfill_desires` and why it cannot be a `bin/update` step.
+  # ------------------------------------------------------------------------
+  # A HALF-WRITTEN WORLD, which is what a backfill that partly failed leaves
+  # behind: somebody in the cast has been written and somebody has not, so one
+  # room's people act on their own and the next room's stand there.
+  def half_written_story
+    story = healthy_story
+    create(:character, story: story, location: story.locations.realized.first)
+    story.characters.reload.first.update!(conscious_desire: nil, unconscious_desire: nil,
+                                          recognized_need: nil, unrecognized_need: nil)
+    story
+  end
+
+  test "a character with no desires is reported, and the remedy needs a model" do
+    story = half_written_story
+
+    row = finding(story, :character_without_desires)
+
+    assert row, "a person with nothing they want is a person the engine cannot weight"
+    assert_equal :warning, row.severity
+    assert_equal :generate, row.remedy
+    assert_not row.repairable?, "nothing on record implies a want, so a safe repair would be inventing one"
+    assert row.repairable?(generate: true)
+  end
+
+  test "having a pursuit label and no sentences is still somebody with no desires" do
+    story = half_written_story
+    story.characters.first.update!(desire_pursuit: "keep", need_pursuit: "keep")
+
+    assert finding(story, :character_without_desires)
+  end
+
+  # A WORLD WHERE NOBODY HAS DESIRES IS EVERY WORLD WRITTEN BEFORE THE COLUMNS,
+  # and it plays exactly as it always did -- nobody acts on their own, so no
+  # precondition the play path has is broken. The doctor reports what is
+  # WRONG; `rake game:backfill_desires` lists what is merely absent.
+  test "a world that has not started on them at all is left alone" do
+    story = healthy_story
+    story.characters.each do |person|
+      person.update!(conscious_desire: nil, unconscious_desire: nil,
+                     recognized_need: nil, unrecognized_need: nil)
+    end
+
+    assert_nil finding(story, :character_without_desires)
+  end
+
+  test "the finding is separate from the stat block's, so one nil is not reported twice" do
+    codes = Story::Doctor.new(half_written_story).findings.map(&:code)
+
+    assert_includes codes, :character_without_desires
+    assert_not_includes codes, :character_without_a_stat_block
+  end
 end

@@ -79,6 +79,14 @@ class Playthrough < ApplicationRecord
   # states the untold ones to the prose) and by `rake game:mechanics`.
   has_many :tolls, class_name: "Playthrough::Toll", dependent: :destroy,
                    inverse_of: :playthrough
+  # WHAT EVERYBODY ELSE IN THE ROOM DECIDED TO DO, one row per present
+  # character per played line. Destroyed with the playthrough on the tolls' and
+  # the vitals' reasoning: what somebody is AFTER is the world's
+  # (`characters.desire_pursuit`) and what they did about it is this player's
+  # progress. Read through `Playthrough::Volition`, which is the one thing that
+  # builds a choice or applies one.
+  has_many :volitions, class_name: "Playthrough::Volition::Record", dependent: :destroy,
+                       inverse_of: :playthrough
 
   # THE WORLD, COPIED INTO THIS GAME AS IT BEGINS: the story's starting
   # inventory into the party's own hands, and the room the player opens in.
@@ -134,6 +142,22 @@ class Playthrough < ApplicationRecord
     return Item.none if location.nil?
 
     Item.of_playthrough(self).lying_in(location).order(:id)
+  end
+
+  # WHAT THE OTHER PEOPLE IN THIS ROOM DID THAT NO PARAGRAPH HAS CARRIED YET.
+  #
+  # `#items_lying_in`'s shape and the ONE reader of it: a closed set read off
+  # this game's own rows, so nothing that states these facts has to know how
+  # they are stored. `Playthrough::Moment` is the caller, and it states them to
+  # the narrator once -- `Playthrough::Turn#claim_volitions!` is what makes it
+  # once.
+  #
+  # `.untold` IS `applied` ROWS ONLY, which is the scope's own decision and is
+  # worth knowing here: a rejected pick and a `wait` both moved nothing, and
+  # telling a paragraph that three people stood still is paying tokens to say
+  # nothing happened.
+  def untold_volitions
+    volitions.untold.chronological.includes(:character, :location)
   end
 
   # WHAT ONE OF THE WORLD'S PEOPLE IS HOLDING, IN THIS GAME. The same statement

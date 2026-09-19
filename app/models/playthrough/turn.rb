@@ -373,6 +373,19 @@ class Playthrough::Turn
     # have, because step 7 is after the prose in both cases.
     Playthrough::Command::Journal.commit("told_tolls") { claim_tolls!(scene) }
 
+    # AND WHAT THE OTHER PEOPLE IN THE ROOM DID IS CLAIMED BY THE PARAGRAPH
+    # THAT CARRIED IT, on `#claim_tolls!`'s reasoning exactly: `Playthrough::Moment`
+    # states the UNTOLD acts as facts, so one of them has to stop being untold
+    # once a paragraph has said it or every later turn would be told again.
+    #
+    # A VOLITION IS ALWAYS THE PREVIOUS TURN'S, which is the one difference
+    # from a toll and is not a special case: the volition step runs AFTER this
+    # line, so what this claims is what the step wrote LAST turn and what this
+    # turn's paragraph has just been told about. That is the same shape
+    # `Playthrough::Riposte`'s blows already have, and for the same reason --
+    # step 7 is after the prose.
+    Playthrough::Command::Journal.commit("told_volitions") { claim_volitions!(scene) }
+
     # AND THEN THE WORLD ANSWERS: every live foe in the room the turn began in
     # strikes once, in `id` order. It runs on EVERY line the engine played and
     # not only on an attack -- that is what makes a fight a fight, and it is the
@@ -380,6 +393,29 @@ class Playthrough::Turn
     # here, because a refused line writes nothing.
     Playthrough::Command::Journal.commit("riposte") do
       Playthrough::Riposte.new(playthrough, turn: self).run!(location: from, round: round)
+      nil
+    end
+
+    # AND EVERYBODY ELSE IN THAT ROOM GETS THEIR TURN, between the foes and the
+    # place. A clerk walks out, picks something up off the floor, hands you
+    # what they are holding, or stands still -- decided by the engine off this
+    # game's own records and a seeded die, with no model call
+    # (`Playthrough::Volition`).
+    #
+    # AFTER THE RIPOSTE, which is what makes "a foe swings, it does not also
+    # wander off" true rather than merely intended: the volition reads
+    # `#foes_in` out of the same records the riposte just acted on and skips
+    # every one of them.
+    #
+    # BEFORE THE HAZARD, so the order reads the way the turn does: the people
+    # act, then the place does. A room that takes the last hit point ends the
+    # game, and nothing below writes into a game that is over.
+    #
+    # ON THE ROOM THE TURN BEGAN IN and on every line the engine PLAYED -- the
+    # riposte's two rules, inherited whole. A refused line never reaches here,
+    # because a refused line writes nothing.
+    Playthrough::Command::Journal.commit("volition") do
+      Playthrough::Volition.run!(playthrough, location: from, round: round)
       nil
     end
 
@@ -1264,6 +1300,15 @@ class Playthrough::Turn
     tolls = playthrough.tolls.untold
     tolls = tolls.where(id: scene.narrated_toll_ids) unless scene.narrated_toll_ids.nil?
     tolls.update_all(scene_id: scene.id, updated_at: Time.current)
+  end
+
+  # `#claim_tolls!` one table over. No `narrated_*_ids` narrowing, because
+  # nothing in the render path decides per-row which of these a paragraph
+  # carried: they are stated together in one sentence and claimed together.
+  def claim_volitions!(scene)
+    return if scene.nil?
+
+    playthrough.volitions.untold.update_all(scene_id: scene.id, updated_at: Time.current)
   end
 
   # Attribution is an audit receipt, after the action and its scene landed.
