@@ -102,7 +102,17 @@ class Eval::Classifier::Bench
   # `seconds` is the wall clock of the one call, `CLOCK_MONOTONIC`, including
   # the schema build and the resolution back to records -- which is what a turn
   # actually waits for, and both are microseconds beside a provider round trip.
-  Reading = Data.define(:line, :arm, :rep, :answer, :answered_by, :raw, :seconds, :error) do
+  Reading = Data.define(:line, :arm, :rep, :answer, :answered_by, :raw, :seconds, :error, :resolved_by,
+                        :target_present, :named_more_than_one) do
+    # `resolved_by`, `target_present` AND `named_more_than_one` DEFAULT TO NIL,
+    # so every call site that predates the cascade -- and every fixture in this
+    # test suite -- keeps working with no change. They are only ever non-nil
+    # on a `cascade: true` bench run, and the two Noul readings are nil even
+    # then on a `typed_model_unavailable` line, which never got an answer to
+    # read them off.
+    def initialize(resolved_by: nil, target_present: nil, named_more_than_one: nil, **rest) =
+      super(resolved_by:, target_present:, named_more_than_one:, **rest)
+
     def id = line.id
     def shape = line.shape
     def arguable? = line.arguable?
@@ -247,12 +257,20 @@ class Eval::Classifier::Bench
         readings_count: readings.size }
     end
 
+    # WHICH READER ANSWERED EACH LINE, POOLED -- `Playthrough::Classifier::PATHS`
+    # by name. Nil for a bench run that pinned the reader off (`system_one:
+    # false`, every set before the cascade could be measured), and every value
+    # is `"model"` for that same run, so this is only informative on a
+    # `cascade:` pass. Read by `Eval::Classifier::Board` for the escalation and
+    # fall-through rates -- see that class.
+    def resolved_by_counts = scored.map(&:resolved_by).compact.tally
+
     def to_h = { arm:, rep:, accuracy: accuracy.round(4), intent_accuracy: intent_accuracy.round(4),
                  strict_accuracy: strict_accuracy.round(4), refusal_agreement: refusal_agreement.round(4),
                  closed_set_misses:, latency_median: latency_median.round(4),
                  latency_p95: latency_p95.round(4), failures:,
                  rotations:, failures_by_class: failures_by_class,
-                 **also_counts, readings: rows }
+                 **also_counts, resolved_by_counts:, readings: rows }
 
     def reading_h(reading)
       line = reading.line
@@ -266,7 +284,9 @@ class Eval::Classifier::Bench
         also_expected: reading.also_expected?, also_answered: reading.also_answered?,
         also_tp: reading.also_true_positive?, also_fp: reading.also_false_positive?,
         also_fn: reading.also_false_negative?, also_omitted: reading.also_named_omitted?,
-        answered_by: reading.answered_by, seconds: reading.seconds&.round(4), error: reading.error }
+        answered_by: reading.answered_by, seconds: reading.seconds&.round(4), error: reading.error,
+        resolved_by: reading.resolved_by, target_present: reading.target_present,
+        named_more_than_one: reading.named_more_than_one }
     end
   end
 
@@ -317,13 +337,31 @@ class Eval::Classifier::Bench
   # `concurrency` is how many of ONE arm's lines are in flight at once, and it
   # defaults to the measured honest ceiling (`Eval::Concurrency::DEFAULT`). It
   # is never how many ARMS run at once, which is one, for ever, in this process.
+  #
+  # `cascade` IS THE ONLY THING THAT TELLS THIS CLASS TO STOP PINNING THE
+  # READER OFF. Every arm here still pins which MODEL answers a Mistral call --
+  # `Arm#pinned` -- and `#read` separately pins which READER answers at all
+  # (`Playthrough::Classifier#initialize`'s `system_one:`), for the reason that
+  # class's header states: without the pin, a maintainer with a System One key
+  # in their shell would have the cascade quietly answering every bench line.
+  # `cascade: false` (the default, and every kept set before this one) keeps
+  # that pin at `system_one: false`, Mistral-only, byte for byte. `cascade:
+  # true` lifts it to `system_one: nil` -- the environment decides, exactly as
+  # a live turn does -- so the arm still names the ESCALATION model (unchanged:
+  # `mistralai/mistral-medium-3.1`) while the cascade itself answers whatever
+  # it composes. There is no separate "Jev arm": the cascade reads the same
+  # `TYPESAFE_API_KEY` a live turn reads, and a run started with `cascade: true`
+  # but no key in the environment measures the model-only path, which is a
+  # setup mistake this class cannot see -- `rake eval:classifier` aborts on it
+  # so the mistake is caught before a call is made.
   def initialize(corpus: Eval::Classifier.corpus, arms: nil, reps: Eval::Noise::MIN_RUNS, io: $stdout,
-                 concurrency: Eval::Concurrency.requested)
+                 concurrency: Eval::Concurrency.requested, cascade: false)
     @corpus = corpus
     @arms = Eval::Classifier::Arm.all(arms.presence || BaseAgent::REMOTE_MODEL_IDS)
     @reps = reps
     @io = io
     @concurrency = [ concurrency.to_i, 1 ].max
+    @cascade = cascade
   end
 
   # HOW MANY CALLS THIS ARM MAY HAVE IN FLIGHT. A LOCAL ARM IS ALWAYS ONE: it is
@@ -372,7 +410,7 @@ class Eval::Classifier::Bench
     Eval::Classifier::Result.new(corpus_size: corpus.size, corpus_digest: Eval::Classifier.digest(corpus),
       request_identity: request_identity,
                                  arms: arms.map(&:id), reps: reps, passes: passes, warmups: warmups,
-                                 concurrency: concurrency)
+                                 concurrency: concurrency, cascade: @cascade)
   end
 
   private
@@ -431,9 +469,12 @@ class Eval::Classifier::Bench
     # A FRESH `Playthrough` PER CALL, AND NOT THE STAGED ONE. An AR object's
     # association cache is not thread-safe, and the staged object is shared by
     # every worker on that position. One indexed read against a 0.6s call.
-    # `system_one: false` for the reason `Eval::Classifier::Stage` states: the
-    # arm pins which model answers, and this pins which READER does.
-    classifier = Playthrough::Classifier.new(Playthrough.find(standing.playthrough.id), system_one: false)
+    # `system_one:` PINS WHICH READER MAY ANSWER, the way `Arm#pinned` pins
+    # which model does -- `false` unless this bench was built `cascade: true`,
+    # in which case it is `nil` and the environment decides, exactly as a live
+    # turn does. See `#initialize`.
+    classifier = Playthrough::Classifier.new(Playthrough.find(standing.playthrough.id),
+                                             system_one: @cascade ? nil : false)
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
     begin
@@ -442,7 +483,8 @@ class Eval::Classifier::Bench
 
       Reading.new(line: line, arm: arm.id, rep: rep, error: nil, seconds: elapsed,
                   answered_by: classifier.agent.current_model[:model],
-                  raw: raw_answer(classifier),
+                  raw: raw_answer(classifier), resolved_by: classifier.resolved_by,
+                  target_present: classifier.target_present, named_more_than_one: classifier.named_more_than_one,
                   answer: Eval::Classifier::Corpus::Answer.from_intent(intent))
     rescue StandardError => error
       # A FAILED CALL HAS NO LATENCY, deliberately: how long it took to fail is
@@ -450,7 +492,8 @@ class Eval::Classifier::Bench
       # folding it into the median would make a flaky arm look slow instead of
       # flaky. The failure count and its error classes are the figure for it.
       Reading.new(line: line, arm: arm.id, rep: rep, answer: nil, answered_by: nil, raw: nil,
-                  seconds: nil, error: "#{error.class}: #{error.message}")
+                  seconds: nil, error: "#{error.class}: #{error.message}", resolved_by: classifier.resolved_by,
+                  target_present: classifier.target_present, named_more_than_one: classifier.named_more_than_one)
     end
   end
 

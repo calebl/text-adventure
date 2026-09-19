@@ -66,16 +66,25 @@ class Eval::Classifier::Result
   # two, and `Eval::Classifier::Comparison` suppresses exactly those two.
   SERIAL = 1
 
-  attr_reader :request_identity, :corpus_size, :corpus_digest, :arms, :reps, :passes, :warmups, :name, :recorded_at, :concurrency
+  attr_reader :request_identity, :corpus_size, :corpus_digest, :arms, :reps, :passes, :warmups, :name, :recorded_at, :concurrency, :cascade
 
+  # `cascade` IS PROVENANCE, NOT A METRIC: whether this set was taken with
+  # `Eval::Classifier::Bench.new(cascade: true)`, so the READER measured was
+  # `Playthrough::Classifier::Cascade` in front of the arm rather than the arm
+  # alone. The arm named is unchanged either way -- the cascade's escalation
+  # target -- which is what lets `rake eval:classifier_compare` pair a cascade
+  # set against the kept Mistral-alone set with no separate provider entry:
+  # both record the same arm, and this flag is the only thing that tells them
+  # apart. See `Eval::Classifier::Bench#initialize`.
   def initialize(corpus_size:, arms:, reps:, passes:, warmups: [], corpus_digest: nil, request_identity: nil,
-                 name: nil, recorded_at: nil, answered_by: nil, concurrency: SERIAL)
+                 name: nil, recorded_at: nil, answered_by: nil, concurrency: SERIAL, cascade: false)
     @corpus_size = corpus_size
     @corpus_digest = corpus_digest
     @request_identity = request_identity&.deep_stringify_keys
     @arms = arms
     @reps = reps
     @concurrency = (concurrency || SERIAL).to_i
+    @cascade = !!cascade
     @passes = passes
     # NORMALIZED TO STRING KEYS ON THE WAY IN, so one lookup serves a live run
     # and a set loaded off disk -- the same rule `#rows` follows.
@@ -117,7 +126,7 @@ class Eval::Classifier::Result
     new(name: document["name"], recorded_at: document["recorded_at"],
         corpus_size: document["corpus_size"], corpus_digest: document["corpus_digest"], request_identity: document["request_identity"],
         arms: document.fetch("arms"), reps: document["reps"],
-        concurrency: document["concurrency"] || SERIAL,
+        concurrency: document["concurrency"] || SERIAL, cascade: document["cascade"] || false,
         warmups: document["warmups"].to_a, answered_by: document["answered_by"],
         passes: document.fetch("passes").map { |row| Stored.new(row) })
   end
@@ -135,19 +144,29 @@ class Eval::Classifier::Result
   # per-shape and per-intent breakdowns, and any figure not already computed --
   # everything that needs to know what a particular line came back as. Those
   # live in the run's own output and in the PR body that quoted it.
-  def summary
+  #
+  # `keep_rows:` IS THE ONE ESCAPE HATCH, and it exists for exactly one reason:
+  # a cascade set cannot be reconciled line by line from four aggregate numbers
+  # a side. `Eval::Classifier::Bench::Reading` carries the two Noul readings
+  # (`target_present`, `named_more_than_one`) beside the typed line, the
+  # expected answer and the answer used -- everything a later diagnosis needs
+  # to find which lines a composition rule got wrong -- and dropping them here
+  # the way every non-cascade kept set does would throw that away with no way
+  # to get it back short of paying for the calls again.
+  def summary(keep_rows: false)
     kept = passes.map do |pass|
       # The counts are computed BEFORE the rows go, or they could never be
       # computed again -- which is the one way this conversion could quietly
       # produce a file that renders a wrong table.
+      rows = keep_rows ? pass.rows.map { |reading_row| reading_row.transform_keys(&:to_s) } : []
       row = pass.to_h.transform_keys(&:to_s)
-                .merge(pass.also_counts.transform_keys(&:to_s), "readings" => [])
+                .merge(pass.also_counts.transform_keys(&:to_s), "readings" => rows)
       Stored.new(row)
     end
 
     self.class.new(name: name, recorded_at: recorded_at, corpus_size: corpus_size,
                    corpus_digest: corpus_digest, request_identity: request_identity, arms: arms, reps: reps, warmups: warmups,
-                   answered_by: answered_by, concurrency: concurrency, passes: kept)
+                   answered_by: answered_by, concurrency: concurrency, cascade: cascade, passes: kept)
   end
 
   def write!(directory, name: nil)
@@ -190,8 +209,19 @@ class Eval::Classifier::Result
   def to_h
     { name: name, recorded_at: recorded_at || Time.current.utc.iso8601,
       corpus_size: corpus_size, corpus_digest: corpus_digest, request_identity: request_identity, arms: arms, reps: reps,
-      concurrency: concurrency, answered_by: answered_by, warmups: warmups,
+      concurrency: concurrency, cascade: cascade, answered_by: answered_by, warmups: warmups,
       passes: passes.map(&:to_h) }
+  end
+
+  # ESCALATION, FALL-THROUGH AND KEY-PRESENT SHARE, POOLED ACROSS THIS ARM'S
+  # REPETITIONS -- the figures `scenes.resolved_by` makes visible in production,
+  # read here off the same column's bench-side counterpart
+  # (`Eval::Classifier::Bench::Pass#resolved_by_counts`). Empty on a set that
+  # pinned the reader off, which is every set before this one existed.
+  def resolved_by_counts(arm)
+    for_arm(arm).each_with_object(Hash.new(0)) do |pass, all|
+      pass.resolved_by_counts.each { |path, count| all[path] += count }
+    end
   end
 
   # A PASS READ BACK OFF DISK. It answers the same questions a live
@@ -212,6 +242,7 @@ class Eval::Classifier::Result
     def rotations = row["rotations"].to_i
     def failures = row["failures"].to_i
     def failures_by_class = (row["failures_by_class"] || {}).to_h
+    def resolved_by_counts = (row["resolved_by_counts"] || {}).to_h
 
     Eval::Classifier::Result::METRICS.each_key do |metric|
       define_method(metric) { row[metric.to_s] }

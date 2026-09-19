@@ -90,6 +90,15 @@ class Playthrough::Classifier::Cascade
   # means this class did not run at all.
   attr_reader :path
 
+  # THE TWO NOUL READINGS THEMSELVES, kept beside `#path` rather than only
+  # acted on. Nil until `#read` has run, and nil forever on a line the
+  # provider never answered (`typed_model_unavailable`) -- there is no reading
+  # to keep in that case. Read-only: nothing here changes what `#compose`
+  # decides. `Eval::Classifier::Bench` is the reason this exists -- a bench
+  # that could only see WHICH path a line took and not WHAT the two flags
+  # actually read could never reconcile a composition question line by line.
+  attr_reader :target_present, :named_more_than_one
+
   # `agent` is the seam a test and the offline engine sweep stand a fixture in
   # at. Nil is the real provider.
   def initialize(classifier, agent: nil)
@@ -125,8 +134,11 @@ class Playthrough::Classifier::Cascade
   def compose(state, answers)
     action = answers.choice("intent").to_sym
     presence = answers.noul("target_present")
+    two_name = answers.noul("named_more_than_one")
+    @target_present = presence
+    @named_more_than_one = two_name
 
-    if escalate?(presence: presence, two_name: answers.noul("named_more_than_one"))
+    if escalate?(presence: presence, two_name: two_name)
       @path = "typed_model_escalated"
       return nil
     end
