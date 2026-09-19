@@ -442,10 +442,11 @@ class Playthrough::Turn
     # turn makes and the only record of what the player actually typed on a turn
     # that was not a conversation. Every branch stamps its own; see
     # `BaseAgent#attribute_to!`.
-    # THE CLASSIFIER ONLY IF IT RAN. A turn the grammar resolved made no call at
-    # all, and `BaseAgent#attribute_to!` on an agent that never spoke would file
-    # an empty conversation under the turn.
-    attribute_conversation!(classifier.agent, scene) if scene && resolved_by == "model"
+    # THE CLASSIFIER ONLY IF IT SPOKE. A turn the grammar resolved made no call
+    # at all, and so did a turn the System One cascade composed on its own
+    # (`typed_model`) -- `BaseAgent#attribute_to!` on an agent that never spoke
+    # would file an empty conversation under the turn.
+    attribute_conversation!(classifier.agent, scene) if scene && Playthrough::Classifier::MODEL_PATHS.include?(resolved_by)
 
     # And the retention cap is applied -- which by default does nothing at all,
     # because nothing is pruned unless `TA_CHAT_KEEP_TURNS` says so. Still called
@@ -550,7 +551,7 @@ class Playthrough::Turn
     reading = grammar.reading_first(command)
     return [ reading.intent, "grammar" ] if reading&.resolved? || reading&.intent&.action == :use
 
-    [ classifier.classify(typed), "model" ]
+    [ classifier.classify(typed), classifier.resolved_by ]
   end
 
   # THE REFUSAL THIS LINE EARNS, or nil for a line the loop will play.

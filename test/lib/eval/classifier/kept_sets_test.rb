@@ -23,7 +23,12 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
   # deleting one is a failing test rather than a table that quietly loses a
   # column.
   BASELINE = %w[classifier-remote classifier-mistral-small classifier-gemini-flash-lite].freeze
-  CURRENT = "physical-classifier-final-20260914".freeze
+  # THE CURRENT BEFORE SIDE, which is the run whose prompt the code sends today.
+  # `physical-classifier-final-20260914` held it until the `examine` criterion
+  # gained a look at the room in general; that set is history now and its own
+  # directory still carries the R02 evidence. The pair either side of the wording
+  # change, and the verdict (NOISE on every metric), are in this set's README.
+  CURRENT = "classifier-examine-wording-20260918".freeze
 
   # Every arm the baseline measured, and the figures the PR body and
   # EVALUATION.md quote for it. If a checked-in file is ever regenerated, this
@@ -137,14 +142,14 @@ class Eval::Classifier::KeptSetsTest < ActiveSupport::TestCase
     end
   end
 
-  # THE FROZEN DIGEST IS NOT THE LIVE ONE. This paid measurement's readings and
-  # scoring are fixed at the labels the corpus held when it was captured; a
-  # later correction to a handful of labels (five entries reviewed against the
-  # maintainer's own rulings) moves the live corpus digest without making the
-  # paid readings wrong or worth re-buying. So this asserts the set is still
-  # internally consistent -- its own recorded digest, unmoved -- and not that
-  # it tracks whatever the corpus says today.
-  FROZEN_DIGEST = "abc2535c473693d9".freeze
+  # THE DIGEST THIS SET WAS SCORED AT, asserted as the set's own recorded value
+  # rather than as "whatever the corpus says today". The two happen to agree
+  # right now, because this set was bought after the five reviewed label
+  # corrections landed -- but they are two different claims, and the previous
+  # current set is the worked example of them coming apart: it was captured at
+  # `abc2535c473693d9`, the labels then moved, and its paid readings were neither
+  # wrong nor worth re-buying.
+  FROZEN_DIGEST = "a259e93e6b865af1".freeze
 
   test "the current single arm baseline matches the corpus and schema request" do
     result = load_kept(CURRENT)

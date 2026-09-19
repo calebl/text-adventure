@@ -124,19 +124,35 @@ module EngineSweep
   # and it fails the sweep rather than silently answering, because a fake answer
   # would make the sweep measure the fake.
   #
-  # The original method is put back in an `ensure`, including when a script
-  # raises, so a failing sweep does not leave a poisoned class behind for the
-  # rest of a test run.
+  # THERE ARE TWO PROVIDERS TO STAND IN FRONT OF NOW. `SystemOneAgent` is not a
+  # `BaseAgent` and never goes through one, and its switch is an environment
+  # variable rather than a call -- so a maintainer with `TYPESAFE_API_KEY` in
+  # their shell would have had the classifier reach the network from inside an
+  # offline sweep, on their machine and nobody else's. Both are guarded, and
+  # `.configured?` is forced to answer NO for the length of the run so the
+  # keyless path is what a sweep walks unless a script says otherwise.
+  #
+  # The originals are put back in an `ensure`, including when a script raises, so
+  # a failing sweep does not leave a poisoned class behind for the rest of a test
+  # run.
   def self.without_a_model
     original = BaseAgent.method(:new)
+    typed = SystemOneAgent.method(:new)
+    switch = SystemOneAgent.method(:configured?)
 
     BaseAgent.singleton_class.send(:define_method, :new) do |*_args, **options, &_block|
       raise ModelCalled, "a sweep asked for a model (BaseAgent.new#{options.any? ? " #{options.inspect}" : ""}); " \
                          "the engine sweep is offline by definition"
     end
+    SystemOneAgent.singleton_class.send(:define_method, :new) do |*_args, **_options, &_block|
+      raise ModelCalled, "a sweep asked for a System One provider; the engine sweep is offline by definition"
+    end
+    SystemOneAgent.singleton_class.send(:define_method, :configured?) { false }
 
     yield
   ensure
     BaseAgent.singleton_class.send(:define_method, :new, original)
+    SystemOneAgent.singleton_class.send(:define_method, :new, typed)
+    SystemOneAgent.singleton_class.send(:define_method, :configured?, switch)
   end
 end

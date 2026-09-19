@@ -159,8 +159,12 @@ class Eval::Classifier::Stage
     playthrough.reload
     move_to_room!(playthrough, story)
 
+    # `system_one: false` PINS THE READER THE WAY THE ARM PINS THE MODEL. A
+    # maintainer with a System One key in their shell would otherwise have the
+    # cascade answer these lines, and the board would carry an arm's name over
+    # another reader's answers. See `Playthrough::Classifier#initialize`.
     Standing.new(position: position, playthrough: playthrough,
-                 classifier: Playthrough::Classifier.new(playthrough))
+                 classifier: Playthrough::Classifier.new(playthrough, system_one: false))
   end
 
   private

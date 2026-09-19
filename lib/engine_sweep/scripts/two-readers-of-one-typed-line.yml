@@ -1,0 +1,110 @@
+# THE FOUR WAYS A FREE-TYPED LINE CAN BE READ, walked in one game.
+#
+# Every other script in this directory types a slashed or verb-first line, which
+# the fixed grammar answers offline -- so nothing here walked the model readers
+# at all. Since the System One cascade landed there are FOUR values
+# `scenes.resolved_by` can hold on a typed line, the key is the only switch, and
+# a step that declares a `system_one` reply is what puts a key in this walk's
+# environment for that one line. So this script is one game in one room, typing
+# four lines, each read a different way:
+#
+#   model                     no key at all. The one model call, exactly as
+#                             before any of this existed -- and exactly what a
+#                             key that has gone missing produces in production
+#   typed_model               the cascade composed the answer; the model call
+#                             never happened, which the declared replies prove
+#   typed_model_escalated     the cascade flagged the line and the model call
+#                             answered it, in that order, on one submission
+#   typed_model_unavailable   the cascade could not be believed and the model
+#                             call answered it. NOT a refusal: the turn plays
+#
+# Offline throughout: both providers are fixtures, and the composition, the
+# resolution, the branch and the row that moves are the real ones.
+story: A Turn at the Gate
+steps:
+- id: no-key-is-the-one-call-it-always-made
+  why: A free line with no `system_one` reply walks the keyless path end to end.
+  type: pick up that red coin
+  browser:
+    token: keyless
+    replies:
+    - purpose: classifier
+      prompt_includes: [red coin, Maren]
+      content: {intent: take, target: red coin, also_named: nothing}
+    - purpose: narration
+      content: You stoop and close your hand around the coin.
+  expect:
+    carrying: [red coin]
+    here: []
+    resolved_by: model
+    changed: true
+    refused: false
+
+- id: the-cascade-composes-and-the-model-call-never-happens
+  why: Neither flag fires, so the engine composes and pays for nothing else.
+  type: put the coin back down
+  browser:
+    token: composed
+    replies:
+    - purpose: system_one
+      prompt_includes: [red coin, put the coin back down]
+      content:
+        intent: drop
+        target_drop: player_item_1
+        named_more_than_one: 0.02
+        target_present: 0.95
+    - purpose: narration
+      content: You set the coin back on the flagstones.
+  expect:
+    carrying: []
+    here: [red coin]
+    resolved_by: typed_model
+    changed: true
+    refused: false
+
+- id: a-flagged-line-goes-on-to-the-model-call
+  why: >-
+    The two-name flag reads high, so the line escalates: System One first, the
+    model call second, and the model call's answer is what the turn acts on.
+  type: take the coin and have a word with Maren
+  browser:
+    token: escalated
+    replies:
+    - purpose: system_one
+      content:
+        intent: take
+        target_take: available_item_1
+        also_named: person_1
+        named_more_than_one: 0.91
+        target_present: 0.88
+    - purpose: classifier
+      content: {intent: take, target: red coin, also_named: nothing}
+    - purpose: narration
+      content: You take the coin without looking away from her.
+  expect:
+    carrying: [red coin]
+    here: []
+    resolved_by: typed_model_escalated
+    changed: true
+    refused: false
+
+- id: a-provider-that-fails-never-costs-the-turn
+  why: >-
+    An unavailable provider is a fact about the network and not a reading of the
+    line, so the turn plays on the reader that was always there.
+  type: leave the coin on the stones
+  browser:
+    token: unavailable
+    replies:
+    - purpose: system_one
+      unavailable: true
+    - purpose: classifier
+      content: {intent: drop, target: red coin, also_named: nothing}
+    - purpose: narration
+      content: You let it fall back where you found it.
+  expect:
+    carrying: []
+    here: [red coin]
+    resolved_by: typed_model_unavailable
+    changed: true
+    refused: false

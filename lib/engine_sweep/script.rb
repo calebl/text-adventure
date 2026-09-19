@@ -187,9 +187,13 @@ class EngineSweep::Script
       end
       value["replies"].each do |reply|
         unless reply.is_a?(Hash) && (reply.keys - %w[purpose content unavailable prompt_includes prompt_excludes]).empty? &&
-            %w[location narration arrival character interaction-narration].include?(reply["purpose"]) &&
+            REPLY_PURPOSES.include?(reply["purpose"]) &&
             ((reply.key?("content") && !reply.key?("unavailable")) || (reply["unavailable"] == true && !reply.key?("content")))
           raise EngineSweep::InvalidScript, "#{where}: browser reply needs a purpose and either content or unavailable: true"
+        end
+        if reply["purpose"] == EngineSweep::BrowserTurn::TypedAgent::PURPOSE && reply.key?("content") &&
+            !reply["content"].is_a?(Hash)
+          raise EngineSweep::InvalidScript, "#{where}: a system_one reply answers questions by id, as a mapping"
         end
         %w[prompt_includes prompt_excludes].each do |key|
           next unless reply.key?(key)
@@ -208,6 +212,20 @@ class EngineSweep::Script
     end
     value
   end
+
+  # WHICH PROVIDER A DECLARED REPLY IS FOR.
+  #
+  # `classifier` and `system_one` are the two readers of a typed line, and they
+  # are here because a `browser:` step can now walk a FREE line rather than only
+  # a slashed one: `classifier` is the model call `Playthrough::Classifier` has
+  # always made, and `system_one` is the typed cascade in front of it. Declaring
+  # a `system_one` reply is what puts a key in the sweep's environment for that
+  # one step -- see `EngineSweep::BrowserTurn#without_provider` -- so a step
+  # without one walks the keyless path, which is what every other script does.
+  REPLY_PURPOSES = %w[
+    location narration arrival character interaction-narration
+    classifier system_one
+  ].freeze
 
   # `true` for the same file again, or a mapping of what this load renames.
   # Closed, like `Expectation::KEYS`: a misspelt `location:` here would read as

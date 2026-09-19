@@ -114,13 +114,15 @@
   <%# PART OF WHAT THE MODEL WAS GIVEN, and its own heading. A turn the grammar
       resolved (`scenes.resolved_by`) made no classifier call at all, which is
       the point of the slash menu and is worth reading as an absence rather than
-      as a gap. %>
+      as a gap. So did a turn the System One cascade composed on its own
+      (`typed_model`): that reader is not a chat, so it leaves no conversation
+      to show here. `scenes.resolved_by` is what says which of the three it was. %>
   <h2>what the classifier was given</h2>
   <% if machinery.classifier_conversations.any? %>
     <%= render partial: "debug/conversation", collection: machinery.classifier_conversations, as: :exchange %>
   <% else %>
     <p class="sheet-note">
-      <%= debug_value(nil, absent: "no classifier call on this turn — Playthrough::Grammar read the line, or nothing did") %>
+      <%= debug_value(nil, absent: "no classifier call on this turn — Playthrough::Grammar or the System One cascade read the line, or nothing did") %>
     </p>
   <% end %>
 </div>

@@ -431,7 +431,9 @@ class Eval::Classifier::Bench
     # A FRESH `Playthrough` PER CALL, AND NOT THE STAGED ONE. An AR object's
     # association cache is not thread-safe, and the staged object is shared by
     # every worker on that position. One indexed read against a 0.6s call.
-    classifier = Playthrough::Classifier.new(Playthrough.find(standing.playthrough.id))
+    # `system_one: false` for the reason `Eval::Classifier::Stage` states: the
+    # arm pins which model answers, and this pins which READER does.
+    classifier = Playthrough::Classifier.new(Playthrough.find(standing.playthrough.id), system_one: false)
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
     begin

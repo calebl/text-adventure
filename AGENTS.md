@@ -98,11 +98,17 @@ whole reason this rule is a rule (`Scene::Narrator::INSTRUCTIONS` and
 
 ## The rules that apply wherever you are working
 
-- **All LLM calls go through `BaseAgent`** (`app/agents/BaseAgent.rb`). Do not
-  build a bare `RubyLLM::Chat`. Every call uses a structured output with
+- **Every chat call goes through `BaseAgent`** (`app/agents/BaseAgent.rb`). Do
+  not build a bare `RubyLLM::Chat`. Every call uses a structured output with
   `RubyLLM::Schema` — `Scene::Narrator` is the one documented exception, because
   a schema and token streaming are mutually exclusive; its header says so and
   says not to "fix" it.
+- **A System One request is the one thing that is not a chat, and it goes
+  through `SystemOneAgent`** (`app/agents/SystemOneAgent.rb`). It sends a state
+  object and typed questions rather than messages, so it is `BaseAgent`'s
+  counterpart and not a kind of it — one provider per file, and neither is ever
+  bypassed. Its header has the key, the failure policy and why an absent key is
+  not an error.
 - **Genuinely zero build step.** `propshaft` + `importmap-rails` +
   `turbo-rails`; no Node, no `package.json`, no watch process.
   `jsbundling-rails`, `cssbundling-rails`, esbuild, Vite and any npm dependency
@@ -217,6 +223,12 @@ bin/brakeman --no-pager    # CI fails on a warning; a new view is where they com
 - `OPENROUTER_API_KEY` (in a gitignored `.env` via `dotenv-rails`, or `.envrc`
   for direnv) is strongly preferred for interactive work. `BaseAgent` works down
   `BaseAgent::REMOTE_MODEL_IDS`; `OPENROUTER_MODEL` overrides the front of it.
+- **`TYPESAFE_API_KEY` is a switch and not a credential detail.** Its presence
+  alone turns the classifier's System One cascade on — there is no feature flag
+  — so a shell that has it reads every typed line through a second model reader,
+  and anything measured there is measured on a different path.
+  `scenes.resolved_by` is where that is visible; `SystemOneAgent.configured?` is
+  the whole of the switch.
 - **Start the app with `bin/dev`**, not `bin/rails server` alone: a turn is a
   job, so a web process on its own accepts a command and narrates nothing.
 
