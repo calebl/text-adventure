@@ -156,6 +156,7 @@ Read the header of the file named, not a summary of it.
 | Why a playthrough ended, and what the player is told | `app/models/playthrough/end_notice.rb` |
 | Which reader answered a line, and the offline grammar | `app/models/playthrough/grammar.rb` |
 | What a typed line is asked, which reader answers it, and why a sentence there is not edited | `app/models/playthrough/classifier/request.rb`, `classifier/cascade.rb` |
+| What request shape the classifier bench can measure, and how a tool-call arm is built without touching the live classifier | `lib/eval/classifier/arm.rb` (the shape axis), `lib/eval/classifier/tool_shapes.rb`, `lib/eval/classifier/tool_agent.rb` |
 | What the narrator and an NPC are told about the moment | `app/models/playthrough/moment.rb` |
 | The game with the prose taken out | `app/models/playthrough/mechanics.rb` |
 | A body, its abilities, and the one check kernel | `app/models/character.rb`, `character/stat_block.rb` |
