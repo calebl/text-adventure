@@ -618,7 +618,11 @@ class Playthrough::Mechanics
     return offline if offline&.resolved? || offline&.intent&.action == :use
 
     intent = classifier.classify(Playthrough::Grammar.unslashed(command))
-    Playthrough::Grammar::Reading.new(intent: intent, understood: describe(intent), resolved_by: "model")
+    # WHICH READER ANSWERED, ASKED OF THE CLASSIFIER rather than assumed: with a
+    # System One key in the environment a line may have been composed by the
+    # cascade, escalated to the model call, or fallen through to it.
+    Playthrough::Grammar::Reading.new(intent: intent, understood: describe(intent),
+                                      resolved_by: classifier.resolved_by)
   end
 
   # ONE OF THE ENGINE-VIEW COMMANDS, READ BY THE FIXED GRAMMAR, whichever mode
@@ -848,7 +852,7 @@ class Playthrough::Mechanics
     # THE CLASSIFIER ONLY IF IT RAN, exactly as `Playthrough::Turn#play` does it:
     # a move the grammar resolved made no call, and filing an empty conversation
     # under the turn would say it had.
-    classifier.agent.attribute_to!(scene) if resolved_by == "model"
+    classifier.agent.attribute_to!(scene) if Playthrough::Classifier::MODEL_PATHS.include?(resolved_by)
     playthrough.prune_conversations!
 
     # WHERE THE PARTY ENDED UP, WHICH IS NOT ALWAYS WHAT WAS NAMED. Walking into

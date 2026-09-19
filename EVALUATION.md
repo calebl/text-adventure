@@ -1130,17 +1130,25 @@ bin/rails runner 'Eval::Prompt::Result.load(Eval.root.join("my-set")) \
 
 ### Current kept sets and historical comparisons
 
-`prompt-2026-09-10`, `physical-classifier-final-20260914` and
+`prompt-2026-09-10`, `classifier-examine-wording-20260918` and
 `prompt-ending-2026-09-10` are the current before sides for future changes.
-The classifier set is the judged R02 prompt: it prevents the demonstrated
-wrong-record substitutions, with aggregate metrics inside noise versus the
-prior baseline and a documented increase in conservative refusals versus its
-intermediate candidate. Older sets remain history.
+The classifier set is the judged R02 prompt with one later amendment: the
+`examine` criterion now admits a look at the room in general, which is what the
+corpus labels already assume. R02 itself prevents the demonstrated wrong-record
+substitutions, with aggregate metrics inside noise versus the prior baseline and
+a documented increase in conservative refusals versus its intermediate
+candidate; `physical-classifier-final-20260914` is that run and remains history
+with its own evidence directory. The amendment was measured either side on the
+same corpus, four repetitions a side, and every metric came back **NOISE** — its
+pair of sets and the verdict are in
+`db/eval/classifier-examine-wording-20260918/README.md`. Older sets remain
+history.
 The main comparison spans pre-existing request drift, so its verdicts cannot
 attribute an effect to one prompt change. Recompute them with:
 
 ```bash
 rake eval:prompt_compare BEFORE=prompt-2026-09-05 AFTER=prompt-2026-09-10
+rake eval:classifier_compare BEFORE=classifier-examine-before-20260918 AFTER=classifier-examine-wording-20260918
 rake eval:classifier_offline
 rake eval:prompt_digest CORPUS=ending
 ```

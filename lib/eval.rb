@@ -321,6 +321,10 @@ module Eval
     db/eval/physical-classifier-revised-20260910/source/classifier.rb.txt
     db/eval/physical-classifier-revised-20260910/source/classifier_corpus.yml
     db/eval/physical-classifier-revised-20260910/verify.rb
+    db/eval/classifier-examine-before-20260918/classifier.json
+    db/eval/classifier-examine-wording-20260918/classifier.json
+    db/eval/classifier-examine-wording-20260918/offline.json
+    db/eval/classifier-examine-wording-20260918/README.md
     db/eval/physical-classifier-final-20260914/audit.json
     db/eval/physical-classifier-final-20260914/classifier.json
     db/eval/physical-classifier-final-20260914/comparison.json

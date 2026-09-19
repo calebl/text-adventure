@@ -286,9 +286,18 @@ class Playthrough::GrammarTest < ActiveSupport::TestCase
     assert_nil read("attack Halkett Rowe")
   end
 
+  # THE LIST IS SPLICED AND NOT COPIED: the classifier owns every value it can
+  # produce, so both halves are asserted -- the literal list a column and a
+  # doctor read, and that the middle of it IS `Playthrough::Classifier::PATHS`.
+  # Pinning only the literal would let the two drift apart silently.
   test "the closed list of readers is the one every consumer reads" do
-    assert_equal %w[grammar model engine_view], Playthrough::Grammar::PATHS
-    assert_equal %w[grammar model], Scene::TURN_READERS
+    assert_equal %w[grammar model typed_model typed_model_escalated typed_model_unavailable engine_view],
+                 Playthrough::Grammar::PATHS
+    assert_equal %w[grammar model typed_model typed_model_escalated typed_model_unavailable],
+                 Scene::TURN_READERS
+    assert_equal Playthrough::Classifier::PATHS,
+                 Playthrough::Grammar::PATHS - %w[grammar engine_view]
+    assert_equal %w[model typed_model_escalated typed_model_unavailable], Playthrough::Classifier::MODEL_PATHS
   end
 
   # --- a throw, which is the one line that names two records ----------------

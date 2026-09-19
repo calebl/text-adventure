@@ -48,6 +48,63 @@ class EngineSweep::BrowserTurn
     end
   end
 
+  # THE SECOND PROVIDER, WHICH IS NOT A `BaseAgent` AND NEVER GOES THROUGH ONE.
+  # A System One request is a state object and a map of typed questions, so this
+  # fixture answers `#ask_questions` rather than `#ask` -- and it builds a REAL
+  # `SystemOneAgent::Answers`, so a reply a script writes is one the shipped
+  # verification accepted: an option outside the criteria that were sent is
+  # refused here exactly as it would be live.
+  #
+  # A reply names only the answers it cares about. Everything else the request
+  # asked is filled with the uninteresting answer -- `nothing` for a Choice, 0.0
+  # for a Noul -- because a provider answers every question it was sent and a
+  # script should not have to restate ten of them to vary one.
+  class TypedAgent
+    PURPOSE = "system_one".freeze
+
+    def initialize(calls, replies, prompt_failures)
+      @calls, @replies, @prompt_failures = calls, replies, prompt_failures
+    end
+
+    def ask_questions(state:, questions:)
+      @calls << PURPOSE
+      expected = @replies.shift
+      unless expected && expected.fetch("purpose") == PURPOSE
+        raise EngineSweep::ModelCalled, "browser step unexpectedly called #{PURPOSE.inspect}"
+      end
+
+      sent = JSON.generate(state)
+      Array(expected["prompt_includes"]).each do |text|
+        @prompt_failures << "#{PURPOSE} state omitted #{text.inspect}" unless sent.include?(text)
+      end
+      Array(expected["prompt_excludes"]).each do |text|
+        @prompt_failures << "#{PURPOSE} state disclosed #{text.inspect}" if sent.include?(text)
+      end
+      raise SystemOneAgent::Unavailable, "the sweep's System One provider is unavailable" if expected["unavailable"]
+
+      SystemOneAgent::Answers.new(body(expected.fetch("content"), questions), questions)
+    end
+
+    private
+
+    def body(named, questions)
+      answers = questions.to_h do |id, question|
+        [ id, named.key?(id) ? answer(named.fetch(id)) : filler(question) ]
+      end
+      { "answers" => answers, "usage" => { "input_tokens" => 0, "output_tokens" => 0 } }
+    end
+
+    def filler(question)
+      question["type"] == "noul" ? answer(0.0) : answer(Playthrough::IntentSchema::NOTHING)
+    end
+
+    def answer(value)
+      return { "type" => "noul", "noul" => value } if value.is_a?(Numeric)
+
+      { "type" => "choice", "choice" => value.to_s, "probabilities" => { value.to_s => 1.0 }, "confidence" => 1.0 }
+    end
+  end
+
   def initialize(mechanics)
     @mechanics = mechanics
   end
@@ -139,13 +196,33 @@ class EngineSweep::BrowserTurn
     Playthrough::Debug.define_singleton_method(:enabled?, original)
   end
 
+  # BOTH PROVIDERS, OFF ONE QUEUE. The replies are consumed in the order a script
+  # declares them whichever provider asks, which is what lets a step pin that an
+  # escalated line asked System One FIRST and the model call second.
+  #
+  # THE KEY IS THE SWITCH, AND HERE THE DECLARED REPLY IS THE KEY. A step with no
+  # `system_one` reply leaves `SystemOneAgent.configured?` answering NO, so the
+  # line walks the keyless path -- which is both the offline case and exactly
+  # what a missing or rotted key produces in production.
   def without_provider(calls, replies:, prompt_failures:)
     original = BaseAgent.method(:new)
+    typed = SystemOneAgent.method(:new)
+    switch = SystemOneAgent.method(:configured?)
+    keyed = replies.any? { |reply| reply["purpose"] == TypedAgent::PURPOSE }
+
     BaseAgent.singleton_class.send(:define_method, :new) do |*_args, **options|
       Agent.new(options[:purpose], calls, replies, prompt_failures)
+    end
+    if keyed
+      SystemOneAgent.singleton_class.send(:define_method, :new) do |*_args, **_options|
+        TypedAgent.new(calls, replies, prompt_failures)
+      end
+      SystemOneAgent.singleton_class.send(:define_method, :configured?) { true }
     end
     yield
   ensure
     BaseAgent.singleton_class.send(:define_method, :new, original)
+    SystemOneAgent.singleton_class.send(:define_method, :new, typed)
+    SystemOneAgent.singleton_class.send(:define_method, :configured?, switch)
   end
 end

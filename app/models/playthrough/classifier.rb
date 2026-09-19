@@ -22,6 +22,15 @@
 # `Eval::Classifier` and EVALUATION.md -> The classifier bench. Anything that
 # changes `INSTRUCTIONS` below is a change to judge with
 # `rake eval:classifier_compare`, not by reading one turn.
+#
+# THERE ARE TWO MODEL READERS HERE NOW, AND THE KEY IS THE SWITCH. Where
+# `TYPESAFE_API_KEY` is in the environment a line is read first by
+# `Playthrough::Classifier::Cascade` -- one System One request of ten typed
+# questions, composed into an `Intent` by the engine -- and the call below is
+# what an escalated or a failed line falls to, unchanged. Where the key is
+# absent there is no cascade and this class is byte for byte what it has always
+# been, which is what every test run and every keyless machine exercises.
+# `#resolved_by` is which of them answered; see `PATHS`.
 class Playthrough::Classifier
   # What one line of player input turned out to be.
   #
@@ -144,6 +153,49 @@ class Playthrough::Classifier
     def refused? = named_more_than_one? || reached_for_nothing? || unreadable? || moves_the_immovable?
   end
 
+  # WHICH SLOT AN ACTION'S RESOLVED RECORD LANDS IN. One table, because two
+  # readers build an `Intent` now -- `#build_intent` from the model call's three
+  # fields and `Playthrough::Classifier::Cascade` from the typed answers -- and a
+  # second copy of this mapping is how a `take` starts landing in `destination`
+  # on one path and not the other.
+  #
+  # `use` is absent and so is `other`: a `use` resolves to a whole closed
+  # attempt token in `physical` rather than to a record, and `other` resolves to
+  # no record at all and never will.
+  SLOTS = {
+    move: :destination,
+    talk: :speaker,
+    take: :item,
+    drop: :item,
+    examine: :item,
+    # THE SAME SLOT AS A `talk` AND FOR THE SAME REASON: both read the cast, and
+    # what the line does TO that person is the action, not the slot.
+    attack: :speaker
+  }.freeze
+
+  # WHICH READER ANSWERED, out of the values `scenes.resolved_by` holds -- the
+  # subset of `Playthrough::Grammar::PATHS` this class can produce, and the table
+  # that list is built from.
+  #
+  #   model                     no System One key in this environment. One model
+  #                             call, exactly as before any of this existed
+  #   typed_model               the cascade answered; neither flag fired
+  #   typed_model_escalated     the cascade flagged the line; the model call
+  #                             answered it
+  #   typed_model_unavailable   the cascade was tried and could not be believed;
+  #                             the model call answered it
+  #
+  # WITH NO FLAG TO READ, THIS COLUMN IS THE ONLY INSTRUMENT. `model` rows on a
+  # machine that is supposed to have a key is how a missing or rotted key is
+  # noticed; a run of `typed_model_unavailable` is how an outage is noticed.
+  # Both are otherwise silent, because the game keeps playing either way.
+  PATHS = %w[model typed_model typed_model_escalated typed_model_unavailable].freeze
+
+  # The paths on which the model call actually happened, so a caller that has to
+  # know whether there is a conversation to file under this turn can ask rather
+  # than compare strings (`Playthrough::Turn#play`, `Playthrough::Mechanics#move`).
+  MODEL_PATHS = (PATHS - %w[typed_model]).freeze
+
   # Resolve the requested intent before asking whether a physical token fits.
   # The initial physical-action candidate made that rule sound universal: it
   # refused reading and putting down, and substituted available targets for
@@ -152,6 +204,17 @@ class Playthrough::Classifier
   # aggregate but still substituted a related exit, person or item, and treated
   # facing an open doorway as crossing it; its measured requests are kept in
   # db/eval/physical-classifier-revised-20260910 as this edit's direct baseline.
+  #
+  # THE `examine` LINE GAINED "or looking around the place in general", and it is
+  # the one deliberate wording change in the System One cascade's ship. The
+  # criterion said only "something", an object, while a targetless look at the
+  # room is an `examine` in the corpus's own labels and the readers split on
+  # exactly that. The SAME words are in
+  # `Playthrough::Classifier::Request::INTENT_CRITERIA`: two readers with two
+  # definitions of `examine` would make the escalation itself a source of
+  # disagreement, which is the one thing a cascade must not add. Baselined either
+  # side on `rake eval:classifier_offline` and `rake eval:prompt`, per
+  # EVALUATION.md.
   INSTRUCTIONS = <<~PROMPT.freeze
     You read one line of a text adventure player's input and say what they were
     trying to do. You do not narrate, you do not answer the player, and you do
@@ -161,7 +224,8 @@ class Playthrough::Classifier
     unavailable. Then resolve that target. Pick the intent that fits best:
       move    - they are going somewhere else
       talk    - they are speaking to someone who is here
-      examine - they are looking at something more closely
+      examine - they are looking at something more closely, or looking around
+                the place in general
       take    - they are picking something up
       drop    - they are putting down, leaving or giving up something they carry
       attack  - they are trying to hurt someone who is here
@@ -219,27 +283,56 @@ class Playthrough::Classifier
 
   attr_reader :playthrough
 
-  def initialize(playthrough)
+  # WHICH READER ANSWERED THE LAST LINE THIS CLASSIFIER READ -- one of `PATHS`,
+  # and nil before `#classify` has run. It is state on the object rather than a
+  # second return value because `#classify` returns an `Intent` to five callers
+  # and a bench, and widening that contract for a fact two of them need would
+  # have been a change everywhere for the sake of one place.
+  #
+  # `Playthrough::Turn#play` and `Playthrough::Mechanics#classify` are what read
+  # it, both to write `scenes.resolved_by`.
+  attr_reader :resolved_by
+
+  # `system_one` HAS THREE POSITIONS, and the third is the one worth explaining.
+  #
+  #   nil      the environment decides, which is the shipped behaviour:
+  #            `SystemOneAgent.configured?` and nothing else
+  #   false    NO CASCADE, whatever this shell has in it. The model call alone
+  #   <object> that fixture, for a test and for the offline engine sweep
+  #
+  # `false` exists because `Eval::Classifier` MEASURES THIS CLASS. A maintainer
+  # with `TYPESAFE_API_KEY` in their shell would otherwise have `rake
+  # eval:classifier` quietly scoring a different reader against the corpus and
+  # `rake eval:classifier_digest` describing a request that was never sent --
+  # both of them silently, and both of them the sort of thing a bench exists to
+  # make impossible. The bench pins its arm; this is the same pinning one layer
+  # up. `Eval::Classifier::Bench` and `Eval::Classifier::Stage` pass it.
+  def initialize(playthrough, system_one: nil)
     @playthrough = playthrough
+    @system_one = system_one
   end
 
   # Returns an Intent. Raises rather than guessing when the call fails, for the
   # same reason every generator here raises: a swallowed failure reads
   # downstream as the player typing something the game did not understand.
+  #
+  # TWO READERS, IN ORDER, AND THE SECOND IS UNCHANGED. Where this environment
+  # has a System One key the line goes to `Playthrough::Classifier::Cascade`
+  # first; a line it composes is answered without the model call below ever
+  # happening. A line it flags, and a line it could not answer at all, falls
+  # through to exactly the call this method has always made. `#resolved_by` says
+  # which, and the two measurements either side of it -- `Playthrough::Drift` and
+  # `Playthrough::Overreach` -- are taken here, off the composed `Intent`,
+  # whichever reader built it.
   def classify(command)
     exits = exits_here
     cast = characters_here
     items = items_here
     carried = items_carried
 
-    answer = agent
-      .with_schema(Playthrough::IntentSchema.for(
-        exit_names(exits) + cast_names(cast) + item_names(items) + item_names(carried) + physical_actions.map(&:token)
-      ))
-      .ask(command_prompt(command, exits, cast, items, carried))
-      .content
+    intent = cascaded(command)
+    intent ||= ask_the_model(command, exits, cast, items, carried)
 
-    intent = build_intent(answer["intent"], answer["target"], exits, cast, items, carried, answer["also_named"])
     record_drift(command, intent, exits, cast, items, carried) if intent.reached_for_nothing?
     record_overreach(command, intent) if intent.named_more_than_one?
     intent
@@ -404,6 +497,44 @@ class Playthrough::Classifier
 
   private
 
+  # THE TYPED READER, OR NOTHING AT ALL. Nil means "the model call answers this
+  # line", for one of three reasons this method's two lines cover:
+  #
+  #   * no cascade in this environment -- no `TYPESAFE_API_KEY`, or a caller that
+  #     pinned it off. Nothing is built, nothing is asked, and `resolved_by` is
+  #     `model`, which is what every test run and every keyless checkout does;
+  #   * the cascade read the line and one of its two flags fired;
+  #   * the cascade was tried and could not be believed.
+  #
+  # The last two are told apart by `Playthrough::Classifier::Cascade#path` and
+  # NOT here, because this method must not start knowing why.
+  def cascaded(command)
+    if @system_one == false || (@system_one.nil? && !SystemOneAgent.configured?)
+      @resolved_by = "model"
+      return nil
+    end
+
+    cascade = Playthrough::Classifier::Cascade.new(self, agent: @system_one)
+    intent = cascade.read(command)
+    @resolved_by = cascade.path
+    intent
+  end
+
+  # THE ONE MODEL CALL THIS CLASS HAS ALWAYS MADE, moved into a method of its own
+  # and otherwise untouched: same closed enum, same prompt, same schema, same
+  # resolution. A keyless environment reaches it on every line, and that is the
+  # whole of what `resolved_by == "model"` means.
+  def ask_the_model(command, exits, cast, items, carried)
+    answer = agent
+      .with_schema(Playthrough::IntentSchema.for(
+        exit_names(exits) + cast_names(cast) + item_names(items) + item_names(carried) + physical_actions.map(&:token)
+      ))
+      .ask(command_prompt(command, exits, cast, items, carried))
+      .content
+
+    build_intent(answer["intent"], answer["target"], exits, cast, items, carried, answer["also_named"])
+  end
+
   # Only ever one slot, and only when the name resolved. `other` carries no
   # target and never will: it falls through to `Scene::Narrator`, which answers
   # the raw command anyway, so resolving one would be building a seam with
@@ -445,19 +576,22 @@ class Playthrough::Classifier
     # `also_named` goes through the same set and the same matcher, because a
     # second, looser way into the records is the thing a closed set exists to
     # prevent.
-    set, finder, slot = case action
-    when :move then [ exits, :find_exit, :destination ]
-    when :talk then [ cast, :find_character, :speaker ]
-    when :take then [ items, :find_item, :item ]
-    when :drop then [ carried, :find_item, :item ]
-    when :examine then [ items + carried, :find_item, :item ]
+    set, finder = case action
+    when :move then [ exits, :find_exit ]
+    when :talk then [ cast, :find_character ]
+    when :take then [ items, :find_item ]
+    when :drop then [ carried, :find_item ]
+    when :examine then [ items + carried, :find_item ]
     # THE SAME SET AS A `talk` AND THE SAME SLOT, which is what makes the loop's
     # dispatch one branch on a resolved person rather than two
     # (`Playthrough::Turn#play`). What the line does TO them is the action.
-    when :attack then [ cast, :find_character, :speaker ]
+    when :attack then [ cast, :find_character ]
     else return Intent.new(action: action)
     end
 
+    # The slot comes out of `SLOTS`, which the typed reader also reads, so the
+    # two paths cannot disagree about where a resolved record lands.
+    slot = SLOTS.fetch(action)
     found = send(finder, set, name)
 
     Intent.new(

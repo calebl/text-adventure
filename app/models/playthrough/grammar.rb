@@ -213,14 +213,21 @@ class Playthrough::Grammar
   # through, so nothing has to keep a second copy of it in agreement.
   #
   #   grammar       this class resolved it, offline, for no model call
-  #   model         `Playthrough::Classifier` resolved it
   #   engine_view   one of `ENGINE_VIEW`, answered by the engine itself. No
   #                 `Scene` is ever written on that path -- `harm`, `check` and
   #                 the read-outs are `Playthrough::Mechanics`'s own -- so the
   #                 value exists for the mode's report and for
   #                 `EngineSweep::Expectation`, and a scene carrying it would be
   #                 a defect `rake game:doctor` would have to name.
-  PATHS = %w[grammar model engine_view].freeze
+  #
+  # AND EVERYTHING BETWEEN THEM BELONGS TO THE OTHER READER. There is more than
+  # one of those since the System One cascade landed -- `model`, `typed_model`,
+  # `typed_model_escalated`, `typed_model_unavailable` -- and the list is
+  # `Playthrough::Classifier::PATHS`, spliced in here rather than copied, so the
+  # class that produces those values is the one that names them. See that
+  # constant for what each means and why the column is the only instrument the
+  # cascade has.
+  PATHS = ([ "grammar" ] + Playthrough::Classifier::PATHS + [ "engine_view" ]).freeze
 
   # The marker a player types to say "read this as a command". One character,
   # taken off the front and nowhere else.

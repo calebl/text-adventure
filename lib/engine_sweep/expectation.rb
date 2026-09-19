@@ -67,12 +67,18 @@
 #   offers          text the refusal has to contain, which is how a script pins
 #                   that a refusal named what WOULD have worked
 #   understood      the engine's own reading of the line, exactly
-#   resolved_by     WHICH READER ANSWERED the line, exactly: `grammar`, `model`
-#                   or `engine_view` (`Playthrough::Grammar::PATHS`). A walk runs
-#                   `model: false`, so `model` is unreachable in a script and
-#                   that is the point of asserting the other two -- it is how a
-#                   script pins that a slashed or verb-first line was read
-#                   offline and cost nothing at all
+#   resolved_by     WHICH READER ANSWERED the line, exactly -- one of
+#                   `Playthrough::Grammar::PATHS`. A plain walk runs
+#                   `model: false`, so only `grammar` and `engine_view` are
+#                   reachable there, and asserting them is how a script pins
+#                   that a slashed or verb-first line was read offline and cost
+#                   nothing at all. A `browser:` step runs the real
+#                   `Playthrough::Turn` against declared provider replies, so
+#                   the four values the two MODEL readers write are reachable
+#                   there and nowhere else: `model` (no System One key),
+#                   `typed_model`, `typed_model_escalated` and
+#                   `typed_model_unavailable`. See
+#                   `two-readers-of-one-typed-line.yml`
 #   note            text the note has to contain
 #   drifts          `Playthrough::Drift` rows this line wrote
 #   blows           `Playthrough::Blow` rows this line wrote -- the player's own
