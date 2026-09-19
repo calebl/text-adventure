@@ -139,4 +139,58 @@ class Eval::Classifier::ArmTest < ActiveSupport::TestCase
 
     assert_equal %w[ollama:qwen3:4b minimax/minimax-m3], mixed.map(&:id)
   end
+
+  # THE SHAPE AXIS, added for the tool-call bench arm. Every arm that names no
+  # suffix measures `:schema`, byte for byte what it always meant -- the
+  # maintainer's decision on `data/ta-tool-calls-scout/report.md` was that
+  # widening this had to leave every existing arm name alone.
+  test "a bare spec is the schema shape, unchanged" do
+    arm = Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1")
+
+    assert_equal :schema, arm.shape
+    assert_predicate arm, :shape_schema?
+    assert_not_predicate arm, :shape_tool?
+    assert_not_predicate arm, :shape_tools?
+    assert_equal "mistralai/mistral-medium-3.1", arm.id
+  end
+
+  test "+tool and +tools name the two tool-call shapes and are read off the end" do
+    single = Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1+tool")
+    per_intent = Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1+tools")
+
+    assert_equal :tool, single.shape
+    assert_predicate single, :shape_tool?
+    assert_equal "mistralai/mistral-medium-3.1", single.model
+    assert_equal "mistralai/mistral-medium-3.1+tool", single.id
+
+    assert_equal :tools, per_intent.shape
+    assert_predicate per_intent, :shape_tools?
+    assert_equal "mistralai/mistral-medium-3.1", per_intent.model
+    assert_equal "mistralai/mistral-medium-3.1+tools", per_intent.id
+  end
+
+  test "a shape suffix and the thinking suffix compose, and +tools is never mistaken for +tool" do
+    arm = Eval::Classifier::Arm.parse("ollama:qwen3:4b+tools+nothink")
+
+    assert_equal :ollama, arm.provider
+    assert_equal "qwen3:4b", arm.model
+    assert_equal :tools, arm.shape
+    assert_predicate arm, :thinking_off?
+    assert_equal "ollama:qwen3:4b+tools+nothink", arm.id
+  end
+
+  test "an unknown shape is refused rather than silently read as schema" do
+    assert_raises(Eval::Classifier::Arm::UnknownProvider) do
+      Eval::Classifier::Arm.new(provider: :openrouter, model: "x", shape: :json_mode)
+    end
+  end
+
+  test "arms differ by shape as well as by model, so a board never collapses two shapes into one row" do
+    schema = Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1")
+    tool = Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1+tool")
+
+    assert_not_equal schema, tool
+    assert_not_equal schema.hash, tool.hash
+    assert_equal tool, Eval::Classifier::Arm.parse("mistralai/mistral-medium-3.1+tool")
+  end
 end

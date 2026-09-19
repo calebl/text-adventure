@@ -19,6 +19,31 @@ class Eval::Classifier::VersionTest < ActiveSupport::TestCase
     end
   end
 
+  # THE GAP THE REPORT NAMED (`data/ta-tool-calls-scout/report.md` §5): a
+  # request identity keyed on `schema` alone would go BLANK for a shape whose
+  # closed set lives in `tools` instead. Proved here rather than assumed: the
+  # digest differs by shape, and a change reaching only INSIDE a tool's
+  # parameters -- not its name, not its description -- still moves it.
+  test "the request identity notices a tool shape, and a change inside a tool's own parameters" do
+    schema_identity = Eval::Classifier::Version.offline(shape: :schema)
+    single_identity = Eval::Classifier::Version.offline(shape: :tool)
+    per_intent_identity = Eval::Classifier::Version.offline(shape: :tools)
+
+    refute_equal schema_identity, single_identity
+    refute_equal schema_identity, per_intent_identity
+    refute_equal single_identity, per_intent_identity
+    assert_equal single_identity, Eval::Classifier::Version.offline(shape: :tool),
+                 "the same shape on the same corpus is deterministic"
+
+    original = Playthrough::IntentSchema.method(:for)
+    Playthrough::IntentSchema.stub(:for, ->(names) { original.call(names + [ "a changed closed label" ]) }) do
+      refute_equal single_identity, Eval::Classifier::Version.offline(shape: :tool),
+                   "a changed enum reaches shape B through the schema it wraps"
+      refute_equal per_intent_identity, Eval::Classifier::Version.offline(shape: :tools),
+                   "and shape C's own tools are built from the same factory"
+    end
+  end
+
   test "capture follows the real classifier schema including its physical tokens" do
     classifier = physical_classifier
     choices = classifier.physical_actions

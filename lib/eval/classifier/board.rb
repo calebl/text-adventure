@@ -33,7 +33,7 @@ class Eval::Classifier::Board
   # The figures, in the order a reader wants them: what it got right, then what
   # it got wrong in the way that matters, then the detector, then speed, then
   # whether the calls even landed.
-  FIGURES = %i[strict_accuracy accuracy intent_accuracy refusal_agreement closed_set_misses].freeze
+  FIGURES = %i[strict_accuracy accuracy intent_accuracy refusal_agreement closed_set_misses out_of_set].freeze
 
   Column = Data.define(:set, :result, :arm) do
     def local? = Eval::Classifier::Arm.parse(arm).local?

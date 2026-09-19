@@ -9,8 +9,16 @@ module Eval::RequestIdentity
   VERSION = 1
   MISSING = "no schema identity recorded".freeze
 
-  def request(instructions, prompt, schema)
-    { system: instructions, user: prompt, schema: schema&.new&.to_json_schema }
+  # `tools`/`tool_choice` ARE OPTIONAL AND ABSENT BY DEFAULT, so a schema'd
+  # request's identity is byte-for-byte what it always was -- `.compact` drops
+  # them along with a nil `schema`, which is also what lets a tool-shaped
+  # request (no `response_format` at all) carry no `schema` key rather than a
+  # misleading nil one. See `Eval::Classifier::ToolShapes` for what builds
+  # `tools` and `Eval::Classifier::Version::CaptureAgent` for what calls this
+  # with them.
+  def request(instructions, prompt, schema, tools: nil, tool_choice: nil)
+    { system: instructions, user: prompt, schema: schema&.new&.to_json_schema,
+      tools: tools, tool_choice: tool_choice }.compact
   end
 
   def of(requests)
