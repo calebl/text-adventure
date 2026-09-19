@@ -179,6 +179,72 @@ class Playthrough::Classifier::CascadeTest < ActiveSupport::TestCase
     assert_equal 1, agent.calls, "an escalated line asked System One twice"
   end
 
+  # --- rule 4, read against the composition it is NOT allowed to depend on ---
+  #
+  # THE THREE TESTS BELOW ARE COUNTERFACTUALS AND NOT NEW RULES. The measured
+  # cascade escalated about 90 lines of the 343-line corpus a repetition and the
+  # shipped one escalates about 62, and the three shapes below are the coded
+  # defects that difference was attributed to. Each one is written so that it
+  # FAILS if the composition ever acquires that shape -- a flag consulted only
+  # once a record survived, a second name thrown away on a line the engine
+  # answered, or a second name lost on the way through an escalation. They pass
+  # today: replaying the measured arm's own 1,112 recorded provider answers
+  # through this class escalates 90, 90, 91 and 93, which is the simulation to
+  # the line. See the header.
+
+  # THE FLAG IS READ OFF THE ANSWER AND NOT OFF THE COMPOSITION. Were it
+  # consulted only when `also_named` had already resolved a record, it would
+  # collapse to "both names survived" and this line would compose.
+  test "the two-name flag escalates even when also_named resolved nothing" do
+    intent, cascade = read({ "intent" => "take", "target_take" => "available_item_1",
+                             "also_named" => Playthrough::IntentSchema::NOTHING,
+                             "named_more_than_one" => 0.91 },
+                           command: "take the press and whatever else is going")
+
+    assert_nil intent
+    assert_equal "typed_model_escalated", cascade.path
+  end
+
+  # The same test from the other side: a second name the chosen action cannot
+  # reach is dropped by the composition, and the flag still escalates.
+  test "the two-name flag escalates even when the second name is not this action's" do
+    intent, cascade = read({ "intent" => "take", "target_take" => "available_item_1",
+                             "also_named" => "person_1", "named_more_than_one" => 0.77 },
+                           command: "take the press and ask Perrin about it")
+
+    assert_nil intent
+    assert_equal "typed_model_escalated", cascade.path
+  end
+
+  # NOR ON THE TARGET. A line whose target resolved to nothing is still two
+  # names to the flag, and the escalation is decided before either is resolved.
+  test "the two-name flag escalates even when the target resolved nothing" do
+    intent, cascade = read({ "intent" => "take", "target_take" => Playthrough::IntentSchema::NOTHING,
+                             "named_more_than_one" => 0.88 },
+                           command: "take the crowbar and the ledger")
+
+    assert_nil intent
+    assert_equal "typed_model_escalated", cascade.path
+  end
+
+  # THE TYPED READER'S SECOND NAME SURVIVES A LINE THE ENGINE ANSWERS ITSELF.
+  # Losing it here is the difference between the second-name recall the arm of
+  # record measured and the one the shipped set reads.
+  test "a composed line keeps the typed reader's second name and refuses on both records" do
+    intent, cascade = read({ "intent" => "take", "target_take" => "available_item_1",
+                             "also_named" => "available_item_2", "named_more_than_one" => 0.31 },
+                           command: "take the press and the stamp")
+
+    assert_equal "typed_model", cascade.path
+    assert_equal @press, intent.item
+    assert_equal @stamp, intent.also_named
+
+    refusal = Playthrough::Refusal.for(intent, typed: "take the press and the stamp")
+    assert_equal :named_more_than_one, refusal.kind
+    assert_includes refusal.fact, "filing press"
+    assert_includes refusal.fact, "ward stamp"
+  end
+
   # --- rule 5: unresolved is derived, never answered -------------------------
 
   test "unresolved is derived from a reaching intent with no target" do

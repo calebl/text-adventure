@@ -108,3 +108,60 @@ steps:
     resolved_by: typed_model_unavailable
     changed: true
     refused: false
+
+# THE TWO FLAGS, EACH WALKED ON ITS OWN. The step above escalates on a two-name
+# reading that ALSO resolved a second record, so it cannot tell "the engine read
+# the flag" from "the engine noticed two names survived". These two can: one
+# reads each flag with the other clear and the second name resolving to nothing.
+- id: the-presence-flag-escalates-on-its-own
+  why: >-
+    A low `target_present` reading sends the line on with the two-name flag
+    clear, which is the half of the rule the step above cannot show.
+  type: pick up whatever the gatekeeper left on the stones
+  browser:
+    token: presence
+    replies:
+    - purpose: system_one
+      content:
+        intent: take
+        target_take: available_item_1
+        named_more_than_one: 0.02
+        target_present: 0.04
+    - purpose: classifier
+      content: {intent: take, target: red coin, also_named: nothing}
+    - purpose: narration
+      content: You lift the coin off the flagstones again.
+  expect:
+    carrying: [red coin]
+    here: []
+    resolved_by: typed_model_escalated
+    changed: true
+    refused: false
+
+- id: the-two-name-flag-escalates-with-no-second-record
+  why: >-
+    The Noul reads high and `also_named` resolves to NOTHING. The line still
+    escalates, because the flag is read off the answer and not off whether a
+    second record survived the composition -- if it were gated on that, this
+    line would compose and the walk would read `typed_model`.
+  type: put down the coin and the key
+  browser:
+    token: two-name-alone
+    replies:
+    - purpose: system_one
+      content:
+        intent: drop
+        target_drop: player_item_1
+        also_named: nothing
+        named_more_than_one: 0.91
+        target_present: 0.9
+    - purpose: classifier
+      content: {intent: drop, target: red coin, also_named: nothing}
+    - purpose: narration
+      content: You set the coin down and keep your hands to yourself.
+  expect:
+    carrying: []
+    here: [red coin]
+    resolved_by: typed_model_escalated
+    changed: true
+    refused: false

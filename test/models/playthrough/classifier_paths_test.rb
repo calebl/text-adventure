@@ -102,6 +102,31 @@ class Playthrough::ClassifierPathsTest < ActiveSupport::TestCase
     assert_equal 1, agent.prompts.size
   end
 
+  # THE ESCALATED LINE TAKES THE MODEL CALL'S WHOLE ANSWER, second name included.
+  # Taking its target and leaving its `also_named` behind would silently disarm
+  # the one-line-one-act refusal on exactly the lines the two-name flag sends to
+  # the second reader -- which is the shape it exists to catch.
+  test "an escalated line carries the model call's second name into the refusal" do
+    intent, classifier, agent = with_key do
+      classify({ "intent" => "take", "target" => "filing press", "also_named" => "ward stamp" },
+               typed: typed_agent("intent" => "take", "target_take" => "available_item_1",
+                                  "also_named" => Playthrough::IntentSchema::NOTHING,
+                                  "named_more_than_one" => 0.91),
+               command: "take the press and the stamp")
+    end
+
+    assert_equal "typed_model_escalated", classifier.resolved_by
+    assert_equal 1, agent.prompts.size
+    assert_equal @press, intent.item
+    assert_equal @stamp, intent.also_named
+    assert_predicate intent, :named_more_than_one?
+
+    refusal = Playthrough::Refusal.for(intent, typed: "take the press and the stamp")
+    assert_equal :named_more_than_one, refusal.kind
+    assert_includes refusal.fact, "filing press"
+    assert_includes refusal.fact, "ward stamp"
+  end
+
   test "a failed cascade records the fall-through and the model call answers it" do
     intent, classifier, agent = with_key do
       classify({ "intent" => "take", "target" => "ward stamp", "also_named" => "nothing" },
