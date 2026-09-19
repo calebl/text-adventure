@@ -27,13 +27,38 @@
 # reach a model make two calls, and a parallel call would pay for the expensive
 # model on every turn and throw most of it away.
 #
-# WHAT ESCALATION IS NOT. It is not a failure and not a refusal. The line is
-# read by the reader that reads that shape of line better, and the measurement
-# says so: on the merged corpus labels the two-flag cascade reads .9300-.9359
-# whole-answer against .9271-.9359 for the same Mistral call alone, with 12-14
-# closed-set misses against 15-17 and the best two-name precision of any arm
-# measured. The bands overlap. The case for the cascade is latency and about
-# half the bill at no measured loss, and it should not be sold as more.
+# WHAT ESCALATION IS NOT. It is not a failure and not a refusal: the line is
+# read by the reader that reads that shape of line better.
+#
+# WHAT IT HAS ACTUALLY MEASURED, AND IT IS BEHIND THE INCUMBENT. The figures
+# this file once quoted were a SIMULATION over stored readings. Run as it ships,
+# four repetitions on the same 343 lines, it reads .9242-.9300 whole-answer
+# against .9329-.9359 for the same Mistral call alone, with 17-18 closed-set
+# misses against 15-16 and 25 of 32 second names against 27. Those bands do not
+# overlap and the cascade is the lower one. The case for it today is latency and
+# about half the bill; it is a measured LOSS on accuracy, and must not be sold
+# as anything else until that is closed.
+#
+# WHERE THAT LOSS IS NOT. It is not this class. The arm the design of record was
+# chosen on kept every provider answer it was given, and replaying those
+# answers -- 278 lines a repetition, four repetitions -- through the composition
+# below escalates 90, 90, 91 and 93, which is the simulation line for line. Both
+# flags are read off the answer before anything is resolved, a composed line
+# keeps its second name, and an escalated line takes the model call's whole
+# answer. Each of those three is pinned by a test that fails when it is untrue;
+# see `Playthrough::Classifier::CascadeTest` and `Playthrough::ClassifierPathsTest`.
+#
+# WHERE SOME OF IT IS. The `also_named` and `target_<action>` wording in
+# `Playthrough::Classifier::Request` is an EARLIER revision than the arm the
+# design of record was scored on -- it is the text of the arm two iterations
+# before it, with the presence question appended. On the stored readings that
+# earlier text finds 24 of 32 second names where the scored text finds 28-30,
+# and the shipped set reads 25. Restoring it is a prompt change and needs a
+# baseline either side, so it is not done here; EVALUATION.md is the protocol.
+# The remaining gap -- the shipped set escalates about 62 lines a repetition
+# where the readings above escalate about 90 -- is NOT explained by anything in
+# this file, and settling it needs the per-line readings a cascade bench pass
+# does not yet keep.
 #
 # NOTHING HERE CAN BLOCK A TURN. Every way the provider can fail is
 # `SystemOneAgent::Unavailable`, and every one of them lands on the same line as
