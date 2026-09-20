@@ -1,13 +1,21 @@
 {
   "format": 1,
-  "kind": "primary_sqlite_dump",
-  "dumped_at": "2026-09-20T19:01:01Z",
+  "kind": "playthrough_sqlite_package",
+  "dumped_at": "2026-09-20T19:06:12Z",
   "rails_env": "development",
-  "source": "storage/development.sqlite3",
   "playthrough": {
     "id": 3,
     "story": "Cold Deck Running",
     "protagonist": "Kael Veyra",
     "current_location": "Core Access Chamber room 1"
-  }
+  },
+  "counts": {
+    "locations": 5,
+    "characters": 3,
+    "scenes": 13,
+    "commands": 13,
+    "chats": 17,
+    "messages": 53
+  },
+  "open_with": "DATABASE_URL=sqlite3:doc/evidence/playthrough-3-cold-deck-running/cold-deck-running--kael-veyra.sqlite3 bin/rails runner 'p Playthrough.find(3).story.title'"
 }
