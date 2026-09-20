@@ -9,10 +9,11 @@ When a playthrough shows a bug, attach a **restoreable miniature primary databas
 
 ## Dump (required for issues)
 
+Write under `tmp/` only (default). Never under `doc/evidence/` or any path that would be committed.
+
 ```bash
 rake 'game:dump_playthrough[PLAYTHROUGH_ID]'
-# or a path under doc/evidence/:
-rake 'game:dump_playthrough[3,doc/evidence/playthrough-3-cold-deck-running/cold-deck-running--kael-veyra.sqlite3.gz]'
+# -> tmp/playthrough-packages/<story>--<protagonist>.sqlite3.gz
 ```
 
 Produces:
@@ -22,7 +23,23 @@ Produces:
 
 Implementation: `Playthrough::SqlitePackage` (`app/models/playthrough/sqlite_package.rb`).
 
-## Open the package
+## Attach to the issue (drag-and-drop — required)
+
+GitHub has no API for issue file attachments. A human must attach the package in the browser:
+
+1. Open the GitHub issue (or PR comment box).
+2. Drag-and-drop the `.sqlite3.gz` from `tmp/playthrough-packages/` into the comment (optionally the `.meta.json` too).
+3. In the same comment, paste the open instructions:
+
+```bash
+gunzip -k path/to/package.sqlite3.gz
+DATABASE_URL=sqlite3:path/to/package.sqlite3 \
+  bin/rails runner 'p Playthrough.find(ID).current_location.name'
+```
+
+Agents: dump the package, print the absolute path, and ask the human to drag-drop it. Do not commit the archive, do not put it under `doc/evidence/`, do not substitute a repo path for the attachment.
+
+## Open a downloaded package
 
 Expand, then point Rails at the sqlite file. Do not merge into an existing DB.
 
@@ -36,21 +53,17 @@ DATABASE_URL=sqlite3:path/to/package.sqlite3 \
 
 ## Optional readable companion
 
-Name-keyed JSON (no DB ids) for skimming in an issue without booting Rails:
+Name-keyed JSON (no DB ids) for skimming in an issue without booting Rails. Also stays in `tmp/` — paste excerpts into the issue if useful; do not commit the dump.
 
 ```bash
 rake 'game:export_playthrough[PLAYTHROUGH_ID]'
 # Playthrough::Exporter — tmp/playthrough-exports/ by default
 ```
 
-## Attach to the issue
-
-1. Put the `.sqlite3.gz` (+ `.meta.json`) under `doc/evidence/<slug>/` when committing with a PR.
-2. Comment on the GitHub issue with the path and the `gunzip` / `DATABASE_URL=...` one-liners.
-3. Prefer the SQLite package over pasting logs or citing development DB ids.
-
 ## Do not
 
+- Commit playthrough packages (or their JSON companions) into the repo
+- Write packages under `doc/evidence/`
 - Dump the whole `storage/development.sqlite3` as playthrough evidence
 - Build an import-into-existing-database path (out of scope; use `DATABASE_URL`)
-- Rely on playthrough integer ids alone in issue write-ups without a package
+- Rely on playthrough integer ids alone in issue write-ups without a package attachment

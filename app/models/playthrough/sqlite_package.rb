@@ -7,10 +7,11 @@
 # `playthrough_*` tables alone: a playthrough is meaningless without its story,
 # so the package is that story's world plus this playthrough's progress.
 #
-# MODE. The shipped artifact is a gzipped SQLite file (`*.sqlite3.gz`). Expand
-# it, then open with `DATABASE_URL=sqlite3:path bin/rails runner ...`. There is
-# no import-into-an-existing-database path -- that would need ID remapping
-# across journals and is a different tool.
+# MODE. The shipped artifact is a gzipped SQLite file (`*.sqlite3.gz`) under
+# `tmp/playthrough-packages/`. Drag-and-drop it onto the GitHub issue -- do not
+# commit it. Expand, then open with `DATABASE_URL=sqlite3:path bin/rails runner
+# ...`. There is no import-into-an-existing-database path -- that would need ID
+# remapping across journals and is a different tool.
 #
 # HOW. Rows are read from the current primary connection into memory, a fresh
 # file is given `db/schema.rb`, the rows are written back with foreign keys
