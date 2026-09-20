@@ -12,21 +12,24 @@ When a playthrough shows a bug, attach a **restoreable miniature primary databas
 ```bash
 rake 'game:dump_playthrough[PLAYTHROUGH_ID]'
 # or a path under doc/evidence/:
-rake 'game:dump_playthrough[3,doc/evidence/playthrough-3-cold-deck-running/cold-deck-running--kael-veyra.sqlite3]'
+rake 'game:dump_playthrough[3,doc/evidence/playthrough-3-cold-deck-running/cold-deck-running--kael-veyra.sqlite3.gz]'
 ```
 
 Produces:
 
-- `*.sqlite3` — schema + that story's world + that playthrough's progress only
-- `*.sqlite3.meta.json` — which playthrough it was taken for
+- `*.sqlite3.gz` — gzipped schema + that story's world + that playthrough's progress only
+- `*.sqlite3.gz.meta.json` — which playthrough it was taken for
 
 Implementation: `Playthrough::SqlitePackage` (`app/models/playthrough/sqlite_package.rb`).
 
 ## Open the package
 
-The file **is** a primary database. Point Rails at it; do not merge into an existing DB.
+Expand, then point Rails at the sqlite file. Do not merge into an existing DB.
 
 ```bash
+gunzip -k path/to/package.sqlite3.gz
+# or: Playthrough::SqlitePackage.expand!("path/to/package.sqlite3.gz")
+
 DATABASE_URL=sqlite3:path/to/package.sqlite3 \
   bin/rails runner 'p Playthrough.find(ID).current_location.name'
 ```
@@ -42,8 +45,8 @@ rake 'game:export_playthrough[PLAYTHROUGH_ID]'
 
 ## Attach to the issue
 
-1. Put the `.sqlite3` (+ `.meta.json`) under `doc/evidence/<slug>/` when committing with a PR.
-2. Comment on the GitHub issue with the path and the `DATABASE_URL=...` one-liner.
+1. Put the `.sqlite3.gz` (+ `.meta.json`) under `doc/evidence/<slug>/` when committing with a PR.
+2. Comment on the GitHub issue with the path and the `gunzip` / `DATABASE_URL=...` one-liners.
 3. Prefer the SQLite package over pasting logs or citing development DB ids.
 
 ## Do not

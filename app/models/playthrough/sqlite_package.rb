@@ -7,15 +7,15 @@
 # `playthrough_*` tables alone: a playthrough is meaningless without its story,
 # so the package is that story's world plus this playthrough's progress.
 #
-# MODE. The file IS a primary SQLite database. Open it with
-# `DATABASE_URL=sqlite3:path bin/rails runner ...` (or console / server). There
-# is no import-into-an-existing-database path -- that would need ID remapping
+# MODE. The shipped artifact is a gzipped SQLite file (`*.sqlite3.gz`). Expand
+# it, then open with `DATABASE_URL=sqlite3:path bin/rails runner ...`. There is
+# no import-into-an-existing-database path -- that would need ID remapping
 # across journals and is a different tool.
 #
 # HOW. Rows are read from the current primary connection into memory, a fresh
-# file is given `db/schema.rb`, and the rows are written back with foreign keys
-# deferred. Lab tables stay empty. Queue and cable are not primary tables and
-# are not here.
+# file is given `db/schema.rb`, the rows are written back with foreign keys
+# deferred, and the file is gzipped for issue evidence. Lab tables stay empty.
+# Queue and cable are not primary tables and are not here.
 #
 # READ ONLY against the source. Nothing here advances a clock or asks a model.
 class Playthrough::SqlitePackage
@@ -51,22 +51,52 @@ class Playthrough::SqlitePackage
   def self.default_path(playthrough)
     story_slug = WorldSeed.slug(playthrough.story.title)
     who = WorldSeed.slug(playthrough.character&.fullname.presence || "unstarted")
-    DIRECTORY.join("#{story_slug}--#{who}.sqlite3")
+    DIRECTORY.join("#{story_slug}--#{who}.sqlite3.gz")
   end
 
   def self.metadata_path(path) = Pathname.new("#{path}#{METADATA_SUFFIX}")
 
-  # Build the package at `path` and return it. Overwrites an existing file.
+  # Path to the uncompressed sqlite beside an archive, or the archive itself
+  # when it is already a bare `.sqlite3`.
+  def self.sqlite_path(path)
+    path = Pathname.new(path)
+    path.to_s.end_with?(".gz") ? Pathname.new(path.to_s.delete_suffix(".gz")) : path
+  end
+
+  # Expand a `.sqlite3.gz` (or pass through a bare `.sqlite3`) and return the
+  # sqlite path Rails can open. Overwrites the destination.
+  def self.expand!(archive, destination: nil)
+    archive = Pathname.new(archive)
+    raise ArgumentError, "#{archive} does not exist" unless archive.exist?
+
+    destination = Pathname.new(destination || sqlite_path(archive))
+    destination.dirname.mkpath
+
+    if archive.to_s.end_with?(".gz")
+      require "zlib"
+      destination.binwrite(Zlib.gunzip(archive.binread))
+    else
+      FileUtils.cp(archive, destination) unless archive == destination
+    end
+    destination
+  end
+
+  # Build the gzipped package at `path` and return the archive path. Accepts a
+  # bare `.sqlite3` path and writes `*.sqlite3.gz` beside (and instead of) it.
   def write!(path = nil)
-    path = Pathname.new(path || self.class.default_path(playthrough))
-    path.dirname.mkpath
-    path.delete if path.exist?
-    self.class.metadata_path(path).delete if self.class.metadata_path(path).exist?
+    requested = Pathname.new(path || self.class.default_path(playthrough))
+    archive = requested.to_s.end_with?(".gz") ? requested : Pathname("#{requested}.gz")
+    sqlite = self.class.sqlite_path(archive)
+
+    archive.dirname.mkpath
+    [ archive, sqlite, self.class.metadata_path(archive) ].each { |file| file.delete if file.exist? }
 
     bundle = extract_bundle
-    materialize!(path, bundle)
-    write_metadata!(path, bundle)
-    path
+    materialize!(sqlite, bundle)
+    compress!(sqlite, archive)
+    sqlite.delete
+    write_metadata!(archive, bundle)
+    archive
   end
 
   private
@@ -253,6 +283,9 @@ class Playthrough::SqlitePackage
       insert_table(connection, "messages", bundle["messages"])
       insert_table(connection, "tool_calls", bundle["tool_calls"])
       connection.execute("PRAGMA foreign_keys = ON")
+      # Compact before gzip: freelist pages compress poorly and cost bytes on
+      # the evidence file for nothing.
+      connection.execute("VACUUM")
     ensure
       ActiveRecord::Base.establish_connection(original)
     end
@@ -290,8 +323,19 @@ class Playthrough::SqlitePackage
         "chats" => bundle["chats"].size,
         "messages" => bundle["messages"].size
       },
-      "open_with" => "DATABASE_URL=sqlite3:#{path} bin/rails runner 'p Playthrough.find(#{playthrough.id}).story.title'"
+      "compressed" => true,
+      "open_with" => [
+        "gunzip -k #{path}",
+        "DATABASE_URL=sqlite3:#{self.class.sqlite_path(path)} bin/rails runner " \
+          "'p Playthrough.find(#{playthrough.id}).story.title'"
+      ]
     }
     self.class.metadata_path(path).write(JSON.pretty_generate(meta))
+  end
+
+  def compress!(sqlite, archive)
+    require "zlib"
+
+    archive.binwrite(Zlib.gzip(sqlite.binread, level: Zlib::BEST_COMPRESSION))
   end
 end

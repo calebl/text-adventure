@@ -213,7 +213,7 @@ namespace :game do
     end
   end
 
-  desc "Package one playthrough as a miniature primary SQLite DB. Usage: rake 'game:dump_playthrough[3]' or rake 'game:dump_playthrough[3,/tmp/out.sqlite3]'"
+  desc "Package one playthrough as a gzipped miniature primary SQLite DB. Usage: rake 'game:dump_playthrough[3]' or rake 'game:dump_playthrough[3,/tmp/out.sqlite3.gz]'"
   task :dump_playthrough, [ :playthrough_id, :path ] => :environment do |_t, args|
     raise ArgumentError, "usage: rake 'game:dump_playthrough[PLAYTHROUGH_ID]'" if args[:playthrough_id].blank?
 
@@ -223,18 +223,23 @@ namespace :game do
 
     inside_app = path.to_s.start_with?(Rails.root.to_s)
     shown = inside_app ? path.relative_path_from(Rails.root) : path
+    size = ActiveSupport::NumberHelper.number_to_human_size(path.size)
     puts "Packaged playthrough ##{playthrough.id} of #{playthrough.story.title.inspect}"
-    puts "  -> #{shown}"
+    puts "  -> #{shown}  (#{size})"
     puts "  meta -> #{Playthrough::SqlitePackage.metadata_path(path).basename}"
-    puts "  story locations: #{playthrough.story.locations.count}  "          "turns: #{playthrough.scene_chain.size}  chats: #{playthrough.chats.count}"
+    puts "  story locations: #{playthrough.story.locations.count}  " \
+         "turns: #{playthrough.scene_chain.size}  chats: #{playthrough.chats.count}"
     if package.warnings.any?
       puts
       puts "Warnings:"
       package.warnings.each { |warning| puts "  - #{warning}" }
     end
+    sqlite = Playthrough::SqlitePackage.sqlite_path(path)
+    relative_sqlite = inside_app ? sqlite.relative_path_from(Rails.root) : sqlite
     puts
-    puts "This file IS a primary database (that story + this playthrough only). Open it with:"
-    puts "  DATABASE_URL=sqlite3:#{shown} bin/rails runner 'p Playthrough.find(#{playthrough.id}).current_location.name'"
+    puts "Gzipped miniature primary DB (that story + this playthrough only). Open with:"
+    puts "  gunzip -k #{shown}"
+    puts "  DATABASE_URL=sqlite3:#{relative_sqlite} bin/rails runner 'p Playthrough.find(#{playthrough.id}).current_location.name'"
   end
 
   desc "List generated stories"

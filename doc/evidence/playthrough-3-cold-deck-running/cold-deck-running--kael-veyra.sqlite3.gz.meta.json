@@ -1,7 +1,7 @@
 {
   "format": 1,
   "kind": "playthrough_sqlite_package",
-  "dumped_at": "2026-09-20T19:06:12Z",
+  "dumped_at": "2026-09-20T19:16:17Z",
   "rails_env": "development",
   "playthrough": {
     "id": 3,
@@ -17,5 +17,9 @@
     "chats": 17,
     "messages": 53
   },
-  "open_with": "DATABASE_URL=sqlite3:doc/evidence/playthrough-3-cold-deck-running/cold-deck-running--kael-veyra.sqlite3 bin/rails runner 'p Playthrough.find(3).story.title'"
+  "compressed": true,
+  "open_with": [
+    "gunzip -k doc/evidence/playthrough-3-cold-deck-running/cold-deck-running--kael-veyra.sqlite3.gz",
+    "DATABASE_URL=sqlite3:doc/evidence/playthrough-3-cold-deck-running/cold-deck-running--kael-veyra.sqlite3 bin/rails runner 'p Playthrough.find(3).story.title'"
+  ]
 }
