@@ -102,6 +102,12 @@ characters:
   likes: A ledger that balances, the smell of a fresh cylinder of wax, rain on the window
   dislikes: Amendments in another hand, being told a query is still open
   fears: Signing her name to something that turns out to have closed a file
+  conscious_desire: Odile Vance wants to reconcile the missing hour in Ward Office 12's daybook.
+  unconscious_desire: Odile Vance wants to obtain the truth behind the impossible amendment.
+  recognized_need: Odile Vance needs to keep every query open until its source is recorded.
+  unrecognized_need: Odile Vance needs to reach the sealed registry and read what it contains.
+  desire_pursuit: keep
+  need_pursuit: obtain
   items:
   - name: Ward Office 12 daybook
     description: |-
@@ -136,6 +142,12 @@ characters:
   likes: An index that catches something, other people's strong tea, the last hour of a shift
   dislikes: Being asked to repeat his name, doors that lock from one side
   fears: Being closed quietly, on a Tuesday, with nobody able to say what was lost
+  conscious_desire: Perrin Lasco wants to place his private index in the hands of a clerk whose file remains open.
+  unconscious_desire: Perrin Lasco wants to obtain a name that will remember him after his file closes.
+  recognized_need: Perrin Lasco needs to keep two copies of every amendment.
+  unrecognized_need: Perrin Lasco needs to reach a person who will hear his own name and not use him.
+  desire_pursuit: keep
+  need_pursuit: withhold
 - fullname: Halkett Rowe
   race: Ledger-Kept
   location: Ward Office 12
@@ -159,6 +171,12 @@ characters:
   likes: A ward office that has nothing to hide, being met at the door, punctuality
   dislikes: An open query, a clerk who reads the file out loud to him
   fears: That the Sealed Room has a file on him, and that it is thicker than it should be
+  conscious_desire: Halkett Rowe wants to close Ward Office 12 with every query answered and the file clean.
+  unconscious_desire: Halkett Rowe wants to obtain the Registry's absolution for his eleven closures.
+  recognized_need: Halkett Rowe needs to keep his appointment at the next ward on time.
+  unrecognized_need: Halkett Rowe needs to reach one supporting file and read it before he signs.
+  desire_pursuit: keep
+  need_pursuit: obtain
 locations:
 - name: Ward Office 12
   detail_level: realized
