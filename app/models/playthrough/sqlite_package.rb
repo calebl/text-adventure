@@ -82,6 +82,17 @@ class Playthrough::SqlitePackage
     destination
   end
 
+  # SHA of the tree this process was started from — what an issue must name so
+  # the report can be tied to a version. Dirty means uncommitted local edits.
+  def self.git_revision
+    root = Rails.root.to_s
+    sha = Dir.chdir(root) { `git rev-parse HEAD 2>/dev/null`.strip }
+    return { "sha" => nil, "dirty" => nil, "error" => "git unavailable" } if sha.blank?
+
+    dirty = Dir.chdir(root) { !`git status --porcelain 2>/dev/null`.strip.empty? }
+    { "sha" => sha, "dirty" => dirty }
+  end
+
   # Build the gzipped package at `path` and return the archive path. Accepts a
   # bare `.sqlite3` path and writes `*.sqlite3.gz` beside (and instead of) it.
   def write!(path = nil)
@@ -310,6 +321,7 @@ class Playthrough::SqlitePackage
       "kind" => "playthrough_sqlite_package",
       "dumped_at" => Time.current.utc.iso8601,
       "rails_env" => Rails.env,
+      "git" => self.class.git_revision,
       "playthrough" => {
         "id" => playthrough.id,
         "story" => story.title,

@@ -71,6 +71,9 @@ class Playthrough::SqlitePackageTest < ActiveSupport::TestCase
     assert_equal "playthrough_sqlite_package", meta.fetch("kind")
     assert_equal "Package Fixture Story", meta.dig("playthrough", "story")
     assert meta.fetch("compressed")
+    assert meta.dig("git", "sha").present?
+    assert_equal `git rev-parse HEAD`.strip, meta.dig("git", "sha")
+    assert_includes [ true, false ], meta.dig("git", "dirty")
 
     sqlite = Playthrough::SqlitePackage.expand!(archive)
     assert sqlite.exist?

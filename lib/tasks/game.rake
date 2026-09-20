@@ -235,10 +235,15 @@ namespace :game do
     inside_app = path.to_s.start_with?(Rails.root.to_s)
     shown = inside_app ? path.relative_path_from(Rails.root) : path
     size = ActiveSupport::NumberHelper.number_to_human_size(path.size)
+    git = Playthrough::SqlitePackage.git_revision
     puts "Packaged playthrough ##{playthrough.id} of #{playthrough.story.title.inspect}"
     puts "  -> #{shown}  (#{size})"
     puts "  absolute -> #{path.expand_path}"
     puts "  meta -> #{Playthrough::SqlitePackage.metadata_path(path).basename}"
+    if git["sha"]
+      dirty = git["dirty"] ? " (dirty working tree)" : ""
+      puts "  git -> #{git["sha"]}#{dirty}"
+    end
     puts "  story locations: #{playthrough.story.locations.count}  " \
          "turns: #{playthrough.scene_chain.size}  chats: #{playthrough.chats.count}"
     if package.warnings.any?
